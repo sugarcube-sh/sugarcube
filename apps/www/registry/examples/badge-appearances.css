@@ -1,0 +1,24 @@
+.badge[data-appearance="soft"] {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+}
+
+.badge[data-appearance="outlined"] {
+    background-color: transparent;
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    border-color: var(--color-border-normal, var(--color-neutral-border-normal));
+}
+
+.badge[data-appearance="soft-outlined"] {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    border-color: var(--color-border-normal, var(--color-neutral-border-normal));
+    border-style: var(--border-style);
+    border-width: var(--border-width-thin);
+}
+
+.badge[data-appearance="ghost"] {
+    background-color: transparent;
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    box-shadow: none;
+}

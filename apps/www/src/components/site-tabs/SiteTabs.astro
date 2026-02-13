@@ -1,0 +1,232 @@
+---
+/**
+ * SiteTabs.astro
+ * Site infrastructure tabs component - used for SourceCode, FrameworkTabs, etc.
+ * Separate from registry tabs to avoid CSS conflicts with demoed components.
+ */
+
+interface Props {
+    defaultValue?: string;
+    class?: string;
+    appearance?: string;
+}
+
+const { defaultValue, class: className, appearance } = Astro.props;
+
+// Generate unique ID for this tabs instance
+const tabsId = Math.random().toString(36).substring(2, 9);
+---
+
+<div
+    data-site-tabs
+    data-site-tabs-id={tabsId}
+    data-default-value={defaultValue}
+    class:list={["site-tabs", className]}
+    data-appearance={appearance}
+>
+    <slot />
+</div>
+
+<script>
+    class SiteTabsController {
+        tabsElement: HTMLElement;
+        tabsId: string;
+        tabsList: HTMLElement | null;
+        triggers: HTMLElement[];
+        contents: HTMLElement[];
+        defaultValue: string | null;
+
+        constructor(tabsElement: HTMLElement) {
+            this.tabsElement = tabsElement;
+            this.tabsId = tabsElement.dataset.siteTabsId || "";
+            this.tabsList = tabsElement.querySelector("[data-site-tabs-list]");
+            this.triggers = Array.from(
+                tabsElement.querySelectorAll("[data-site-tabs-trigger]"),
+            );
+            this.contents = Array.from(
+                tabsElement.querySelectorAll("[data-site-tabs-content]"),
+            );
+            this.defaultValue = tabsElement.dataset.defaultValue || null;
+
+            this.init();
+        }
+
+        init() {
+            // Set aria attributes on tablist
+            if (this.tabsList) {
+                this.tabsList.setAttribute("role", "tablist");
+                this.tabsList.setAttribute("aria-orientation", "horizontal");
+            }
+
+            // Set aria attributes on triggers
+            this.triggers.forEach((trigger) => {
+                const value = trigger.getAttribute("data-value") || "";
+
+                trigger.setAttribute("role", "tab");
+                trigger.setAttribute("id", `site-tab-${this.tabsId}-${value}`);
+                trigger.setAttribute(
+                    "aria-controls",
+                    `site-panel-${this.tabsId}-${value}`,
+                );
+                trigger.setAttribute("tabindex", "-1");
+
+                trigger.addEventListener("click", () =>
+                    this.activateTab(value),
+                );
+                trigger.addEventListener("keydown", (e) =>
+                    this.handleKeyDown(e),
+                );
+            });
+
+            // Set aria attributes on content panels
+            this.contents.forEach((content) => {
+                const value = content.getAttribute("data-value") || "";
+
+                content.setAttribute("role", "tabpanel");
+                content.setAttribute(
+                    "id",
+                    `site-panel-${this.tabsId}-${value}`,
+                );
+                content.setAttribute(
+                    "aria-labelledby",
+                    `site-tab-${this.tabsId}-${value}`,
+                );
+                content.setAttribute("tabindex", "0");
+            });
+
+            // Activate default tab or first tab
+            const defaultValue = this.defaultValue;
+            const hasDefaultTab =
+                defaultValue &&
+                this.triggers.some(
+                    (t) => t.getAttribute("data-value") === defaultValue,
+                );
+
+            if (hasDefaultTab) {
+                this.activateTab(defaultValue);
+            } else if (this.triggers.length > 0) {
+                const firstValue = this.triggers[0]?.getAttribute("data-value");
+                if (firstValue) this.activateTab(firstValue);
+            }
+        }
+
+        activateTab(value: string) {
+            this.triggers.forEach((trigger) => {
+                const isActive = trigger.getAttribute("data-value") === value;
+                trigger.setAttribute(
+                    "aria-selected",
+                    isActive ? "true" : "false",
+                );
+                trigger.setAttribute("tabindex", isActive ? "0" : "-1");
+
+                if (isActive) {
+                    trigger.setAttribute("data-state", "active");
+                } else {
+                    trigger.removeAttribute("data-state");
+                }
+            });
+
+            this.contents.forEach((content) => {
+                const isActive = content.getAttribute("data-value") === value;
+                content.setAttribute(
+                    "aria-hidden",
+                    isActive ? "false" : "true",
+                );
+
+                if (isActive) {
+                    content.setAttribute("data-state", "active");
+                } else {
+                    content.removeAttribute("data-state");
+                }
+            });
+
+            if (
+                document.activeElement &&
+                this.triggers.includes(document.activeElement as HTMLElement)
+            ) {
+                const activeTrigger = this.triggers.find(
+                    (t) => t.getAttribute("data-value") === value,
+                );
+                if (activeTrigger) {
+                    activeTrigger.focus();
+                }
+            }
+        }
+
+        handleKeyDown(event: KeyboardEvent) {
+            const target = event.target as HTMLElement;
+            if (!target || !target.matches("[data-site-tabs-trigger]")) return;
+
+            const currentIndex = this.triggers.findIndex((t) => t === target);
+            if (currentIndex === -1) return;
+
+            let nextIndex = currentIndex;
+
+            switch (event.key) {
+                case "ArrowRight":
+                case "ArrowDown":
+                    event.preventDefault();
+                    nextIndex = (currentIndex + 1) % this.triggers.length;
+                    break;
+
+                case "ArrowLeft":
+                case "ArrowUp":
+                    event.preventDefault();
+                    nextIndex =
+                        (currentIndex - 1 + this.triggers.length) %
+                        this.triggers.length;
+                    break;
+
+                case "Home":
+                    event.preventDefault();
+                    nextIndex = 0;
+                    break;
+
+                case "End":
+                    event.preventDefault();
+                    nextIndex = this.triggers.length - 1;
+                    break;
+
+                case " ":
+                case "Enter":
+                    event.preventDefault();
+                    const currentValue =
+                        this.triggers[currentIndex]?.getAttribute("data-value");
+                    if (currentValue) {
+                        this.activateTab(currentValue);
+                    }
+                    return;
+
+                default:
+                    return;
+            }
+
+            if (nextIndex !== currentIndex) {
+                const nextTrigger = this.triggers[nextIndex];
+                const nextValue = nextTrigger?.getAttribute("data-value");
+
+                if (nextValue) {
+                    this.activateTab(nextValue);
+                    nextTrigger?.focus();
+                }
+            }
+        }
+    }
+
+    function initSiteTabs() {
+        const tabsElements = document.querySelectorAll("[data-site-tabs]");
+        tabsElements.forEach((tabs) => {
+            new SiteTabsController(tabs as HTMLElement);
+        });
+    }
+
+    initSiteTabs();
+    document.addEventListener("astro:after-swap", initSiteTabs);
+</script>
+
+<style is:global>
+    /* Hide inactive tab panels */
+    [data-site-tabs-content]:not([data-state="active"]) {
+        display: none;
+    }
+</style>

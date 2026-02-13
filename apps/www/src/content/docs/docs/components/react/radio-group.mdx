@@ -1,0 +1,69 @@
+---
+title: Radio group
+description: A radio group component.
+---
+import { RadioGroupDemo } from "@/registry/examples/radio-group-demo.tsx";
+import { RadioGroupDisabledDemo } from "@/registry/examples/radio-group-disabled.tsx";
+import { RadioGroupSizesDemo } from "@/registry/examples/radio-group-sizes.tsx";
+import { RadioGroupHintDemo } from "@/registry/examples/radio-group-hint.tsx";
+import { RadioGroupCard } from "@/registry/examples/radio-group-card.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <RadioGroupDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/radio-group-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components radio-group -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/radio-group/react/radio-group.tsx",
+    "@/registry/components/radio-group/react/radio-group.css"
+]} collapsible={true} />
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the radio group component. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Disabled
+
+<ComponentDemo>
+    <RadioGroupDisabledDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/radio-group-disabled.tsx" />
+
+### Sizes
+
+<ComponentDemo>
+    <RadioGroupSizesDemo client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/radio-group-sizes.tsx",
+    "@/registry/examples/radio-group-sizes.css"
+]} />
+
+### With hint
+
+<ComponentDemo>
+    <RadioGroupHintDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/radio-group-hint.tsx" />
+
+### Card style
+
+<ComponentDemo>
+    <RadioGroupCard client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/radio-group-card.tsx",
+    "@/registry/examples/radio-group-card.css"
+]} />

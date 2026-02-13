@@ -1,0 +1,7 @@
+.source-code-scrollable {
+    max-height: var(--source-code-max-height, 24rem);
+    overflow-y: auto;
+    border-radius: var(--radius-md);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}

@@ -1,0 +1,55 @@
+{
+  "stroke.invalid.keyword": {
+    "$type": "strokeStyle",
+    "$value": "invalid",
+    "$path": "stroke.invalid.keyword",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/strokes.json"
+    }
+  },
+  "stroke.invalid.type": {
+    "$type": "strokeStyle",
+    "$value": 123,
+    "$path": "stroke.invalid.type",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/strokes.json"
+    }
+  },
+  "stroke.invalid.linecap": {
+    "$type": "strokeStyle",
+    "$value": {
+      "dashArray": [{ "value": 4, "unit": "px" }],
+      "lineCap": "invalid"
+    },
+    "$path": "stroke.invalid.linecap",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/strokes.json"
+    }
+  },
+  "stroke.missing.required": {
+    "$type": "strokeStyle",
+    "$value": {
+      "dashArray": [{ "value": 4, "unit": "px" }]
+    },
+    "$path": "stroke.missing.required",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/strokes.json"
+    }
+  },
+  "stroke.invalid.dasharray": {
+    "$type": "strokeStyle",
+    "$value": {
+      "dashArray": [{ "value": "four", "unit": "px" }],
+      "lineCap": "round"
+    },
+    "$path": "stroke.invalid.dasharray",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/strokes.json"
+    }
+  }
+}

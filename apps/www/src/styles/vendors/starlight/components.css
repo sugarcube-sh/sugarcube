@@ -1,0 +1,199 @@
+header.header {
+    display: flex;
+    align-items: center;
+    padding-block: 0;
+    padding-inline-start: var(--sl-content-pad-x);
+    background-color: var(--color-surface-default);
+    border-bottom: var(--border-width-thin) var(--color-surface-border) var(--border-style);
+}
+
+p.page-description {
+    margin-top: var(--space-3xs);
+    color: var(--color-text-quiet);
+}
+
+.content-panel + .content-panel {
+    border-top: 0;
+}
+
+.sl-markdown-content a:not(:where(.not-content *)) {
+    text-decoration-style: dotted;
+}
+
+.sl-markdown-content code:not(:where(.not-content *)) {
+    border-radius: var(--radius-md);
+}
+
+.sl-markdown-content ul:not([role="tablist"]),
+ol {
+    padding-inline-start: var(--space-md, 1.5rem);
+}
+
+.sidebar details {
+    --indent: 0;
+}
+
+.sidebar details details {
+    --indent: 1;
+}
+
+.sidebar details details details {
+    --indent: 2;
+}
+
+.sidebar summary {
+    padding-inline: 0;
+    padding-inline-start: calc(var(--indent, 0) * var(--space-2xs));
+}
+
+.sidebar details > ul {
+    padding-inline-start: calc(var(--indent, 0) * var(--space-2xs));
+}
+
+.sidebar a[aria-current="page"],
+.sidebar a[aria-current="page"]:hover,
+.sidebar a[aria-current="page"]:focus {
+    background-color: var(--color-surface-lowered);
+    color: var(--color-text-normal);
+    font-weight: var(--font-weight-medium);
+}
+
+.sidebar a {
+    color: var(--color-text-quiet);
+}
+
+.sidebar a:hover {
+    color: var(--color-text-normal);
+}
+
+.top-level ul li {
+    padding-inline: 0;
+    padding-block: 2px;
+    border-inline-start: 0;
+    margin-inline-start: 0;
+}
+
+.top-level ul li a {
+    padding-inline: var(--space-2xs);
+}
+
+.sidebar .group-label span {
+    color: var(--color-text-normal);
+    font-size: var(--text-sm);
+}
+
+.sidebar summary svg {
+    --sl-icon-color: var(--color-text-quiet);
+}
+
+.right-sidebar {
+    border-left: var(--border-width-thin) var(--color-surface-border) var(--border-style);
+}
+
+.pagination-links a {
+    border: var(--border-width-thin) var(--color-surface-border) var(--border-style);
+    box-shadow: var(--shadow-xs);
+}
+
+.pagination-links .link-title,
+.pagination-links span {
+    font-size: var(--text-base);
+}
+
+/* Site Search */
+@media (max-width: 49.99em) {
+    site-search {
+        display: none;
+    }
+}
+
+site-search kbd {
+    border: none;
+}
+
+site-search kbd kbd {
+    --_kbd-border-color: color-mix(in srgb, var(--color-text-normal, currentColor) 20%, #0000);
+    border: var(--border-width-thin, 1px) var(--border-style, solid)
+        var(--_kbd-border-color, currentColor);
+    border-bottom: calc(var(--border-width-thin, 1px) + 1px) solid
+        color-mix(in srgb, var(--color-text-normal, currentColor) 20%, transparent);
+    border-radius: min(
+        calc(var(--form-control-toggle-size, 1.125rem) * 0.375),
+        var(--radius-md, 0.25rem)
+    );
+    font-size: var(--text-xs);
+}
+
+site-search button:hover {
+    border-color: var(--color-surface-border);
+}
+
+/* Mobile Starlight TOC */
+mobile-starlight-toc .toggle:hover {
+    border-color: var(--color-surface-border);
+}
+
+mobile-starlight-toc details[open] .toggle {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-fill-loud) 25%, transparent);
+    outline: none;
+    border-color: var(--color-fill-loud);
+}
+
+starlight-menu-button button {
+    background-color: var(--sl-color-black);
+    color: var(--sl-color-white);
+    box-shadow: none;
+    font-size: var(--sl-text-xl);
+    width: revert;
+    height: revert;
+}
+
+/* Expressive Code */
+.expressive-code .frame {
+    box-shadow: none;
+}
+
+.expressive-code pre {
+    border-radius: var(--radius-md);
+}
+
+.expressive-code .has-title .header {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.expressive-code .has-title pre {
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.collapsible .expressive-code pre {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.collapsible .expressive-code .has-title pre {
+    border-radius: 0;
+}
+
+.sidebar-pane {
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-text-normal, currentColor) 30%, transparent)
+        transparent;
+}
+
+.sidebar-pane::-webkit-scrollbar {
+    background: transparent;
+    width: 8px;
+    height: 8px;
+}
+
+.sidebar-pane::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-text-normal, currentColor) 30%, transparent);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.sidebar-pane::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--color-text-normal, currentColor) 50%, transparent);
+    background-clip: padding-box;
+}

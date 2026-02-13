@@ -1,0 +1,20 @@
+{
+  "name": "label",
+  "type": "component",
+  "path": "components/label/react/label.css",
+  "content": ".label {\n    display: inline-block;\n    position: relative;\n    font-size: var(--form-control-font-size, inherit);\n    color: var(--form-control-label-color);\n    line-height: var(--form-control-label-line-height);\n}\n\n.label:not(:has(input[type=\"checkbox\"])):not(:has(input[type=\"radio\"])) {\n    font-weight: var(--font-weight-medium);\n}\n\n.label:has(\n        input:not(\n                [type=\"button\"],\n                [type=\"checkbox\"],\n                [type=\"color\"],\n                [type=\"file\"],\n                [type=\"hidden\"],\n                [type=\"image\"],\n                [type=\"radio\"],\n                [type=\"reset\"],\n                [type=\"submit\"]\n            ),\n        textarea,\n        select\n    ) {\n    width: 100%;\n}\n\n.label + :is(input:not([type=\"checkbox\"], [type=\"radio\"]), textarea, select),\n.label > :is(input:not([type=\"checkbox\"], [type=\"radio\"]), textarea, select) {\n    margin-block-start: 0.5em;\n}\n",
+  "frameworks": [
+    "react"
+  ],
+  "dependencies": {
+    "react": [
+      "clsx",
+      "@radix-ui/react-label"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

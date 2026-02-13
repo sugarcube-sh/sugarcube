@@ -1,0 +1,23 @@
+---
+/**
+ * SiteTabsTrigger.astro
+ * Individual site tab button
+ */
+
+interface Props {
+    value: string;
+    class?: string;
+    disabled?: boolean;
+}
+
+const { value, class: className, disabled = false } = Astro.props;
+---
+
+<button
+    data-site-tabs-trigger
+    data-value={value}
+    class:list={["site-tabs-trigger", className]}
+    disabled={disabled}
+>
+    <slot />
+</button>

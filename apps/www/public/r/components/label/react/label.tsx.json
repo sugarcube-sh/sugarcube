@@ -1,0 +1,20 @@
+{
+  "name": "label",
+  "type": "component",
+  "path": "components/label/react/label.tsx",
+  "content": "\"use client\";\n\nimport * as LabelPrimitive from \"@radix-ui/react-label\";\nimport type * as React from \"react\";\n\nimport cn from \"clsx\";\n\nfunction Label({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {\n    return <LabelPrimitive.Root className={cn(\"label\", className)} {...props} />;\n}\n\nexport { Label };\n",
+  "frameworks": [
+    "react"
+  ],
+  "dependencies": {
+    "react": [
+      "clsx",
+      "@radix-ui/react-label"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

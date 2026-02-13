@@ -1,0 +1,20 @@
+---
+import { CircleCheck } from "@lucide/astro";
+---
+
+<div class="flow w-full">
+    <div class="alert" data-tinted-shadows>
+        <CircleCheck class="icon" />
+        <div class="alert-title">With tinted shadows</div>
+        <div class="alert-description">
+            This alert uses tinted shadows that match the alert color.
+        </div>
+    </div>
+    <div class="alert" data-tinted-shadows data-variant="success">
+        <CircleCheck class="icon" />
+        <div class="alert-title">Success with tinted shadows</div>
+        <div class="alert-description">
+            The shadow color matches the alert variant.
+        </div>
+    </div>
+</div>

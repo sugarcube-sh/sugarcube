@@ -1,0 +1,9 @@
+{
+  "name": "compositions",
+  "type": "cube",
+  "path": "styles/compositions/switcher.css",
+  "content": "/*\nSWITCHER\nMore info: https://every-layout.dev/layouts/switcher/\nA layout that allows you to lay **2** items next to each other\nuntil there is not enough horizontal space to allow that.\n\nCUSTOM PROPERTIES AND CONFIGURATION\n--switcher-gap: This defines the space\nbetween each item\n\n--switcher-inline-at: How large the container\nneeds to be to allow items to sit inline with each other\n\n--switcher-vertical-alignment How items should align vertically.\nCan be any acceptable flexbox alignment value.\n*/\n.switcher {\n    display: flex;\n    flex-wrap: wrap;\n    gap: var(--switcher-gap, 1rem);\n    align-items: var(--switcher-vertical-alignment, flex-start);\n}\n\n.switcher > * {\n    flex-grow: 1;\n    flex-basis: calc((var(--switcher-inline-at, 40rem) - 100%) * 999);\n}\n\n/* Max 2 items,\n  so anything greater than 2 is full width */\n.switcher > :nth-child(n + 3) {\n    flex-basis: 100%;\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

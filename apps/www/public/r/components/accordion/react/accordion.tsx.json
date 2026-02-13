@@ -1,0 +1,22 @@
+{
+  "name": "accordion",
+  "type": "component",
+  "path": "components/accordion/react/accordion.tsx",
+  "content": "\"use client\";\n\nimport * as AccordionPrimitive from \"@radix-ui/react-accordion\";\nimport { ChevronDownIcon } from \"lucide-react\";\nimport type * as React from \"react\";\n\nimport cn from \"clsx\";\n\nfunction Accordion({ ...props }: React.ComponentProps<typeof AccordionPrimitive.Root>) {\n    return <AccordionPrimitive.Root data-slot=\"accordion\" {...props} />;\n}\n\nfunction AccordionItem({\n    className,\n    ...props\n}: React.ComponentProps<typeof AccordionPrimitive.Item>) {\n    return <AccordionPrimitive.Item className={cn(\"accordion-item\", className)} {...props} />;\n}\n\nfunction AccordionTrigger({\n    className,\n    children,\n    ...props\n}: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {\n    return (\n        <AccordionPrimitive.Header className=\"accordion-header\">\n            <AccordionPrimitive.Trigger className={cn(\"accordion-trigger\", className)} {...props}>\n                {children}\n                <ChevronDownIcon />\n            </AccordionPrimitive.Trigger>\n        </AccordionPrimitive.Header>\n    );\n}\n\nfunction AccordionContent({\n    className,\n    children,\n    ...props\n}: React.ComponentProps<typeof AccordionPrimitive.Content>) {\n    return (\n        <AccordionPrimitive.Content className=\"accordion-content\" {...props}>\n            <div className={cn(\"accordion-content-inner\", className)}>{children}</div>\n        </AccordionPrimitive.Content>\n    );\n}\n\nexport { Accordion, AccordionItem, AccordionTrigger, AccordionContent };\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "react": [
+      "@radix-ui/react-accordion",
+      "lucide-react",
+      "clsx"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

@@ -1,0 +1,16 @@
+.avatar-group.is-animated .avatar:first-of-type {
+    margin-inline-start: 0;
+    transition: none;
+}
+
+.avatar-group.is-animated .avatar:not(:first-of-type) {
+    transition: margin-inline-start 150ms ease-in-out;
+}
+
+.avatar-group.is-animated:hover .avatar:not(:first-of-type):not(:last-child) {
+    margin-inline-start: 4px;
+}
+
+.avatar-group.is-animated:hover .avatar:last-child {
+    margin-inline-start: 0;
+}

@@ -1,0 +1,9 @@
+{
+  "name": "static",
+  "type": "tokens",
+  "path": "tokens/starter-kits/static/size.json",
+  "content": "{\n  \"size\": {\n    \"$type\": \"dimension\",\n    \"step\": {\n      \"-2\": {\n        \"$value\": {\n          \"value\": 0.75,\n          \"unit\": \"rem\"\n        }\n      },\n      \"-1\": {\n        \"$value\": {\n          \"value\": 0.875,\n          \"unit\": \"rem\"\n        }\n      },\n      \"0\": {\n        \"$value\": {\n          \"value\": 1,\n          \"unit\": \"rem\"\n        }\n      },\n      \"1\": {\n        \"$value\": {\n          \"value\": 1.125,\n          \"unit\": \"rem\"\n        }\n      },\n      \"2\": {\n        \"$value\": {\n          \"value\": 1.25,\n          \"unit\": \"rem\"\n        }\n      },\n      \"3\": {\n        \"$value\": {\n          \"value\": 1.5,\n          \"unit\": \"rem\"\n        }\n      },\n      \"4\": {\n        \"$value\": {\n          \"value\": 1.875,\n          \"unit\": \"rem\"\n        }\n      },\n      \"5\": {\n        \"$value\": {\n          \"value\": 2.25,\n          \"unit\": \"rem\"\n        }\n      },\n      \"6\": {\n        \"$value\": {\n          \"value\": 3,\n          \"unit\": \"rem\"\n        }\n      },\n      \"7\": {\n        \"$value\": {\n          \"value\": 3.75,\n          \"unit\": \"rem\"\n        }\n      },\n      \"8\": {\n        \"$value\": {\n          \"value\": 4.5,\n          \"unit\": \"rem\"\n        }\n      },\n      \"9\": {\n        \"$value\": {\n          \"value\": 6,\n          \"unit\": \"rem\"\n        }\n      },\n      \"10\": {\n        \"$value\": {\n          \"value\": 8,\n          \"unit\": \"rem\"\n        }\n      }\n    }\n  }\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

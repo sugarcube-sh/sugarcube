@@ -1,0 +1,26 @@
+.radio[data-size="sm"] {
+    --scale: calc(var(--text-sm) / 1rem);
+}
+
+.radio[data-size="sm"] + .label,
+.radio[data-size="sm"] ~ .label {
+    font-size: var(--text-sm);
+}
+
+.radio[data-size="md"] {
+    --scale: calc(var(--text-base) / 1rem);
+}
+
+.radio[data-size="md"] + .label,
+.radio[data-size="md"] ~ .label {
+    font-size: var(--text-base);
+}
+
+.radio[data-size="lg"] {
+    --scale: calc(var(--text-lg) / 1rem);
+}
+
+.radio[data-size="lg"] + .label,
+.radio[data-size="lg"] ~ .label {
+    font-size: var(--text-lg);
+}

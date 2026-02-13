@@ -1,0 +1,88 @@
+---
+title: Advanced setup
+description: Understand how init detects your project and customize its behavior with command-line options
+---
+
+import Table from "@/src/components/Table.astro";
+
+## Default behavior
+
+By default, `init` inspects your project and makes decisions based on what it finds:
+
+### Where files go
+
+If your project has a `src/` directory, tokens are placed in `src/design-tokens` and styles in `src/styles`. Otherwise, they go in `design-tokens` and `styles` at the project root.
+
+### Starter kit vs existing tokens
+
+When no design tokens are found, `init` seeds your project with the `fluid` starter kit. If you already have tokens, they're processed as-is.
+
+### Build integration
+
+When Vite (or a compatible bundler) is detected, the `@sugarcube-sh/vite` plugin is installed for on-demand CSS generation. Without Vite, static CSS files are generated instead.
+
+### Configuration
+
+A `sugarcube.config.ts` (or `.js`) file is created only if you customize settings via flags. If you run `init` without flags, no config file is generated.
+
+## Customizing `init`
+
+You can override any of these defaults using command-line options:
+
+<Table>
+| Option | Description |
+|--------|-------------|
+| `--tokens-dir <dir>` | Custom directory for design tokens (e.g., `./tokens`) |
+| `--styles-dir <dir>` | Custom directory for generated CSS output (e.g., `./css`) |
+| `--variables-dir <dir>` | Custom directory for generated CSS variables (e.g., `./css/global`) |
+| `--utilities-dir <dir>` | Custom directory for generated utility classes (e.g., `./css/utilities`) |
+| `--fluid-min <number>` | Minimum viewport width for fluid scaling (e.g., `320`) |
+| `--fluid-max <number>` | Maximum viewport width for fluid scaling (e.g., `1200`) |
+| `--color-fallback <strategy>` | Color fallback strategy: `native` or `polyfill` |
+| `--skip-deps` | Skip all sugarcube package installation |
+| `--kit <kit>` | Starter kit to use when seeding tokens (e.g., `fluid`, `minimal`) |
+</Table>
+
+## Examples
+
+**Custom directories:**
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli init --tokens-dir ./tokens --styles-dir ./css" />
+
+**Skipping package installation:**
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli init --skip-deps" />
+
+**Choosing a starter kit:**
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli init --kit static" />
+
+See [Working with tokens](/docs/working-with-tokens) for more on starter kits.
+
+## Skipping `init` entirely
+
+If you already have design tokens and a `*.resolver.json` file, you can skip `init` and use sugarcube directly:
+
+### With Vite
+
+Manually add the plugin to your build config:
+
+```typescript
+// vite.config.ts
+import { defineConfig } from "vite";
+import sugarcube from "@sugarcube-sh/vite";
+
+export default defineConfig({
+  plugins: [sugarcube()],
+});
+```
+
+See the [Vite plugin docs](/docs/vite-plugin) for configuration options.
+
+### Without Vite
+
+Run CLI commands directly to generate CSS:
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli generate" />
+
+All commands support zero-config auto-discovery. See [CLI commands](/docs/cli/cli-commands) for more details.

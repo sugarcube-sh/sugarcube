@@ -1,0 +1,104 @@
+---
+title: Badge
+description: A badge component.
+---
+import { BadgeDemo } from "@/registry/examples/badge-demo.tsx";
+import { BadgeVariants } from "@/registry/examples/badge-variants.tsx";
+import { BadgeAppearances } from "@/registry/examples/badge-appearances.tsx";
+import { BadgeSizes } from "@/registry/examples/badge-sizes.tsx";
+import { BadgeShapes } from "@/registry/examples/badge-shapes.tsx";
+import { BadgeWithIcon } from "@/registry/examples/badge-with-icon.tsx";
+import { BadgeNumbers } from "@/registry/examples/badge-numbers.tsx";
+import { BadgeStatus } from "@/registry/examples/badge-status.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <BadgeDemo />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/badge-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components badge -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/badge/react/badge.tsx",
+    "@/registry/components/badge/react/badge.css"
+]} collapsible={true} />
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the badge component with variants, appearances, and sizes. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Variants
+
+You can add color variants using data attributes. This example shows how you might implement variants using CSS custom properties:
+
+<ComponentDemo>
+    <BadgeVariants />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/badge-variants.tsx",
+    "@/registry/examples/badge-variants.css"
+]} />
+
+### Appearances
+
+You can add different visual appearances using data attributes. This example shows how you might implement different badge styles:
+
+<ComponentDemo>
+    <BadgeAppearances />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/badge-appearances.tsx",
+    "@/registry/examples/badge-appearances.css"
+]} />
+
+### Sizes
+
+You can add size variants using data attributes. This example shows how you might implement different badge sizes:
+
+<ComponentDemo>
+    <BadgeSizes />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/badge-sizes.tsx",
+    "@/registry/examples/badge-sizes.css"
+]} />
+
+### Shapes
+
+You can add shape variants using data attributes. This example shows how you might implement different badge shapes:
+
+<ComponentDemo>
+    <BadgeShapes />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/badge-shapes.tsx",
+    "@/registry/examples/badge-shapes.css"
+]} />
+
+### With icon
+
+Badges work well with icons. You can add icons to badges:
+
+<ComponentDemo>
+    <BadgeWithIcon />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/badge-with-icon.tsx" />
+
+### Numbers
+
+Badges are commonly used to display numbers or counts. Use `tabular-nums` for consistent number width:
+
+<ComponentDemo>
+    <BadgeNumbers />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/badge-numbers.tsx" />

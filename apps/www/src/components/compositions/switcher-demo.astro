@@ -1,0 +1,53 @@
+---
+// Switcher composition demo
+---
+
+<div class="flow flow-space-md">
+    <h2>Switcher Composition</h2>
+    <p>
+        The switcher composition allows two items to sit side by side until
+        there isn't enough space. When the container becomes too narrow, the
+        items stack vertically.
+    </p>
+
+    <div class="switcher switcher-inline-at-xs">
+        <div>
+            <h3>Primary Content</h3>
+            <p>This is the main content area that takes priority.</p>
+        </div>
+        <div>
+            <h3>Secondary Content</h3>
+            <p>This content sits alongside when space allows.</p>
+        </div>
+    </div>
+
+    <div class="switcher switcher-inline-at-sm">
+        <div>
+            <h3>Title</h3>
+            <p>This could be a page title or heading.</p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary">Action</button>
+        </div>
+    </div>
+
+    <div class="switcher switcher-inline-at-md">
+        <div>
+            <h3>Form Field</h3>
+            <p>Input field with label.</p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-secondary">Help</button>
+        </div>
+    </div>
+
+    <div class="switcher switcher-inline-at-lg">
+        <div>
+            <h3>Status</h3>
+            <p>Current status information.</p>
+        </div>
+        <div>
+            <span class="badge">Active</span>
+        </div>
+    </div>
+</div>

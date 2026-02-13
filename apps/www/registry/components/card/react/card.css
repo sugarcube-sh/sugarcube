@@ -1,0 +1,33 @@
+.card {
+    --inner-border-radius: calc(var(--panel-radius) - var(--panel-border-width));
+    position: relative;
+    background-color: var(--color-surface-raised);
+    border: var(--panel-border-width) var(--panel-border-style) var(--panel-border-color);
+    border-radius: var(--panel-radius);
+    box-shadow: var(--shadow-xs);
+}
+
+.card-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    padding-block-start: var(--space-md);
+    padding-inline: var(--space-md);
+}
+
+.card-media {
+    display: flex;
+    overflow: hidden;
+    border-start-start-radius: var(--inner-border-radius);
+    border-start-end-radius: var(--inner-border-radius);
+}
+
+.card-content {
+    padding-block: var(--space-md);
+    padding-inline: var(--space-md);
+}
+
+.card-footer {
+    padding-block-end: var(--space-md);
+    padding-inline: var(--space-md);
+}

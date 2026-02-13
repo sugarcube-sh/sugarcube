@@ -1,0 +1,27 @@
+---
+import Icons from "@/src/components/Icons.astro";
+/**
+ * MobileMenuFooter - Overrides Starlight's default MobileMenuFooter
+ * Appears at the bottom of the mobile sidebar menu.
+ * Contains theme toggle, mode toggle, and GitHub link.
+ */
+import Link from "@/src/components/Link.astro";
+import ModeToggle from "@/src/components/ModeToggle.astro";
+import { ThemeToggle } from "@/src/components/ThemeToggle.tsx";
+---
+
+<div class="mobile-menu-footer">
+    <div class="cluster">
+        <ThemeToggle client:load />
+        <ModeToggle />
+        <Link
+            href="https://github.com/sugarcube-sh/sugarcube"
+            isExternal
+            class="site-button is-icon-only"
+            data-appearance="ghost"
+        >
+            <Icons name="github" />
+            <span class="sr-only">GitHub</span>
+        </Link>
+    </div>
+</div>

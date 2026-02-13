@@ -1,0 +1,33 @@
+---
+const plans = [
+    {
+        id: "starter",
+        name: "Starter Plan",
+        description: "Perfect for small businesses getting started with our platform",
+        price: "$10",
+    },
+    {
+        id: "pro",
+        name: "Pro Plan",
+        description: "Advanced features for growing businesses with higher demands",
+        price: "$20",
+    },
+];
+---
+<div class="radio-group-card flow flow-space-2xs">
+    {plans.map((plan) => (
+        <label class="flex flex-nowrap gap-xs w-full">
+            <input
+                type="radio"
+                name="radio-group-card"
+                value={plan.id}
+                class="radio"
+                checked={plan.id === "starter"}
+            />
+            <div class="flow">
+                <div class="font-weight-semibold">{plan.name}</div>
+                <div class="text-sm text-quiet">{plan.description}</div>
+            </div>
+        </label>
+    ))}
+</div>

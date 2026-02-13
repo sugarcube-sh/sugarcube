@@ -1,0 +1,38 @@
+.input {
+    /* Calculate total height: (top + bottom padding) + (font-size × line-height)
+     * Rounded to nearest pixel */
+    --form-control-height: round(
+        calc(2 * var(--form-control-padding-block) + 1em * var(--form-control-line-height)),
+        1px
+    );
+
+    appearance: none;
+    inline-size: 100%;
+    padding-inline: var(--space-xs);
+    padding-block: 0;
+    height: var(--form-control-height);
+    border: var(--form-control-border-width) var(--border-style) var(--form-control-border-color);
+    border-radius: var(--radius-input);
+    box-shadow: var(--shadow-xs);
+    background-color: var(--form-control-background-color);
+    transition-property: border-color, box-shadow;
+    transition-timing-function: var(--ease-out);
+    transition-duration: var(--transition-normal);
+}
+
+.input:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-fill-loud) 25%, transparent);
+    outline: none;
+    border-color: var(--color-fill-loud);
+}
+
+.input[aria-invalid="true"]:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-rose-600) 25%, transparent);
+    outline: none;
+    border-color: var(--color-rose-600);
+}
+
+.input:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}

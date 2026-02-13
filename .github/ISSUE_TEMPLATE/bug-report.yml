@@ -1,0 +1,129 @@
+name: "Bug report"
+description: "Report an issue with sugarcube"
+title: '[bug]: '
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Thanks for taking the time to create a bug report. Please search open/closed issues before submitting, as the issue may have already been reported/addressed.
+
+  - type: markdown
+    attributes:
+      value: |
+        #### If you aren't sure this is a bug or not, please open a discussion instead:
+        - [Discussions](https://github.com/sugarcube-sh/sugarcube/discussions/new?category=general)
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is. If you intend to submit a PR for this issue, tell us how in the description. Thanks!
+      placeholder: Bug description
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected area
+      description: Which part of sugarcube is affected by this bug?
+      options:
+        - label: CLI
+        - label: Core library
+        - label: Build tool integration (Vite plugin)
+        - label: Component registry
+        - label: CUBE CSS
+        - label: Design token validation and processing
+        - label: Documentation website
+        - label: Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How to reproduce
+      description: A step-by-step description of how to reproduce the bug.
+      placeholder: |
+        1. Run 'npx @sugarcube-sh/cli init'
+        2. See error
+    validations:
+      required: true
+
+  - type: input
+    id: command-used
+    attributes:
+      label: Command used (if CLI-related)
+      description: The exact command you ran, including any flags or arguments
+      placeholder: npx @sugarcube-sh/cli init --silent
+    validations:
+      required: false
+
+  - type: input
+    id: config-file
+    attributes:
+      label: Configuration file (if applicable)
+      description: Relevant parts of your sugarcube.config.{js|ts} or other config files
+    validations:
+      required: false
+
+  - type: input
+    id: token-files
+    attributes:
+      label: Design token files (if applicable)
+      description: Relevant parts of your design token files that might be causing the issue
+      placeholder: |
+        {
+          "color": {
+            "primary": { "value": "#007acc" }
+          }
+        }
+    validations:
+      required: false
+
+  - type: input
+    id: codesandbox-stackblitz
+    attributes:
+      label: Codesandbox/StackBlitz link
+      description: | 
+        A link to a CodeSandbox or StackBlitz that includes a minimal reproduction of the problem. In rare cases when not applicable, you can link to a GitHub repository that we can easily run to recreate the issue. If a report is vague and does not have a reproduction, it will be closed without warning. 
+
+        > [!CAUTION]
+        > If you skip this step, this issue might be **labeled** with `please add a reproduction` and **closed**.
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: "Please include console logs, terminal output, or build logs around the time this bug occurred. Optional if provided reproduction. Please try not to insert an image but copy paste the log text."
+      render: bash
+
+  - type: textarea
+    id: system-info
+    attributes:
+      label: System Info
+      description: Information about your system that's relevant.
+      render: bash
+      placeholder: |
+        OS: macOS 14.0
+        Node: v18.17.0
+        Package Manager: pnpm 8.6.0
+        Framework: Astro 4.0
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Before submitting
+      description: By submitting this issue, you agree to follow our [Contributing Guidelines](https://github.com/sugarcube-sh/sugarcube/blob/main/CONTRIBUTING.md).
+      options:
+        - label: I've searched for existing issues
+          required: true
+        - label: I've checked the documentation
+          required: true
+        - label: I've tried the latest version of sugarcube
+          required: true 

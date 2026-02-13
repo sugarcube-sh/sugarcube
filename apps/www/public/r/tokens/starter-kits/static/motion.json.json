@@ -1,0 +1,9 @@
+{
+  "name": "static",
+  "type": "tokens",
+  "path": "tokens/starter-kits/static/motion.json",
+  "content": "{\n  \"transition\": {\n    \"$type\": \"duration\",\n    \"fast\": {\n      \"$value\": { \"value\": 75, \"unit\": \"ms\" }\n    },\n    \"normal\": {\n      \"$value\": { \"value\": 150, \"unit\": \"ms\" }\n    },\n    \"slow\": {\n      \"$value\": { \"value\": 300, \"unit\": \"ms\" }\n    }\n  },\n  \"ease\": {\n    \"$type\": \"cubicBezier\",\n    \"in\": {\n      \"$value\": [0.4, 0, 1, 1]\n    },\n    \"out\": {\n      \"$value\": [0, 0, 0.2, 1]\n    },\n    \"in-out\": {\n      \"$value\": [0.4, 0, 0.2, 1]\n    }\n  }\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

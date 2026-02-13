@@ -1,0 +1,26 @@
+---
+title: Introduction
+description: Browse sugarcube's component registry
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+import SiteCard from "@/src/components/SiteCard.astro";
+import { ArrowUpRightIcon } from "lucide-react";
+
+Components are available as **React** and **CSS-only** implementations. **Web components** are a priority and soon to enter active development. Pick your framework and browse the registry.
+
+<CardGrid>
+    <SiteCard>
+        <h2 class="site-card-header">React</h2>
+        <p class="site-card-content"><a href="/docs/components/react/accordion">Browse React components <ArrowUpRightIcon /></a></p>
+    </SiteCard>
+
+    <SiteCard>
+        <h2 class="site-card-header">CSS-only</h2>
+        <p class="site-card-content"><a href="/docs/components/css-only/accordion">Browse CSS-only components <ArrowUpRightIcon /></a></p>
+    </SiteCard>
+</CardGrid>
+
+
+
+

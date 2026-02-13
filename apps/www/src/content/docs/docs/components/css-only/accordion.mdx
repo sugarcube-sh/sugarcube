@@ -1,0 +1,44 @@
+---
+title: Accordion
+description: A collapsible interface for organizing content into expandable sections.
+---
+
+import AccordionDemo from "@/registry/examples/accordion-demo.astro";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+
+## Preview
+
+<ComponentDemo>
+    <AccordionDemo />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/accordion-demo.astro" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components accordion -f css-only" />
+
+## Source Code
+
+<SourceCode path="@/registry/components/accordion/css/accordion.css" collapsible={true} />
+
+## Usage
+
+The styles are designed to work with native `details` and `summary` elements. Apply the `.accordion` class to a container:
+
+```html
+<div class="accordion">
+  <details>
+    <summary>Section 1</summary>
+    <div class="accordion-content">
+      <p>Content for section 1</p>
+    </div>
+  </details>
+  
+  <details>
+    <summary>Section 2</summary>
+    <div class="accordion-content">
+      <p>Content for section 2</p>
+    </div>
+  </details>
+</div>
+```

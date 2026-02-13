@@ -1,0 +1,56 @@
+{
+  "font.weight.invalid.range.low": {
+    "$type": "fontWeight",
+    "$value": 0,
+    "$path": "font.weight.invalid.range.low",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.weight.invalid.range.high": {
+    "$type": "fontWeight",
+    "$value": 1001,
+    "$path": "font.weight.invalid.range.high",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.weight.invalid.keyword": {
+    "$type": "fontWeight",
+    "$value": "bolder",
+    "$path": "font.weight.invalid.keyword",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.weight.invalid.type.boolean": {
+    "$type": "fontWeight",
+    "$value": true,
+    "$path": "font.weight.invalid.type.boolean",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.weight.invalid.type.object": {
+    "$type": "fontWeight",
+    "$value": { "weight": 400 },
+    "$path": "font.weight.invalid.type.object",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.weight.invalid.type.array": {
+    "$type": "fontWeight",
+    "$value": [400],
+    "$path": "font.weight.invalid.type.array",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  }
+}

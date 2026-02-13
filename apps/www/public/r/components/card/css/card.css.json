@@ -1,0 +1,18 @@
+{
+  "name": "card",
+  "type": "component",
+  "path": "components/card/css/card.css",
+  "content": ".card {\n    --inner-border-radius: calc(var(--panel-radius) - var(--panel-border-width));\n    position: relative;\n    background-color: var(--color-surface-raised);\n    border: var(--panel-border-width) var(--panel-border-style) var(--panel-border-color);\n    border-radius: var(--panel-radius);\n    box-shadow: var(--shadow-xs);\n}\n\n.card-header {\n    display: flex;\n    flex-direction: column;\n    gap: var(--space-2xs);\n    padding-block-start: var(--space-md);\n    padding-inline: var(--space-md);\n}\n\n.card-media {\n    display: flex;\n    overflow: hidden;\n    border-start-start-radius: var(--inner-border-radius);\n    border-start-end-radius: var(--inner-border-radius);\n}\n\n.card-content {\n    padding-block: var(--space-md);\n    padding-inline: var(--space-md);\n}\n\n.card-footer {\n    padding-block-end: var(--space-md);\n    padding-inline: var(--space-md);\n}\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "css-only": [],
+    "react": []
+  },
+  "registryDependencies": {
+    "css-only": [],
+    "react": []
+  }
+}

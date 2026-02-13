@@ -1,0 +1,9 @@
+{
+  "name": "compositions",
+  "type": "cube",
+  "path": "styles/compositions/cluster.css",
+  "content": "/*\nCLUSTER\nMore info: https://every-layout.dev/layouts/cluster/\nA layout that lets you distribute items with consitent\nspacing, regardless of their size\n\nCUSTOM PROPERTIES AND CONFIGURATION\n--cluster-gap: Controls the gap between cluster items\n\n--cluster-horizontal-alignment: Controls horizontal alignment of items.\nCan be any acceptable flexbox alignment value.\n\n--cluster-vertical-alignment: Controls vertical alignment of items.\nCan be any acceptable flexbox alignment value.\n*/\n\n.cluster {\n    display: flex;\n    flex-wrap: wrap;\n    gap: var(--cluster-gap, 0.5rem);\n    justify-content: var(--cluster-horizontal-alignment, flex-start);\n    align-items: var(--cluster-vertical-alignment, center);\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

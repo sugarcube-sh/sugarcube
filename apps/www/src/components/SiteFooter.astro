@@ -1,0 +1,38 @@
+---
+import Logo from "@/src/assets/sugarcube-logo.svg";
+---
+
+<footer
+    class="site-footer wrapper flow region pt-3xl pb-2xl"
+    style="--wrapper-max-width: var(--container-3xl)"
+>
+    <div class="repel">
+        <div class="cluster">
+            <Logo />
+            <p>MIT LICENSE © {new Date().getFullYear()}</p>
+        </div>
+        <nav>
+            <ul class="cluster" role="list">
+                <li>
+                    <a href="/docs">Docs</a>
+                </li>
+                <li>
+                    <a href="/services">Services</a>
+                </li>
+                <li>
+                    <a href="https://github.com/sponsors/mark-tomlinson-dev"
+                        >Sponsor</a
+                    >
+                </li>
+                <li>
+                    <a href="https://github.com/sugarcube-sh/sugarcube"
+                        >GitHub</a
+                    >
+                </li>
+                <li>
+                    <a href="https://bsky.app/profile/sugarcube.sh">Bluesky</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</footer>

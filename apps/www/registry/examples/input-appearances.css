@@ -1,0 +1,15 @@
+.input[data-appearance="soft"] {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    border-color: transparent;
+}
+
+.input[data-appearance="soft-outlined"] {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    border-color: var(--color-border-normal, var(--color-neutral-border-normal));
+}
+
+.input[data-appearance="soft-outlined"]:focus-visible {
+    border-color: var(--color-fill-loud);
+}

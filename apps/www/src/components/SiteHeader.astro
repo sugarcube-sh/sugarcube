@@ -1,0 +1,117 @@
+---
+// @ts-ignore - virtual:starlight module
+import Search from "virtual:starlight/components/Search";
+import Icons from "@/src/components/Icons.astro";
+import Link from "@/src/components/Link.astro";
+import ModeToggle from "@/src/components/ModeToggle.astro";
+import { ThemeToggle } from "@/src/components/ThemeToggle.tsx";
+
+import logoSvg from "@/src/assets/sugarcube-logo.svg?raw";
+
+const isDocsRoute = Astro.url.pathname.startsWith("/docs");
+---
+
+{
+    isDocsRoute ? (
+        <>
+            {/* <div class="alpha-banner">
+                ⚠️ Private Alpha — This project is under active development and
+                not yet ready for public use.
+            </div> */}
+            <div class="repel w-full">
+                <a
+                    class="logo cluster cluster-gap-xs"
+                    href="/"
+                    aria-label="sugarcube home"
+                >
+                    <Fragment set:html={logoSvg} />
+                    sugarcube
+                </a>
+                <Search />
+                <nav class="sl-hidden md:sl-flex">
+                    <ul class="cluster gap-0 flex-nowrap" role="list">
+                        <li>
+                            <ThemeToggle className="is-nav-link" client:load />
+                        </li>
+                        <li>
+                            <ModeToggle class="is-nav-link" />
+                        </li>
+                        <li>
+                            <Link
+                                href="https://github.com/sugarcube-sh/sugarcube"
+                                isExternal
+                                class="site-button is-icon-only is-nav-link"
+                                data-appearance="ghost"
+                            >
+                                <Icons name="github" />
+                                <span class="sr-only">GitHub</span>
+                            </Link>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </>
+    ) : (
+        <header class="site-header">
+            <div class="repel w-full">
+                <div class="cluster cluster-gap-3xl">
+                    <a
+                        class="logo cluster cluster-gap-xs"
+                        href="/"
+                        aria-label="sugarcube home"
+                    >
+                        <Fragment set:html={logoSvg} />
+                        sugarcube
+                    </a>
+                </div>
+
+                <nav class="sl-hidden md:sl-flex">
+                    <ul class="cluster cluster-gap-xl flex-nowrap" role="list">
+                        <div class="cluster gap-0">
+                            <li>
+                                <Link
+                                    href="/docs"
+                                    class="is-compact site-button is-nav-link"
+                                    data-appearance="ghost"
+                                >
+                                    Docs
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    href="/services"
+                                    class="is-compact site-button is-nav-link"
+                                    data-appearance="ghost"
+                                >
+                                    Services
+                                </Link>
+                            </li>
+                        </div>
+                        <div class="cluster gap-0">
+                            <li>
+                                <ThemeToggle
+                                    className="is-nav-link"
+                                    client:load
+                                />
+                            </li>
+                            <li>
+                                <ModeToggle class="is-nav-link" />
+                            </li>
+                            <li>
+                                <Link
+                                    href="https://github.com/sugarcube-sh/sugarcube"
+                                    isExternal
+                                    class="site-button is-icon-only is-nav-link"
+                                    data-appearance="ghost"
+                                >
+                                    <Icons name="github" />
+                                    <span class="sr-only">GitHub</span>
+                                </Link>
+                            </li>
+                        </div>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+    )
+}

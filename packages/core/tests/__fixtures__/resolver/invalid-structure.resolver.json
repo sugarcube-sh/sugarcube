@@ -1,0 +1,11 @@
+{
+  "version": "2025.10",
+  "name": "Invalid Structure Test",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [{ "$ref": "tokens/invalid-structure.json" }]
+    }
+  ]
+}

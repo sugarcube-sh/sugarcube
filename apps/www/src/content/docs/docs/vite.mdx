@@ -1,0 +1,61 @@
+---
+title: Vite
+description: How to setup sugarcube with Vite
+---
+
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Create your project
+
+Start by creating a new Vite project if you don't have one set up already. The most common approach is to use [Create Vite](https://vitejs.dev/guide/#scaffolding-your-first-vite-project).
+
+<PackageManagerTabs command="npm create vite@latest my-project" />
+
+Then navigate into your project:
+
+```bash frame="none"
+cd my-project
+```
+
+## Initialize sugarcube
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli init" />
+
+## Configure Plugin
+
+Add the Vite plugin to your configuration (you may have to create `vite.config.{ts|js}` if it doesn't exist):
+
+```ts title="vite.config.ts"
+import { defineConfig } from "vite";
+import sugarcube from "@sugarcube-sh/vite";
+
+export default defineConfig({
+    plugins: [sugarcube()],
+});
+```
+
+## Import CSS
+
+Import the virtual CSS module to use the plugin:
+
+```js title="src/main.js"
+import "virtual:sugarcube.css";
+```
+
+This single import includes both design token CSS variables and any utility classes you have configured and used.
+
+<SiteAside type="note">
+    Without the plugin, import generated CSS files directly (e.g., `import "./styles/global/tokens.variables.gen.css"`).
+</SiteAside>
+
+### Granular imports
+
+If you need more control, you can import variables and utilities separately:
+
+```js title="src/main.js"
+// Just the CSS variables from your design tokens
+import "virtual:sugarcube/variables.css";
+
+// Just the utility classes
+import "virtual:sugarcube/utilities.css";
+```

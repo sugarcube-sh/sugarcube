@@ -1,0 +1,47 @@
+.dialog {
+    align-content: start;
+    margin: auto;
+    inset: 0;
+    overflow: hidden;
+    width: 32rem;
+    border: none;
+    max-width: calc(100% - var(--space-3xl));
+    padding: var(--space-lg);
+    background-color: var(--color-surface-raised);
+    border-radius: var(--panel-radius);
+    box-shadow: var(--shadow-lg);
+}
+
+.dialog:focus {
+    outline: none;
+}
+
+.dialog[open] {
+    display: grid;
+    animation: dialog-open 200ms var(--ease-out);
+}
+
+.dialog::backdrop {
+    background-color: var(--color-overlay);
+    animation: dialog-backdrop-fade-in 200ms var(--ease-out);
+}
+
+@keyframes dialog-open {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes dialog-backdrop-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

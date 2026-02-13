@@ -1,0 +1,106 @@
+{
+  "tokens.shadow.basic": {
+    "$type": "shadow",
+    "$value": {
+      "color": "#000000",
+      "offsetX": { "value": 0, "unit": "px" },
+      "offsetY": { "value": 2, "unit": "px" },
+      "blur": { "value": 4, "unit": "px" },
+      "spread": { "value": 0, "unit": "px" }
+    },
+    "$path": "tokens/shadow.basic",
+    "$originalPath": "shadow.basic"
+  },
+  "tokens.shadow.inset": {
+    "$type": "shadow",
+    "$value": {
+      "color": "#000000",
+      "offsetX": { "value": 0, "unit": "px" },
+      "offsetY": { "value": 2, "unit": "px" },
+      "blur": { "value": 4, "unit": "px" },
+      "spread": { "value": 0, "unit": "px" },
+      "inset": true
+    },
+    "$path": "tokens/shadow.inset",
+    "$originalPath": "shadow.inset"
+  },
+  "tokens.shadow.multiple": {
+    "$type": "shadow",
+    "$value": [
+      {
+        "color": "#000000",
+        "offsetX": { "value": 0, "unit": "px" },
+        "offsetY": { "value": 2, "unit": "px" },
+        "blur": { "value": 4, "unit": "px" },
+        "spread": { "value": 0, "unit": "px" }
+      },
+      {
+        "color": "#0000FF",
+        "offsetX": { "value": 0, "unit": "px" },
+        "offsetY": { "value": 4, "unit": "px" },
+        "blur": { "value": 8, "unit": "px" },
+        "spread": { "value": 2, "unit": "px" },
+        "inset": true
+      }
+    ],
+    "$path": "tokens/shadow.multiple",
+    "$originalPath": "shadow.multiple"
+  },
+  "tokens.shadow.invalid.type": {
+    "$type": "shadow",
+    "$value": "not-an-object",
+    "$path": "tokens.shadow.invalid.type",
+    "$source": { "file": "tokens" },
+    "$originalPath": "shadow.invalid.type"
+  },
+  "tokens.shadow.invalid.color": {
+    "$type": "shadow",
+    "$value": {
+      "color": "not-a-color",
+      "offsetX": { "value": 0, "unit": "px" },
+      "offsetY": { "value": 2, "unit": "px" },
+      "blur": { "value": 4, "unit": "px" },
+      "spread": { "value": 0, "unit": "px" }
+    },
+    "$path": "tokens.shadow.invalid.color",
+    "$source": { "file": "tokens" },
+    "$originalPath": "shadow.invalid.color"
+  },
+  "tokens.shadow.invalid.dimension": {
+    "$type": "shadow",
+    "$value": {
+      "color": "#000000",
+      "offsetX": { "value": 0, "unit": "em" },
+      "offsetY": { "value": 2, "unit": "px" },
+      "blur": { "value": 4, "unit": "px" },
+      "spread": { "value": 0, "unit": "px" }
+    },
+    "$path": "tokens.shadow.invalid.dimension",
+    "$source": { "file": "tokens" },
+    "$originalPath": "shadow.invalid.dimension"
+  },
+  "tokens.shadow.missing.required": {
+    "$type": "shadow",
+    "$value": {
+      "color": "#000000",
+      "offsetX": { "value": 0, "unit": "px" }
+    },
+    "$path": "tokens.shadow.missing.required",
+    "$source": { "file": "tokens" },
+    "$originalPath": "shadow.missing.required"
+  },
+  "tokens.shadow.invalid.inset": {
+    "$type": "shadow",
+    "$value": {
+      "color": "#000000",
+      "offsetX": { "value": 0, "unit": "px" },
+      "offsetY": { "value": 2, "unit": "px" },
+      "blur": { "value": 4, "unit": "px" },
+      "spread": { "value": 0, "unit": "px" },
+      "inset": "true"
+    },
+    "$path": "tokens.shadow.invalid.inset",
+    "$source": { "file": "tokens" },
+    "$originalPath": "shadow.invalid.inset"
+  }
+}

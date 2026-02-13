@@ -1,0 +1,53 @@
+.button[data-variant="neutral"] {
+    --color-fill-loud: var(--color-neutral-fill-loud);
+    --color-on-loud: var(--color-neutral-on-loud);
+    --color-border-normal: var(--color-neutral-border-normal);
+    --color-fill-normal: var(--color-neutral-fill-normal);
+    --color-on-normal: var(--color-neutral-on-normal);
+    --color-border-quiet: var(--color-neutral-border-quiet);
+}
+
+.button[data-variant="accent"] {
+    --color-fill-loud: var(--color-accent-fill-loud);
+    --color-on-loud: var(--color-accent-on-loud);
+    --color-border-normal: var(--color-accent-border-normal);
+    --color-fill-normal: var(--color-accent-fill-normal);
+    --color-on-normal: var(--color-accent-on-normal);
+    --color-border-quiet: var(--color-accent-border-quiet);
+}
+
+.button[data-variant="success"] {
+    --color-fill-loud: var(--color-success-fill-loud);
+    --color-on-loud: var(--color-success-on-loud);
+    --color-border-normal: var(--color-success-border-normal);
+    --color-fill-normal: var(--color-success-fill-normal);
+    --color-on-normal: var(--color-success-on-normal);
+    --color-border-quiet: var(--color-success-border-quiet);
+}
+
+.button[data-variant="warning"] {
+    --color-fill-loud: var(--color-warning-fill-loud);
+    --color-on-loud: var(--color-warning-on-loud);
+    --color-border-normal: var(--color-warning-border-normal);
+    --color-fill-normal: var(--color-warning-fill-normal);
+    --color-on-normal: var(--color-warning-on-normal);
+    --color-border-quiet: var(--color-warning-border-quiet);
+}
+
+.button[data-variant="error"] {
+    --color-fill-loud: var(--color-error-fill-loud);
+    --color-on-loud: var(--color-error-on-loud);
+    --color-border-normal: var(--color-error-border-normal);
+    --color-fill-normal: var(--color-error-fill-normal);
+    --color-on-normal: var(--color-error-on-normal);
+    --color-border-quiet: var(--color-error-border-quiet);
+}
+
+.button[data-variant="info"] {
+    --color-fill-loud: var(--color-info-fill-loud);
+    --color-on-loud: var(--color-info-on-loud);
+    --color-border-normal: var(--color-info-border-normal);
+    --color-fill-normal: var(--color-info-fill-normal);
+    --color-on-normal: var(--color-info-on-normal);
+    --color-border-quiet: var(--color-info-border-quiet);
+}

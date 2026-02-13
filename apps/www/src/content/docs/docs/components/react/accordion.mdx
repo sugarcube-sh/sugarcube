@@ -1,0 +1,29 @@
+---
+title: Accordion
+description: A collapsible interface for organizing content into expandable sections.
+---
+
+import { AccordionDemo } from "@/registry/examples/accordion-demo.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+
+## Preview
+
+<ComponentDemo>
+    <AccordionDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/accordion-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components accordion -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/accordion/react/accordion.tsx",
+    "@/registry/components/accordion/react/accordion.css"
+]} collapsible={true} />
+
+## API
+
+[Radix UI Accordion API reference](https://www.radix-ui.com/primitives/docs/components/accordion)

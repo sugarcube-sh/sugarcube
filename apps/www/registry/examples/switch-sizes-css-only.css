@@ -1,0 +1,11 @@
+.switch[data-size="sm"] {
+    --scale: calc(var(--text-sm) / 1rem);
+}
+
+.switch[data-size="md"] {
+    --scale: calc(var(--text-base) / 1rem);
+}
+
+.switch[data-size="lg"] {
+    --scale: calc(var(--text-lg) / 1rem);
+}

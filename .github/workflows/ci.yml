@@ -1,0 +1,28 @@
+name: CI
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        types: [assigned, opened, synchronize, reopened]
+        branches:
+            - main
+# Automatically cancel in-progress actions on the same branch
+concurrency:
+    group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+    cancel-in-progress: true
+jobs:
+    build:
+        name: Build Packages
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: "pnpm"
+            - run: pnpm install
+            - run: pnpm run build
+            - run: pnpm run type-check
+            - run: pnpm run test

@@ -1,0 +1,11 @@
+/* Override or reset global.css scroll-margin-block so that we can let starlight handle the scroll-margin-block */
+:target {
+    scroll-margin-block: 0;
+}
+
+/* Restore label + input spacing that Starlight's wildcard margin: 0 wipes out */
+/* These rules have higher specificity than Starlight's * { margin: 0; } */
+label + :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select),
+label > :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+    margin-block-start: 0.5em;
+}

@@ -1,0 +1,27 @@
+.avatar {
+    --avatar-size: 3rem;
+    position: relative;
+    display: flex;
+    flex-shrink: 0;
+    overflow: hidden;
+    height: var(--avatar-size);
+    width: var(--avatar-size);
+    border-radius: var(--radius-full);
+}
+
+.avatar-image {
+    aspect-ratio: 1;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+}
+
+.avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    border-radius: var(--radius-full);
+}

@@ -1,0 +1,30 @@
+{
+  "tokens.font.primary": {
+    "$type": "fontFamily",
+    "$value": "Arial",
+    "$path": "tokens.font.primary",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.primary"
+  },
+  "tokens.font.stack": {
+    "$type": "fontFamily",
+    "$value": ["Arial", "Helvetica", "sans-serif"],
+    "$path": "tokens.font.stack",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.stack"
+  },
+  "tokens.font.invalid.type": {
+    "$type": "fontFamily",
+    "$value": 123,
+    "$path": "tokens.font.invalid.type",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.invalid.type"
+  },
+  "tokens.font.invalid.array": {
+    "$type": "fontFamily",
+    "$value": ["Arial", 123, "sans-serif"],
+    "$path": "tokens.font.invalid.array",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.invalid.array"
+  }
+}

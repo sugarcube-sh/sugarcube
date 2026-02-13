@@ -1,0 +1,20 @@
+{
+  "font.primary": {
+    "$type": "fontFamily",
+    "$value": "Arial",
+    "$path": "font.primary",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.stack": {
+    "$type": "fontFamily",
+    "$value": ["Arial", "Helvetica", "sans-serif"],
+    "$path": "font.stack",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  }
+}

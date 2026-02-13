@@ -1,0 +1,16 @@
+{
+  "$description": "Root level metadata",
+  "color": {
+    "$type": "color",
+    "empty": {
+      "$description": "Empty group with metadata",
+      "$extensions": { "status": "draft" }
+    },
+    "nested": {
+      "token": {
+        "$value": "#0066cc",
+        "$description": "Token level metadata"
+      }
+    }
+  }
+}

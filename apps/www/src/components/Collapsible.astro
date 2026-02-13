@@ -1,0 +1,94 @@
+---
+interface Props {
+    defaultCollapsed?: boolean;
+    collapsedHeight?: string;
+    expandLabel?: string;
+    collapseLabel?: string;
+    class?: string;
+}
+
+const {
+    defaultCollapsed = true,
+    collapsedHeight = "16rem",
+    expandLabel = "Expand",
+    collapseLabel = "Collapse",
+    class: className,
+} = Astro.props;
+
+// Generate unique ID for aria-controls
+const contentId = `collapsible-${Math.random().toString(36).substring(2, 9)}`;
+---
+
+<div
+    class:list={["collapsible", className]}
+    data-collapsible
+    data-state={defaultCollapsed ? "collapsed" : "expanded"}
+    style={`--collapsible-height: ${collapsedHeight}`}
+>
+    <div class="collapsible-content" id={contentId}>
+        <slot />
+    </div>
+    <button
+        type="button"
+        class="collapsible-trigger"
+        data-collapsible-trigger
+        aria-expanded={defaultCollapsed ? "false" : "true"}
+        aria-controls={contentId}
+        data-expand-label={expandLabel}
+        data-collapse-label={collapseLabel}
+    >
+        <span class="collapsible-trigger-text">
+            {defaultCollapsed ? expandLabel : collapseLabel}
+        </span>
+    </button>
+</div>
+
+<script>
+    function initCollapsible() {
+        const triggers = document.querySelectorAll(
+            ".collapsible [data-collapsible-trigger]",
+        );
+
+        triggers.forEach((trigger) => {
+            // Avoid adding multiple listeners
+            if (trigger.hasAttribute("data-initialized")) return;
+
+            trigger.setAttribute("data-initialized", "");
+
+            trigger.addEventListener("click", () => {
+                const wrapper = trigger.closest("[data-collapsible]");
+                if (!wrapper) return;
+
+                const isCollapsed =
+                    wrapper.getAttribute("data-state") === "collapsed";
+                const newState = isCollapsed ? "expanded" : "collapsed";
+
+                wrapper.setAttribute("data-state", newState);
+                trigger.setAttribute(
+                    "aria-expanded",
+                    isCollapsed ? "true" : "false",
+                );
+
+                const textEl = trigger.querySelector(
+                    ".collapsible-trigger-text",
+                );
+                if (textEl) {
+                    const expandLabel =
+                        trigger.getAttribute("data-expand-label") || "Expand";
+                    const collapseLabel =
+                        trigger.getAttribute("data-collapse-label") ||
+                        "Collapse";
+                    textEl.textContent = isCollapsed
+                        ? collapseLabel
+                        : expandLabel;
+                }
+            });
+        });
+    }
+
+    // Initialize on page load
+    initCollapsible();
+
+    // Re-initialize after Astro view transitions
+    document.addEventListener("astro:after-swap", initCollapsible);
+</script>

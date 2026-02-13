@@ -1,0 +1,61 @@
+{
+    "name": "@sugarcube-sh/vite",
+    "version": "0.1.0",
+    "type": "module",
+    "publishConfig": {
+        "access": "public",
+        "provenance": false
+    },
+    "description": "Vite plugin for sugarcube",
+    "license": "MIT",
+    "author": {
+        "name": "Mark Tomlinson",
+        "email": "mark@marktomlinson.dev",
+        "url": "https://marktomlinson.dev"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/sugarcube-sh/sugarcube"
+    },
+    "bugs": {
+        "url": "https://github.com/sugarcube-sh/sugarcube/issues"
+    },
+    "keywords": [
+        "vite",
+        "vite-plugin",
+        "design-tokens",
+        "design-system",
+        "cube-css",
+        "css",
+        "sugarcube"
+    ],
+    "files": [
+        "dist/",
+        "README.md",
+        "LICENSE.md"
+    ],
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.mts",
+            "import": "./dist/index.mjs"
+        }
+    },
+    "scripts": {
+        "build": "pkgroll --minify",
+        "dev": "pkgroll --watch",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "type-check": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@sugarcube-sh/core": "workspace:*",
+        "@unocss/vite": "66.5.2"
+    },
+    "peerDependencies": {
+        "vite": "^5.2.0 || ^6 || ^7"
+    },
+    "devDependencies": {
+        "pkgroll": "2.5.1",
+        "vite": "5.2.0"
+    }
+}

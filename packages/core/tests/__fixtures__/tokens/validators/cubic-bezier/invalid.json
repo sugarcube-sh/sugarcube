@@ -1,0 +1,38 @@
+{
+  "easing.invalid.type": {
+    "$type": "cubicBezier",
+    "$value": "not-an-array",
+    "$path": "easing.invalid.type",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/easing.json"
+    }
+  },
+  "easing.invalid.range": {
+    "$type": "cubicBezier",
+    "$value": [1.5, 0, 2, 1],
+    "$path": "easing.invalid.range",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/easing.json"
+    }
+  },
+  "easing.invalid.length": {
+    "$type": "cubicBezier",
+    "$value": [0, 0, 1],
+    "$path": "easing.invalid.length",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/easing.json"
+    }
+  },
+  "easing.invalid.element-type": {
+    "$type": "cubicBezier",
+    "$value": [0, "0", 1, 1],
+    "$path": "easing.invalid.element-type",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/easing.json"
+    }
+  }
+}

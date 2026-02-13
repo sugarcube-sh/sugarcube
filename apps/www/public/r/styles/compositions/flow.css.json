@@ -1,0 +1,9 @@
+{
+  "name": "compositions",
+  "type": "cube",
+  "path": "styles/compositions/flow.css",
+  "content": "/* \nFLOW COMPOSITION \nLike the Every Layout stack: https://every-layout.dev/layouts/stack/\nInfo about this implementation: https://piccalil.li/quick-tip/flow-utility/ \n*/\n.flow > * + * {\n    margin-block-start: var(--flow-space, 1em);\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

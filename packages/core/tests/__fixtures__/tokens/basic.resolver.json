@@ -1,0 +1,11 @@
+{
+  "version": "2025.10",
+  "name": "Basic Test",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [{ "$ref": "tokens.json" }]
+    }
+  ]
+}

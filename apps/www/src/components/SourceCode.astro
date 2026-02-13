@@ -1,0 +1,93 @@
+---
+import nodePath from "node:path";
+import Collapsible from "@/src/components/Collapsible.astro";
+import { extractSourceCode } from "@/src/lib/extract-source";
+import { Code, TabItem, Tabs } from "@astrojs/starlight/components";
+
+interface Props {
+    path?: string;
+    paths?: string[];
+    collapsible?: boolean;
+    maxHeight?: string;
+}
+
+const { path, paths, collapsible = false, maxHeight = "24rem" } = Astro.props;
+
+// Normalise to array because paths is optional and can be a single string or an array
+const filePaths = paths ?? (path ? [path] : []);
+
+const files = filePaths
+    .map((filePath) => {
+        const code = extractSourceCode(filePath);
+        const ext = nodePath.extname(filePath).slice(1);
+        return {
+            path: filePath,
+            code,
+            lang: ext === "ts" || ext === "tsx" ? "tsx" : ext,
+            label: nodePath.basename(filePath),
+        };
+    })
+    .filter((file) => file.code.length > 0);
+
+const hasMultipleFiles = files.length > 1;
+---
+
+<div class="source-code not-content">
+    {
+        files.length > 0 && (
+            <>
+                {hasMultipleFiles ? (
+                    <Tabs>
+                        {files.map((file) => (
+                            <TabItem label={file.label}>
+                                {collapsible ? (
+                                    <Collapsible collapsedHeight={maxHeight}>
+                                        <Code
+                                            code={file.code}
+                                            lang={file.lang}
+                                            frame="none"
+                                        />
+                                    </Collapsible>
+                                ) : (
+                                    <div
+                                        class="source-code-scrollable"
+                                        style={`--source-code-max-height: ${maxHeight}`}
+                                    >
+                                        <Code
+                                            code={file.code}
+                                            lang={file.lang}
+                                            frame="none"
+                                        />
+                                    </div>
+                                )}
+                            </TabItem>
+                        ))}
+                    </Tabs>
+                ) : (
+                    <>
+                        {collapsible ? (
+                            <Collapsible collapsedHeight={maxHeight}>
+                                <Code
+                                    code={files[0]!.code}
+                                    lang={files[0]!.lang}
+                                    frame="none"
+                                />
+                            </Collapsible>
+                        ) : (
+                            <div
+                                class="source-code-scrollable"
+                                style={`--source-code-max-height: ${maxHeight}`}
+                            >
+                                <Code
+                                    code={files[0]!.code}
+                                    lang={files[0]!.lang}
+                                    frame="none"
+                                />
+                            </div>
+                        )}
+                    </>
+                )}
+            </>
+        )
+    }
+</div>

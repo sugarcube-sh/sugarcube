@@ -1,0 +1,27 @@
+---
+export interface Props {
+    name: string;
+    className?: string;
+}
+
+const { name, className = "" } = Astro.props;
+
+function getComponentName(name: string) {
+    return name
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+---
+
+<div
+    id={name}
+    data-name={name.toLowerCase()}
+    class={`component-wrapper ${className}`}
+>
+    <div class="component-header">
+        <div class="component-title">{getComponentName(name)}</div>
+    </div>
+    <div class="component-content">
+        <slot />
+    </div>
+</div>

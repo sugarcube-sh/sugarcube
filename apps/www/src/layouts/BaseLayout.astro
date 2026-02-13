@@ -1,0 +1,49 @@
+---
+// import 'virtual:sugarcube/variables.css'
+// import 'virtual:sugarcube/utilities.css'
+// import 'virtual:uno.css'
+import "virtual:sugarcube.css";
+import BaseHead from "@/src/components/BaseHead.astro";
+// import SiteFooter from "@/src/components/SiteFooter.astro";
+// import SiteHeader from "@/src/components/SiteHeader.astro";
+import { siteConfig } from "@/src/site.config";
+import type { SiteMeta } from "@/src/types";
+
+import "@/src/styles/index.css";
+interface Props {
+    meta: SiteMeta;
+    wrapperWidth?: "container-3xl" | "container-4xl" | "container-5xl";
+}
+
+const {
+    meta: { articleDate, description = siteConfig.description, ogImage, title },
+    // wrapperWidth = "container-3xl",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang={siteConfig.lang}>
+    <BaseHead
+        articleDate={articleDate}
+        description={description}
+        ogImage={ogImage}
+        title={title}
+    />
+    <body class="site-body">
+        <!-- <div class="alpha-banner">
+            ⚠️ Private Alpha — This project is under active development and not
+            yet ready for public use.
+        </div> -->
+        <!-- <SiteHeader /> -->
+        <main>
+            <slot />
+        </main>
+        <!-- <SiteFooter width={wrapperWidth} /> -->
+    </body>
+</html>
+
+<style>
+    :root {
+        --color-text-link: var(--color-text-normal);
+    }
+</style>

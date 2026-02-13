@@ -1,0 +1,26 @@
+{
+  "transition": {
+    "$type": "duration",
+    "fast": {
+      "$value": { "value": 75, "unit": "ms" }
+    },
+    "normal": {
+      "$value": { "value": 150, "unit": "ms" }
+    },
+    "slow": {
+      "$value": { "value": 300, "unit": "ms" }
+    }
+  },
+  "ease": {
+    "$type": "cubicBezier",
+    "in": {
+      "$value": [0.4, 0, 1, 1]
+    },
+    "out": {
+      "$value": [0, 0, 0.2, 1]
+    },
+    "in-out": {
+      "$value": [0.4, 0, 0.2, 1]
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "font.weight.numeric.thin": {
+    "$type": "fontWeight",
+    "$value": 100,
+    "$path": "font.weight.numeric.thin",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.weight.numeric.normal": {
+    "$type": "fontWeight",
+    "$value": 400,
+    "$path": "font.weight.numeric.normal",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.weight.numeric.bold": {
+    "$type": "fontWeight",
+    "$value": 700,
+    "$path": "font.weight.numeric.bold",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.weight.keyword.thin": {
+    "$type": "fontWeight",
+    "$value": "thin",
+    "$path": "font.weight.keyword.thin",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.weight.keyword.normal": {
+    "$type": "fontWeight",
+    "$value": "normal",
+    "$path": "font.weight.keyword.normal",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.weight.keyword.bold": {
+    "$type": "fontWeight",
+    "$value": "bold",
+    "$path": "font.weight.keyword.bold",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  }
+}

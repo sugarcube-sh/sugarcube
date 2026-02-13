@@ -1,0 +1,65 @@
+{
+    "name": "@sugarcube-sh/core",
+    "version": "0.1.0",
+    "publishConfig": {
+        "access": "public",
+        "provenance": false
+    },
+    "description": "Core functionality for sugarcube",
+    "license": "MIT",
+    "author": {
+        "name": "Mark Tomlinson",
+        "email": "mark@marktomlinson.dev",
+        "url": "https://marktomlinson.dev"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/sugarcube-sh/sugarcube"
+    },
+    "bugs": {
+        "url": "https://github.com/sugarcube-sh/sugarcube/issues"
+    },
+    "keywords": [
+        "design-tokens",
+        "design-system",
+        "cube-css",
+        "css",
+        "sugarcube"
+    ],
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "type": "module",
+    "exports": {
+        ".": "./dist/index.js"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE.md"
+    ],
+    "scripts": {
+        "build": "pkgroll --minify",
+        "build:clean": "rm -rf dist && pkgroll --minify",
+        "dev": "pkgroll --watch",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
+        "test:bench": "vitest bench --no-watch",
+        "test:bench:save": "vitest bench --no-watch --outputJson benchmarks/$(date +%Y-%m-%d)-results.json",
+        "test:bench:compare": "./scripts/bench-compare.sh",
+        "type-check": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "pkgroll": "2.5.1",
+        "vitest": "2.1.1"
+    },
+    "dependencies": {
+        "jiti": "2.4.2",
+        "pathe": "2.0.3",
+        "tinyglobby": "^0.2.9",
+        "zod": "^3.23.8"
+    }
+}

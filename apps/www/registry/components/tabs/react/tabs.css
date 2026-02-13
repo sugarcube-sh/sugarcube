@@ -1,0 +1,68 @@
+.tabs-list {
+    --tabs-list-padding: 3px;
+    /* Calculate total height: (top + bottom padding) + (font-size × line-height)
+     * Rounded to nearest pixel. Works with fluid and static typography
+     * since 1em scales with the computed font-size. */
+    --form-control-height: round(
+        calc(
+            2 *
+            (var(--form-control-padding-block) - var(--tabs-list-padding)) +
+            1em *
+            var(--form-control-line-height)
+        ),
+        1px
+    );
+    display: inline-flex;
+    background-color: var(--color-surface-lowered);
+    padding: var(--tabs-list-padding);
+    border-radius: var(--radius-lg);
+    min-height: var(--form-control-height);
+}
+
+.tabs-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    font-size: inherit;
+    padding-block: 0;
+    background-color: var(--color-surface-lowered);
+    border-width: var(--border-width-thin);
+    border-style: var(--border-style);
+    border-color: transparent;
+    border-radius: var(--radius-md);
+    color: var(--color-text-normal);
+    font-weight: var(--font-weight-medium);
+    gap: var(--space-2xs);
+    padding-inline: var(--form-control-padding-inline);
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-timing-function: var(--ease-out);
+    transition-duration: var(--transition-normal);
+    outline-style: none;
+}
+
+.tabs-trigger[data-state="active"] {
+    background-color: var(--color-surface-default);
+    box-shadow: var(--shadow-sm);
+}
+
+.tabs-trigger:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-neutral-400) 25%, transparent);
+    border-color: var(--color-neutral-400);
+    z-index: var(--z-raised);
+}
+
+.tabs-trigger:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.tabs-panel {
+    outline-style: none;
+}
+
+.tabs-panel[data-state="inactive"] {
+    display: none;
+}

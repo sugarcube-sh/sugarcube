@@ -1,0 +1,34 @@
+---
+title: Select
+description: A select component.
+---
+
+import SelectDemo from "@/registry/examples/select-demo.astro";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+
+## Preview
+
+<ComponentDemo>
+    <SelectDemo />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/select-demo.astro" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components select -f css-only" />
+
+## Source Code
+
+<SourceCode path="@/registry/components/select/css/select.css" collapsible={true} />
+
+## Usage
+
+Apply the `.select` class to select elements:
+
+```html
+<select class="select">
+  <option value="option1">Option 1</option>
+  <option value="option2">Option 2</option>
+  <option value="option3">Option 3</option>
+</select>
+```

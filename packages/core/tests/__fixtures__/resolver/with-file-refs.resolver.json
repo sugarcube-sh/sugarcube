@@ -1,0 +1,20 @@
+{
+  "version": "2025.10",
+  "name": "With File References",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [{ "$ref": "tokens/colors.json" }, { "$ref": "tokens/spacing.json" }]
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [{ "$ref": "tokens/colors-dark.json" }]
+      }
+    }
+  ]
+}

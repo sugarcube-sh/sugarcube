@@ -1,0 +1,24 @@
+---
+title: Combobox
+description: A combobox component.
+---
+import { ComboboxDemo } from "@/registry/components/combobox/react/combobox";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+
+## Preview
+
+<ComponentDemo>
+    <ComboboxDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/components/combobox/react/combobox.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components combobox -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/combobox/react/combobox.tsx",
+    "@/registry/components/combobox/combobox.css"
+]} collapsible={true} />

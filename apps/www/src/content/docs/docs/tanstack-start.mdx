@@ -1,0 +1,94 @@
+---
+title: TanStack Start
+description: How to setup sugarcube with TanStack Start
+---
+
+This guide covers TanStack Start projects. For a complete introduction, see the [setup guide](/docs/setup).
+
+## Create your project
+
+Start by creating a new TanStack Start project if you don't have one set up already:
+
+<PackageManagerTabs command="npm create @tanstack/start@latest" />
+
+## Initialize sugarcube
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli init" />
+
+## Configure Plugin
+
+If `init` installed the Vite plugin, add it to your Vite configuration. **Important**: The sugarcube plugin must run before `tanstackStart()`:
+
+```ts title="vite.config.ts"
+// other imports
+import sugarcube from "@sugarcube-sh/vite";
+
+export default defineConfig({
+    plugins: [
+        devtools(),
+        nitro(),
+        viteTsConfigPaths({
+            projects: ["./tsconfig.json"],
+        }),
+        // SugarCube must run before TanStack Start to process virtual CSS
+        sugarcube(),
+        tanstackStart(),
+        viteReact(),
+    ],
+    build: {
+        // Workaround for UnoCSS multi-environment issue
+        // See: https://github.com/unocss/unocss/issues/4990
+        outDir: ".output/public",
+    },
+});
+```
+
+## Import CSS
+
+Import the virtual CSS module in your root component:
+
+```tsx title="__root.tsx"
+import "virtual:sugarcube.css";
+```
+
+This single import includes both design token CSS variables and utility classes.
+
+If you have additional styles, import them and add to the links array:
+
+```tsx title="__root.tsx"
+import appCss from "../styles.css?url";
+import "virtual:sugarcube.css";
+
+links: [{ rel: "stylesheet", href: appCss }];
+```
+
+### Granular imports
+
+If you need more control, you can import variables and utilities separately:
+
+```tsx title="__root.tsx"
+// Just the CSS variables from your design tokens
+import "virtual:sugarcube/variables.css";
+
+// Just the utility classes
+import "virtual:sugarcube/utilities.css";
+```
+
+## Optional: UnoCSS Presets
+
+If you want to use UnoCSS presets alongside sugarcube, pass them via the `unoPresets` option:
+
+```ts title="vite.config.ts"
+import { presetWind3 } from "@unocss/preset-wind";
+import sugarcube from "@sugarcube-sh/vite";
+
+export default defineConfig({
+    plugins: [
+        // ... other plugins
+        sugarcube({
+            unoPresets: [presetWind3({ preflight: false })],
+        }),
+        // ... rest of plugins
+    ],
+});
+```

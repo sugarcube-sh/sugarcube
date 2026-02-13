@@ -1,0 +1,39 @@
+.table-wrapper {
+    border-radius: var(--panel-radius);
+    border: var(--border-width-thin) var(--border-style) var(--color-surface-border);
+    overflow: auto;
+    font-size: var(--text-sm);
+}
+
+.table-wrapper table {
+    display: table;
+    border: none;
+}
+
+.table-wrapper :is(th) {
+    background-color: var(--color-surface-lowered);
+}
+
+.table-wrapper :is(th, td) {
+    border-color: var(--color-surface-border);
+    border-inline-start: none;
+}
+
+.table-wrapper tr:last-child td {
+    border-bottom: none;
+}
+
+.table-wrapper thead th {
+    padding-block: var(--space-xs);
+}
+
+.table-wrapper td,
+.table-wrapper th {
+    padding-block: var(--space-2xs);
+    padding-inline: var(--space-xs);
+}
+
+.table-wrapper code {
+    border-radius: var(--radius-md);
+    font-size: var(--sl-text-code-sm);
+}

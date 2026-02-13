@@ -1,0 +1,47 @@
+{
+  "version": "2025.10",
+  "name": "Simple Test",
+  "description": "A simple resolver for testing",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "color": {
+            "primary": {
+              "$type": "color",
+              "$value": "#3b82f6"
+            },
+            "secondary": {
+              "$type": "color",
+              "$value": "#10b981"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [
+          {
+            "color": {
+              "primary": {
+                "$type": "color",
+                "$value": "#60a5fa"
+              },
+              "secondary": {
+                "$type": "color",
+                "$value": "#34d399"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

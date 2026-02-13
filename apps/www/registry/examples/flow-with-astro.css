@@ -1,0 +1,4 @@
+.flow > * + *:where(:not(dialog)),
+.flow > * + :where(astro-island, astro-slot) > *:first-child {
+    margin-block-start: var(--flow-space, 1em);
+}

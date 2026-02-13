@@ -1,0 +1,140 @@
+{
+  "color.hex.rgb": {
+    "$type": "color",
+    "$value": "#ff0000",
+    "$path": "color.hex.rgb",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.hex.rgba": {
+    "$type": "color",
+    "$value": "#00000080",
+    "$path": "color.hex.rgba",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.hex.blue": {
+    "$type": "color",
+    "$value": "#0000ff",
+    "$path": "color.hex.blue",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.oklch.basic": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "oklch",
+      "components": [0.7016, 0.3225, 328.363]
+    },
+    "$path": "color.oklch.basic",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.oklch.with-alpha": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "oklch",
+      "components": [0.62796, 0.25768, 29.2338],
+      "alpha": 0.8
+    },
+    "$path": "color.oklch.with-alpha",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.oklch.with-none": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "oklch",
+      "components": [0.7, "none", 90]
+    },
+    "$path": "color.oklch.with-none",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.display-p3.basic": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "display-p3",
+      "components": [0.9, 0.2, 0.1]
+    },
+    "$path": "color.display-p3.basic",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.display-p3.with-hex": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "display-p3",
+      "components": [0.9, 0.2, 0.1],
+      "hex": "#e63946"
+    },
+    "$path": "color.display-p3.with-hex",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.srgb.basic": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "srgb",
+      "components": [0.8, 0.4, 0.2]
+    },
+    "$path": "color.srgb.basic",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.srgb.with-alpha": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "srgb",
+      "components": [0.2, 0.4, 0.8],
+      "alpha": 0.9
+    },
+    "$path": "color.srgb.with-alpha",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.hsl.basic": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "hsl",
+      "components": [270, 0.8, 0.6]
+    },
+    "$path": "color.hsl.basic",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.hsl.with-none": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "hsl",
+      "components": ["none", 0.5, 0.7]
+    },
+    "$path": "color.hsl.with-none",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  }
+}

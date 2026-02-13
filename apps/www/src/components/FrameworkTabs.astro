@@ -1,0 +1,75 @@
+---
+import Tabs from "@/src/components/site-tabs/SiteTabs.astro";
+import TabsContent from "@/src/components/site-tabs/SiteTabsContent.astro";
+import TabsList from "@/src/components/site-tabs/SiteTabsList.astro";
+import TabsTrigger from "@/src/components/site-tabs/SiteTabsTrigger.astro";
+import { Code } from "@astrojs/starlight/components";
+
+interface Props {
+    defaultValue?: string;
+    class?: string;
+}
+
+const { defaultValue = "react", class: className } = Astro.props;
+
+// Define the frameworks and their content
+const frameworks = {
+    react: {
+        name: "React (Vite)",
+        code: `// src/main.jsx
+import '@sugarcube'`,
+        lang: "jsx",
+        file: "src/main.jsx",
+    },
+    next: {
+        name: "Next.js",
+        code: `// src/app/layout.jsx
+import '@sugarcube'`,
+        lang: "jsx",
+        file: "src/app/layout.jsx",
+    },
+    astro: {
+        name: "Astro",
+        code: `---
+// src/layouts/Layout.astro
+import '@sugarcube'
+---`,
+        lang: "astro",
+        file: "src/layouts/Layout.astro",
+    },
+    html: {
+        name: "Vanilla HTML",
+        code: `<!-- index.html -->
+<link rel="stylesheet" href="/styles/_sugarcube.css">`,
+        lang: "html",
+        file: "index.html",
+    },
+};
+---
+
+<Tabs defaultValue={defaultValue} class:list={[className]}>
+    <TabsList>
+        {
+            Object.entries(frameworks).map(([key, framework]) => (
+                <TabsTrigger value={key}>
+                    <div class="tabs-trigger-inner">
+                        <span>{framework.name}</span>
+                    </div>
+                </TabsTrigger>
+            ))
+        }
+    </TabsList>
+    {
+        Object.entries(frameworks).map(([key, framework]) => (
+            <TabsContent value={key}>
+                <Code
+                    code={framework.code}
+                    lang={framework.lang}
+                    title={framework.file}
+                    frame="none"
+                    class="no-top-radius"
+                />
+            </TabsContent>
+        ))
+    }
+</Tabs>

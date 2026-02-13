@@ -1,0 +1,21 @@
+{
+  "name": "checkbox",
+  "type": "component",
+  "path": "components/checkbox/react/checkbox.css",
+  "content": ".checkbox {\n    /* Scale multiplier: Converts rem-based tokens to proportionally scale with font-size. */\n    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);\n\n    --checked-icon-color: var(--color-accent-on-loud);\n    --checked-icon-scale: 0.9;\n\n    font: inherit;\n    font-size: var(--form-control-font-size, var(--text-base));\n    appearance: none;\n    margin: 0;\n    background: none;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    cursor: pointer;\n    width: calc(var(--form-control-toggle-size) * var(--scale));\n    height: calc(var(--form-control-toggle-size) * var(--scale));\n    background-color: var(--input-bg);\n    border: var(--form-control-border-width) var(--form-control-border-style)\n        var(--form-control-border-color);\n    border-radius: min(\n        calc(var(--form-control-toggle-size) * 0.375 * var(--scale)),\n        var(--radius-md)\n    );\n    box-shadow: var(--shadow-xs);\n    outline-style: none;\n    transition-property: border-color, box-shadow;\n    transition-timing-function: var(--ease-out);\n    transition-duration: var(--transition-normal);\n}\n\n.checkbox[data-state=\"checked\"] {\n    background-color: var(--form-control-activated-color);\n    border-color: var(--form-control-activated-color);\n}\n\n.checkbox[data-state=\"checked\"]:focus-visible {\n    box-shadow: 0 0 0 3px color-mix(in oklab, var(--form-control-activated-color) 40%, transparent);\n    border-color: var(--form-control-activated-color);\n}\n\n.checkbox:focus-visible {\n    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-neutral-400) 25%, transparent);\n    border-color: var(--color-neutral-400);\n}\n\n.checkbox:disabled,\n.checkbox:disabled + .label {\n    cursor: not-allowed;\n    opacity: 0.5;\n}\n\n.checkbox .checkbox-indicator {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.checkbox .checkbox-indicator svg {\n    color: var(--checked-icon-color);\n    scale: var(--checked-icon-scale);\n    stroke-width: 3;\n}\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "react": [
+      "@radix-ui/react-checkbox",
+      "lucide-react"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

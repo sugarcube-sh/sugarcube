@@ -1,0 +1,18 @@
+/* Component-specific size imports */
+@import "./button-sizes.css";
+@import "./input-sizes.css";
+@import "./radio-group-sizes.css";
+@import "./alert-sizes.css";
+@import "./switch-sizes.css";
+@import "./checkbox-sizes.css";
+@import "./command-sizes.css";
+
+/* Powerful lever! USE WITH CAUTION! */
+.button:not([data-size]),
+.input:not([data-size]),
+.command:not([data-size]),
+.select-trigger:not([data-size]),
+.tabs-trigger:not([data-size]) {
+    font-size: var(--form-control-font-size, var(--text-base));
+    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+}

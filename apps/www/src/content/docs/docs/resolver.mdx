@@ -1,0 +1,210 @@
+---
+title: Resolver Document
+---
+
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+<SiteAside type="note">
+  The resolver format is part of the [DTCG (Design Tokens Community Group) specification](https://www.designtokens.org/TR/2025.10/resolver/) — an industry standard, not a sugarcube invention. The DTCG spec is the source of truth. If you find sugarcube diverging from the spec, please [raise an issue](https://github.com/sugarcube-sh/sugarcube/issues).
+</SiteAside>
+
+A resolver document is a JSON file that defines how to load and combine your design tokens. It specifies which token files to load and how theming variations work.
+
+## Basic structure
+
+A resolver document has two main parts:
+
+1. **Sets** — Groups of token source files
+2. **Modifiers** — Theming variations (like light/dark)
+
+```json title="tokens.resolver.json"
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        { "$ref": "./colors.json" },
+        { "$ref": "./spacing.json" }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [{ "$ref": "./dark.json" }]
+      }
+    }
+  ]
+}
+```
+
+## Auto-discovery
+
+Sugarcube automatically discovers `*.resolver.json` files in your project, so you typically don't need to configure the resolver path.
+
+If you have multiple resolver files, specify which one to use in your config:
+
+```ts title="sugarcube.config.ts"
+import { defineConfig } from "@sugarcube-sh/vite";
+
+export default defineConfig({
+  resolver: "src/design-tokens/tokens.resolver.json"
+});
+```
+
+## Sets
+
+A set groups related token sources together. Use sets to organize your tokens logically:
+
+```json
+{
+  "type": "set",
+  "name": "base",
+  "sources": [
+    { "$ref": "./palette.json" },
+    { "$ref": "./colors.json" },
+    { "$ref": "./typography.json" },
+    { "$ref": "./spacing.json" }
+  ]
+}
+```
+
+### Source references
+
+Sources use `$ref` to reference external files. Paths are relative to the resolver document:
+
+```json
+{ "$ref": "./colors.json" }        // Same directory
+{ "$ref": "../shared/tokens.json" } // Parent directory
+{ "$ref": "./tokens/base.json" }   // Subdirectory
+```
+
+### Multiple sets
+
+You can define multiple sets. Tokens from later sets override earlier ones:
+
+```json
+{
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "foundation",
+      "sources": [{ "$ref": "./foundation.json" }]
+    },
+    {
+      "type": "set",
+      "name": "semantic",
+      "sources": [{ "$ref": "./semantic.json" }]
+    }
+  ]
+}
+```
+
+## Modifiers
+
+Modifiers provide themed variations of your tokens. See [Theming](/docs/theming) for full details.
+
+```json
+{
+  "type": "modifier",
+  "name": "theme",
+  "default": "light",
+  "contexts": {
+    "light": [],
+    "dark": [{ "$ref": "./dark.json" }]
+  }
+}
+```
+
+- **`name`** — Becomes the CSS data attribute (`data-theme`)
+- **`default`** — Context whose values go in `:root`
+- **`contexts`** — Map of context names to source arrays
+
+## Resolution order
+
+The `resolutionOrder` array controls how tokens are processed:
+
+1. Items are processed top to bottom
+2. Later tokens override earlier ones with the same path
+3. Sets provide base values, modifiers provide overrides
+
+```json
+{
+  "resolutionOrder": [
+    { "type": "set", "name": "base", "sources": [...] },     // First: base tokens
+    { "type": "set", "name": "semantic", "sources": [...] }, // Second: semantic layer
+    { "type": "modifier", "name": "theme", ... }             // Third: theme overrides
+  ]
+}
+```
+
+## Version
+
+Always include `"version": "2025.10"` at the top of your resolver:
+
+```json
+{
+  "version": "2025.10",
+  "resolutionOrder": [...]
+}
+```
+
+This identifies the resolver format and ensures compatibility.
+
+## File naming
+
+By convention, resolver files use the `.resolver.json` extension:
+
+```
+src/design-tokens/
+├── tokens.resolver.json  ← Resolver document
+├── colors.json           ← Token file
+├── spacing.json          ← Token file
+└── dark.json             ← Theme override file
+```
+
+<SiteAside type="tip">
+  The `.resolver.json` extension makes it clear which file is the entry point for your token system.
+</SiteAside>
+
+## Complete example
+
+Here's a complete resolver with base tokens and a light/dark theme:
+
+```json title="tokens.resolver.json"
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        { "$ref": "./palette.json" },
+        { "$ref": "./colors.json" },
+        { "$ref": "./borders.json" },
+        { "$ref": "./spacing.json" },
+        { "$ref": "./typography.json" }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [{ "$ref": "./dark.json" }]
+      }
+    }
+  ]
+}
+```
+
+## Learn more
+
+- [DTCG Resolver Module 2025.10](https://www.designtokens.org/TR/2025.10/resolver/) — The official specification
+- [Theming](/docs/theming) — Using modifiers for light/dark themes
+- [Tokens](/docs/tokens) — DTCG token format

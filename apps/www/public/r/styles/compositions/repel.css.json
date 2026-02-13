@@ -1,0 +1,9 @@
+{
+  "name": "compositions",
+  "type": "cube",
+  "path": "styles/compositions/repel.css",
+  "content": "/*\nREPEL\nA little layout that pushes items away from each other where\nthere is space in the viewport and stacks on small viewports\n\nCUSTOM PROPERTIES AND CONFIGURATION\n\n--repel-direction: Controls the direction of the repel items.\nCan be any acceptable flexbox direction value.\n\n--repel-vertical-alignment How items should align vertically.\nCan be any acceptable flexbox alignment value.\n\n--repel-gap: Controls the gap between repel items\n*/\n.repel {\n    display: flex;\n    flex-wrap: wrap;\n    justify-content: space-between;\n    flex-direction: var(--repel-direction, row);\n    align-items: var(--repel-vertical-alignment, center);\n    gap: var(--repel-gap, 1rem);\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

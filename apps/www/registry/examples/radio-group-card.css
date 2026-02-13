@@ -1,0 +1,20 @@
+.radio-group-card .radio-toggle[data-state="checked"] {
+    color: var(--color-accent-fill-loud, var(--color-neutral-fill-loud));
+    border-color: var(--color-accent-border-normal, var(--form-control-border-color));
+}
+
+.radio-group-card > label {
+    border-radius: var(--panel-radius);
+    border: var(--panel-border-width) var(--border-style) var(--panel-border-color);
+    padding: var(--space-xs);
+    transition: all 100ms ease;
+}
+
+.radio-group-card > label:has(.radio-toggle[data-state="checked"]) {
+    border-color: var(--color-accent-border-quiet, var(--panel-border-color));
+    background-color: var(--color-accent-fill-normal, var(--color-neutral-fill-normal));
+}
+
+.radio-group-card > label:not(:has(.radio-toggle[data-state="checked"])):hover {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+}

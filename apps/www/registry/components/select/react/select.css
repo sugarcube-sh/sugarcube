@@ -1,0 +1,224 @@
+.select-trigger {
+    /* Scale multiplier: Converts rem-based tokens to proportionally scale with font-size. */
+    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+
+    /* Calculate total height: (top + bottom padding) + (font-size × line-height)
+     * Rounded to nearest pixel */
+    --form-control-height: round(
+        calc(
+            2 *
+            var(--form-control-padding-block) *
+            var(--scale) +
+            1em *
+            var(--form-control-line-height)
+        ),
+        1px
+    );
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    font: inherit;
+    border-color: transparent;
+    padding-block: 0;
+    outline-style: none;
+    font-size: var(--form-control-font-size, var(--text-base));
+    background-color: var(--form-control-bg);
+    border-radius: var(--form-control-border-radius);
+    border-color: var(--form-control-border-color);
+    border-style: var(--border-style);
+    border-width: var(--form-control-border-width);
+    box-shadow: var(--shadow-xs);
+    font-weight: var(--font-weight-medium);
+    gap: var(--space-2xs);
+    min-height: var(--form-control-height);
+    padding-inline: calc(var(--form-control-padding-inline) * var(--scale));
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-timing-function: var(--ease-out);
+    transition-duration: var(--transition-normal);
+}
+
+.select-trigger[data-placeholder] {
+    color: var(--form-control-placeholder-color);
+}
+
+.select-trigger:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-neutral-400) 25%, transparent);
+    border-color: var(--color-neutral-400);
+}
+
+.select-trigger:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.select-trigger > svg:not([data-slot="select-value"] svg) {
+    color: var(--color-text-quiet);
+}
+
+.select-trigger > span[data-slot="select-value"] {
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-clamp: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.select-content {
+    position: relative;
+    z-index: var(--z-dropdown);
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-width: 8rem;
+    max-height: var(--radix-select-content-available-height);
+    border-radius: var(--panel-radius);
+    border: var(--panel-border-width) var(--border-style) var(--panel-border-color);
+    background: var(--color-surface-raised);
+    box-shadow: var(--shadow-md);
+    font-size: var(--form-control-font-size);
+}
+
+.select-label {
+    padding-block: 0.25rem;
+    padding-inline: 0.5rem;
+    font-size: var(--text-xs);
+    color: var(--color-text-quiet);
+}
+
+.select-item {
+    position: relative;
+    display: flex;
+    width: 100%;
+    cursor: default;
+    user-select: none;
+    align-items: center;
+    outline: none;
+    padding-inline: 0.5rem 2rem;
+    padding-block: 0.375rem;
+}
+
+.select-item svg {
+    color: var(--color-text-quiet);
+}
+
+.select-item > span:last-child {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.select-item[data-highlighted] {
+    outline: none;
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    border-radius: var(--radius-md);
+}
+
+.select-item[data-disabled] {
+    pointer-events: none;
+    color: var(--select-item-disabled);
+}
+
+.select-item-indicator {
+    position: absolute;
+    right: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 1em;
+    width: 1em;
+}
+
+.select-item-indicator svg {
+    color: var(--color-text-quiet);
+}
+
+.select-viewport {
+    padding: 0.25rem 0.25rem;
+    width: 100%;
+    height: var(--radix-select-trigger-height);
+    min-width: var(--radix-select-trigger-width);
+    scroll-margin: 0.25rem;
+}
+
+.select-scroll-up-button,
+.select-scroll-down-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-block: 0.5rem;
+}
+
+.select-content[data-side="bottom"] {
+    transform: translateY(4px);
+}
+.select-content[data-side="top"] {
+    transform: translateY(-4px);
+}
+.select-content[data-side="left"] {
+    transform: translateX(-4px);
+}
+.select-content[data-side="right"] {
+    transform: translateX(4px);
+}
+
+.select-content[data-state="open"][data-side="bottom"] {
+    animation: select-slide-in-from-top var(--transition-normal) var(--ease-out);
+}
+.select-content[data-state="open"][data-side="top"] {
+    animation: select-slide-in-from-bottom var(--transition-normal) var(--ease-out);
+}
+.select-content[data-state="open"][data-side="left"] {
+    animation: select-slide-in-from-right var(--transition-normal) var(--ease-out);
+}
+.select-content[data-state="open"][data-side="right"] {
+    animation: select-slide-in-from-left var(--transition-normal) var(--ease-out);
+}
+
+@keyframes select-slide-in-from-top {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(4px) scale(1);
+    }
+}
+
+@keyframes select-slide-in-from-bottom {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-4px) scale(1);
+    }
+}
+
+@keyframes select-slide-in-from-left {
+    from {
+        opacity: 0;
+        transform: translateX(-8px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(4px) scale(1);
+    }
+}
+
+@keyframes select-slide-in-from-right {
+    from {
+        opacity: 0;
+        transform: translateX(8px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-4px) scale(1);
+    }
+}

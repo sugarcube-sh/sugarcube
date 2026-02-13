@@ -1,0 +1,37 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    "apps/www": {
+      "entry": ["src/**/*.ts", "src/**/*.astro"],
+      "project": ["src/**/*.ts", "src/**/*.astro"],
+      "ignore": ["registry/**"],
+      "ignoreDependencies": [
+        "@ariakit/react",
+        "@base-ui-components/react",
+        "@radix-ui/*",
+        "@sugarcube-sh/cli",
+        "@unocss/preset-mini",
+        "clsx",
+        "cmdk",
+        "react-hook-form"
+      ]
+    },
+    "packages/core": {
+      "entry": ["src/index.ts", "tests/**/*.test.ts", "tests/**/*.bench.ts"],
+      "project": ["src/**/*.ts", "tests/**/*.ts"],
+      "ignore": ["tests/__fixtures__/**"]
+    },
+    "packages/cli": {
+      "entry": ["tests/**/*.test.ts"],
+      "project": ["src/**/*.ts", "tests/**/*.ts"]
+    },
+    "packages/vite": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/postcss": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    }
+  }
+}

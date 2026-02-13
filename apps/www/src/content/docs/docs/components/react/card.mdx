@@ -1,0 +1,39 @@
+---
+title: Card
+description: A card component.
+---
+import { CardDemo } from "@/registry/examples/card-demo.tsx";
+import { CardMediaDemo } from "@/registry/examples/card-media.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <CardDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/card-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components card -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/card/react/card.tsx",
+    "@/registry/components/card/react/card.css"
+]} collapsible={true} />
+
+## Examples
+
+<SiteAside type="note">
+    The card component is intentionally minimal — it's little more than a container with basic styling (border, border-radius, background, and shadow). The optional structure classes (`.card-header`, `.card-content`, `.card-footer`) only provide padding and layout hints. For colors, spacing, typography, and other visual styling, use utility classes or your own custom CSS. This keeps the card flexible and adaptable — a starting point for your own card component.
+</SiteAside>
+
+### With media
+
+<ComponentDemo>
+    <CardMediaDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/card-media.tsx" />

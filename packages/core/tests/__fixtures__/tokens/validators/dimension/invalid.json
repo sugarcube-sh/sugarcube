@@ -1,0 +1,38 @@
+{
+  "spacing.invalid.unit": {
+    "$type": "dimension",
+    "$value": {
+      "value": 1,
+      "unit": "em"
+    },
+    "$path": "spacing.invalid.unit",
+    "$source": { "file": "tokens/spacing.json" },
+    "$originalPath": "spacing.invalid.unit"
+  },
+  "spacing.invalid.missing-unit": {
+    "$type": "dimension",
+    "$value": {
+      "value": 16
+    },
+    "$path": "spacing.invalid.missing-unit",
+    "$source": { "file": "tokens/spacing.json" },
+    "$originalPath": "spacing.invalid.missing-unit"
+  },
+  "spacing.invalid.value": {
+    "$type": "dimension",
+    "$value": {
+      "value": "10",
+      "unit": "px"
+    },
+    "$path": "spacing.invalid.value",
+    "$source": { "file": "tokens/spacing.json" },
+    "$originalPath": "spacing.invalid.value"
+  },
+  "spacing.invalid.structure": {
+    "$type": "dimension",
+    "$value": "16px",
+    "$path": "spacing.invalid.structure",
+    "$source": { "file": "tokens/spacing.json" },
+    "$originalPath": "spacing.invalid.structure"
+  }
+}

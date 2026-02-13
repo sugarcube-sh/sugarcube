@@ -1,0 +1,21 @@
+{
+  "name": "dialog",
+  "type": "component",
+  "path": "components/dialog/react/dialog.css",
+  "content": ".dialog:has(.command) {\n    padding: 0;\n    border: none;\n}\n\n.dialog-backdrop {\n    position: fixed;\n    inset: 0;\n    z-index: var(--z-modal);\n    background-color: var(--color-overlay);\n    animation: dialog-fade-out var(--transition-normal) var(--ease-out);\n}\n\n.dialog-backdrop[data-state=\"open\"] {\n    animation: dialog-fade-in var(--transition-normal) var(--ease-out);\n}\n\n.dialog {\n    position: fixed;\n    left: 50%;\n    top: 50%;\n    transform: translate(-50%, -50%);\n    z-index: var(--z-modal);\n    max-width: calc(100vw - 2rem);\n    width: 26rem;\n    background-color: var(--color-surface-raised);\n    padding: var(--space-md);\n    box-shadow: var(--shadow-md);\n    border-radius: var(--panel-radius);\n    animation: dialog-close var(--transition-normal) var(--ease-out);\n}\n\n.dialog[data-state=\"open\"] {\n    animation: dialog-open var(--transition-normal) var(--ease-out);\n}\n\n@keyframes dialog-fade-in {\n    from {\n        opacity: 0;\n    }\n    to {\n        opacity: 1;\n    }\n}\n\n@keyframes dialog-fade-out {\n    from {\n        opacity: 1;\n    }\n    to {\n        opacity: 0;\n    }\n}\n\n@keyframes dialog-open {\n    from {\n        opacity: 0;\n        transform: translate(-50%, -48%) scale(0.95);\n    }\n    to {\n        opacity: 1;\n        transform: translate(-50%, -50%) scale(1);\n    }\n}\n\n@keyframes dialog-close {\n    from {\n        opacity: 1;\n        transform: translate(-50%, -50%) scale(1);\n    }\n    to {\n        opacity: 0;\n        transform: translate(-50%, -48%) scale(0.95);\n    }\n}\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "react": [
+      "clsx",
+      "@radix-ui/react-dialog"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

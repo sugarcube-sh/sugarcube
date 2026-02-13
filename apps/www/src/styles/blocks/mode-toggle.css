@@ -1,0 +1,15 @@
+.mode-toggle .mode-icon {
+    display: none;
+}
+
+:root[data-mode="light"] .mode-toggle .lucide-moon {
+    display: block;
+}
+
+:root[data-mode="dark"] .mode-toggle .lucide-sun {
+    display: block;
+}
+
+:root:not([data-mode]) .mode-toggle .lucide-moon {
+    display: block;
+}

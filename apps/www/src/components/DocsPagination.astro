@@ -1,0 +1,39 @@
+---
+const { dir, pagination } = Astro.locals.starlightRoute;
+const { prev, next } = pagination;
+import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
+const isRtl = dir === "rtl";
+---
+
+<div dir={dir} class="docs-pagination repel">
+    {
+        prev && (
+            <a
+                href={prev.href}
+                rel="prev"
+                class="site-button"
+                data-appearance="soft"
+            >
+                {isRtl ? <ArrowRightIcon /> : <ArrowLeftIcon />}
+                <span>
+                    <span>{prev.label}</span>
+                </span>
+            </a>
+        )
+    }
+    {
+        next && (
+            <a
+                href={next.href}
+                rel="next"
+                class="site-button"
+                data-appearance="soft"
+            >
+                <span>
+                    <span>{next.label}</span>
+                </span>
+                {isRtl ? <ArrowLeftIcon /> : <ArrowRightIcon />}
+            </a>
+        )
+    }
+</div>

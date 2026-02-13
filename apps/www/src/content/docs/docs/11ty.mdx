@@ -1,0 +1,86 @@
+---
+title: 11ty
+description: How to setup sugarcube with 11ty
+---
+
+This guide covers 11ty projects. For a complete introduction, see the [setup guide](/docs/setup).
+
+## Create your project
+
+Start by creating a new 11ty project if you don't have one set up already. 11ty is intentionally minimal and doesn't have a scaffolder — see the [11ty Getting Started guide](https://www.11ty.dev/docs/get-started/) to set up a project.
+
+## Initialize sugarcube
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli init" />
+
+
+## Configure 11ty
+
+11ty doesn't process CSS by default. Add a passthrough copy to include the generated styles in your output:
+
+```js title="eleventy.config.js"
+export default function (eleventyConfig) {
+    eleventyConfig.addPassthroughCopy("styles");
+};
+```
+
+## Import CSS
+
+Import the generated CSS in your base layout template (or wherever you import your other styles):
+
+```html frame="none"
+<link rel="stylesheet" href="/styles/global/tokens.variables.gen.css">
+```
+
+## With Vite (optional)
+
+If you're using [eleventy-plugin-vite](https://www.11ty.dev/docs/server-vite/) for faster builds and HMR, sugarcube can integrate with it for a better developer experience.
+
+### Install Vite dependencies
+
+<PackageManagerTabs command="npm install vite @11ty/eleventy-plugin-vite @sugarcube-sh/vite" />
+
+### Configure 11ty
+
+Add the Vite plugin with the sugarcube Vite plugin in `viteOptions`:
+
+```js title="eleventy.config.js"
+import EleventyVitePlugin from "@11ty/eleventy-plugin-vite";
+import sugarcube from "@sugarcube-sh/vite";
+
+export default function (eleventyConfig) {
+    eleventyConfig.addPlugin(EleventyVitePlugin, {
+        viteOptions: {
+            plugins: [sugarcube()]
+        }
+    });
+    eleventyConfig.addPassthroughCopy("main.js");
+};
+```
+
+### Create a JS entry point
+
+Virtual modules require a JavaScript entry point. Create a `main.js` file in your project root:
+
+```js title="main.js"
+import "virtual:sugarcube.css";
+```
+
+### Import in your template
+
+Add the script to your HTML template:
+
+```html frame="none"
+<script type="module" src="/main.js"></script>
+```
+
+The CSS will be injected automatically when the module loads.
+
+### Granular virtual imports
+
+If you need more control, you can import variables and utilities separately in your `main.js`:
+
+```js title="main.js"
+import "virtual:sugarcube/variables.css";
+import "virtual:sugarcube/utilities.css";
+```

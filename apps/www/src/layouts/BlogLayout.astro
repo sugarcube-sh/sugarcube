@@ -1,0 +1,26 @@
+---
+import { siteConfig } from "@/src/site.config";
+import type { SiteMeta } from "@/src/types";
+import BaseLayout from "./BaseLayout.astro";
+
+const {
+    title: postTitle,
+    publishDate,
+    updatedDate,
+    description: postDescription,
+    ogImage,
+} = Astro.props;
+
+const meta: SiteMeta = {
+    title: postTitle,
+    description: postDescription || siteConfig.description,
+    articleDate: updatedDate
+        ? new Date(updatedDate).toISOString()
+        : new Date(publishDate).toISOString(),
+    ogImage: ogImage,
+};
+---
+
+<BaseLayout meta={meta}>
+    <slot />
+</BaseLayout>

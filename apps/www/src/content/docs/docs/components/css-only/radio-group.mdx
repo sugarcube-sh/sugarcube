@@ -1,0 +1,79 @@
+---
+title: Radio Group
+description: A radio group component.
+---
+
+import RadioGroupDemo from "@/registry/examples/radio-group-demo.astro";
+import RadioGroupDisabled from "@/registry/examples/radio-group-disabled.astro";
+import RadioGroupSizes from "@/registry/examples/radio-group-sizes.astro";
+import RadioGroupHint from "@/registry/examples/radio-group-hint.astro";
+import RadioGroupCard from "@/registry/examples/radio-group-card.astro";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <RadioGroupDemo />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/radio-group-demo.astro" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components radio-group -f css-only" />
+
+## Source Code
+
+<SourceCode path="@/registry/components/radio-group/css/radio-group.css" collapsible={true} />
+
+## Usage
+
+Apply the `.radio` class to radio input elements:
+
+```html
+
+<label for="option1">
+    <input type="radio" class="radio" id="option1" name="group" value="option1" />
+    Option 1
+</label>
+```
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the radio group component. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Disabled
+
+<ComponentDemo>
+    <RadioGroupDisabled />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/radio-group-disabled.astro" />
+
+### Sizes
+
+<ComponentDemo>
+    <RadioGroupSizes />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/radio-group-sizes.astro",
+    "@/registry/examples/radio-group-sizes-css-only.css"
+]} />
+
+### With hint
+
+<ComponentDemo>
+    <RadioGroupHint />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/radio-group-hint.astro" />
+
+### Card style
+
+<ComponentDemo>
+    <RadioGroupCard />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/radio-group-card.astro",
+    "@/registry/examples/radio-group-card-css-only.css"
+]} />

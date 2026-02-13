@@ -1,0 +1,90 @@
+<script is:inline>
+    (function () {
+        const root = document.documentElement;
+        const darkModePref = window.matchMedia("(prefers-color-scheme: dark)");
+
+        // ─── Mode (dark/light) ─────────────────────────────────────────────
+
+        function getModePref() {
+            const stored =
+                typeof localStorage !== "undefined" &&
+                localStorage.getItem("mode");
+            return stored || (darkModePref.matches ? "dark" : "light");
+        }
+
+        function setMode(mode) {
+            if (mode !== "light" && mode !== "dark") {
+                return console.warn(
+                    `Invalid mode "${mode}". Expected "light" or "dark".`,
+                );
+            }
+
+            if (mode === root.getAttribute("data-mode")) {
+                return;
+            }
+
+            root.style.colorScheme = mode;
+            root.setAttribute("data-mode", mode);
+
+            if (typeof localStorage !== "undefined") {
+                localStorage.setItem("mode", mode);
+            }
+        }
+
+        // ─── Theme (e.g., default, ocean, forest etc. ───────────────────
+
+        function getThemePref() {
+            const stored =
+                typeof localStorage !== "undefined" &&
+                localStorage.getItem("theme");
+            return stored || "default";
+        }
+
+        function setTheme(theme) {
+            if (typeof theme !== "string" || !theme) {
+                return console.warn(
+                    `Invalid theme "${theme}". Expected a non-empty string.`,
+                );
+            }
+
+            if (theme === root.getAttribute("data-theme")) {
+                return;
+            }
+
+            root.setAttribute("data-theme", theme);
+
+            if (typeof localStorage !== "undefined") {
+                localStorage.setItem("theme", theme);
+            }
+        }
+
+        setMode(getModePref());
+        setTheme(getThemePref());
+
+        // View Transitions hook to restore preferences after page swap
+        document.addEventListener("astro:after-swap", () => {
+            setMode(getModePref());
+            setTheme(getThemePref());
+        });
+
+        // Custom events fired by toggle components
+        document.addEventListener("mode-change", (e) => {
+            setMode(e.detail.mode);
+        });
+
+        document.addEventListener("theme-change", (e) => {
+            setTheme(e.detail.theme);
+        });
+
+        // System preference change (for mode only)
+        darkModePref.addEventListener("change", (e) => {
+            // Only auto-switch if user hasn't explicitly set a preference
+            const stored =
+                typeof localStorage !== "undefined" &&
+                localStorage.getItem("mode");
+            if (!stored) {
+                setMode(e.matches ? "dark" : "light");
+            }
+        });
+    })();
+</script>

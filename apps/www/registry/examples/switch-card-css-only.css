@@ -1,0 +1,15 @@
+.switch-card {
+    border-radius: var(--panel-radius);
+    border: var(--panel-border-width) var(--border-style) var(--panel-border-color);
+    padding: var(--space-xs);
+    transition: all 250ms ease;
+}
+
+.switch-card:has(.switch:checked) {
+    border-color: var(--color-accent-border-quiet, var(--panel-border-color));
+    background-color: var(--color-accent-fill-normal, var(--color-neutral-fill-normal));
+}
+
+.switch-card:has(.switch:not(:checked)):hover {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+}

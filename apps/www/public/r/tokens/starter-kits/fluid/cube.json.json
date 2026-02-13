@@ -1,0 +1,9 @@
+{
+  "name": "fluid",
+  "type": "tokens",
+  "path": "tokens/starter-kits/fluid/cube.json",
+  "content": "{\n  \"cluster-gap\": {\n    \"$type\": \"fluidDimension\",\n    \"$value\": \"{space.sm}\",\n    \"$description\": \"Base gap spacing for cluster composition\"\n  },\n  \"grid-gap\": {\n    \"$type\": \"fluidDimension\",\n    \"$value\": \"{space.md}\",\n    \"$description\": \"Default gap for grid composition\"\n  },\n  \"repel-gap\": {\n    \"$type\": \"fluidDimension\",\n    \"$value\": \"{space.md}\",\n    \"$description\": \"Default gap for repel composition\"\n  },\n  \"sidebar-gap\": {\n    \"$type\": \"fluidDimension\",\n    \"$value\": \"{space.md}\",\n    \"$description\": \"Default gap for sidebar composition\"\n  },\n  \"switcher-gap\": {\n    \"$type\": \"fluidDimension\",\n    \"$value\": \"{space.md}\",\n    \"$description\": \"Default gap for switcher composition\"\n  },\n  \"flow-space\": {\n    \"$type\": \"fluidDimension\",\n    \"$value\": \"{space.md}\",\n    \"$description\": \"Base vertical spacing in flow composition\"\n  },\n  \"region-space\": {\n    \"$type\": \"fluidDimension\",\n    \"$value\": \"{space.xl}\",\n    \"$description\": \"Base vertical padding for page sections\"\n  },\n  \"wrapper-max-width\": {\n    \"$type\": \"dimension\",\n    \"$value\": \"{container.4xl}\",\n    \"$description\": \"Max width for wrapper composition\"\n  },\n  \"wrapper-padding-inline\": {\n    \"$type\": \"fluidDimension\",\n    \"$value\": \"{space.sm}\",\n    \"$description\": \"Inline padding for wrapper composition\"\n  },\n  \"sidebar-content-min-width\": {\n    \"$type\": \"dimension\",\n    \"$value\": { \"value\": 37.5, \"unit\": \"rem\" },\n    \"$description\": \"Min width for sidebar content\"\n  }\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

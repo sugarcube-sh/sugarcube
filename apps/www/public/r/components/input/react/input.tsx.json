@@ -1,0 +1,22 @@
+{
+  "name": "input",
+  "type": "component",
+  "path": "components/input/react/input.tsx",
+  "content": "import type * as React from \"react\";\n\nimport cn from \"clsx\";\n\nfunction Input({ className, type, ...props }: React.ComponentProps<\"input\">) {\n    return <input type={type} className={cn(\"input\", className)} {...props} />;\n}\n\nexport { Input };\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "react": [
+      "react",
+      "react-dom",
+      "clsx"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

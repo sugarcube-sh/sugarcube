@@ -1,0 +1,38 @@
+.radio-toggle[data-size="sm"] {
+    --scale: calc(var(--text-sm) / 1rem);
+}
+
+.radio-toggle[data-size="sm"] + .label,
+.radio-group-item[data-size="sm"] ~ .label {
+    font-size: var(--text-sm);
+}
+
+.label:has(+ .radio-group-item[data-size="sm"]) {
+    font-size: var(--text-sm);
+}
+
+.radio-toggle[data-size="md"] {
+    --scale: calc(var(--text-base) / 1rem);
+}
+
+.radio-toggle[data-size="md"] + .label,
+.radio-toggle[data-size="md"] ~ .label {
+    font-size: var(--text-base);
+}
+
+.label:has(+ .radio-toggle[data-size="md"]) {
+    font-size: var(--text-base);
+}
+
+.radio-toggle[data-size="lg"] {
+    --scale: calc(var(--text-lg) / 1rem);
+}
+
+.radio-toggle[data-size="lg"] + .label,
+.radio-toggle[data-size="lg"] ~ .label {
+    font-size: var(--text-lg);
+}
+
+.label:has(+ .radio-toggle[data-size="lg"]) {
+    font-size: var(--text-lg);
+}

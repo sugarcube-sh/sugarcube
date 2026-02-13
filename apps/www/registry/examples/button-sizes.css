@@ -1,0 +1,14 @@
+.button[data-size="sm"] {
+    --scale: calc(var(--text-sm) / 1rem);
+    font-size: var(--text-sm);
+}
+
+.button[data-size="md"] {
+    --scale: calc(var(--text-base) / 1rem);
+    font-size: var(--text-base);
+}
+
+.button[data-size="lg"] {
+    --scale: calc(var(--text-lg) / 1rem);
+    font-size: var(--text-lg);
+}

@@ -1,0 +1,66 @@
+{
+  "spacing.fluid.invalid.structure.string": {
+    "$type": "fluidDimension",
+    "$value": "not-an-object",
+    "$path": "spacing.fluid.invalid.structure.string",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/spacing.json"
+    }
+  },
+  "spacing.fluid.invalid.structure.array": {
+    "$type": "fluidDimension",
+    "$value": [{ "value": 16, "unit": "px" }, { "value": 24, "unit": "px" }],
+    "$path": "spacing.fluid.invalid.structure.array",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/spacing.json"
+    }
+  },
+  "spacing.fluid.invalid.missing-min": {
+    "$type": "fluidDimension",
+    "$value": {
+      "max": { "value": 24, "unit": "px" }
+    },
+    "$path": "spacing.fluid.invalid.missing-min",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/spacing.json"
+    }
+  },
+  "spacing.fluid.invalid.missing-max": {
+    "$type": "fluidDimension",
+    "$value": {
+      "min": { "value": 16, "unit": "px" }
+    },
+    "$path": "spacing.fluid.invalid.missing-max",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/spacing.json"
+    }
+  },
+  "spacing.fluid.invalid.min-value": {
+    "$type": "fluidDimension",
+    "$value": {
+      "min": { "value": "16", "unit": "px" },
+      "max": { "value": 24, "unit": "px" }
+    },
+    "$path": "spacing.fluid.invalid.min-value",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/spacing.json"
+    }
+  },
+  "spacing.fluid.invalid.max-unit": {
+    "$type": "fluidDimension",
+    "$value": {
+      "min": { "value": 16, "unit": "px" },
+      "max": { "value": 24, "unit": "invalid" }
+    },
+    "$path": "spacing.fluid.invalid.max-unit",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/spacing.json"
+    }
+  }
+}

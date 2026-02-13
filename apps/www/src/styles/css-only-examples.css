@@ -1,0 +1,26 @@
+@import "@/registry/examples/button-variants.css";
+@import "@/registry/examples/badge-variants.css";
+@import "@/registry/examples/alert-variants.css";
+@import "@/registry/examples/button-appearances.css";
+@import "@/registry/examples/input-appearances.css";
+@import "@/registry/examples/sizes.css";
+@import "@/registry/examples/icon-only.css";
+
+@import "@/registry/examples/radio-group-card-css-only.css";
+@import "@/registry/examples/radio-group-sizes-css-only.css";
+@import "@/registry/examples/switch-card-css-only.css";
+@import "@/registry/examples/switch-sizes-css-only.css";
+@import "@/registry/examples/checkbox-sizes-css-only.css";
+@import "@/registry/examples/checkbox-card-css-only.css";
+
+@import "@/registry/examples/alert-appearances.css";
+@import "@/registry/examples/alert-border-accent.css";
+@import "@/registry/examples/alert-tinted-shadows.css";
+@import "@/registry/examples/avatar-group.css";
+@import "@/registry/examples/avatar-animated.css";
+@import "@/registry/examples/avatar-sizes.css";
+@import "@/registry/examples/avatar-shapes.css";
+@import "@/registry/examples/badge-appearances.css";
+@import "@/registry/examples/badge-sizes.css";
+@import "@/registry/examples/badge-shapes.css";
+@import "@/registry/examples/input-with-icon.css";

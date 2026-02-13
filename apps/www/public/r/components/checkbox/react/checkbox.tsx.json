@@ -1,0 +1,21 @@
+{
+  "name": "checkbox",
+  "type": "component",
+  "path": "components/checkbox/react/checkbox.tsx",
+  "content": "\"use client\";\n\nimport * as CheckboxPrimitive from \"@radix-ui/react-checkbox\";\nimport { CheckIcon } from \"lucide-react\";\nimport type * as React from \"react\";\n\nimport cn from \"clsx\";\n\nfunction Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {\n    return (\n        <CheckboxPrimitive.Root className={cn(\"checkbox\", className)} {...props}>\n            <CheckboxPrimitive.Indicator className=\"checkbox-indicator\">\n                <CheckIcon />\n            </CheckboxPrimitive.Indicator>\n        </CheckboxPrimitive.Root>\n    );\n}\n\nexport { Checkbox };\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "react": [
+      "@radix-ui/react-checkbox",
+      "lucide-react"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

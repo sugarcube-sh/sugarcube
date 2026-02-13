@@ -1,0 +1,3 @@
+.badge[data-size="lg"] {
+    font-size: var(--text-sm);
+}

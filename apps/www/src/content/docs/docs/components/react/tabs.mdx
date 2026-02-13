@@ -1,0 +1,24 @@
+---
+title: Tabs
+description: A tabs component.
+---
+import { TabsDemo } from "@/registry/examples/tabs-demo.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+
+## Preview
+
+<ComponentDemo>
+    <TabsDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/tabs-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components tabs -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/tabs/react/tabs.tsx",
+    "@/registry/components/tabs/react/tabs.css"
+]} collapsible={true} />

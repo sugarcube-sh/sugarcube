@@ -1,0 +1,71 @@
+---
+/**
+ * A Starlight-compatible Aside component that uses alert.css classes.
+ *
+ * For full composition control, use SiteAlert, SiteAlertTitle, and SiteAlertDescription directly:
+ *
+ * ```astro
+ * <SiteAlert variant="info">
+ *     <InfoIcon />
+ *     <SiteAlertTitle>Custom Title</SiteAlertTitle>
+ *     <SiteAlertDescription>Your content here</SiteAlertDescription>
+ * </SiteAlert>
+ * ```
+ */
+import type { HTMLAttributes } from "astro/types";
+import { AlertCircleIcon, AlertTriangleIcon, InfoIcon, LightbulbIcon } from "lucide-react";
+import SiteAlert from "./SiteAlert.astro";
+import SiteAlertDescription from "./SiteAlertDescription.astro";
+import SiteAlertTitle from "./SiteAlertTitle.astro";
+
+const asideVariants = ["note", "tip", "caution", "danger"] as const;
+type AsideVariant = (typeof asideVariants)[number];
+
+// Map Starlight aside types to alert variants
+const variantMap: Record<AsideVariant, "info" | "success" | "warning" | "error" | "tip"> = {
+    note: "info",
+    tip: "tip",
+    caution: "warning",
+    danger: "error",
+};
+
+// Default icons for each type
+const iconMap = {
+    note: InfoIcon,
+    tip: LightbulbIcon,
+    caution: AlertTriangleIcon,
+    danger: AlertCircleIcon,
+};
+
+// Default titles for each type
+const titleMap: Record<AsideVariant, string> = {
+    note: "Note",
+    tip: "Tip",
+    caution: "Caution",
+    danger: "Danger",
+};
+
+interface Props extends Omit<HTMLAttributes<"div">, "title"> {
+    type?: AsideVariant;
+    title?: string;
+}
+
+const { type = "note", title, class: className, ...props } = Astro.props;
+
+const variant = variantMap[type];
+const Icon = iconMap[type];
+const displayTitle = title ?? titleMap[type];
+---
+
+<SiteAlert
+    variant={variant}
+    class={className}
+    aria-label={displayTitle}
+    {...props}
+>
+    <Icon />
+    <SiteAlertTitle>{displayTitle}</SiteAlertTitle>
+    <SiteAlertDescription>
+        <slot />
+    </SiteAlertDescription>
+</SiteAlert>

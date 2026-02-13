@@ -1,0 +1,93 @@
+{
+  "version": "2025.10",
+  "name": "Complex Design System",
+  "description": "A complex resolver with multiple sets and modifiers",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "colors",
+      "description": "Base color tokens",
+      "sources": [
+        {
+          "color": {
+            "brand": {
+              "primary": { "$type": "color", "$value": "#3b82f6" },
+              "secondary": { "$type": "color", "$value": "#8b5cf6" }
+            },
+            "neutral": {
+              "100": { "$type": "color", "$value": "#f5f5f5" },
+              "900": { "$type": "color", "$value": "#171717" }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "set",
+      "name": "spacing",
+      "description": "Spacing tokens",
+      "sources": [
+        {
+          "space": {
+            "xs": { "$type": "dimension", "$value": { "value": 4, "unit": "px" } },
+            "sm": { "$type": "dimension", "$value": { "value": 8, "unit": "px" } },
+            "md": { "$type": "dimension", "$value": { "value": 16, "unit": "px" } }
+          }
+        }
+      ]
+    },
+    {
+      "type": "set",
+      "name": "components",
+      "description": "Component tokens with cross-set references",
+      "sources": [
+        {
+          "button": {
+            "padding": { "$type": "dimension", "$value": "{space.sm}" },
+            "background": { "$type": "color", "$value": "{color.brand.primary}" }
+          }
+        }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [
+          {
+            "color": {
+              "surface": { "$type": "color", "$value": "{color.neutral.900}" },
+              "text": { "$type": "color", "$value": "{color.neutral.100}" }
+            }
+          }
+        ],
+        "ocean": [
+          {
+            "color": {
+              "brand": {
+                "primary": { "$type": "color", "$value": "#0ea5e9" }
+              }
+            }
+          }
+        ],
+        "ocean-dark": [
+          {
+            "color": {
+              "brand": {
+                "primary": { "$type": "color", "$value": "#38bdf8" }
+              },
+              "surface": { "$type": "color", "$value": "#0c2d3f" }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "$extensions": {
+    "com.sugarcube": {
+      "generatedAt": "2025-01-18"
+    }
+  }
+}

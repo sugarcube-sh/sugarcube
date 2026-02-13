@@ -1,0 +1,80 @@
+.button {
+    /* Scale multiplier: Converts rem-based tokens to proportionally scale with font-size.
+     * This allows rem tokens (spec-compliant) to behave like em units (proportional scaling).
+     * When font-size changes (via data-size or global form-control-font-size), padding scales proportionally.
+     * Example: If --text-sm = 0.875rem, scale = 0.875, so 1rem padding becomes 0.875rem. */
+    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+
+    /* Calculate total height: (top + bottom padding) + (font-size × line-height)
+     * Rounded to nearest pixel.
+     * 
+     * Why this approach?
+     * Change one token (--form-control-font-size) and ALL form controls
+     * automatically adjust their size proportionally - buttons, inputs, checkboxes, etc.
+     * 
+     * How it works:
+     * - Padding uses rem tokens multiplied by scale (proportional to font-size)
+     * - Line-height uses 1em (already proportional to font-size)
+     * - Together they create a height that scales perfectly with font-size changes
+     */
+    --form-control-height: round(
+        calc(
+            2 *
+            var(--form-control-padding-block) *
+            var(--scale) +
+            1em *
+            var(--form-control-line-height)
+        ),
+        1px
+    );
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    font: inherit;
+    font-size: var(--form-control-font-size, var(--text-base));
+    padding-block: 0;
+    border-color: transparent;
+    background-color: var(--color-fill-loud, var(--color-neutral-fill-loud));
+    border-radius: var(--form-control-border-radius);
+    border-style: var(--border-style);
+    border-width: var(--border-width-thin);
+    color: var(--color-on-loud, var(--color-neutral-on-normal));
+    font-weight: var(--font-weight-medium);
+    gap: var(--space-2xs);
+    min-height: var(--form-control-height);
+    padding-inline: calc(var(--form-control-padding-inline) * var(--scale));
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-timing-function: var(--ease-out);
+    transition-duration: var(--transition-normal);
+}
+
+.button:hover {
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-loud, var(--color-neutral-fill-loud)),
+        var(--color-mix-hover, black 5%)
+    );
+}
+
+.button:active {
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-loud, var(--color-neutral-fill-loud)),
+        var(--color-mix-active, black 10%)
+    );
+}
+
+.button:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-fill-loud) 25%, transparent);
+    outline: none;
+    border-color: var(--color-fill-loud);
+}
+
+.button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

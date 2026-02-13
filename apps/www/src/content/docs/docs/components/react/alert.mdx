@@ -1,0 +1,116 @@
+---
+title: Alert
+description: An alert component.
+---
+import { AlertDemo } from "@/registry/examples/alert-demo.tsx";
+import { AlertVariants } from "@/registry/examples/alert-variants.tsx";
+import { AlertAppearances } from "@/registry/examples/alert-appearances.tsx";
+import { AlertTintedShadows } from "@/registry/examples/alert-tinted-shadows.tsx";
+import { AlertWithoutIcon } from "@/registry/examples/alert-without-icon.tsx";
+import { AlertDescriptionOnly } from "@/registry/examples/alert-description-only.tsx";
+import { AlertBorderAccent } from "@/registry/examples/alert-border-accent.tsx";
+import { AlertSizes } from "@/registry/examples/alert-sizes.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <AlertDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/alert-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components alert -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/alert/react/alert.tsx",
+    "@/registry/components/alert/react/alert.css"
+]} collapsible={true} />
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the alert component with variants, appearances, and features. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Variants
+
+You can add color variants using data attributes. This example shows how you might implement variants using CSS custom properties:
+
+<ComponentDemo>
+    <AlertVariants client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/alert-variants.tsx",
+    "@/registry/examples/alert-variants.css"
+]} />
+
+### Appearances
+
+You can add different visual appearances using data attributes. This example shows how you might implement different alert styles:
+
+<ComponentDemo>
+    <AlertAppearances client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/alert-appearances.tsx",
+    "@/registry/examples/alert-appearances.css"
+]} />
+
+### Sizes
+
+You can add different sizes to the alert using data attributes. This example shows how you might implement different alert sizes:
+
+<ComponentDemo>
+    <AlertSizes client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/alert-sizes.tsx",
+    "@/registry/examples/alert-sizes.css"
+]} />
+
+### Without icon
+
+Alerts work perfectly fine without icons. This example shows variants without icons:
+
+<ComponentDemo>
+    <AlertWithoutIcon client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/alert-without-icon.tsx" />
+
+### Description only
+
+You can use alerts with just a description and no title:
+
+<ComponentDemo>
+    <AlertDescriptionOnly client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/alert-description-only.tsx" />
+
+### Border accent
+
+You can add a thick colored border on the left side for a strong visual indicator:
+
+<ComponentDemo>
+    <AlertBorderAccent client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/alert-border-accent.tsx",
+    "@/registry/examples/alert-border-accent.css"
+]} />
+
+### Tinted shadows
+
+You can add tinted shadows that match the alert color. This example shows how you might implement tinted shadows:
+
+<ComponentDemo>
+    <AlertTintedShadows client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/alert-tinted-shadows.tsx",
+    "@/registry/examples/alert-tinted-shadows.css"
+]} />

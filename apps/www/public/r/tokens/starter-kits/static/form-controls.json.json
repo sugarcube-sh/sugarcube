@@ -1,0 +1,9 @@
+{
+  "name": "static",
+  "type": "tokens",
+  "path": "tokens/starter-kits/static/form-controls.json",
+  "content": "{\n  \"form-control\": {\n    \"activated-color\": {\n      \"$value\": \"{color.accent.fill.loud}\"\n    },\n    \"background-color\": {\n      \"$value\": \"{color.surface.default}\"\n    },\n    \"border-width\": {\n      \"$value\": \"{border.width.thin}\"\n    },\n    \"border-style\": {\n      \"$value\": \"{border.style}\"\n    },\n    \"border-color\": {\n      \"$value\": \"{color.border.normal}\"\n    },\n    \"border-radius\": {\n      \"$value\": \"{radius.lg}\"\n    },\n    \"padding\": {\n      \"$type\": \"dimension\",\n      \"block\": {\n        \"$value\": {\n          \"value\": 0.65,\n          \"unit\": \"rem\"\n        }\n      },\n      \"inline\": {\n        \"$value\": {\n          \"value\": 1,\n          \"unit\": \"rem\"\n        }\n      }\n    },\n    \"line-height\": {\n      \"$type\": \"number\",\n      \"$value\": \"{leading.tight}\"\n    },\n    \"font-size\": {\n      \"$value\": \"{text.sm}\"\n    },\n    \"placeholder-color\": {\n      \"$type\": \"color\",\n      \"$value\": \"{color.text.placeholder}\"\n    },\n    \"toggle-size\": {\n      \"$type\": \"dimension\",\n      \"$value\": { \"value\": 1.25, \"unit\": \"rem\" }\n    },\n    \"value-color\": {\n      \"$value\": \"{color.text.normal}\"\n    },\n    \"label\": {\n      \"color\": { \"$value\": \"{color.text.normal}\" },\n      \"line-height\": { \"$value\": \"{leading.tight}\" }\n    }\n  }\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

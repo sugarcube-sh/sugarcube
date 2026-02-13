@@ -1,0 +1,84 @@
+---
+title: Avatar
+description: An avatar component.
+---
+import AvatarDemo from "@/registry/examples/avatar-demo.tsx";
+import { AvatarSizes } from "@/registry/examples/avatar-sizes.tsx";
+import { AvatarShapes } from "@/registry/examples/avatar-shapes.tsx";
+import { AvatarGroup } from "@/registry/examples/avatar-group.tsx";
+import { AvatarGroupAnimated } from "@/registry/examples/avatar-group-animated.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <AvatarDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/avatar-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components avatar -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/avatar/react/avatar.tsx",
+    "@/registry/components/avatar/react/avatar.css"
+]} collapsible={true} />
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the avatar component with sizes, shapes, and groups. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Sizes
+
+You can add size variants using data attributes. This example shows how you might implement different avatar sizes:
+
+<ComponentDemo>
+    <AvatarSizes client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/avatar-sizes.tsx",
+    "@/registry/examples/avatar-sizes.css"
+]} />
+
+### Shapes
+
+You can add shape variants using data attributes. This example shows how you might implement different avatar shapes:
+
+<ComponentDemo>
+    <AvatarShapes client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/avatar-shapes.tsx",
+    "@/registry/examples/avatar-shapes.css"
+]} />
+
+### Group
+
+You can create avatar groups that overlap. This example shows how you might implement avatar groups:
+
+<ComponentDemo>
+    <AvatarGroup client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/avatar-group.tsx",
+    "@/registry/examples/avatar-group.css"
+]} />
+
+### Animated group
+
+You can add hover animations to avatar groups. This example shows how you might implement animated avatar groups:
+
+<ComponentDemo>
+    <AvatarGroupAnimated client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/avatar-group-animated.tsx",
+    "@/registry/examples/avatar-group.css",
+    "@/registry/examples/avatar-animated.css"
+]} />

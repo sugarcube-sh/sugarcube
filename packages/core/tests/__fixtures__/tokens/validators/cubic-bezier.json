@@ -1,0 +1,37 @@
+{
+  "tokens.easing.linear": {
+    "$type": "cubicBezier",
+    "$value": [0, 0, 1, 1],
+    "$path": "tokens.easing.linear",
+    "$source": { "file": "tokens" },
+    "$originalPath": "easing.linear"
+  },
+  "tokens.easing.easeIn": {
+    "$type": "cubicBezier",
+    "$value": [0.42, 0, 1, 1],
+    "$path": "tokens.easing.easeIn",
+    "$source": { "file": "tokens" },
+    "$originalPath": "easing.easeIn"
+  },
+  "tokens.easing.invalid.type": {
+    "$type": "cubicBezier",
+    "$value": "0,0,1,1",
+    "$path": "tokens.easing.invalid.type",
+    "$source": { "file": "tokens" },
+    "$originalPath": "easing.invalid.type"
+  },
+  "tokens.easing.invalid.range": {
+    "$type": "cubicBezier",
+    "$value": [-0.1, 0, 1.1, 1],
+    "$path": "tokens.easing.invalid.range",
+    "$source": { "file": "tokens" },
+    "$originalPath": "easing.invalid.range"
+  },
+  "tokens.easing.invalid.length": {
+    "$type": "cubicBezier",
+    "$value": [0, 0, 1],
+    "$path": "tokens.easing.invalid.length",
+    "$source": { "file": "tokens" },
+    "$originalPath": "easing.invalid.length"
+  }
+}

@@ -1,0 +1,25 @@
+.alert[data-border-accent] {
+    border: 0;
+    border-inline-start-width: 4px;
+    border-inline-start-style: solid;
+    border-inline-start-color: var(--color-fill-loud, var(--color-neutral-fill-loud));
+    border-block-start-width: var(--border-width-thin);
+    border-block-end-width: var(--border-width-thin);
+    border-inline-end-width: var(--border-width-thin);
+}
+
+[data-variant="error"][data-border-accent] {
+    border-inline-start-color: var(--color-error-fill-loud);
+}
+
+[data-variant="info"][data-border-accent] {
+    border-inline-start-color: var(--color-info-fill-loud);
+}
+
+[data-variant="success"][data-border-accent] {
+    border-inline-start-color: var(--color-success-fill-loud);
+}
+
+[data-variant="warning"][data-border-accent] {
+    border-inline-start-color: var(--color-warning-fill-loud);
+}

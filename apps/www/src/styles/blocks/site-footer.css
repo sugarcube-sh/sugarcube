@@ -1,0 +1,13 @@
+.site-footer nav ul li {
+    margin-inline-start: 0;
+}
+
+.site-footer nav ul li a {
+    text-decoration: none;
+    color: var(--color-text-quiet);
+    transition: color var(--transition-normal) var(--ease-out);
+}
+
+.site-footer nav ul li a:hover {
+    color: var(--color-text-normal);
+}

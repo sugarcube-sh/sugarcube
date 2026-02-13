@@ -1,0 +1,9 @@
+{
+  "name": "static",
+  "type": "tokens",
+  "path": "tokens/starter-kits/static/space.json",
+  "content": "{\n  \"space\": {\n    \"$type\": \"dimension\",\n    \"3xs\": {\n      \"$value\": {\n        \"value\": 0.25,\n        \"unit\": \"rem\"\n      }\n    },\n    \"2xs\": {\n      \"$value\": {\n        \"value\": 0.5,\n        \"unit\": \"rem\"\n      }\n    },\n    \"xs\": {\n      \"$value\": {\n        \"value\": 0.75,\n        \"unit\": \"rem\"\n      }\n    },\n    \"sm\": {\n      \"$value\": {\n        \"value\": 1,\n        \"unit\": \"rem\"\n      }\n    },\n    \"md\": {\n      \"$value\": {\n        \"value\": 1.5,\n        \"unit\": \"rem\"\n      }\n    },\n    \"lg\": {\n      \"$value\": {\n        \"value\": 2,\n        \"unit\": \"rem\"\n      }\n    },\n    \"xl\": {\n      \"$value\": {\n        \"value\": 3,\n        \"unit\": \"rem\"\n      }\n    },\n    \"2xl\": {\n      \"$value\": {\n        \"value\": 4,\n        \"unit\": \"rem\"\n      }\n    },\n    \"3xl\": {\n      \"$value\": {\n        \"value\": 6,\n        \"unit\": \"rem\"\n      }\n    }\n  }\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

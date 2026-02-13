@@ -1,0 +1,53 @@
+<button
+    class="button"
+    data-appearance="outlined"
+    onclick="document.getElementById('dialog-example').showModal()"
+>
+    Open Dialog
+</button>
+<dialog class="dialog flow" id="dialog-example" closedby="any">
+    <h3 class="dialog-title text-lg font-semibold">Edit profile</h3>
+    <p class="dialog-description flow-space-2xs text-sm text-quiet">
+        Make changes to your profile here. Click save when you're done.
+    </p>
+    <div class="flow">
+        <div>
+            <label for="name-1" class="label">Name</label>
+            <input
+                type="text"
+                id="name-1"
+                name="name"
+                class="input"
+                value="Pedro Duarte"
+                placeholder="Name"
+                data-size="sm"
+            />
+        </div>
+        <div class="flow-space-2xs">
+            <label for="username-1" class="label">Username</label>
+            <input
+                type="text"
+                id="username-1"
+                name="username"
+                class="input"
+                value="@peduarte"
+                data-size="sm"
+            />
+        </div>
+    </div>
+    <div class="cluster justify-end gap-2xs">
+        <button
+            class="button"
+            data-appearance="outlined"
+            onclick="document.getElementById('dialog-example').close()"
+        >
+            Close
+        </button>
+        <button
+            class="button"
+            onclick="document.getElementById('dialog-example').close()"
+        >
+            Confirm
+        </button>
+    </div>
+</dialog>

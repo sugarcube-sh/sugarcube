@@ -1,0 +1,52 @@
+.collapsible {
+    position: relative;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.collapsible[data-state="collapsed"] .collapsible-content {
+    max-height: var(--collapsible-height, 16rem);
+    overflow: hidden;
+}
+
+.collapsible[data-state="collapsed"]::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 20rem;
+    background: linear-gradient(to bottom, transparent, var(--ec-frm-edBg));
+    pointer-events: none;
+}
+
+.collapsible[data-state="expanded"] .collapsible-content {
+    max-height: none;
+}
+
+.collapsible-trigger {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 3rem;
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--ec-frm-edActTabFg);
+    z-index: var(--z-raised);
+    font-weight: var(--font-weight-medium);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.collapsible-trigger:hover {
+    color: color-mix(in oklab, var(--ec-frm-edActTabFg) 50%, #ffffff);
+}
+
+.collapsible[data-state="expanded"] .collapsible-trigger {
+    position: relative;
+    background: var(--ec-frm-edBg);
+}

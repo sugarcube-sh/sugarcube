@@ -1,0 +1,18 @@
+{
+  "name": "switch",
+  "type": "component",
+  "path": "components/switch/css/switch.css",
+  "content": ".switch {\n    --scale: 1;\n    --_switch-height: calc(1rem * var(--scale));\n    --_switch-width: calc(1.85rem * var(--scale));\n    --_switch-thumb-travel: calc(var(--_switch-width) - var(--_switch-height));\n    --_switch-thumb-size: calc(var(--_switch-height) - var(--form-control-border-width) * 2);\n\n    appearance: none;\n    cursor: pointer;\n    position: relative;\n    width: var(--_switch-width);\n    height: var(--_switch-height);\n    border-radius: var(--radius-full);\n    background-color: var(--color-surface-lowest);\n    border: 1px var(--border-style) #0000;\n    transition: background-color var(--transition-normal) var(--ease-in-out);\n}\n\n.switch::before {\n    content: \"\";\n    position: absolute;\n    left: 0;\n    width: var(--_switch-thumb-size);\n    height: var(--_switch-thumb-size);\n    border: var(--form-control-border-width) var(--border-style) #0000;\n    border-radius: var(--radius-full);\n    background-color: var(--color-surface-default);\n    box-shadow: var(--shadow-sm);\n    transition: transform var(--transition-normal) var(--ease-in-out);\n}\n\n.switch:checked {\n    background-color: var(--color-accent-fill-loud, var(--color-neutral-fill-loud));\n}\n\n.switch:checked::before {\n    transform: translateX(var(--_switch-thumb-travel));\n}\n\n.switch:checked::after {\n    mask: none;\n    background-color: var(--color-accent-fill-loud, var(--color-neutral-fill-loud));\n}\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "css-only": [],
+    "react": []
+  },
+  "registryDependencies": {
+    "css-only": [],
+    "react": []
+  }
+}

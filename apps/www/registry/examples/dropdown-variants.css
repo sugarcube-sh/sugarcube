@@ -1,0 +1,11 @@
+.dropdown-menu-item[data-variant="error"] {
+    color: var(--color-rose-600);
+}
+
+.dropdown-menu-item[data-variant="error"]:hover {
+    background-color: var(--color-error-fill-normal, var(--color-neutral-fill-normal));
+}
+
+.dropdown-menu-item[data-variant="error"] svg {
+    color: var(--color-rose-600);
+}

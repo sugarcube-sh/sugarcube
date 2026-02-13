@@ -1,0 +1,76 @@
+---
+title: Checkbox
+description: A checkbox component.
+---
+
+import CheckboxDemo from "@/registry/examples/checkbox-demo.astro";
+import CheckboxDisabled from "@/registry/examples/checkbox-disabled.astro";
+import CheckboxSizes from "@/registry/examples/checkbox-sizes.astro";
+import CheckboxHint from "@/registry/examples/checkbox-hint.astro";
+import CheckboxCard from "@/registry/examples/checkbox-card.astro";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <CheckboxDemo />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/checkbox-demo.astro" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components checkbox -f css-only" />
+
+## Source Code
+
+<SourceCode path="@/registry/components/checkbox/css/checkbox.css" collapsible={true} />
+
+## Usage
+
+Apply the `.checkbox` class to checkbox input elements:
+
+```html
+<input type="checkbox" class="checkbox" id="check1" />
+<label for="check1">Accept terms</label>
+```
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the checkbox component. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Disabled
+
+<ComponentDemo>
+    <CheckboxDisabled />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/checkbox-disabled.astro" />
+
+### Sizes
+
+<ComponentDemo>
+    <CheckboxSizes />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/checkbox-sizes.astro",
+    "@/registry/examples/checkbox-sizes-css-only.css"
+]} />
+
+### With hint
+
+<ComponentDemo>
+    <CheckboxHint />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/checkbox-hint.astro" />
+
+### Card style
+
+<ComponentDemo>
+    <CheckboxCard />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/checkbox-card.astro",
+    "@/registry/examples/checkbox-card-css-only.css"
+]} />

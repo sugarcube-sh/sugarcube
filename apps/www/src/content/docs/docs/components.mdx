@@ -1,0 +1,98 @@
+---
+title: Components
+---
+
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+import Table from "@/src/components/Table.astro";
+
+Sugarcube maintains a registry of components that you can copy into your project. They're designed to work naturally with token-driven frontends and are available as **React** and **CSS-only** components. **Web components** for framework agnosticism are a priority and soon to enter active development.
+
+## Not a component library
+
+Rather than shipping as packages you install, sugarcube copies components into your project as source files. Similar to [shadcn/ui](https://ui.shadcn.com), sugarcube isn't a component library — it's how you build your component library.
+
+## Adding components
+
+Use the `components` command to add components to your project:
+
+<PackageManagerTabs command="sugarcube components" />
+
+Running without arguments prompts you to select a framework and components. 
+
+To skip prompts, pass component names and the `--framework` flag:
+
+<PackageManagerTabs command="sugarcube components button card --framework react" />
+
+See [the CLI reference](/docs/reference/cli-commands) for full command options.
+
+**Alternatively**, you can copy component code directly from the [component documentation](/docs/components). Each component page includes the full source code that you can copy and paste into your project.
+
+## File output
+
+When you add components, both the component implementation files and their CSS files are copied together to the same location.
+
+For example, adding a `button` component creates:
+- `src/ui/components/button/button.tsx`
+- `src/ui/components/button/button.css`
+
+### Customizing output locations
+
+You can customize where components are installed two different ways:
+
+1. **Using the `--components-dir` flag**:
+
+    <PackageManagerTabs command="sugarcube components --components-dir custom-components-dir" />
+
+2. **In your config file**:
+   ```ts title="sugarcube.config.ts" ins={5} del={4}
+   import { defineConfig } from "@sugarcube-sh/cli";
+
+   export default defineConfig({
+     output: {
+       components: "src/components",
+       cssRoot: "src/styles"
+     }
+   });
+   ```
+
+<SiteAside type="note">
+    The `--components-dir` flag takes precedence over the config file and will update your config if the value differs.
+</SiteAside>
+
+## Components & design tokens
+
+Components in the sugarcube registry are designed to work with design tokens. They ship with stylesheets that use CSS variables generated from your design tokens:
+
+```css title="components/button/button.css"
+.button {
+    background-color: var(--color-fill-solid);
+    color: var(--color-on-solid);
+    ...
+}
+```
+
+This means practicing [design-token-driven development](/docs/tokens#token-driven-development) becomes natural with sugarcube. To change a component's appearance, simply edit your design tokens.
+
+<SiteAside type="caution">
+    The CSS variable names that sugarcube components consume are based on tokens from sugarcube's [starter kits](/docs/starter-kits). If you're not using a starter kit, you'll need to update the component stylesheets to use your CSS variable names.
+</SiteAside>
+
+### Editing component styles
+
+Since components are source files in your project, you can edit their CSS directly. __The stylesheets that ship with components provide a foundation to build on; you're not locked in__.
+
+{/* ## Component dependencies
+
+You might be wondering: if sugarcube keeps APIs minimal and avoids dependencies, how do the React components work? Complex components like dialogs and accordions need accessibility features, keyboard navigation, and focus management.
+
+Sugarcube's React components use [Radix UI](https://www.radix-ui.com) primitives under the hood (with [Base UI](https://https://base-ui.com/) versions planned). Radix provides the accessibility and behavior layer, while sugarcube provides the styling layer that connects to your design tokens.
+
+**The key difference:** You have the source code. When you copy a component into your project, you can see exactly how it uses Radix. You can modify it, remove the dependency if you prefer something else, or keep it as-is. The components are thin wrappers that pass through Radix's props directly — sugarcube doesn't add another layer of opinionated APIs on top.
+
+So yes, there are dependencies and APIs, but they're transparent and under your control. You're not locked into sugarcube's choices the way you would be with a packaged component library. */}
+
+## Next steps
+
+Now that you understand components, you can:
+- Browse [React components](/docs/components/react/accordion) and [CSS-only components](/docs/components/css-only/accordion).
+- [Add CUBE CSS](/docs/cube-css) for consistent styling patterns.

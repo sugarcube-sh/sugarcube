@@ -1,0 +1,75 @@
+---
+title: Input
+description: An input component.
+---
+import { InputDemo } from "@/registry/examples/input-demo.tsx";
+import { InputWithIconDemo } from "@/registry/examples/input-with-icon.tsx";
+import { InputSizesDemo } from "@/registry/examples/input-sizes.tsx";
+import { InputAppearancesDemo } from "@/registry/examples/input-appearances.tsx";
+import { InputStatesDemo } from "@/registry/examples/input-states";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <InputDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/input-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components input -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/input/react/input.tsx",
+    "@/registry/components/input/react/input.css"
+]} collapsible={true} />
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the input component. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+{/* ### Input with Icon
+
+You can wrap the `Input` component in a div to add icons, buttons, or other elements inside the input's visual appearance. The wrapper provides the border, shadow, and styling, while the input itself is borderless:
+
+<ComponentDemo>
+    <InputWithIconDemo client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/input-with-icon.tsx",
+    "@/registry/examples/input-with-icon.css"
+]} /> */}
+
+### Sizes
+
+You can add size variants using data attributes. This example shows how you might implement different input sizes:
+
+<ComponentDemo>
+    <InputSizesDemo client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/input-sizes.tsx",
+    "@/registry/examples/input-sizes.css"
+]} />
+
+### Appearances
+
+<ComponentDemo>
+    <InputAppearancesDemo client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/input-appearances.tsx",
+    "@/registry/examples/input-appearances.css"
+]} />
+
+### States
+
+<ComponentDemo>
+    <InputStatesDemo client:load />
+</ComponentDemo>

@@ -1,0 +1,20 @@
+{
+  "name": "card",
+  "type": "component",
+  "path": "components/card/react/card.tsx",
+  "content": "import type * as React from \"react\";\n\nimport cn from \"clsx\";\n\nfunction Card({ className, ...props }: React.ComponentProps<\"div\">) {\n    return <div className={cn(\"card\", className)} {...props} />;\n}\n\nfunction CardHeader({ className, ...props }: React.ComponentProps<\"div\">) {\n    return <div className={cn(\"card-header\", className)} {...props} />;\n}\n\nfunction CardTitle({ className, ...props }: React.ComponentProps<\"div\">) {\n    return <div className={cn(\"card-title\", className)} {...props} />;\n}\n\nfunction CardDescription({ className, ...props }: React.ComponentProps<\"div\">) {\n    return <div className={cn(\"card-description\", className)} {...props} />;\n}\n\nfunction CardAction({ className, ...props }: React.ComponentProps<\"div\">) {\n    return <div className={cn(\"card-action\", className)} {...props} />;\n}\n\nfunction CardContent({ className, ...props }: React.ComponentProps<\"div\">) {\n    return <div className={cn(\"card-content\", className)} {...props} />;\n}\n\nfunction CardMedia({ className, ...props }: React.ComponentProps<\"div\">) {\n    return <div className={cn(\"card-media\", className)} {...props} />;\n}\n\nfunction CardFooter({ className, ...props }: React.ComponentProps<\"div\">) {\n    return <div className={cn(\"card-footer\", className)} {...props} />;\n}\n\nexport {\n    Card,\n    CardHeader,\n    CardFooter,\n    CardTitle,\n    CardAction,\n    CardDescription,\n    CardContent,\n    CardMedia,\n};\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "react": [
+      "clsx"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

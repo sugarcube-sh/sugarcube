@@ -1,0 +1,38 @@
+{
+  "font.invalid.type.number": {
+    "$type": "fontFamily",
+    "$value": 123,
+    "$path": "font.invalid.type.number",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.invalid.type.object": {
+    "$type": "fontFamily",
+    "$value": { "name": "Arial" },
+    "$path": "font.invalid.type.object",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.invalid.array.mixed": {
+    "$type": "fontFamily",
+    "$value": ["Arial", 123, "sans-serif"],
+    "$path": "font.invalid.array.mixed",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.invalid.array.numbers": {
+    "$type": "fontFamily",
+    "$value": [1, 2, 3],
+    "$path": "font.invalid.array.numbers",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  }
+}

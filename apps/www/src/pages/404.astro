@@ -1,0 +1,23 @@
+---
+import BaseLayout from "@/src/layouts/BaseLayout.astro";
+
+const meta = {
+    title: "Page not found",
+    description: "The page you’re looking for doesn’t exist.",
+};
+---
+
+<BaseLayout meta={meta}>
+    <article class="region region-space-xl px-lg">
+        <div class="flow measure-short">
+            <h1>Page not found</h1>
+            <p>
+                We couldn’t find the page you were looking for. Check the URL
+                for typos or head back to the homepage.
+            </p>
+            <div class="cluster cluster-gap-sm">
+                <a class="site-button" href="/">Go home</a>
+            </div>
+        </div>
+    </article>
+</BaseLayout>

@@ -1,0 +1,39 @@
+---
+import CodeBlock from "@/src/components/CodeBlock.astro";
+// import pkg from "../../../../packages/sugarcube/package.json";
+---
+
+<section class="site-hero region region-space-md">
+    <div class="flow">
+        <!-- <a
+            href="https://github.com/sugarcube-sh/sugarcube/releases"
+            class="badge decoration-none"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            v{pkg.version}
+        </a> -->
+        <h1 class="flow-space-xs">
+            The toolkit for seriously sweet front ends
+        </h1>
+        <p class="text-lg flow-space-sm">
+            Build front ends your team can grow with confidence.
+        </p>
+        <div class="flow flow-space-xl">
+            <CodeBlock>
+                <span class="text-quieter mr-3xs">$</span> pnpm dlx @sugarcube-sh/cli
+                init</CodeBlock
+            >
+            <div class="flow-space-sm">
+                <div>
+                    <a
+                        class="site-button"
+                        href="/docs/setup"
+                        data-size="sm"
+                        class="site-button">Get Started</a
+                    >
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

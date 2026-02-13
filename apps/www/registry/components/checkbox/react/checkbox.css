@@ -1,0 +1,64 @@
+.checkbox {
+    /* Scale multiplier: Converts rem-based tokens to proportionally scale with font-size. */
+    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+
+    --checked-icon-color: var(--color-accent-on-loud);
+    --checked-icon-scale: 0.9;
+
+    font: inherit;
+    font-size: var(--form-control-font-size, var(--text-base));
+    appearance: none;
+    margin: 0;
+    background: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    width: calc(var(--form-control-toggle-size) * var(--scale));
+    height: calc(var(--form-control-toggle-size) * var(--scale));
+    background-color: var(--input-bg);
+    border: var(--form-control-border-width) var(--form-control-border-style)
+        var(--form-control-border-color);
+    border-radius: min(
+        calc(var(--form-control-toggle-size) * 0.375 * var(--scale)),
+        var(--radius-md)
+    );
+    box-shadow: var(--shadow-xs);
+    outline-style: none;
+    transition-property: border-color, box-shadow;
+    transition-timing-function: var(--ease-out);
+    transition-duration: var(--transition-normal);
+}
+
+.checkbox[data-state="checked"] {
+    background-color: var(--form-control-activated-color);
+    border-color: var(--form-control-activated-color);
+}
+
+.checkbox[data-state="checked"]:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--form-control-activated-color) 40%, transparent);
+    border-color: var(--form-control-activated-color);
+}
+
+.checkbox:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-neutral-400) 25%, transparent);
+    border-color: var(--color-neutral-400);
+}
+
+.checkbox:disabled,
+.checkbox:disabled + .label {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.checkbox .checkbox-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.checkbox .checkbox-indicator svg {
+    color: var(--checked-icon-color);
+    scale: var(--checked-icon-scale);
+    stroke-width: 3;
+}

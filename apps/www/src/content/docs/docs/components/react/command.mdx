@@ -1,0 +1,39 @@
+---
+title: Command
+description: A command component.
+---
+import { CommandDemo } from "@/registry/examples/command-demo.tsx";
+import { CommandDialogDemo } from "@/registry/examples/command-dialog.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <CommandDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/command-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components command -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/command/react/command.tsx",
+    "@/registry/components/command/react/command.css"
+]} collapsible={true} />
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the command component. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Command Dialog
+
+<ComponentDemo>
+    <CommandDialogDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/command-dialog.tsx" />

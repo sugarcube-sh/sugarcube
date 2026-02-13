@@ -1,0 +1,59 @@
+---
+title: Card
+description: A card component.
+---
+
+import CardDemo from "@/registry/examples/card-demo.astro";
+import CardStructure from "@/registry/examples/card-structure.astro";
+import CardMedia from "@/registry/examples/card-media.astro";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <CardDemo />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/card-demo.astro" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components card -f css-only" />
+
+## Source Code
+
+<SourceCode path="@/registry/components/card/css/card.css" collapsible={true} />
+
+## Usage
+
+Apply the `.card` class to a container:
+
+```html
+<div class="card">
+  <h3>Card Title</h3>
+  <p>Card content goes here.</p>
+</div>
+```
+
+<SiteAside type="note">
+     The card component is intentionally minimal — it's little more than a container with basic styling (border, border-radius, background, and shadow). The optional structure classes (`.card-header`, `.card-content`, `.card-footer`) only provide padding and layout hints. For colors, spacing, typography, and other visual styling, use utility classes or your own custom CSS. This keeps the card flexible and adaptable — a starting point for your own card component.
+</SiteAside>
+
+### Using structure classes
+
+The structure classes are optional and only provide consistent padding. You can use them when you need structured sections:
+
+<ComponentDemo>
+    <CardStructure />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/card-structure.astro" />
+
+### With media
+
+The `.card-media` class handles image overflow and border radius:
+
+<ComponentDemo>
+    <CardMedia />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/card-media.astro" />
+

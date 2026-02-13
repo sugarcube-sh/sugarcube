@@ -1,0 +1,105 @@
+---
+title: Button
+description: A button component.
+---
+import { ButtonDemo } from "@/registry/examples/button-demo.tsx";
+import { ButtonVariants } from "@/registry/examples/button-variants.tsx";
+import { ButtonAppearances } from "@/registry/examples/button-appearances.tsx";
+import { ButtonSizes } from "@/registry/examples/button-sizes.tsx";
+import { ButtonWithIcons } from "@/registry/examples/button-with-icons.tsx";
+import { ButtonIconOnly } from "@/registry/examples/button-icon-only.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import { Aside } from "@astrojs/starlight/components";
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <ButtonDemo />
+</ComponentDemo>
+<SourceCode paths={["@/registry/examples/button-demo.tsx"]} collapsible={false} />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components button -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/button/react/button.tsx",
+    "@/registry/components/button/react/button.css"
+]} collapsible={true} />
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the button component with variants, appearances, and sizes. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Variants
+
+You can add color variants using data attributes. This example shows how you might implement variants using CSS custom properties:
+
+<ComponentDemo>
+    <ButtonVariants />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/button-variants.tsx",
+    "@/registry/examples/button-variants.css"
+]} />
+
+
+### Appearances
+
+You can add different visual appearances using data attributes. This example shows how you might implement different button styles:
+
+<ComponentDemo>
+    <ButtonAppearances />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/button-appearances.tsx",
+    "@/registry/examples/button-appearances.css"
+]} />
+
+### Sizes
+
+You can add size variants using utility classes. This example shows how you might implement different button sizes:
+
+<ComponentDemo>
+    <ButtonSizes />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/button-sizes.tsx",
+    "@/registry/examples/button-sizes.css"
+]} />
+
+### With icons
+
+The button component works well with icons. You can add icons before or after the button text:
+
+<ComponentDemo>
+    <ButtonWithIcons />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/button-with-icons.tsx",
+    "@/registry/examples/button-with-icons.css"
+]} />
+
+### Icon only
+
+You can create icon-only buttons using the `is-icon-only` utility class. This works with any appearance:
+
+<ComponentDemo>
+    <ButtonIconOnly />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/button-icon-only.tsx",
+    "@/registry/examples/icon-only.css"
+]} />
+
+
+
+
+
+

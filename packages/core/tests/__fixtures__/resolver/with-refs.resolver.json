@@ -1,0 +1,42 @@
+{
+  "version": "2025.10",
+  "name": "With References",
+  "sets": {
+    "foundation": {
+      "description": "Foundation tokens",
+      "sources": [
+        {
+          "color": {
+            "black": { "$type": "color", "$value": "#000000" },
+            "white": { "$type": "color", "$value": "#ffffff" }
+          }
+        }
+      ]
+    }
+  },
+  "modifiers": {
+    "theme": {
+      "description": "Theme variations",
+      "default": "light",
+      "contexts": {
+        "light": [
+          {
+            "color": {
+              "background": { "$type": "color", "$value": "{color.white}" },
+              "text": { "$type": "color", "$value": "{color.black}" }
+            }
+          }
+        ],
+        "dark": [
+          {
+            "color": {
+              "background": { "$type": "color", "$value": "{color.black}" },
+              "text": { "$type": "color", "$value": "{color.white}" }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "resolutionOrder": [{ "$ref": "#/sets/foundation" }, { "$ref": "#/modifiers/theme" }]
+}

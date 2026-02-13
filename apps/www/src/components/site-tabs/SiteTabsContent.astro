@@ -1,0 +1,21 @@
+---
+/**
+ * SiteTabsContent.astro
+ * Individual site tab content panel
+ */
+
+interface Props {
+    value: string;
+    class?: string;
+}
+
+const { value, class: className } = Astro.props;
+---
+
+<div
+    data-site-tabs-content
+    data-value={value}
+    class:list={["site-tabs-content", className]}
+>
+    <slot />
+</div>

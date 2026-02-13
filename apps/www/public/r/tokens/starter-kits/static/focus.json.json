@@ -1,0 +1,9 @@
+{
+  "name": "static",
+  "type": "tokens",
+  "path": "tokens/starter-kits/static/focus.json",
+  "content": "{\n  \"focus\": {\n    \"ring\": {\n      \"color\": { \"$type\": \"color\", \"$value\": \"{color.accent.fill.loud}\" },\n      \"offset\": { \"$type\": \"dimension\", \"$value\": { \"value\": 4, \"unit\": \"px\" } },\n      \"width\": { \"$type\": \"dimension\", \"$value\": { \"value\": 2, \"unit\": \"px\" } },\n      \"style\": { \"$type\": \"strokeStyle\", \"$value\": \"solid\" }\n    }\n  }\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

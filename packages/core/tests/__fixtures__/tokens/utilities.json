@@ -1,0 +1,73 @@
+{
+  "color": {
+    "primary": {
+      "$type": "color",
+      "$value": "#000000"
+    },
+    "secondary": {
+      "$type": "color",
+      "$value": "#ffffff"
+    }
+  },
+  "surface": {
+    "primary": {
+      "$type": "color",
+      "$value": "#f5f5f5"
+    },
+    "secondary": {
+      "$type": "color",
+      "$value": "#e0e0e0"
+    },
+    "tertiary": {
+      "$type": "color",
+      "$value": "#d0d0d0"
+    }
+  },
+  "border": {
+    "primary": {
+      "$type": "border",
+      "$value": {
+        "color": "#000000",
+        "width": "1px",
+        "style": "solid"
+      }
+    }
+  },
+  "shadow": {
+    "primary": {
+      "$type": "shadow",
+      "$value": {
+        "color": "#000000",
+        "offsetX": "0px",
+        "offsetY": "4px",
+        "blur": "8px",
+        "spread": "0px"
+      }
+    }
+  },
+  "gradient": {
+    "primary": {
+      "$type": "gradient",
+      "$value": [
+        {
+          "color": "#000000",
+          "position": 0
+        },
+        {
+          "color": "#ffffff",
+          "position": 1
+        }
+      ]
+    }
+  },
+  "dimension": {
+    "4": {
+      "$type": "dimension",
+      "$value": "1rem"
+    },
+    "8": {
+      "$type": "dimension",
+      "$value": "2rem"
+    }
+  }
+}

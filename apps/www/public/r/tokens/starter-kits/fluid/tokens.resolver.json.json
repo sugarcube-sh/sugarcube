@@ -1,0 +1,9 @@
+{
+  "name": "fluid",
+  "type": "tokens",
+  "path": "tokens/starter-kits/fluid/tokens.resolver.json",
+  "content": "{\n  \"version\": \"2025.10\",\n  \"resolutionOrder\": [\n    {\n      \"type\": \"set\",\n      \"name\": \"base\",\n      \"sources\": [\n        { \"$ref\": \"./palette.json\" },\n        { \"$ref\": \"./colors.json\" },\n        { \"$ref\": \"./borders.json\" },\n        { \"$ref\": \"./containers.json\" },\n        { \"$ref\": \"./corners.json\" },\n        { \"$ref\": \"./cube.json\" },\n        { \"$ref\": \"./elevation.json\" },\n        { \"$ref\": \"./focus.json\" },\n        { \"$ref\": \"./form-controls.json\" },\n        { \"$ref\": \"./motion.json\" },\n        { \"$ref\": \"./panels.json\" },\n        { \"$ref\": \"./shadows.json\" },\n        { \"$ref\": \"./size.json\" },\n        { \"$ref\": \"./space.json\" },\n        { \"$ref\": \"./typography.json\" }\n      ]\n    },\n    {\n      \"type\": \"modifier\",\n      \"name\": \"mode\",\n      \"default\": \"light\",\n      \"contexts\": {\n        \"light\": [],\n        \"dark\": [{ \"$ref\": \"./dark.json\" }]\n      }\n    }\n  ]\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

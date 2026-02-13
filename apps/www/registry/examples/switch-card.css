@@ -1,0 +1,23 @@
+.switch-card {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--space-xs);
+    align-items: center;
+    border-radius: var(--panel-radius);
+    border: var(--panel-border-width) var(--border-style) var(--panel-border-color);
+    padding: var(--space-xs);
+    transition: all 250ms ease;
+}
+
+.switch-card:has(.switch[data-state="checked"]) {
+    border-color: var(--color-accent-border-quiet, var(--panel-border-color));
+    background-color: var(--color-accent-fill-normal, var(--color-neutral-fill-normal));
+}
+
+.switch-card:has(.switch:not([data-state="checked"])):hover {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+}
+
+.switch-card .switch[data-state="checked"] {
+    --switch-bg-checked: var(--color-accent-fill-loud, var(--color-neutral-fill-loud));
+}

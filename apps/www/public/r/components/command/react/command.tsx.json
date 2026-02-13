@@ -1,0 +1,22 @@
+{
+  "name": "command",
+  "type": "component",
+  "path": "components/command/react/command.tsx",
+  "content": "\"use client\";\n\nimport cn from \"clsx\";\nimport { Command as CommandPrimitive } from \"cmdk\";\nimport { SearchIcon } from \"lucide-react\";\n\nimport {\n    Dialog,\n    DialogContent,\n    DialogDescription,\n    DialogTitle,\n} from \"@/registry/components/dialog/react/dialog\";\n\nfunction Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {\n    return <CommandPrimitive data-slot=\"command\" className={cn(\"command\", className)} {...props} />;\n}\n\nfunction CommandDialog({\n    title = \"Command Palette\",\n    description = \"Search for a command to run...\",\n    children,\n    className,\n    showCloseButton = true,\n    ...props\n}: React.ComponentProps<typeof Dialog> & {\n    title?: string;\n    description?: string;\n    className?: string;\n    showCloseButton?: boolean;\n}) {\n    return (\n        <Dialog {...props}>\n            <DialogTitle className=\"visually-hidden\">{title}</DialogTitle>\n            <DialogDescription className=\"visually-hidden\">{description}</DialogDescription>\n            <DialogContent className={cn(className)}>\n                <Command className=\"\">{children}</Command>\n            </DialogContent>\n        </Dialog>\n    );\n}\n\nfunction CommandInput({\n    className,\n    ...props\n}: React.ComponentProps<typeof CommandPrimitive.Input>) {\n    return (\n        <div data-slot=\"command-input-wrapper\" className=\"command-input-wrapper\">\n            <SearchIcon />\n            <CommandPrimitive.Input\n                data-slot=\"command-input\"\n                className={cn(\"command-input\", className)}\n                {...props}\n            />\n        </div>\n    );\n}\n\nfunction CommandList({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.List>) {\n    return (\n        <CommandPrimitive.List\n            data-slot=\"command-list\"\n            className={cn(\"command-list\", className)}\n            {...props}\n        />\n    );\n}\n\nfunction CommandEmpty({ ...props }: React.ComponentProps<typeof CommandPrimitive.Empty>) {\n    return (\n        <CommandPrimitive.Empty data-slot=\"command-empty\" className=\"command-empty\" {...props} />\n    );\n}\n\nfunction CommandGroup({\n    className,\n    ...props\n}: React.ComponentProps<typeof CommandPrimitive.Group>) {\n    return (\n        <CommandPrimitive.Group\n            data-slot=\"command-group\"\n            className={cn(\"command-group\", className)}\n            {...props}\n        />\n    );\n}\n\nfunction CommandSeparator({\n    className,\n    ...props\n}: React.ComponentProps<typeof CommandPrimitive.Separator>) {\n    return (\n        <CommandPrimitive.Separator\n            data-slot=\"command-separator\"\n            className={cn(\"command-separator\", className)}\n            {...props}\n        />\n    );\n}\n\nfunction CommandItem({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Item>) {\n    return (\n        <CommandPrimitive.Item\n            data-slot=\"command-item\"\n            className={cn(\"command-item\", className)}\n            {...props}\n        />\n    );\n}\n\nfunction CommandShortcut({ className, ...props }: React.ComponentProps<\"span\">) {\n    return (\n        <span\n            data-slot=\"command-shortcut\"\n            className={cn(\"command-shortcut\", className)}\n            {...props}\n        />\n    );\n}\n\nexport {\n    Command,\n    CommandDialog,\n    CommandInput,\n    CommandList,\n    CommandEmpty,\n    CommandGroup,\n    CommandItem,\n    CommandShortcut,\n    CommandSeparator,\n};\n",
+  "frameworks": [
+    "react"
+  ],
+  "dependencies": {
+    "react": [
+      "clsx",
+      "cmdk"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [
+      "dialog"
+    ],
+    "css-only": []
+  }
+}

@@ -1,0 +1,53 @@
+---
+title: Introduction
+description: Learn what sugarcube is, what it provides, and when you might want to use it.
+---
+
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+Sugarcube is a toolkit for building __design-token-driven front ends__. It transforms design tokens into CSS variables and just-in-time utility classes, and provides optional CSS architecture and components.
+
+## What sugarcube provides
+
+### Design tokens → CSS
+
+Define your design decisions as [DTCG-format](https://www.designtokens.org/tr/2025.10/) tokens. Sugarcube generates CSS variables and (optionally) utility classes from them. Change a token value, and have your CSS update accordingly.
+
+If you don't have tokens yet, sugarcube will add a complete [starter kit](/docs/starter-kits) during initialization.
+
+### CSS architecture (optional)
+
+Use the `cube` command to add [CUBE CSS](/docs/cube-css) to your project.
+
+### Components (optional)
+
+Add components from the [registry](/docs/components) to your project as source files.
+
+### Integration options
+
+Use the Vite plugin for live regeneration during development, or use the CLI to generate static CSS files you import directly (no runtime dependency).
+
+## Use what you need
+
+You don't have to use everything. Just want token-based CSS variables? Skip components and CUBE. Just want CUBE? Run `sugarcube cube` to add it to your project.
+
+## When to use sugarcube
+
+Sugarcube is a good fit when:
+
+- You're starting a project and want consistent front end foundations from the start
+- You're building or implementing a design system or component library
+- You have design tokens from Figma/Tokens Studio/etc. and want to generate CSS from them
+- You're refactoring an existing front end and want to introduce structure without rewriting everything
+
+## Get started
+
+Run the init command in your project:
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli init" />
+
+This detects your project settings, sets up tokens (or adds a starter kit), and generates your initial CSS.
+
+<SiteAside type="tip">
+    [Continue to the setup guide](/docs/setup) for full setup instructions.
+</SiteAside>

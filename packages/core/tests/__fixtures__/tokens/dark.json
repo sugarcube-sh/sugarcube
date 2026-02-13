@@ -1,0 +1,7 @@
+{
+  "button": {
+    "background": {
+      "surface": { "$value": "{color.primary}" }
+    }
+  }
+}

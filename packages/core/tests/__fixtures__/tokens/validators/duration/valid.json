@@ -1,0 +1,26 @@
+{
+  "duration.fast": {
+    "$type": "duration",
+    "$value": {
+      "value": 300,
+      "unit": "ms"
+    },
+    "$path": "duration.fast",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/duration.json"
+    }
+  },
+  "duration.slow": {
+    "$type": "duration",
+    "$value": {
+      "value": 1.5,
+      "unit": "s"
+    },
+    "$path": "duration.slow",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/duration.json"
+    }
+  }
+}

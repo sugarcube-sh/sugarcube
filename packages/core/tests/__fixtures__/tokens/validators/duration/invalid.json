@@ -1,0 +1,55 @@
+{
+  "duration.invalid.unit": {
+    "$type": "duration",
+    "$value": {
+      "value": 300,
+      "unit": "mins"
+    },
+    "$path": "duration.invalid.unit",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/duration.json"
+    }
+  },
+  "duration.invalid.value": {
+    "$type": "duration",
+    "$value": {
+      "value": "300",
+      "unit": "ms"
+    },
+    "$path": "duration.invalid.value",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/duration.json"
+    }
+  },
+  "duration.invalid.missing-unit": {
+    "$type": "duration",
+    "$value": {
+      "value": 300
+    },
+    "$path": "duration.invalid.missing-unit",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/duration.json"
+    }
+  },
+  "duration.invalid.structure.string": {
+    "$type": "duration",
+    "$value": "not-an-object",
+    "$path": "duration.invalid.structure.string",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/duration.json"
+    }
+  },
+  "duration.invalid.structure.array": {
+    "$type": "duration",
+    "$value": [300, "ms"],
+    "$path": "duration.invalid.structure.array",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/duration.json"
+    }
+  }
+}

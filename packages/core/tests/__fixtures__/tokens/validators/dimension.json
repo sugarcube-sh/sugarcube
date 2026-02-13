@@ -1,0 +1,58 @@
+{
+  "tokens.spacing.small": {
+    "$type": "dimension",
+    "$value": {
+      "value": 8,
+      "unit": "px"
+    },
+    "$path": "tokens.spacing.small",
+    "$source": { "file": "tokens" },
+    "$originalPath": "spacing.small"
+  },
+  "tokens.spacing.medium": {
+    "$type": "dimension",
+    "$value": {
+      "value": 1.5,
+      "unit": "rem"
+    },
+    "$path": "tokens.spacing.medium",
+    "$source": { "file": "tokens" },
+    "$originalPath": "spacing.medium"
+  },
+  "tokens.spacing.zero": {
+    "$type": "dimension",
+    "$value": {
+      "value": 0,
+      "unit": "px"
+    },
+    "$path": "tokens.spacing.zero",
+    "$source": { "file": "tokens" },
+    "$originalPath": "spacing.zero"
+  },
+  "tokens.spacing.invalid.unit": {
+    "$type": "dimension",
+    "$value": {
+      "value": 10,
+      "unit": "em"
+    },
+    "$path": "tokens.spacing.invalid.unit",
+    "$source": { "file": "tokens" },
+    "$originalPath": "spacing.invalid.unit"
+  },
+  "tokens.spacing.invalid.missing-unit": {
+    "$type": "dimension",
+    "$value": {
+      "value": 10
+    },
+    "$path": "tokens.spacing.invalid.type",
+    "$source": { "file": "tokens" },
+    "$originalPath": "spacing.invalid.type"
+  },
+  "tokens.spacing.invalid.type": {
+    "$type": "dimension",
+    "$value": "10px",
+    "$path": "tokens.spacing.invalid.type",
+    "$source": { "file": "tokens" },
+    "$originalPath": "spacing.invalid.type"
+  }
+}

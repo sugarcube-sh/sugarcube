@@ -1,0 +1,73 @@
+.site-card {
+    --inner-border-radius: calc(var(--panel-radius) - var(--panel-border-width));
+    position: relative;
+    background-color: var(--color-surface-raised);
+    border: var(--panel-border-width) var(--panel-border-style) var(--panel-border-color);
+    border-radius: var(--panel-radius);
+    box-shadow: var(--shadow-xs);
+}
+
+.site-card-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    padding-block-start: var(--space-md);
+    padding-inline: var(--space-md);
+    font-size: var(--text-lg);
+}
+
+.site-card-media {
+    display: flex;
+    overflow: hidden;
+    border-start-start-radius: var(--inner-border-radius);
+    border-start-end-radius: var(--inner-border-radius);
+}
+
+.site-card-content {
+    padding-block: var(--space-md);
+    padding-inline: var(--space-md);
+}
+
+.site-card-content a {
+    text-decoration-style: dotted;
+}
+
+.site-card-footer {
+    padding-block-end: var(--space-md);
+    padding-inline: var(--space-md);
+}
+
+.site-card[data-appearance="outlined"] {
+    background-color: transparent;
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    border-color: var(--color-border-normal, var(--color-neutral-border-normal));
+}
+
+.site-card[data-appearance="soft"] {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    border-color: transparent;
+}
+
+.site-card[data-appearance="soft-outlined"] {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    border-color: var(--color-border-normal, var(--color-neutral-border-normal));
+}
+
+.site-card[data-variant="neutral"] {
+    --color-fill-loud: var(--color-neutral-fill-loud);
+    --color-on-loud: var(--color-neutral-on-loud);
+    --color-border-normal: var(--color-neutral-border-normal);
+    --color-fill-normal: var(--color-neutral-fill-normal);
+    --color-on-normal: var(--color-neutral-on-normal);
+    --color-border-quiet: var(--color-neutral-border-quiet);
+}
+
+.site-card[data-variant="accent"] {
+    --color-fill-loud: var(--color-accent-fill-loud);
+    --color-on-loud: var(--color-accent-on-loud);
+    --color-border-normal: var(--color-accent-border-normal);
+    --color-fill-normal: var(--color-accent-fill-normal);
+    --color-on-normal: var(--color-accent-on-normal);
+    --color-border-quiet: var(--color-accent-border-quiet);
+}

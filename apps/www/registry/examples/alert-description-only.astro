@@ -1,0 +1,15 @@
+---
+import { Info } from "@lucide/astro";
+---
+
+<div class="flow w-full">
+    <div class="alert">
+        <Info class="icon" size={16} />
+        <div class="alert-description">
+            This alert has only a description, no title.
+        </div>
+    </div>
+    <div class="alert" data-variant="warning">
+        <div class="alert-description">This is a warning without a title.</div>
+    </div>
+</div>

@@ -1,0 +1,45 @@
+---
+import Icon from "@/src/components/Icons.astro";
+
+const frameworks = [
+    {
+        name: "Vite",
+        icon: "vite",
+        href: "/docs/vite",
+    },
+    {
+        name: "Astro",
+        icon: "astro",
+        href: "/docs/astro",
+    },
+    {
+        name: "11ty",
+        icon: "11ty",
+        href: "/docs/11ty",
+    },
+    {
+        name: "TanStack Start",
+        icon: "tanstack-start",
+        href: "/docs/tanstack-start",
+    },
+    // {
+    //     name: "TanStack Router",
+    //     icon: "tanstack-router",
+    //     href: "/docs/tanstack-router",
+    // },
+] as const;
+---
+
+<div class="not-content grid-auto">
+    {
+        frameworks.map((framework) => (
+            <a
+                href={framework.href}
+                class="site-card bg-surface-lowered flex flex-col items-center justify-center p-md decoration-none"
+            >
+                <Icon name={framework.icon} class="h-24 w-24" />
+                <p class="font-weight-medium">{framework.name}</p>
+            </a>
+        ))
+    }
+</div>

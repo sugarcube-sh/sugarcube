@@ -1,0 +1,20 @@
+{
+  "name": "popover",
+  "type": "component",
+  "path": "components/popover/react/popover.tsx",
+  "content": "import * as PopoverPrimitive from \"@radix-ui/react-popover\";\n\nimport cn from \"clsx\";\n\nfunction Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {\n    return <PopoverPrimitive.Root data-slot=\"popover\" {...props} />;\n}\n\nfunction PopoverTrigger({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {\n    return <PopoverPrimitive.Trigger data-slot=\"popover-trigger\" {...props} />;\n}\n\nfunction PopoverContent({\n    className,\n    align = \"center\",\n    sideOffset = 4,\n    ...props\n}: React.ComponentProps<typeof PopoverPrimitive.Content>) {\n    return (\n        <PopoverPrimitive.Portal>\n            <PopoverPrimitive.Content\n                data-slot=\"popover-content\"\n                align={align}\n                sideOffset={sideOffset}\n                className={cn(\"popover-content\", className)}\n                {...props}\n            />\n        </PopoverPrimitive.Portal>\n    );\n}\n\nfunction PopoverAnchor({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {\n    return <PopoverPrimitive.Anchor data-slot=\"popover-anchor\" {...props} />;\n}\n\nexport { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };\n",
+  "frameworks": [
+    "react"
+  ],
+  "dependencies": {
+    "react": [
+      "@radix-ui/react-popover",
+      "clsx"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

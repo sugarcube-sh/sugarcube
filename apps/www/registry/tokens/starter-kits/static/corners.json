@@ -1,0 +1,56 @@
+{
+  "radius": {
+    "$type": "dimension",
+    "button": { "$value": "{radius.md}" },
+    "input": { "$value": "{radius.md}" },
+    "none": { "$value": { "value": 0, "unit": "rem" } },
+    "sm": {
+      "$value": {
+        "value": 0.125,
+        "unit": "rem"
+      }
+    },
+    "md": {
+      "$value": {
+        "value": 0.25,
+        "unit": "rem"
+      }
+    },
+    "lg": {
+      "$value": {
+        "value": 0.5,
+        "unit": "rem"
+      }
+    },
+    "xl": {
+      "$value": {
+        "value": 0.75,
+        "unit": "rem"
+      }
+    },
+    "2xl": {
+      "$value": {
+        "value": 1,
+        "unit": "rem"
+      }
+    },
+    "3xl": {
+      "$value": {
+        "value": 1.5,
+        "unit": "rem"
+      }
+    },
+    "4xl": {
+      "$value": {
+        "value": 2,
+        "unit": "rem"
+      }
+    },
+    "full": {
+      "$value": {
+        "value": 9999,
+        "unit": "px"
+      }
+    }
+  }
+}

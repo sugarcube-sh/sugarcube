@@ -1,0 +1,72 @@
+{
+  "typography.invalid.type": {
+    "$type": "typography",
+    "$value": "not-an-object",
+    "$path": "typography.invalid.type",
+    "$source": { "file": "tokens/typography.json" },
+    "$originalPath": "typography.invalid.type"
+  },
+  "typography.missing.required": {
+    "$type": "typography",
+    "$value": {
+      "fontFamily": "Arial"
+    },
+    "$path": "typography.missing.required",
+    "$source": { "file": "tokens/typography.json" },
+    "$originalPath": "typography.missing.required"
+  },
+  "typography.invalid.font.family": {
+    "$type": "typography",
+    "$value": {
+      "fontFamily": 123,
+      "fontSize": {
+        "value": 16,
+        "unit": "px"
+      }
+    },
+    "$path": "typography.invalid.font.family",
+    "$source": { "file": "tokens/typography.json" },
+    "$originalPath": "typography.invalid.font.family"
+  },
+  "typography.invalid.font.size": {
+    "$type": "typography",
+    "$value": {
+      "fontFamily": "Arial",
+      "fontSize": {
+        "value": "16",
+        "unit": "em"
+      }
+    },
+    "$path": "typography.invalid.font.size",
+    "$source": { "file": "tokens/typography.json" },
+    "$originalPath": "typography.invalid.font.size"
+  },
+  "typography.invalid.letter.spacing": {
+    "$type": "typography",
+    "$value": {
+      "fontFamily": "Arial",
+      "fontSize": {
+        "value": 16,
+        "unit": "px"
+      },
+      "letterSpacing": "0.5px"
+    },
+    "$path": "typography.invalid.letter.spacing",
+    "$source": { "file": "tokens/typography.json" },
+    "$originalPath": "typography.invalid.letter.spacing"
+  },
+  "typography.invalid.line.height": {
+    "$type": "typography",
+    "$value": {
+      "fontFamily": "Arial",
+      "fontSize": {
+        "value": 16,
+        "unit": "px"
+      },
+      "lineHeight": "1.5"
+    },
+    "$path": "typography.invalid.line.height",
+    "$source": { "file": "tokens/typography.json" },
+    "$originalPath": "typography.invalid.line.height"
+  }
+}

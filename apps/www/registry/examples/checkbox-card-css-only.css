@@ -1,0 +1,19 @@
+.checkbox-card {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--space-xs);
+    background-color: var(--color-surface-default);
+    border-radius: var(--panel-radius);
+    border: var(--panel-border-width) var(--border-style) var(--panel-border-color);
+    padding: var(--space-xs);
+    transition: all 100ms ease;
+}
+
+.checkbox-card:hover {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+}
+
+.checkbox-card:has(input:checked) {
+    background-color: var(--color-accent-fill-normal);
+    border-color: var(--color-accent-border-quiet);
+}

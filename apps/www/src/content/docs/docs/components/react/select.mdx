@@ -1,0 +1,39 @@
+---
+title: Select
+description: A select component.
+---
+import { SelectDemo } from "@/registry/examples/select-demo.tsx";
+import { SelectScrollable } from "@/registry/examples/select-scrollable.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <SelectDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/select-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components select -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/select/react/select.tsx",
+    "@/registry/components/select/react/select.css"
+]} collapsible={true} />
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the select component. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Scrollable
+
+<ComponentDemo>
+    <SelectScrollable client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/select-scrollable.tsx" />

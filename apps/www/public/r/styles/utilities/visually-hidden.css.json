@@ -1,0 +1,9 @@
+{
+  "name": "utilities",
+  "type": "cube",
+  "path": "styles/utilities/visually-hidden.css",
+  "content": "/* \nVISUALLY HIDDEN UTILITY\nInfo: https://piccalil.li/quick-tip/visually-hidden/ \n*/\n.visually-hidden {\n    border: 0;\n    clip: rect(0 0 0 0);\n    height: 0;\n    margin: 0;\n    overflow: hidden;\n    padding: 0;\n    position: absolute;\n    width: 1px;\n    white-space: nowrap;\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

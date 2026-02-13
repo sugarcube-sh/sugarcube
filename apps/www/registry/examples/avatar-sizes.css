@@ -1,0 +1,15 @@
+.avatar[data-size="xs"] {
+    --avatar-size: 1.25rem;
+}
+
+.avatar[data-size="sm"] {
+    --avatar-size: 2rem;
+}
+
+.avatar[data-size="lg"] {
+    --avatar-size: 4rem;
+}
+
+.avatar[data-size="xl"] {
+    --avatar-size: 5rem;
+}

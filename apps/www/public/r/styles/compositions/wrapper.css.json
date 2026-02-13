@@ -1,0 +1,9 @@
+{
+  "name": "compositions",
+  "type": "cube",
+  "path": "styles/compositions/wrapper.css",
+  "content": "/*\nWRAPPER COMPOSITION \nA common wrapper/container\n\nCUSTOM PROPERTIES AND CONFIGURATION\n--wrapper-max-width: The maximum width of the wrapper\n\n--wrapper-padding-inline: The inline padding of the wrapper\n*/\n.wrapper {\n    margin-inline: auto;\n    max-width: var(--wrapper-max-width, 1360px);\n    padding-left: var(--wrapper-padding-inline, 1rem);\n    padding-right: var(--wrapper-padding-inline, 1rem);\n    position: relative;\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

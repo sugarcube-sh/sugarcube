@@ -1,0 +1,15 @@
+{
+  "font": {
+    "$type": "fontFamily",
+    "invalid": {
+      "$type": "fontFamily",
+      "type": {
+        "$type": "fontFamily",
+        "number": {
+          "$type": "fontFamily",
+          "$value": 123
+        }
+      }
+    }
+  }
+}

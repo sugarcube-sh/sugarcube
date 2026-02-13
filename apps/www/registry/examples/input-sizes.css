@@ -1,0 +1,39 @@
+.input[data-size="xs"] {
+    --scale: calc(var(--text-xs) / 1rem);
+    font-size: var(--text-xs);
+}
+
+.input[data-size="sm"] {
+    --scale: calc(var(--text-sm) / 1rem);
+    font-size: var(--text-sm);
+}
+
+.input[data-size="md"] {
+    --scale: calc(var(--text-base) / 1rem);
+    font-size: var(--text-base);
+}
+
+.input[data-size="lg"] {
+    --scale: calc(var(--text-lg) / 1rem);
+    font-size: var(--text-lg);
+}
+
+.label:has(+ .input[data-size="xs"]),
+.label:has(.input[data-size="xs"]) {
+    font-size: var(--text-xs);
+}
+
+.label:has(+ .input[data-size="sm"]),
+.label:has(.input[data-size="sm"]) {
+    font-size: var(--text-sm);
+}
+
+.label:has(+ .input[data-size="md"]),
+.label:has(.input[data-size="md"]) {
+    font-size: var(--text-base);
+}
+
+.label:has(+ .input[data-size="lg"]),
+.label:has(.input[data-size="lg"]) {
+    font-size: var(--text-lg);
+}

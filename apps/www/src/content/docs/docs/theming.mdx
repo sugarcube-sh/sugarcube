@@ -1,0 +1,267 @@
+---
+title: Theming
+---
+
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+Sugarcube supports theming through **modifiers** — named variations that override your base token values. A common example is a light/dark theme.
+
+## How modifiers work
+
+A modifier defines a set of **contexts** (like "light" and "dark"), each providing different token values. The default context's values go into `:root`, while other contexts generate CSS under attribute selectors like `[data-theme="dark"]`.
+
+## Defining a theme modifier
+
+Modifiers are defined in your [resolver document](/docs/resolver). Here's a basic light/dark theme:
+
+```json title="tokens.resolver.json"
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        { "$ref": "./colors.json" },
+        { "$ref": "./spacing.json" },
+        { "$ref": "./typography.json" }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [{ "$ref": "./dark.json" }]
+      }
+    }
+  ]
+}
+```
+
+This generates CSS variables like:
+
+```css
+:root {
+  --color-surface: #ffffff;
+  --color-text: #1a1a1a;
+}
+
+[data-theme="dark"] {
+  --color-surface: #1a1a1a;
+  --color-text: #ffffff;
+}
+```
+
+### Key concepts
+
+- **`name`**: The modifier name becomes the data attribute (`data-theme`)
+- **`default`**: The context whose values appear in `:root`
+- **`contexts`**: Each context maps to an array of token sources
+
+<SiteAside type="note">
+  The default context (here "light") doesn't need any sources — it uses the base token values. Only non-default contexts (like "dark") need override files.
+</SiteAside>
+
+## Using themes in HTML
+
+Set the data attribute to activate a theme:
+
+```html
+<html data-theme="dark">
+  <!-- entire document uses dark mode variables -->
+</html>
+```
+
+You can scope themes to specific containers:
+
+```html
+<div data-theme="dark">
+  <!-- only this section uses dark theme variables -->
+</div>
+```
+
+## Multiple theme contexts
+
+You can define more than two contexts:
+
+```json title="tokens.resolver.json"
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [{ "$ref": "./base.json" }]
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [{ "$ref": "./dark.json" }],
+        "high-contrast": [{ "$ref": "./high-contrast.json" }]
+      }
+    }
+  ]
+}
+```
+
+This generates:
+
+```css
+:root { /* light theme values */ }
+[data-theme="dark"] { /* dark overrides */ }
+[data-theme="high-contrast"] { /* high-contrast overrides */ }
+```
+
+## Brand themes
+
+The modifier name can be anything — it doesn't have to be "theme". For brand variations:
+
+```json title="tokens.resolver.json"
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [{ "$ref": "./base.json" }]
+    },
+    {
+      "type": "modifier",
+      "name": "brand",
+      "default": "default",
+      "contexts": {
+        "default": [],
+        "ocean": [{ "$ref": "./ocean.json" }],
+        "forest": [{ "$ref": "./forest.json" }]
+      }
+    }
+  ]
+}
+```
+
+This generates `[data-brand="ocean"]` and `[data-brand="forest"]` selectors:
+
+```html
+<html data-brand="ocean">
+  <!-- ocean brand colors -->
+</html>
+```
+
+## Multiple modifiers (brands with dark modes)
+
+You can use multiple modifiers together. A common pattern is having multiple brands where each brand needs its own dark mode:
+
+```json title="tokens.resolver.json"
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [{ "$ref": "./base.json" }]
+    },
+    {
+      "type": "modifier",
+      "name": "brand",
+      "default": "default",
+      "contexts": {
+        "default": [],
+        "ocean": [{ "$ref": "./ocean.json" }],
+        "forest": [{ "$ref": "./forest.json" }]
+      }
+    },
+    {
+      "type": "modifier",
+      "name": "mode",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [{ "$ref": "./dark.json" }],
+        "ocean-dark": [{ "$ref": "./ocean-dark.json" }],
+        "forest-dark": [{ "$ref": "./forest-dark.json" }]
+      }
+    }
+  ]
+}
+```
+
+This generates independent selectors for each modifier:
+
+```css
+:root { /* base + default brand + light mode */ }
+
+[data-brand="ocean"] { /* ocean brand overrides */ }
+[data-brand="forest"] { /* forest brand overrides */ }
+
+[data-mode="dark"] { /* default dark mode */ }
+[data-mode="ocean-dark"] { /* ocean-specific dark */ }
+[data-mode="forest-dark"] { /* forest-specific dark */ }
+```
+
+### Using multiple modifiers in HTML
+
+Combine the data attributes to apply both brand and mode:
+
+```html
+<!-- Ocean brand, light mode -->
+<html data-brand="ocean">
+
+<!-- Ocean brand, dark mode -->
+<html data-brand="ocean" data-mode="ocean-dark">
+
+<!-- Forest brand, dark mode -->
+<html data-brand="forest" data-mode="forest-dark">
+```
+
+<SiteAside type="note">
+  Since later CSS rules override earlier ones (when specificity is equal), your UI logic should coordinate the mode value with the brand. When using the ocean brand and toggling dark mode, set `data-mode="ocean-dark"` rather than `data-mode="dark"`.
+</SiteAside>
+
+### Why this pattern works
+
+CSS specificity makes this work correctly:
+- All attribute selectors have equal specificity
+- Modifiers are output in `resolutionOrder`, so `mode` CSS appears after `brand` CSS
+- When both `data-brand="ocean"` and `data-mode="ocean-dark"` are set, the mode's values win (which is what you want for dark mode overrides)
+
+## Token override files
+
+Override files are ordinary [DTCG tokens](/docs/tokens). They only need to include the tokens you want to change — everything else inherits from base:
+
+```json title="dark.json"
+{
+  "color": {
+    "surface": { "$value": "#1a1a1a" },
+    "text": { "$value": "#ffffff" }
+  }
+}
+```
+
+<SiteAside type="tip">
+  Keep override files focused. Only include tokens that actually change for that context. This makes it clear what each theme modifies and keeps files maintainable.
+</SiteAside>
+
+## Resolution order matters
+
+Modifiers in `resolutionOrder` are applied in sequence. Place your base set first, then modifiers:
+
+```json
+{
+  "resolutionOrder": [
+    { "type": "set", "name": "base", "sources": [...] },
+    { "type": "modifier", "name": "theme", ... }
+  ]
+}
+```
+
+Tokens from later entries override earlier ones. The modifier's context sources override the base set.
+
+## Learn more
+
+- [Resolver documents](/docs/resolver) — Full resolver specification
+- [Tokens](/docs/tokens) — DTCG token format

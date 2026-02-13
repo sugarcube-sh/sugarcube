@@ -1,0 +1,14 @@
+@import "@/registry/components/alert/css/alert.css";
+@import "@/registry/components/button/css/button.css";
+@import "@/registry/components/card/css/card.css";
+@import "@/registry/components/input/css/input.css";
+@import "@/registry/components/checkbox/css/checkbox.css";
+@import "@/registry/components/radio-group/css/radio-group.css";
+@import "@/registry/components/select/css/select.css";
+@import "@/registry/components/switch/css/switch.css";
+@import "@/registry/components/accordion/css/accordion.css";
+@import "@/registry/components/avatar/css/avatar.css";
+@import "@/registry/components/badge/css/badge.css";
+@import "@/registry/components/dialog/css/dialog.css";
+
+@import "./css-only-examples.css";

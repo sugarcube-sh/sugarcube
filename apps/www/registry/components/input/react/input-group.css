@@ -1,0 +1,109 @@
+/* InputGroup - The wrapper that provides visual appearance */
+.input-group {
+    display: flex;
+    align-items: center;
+    inline-size: 100%;
+    min-height: 2.5rem;
+    padding-inline: var(--space-xs, 0.75rem);
+    border: var(--form-control-border-width, 1px) var(--border-style, solid)
+        var(--form-control-border-color, #cdcdcd);
+    border-radius: var(--radius-input);
+    box-shadow: var(--shadow-xs);
+    background-color: var(--color-bg, Canvas);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+    gap: var(--space-2xs, 0.5rem);
+}
+
+/* Adjust height for textarea */
+.input-group:has(> textarea) {
+    min-height: auto;
+}
+
+/* Focus state - respond to child input focus */
+.input-group:has([data-slot="input-group-control"]:focus) {
+    --form-control-border-color: var(--color-text-primary, currentColor);
+    --focus-ring-color: var(--color-text-primary, currentColor);
+    outline: var(--focus-ring-width, 2px) var(--focus-ring-style, solid) var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset, 2px);
+}
+
+/* Error state - respond to child input with aria-invalid */
+.input-group:has([data-slot="input-group-control"][aria-invalid="true"]) {
+    --form-control-border-color: var(--color-rose-600);
+}
+
+.input-group:has([data-slot="input-group-control"][aria-invalid="true"]:focus) {
+    --focus-ring-color: var(--color-rose-600);
+}
+
+/* Disabled state */
+.input-group[data-disabled="true"] {
+    border-color: var(--color-bg-offset-3, #cdcdcd);
+    background-color: var(--color-bg-offset-3, #cdcdcd);
+    opacity: 0.5;
+}
+
+/* InputGroupInput - Reset all visual styles, wrapper handles appearance */
+/* Using .input.input-group-input for higher specificity to override base .input styles */
+.input.input-group-input {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding-inline: 0 !important;
+    padding-block: 0 !important;
+    min-height: auto !important;
+    inline-size: auto !important;
+    background-color: transparent !important;
+    flex: 1;
+}
+
+.input.input-group-input:focus {
+    outline: none !important;
+    --form-control-border-color: transparent;
+    --focus-ring-color: transparent;
+}
+
+/* Utility classes for common patterns - users can customize or replace these */
+.input-group-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--color-text-quiet, #a3a6b5);
+    cursor: pointer;
+}
+
+.input-group-icon svg:not([class*="size-"]) {
+    inline-size: 1rem;
+    block-size: 1rem;
+}
+
+.input-group-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: var(--space-3xs, 0.25rem);
+    border: none;
+    border-radius: calc(var(--radius-input) - 2px);
+    background-color: transparent;
+    color: var(--color-text-quiet, #a3a6b5);
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.input-group-button:hover {
+    background-color: var(--color-bg-offset-1);
+    color: var(--color-text-primary, currentColor);
+}
+
+.input-group-button:focus-visible {
+    outline: var(--focus-ring-width, 2px) var(--focus-ring-style, solid)
+        var(--focus-ring-color, currentColor);
+    outline-offset: 2px;
+}
+
+.input-group-button svg:not([class*="size-"]) {
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+}

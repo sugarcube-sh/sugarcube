@@ -1,0 +1,11 @@
+{
+  "version": "2025.10",
+  "name": "Invalid Source Test",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [{ "$ref": "tokens/nonexistent-file.json" }]
+    }
+  ]
+}

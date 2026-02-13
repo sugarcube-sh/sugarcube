@@ -1,0 +1,19 @@
+{
+  "name": "textarea",
+  "type": "component",
+  "path": "components/textarea/react/textarea.tsx",
+  "content": "import type * as React from \"react\";\n\nimport cn from \"clsx\";\n\nfunction Textarea({ className, ...props }: React.ComponentProps<\"textarea\">) {\n    return <textarea className={cn(\"textarea\", className)} {...props} />;\n}\n\nexport { Textarea };\n",
+  "frameworks": [
+    "react"
+  ],
+  "dependencies": {
+    "react": [
+      "clsx"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

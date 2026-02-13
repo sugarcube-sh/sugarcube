@@ -1,0 +1,43 @@
+@layer theme,
+    global,
+    starlight,
+    compositions,
+    blocks,
+    components,
+    utilities,
+    custom,
+    vendors,
+    sc-starlight,
+    overrides;
+
+@import "@/registry/styles/global/global.css" layer(global);
+@import "@/registry/styles/compositions/wrapper.css" layer(compositions);
+@import "@/registry/styles/compositions/flow.css" layer(compositions);
+@import "@/registry/styles/compositions/cluster.css" layer(compositions);
+@import "@/registry/styles/compositions/grid.css" layer(compositions);
+@import "@/registry/styles/compositions/repel.css" layer(compositions);
+@import "@/registry/styles/compositions/switcher.css" layer(compositions);
+@import "@/registry/styles/blocks/prose.css" layer(blocks);
+@import "@/registry/styles/blocks/doc.css" layer(blocks);
+@import "@/src/styles/blocks/readme.css" layer(blocks);
+@import "@/src/styles/blocks/site-head.css" layer(blocks);
+@import "@/src/styles/blocks/site-tabs.css" layer(blocks);
+@import "@/src/styles/blocks/site-alert.css" layer(blocks);
+@import "@/src/styles/blocks/site-table.css" layer(blocks);
+@import "@/src/styles/blocks/site-button.css" layer(blocks);
+@import "@/src/styles/blocks/site-card.css" layer(blocks);
+@import "@/src/styles/blocks/mode-toggle.css" layer(blocks);
+@import "@/src/styles/blocks/site-dropdown-menu.css" layer(blocks);
+@import "@/src/styles/blocks/collapsible.css" layer(blocks);
+@import "@/src/styles/blocks/site-code-block.css" layer(blocks);
+@import "@/src/styles/blocks/site-badge.css" layer(blocks);
+@import "@/src/styles/blocks/site-footer.css" layer(blocks);
+@import "@/src/styles/blocks/component-demo.css" layer(blocks);
+@import "@/src/styles/blocks/component-wrapper.css" layer(blocks);
+@import "@/src/styles/blocks/docs-pagination.css" layer(blocks);
+@import "@/src/styles/blocks/source-code.css" layer(blocks);
+@import "@/registry/styles/utilities/region.css" layer(utilities);
+@import "@/registry/styles/utilities/visually-hidden.css" layer(utilities);
+@import "./vendors/starlight/reset.css" layer(sugarcube.starlight);
+@import "./vendors/starlight/theme.css" layer(sugarcube.starlight);
+@import "./vendors/starlight/components.css" layer(sugarcube.starlight);

@@ -1,0 +1,11 @@
+.alert[data-size="sm"] {
+    font-size: var(--text-sm);
+}
+
+.alert[data-size="md"] {
+    font-size: var(--text-base);
+}
+
+.alert[data-size="lg"] {
+    font-size: var(--text-lg);
+}

@@ -1,0 +1,87 @@
+.site-alert {
+    position: relative;
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    border: var(--border-width-thin) var(--border-style)
+        var(--color-border-normal, var(--color-neutral-border-normal));
+    padding-inline: var(--space-sm);
+    padding-block: var(--space-xs);
+    border-radius: var(--panel-radius);
+    box-shadow: var(--shadow-xs);
+}
+
+.site-alert:has(svg) {
+    display: grid;
+    /* align-items: center; */
+    grid-template-columns: 1rem 1fr;
+    row-gap: var(--space-3xs);
+    column-gap: var(--space-xs);
+}
+
+.site-alert .button {
+    grid-column: var(--alert-action-col-start, 3);
+}
+
+.site-alert code {
+    background-color: var(--color-fill-loud);
+    color: var(--color-on-loud);
+    border-radius: var(--radius-md);
+    font-size: var(--sl-text-code-sm);
+}
+
+.site-alert a {
+    color: inherit;
+    text-decoration-style: dotted;
+}
+
+/* TODO: could these be part of a global svg styles? */
+.site-alert svg {
+    justify-self: center;
+    align-self: center;
+}
+
+.site-alert-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    grid-column-start: var(--alert-title-col-start, 2);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--tracking-tight);
+}
+
+.site-alert-description {
+    grid-column-start: var(--alert-description-col-start, 2);
+}
+
+.site-alert[data-variant="warning"] {
+    --color-fill-loud: var(--color-warning-fill-loud);
+    --color-on-loud: var(--color-warning-on-loud);
+    --color-border-normal: var(--color-warning-border-normal);
+    --color-fill-normal: var(--color-warning-fill-normal);
+    --color-on-normal: var(--color-warning-on-normal);
+    --color-border-quiet: var(--color-warning-border-quiet);
+}
+
+.site-alert[data-variant="tip"] {
+    --color-fill-loud: var(--color-accent-fill-loud);
+    --color-on-loud: var(--color-accent-on-loud);
+    --color-border-normal: var(--color-accent-border-normal);
+    --color-fill-normal: var(--color-accent-fill-normal);
+    --color-on-normal: var(--color-accent-on-normal);
+    --color-border-quiet: var(--color-accent-border-quiet);
+}
+
+.site-alert[data-variant="info"] {
+    --color-fill-loud: var(--color-info-fill-loud);
+    --color-on-loud: var(--color-info-on-loud);
+    --color-border-normal: var(--color-info-border-normal);
+    --color-fill-normal: var(--color-info-fill-normal);
+    --color-on-normal: var(--color-info-on-normal);
+    --color-border-quiet: var(--color-info-border-quiet);
+}
+
+.site-alert[data-size="sm"] {
+    font-size: var(--text-sm);
+}

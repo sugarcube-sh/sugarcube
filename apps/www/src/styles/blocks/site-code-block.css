@@ -1,0 +1,54 @@
+.site-code-block {
+    --form-control-height: round(
+        calc(2 * var(--form-control-padding-block) + 1em * var(--form-control-line-height)),
+        1px
+    );
+
+    background-color: color-mix(in oklab, var(--color-fill-normal) 50%, transparent);
+    border-radius: var(--form-control-border-radius);
+    font-size: var(--text-sm);
+    display: inline-flex;
+    gap: var(--space-3xs);
+    align-items: center;
+    position: relative;
+    padding-inline-start: var(--space-2xs);
+    border: var(--border-width-thin) var(--border-style) var(--color-border-normal);
+    min-height: var(--form-control-height);
+}
+
+.site-code-block code {
+    background-color: transparent;
+    color: var(--color-on-normal);
+}
+
+.site-code-block [data-copy-button] {
+    background-color: transparent;
+    box-shadow: none;
+    border: none;
+    min-height: auto;
+    color: var(--color-text-quiet);
+    transition: color var(--transition-normal) ease, scale var(--transition-normal) ease;
+}
+
+.site-code-block [data-copy-button]:hover {
+    color: var(--color-text-normal);
+    scale: 1.1;
+}
+
+.site-code-block [data-tooltip] {
+    position: absolute;
+    right: 0;
+    bottom: -2rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-normal) ease;
+}
+
+.site-code-block [data-tooltip][data-visible="true"] {
+    opacity: 1;
+    visibility: visible;
+    background-color: var(--color-fill-normal);
+    padding-inline: var(--space-2xs);
+    padding-block: var(--space-3xs);
+    border-radius: var(--form-control-border-radius);
+}

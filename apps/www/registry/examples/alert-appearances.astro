@@ -1,0 +1,40 @@
+---
+import { CircleAlert, CircleCheck, Info, TriangleAlert } from "@lucide/astro";
+---
+
+<div class="flow w-full">
+    <div class="alert">
+        <CircleCheck class="icon" />
+        <div class="alert-title">Default</div>
+        <div class="alert-description">
+            This is the default alert appearance.
+        </div>
+    </div>
+    <div class="alert" data-appearance="outlined">
+        <CircleCheck class="icon" />
+        <div class="alert-title">Outlined</div>
+        <div class="alert-description">
+            This alert has an outlined appearance.
+        </div>
+    </div>
+    <div class="alert" data-appearance="soft" data-variant="success">
+        <CircleCheck class="icon" />
+        <div class="alert-title">Soft Success</div>
+        <div class="alert-description">This alert has a soft appearance.</div>
+    </div>
+    <div class="alert" data-appearance="soft" data-variant="error">
+        <CircleAlert class="icon" />
+        <div class="alert-title">Soft Error</div>
+        <div class="alert-description">This is a soft error alert.</div>
+    </div>
+    <div class="alert" data-appearance="soft" data-variant="warning">
+        <TriangleAlert class="icon" />
+        <div class="alert-title">Soft Warning</div>
+        <div class="alert-description">This is a soft warning alert.</div>
+    </div>
+    <div class="alert" data-appearance="soft" data-variant="info">
+        <Info class="icon" />
+        <div class="alert-title">Soft Info</div>
+        <div class="alert-description">This is a soft info alert.</div>
+    </div>
+</div>

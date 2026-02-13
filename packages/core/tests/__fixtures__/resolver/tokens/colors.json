@@ -1,0 +1,12 @@
+{
+  "color": {
+    "primary": {
+      "$type": "color",
+      "$value": "#3b82f6"
+    },
+    "secondary": {
+      "$type": "color",
+      "$value": "#8b5cf6"
+    }
+  }
+}

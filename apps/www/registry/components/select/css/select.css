@@ -1,0 +1,86 @@
+.select {
+    /* Scale multiplier: Converts rem-based tokens to proportionally scale with font-size. */
+    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+
+    /* Calculate total height: (top + bottom padding) + (font-size × line-height)
+     * Rounded to nearest pixel */
+    --form-control-height: round(
+        calc(
+            2 *
+            var(--form-control-padding-block) *
+            var(--scale) +
+            1em *
+            var(--form-control-line-height)
+        ),
+        1px
+    );
+
+    appearance: none;
+    background-color: var(--color-surface-default);
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.5rem;
+    touch-action: manipulation;
+    font-size: var(--form-control-font-size, var(--text-base));
+    min-height: var(--form-control-height);
+    padding-inline: calc(var(--form-control-padding-inline) * var(--scale));
+    padding-block: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23222' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath stroke='none' d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='M6 9l6 6l6 -6' /%3E%3C/svg%3E");
+    background-size: 1em;
+    background-position: right var(--space-2xs, 0.5em) top 60%;
+    background-repeat: no-repeat;
+    text-overflow: ellipsis;
+}
+
+.select {
+    @supports (appearance: base-select) {
+        appearance: base-select;
+    }
+}
+
+.select:focus {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-neutral-400) 50%, transparent);
+    outline: none;
+    border-color: var(--color-neutral-400);
+}
+
+.select::picker(select) {
+    appearance: base-select;
+    color: inherit;
+    max-height: 70dvh;
+    border: var(--panel-border-width) var(--border-style) var(--panel-border-color);
+    border-radius: var(--panel-radius);
+    margin-block: var(--space-2xs);
+    padding: var(--space-2xs) var(--space-3xs);
+    background-color: inherit;
+    box-shadow: var(--shadow-md);
+}
+
+.select::picker-icon {
+    visibility: hidden;
+}
+
+.select option {
+    padding-inline: var(--space-2xs);
+    padding-block: 0.375rem;
+    border-radius: var(--radius-md);
+    transition-property: color, background-color;
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+
+.select option::checkmark {
+    order: 1;
+    margin-left: auto;
+    content: "\002713";
+}
+
+.select option:not(:disabled):hover,
+.select option:not(:disabled):focus,
+.select option:not(:disabled):focus-visible {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    cursor: pointer;
+    outline: none;
+}

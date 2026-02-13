@@ -1,0 +1,22 @@
+{
+  "name": "radio-group",
+  "type": "component",
+  "path": "components/radio-group/react/radio-group.tsx",
+  "content": "\"use client\";\n\nimport * as RadioGroupPrimitive from \"@radix-ui/react-radio-group\";\nimport { CircleIcon } from \"lucide-react\";\nimport type * as React from \"react\";\n\nimport cn from \"clsx\";\n\nfunction RadioGroup({\n    className,\n    ...props\n}: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {\n    return <RadioGroupPrimitive.Root className={cn(\"radio-group\", className)} {...props} />;\n}\n\nfunction RadioGroupItem({\n    className,\n    ...props\n}: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {\n    return (\n        <RadioGroupPrimitive.Item className={cn(\"radio-toggle\", className)} {...props}>\n            <RadioGroupPrimitive.Indicator className=\"radio-toggle-icon\">\n                <CircleIcon />\n            </RadioGroupPrimitive.Indicator>\n        </RadioGroupPrimitive.Item>\n    );\n}\n\nexport { RadioGroup, RadioGroupItem };\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "react": [
+      "@radix-ui/react-radio-group",
+      "lucide-react",
+      "clsx"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

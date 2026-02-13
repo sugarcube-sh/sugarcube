@@ -1,0 +1,74 @@
+{
+  "gradient.invalid.type": {
+    "$type": "gradient",
+    "$value": "not-an-array",
+    "$path": "gradient.invalid.type",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/gradients.json"
+    }
+  },
+  "gradient.invalid.stop": {
+    "$type": "gradient",
+    "$value": ["invalid-stop"],
+    "$path": "gradient.invalid.stop",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/gradients.json"
+    }
+  },
+  "gradient.invalid.color": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "color": "not-a-color",
+        "position": 0
+      }
+    ],
+    "$path": "gradient.invalid.color",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/gradients.json"
+    }
+  },
+  "gradient.missing.color": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "position": 0
+      }
+    ],
+    "$path": "gradient.missing.color",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/gradients.json"
+    }
+  },
+  "gradient.invalid.position": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "color": "#000000",
+        "position": 1.5
+      }
+    ],
+    "$path": "gradient.invalid.position",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/gradients.json"
+    }
+  },
+  "gradient.missing.position": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "color": "#000000"
+      }
+    ],
+    "$path": "gradient.missing.position",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/gradients.json"
+    }
+  }
+}

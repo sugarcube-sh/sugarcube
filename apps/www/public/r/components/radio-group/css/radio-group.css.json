@@ -1,0 +1,18 @@
+{
+  "name": "radio-group",
+  "type": "component",
+  "path": "components/radio-group/css/radio-group.css",
+  "content": ".radio {\n    --_radio-color: var(--color-accent-fill-loud);\n\n    /* Base scale - defaults to text-base (1rem) */\n    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);\n\n    appearance: none;\n    margin: 0;\n    flex-shrink: 0;\n    vertical-align: middle;\n    width: calc(var(--form-control-toggle-size) * var(--scale));\n    height: calc(var(--form-control-toggle-size) * var(--scale));\n    border: var(--form-control-border-width) var(--border-style) var(--form-control-border-color);\n    box-shadow: var(--shadow-xs);\n    display: inline-block;\n    border-radius: var(--radius-full);\n    padding: calc(0.225rem * var(--scale));\n}\n\n.radio::before {\n    content: \"\";\n    background-size: auto;\n    background-image: none;\n    border-radius: var(--radius-full);\n    width: 100%;\n    height: 100%;\n    display: block;\n}\n\n.radio:checked {\n    border-color: var(--_radio-color);\n}\n\n.radio:checked::before {\n    background-color: var(--_radio-color);\n    border-radius: var(--radius-full);\n}\n\n.radio:focus-visible {\n    --focus-ring-color: var(--_radio-color);\n    --focus-ring-offset: 2px;\n    outline-offset: var(--focus-ring-offset);\n    outline-style: var(--focus-ring-style);\n    outline-width: var(--focus-ring-width);\n}\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "css-only": [],
+    "react": []
+  },
+  "registryDependencies": {
+    "css-only": [],
+    "react": []
+  }
+}

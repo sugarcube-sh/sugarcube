@@ -1,0 +1,61 @@
+---
+title: Working with CUBE CSS
+description: Resources for learning CUBE CSS.
+---
+
+CUBE CSS is a methodology created by [Andy Bell](https://bell.bz). We're not going to try to teach it better than he does. What follows is simply a brief practical introduction. We strongly encourage you to learn direct from the source:
+
+- Check out the [official CUBE CSS documentation](https://cube.fyi/) for a full overview.
+- Jump into [Andy's explainer article](https://piccalil.li/blog/cube-css/) for a friendly introduction.
+- Go deeper and get more hands-on with [Complete CSS](https://piccalil.li/complete-css/), Andy's comprehensive course.
+- Explore [Every Layout](https://every-layout.dev/) (co-authored with [Heydon Pickering](https://heydonworks.com/)) to better understand the layout primitives that power CUBE compositions.
+
+
+## It's not as unfamiliar as you think
+
+If you can write `mx-auto max-w-7xl px-4`, you can write `.wrapper`.
+
+If you can write `flex flex-wrap gap-2 items-center`, you can write `.cluster`.
+
+If you can write `flex flex-wrap justify-between items-center gap-4`, you can write `.repel`.
+
+If you can write `space-y-4`, you can write `.flow`.
+
+## The mental model
+
+**Global CSS does the heavy lifting.** Your `global.css` sets up typography, colors, and base element styles using your design tokens. By the time you start writing components, headings already look like headings, links already look like links. You're not starting from zero. You're using the power of the cascade.
+
+**Compositions handle layout.** Classes like `.flow`, `.cluster`, `.wrapper` control how elements are arranged and spaced.
+
+**Blocks are your components.** Your buttons, cards, alerts. Because global CSS and compositions have done most of the work, blocks tend to be small — just the component-specific bits.
+
+**Utilities make small adjustments.** Single-purpose classes for one-off tweaks.
+
+## Overriding compositions
+
+You might be thinking: what if `.wrapper` sets a `max-width` that I don't want everywhere? Or what if `.flow` sets a gap that I don't want everywhere?
+
+Compositions use CSS custom properties with sensible defaults. You can override them however you like:
+
+```html
+<!-- Default gap -->
+<div class="cluster">...</div>
+
+<!-- With a utility class -->
+<div class="cluster cluster-gap-xs">...</div>
+
+<!-- With an inline style -->
+<div class="cluster" style="--cluster-gap: 0.5rem;">...</div>
+
+<!-- With custom CSS -->
+<div class="cluster my-nav">...</div>
+```
+
+Utility classes, inline styles, custom CSS — whatever fits your workflow. We at sugarcube prefer utilities, but it's personal preference.
+
+## Next steps
+
+- Check out the [official CUBE CSS documentation](https://cube.fyi/).
+- Read [Andy's explainer article](https://piccalil.li/blog/cube-css/).
+- Learn CUBE CSS from the ground up with [Complete CSS](https://piccalil.li/complete-css/).
+- Better understand compositions with [Every Layout](https://every-layout.dev/).

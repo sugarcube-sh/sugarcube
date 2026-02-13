@@ -1,0 +1,90 @@
+/*
+ * Starlight Theme Overrides
+ * Maps Starlight's CSS variables to sugarcube design tokens.
+ */
+
+:root {
+    /* ─── Semantic Colors ─────────────────────────────────────────────────
+     * These are the key variables that Starlight uses throughout.
+     * "white" = foreground/text color, "black" = background color
+     * (they swap in light mode in Starlight's system) - don't love that!
+     */
+    --sl-color-white: var(--color-text-normal);
+    --sl-color-black: var(--color-surface-default);
+
+    /* ─── Gray Scale ──────────────────────────────────────────────────────
+     * Starlight uses gray-1 through gray-7 for various UI elements.
+     * Lower numbers = lighter in dark mode, darker in light mode.
+     */
+    --sl-color-gray-1: var(--color-text-normal);
+    --sl-color-gray-2: var(--color-text-normal);
+    --sl-color-gray-3: var(--color-text-quiet);
+    --sl-color-gray-4: var(--color-text-quiet);
+    --sl-color-gray-5: var(--color-surface-border);
+    --sl-color-gray-6: var(--color-surface-raised);
+    --sl-color-gray-7: var(--color-surface-default);
+
+    /* ─── Accent Colors ───────────────────────────────────────────────────
+     * Used for links, highlights, and interactive elements.
+     */
+    --sl-color-accent-low: var(--color-accent-fill-quiet);
+    --sl-color-accent: var(--color-accent-fill-normal);
+    --sl-color-accent-high: var(--color-accent-fill-loud);
+
+    /* ─── Semantic Mappings ───────────────────────────────────────────────
+     * These reference other Starlight variables or your tokens directly.
+     */
+    --sl-color-text: var(--color-text-normal);
+    --sl-color-text-accent: var(--color-text-link);
+    --sl-color-text-invert: var(--color-text-normal);
+    --sl-color-bg: var(--color-surface-default);
+    --sl-color-bg-nav: var(--color-surface-default);
+    --sl-color-bg-sidebar: var(--color-surface-default);
+    --sl-color-bg-inline-code: var(--color-surface-lowered);
+    --sl-color-bg-accent: var(--color-text-link);
+    --sl-color-hairline-light: var(--color-surface-border);
+    --sl-color-hairline: var(--color-surface-border);
+    --sl-color-hairline-shade: var(--color-surface-border);
+    --sl-color-backdrop-overlay: var(--color-surface-overlay);
+
+    /* ─── Typography ──────────────────────────────────────────────────────
+     * Map to your font and text size tokens.
+     */
+    --__sl-font: var(--font-body);
+    --__sl-font-mono: var(--font-mono);
+    --sl-line-height: var(--leading-relaxed);
+
+    /* Heading sizes - adjust to match your scale */
+    --sl-text-h1: var(--text-2xl);
+    --sl-text-h2: var(--text-xl);
+    --sl-text-h3: var(--text-lg);
+    --sl-text-h4: var(--text-base);
+    --sl-text-h5: var(--text-base);
+
+    /* Body text sizes */
+    --sl-text-body: var(--text-base);
+    --sl-text-body-sm: var(--text-sm);
+    --sl-text-code: var(--text-sm);
+    --sl-text-code-sm: var(--text-sm);
+
+    /* ─── Layout ──────────────────────────────────────────────────────────
+     * Adjust spacing and layout values as needed.
+     */
+    --sl-content-gap-y: 1.375rem;
+    --sl-sidebar-pad-x: var(--space-lg);
+    --sl-sidebar-item-padding-inline: 0;
+
+    /* ─── Shadows ─────────────────────────────────────────────────────────
+     * Map to your shadow tokens if you have them, or keep Starlight's defaults.
+     */
+    --sl-shadow-sm: var(--shadow-sm);
+    --sl-shadow-md: var(--shadow-md);
+    --sl-shadow-lg: var(--shadow-lg);
+}
+
+/* On desktop, match content padding to sidebar padding for alignment */
+@media (min-width: 50em) {
+    :root {
+        --sl-content-pad-x: var(--space-lg);
+    }
+}

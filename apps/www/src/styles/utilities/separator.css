@@ -1,0 +1,17 @@
+.separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    font-size: var(--text-sm);
+}
+
+.separator::before,
+.separator::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid var(--stroke-color-primary);
+}
+
+.separator-text {
+    padding: 0 var(--space-sm);
+}

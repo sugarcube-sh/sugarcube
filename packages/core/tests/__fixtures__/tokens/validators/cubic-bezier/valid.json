@@ -1,0 +1,29 @@
+{
+  "easing.linear": {
+    "$type": "cubicBezier",
+    "$value": [0, 0, 1, 1],
+    "$path": "easing.linear",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/easing.json"
+    }
+  },
+  "easing.ease-in": {
+    "$type": "cubicBezier",
+    "$value": [0.42, 0, 1, 1],
+    "$path": "easing.ease-in",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/easing.json"
+    }
+  },
+  "easing.ease-out": {
+    "$type": "cubicBezier",
+    "$value": [0, 0, 0.58, 1],
+    "$path": "easing.ease-out",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/easing.json"
+    }
+  }
+}

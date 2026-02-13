@@ -1,0 +1,20 @@
+{
+  "name": "alert",
+  "type": "component",
+  "path": "components/alert/react/alert.tsx",
+  "content": "import cn from \"clsx\";\n\nfunction Alert({ className, ...props }: React.ComponentProps<\"div\">) {\n    return <div data-slot=\"alert\" role=\"alert\" className={cn(\"alert\", className)} {...props} />;\n}\n\nfunction AlertTitle({ className, ...props }: React.ComponentProps<\"div\">) {\n    return <div data-slot=\"alert-title\" className={cn(\"alert-title\", className)} {...props} />;\n}\n\nfunction AlertDescription({ className, ...props }: React.ComponentProps<\"div\">) {\n    return (\n        <div\n            data-slot=\"alert-description\"\n            className={cn(\"alert-description\", className)}\n            {...props}\n        />\n    );\n}\n\nexport { Alert, AlertTitle, AlertDescription };\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "react": [
+      "clsx"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

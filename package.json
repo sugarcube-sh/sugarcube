@@ -1,0 +1,39 @@
+{
+    "name": "@sugarcube-sh/root",
+    "version": "0.0.1",
+    "license": "MIT",
+    "private": true,
+    "author": {
+        "name": "Mark Tomlinson",
+        "email": "mark@marktomlinson.dev",
+        "url": "https://marktomlinson.dev"
+    },
+    "scripts": {
+        "build": "pnpm --filter='@sugarcube-sh/core' build && pnpm -r --filter='@sugarcube-sh/*' --filter='!@sugarcube-sh/core' build",
+        "build:clean": "pnpm clean && pnpm build",
+        "ci:install": "pnpm install",
+        "ci:version": "changeset version",
+        "ci:publish": "changeset publish",
+        "ci:prepublish": "pnpm build",
+        "clean": "rm -rf packages/*/dist packages/*/.tsbuildinfo node_modules/.cache",
+        "deploy:www": "pnpm --filter=www run deploy",
+        "dev": "pnpm --filter=!@sugarcube-sh/cli -r --parallel dev",
+        "dev:www": "pnpm --filter=www dev",
+        "format": "biome check --write",
+        "knip": "knip",
+        "lint": "biome lint --write --unsafe",
+        "test": "pnpm -r --if-present test",
+        "type-check": "pnpm -r --if-present type-check"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "1.9.4",
+        "@changesets/cli": "^2.27.9",
+        "@types/node": "^22.15.27",
+        "@vitest/coverage-istanbul": "2.1.1",
+        "knip": "^5.59.1",
+        "typescript": "^5.8.3",
+        "vite-tsconfig-paths": "^5.0.1",
+        "vitest": "2.1.1"
+    },
+    "packageManager": "pnpm@10.17.1"
+}

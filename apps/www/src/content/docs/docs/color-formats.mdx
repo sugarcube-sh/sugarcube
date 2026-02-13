@@ -1,0 +1,81 @@
+---
+title: Color Formats
+---
+
+import Table from "@/src/components/Table.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+Sugarcube supports modern color spaces like OKLCH and Display P3, with fallback strategies for browser compatibility.
+
+## Supported color spaces
+
+<Table>
+| Supported | Not yet supported |
+|-----------|-------------------|
+| OKLCH | sRGB Linear |
+| Display P3 | HWB |
+| sRGB | CIELAB |
+| HSL | LCH |
+| Hex | OKLAB |
+| | A98 RGB |
+| | ProPhoto RGB |
+| | Rec 2020 |
+</Table>
+
+<SiteAside type="note">
+    We are currently working to support more color spaces. If you need a specific color space, please [open an issue](https://github.com/sugarcube-sh/sugarcube/issues/new).
+</SiteAside>
+
+
+## Color fallbacks
+
+By default, sugarcube outputs modern color spaces directly without fallbacks:
+
+```css
+:root {
+  --color-primary: oklch(0.7 0.3 328);
+}
+```
+
+To support older browsers, add `colorFallbackStrategy: "polyfill"` to your `transforms` configuration:
+
+```ts title="sugarcube.config.ts"
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  transforms: {
+    colorFallbackStrategy: "polyfill"
+  }
+});
+```
+
+This generates CSS with fallback colors using feature queries:
+
+```css
+:root {
+  --color-primary: #ff00ff;
+}
+
+@supports (color: oklch(0 0 0)) {
+  :root {
+    --color-primary: oklch(0.7 0.3 328);
+  }
+}
+```
+
+When using the `polyfill` strategy, you must include a `hex` fallback value in your design tokens:
+
+```json title="design-tokens/colors.json"
+{
+  "color": {
+    "primary": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.7, 0.3, 328],
+        "hex": "#ff00ff"
+      }
+    }
+  }
+}
+```

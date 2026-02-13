@@ -1,0 +1,43 @@
+---
+title: Dialog
+description: A dialog component.
+---
+
+import DialogDemo from "@/registry/examples/dialog-demo.astro";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <DialogDemo />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/dialog-demo.astro" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components dialog -f css-only" />
+
+## Source Code
+
+<SourceCode path="@/registry/components/dialog/css/dialog.css" collapsible={true} />
+
+## Usage
+
+<SiteAside type="note">
+    Native dialogs use the `showModal()` method to open and `close()` method to close. You can also use forms with `method="dialog"` for form-based dialogs.
+</SiteAside>
+
+Apply the `.dialog` class to a native `dialog` element:
+
+```html
+<dialog class="dialog" id="my-dialog">
+  <h2>Dialog Title</h2>
+  <p>Dialog content goes here.</p>
+  <button onclick="this.closest('dialog').close()">Close</button>
+</dialog>
+
+<button onclick="document.getElementById('my-dialog').showModal()">
+  Open Dialog
+</button>
+```

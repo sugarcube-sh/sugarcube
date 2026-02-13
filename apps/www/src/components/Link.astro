@@ -1,0 +1,27 @@
+---
+interface Props {
+    href: string;
+    isExternal?: boolean | undefined;
+    class?: string | undefined;
+    "data-appearance"?: string | undefined;
+    "data-size"?: string | undefined;
+}
+
+const {
+    href,
+    isExternal = false,
+    class: className,
+    "data-appearance": dataAppearance,
+    "data-size": dataSize,
+} = Astro.props as Props;
+---
+
+<a
+    href={href}
+    class={className}
+    data-appearance={dataAppearance}
+    data-size={dataSize}
+    {...isExternal && { rel: "noopener noreferrer", target: "_blank" }}
+>
+    <slot />
+</a>

@@ -1,0 +1,11 @@
+{
+  "space": {
+    "$type": "fluidDimension",
+    "small": {
+      "$value": {
+        "min": { "value": 8, "unit": "px" },
+        "max": { "value": 16, "unit": "px" }
+      }
+    }
+  }
+}

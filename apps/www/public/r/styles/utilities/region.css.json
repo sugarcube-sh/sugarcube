@@ -1,0 +1,9 @@
+{
+  "name": "utilities",
+  "type": "cube",
+  "path": "styles/utilities/region.css",
+  "content": "/* \nREGION UTILITY\nConsistent block padding for page sections\n\nCUSTOM PROPERTIES AND CONFIGURATION\n--region-space: The vertical padding of the region\n*/\n.region {\n    padding-block: var(--region-space, 1rem);\n    position: relative;\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

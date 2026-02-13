@@ -1,0 +1,106 @@
+---
+title: Badge
+description: A minimal badge component that works with your design tokens
+---
+
+import BadgeDemo from "@/registry/examples/badge-demo.astro";
+import BadgeVariants from "@/registry/examples/badge-variants.astro";
+import BadgeAppearances from "@/registry/examples/badge-appearances.astro";
+import BadgeSizes from "@/registry/examples/badge-sizes.astro";
+import BadgeShapes from "@/registry/examples/badge-shapes.astro";
+import BadgeWithIcon from "@/registry/examples/badge-with-icon.astro";
+import BadgeNumbers from "@/registry/examples/badge-numbers.astro";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <BadgeDemo />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/badge-demo.astro" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components badge -f css-only" />
+
+## Source Code
+
+<SourceCode path="@/registry/components/badge/css/badge.css" collapsible={true} />
+
+## Usage
+
+Apply the `.badge` class to display a badge:
+
+```html
+<span class="badge">New</span>
+```
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the badge component with variants, appearances, and sizes. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Variants
+
+You can add color variants using data attributes. This example shows how you might implement variants using CSS custom properties:
+
+<ComponentDemo>
+    <BadgeVariants />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/badge-variants.astro",
+    "@/registry/examples/badge-variants.css"
+]} />
+
+### Appearances
+
+You can add different visual appearances using data attributes. This example shows how you might implement different badge styles:
+
+<ComponentDemo>
+    <BadgeAppearances />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/badge-appearances.astro",
+    "@/registry/examples/badge-appearances.css"
+]} />
+
+### Sizes
+
+You can add size variants using data attributes. This example shows how you might implement different badge sizes:
+
+<ComponentDemo>
+    <BadgeSizes />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/badge-sizes.astro",
+    "@/registry/examples/badge-sizes.css"
+]} />
+
+### Shapes
+
+You can add shape variants using data attributes. This example shows how you might implement different badge shapes:
+
+<ComponentDemo>
+    <BadgeShapes />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/badge-shapes.astro" />
+
+### With icon
+
+Badges work well with icons. You can add icons to badges:
+
+<ComponentDemo>
+    <BadgeWithIcon />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/badge-with-icon.astro" />
+
+### Numbers
+
+Badges are commonly used to display numbers or counts. Use `tabular-nums` for consistent number width:
+
+<ComponentDemo>
+    <BadgeNumbers />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/badge-numbers.astro" />

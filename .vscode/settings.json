@@ -1,0 +1,15 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.associations": {
+    "**/tests/fixtures/outputs/**/*.json": "jsonc"
+  },
+  "json.schemas": [
+    {
+      "fileMatch": ["**/tests/fixtures/outputs/**/*.json"],
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "allowTrailingCommas": true
+      }
+    }
+  ]
+}

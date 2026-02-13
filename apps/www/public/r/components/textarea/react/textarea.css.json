@@ -1,0 +1,19 @@
+{
+  "name": "textarea",
+  "type": "component",
+  "path": "components/textarea/react/textarea.css",
+  "content": ".textarea {\n    outline-style: none;\n    transition-property: border-color, box-shadow;\n    transition-timing-function: var(--ease-out);\n    transition-duration: var(--transition-normal);\n}\n\n.textarea:disabled {\n    cursor: not-allowed;\n    opacity: 0.5;\n}\n\n.textarea:focus-visible {\n    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-fill-loud) 25%, transparent);\n    outline: none;\n    border-color: var(--color-fill-loud);\n}\n",
+  "frameworks": [
+    "react"
+  ],
+  "dependencies": {
+    "react": [
+      "clsx"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

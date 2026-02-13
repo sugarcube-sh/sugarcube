@@ -1,0 +1,11 @@
+.command[data-size="sm"] {
+    font-size: var(--text-sm);
+}
+
+.command[data-size="md"] {
+    font-size: var(--text-base);
+}
+
+.command[data-size="lg"] {
+    font-size: var(--text-lg);
+}

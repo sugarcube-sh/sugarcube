@@ -1,0 +1,14 @@
+---
+import type { Props } from "@astrojs/starlight/props";
+
+const {
+    entry: {
+        data: { title, description },
+    },
+} = Astro.locals.starlightRoute;
+---
+
+<Fragment>
+    <h1 id="_top">{title}</h1>
+    {description && <p class="page-description">{description}</p>}
+</Fragment>

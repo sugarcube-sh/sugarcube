@@ -1,0 +1,55 @@
+---
+title: Design Tokens
+description: Learn about the role of design tokens in sugarcube
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+Design tokens are the foundation of any sugarcube project. Sugarcube uses them to generate CSS - CSS variables (by default) and utility classes (if configured).
+
+## Your token files
+
+After running `init`, your tokens are located in your project's token directory (typically `src/design-tokens/` or `design-tokens/` at the root). If you used a starter kit, you'll see JSON files like `colors.json`, `space.json`, and `typography.json`. If you brought your own tokens, your existing files will be there.
+
+<div class="alert">
+    <p class="alert-description">Learn about available starter kits and their differences in the [starter kits guide](/docs/starter-kits).</p>
+</div>
+
+Edit these JSON files to change your design values. With the Vite plugin, changes automatically regenerate your CSS. Without the plugin, run `sugarcube generate` after editing.
+
+## Token-driven development
+
+This opens up what we might call **(design)-token-driven development** (catchy, huh?). Instead of writing CSS variables, you write tokens. Instead of editing CSS variables, you edit tokens.
+
+```js title="palette.json" del={5} ins={6}
+{
+    "color": {
+        "$type": "color",
+        "primary": {
+            "$value": "{color.blue.600}"
+            "$value": "{color.orange.600}"
+        }
+    }
+}
+```
+
+How much you actually edit your tokens will depend on the project. If your design system is stable, you might never edit them. On the other hand, if you are using sugarcube to develop a design system from scratch (perhaps by using a starter kit as a launching pad and designing in the browser), you might edit them often at first.
+
+## Why tokens rather than CSS variables?
+
+As with most things in development, if your current approach works well, there is no need to change. However, there are several compelling reasons why you might want to locate your design system in tokens rather than CSS variables, including but not limited to:
+
+1. **Programmatic transformation**: CSS variables are strings that can't be easily analyzed or transformed. Tokens are structured data that can be programmatically transformed into CSS variables, utility classes and much more. 
+2. **Documentation**: CSS variables are not easily documented. Tokens are naturally self-documenting. They can contain metadata such as descriptions and other information, and can be used to generate documentation programmatically.
+3. **Separation of concerns**: Tokens are design data (JSON). CSS variables are implementation (CSS syntax). When CSS variables are your source of truth, design decisions live in CSS. With tokens, design decisions live in data, and CSS is generated from that data. Your design system exists independently of how it's implemented, making it portable and allowing you to change implementation details without touching your design decisions.
+4. **Portability**: Tokens that adhere to the DTCG specification are platform-agnostic. They can be used in any project, regardless of the token transformation tool you use. This means you are not locked into a specific tool or implementation.
+
+## Next steps
+
+Now that you understand tokens, you can:
+- [Learn token syntax and patterns](/docs/working-with-tokens) for practical examples
+- [Configure utility classes](/docs/utilities) to generate classes from your tokens
+- [Add components](/docs/components) from the registry
+- [Add CUBE CSS](/docs/cube-css) for consistent styling patterns
+
+

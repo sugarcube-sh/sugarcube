@@ -1,0 +1,96 @@
+{
+  "tokens.gradient.simple": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "color": "#000000",
+        "position": 0
+      },
+      {
+        "color": "#ffffff",
+        "position": 1
+      }
+    ],
+    "$path": "tokens/gradient.simple",
+    "$originalPath": "gradient.simple"
+  },
+  "tokens.gradient.multiple": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "color": "#000000",
+        "position": 0
+      },
+      {
+        "color": "#888888",
+        "position": 0.5
+      },
+      {
+        "color": "#ffffff",
+        "position": 1
+      }
+    ],
+    "$path": "tokens/gradient.multiple",
+    "$originalPath": "gradient.multiple"
+  },
+  "tokens.gradient.invalid.type": {
+    "$type": "gradient",
+    "$value": "not-an-array",
+    "$path": "tokens.gradient.invalid.type",
+    "$source": { "file": "tokens" },
+    "$originalPath": "gradient.invalid.type"
+  },
+  "tokens.gradient.invalid.stop": {
+    "$type": "gradient",
+    "$value": ["not-an-object"],
+    "$path": "tokens.gradient.invalid.stop",
+    "$source": { "file": "tokens" },
+    "$originalPath": "gradient.invalid.stop"
+  },
+  "tokens.gradient.invalid.color": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "color": "not-a-color",
+        "position": 0.5
+      }
+    ],
+    "$path": "tokens.gradient.invalid.color",
+    "$source": { "file": "tokens" },
+    "$originalPath": "gradient.invalid.color"
+  },
+  "tokens.gradient.missing.color": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "position": 0.5
+      }
+    ],
+    "$path": "tokens.gradient.missing.color",
+    "$source": { "file": "tokens" },
+    "$originalPath": "gradient.missing.color"
+  },
+  "tokens.gradient.invalid.position": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "color": "#000000",
+        "position": 1.5
+      }
+    ],
+    "$path": "tokens.gradient.invalid.position",
+    "$source": { "file": "tokens" },
+    "$originalPath": "gradient.invalid.position"
+  },
+  "tokens.gradient.missing.position": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "color": "#000000"
+      }
+    ],
+    "$path": "tokens.gradient.missing.position",
+    "$source": { "file": "tokens" },
+    "$originalPath": "gradient.missing.position"
+  }
+}

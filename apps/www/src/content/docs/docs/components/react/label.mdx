@@ -1,0 +1,24 @@
+---
+title: Label
+description: A label component.
+---
+import { LabelDemo } from "@/registry/examples/label-demo.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+
+## Preview
+
+<ComponentDemo>
+    <LabelDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/label-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components label -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/label/react/label.tsx",
+    "@/registry/components/label/react/label.css"
+]} collapsible={true} />

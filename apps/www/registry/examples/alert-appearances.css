@@ -1,0 +1,16 @@
+.alert[data-appearance="outlined"] {
+    background-color: transparent;
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    border-color: var(--color-border-normal, var(--color-neutral-border-normal));
+}
+
+.alert[data-appearance="soft"] {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    border-color: transparent;
+}
+
+.alert[data-appearance="soft-outlined"] {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    border-color: var(--color-border-normal, var(--color-neutral-border-normal));
+}

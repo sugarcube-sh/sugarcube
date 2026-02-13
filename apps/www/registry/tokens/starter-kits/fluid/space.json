@@ -1,0 +1,113 @@
+{
+  "space": {
+    "$type": "fluidDimension",
+    "0": {
+      "$value": {
+        "min": { "value": 0, "unit": "rem" },
+        "max": { "value": 0, "unit": "rem" }
+      }
+    },
+    "3xs": {
+      "$value": {
+        "min": { "value": 0.25, "unit": "rem" },
+        "max": { "value": 0.25, "unit": "rem" }
+      }
+    },
+    "2xs": {
+      "$value": {
+        "min": { "value": 0.4375, "unit": "rem" },
+        "max": { "value": 0.5, "unit": "rem" }
+      }
+    },
+    "xs": {
+      "$value": {
+        "min": { "value": 0.6875, "unit": "rem" },
+        "max": { "value": 0.75, "unit": "rem" }
+      }
+    },
+    "sm": {
+      "$value": {
+        "min": { "value": 0.875, "unit": "rem" },
+        "max": { "value": 1, "unit": "rem" }
+      }
+    },
+    "md": {
+      "$value": {
+        "min": { "value": 1.3125, "unit": "rem" },
+        "max": { "value": 1.5, "unit": "rem" }
+      }
+    },
+    "lg": {
+      "$value": {
+        "min": { "value": 1.75, "unit": "rem" },
+        "max": { "value": 2, "unit": "rem" }
+      }
+    },
+    "xl": {
+      "$value": {
+        "min": { "value": 2.625, "unit": "rem" },
+        "max": { "value": 3, "unit": "rem" }
+      }
+    },
+    "2xl": {
+      "$value": {
+        "min": { "value": 3.5, "unit": "rem" },
+        "max": { "value": 4, "unit": "rem" }
+      }
+    },
+    "3xl": {
+      "$value": {
+        "min": { "value": 5.25, "unit": "rem" },
+        "max": { "value": 6, "unit": "rem" }
+      }
+    },
+    "3xs-2xs": {
+      "$value": {
+        "min": { "value": 0.25, "unit": "rem" },
+        "max": { "value": 0.5, "unit": "rem" }
+      }
+    },
+    "2xs-xs": {
+      "$value": {
+        "min": { "value": 0.4375, "unit": "rem" },
+        "max": { "value": 0.75, "unit": "rem" }
+      }
+    },
+    "xs-sm": {
+      "$value": {
+        "min": { "value": 0.6875, "unit": "rem" },
+        "max": { "value": 1, "unit": "rem" }
+      }
+    },
+    "sm-md": {
+      "$value": {
+        "min": { "value": 0.875, "unit": "rem" },
+        "max": { "value": 1.5, "unit": "rem" }
+      }
+    },
+    "md-lg": {
+      "$value": {
+        "min": { "value": 1.3125, "unit": "rem" },
+        "max": { "value": 2, "unit": "rem" }
+      }
+    },
+    "lg-xl": {
+      "$value": {
+        "min": { "value": 1.75, "unit": "rem" },
+        "max": { "value": 3, "unit": "rem" }
+      }
+    },
+    "xl-2xl": {
+      "$value": {
+        "min": { "value": 2.625, "unit": "rem" },
+        "max": { "value": 4, "unit": "rem" }
+      }
+    },
+    "2xl-3xl": {
+      "$value": {
+        "min": { "value": 3.5, "unit": "rem" },
+        "max": { "value": 6, "unit": "rem" }
+      }
+    }
+  }
+}

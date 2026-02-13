@@ -1,0 +1,65 @@
+{
+  "tokens.font.weight.thin": {
+    "$type": "fontWeight",
+    "$value": 100,
+    "$path": "tokens.font.weight.thin",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.weight.thin"
+  },
+  "tokens.font.weight.normal": {
+    "$type": "fontWeight",
+    "$value": 400,
+    "$path": "tokens.font.weight.normal",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.weight.normal"
+  },
+  "tokens.font.weight.bold": {
+    "$type": "fontWeight",
+    "$value": 700,
+    "$path": "tokens.font.weight.bold",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.weight.bold"
+  },
+  "tokens.font.weight.keyword.thin": {
+    "$type": "fontWeight",
+    "$value": "thin",
+    "$path": "tokens.font.weight.keyword.thin",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.weight.keyword.thin"
+  },
+  "tokens.font.weight.keyword.normal": {
+    "$type": "fontWeight",
+    "$value": "normal",
+    "$path": "tokens.font.weight.keyword.normal",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.weight.keyword.normal"
+  },
+  "tokens.font.weight.keyword.bold": {
+    "$type": "fontWeight",
+    "$value": "bold",
+    "$path": "tokens.font.weight.keyword.bold",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.weight.keyword.bold"
+  },
+  "tokens.font.weight.invalid.range": {
+    "$type": "fontWeight",
+    "$value": 1001,
+    "$path": "tokens.font.weight.invalid.range",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.weight.invalid.range"
+  },
+  "tokens.font.weight.invalid.keyword": {
+    "$type": "fontWeight",
+    "$value": "bolder",
+    "$path": "tokens.font.weight.invalid.keyword",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.weight.invalid.keyword"
+  },
+  "tokens.font.weight.invalid.type": {
+    "$type": "fontWeight",
+    "$value": true,
+    "$path": "tokens.font.weight.invalid.type",
+    "$source": { "file": "tokens" },
+    "$originalPath": "font.weight.invalid.type"
+  }
+}

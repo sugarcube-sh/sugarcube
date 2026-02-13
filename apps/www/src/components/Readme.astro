@@ -1,0 +1,32 @@
+---
+import { File, TriangleAlertIcon } from "@lucide/astro";
+import Hero from "@/src/components/Hero.astro";
+import WhatIsSC from "@/src/components/WhatIsSC.astro";
+import Features from "@/src/components/Features.astro";
+import Acknowledgments from "@/src/components/Acknowledgments.astro";
+import Playground from "@/src/components/Playground.astro";
+---
+
+<div
+    class="wrapper readme pt-6xl"
+    style="--wrapper-max-width: var(--container-3xl)"
+>
+    <div class="inline-flex items-center gap-2xs">
+        <File class="text-quieter text-2xl" />
+        <span class="font-mono text-sm leading-none"> README.md </span>
+    </div>
+    <div class="site-alert mt-lg py-2xs" data-variant="warning" data-size="sm">
+        <TriangleAlertIcon />
+        Sugarcube is in early development. The config and CLI APIs are stabilizing but may still
+        change.
+    </div>
+    <Hero />
+    <hr />
+    <WhatIsSC />
+    <hr />
+    <Features />
+    <hr />
+    <Playground />
+    <hr />
+    <Acknowledgments />
+</div>

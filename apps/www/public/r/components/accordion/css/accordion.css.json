@@ -1,0 +1,18 @@
+{
+  "name": "accordion",
+  "type": "component",
+  "path": "components/accordion/css/accordion.css",
+  "content": ".accordion {\n    width: 100%;\n}\n\n.accordion details {\n    border: 0;\n    border-block-end: var(--border-width-thin) var(--border-style) var(--color-surface-border);\n    display: block;\n    padding-inline: 0;\n    padding-block: var(--space-md);\n}\n\n.accordion details summary {\n    position: relative;\n    display: block;\n    line-height: var(--leading-tight);\n    font-weight: var(--font-weight-medium);\n    cursor: pointer;\n}\n\n.accordion details summary[open] {\n    margin-block-end: var(--space-xs, 0.75rem);\n}\n\n.accordion details summary::before {\n    position: absolute;\n    top: calc(50% - 0.5em);\n    right: 1em;\n    width: 1em;\n    height: 1em;\n    transform-origin: center;\n    background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23222' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath stroke='none' d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='M9 6l6 6l-6 6' /%3E%3C/svg%3E\");\n    background-position: center;\n    background-size: 1.25em;\n    background-repeat: no-repeat;\n    content: \"\";\n    transition: rotate 50ms ease;\n}\n\n.accordion details summary::-webkit-details-marker {\n    display: none;\n}\n\n.accordion details[open] summary::before {\n    rotate: 90deg;\n}\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "css-only": [],
+    "react": []
+  },
+  "registryDependencies": {
+    "css-only": [],
+    "react": []
+  }
+}

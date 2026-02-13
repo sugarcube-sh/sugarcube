@@ -1,0 +1,69 @@
+---
+title: Switch
+description: A switch component.
+---
+
+import SwitchDemo from "@/registry/examples/switch-demo.astro";
+import SwitchBasic from "@/registry/examples/switch-basic.astro";
+import SwitchDisabled from "@/registry/examples/switch-disabled.astro";
+import SwitchCard from "@/registry/examples/switch-card.astro";
+import SwitchSizes from "@/registry/examples/switch-sizes.astro";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <SwitchDemo />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/switch-demo.astro" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components switch -f css-only" />
+
+## Source Code
+
+<SourceCode path="@/registry/components/switch/css/switch.css" collapsible={true} />
+
+## Usage
+
+Apply the `.switch` class to checkbox inputs:
+
+<ComponentDemo>
+    <SwitchBasic />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/switch-basic.astro" />
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the switch component. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Disabled
+
+<ComponentDemo>
+    <SwitchDisabled />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/switch-disabled.astro" />
+
+### Card style
+
+<ComponentDemo>
+    <SwitchCard />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/switch-card.astro",
+    "@/registry/examples/switch-card-css-only.css"
+]} />
+
+### Sizes
+
+<ComponentDemo>
+    <SwitchSizes />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/switch-sizes.astro",
+    "@/registry/examples/switch-sizes-css-only.css"
+]} />

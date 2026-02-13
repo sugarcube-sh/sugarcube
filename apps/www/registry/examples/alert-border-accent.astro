@@ -1,0 +1,40 @@
+---
+import { CircleAlert, CircleCheck, Info, TriangleAlert } from "@lucide/astro";
+---
+
+<div class="flow w-full">
+    <div class="alert" data-border-accent>
+        <div class="alert-title">Default with border accent</div>
+        <div class="alert-description">
+            This alert has a thick colored border on the left side.
+        </div>
+    </div>
+    <div class="alert" data-variant="success" data-border-accent>
+        <CircleCheck class="icon" />
+        <div class="alert-title">Success with border accent</div>
+        <div class="alert-description">
+            The border color matches the variant.
+        </div>
+    </div>
+    <div class="alert" data-variant="info" data-border-accent>
+        <Info class="icon" />
+        <div class="alert-title">Info with border accent</div>
+        <div class="alert-description">
+            This style is commonly used for important alerts.
+        </div>
+    </div>
+    <div class="alert" data-variant="warning" data-border-accent>
+        <TriangleAlert class="icon" />
+        <div class="alert-title">Warning with border accent</div>
+        <div class="alert-description">
+            Notice the thick colored border on the left.
+        </div>
+    </div>
+    <div class="alert" data-variant="error" data-border-accent>
+        <CircleAlert class="icon" />
+        <div class="alert-title">Error with border accent</div>
+        <div class="alert-description">
+            The border provides a strong visual indicator.
+        </div>
+    </div>
+</div>

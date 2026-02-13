@@ -1,0 +1,16 @@
+{
+  "space": {
+    "xs": {
+      "$type": "dimension",
+      "$value": { "value": 4, "unit": "px" }
+    },
+    "sm": {
+      "$type": "dimension",
+      "$value": { "value": 8, "unit": "px" }
+    },
+    "md": {
+      "$type": "dimension",
+      "$value": { "value": 16, "unit": "px" }
+    }
+  }
+}

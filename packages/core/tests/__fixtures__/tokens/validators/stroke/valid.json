@@ -1,0 +1,44 @@
+{
+  "stroke.keyword.solid": {
+    "$type": "strokeStyle",
+    "$value": "solid",
+    "$path": "stroke.keyword.solid",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/strokes.json"
+    }
+  },
+  "stroke.keyword.dashed": {
+    "$type": "strokeStyle",
+    "$value": "dashed",
+    "$path": "stroke.keyword.dashed",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/strokes.json"
+    }
+  },
+  "stroke.custom": {
+    "$type": "strokeStyle",
+    "$value": {
+      "dashArray": [{ "value": 4, "unit": "px" }],
+      "lineCap": "round"
+    },
+    "$path": "stroke.custom",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/strokes.json"
+    }
+  },
+  "stroke.custom.multiple": {
+    "$type": "strokeStyle",
+    "$value": {
+      "dashArray": [{ "value": 4, "unit": "px" }, { "value": 2, "unit": "px" }],
+      "lineCap": "butt"
+    },
+    "$path": "stroke.custom.multiple",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/strokes.json"
+    }
+  }
+}

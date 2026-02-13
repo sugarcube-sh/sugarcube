@@ -1,0 +1,9 @@
+{
+  "name": "compositions",
+  "type": "cube",
+  "path": "styles/compositions/sidebar.css",
+  "content": "/* \nSIDEBAR\nMore info: https://piccalil.li/blog/a-revisit-of-the-every-layout-sidebar-with-has-and-selector-performance/ and https://every-layout.dev/layouts/sidebar/\nA layout that allows you to have a flexible main content area\nand a \"fixed\" width sidebar that sits on the left or right.\nIf there is not enough viewport space to fit both the sidebar\nwidth *and* the main content minimum width, they will stack\non top of each other\n\nCUSTOM PROPERTIES AND CONFIGURATION\n--sidebar-gap: This defines the space\nbetween the sidebar and main content.\n\n--sidebar-size: How large the sidebar should be\n\n--sidebar-wrap-at: The minimum size of the main content area\n*/\n\n:has(> .sidebar) {\n    display: flex;\n    flex-wrap: wrap;\n    gap: var(--sidebar-gap, 1rem);\n    align-items: var(--align, flex-start);\n}\n\n.sidebar {\n    flex-basis: var(--sidebar-size, 20rem);\n    flex-grow: 1;\n}\n\n:has(> .sidebar) > :not(.sidebar) {\n    flex-basis: 0;\n    flex-grow: 999;\n    min-inline-size: var(--sidebar-wrap-at, 50%);\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

@@ -1,0 +1,10 @@
+node_modules
+dist
+notes
+coverage
+drafts
+.DS_Store
+.env*
+.wrangler
+*.log
+*.tsbuildinfo

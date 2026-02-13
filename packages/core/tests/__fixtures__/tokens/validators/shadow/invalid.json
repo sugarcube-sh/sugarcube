@@ -1,0 +1,84 @@
+{
+  "shadow.invalid.type": {
+    "$type": "shadow",
+    "$value": "not-an-object",
+    "$path": "shadow.invalid.type",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/shadows.json"
+    }
+  },
+  "shadow.invalid.color": {
+    "$type": "shadow",
+    "$value": {
+      "color": "not-a-color",
+      "offsetX": { "value": 0, "unit": "px" },
+      "offsetY": { "value": 2, "unit": "px" },
+      "blur": { "value": 4, "unit": "px" },
+      "spread": { "value": 0, "unit": "px" }
+    },
+    "$path": "shadow.invalid.color",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/shadows.json"
+    }
+  },
+  "shadow.invalid.dimension.unit": {
+    "$type": "shadow",
+    "$value": {
+      "color": "#000000",
+      "offsetX": { "value": 0, "unit": "em" },
+      "offsetY": { "value": 2, "unit": "px" },
+      "blur": { "value": 4, "unit": "px" },
+      "spread": { "value": 0, "unit": "px" }
+    },
+    "$path": "shadow.invalid.dimension.unit",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/shadows.json"
+    }
+  },
+  "shadow.invalid.dimension.value": {
+    "$type": "shadow",
+    "$value": {
+      "color": "#000000",
+      "offsetX": { "value": "zero", "unit": "px" },
+      "offsetY": { "value": 2, "unit": "px" },
+      "blur": { "value": 4, "unit": "px" },
+      "spread": { "value": 0, "unit": "px" }
+    },
+    "$path": "shadow.invalid.dimension.value",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/shadows.json"
+    }
+  },
+  "shadow.missing.required": {
+    "$type": "shadow",
+    "$value": {
+      "color": "#000000",
+      "offsetX": { "value": 0, "unit": "px" }
+    },
+    "$path": "shadow.missing.required",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/shadows.json"
+    }
+  },
+  "shadow.invalid.inset": {
+    "$type": "shadow",
+    "$value": {
+      "color": "#000000",
+      "offsetX": { "value": 0, "unit": "px" },
+      "offsetY": { "value": 2, "unit": "px" },
+      "blur": { "value": 4, "unit": "px" },
+      "spread": { "value": 0, "unit": "px" },
+      "inset": "true"
+    },
+    "$path": "shadow.invalid.inset",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/shadows.json"
+    }
+  }
+}

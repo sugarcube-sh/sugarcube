@@ -1,0 +1,21 @@
+{
+  "version": "2025.10",
+  "name": "With Extending References",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "$ref": "tokens/colors.json",
+          "color": {
+            "accent": {
+              "$type": "color",
+              "$value": "#f59e0b"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

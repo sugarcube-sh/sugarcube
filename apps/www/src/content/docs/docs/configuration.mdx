@@ -1,0 +1,106 @@
+---
+title: Configuration
+---
+
+This page is designed to help you achieve common configuration-based tasks quickly. If you're after a complete reference of configuration options instead, see the [configuration schema reference](/docs/reference/configuration-schema).
+
+## Zero-Config by Default
+
+Sugarcube works out of the box with sensible defaults and auto-discovery.
+
+### When You Need a Config File
+
+**Using the Vite plugin?** You only need a config file if you want to customize any settings (output directories, fluid ranges, etc.).
+
+**Using the CLI?** Config file is optional. You can customize settings via CLI flags on each command, or put them in a config file to avoid repeating flags.
+
+## Creating a Config File
+
+When you run `init` with customization flags, sugarcube creates a minimal `sugarcube.config.{ts|js}` file containing the settings you customized:
+
+```bash frame="none"
+npx @sugarcube-sh/cli init --styles-dir public/css --variables-dir public/tokens
+```
+
+Creates:
+
+```ts title="sugarcube.config.ts" frame="none"
+import { defineConfig } from "@sugarcube-sh/vite";
+
+export default defineConfig({
+  output: {
+    cssRoot: "public/css",
+    variables: "public/tokens"
+  }
+});
+```
+
+If you run `init` without any flags, no config file is created.
+
+## Configuring fluid spacing and typography
+
+To adjust the 'slope' of the scaling curve for fluid calculations, configure the viewport range for fluid calculations:
+
+```ts title="sugarcube.config.ts" ins={3-8}
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  transforms: {
+    fluid: {
+      min: 375,
+      max: 1440
+    }
+  }
+});
+```
+
+For more on fluid spacing and typography in sugarcube, see [fluid spacing and typography](/docs/fluid-space-and-type).
+
+## Polyfilling modern CSS color formats
+
+To polyfill modern CSS color formats for older browsers, set `colorFallbackStrategy` to `"polyfill"`:
+
+```ts title="sugarcube.config.ts" ins={4-6}
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  resolver: "src/design-tokens/tokens.resolver.json",
+  transforms: {
+    colorFallbackStrategy: "polyfill"
+  }
+});
+```
+
+For more on color formats in sugarcube, see [color formats](/docs/color-formats).
+
+## Changing where components are copied to
+
+To change where components are copied to, set `output.components`:
+
+```ts title="sugarcube.config.ts" ins={4-6}
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  resolver: "src/design-tokens/tokens.resolver.json",
+  output: {
+    components: "src/components"
+  }
+});
+```
+
+## Changing where CSS files are written
+
+To change where CSS files are written, set `output.cssRoot`:
+
+```ts title="sugarcube.config.ts" ins={4-6}
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  resolver: "src/design-tokens/tokens.resolver.json",
+  output: {
+    cssRoot: "styles"
+  }
+});
+```
+
+This sets the base directory. Token variables, utilities, and CUBE CSS will be output under this directory by default. But you can override individual paths with `output.variables`, `output.utilities`, or `output.cube` if needed.

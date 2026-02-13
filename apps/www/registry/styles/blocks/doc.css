@@ -1,0 +1,155 @@
+/* Default flow space. Change this one value to change the overall feel */
+.doc {
+    --flow-space: var(--space-md, 2rem);
+}
+
+/* Increase legibility by limiting line lengths */
+.doc :is(p, li, dl, figcaption, blockquote) {
+    max-width: 70ch;
+    text-wrap: pretty;
+}
+
+/* Limit the length of headings, too */
+.doc :is(h1, h2, h3, h4) {
+    max-width: 35ch;
+}
+
+.doc :is(h1, h2, h3) {
+    /* Allow words to break by default. Great for small viewports */
+    overflow-wrap: anywhere;
+}
+
+.doc :is(h1) {
+    font-size: var(--text-4xl);
+}
+.doc :is(h2) {
+    font-size: var(--text-2xl);
+}
+.doc :is(h3) {
+    font-size: var(--text-xl);
+}
+.doc :is(h4) {
+    font-size: var(--text-lg);
+}
+
+/* Heading flow for elements that follow them */
+.doc :is(h1, h2, h3, h4, .anchor-heading):not(.not-doc) + *:not(.not-doc) {
+    --flow-space: var(--space-sm);
+}
+
+/* Add more space on and around figures and tables */
+.doc :is(figure, table):not(.not-doc),
+.doc :is(figure, table):not(.not-doc) + *:not(.not-doc) {
+    --flow-space: var(--space-2xl);
+}
+
+/* Add more space to headings on block start */
+.doc *:not(.not-doc) + :is(h1, h2, h3, h4):not(.not-doc) {
+    --flow-space: var(--space-xl);
+}
+
+/* Flow for list items */
+.doc :is(ul, ol):not(.not-doc) li + li,
+.doc :is(ul, ol):not(.not-doc) li > :is(ol, ul):not(.not-doc) {
+    margin-block-start: var(--space-xs);
+}
+
+/* Flow for list items when a paragraph is inside it. Should be same as default flow space */
+.doc :is(ul, ol):not(.not-doc) li + li:has(p) {
+    margin-block-start: var(--flow-space, var(--space-lg, 2rem));
+}
+
+/* Flow for paragraphs used inside list items */
+.doc :is(ul, ol) li:has(> p) > p {
+    margin-block-start: var(--space-xs);
+}
+
+/* Flow for dt/dd groups. Should be same as default flow space */
+.doc :is(dl):not(.not-doc) dd + dt {
+    margin-block-start: var(--flow-space, var(--space-lg, 2rem));
+}
+
+/* Flow for dt/dd pairs */
+.doc :is(dl):not(.not-doc) dt + dd {
+    margin-block-start: var(--space-xs, 0.75rem);
+}
+
+/* Add lots of space for horizontal rules */
+.doc :is(hr) {
+    --flow-space: var(--space-2xl);
+}
+
+/* Bump up the line height for paragraphs */
+.doc :is(p) {
+    line-height: 2;
+}
+
+/* Bump down the font weight for headings, dt, and strong */
+.doc :is(h1, h2, h3, h4, h5, h6, dt, strong) {
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+.doc :is(blockquote) {
+    padding-inline-start: var(--space-sm);
+    border-inline-start-width: 0.25rem;
+    border-inline-start-style: solid;
+    border-inline-start-color: var(--doc-blockquote-border-color, var(--color-surface-border));
+}
+
+.doc :is(blockquote) p {
+    font-style: italic;
+    font-weight: var(--font-weight-medium, 500);
+}
+
+.doc :is(kbd) {
+    border-radius: var(--radius-input, 0.25rem);
+}
+
+.doc :is(code):not(.not-doc):not(pre code) {
+    font-weight: var(--font-weight-semibold, 600);
+    font-size: 0.95em;
+    background: revert;
+}
+
+.doc :is(code):not(.not-doc):not(pre code):before {
+    content: "`";
+}
+
+.doc :is(code):not(.not-doc):not(pre code):after {
+    content: "`";
+}
+
+.doc pre {
+    border-radius: var(--panel-radius, 0.5rem);
+}
+
+.doc :is(ol, ul):not(.not-doc) {
+    padding-inline-start: var(--space-md, 1.5rem);
+}
+
+.doc :is(ol, ul):not(.not-doc) li {
+    padding-inline-start: var(--space-2xs, 0.5rem);
+}
+
+.doc :is(ul > li):not(.not-doc)::marker {
+    color: var(--doc-list-marker-color, var(--color-neutral-400));
+}
+
+.doc :is(ol > li):not(.not-doc)::marker {
+    font-weight: var(--font-weight-normal, 400);
+    color: var(--doc-list-marker-color, var(--color-neutral-400));
+    font-size: var(--doc-list-marker-size, 1em);
+}
+
+/* .prose :is(ol > li):not(.not-prose):has(:is(h1, h2, h3, h4, h5, h6))::marker {
+    font-size: 0.8em;
+    font-family: var(--font-mono);
+} */
+
+.doc :is(ul, ol) li:has(> *:not(.not-doc)) > *:not(.not-doc) {
+    margin-block-start: var(--space-sm);
+}
+
+.doc :is(.anchor-heading) {
+    font-size: var(--text-base);
+}

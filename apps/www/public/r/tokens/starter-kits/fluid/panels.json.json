@@ -1,0 +1,9 @@
+{
+  "name": "fluid",
+  "type": "tokens",
+  "path": "tokens/starter-kits/fluid/panels.json",
+  "content": "{\n  \"panel\": {\n    \"radius\": {\n      \"$value\": \"{radius.lg}\"\n    },\n    \"border-style\": {\n      \"$value\": \"{border.style}\"\n    },\n    \"border-color\": {\n      \"$value\": \"{color.border.normal}\"\n    },\n    \"border-width\": {\n      \"$value\": \"{border.width.thin}\"\n    }\n  }\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

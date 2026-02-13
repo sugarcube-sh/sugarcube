@@ -1,0 +1,822 @@
+[
+  {
+    "name": "accordion",
+    "type": "component",
+    "frameworks": [
+      "react",
+      "css-only"
+    ],
+    "files": [
+      {
+        "path": "components/accordion/react/accordion.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/accordion/react/accordion.css",
+        "type": "css",
+        "framework": "react"
+      },
+      {
+        "path": "components/accordion/css/accordion.css",
+        "type": "css",
+        "framework": "css-only"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "@radix-ui/react-accordion",
+        "lucide-react",
+        "clsx"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "alert",
+    "type": "component",
+    "frameworks": [
+      "react",
+      "css-only"
+    ],
+    "files": [
+      {
+        "path": "components/alert/react/alert.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/alert/react/alert.css",
+        "type": "css",
+        "framework": "react"
+      },
+      {
+        "path": "components/alert/css/alert.css",
+        "type": "css",
+        "framework": "css-only"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "clsx"
+      ]
+    }
+  },
+  {
+    "name": "avatar",
+    "type": "component",
+    "frameworks": [
+      "react",
+      "css-only"
+    ],
+    "files": [
+      {
+        "path": "components/avatar/react/avatar.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/avatar/react/avatar.css",
+        "type": "css",
+        "framework": "react"
+      },
+      {
+        "path": "components/avatar/css/avatar.css",
+        "type": "css",
+        "framework": "css-only"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "@radix-ui/react-avatar",
+        "lucide-react",
+        "clsx"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "badge",
+    "type": "component",
+    "frameworks": [
+      "react",
+      "css-only"
+    ],
+    "files": [
+      {
+        "path": "components/badge/react/badge.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/badge/react/badge.css",
+        "type": "css",
+        "framework": "react"
+      },
+      {
+        "path": "components/badge/css/badge.css",
+        "type": "css",
+        "framework": "css-only"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "clsx"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "button",
+    "type": "component",
+    "frameworks": [
+      "react",
+      "css-only"
+    ],
+    "files": [
+      {
+        "path": "components/button/react/button.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/button/react/button.css",
+        "type": "css",
+        "framework": "react"
+      },
+      {
+        "path": "components/button/css/button.css",
+        "type": "css",
+        "framework": "css-only"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "@radix-ui/react-slot",
+        "clsx"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "card",
+    "type": "component",
+    "frameworks": [
+      "react",
+      "css-only"
+    ],
+    "files": [
+      {
+        "path": "components/card/react/card.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/card/react/card.css",
+        "type": "css",
+        "framework": "react"
+      },
+      {
+        "path": "components/card/css/card.css",
+        "type": "css",
+        "framework": "css-only"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "clsx"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "checkbox",
+    "type": "component",
+    "frameworks": [
+      "react",
+      "css-only"
+    ],
+    "files": [
+      {
+        "path": "components/checkbox/react/checkbox.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/checkbox/react/checkbox.css",
+        "type": "css",
+        "framework": "react"
+      },
+      {
+        "path": "components/checkbox/css/checkbox.css",
+        "type": "css",
+        "framework": "css-only"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "@radix-ui/react-checkbox",
+        "lucide-react"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "combobox",
+    "type": "component",
+    "frameworks": [
+      "react"
+    ],
+    "files": [
+      {
+        "path": "components/combobox/react/combobox.tsx",
+        "type": "tsx",
+        "framework": "react"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "lucide-react"
+      ]
+    },
+    "registryDependencies": {
+      "react": [
+        "button",
+        "popover",
+        "command"
+      ]
+    }
+  },
+  {
+    "name": "command",
+    "type": "component",
+    "frameworks": [
+      "react"
+    ],
+    "files": [
+      {
+        "path": "components/command/react/command.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/command/react/command.css",
+        "type": "css",
+        "framework": "react"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "clsx",
+        "cmdk"
+      ]
+    },
+    "registryDependencies": {
+      "react": [
+        "dialog"
+      ]
+    }
+  },
+  {
+    "name": "dialog",
+    "type": "component",
+    "frameworks": [
+      "react",
+      "css-only"
+    ],
+    "files": [
+      {
+        "path": "components/dialog/react/dialog.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/dialog/react/dialog.css",
+        "type": "css",
+        "framework": "react"
+      },
+      {
+        "path": "components/dialog/css/dialog.css",
+        "type": "css",
+        "framework": "css-only"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "clsx",
+        "@radix-ui/react-dialog"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "dropdown-menu",
+    "type": "component",
+    "frameworks": [
+      "react"
+    ],
+    "files": [
+      {
+        "path": "components/dropdown-menu/react/dropdown-menu.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/dropdown-menu/react/dropdown-menu.css",
+        "type": "css",
+        "framework": "react"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "@radix-ui/react-dropdown-menu",
+        "lucide-react",
+        "clsx"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "input",
+    "type": "component",
+    "frameworks": [
+      "react",
+      "css-only"
+    ],
+    "files": [
+      {
+        "path": "components/input/react/input.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/input/react/input.css",
+        "type": "css",
+        "framework": "react"
+      },
+      {
+        "path": "components/input/css/input.css",
+        "type": "css",
+        "framework": "css-only"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "react",
+        "react-dom",
+        "clsx"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "label",
+    "type": "component",
+    "frameworks": [
+      "react"
+    ],
+    "files": [
+      {
+        "path": "components/label/react/label.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/label/react/label.css",
+        "type": "css",
+        "framework": "react"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "clsx",
+        "@radix-ui/react-label"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "popover",
+    "type": "component",
+    "frameworks": [
+      "react"
+    ],
+    "files": [
+      {
+        "path": "components/popover/react/popover.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/popover/react/popover.css",
+        "type": "css",
+        "framework": "react"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "@radix-ui/react-popover",
+        "clsx"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "radio-group",
+    "type": "component",
+    "frameworks": [
+      "react",
+      "css-only"
+    ],
+    "files": [
+      {
+        "path": "components/radio-group/react/radio-group.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/radio-group/react/radio-group.css",
+        "type": "css",
+        "framework": "react"
+      },
+      {
+        "path": "components/radio-group/css/radio-group.css",
+        "type": "css",
+        "framework": "css-only"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "@radix-ui/react-radio-group",
+        "lucide-react",
+        "clsx"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "select",
+    "type": "component",
+    "frameworks": [
+      "react",
+      "css-only"
+    ],
+    "files": [
+      {
+        "path": "components/select/react/select.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/select/react/select.css",
+        "type": "css",
+        "framework": "react"
+      },
+      {
+        "path": "components/select/css/select.css",
+        "type": "css",
+        "framework": "css-only"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "@radix-ui/react-select",
+        "lucide-react"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "switch",
+    "type": "component",
+    "frameworks": [
+      "react",
+      "css-only"
+    ],
+    "files": [
+      {
+        "path": "components/switch/react/switch.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/switch/react/switch.css",
+        "type": "css",
+        "framework": "react"
+      },
+      {
+        "path": "components/switch/css/switch.css",
+        "type": "css",
+        "framework": "css-only"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "react",
+        "react-dom",
+        "clsx",
+        "@radix-ui/react-switch"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "tabs",
+    "type": "component",
+    "frameworks": [
+      "react"
+    ],
+    "files": [
+      {
+        "path": "components/tabs/react/tabs.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/tabs/react/tabs.css",
+        "type": "css",
+        "framework": "react"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "clsx",
+        "@radix-ui/react-tabs"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "textarea",
+    "type": "component",
+    "frameworks": [
+      "react"
+    ],
+    "files": [
+      {
+        "path": "components/textarea/react/textarea.tsx",
+        "type": "tsx",
+        "framework": "react"
+      },
+      {
+        "path": "components/textarea/react/textarea.css",
+        "type": "css",
+        "framework": "react"
+      }
+    ],
+    "dependencies": {
+      "react": [
+        "clsx"
+      ]
+    },
+    "registryDependencies": {
+      "react": []
+    }
+  },
+  {
+    "name": "blocks",
+    "type": "cube",
+    "files": [
+      {
+        "path": "styles/blocks/prose.css",
+        "type": "css"
+      }
+    ]
+  },
+  {
+    "name": "compositions",
+    "type": "cube",
+    "files": [
+      {
+        "path": "styles/compositions/cluster.css",
+        "type": "css"
+      },
+      {
+        "path": "styles/compositions/grid.css",
+        "type": "css"
+      },
+      {
+        "path": "styles/compositions/flow.css",
+        "type": "css"
+      },
+      {
+        "path": "styles/compositions/repel.css",
+        "type": "css"
+      },
+      {
+        "path": "styles/compositions/sidebar.css",
+        "type": "css"
+      },
+      {
+        "path": "styles/compositions/switcher.css",
+        "type": "css"
+      },
+      {
+        "path": "styles/compositions/wrapper.css",
+        "type": "css"
+      }
+    ]
+  },
+  {
+    "name": "utilities",
+    "type": "cube",
+    "files": [
+      {
+        "path": "styles/utilities/region.css",
+        "type": "css"
+      },
+      {
+        "path": "styles/utilities/visually-hidden.css",
+        "type": "css"
+      }
+    ]
+  },
+  {
+    "name": "global",
+    "type": "cube",
+    "files": [
+      {
+        "path": "styles/global/global.css",
+        "type": "css"
+      }
+    ]
+  },
+  {
+    "name": "static",
+    "type": "tokens",
+    "files": [
+      {
+        "path": "tokens/starter-kits/static/borders.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/colors.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/tokens.resolver.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/containers.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/corners.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/cube.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/dark.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/elevation.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/focus.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/form-controls.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/motion.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/palette.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/panels.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/shadows.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/size.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/space.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/static/typography.json",
+        "type": "json"
+      }
+    ]
+  },
+  {
+    "name": "fluid",
+    "type": "tokens",
+    "files": [
+      {
+        "path": "tokens/starter-kits/fluid/borders.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/colors.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/tokens.resolver.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/containers.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/corners.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/cube.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/dark.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/elevation.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/focus.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/form-controls.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/motion.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/palette.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/panels.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/shadows.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/size.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/space.json",
+        "type": "json"
+      },
+      {
+        "path": "tokens/starter-kits/fluid/typography.json",
+        "type": "json"
+      }
+    ]
+  }
+]

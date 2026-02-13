@@ -1,0 +1,7 @@
+.avatar[data-shape="square"] {
+    border-radius: 0;
+}
+
+.avatar[data-shape="rounded"] {
+    border-radius: var(--radius-lg);
+}

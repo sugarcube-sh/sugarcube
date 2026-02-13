@@ -1,0 +1,49 @@
+---
+// Wrapper composition demo
+---
+
+<div class="flow flow-space-md">
+    <h2>Wrapper Composition</h2>
+    <p>
+        The wrapper composition centers content and applies a maximum width.
+        Perfect for main content areas that shouldn't stretch too wide on large
+        screens.
+    </p>
+
+    <div class="wrapper">
+        <h3>Centered Content</h3>
+        <p>
+            This content is centered and has a maximum width. It prevents text
+            from becoming too wide to read comfortably on large screens while
+            maintaining good readability.
+        </p>
+        <p>
+            The wrapper composition is ideal for main content areas, articles,
+            forms, and any content that benefits from controlled width and
+            centering.
+        </p>
+    </div>
+
+    <div class="wrapper">
+        <h3>Form Example</h3>
+        <form class="flow flow-space-sm">
+            <div>
+                <label for="name">Name</label>
+                <input type="text" id="name" />
+            </div>
+            <div>
+                <label for="email">Email</label>
+                <input type="email" id="email" />
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+
+    <div class="wrapper">
+        <h3>Card Layout</h3>
+        <div class="card">
+            <h4>Card Title</h4>
+            <p>This card is wrapped and centered for optimal reading.</p>
+        </div>
+    </div>
+</div>

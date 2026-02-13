@@ -1,0 +1,9 @@
+{
+  "name": "fluid",
+  "type": "tokens",
+  "path": "tokens/starter-kits/fluid/elevation.json",
+  "content": "{\n  \"z\": {\n    \"$type\": \"number\",\n    \"raised\": { \"$value\": 1 },\n    \"dropdown\": { \"$value\": 50 },\n    \"modal\": { \"$value\": 100 },\n    \"tooltip\": { \"$value\": 150 },\n    \"notification\": { \"$value\": 200 }\n  }\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

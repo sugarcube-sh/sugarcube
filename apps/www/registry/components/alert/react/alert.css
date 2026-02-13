@@ -1,0 +1,42 @@
+.alert {
+    position: relative;
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    border: var(--border-width-thin) var(--border-style)
+        var(--color-border-normal, var(--color-neutral-border-normal));
+    padding-inline: var(--space-sm);
+    padding-block: var(--space-xs);
+    border-radius: var(--panel-radius);
+    box-shadow: var(--shadow-xs);
+}
+
+.alert:has(svg) {
+    display: grid;
+    grid-template-columns: 1rem 1fr;
+    row-gap: var(--space-3xs);
+    column-gap: var(--space-xs);
+}
+
+.alert .button {
+    grid-column: var(--alert-action-col-start, 3);
+}
+
+.alert svg {
+    justify-self: center;
+    align-self: center;
+}
+
+.alert .alert-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    grid-column-start: var(--alert-title-col-start, 2);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--tracking-tight);
+}
+
+.alert .alert-description {
+    grid-column-start: var(--alert-description-col-start, 2);
+}

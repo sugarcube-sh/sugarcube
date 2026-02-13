@@ -1,0 +1,109 @@
+---
+import {
+    Variable,
+    Wrench,
+    Package,
+    Layers,
+    LayoutGrid,
+    Puzzle,
+    Palette,
+    Plug,
+    BriefcaseBusiness,
+    Landmark,
+    SunMoon,
+    Watch,
+} from "@lucide/astro";
+
+const icons = {
+    Variable,
+    Wrench,
+    Package,
+    Layers,
+    LayoutGrid,
+    Puzzle,
+    Palette,
+    Plug,
+    BriefcaseBusiness,
+    Landmark,
+    SunMoon,
+    Watch,
+};
+
+const features = [
+    {
+        icon: "Variable",
+        title: "Single source of truth for your styles",
+        description:
+            "Define your design decisions as tokens. Sugarcube generates CSS variables and utility classes from them — change a token and everything updates.",
+    },
+    {
+        icon: "Watch",
+        title: "Just-in-time utilities",
+        description:
+            "Utility classes are generated on demand. Only the classes you use end up in your CSS — no bloat.",
+    },
+    {
+        icon: "BriefcaseBusiness",
+        title: "Portable token format",
+        description:
+            "Tokens use the newly stable DTCG format — ready for any tool that does the same, so you're not locked in.",
+    },
+    {
+        icon: "Palette",
+        title: "Starter kits",
+        description:
+            "Don't have tokens? We'll add a complete starter kit on initialization. Yours to learn from, use as-is, or customize.",
+    },
+    {
+        icon: "SunMoon",
+        title: "Maximum themeability built in",
+        description:
+            "Manage and generate multiple modes, themes, or brands all by changing a few tokens.",
+    },
+    {
+        icon: "Landmark",
+        title: "CSS architecture",
+        description:
+            "Structure your styles with CUBE CSS — a methodology that keeps your HTML clean and your CSS organized.",
+    },
+    {
+        icon: "Puzzle",
+        title: "Components",
+        description:
+            "Copy from the registry as source files. Yours to fully customize. Built for token-driven front ends.",
+    },
+    {
+        icon: "Plug",
+        title: "No runtime, no lock-in",
+        description:
+            "No runtime dependency in your bundle. Generate static CSS with the CLI, or use the Vite plugin for hot reloading during dev.",
+    },
+];
+---
+
+<section class="region flow region-space-md">
+    <h2>
+        <span>##</span>Features
+    </h2>
+    <div class="grid-auto" style="--grid-item-min: 20rem;">
+        {
+            features.map((feature) => {
+                const Icon = icons[feature.icon as keyof typeof icons];
+                return (
+                    <div
+                        class="site-card p-sm flow"
+                        data-appearance="soft-outlined"
+                    >
+                        <div class="cluster cluster-gap-xs">
+                            <div>
+                                <Icon class="text-quiet text-xl" />
+                            </div>
+                            <h3 class="text-base">{feature.title}</h3>
+                        </div>
+                        <p>{feature.description}</p>
+                    </div>
+                );
+            })
+        }
+    </div>
+</section>

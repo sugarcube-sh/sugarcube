@@ -1,0 +1,18 @@
+{
+  "name": "alert",
+  "type": "component",
+  "path": "components/alert/css/alert.css",
+  "content": ".alert {\n    position: relative;\n    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));\n    color: var(--color-on-normal, var(--color-neutral-on-normal));\n    border: var(--border-width-thin) var(--border-style)\n        var(--color-border-normal, var(--color-neutral-border-normal));\n    padding-inline: var(--space-sm);\n    padding-block: var(--space-xs);\n    border-radius: var(--panel-radius);\n    box-shadow: var(--shadow-xs);\n}\n\n.alert:has(svg) {\n    display: grid;\n    grid-template-columns: 1rem 1fr;\n    row-gap: var(--space-3xs);\n    column-gap: var(--space-xs);\n}\n\n.alert .button {\n    grid-column: var(--alert-action-col-start, 3);\n}\n\n.alert svg {\n    justify-self: center;\n    align-self: center;\n}\n\n.alert .alert-title {\n    display: -webkit-box;\n    -webkit-line-clamp: 1;\n    line-clamp: 1;\n    -webkit-box-orient: vertical;\n    overflow: hidden;\n    grid-column-start: var(--alert-title-col-start, 2);\n    font-weight: var(--font-weight-medium);\n    letter-spacing: var(--tracking-tight);\n}\n\n.alert .alert-description {\n    grid-column-start: var(--alert-description-col-start, 2);\n}\n\n.alert a,\n.alert-description a {\n    color: inherit;\n}\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "css-only": [],
+    "react": []
+  },
+  "registryDependencies": {
+    "css-only": [],
+    "react": []
+  }
+}

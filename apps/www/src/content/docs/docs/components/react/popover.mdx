@@ -1,0 +1,24 @@
+---
+title: Popover
+description: A popover component.
+---
+import { PopoverDemo } from "@/registry/examples/popover-demo.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+
+## Preview
+
+<ComponentDemo>
+    <PopoverDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/popover-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components popover -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/popover/react/popover.tsx",
+    "@/registry/components/popover/react/popover.css"
+]} collapsible={true} />

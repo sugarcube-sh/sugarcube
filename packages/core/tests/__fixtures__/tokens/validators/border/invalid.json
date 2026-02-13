@@ -1,0 +1,90 @@
+{
+  "border.missing-color": {
+    "$type": "border",
+    "$value": {
+      "width": { "value": 1, "unit": "px" },
+      "style": "solid"
+    },
+    "$path": "border.missing-color",
+    "$source": { "file": "tokens" },
+    "$originalPath": "border.missing-color"
+  },
+  "border.missing-width": {
+    "$type": "border",
+    "$value": {
+      "color": "#000000",
+      "style": "solid"
+    },
+    "$path": "border.missing-width",
+    "$source": { "file": "tokens" },
+    "$originalPath": "border.missing-width"
+  },
+  "border.missing-style": {
+    "$type": "border",
+    "$value": {
+      "color": "#000000",
+      "width": { "value": 1, "unit": "px" }
+    },
+    "$path": "border.missing-style",
+    "$source": { "file": "tokens" },
+    "$originalPath": "border.missing-style"
+  },
+  "border.invalid-color": {
+    "$type": "border",
+    "$value": {
+      "color": "not-a-color",
+      "width": { "value": 1, "unit": "px" },
+      "style": "solid"
+    },
+    "$path": "border.invalid-color",
+    "$source": { "file": "tokens" },
+    "$originalPath": "border.invalid-color"
+  },
+  "border.invalid-width-value": {
+    "$type": "border",
+    "$value": {
+      "color": "#000000",
+      "width": { "value": "1", "unit": "px" },
+      "style": "solid"
+    },
+    "$path": "border.invalid-width-value",
+    "$source": { "file": "tokens" },
+    "$originalPath": "border.invalid-width-value"
+  },
+  "border.invalid-width-unit": {
+    "$type": "border",
+    "$value": {
+      "color": "#000000",
+      "width": { "value": 1, "unit": "em" },
+      "style": "solid"
+    },
+    "$path": "border.invalid-width-unit",
+    "$source": { "file": "tokens" },
+    "$originalPath": "border.invalid-width-unit"
+  },
+  "border.invalid-style-keyword": {
+    "$type": "border",
+    "$value": {
+      "color": "#000000",
+      "width": { "value": 1, "unit": "px" },
+      "style": "invalid"
+    },
+    "$path": "border.invalid-style-keyword",
+    "$source": { "file": "tokens" },
+    "$originalPath": "border.invalid-style-keyword"
+  },
+  "border.invalid-custom-style": {
+    "$type": "border",
+    "$value": {
+      "color": "#000000",
+      "width": { "value": 1, "unit": "px" },
+      "style": {
+        "dashArray": [{ "value": 4, "unit": "em" }],
+        "lineCap": "invalid"
+      }
+    },
+    "$path": "border.invalid-custom-style",
+    "$source": { "file": "tokens" },
+    "$originalPath": "border.invalid-custom-style"
+  }
+}

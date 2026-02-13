@@ -1,0 +1,43 @@
+.switch {
+    --scale: 1;
+    --_switch-height: calc(1rem * var(--scale));
+    --_switch-width: calc(1.85rem * var(--scale));
+    --_switch-thumb-travel: calc(var(--_switch-width) - var(--_switch-height));
+    --_switch-thumb-size: calc(var(--_switch-height) - var(--form-control-border-width) * 2);
+
+    appearance: none;
+    cursor: pointer;
+    position: relative;
+    width: var(--_switch-width);
+    height: var(--_switch-height);
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface-lowest);
+    border: 1px var(--border-style) #0000;
+    transition: background-color var(--transition-normal) var(--ease-in-out);
+}
+
+.switch::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: var(--_switch-thumb-size);
+    height: var(--_switch-thumb-size);
+    border: var(--form-control-border-width) var(--border-style) #0000;
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface-default);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-normal) var(--ease-in-out);
+}
+
+.switch:checked {
+    background-color: var(--color-accent-fill-loud, var(--color-neutral-fill-loud));
+}
+
+.switch:checked::before {
+    transform: translateX(var(--_switch-thumb-travel));
+}
+
+.switch:checked::after {
+    mask: none;
+    background-color: var(--color-accent-fill-loud, var(--color-neutral-fill-loud));
+}

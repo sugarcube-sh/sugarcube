@@ -1,0 +1,29 @@
+{
+  "spacing.small": {
+    "$type": "dimension",
+    "$value": {
+      "value": 8,
+      "unit": "px"
+    },
+    "$path": "spacing.small",
+    "$source": { "file": "tokens/spacing.json" },
+    "$originalPath": "spacing.small"
+  },
+  "spacing.medium": {
+    "$type": "dimension",
+    "$value": {
+      "value": 1,
+      "unit": "rem"
+    },
+    "$path": "spacing.medium",
+    "$source": { "file": "tokens/spacing.json" },
+    "$originalPath": "spacing.medium"
+  },
+  "spacing.reference": {
+    "$type": "dimension",
+    "$value": "{spacing.small}",
+    "$path": "spacing.reference",
+    "$source": { "file": "tokens/spacing.json" },
+    "$originalPath": "spacing.reference"
+  }
+}

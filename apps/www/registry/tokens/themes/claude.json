@@ -1,0 +1,65 @@
+{
+  "color": {
+    "$type": "color",
+    "transparent": {
+      "$value": "{color.alpha.black.00}"
+    },
+    "white": {
+      "$value": "#FFFFFF"
+    },
+    "black": {
+      "$value": "#000000"
+    },
+    "bg": {
+      "$value": "#FAF9F5"
+    },
+    "bg-offset-1": {
+      "$value": "#F5F4ED"
+    },
+    "bg-offset-2": {
+      "$value": "#F0EEE6"
+    },
+    "bg-offset-3": {
+      "$value": "#E8E6DC"
+    },
+    "primary": {
+      "$value": "#c96442"
+    },
+    "primary-offset-1": {
+      "$value": "#c96442"
+    },
+    "primary-offset-2": {
+      "$value": "#c96442"
+    },
+    "border": {
+      "$value": "#1c1c1a26"
+    },
+    "overlay": {
+      "$value": "{color.alpha.black.50}"
+    },
+    "text": {
+      "primary": {
+        "$value": "#1c1c1a"
+      },
+      "secondary": {
+        "$value": "{color.neutral.700}"
+      },
+      "title": {
+        "$value": "#1c1c1a"
+      },
+      "muted": {
+        "$value": "{color.neutral.500}"
+      }
+    }
+  },
+  "card": {
+    "bg": {
+      "$value": "{color.bg-offset-1}"
+    }
+  },
+  "input": {
+    "bg": {
+      "$value": "{color.bg-offset-2}"
+    }
+  }
+}

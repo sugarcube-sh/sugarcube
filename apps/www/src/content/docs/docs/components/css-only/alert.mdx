@@ -1,0 +1,127 @@
+---
+title: Alert
+description: An alert component.
+---
+
+import AlertDemo from "@/registry/examples/alert-demo.astro";
+import AlertVariants from "@/registry/examples/alert-variants.astro";
+import AlertAppearances from "@/registry/examples/alert-appearances.astro";
+import AlertSizes from "@/registry/examples/alert-sizes.astro";
+import AlertWithoutIcon from "@/registry/examples/alert-without-icon.astro";
+import AlertDescriptionOnly from "@/registry/examples/alert-description-only.astro";
+import AlertBorderAccent from "@/registry/examples/alert-border-accent.astro";
+import AlertTintedShadows from "@/registry/examples/alert-tinted-shadows.astro";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <AlertDemo />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/alert-demo.astro" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components alert -f css-only" />
+
+## Source Code
+
+<SourceCode path="@/registry/components/alert/css/alert.css" collapsible={true} />
+
+## Usage
+
+Apply the `.alert`, `.alert-title`, and `.alert-description` classes to your markup:
+
+```html
+<div class="alert">
+  <svg><!-- icon --></svg>
+  <div class="alert-title">Alert Title</div>
+  <div class="alert-description">Alert description text</div>
+  <button class="button">Action</button>
+</div>
+```
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the alert component with variants, appearances, and features. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Variants
+
+You can add color variants using data attributes. This example shows how you might implement variants using CSS custom properties:
+
+<ComponentDemo>
+    <AlertVariants />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/alert-variants.astro",
+    "@/registry/examples/alert-variants.css"
+]} />
+
+### Appearances
+
+You can add different visual appearances using data attributes. This example shows how you might implement different alert styles:
+
+<ComponentDemo>
+    <AlertAppearances />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/alert-appearances.astro",
+    "@/registry/examples/alert-appearances.css"
+]} />
+
+### Sizes
+
+You can add different sizes to the alert using data attributes. This example shows how you might implement different alert sizes:
+
+<ComponentDemo>
+    <AlertSizes />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/alert-sizes.astro",
+    "@/registry/examples/alert-sizes.css"
+]} />
+
+### Without icon
+
+Alerts work perfectly fine without icons. This example shows variants without icons:
+
+<ComponentDemo>
+    <AlertWithoutIcon />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/alert-without-icon.astro" />
+
+### Description only
+
+You can use alerts with just a description and no title:
+
+<ComponentDemo>
+    <AlertDescriptionOnly />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/alert-description-only.astro" />
+
+### Border accent
+
+You can add a thick colored border on the left side for a strong visual indicator:
+
+<ComponentDemo>
+    <AlertBorderAccent />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/alert-border-accent.astro",
+    "@/registry/examples/alert-border-accent.css"
+]} />
+
+### Tinted shadows
+
+You can add tinted shadows that match the alert color. This example shows how you might implement tinted shadows:
+
+<ComponentDemo>
+    <AlertTintedShadows />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/alert-tinted-shadows.astro",
+    "@/registry/examples/alert-tinted-shadows.css"
+]} />

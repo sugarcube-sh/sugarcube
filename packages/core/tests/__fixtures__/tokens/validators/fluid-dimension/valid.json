@@ -1,0 +1,26 @@
+{
+  "spacing.fluid.1": {
+    "$type": "fluidDimension",
+    "$value": {
+      "min": { "value": 16, "unit": "px" },
+      "max": { "value": 24, "unit": "px" }
+    },
+    "$path": "spacing.fluid.1",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/spacing.json"
+    }
+  },
+  "spacing.fluid.2": {
+    "$type": "fluidDimension",
+    "$value": {
+      "min": { "value": 24, "unit": "rem" },
+      "max": { "value": 32, "unit": "rem" }
+    },
+    "$path": "spacing.fluid.2",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/spacing.json"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "avatar",
+  "type": "component",
+  "path": "components/avatar/css/avatar.css",
+  "content": ".avatar {\n    --avatar-size: 3rem;\n    position: relative;\n    display: flex;\n    flex-shrink: 0;\n    overflow: hidden;\n    height: var(--avatar-size);\n    width: var(--avatar-size);\n    border-radius: var(--radius-full);\n}\n\n.avatar-image {\n    aspect-ratio: 1;\n    height: 100%;\n    width: 100%;\n    object-fit: cover;\n}\n\n.avatar-fallback {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    height: 100%;\n    width: 100%;\n    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));\n    border-radius: var(--radius-full);\n}\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "css-only": [],
+    "react": []
+  },
+  "registryDependencies": {
+    "css-only": [],
+    "react": []
+  }
+}

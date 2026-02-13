@@ -1,0 +1,6 @@
+.button[data-variant="danger"] {
+    --button-bg: var(--bg-danger);
+    --button-fg: var(--color-white);
+    --button-bg-hover: var(--bg-danger-hover);
+    --button-bg-active: var(--bg-danger-active);
+}

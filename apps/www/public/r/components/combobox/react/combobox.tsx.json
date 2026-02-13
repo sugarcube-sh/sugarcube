@@ -1,0 +1,23 @@
+{
+  "name": "combobox",
+  "type": "component",
+  "path": "components/combobox/react/combobox.tsx",
+  "content": "import { Check, ChevronsUpDown } from \"lucide-react\";\nimport * as React from \"react\";\n\nimport { Button } from \"@/registry/components/button/react/button\";\nimport {\n    Command,\n    CommandEmpty,\n    CommandGroup,\n    CommandInput,\n    CommandItem,\n    CommandList,\n} from \"@/registry/components/command/react/command\";\nimport {\n    Popover,\n    PopoverContent,\n    PopoverTrigger,\n} from \"@/registry/components/popover/react/popover\";\nimport cn from \"clsx\";\n\nconst frameworks = [\n    {\n        value: \"next.js\",\n        label: \"Next.js\",\n    },\n    {\n        value: \"sveltekit\",\n        label: \"SvelteKit\",\n    },\n    {\n        value: \"nuxt.js\",\n        label: \"Nuxt.js\",\n    },\n    {\n        value: \"remix\",\n        label: \"Remix\",\n    },\n    {\n        value: \"astro\",\n        label: \"Astro\",\n    },\n];\n\nexport function ComboboxDemo() {\n    const [open, setOpen] = React.useState(false);\n    const [value, setValue] = React.useState(\"\");\n\n    return (\n        <Popover open={open} onOpenChange={setOpen}>\n            <PopoverTrigger asChild>\n                <Button\n                    data-appearance=\"outlined\"\n                    // biome-ignore lint/a11y/useSemanticElements: Custom combobox implementation\n                    role=\"combobox\"\n                    aria-expanded={open}\n                >\n                    {value\n                        ? frameworks.find((framework) => framework.value === value)?.label\n                        : \"Select framework...\"}\n                    <ChevronsUpDown />\n                </Button>\n            </PopoverTrigger>\n            <PopoverContent>\n                <Command>\n                    <CommandInput placeholder=\"Search framework...\" />\n                    <CommandList>\n                        <CommandEmpty>No framework found.</CommandEmpty>\n                        <CommandGroup>\n                            {frameworks.map((framework) => (\n                                <CommandItem\n                                    key={framework.value}\n                                    value={framework.value}\n                                    onSelect={(currentValue) => {\n                                        setValue(currentValue === value ? \"\" : currentValue);\n                                        setOpen(false);\n                                    }}\n                                >\n                                    {framework.label}\n                                    <Check\n                                        className={cn(\n                                            \"ml-auto\",\n                                            value === framework.value ? \"opacity-1\" : \"opacity-0\"\n                                        )}\n                                    />\n                                </CommandItem>\n                            ))}\n                        </CommandGroup>\n                    </CommandList>\n                </Command>\n            </PopoverContent>\n        </Popover>\n    );\n}\n",
+  "frameworks": [
+    "react"
+  ],
+  "dependencies": {
+    "react": [
+      "lucide-react"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [
+      "button",
+      "popover",
+      "command"
+    ],
+    "css-only": []
+  }
+}

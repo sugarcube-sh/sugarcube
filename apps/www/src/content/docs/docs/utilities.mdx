@@ -1,0 +1,311 @@
+---
+title: CSS Utilities
+---
+
+import Table from "@/src/components/Table.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+Sugarcube generates utility classes from your design tokens. You tell it which CSS properties to create utilities for and which tokens to use.
+
+<SiteAside type="note">
+    Utilities are only generated if they're actually used in your markup. If a class doesn't appear in your code, it won't be generated.
+</SiteAside>
+
+## The mental model
+
+A utility configuration maps **tokens** to **CSS classes**. Each configuration has three parts:
+
+```ts
+{
+  "background-color": {     // ← CSS property (what gets applied)
+    source: "color.*",      // ← Token pattern (which tokens to use)
+    prefix: "bg"            // ← Class prefix (what the class starts with)
+  }
+}
+```
+
+This generates classes like `.bg-primary` that apply `background-color: var(--color-primary)`.
+
+**The formula:**
+
+<Table>
+| Part | What it does | Example |
+|------|--------------|---------|
+| Key | The CSS property applied | `background-color` |
+| `source` | Which tokens to match | `color.*` → all tokens under `color` |
+| `prefix` | Class name starts with this | `bg` → `.bg-primary`, `.bg-secondary` |
+</Table>
+
+## Basic example
+
+Given these tokens:
+
+```json title="colors.json"
+{
+  "color": {
+    "$type": "color",
+    "primary": { "$value": "#0066cc" },
+    "secondary": { "$value": "#00aa00" }
+  }
+}
+```
+
+This configuration:
+
+```ts title="sugarcube.config.ts"
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  utilities: {
+    "background-color": {
+      source: "color.*",
+      prefix: "bg"
+    }
+  }
+});
+```
+
+Generates these utilities:
+
+```css
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.bg-secondary {
+  background-color: var(--color-secondary);
+}
+```
+
+## Multiple properties from the same tokens
+
+You can create different utility sets from the same tokens by changing the CSS property and prefix:
+
+```ts title="sugarcube.config.ts"
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  utilities: {
+    // Text colors
+    color: {
+      source: "color.*",
+      prefix: "text"
+    },
+    // Background colors
+    "background-color": {
+      source: "color.*",
+      prefix: "bg"
+    },
+    // Border colors
+    "border-color": {
+      source: "color.*",
+      prefix: "border"
+    }
+  }
+});
+```
+
+Now `.text-primary`, `.bg-primary`, and `.border-primary` all work, each applying a different CSS property.
+
+## Default prefix behavior
+
+If you omit `prefix`, sugarcube uses the first part of `source` (before the first dot):
+
+```ts
+// These are equivalent:
+color: { source: "color.*" }
+color: { source: "color.*", prefix: "color" }
+```
+
+Both generate `.color-primary`, `.color-secondary`, etc.
+
+<Table>
+| `source` | Default prefix | Class names |
+|----------|----------------|-------------|
+| `color.*` | `color` | `.color-primary` |
+| `space.*` | `space` | `.space-sm`, `.space-md` |
+| `font.weight.*` | `font` | `.font-bold`, `.font-normal` |
+</Table>
+
+## CSS custom properties
+
+You can set CSS custom properties instead of standard properties. This is useful for layout patterns like CUBE CSS:
+
+```ts title="sugarcube.config.ts"
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  utilities: {
+    "--flow-space": {
+      source: "space.*",
+      prefix: "flow-space"
+    }
+  }
+});
+```
+
+Generates:
+
+```css
+.flow-space-sm {
+  --flow-space: var(--space-sm);
+}
+
+.flow-space-md {
+  --flow-space: var(--space-md);
+}
+```
+
+Your CSS can then reference `--flow-space` to control spacing between elements.
+
+## Nested tokens
+
+When tokens are nested deeper, the full path after the wildcard becomes part of the class name.
+
+Given tokens like:
+
+```json title="colors.json"
+{
+  "color": {
+    "text": {
+      "primary": { "$value": "#000" },
+      "muted": { "$value": "#666" }
+    },
+    "fill": {
+      "solid": { "$value": "#fff" },
+      "soft": { "$value": "#f5f5f5" }
+    }
+  }
+}
+```
+
+With `source: "color.*"` and `prefix: "bg"`:
+
+```css
+.bg-text-primary { background-color: var(--color-text-primary); }
+.bg-text-muted { background-color: var(--color-text-muted); }
+.bg-fill-solid { background-color: var(--color-fill-solid); }
+.bg-fill-soft { background-color: var(--color-fill-soft); }
+```
+
+### Targeting a specific group
+
+To only match tokens in a specific nested path, be more specific in `source`:
+
+```ts
+color: {
+  source: "color.text.*",  // Only tokens under color.text
+  prefix: "text"
+}
+```
+
+Generates: `.text-primary`, `.text-muted` (shorter class names, only text colors)
+
+### Avoiding duplicate prefixes with `stripDuplicates`
+
+Sometimes your prefix matches part of the token path, creating awkward names like `.text-text-primary`.
+
+Use `stripDuplicates` to clean this up:
+
+```ts
+color: {
+  source: "color.*",
+  prefix: "text",
+  stripDuplicates: true
+}
+```
+
+Without `stripDuplicates`: `.text-text-primary`, `.text-text-muted`
+With `stripDuplicates`: `.text-primary`, `.text-muted`
+
+## Directional utilities
+
+For spacing properties, generate directional variants:
+
+```ts title="sugarcube.config.ts"
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  utilities: {
+    padding: {
+      source: "space.*",
+      prefix: "p",
+      directions: ["all", "top", "right", "bottom", "left", "x", "y"]
+    }
+  }
+});
+```
+
+With a `space.sm` token, this generates:
+
+<Table>
+| Class | CSS Property |
+|-------|--------------|
+| `p-sm` | `padding` (all sides) |
+| `pt-sm` | `padding-block-start` (top) |
+| `pr-sm` | `padding-inline-end` (right) |
+| `pb-sm` | `padding-block-end` (bottom) |
+| `pl-sm` | `padding-inline-start` (left) |
+| `px-sm` | `padding-inline` (horizontal) |
+| `py-sm` | `padding-block` (vertical) |
+</Table>
+
+Note: Directions use CSS logical properties for better internationalization support.
+
+## Just-in-time compilation
+
+Only utilities actually used in your code are generated — you don't pay for unused utilities. This works automatically with both the Vite plugin and CLI.
+
+## Using the Vite plugin vs CLI
+
+### With the Vite plugin
+
+Utilities are generated on-the-fly during development and build:
+
+```ts title="vite.config.ts"
+import sugarcube from "@sugarcube-sh/vite";
+
+export default {
+  plugins: [sugarcube()]
+};
+```
+
+Import utilities in your CSS:
+
+```css title="index.css"
+@import "virtual:sugarcube/utilities.css";
+```
+
+### Without the plugin (static generation)
+
+Generate utilities as a static CSS file:
+
+<PackageManagerTabs command="sugarcube generate" />
+
+This scans your codebase for used utilities and writes `utilities.gen.css` to your styles directory.
+
+Import it:
+
+```css
+@import "./src/styles/utilities/utilities.gen.css";
+```
+
+Re-run the command after changing tokens or utility configuration.
+
+## Extending with UnoCSS presets (recommended)
+
+Add UnoCSS presets for utilities beyond what tokens provide (like `flex`, `grid`, `absolute`):
+
+```ts title="vite.config.ts"
+import sugarcube from "@sugarcube-sh/vite";
+import presetWind3 from "@unocss/preset-wind3";
+
+export default {
+  plugins: [
+    sugarcube({
+      unoPresets: [presetWind3({ preflight: false })]
+    })
+  ]
+};
+```
+

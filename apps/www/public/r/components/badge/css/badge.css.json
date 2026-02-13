@@ -1,0 +1,18 @@
+{
+  "name": "badge",
+  "type": "component",
+  "path": "components/badge/css/badge.css",
+  "content": ".badge {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    width: fit-content;\n    white-space: nowrap;\n    flex-shrink: 0;\n    overflow: hidden;\n    background-color: var(--color-fill-loud, var(--color-neutral-fill-loud));\n    color: var(--color-on-loud, var(--color-neutral-on-loud));\n    border-radius: var(--radius-full);\n    border-style: var(--border-style);\n    border-width: var(--border-width-thin);\n    border-color: transparent;\n    padding: 0 0.75em;\n    font-size: max(var(--text-xs), 0.75em);\n    font-weight: var(--font-weight-medium);\n    gap: var(--space-2xs);\n    transition: color var(--transition-normal), box-shadow var(--transition-normal);\n}\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "css-only": [],
+    "react": []
+  },
+  "registryDependencies": {
+    "css-only": [],
+    "react": []
+  }
+}

@@ -1,0 +1,34 @@
+.label {
+    display: inline-block;
+    position: relative;
+    font-size: var(--form-control-font-size, inherit);
+    color: var(--form-control-label-color);
+    line-height: var(--form-control-label-line-height);
+}
+
+.label:not(:has(input[type="checkbox"])):not(:has(input[type="radio"])) {
+    font-weight: var(--font-weight-medium);
+}
+
+.label:has(
+        input:not(
+                [type="button"],
+                [type="checkbox"],
+                [type="color"],
+                [type="file"],
+                [type="hidden"],
+                [type="image"],
+                [type="radio"],
+                [type="reset"],
+                [type="submit"]
+            ),
+        textarea,
+        select
+    ) {
+    width: 100%;
+}
+
+.label + :is(input:not([type="checkbox"], [type="radio"]), textarea, select),
+.label > :is(input:not([type="checkbox"], [type="radio"]), textarea, select) {
+    margin-block-start: 0.5em;
+}

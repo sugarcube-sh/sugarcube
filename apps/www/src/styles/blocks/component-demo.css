@@ -1,0 +1,11 @@
+.component-demo {
+    display: flex;
+    min-height: 450px;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    border: var(--border-style) var(--border-width-thin) var(--panel-border-color);
+    border-radius: var(--radius-md);
+    padding: var(--space-xl);
+    background-color: var(--color-surface-default);
+}

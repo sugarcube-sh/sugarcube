@@ -1,0 +1,146 @@
+{
+  "color.invalid.short": {
+    "$type": "color",
+    "$value": "#ff0",
+    "$path": "color.invalid.short",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.invalid.chars": {
+    "$type": "color",
+    "$value": "#gh00ff",
+    "$path": "color.invalid.chars",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.invalid.no-hash": {
+    "$type": "color",
+    "$value": "ff0000",
+    "$path": "color.invalid.no-hash",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.invalid.type": {
+    "$type": "color",
+    "$value": 123,
+    "$path": "color.invalid.type",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.invalid.w3c.colorspace": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "invalid-space",
+      "components": [0.5, 0.5, 0.5]
+    },
+    "$path": "color.invalid.w3c.colorspace",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.invalid.w3c.missing-colorspace": {
+    "$type": "color",
+    "$value": {
+      "components": [0.5, 0.5, 0.5]
+    },
+    "$path": "color.invalid.w3c.missing-colorspace",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.invalid.w3c.missing-components": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "oklch"
+    },
+    "$path": "color.invalid.w3c.missing-components",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.invalid.w3c.wrong-component-count": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "oklch",
+      "components": [0.5, 0.5]
+    },
+    "$path": "color.invalid.w3c.wrong-component-count",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.invalid.w3c.invalid-component-type": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "oklch",
+      "components": [0.5, "invalid", 180]
+    },
+    "$path": "color.invalid.w3c.invalid-component-type",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.invalid.w3c.invalid-alpha": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "oklch",
+      "components": [0.5, 0.3, 180],
+      "alpha": "invalid"
+    },
+    "$path": "color.invalid.w3c.invalid-alpha",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.invalid.w3c.oklch-out-of-range": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "oklch",
+      "components": [1.2, -0.1, 400]
+    },
+    "$path": "color.invalid.w3c.oklch-out-of-range",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.invalid.w3c.display-p3-out-of-range": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "display-p3",
+      "components": [1.5, -0.2, 2.0]
+    },
+    "$path": "color.invalid.w3c.display-p3-out-of-range",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  },
+  "color.invalid.w3c.alpha-out-of-range": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "srgb",
+      "components": [0.5, 0.5, 0.5],
+      "alpha": 1.5
+    },
+    "$path": "color.invalid.w3c.alpha-out-of-range",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/colors.json"
+    }
+  }
+}

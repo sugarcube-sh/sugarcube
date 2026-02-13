@@ -1,0 +1,42 @@
+{
+  "gradient.simple": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "color": "#000000",
+        "position": 0
+      },
+      {
+        "color": "#ffffff",
+        "position": 1
+      }
+    ],
+    "$path": "gradient.simple",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/gradients.json"
+    }
+  },
+  "gradient.multiple": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "color": "#000000",
+        "position": 0
+      },
+      {
+        "color": "#666666",
+        "position": 0.5
+      },
+      {
+        "color": "#ffffff",
+        "position": 1
+      }
+    ],
+    "$path": "gradient.multiple",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/gradients.json"
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "version": "2025.10",
+  "name": "Multiple Modifiers Test",
+  "description": "Tests orthogonal modifiers (theme + density)",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "color": {
+            "primary": {
+              "$type": "color",
+              "$value": "#3b82f6"
+            },
+            "background": {
+              "$type": "color",
+              "$value": "#ffffff"
+            }
+          },
+          "spacing": {
+            "sm": {
+              "$type": "dimension",
+              "$value": { "value": 8, "unit": "px" }
+            },
+            "md": {
+              "$type": "dimension",
+              "$value": { "value": 16, "unit": "px" }
+            },
+            "lg": {
+              "$type": "dimension",
+              "$value": { "value": 24, "unit": "px" }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [
+          {
+            "color": {
+              "primary": {
+                "$type": "color",
+                "$value": "#60a5fa"
+              },
+              "background": {
+                "$type": "color",
+                "$value": "#1f2937"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "modifier",
+      "name": "density",
+      "default": "normal",
+      "contexts": {
+        "normal": [],
+        "compact": [
+          {
+            "spacing": {
+              "sm": {
+                "$type": "dimension",
+                "$value": { "value": 4, "unit": "px" }
+              },
+              "md": {
+                "$type": "dimension",
+                "$value": { "value": 8, "unit": "px" }
+              },
+              "lg": {
+                "$type": "dimension",
+                "$value": { "value": 12, "unit": "px" }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

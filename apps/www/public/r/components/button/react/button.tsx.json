@@ -1,0 +1,21 @@
+{
+  "name": "button",
+  "type": "component",
+  "path": "components/button/react/button.tsx",
+  "content": "import { Slot } from \"@radix-ui/react-slot\";\nimport cn from \"clsx\";\nimport type * as React from \"react\";\n\nfunction Button({\n    className,\n    asChild = false,\n    ...props\n}: React.ComponentProps<\"button\"> & { asChild?: boolean }) {\n    const Comp = asChild ? Slot : \"button\";\n    return <Comp data-slot=\"button\" className={cn(\"button\", className)} {...props} />;\n}\nexport { Button };\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "react": [
+      "@radix-ui/react-slot",
+      "clsx"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

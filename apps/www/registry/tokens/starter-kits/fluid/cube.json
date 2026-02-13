@@ -1,0 +1,52 @@
+{
+  "cluster-gap": {
+    "$type": "fluidDimension",
+    "$value": "{space.sm}",
+    "$description": "Base gap spacing for cluster composition"
+  },
+  "grid-gap": {
+    "$type": "fluidDimension",
+    "$value": "{space.md}",
+    "$description": "Default gap for grid composition"
+  },
+  "repel-gap": {
+    "$type": "fluidDimension",
+    "$value": "{space.md}",
+    "$description": "Default gap for repel composition"
+  },
+  "sidebar-gap": {
+    "$type": "fluidDimension",
+    "$value": "{space.md}",
+    "$description": "Default gap for sidebar composition"
+  },
+  "switcher-gap": {
+    "$type": "fluidDimension",
+    "$value": "{space.md}",
+    "$description": "Default gap for switcher composition"
+  },
+  "flow-space": {
+    "$type": "fluidDimension",
+    "$value": "{space.md}",
+    "$description": "Base vertical spacing in flow composition"
+  },
+  "region-space": {
+    "$type": "fluidDimension",
+    "$value": "{space.xl}",
+    "$description": "Base vertical padding for page sections"
+  },
+  "wrapper-max-width": {
+    "$type": "dimension",
+    "$value": "{container.4xl}",
+    "$description": "Max width for wrapper composition"
+  },
+  "wrapper-padding-inline": {
+    "$type": "fluidDimension",
+    "$value": "{space.sm}",
+    "$description": "Inline padding for wrapper composition"
+  },
+  "sidebar-content-min-width": {
+    "$type": "dimension",
+    "$value": { "value": 37.5, "unit": "rem" },
+    "$description": "Min width for sidebar content"
+  }
+}

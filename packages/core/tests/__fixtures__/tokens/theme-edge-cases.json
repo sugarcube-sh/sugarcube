@@ -1,0 +1,13 @@
+{
+  "$description": "Theme level metadata",
+  "color": {
+    "$type": "color",
+    "themed": {
+      "$description": "Token that references base collection",
+      "token": {
+        "$value": "{color.nested.token}",
+        "$description": "Themed token with metadata"
+      }
+    }
+  }
+}

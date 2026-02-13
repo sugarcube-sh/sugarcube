@@ -1,0 +1,35 @@
+---
+import { CircleAlert, CircleCheck, Info, TriangleAlert } from "@lucide/astro";
+---
+
+<div class="flow w-full">
+    <div class="alert">
+        <CircleCheck class="icon" />
+        <div class="alert-title">Default alert</div>
+        <div class="alert-description">This is the alert style.</div>
+    </div>
+    <div class="alert" data-variant="success">
+        <CircleCheck class="icon" />
+        <div class="alert-title">Success</div>
+        <div class="alert-description">Your changes have been saved.</div>
+    </div>
+    <div class="alert" data-variant="info">
+        <Info class="icon" />
+        <div class="alert-title">Information</div>
+        <div class="alert-description">Here's some helpful information.</div>
+    </div>
+    <div class="alert" data-variant="warning">
+        <TriangleAlert class="icon" />
+        <div class="alert-title">Warning</div>
+        <div class="alert-description">
+            Please review this before proceeding.
+        </div>
+    </div>
+    <div class="alert" data-variant="error">
+        <CircleAlert class="icon" />
+        <div class="alert-title">Error</div>
+        <div class="alert-description">
+            Something went wrong. Please try again.
+        </div>
+    </div>
+</div>

@@ -1,0 +1,37 @@
+name: Release
+on:
+    push:
+        branches: [main]
+permissions:
+    contents: write
+    pull-requests: write
+    packages: write
+    id-token: write # Required for OIDC (Trusted Publishers)
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+jobs:
+    release:
+        name: Release
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: "pnpm"
+                  registry-url: https://registry.npmjs.org/
+            - run: npm install -g npm@latest
+            - run: pnpm run ci:install
+            - run: pnpm run ci:prepublish
+            - name: Create Release Pull Request or Publish to npm
+              id: changesets
+              uses: changesets/action@v1
+              with:
+                  version: pnpm run ci:version
+                  publish: pnpm run ci:publish
+                  commit: "[ci] release"
+                  title: "[ci] release"
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

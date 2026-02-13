@@ -1,0 +1,69 @@
+---
+title: Checkbox
+description: A checkbox component.
+---
+import { CheckboxDemo } from "@/registry/examples/checkbox-demo.tsx";
+import { CheckboxDisabledDemo } from "@/registry/examples/checkbox-disabled.tsx";
+import { CheckboxSizesDemo } from "@/registry/examples/checkbox-sizes.tsx";
+import { CheckboxHintDemo } from "@/registry/examples/checkbox-hint.tsx";
+import { CheckboxCardDemo } from "@/registry/examples/checkbox-card.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <CheckboxDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/checkbox-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components checkbox -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/checkbox/react/checkbox.tsx",
+    "@/registry/components/checkbox/react/checkbox.css"
+]} collapsible={true} />
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the checkbox component. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Disabled
+
+<ComponentDemo>
+    <CheckboxDisabledDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/checkbox-disabled.tsx" />
+
+### Sizes
+
+<ComponentDemo>
+    <CheckboxSizesDemo client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/checkbox-sizes.tsx",
+    "@/registry/examples/checkbox-sizes.css"
+]} />
+
+### With hint
+
+<ComponentDemo>
+    <CheckboxHintDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/checkbox-hint.tsx" />
+
+### Card style
+
+<ComponentDemo>
+    <CheckboxCardDemo client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/checkbox-card.tsx",
+    "@/registry/examples/checkbox-card.css"
+]} />

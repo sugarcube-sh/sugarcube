@@ -1,0 +1,20 @@
+{
+  "name": "popover",
+  "type": "component",
+  "path": "components/popover/react/popover.css",
+  "content": "[data-slot=\"popover-trigger\"] svg {\n    pointer-events: none;\n    color: var(--color-text-quiet);\n}\n\n.popover-content {\n    outline: none;\n    min-width: fit-content;\n    background-color: var(--color-surface-raised);\n    transform-origin: var(--radix-popover-content-transform-origin);\n    border-width: var(--panel-border-width);\n    border-style: var(--panel-border-style);\n    border-color: var(--panel-border-color);\n    border-radius: var(--panel-radius);\n    padding-inline: var(--space-md);\n    padding-block: var(--space-md);\n    box-shadow: var(--shadow-xs);\n}\n\n.popover-content:has(.command) {\n    padding: 0;\n}\n\n.popover-content[data-state=\"open\"] {\n    animation: popover-slide-in-from-top var(--transition-normal) var(--ease-out);\n}\n\n.popover-content[data-side=\"bottom\"] {\n    animation: popover-slide-in-from-top var(--transition-normal) var(--ease-out);\n}\n\n.popover-content[data-side=\"left\"] {\n    animation: popover-slide-in-from-right var(--transition-normal) var(--ease-out);\n}\n\n.popover-content[data-side=\"right\"] {\n    animation: popover-slide-in-from-left var(--transition-normal) var(--ease-out);\n}\n\n.popover-content[data-side=\"top\"] {\n    animation: popover-slide-in-from-bottom var(--transition-normal) var(--ease-out);\n}\n\n@keyframes popover-slide-in-from-top {\n    from {\n        opacity: 0;\n        transform: translateY(-8px) scale(0.95);\n    }\n    to {\n        opacity: 1;\n        transform: translateY(0) scale(1);\n    }\n}\n\n@keyframes popover-slide-in-from-bottom {\n    from {\n        opacity: 0;\n        transform: translateY(8px) scale(0.95);\n    }\n    to {\n        opacity: 1;\n        transform: translateY(0) scale(1);\n    }\n}\n\n@keyframes popover-slide-in-from-left {\n    from {\n        opacity: 0;\n        transform: translateX(-8px) scale(0.95);\n    }\n    to {\n        opacity: 1;\n        transform: translateX(0) scale(1);\n    }\n}\n\n@keyframes popover-slide-in-from-right {\n    from {\n        opacity: 0;\n        transform: translateX(8px) scale(0.95);\n    }\n    to {\n        opacity: 1;\n        transform: translateX(0) scale(1);\n    }\n}\n",
+  "frameworks": [
+    "react"
+  ],
+  "dependencies": {
+    "react": [
+      "@radix-ui/react-popover",
+      "clsx"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

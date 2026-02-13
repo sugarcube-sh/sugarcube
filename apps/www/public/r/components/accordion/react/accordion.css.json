@@ -1,0 +1,22 @@
+{
+  "name": "accordion",
+  "type": "component",
+  "path": "components/accordion/react/accordion.css",
+  "content": ".accordion-item {\n    border-block-end: var(--border-width-thin) var(--border-style) var(--color-surface-border);\n}\n\n.accordion-item:last-child {\n    border-block-end: 0;\n}\n\n.accordion-header {\n    display: flex;\n}\n\n.accordion-trigger {\n    border: 0;\n    padding-inline: 0;\n    display: flex;\n    flex: 1;\n    align-items: flex-start;\n    justify-content: space-between;\n    text-align: left;\n    background: var(--color-surface-default);\n    color: var(--color-text-normal);\n    gap: var(--space-md);\n    padding-block: var(--space-md);\n    font-size: var(--text-base);\n    font-weight: var(--font-weight-medium);\n    line-height: var(--leading-tight);\n    outline-style: none;\n    border-radius: var(--form-control-border-radius);\n}\n\n.accordion-trigger:focus-visible {\n    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-neutral-400) 25%, transparent);\n    border-color: var(--color-neutral-400);\n    z-index: var(--z-raised);\n}\n\n.accordion-trigger svg {\n    color: var(--color-text-quiet);\n    transition: transform var(--transition-normal);\n}\n\n.accordion-trigger:hover {\n    text-decoration: underline;\n}\n\n.accordion-trigger[data-state=\"open\"] svg {\n    transform: rotate(180deg);\n}\n\n.accordion-content {\n    overflow: hidden;\n    text-wrap: pretty;\n}\n\n.accordion-content[data-state=\"closed\"] {\n    animation: accordion-up var(--transition-normal) var(--ease-out);\n}\n\n.accordion-content[data-state=\"open\"] {\n    animation: accordion-down var(--transition-normal) var(--ease-out);\n}\n\n.accordion-content-inner {\n    padding-block-end: var(--space-md);\n}\n\n.accordion-content-inner > * + * {\n    margin-block-start: var(--space-sm);\n}\n\n@keyframes accordion-down {\n    from {\n        height: 0;\n    }\n    to {\n        height: var(--radix-accordion-content-height);\n    }\n}\n\n@keyframes accordion-up {\n    from {\n        height: var(--radix-accordion-content-height);\n    }\n    to {\n        height: 0;\n    }\n}\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "react": [
+      "@radix-ui/react-accordion",
+      "lucide-react",
+      "clsx"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

@@ -1,0 +1,7 @@
+.badge[data-shape="square"] {
+    border-radius: var(--radius-sm);
+}
+
+.badge[data-shape="rounded"] {
+    border-radius: var(--radius-md);
+}

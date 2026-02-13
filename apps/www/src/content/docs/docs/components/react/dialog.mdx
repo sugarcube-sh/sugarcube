@@ -1,0 +1,24 @@
+---
+title: Dialog
+description: A dialog component.
+---
+import { DialogDemo } from "@/registry/examples/dialog-demo.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+
+## Preview
+
+<ComponentDemo>
+    <DialogDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/dialog-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components dialog -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/dialog/react/dialog.tsx",
+    "@/registry/components/dialog/react/dialog.css"
+]} collapsible={true} />

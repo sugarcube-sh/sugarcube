@@ -1,0 +1,58 @@
+---
+title: CUBE CSS
+description: Learn about CUBE CSS and how it organizes your styles.
+---
+
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+While design tokens, CSS variables, and utility classes give you a solid foundation for your styles, they don't solve the fundamental problem of **how to organize your CSS** or write it in a maintainable, scalable way. For that, you need a methodology or architecture.
+
+## CUBE CSS
+
+Sugarcube recommends CUBE CSS because it harnesses the power of the cascade, integrates well with design token workflows, and naturally teaches you about CSS *as you write it*.
+
+{/* <SiteAside type="tip">
+    Learn more about CUBE CSS from [Andy Bell's article](https://piccalil.li/blog/cube-css/) and the [official documentation](https://cube.fyi). For a comprehensive and practical way to learn CUBE CSS, check out [Andy's Complete CSS course](https://piccalil.li/complete-css/).
+</SiteAside> */}
+
+## Adding CUBE CSS
+
+Add CUBE CSS to your project using the `cube` command:
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli cube" />
+
+CUBE CSS is added to your project in the [styles output directory](/docs/configuration#changing-where-css-files-are-written). The command uses the `output.cube` value from your `sugarcube.config.ts` file (or falls back to `output.cssRoot`), or you can specify a custom output directory with the `--cube-dir` flag:
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli cube --cube-dir src/styles/cube" />
+
+## File output
+
+When you add CUBE CSS to your project, the following directory structure is created:
+
+```
+src/styles/
+├── blocks/
+├── compositions/
+├── global/
+└── utilities/
+```
+
+Sugarcube adds a starter set of files to each directory. **These are just starting points**. **CUBE CSS is a methodology, not a fixed set of files**. You can add, remove, or modify any files as needed.
+
+See the [working with CUBE CSS](/docs/working-with-cube-css) guide for detailed patterns, examples, and how to use CUBE CSS effectively with sugarcube.
+
+## Importing CUBE CSS
+
+CUBE CSS files are source files that you import however your project imports styles.
+
+```css
+@import "./src/styles/global/global.css";
+@import "./src/styles/compositions/flow.css";
+@import "./src/styles/compositions/cluster.css";
+...
+```
+
+
+## Next steps
+
+- Learn about [working with CUBE CSS](/docs/working-with-cube-css).

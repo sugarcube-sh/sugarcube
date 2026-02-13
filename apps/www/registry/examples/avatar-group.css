@@ -1,0 +1,4 @@
+.avatar-group .avatar:not(:first-of-type) {
+    margin-inline-start: calc(-1 * 8px);
+    box-shadow: 0 0 0 2px var(--color-surface-default, white);
+}

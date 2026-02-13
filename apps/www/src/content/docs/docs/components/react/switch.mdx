@@ -1,0 +1,58 @@
+---
+title: Switch
+description: A switch component.
+---
+import { SwitchDemo } from "@/registry/examples/switch-demo.tsx";
+import { SwitchDisabledDemo } from "@/registry/examples/switch-disabled.tsx";
+import { SwitchCardDemo } from "@/registry/examples/switch-card.tsx";
+import { SwitchSizesDemo } from "@/registry/examples/switch-sizes.tsx";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <SwitchDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/switch-demo.tsx" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components switch -f react" />
+
+## Source Code
+
+<SourceCode paths={[
+    "@/registry/components/switch/react/switch.tsx",
+    "@/registry/components/switch/react/switch.css"
+]} collapsible={true} />
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the switch component. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Disabled
+
+<ComponentDemo>
+    <SwitchDisabledDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/switch-disabled.tsx" />
+
+### Card style
+
+<ComponentDemo>
+    <SwitchCardDemo client:load />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/switch-card.tsx" />
+
+### Sizes
+
+<ComponentDemo>
+    <SwitchSizesDemo client:load />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/switch-sizes.tsx",
+    "@/registry/examples/switch-sizes.css"
+]} />

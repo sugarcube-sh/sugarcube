@@ -1,0 +1,31 @@
+.component-wrapper {
+    display: flex;
+    width: 100%;
+    scroll-margin-top: 4rem;
+    flex-direction: column;
+    border-radius: var(--panel-radius);
+    border: var(--border-width-thin) var(--border-style) var(--color-surface-border);
+}
+
+.component-header {
+    border-bottom: var(--border-width-thin) var(--border-style) var(--color-surface-border);
+    padding: var(--space-xs) var(--space-sm);
+}
+
+.component-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.component-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    align-items: start;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+
+    astro-island {
+        display: flex;
+    }
+}

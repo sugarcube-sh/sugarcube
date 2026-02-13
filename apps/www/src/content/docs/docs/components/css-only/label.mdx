@@ -1,0 +1,29 @@
+---
+title: Label
+description: A label component.
+---
+
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+<SiteAside type="note">
+    If you're using [CUBE CSS](/docs/styles/cube-css), label styles are already included in `global.css`. Only install this component if you need label styles without CUBE CSS.
+</SiteAside>
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components label -f css-only" />
+
+## Source Code
+
+<SourceCode path="@/registry/components/label/css/label.css" collapsible={true} />
+
+## Usage
+
+Add the `.label` class to your label element.
+
+```html
+<label class="label">
+  Label text
+  <input type="text" class="input" />
+</label>
+```

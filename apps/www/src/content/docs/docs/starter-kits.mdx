@@ -1,0 +1,33 @@
+---
+title: Starter Kits
+description: Learn about what starter kits are, which ones are available, and how to choose one.
+---
+
+Starter kits are pre-built design token sets that are designed to provide a solid foundation for your project. When you run `init` without existing tokens, sugarcube installs a starter kit.
+
+## Available Kits
+
+### Fluid (default)
+
+Uses [`fluidDimension`](/docs/fluid-space-and-type) tokens for spacing and typography that scale with viewport size using CSS `clamp()`.
+
+### Static
+
+Uses fixed dimensions (px/rem).
+
+## Choosing a Kit
+
+By default, `init` uses the `fluid` starter kit.
+
+Pass the `--kit` flag to select a different starter kit:
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli init --kit static" />
+
+## Customization
+
+Starter kits are starting points, not constraints. Edit the JSON files to build your design system.
+
+## Learn More
+
+- [Working with tokens](/docs/working-with-tokens) - Token syntax and patterns
+- [Fluid space and type](/docs/fluid-space-and-type) - Understanding fluid dimensions

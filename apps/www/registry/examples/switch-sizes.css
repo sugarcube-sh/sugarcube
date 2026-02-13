@@ -1,0 +1,41 @@
+.switch[data-size="sm"] {
+    font-size: var(--text-sm);
+    --scale: calc(var(--text-sm) / 1rem);
+}
+
+.switch[data-size="sm"] + .label,
+.switch[data-size="sm"] ~ .label {
+    font-size: var(--text-sm);
+}
+
+.label:has(+ .switch[data-size="sm"]) {
+    font-size: var(--text-sm);
+}
+
+.switch[data-size="md"] {
+    font-size: var(--text-base);
+    --scale: calc(var(--text-base) / 1rem);
+}
+
+.switch[data-size="md"] + .label,
+.switch[data-size="md"] ~ .label {
+    font-size: var(--text-base);
+}
+
+.label:has(+ .switch[data-size="md"]) {
+    font-size: var(--text-base);
+}
+
+.switch[data-size="lg"] {
+    font-size: var(--text-lg);
+    --scale: calc(var(--text-lg) / 1rem);
+}
+
+.switch[data-size="lg"] + .label,
+.switch[data-size="lg"] ~ .label {
+    font-size: var(--text-lg);
+}
+
+.label:has(+ .switch[data-size="lg"]) {
+    font-size: var(--text-lg);
+}

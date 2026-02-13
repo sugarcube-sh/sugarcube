@@ -1,0 +1,57 @@
+---
+import Copy from "@lucide/astro/icons/copy";
+
+interface Props {
+    class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<div data-code-block class:list={["site-code-block", className]}>
+    <code data-code><slot /></code>
+
+    <button
+        class="site-button"
+        data-copy-button
+        type="button"
+        title="Copy to clipboard"
+        data-size="sm"
+    >
+        <Copy />
+    </button>
+
+    <span data-tooltip aria-hidden="true">Copied!</span>
+</div>
+
+<script>
+    function initCodeBlocks() {
+        document
+            .querySelectorAll<HTMLElement>("[data-code-block]")
+            .forEach((block) => {
+                const code = block.querySelector<HTMLElement>("[data-code]");
+                const button =
+                    block.querySelector<HTMLButtonElement>(
+                        "[data-copy-button]",
+                    );
+                const tooltip =
+                    block.querySelector<HTMLElement>("[data-tooltip]");
+
+                if (!code || !button || !tooltip) return;
+
+                button.addEventListener("click", () => {
+                    navigator.clipboard.writeText(code.innerText);
+                    button.title = "Copied!";
+                    tooltip.dataset.visible = "true";
+
+                    setTimeout(() => {
+                        button.title = "Copy to clipboard";
+                        delete tooltip.dataset.visible;
+                    }, 2500);
+                });
+            });
+    }
+
+    initCodeBlocks();
+    document.addEventListener("astro:after-swap", initCodeBlocks);
+</script>

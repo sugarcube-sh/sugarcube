@@ -1,0 +1,9 @@
+{
+  "name": "static",
+  "type": "tokens",
+  "path": "tokens/starter-kits/static/borders.json",
+  "content": "{\n  \"border\": {\n    \"width\": {\n      \"$type\": \"dimension\",\n      \"hairline\": {\n        \"$value\": { \"value\": 0.75, \"unit\": \"px\" }\n      },\n      \"thin\": {\n        \"$value\": { \"value\": 1, \"unit\": \"px\" }\n      },\n      \"thick\": {\n        \"$value\": { \"value\": 2, \"unit\": \"px\" }\n      }\n    },\n    \"style\": {\n      \"$type\": \"strokeStyle\",\n      \"$value\": \"solid\"\n    }\n  }\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

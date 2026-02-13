@@ -1,0 +1,15 @@
+.readme :is(p) {
+    max-width: 45rem;
+    color: var(--color-text-quiet);
+    line-height: var(--leading-relaxed);
+}
+
+.readme :is(h2) {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-semibold);
+}
+
+.readme :is(h2) > span {
+    color: var(--color-text-quiet);
+    margin-inline-end: var(--space-2xs);
+}

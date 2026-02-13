@@ -1,0 +1,149 @@
+---
+title: Working with Tokens
+description: Practical guide to token syntax, organization, and patterns
+---
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Token Syntax
+
+Tokens are JSON files following the [DTCG specification](https://www.designtokens.org/tr/2025.10/format/).
+
+<SiteAside type="note">
+  The [DTCG specification](https://www.designtokens.org/tr/2025.10/format/) is the authoritative source for token syntax. What follows is meant as a quick primer to get you started. For detailed reference, please always refer to the specification. If you have found an inconsistency in sugarcube's implementation of the specification, please consider [opening an issue](https://github.com/sugarcube-sh/sugarcube/issues/new).
+</SiteAside>
+
+### Token Paths
+
+Tokens are addressed by their **path** — a dot-separated name derived from their position in the JSON structure:
+
+```json
+{
+  "color": {
+    "primary": { }
+  }
+}
+```
+
+This token's path is `color.primary`.
+
+Paths can be nested as deep as you need:
+
+```json
+{
+  "color": {
+    "button": {
+      "background": { }
+    }
+  }
+}
+```
+
+This token's path is `color.button.background`.
+
+### Values and Types
+
+Each token requires a `$value` and `$type`. For a full list of types and valid values, please refer to the [DTCG specification](https://www.designtokens.org/tr/2025.10/format/).
+
+```json ins={4-5}
+{
+  "color": {
+    "primary": {
+      "$value": "#3b82f6",
+      "$type": "color"
+    }
+  }
+}
+```
+
+### Type Inheritance
+
+Types can be inherited from parent groups, saving you from having to specify the same type for every token in a group.
+
+```json ins={3}
+{
+  "space": {
+    "$type": "dimension",
+    "sm": {
+      "$value": { "value": 8, "unit": "px" }
+    },
+    "md": {
+      "$value": { "value": 16, "unit": "px" }
+    }
+  }
+}
+```
+
+### References
+
+Tokens can reference other tokens using `{group.token}` syntax:
+
+```json ins={9}
+{
+  "color": {
+    "$type": "color",
+    "primary": {
+      "$value": "#3b82f6",
+    },
+    "button": {
+      "background": {
+        "$value": "{color.primary}",
+      }
+    }
+  }
+}
+```
+
+## File Organization
+
+You are of course free to organize token files however you see fit. If you're unsure, organizing by domain (colors, spacing, typography) in separate files works well:
+
+```
+design-tokens/
+├── colors.json
+├── space.json
+├── typography.json
+...
+```
+
+{/* TODO: Common patterns: explain the difference between primitive tokens and semantic tokens and how to use each / common patterns for theming etc. */}
+
+{/* ## Common Patterns
+
+### Semantic Colors
+
+Use references to build semantic color systems:
+
+```json
+{
+  "color": {
+    "blue": {
+      "600": { "$value": "#3b82f6", "$type": "color" }
+    },
+    "primary": {
+      "$value": "{color.blue.600}",
+      "$type": "color"
+    },
+    "primary-hover": {
+      "$value": "{color.blue.700}",
+      "$type": "color"
+    }
+  }
+}
+```
+
+### Spacing Scale
+
+Define a consistent spacing scale:
+
+```json
+{
+  "space": {
+    "$type": "dimension",
+    "xs": { "$value": { "value": 4, "unit": "px" } },
+    "sm": { "$value": { "value": 8, "unit": "px" } },
+    "md": { "$value": { "value": 16, "unit": "px" } },
+    "lg": { "$value": { "value": 24, "unit": "px" } },
+    "xl": { "$value": { "value": 32, "unit": "px" } }
+  }
+}
+``` */}

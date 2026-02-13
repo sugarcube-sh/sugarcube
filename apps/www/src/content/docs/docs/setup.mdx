@@ -1,0 +1,91 @@
+---
+title: Setup
+description: Follow these steps to set up sugarcube in your project.
+---
+
+import "@/registry/components/alert/css/alert.css"
+import FrameworkCards from "@/src/components/FrameworkCards.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Initialize your project
+
+Run the `init` command in the root of an existing project:
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli init" />
+
+This will:
+
+1. Detect project settings
+2. Set up design tokens
+3. Install `@sugarcube-sh/vite` (if compatible with your framework)
+4. Generate token-based CSS
+5. Create a config file (if you customized settings via flags)
+
+<SiteAside type="note">
+    The CLI will tell you whether the Vite plugin was installed. If it wasn't installed, you can skip directly to the [Without the plugin](#without-the-plugin) section.
+</SiteAside>
+
+## Configure plugin
+
+If `init` installed the Vite plugin, you need to add it to your build configuration:
+
+```ts title="vite.config.ts"
+import { defineConfig } from "vite";
+import sugarcube from "@sugarcube-sh/vite";
+
+export default defineConfig({
+    plugins: [sugarcube()],
+});
+```
+
+<SiteAside type="tip">
+    For framework-specific examples, see the [framework guides](#framework-guides) below.
+</SiteAside>
+
+## Import generated CSS
+
+Sugarcube generates a virtual CSS module. Import it into the entrypoint of your project:
+
+```ts
+import "virtual:sugarcube.css";
+```
+
+This single import includes both design token CSS variables and utility classes.
+
+### Granular imports
+
+If you need more control, you can import variables and utilities separately:
+
+```ts
+// Just the CSS variables from your design tokens
+import "virtual:sugarcube/variables.css";
+// Just the utility classes
+import "virtual:sugarcube/utilities.css";
+```
+
+### Without the plugin
+
+If you are not using the Vite plugin, sugarcube generates static CSS files instead. Import them where you import your other styles:
+
+```css
+@import "./src/styles/global/tokens.variables.gen.css";
+```
+
+That's it! You can now start building with sugarcube.
+
+## Start building with sugarcube
+
+- [Edit tokens and see changes live](/docs/tokens)
+- [Configure utility classes](/docs/utilities)
+- [Add components from the registry](/docs/components)
+- [Add CUBE CSS](/docs/cube-css)
+
+## Customizing your setup
+
+By default, `init` detects your project structure and makes sensible choices. You can skip plugin installation, customize directories, or choose a different starter kit. See [Advanced setup](/docs/advanced-setup) for details.
+
+## Framework guides
+
+Need the exact config for your framework? These guides have copy-paste snippets for Astro, TanStack Start, 11ty, and more.
+
+<FrameworkCards />

@@ -1,0 +1,62 @@
+---
+title: Fluid space and type
+---
+
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+Fluid spacing and typography create responsive designs that adapt naturally to different screen sizes. Sugarcube supports this with a special token type called `fluidDimension`.
+
+<SiteAside type="caution">
+    `fluidDimension` tokens are **not** part of the official [DTCG specification](https://www.designtokens.org/tr/2025.10/format/). They are sugarcube-specific and won't be recognized by other design token tools. If you need cross-tool compatibility, use standard `dimension` tokens instead.
+</SiteAside>
+
+## Adding fluid dimension tokens
+
+The syntax is based on the [DTCG `dimension` token type](https://www.designtokens.org/tr/2025.10/format/#dimension), with `min` and `max` properties that define the scaling range:
+
+```json title="src/design-tokens/spacing.json"
+{
+  "spacing": {
+    "$type": "fluidDimension",
+    "sm": {
+      "$value": {
+        "min": { "value": 0.5, "unit": "rem" },
+        "max": { "value": 1, "unit": "rem" }
+      }
+    }
+  }
+}
+```
+
+## Adjusting the scaling rate
+
+`fluidDimension` tokens generate CSS variables using `clamp()` functions:
+
+```css
+--spacing-sm: clamp(0.5rem, 0.5rem + 0.57vw, 1rem);
+```
+
+The preferred value scales smoothly between min and max across the viewport range. By default, sugarcube uses 320px (min) and 1200px (max). The viewport range determines the scaling slope:
+
+- **Wider range** (e.g., 320px to 1440px) = gentler slope, slower scaling
+- **Narrower range** (e.g., 375px to 1200px) = steeper slope, faster scaling
+
+Customize viewport boundaries in your `transforms` configuration:
+
+```ts title="sugarcube.config.ts"
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  transforms: {
+    fluid: {
+      min: 375,
+      max: 1440
+    }
+  }
+});
+```
+
+## Resources
+
+- [Utopia.fyi](https://utopia.fyi/) - Tools for generating fluid typography and spacing scales.
+- [Be the Browser's Mentor, Not Micromanager](https://andy-bell.co.uk/be-the-browsers-mentor-not-its-micromanager/) - A blog post and talk by Andy Bell.

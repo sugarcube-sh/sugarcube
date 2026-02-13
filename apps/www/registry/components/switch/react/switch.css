@@ -1,0 +1,59 @@
+.switch {
+    /* Scale multiplier: Converts rem-based tokens to proportionally scale with font-size. */
+    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+
+    --switch-height: calc(var(--form-control-toggle-size) * var(--scale, 1));
+    --switch-width: calc(var(--switch-height) * 1.75);
+    --switch-border-color: transparent;
+
+    --thumb-travel: calc(var(--switch-width) - var(--switch-height));
+    --thumb-size: calc(var(--switch-height) - var(--form-control-border-width) * 2);
+    --thumb-border-color: transparent;
+
+    font: inherit;
+    font-size: var(--form-control-font-size, var(--text-base));
+    padding: 0;
+    cursor: pointer;
+    height: var(--switch-height);
+    width: var(--switch-width);
+    border: var(--form-control-border-width) var(--border-style) var(--switch-border-color);
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface-lowest);
+    box-shadow: var(--shadow-xs);
+    transition: background-color var(--transition-normal) var(--ease-in-out);
+    outline-style: none;
+}
+
+.switch:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-neutral-400) 25%, transparent);
+    border-color: var(--color-neutral-400);
+}
+
+.switch[data-state="checked"] {
+    background-color: var(--form-control-activated-color);
+    border-color: var(--form-control-activated-color);
+}
+
+.switch[data-state="checked"]:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--form-control-activated-color) 25%, transparent);
+}
+
+.switch:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.switch-thumb {
+    display: block;
+    pointer-events: none;
+    height: var(--thumb-size);
+    width: var(--thumb-size);
+    border-radius: var(--radius-full);
+    border: var(--form-control-border-width) var(--border-style) var(--thumb-border-color);
+    background-color: var(--color-surface-default);
+    transition: transform var(--transition-normal) var(--ease-in-out);
+}
+
+.switch-thumb[data-state="checked"] {
+    transform: translateX(var(--thumb-travel));
+}

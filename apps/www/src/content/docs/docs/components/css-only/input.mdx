@@ -1,0 +1,70 @@
+---
+title: Input
+description: An input component.
+---
+
+import InputDemo from "@/registry/examples/input-demo.astro";
+import InputSizes from "@/registry/examples/input-sizes.astro";
+import InputAppearances from "@/registry/examples/input-appearances.astro";
+import InputStates from "@/registry/examples/input-states.astro";
+import ComponentDemo from "@/src/components/ComponentDemo.astro";
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+## Preview
+
+<ComponentDemo>
+    <InputDemo />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/input-demo.astro" />
+
+## Installation
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli components input -f css-only" />
+
+## Source Code
+
+<SourceCode path="@/registry/components/input/css/input.css" collapsible={true} />
+
+## Usage
+
+Apply the `.input` class to input elements:
+
+```html
+<input type="text" class="input" placeholder="Enter text..." />
+<input type="email" class="input" placeholder="Email address" />
+```
+
+## Examples
+
+<SiteAside type="note">
+    The following examples show how you might extend the input component. This is just one possible approach. Ultimately, your component APIs are up to you!
+</SiteAside>
+
+### Sizes
+
+You can add size variants using data attributes. This example shows how you might implement different input sizes:
+
+<ComponentDemo>
+    <InputSizes />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/input-sizes.astro",
+    "@/registry/examples/input-sizes.css"
+]} />
+
+### Appearances
+
+<ComponentDemo>
+    <InputAppearances />
+</ComponentDemo>
+<SourceCode paths={[
+    "@/registry/examples/input-appearances.astro",
+    "@/registry/examples/input-appearances.css"
+]} />
+
+### States
+
+<ComponentDemo>
+    <InputStates />
+</ComponentDemo>
+<SourceCode path="@/registry/examples/input-states.astro" />

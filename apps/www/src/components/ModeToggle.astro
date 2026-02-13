@@ -1,0 +1,67 @@
+---
+import { Moon, Sun } from "lucide-react";
+
+interface Props {
+    class?: string;
+    compact?: boolean;
+}
+
+const { class: className, compact = false } = Astro.props;
+---
+
+<mode-toggle class="mode-toggle">
+    <button
+        type="button"
+        class:list={[
+            "site-button is-icon-only",
+            compact && "is-compact",
+            className,
+        ]}
+        data-appearance="ghost"
+        aria-label="Toggle color mode"
+        role="switch"
+        aria-checked="false"
+    >
+        <span class="visually-hidden">Toggle color mode</span>
+        <Sun className="mode-icon" />
+        <Moon className="mode-icon" />
+    </button>
+</mode-toggle>
+
+<script>
+    class ModeToggle extends HTMLElement {
+        constructor() {
+            super();
+            const button = this.querySelector<HTMLButtonElement>("button");
+
+            if (!button) {
+                console.warn("ModeToggle: No button found");
+                return;
+            }
+
+            const isDarkMode = () =>
+                document.documentElement.getAttribute("data-mode") === "dark";
+
+            const updateAriaChecked = () => {
+                button.setAttribute("aria-checked", String(isDarkMode()));
+            };
+
+            updateAriaChecked();
+
+            button.addEventListener("click", () => {
+                const newMode = isDarkMode() ? "light" : "dark";
+                document.dispatchEvent(
+                    new CustomEvent("mode-change", {
+                        detail: { mode: newMode },
+                    }),
+                );
+            });
+
+            document.addEventListener("mode-change", updateAriaChecked);
+
+            document.addEventListener("astro:after-swap", updateAriaChecked);
+        }
+    }
+
+    customElements.define("mode-toggle", ModeToggle);
+</script>

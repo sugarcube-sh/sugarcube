@@ -1,0 +1,9 @@
+{
+  "version": "2025.10",
+  "sets": {
+    "a": {
+      "sources": [{ "$ref": "circular-b.resolver.json#/sets/b" }]
+    }
+  },
+  "resolutionOrder": [{ "$ref": "#/sets/a" }]
+}

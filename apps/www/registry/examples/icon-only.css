@@ -1,0 +1,4 @@
+.button.is-icon-only {
+    aspect-ratio: 1 / 1;
+    width: var(--form-control-height);
+}

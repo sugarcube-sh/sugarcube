@@ -1,0 +1,102 @@
+.button[data-appearance="soft"] {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+}
+
+.button[data-appearance="soft"]:hover {
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-normal, var(--color-neutral-fill-normal)),
+        black 5%
+    );
+}
+
+.button[data-appearance="soft"]:active {
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-normal, var(--color-neutral-fill-normal)),
+        black 10%
+    );
+}
+
+.button[data-appearance="soft"]:focus-visible {
+    border-color: transparent;
+}
+
+.button[data-appearance="outlined"] {
+    background-color: transparent;
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    border-color: var(--color-border-normal, var(--color-neutral-border-normal));
+    box-shadow: var(--shadow-xs);
+}
+
+.button[data-appearance="outlined"]:hover {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+}
+
+.button[data-appearance="outlined"]:active {
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-normal, var(--color-neutral-fill-normal)),
+        black 10%
+    );
+}
+
+.button[data-appearance="outlined"]:focus-visible {
+    border-color: var(--color-fill-loud);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-fill-loud) 25%, transparent);
+}
+
+.button[data-appearance="soft-outlined"] {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    border-color: var(--color-border-normal, var(--color-neutral-border-normal));
+    border-style: var(--border-style);
+    border-width: var(--border-width-thin);
+}
+
+.button[data-appearance="soft-outlined"]:hover {
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-normal, var(--color-neutral-fill-normal)),
+        black 5%
+    );
+}
+
+.button[data-appearance="soft-outlined"]:active {
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-normal, var(--color-neutral-fill-normal)),
+        black 10%
+    );
+}
+
+.button[data-appearance="soft-outlined"]:focus-visible {
+    border-color: var(--color-fill-loud);
+}
+
+.button[data-appearance="ghost"] {
+    background-color: transparent;
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+    box-shadow: none;
+}
+
+.button[data-appearance="ghost"]:hover {
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    color: var(--color-on-normal, var(--color-neutral-on-normal));
+}
+
+.button[data-appearance="ghost"]:active {
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-normal, var(--color-neutral-fill-normal)),
+        black 10%
+    );
+}
+
+.button[data-appearance="ghost"]:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-fill-loud) 25%, transparent);
+    border-color: transparent;
+    outline: none;
+}

@@ -1,0 +1,38 @@
+.checkbox[data-size="sm"] {
+    --scale: calc(var(--text-sm) / 1rem);
+}
+
+.checkbox[data-size="sm"] + .label,
+.checkbox[data-size="sm"] ~ .label {
+    font-size: var(--text-sm);
+}
+
+.label:has(+ .checkbox[data-size="sm"]) {
+    font-size: var(--text-sm);
+}
+
+.checkbox[data-size="md"] {
+    --scale: calc(var(--text-base) / 1rem);
+}
+
+.checkbox[data-size="md"] + .label,
+.checkbox[data-size="md"] ~ .label {
+    font-size: var(--text-base);
+}
+
+.label:has(+ .checkbox[data-size="md"]) {
+    font-size: var(--text-base);
+}
+
+.checkbox[data-size="lg"] {
+    --scale: calc(var(--text-lg) / 1rem);
+}
+
+.checkbox[data-size="lg"] + .label,
+.checkbox[data-size="lg"] ~ .label {
+    font-size: var(--text-lg);
+}
+
+.label:has(+ .checkbox[data-size="lg"]) {
+    font-size: var(--text-lg);
+}

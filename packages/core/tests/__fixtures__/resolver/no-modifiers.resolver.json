@@ -1,0 +1,19 @@
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "color": {
+            "primary": { "$type": "color", "$value": "#3b82f6" }
+          },
+          "space": {
+            "sm": { "$type": "dimension", "$value": { "value": 8, "unit": "px" } }
+          }
+        }
+      ]
+    }
+  ]
+}

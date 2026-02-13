@@ -1,0 +1,58 @@
+.radio-toggle {
+    /* Base scale - defaults to text-base (1rem) */
+    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+
+    --checked-icon-color: var(--color-accent-fill-loud, var(--color-neutral-fill-loud));
+    --checked-icon-scale: 0.6;
+
+    flex-shrink: 0;
+    font-size: var(--form-control-font-size, var(--text-base));
+    background: transparent;
+    border: var(--form-control-border-width) var(--border-style) var(--form-control-border-color);
+    height: calc(var(--form-control-toggle-size) * var(--scale));
+    width: calc(var(--form-control-toggle-size) * var(--scale));
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-xs);
+    outline-style: none;
+    transition-property: border-color, box-shadow;
+    transition-timing-function: var(--ease-out);
+    transition-duration: var(--transition-normal);
+}
+
+.radio-toggle[data-state="checked"] {
+    border-color: var(--color-accent-border-normal, var(--form-control-border-color));
+}
+
+.radio-toggle[data-state="checked"]:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--form-control-activated-color) 40%, transparent);
+    border-color: var(--form-control-activated-color);
+}
+
+.radio-toggle:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-neutral-400) 25%, transparent);
+    border-color: var(--color-neutral-400);
+}
+
+.radio-toggle[disabled] + .label,
+.radio-toggle[disabled] ~ .label {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.radio-toggle-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    color: var(--color-accent-fill-loud, var(--color-neutral-fill-loud));
+    scale: var(--checked-icon-scale);
+}
+
+.radio-toggle-icon svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    fill: var(--color-accent-fill-loud, var(--color-neutral-fill-loud));
+    stroke: var(--color-accent-fill-loud, var(--color-neutral-fill-loud));
+}

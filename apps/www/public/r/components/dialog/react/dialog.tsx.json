@@ -1,0 +1,21 @@
+{
+  "name": "dialog",
+  "type": "component",
+  "path": "components/dialog/react/dialog.tsx",
+  "content": "\"use client\";\n\nimport * as DialogPrimitive from \"@radix-ui/react-dialog\";\nimport cn from \"clsx\";\nimport type * as React from \"react\";\n\nfunction Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {\n    return <DialogPrimitive.Root {...props} />;\n}\n\nfunction DialogTrigger({ ...props }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {\n    return <DialogPrimitive.Trigger {...props} />;\n}\n\nfunction DialogPortal({ ...props }: React.ComponentProps<typeof DialogPrimitive.Portal>) {\n    return <DialogPrimitive.Portal {...props} />;\n}\n\nfunction DialogClose({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Close>) {\n    return <DialogPrimitive.Close className={cn(\"button\", className)} {...props} />;\n}\n\nfunction DialogBackdrop({\n    className,\n    ...props\n}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {\n    return <DialogPrimitive.Overlay className={cn(\"dialog-backdrop\", className)} {...props} />;\n}\n\nfunction DialogContent({\n    className,\n    children,\n    ...props\n}: React.ComponentProps<typeof DialogPrimitive.Content>) {\n    return (\n        <DialogPortal>\n            <DialogBackdrop />\n            <DialogPrimitive.Content className={cn(\"dialog\", className)} {...props}>\n                {children}\n            </DialogPrimitive.Content>\n        </DialogPortal>\n    );\n}\n\nfunction DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {\n    return <DialogPrimitive.Title className={cn(\"dialog-title\", className)} {...props} />;\n}\n\nfunction DialogDescription({\n    className,\n    ...props\n}: React.ComponentProps<typeof DialogPrimitive.Description>) {\n    return (\n        <DialogPrimitive.Description className={cn(\"dialog-description\", className)} {...props} />\n    );\n}\n\nexport {\n    Dialog,\n    DialogTrigger,\n    DialogPortal,\n    DialogBackdrop,\n    DialogContent,\n    DialogClose,\n    DialogTitle,\n    DialogDescription,\n};\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "react": [
+      "clsx",
+      "@radix-ui/react-dialog"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

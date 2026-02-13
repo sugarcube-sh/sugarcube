@@ -1,0 +1,69 @@
+.site-tabs-list {
+    --form-control-height: round(
+        calc(
+            2 *
+            (var(--form-control-padding-block) - var(--site-tabs-list-padding)) +
+            1em *
+            var(--form-control-line-height)
+        ),
+        1px
+    );
+    display: flex;
+    background-color: var(--color-surface-lowered);
+    padding: var(--site-tabs-list-padding);
+    min-height: var(--form-control-height);
+    border: var(--border-width-thin) var(--border-style) var(--color-surface-border);
+}
+
+.site-tabs-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    font-size: inherit;
+    padding-block: 2px;
+    background-color: var(--color-surface-lowered);
+    border-width: var(--border-width-thin);
+    border-style: var(--border-style);
+    border-color: transparent;
+    color: var(--color-text-normal);
+    font-weight: var(--font-weight-medium);
+    gap: var(--space-2xs);
+    padding-inline: var(--form-control-padding-inline);
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-timing-function: var(--ease-out);
+    transition-duration: var(--transition-normal);
+    outline-style: none;
+}
+
+.site-tabs-trigger[data-state="active"] {
+    background-color: var(--color-surface-default);
+}
+
+.site-tabs-trigger:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-neutral-400) 25%, transparent);
+    border-color: var(--color-neutral-400);
+    z-index: var(--z-raised);
+}
+
+.site-tabs-trigger:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.site-tabs-content {
+    outline-style: none;
+}
+
+.site-tabs-trigger:not([data-size]) {
+    font-size: var(--form-control-font-size, var(--text-base));
+    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+}
+
+.site-tabs[data-appearance="file-tabs"] {
+    .site-tabs-list {
+        background: var(--ec-frm-edTabBarBg, var(--color-fill-loud));
+    }
+}

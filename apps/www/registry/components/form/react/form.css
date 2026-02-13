@@ -1,0 +1,13 @@
+.form-message {
+    font-size: var(--text-xs);
+    line-height: var(--leading-none);
+    margin-block-start: var(--space-xs);
+}
+
+.form-message[data-error] {
+    color: var(--text-error);
+}
+
+.form-item + .button {
+    margin-block-start: var(--space-md);
+}

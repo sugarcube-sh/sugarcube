@@ -1,0 +1,20 @@
+{
+  "name": "tabs",
+  "type": "component",
+  "path": "components/tabs/react/tabs.tsx",
+  "content": "\"use client\";\nimport * as TabsPrimitive from \"@radix-ui/react-tabs\";\nimport cn from \"clsx\";\nimport type * as React from \"react\";\n\nfunction Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {\n    return <TabsPrimitive.Root data-slot=\"tabs\" className={cn(\"tabs\", className)} {...props} />;\n}\nfunction TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {\n    return (\n        <TabsPrimitive.List\n            data-slot=\"tabs-list\"\n            className={cn(\"tabs-list\", className)}\n            {...props}\n        />\n    );\n}\nfunction TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {\n    return (\n        <TabsPrimitive.Trigger\n            data-slot=\"tabs-trigger\"\n            className={cn(\"tabs-trigger\", className)}\n            {...props}\n        />\n    );\n}\nfunction TabsPanel({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {\n    return (\n        <TabsPrimitive.Content\n            data-slot=\"tabs-content\"\n            className={cn(\"tabs-panel\", className)}\n            {...props}\n        />\n    );\n}\nexport { Tabs, TabsList, TabsTrigger, TabsPanel };\n",
+  "frameworks": [
+    "react"
+  ],
+  "dependencies": {
+    "react": [
+      "clsx",
+      "@radix-ui/react-tabs"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

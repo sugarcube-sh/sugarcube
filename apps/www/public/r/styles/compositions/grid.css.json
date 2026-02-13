@@ -1,0 +1,9 @@
+{
+  "name": "compositions",
+  "type": "cube",
+  "path": "styles/compositions/grid.css",
+  "content": "/* AUTO GRID\nRelated Every Layout: https://every-layout.dev/layouts/grid/\nMore info: https://piccalil.li/tutorial/create-a-responsive-grid-layout-with-no-media-queries-using-css-grid/\nA flexible layout that will create an auto-fill grid with\nconfigurable grid item sizes\n\nCUSTOM PROPERTIES AND CONFIGURATION\n--grid-placement (auto-fill): Set either auto-fit or auto-fill\nto change how empty grid tracks are handled.\n\n--grid-item-min (16rem): How large each item should be\nideally, as a minimum.\n\n--grid-gap (1rem): The space between grid items.\n\n--grid-align-items (start): How items align vertically within\ntheir grid area. Can be any valid align-items value. */\n\n.grid-auto {\n    display: grid;\n    grid-template-columns: repeat(\n            var(--grid-placement, auto-fill),\n            minmax(var(--grid-item-min, 16rem), 1fr)\n        );\n    gap: var(--grid-gap, 1rem);\n    align-items: var(--grid-align-items, stretch);\n}\n",
+  "frameworks": [],
+  "dependencies": {},
+  "registryDependencies": {}
+}

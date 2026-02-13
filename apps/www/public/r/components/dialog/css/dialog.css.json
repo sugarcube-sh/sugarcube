@@ -1,0 +1,18 @@
+{
+  "name": "dialog",
+  "type": "component",
+  "path": "components/dialog/css/dialog.css",
+  "content": ".dialog {\n    align-content: start;\n    margin: auto;\n    inset: 0;\n    overflow: hidden;\n    width: 32rem;\n    border: none;\n    max-width: calc(100% - var(--space-3xl));\n    padding: var(--space-lg);\n    background-color: var(--color-surface-raised);\n    border-radius: var(--panel-radius);\n    box-shadow: var(--shadow-lg);\n}\n\n.dialog:focus {\n    outline: none;\n}\n\n.dialog[open] {\n    display: grid;\n    animation: dialog-open 200ms var(--ease-out);\n}\n\n.dialog::backdrop {\n    background-color: var(--color-overlay);\n    animation: dialog-backdrop-fade-in 200ms var(--ease-out);\n}\n\n@keyframes dialog-open {\n    from {\n        opacity: 0;\n        transform: scale(0.95);\n    }\n    to {\n        opacity: 1;\n        transform: scale(1);\n    }\n}\n\n@keyframes dialog-backdrop-fade-in {\n    from {\n        opacity: 0;\n    }\n    to {\n        opacity: 1;\n    }\n}\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "css-only": [],
+    "react": []
+  },
+  "registryDependencies": {
+    "css-only": [],
+    "react": []
+  }
+}

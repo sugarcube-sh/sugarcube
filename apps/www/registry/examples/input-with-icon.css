@@ -1,0 +1,80 @@
+/* Wrapper that provides the visual appearance */
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs, 0.5rem);
+    inline-size: 100%;
+    padding-inline: var(--space-xs, 0.75rem);
+    min-height: 2.5rem;
+    border: var(--form-control-border-width, 1px) var(--border-style, solid)
+        var(--form-control-border-color, #cdcdcd);
+    border-radius: var(--radius-input);
+    box-shadow: var(--shadow-xs);
+    background-color: var(--color-bg, Canvas);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.input-wrapper:focus-within {
+    --form-control-border-color: var(--color-text-primary, currentColor);
+    --focus-ring-color: var(--color-text-primary, currentColor);
+    outline: var(--focus-ring-width, 2px) var(--focus-ring-style, solid) var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset, 2px);
+}
+
+/* Icon inside the wrapper */
+.input-icon {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    color: var(--color-text-quiet, #a3a6b5);
+    flex-shrink: 0;
+}
+
+/* Input without border/shadow since wrapper provides it */
+/* Reset all visual styles from base .input class */
+/* Using .input.input-no-border for higher specificity to override base styles */
+.input.input-no-border:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+        [type="file"]
+    ) {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding-inline: 0;
+    padding-block: 0;
+    min-height: auto;
+    inline-size: auto;
+    background-color: transparent;
+    flex: 1;
+}
+
+.input.input-no-border:focus {
+    outline: none;
+    --form-control-border-color: transparent;
+    --focus-ring-color: transparent;
+}
+
+/* Clear button */
+.input-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--color-text-quiet, #a3a6b5);
+    cursor: pointer;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.input-clear:hover {
+    background-color: var(--color-bg-offset-1);
+    color: var(--color-text-primary, currentColor);
+}
+
+.input-clear svg {
+    inline-size: 1rem;
+    block-size: 1rem;
+}

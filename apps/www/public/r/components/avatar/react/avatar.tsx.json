@@ -1,0 +1,22 @@
+{
+  "name": "avatar",
+  "type": "component",
+  "path": "components/avatar/react/avatar.tsx",
+  "content": "\"use client\";\n\nimport * as AvatarPrimitive from \"@radix-ui/react-avatar\";\nimport type * as React from \"react\";\n\nimport cn from \"clsx\";\n\nfunction Avatar({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Root>) {\n    return (\n        <AvatarPrimitive.Root data-slot=\"avatar\" className={cn(\"avatar\", className)} {...props} />\n    );\n}\n\nfunction AvatarImage({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Image>) {\n    return (\n        <AvatarPrimitive.Image\n            data-slot=\"avatar-image\"\n            className={cn(\"avatar-image\", className)}\n            {...props}\n        />\n    );\n}\n\nfunction AvatarFallback({\n    className,\n    ...props\n}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {\n    return (\n        <AvatarPrimitive.Fallback\n            data-slot=\"avatar-fallback\"\n            className={cn(\"avatar-fallback\", className)}\n            {...props}\n        />\n    );\n}\n\nexport { Avatar, AvatarImage, AvatarFallback };\n",
+  "frameworks": [
+    "react",
+    "css-only"
+  ],
+  "dependencies": {
+    "react": [
+      "@radix-ui/react-avatar",
+      "lucide-react",
+      "clsx"
+    ],
+    "css-only": []
+  },
+  "registryDependencies": {
+    "react": [],
+    "css-only": []
+  }
+}

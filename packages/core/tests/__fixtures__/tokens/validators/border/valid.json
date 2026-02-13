@@ -1,0 +1,38 @@
+{
+  "border.thin": {
+    "$type": "border",
+    "$value": {
+      "color": "#000000",
+      "width": { "value": 1, "unit": "px" },
+      "style": "solid"
+    },
+    "$path": "border.thin",
+    "$source": { "file": "tokens" },
+    "$originalPath": "border.thin"
+  },
+  "border.thick": {
+    "$type": "border",
+    "$value": {
+      "color": "#0000FF80",
+      "width": { "value": 4, "unit": "px" },
+      "style": "dashed"
+    },
+    "$path": "border.thick",
+    "$source": { "file": "tokens" },
+    "$originalPath": "border.thick"
+  },
+  "border.custom": {
+    "$type": "border",
+    "$value": {
+      "color": "#FF0000",
+      "width": { "value": 2, "unit": "px" },
+      "style": {
+        "dashArray": [{ "value": 4, "unit": "px" }, { "value": 2, "unit": "px" }],
+        "lineCap": "round"
+      }
+    },
+    "$path": "border.custom",
+    "$source": { "file": "tokens" },
+    "$originalPath": "border.custom"
+  }
+}
