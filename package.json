@@ -29,11 +29,11 @@
         "@biomejs/biome": "1.9.4",
         "@changesets/cli": "^2.27.9",
         "@types/node": "^22.15.27",
-        "@vitest/coverage-istanbul": "2.1.1",
+        "@vitest/coverage-istanbul": "4.0.18",
         "knip": "^5.59.1",
         "typescript": "^5.8.3",
         "vite-tsconfig-paths": "^5.0.1",
-        "vitest": "2.1.1"
+        "vitest": "4.0.18"
     },
     "packageManager": "pnpm@10.17.1"
 }
