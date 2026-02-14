@@ -14,7 +14,7 @@ CLI for [sugarcube](https://sugarcube.sh).
 - `sugarcube generate` - Generate CSS from your design tokens
 - `sugarcube validate` - Validate your token files
 - `sugarcube components` - Add components to your project
-- `sugarcube cube` - Add CUBE CSS utilities
+- `sugarcube cube` - Add CUBE CSS
 
 ## Installation
 
