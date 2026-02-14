@@ -6,8 +6,8 @@
 
 <p align="center">
   <a href="https://github.com/sugarcube-sh/sugarcube/actions"><img src="https://img.shields.io/github/actions/workflow/status/sugarcube-sh/sugarcube/ci.yml?branch=main" alt="Build Status"></a>
-  <a href="https://www.npmjs.com/package/sugarcube"><img src="https://img.shields.io/npm/v/sugarcube.svg" alt="Latest Release"></a>
-  <a href="https://www.npmjs.com/package/sugarcube"><img src="https://img.shields.io/npm/dt/sugarcube.svg" alt="Total Downloads"></a>
+  <a href="https://www.npmjs.com/package/@sugarcube-sh/core"><img src="https://img.shields.io/npm/v/@sugarcube-sh/core.svg" alt="Latest Release"></a>
+  <a href="https://www.npmjs.com/package/@sugarcube-sh/core"><img src="https://img.shields.io/npm/dt/@sugarcube-sh/core.svg" alt="Total Downloads"></a>
   <a href="https://github.com/sugarcube-sh/sugarcube/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/license-see%20LICENSE-blue" alt="License"></a>
 </p>
 
