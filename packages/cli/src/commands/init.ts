@@ -111,6 +111,11 @@ async function buildInitContext(
 ): Promise<InitContext> {
     const packageManager = await getPackageManager(process.cwd(), { withFallback: true });
 
+    // Add discovered resolver path to config (deliberately (for now) not passed through options/sugarcubeConfig)
+    if (projectContext.resolverPath) {
+        config.resolver = projectContext.resolverPath;
+    }
+
     return {
         options,
         ...projectContext,
