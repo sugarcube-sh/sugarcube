@@ -41,7 +41,7 @@
     border-color: transparent;
 }
 
-.site-code-block [data-tooltip] {
+.site-code-block-tooltip {
     position: absolute;
     right: 0;
     bottom: -2rem;
@@ -50,7 +50,7 @@
     transition: opacity var(--transition-normal) ease;
 }
 
-.site-code-block [data-tooltip][data-visible="true"] {
+.site-code-block-tooltip[data-visible="true"] {
     opacity: 1;
     visibility: visible;
     background-color: var(--color-fill-normal);
