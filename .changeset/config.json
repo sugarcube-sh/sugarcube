@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["www", "@sugarcube-sh/core", "@sugarcube-sh/cli", "@sugarcube-sh/vite"]
+  "ignore": ["www"]
 }
