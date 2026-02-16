@@ -13,3 +13,16 @@
     color: var(--color-text-quiet);
     margin-inline-end: var(--space-2xs);
 }
+
+.readme :is(li) {
+    color: var(--color-text-quiet);
+}
+
+.readme :is(ul > li > a) {
+    color: var(--color-text-quiet);
+    transition: color var(--transition-normal) var(--ease-out);
+}
+
+.readme :is(ul > li > a):hover {
+    color: var(--color-text-normal);
+}

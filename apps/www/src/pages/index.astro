@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "@/src/layouts/BaseLayout.astro";
 import { siteConfig } from "@/src/site.config";
-// import Readme from "@/src/components/Readme.astro";
+import Readme from "@/src/components/Readme.astro";
 
 const meta = {
     title: "Seriously sweet frontends",
@@ -10,8 +10,8 @@ const meta = {
 ---
 
 <BaseLayout meta={meta}>
-    <!-- <Readme /> -->
-    <article
+    <Readme />
+    <!-- <article
         data-theme="coming-soon"
         class="region flow px-lg region-space-lg font-mono"
     >
@@ -23,5 +23,5 @@ const meta = {
                 >@marktomlinson.dev</a
             >.
         </p>
-    </article>
+    </article> -->
 </BaseLayout>

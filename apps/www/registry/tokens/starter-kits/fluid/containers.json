@@ -36,6 +36,9 @@
     },
     "8xl": {
       "$value": { "value": 1440, "unit": "px" }
+    },
+    "9xl": {
+      "$value": { "value": 1600, "unit": "px" }
     }
   }
 }

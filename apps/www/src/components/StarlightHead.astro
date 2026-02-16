@@ -17,6 +17,10 @@ const isCssOnlyComponentRoute = pathname.includes("/docs/components/css-only/");
 
 <DefaultHead {...Astro.props}>
     <slot />
+    {/* Favicons */}
+    <link href="/favicon.ico" rel="icon" sizes="32x32" />
+    <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
+    <link href="/apple-touch-icon.png" rel="apple-touch-icon" />
 </DefaultHead>
 
 {/* Mode & theme provider - must run early to prevent FOUC */}

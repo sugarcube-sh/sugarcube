@@ -7,6 +7,7 @@
         1px
     );
 
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -181,4 +182,8 @@
 /* Sizes */
 .site-button[data-size="sm"] {
     font-size: var(--text-sm);
+}
+
+.site-button.is-pill {
+    border-radius: var(--radius-full);
 }

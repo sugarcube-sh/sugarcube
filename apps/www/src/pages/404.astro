@@ -8,16 +8,38 @@ const meta = {
 ---
 
 <BaseLayout meta={meta}>
-    <article class="region region-space-xl px-lg">
+    <article class="region region-space-xl not-found">
         <div class="flow measure-short">
             <h1>Page not found</h1>
             <p>
-                We couldn’t find the page you were looking for. Check the URL
-                for typos or head back to the homepage.
+                We couldn’t find the page you were looking for. Please check the
+                URL and try again.
             </p>
-            <div class="cluster cluster-gap-sm">
-                <a class="site-button" href="/">Go home</a>
+            <div class="cluster cluster-gap-xs">
+                <a class="site-button" data-size="sm" href="/">Go home</a>
+                <a
+                    class="site-button"
+                    data-appearance="soft-outlined"
+                    data-size="sm"
+                    href="/docs">Go to docs</a
+                >
             </div>
         </div>
     </article>
 </BaseLayout>
+
+<style>
+    .not-found {
+        padding-inline: var(--space-lg);
+    }
+
+    .not-found :is(p) {
+        color: var(--color-text-quiet);
+    }
+
+    @media (max-width: 50rem) {
+        .not-found {
+            padding-inline: 1rem;
+        }
+    }
+</style>

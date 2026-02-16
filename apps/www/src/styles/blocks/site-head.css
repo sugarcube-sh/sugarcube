@@ -1,5 +1,4 @@
 .site-header {
-    padding-inline: var(--space-lg);
     position: sticky;
     top: 0;
     left: 0;
@@ -9,19 +8,15 @@
     display: flex;
     align-items: center;
     padding-block: 0;
-}
-
-@media (max-width: 1280px) {
-    .site-header {
-        background-color: transparent;
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-    }
+    padding-inline: var(--space-lg);
+    background-color: transparent;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 
 @media (max-width: 50rem) {
     .site-header {
-        padding-inline: 1rem;
+        padding-inline: var(--wrapper-padding-inline);
         height: 3.5rem;
     }
 }

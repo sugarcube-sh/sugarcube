@@ -8,16 +8,14 @@ import { ThemeToggle } from "@/src/components/ThemeToggle.tsx";
 
 import logoSvg from "@/src/assets/sugarcube-logo.svg?raw";
 
-const isDocsRoute = Astro.url.pathname.startsWith("/docs");
+const isDocsRoute =
+    Astro.url.pathname.startsWith("/docs") && Astro.routePattern !== "/404";
+console.log(Astro.routePattern);
 ---
 
 {
     isDocsRoute ? (
         <>
-            {/* <div class="alpha-banner">
-                ⚠️ Private Alpha — This project is under active development and
-                not yet ready for public use.
-            </div> */}
             <div class="repel w-full">
                 <a
                     class="logo cluster cluster-gap-xs"
@@ -67,26 +65,6 @@ const isDocsRoute = Astro.url.pathname.startsWith("/docs");
 
                 <nav class="sl-hidden md:sl-flex">
                     <ul class="cluster cluster-gap-xl flex-nowrap" role="list">
-                        <div class="cluster gap-0">
-                            <li>
-                                <Link
-                                    href="/docs"
-                                    class="is-compact site-button is-nav-link"
-                                    data-appearance="ghost"
-                                >
-                                    Docs
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    href="/services"
-                                    class="is-compact site-button is-nav-link"
-                                    data-appearance="ghost"
-                                >
-                                    Services
-                                </Link>
-                            </li>
-                        </div>
                         <div class="cluster gap-0">
                             <li>
                                 <ThemeToggle

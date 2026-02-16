@@ -35,6 +35,12 @@
     scale: 1.1;
 }
 
+.site-code-block [data-copy-button]:focus-visible {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-fill-loud) 25%, transparent);
+    outline: none;
+    border-color: transparent;
+}
+
 .site-code-block [data-tooltip] {
     position: absolute;
     right: 0;

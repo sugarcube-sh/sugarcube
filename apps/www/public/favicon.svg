@@ -1,13 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 169">
-  <style>
-    .stroke { stroke: #000; fill: none; }
-    @media (prefers-color-scheme: dark) {
-      .stroke { stroke: #FFF; }
-    }
-  </style>
-  <path class="stroke" d="m0-80.273-69.518-40.136-69.518 40.136L0 0l-69.518 40.136L-139.036 0" style="stroke-width:8px;stroke-linecap:round;stroke-linejoin:round" transform="translate(143.036 124.409)"/>
-  <path class="stroke" d="M-40.136-40.136h80.272" style="stroke-width:5px;stroke-dasharray:12,12;stroke-linecap:round" transform="matrix(0 1 1 0 44.136 84.272)"/>
-  <path class="stroke" d="M-40.136-40.136h80.272" style="stroke-width:5px;stroke-dasharray:12,12;stroke-linecap:round" transform="matrix(0 1 1 0 183.173 84.272)"/>
-  <path class="stroke" d="M-40.136-40.136h80.272" style="stroke-width:5px;stroke-dasharray:12,12;stroke-linecap:round" transform="matrix(0 1 1 0 113.654 125.083)"/>
-  <path class="stroke" d="m-10.755 40.137 160.546-.001" style="stroke-width:5px;stroke-dasharray:12,12;stroke-linecap:round" transform="rotate(150 -3.913 81.368)scale(-1 1)"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 168 189">
+  <rect x="-10" y="-10" width="168" height="189" fill="#FFF"/>
+  <path stroke="#000" fill="none" d="m0-80.273-69.518-40.136-69.518 40.136L0 0l-69.518 40.136L-139.036 0" style="stroke-width:10px;stroke-linecap:round;stroke-linejoin:round" transform="translate(143.036 124.409)"/>
+  <path stroke="#000" fill="none" d="M-40.136-40.136h80.272" style="stroke-width:7px;stroke-dasharray:12,12;stroke-linecap:round" transform="matrix(0 1 1 0 44.136 84.272)"/>
+  <path stroke="#000" fill="none" d="M-40.136-40.136h80.272" style="stroke-width:7px;stroke-dasharray:12,12;stroke-linecap:round" transform="matrix(0 1 1 0 183.173 84.272)"/>
+  <path stroke="#000" fill="none" d="M-40.136-40.136h80.272" style="stroke-width:7px;stroke-dasharray:12,12;stroke-linecap:round" transform="matrix(0 1 1 0 113.654 125.083)"/>
+  <path stroke="#000" fill="none" d="m-10.755 40.137 160.546-.001" style="stroke-width:7px;stroke-dasharray:12,12;stroke-linecap:round" transform="rotate(150 -3.913 81.368)scale(-1 1)"/>
 </svg>

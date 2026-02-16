@@ -1,11 +1,13 @@
 ---
-title: Setup
-description: Follow these steps to set up sugarcube in your project.
+title: Getting Started
+description: Follow these steps to get sugarcube running in your project.
 ---
 
 import "@/registry/components/alert/css/alert.css"
 import FrameworkCards from "@/src/components/FrameworkCards.astro";
 import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+Sugarcube helps you build front ends on strong, reusable foundations using design tokens. This guide will get sugarcube running in your project in under a minute.
 
 ## Initialize your project
 
@@ -13,13 +15,13 @@ Run the `init` command in the root of an existing project:
 
 <PackageManagerTabs command="npx @sugarcube-sh/cli init" />
 
-This will:
+This command will:
 
-1. Detect project settings
-2. Set up design tokens
-3. Install `@sugarcube-sh/vite` (if compatible with your framework)
-4. Generate token-based CSS
-5. Create a config file (if you customized settings via flags)
+- detect your project structure  
+- add design tokens (or use your existing ones)  
+- generate CSS variables  
+- install the Vite plugin if compatible  
+- create a config file (if you passed flags) 
 
 <SiteAside type="note">
     The CLI will tell you whether the Vite plugin was installed. If it wasn't installed, you can skip directly to the [Without the plugin](#without-the-plugin) section.
@@ -89,3 +91,7 @@ By default, `init` detects your project structure and makes sensible choices. Yo
 Need the exact config for your framework? These guides have copy-paste snippets for Astro, TanStack Start, 11ty, and more.
 
 <FrameworkCards />
+
+## Learn more
+
+Curious why sugarcube exists? [Read the story behind sugarcube](/docs/about).
