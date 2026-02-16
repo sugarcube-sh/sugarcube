@@ -1,10 +1,14 @@
 ---
-title: "CLI commands"
+title: "CLI Commands"
 description: "Complete reference for all sugarcube CLI commands, their options, and usage examples."
 ---
 
 import Table from "@/src/components/Table.astro";
 import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+<SiteAside type="tip" title="Shorter commands">
+   For shorter syntax, install `@sugarcube-sh/cli` as a dev dependency. This provides a `sugarcube` command you can use in npm scripts: e.g.: `"tokens:generate": "sugarcube generate"`
+</SiteAside>
 
 ## `init`
 
@@ -100,7 +104,7 @@ Generate CSS variables and utility classes from your design tokens.
 ### Usage
 
 ```bash frame="none"
-sugarcube generate [options]
+npx @sugarcube-sh/cli generate [options]
 ```
 
 ### Description
@@ -139,29 +143,29 @@ The command supports **zero-config** usage with automatic resolver discovery, or
 
 ```bash frame="none"
 # Zero-config - auto-discovers resolver, uses defaults
-sugarcube generate
+npx @sugarcube-sh/cli generate
 
 # Specify resolver explicitly
-sugarcube generate --resolver ./tokens.resolver.json
+npx @sugarcube-sh/cli generate --resolver ./tokens.resolver.json
 
 # Custom output directories
-sugarcube generate --styles-dir dist/styles
+npx @sugarcube-sh/cli generate --styles-dir dist/styles
 
 # Override fluid viewport range
-sugarcube generate --fluid-min 375 --fluid-max 1440
+npx @sugarcube-sh/cli generate --fluid-min 375 --fluid-max 1440
 
 # Use polyfill for wide gamut colors
-sugarcube generate --color-fallback polyfill
+npx @sugarcube-sh/cli generate --color-fallback polyfill
 
 # Combine multiple options
-sugarcube generate \
+npx @sugarcube-sh/cli generate \
   --resolver ./tokens.resolver.json \
   --styles-dir src/css \
   --fluid-max 1600 \
   --silent
 
 # Override config file values temporarily
-sugarcube generate --fluid-max 1600
+npx @sugarcube-sh/cli generate --fluid-max 1600
 ```
 
 ### Flag Behavior
@@ -180,7 +184,7 @@ sugarcube generate --fluid-max 1600
 ```bash frame="none"
 # Your config has fluid.max = 1200
 # Test with a larger viewport without changing config:
-sugarcube generate --fluid-max 1600
+npx @sugarcube-sh/cli generate --fluid-max 1600
 # Config file still has 1200 - only this run used 1600
 ```
 
@@ -209,7 +213,7 @@ Validate design token files for W3C compliance and correctness.
 ### Usage
 
 ```bash frame="none"
-sugarcube validate [paths...]
+npx @sugarcube-sh/cli validate [paths...]
 ```
 
 ### Description
@@ -233,14 +237,14 @@ The `validate` command checks your design token files for:
 
 ```bash frame="none"
 # Validate tokens using config file
-sugarcube validate
+npx @sugarcube-sh/cli validate
 
 # Validate specific files or directories
-sugarcube validate src/design-tokens
-sugarcube validate tokens/colors.json tokens/spacing.json
+npx @sugarcube-sh/cli validate src/design-tokens
+npx @sugarcube-sh/cli validate tokens/colors.json tokens/spacing.json
 
 # Validate multiple paths
-sugarcube validate src/tokens/colors src/tokens/spacing
+npx @sugarcube-sh/cli validate src/tokens/colors src/tokens/spacing
 ```
 
 ### Behavior
@@ -258,7 +262,7 @@ Install copy-to-use components for your framework.
 ### Usage
 
 ```bash frame="none"
-sugarcube components [components...] [options]
+npx @sugarcube-sh/cli components [components...] [options]
 ```
 
 ### Description
@@ -288,19 +292,19 @@ The `components` command allows you to browse and install pre-built components f
 
 ```bash frame="none" 
 # Interactive mode - browse and select components
-sugarcube components
+npx @sugarcube-sh/cli components
 
 # Install specific components
-sugarcube components button card --framework react
+npx @sugarcube-sh/cli components button card --framework react
 
 # Install CSS-only components
-sugarcube components button --framework css-only
+npx @sugarcube-sh/cli components button --framework css-only
 
 # Specify custom output directory
-sugarcube components button --components-dir src/ui
+npx @sugarcube-sh/cli components button --components-dir src/ui
 
 # Overwrite existing files
-sugarcube components button --overwrite
+npx @sugarcube-sh/cli components button --overwrite
 ```
 
 ### Behavior
@@ -326,7 +330,7 @@ Add CUBE CSS architecture to your project.
 ### Usage
 
 ```bash frame="none"
-sugarcube cube [options]
+npx @sugarcube-sh/cli cube [options]
 ```
 
 ### Description
@@ -347,16 +351,16 @@ The `cube` command installs the CUBE CSS methodology files into your project. CU
 
 ```bash frame="none"
 # Add CUBE CSS files
-sugarcube cube
+npx @sugarcube-sh/cli cube
 
 # Specify custom output directory
-sugarcube cube --cube-dir src/styles/cube
+npx @sugarcube-sh/cli cube --cube-dir src/styles/cube
 
 # Skip overwrite confirmation
-sugarcube cube --force
+npx @sugarcube-sh/cli cube --force
 
 # Silent mode
-sugarcube cube --silent
+npx @sugarcube-sh/cli cube --silent
 ```
 
 ### Output
@@ -403,22 +407,22 @@ A typical sugarcube workflow:
 
 2. **Generate CSS** (if not using Vite plugin):
    ```bash frame="none"
-   sugarcube generate
+   npx @sugarcube-sh/cli generate
    ```
 
 3. **Add components** as needed:
    ```bash frame="none"
-   sugarcube components
+   npx @sugarcube-sh/cli components
    ```
 
 4. **Add CUBE CSS** (optional):
    ```bash frame="none"
-   sugarcube cube
+   npx @sugarcube-sh/cli cube
    ```
 
 5. **Validate tokens** during development:
    ```bash frame="none"
-   sugarcube validate
+   npx @sugarcube-sh/cli validate
    ```
 
 ## Getting Help
@@ -426,5 +430,5 @@ A typical sugarcube workflow:
 For more information about a specific command:
 
 ```bash frame="none"
-sugarcube <command> --help
+npx @sugarcube-sh/cli <command> --help
 ```
