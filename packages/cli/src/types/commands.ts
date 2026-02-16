@@ -64,6 +64,7 @@ export interface ProjectContext {
     stylesDir: string;
     isSrcDir: boolean;
     hasExistingTokens: boolean;
+    resolverPath: string | null;
     framework: ProjectFramework;
 }
 
