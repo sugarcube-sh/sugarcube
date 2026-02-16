@@ -94,7 +94,7 @@
           "$value": "{color.pink.400}"
         },
         "normal": {
-          "$value": "{color.pink.400}"
+          "$value": "{color.pink.200}"
         },
         "loud": {
           "$value": "{color.white}"
@@ -174,10 +174,10 @@
       },
       "border": {
         "quiet": {
-          "$value": "{color.amber.700}"
+          "$value": "{color.amber.800}"
         },
         "normal": {
-          "$value": "{color.amber.600}"
+          "$value": "{color.amber.700}"
         },
         "loud": {
           "$value": "{color.amber.500}"
