@@ -8,7 +8,7 @@
     min-height: 2.5rem;
     border: var(--form-control-border-width, 1px) var(--border-style, solid)
         var(--form-control-border-color, #cdcdcd);
-    border-radius: var(--radius-input);
+    border-radius: var(--form-control-border-radius);
     box-shadow: var(--shadow-xs);
     background-color: var(--color-bg, Canvas);
     transition: border-color 150ms ease, box-shadow 150ms ease;

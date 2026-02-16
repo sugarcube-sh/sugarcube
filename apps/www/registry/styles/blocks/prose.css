@@ -103,7 +103,7 @@ CUSTOM PROPERTIES AND CONFIGURATION
 }
 
 .prose :is(kbd) {
-    border-radius: var(--radius-input, 0.25rem);
+    border-radius: var(--form-control-border-radius, 0.25rem);
 }
 
 .prose :is(code):not(.not-prose):not(pre code) {

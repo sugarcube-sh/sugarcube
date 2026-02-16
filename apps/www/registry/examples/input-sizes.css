@@ -37,3 +37,14 @@
 .label:has(.input[data-size="lg"]) {
     font-size: var(--text-lg);
 }
+
+/* Ignore size variants on mobile for zoom prevention.
+* Lower the scale so the padding is not too large (in otherds, larger font size but not our usual scale).
+*/
+@media (max-width: 768px) {
+    .input,
+    .input[data-size] {
+        font-size: 1rem;
+        --scale: 0.75;
+    }
+}
