@@ -21,7 +21,7 @@ const { class: className } = Astro.props;
         <Copy />
     </button>
 
-    <span data-tooltip aria-hidden="true">Copied!</span>
+    <span class="site-code-block-tooltip" aria-hidden="true">Copied!</span>
 </div>
 
 <script>
@@ -35,7 +35,7 @@ const { class: className } = Astro.props;
                         "[data-copy-button]",
                     );
                 const tooltip =
-                    block.querySelector<HTMLElement>("[data-tooltip]");
+                    block.querySelector<HTMLElement>(".site-code-block-tooltip");
 
                 if (!code || !button || !tooltip) return;
 

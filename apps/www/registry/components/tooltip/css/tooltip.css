@@ -1,0 +1,119 @@
+/*
+ * Tooltip - CSS only, no JS required
+ * Usage: <span data-tooltip="Tooltip text">Hover me</span>
+ * Positions: data-position="top" (default) | "bottom" | "left" | "right"
+ */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]:where(:not(button)) {
+    display: inline-block;
+}
+
+[data-tooltip]::before,
+[data-tooltip]::after {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, 4px);
+    opacity: 0;
+    pointer-events: none;
+    z-index: var(--z-tooltip);
+    transition:
+        opacity var(--transition-normal) var(--ease-out),
+        transform var(--transition-normal) var(--ease-out);
+}
+
+[data-tooltip]::before {
+    content: attr(data-tooltip);
+    bottom: calc(100% + 5px);
+    max-width: 200px;
+    width: max-content;
+    padding-inline: var(--space-2xs);
+    padding-block: var(--space-2xs);
+    font-size: var(--text-xs);
+    color: var(--color-on-loud, var(--color-neutral-on-loud));
+    background-color: var(--color-fill-loud, var(--color-neutral-fill-loud));
+    border-radius: var(--radius-md);
+}
+
+[data-tooltip]::after {
+    content: '';
+    bottom: 100%;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid var(--color-fill-loud, var(--color-neutral-fill-loud));
+}
+
+[data-tooltip]:hover::before,
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::before,
+[data-tooltip]:focus-visible::after {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+    transition-delay: var(--transition-slow);
+}
+
+[data-tooltip-hidden]::before,
+[data-tooltip-hidden]::after {
+    opacity: 0 !important;
+    transition-delay: 0ms !important;
+}
+
+[data-tooltip][data-position="bottom"]::before,
+[data-tooltip][data-position="bottom"]::after {
+    bottom: auto;
+}
+
+[data-tooltip][data-position="bottom"]::before {
+    top: calc(100% + 5px);
+}
+
+[data-tooltip][data-position="bottom"]::after {
+    top: 100%;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: none;
+    border-bottom: 5px solid var(--color-fill-loud, var(--color-neutral-fill-loud));
+}
+
+[data-tooltip][data-position="left"]::before,
+[data-tooltip][data-position="left"]::after {
+    left: auto;
+    bottom: auto;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+[data-tooltip][data-position="left"]::before {
+    right: calc(100% + 5px);
+}
+
+[data-tooltip][data-position="left"]::after {
+    right: 100%;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 5px solid var(--color-fill-loud, var(--color-neutral-fill-loud));
+}
+
+[data-tooltip][data-position="right"]::before,
+[data-tooltip][data-position="right"]::after {
+    left: auto;
+    bottom: auto;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+[data-tooltip][data-position="right"]::before {
+    left: calc(100% + 5px);
+}
+
+[data-tooltip][data-position="right"]::after {
+    left: 100%;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-right: 5px solid var(--color-fill-loud, var(--color-neutral-fill-loud));
+}
