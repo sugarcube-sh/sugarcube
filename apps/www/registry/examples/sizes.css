@@ -16,3 +16,13 @@
     font-size: var(--form-control-font-size, var(--text-base));
     --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
 }
+
+/* Ignore size variants on mobile - consistent 16px prevents iOS zoom */
+@media (max-width: 768px) {
+    .input:not([data-size]),
+    .textarea,
+    .command:not([data-size]),
+    .select-trigger:not([data-size]) {
+        font-size: 1rem;
+    }
+}

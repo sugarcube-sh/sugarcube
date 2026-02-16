@@ -102,7 +102,7 @@
 }
 
 .doc :is(kbd) {
-    border-radius: var(--radius-input, 0.25rem);
+    border-radius: var(--form-control-border-radius, 0.25rem);
 }
 
 .doc :is(code):not(.not-doc):not(pre code) {
