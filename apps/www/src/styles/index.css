@@ -37,8 +37,10 @@
 @import "@/src/styles/blocks/component-wrapper.css" layer(blocks);
 @import "@/src/styles/blocks/docs-pagination.css" layer(blocks);
 @import "@/src/styles/blocks/source-code.css" layer(blocks);
+@import "@/registry/components/sheet/css/sheet.css" layer(components);
 @import "@/registry/styles/utilities/region.css" layer(utilities);
 @import "@/registry/styles/utilities/visually-hidden.css" layer(utilities);
+@import "@/src/styles/utilities/separator.css" layer(utilities);
 @import "./vendors/starlight/reset.css" layer(sugarcube.starlight);
 @import "./vendors/starlight/theme.css" layer(sugarcube.starlight);
 @import "./vendors/starlight/components.css" layer(sugarcube.starlight);

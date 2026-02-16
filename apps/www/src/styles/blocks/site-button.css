@@ -1,7 +1,6 @@
 .site-button {
     /* Calculate total height: (top + bottom padding) + (font-size × line-height)
-     * Rounded to nearest pixel. Works with fluid and static typography
-     * since 1em scales with the computed font-size. */
+    Rounded to nearest pixel. */
     --form-control-height: round(
         calc(2 * var(--form-control-padding-block) + 1em * var(--form-control-line-height)),
         1px
@@ -55,7 +54,6 @@
     border-color: var(--color-neutral-400);
 }
 
-/* Soft appearance */
 .site-button[data-appearance="soft"] {
     background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
     color: var(--color-on-normal, var(--color-neutral-on-normal));
@@ -81,7 +79,6 @@
     border-color: transparent;
 }
 
-/* Outlined appearance */
 .site-button[data-appearance="outlined"] {
     background-color: transparent;
     color: var(--color-on-normal, var(--color-neutral-on-normal));
@@ -102,13 +99,11 @@
     );
 }
 
-/* TODO: border colors could be better I think */
 .site-button[data-appearance="outlined"]:focus-visible {
     border-color: var(--color-fill-loud);
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-fill-loud) 25%, transparent);
 }
 
-/* Soft-outlined appearance */
 .site-button[data-appearance="soft-outlined"] {
     background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
     color: var(--color-on-normal, var(--color-neutral-on-normal));
@@ -137,7 +132,6 @@
     border-color: var(--color-fill-loud);
 }
 
-/* Ghost appearance */
 .site-button[data-appearance="ghost"] {
     background-color: transparent;
     color: var(--color-on-normal, var(--color-neutral-on-normal));
@@ -163,7 +157,6 @@
     outline: none;
 }
 
-/* Icon-only modifier */
 .site-button.is-icon-only {
     aspect-ratio: 1;
     padding-inline: 0;
@@ -174,16 +167,17 @@
     height: 1.25em;
 }
 
-/* Compact modifier - reduced vertical padding */
 .site-button.is-nav-link {
-    --form-control-padding-inline: var(--space-xs);
-}
-
-/* Sizes */
-.site-button[data-size="sm"] {
-    font-size: var(--text-sm);
+    --form-control-padding-block: 0.5rem;
+    --form-control-padding-inline: var(--space-2xs);
+    padding-block: 0;
+    font-weight: var(--font-weight-medium);
 }
 
 .site-button.is-pill {
     border-radius: var(--radius-full);
+}
+
+.site-button[data-size="sm"] {
+    font-size: var(--text-sm);
 }
