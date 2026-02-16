@@ -21,6 +21,7 @@
 @import "@/registry/styles/blocks/doc.css" layer(blocks);
 @import "@/src/styles/blocks/readme.css" layer(blocks);
 @import "@/src/styles/blocks/site-head.css" layer(blocks);
+@import "@/src/styles/blocks/services.css" layer(blocks);
 @import "@/src/styles/blocks/site-tabs.css" layer(blocks);
 @import "@/src/styles/blocks/site-alert.css" layer(blocks);
 @import "@/src/styles/blocks/site-table.css" layer(blocks);

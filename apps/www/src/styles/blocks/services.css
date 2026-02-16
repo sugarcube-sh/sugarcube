@@ -1,0 +1,17 @@
+.services {
+    padding-inline: var(--space-lg);
+}
+
+.services :is(p) {
+    color: var(--color-text-quiet);
+}
+
+.services :is(ul) li {
+    color: var(--color-text-quiet);
+}
+
+@media (max-width: 50rem) {
+    .services {
+        padding-inline: 1rem;
+    }
+}

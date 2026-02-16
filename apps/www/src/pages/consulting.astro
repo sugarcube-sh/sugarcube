@@ -1,0 +1,51 @@
+---
+import BaseLayout from "@/src/layouts/BaseLayout.astro";
+import { Mail, Calendar } from "@lucide/astro";
+---
+
+<BaseLayout meta={{ title: "Services" }}>
+    <article class="services region flow max-w-md">
+        <h1 class="text-3xl tracking-tight text-pretty">
+            Helping Teams Build Stronger Front-End Foundations
+        </h1>
+        <p>
+            I’m <a href="https://marktomlinson.dev" target="_blank">Mark</a>,
+            the creator and maintainer of sugarcube. In addition to working on
+            sugarcube itself, I offer services to teams who are looking to
+            optimize their front-end development process.
+        </p>
+        <p>
+            Many teams know they need stronger front-end foundations:
+            <ul>
+                <li>reusable patterns</li>
+                <li>a quicker way to spin up well-crafted projects</li>
+                <li>scalable, maintainable CSS architecture</li>
+                <li>faster, more reliable design-to-code workflows</li>
+                <li>better internal tooling</li>
+                <li>the design system you’ve been meaning to build</li>
+            </ul>
+            <p>
+                But they often don’t have the time to step back and implement
+                them properly.
+            </p>
+            <p>
+                If that’s you and your team, I’d love to hear about your
+                specific challenges and how I might help.
+            </p>
+            <p>
+                <a
+                    class="site-button"
+                    data-size="sm"
+                    href="mailto:mark@sugarcube.sh"><Mail /> Send email</a
+                >
+                <a
+                    class="site-button"
+                    data-size="sm"
+                    data-appearance="soft-outlined"
+                    href="https://calendly.com/mark-sugarcube/30min"
+                    ><Calendar />Hop on a call</a
+                >
+            </p>
+        </p>
+    </article>
+</BaseLayout>

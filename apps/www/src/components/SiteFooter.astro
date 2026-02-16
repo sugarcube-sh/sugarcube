@@ -1,38 +1,64 @@
 ---
 import Logo from "@/src/assets/sugarcube-logo.svg";
+import { ArrowRight } from "@lucide/astro";
+// const isHomePage = Astro.url.pathname === "/";
+const isConsultingPage = Astro.url.pathname.includes("/consulting");
 ---
 
-<footer
-    class="site-footer wrapper flow region pt-3xl pb-2xl"
-    style="--wrapper-max-width: var(--container-3xl)"
->
+<footer class="site-footer region py-lg mt-xl">
     <div class="repel">
-        <div class="cluster">
-            <Logo />
-            <p>MIT LICENSE © {new Date().getFullYear()}</p>
+        <div class="flow">
+            <div class="cluster">
+                <Logo />
+                <p>MIT LICENSE © {new Date().getFullYear()}</p>
+            </div>
+            <nav>
+                <ul class="cluster" role="list">
+                    <li>
+                        <a href="/docs">Docs</a>
+                    </li>
+                    <li>
+                        <a href="/consulting">Consulting</a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/sponsors/mark-tomlinson-dev"
+                            >Sponsor</a
+                        >
+                    </li>
+                    <li>
+                        <a href="https://github.com/sugarcube-sh/sugarcube"
+                            >GitHub</a
+                        >
+                    </li>
+                    <li>
+                        <a href="https://bsky.app/profile/sugarcube.sh"
+                            >Bluesky</a
+                        >
+                    </li>
+                </ul>
+            </nav>
         </div>
-        <nav>
-            <ul class="cluster" role="list">
-                <li>
-                    <a href="/docs">Docs</a>
-                </li>
-                <li>
-                    <a href="/services">Services</a>
-                </li>
-                <li>
-                    <a href="https://github.com/sponsors/mark-tomlinson-dev"
-                        >Sponsor</a
-                    >
-                </li>
-                <li>
-                    <a href="https://github.com/sugarcube-sh/sugarcube"
-                        >GitHub</a
-                    >
-                </li>
-                <li>
-                    <a href="https://bsky.app/profile/sugarcube.sh">Bluesky</a>
-                </li>
-            </ul>
-        </nav>
+        <div class="footer-ctas cluster">
+            <!-- <div class="footer-cta">
+                <p>Need help with sugarcube?</p>
+                <a href="https://github.com/sugarcube-sh/sugarcube/discussions" class="site-button" data-size="sm" data-appearance="ghost"
+                    >Join the discussion <ArrowRight /></a
+                >
+            </div> -->
+            {
+                isConsultingPage ? null : (
+                    <div class="footer-cta">
+                        <p>Want us to build it for you?</p>
+                        <a
+                            href="/consulting"
+                            class="site-button is-pill"
+                            data-size="sm"
+                        >
+                            Let's Talk <ArrowRight />
+                        </a>
+                    </div>
+                )
+            }
+        </div>
     </div>
 </footer>

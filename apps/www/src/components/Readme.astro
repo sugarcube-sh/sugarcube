@@ -4,7 +4,8 @@ import Hero from "@/src/components/Hero.astro";
 import WhatIsSC from "@/src/components/WhatIsSC.astro";
 import Features from "@/src/components/Features.astro";
 import Acknowledgments from "@/src/components/Acknowledgments.astro";
-import Playground from "@/src/components/Playground.astro";
+import Help from "@/src/components/Help.astro";
+// import Playground from "@/src/components/Playground.astro";
 ---
 
 <div
@@ -17,8 +18,8 @@ import Playground from "@/src/components/Playground.astro";
     </div>
     <div class="site-alert mt-lg py-2xs" data-variant="warning" data-size="sm">
         <TriangleAlertIcon />
-        Sugarcube is in early development. The config and CLI APIs are stabilizing but may still
-        change.
+        Sugarcube is working towards a 1.0 release. The config and CLI APIs are stabilizing
+        but may still change.
     </div>
     <Hero />
     <hr />
@@ -26,7 +27,9 @@ import Playground from "@/src/components/Playground.astro";
     <hr />
     <Features />
     <hr />
-    <Playground />
+    <Help />
+    <!-- <hr /> -->
+    <!-- <Playground /> -->
     <hr />
     <Acknowledgments />
 </div>

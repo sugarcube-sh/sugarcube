@@ -71,6 +71,7 @@
      * Adjust spacing and layout values as needed.
      */
     --sl-content-gap-y: 1.375rem;
+    --sl-content-pad-x: var(--wrapper-padding-inline);
     --sl-sidebar-pad-x: var(--space-lg);
     --sl-sidebar-item-padding-inline: 0;
 

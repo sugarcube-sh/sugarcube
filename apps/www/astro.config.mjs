@@ -4,7 +4,6 @@ import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import sugarcube from "@sugarcube-sh/vite";
 import robotsTxt from "astro-robots-txt";
-import webmanifest from "astro-webmanifest";
 import { defineConfig, fontProviders } from "astro/config";
 import { siteConfig } from "./src/site.config";
 import presetWind3 from "@unocss/preset-wind3";
@@ -34,35 +33,17 @@ export default defineConfig({
         }),
         sitemap(),
         robotsTxt(),
-        webmanifest({
-            // See: https://github.com/alextim/astro-lib/blob/main/packages/astro-webmanifest/README.md
-            name: siteConfig.title,
-            short_name: "sugarcube",
-            description: siteConfig.description,
-            lang: siteConfig.lang,
-            icons: [],
-            start_url: "/",
-            background_color: "#000000",
-            theme_color: "#000000",
-            display: "standalone",
-            config: {
-                insertFaviconLinks: false,
-                insertThemeColorMeta: false,
-                insertManifestLink: false,
-            },
-        }),
         react(),
         starlight({
             title: "sugarcube",
-            favicon: "/favicon.svg",
+            disable404Route: true,
             customCss: ["virtual:sugarcube.css", "src/styles/index.css"],
             sidebar: [
                 {
                     label: "Get started",
                     items: [
-                        "docs/intro",
                         "docs/about",
-                        "docs/setup",
+                        "docs/getting-started",
                         "docs/advanced-setup",
                         "docs/tokens",
                         "docs/working-with-tokens",

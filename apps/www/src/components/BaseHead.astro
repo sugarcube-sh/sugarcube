@@ -21,10 +21,10 @@ const socialImageURL = new URL(ogImage ? ogImage : "/social-card.png", Astro.url
 
     {/* Fonts */}
     <Font cssVariable="--font-geist" preload />
-    {/* Icons */}
+    {/* Favicons */}
+    <link href="/favicon.ico" rel="icon" sizes="32x32" />
     <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
-    {/* Manifest */}
-    <link href="/manifest.webmanifest" rel="manifest" />
+    <link href="/apple-touch-icon.png" rel="apple-touch-icon" />
     {/* Canonical URL */}
     <link href={canonicalURL} rel="canonical" />
 
