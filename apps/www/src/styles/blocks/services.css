@@ -1,5 +1,11 @@
 .services {
     padding-inline: var(--space-lg);
+    max-width: var(--container-md);
+}
+
+.services :is(h1) {
+    font-size: var(--text-3xl);
+    text-wrap: pretty;
 }
 
 .services :is(p) {

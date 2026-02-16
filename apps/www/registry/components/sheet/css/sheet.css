@@ -1,0 +1,120 @@
+.sheet {
+    position: fixed;
+    margin: 0;
+    border: none;
+    background-color: var(--color-surface-raised);
+    box-shadow: var(--shadow-lg);
+    overflow: auto;
+    max-height: 100%;
+    max-width: 100%;
+}
+
+.sheet:focus {
+    outline: none;
+}
+
+.sheet::backdrop {
+    background-color: var(--color-overlay, rgb(0 0 0 / 0.5));
+    opacity: 1;
+    animation: sheet-backdrop-in var(--transition-normal) var(--ease-out);
+}
+
+.sheet {
+    inset: 0 0 0 auto;
+    width: min(24rem, calc(100% - var(--space-lg)));
+    height: 100%;
+    border-radius: var(--panel-radius) 0 0 var(--panel-radius);
+    border-left: var(--border-width-thin) solid var(--color-surface-border);
+}
+
+.sheet[open] {
+    animation: sheet-slide-in-right var(--transition-normal) var(--ease-out);
+}
+
+/* Left */
+.sheet[data-position="left"] {
+    inset: 0 auto 0 0;
+    border-left: none;
+    border-right: var(--border-width-thin) solid var(--color-surface-border);
+    border-radius: 0 var(--panel-radius) var(--panel-radius) 0;
+}
+
+.sheet[data-position="left"][open] {
+    animation: sheet-slide-in-left var(--transition-normal) var(--ease-out);
+}
+
+/* Top */
+.sheet[data-position="top"] {
+    inset: 0 0 auto 0;
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    border-left: none;
+    border-bottom: var(--border-width-thin) solid var(--color-surface-border);
+    border-radius: 0 0 var(--panel-radius) var(--panel-radius);
+}
+
+.sheet[data-position="top"][open] {
+    animation: sheet-slide-in-top var(--transition-normal) var(--ease-out);
+}
+
+/* Bottom */
+.sheet[data-position="bottom"] {
+    inset: auto 0 0 0;
+    width: 100%;
+    height: auto;
+    min-height: 80vh;
+    max-height: 80vh;
+    border-left: none;
+    border-top: var(--border-width-thin) solid var(--color-surface-border);
+    border-radius: var(--panel-radius) var(--panel-radius) 0 0;
+}
+
+.sheet[data-position="bottom"][open] {
+    animation: sheet-slide-in-bottom 200ms var(--ease-out);
+}
+
+@keyframes sheet-backdrop-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes sheet-slide-in-right {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes sheet-slide-in-left {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes sheet-slide-in-top {
+    from {
+        transform: translateY(-100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes sheet-slide-in-bottom {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}

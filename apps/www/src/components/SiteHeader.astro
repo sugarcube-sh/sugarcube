@@ -10,7 +10,6 @@ import logoSvg from "@/src/assets/sugarcube-logo.svg?raw";
 
 const isDocsRoute =
     Astro.url.pathname.startsWith("/docs") && Astro.routePattern !== "/404";
-console.log(Astro.routePattern);
 ---
 
 {
@@ -52,43 +51,58 @@ console.log(Astro.routePattern);
     ) : (
         <header class="site-header">
             <div class="repel w-full">
-                <div class="cluster cluster-gap-3xl">
-                    <a
-                        class="logo cluster cluster-gap-xs"
-                        href="/"
-                        aria-label="sugarcube home"
-                    >
-                        <Fragment set:html={logoSvg} />
-                        sugarcube
-                    </a>
-                </div>
+                <!-- Left: Logo -->
+                <a
+                    class="logo cluster cluster-gap-xs"
+                    href="/"
+                    aria-label="sugarcube home"
+                >
+                    <Fragment set:html={logoSvg} />
+                    <span class="hidden md:inline">sugarcube</span>
+                </a>
 
-                <nav class="sl-hidden md:sl-flex">
-                    <ul class="cluster cluster-gap-xl flex-nowrap" role="list">
-                        <div class="cluster gap-0">
+                <!-- Center: Nav links -->
+                <div class="cluster cluster-gap-sm">
+                    <nav>
+                        <ul class="cluster gap-3xs flex-nowrap" role="list">
                             <li>
-                                <ThemeToggle
-                                    className="is-nav-link"
-                                    client:load
-                                />
-                            </li>
-                            <li>
-                                <ModeToggle class="is-nav-link" />
-                            </li>
-                            <li>
-                                <Link
-                                    href="https://github.com/sugarcube-sh/sugarcube"
-                                    isExternal
-                                    class="site-button is-icon-only is-nav-link"
-                                    data-appearance="ghost"
-                                >
-                                    <Icons name="github" />
-                                    <span class="sr-only">GitHub</span>
+                                <Link href="/docs" class="site-button is-nav-link" data-appearance="ghost">
+                                    Docs
                                 </Link>
                             </li>
-                        </div>
+                            <li>
+                                <Link href="/consulting" class="site-button is-nav-link" data-appearance="ghost">
+                                    Consulting
+                                </Link>
+                            </li>
+                        </ul>
+                    </nav>
+
+                    <div class="separator" data-orientation="vertical"></div>
+
+                <!-- Right: Icons -->
+                <nav>
+                    <ul class="cluster gap-0 flex-nowrap" role="list">
+                        <li>
+                            <ThemeToggle className="is-nav-link" client:load />
+                        </li>
+                        <li>
+                            <ModeToggle class="is-nav-link" />
+                        </li>
+                        <li>
+                            <Link
+                                href="https://github.com/sugarcube-sh/sugarcube"
+                                isExternal
+                                class="site-button is-icon-only is-nav-link"
+                                data-appearance="ghost"
+                            >
+                                <Icons name="github" />
+                                <span class="sr-only">GitHub</span>
+                            </Link>
+                        </li>
                     </ul>
                 </nav>
+                </div>
             </div>
         </header>
     )
