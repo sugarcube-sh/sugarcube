@@ -1,3 +1,11 @@
+.readme {
+    --flow-space: var(--space-lg);
+}
+
+.readme :is(hr) {
+    --flow-space: var(--space-sm);
+}
+
 .readme :is(p) {
     max-width: 45rem;
     color: var(--color-text-quiet);
