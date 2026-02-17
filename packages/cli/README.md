@@ -10,11 +10,11 @@ CLI for [sugarcube](https://sugarcube.sh).
 
 ## Commands
 
-- `sugarcube init` - Set up sugarcube in your project
-- `sugarcube generate` - Generate CSS from your design tokens
-- `sugarcube validate` - Validate your token files
-- `sugarcube components` - Add components to your project
-- `sugarcube cube` - Add CUBE CSS
+- `@sugarcube-sh/cli init` - Set up sugarcube in your project
+- `@sugarcube-sh/cli generate` - Generate CSS from your design tokens
+- `@sugarcube-sh/cli validate` - Validate your token files
+- `@sugarcube-sh/cli components` - Add components to your project
+- `@sugarcube-sh/cli cube` - Add CUBE CSS
 
 ## Installation
 
