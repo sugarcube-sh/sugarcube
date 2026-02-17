@@ -5,7 +5,11 @@ import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 const isRtl = dir === "rtl";
 ---
 
-<div dir={dir} class="docs-pagination repel">
+<div
+    dir={dir}
+    class="docs-pagination switcher"
+    style="--switcher-inline-at: 20rem;"
+>
     {
         prev && (
             <a
