@@ -30,7 +30,7 @@ export default defineConfig({
         viteTsConfigPaths({
             projects: ["./tsconfig.json"],
         }),
-        // SugarCube must run before TanStack Start to process virtual CSS
+        // sugarcube must run before TanStack Start to process virtual CSS
         sugarcube(),
         tanstackStart(),
         viteReact(),

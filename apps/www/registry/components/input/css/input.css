@@ -7,7 +7,7 @@
             2 *
             var(--form-control-padding-block) *
             var(--scale) +
-            1.25em
+            1em * var(--form-control-line-height)
         ),
         1px
     );

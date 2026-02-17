@@ -1,6 +1,12 @@
 .site-code-block {
-    --form-control-height: round(
-        calc(2 * var(--form-control-padding-block) + 1em * var(--form-control-line-height)),
+    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+    
+    /* Height: (padding × 2 × scale) + (1em × line-height), rounded to nearest px */
+     --form-control-height: round(
+        calc(
+            2 * var(--form-control-padding-block) * var(--scale) +
+            1em * var(--form-control-line-height)
+        ),
         1px
     );
 

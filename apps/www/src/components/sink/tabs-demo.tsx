@@ -33,11 +33,11 @@ export function TabsDemo() {
                             <form>
                                 <div className="">
                                     <Label htmlFor="tabs-demo-name">Name</Label>
-                                    <Input id="tabs-demo-name" defaultValue="Pedro Duarte" />
+                                    <Input id="tabs-demo-name" defaultValue="Teddy Adorno" />
                                 </div>
                                 <div className="">
                                     <Label htmlFor="tabs-demo-username">Username</Label>
-                                    <Input id="tabs-demo-username" defaultValue="@peduarte" />
+                                    <Input id="tabs-demo-username" defaultValue="@teddyadorno" />
                                 </div>
                             </form>
                         </CardContent>
