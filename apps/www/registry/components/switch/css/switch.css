@@ -1,13 +1,13 @@
 .switch {
-    --scale: 1;
-    --_switch-height: calc(1rem * var(--scale));
-    --_switch-width: calc(1.85rem * var(--scale));
-    --_switch-thumb-travel: calc(var(--_switch-width) - var(--_switch-height));
+    --_switch-height: 1em;
+    --_switch-width: 1.85em;
     --_switch-thumb-size: calc(var(--_switch-height) - var(--form-control-border-width) * 2);
+    --_switch-thumb-travel: calc(var(--_switch-width) - var(--_switch-height));
 
     appearance: none;
     cursor: pointer;
     position: relative;
+    font-size: var(--form-control-font-size, var(--text-base));
     width: var(--_switch-width);
     height: var(--_switch-height);
     border-radius: var(--radius-full);

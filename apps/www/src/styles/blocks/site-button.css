@@ -1,27 +1,24 @@
 .site-button {
-    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+    --_padding-block: 0.65em;
+    --_padding-inline: 0.75em;
     
-    /* Height: (padding × 2 × scale) + (1em × line-height), rounded to nearest px */
-     --form-control-height: round(
-        calc(
-            2 * var(--form-control-padding-block) * var(--scale) +
-            1em * var(--form-control-line-height)
-        ),
+    --form-control-height: round(
+        calc(2 * var(--_padding-block) + 1em * 1.25),
         1px
-    );
+        );
 
 
+    font-size: var(--form-control-font-size, var(--text-base));
     display: inline-flex;
     align-items: center;
     justify-content: center;
     text-decoration: none;
     cursor: pointer;
     white-space: nowrap;
-    font-size: inherit;
     font-family: inherit;
     border-color: transparent;
     padding-block: 0;
-    padding-inline: var(--form-control-padding-inline);
+    padding-inline: var(--_padding-inline);
     background-color: var(--color-fill-loud, var(--color-neutral-fill-loud));
     border-radius: var(--form-control-border-radius);
     border-style: var(--border-style);
@@ -172,8 +169,9 @@
 }
 
 .site-button.is-nav-link {
-    --form-control-padding-block: 0.5rem;
-    --form-control-padding-inline: var(--space-2xs);
+    --_padding-block: 0.5rem;
+    --_padding-inline: var(--space-2xs);
+    font-size: var(--text-base);
     padding-block: 0;
     font-weight: var(--font-weight-medium);
 }

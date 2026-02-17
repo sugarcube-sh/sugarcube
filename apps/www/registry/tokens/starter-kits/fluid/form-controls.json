@@ -18,24 +18,9 @@
     "border-radius": {
       "$value": "{radius.lg}"
     },
-    "padding": {
-      "$type": "dimension",
-      "block": {
-        "$value": {
-          "value": 0.65,
-          "unit": "rem"
-        }
-      },
-      "inline": {
-        "$value": {
-          "value": 1,
-          "unit": "rem"
-        }
-      }
-    },
     "line-height": {
       "$type": "number",
-      "$value": "{leading.tight}"
+      "$value": "{leading.normal}"
     },
     "font-size": {
       "$value": "{text.sm}"

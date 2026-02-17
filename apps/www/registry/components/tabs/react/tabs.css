@@ -1,5 +1,5 @@
 .tabs-list {
-    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+    --scale: 0.875;
    
     /* Height: (padding × 2 × scale) + (1em × line-height), rounded to nearest px */
      --form-control-height: round(

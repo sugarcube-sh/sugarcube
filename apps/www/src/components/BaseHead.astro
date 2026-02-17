@@ -1,4 +1,5 @@
 ---
+import CSSLayers from "@/src/components/CSSLayers.astro";
 import Font from "astro/components/Font.astro";
 import ThemeProvider from "@/src/components/ThemeProvider.astro";
 import { siteConfig } from "@/src/site.config";
@@ -15,6 +16,7 @@ const socialImageURL = new URL(ogImage ? ogImage : "/social-card.png", Astro.url
 ---
 
 <head>
+    <CSSLayers />
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>{siteTitle}</title>

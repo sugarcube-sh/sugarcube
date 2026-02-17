@@ -1,20 +1,17 @@
 .input {
-    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
-
-    /* Height: (padding × 2 × scale) + (1em × line-height), rounded to nearest px */
+    
+    --_padding-block: 0.65em;
+    --_padding-inline: 0.75em;
+    
     --form-control-height: round(
-        calc(
-            2 *
-            var(--form-control-padding-block) *
-            var(--scale) +
-            1em * var(--form-control-line-height)
-        ),
+        calc(2 * var(--_padding-block) + 1em * 1.25),
         1px
-    );
-
+        );
+        
+    font-size: var(--form-control-font-size, var(--text-base));
     appearance: none;
     inline-size: 100%;
-    padding-inline: var(--space-xs);
+    padding-inline: var(--_padding-inline);
     padding-block: 0;
     height: var(--form-control-height);
     border: var(--form-control-border-width) var(--border-style) var(--form-control-border-color);

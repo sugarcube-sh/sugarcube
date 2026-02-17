@@ -1,20 +1,19 @@
 .radio {
     --_radio-color: var(--color-accent-fill-loud);
 
-    /* Base scale - defaults to text-base (1rem) */
-    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
-
     appearance: none;
     margin: 0;
     flex-shrink: 0;
     vertical-align: middle;
-    width: calc(var(--form-control-toggle-size) * var(--scale));
-    height: calc(var(--form-control-toggle-size) * var(--scale));
+
+    width: 1.1em;
+    height: 1.1em;
+    padding: 0.15em;
+
     border: var(--form-control-border-width) var(--border-style) var(--form-control-border-color);
     box-shadow: var(--shadow-xs);
     display: inline-block;
     border-radius: var(--radius-full);
-    padding: calc(0.225rem * var(--scale));
 }
 
 .radio::before {

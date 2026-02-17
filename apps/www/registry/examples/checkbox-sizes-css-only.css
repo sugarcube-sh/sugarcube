@@ -1,6 +1,5 @@
 .checkbox[data-size="sm"] {
-    --scale: calc(var(--text-sm) / 1rem);
-    --checked-icon-scale: calc(0.8 * var(--scale));
+    font-size: var(--text-sm);
 }
 
 .checkbox[data-size="sm"] + .label,
@@ -13,8 +12,7 @@
 }
 
 .checkbox[data-size="md"] {
-    --scale: calc(var(--text-base) / 1rem);
-    --checked-icon-scale: calc(0.8 * var(--scale));
+    font-size: var(--text-base);
 }
 
 .checkbox[data-size="md"] + .label,
@@ -27,8 +25,7 @@
 }
 
 .checkbox[data-size="lg"] {
-    --scale: calc(var(--text-lg) / 1rem);
-    --checked-icon-scale: calc(0.8 * var(--scale));
+    font-size: var(--text-lg);
 }
 
 .checkbox[data-size="lg"] + .label,

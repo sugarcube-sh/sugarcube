@@ -1,21 +1,17 @@
 .input[data-size="xs"] {
-    --scale: calc(var(--text-xs) / 1rem);
-    font-size: var(--text-xs);
+    font-size: calc(var(--form-control-font-size, var(--text-base)) * 0.75);
 }
 
 .input[data-size="sm"] {
-    --scale: calc(var(--text-sm) / 1rem);
-    font-size: var(--text-sm);
+    font-size: calc(var(--form-control-font-size, var(--text-base)) * 0.875);
 }
 
 .input[data-size="md"] {
-    --scale: calc(var(--text-base) / 1rem);
-    font-size: var(--text-base);
+    font-size: var(--form-control-font-size, var(--text-base));
 }
 
 .input[data-size="lg"] {
-    --scale: calc(var(--text-lg) / 1rem);
-    font-size: var(--text-lg);
+    font-size: calc(var(--form-control-font-size, var(--text-base)) * 1.125);
 }
 
 .label:has(+ .input[data-size="xs"]),
@@ -38,13 +34,12 @@
     font-size: var(--text-lg);
 }
 
-/* Ignore size variants on mobile for zoom prevention.
-* Lower the scale so the padding is not too large (in otherds, larger font size but not our usual scale).
-*/
+/* Force 16px (1rem) on mobile to prevent iOS zoom.
+ * Padding auto-scales via em units.
+ */
 @media (max-width: 768px) {
     .input,
     .input[data-size] {
         font-size: 1rem;
-        --scale: 0.75;
     }
 }

@@ -1,14 +1,10 @@
 .site-code-block {
-    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+    --_padding-block: 0.65em;
     
-    /* Height: (padding × 2 × scale) + (1em × line-height), rounded to nearest px */
-     --form-control-height: round(
-        calc(
-            2 * var(--form-control-padding-block) * var(--scale) +
-            1em * var(--form-control-line-height)
-        ),
+    --form-control-height: round(
+        calc(2 * var(--_padding-block) + 1em * 1.25),
         1px
-    );
+        );
 
     background-color: color-mix(in oklab, var(--color-fill-normal) 50%, transparent);
     border-radius: var(--form-control-border-radius);

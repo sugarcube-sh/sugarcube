@@ -1,14 +1,11 @@
 .button {
-    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+    --_padding-block: 0.65em;
+    --_padding-inline: 0.75em;
     
-    /* Height: (padding × 2 × scale) + (1em × line-height), rounded to nearest px */
-     --form-control-height: round(
-        calc(
-            2 * var(--form-control-padding-block) * var(--scale) +
-            1em * var(--form-control-line-height)
-        ),
+    --form-control-height: round(
+        calc(2 * var(--_padding-block) + 1em * 1.25),
         1px
-    );
+        );
 
     display: inline-flex;
     align-items: center;
@@ -28,7 +25,7 @@
     font-weight: var(--font-weight-medium);
     gap: var(--space-2xs);
     min-height: var(--form-control-height);
-    padding-inline: calc(var(--form-control-padding-inline) * var(--scale));
+    padding-inline: var(--_padding-inline);
     transition-property: color, background-color, border-color, box-shadow;
     transition-timing-function: var(--ease-out);
     transition-duration: var(--transition-normal);
