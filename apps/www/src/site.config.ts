@@ -12,6 +12,7 @@ export const siteConfig: SiteConfig = {
     },
     description: "The toolkit for seriously sweet front ends.",
     lang: "en-GB",
+    ogImage: "/social-card.png",
     ogLocale: "en_GB",
     title: "sugarcube",
     url: "https://sugarcube.sh/",

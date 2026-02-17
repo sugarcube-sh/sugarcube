@@ -6,6 +6,7 @@ export interface SiteConfig {
     };
     description: string;
     lang: string;
+    ogImage?: string;
     ogLocale: string;
     title: string;
     url: string;
