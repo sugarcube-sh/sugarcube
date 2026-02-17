@@ -128,7 +128,7 @@
           "$value": "{color.pink.700}"
         },
         "normal": {
-          "$value": "{color.pink.600}"
+          "$value": "{color.pink.700}"
         },
         "loud": {
           "$value": "{color.pink.50}"
@@ -164,7 +164,7 @@
           "$value": "{color.emerald.700}"
         },
         "normal": {
-          "$value": "{color.emerald.600}"
+          "$value": "{color.emerald.700}"
         },
         "loud": {
           "$value": "{color.emerald.50}"
@@ -200,7 +200,7 @@
           "$value": "{color.amber.700}"
         },
         "normal": {
-          "$value": "{color.amber.600}"
+          "$value": "{color.amber.700}"
         },
         "loud": {
           "$value": "{color.amber.50}"
@@ -236,7 +236,7 @@
           "$value": "{color.rose.700}"
         },
         "normal": {
-          "$value": "{color.rose.600}"
+          "$value": "{color.rose.700}"
         },
         "loud": {
           "$value": "{color.rose.50}"
@@ -272,7 +272,7 @@
           "$value": "{color.blue.700}"
         },
         "normal": {
-          "$value": "{color.blue.600}"
+          "$value": "{color.blue.700}"
         },
         "loud": {
           "$value": "{color.blue.50}"
