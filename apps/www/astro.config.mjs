@@ -36,6 +36,7 @@ export default defineConfig({
         starlight({
             title: "sugarcube",
             disable404Route: true,
+            favicon: '/favicon.svg',
             customCss: ["virtual:sugarcube.css", "src/styles/index.css"],
             sidebar: [
                 {
