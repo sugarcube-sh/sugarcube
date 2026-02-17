@@ -25,10 +25,10 @@
         "$value": "{color.neutral.900}"
       },
       "quiet": {
-        "$value": "{color.neutral.500}"
+        "$value": "{color.neutral.600}"
       },
       "quieter": {
-        "$value": "{color.neutral.400}"
+        "$value": "{color.neutral.500}"
       },
       "placeholder": {
         "$value": "{color.neutral.500}"

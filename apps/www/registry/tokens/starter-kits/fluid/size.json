@@ -13,13 +13,13 @@
       },
       "-1": {
         "$value": {
-          "min": { "value": 0.8125, "unit": "rem" },
+          "min": { "value": 0.875, "unit": "rem" },
           "max": { "value": 0.875, "unit": "rem" }
         }
       },
       "0": {
         "$value": {
-          "min": { "value": 0.875, "unit": "rem" },
+          "min": { "value": 0.95, "unit": "rem" },
           "max": { "value": 1, "unit": "rem" }
         }
       },
