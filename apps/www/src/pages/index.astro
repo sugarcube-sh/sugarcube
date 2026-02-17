@@ -4,24 +4,11 @@ import { siteConfig } from "@/src/site.config";
 import Readme from "@/src/components/Readme.astro";
 
 const meta = {
-    title: "Seriously sweet frontends",
+    title: siteConfig.title,
     description: siteConfig.description,
 };
 ---
 
 <BaseLayout meta={meta}>
     <Readme />
-    <!-- <article
-        data-theme="coming-soon"
-        class="region flow px-lg region-space-lg font-mono"
-    >
-        <h1>sugarcube</h1>
-        <p>A tool for building design-token-driven frontends.</p>
-        <p><mark>Coming Q1 2026.</mark></p>
-        <p>
-            Follow along <a href="https://bsky.app/profile/marktomlinson.dev"
-                >@marktomlinson.dev</a
-            >.
-        </p>
-    </article> -->
 </BaseLayout>
