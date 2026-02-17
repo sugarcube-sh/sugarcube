@@ -4,7 +4,13 @@ import type { InitOptions } from "../types/index.js";
 export async function buildSugarcubeConfig(options: InitOptions): Promise<SugarcubeConfig> {
     const config: SugarcubeConfig = {};
 
-    if (options.stylesDir || options.variablesDir || options.utilitiesDir) {
+    if (
+        options.stylesDir ||
+        options.variablesDir ||
+        options.variablesFilename ||
+        options.utilitiesDir ||
+        options.utilitiesFilename
+    ) {
         config.output = {};
 
         if (options.stylesDir) {
@@ -15,8 +21,16 @@ export async function buildSugarcubeConfig(options: InitOptions): Promise<Sugarc
             config.output.variables = options.variablesDir;
         }
 
+        if (options.variablesFilename) {
+            config.output.variablesFilename = options.variablesFilename;
+        }
+
         if (options.utilitiesDir) {
             config.output.utilities = options.utilitiesDir;
+        }
+
+        if (options.utilitiesFilename) {
+            config.output.utilitiesFilename = options.utilitiesFilename;
         }
     }
 

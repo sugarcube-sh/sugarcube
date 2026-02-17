@@ -33,7 +33,9 @@ export interface InitOptions {
     tokensDir?: string;
     stylesDir?: string;
     variablesDir?: string;
+    variablesFilename?: string;
     utilitiesDir?: string;
+    utilitiesFilename?: string;
     fluidMin?: string;
     fluidMax?: string;
     colorFallback?: string;

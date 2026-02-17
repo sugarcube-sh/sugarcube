@@ -58,7 +58,9 @@ npx @sugarcube-sh/cli init --styles-dir custom/styles
 | `--tokens-dir <dir>` | Design tokens directory (e.g., `src/design-tokens`) | Auto-detected |
 | `--styles-dir <dir>` | CSS root output directory (e.g., `src/styles`) | Auto-detected |
 | `--variables-dir <dir>` | Token variables output directory | `{styles-dir}/global` |
+| `--variables-filename <name>` | Token variables filename | `tokens.variables.gen.css` |
 | `--utilities-dir <dir>` | Utilities output directory | `{styles-dir}/utilities` |
+| `--utilities-filename <name>` | Utilities filename | `utilities.gen.css` |
 | `--fluid-min <number>` | Min viewport for fluid scaling (px). Must be used with `--fluid-max` | `320` |
 | `--fluid-max <number>` | Max viewport for fluid scaling (px). Must be used with `--fluid-min` | `1200` |
 | `--color-fallback <strategy>` | Color fallback: `native` or `polyfill` | `native` |

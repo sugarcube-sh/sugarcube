@@ -222,7 +222,9 @@ function hasCustomizationFlags(options: InitOptions): boolean {
     return !!(
         options.stylesDir ||
         options.variablesDir ||
+        options.variablesFilename ||
         options.utilitiesDir ||
+        options.utilitiesFilename ||
         options.fluidMin ||
         options.fluidMax ||
         options.colorFallback
@@ -399,7 +401,12 @@ export const init = new Command()
     .option("--tokens-dir <dir>", "Design tokens directory (e.g., 'src/design-tokens')")
     .option("--styles-dir <dir>", "Styles output directory (e.g., 'src/styles')")
     .option("--variables-dir <dir>", "Token variables directory (e.g., 'src/styles/global')")
+    .option(
+        "--variables-filename <name>",
+        "Token variables filename (default: 'tokens.variables.gen.css')"
+    )
     .option("--utilities-dir <dir>", "Utilities directory (e.g., 'src/styles/utilities')")
+    .option("--utilities-filename <name>", "Utilities filename (default: 'utilities.gen.css')")
     .option("--fluid-min <number>", "Minimum viewport width for fluid scaling (default: 320)")
     .option("--fluid-max <number>", "Maximum viewport width for fluid scaling (default: 1200)")
     .option(
