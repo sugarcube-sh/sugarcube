@@ -134,8 +134,6 @@ export default defineConfig({
         mdx(),
     ],
     vite: {
-        // @ts-expect-error - Need to make an Astro-specific integration to prevent this
-        // Same happens with Tailwind etc. It's benign but annoying.
         plugins: [sugarcube({ unoPresets: [presetWind3({ preflight: false })] })],
     },
     prefetch: true,
