@@ -8,12 +8,6 @@ body:
       value: |
         ### Thanks for taking the time to create a bug report. Please search open/closed issues before submitting, as the issue may have already been reported/addressed.
 
-  - type: markdown
-    attributes:
-      value: |
-        #### If you aren't sure this is a bug or not, please open a discussion instead:
-        - [Discussions](https://github.com/sugarcube-sh/sugarcube/discussions/new?category=general)
-
   - type: textarea
     id: bug-description
     attributes:
