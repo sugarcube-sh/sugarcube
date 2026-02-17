@@ -1,17 +1,17 @@
 .tabs-list {
-    --tabs-list-padding: 3px;
-    /* Calculate total height: (top + bottom padding) + (font-size × line-height)
-     * Rounded to nearest pixel. Works with fluid and static typography
-     * since 1em scales with the computed font-size. */
-    --form-control-height: round(
+    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+   
+    /* Height: (padding × 2 × scale) + (1em × line-height), rounded to nearest px */
+     --form-control-height: round(
         calc(
-            2 *
-            (var(--form-control-padding-block) - var(--tabs-list-padding)) +
-            1em *
-            var(--form-control-line-height)
+            2 * var(--form-control-padding-block) * var(--scale) +
+            1em * var(--form-control-line-height)
         ),
         1px
     );
+    
+    --tabs-list-padding: 3px;
+
     display: inline-flex;
     background-color: var(--color-surface-lowered);
     padding: var(--tabs-list-padding);

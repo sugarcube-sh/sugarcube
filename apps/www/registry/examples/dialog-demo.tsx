@@ -27,7 +27,7 @@ export function DialogDemo() {
                         <Input
                             id="name-1"
                             name="name"
-                            defaultValue="Pedro Duarte"
+                            defaultValue="Teddy Adorno"
                             placeholder="Name"
                             data-size="sm"
                         />
@@ -37,7 +37,7 @@ export function DialogDemo() {
                         <Input
                             id="username-1"
                             name="username"
-                            defaultValue="@peduarte"
+                            defaultValue="@teddyadorno"
                             data-size="sm"
                         />
                     </div>

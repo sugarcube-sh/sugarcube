@@ -114,35 +114,35 @@
     "accent": {
       "fill": {
         "quiet": {
-          "$value": "{color.neutral.50}"
+          "$value": "{color.pink.50}"
         },
         "normal": {
-          "$value": "{color.neutral.100}"
+          "$value": "{color.pink.100}"
         },
         "loud": {
-          "$value": "{color.neutral.800}"
+          "$value": "{color.pink.600}"
         }
       },
       "on": {
         "quiet": {
-          "$value": "{color.neutral.950}"
+          "$value": "{color.pink.700}"
         },
         "normal": {
-          "$value": "{color.neutral.950}"
+          "$value": "{color.pink.600}"
         },
         "loud": {
-          "$value": "{color.neutral.50}"
+          "$value": "{color.pink.50}"
         }
       },
       "border": {
         "quiet": {
-          "$value": "{color.neutral.100}"
+          "$value": "{color.pink.100}"
         },
         "normal": {
-          "$value": "{color.neutral.200}"
+          "$value": "{color.pink.200}"
         },
         "loud": {
-          "$value": "{color.neutral.300}"
+          "$value": "{color.pink.300}"
         }
       }
     },

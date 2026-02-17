@@ -1,29 +1,11 @@
 .button {
-    /* Scale multiplier: Converts rem-based tokens to proportionally scale with font-size.
-     * This allows rem tokens (spec-compliant) to behave like em units (proportional scaling).
-     * When font-size changes (via data-size or global form-control-font-size), padding scales proportionally.
-     * Example: If --text-sm = 0.875rem, scale = 0.875, so 1rem padding becomes 0.875rem. */
     --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
-
-    /* Calculate total height: (top + bottom padding) + (font-size × line-height)
-     * Rounded to nearest pixel.
-     * 
-     * Why this approach?
-     * Change one token (--form-control-font-size) and ALL form controls
-     * automatically adjust their size proportionally - buttons, inputs, checkboxes, etc.
-     * 
-     * How it works:
-     * - Padding uses rem tokens multiplied by scale (proportional to font-size)
-     * - Line-height uses 1em (already proportional to font-size)
-     * - Together they create a height that scales perfectly with font-size changes
-     */
-    --form-control-height: round(
+    
+    /* Height: (padding × 2 × scale) + (1em × line-height), rounded to nearest px */
+     --form-control-height: round(
         calc(
-            2 *
-            var(--form-control-padding-block) *
-            var(--scale) +
-            1em *
-            var(--form-control-line-height)
+            2 * var(--form-control-padding-block) * var(--scale) +
+            1em * var(--form-control-line-height)
         ),
         1px
     );

@@ -34,7 +34,6 @@
     text-decoration-style: dotted;
 }
 
-/* TODO: could these be part of a global svg styles? */
 .site-alert svg {
     justify-self: center;
     align-self: center;

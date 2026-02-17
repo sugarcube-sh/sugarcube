@@ -5,7 +5,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sugarcube-sh/sugarcube/actions"><img src="https://img.shields.io/github/actions/workflow/status/sugarcube-sh/sugarcube/ci.yml?branch=main" alt="Build Status"></a>
   <a href="https://www.npmjs.com/package/@sugarcube-sh/core"><img src="https://img.shields.io/npm/v/@sugarcube-sh/core.svg" alt="Latest Release"></a>
   <a href="https://www.npmjs.com/package/@sugarcube-sh/core"><img src="https://img.shields.io/npm/dt/@sugarcube-sh/core.svg" alt="Total Downloads"></a>
   <a href="https://github.com/sugarcube-sh/sugarcube/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/license-see%20LICENSE-blue" alt="License"></a>
@@ -25,15 +24,15 @@ pnpm dlx @sugarcube-sh/cli init
 
 ## Documentation
 
-For full documentation, visit [sugarcube.sh](https://sugarcube.sh).
+For full documentation, visit [sugarcube.sh/docs](https://sugarcube.sh/docs).
 
 ## Packages
 
 | Package | Description |
 |---------|-------------|
-| [`@sugarcube-sh/cli`](https://www.npmjs.com/package/@sugarcube-sh/cli) | CLI for sugarcube |
-| [`@sugarcube-sh/vite`](https://www.npmjs.com/package/@sugarcube-sh/vite) | Vite plugin for sugarcube |
-| [`@sugarcube-sh/core`](https://www.npmjs.com/package/@sugarcube-sh/core) | Core functionality for sugarcube |
+| [`@sugarcube-sh/cli`](https://npmx.dev/package/@sugarcube-sh/cli) | CLI for sugarcube |
+| [`@sugarcube-sh/vite`](https://npmx.dev/package/@sugarcube-sh/vite) | Vite plugin for sugarcube |
+| [`@sugarcube-sh/core`](https://npmx.dev/package/@sugarcube-sh/core) | Core functionality for sugarcube |
 
 ## License
 
