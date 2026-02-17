@@ -4,6 +4,7 @@ notes
 coverage
 drafts
 .DS_Store
+.claude
 .env*
 .wrangler
 *.log
