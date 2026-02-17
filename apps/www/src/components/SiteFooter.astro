@@ -1,7 +1,6 @@
 ---
 import Logo from "@/src/assets/sugarcube-logo.svg";
 import { ArrowRight } from "@lucide/astro";
-// const isHomePage = Astro.url.pathname === "/";
 const isConsultingPage = Astro.url.pathname.includes("/consulting");
 ---
 
@@ -39,20 +38,11 @@ const isConsultingPage = Astro.url.pathname.includes("/consulting");
             </nav>
         </div>
         <div class="footer-ctas cluster">
-            <!-- <div class="footer-cta">
-                <p>Need help with sugarcube?</p>
-                <a href="https://github.com/sugarcube-sh/sugarcube/discussions" class="site-button" data-size="sm" data-appearance="ghost"
-                    >Join the discussion <ArrowRight /></a
-                >
-            </div> -->
             {
                 isConsultingPage ? null : (
                     <div class="footer-cta">
                         <p>Want us to build it for you?</p>
-                        <a
-                            href="/consulting"
-                            class="site-button is-pill"
-                        >
+                        <a href="/consulting" class="site-button is-pill">
                             Let's Talk <ArrowRight />
                         </a>
                     </div>
