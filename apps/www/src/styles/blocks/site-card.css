@@ -11,10 +11,6 @@
     color: var(--color-on-normal, var(--color-neutral-on-normal));
 }
 
-.site-card p {
-    color: var(--color-on-normal, var(--color-neutral-on-normal));
-}
-
 .site-card-header {
     display: flex;
     flex-direction: column;
