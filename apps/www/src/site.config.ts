@@ -10,7 +10,8 @@ export const siteConfig: SiteConfig = {
             year: "numeric",
         },
     },
-    description: "The toolkit for seriously sweet front ends.",
+    description:
+        "Design tokens, generated CSS, and optional components. Build front ends on strong, reusable foundations.",
     lang: "en-GB",
     ogImage: "/social-card.png",
     ogLocale: "en_GB",
