@@ -53,8 +53,8 @@
         "type-check": "tsc --noEmit"
     },
     "devDependencies": {
-        "pkgroll": "2.5.1",
-        "vitest": "2.1.1"
+        "pkgroll": "^2.26.0",
+        "vitest": "^4.0.18"
     },
     "dependencies": {
         "jiti": "2.4.2",
