@@ -1,14 +1,11 @@
 .select {
-    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
+    --_padding-block: 0.65em;
+    --_padding-inline: 0.75em;
     
-    /* Height: (padding × 2 × scale) + (1em × line-height), rounded to nearest px */
-     --form-control-height: round(
-        calc(
-            2 * var(--form-control-padding-block) * var(--scale) +
-            1em * var(--form-control-line-height)
-        ),
+    --form-control-height: round(
+        calc(2 * var(--_padding-block) + 1em * 1.25),
         1px
-    );
+        );
 
     appearance: none;
     background-color: var(--color-surface-default);
@@ -20,7 +17,7 @@
     touch-action: manipulation;
     font-size: var(--form-control-font-size, var(--text-base));
     min-height: var(--form-control-height);
-    padding-inline: calc(var(--form-control-padding-inline) * var(--scale));
+    padding-inline: var(--_padding-inline);
     padding-block: 0;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23222' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath stroke='none' d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='M6 9l6 6l6 -6' /%3E%3C/svg%3E");
     background-size: 1em;

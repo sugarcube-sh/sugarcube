@@ -4,7 +4,7 @@ import Search from "virtual:starlight/components/Search";
 import Icons from "@/src/components/Icons.astro";
 import Link from "@/src/components/Link.astro";
 import ModeToggle from "@/src/components/ModeToggle.astro";
-import { ThemeToggle } from "@/src/components/ThemeToggle.tsx";
+// import { ThemeToggle } from "@/src/components/ThemeToggle.tsx";
 
 import logoSvg from "@/src/assets/sugarcube-logo.svg?raw";
 
@@ -27,9 +27,9 @@ const isDocsRoute =
                 <Search />
                 <nav class="sl-hidden md:sl-flex">
                     <ul class="cluster gap-0 flex-nowrap" role="list">
-                        <li>
+                        {/* <li>
                             <ThemeToggle className="is-nav-link" client:load />
-                        </li>
+                        </li> */}
                         <li>
                             <ModeToggle class="is-nav-link" />
                         </li>
@@ -83,9 +83,9 @@ const isDocsRoute =
                 <!-- Right: Icons -->
                 <nav>
                     <ul class="cluster gap-0 flex-nowrap" role="list">
-                        <li>
+                        {/* <li>
                             <ThemeToggle className="is-nav-link" client:load />
-                        </li>
+                        </li> */}
                         <li>
                             <ModeToggle class="is-nav-link" />
                         </li>

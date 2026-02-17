@@ -5,7 +5,8 @@ export function ButtonSizes() {
         <div className="flow">
             <div className="cluster gutter-2xs">
                 <Button data-size="sm">Small</Button>
-                <Button data-size="md">Default</Button>
+                <Button>Default</Button>
+                <Button data-size="md">Medium</Button>
                 <Button data-size="lg">Large</Button>
             </div>
         </div>

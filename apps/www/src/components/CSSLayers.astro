@@ -1,0 +1,33 @@
+---
+/**
+ * CSS Layer Order Declaration
+ *
+ * This MUST be the first <style> in <head> to establish cascade priority
+ * before any CSS loads.
+ *
+ * Layer priority (lowest → highest):
+ * - theme, global: base tokens and resets
+ * - starlight.*: Starlight's internal layers
+ * - compositions, blocks, etc.: custom styles that override Starlight
+ */
+---
+
+<style is:inline>
+@layer
+  theme,
+  global,
+  starlight.base,
+  starlight.reset,
+  starlight.core,
+  starlight.content,
+  starlight.components,
+  starlight.utils,
+  compositions,
+  blocks,
+  components,
+  utilities,
+  custom,
+  vendors,
+  sugarcube.starlight,
+  overrides;
+</style>

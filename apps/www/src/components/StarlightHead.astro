@@ -1,4 +1,5 @@
 ---
+import CSSLayers from "@/src/components/CSSLayers.astro";
 import ThemeProvider from "@/src/components/ThemeProvider.astro";
 /**
  * Custom Starlight Head component that injects route-specific CSS
@@ -14,6 +15,8 @@ const pathname = Astro.url.pathname;
 const isReactComponentRoute = pathname.includes("/docs/components/react/");
 const isCssOnlyComponentRoute = pathname.includes("/docs/components/css-only/");
 ---
+
+<CSSLayers />
 
 <DefaultHead {...Astro.props}>
     <slot />

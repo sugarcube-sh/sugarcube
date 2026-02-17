@@ -7,14 +7,17 @@
 @import "./checkbox-sizes.css";
 @import "./command-sizes.css";
 
-/* Powerful lever! USE WITH CAUTION! */
+/* Powerful lever! USE WITH CAUTION!
+ * --form-control-font-size sets the baseline for all form controls.
+ * Size variants (data-size) are relative multipliers of this baseline.
+ * Padding uses em units so everything auto-scales with font-size.
+ */
 .button:not([data-size]),
 .input:not([data-size]),
 .command:not([data-size]),
 .select-trigger:not([data-size]),
 .tabs-trigger:not([data-size]) {
     font-size: var(--form-control-font-size, var(--text-base));
-    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
 }
 
 /* Ignore size variants on mobile - consistent 16px prevents iOS zoom */

@@ -1,7 +1,4 @@
 .radio-toggle {
-    /* Base scale - defaults to text-base (1rem) */
-    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
-
     --checked-icon-color: var(--color-accent-fill-loud, var(--color-neutral-fill-loud));
     --checked-icon-scale: 0.6;
 
@@ -9,8 +6,11 @@
     font-size: var(--form-control-font-size, var(--text-base));
     background: transparent;
     border: var(--form-control-border-width) var(--border-style) var(--form-control-border-color);
-    height: calc(var(--form-control-toggle-size) * var(--scale));
-    width: calc(var(--form-control-toggle-size) * var(--scale));
+
+    width: 1.1em;
+    height: 1.1em;
+    padding: 0.15em;
+
     border-radius: var(--radius-full);
     box-shadow: var(--shadow-xs);
     outline-style: none;

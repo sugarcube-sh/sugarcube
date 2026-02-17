@@ -1,9 +1,6 @@
 .switch {
-    /* Scale multiplier: Converts rem-based tokens to proportionally scale with font-size. */
-    --scale: calc(var(--form-control-font-size, var(--text-base)) / 1rem);
-
-    --switch-height: calc(var(--form-control-toggle-size) * var(--scale, 1));
-    --switch-width: calc(var(--switch-height) * 1.75);
+    --switch-height: 1em;
+    --switch-width: 1.75em;
     --switch-border-color: transparent;
 
     --thumb-travel: calc(var(--switch-width) - var(--switch-height));
