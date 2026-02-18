@@ -7,7 +7,6 @@ interface Props {
 
 const { command } = Astro.props;
 
-// Transform the command for different package managers
 const commands = {
     pnpm: command
         .replace(/^npx/, "pnpm dlx")

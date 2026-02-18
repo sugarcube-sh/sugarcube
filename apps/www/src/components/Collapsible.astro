@@ -15,7 +15,6 @@ const {
     class: className,
 } = Astro.props;
 
-// Generate unique ID for aria-controls
 const contentId = `collapsible-${Math.random().toString(36).substring(2, 9)}`;
 ---
 
@@ -50,7 +49,6 @@ const contentId = `collapsible-${Math.random().toString(36).substring(2, 9)}`;
         );
 
         triggers.forEach((trigger) => {
-            // Avoid adding multiple listeners
             if (trigger.hasAttribute("data-initialized")) return;
 
             trigger.setAttribute("data-initialized", "");
@@ -86,9 +84,7 @@ const contentId = `collapsible-${Math.random().toString(36).substring(2, 9)}`;
         });
     }
 
-    // Initialize on page load
     initCollapsible();
 
-    // Re-initialize after Astro view transitions
     document.addEventListener("astro:after-swap", initCollapsible);
 </script>

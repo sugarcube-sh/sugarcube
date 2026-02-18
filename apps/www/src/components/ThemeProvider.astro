@@ -61,13 +61,11 @@
         setMode(getModePref());
         setTheme(getThemePref());
 
-        // View Transitions hook to restore preferences after page swap
         document.addEventListener("astro:after-swap", () => {
             setMode(getModePref());
             setTheme(getThemePref());
         });
 
-        // Custom events fired by toggle components
         document.addEventListener("mode-change", (e) => {
             setMode(e.detail.mode);
         });
@@ -76,7 +74,6 @@
             setTheme(e.detail.theme);
         });
 
-        // System preference change (for mode only)
         darkModePref.addEventListener("change", (e) => {
             // Only auto-switch if user hasn't explicitly set a preference
             const stored =

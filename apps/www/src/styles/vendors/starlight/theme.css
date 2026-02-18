@@ -48,27 +48,25 @@
     --sl-color-backdrop-overlay: var(--color-surface-overlay);
 
     /* ─── Typography ──────────────────────────────────────────────────────
-     * Map to your font and text size tokens.
+     * Map to out font and text size tokens.
      */
     --__sl-font: var(--font-body);
     --__sl-font-mono: var(--font-mono);
     --sl-line-height: var(--leading-relaxed);
 
-    /* Heading sizes - adjust to match your scale */
     --sl-text-h1: var(--text-2xl);
     --sl-text-h2: var(--text-xl);
     --sl-text-h3: var(--text-lg);
     --sl-text-h4: var(--text-base);
     --sl-text-h5: var(--text-base);
 
-    /* Body text sizes */
     --sl-text-body: var(--text-base);
     --sl-text-body-sm: var(--text-sm);
     --sl-text-code: var(--text-sm);
     --sl-text-code-sm: var(--text-sm);
 
     /* ─── Layout ──────────────────────────────────────────────────────────
-     * Adjust spacing and layout values as needed.
+     * Map to our spacing tokens.
      */
     --sl-content-gap-y: 1.375rem;
     --sl-content-pad-x: var(--wrapper-padding-inline);
@@ -76,7 +74,7 @@
     --sl-sidebar-item-padding-inline: 0;
 
     /* ─── Shadows ─────────────────────────────────────────────────────────
-     * Map to your shadow tokens if you have them, or keep Starlight's defaults.
+     * Map to our shadow tokens.
      */
     --sl-shadow-sm: var(--shadow-sm);
     --sl-shadow-md: var(--shadow-md);

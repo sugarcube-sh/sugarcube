@@ -18,7 +18,6 @@
 @import "@/src/styles/blocks/site-dropdown-menu.css" layer(blocks);
 @import "@/src/styles/blocks/collapsible.css" layer(blocks);
 @import "@/src/styles/blocks/site-code-block.css" layer(blocks);
-@import "@/src/styles/blocks/site-badge.css" layer(blocks);
 @import "@/src/styles/blocks/site-footer.css" layer(blocks);
 @import "@/src/styles/blocks/component-demo.css" layer(blocks);
 @import "@/src/styles/blocks/component-wrapper.css" layer(blocks);

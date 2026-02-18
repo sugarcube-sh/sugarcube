@@ -36,7 +36,6 @@ export function ThemeToggle({ compact = false, className }: ThemeToggleProps) {
             setTheme(currentTheme as Theme);
         }
 
-        // Listen for theme changes from other sources
         const handleThemeChange = (e: CustomEvent<{ theme: string }>) => {
             setTheme(e.detail.theme as Theme);
         };
