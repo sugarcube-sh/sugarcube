@@ -36,4 +36,5 @@
 .table-wrapper code {
     border-radius: var(--radius-md);
     font-size: var(--sl-text-code-sm);
+    overflow-wrap: normal;
 }
