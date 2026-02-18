@@ -25,12 +25,22 @@
         "test": "pnpm -r --if-present test",
         "type-check": "pnpm -r --if-present type-check"
     },
+    "simple-git-hooks": {
+        "pre-commit": "pnpm lint-staged"
+    },
+    "lint-staged": {
+        "*.{js,ts,mjs,cjs,tsx,jsx,json,jsonc,css,astro}": [
+            "biome check --write"
+        ]
+    },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
         "@changesets/cli": "^2.27.9",
         "@types/node": "^22.15.27",
         "@vitest/coverage-istanbul": "^4.0.18",
         "knip": "^5.59.1",
+        "lint-staged": "^16.2.7",
+        "simple-git-hooks": "^2.13.1",
         "typescript": "^5.8.3",
         "vite-tsconfig-paths": "^5.0.1",
         "vitest": "^4.0.18"
