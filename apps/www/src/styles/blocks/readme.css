@@ -32,7 +32,7 @@
 }
 
 .readme .site-hero :is(p) {
-   font-size: var(--text-lg);
+    font-size: var(--text-lg);
 }
 
 .readme :is(a):not(.site-button) {

@@ -1,4 +1,5 @@
 import { isInlineModifier, isInlineSet, isReference } from "../guards/resolver-guards.js";
+import type { TokenGroup } from "../types/dtcg.js";
 import type {
     InlineModifier,
     InlineSet,
@@ -9,7 +10,6 @@ import type {
     SetDefinition,
     Source,
 } from "../types/resolver.js";
-import type { TokenGroup } from "../types/dtcg.js";
 import { createResolveContext, resolveReference, resolveSources } from "./resolve-refs.js";
 import { deepMerge, extractModifiers } from "./utils.js";
 import { validateInputs } from "./validate-inputs.js";

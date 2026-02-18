@@ -62,7 +62,8 @@ export function ThemeToggle({ compact = false, className }: ThemeToggleProps) {
                     type="button"
                     className={`site-button is-icon-only ${compact ? "is-compact" : ""} ${className ?? ""}`}
                     data-appearance="ghost"
-                    data-tooltip="Select theme" data-position="bottom"
+                    data-tooltip="Select theme"
+                    data-position="bottom"
                     aria-label="Select theme"
                 >
                     <Paintbrush />

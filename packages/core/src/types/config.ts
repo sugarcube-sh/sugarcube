@@ -42,10 +42,10 @@ export type UtilitiesConfig = Record<string, PropertyUtilityConfig | PropertyUti
 export interface SugarcubeConfig {
     /**
      * Path to the DTCG resolver document (.resolver.json).
-     * 
+     *
      * **Optional** - If omitted, sugarcube will automatically discover
      * `*.resolver.json` files in your project.
-     * 
+     *
      * Only specify this if you have multiple resolver files and need to
      * choose a specific one.
      */

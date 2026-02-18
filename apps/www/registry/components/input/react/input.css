@@ -1,11 +1,14 @@
 .input {
     --scale: 0.875;
-    
+
     /* Height: (padding × 2 × scale) + (1em × line-height), rounded to nearest px */
-     --form-control-height: round(
+    --form-control-height: round(
         calc(
-            2 * var(--form-control-padding-block) * var(--scale) +
-            1em * var(--form-control-line-height)
+            2 *
+            var(--form-control-padding-block) *
+            var(--scale) +
+            1em *
+            var(--form-control-line-height)
         ),
         1px
     );

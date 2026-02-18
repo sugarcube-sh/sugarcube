@@ -1,9 +1,9 @@
 import { ErrorMessages } from "../constants/error-messages.js";
 import type { UtilitiesConfig } from "../types/config.js";
 import type { ConvertedToken, NormalizedConvertedTokens } from "../types/convert.js";
+import type { TokenType } from "../types/dtcg.js";
 import type { NodeMetadata } from "../types/tokens.js";
 import type { DirectionalVariant, PropertyUtilityConfig } from "../types/utilities.js";
-import type { TokenType } from "../types/dtcg.js";
 
 type CSSObject = Record<string, string | number | undefined>;
 

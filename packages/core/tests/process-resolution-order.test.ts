@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { ErrorMessages } from "../src/constants/error-messages.js";
 import { parseResolverDocument } from "../src/resolver/parse-resolver.js";
 import { processResolutionOrder } from "../src/resolver/process-resolution-order.js";
-import type { ResolverDocument } from "../src/types/resolver.js";
 import type { TokenGroup } from "../src/types/dtcg.js";
+import type { ResolverDocument } from "../src/types/resolver.js";
 
 const fixturesPath = resolve(__dirname, "__fixtures__/resolver");
 

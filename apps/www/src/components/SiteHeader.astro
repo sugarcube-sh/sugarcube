@@ -8,8 +8,7 @@ import ModeToggle from "@/src/components/ModeToggle.astro";
 
 import logoSvg from "@/src/assets/sugarcube-logo.svg?raw";
 
-const isDocsRoute =
-    Astro.url.pathname.startsWith("/docs") && Astro.routePattern !== "/404";
+const isDocsRoute = Astro.url.pathname.startsWith("/docs") && Astro.routePattern !== "/404";
 ---
 
 {

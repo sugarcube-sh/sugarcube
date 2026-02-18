@@ -2,13 +2,13 @@
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
+import starlight from "@astrojs/starlight";
 import sugarcube from "@sugarcube-sh/vite";
+import presetWind3 from "@unocss/preset-wind3";
+import AutoImport from "astro-auto-import";
 import robotsTxt from "astro-robots-txt";
 import { defineConfig, fontProviders } from "astro/config";
 import { siteConfig } from "./src/site.config";
-import presetWind3 from "@unocss/preset-wind3";
-import AutoImport from "astro-auto-import";
-import starlight from "@astrojs/starlight";
 
 export default defineConfig({
     site: siteConfig.url,
@@ -24,10 +24,7 @@ export default defineConfig({
     },
     integrations: [
         AutoImport({
-            imports: [
-                "src/components/SourceCode.astro",
-                "src/components/PackageManagerTabs.astro",
-            ],
+            imports: ["src/components/SourceCode.astro", "src/components/PackageManagerTabs.astro"],
         }),
         sitemap(),
         robotsTxt(),
@@ -35,7 +32,7 @@ export default defineConfig({
         starlight({
             title: "sugarcube",
             disable404Route: true,
-            favicon: '/favicon.svg',
+            favicon: "/favicon.svg",
             customCss: ["virtual:sugarcube.css", "src/styles/index.css"],
             sidebar: [
                 {

@@ -1,11 +1,8 @@
 .select {
     --_padding-block: 0.65em;
     --_padding-inline: 0.75em;
-    
-    --form-control-height: round(
-        calc(2 * var(--_padding-block) + 1em * 1.25),
-        1px
-        );
+
+    --form-control-height: round(calc(2 * var(--_padding-block) + 1em * 1.25), 1px);
 
     appearance: none;
     background-color: var(--color-surface-default);

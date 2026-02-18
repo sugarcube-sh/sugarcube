@@ -5,8 +5,8 @@ import { generateCSSVariables } from "../src/generators/generate-css-variables.j
 import { loadAndResolveTokens } from "../src/pipelines/load-and-resolve.js";
 import { processAndConvertTokens } from "../src/pipelines/process-and-convert.js";
 import { processForLayeredCSS } from "../src/resolver/process-resolution-order.js";
-import type { ResolverDocument, Source } from "../src/types/resolver.js";
 import type { TokenGroup } from "../src/types/dtcg.js";
+import type { ResolverDocument, Source } from "../src/types/resolver.js";
 
 const FIXTURES_DIR = resolve(__dirname, "__fixtures__/resolver");
 

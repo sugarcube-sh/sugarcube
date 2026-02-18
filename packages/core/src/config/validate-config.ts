@@ -63,4 +63,3 @@ export function validateConfig(config: Partial<SugarcubeConfig>): InternalConfig
     const internalConfig = fillDefaults(userConfig);
     return validateInternalConfig(internalConfig);
 }
-

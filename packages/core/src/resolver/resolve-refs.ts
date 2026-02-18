@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { isAbsolute, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
 import { isReference } from "../guards/resolver-guards.js";
+import type { TokenGroup } from "../types/dtcg.js";
 import type {
     ModifierDefinition,
     ReferenceObject,
@@ -10,7 +11,6 @@ import type {
     SetDefinition,
     Source,
 } from "../types/resolver.js";
-import type { TokenGroup } from "../types/dtcg.js";
 import { isResolverFormat } from "./parse-resolver.js";
 
 /** Result of resolving a reference. */

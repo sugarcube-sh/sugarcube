@@ -24,4 +24,3 @@ export function isTypographyToken(
 ): token is ConvertedToken<"typography"> {
     return token.$type === "typography";
 }
-

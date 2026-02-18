@@ -1,8 +1,8 @@
 import { convert } from "../pipeline/convert.js";
 import { normalizeTokens } from "../pipeline/normalize.js";
 import { processTrees } from "../pipeline/process-trees.js";
-import type { NormalizedConvertedTokens } from "../types/convert.js";
 import type { InternalConfig } from "../types/config.js";
+import type { NormalizedConvertedTokens } from "../types/convert.js";
 import type { ResolvedTokens } from "../types/resolve.js";
 import type { TokenTree } from "../types/tokens.js";
 import type { ValidationError } from "../types/validate.js";

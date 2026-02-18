@@ -1,5 +1,5 @@
-import type { BaseError } from "./errors.js";
 import type { TokenGroup } from "./dtcg.js";
+import type { BaseError } from "./errors.js";
 
 /**
  * A reference object using JSON Pointer syntax.

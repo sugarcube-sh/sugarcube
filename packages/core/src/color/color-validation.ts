@@ -1,6 +1,6 @@
+import type { DTCGColorSpace, DTCGColorValue } from "../types/dtcg-color.js";
 import type { Result } from "../types/result.js";
 import { error, success } from "../types/result.js";
-import type { DTCGColorSpace, DTCGColorValue } from "../types/dtcg-color.js";
 
 export function isDTCGColorValue(value: unknown): value is DTCGColorValue {
     if (typeof value !== "object" || value === null) {

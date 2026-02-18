@@ -7,9 +7,7 @@ export interface Props {
 const { name, className = "" } = Astro.props;
 
 function getComponentName(name: string) {
-    return name
-        .replace(/-/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase());
+    return name.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 ---
 

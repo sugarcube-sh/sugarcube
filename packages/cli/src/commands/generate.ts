@@ -22,9 +22,9 @@ import type {
 import { configFileExists, loadInternalConfig } from "@sugarcube-sh/core";
 import { createGenerator } from "@unocss/core";
 import { Command } from "commander";
-import { glob } from "tinyglobby";
 import { relative } from "pathe";
 import color from "picocolors";
+import { glob } from "tinyglobby";
 import packageJson from "../../package.json" with { type: "json" };
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { isPackageInstalled } from "../detection/is-package-installed.js";

@@ -1,10 +1,7 @@
 .site-code-block {
     --_padding-block: 0.65em;
-    
-    --form-control-height: round(
-        calc(2 * var(--_padding-block) + 1em * 1.25),
-        1px
-        );
+
+    --form-control-height: round(calc(2 * var(--_padding-block) + 1em * 1.25), 1px);
 
     background-color: color-mix(in oklab, var(--color-fill-normal) 50%, transparent);
     border-radius: var(--form-control-border-radius);

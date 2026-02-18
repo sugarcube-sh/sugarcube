@@ -3,8 +3,8 @@ import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { resolve } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
-import { findResolverDocument } from "../utils/find-resolver.js";
 import type { InternalConfig, SugarcubeConfig } from "../types/config.js";
+import { findResolverDocument } from "../utils/find-resolver.js";
 import { fillDefaults } from "./normalize-config.js";
 import { validateInternalConfig, validateSugarcubeConfig } from "./validate-config.js";
 

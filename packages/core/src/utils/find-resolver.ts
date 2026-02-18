@@ -1,5 +1,5 @@
-import { glob } from "tinyglobby";
 import { relative } from "pathe";
+import { glob } from "tinyglobby";
 
 export type ResolverDiscoveryResult =
     | { found: "one"; path: string }

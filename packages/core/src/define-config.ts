@@ -15,5 +15,5 @@ import type { SugarcubeConfig } from "./types/config.js";
  * ```
  */
 export function defineConfig(config: SugarcubeConfig): SugarcubeConfig {
-	return config;
+    return config;
 }

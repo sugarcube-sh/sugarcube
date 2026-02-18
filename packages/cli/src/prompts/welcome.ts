@@ -5,4 +5,3 @@ export const welcome = async () => {
     log.space(1);
     await log.animated(messages, { clear: false });
 };
-

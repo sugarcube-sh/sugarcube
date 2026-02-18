@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { isAbsolute, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
-import { resolverDocumentSchema } from "../schemas/resolver.js";
 import { isInlineModifier, isInlineSet, isReference } from "../guards/resolver-guards.js";
+import { resolverDocumentSchema } from "../schemas/resolver.js";
 import type {
     InlineModifier,
     InlineSet,

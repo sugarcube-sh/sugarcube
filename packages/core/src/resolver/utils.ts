@@ -1,6 +1,6 @@
 import { isInlineModifier, isReference } from "../guards/resolver-guards.js";
-import type { InlineModifier, ModifierDefinition, ResolverDocument } from "../types/resolver.js";
 import type { TokenGroup } from "../types/dtcg.js";
+import type { InlineModifier, ModifierDefinition, ResolverDocument } from "../types/resolver.js";
 
 function isToken(value: unknown): boolean {
     return typeof value === "object" && value !== null && "$value" in value;
@@ -116,4 +116,3 @@ function extractInlineModifier(
         default: item.default,
     };
 }
-

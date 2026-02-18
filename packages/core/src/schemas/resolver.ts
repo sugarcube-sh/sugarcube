@@ -26,8 +26,6 @@ const referenceObjectSchema = z
     })
     .passthrough();
 
-
-
 /**
  * Source schema - either a reference or inline token group.
  * We use z.unknown() for inline tokens since we don't need to validate

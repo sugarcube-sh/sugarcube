@@ -1,7 +1,7 @@
 import type { ColorFallbackStrategy } from "../types/config.js";
+import type { DTCGColorValue } from "../types/dtcg-color.js";
 import type { Result } from "../types/result.js";
 import { error, success } from "../types/result.js";
-import type { DTCGColorValue } from "../types/dtcg-color.js";
 import {
     formatDTCGColorToOKLCH,
     isDTCGColorValue,

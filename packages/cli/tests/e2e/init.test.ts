@@ -70,69 +70,74 @@ describe("init command - happy path", () => {
         expect(existsSync(join(testDir, "design-tokens"))).toBe(true);
     });
 
-    it("creates config file when customization flags are passed", { timeout: TEST_TIMEOUT }, async () => {
-        await writeFile(
-            join(testDir, "package.json"),
-            JSON.stringify({ name: "test-project", version: "1.0.0" })
-        );
+    it(
+        "creates config file when customization flags are passed",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            await writeFile(
+                join(testDir, "package.json"),
+                JSON.stringify({ name: "test-project", version: "1.0.0" })
+            );
 
-        const result = await execaCommand(
-            `node ${CLI_PATH} init --skip-deps --styles-dir custom-styles`,
-            {
+            const result = await execaCommand(
+                `node ${CLI_PATH} init --skip-deps --styles-dir custom-styles`,
+                {
+                    cwd: testDir,
+                    timeout: TEST_TIMEOUT,
+                    reject: false,
+                }
+            );
+
+            expect(result.exitCode).toBe(0);
+
+            // Config file should be created when customization flags are passed
+            const configPath = existsSync(join(testDir, "sugarcube.config.ts"))
+                ? join(testDir, "sugarcube.config.ts")
+                : join(testDir, "sugarcube.config.js");
+            expect(existsSync(configPath)).toBe(true);
+
+            // Config should contain the custom styles directory
+            const configContent = await readFile(configPath, "utf8");
+            expect(configContent).toContain("custom-styles");
+
+            // With --skip-deps, no type source is available, so config is a plain export
+            expect(configContent).toContain("export default");
+        }
+    );
+
+    it(
+        "creates config with defineConfig when vite plugin is installed",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            await writeFile(
+                join(testDir, "package.json"),
+                JSON.stringify({
+                    name: "test-project",
+                    version: "1.0.0",
+                    dependencies: { vite: "^5.0.0" },
+                })
+            );
+
+            const result = await execaCommand(`node ${CLI_PATH} init --styles-dir custom-styles`, {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
-            }
-        );
+            });
 
-        expect(result.exitCode).toBe(0);
+            expect(result.exitCode).toBe(0);
 
-        // Config file should be created when customization flags are passed
-        const configPath = existsSync(join(testDir, "sugarcube.config.ts"))
-            ? join(testDir, "sugarcube.config.ts")
-            : join(testDir, "sugarcube.config.js");
-        expect(existsSync(configPath)).toBe(true);
+            // Config file should use defineConfig when vite plugin is installed
+            const configPath = existsSync(join(testDir, "sugarcube.config.ts"))
+                ? join(testDir, "sugarcube.config.ts")
+                : join(testDir, "sugarcube.config.js");
+            expect(existsSync(configPath)).toBe(true);
 
-        // Config should contain the custom styles directory
-        const configContent = await readFile(configPath, "utf8");
-        expect(configContent).toContain("custom-styles");
-
-        // With --skip-deps, no type source is available, so config is a plain export
-        expect(configContent).toContain("export default");
-    });
-
-    it("creates config with defineConfig when vite plugin is installed", { timeout: TEST_TIMEOUT }, async () => {
-        await writeFile(
-            join(testDir, "package.json"),
-            JSON.stringify({
-                name: "test-project",
-                version: "1.0.0",
-                dependencies: { vite: "^5.0.0" },
-            })
-        );
-
-        const result = await execaCommand(
-            `node ${CLI_PATH} init --styles-dir custom-styles`,
-            {
-                cwd: testDir,
-                timeout: TEST_TIMEOUT,
-                reject: false,
-            }
-        );
-
-        expect(result.exitCode).toBe(0);
-
-        // Config file should use defineConfig when vite plugin is installed
-        const configPath = existsSync(join(testDir, "sugarcube.config.ts"))
-            ? join(testDir, "sugarcube.config.ts")
-            : join(testDir, "sugarcube.config.js");
-        expect(existsSync(configPath)).toBe(true);
-
-        const configContent = await readFile(configPath, "utf8");
-        expect(configContent).toContain("custom-styles");
-        expect(configContent).toContain("defineConfig");
-        expect(configContent).toContain("@sugarcube-sh/vite");
-    });
+            const configContent = await readFile(configPath, "utf8");
+            expect(configContent).toContain("custom-styles");
+            expect(configContent).toContain("defineConfig");
+            expect(configContent).toContain("@sugarcube-sh/vite");
+        }
+    );
 });
 
 describe("init command - plugin installation", () => {

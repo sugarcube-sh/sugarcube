@@ -6,7 +6,6 @@ import type { TypeSource } from "../types/index.js";
 import { CLIError } from "../types/index.js";
 import { getConfigFileName } from "../utils/config-filename.js";
 
-
 function isValidIdentifier(key: string): boolean {
     return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key);
 }
@@ -57,10 +56,7 @@ function formatValue(value: unknown, indent = 0): string {
     return JSON.stringify(value);
 }
 
-function formatConfigAsCode(
-    config: Record<string, unknown>,
-    typeSource: TypeSource
-): string {
+function formatConfigAsCode(config: Record<string, unknown>, typeSource: TypeSource): string {
     const formattedConfig = formatValue(config, 0);
 
     if (!typeSource) {
