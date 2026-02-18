@@ -33,10 +33,7 @@ const frameworks = [
 <div class="not-content grid-auto">
     {
         frameworks.map((framework) => (
-            <a
-                href={framework.href}
-                class="site-card bg-surface-lowered flex flex-col items-center justify-center p-md decoration-none"
-            >
+            <a href={framework.href} class="site-card framework-card">
                 <Icon name={framework.icon} class="h-24 w-24" />
                 <p class="font-weight-medium">{framework.name}</p>
             </a>

@@ -75,3 +75,13 @@
     --color-on-normal: var(--color-accent-on-normal);
     --color-border-quiet: var(--color-accent-border-quiet);
 }
+
+.site-card.framework-card {
+    background-color: var(--color-surface-lowered);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-md);
+    text-decoration: none;
+}
