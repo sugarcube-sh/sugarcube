@@ -175,8 +175,8 @@ importers:
         specifier: workspace:*
         version: link:../core
       '@unocss/core':
-        specifier: 66.5.2
-        version: 66.5.2
+        specifier: 66.6.0
+        version: 66.6.0
       commander:
         specifier: 12.1.0
         version: 12.1.0
@@ -6490,7 +6490,7 @@ snapshots:
 
   '@unocss/rule-utils@66.5.2':
     dependencies:
-      '@unocss/core': 66.5.2
+      '@unocss/core': 66.6.0
       magic-string: 0.30.21
 
   '@unocss/rule-utils@66.6.0':
