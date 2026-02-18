@@ -22,6 +22,7 @@
         "format": "biome check --write",
         "knip": "knip",
         "lint": "biome lint --write --unsafe",
+        "lint:check": "biome check",
         "test": "pnpm -r --if-present test",
         "type-check": "pnpm -r --if-present type-check"
     },
