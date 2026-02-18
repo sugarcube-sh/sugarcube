@@ -12,6 +12,10 @@
     color: var(--color-text-quiet);
 }
 
+.services :is(a) {
+    text-decoration-style: dotted;
+}
+
 .services :is(ul) li {
     color: var(--color-text-quiet);
 }
