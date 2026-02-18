@@ -1,7 +1,7 @@
 <h1 align="center">sugarcube</h1>
 
 <p align="center">
-  The toolkit for seriously sweet front ends.
+  Design system rigor, out of the box.
 </p>
 
 <p align="center">
@@ -12,9 +12,9 @@
 
 ---
 
-Sugarcube helps you build solid front-end foundations.
+Sugarcube turns design tokens into CSS variables, utilities, and component styles. Change a token, everything updates.
 
-Use the Vite plugin if you want virtual modules and HMR. Use the CLI if you prefer static generation.
+Built on the W3C DTCG token standard. Works with Vite or as a standalone CLI. No runtime.
 
 ## Quick Start
 
