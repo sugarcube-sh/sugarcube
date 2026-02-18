@@ -4,17 +4,21 @@ import CodeBlock from "@/src/components/CodeBlock.astro";
 
 <section class="site-hero region region-space-xl">
     <div class="flow">
-        <h1 class="flow-space-xs tracking-tight text-pretty">
-            The toolkit for seriously sweet front ends
+        <h1 class="tracking-tight text-pretty text-4xl">
+            Design system rigor, out of the box
         </h1>
-        <p class="text-lg flow-space-sm">
-            Build front ends your team can grow with confidence.
+        <p>
+            Sugarcube turns design tokens into CSS variables, utilities, and
+            component styles.
         </p>
-        <!-- <p class="flow-space-sm">
-            Define your design tokens. Sugarcube generates CSS variables,
-            utilities, and components that stay consistent as your system
-            evolves.
-        </p> -->
+        <p>Change a token, everything updates.</p>
+        <p>
+            Built on the <a
+                href="https://www.designtokens.org/"
+                target="_blank"
+                rel="noopener noreferrer">W3C DTCG token standard</a
+            >. Works with Vite or as a standalone CLI. No runtime.
+        </p>
         <div class="flow flow-space-2xl">
             <CodeBlock>
                 <span class="text-quieter mr-3xs">$</span> pnpm dlx @sugarcube-sh/cli

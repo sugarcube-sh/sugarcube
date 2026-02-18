@@ -34,3 +34,11 @@
 .readme :is(ul > li > a):hover {
     color: var(--color-text-normal);
 }
+
+.readme .site-hero :is(p) {
+   font-size: var(--text-lg);
+}
+
+.readme :is(a):not(.site-button) {
+    text-decoration-style: dotted;
+}
