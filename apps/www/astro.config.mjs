@@ -27,7 +27,6 @@ export default defineConfig({
             imports: [
                 "src/components/SourceCode.astro",
                 "src/components/PackageManagerTabs.astro",
-                "src/components/AnchorHeading.astro",
             ],
         }),
         sitemap(),
