@@ -45,8 +45,8 @@
 
 .site-code-block-tooltip {
     position: absolute;
+    bottom: -2.2rem;
     right: 0;
-    bottom: -2rem;
     opacity: 0;
     visibility: hidden;
     transition: opacity var(--transition-normal) ease;
@@ -55,8 +55,10 @@
 .site-code-block-tooltip[data-visible="true"] {
     opacity: 1;
     visibility: visible;
-    background-color: var(--color-fill-normal);
+    background-color: var(--color-accent-fill-normal);
+    color: var(--color-accent-on-normal);
     padding-inline: var(--space-2xs);
     padding-block: var(--space-3xs);
     border-radius: var(--form-control-border-radius);
+    border: var(--border-width-thin) var(--border-style) var(--color-accent-border-normal);
 }
