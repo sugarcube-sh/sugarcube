@@ -1,7 +1,7 @@
 <h1 align="center">sugarcube</h1>
 
 <p align="center">
-  <strong>Design tokens → CSS variables → utility classes</strong><br/>
+  <strong>Design tokens → CSS variables, utility classes, & components</strong><br/>
   Build on the W3C standard. No runtime. No lock-in.
 </p>
 
@@ -13,17 +13,33 @@
 
 ---
 
-Sugarcube processes [W3C DTCG](https://www.designtokens.org/) design tokens into CSS variables and utility classes. Change a token, your CSS updates. Use Vite for hot reloading, or generate static files with the CLI.
+Sugarcube processes [W3C DTCG](https://www.designtokens.org/) design tokens into CSS variables, utility classes, and component styles. Change a token, your CSS updates. Use Vite for hot reloading, or generate static files with the CLI.
+
+## Contents
+
+- [Why sugarcube?](#why-sugarcube)
+- [Quick start](#quick-start)
+- [What you get](#what-you-get)
+- [Documentation](#documentation)
+- [Packages](#packages)
 
 ## Why sugarcube?
 
-**Tokens are source. CSS is output.** Your Tailwind config, your stylesheets, your CSS variables — these are all implementations of design decisions. Tokens are those decisions in a portable, tool-agnostic format. When your source is a standard, you can change your tools without rewriting your design system.
+### It's just CSS
 
-**The DTCG got the format right.** DTCG is what the ecosystem is converging on. Figma Variables, Tokens Studio, Style Dictionary—they all speak it. Sugarcube reads DTCG directly. Learn one format, use any tool.
+Sugarcube generates plain CSS files. No runtime, no framework coupling, no proprietary syntax in your markup. You can stop using sugarcube tomorrow and keep all your CSS.
 
-**One source, multiple outputs.** Tokens become CSS variables. Variables become utility classes. Change one token, everything downstream updates. No parallel definitions to maintain.
+### Tokens are more than values
 
-**Plain CSS, no runtime.** Sugarcube generates `.css` files at build time. No framework dependency, no bundle size, no proprietary syntax in your markup. Stop using sugarcube tomorrow; keep all your CSS.
+CSS variables store values. Tokens store values plus metadata — descriptions, types, deprecation flags, relationships between values and so on. That metadata can power tooling: linting, documentation generation, design-tool sync.
+
+### Components without styling framework lock-in
+
+Unlike component libraries that require a specific styling framework, sugarcube component styles are just CSS. 
+
+### The standard, not a proprietary format
+
+The DTCG token standard is what the ecosystem is converging on. Sugarcube reads DTCG directly. Learn one format, use any tool. If you outgrow sugarcube, your tokens work with whatever comes next.
 
 ## Quick start
 
@@ -31,7 +47,7 @@ Sugarcube processes [W3C DTCG](https://www.designtokens.org/) design tokens into
 npx @sugarcube-sh/cli init
 ```
 
-This detects your project, adds a token starter kit (or uses your existing tokens), and generates CSS.
+This detects your project, adds a token starter kit (or uses your existing tokens), generates CSS, and installs either the Vite plugin or the CLI (pass `--skip-deps` for neither).
 
 For Vite projects, the plugin provides hot reloading when tokens change:
 
@@ -44,14 +60,33 @@ export default {
 };
 ```
 
+For non-Vite projects, the CLI provides a `generate` command to generate CSS:
+
+```bash
+npx @sugarcube-sh/cli generate
+```
+
+If you install the CLI as a dev dependency, you can use the `sugarcube` command in your npm scripts:
+
+```json
+{
+  "scripts": {
+    "tokens:generate": "sugarcube generate",
+    "tokens:validate": "sugarcube validate"
+  }
+}
+```
+
+See the [CLI commands](/docs/reference/cli-commands) for more details.
+
 ## What you get
 
 | Layer | What it does | Optional? |
 |-------|--------------|-----------|
 | **CSS variables** | Every token becomes a `--variable` | Core feature |
 | **Utility classes** | `.color-primary`, `.space-m`, etc. | Yes |
-| **CUBE CSS** | Architecture for organizing styles | Yes |
-| **Components** | Layout primitives and UI components | Yes |
+| **CUBE CSS** | A methodology for clean, scalable CSS | Yes |
+| **Components** | UI components | Yes |
 
 Use all of it, or just the variables. Sugarcube is designed to be adopted incrementally.
 
