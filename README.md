@@ -14,13 +14,6 @@
 
 Sugarcube processes [W3C DTCG](https://www.designtokens.org/) design tokens into CSS variables, utility classes, and component styles. Change a token, your CSS updates. Use Vite for hot reloading, or generate static files with the CLI.
 
-## Contents
-
-- [Quick start](#quick-start)
-- [What you get](#what-you-get)
-- [Documentation](#documentation)
-- [Packages](#packages)
-
 ## Quick start
 
 ```bash
