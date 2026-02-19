@@ -14,6 +14,10 @@ export { fillDefaults } from "./config/normalize-config.js";
 export { findResolverDocument } from "./utils/find-resolver.js";
 export type { ResolverDiscoveryResult } from "./utils/find-resolver.js";
 
+// Resolver utilities
+export { extractFileRefs } from "./resolver/extract-file-refs.js";
+export type { ExtractFileRefsResult } from "./resolver/extract-file-refs.js";
+
 // Pipelines
 export { loadAndResolveTokens } from "./pipelines/load-and-resolve.js";
 export { processAndConvertTokens } from "./pipelines/process-and-convert.js";
