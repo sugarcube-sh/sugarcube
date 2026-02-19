@@ -58,6 +58,7 @@
         "@clack/prompts": "1.0.0-alpha.3",
         "@sugarcube-sh/core": "workspace:*",
         "@unocss/core": "^66.5.2",
+        "chokidar": "^4.0.3",
         "commander": "12.1.0",
         "execa": "9.5.2",
         "fast-wrap-ansi": "0.1.3",
