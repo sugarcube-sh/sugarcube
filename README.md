@@ -1,7 +1,8 @@
 <h1 align="center">sugarcube</h1>
 
 <p align="center">
-  Design system rigor, out of the box.
+  <strong>Design tokens → CSS variables → utility classes</strong><br/>
+  Build on the W3C standard. No runtime. No lock-in.
 </p>
 
 <p align="center">
@@ -12,19 +13,51 @@
 
 ---
 
-Sugarcube turns design tokens into CSS variables, utilities, and component styles. Change a token, everything updates.
+Sugarcube processes [W3C DTCG](https://www.designtokens.org/) design tokens into CSS variables and utility classes. Change a token, your CSS updates. Use Vite for hot reloading, or generate static files with the CLI.
 
-Built on the W3C DTCG token standard. Works with Vite or as a standalone CLI. No runtime.
+## Why sugarcube?
 
-## Quick Start
+**Tokens are source. CSS is output.** Your Tailwind config, your stylesheets, your CSS variables — these are all implementations of design decisions. Tokens are those decisions in a portable, tool-agnostic format. When your source is a standard, you can change your tools without rewriting your design system.
+
+**The DTCG got the format right.** DTCG is what the ecosystem is converging on. Figma Variables, Tokens Studio, Style Dictionary—they all speak it. Sugarcube reads DTCG directly. Learn one format, use any tool.
+
+**One source, multiple outputs.** Tokens become CSS variables. Variables become utility classes. Change one token, everything downstream updates. No parallel definitions to maintain.
+
+**Plain CSS, no runtime.** Sugarcube generates `.css` files at build time. No framework dependency, no bundle size, no proprietary syntax in your markup. Stop using sugarcube tomorrow; keep all your CSS.
+
+## Quick start
 
 ```bash
-pnpm dlx @sugarcube-sh/cli init
+npx @sugarcube-sh/cli init
 ```
+
+This detects your project, adds a token starter kit (or uses your existing tokens), and generates CSS.
+
+For Vite projects, the plugin provides hot reloading when tokens change:
+
+```ts
+// vite.config.ts
+import sugarcube from '@sugarcube-sh/vite';
+
+export default {
+  plugins: [sugarcube()]
+};
+```
+
+## What you get
+
+| Layer | What it does | Optional? |
+|-------|--------------|-----------|
+| **CSS variables** | Every token becomes a `--variable` | Core feature |
+| **Utility classes** | `.color-primary`, `.space-m`, etc. | Yes |
+| **CUBE CSS** | Architecture for organizing styles | Yes |
+| **Components** | Layout primitives and UI components | Yes |
+
+Use all of it, or just the variables. Sugarcube is designed to be adopted incrementally.
 
 ## Documentation
 
-For full documentation, visit [sugarcube.sh/docs](https://sugarcube.sh/docs).
+[sugarcube.sh/docs](https://sugarcube.sh/docs) — Full setup guide, configuration reference, and component registry.
 
 ## Packages
 
