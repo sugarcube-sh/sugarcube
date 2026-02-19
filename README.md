@@ -57,17 +57,6 @@ If the CLI is installed as a dev dependency, you can use the `sugarcube` command
 }
 ```
 
-## What you get
-
-| Feature | What it does | Optional? |
-|-------|--------------|-----------|
-| **CSS variables** | Every token becomes a `--variable` | No |
-| **Utility classes** | `.color-primary`, `.space-m`, etc. | Yes |
-| **CUBE CSS** | A methodology for clean, scalable CSS | Yes |
-| **Components** | UI components | Yes |
-
-Use all of it, or just the variables. Sugarcube is designed to be flexible.
-
 ## Documentation
 
 [sugarcube.sh/docs](https://sugarcube.sh/docs) — Full setup guide, configuration reference, and component registry.
