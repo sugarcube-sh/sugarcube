@@ -1,17 +1,17 @@
 .input[data-size="xs"] {
-    font-size: calc(var(--form-control-font-size, var(--text-base)) * 0.75);
+    font-size: var(--text-xs);
 }
 
 .input[data-size="sm"] {
-    font-size: calc(var(--form-control-font-size, var(--text-base)) * 0.875);
+    font-size: var(--text-sm);
 }
 
 .input[data-size="md"] {
-    font-size: var(--form-control-font-size, var(--text-base));
+    font-size: var(--text-base);
 }
 
 .input[data-size="lg"] {
-    font-size: calc(var(--form-control-font-size, var(--text-base)) * 1.125);
+    font-size: var(--text-lg);
 }
 
 .label:has(+ .input[data-size="xs"]),
