@@ -344,7 +344,7 @@ textarea,
 select {
     width: 100%;
     height: var(--form-control-height, 2.5rem);
-    padding: 0 var(--form-control-padding-inline, 0.75rem);
+    padding: 0 0.75em;
 
     color: var(--form-control-value-color);
     font: inherit;
@@ -374,7 +374,7 @@ select {
 textarea {
     height: auto;
     min-height: var(--form-control-height, 2.5rem);
-    padding: var(--form-control-padding-block, 0.5rem) var(--form-control-padding-inline, 0.75rem);
+    padding: 0.65em 0.75em;
     line-height: var(--leading-normal, 1.5);
     resize: vertical;
 }
