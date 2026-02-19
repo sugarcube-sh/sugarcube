@@ -2,7 +2,6 @@
 
 <p align="center">
   <strong>Design tokens → CSS variables, utility classes, & components</strong><br/>
-  Build on the W3C standard. No runtime. No lock-in.
 </p>
 
 <p align="center">
@@ -17,29 +16,10 @@ Sugarcube processes [W3C DTCG](https://www.designtokens.org/) design tokens into
 
 ## Contents
 
-- [Why sugarcube?](#why-sugarcube)
 - [Quick start](#quick-start)
 - [What you get](#what-you-get)
 - [Documentation](#documentation)
 - [Packages](#packages)
-
-## Why sugarcube?
-
-### It's just CSS
-
-Sugarcube generates plain CSS files. No runtime, no framework coupling, no proprietary syntax in your markup. You can stop using sugarcube tomorrow and keep all your CSS.
-
-### Tokens are more than values
-
-CSS variables store values. Tokens store values plus metadata — descriptions, types, deprecation flags, relationships between values and so on. That metadata can power tooling: linting, documentation generation, design-tool sync.
-
-### Components without styling framework lock-in
-
-Unlike component libraries that require a specific styling framework, sugarcube component styles are just CSS. 
-
-### The standard, not a proprietary format
-
-The DTCG token standard is what the ecosystem is converging on. Sugarcube reads DTCG directly. Learn one format, use any tool. If you outgrow sugarcube, your tokens work with whatever comes next.
 
 ## Quick start
 
@@ -66,29 +46,27 @@ For non-Vite projects, the CLI provides a `generate` command to generate CSS:
 npx @sugarcube-sh/cli generate
 ```
 
-If you install the CLI as a dev dependency, you can use the `sugarcube` command in your npm scripts:
+If the CLI is installed as a dev dependency, you can use the `sugarcube` command in your npm scripts:
 
 ```json
 {
   "scripts": {
-    "tokens:generate": "sugarcube generate",
+    "styles:generate": "sugarcube generate",
     "tokens:validate": "sugarcube validate"
   }
 }
 ```
 
-See the [CLI commands](/docs/reference/cli-commands) for more details.
-
 ## What you get
 
-| Layer | What it does | Optional? |
+| Feature | What it does | Optional? |
 |-------|--------------|-----------|
-| **CSS variables** | Every token becomes a `--variable` | Core feature |
+| **CSS variables** | Every token becomes a `--variable` | No |
 | **Utility classes** | `.color-primary`, `.space-m`, etc. | Yes |
 | **CUBE CSS** | A methodology for clean, scalable CSS | Yes |
 | **Components** | UI components | Yes |
 
-Use all of it, or just the variables. Sugarcube is designed to be adopted incrementally.
+Use all of it, or just the variables. Sugarcube is designed to be flexible.
 
 ## Documentation
 
