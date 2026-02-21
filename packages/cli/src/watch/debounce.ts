@@ -1,19 +1,29 @@
-/**
- * Creates a debounced function that delays invoking the provided function
- * until after `wait` milliseconds have elapsed since the last time it was invoked.
- */
+export type DebouncedFn<Args extends unknown[]> = ((...args: Args) => void) & {
+    cancel: () => void;
+};
+
 export function debounce<Args extends unknown[]>(
     fn: (...args: Args) => void,
     wait: number
-): (...args: Args) => void {
+): DebouncedFn<Args> {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-    return (...args: Args) => {
+    const debounced = (...args: Args) => {
         if (timeoutId) {
             clearTimeout(timeoutId);
         }
         timeoutId = setTimeout(() => {
+            timeoutId = undefined;
             fn(...args);
         }, wait);
     };
+
+    debounced.cancel = () => {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = undefined;
+        }
+    };
+
+    return debounced;
 }
