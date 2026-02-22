@@ -38,6 +38,7 @@ export type {
     SugarcubeConfig,
     ColorFallbackStrategy,
     FluidConfig,
+    LayersConfig,
 } from "./types/config.js";
 export type { ModifierMeta, TokenPipelineSource } from "./types/pipelines.js";
 export type { ResolvedTokens } from "./types/resolve.js";
