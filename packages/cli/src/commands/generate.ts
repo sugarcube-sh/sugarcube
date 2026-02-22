@@ -128,6 +128,8 @@ async function resolveConfig(options: GenerateFlags): Promise<InternalConfig> {
         return mergeConfigWithFlags(loadedConfig, options);
     }
 
+    // Note: We do our own discovery here instead of using loadInternalConfig's fallback
+    // because generate needs special flag-merging logic that loadInternalConfig doesn't handle.
     const discovery = await findResolverDocument(process.cwd());
 
     if (discovery.found === "multiple") {
