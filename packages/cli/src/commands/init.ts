@@ -40,7 +40,7 @@ import type {
 } from "../types/index.js";
 import { getConfigFileName } from "../utils/config-filename.js";
 import { handleError } from "../utils/handle-error.js";
-import { validateOptions } from "../validation/index.js";
+import { validateFilename } from "../validation/flags.js";
 import { preflightInit } from "../validation/preflight-init.js";
 import { generateSugarcubeUtilities } from "./generate.js";
 
@@ -418,7 +418,8 @@ export const init = new Command()
         let ctx: InitContext;
 
         try {
-            validateOptions(options);
+            validateFilename(options.variablesFilename, "--variables-filename");
+            validateFilename(options.utilitiesFilename, "--utilities-filename");
 
             await preflightInit();
 

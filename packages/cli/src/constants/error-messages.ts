@@ -37,12 +37,6 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
     CONFIG_WRITE_FAILED: () =>
         "Failed to write configuration file. Check permissions and try again.",
 
-    DIRECTORY_PATH_EMPTY: (optionName: string) =>
-        `${optionName} cannot be empty. Please provide a valid directory path.`,
-
-    DIRECTORY_PATH_RESERVED: (optionName: string, dirPath: string) =>
-        `Option: ${optionName}\nValue: "${dirPath}"\n\n${optionName} cannot be in a reserved directory`,
-
     KIT_INCOMPLETE: () =>
         "The starter kit appears to be incomplete or corrupted.\n\nThis is likely a temporary issue. Please try running the command again or choose a different starter kit.",
 
@@ -144,4 +138,7 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
 
     GENERATE_MULTIPLE_RESOLVERS_NO_CONFIG: (paths: string[]) =>
         `No config file found, but multiple resolver files detected:\n${paths.map((p) => `  - ${p}`).join("\n")}\n\nPlease either:\n  - Create a config file with ${color.cyan(COMMANDS.INIT)}\n  - Use --resolver flag to specify which resolver to use`,
+
+    FILENAME_CONTAINS_PATH: (flagName: string, value: string) =>
+        `Invalid ${flagName} value: "${value}". Must be a filename, not a path.\n\nUse --variables-dir or --utilities-dir to specify the directory.`,
 } as const;
