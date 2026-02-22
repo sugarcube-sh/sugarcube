@@ -15,7 +15,7 @@ export type ExtractFileRefsResult = {
 
 /**
  * Extract all external file paths from a resolver document without fully loading/resolving tokens.
- * This is useful for watch mode to know which files to monitor for changes.
+ * This is useful for watch mode to know which files to monitor for changes without fully loading/resolving tokens.
  *
  * @param resolverPath - Path to the resolver JSON file
  * @returns Object containing absolute paths to all referenced files and the resolver itself
@@ -32,10 +32,8 @@ export async function extractFileRefs(resolverPath: string): Promise<ExtractFile
 
     const filePaths = new Set<string>();
 
-    // Extract refs from resolutionOrder
     for (const item of document.resolutionOrder) {
         if (isReference(item)) {
-            // Direct file reference in resolutionOrder (unusual but valid)
             addFileRef(item.$ref, basePath, filePaths);
         } else if (isInlineSet(item)) {
             extractFromSources(item.sources, basePath, filePaths);
@@ -46,14 +44,12 @@ export async function extractFileRefs(resolverPath: string): Promise<ExtractFile
         }
     }
 
-    // Extract refs from sets definitions
     if (document.sets) {
         for (const set of Object.values(document.sets)) {
             extractFromSources(set.sources, basePath, filePaths);
         }
     }
 
-    // Extract refs from modifiers definitions
     if (document.modifiers) {
         for (const modifier of Object.values(document.modifiers)) {
             for (const sources of Object.values(modifier.contexts)) {
