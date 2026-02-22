@@ -12,6 +12,17 @@ export type TransformsConfig = {
     colorFallbackStrategy: ColorFallbackStrategy;
 };
 
+/**
+ * CSS cascade layers configuration.
+ * When configured, generated CSS will be wrapped in @layer blocks.
+ */
+export type LayersConfig = {
+    /** Layer name for CSS variables (e.g., "base", "tokens") */
+    variables: string;
+    /** Layer name for utility classes (e.g., "utilities") */
+    utilities: string;
+};
+
 export type OutputConfig = {
     cssRoot: string;
     variables?: string;
@@ -22,6 +33,8 @@ export type OutputConfig = {
     components?: string;
     themeAttribute: string;
     defaultContext?: string;
+    /** CSS cascade layers configuration. When set, output is wrapped in @layer blocks. */
+    layers?: LayersConfig;
 };
 
 export type UtilitiesConfig = Record<string, PropertyUtilityConfig | PropertyUtilityConfig[]>;
@@ -115,6 +128,17 @@ export interface SugarcubeConfig {
          * @default The resolver's default context
          */
         defaultContext?: string;
+        /**
+         * CSS cascade layers configuration.
+         * When set, generated CSS will be wrapped in @layer blocks.
+         *
+         * @example
+         * layers: {
+         *   variables: "base",
+         *   utilities: "utilities"
+         * }
+         */
+        layers?: LayersConfig;
     };
 
     /**
