@@ -41,6 +41,7 @@ export function fillDefaults(userConfig: SugarcubeConfig): InternalConfig {
             themeAttribute:
                 userConfig.output?.themeAttribute ?? DEFAULT_CONFIG.output.themeAttribute,
             defaultContext: userConfig.output?.defaultContext,
+            layers: userConfig.output?.layers,
         },
     };
 
