@@ -21,7 +21,6 @@ import type {
     ResolvedTokens,
     TokenTree,
 } from "@sugarcube-sh/core";
-import { configFileExists, loadInternalConfig } from "@sugarcube-sh/core";
 import { type UserConfig, createGenerator } from "@unocss/core";
 import { Command } from "commander";
 import { relative } from "pathe";
@@ -150,10 +149,6 @@ function formatOutputPaths(output: CSSFileOutput): string[] {
     const paths = output.map((f) => f.path);
     const unique = [...new Set(paths)];
     return unique.map((file) => relative(process.cwd(), file));
-}
-
-function addBanner(output: CSSFileOutput): CSSFileOutput {
-    return output.map((file) => ({ ...file, css: CSS_BANNER + file.css }));
 }
 
 export async function generateSugarcubeUtilities(
