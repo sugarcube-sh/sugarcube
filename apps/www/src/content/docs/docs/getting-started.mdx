@@ -54,17 +54,6 @@ import "virtual:sugarcube.css";
 
 This single import includes both design token CSS variables and utility classes.
 
-### Granular imports
-
-If you need more control, you can import variables and utilities separately:
-
-```ts
-// Just the CSS variables from your design tokens
-import "virtual:sugarcube/variables.css";
-// Just the utility classes
-import "virtual:sugarcube/utilities.css";
-```
-
 ### Without the plugin
 
 If you are not using the Vite plugin, sugarcube generates static CSS files instead. Import them where you import your other styles:

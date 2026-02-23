@@ -62,21 +62,9 @@ import "virtual:sugarcube.css";
 links: [{ rel: "stylesheet", href: appCss }];
 ```
 
-### Granular imports
-
-If you need more control, you can import variables and utilities separately:
-
-```tsx title="__root.tsx"
-// Just the CSS variables from your design tokens
-import "virtual:sugarcube/variables.css";
-
-// Just the utility classes
-import "virtual:sugarcube/utilities.css";
-```
-
 ## Optional: UnoCSS Presets
 
-If you want to use UnoCSS presets alongside sugarcube, pass them via the `unoPresets` option:
+If you want to use UnoCSS presets alongside sugarcube, pass them via `unoOptions.presets`:
 
 ```ts title="vite.config.ts"
 import { presetWind3 } from "@unocss/preset-wind";
@@ -86,7 +74,9 @@ export default defineConfig({
     plugins: [
         // ... other plugins
         sugarcube({
-            unoPresets: [presetWind3({ preflight: false })],
+            unoOptions: {
+                presets: [presetWind3({ preflight: false })],
+            }
         }),
         // ... rest of plugins
     ],

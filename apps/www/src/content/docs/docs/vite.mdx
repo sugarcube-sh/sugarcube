@@ -48,14 +48,6 @@ This single import includes both design token CSS variables and any utility clas
     Without the plugin, import generated CSS files directly (e.g., `import "./styles/global/tokens.variables.gen.css"`).
 </SiteAside>
 
-### Granular imports
+## Next Steps
 
-If you need more control, you can import variables and utilities separately:
-
-```js title="src/main.js"
-// Just the CSS variables from your design tokens
-import "virtual:sugarcube/variables.css";
-
-// Just the utility classes
-import "virtual:sugarcube/utilities.css";
-```
+For advanced plugin options like UnoCSS presets and CSS cascade layers, see [Vite Plugin](/docs/vite-plugin).

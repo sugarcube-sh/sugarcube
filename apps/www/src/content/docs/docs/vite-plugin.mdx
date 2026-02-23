@@ -1,0 +1,53 @@
+---
+title: Vite Plugin
+description: How the sugarcube Vite plugin works
+---
+
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+The sugarcube Vite plugin gives you on-demand CSS generation and hot module replacement for your design tokens.
+
+## What it does
+
+When you use the plugin:
+
+1. **Loads your design tokens** from your resolver document on startup
+2. **Generates CSS variables** from your tokens (colors, spacing, typography, etc.)
+3. **Generates utility classes** on-demand as you use them in your markup
+4. **Hot reloads** when you edit tokens, config, or markup.
+
+All of this is served through a single virtual import:
+
+```js
+import "virtual:sugarcube.css";
+```
+
+## Adding utility presets
+
+The plugin can include additional utility classes from UnoCSS presets like `presetWind3` or `presetWind4`:
+
+```ts title="vite.config.ts"
+import { defineConfig } from "vite";
+import sugarcube from "@sugarcube-sh/vite";
+import presetWind3 from "@unocss/preset-wind3";
+
+export default defineConfig({
+    plugins: [
+        sugarcube({
+            unoOptions: {
+                presets: [presetWind3({ preflight: false })],
+            }
+        })
+    ],
+});
+```
+
+This gives you utilities like (`flex`, `grid`, `w-full`, etc.) alongside your sugarcube token-based utilities.
+
+<SiteAside type="note">
+    Sugarcube's utilities always take precedence. If a preset defines the same class, sugarcube wins.
+</SiteAside>
+
+## CSS Cascade Layers
+
+To wrap output in CSS `@layer` blocks, see [CSS Cascade Layers](/docs/cascade-layers).

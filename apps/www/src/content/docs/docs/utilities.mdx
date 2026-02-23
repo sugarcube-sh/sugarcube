@@ -270,12 +270,6 @@ export default {
 };
 ```
 
-Import utilities in your CSS:
-
-```css title="index.css"
-@import "virtual:sugarcube/utilities.css";
-```
-
 ### Without the plugin (static generation)
 
 Generate utilities as a static CSS file:
@@ -303,7 +297,9 @@ import presetWind3 from "@unocss/preset-wind3";
 export default {
   plugins: [
     sugarcube({
-      unoPresets: [presetWind3({ preflight: false })]
+      unoOptions: {
+        presets: [presetWind3({ preflight: false })]
+      }
     })
   ]
 };

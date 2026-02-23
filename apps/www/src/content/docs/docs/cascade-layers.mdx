@@ -1,0 +1,116 @@
+---
+title: CSS Cascade Layers
+description: Using CSS @layer with sugarcube for cascade control
+---
+
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+
+CSS Cascade Layers (`@layer`) let you control specificity without fighting selector weight. Sugarcube supports cascade layers in both the Vite plugin and CLI.
+
+## Vite plugin
+
+Use `unoOptions.outputToCssLayers` to wrap output in `@layer` blocks:
+
+```ts title="vite.config.ts"
+import { defineConfig } from "vite";
+import sugarcube from "@sugarcube-sh/vite";
+
+export default defineConfig({
+    plugins: [
+        sugarcube({
+            unoOptions: {
+                outputToCssLayers: true
+            }
+        })
+    ],
+});
+```
+
+### Custom layer names
+
+By default, CSS layers use UnoCSS's internal layer names (`preflights`, `default`, etc.). To use your own names, provide a `cssLayerName` function:
+
+```ts title="vite.config.ts"
+import { defineConfig } from "vite";
+import sugarcube from "@sugarcube-sh/vite";
+
+export default defineConfig({
+    plugins: [
+        sugarcube({
+            unoOptions: {
+                outputToCssLayers: {
+                    cssLayerName: (layer: string) => {
+                        if (layer === "preflights") return "base";
+                        if (layer === "default") return "utilities";
+                        return layer;
+                    }
+                }
+            }
+        })
+    ],
+});
+```
+
+This produces:
+
+```css
+@layer base, utilities;
+
+@layer base {
+    :root { --color-primary: ...; }
+}
+
+@layer utilities {
+    .text-sm { font-size: var(--text-sm); }
+}
+```
+
+### Preset precedence
+
+Sugarcube's output takes precedence over unoCSS presets. If both sugarcube and a unoCSS preset (like `presetWind4`) define the same CSS variable or utility class, sugarcube's version wins.
+
+This means you can safely use presets alongside sugarcube - for any overlapping tokens or utilities, your sugarcube design tokens and utility classes take priority.
+
+## CLI
+
+When using the CLI (without the Vite plugin), configure layers via `output.layers`:
+
+```ts title="sugarcube.config.ts"
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+    output: {
+        layers: {
+            variables: "base",
+            utilities: "utilities"
+        }
+    }
+});
+```
+
+This wraps generated files in `@layer` blocks:
+
+```css title="tokens.variables.gen.css" frame="none"
+@layer base {
+    :root { --color-primary: ...; }
+}
+```
+
+```css title="utilities.gen.css" frame="none"
+@layer utilities {
+    .text-sm { font-size: var(--text-sm); }
+}
+```
+
+Import them in the correct order in your main CSS to establish layer precedence:
+
+```css title="main.css" frame="none"
+/* Declare layer order */
+@layer base, utilities;
+
+/* Import generated files */
+@import "./global/tokens.variables.gen.css";
+@import "./utilities/utilities.gen.css";
+```
+
+
