@@ -20,7 +20,7 @@ import type {
     TokenTree,
 } from "@sugarcube-sh/core";
 import { configFileExists, loadInternalConfig } from "@sugarcube-sh/core";
-import { createGenerator } from "@unocss/core";
+import { type UserConfig, createGenerator } from "@unocss/core";
 import { Command } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
@@ -80,9 +80,18 @@ export async function generateSugarcubeUtilities(
         preflights: [],
     };
 
-    const generator = await createGenerator({
+    const layerName = config.output.layers?.utilities;
+
+    const generatorOptions: UserConfig = {
         presets: [sugarcubePreset],
-    });
+        ...(layerName && {
+            outputToCssLayers: {
+                cssLayerName: () => layerName,
+            },
+        }),
+    };
+
+    const generator = await createGenerator(generatorOptions);
 
     const files = await glob([SCAN_INCLUDE_PATTERN], {
         ignore: SCAN_IGNORE_PATTERNS,
@@ -139,6 +148,20 @@ function addBanner(output: CSSFileOutput): CSSFileOutput {
     }));
 }
 
+function wrapInLayer(output: CSSFileOutput, layerName: string): CSSFileOutput {
+    return output.map((file) => {
+        // Need extra formatting for @layer blocks
+        const indentedCss = file.css
+            .split("\n")
+            .map((line) => (line.trim() ? `    ${line}` : line))
+            .join("\n");
+        return {
+            ...file,
+            css: `@layer ${layerName} {\n${indentedCss}}\n`,
+        };
+    });
+}
+
 async function generateAllCSS(
     trees: TokenTree[],
     resolved: ResolvedTokens,
@@ -146,9 +169,14 @@ async function generateAllCSS(
     modifiers: ModifierMeta[]
 ): Promise<CSSFileOutput> {
     const output: CSSFileOutput = [];
+    const layersConfig = config.output.layers;
 
     const convertedTokens = await processAndConvertTokens(trees, resolved, config);
-    const cssVariables = await generateCSSVariables(convertedTokens, config, modifiers);
+
+    let cssVariables = await generateCSSVariables(convertedTokens, config, modifiers);
+    if (layersConfig) {
+        cssVariables = wrapInLayer(cssVariables, layersConfig.variables);
+    }
     const cssVariablesWithBanner = addBanner(cssVariables);
     await writeCSSVariablesToDisk(cssVariablesWithBanner);
     output.push(...cssVariablesWithBanner);
