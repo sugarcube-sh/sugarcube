@@ -104,3 +104,22 @@ export default defineConfig({
 ```
 
 This sets the base directory. Token variables, utilities, and CUBE CSS will be output under this directory by default. But you can override individual paths with `output.variables`, `output.utilities`, or `output.cube` if needed.
+
+## CSS Cascade Layers (CLI only)
+
+When using the CLI (without the Vite plugin), you can wrap generated CSS in `@layer` blocks:
+
+```ts title="sugarcube.config.ts" ins={4-7}
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  output: {
+    layers: {
+      variables: "base",
+      utilities: "utilities"
+    }
+  }
+});
+```
+
+For full details on cascade layers, see [CSS Cascade Layers](/docs/cascade-layers).

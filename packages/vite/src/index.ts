@@ -24,6 +24,39 @@ type CSSObject = Record<string, string | number | undefined>;
 /** UnoCSS dynamic rule: [pattern, handler] */
 type UnoRule = [RegExp, (match: RegExpMatchArray) => CSSObject];
 
+/** UnoCSS outputToCssLayers configuration */
+type OutputToCssLayersOptions =
+    | boolean
+    | {
+          cssLayerName?: (layer: string) => string | undefined;
+      };
+
+/**
+ * UnoCSS configuration options.
+ * @see https://unocss.dev/config/
+ */
+interface UnoOptions {
+    /** Additional presets */
+    presets?: unknown[];
+    /** UnoCSS theme configuration */
+    theme?: Record<string, unknown>;
+    /** Layer ordering - maps layer names to numeric order */
+    layers?: Record<string, number>;
+    /** Output to CSS cascade layers (@layer) */
+    outputToCssLayers?: OutputToCssLayersOptions;
+    /** Any other UnoCSS options */
+    [key: string]: unknown;
+}
+
+interface SugarcubePluginOptions {
+    /**
+     * UnoCSS options passed directly to UnoCSS.
+     * Use this to configure presets, theme, layers, outputToCssLayers, etc.
+     * @see https://unocss.dev/config/
+     */
+    unoOptions?: UnoOptions;
+}
+
 const perf = new PerfMonitor();
 
 export interface SugarcubePluginContext {
@@ -263,11 +296,6 @@ function createSugarcubeContext(): SugarcubePluginContext {
     return ctx;
 }
 
-interface SugarcubePluginOptions<T = any> {
-    unoPresets?: T[];
-    unoTheme?: Record<string, any>;
-}
-
 /**
  * Extracts the token directory from the resolver path.
  * Assumes token files are in the same directory as the resolver document.
@@ -288,18 +316,28 @@ function extractTokenDirs(config: InternalConfig): string[] {
 export default async function sugarcubePlugin(
     options: SugarcubePluginOptions = {}
 ): Promise<Plugin[]> {
-    const { unoPresets = [], unoTheme } = options;
+    const { unoOptions = {} } = options;
     const ctx = createSugarcubeContext();
     // It's imperative to await the ready state otherwise
     // UnoCSS will not get the generated rules
     await ctx.ready;
 
-    const sugarcubePreset = {
+    const sugarcubePreset: any = {
         name: "sugarcube",
         get rules() {
-            const rules = ctx.getRules();
-            return rules;
+            return ctx.getRules();
         },
+        // Variables are always included via preflight now
+        preflights: [
+            {
+                getCSS: () => ctx.getCSS(),
+            },
+        ],
+    };
+
+    const unoConfig: any = {
+        ...unoOptions,
+        presets: [...(unoOptions.presets || []), sugarcubePreset],
     };
 
     const plugins: Plugin[] = [
@@ -310,10 +348,7 @@ export default async function sugarcubePlugin(
             },
         } satisfies Plugin,
 
-        ...UnoCSS({
-            presets: [...unoPresets, sugarcubePreset],
-            theme: unoTheme,
-        }),
+        ...UnoCSS(unoConfig),
         {
             name: "sugarcube:virtual-css",
             enforce: "pre",
@@ -321,45 +356,19 @@ export default async function sugarcubePlugin(
             config() {
                 return {
                     optimizeDeps: {
-                        exclude: [
-                            "virtual:sugarcube.css",
-                            "virtual:sugarcube/variables.css",
-                            "virtual:sugarcube/utilities.css",
-                        ],
+                        exclude: ["virtual:sugarcube.css"],
                     },
                 };
             },
 
-            resolveId(id) {
-                if (id === "virtual:sugarcube/variables.css") {
-                    return "/__sugarcube_variables.css";
-                }
-                if (id === "virtual:sugarcube/utilities.css") {
-                    // Return the UnoCSS virtual module ID
-                    return "/__uno.css";
-                }
+            async resolveId(id) {
+                // Variables included via preflight, utilities via rules
                 if (id === "virtual:sugarcube.css") {
-                    // Combined module imports both variables and utilities
-                    return "/__sugarcube_combined.js";
-                }
-            },
-
-            load(id) {
-                // Strip query string for matching
-                const cleanId = id.split("?")[0];
-
-                if (cleanId === "/__sugarcube_variables.css") {
-                    return {
-                        code: ctx.getCSS(),
-                        map: { mappings: "" },
-                    };
-                }
-
-                if (cleanId === "/__sugarcube_combined.js") {
-                    return {
-                        code: `import "virtual:sugarcube/variables.css";\nimport "virtual:uno.css";`,
-                        map: null,
-                    };
+                    // Resolve through UnoCSS's virtual module system
+                    const resolved = await this.resolve("virtual:uno.css", undefined, {
+                        skipSelf: true,
+                    });
+                    return resolved;
                 }
             },
         } satisfies Plugin,
@@ -453,15 +462,7 @@ export default async function sugarcubePlugin(
 
                         await ctx.reloadTokens();
 
-                        // Invalidate the variables virtual module
-                        const varMod = server.moduleGraph.getModuleById(
-                            "/__sugarcube_variables.css"
-                        );
-                        if (varMod) {
-                            server.moduleGraph.invalidateModule(varMod);
-                            server.reloadModule(varMod);
-                        }
-
+                        // Invalidate UnoCSS module (contains both variables via preflight and utilities)
                         I.start("Vite Invalidate");
                         ctx.invalidate(server);
                         I.end("Vite Invalidate");

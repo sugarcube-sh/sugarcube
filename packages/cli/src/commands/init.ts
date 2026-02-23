@@ -5,6 +5,7 @@ import {
     findResolverDocument,
 } from "@sugarcube-sh/core";
 import {
+    type CSSFileOutput,
     generateCSSVariables,
     processAndConvertTokens,
     writeCSSUtilitiesToDisk,
@@ -43,6 +44,13 @@ import { handleError } from "../utils/handle-error.js";
 import { validateFilename } from "../validation/flags.js";
 import { preflightInit } from "../validation/preflight-init.js";
 import { generateSugarcubeUtilities } from "./generate.js";
+
+function wrapInLayer(output: CSSFileOutput, layerName: string): CSSFileOutput {
+    return output.map((file) => ({
+        ...file,
+        css: `@layer ${layerName} {\n${file.css}}\n`,
+    }));
+}
 
 async function initializeProjectContext(options: InitOptions): Promise<{
     tokensDir: string;
@@ -157,8 +165,12 @@ async function writeCSSVariables(ctx: InitContext): Promise<void> {
     }
 
     const { trees, resolved } = ctx.setupResult;
+    const layersConfig = ctx.config.output.layers;
     const convertedTokens = await processAndConvertTokens(trees, resolved, ctx.config);
-    const cssVars = await generateCSSVariables(convertedTokens, ctx.config);
+    let cssVars = await generateCSSVariables(convertedTokens, ctx.config);
+    if (layersConfig) {
+        cssVars = wrapInLayer(cssVars, layersConfig.variables);
+    }
     await writeCSSVariablesToDisk(cssVars);
 }
 

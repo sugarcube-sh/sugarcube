@@ -189,6 +189,33 @@ export default defineConfig({
 });
 ```
 
+### `output.layers`
+
+**Type:** `object`
+**Optional**
+
+<SiteAside type="note">
+    This option only applies when using the CLI. For Vite plugin users, configure layers via `unoOptions.outputToCssLayers` instead. See [CSS Cascade Layers](/docs/cascade-layers).
+</SiteAside>
+
+Wraps generated CSS in `@layer` blocks for CSS Cascade Layers support.
+
+```ts
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  output: {
+    layers: {
+      variables: "theme",
+      utilities: "utilities"
+    }
+  }
+});
+```
+
+- **`variables`** (required): The CSS layer name for token variables
+- **`utilities`** (required): The CSS layer name for utility classes
+
 ## Transforms
 
 The `transforms` object configures how sugarcube processes design tokens.

@@ -19,6 +19,11 @@ const utilityConfigSchema = z.object({
 
 const utilityConfigOrArraySchema = z.union([utilityConfigSchema, z.array(utilityConfigSchema)]);
 
+const layersSchema = z.object({
+    variables: z.string(),
+    utilities: z.string(),
+});
+
 export const userConfigSchema = z.object({
     resolver: z.string().optional(),
 
@@ -40,6 +45,7 @@ export const userConfigSchema = z.object({
             components: z.string().optional(),
             themeAttribute: z.string().optional(),
             defaultContext: z.string().optional(),
+            layers: layersSchema.optional(),
         })
         .optional(),
 
@@ -64,6 +70,7 @@ export const internalConfigSchema = z.object({
         components: z.string().optional(),
         themeAttribute: z.string(),
         defaultContext: z.string().optional(),
+        layers: layersSchema.optional(),
     }),
 
     utilities: z.record(z.string(), utilityConfigOrArraySchema).optional(),
