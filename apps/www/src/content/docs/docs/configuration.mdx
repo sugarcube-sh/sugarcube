@@ -41,7 +41,7 @@ If you run `init` without any flags, no config file is created.
 
 To adjust the 'slope' of the scaling curve for fluid calculations, configure the viewport range for fluid calculations:
 
-```ts title="sugarcube.config.ts" ins={3-8}
+```ts title="sugarcube.config.ts" ins={5-8}
 import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
@@ -60,11 +60,10 @@ For more on fluid spacing and typography in sugarcube, see [fluid spacing and ty
 
 To polyfill modern CSS color formats for older browsers, set `colorFallbackStrategy` to `"polyfill"`:
 
-```ts title="sugarcube.config.ts" ins={4-6}
+```ts title="sugarcube.config.ts" ins={5}
 import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
   transforms: {
     colorFallbackStrategy: "polyfill"
   }
@@ -77,11 +76,10 @@ For more on color formats in sugarcube, see [color formats](/docs/color-formats)
 
 To change where components are copied to, set `output.components`:
 
-```ts title="sugarcube.config.ts" ins={4-6}
+```ts title="sugarcube.config.ts" ins={5}
 import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
   output: {
     components: "src/components"
   }
@@ -92,11 +90,10 @@ export default defineConfig({
 
 To change where CSS files are written, set `output.cssRoot`:
 
-```ts title="sugarcube.config.ts" ins={4-6}
+```ts title="sugarcube.config.ts" ins={5}
 import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
   output: {
     cssRoot: "styles"
   }
@@ -109,7 +106,7 @@ This sets the base directory. Token variables, utilities, and CUBE CSS will be o
 
 When using the CLI (without the Vite plugin), you can wrap generated CSS in `@layer` blocks:
 
-```ts title="sugarcube.config.ts" ins={4-7}
+```ts title="sugarcube.config.ts" ins={5-8}
 import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({

@@ -38,7 +38,7 @@ export default defineConfig({
                 {
                     label: "Get started",
                     items: [
-                        "docs/about",
+                        "docs/introduction",
                         "docs/getting-started",
                         "docs/advanced-setup",
                         "docs/tokens",

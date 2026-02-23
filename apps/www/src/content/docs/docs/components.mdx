@@ -44,13 +44,12 @@ You can customize where components are installed two different ways:
     <PackageManagerTabs command="sugarcube components --components-dir custom-components-dir" />
 
 2. **In your config file**:
-   ```ts title="sugarcube.config.ts" ins={5} del={4}
+   ```ts title="sugarcube.config.ts" ins={5}
    import { defineConfig } from "@sugarcube-sh/cli";
 
    export default defineConfig({
      output: {
        components: "src/components",
-       cssRoot: "src/styles"
      }
    });
    ```
