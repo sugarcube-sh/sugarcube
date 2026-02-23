@@ -135,6 +135,7 @@ export default defineConfig({
             sugarcube({
                 unoOptions: {
                     presets: [presetWind3({ preflight: false })],
+                    blocklist: ["container"],
                     outputToCssLayers: {
                         cssLayerName: (layer) => {
                             if (layer === "preflights") return "theme";
