@@ -52,6 +52,7 @@ export default defineConfig({
                         "docs/resolver",
                         "docs/fluid-space-and-type",
                         "docs/color-formats",
+                        "docs/cascade-layers",
                         "docs/configuration",
                         "docs/editor-setup",
                     ],
@@ -130,7 +131,20 @@ export default defineConfig({
         mdx(),
     ],
     vite: {
-        plugins: [sugarcube({ unoPresets: [presetWind3({ preflight: false })] })],
+        plugins: [
+            sugarcube({
+                unoOptions: {
+                    presets: [presetWind3({ preflight: false })],
+                    outputToCssLayers: {
+                        cssLayerName: (layer) => {
+                            if (layer === "preflights") return "theme";
+                            if (layer === "default") return "utilities";
+                            return layer;
+                        },
+                    },
+                },
+            }),
+        ],
     },
     prefetch: true,
     devToolbar: {

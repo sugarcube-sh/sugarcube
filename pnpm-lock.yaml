@@ -110,12 +110,6 @@ importers:
       '@types/react-dom':
         specifier: ^19.1.3
         version: 19.2.3(@types/react@19.2.14)
-      '@unocss/preset-mini':
-        specifier: ^66.5.2
-        version: 66.6.0
-      '@unocss/preset-wind3':
-        specifier: ^66.5.4
-        version: 66.6.0
       astro:
         specifier: ^5.15.3
         version: 5.17.2(@types/node@22.19.11)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
@@ -153,6 +147,12 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0
     devDependencies:
+      '@unocss/preset-wind3':
+        specifier: ^66.6.0
+        version: 66.6.0
+      '@unocss/preset-wind4':
+        specifier: ^66.6.0
+        version: 66.6.0
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -2236,6 +2236,9 @@ packages:
 
   '@unocss/preset-wind3@66.6.0':
     resolution: {integrity: sha512-7gzswF810BCSru7pF01BsMzGZbfrsWT5GV6JJLkhROS2pPjeNOpqy2VEfiavv5z09iGSIESeOFMlXr5ORuLZrg==}
+
+  '@unocss/preset-wind4@66.6.0':
+    resolution: {integrity: sha512-1yyo9fmB+r5C92kSHU7lIaqGJdvz5UQyYZxYDxSmWLAUzWEK5HBRj6OkSF6rUnz+Yd4JvgOgACZNOShVOezPlA==}
 
   '@unocss/rule-utils@66.5.2':
     resolution: {integrity: sha512-2eR5TBTO+cmPY9ahFjyEu8qP/NFPI02dVpI0rgGKdyDMv/PnO9+yS/9rKgrmXsN3nPYHjOrLutRXkF/xxm/t3w==}
@@ -6486,6 +6489,12 @@ snapshots:
     dependencies:
       '@unocss/core': 66.6.0
       '@unocss/preset-mini': 66.6.0
+      '@unocss/rule-utils': 66.6.0
+
+  '@unocss/preset-wind4@66.6.0':
+    dependencies:
+      '@unocss/core': 66.6.0
+      '@unocss/extractor-arbitrary-variants': 66.6.0
       '@unocss/rule-utils': 66.6.0
 
   '@unocss/rule-utils@66.5.2':
