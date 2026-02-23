@@ -73,7 +73,20 @@ This means you can safely use presets alongside sugarcube - for any overlapping 
 
 ## CLI
 
-When using the CLI (without the Vite plugin), configure layers via `output.layers`:
+Use CSS's native `@import ... layer()` syntax to assign layers at import time:
+
+```css title="main.css" frame="none"
+@layer base, utilities;
+
+@import "./global/tokens.variables.gen.css" layer(base);
+@import "./utilities/utilities.gen.css" layer(utilities);
+```
+
+No sugarcube configuration needed - this works with the generated files as-is.
+
+### Baked-in layers
+
+If you prefer the layer wrapper baked into the generated files, use `output.layers`:
 
 ```ts title="sugarcube.config.ts"
 import { defineConfig } from "@sugarcube-sh/cli";
@@ -88,7 +101,7 @@ export default defineConfig({
 });
 ```
 
-This wraps generated files in `@layer` blocks:
+This produces files already wrapped in `@layer` blocks:
 
 ```css title="tokens.variables.gen.css" frame="none"
 @layer base {
@@ -96,32 +109,11 @@ This wraps generated files in `@layer` blocks:
 }
 ```
 
-```css title="utilities.gen.css" frame="none"
-@layer utilities {
-    .text-sm { font-size: var(--text-sm); }
-}
-```
-
-Import them in the correct order in your main CSS to establish layer precedence:
+Then import without the `layer()` syntax:
 
 ```css title="main.css" frame="none"
-/* Declare layer order */
 @layer base, utilities;
 
-/* Import generated files */
 @import "./global/tokens.variables.gen.css";
 @import "./utilities/utilities.gen.css";
 ```
-
-### Without configuration
-
-You don't need `output.layers` to use CSS cascade layers. Without it, sugarcube generates unwrapped CSS, and you can assign layers at import time using CSS's native `@import ... layer()` syntax:
-
-```css title="main.css" frame="none"
-@layer base, utilities;
-
-@import "./global/tokens.variables.gen.css" layer(base);
-@import "./utilities/utilities.gen.css" layer(utility);
-```
-
-The `output.layers` config is a convenience that bakes the layer wrapper into the generated files. This is useful when importing via JavaScript or bundlers that don't support the `layer()` syntax.
