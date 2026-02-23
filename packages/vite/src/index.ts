@@ -327,7 +327,7 @@ export default async function sugarcubePlugin(
         get rules() {
             return ctx.getRules();
         },
-        // Variables are always included via preflight
+        // Variables are always included via preflight now
         preflights: [
             {
                 getCSS: () => ctx.getCSS(),
@@ -335,8 +335,6 @@ export default async function sugarcubePlugin(
         ],
     };
 
-    // Build UnoCSS options - merge user options with sugarcube preset
-    // Sugarcube comes last so its rules take precedence over other presets
     const unoConfig: any = {
         ...unoOptions,
         presets: [...(unoOptions.presets || []), sugarcubePreset],
