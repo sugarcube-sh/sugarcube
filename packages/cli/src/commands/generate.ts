@@ -80,19 +80,12 @@ export async function generateSugarcubeUtilities(
 
     const sugarcubePreset = {
         name: "sugarcube",
-        rules: convertConfigToUnoRules(config.utilities ?? {}, tokens),
+        rules: convertConfigToUnoRules(config.utilities, tokens),
         preflights: [],
     };
 
-    const layerName = config.output.layers?.utilities;
-
     const generatorOptions: UserConfig = {
         presets: [sugarcubePreset],
-        ...(layerName && {
-            outputToCssLayers: {
-                cssLayerName: () => layerName,
-            },
-        }),
     };
 
     const generator = await createGenerator(generatorOptions);
@@ -185,7 +178,10 @@ async function generateAllCSS(
     await writeCSSVariablesToDisk(cssVariablesWithBanner);
     output.push(...cssVariablesWithBanner);
 
-    const utilities = await generateSugarcubeUtilities(convertedTokens, config);
+    let utilities = await generateSugarcubeUtilities(convertedTokens, config);
+    if (layersConfig) {
+        utilities = wrapInLayer(utilities, layersConfig.utilities);
+    }
     const utilitiesWithBanner = addBanner(utilities);
     await writeCSSUtilitiesToDisk(utilitiesWithBanner);
     output.push(...utilitiesWithBanner);
