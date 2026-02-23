@@ -5,11 +5,8 @@
     appearance: none;
     vertical-align: middle;
     font-size: var(--form-control-font-size, var(--text-base));
-
-    /* Size in em - scales with font-size */
     width: 1.1em;
     height: 1.1em;
-
     border: var(--form-control-border-width) var(--form-control-border-style)
         var(--form-control-border-color);
     border-radius: min(0.4em, var(--radius-md));

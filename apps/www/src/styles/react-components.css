@@ -1,6 +1,6 @@
 @import "@/registry/components/button/react/button.css" layer(blocks);
 @import "@/registry/components/card/react/card.css" layer(blocks);
-@import "@/registry/components/input/react/input.css";
+@import "@/registry/components/input/react/input.css" layer(blocks);
 @import "@/registry/components/label/react/label.css" layer(blocks);
 @import "@/registry/components/checkbox/react/checkbox.css" layer(blocks);
 @import "@/registry/components/radio-group/react/radio-group.css" layer(blocks);

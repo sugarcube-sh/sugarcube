@@ -1,16 +1,14 @@
 .tabs-list {
     --_padding-block: 0.65em;
     --_padding-inline: 0.75em;
-
-    --form-control-height: round(calc(2 * var(--_padding-block) + 1em * 1.25), 1px);
-
-    --tabs-list-padding: 3px;
+    --_form-control-height: round(calc(2 * var(--_padding-block) + 1em * 1.25), 1px);
+    --_tabs-list-padding: 3px;
 
     display: inline-flex;
     background-color: var(--color-surface-lowered);
-    padding: var(--tabs-list-padding);
+    padding: var(--_tabs-list-padding);
     border-radius: var(--radius-lg);
-    min-height: var(--form-control-height);
+    min-height: var(--_form-control-height);
 }
 
 .tabs-trigger {
