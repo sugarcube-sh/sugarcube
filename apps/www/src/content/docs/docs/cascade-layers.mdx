@@ -113,4 +113,15 @@ Import them in the correct order in your main CSS to establish layer precedence:
 @import "./utilities/utilities.gen.css";
 ```
 
+### Without configuration
 
+You don't need `output.layers` to use CSS cascade layers. Without it, sugarcube generates unwrapped CSS, and you can assign layers at import time using CSS's native `@import ... layer()` syntax:
+
+```css title="main.css" frame="none"
+@layer base, utilities;
+
+@import "./global/tokens.variables.gen.css" layer(base);
+@import "./utilities/utilities.gen.css" layer(utility);
+```
+
+The `output.layers` config is a convenience that bakes the layer wrapper into the generated files. This is useful when importing via JavaScript or bundlers that don't support the `layer()` syntax.
