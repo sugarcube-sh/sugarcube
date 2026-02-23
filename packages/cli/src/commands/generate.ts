@@ -74,6 +74,10 @@ export async function generateSugarcubeUtilities(
     tokens: NormalizedConvertedTokens,
     config: InternalConfig
 ): Promise<CSSFileOutput> {
+    if (!config.utilities || Object.keys(config.utilities).length === 0) {
+        return [];
+    }
+
     const sugarcubePreset = {
         name: "sugarcube",
         rules: convertConfigToUnoRules(config.utilities ?? {}, tokens),
