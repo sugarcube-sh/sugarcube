@@ -1,7 +1,6 @@
 .site-code-block {
     --_padding-block: 0.65em;
-
-    --form-control-height: round(calc(2 * var(--_padding-block) + 1em * 1.25), 1px);
+    --_form-control-height: round(calc(2 * var(--_padding-block) + 1em * 1.25), 1px);
 
     background-color: color-mix(in oklab, var(--color-fill-normal) 50%, transparent);
     border-radius: var(--form-control-border-radius);
@@ -12,7 +11,7 @@
     position: relative;
     padding-inline-start: var(--space-2xs);
     border: var(--border-width-thin) var(--border-style) var(--color-border-normal);
-    min-height: var(--form-control-height);
+    min-height: var(--_form-control-height);
 }
 
 .site-code-block code {

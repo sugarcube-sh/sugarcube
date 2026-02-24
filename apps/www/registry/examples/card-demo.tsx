@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/registry/components/card/react/card";
 export function CardDemo() {
     return (
         <Card className="bg-teal-500">
-            <CardContent>
+            <CardContent className="">
                 <figure
                     className="min-h-[264px] repel"
                     style={

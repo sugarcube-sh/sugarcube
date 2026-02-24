@@ -193,7 +193,7 @@ function DropdownMenuWithAvatar() {
             <DropdownMenuTrigger asChild>
                 <Button
                     data-appearance="outlined"
-                    style={{ "--form-control-height": "3rem" } as React.CSSProperties}
+                    style={{ "--_form-control-height": "3rem" } as React.CSSProperties}
                 >
                     <Avatar data-size="sm">
                         <AvatarImage

@@ -1,8 +1,7 @@
 .site-button {
     --_padding-block: 0.65em;
     --_padding-inline: 0.75em;
-
-    --form-control-height: round(calc(2 * var(--_padding-block) + 1em * 1.25), 1px);
+    --_form-control-height: round(calc(2 * var(--_padding-block) + 1em * 1.25), 1px);
 
     font-size: var(--form-control-font-size, var(--text-base));
     display: inline-flex;
@@ -23,7 +22,7 @@
     color: var(--color-on-loud, var(--color-neutral-on-normal));
     font-weight: var(--font-weight-medium);
     gap: var(--space-2xs);
-    min-height: var(--form-control-height);
+    min-height: var(--_form-control-height);
     transition-property: color, background-color, border-color;
     transition-timing-function: var(--ease-out);
     transition-duration: var(--transition-normal);

@@ -34,9 +34,6 @@
     font-size: var(--text-lg);
 }
 
-/* Force 16px (1rem) on mobile to prevent iOS zoom.
- * Padding auto-scales via em units.
- */
 @media (max-width: 768px) {
     .input,
     .input[data-size] {

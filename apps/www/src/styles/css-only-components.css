@@ -1,14 +1,14 @@
-@import "@/registry/components/alert/css/alert.css";
-@import "@/registry/components/button/css/button.css";
-@import "@/registry/components/card/css/card.css";
-@import "@/registry/components/input/css/input.css";
-@import "@/registry/components/checkbox/css/checkbox.css";
-@import "@/registry/components/radio-group/css/radio-group.css";
-@import "@/registry/components/select/css/select.css";
-@import "@/registry/components/switch/css/switch.css";
-@import "@/registry/components/accordion/css/accordion.css";
-@import "@/registry/components/avatar/css/avatar.css";
-@import "@/registry/components/badge/css/badge.css";
-@import "@/registry/components/dialog/css/dialog.css";
+@import "@/registry/components/alert/css/alert.css" layer(blocks);
+@import "@/registry/components/button/css/button.css" layer(blocks);
+@import "@/registry/components/card/css/card.css" layer(blocks);
+@import "@/registry/components/input/css/input.css" layer(blocks);
+@import "@/registry/components/checkbox/css/checkbox.css" layer(blocks);
+@import "@/registry/components/radio-group/css/radio-group.css" layer(blocks);
+@import "@/registry/components/select/css/select.css" layer(blocks);
+@import "@/registry/components/switch/css/switch.css" layer(blocks);
+@import "@/registry/components/accordion/css/accordion.css" layer(blocks);
+@import "@/registry/components/avatar/css/avatar.css" layer(blocks);
+@import "@/registry/components/badge/css/badge.css" layer(blocks);
+@import "@/registry/components/dialog/css/dialog.css" layer(blocks);
 
-@import "./css-only-examples.css";
+@import "./css-only-examples.css" layer(blocks);

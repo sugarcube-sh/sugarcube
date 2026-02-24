@@ -343,7 +343,7 @@ input:not(
 textarea,
 select {
     width: 100%;
-    height: var(--form-control-height, 2.5rem);
+    height: var(--_form-control-height, 2.5rem);
     padding: 0 0.75em;
 
     color: var(--form-control-value-color);
@@ -373,7 +373,7 @@ select {
 /* Textarea specific */
 textarea {
     height: auto;
-    min-height: var(--form-control-height, 2.5rem);
+    min-height: var(--_form-control-height, 2.5rem);
     padding: 0.65em 0.75em;
     line-height: var(--leading-normal, 1.5);
     resize: vertical;
@@ -386,8 +386,8 @@ textarea:not([rows]) {
 /* Color input */
 input[type="color"] {
     display: block;
-    width: var(--form-control-height, 2.5rem);
-    height: var(--form-control-height, 2.5rem);
+    width: var(--_form-control-height, 2.5rem);
+    height: var(--_form-control-height, 2.5rem);
     padding: calc(var(--form-control-border-width, 1px) * 2);
 
     background: transparent;
