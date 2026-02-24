@@ -175,8 +175,8 @@ importers:
         specifier: workspace:*
         version: link:../core
       '@unocss/core':
-        specifier: 66.5.2
-        version: 66.5.2
+        specifier: ^66.5.2
+        version: 66.6.0
       commander:
         specifier: 12.1.0
         version: 12.1.0
@@ -196,7 +196,7 @@ importers:
         specifier: 6.1.0
         version: 6.1.0
       pathe:
-        specifier: 2.0.3
+        specifier: ^2.0.3
         version: 2.0.3
       picocolors:
         specifier: 1.1.1
@@ -221,10 +221,10 @@ importers:
   packages/core:
     dependencies:
       jiti:
-        specifier: 2.4.2
-        version: 2.4.2
+        specifier: ^2.6.1
+        version: 2.6.1
       pathe:
-        specifier: 2.0.3
+        specifier: ^2.0.3
         version: 2.0.3
       tinyglobby:
         specifier: ^0.2.9
@@ -235,10 +235,10 @@ importers:
     devDependencies:
       pkgroll:
         specifier: ^2.26.0
-        version: 2.26.0(typescript@5.9.3)(vite@6.4.1(@types/node@22.19.11)(jiti@2.4.2)(tsx@4.21.0)(yaml@2.8.2))
+        version: 2.26.0(typescript@5.9.3)(vite@6.4.1(@types/node@22.19.11)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(@types/node@22.19.11)(jiti@2.4.2)(tsx@4.21.0)(yaml@2.8.2)
+        version: 4.0.18(@types/node@22.19.11)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/vite:
     dependencies:
@@ -246,7 +246,7 @@ importers:
         specifier: workspace:*
         version: link:../core
       '@unocss/vite':
-        specifier: 66.5.2
+        specifier: ^66.5.2
         version: 66.5.2(vite@6.4.1(@types/node@22.19.11)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))
     devDependencies:
       pkgroll:
@@ -3220,10 +3220,6 @@ packages:
   istanbul-reports@3.2.0:
     resolution: {integrity: sha512-HGYWWS/ehqTV3xN10i23tkPkpH46MLCIMFNCaaKNavAXTF1RkqxawEPtnjnGZ6XKSInBKkiOA5BKS+aZiY3AvA==}
     engines: {node: '>=8'}
-
-  jiti@2.4.2:
-    resolution: {integrity: sha512-rg9zJN+G4n2nfJl5MW3BMygZX56zKPNVEYYqq7adpmMh4Jn2QNEwhvQlFy6jPVdcod7txZtKHWnyZiA3a0zP7A==}
-    hasBin: true
 
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
@@ -6499,7 +6495,7 @@ snapshots:
 
   '@unocss/rule-utils@66.5.2':
     dependencies:
-      '@unocss/core': 66.5.2
+      '@unocss/core': 66.6.0
       magic-string: 0.30.21
 
   '@unocss/rule-utils@66.6.0':
@@ -6556,14 +6552,6 @@ snapshots:
       '@vitest/utils': 4.0.18
       chai: 6.2.2
       tinyrainbow: 3.0.3
-
-  '@vitest/mocker@4.0.18(vite@6.4.1(@types/node@22.19.11)(jiti@2.4.2)(tsx@4.21.0)(yaml@2.8.2))':
-    dependencies:
-      '@vitest/spy': 4.0.18
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 6.4.1(@types/node@22.19.11)(jiti@2.4.2)(tsx@4.21.0)(yaml@2.8.2)
 
   '@vitest/mocker@4.0.18(vite@6.4.1(@types/node@22.19.11)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
@@ -7755,8 +7743,6 @@ snapshots:
       html-escaper: 2.0.2
       istanbul-lib-report: 3.0.1
 
-  jiti@2.4.2: {}
-
   jiti@2.6.1: {}
 
   js-tokens@4.0.0: {}
@@ -8537,25 +8523,6 @@ snapshots:
 
   pify@4.0.1: {}
 
-  pkgroll@2.26.0(typescript@5.9.3)(vite@6.4.1(@types/node@22.19.11)(jiti@2.4.2)(tsx@4.21.0)(yaml@2.8.2)):
-    dependencies:
-      '@rollup/plugin-alias': 6.0.0(rollup@4.57.1)
-      '@rollup/plugin-commonjs': 29.0.0(rollup@4.57.1)
-      '@rollup/plugin-dynamic-import-vars': 2.1.5(rollup@4.57.1)
-      '@rollup/plugin-json': 6.1.0(rollup@4.57.1)
-      '@rollup/plugin-node-resolve': 16.0.3(rollup@4.57.1)
-      cjs-module-lexer: 2.2.0
-      esbuild: 0.26.0
-      magic-string: 0.30.21
-      rollup: 4.57.1
-      rollup-plugin-import-trace: 1.0.0(rollup@4.57.1)(vite@6.4.1(@types/node@22.19.11)(jiti@2.4.2)(tsx@4.21.0)(yaml@2.8.2))
-      rollup-pluginutils: 2.8.2
-      yaml: 2.8.2
-    optionalDependencies:
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - vite
-
   pkgroll@2.26.0(typescript@5.9.3)(vite@6.4.1(@types/node@22.19.11)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)):
     dependencies:
       '@rollup/plugin-alias': 6.0.0(rollup@4.57.1)
@@ -8883,11 +8850,6 @@ snapshots:
   reusify@1.1.0: {}
 
   rfdc@1.4.1: {}
-
-  rollup-plugin-import-trace@1.0.0(rollup@4.57.1)(vite@6.4.1(@types/node@22.19.11)(jiti@2.4.2)(tsx@4.21.0)(yaml@2.8.2)):
-    optionalDependencies:
-      rollup: 4.57.1
-      vite: 6.4.1(@types/node@22.19.11)(jiti@2.4.2)(tsx@4.21.0)(yaml@2.8.2)
 
   rollup-plugin-import-trace@1.0.0(rollup@4.57.1)(vite@6.4.1(@types/node@22.19.11)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)):
     optionalDependencies:
@@ -9404,21 +9366,6 @@ snapshots:
       - supports-color
       - typescript
 
-  vite@6.4.1(@types/node@22.19.11)(jiti@2.4.2)(tsx@4.21.0)(yaml@2.8.2):
-    dependencies:
-      esbuild: 0.25.12
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
-      postcss: 8.5.6
-      rollup: 4.57.1
-      tinyglobby: 0.2.15
-    optionalDependencies:
-      '@types/node': 22.19.11
-      fsevents: 2.3.3
-      jiti: 2.4.2
-      tsx: 4.21.0
-      yaml: 2.8.2
-
   vite@6.4.1(@types/node@22.19.11)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2):
     dependencies:
       esbuild: 0.25.12
@@ -9437,43 +9384,6 @@ snapshots:
   vitefu@1.1.1(vite@6.4.1(@types/node@22.19.11)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)):
     optionalDependencies:
       vite: 6.4.1(@types/node@22.19.11)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
-
-  vitest@4.0.18(@types/node@22.19.11)(jiti@2.4.2)(tsx@4.21.0)(yaml@2.8.2):
-    dependencies:
-      '@vitest/expect': 4.0.18
-      '@vitest/mocker': 4.0.18(vite@6.4.1(@types/node@22.19.11)(jiti@2.4.2)(tsx@4.21.0)(yaml@2.8.2))
-      '@vitest/pretty-format': 4.0.18
-      '@vitest/runner': 4.0.18
-      '@vitest/snapshot': 4.0.18
-      '@vitest/spy': 4.0.18
-      '@vitest/utils': 4.0.18
-      es-module-lexer: 1.7.0
-      expect-type: 1.3.0
-      magic-string: 0.30.21
-      obug: 2.1.1
-      pathe: 2.0.3
-      picomatch: 4.0.3
-      std-env: 3.10.0
-      tinybench: 2.9.0
-      tinyexec: 1.0.2
-      tinyglobby: 0.2.15
-      tinyrainbow: 3.0.3
-      vite: 6.4.1(@types/node@22.19.11)(jiti@2.4.2)(tsx@4.21.0)(yaml@2.8.2)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@types/node': 22.19.11
-    transitivePeerDependencies:
-      - jiti
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - terser
-      - tsx
-      - yaml
 
   vitest@4.0.18(@types/node@22.19.11)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2):
     dependencies:
