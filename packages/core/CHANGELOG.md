@@ -1,5 +1,12 @@
 # @sugarcube-sh/core
 
+## 0.0.4
+
+### Patch Changes
+
+- 55c3e87: Use caret ranges for ecosystem dependencies (jiti, pathe, @unocss/\*) to improve compatibility when deduping with other packages in consumer projects. @mark-tomlinson-dev
+- 4e8985c: Added watch mode (`--watch`) to `generate` command
+
 ## 0.0.3
 
 ### Patch Changes
