@@ -57,8 +57,8 @@
         "vitest": "^4.0.18"
     },
     "dependencies": {
-        "jiti": "2.4.2",
-        "pathe": "2.0.3",
+        "jiti": "^2.6.1",
+        "pathe": "^2.0.3",
         "tinyglobby": "^0.2.9",
         "zod": "^3.23.8"
     }

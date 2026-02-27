@@ -49,7 +49,7 @@
     },
     "dependencies": {
         "@sugarcube-sh/core": "workspace:*",
-        "@unocss/vite": "66.5.2"
+        "@unocss/vite": "^66.5.2"
     },
     "peerDependencies": {
         "vite": "^6.0.0 || ^7"
