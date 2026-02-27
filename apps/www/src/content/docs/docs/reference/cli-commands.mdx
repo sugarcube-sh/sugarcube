@@ -61,16 +61,16 @@ npx @sugarcube-sh/cli init --styles-dir custom/styles
 | `--variables-filename <name>` | Token variables filename | `tokens.variables.gen.css` |
 | `--utilities-dir <dir>` | Utilities output directory | `{styles-dir}/utilities` |
 | `--utilities-filename <name>` | Utilities filename | `utilities.gen.css` |
-| `--fluid-min <number>` | Min viewport for fluid scaling (px). Must be used with `--fluid-max` | `320` |
-| `--fluid-max <number>` | Max viewport for fluid scaling (px). Must be used with `--fluid-min` | `1200` |
+| `--fluid-min <number>` | Min viewport for fluid scaling (px) | `320` |
+| `--fluid-max <number>` | Max viewport for fluid scaling (px) | `1200` |
 | `--color-fallback <strategy>` | Color fallback: `native` or `polyfill` | `native` |
 | `--skip-deps` | Skip all sugarcube package installation | - |
 </Table>
 
-**Note:** 
-- Fluid flags (`--fluid-min` and `--fluid-max`) must be provided together or not at all
+<SiteAside type="note">
 - Providing customization flags creates a **minimal config file containing only your customizations**
 - Omitted settings use auto-discovery and sensible defaults
+</SiteAside>
 
 ### Examples
 
@@ -139,6 +139,7 @@ The command supports **zero-config** usage with automatic resolver discovery, or
 | `--color-fallback <strategy>` | Color fallback: `native` or `polyfill` | `native` |
 | `--force` | Skip overwrite confirmation | - |
 | `-s, --silent` | Suppress logs and prompts | - |
+| `-w, --watch` | Watch for changes and regenerate automatically | - |
 </Table>
 
 ### Examples
@@ -168,7 +169,32 @@ npx @sugarcube-sh/cli generate \
 
 # Override config file values temporarily
 npx @sugarcube-sh/cli generate --fluid-max 1600
+
+# Watch mode - regenerate on token or markup file changes
+npx @sugarcube-sh/cli generate --watch
 ```
+
+### Watch Mode
+
+The `--watch` flag enables continuous regeneration during development:
+
+- Watches your token files (resolver and all referenced JSON files)
+- Watches markup files (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.astro`, `.html`, etc.) for utility class changes
+- Regenerates CSS when changes are detected
+- Shows timing information for each regeneration
+
+```bash frame="none"
+npx @sugarcube-sh/cli generate --watch
+# [sugarcube] Generated in 42ms
+# [sugarcube] Watching 5 token files + markup files...
+# [sugarcube] colors.json → src/styles/global/tokens.variables.gen.css (38ms)
+```
+
+Press `Ctrl+C` to stop watching.
+
+<SiteAside type="caution">
+    Changes to the config file are not watched. You must restart the command to apply new settings.
+</SiteAside>
 
 ### Flag Behavior
 
@@ -410,6 +436,9 @@ A typical sugarcube workflow:
 2. **Generate CSS** (if not using Vite plugin):
    ```bash frame="none"
    npx @sugarcube-sh/cli generate
+
+   # Or use watch mode during development
+   npx @sugarcube-sh/cli generate --watch
    ```
 
 3. **Add components** as needed:

@@ -12,7 +12,7 @@ import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 ## Commands
 
 - **`init`** - Set up a new project
-- **`generate`** - Generate CSS variables and utility classes from your design tokens. Use this if you are *not* using the [Vite plugin](/docs/vite-plugin).
+- **`generate`** - Generate CSS variables and utility classes from your design tokens. Supports `--watch` for continuous regeneration during development. Use this if you are *not* using the Vite plugin.
 - **`validate`** - Validate design token files for W3C compliance
 - **`components`** - Install copy-to-use components for your framework
 - **`cube`** - Add CUBE CSS architecture to your project
@@ -24,6 +24,31 @@ import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 3. **Add components** as needed: `npx @sugarcube-sh/cli components`
 4. **Validate** tokens: `npx @sugarcube-sh/cli validate`
 
+## Using with UnoCSS CLI (if not using the Vite plugin)
+
+Want utilities like `flex`, `grid`, or `w-full` alongside your token-based utilities? Run the sugarcube CLI alongside the [UnoCSS CLI](https://unocss.dev/integrations/cli):
+
+```bash
+# Terminal 1: Token-based CSS
+sugarcube generate --watch
+
+# Terminal 2: Preset utilities
+unocss "src/**/*.tsx" --watch --preset wind4
+```
+
+Then import both:
+
+```css
+@import "./styles/global/tokens.variables.gen.css";
+@import "./styles/utilities/utilities.gen.css";
+@import "./uno.css";
+```
+
+Sugarcube handles your design token utilities (`.bg-primary`, `.text-heading`, etc.) while UnoCSS handles preset utilities (`.flex`, `.grid`, `.gap-4`, etc.).
+
+<SiteAside type="note">
+    Avoid token names that match preset utility names (like `color.red.500`) to prevent class name conflicts.
+</SiteAside>
 
 ## Next steps
 

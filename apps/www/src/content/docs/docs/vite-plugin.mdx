@@ -22,6 +22,15 @@ All of this is served through a single virtual import:
 import "virtual:sugarcube.css";
 ```
 
+## Why use the plugin?
+
+The CLI's `--watch` mode works well for many projects - and in Vite projects, Vite automatically picks up changes to the generated CSS files, giving you hot reloading. The Vite plugin offers additional benefits:
+
+- **Single process**: No separate watcher to run alongside `vite dev`
+- **Transform pipeline integration**: Hooks directly into Vite's module processing instead of duplicating file watching
+- **Virtual module**: No physical CSS file to manage or .gitignore
+- **Precise invalidation**: Integrated with Vite's module graph for optimal HMR
+
 ## Adding utility presets
 
 The plugin can include additional utility classes from UnoCSS presets like `presetWind3` or `presetWind4`:
