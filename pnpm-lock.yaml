@@ -166,8 +166,8 @@ importers:
         specifier: 23.3.0
         version: 23.3.0
       '@clack/core':
-        specifier: 1.0.0-alpha.3
-        version: 1.0.0-alpha.3
+        specifier: 1.0.1
+        version: 1.0.1
       '@clack/prompts':
         specifier: 1.0.0-alpha.3
         version: 1.0.0-alpha.3
@@ -533,6 +533,9 @@ packages:
 
   '@clack/core@1.0.0-alpha.3':
     resolution: {integrity: sha512-al3c2RSTesNLPVyEi4qJMmQigCbxKPRl35nxbbRLJLoYEE3JuHlZIi7oXchZ/LVegGSlsQUzPqNH5vrHpoKDxg==}
+
+  '@clack/core@1.0.1':
+    resolution: {integrity: sha512-WKeyK3NOBwDOzagPR5H08rFk9D/WuN705yEbuZvKqlkmoLM2woKtXb10OO2k1NoSU4SFG947i2/SCYh+2u5e4g==}
 
   '@clack/prompts@1.0.0-alpha.3':
     resolution: {integrity: sha512-t0nEprDU45jP9Ipp+kEXml9FZ49Xr3BpUUJ0rqrSVguOPrfh4AOBpj8Swx29pZjs8t1tVTvFSyMTvVdQzbmqng==}
@@ -3731,6 +3734,7 @@ packages:
   prebuild-install@7.1.3:
     resolution: {integrity: sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==}
     engines: {node: '>=10'}
+    deprecated: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
     hasBin: true
 
   prettier@2.8.8:
@@ -5083,6 +5087,11 @@ snapshots:
       prettier: 2.8.8
 
   '@clack/core@1.0.0-alpha.3':
+    dependencies:
+      picocolors: 1.1.1
+      sisteransi: 1.0.5
+
+  '@clack/core@1.0.1':
     dependencies:
       picocolors: 1.1.1
       sisteransi: 1.0.5
