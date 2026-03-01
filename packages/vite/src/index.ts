@@ -336,6 +336,7 @@ export default async function sugarcubePlugin(
     };
 
     const unoConfig: any = {
+        configFile: false,
         ...unoOptions,
         presets: [...(unoOptions.presets || []), sugarcubePreset],
     };
