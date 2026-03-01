@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execaCommand } from "execa";
@@ -181,6 +181,56 @@ describe("init command - CUBE CSS", () => {
 
         expect(result.exitCode).toBe(0);
         expect(existsSync(join(testDir, "src/styles"))).toBe(false);
+    });
+});
+
+describe("init command - Vite plugin", () => {
+    let testDir: string;
+
+    beforeEach(async () => {
+        testDir = join(tmpdir(), `sugarcube-e2e-${Date.now()}`);
+        await mkdir(testDir, { recursive: true });
+    });
+
+    afterEach(async () => {
+        await rm(testDir, { recursive: true, force: true });
+    });
+
+    it("installs Vite plugin with --vite flag", { timeout: TEST_TIMEOUT }, async () => {
+        await writeFile(
+            join(testDir, "package.json"),
+            JSON.stringify({ name: "test-project", version: "1.0.0" })
+        );
+
+        const result = await execaCommand(`node ${CLI_PATH} init --kit fluid --vite`, {
+            cwd: testDir,
+            timeout: TEST_TIMEOUT,
+            reject: false,
+        });
+
+        expect(result.exitCode).toBe(0);
+        expect(existsSync(join(testDir, "design-tokens"))).toBe(true);
+
+        const pkg = JSON.parse(await readFile(join(testDir, "package.json"), "utf-8"));
+        expect(pkg.devDependencies?.["@sugarcube-sh/vite"] !== undefined).toBe(true);
+    });
+
+    it("skips Vite plugin in non-TTY without --vite", { timeout: TEST_TIMEOUT }, async () => {
+        await writeFile(
+            join(testDir, "package.json"),
+            JSON.stringify({ name: "test-project", version: "1.0.0" })
+        );
+
+        const result = await execaCommand(`node ${CLI_PATH} init --kit fluid`, {
+            cwd: testDir,
+            timeout: TEST_TIMEOUT,
+            reject: false,
+        });
+
+        expect(result.exitCode).toBe(0);
+
+        const pkg = JSON.parse(await readFile(join(testDir, "package.json"), "utf-8"));
+        expect(pkg.devDependencies?.["@sugarcube-sh/vite"]).toBeUndefined();
     });
 });
 

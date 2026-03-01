@@ -19,6 +19,7 @@ export interface RunCubeOptions {
     cubeDir?: string;
     skipIntro?: boolean;
     skipOutro?: boolean;
+    continueOnDecline?: boolean;
 }
 
 export async function runCube(options: RunCubeOptions = {}): Promise<void> {
@@ -44,7 +45,10 @@ export async function runCube(options: RunCubeOptions = {}): Promise<void> {
         log.space(1);
         const warningBox = warningBoxWithBadge(warningMessage, {});
         warningBox;
-        await confirmOverwrite("Continue?", false);
+        const confirmed = await confirmOverwrite("Continue?", false, {
+            exitOnDecline: !options.continueOnDecline,
+        });
+        if (!confirmed) return;
     }
 
     const createdFiles = await installCUBE(cssOutputDirectory);

@@ -66,15 +66,22 @@ export async function promptComponentSelectionFiltered(
     return selected as string[];
 }
 
-export async function confirmOverwrite(message: string, initialValue = false): Promise<boolean> {
+export async function confirmOverwrite(
+    message: string,
+    initialValue = false,
+    { exitOnDecline = true }: { exitOnDecline?: boolean } = {}
+): Promise<boolean> {
     const proceed = await confirm({
         message,
         initialValue,
     });
 
     if (!proceed || isCancel(proceed)) {
-        cancel();
-        process.exit(0);
+        if (exitOnDecline) {
+            cancel();
+            process.exit(0);
+        }
+        return false;
     }
 
     return true;

@@ -8,4 +8,5 @@ export const LINKS = {
     VITE_PLUGIN: "https://sugarcube.sh/docs/vite-plugin",
     CLI_OVERVIEW: "https://sugarcube.sh/docs/cli-overview",
     HOMEPAGE: "https://sugarcube.sh",
+    DOCS: "https://sugarcube.sh/docs",
 } as const;

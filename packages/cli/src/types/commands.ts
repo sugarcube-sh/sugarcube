@@ -5,6 +5,7 @@ export interface InitOptions {
     tokensDir?: string;
     cube?: boolean;
     components?: boolean;
+    vite?: boolean;
 }
 
 export interface InitContext {

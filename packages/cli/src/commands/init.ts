@@ -1,13 +1,18 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { confirm, isCancel, select } from "@clack/prompts";
+import { isCancel, select } from "@clack/prompts";
 import { Command } from "commander";
 import { basename, join } from "pathe";
 import color from "picocolors";
+import { CLI_PACKAGE, VITE_PLUGIN } from "../constants/index.js";
+import { isPackageInstalled } from "../detection/is-package-installed.js";
+import { getPackageManager } from "../detection/package-manager.js";
 import { detectExistingTokens } from "../detection/tokens.js";
 import { writeTokenFiles } from "../fs/write-token-files.js";
-import { intro, label, outro } from "../prompts/common.js";
+import { installDependencies } from "../installation/index.js";
+import { intro, label } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
+import { next } from "../prompts/next-steps.js";
 import type { Task } from "../prompts/tasks.js";
 import { welcome } from "../prompts/welcome.js";
 import { fetchStarterKit } from "../registry/client.js";
@@ -27,7 +32,7 @@ function isInteractive(): boolean {
 
 async function promptStarterKit(): Promise<string> {
     const choice = await select({
-        message: "Choose a starter kit",
+        message: "Choose a token starter kit",
         options: [
             {
                 label: "Fluid",
@@ -49,13 +54,19 @@ async function promptStarterKit(): Promise<string> {
     return choice as string;
 }
 
-async function promptConfirm(message: string): Promise<boolean> {
+async function promptOptional(message: string, skipHint: string): Promise<boolean> {
     if (!isInteractive()) return false;
-    const result = await confirm({ message });
+    const result = await select({
+        message,
+        options: [
+            { label: "Add", value: true },
+            { label: "Skip", value: false, hint: skipHint },
+        ],
+    });
     if (isCancel(result)) {
         process.exit(0);
     }
-    return result;
+    return result as boolean;
 }
 
 async function scaffoldTokens(ctx: InitContext): Promise<void> {
@@ -80,6 +91,7 @@ export const init = new Command()
     .option("--tokens-dir <dir>", "Design tokens directory")
     .option("--cube", "Add CUBE CSS (skips prompt)")
     .option("--components", "Add components (skips prompt, requires TTY for selection)")
+    .option("--vite", "Install the Vite plugin (skips prompt)")
     .action(async (options: InitOptions) => {
         try {
             await preflightInit();
@@ -104,49 +116,109 @@ export const init = new Command()
             intro(label("sugarcube"));
             await welcome();
 
+            // 1. Tokens
+            const detectionTasks: Task[] = [
+                {
+                    pending: "Detect existing tokens",
+                    start: "Detecting existing tokens...",
+                    end: hasExistingTokens
+                        ? `Existing design tokens found at ${tokensDir} — using those!`
+                        : "No existing design tokens found — prompting for starter kit",
+                    while: async () => {},
+                },
+            ];
+
+            await log.tasks(detectionTasks);
+
             if (!hasExistingTokens && !starterKit) {
                 ctx.starterKit = await promptStarterKit();
             }
 
-            const tokenTasks: Task[] = [];
-
             if (ctx.starterKit) {
-                tokenTasks.push({
-                    pending: "Add design tokens",
-                    start: "Adding design tokens...",
-                    end: "Design tokens added",
-                    while: async () => {
-                        await scaffoldTokens(ctx);
+                await log.tasks([
+                    {
+                        pending: "Add design tokens",
+                        start: "Adding design tokens...",
+                        end: "Design tokens added",
+                        while: async () => {
+                            await scaffoldTokens(ctx);
+                        },
                     },
-                });
-            } else {
-                tokenTasks.push({
-                    pending: "Detect existing tokens",
-                    start: "Detecting existing tokens...",
-                    end: `Existing tokens found at ${tokensDir} - using those!`,
-                    while: async () => {},
-                });
+                ]);
             }
 
-            await log.tasks(tokenTasks);
-
-            // CUBE CSS
+            // 2. CUBE CSS
             const addCube =
                 options.cube === true ||
-                (options.cube == null && (await promptConfirm("Add CUBE CSS?")));
+                (options.cube == null &&
+                    (await promptOptional(
+                        "CUBE CSS",
+                        `you can add it later with ${color.cyan("sugarcube cube")}`
+                    )));
             if (addCube) {
-                await runCube({ skipIntro: true, skipOutro: true });
+                await runCube({ skipIntro: true, skipOutro: true, continueOnDecline: true });
             }
 
-            // Components
+            // 3. Components
             const addComponents =
                 options.components === true ||
-                (options.components == null && (await promptConfirm("Add components?")));
+                (options.components == null &&
+                    (await promptOptional(
+                        "Components",
+                        `you can add them later with ${color.cyan("sugarcube components")}`
+                    )));
             if (addComponents && isInteractive()) {
-                await runComponents([], { skipIntro: true, skipOutro: true });
+                await runComponents([], {
+                    skipIntro: true,
+                    skipOutro: true,
+                    continueOnDecline: true,
+                });
             }
 
-            outro(color.green("🎉 Project initialized!"));
+            // 4. Vite plugin
+            const installVite =
+                options.vite === true ||
+                (options.vite == null &&
+                    (await promptOptional(
+                        `Vite plugin ${color.dim("(recommended for Vite-based frameworks: Astro, SvelteKit, Nuxt...)")}`,
+                        `you can install it later with ${color.cyan("npm i -D @sugarcube-sh/vite")}`
+                    )));
+
+            // 5. Install dependencies
+            const packageManager = await getPackageManager(process.cwd(), {
+                withFallback: true,
+            });
+
+            const depsToInstall: string[] = [];
+
+            if (!isPackageInstalled(CLI_PACKAGE, process.cwd())) {
+                depsToInstall.push(CLI_PACKAGE);
+            }
+            if (installVite) {
+                depsToInstall.push(VITE_PLUGIN);
+            }
+
+            if (depsToInstall.length > 0) {
+                await log.tasks([
+                    {
+                        pending: `Install ${depsToInstall.join(", ")}`,
+                        start: `Installing ${depsToInstall.join(", ")}...`,
+                        end: `Installed ${depsToInstall.join(", ")}`,
+                        while: async () => {
+                            await installDependencies(
+                                depsToInstall,
+                                process.cwd(),
+                                packageManager,
+                                { devDependency: true }
+                            );
+                        },
+                    },
+                ]);
+            }
+
+            log.success("🎉 Project initialized!");
+
+            await next({ installedVitePlugin: installVite });
         } catch (error) {
             handleError(error);
         }

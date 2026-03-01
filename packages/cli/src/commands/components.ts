@@ -31,6 +31,7 @@ export interface RunComponentsOptions {
     overwrite?: boolean;
     skipIntro?: boolean;
     skipOutro?: boolean;
+    continueOnDecline?: boolean;
 }
 
 export async function runComponents(
@@ -88,7 +89,10 @@ export async function runComponents(
         const warningBox = warningBoxWithBadge(warningMessage, {});
         log.space(1);
         warningBox;
-        await confirmOverwrite("Continue?", false);
+        const confirmed = await confirmOverwrite("Continue?", false, {
+            exitOnDecline: !options.continueOnDecline,
+        });
+        if (!confirmed) return;
     }
 
     const tasks = [];
