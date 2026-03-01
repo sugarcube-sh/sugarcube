@@ -1,0 +1,27 @@
+/* AUTO GRID
+Related Every Layout: https://every-layout.dev/layouts/grid/
+More info: https://piccalil.li/tutorial/create-a-responsive-grid-layout-with-no-media-queries-using-css-grid/
+A flexible layout that will create an auto-fill grid with
+configurable grid item sizes
+
+CUSTOM PROPERTIES AND CONFIGURATION
+--grid-placement (auto-fill): Set either auto-fit or auto-fill
+to change how empty grid tracks are handled.
+
+--grid-item-min (16rem): How large each item should be
+ideally, as a minimum.
+
+--grid-gap (1rem): The space between grid items.
+
+--grid-align-items (start): How items align vertically within
+their grid area. Can be any valid align-items value. */
+
+.grid-auto {
+    display: grid;
+    grid-template-columns: repeat(
+            var(--grid-placement, auto-fill),
+            minmax(var(--grid-item-min, 16rem), 1fr)
+        );
+    gap: var(--grid-gap, 1rem);
+    align-items: var(--grid-align-items, stretch);
+}

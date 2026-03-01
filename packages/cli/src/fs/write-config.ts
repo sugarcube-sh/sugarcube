@@ -2,7 +2,6 @@ import { writeFile } from "node:fs/promises";
 import type { userConfigSchema } from "@sugarcube-sh/core";
 import type { z } from "zod";
 import { LINKS } from "../constants/links.js";
-import type { TypeSource } from "../types/index.js";
 import { CLIError } from "../types/index.js";
 import { getConfigFileName } from "../utils/config-filename.js";
 
@@ -56,24 +55,15 @@ function formatValue(value: unknown, indent = 0): string {
     return JSON.stringify(value);
 }
 
-function formatConfigAsCode(config: Record<string, unknown>, typeSource: TypeSource): string {
+function formatConfigAsCode(config: Record<string, unknown>): string {
     const formattedConfig = formatValue(config, 0);
-
-    if (!typeSource) {
-        const header = `// Configuration reference: ${LINKS.CONFIGURATION}\nexport default `;
-        return `${header}${formattedConfig};\n`;
-    }
-
-    return `import { defineConfig } from "${typeSource}";\n\nexport default defineConfig(${formattedConfig});\n`;
+    return `// Configuration reference: ${LINKS.CONFIGURATION}\nexport default ${formattedConfig};\n`;
 }
 
-export async function writeSugarcubeConfig(
-    validatedConfig: z.infer<typeof userConfigSchema>,
-    typeSource: TypeSource
-) {
+export async function writeSugarcubeConfig(validatedConfig: z.infer<typeof userConfigSchema>) {
     try {
         const configFileName = await getConfigFileName();
-        const content = formatConfigAsCode(validatedConfig, typeSource);
+        const content = formatConfigAsCode(validatedConfig);
         await writeFile(configFileName, content, "utf-8");
     } catch (error) {
         const errorMessage = error instanceof Error ? `: ${error.message}` : "";

@@ -1,0 +1,16 @@
+/*
+WRAPPER COMPOSITION 
+A common wrapper/container
+
+CUSTOM PROPERTIES AND CONFIGURATION
+--wrapper-max-width: The maximum width of the wrapper
+
+--wrapper-padding-inline: The inline padding of the wrapper
+*/
+.wrapper {
+    margin-inline: auto;
+    max-width: var(--wrapper-max-width, 1360px);
+    padding-left: var(--wrapper-padding-inline, 1rem);
+    padding-right: var(--wrapper-padding-inline, 1rem);
+    position: relative;
+}

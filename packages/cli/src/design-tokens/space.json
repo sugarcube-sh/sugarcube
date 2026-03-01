@@ -1,0 +1,59 @@
+{
+  "space": {
+    "$type": "dimension",
+    "3xs": {
+      "$value": {
+        "value": 0.25,
+        "unit": "rem"
+      }
+    },
+    "2xs": {
+      "$value": {
+        "value": 0.5,
+        "unit": "rem"
+      }
+    },
+    "xs": {
+      "$value": {
+        "value": 0.75,
+        "unit": "rem"
+      }
+    },
+    "sm": {
+      "$value": {
+        "value": 1,
+        "unit": "rem"
+      }
+    },
+    "md": {
+      "$value": {
+        "value": 1.5,
+        "unit": "rem"
+      }
+    },
+    "lg": {
+      "$value": {
+        "value": 2,
+        "unit": "rem"
+      }
+    },
+    "xl": {
+      "$value": {
+        "value": 3,
+        "unit": "rem"
+      }
+    },
+    "2xl": {
+      "$value": {
+        "value": 4,
+        "unit": "rem"
+      }
+    },
+    "3xl": {
+      "$value": {
+        "value": 6,
+        "unit": "rem"
+      }
+    }
+  }
+}

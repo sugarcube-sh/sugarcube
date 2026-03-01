@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execaCommand } from "execa";
@@ -9,7 +9,7 @@ const CLI_PATH = join(__dirname, "../../dist/index.mjs");
 
 const TEST_TIMEOUT = 60_000;
 
-describe("init command - happy path", () => {
+describe("init command - starter kit selection", () => {
     let testDir: string;
 
     beforeEach(async () => {
@@ -21,126 +21,76 @@ describe("init command - happy path", () => {
         await rm(testDir, { recursive: true, force: true });
     });
 
-    it("initializes in a fresh npm project (zero-config)", { timeout: TEST_TIMEOUT }, async () => {
+    it("initializes with fluid starter kit via flag", { timeout: TEST_TIMEOUT }, async () => {
         await writeFile(
             join(testDir, "package.json"),
             JSON.stringify({ name: "test-project", version: "1.0.0" })
         );
 
-        const result = await execaCommand(`node ${CLI_PATH} init --skip-deps`, {
+        const result = await execaCommand(`node ${CLI_PATH} init --kit fluid`, {
             cwd: testDir,
             timeout: TEST_TIMEOUT,
             reject: false,
         });
 
         expect(result.exitCode).toBe(0);
-
-        // Zero-config: no config file created when no customization flags are passed
-        const hasConfig =
-            existsSync(join(testDir, "sugarcube.config.ts")) ||
-            existsSync(join(testDir, "sugarcube.config.js"));
-        expect(hasConfig).toBe(false);
-
-        // But tokens are still created
         expect(existsSync(join(testDir, "design-tokens"))).toBe(true);
     });
 
-    it("initializes in a fresh pnpm project (zero-config)", { timeout: TEST_TIMEOUT }, async () => {
+    it("initializes with static starter kit via flag", { timeout: TEST_TIMEOUT }, async () => {
         await writeFile(
             join(testDir, "package.json"),
             JSON.stringify({ name: "test-project", version: "1.0.0" })
         );
-        await writeFile(join(testDir, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
 
-        const result = await execaCommand(`node ${CLI_PATH} init --skip-deps`, {
+        const result = await execaCommand(`node ${CLI_PATH} init --kit static`, {
             cwd: testDir,
             timeout: TEST_TIMEOUT,
             reject: false,
         });
 
         expect(result.exitCode).toBe(0);
-
-        // Zero-config: no config file created when no customization flags are passed
-        const hasConfig =
-            existsSync(join(testDir, "sugarcube.config.ts")) ||
-            existsSync(join(testDir, "sugarcube.config.js"));
-        expect(hasConfig).toBe(false);
-
-        // But tokens are still created
         expect(existsSync(join(testDir, "design-tokens"))).toBe(true);
     });
 
-    it(
-        "creates config file when customization flags are passed",
-        { timeout: TEST_TIMEOUT },
-        async () => {
-            await writeFile(
-                join(testDir, "package.json"),
-                JSON.stringify({ name: "test-project", version: "1.0.0" })
-            );
+    it("uses src/design-tokens when src/ exists", { timeout: TEST_TIMEOUT }, async () => {
+        await writeFile(
+            join(testDir, "package.json"),
+            JSON.stringify({ name: "test-project", version: "1.0.0" })
+        );
+        await mkdir(join(testDir, "src"), { recursive: true });
 
-            const result = await execaCommand(
-                `node ${CLI_PATH} init --skip-deps --styles-dir custom-styles`,
-                {
-                    cwd: testDir,
-                    timeout: TEST_TIMEOUT,
-                    reject: false,
-                }
-            );
+        const result = await execaCommand(`node ${CLI_PATH} init --kit fluid`, {
+            cwd: testDir,
+            timeout: TEST_TIMEOUT,
+            reject: false,
+        });
 
-            expect(result.exitCode).toBe(0);
+        expect(result.exitCode).toBe(0);
+        expect(existsSync(join(testDir, "src/design-tokens"))).toBe(true);
+    });
 
-            // Config file should be created when customization flags are passed
-            const configPath = existsSync(join(testDir, "sugarcube.config.ts"))
-                ? join(testDir, "sugarcube.config.ts")
-                : join(testDir, "sugarcube.config.js");
-            expect(existsSync(configPath)).toBe(true);
+    it("respects custom --tokens-dir", { timeout: TEST_TIMEOUT }, async () => {
+        await writeFile(
+            join(testDir, "package.json"),
+            JSON.stringify({ name: "test-project", version: "1.0.0" })
+        );
 
-            // Config should contain the custom styles directory
-            const configContent = await readFile(configPath, "utf8");
-            expect(configContent).toContain("custom-styles");
-
-            // With --skip-deps, no type source is available, so config is a plain export
-            expect(configContent).toContain("export default");
-        }
-    );
-
-    it(
-        "creates config with defineConfig when vite plugin is installed",
-        { timeout: TEST_TIMEOUT },
-        async () => {
-            await writeFile(
-                join(testDir, "package.json"),
-                JSON.stringify({
-                    name: "test-project",
-                    version: "1.0.0",
-                    dependencies: { vite: "^5.0.0" },
-                })
-            );
-
-            const result = await execaCommand(`node ${CLI_PATH} init --styles-dir custom-styles`, {
+        const result = await execaCommand(
+            `node ${CLI_PATH} init --kit fluid --tokens-dir custom-tokens`,
+            {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
-            });
+            }
+        );
 
-            expect(result.exitCode).toBe(0);
-
-            // Config file should use defineConfig when vite plugin is installed
-            const configPath = existsSync(join(testDir, "sugarcube.config.ts"))
-                ? join(testDir, "sugarcube.config.ts")
-                : join(testDir, "sugarcube.config.js");
-            expect(existsSync(configPath)).toBe(true);
-
-            const configContent = await readFile(configPath, "utf8");
-            expect(configContent).toContain("custom-styles");
-            expect(configContent).toContain("defineConfig");
-            expect(configContent).toContain("@sugarcube-sh/vite");
-        }
-    );
+        expect(result.exitCode).toBe(0);
+        expect(existsSync(join(testDir, "custom-tokens"))).toBe(true);
+    });
 });
 
-describe("init command - plugin installation", () => {
+describe("init command - existing tokens", () => {
     let testDir: string;
 
     beforeEach(async () => {
@@ -152,15 +102,29 @@ describe("init command - plugin installation", () => {
         await rm(testDir, { recursive: true, force: true });
     });
 
-    it("installs vite plugin in a vite project (npm)", { timeout: TEST_TIMEOUT }, async () => {
+    it("detects existing tokens and skips starter kit", { timeout: TEST_TIMEOUT }, async () => {
         await writeFile(
             join(testDir, "package.json"),
+            JSON.stringify({ name: "test-project", version: "1.0.0" })
+        );
+
+        const tokensDir = join(testDir, "design-tokens");
+        await mkdir(tokensDir, { recursive: true });
+
+        await writeFile(
+            join(tokensDir, "colors.json"),
             JSON.stringify({
-                name: "test-vite-project",
-                version: "1.0.0",
-                dependencies: {
-                    vite: "^5.0.0",
+                color: {
+                    primary: { $value: "#000", $type: "color" },
                 },
+            })
+        );
+
+        await writeFile(
+            join(tokensDir, "tokens.resolver.json"),
+            JSON.stringify({
+                $schema: "https://sugarcube.sh/resolver.schema.json",
+                resolutionOrder: ["./colors.json"],
             })
         );
 
@@ -171,40 +135,52 @@ describe("init command - plugin installation", () => {
         });
 
         expect(result.exitCode).toBe(0);
+    });
+});
 
-        const pkgJson = JSON.parse(
-            await (await import("node:fs/promises")).readFile(join(testDir, "package.json"), "utf8")
-        );
-        const allDeps = { ...pkgJson.dependencies, ...pkgJson.devDependencies };
-        expect(allDeps["@sugarcube-sh/vite"]).toBeDefined();
+describe("init command - CUBE CSS", () => {
+    let testDir: string;
+
+    beforeEach(async () => {
+        testDir = join(tmpdir(), `sugarcube-e2e-${Date.now()}`);
+        await mkdir(testDir, { recursive: true });
     });
 
-    it("installs vite plugin in a pnpm project", { timeout: TEST_TIMEOUT }, async () => {
+    afterEach(async () => {
+        await rm(testDir, { recursive: true, force: true });
+    });
+
+    it("installs CUBE CSS with --cube flag", { timeout: TEST_TIMEOUT }, async () => {
         await writeFile(
             join(testDir, "package.json"),
-            JSON.stringify({
-                name: "test-vite-pnpm",
-                version: "1.0.0",
-                dependencies: {
-                    vite: "^5.0.0",
-                },
-            })
+            JSON.stringify({ name: "test-project", version: "1.0.0" })
         );
-        await writeFile(join(testDir, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
 
-        const result = await execaCommand(`node ${CLI_PATH} init`, {
+        const result = await execaCommand(`node ${CLI_PATH} init --kit fluid --cube`, {
             cwd: testDir,
             timeout: TEST_TIMEOUT,
             reject: false,
         });
 
         expect(result.exitCode).toBe(0);
+        expect(existsSync(join(testDir, "design-tokens"))).toBe(true);
+        expect(existsSync(join(testDir, "src/styles"))).toBe(true);
+    });
 
-        const pkgJson = JSON.parse(
-            await (await import("node:fs/promises")).readFile(join(testDir, "package.json"), "utf8")
+    it("skips CUBE CSS in non-TTY without --cube", { timeout: TEST_TIMEOUT }, async () => {
+        await writeFile(
+            join(testDir, "package.json"),
+            JSON.stringify({ name: "test-project", version: "1.0.0" })
         );
-        const allDeps = { ...pkgJson.dependencies, ...pkgJson.devDependencies };
-        expect(allDeps["@sugarcube-sh/vite"]).toBeDefined();
+
+        const result = await execaCommand(`node ${CLI_PATH} init --kit fluid`, {
+            cwd: testDir,
+            timeout: TEST_TIMEOUT,
+            reject: false,
+        });
+
+        expect(result.exitCode).toBe(0);
+        expect(existsSync(join(testDir, "src/styles"))).toBe(false);
     });
 });
 
@@ -220,40 +196,40 @@ describe("init command - edge cases", () => {
         await rm(testDir, { recursive: true, force: true });
     });
 
-    it("fails gracefully in multi-project directory", { timeout: TEST_TIMEOUT }, async () => {
-        const proj1 = join(testDir, "project-one");
-        const proj2 = join(testDir, "project-two");
+    it("fails if config already exists", { timeout: TEST_TIMEOUT }, async () => {
+        await writeFile(
+            join(testDir, "package.json"),
+            JSON.stringify({ name: "test-project", version: "1.0.0" })
+        );
+        await writeFile(join(testDir, "sugarcube.config.ts"), "export default {};");
 
-        await mkdir(proj1, { recursive: true });
-        await mkdir(proj2, { recursive: true });
-
-        await writeFile(join(proj1, "package.json"), JSON.stringify({ name: "proj1" }));
-        await writeFile(join(proj2, "package.json"), JSON.stringify({ name: "proj2" }));
-
-        const nm1 = join(proj1, "node_modules", "fake-pkg");
-        const nm2 = join(proj2, "node_modules", "fake-pkg");
-        await mkdir(nm1, { recursive: true });
-        await mkdir(nm2, { recursive: true });
-        await writeFile(join(nm1, "index.js"), "module.exports = {}");
-        await writeFile(join(nm2, "index.js"), "module.exports = {}");
-
-        await writeFile(join(testDir, "package.json"), JSON.stringify({ name: "monorepo" }));
-
-        const result = await execaCommand(`node ${CLI_PATH} init --skip-deps`, {
+        const result = await execaCommand(`node ${CLI_PATH} init --kit fluid`, {
             cwd: testDir,
             timeout: TEST_TIMEOUT,
             reject: false,
         });
 
-        expect(result.exitCode).toBeDefined();
+        expect(result.exitCode).not.toBe(0);
+    });
 
-        if (result.exitCode !== 0) {
-            const output = result.stdout + result.stderr;
-            expect(
-                output.includes("monorepo") ||
-                    output.includes("multiple projects") ||
-                    output.includes("limit")
-            ).toBe(true);
-        }
+    it("zero-config: no config file created", { timeout: TEST_TIMEOUT }, async () => {
+        await writeFile(
+            join(testDir, "package.json"),
+            JSON.stringify({ name: "test-project", version: "1.0.0" })
+        );
+
+        const result = await execaCommand(`node ${CLI_PATH} init --kit fluid`, {
+            cwd: testDir,
+            timeout: TEST_TIMEOUT,
+            reject: false,
+        });
+
+        expect(result.exitCode).toBe(0);
+        expect(existsSync(join(testDir, "design-tokens"))).toBe(true);
+
+        const hasConfig =
+            existsSync(join(testDir, "sugarcube.config.ts")) ||
+            existsSync(join(testDir, "sugarcube.config.js"));
+        expect(hasConfig).toBe(false);
     });
 });

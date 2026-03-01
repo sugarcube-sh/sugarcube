@@ -1,0 +1,93 @@
+{
+  "font": {
+    "$type": "fontFamily",
+    "body": {
+      "$value": "{font.sans}"
+    },
+    "heading": {
+      "$value": "{font.sans}"
+    },
+    "sans": {
+      "$value": [
+        "Inter",
+        "-apple-system",
+        "BlinkMacSystemFont",
+        "Segoe UI",
+        "Roboto",
+        "Helvetica Neue",
+        "Arial",
+        "sans-serif"
+      ]
+    },
+    "mono": {
+      "$value": ["SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", "monospace"]
+    },
+    "serif": {
+      "$value": ["Georgia", "Cambria", "Times New Roman", "Times", "serif"]
+    },
+    "weight": {
+      "$type": "fontWeight",
+      "normal": { "$value": 400 },
+      "medium": { "$value": 500 },
+      "semibold": { "$value": 600 },
+      "bold": { "$value": 700 }
+    }
+  },
+  "text": {
+    "xs": {
+      "$value": "{size.step.-2}"
+    },
+    "sm": {
+      "$value": "{size.step.-1}"
+    },
+    "base": {
+      "$value": "{size.step.0}"
+    },
+    "lg": {
+      "$value": "{size.step.1}"
+    },
+    "xl": {
+      "$value": "{size.step.2}"
+    },
+    "2xl": {
+      "$value": "{size.step.3}"
+    },
+    "3xl": {
+      "$value": "{size.step.4}"
+    },
+    "4xl": {
+      "$value": "{size.step.5}"
+    },
+    "5xl": {
+      "$value": "{size.step.6}"
+    },
+    "6xl": {
+      "$value": "{size.step.7}"
+    },
+    "7xl": {
+      "$value": "{size.step.8}"
+    },
+    "8xl": {
+      "$value": "{size.step.9}"
+    },
+    "9xl": {
+      "$value": "{size.step.10}"
+    }
+  },
+  "leading": {
+    "$type": "number",
+    "title": {
+      "$value": "{leading.tight}"
+    },
+    "none": { "$value": 1 },
+    "tight": { "$value": 1.25 },
+    "normal": { "$value": 1.5 },
+    "relaxed": { "$value": 1.75 }
+  },
+  "tracking": {
+    "$type": "dimension",
+    "tight": { "$value": { "value": -0.025, "unit": "rem" } },
+    "normal": { "$value": { "value": 0, "unit": "rem" } },
+    "wide": { "$value": { "value": 0.025, "unit": "rem" } }
+  }
+}

@@ -1,0 +1,23 @@
+/*
+REPEL
+A little layout that pushes items away from each other where
+there is space in the viewport and stacks on small viewports
+
+CUSTOM PROPERTIES AND CONFIGURATION
+
+--repel-direction: Controls the direction of the repel items.
+Can be any acceptable flexbox direction value.
+
+--repel-vertical-alignment How items should align vertically.
+Can be any acceptable flexbox alignment value.
+
+--repel-gap: Controls the gap between repel items
+*/
+.repel {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    flex-direction: var(--repel-direction, row);
+    align-items: var(--repel-vertical-alignment, center);
+    gap: var(--repel-gap, 1rem);
+}

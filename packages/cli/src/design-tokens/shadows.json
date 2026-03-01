@@ -1,0 +1,113 @@
+{
+  "shadow": {
+    "$type": "shadow",
+    "button": {
+      "$value": "{shadow.xs}"
+    },
+    "card": {
+      "$value": "{shadow.xs}"
+    },
+    "input": {
+      "$value": "{shadow.xs}"
+    },
+    "2xs": {
+      "$value": {
+        "offsetX": { "value": 0, "unit": "px" },
+        "offsetY": { "value": 1, "unit": "px" },
+        "blur": { "value": 0, "unit": "px" },
+        "spread": { "value": 0, "unit": "px" },
+        "color": "{color.alpha.black.05}"
+      }
+    },
+    "xs": {
+      "$value": {
+        "offsetX": { "value": 0, "unit": "px" },
+        "offsetY": { "value": 1, "unit": "px" },
+        "blur": { "value": 2, "unit": "px" },
+        "spread": { "value": 0, "unit": "px" },
+        "color": "{color.alpha.black.05}"
+      }
+    },
+    "sm": {
+      "$value": [
+        {
+          "offsetX": { "value": 0, "unit": "px" },
+          "offsetY": { "value": 1, "unit": "px" },
+          "blur": { "value": 3, "unit": "px" },
+          "spread": { "value": 0, "unit": "px" },
+          "color": "{color.alpha.black.10}"
+        },
+        {
+          "offsetX": { "value": 0, "unit": "px" },
+          "offsetY": { "value": 1, "unit": "px" },
+          "blur": { "value": 2, "unit": "px" },
+          "spread": { "value": -1, "unit": "px" },
+          "color": "{color.alpha.black.10}"
+        }
+      ]
+    },
+    "md": {
+      "$value": [
+        {
+          "offsetX": { "value": 0, "unit": "px" },
+          "offsetY": { "value": 4, "unit": "px" },
+          "blur": { "value": 6, "unit": "px" },
+          "spread": { "value": -1, "unit": "px" },
+          "color": "{color.alpha.black.10}"
+        },
+        {
+          "offsetX": { "value": 0, "unit": "px" },
+          "offsetY": { "value": 2, "unit": "px" },
+          "blur": { "value": 4, "unit": "px" },
+          "spread": { "value": -2, "unit": "px" },
+          "color": "{color.alpha.black.10}"
+        }
+      ]
+    },
+    "lg": {
+      "$value": [
+        {
+          "offsetX": { "value": 0, "unit": "px" },
+          "offsetY": { "value": 10, "unit": "px" },
+          "blur": { "value": 15, "unit": "px" },
+          "spread": { "value": -3, "unit": "px" },
+          "color": "{color.alpha.black.10}"
+        },
+        {
+          "offsetX": { "value": 0, "unit": "px" },
+          "offsetY": { "value": 4, "unit": "px" },
+          "blur": { "value": 6, "unit": "px" },
+          "spread": { "value": -4, "unit": "px" },
+          "color": "{color.alpha.black.10}"
+        }
+      ]
+    },
+    "xl": {
+      "$value": [
+        {
+          "offsetX": { "value": 0, "unit": "px" },
+          "offsetY": { "value": 20, "unit": "px" },
+          "blur": { "value": 25, "unit": "px" },
+          "spread": { "value": -5, "unit": "px" },
+          "color": "{color.alpha.black.10}"
+        },
+        {
+          "offsetX": { "value": 0, "unit": "px" },
+          "offsetY": { "value": 8, "unit": "px" },
+          "blur": { "value": 10, "unit": "px" },
+          "spread": { "value": -6, "unit": "px" },
+          "color": "{color.alpha.black.10}"
+        }
+      ]
+    },
+    "2xl": {
+      "$value": {
+        "offsetX": { "value": 0, "unit": "px" },
+        "offsetY": { "value": 25, "unit": "px" },
+        "blur": { "value": 50, "unit": "px" },
+        "spread": { "value": -12, "unit": "px" },
+        "color": "{color.alpha.black.25}"
+      }
+    }
+  }
+}

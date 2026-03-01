@@ -27,7 +27,6 @@ import { relative } from "pathe";
 import color from "picocolors";
 import packageJson from "../../package.json" with { type: "json" };
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
-import { isPackageInstalled } from "../detection/is-package-installed.js";
 import { loadAndResolveTokensForCLI } from "../pipelines/load-and-resolve-for-cli.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
@@ -341,12 +340,6 @@ export const generate = new Command()
 
             validateFilename(options.variablesFilename, "--variables-filename");
             validateFilename(options.utilitiesFilename, "--utilities-filename");
-
-            if (isPackageInstalled("@sugarcube-sh/vite")) {
-                throw new CLIError(
-                    "Sugarcube vite plugin detected. When using the plugin, CSS is generated automatically during your build process. Remove the plugin to use CLI generation instead."
-                );
-            }
 
             const finalConfig = await resolveConfig(options);
 
