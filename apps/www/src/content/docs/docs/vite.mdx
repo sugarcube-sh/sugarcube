@@ -3,8 +3,6 @@ title: Vite
 description: How to setup sugarcube with Vite
 ---
 
-import SiteAside from "@/src/components/site-alert/SiteAside.astro";
-
 ## Create your project
 
 Start by creating a new Vite project if you don't have one set up already. The most common approach is to use [Create Vite](https://vitejs.dev/guide/#scaffolding-your-first-vite-project).
@@ -21,9 +19,9 @@ cd my-project
 
 <PackageManagerTabs command="npx @sugarcube-sh/cli init" />
 
-## Configure Plugin
+## With the Vite plugin
 
-Add the Vite plugin to your configuration (you may have to create `vite.config.{ts|js}` if it doesn't exist):
+If you chose the Vite plugin during init, add it to your configuration (you may have to create `vite.config.{ts|js}` if it doesn't exist):
 
 ```ts title="vite.config.ts"
 import { defineConfig } from "vite";
@@ -34,20 +32,16 @@ export default defineConfig({
 });
 ```
 
-## Import CSS
-
-Import the virtual CSS module to use the plugin:
+Then import the virtual CSS module in your project's entrypoint:
 
 ```js title="src/main.js"
 import "virtual:sugarcube.css";
 ```
 
-This single import includes both design token CSS variables and any utility classes you have configured and used.
+## Without the Vite plugin
 
-<SiteAside type="note">
-    Without the plugin, import generated CSS files directly (e.g., `import "./styles/global/tokens.variables.gen.css"`).
-</SiteAside>
+If you skipped the Vite plugin during init, [generate CSS with the CLI](/docs/reference/cli-commands#generate) and import the files directly:
 
-## Next Steps
-
-- [CSS cascade layers](/docs/cascade-layers)
+```js title="src/main.js"
+import "./styles/global/tokens.variables.gen.css";
+```

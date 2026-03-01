@@ -15,13 +15,13 @@ Rather than shipping as packages you install, sugarcube copies components into y
 
 Use the `components` command to add components to your project:
 
-<PackageManagerTabs command="sugarcube components" />
+<PackageManagerTabs command="npx sugarcube components" />
 
 Running without arguments prompts you to select a framework and components. 
 
 To skip prompts, pass component names and the `--framework` flag:
 
-<PackageManagerTabs command="sugarcube components button card --framework react" />
+<PackageManagerTabs command="npx sugarcube components button card --framework react" />
 
 See [the CLI reference](/docs/reference/cli-commands) for full command options.
 
@@ -41,7 +41,7 @@ You can customize where components are installed two different ways:
 
 1. **Using the `--components-dir` flag**:
 
-    <PackageManagerTabs command="sugarcube components --components-dir custom-components-dir" />
+    <PackageManagerTabs command="npx sugarcube components --components-dir custom-components-dir" />
 
 2. **In your config file**:
    ```ts title="sugarcube.config.ts" ins={5}

@@ -13,10 +13,9 @@ Start by creating a new 11ty project if you don't have one set up already. 11ty 
 
 <PackageManagerTabs command="npx @sugarcube-sh/cli init" />
 
+## Without the Vite plugin
 
-## Configure 11ty
-
-11ty doesn't process CSS by default. Add a passthrough copy to include the generated styles in your output:
+[Generate CSS with the CLI](/docs/reference/cli-commands#generate), then configure 11ty to include the output. 11ty doesn't process CSS by default, so add a passthrough copy:
 
 ```js title="eleventy.config.js"
 export default function (eleventyConfig) {
@@ -24,17 +23,15 @@ export default function (eleventyConfig) {
 };
 ```
 
-## Import CSS
-
-Import the generated CSS in your base layout template (or wherever you import your other styles):
+Then import the generated CSS in your base layout template:
 
 ```html frame="none"
 <link rel="stylesheet" href="/styles/global/tokens.variables.gen.css">
 ```
 
-## With Vite (optional)
+## With the Vite plugin
 
-If you're using [eleventy-plugin-vite](https://www.11ty.dev/docs/server-vite/) for faster builds and HMR, sugarcube can integrate with it for a better developer experience.
+If you chose the Vite plugin during init (or want to add it later for HMR), you can use [eleventy-plugin-vite](https://www.11ty.dev/docs/server-vite/).
 
 ### Install Vite dependencies
 

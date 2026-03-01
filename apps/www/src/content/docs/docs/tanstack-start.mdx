@@ -15,9 +15,9 @@ Start by creating a new TanStack Start project if you don't have one set up alre
 
 <PackageManagerTabs command="npx @sugarcube-sh/cli init" />
 
-## Configure Plugin
+## With the Vite plugin
 
-If `init` installed the Vite plugin, add it to your Vite configuration. **Important**: The sugarcube plugin must run before `tanstackStart()`:
+If you chose the Vite plugin during init, add it to your Vite configuration. **Important**: The sugarcube plugin must run before `tanstackStart()`:
 
 ```ts title="vite.config.ts"
 // other imports
@@ -43,15 +43,11 @@ export default defineConfig({
 });
 ```
 
-## Import CSS
-
-Import the virtual CSS module in your root component:
+Then import the virtual CSS module in your root component:
 
 ```tsx title="__root.tsx"
 import "virtual:sugarcube.css";
 ```
-
-This single import includes both design token CSS variables and utility classes.
 
 If you have additional styles, import them and add to the links array:
 
@@ -62,7 +58,7 @@ import "virtual:sugarcube.css";
 links: [{ rel: "stylesheet", href: appCss }];
 ```
 
-## Optional: UnoCSS Presets
+### Optional: UnoCSS Presets
 
 If you want to use UnoCSS presets alongside sugarcube, pass them via `unoOptions.presets`:
 
@@ -81,4 +77,12 @@ export default defineConfig({
         // ... rest of plugins
     ],
 });
+```
+
+## Without the Vite plugin
+
+If you skipped the Vite plugin during init, [generate CSS with the CLI](/docs/reference/cli-commands#generate) and import the files directly:
+
+```tsx title="__root.tsx"
+import "./styles/global/tokens.variables.gen.css";
 ```

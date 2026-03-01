@@ -19,11 +19,11 @@ Sugarcube recommends CUBE CSS because it harnesses the power of the cascade, int
 
 Add CUBE CSS to your project using the `cube` command:
 
-<PackageManagerTabs command="npx @sugarcube-sh/cli cube" />
+<PackageManagerTabs command="npx sugarcube cube" />
 
 CUBE CSS is added to your project in the [styles output directory](/docs/configuration#changing-where-css-files-are-written). The command uses the `output.cube` value from your `sugarcube.config.ts` file (or falls back to `output.cssRoot`), or you can specify a custom output directory with the `--cube-dir` flag:
 
-<PackageManagerTabs command="npx @sugarcube-sh/cli cube --cube-dir src/styles/cube" />
+<PackageManagerTabs command="npx sugarcube cube --cube-dir src/styles/cube" />
 
 ## File output
 

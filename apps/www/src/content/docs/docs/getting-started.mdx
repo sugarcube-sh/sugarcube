@@ -1,35 +1,30 @@
 ---
 title: Getting Started
-description: Follow these steps to get sugarcube running in your project.
+description: Set up sugarcube in your project.
 ---
 
-import "@/registry/components/alert/css/alert.css"
 import FrameworkCards from "@/src/components/FrameworkCards.astro";
 import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 
-Sugarcube helps you build front ends on strong, reusable foundations using design tokens. This guide will get sugarcube running in your project in under a minute.
+Sugarcube works with any framework — or none at all. Pick yours to get started, or follow the general setup guide below.
 
-## Initialize your project
+## Framework guides
 
-Run the `init` command in the root of an existing project:
+<FrameworkCards />
+
+## General setup
+
+Run this in the root of an existing project and follow the prompts:
 
 <PackageManagerTabs command="npx @sugarcube-sh/cli init" />
 
-This command will:
+### Next steps
 
-- detect your project structure  
-- add design tokens (or use your existing ones)  
-- generate CSS variables  
-- install the Vite plugin if compatible  
-- create a config file (if you override default settings via flags) 
+How you use sugarcube depends on whether you installed the Vite plugin during init.
 
-<SiteAside type="note">
-    The CLI will tell you whether the Vite plugin was installed. If it wasn't installed, you can skip directly to the [Without the plugin](#without-the-plugin) section.
-</SiteAside>
+#### With the Vite plugin
 
-## Configure plugin
-
-If `init` installed the Vite plugin, you need to add it to your build configuration:
+Add the plugin to your build config:
 
 ```ts title="vite.config.ts"
 import { defineConfig } from "vite";
@@ -40,49 +35,24 @@ export default defineConfig({
 });
 ```
 
-<SiteAside type="tip">
-    For framework-specific examples, see the [framework guides](#framework-guides) below.
-</SiteAside>
-
-## Import generated CSS
-
-Sugarcube generates a virtual CSS module. Import it into the entrypoint of your project:
+Then import the virtual module in your project's entrypoint:
 
 ```ts
 import "virtual:sugarcube.css";
 ```
 
-This single import includes both design token CSS variables and utility classes.
+#### Without the Vite plugin
 
-### Without the plugin
+Run the CLI to generate CSS files:
 
-If you are not using the Vite plugin, sugarcube generates static CSS files instead. Import them where you import your other styles:
+<PackageManagerTabs command="npx sugarcube generate" />
+
+Then import the output where you import your other styles:
 
 ```css
 @import "./src/styles/global/tokens.variables.gen.css";
 ```
 
-That's it! You can now start building with sugarcube.
-
-## Start building with sugarcube
-
-- [Edit tokens and see changes live](/docs/tokens)
-- [Configure utility classes](/docs/utilities)
-- [Add components from the registry](/docs/components)
-- [Add CUBE CSS](/docs/cube-css)
-
-## Customizing your setup
-
-By default, `init` detects your project structure and makes sensible choices. You can skip plugin installation, customize directories, or choose a different starter kit. See [Advanced setup](/docs/advanced-setup) for details.
-
-## Framework guides
-
-Need the exact config for your framework? These guides have copy-paste snippets for Astro, TanStack Start, 11ty, and more.
-
-<FrameworkCards />
-
-More framework guides coming soon.
-
-## Learn more
-
-Curious why sugarcube exists? [Read the story behind sugarcube](/docs/introduction)**.**
+<SiteAside type="tip">
+    Add a script to your `package.json` for convenience, e.g. `"generate:styles": "sugarcube generate --watch"`
+</SiteAside>

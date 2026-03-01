@@ -5,8 +5,8 @@ description: Use the CLI to initialize a new sugarcube project, generate CSS, ad
 
 import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 
-<SiteAside type="tip" title="Shorter commands">
-    For shorter syntax, install `@sugarcube-sh/cli` as a dev dependency. This provides a `sugarcube` command you can use in npm scripts, e.g.: `"tokens:generate": "sugarcube generate"`
+<SiteAside type="note">
+    These commands assume you've run [`init`](/docs/getting-started), which installs the CLI locally.
 </SiteAside>
 
 ## Commands
@@ -20,9 +20,9 @@ import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 ## Typical Workflow
 
 1. **Initialize**: `npx @sugarcube-sh/cli init` - Sets up starter kit, detects framework, installs dependencies
-2. **Generate** CSS (if not using the Vite plugin): `npx @sugarcube-sh/cli generate` - Processes tokens, outputs CSS
-3. **Add components** as needed: `npx @sugarcube-sh/cli components`
-4. **Validate** tokens: `npx @sugarcube-sh/cli validate`
+2. **Generate** CSS (if not using the Vite plugin): `npx sugarcube generate` - Processes tokens, outputs CSS
+3. **Add components** as needed: `npx sugarcube components`
+4. **Validate** tokens: `npx sugarcube validate`
 
 ## Using with UnoCSS CLI (if not using the Vite plugin)
 

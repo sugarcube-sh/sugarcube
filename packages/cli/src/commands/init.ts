@@ -26,10 +26,6 @@ function getDefaultTokensDir(): string {
     return existsSync(resolve(process.cwd(), "src")) ? "src/design-tokens" : "design-tokens";
 }
 
-function isInteractive(): boolean {
-    return Boolean(process.stdin.isTTY);
-}
-
 async function promptStarterKit(): Promise<string> {
     const choice = await select({
         message: "Choose a token starter kit",
@@ -37,12 +33,12 @@ async function promptStarterKit(): Promise<string> {
             {
                 label: "Fluid",
                 value: "fluid",
-                hint: "Responsive tokens with fluid scaling (recommended)",
+                hint: "Fluid spacing and typography",
             },
             {
                 label: "Static",
                 value: "static",
-                hint: "Fixed-value tokens without fluid scaling",
+                hint: "Fixed spacing and typography",
             },
         ],
     });
@@ -55,7 +51,6 @@ async function promptStarterKit(): Promise<string> {
 }
 
 async function promptOptional(message: string, skipHint: string): Promise<boolean> {
-    if (!isInteractive()) return false;
     const result = await select({
         message,
         options: [
@@ -87,28 +82,27 @@ async function scaffoldTokens(ctx: InitContext): Promise<void> {
 export const init = new Command()
     .name("init")
     .description("Initialize a new sugarcube project")
-    .option("--kit <kit>", "Starter kit to use (fluid or static)")
     .option("--tokens-dir <dir>", "Design tokens directory")
-    .option("--cube", "Add CUBE CSS (skips prompt)")
-    .option("--components", "Add components (skips prompt, requires TTY for selection)")
-    .option("--vite", "Install the Vite plugin (skips prompt)")
+    .option("--cube-dir <dir>", "CUBE CSS output directory")
     .action(async (options: InitOptions) => {
         try {
+            if (!process.stdin.isTTY) {
+                console.error(
+                    "init requires an interactive terminal. Use individual commands (cube, components, generate) for CI."
+                );
+                process.exit(1);
+            }
+
             await preflightInit();
 
             const tokensDir = options.tokensDir ?? getDefaultTokensDir();
             const hasExistingTokens = await detectExistingTokens(tokensDir);
 
-            let starterKit: string | null = null;
-            if (!hasExistingTokens) {
-                starterKit = options.kit ?? null;
-            }
-
             const ctx: InitContext = {
                 options,
                 tokensDir,
                 hasExistingTokens,
-                starterKit,
+                starterKit: null,
                 sugarcubeConfig: {},
                 createdFiles: [],
             };
@@ -130,7 +124,7 @@ export const init = new Command()
 
             await log.tasks(detectionTasks);
 
-            if (!hasExistingTokens && !starterKit) {
+            if (!hasExistingTokens) {
                 ctx.starterKit = await promptStarterKit();
             }
 
@@ -148,26 +142,25 @@ export const init = new Command()
             }
 
             // 2. CUBE CSS
-            const addCube =
-                options.cube === true ||
-                (options.cube == null &&
-                    (await promptOptional(
-                        "CUBE CSS",
-                        `you can add it later with ${color.cyan("sugarcube cube")}`
-                    )));
+            const addCube = await promptOptional(
+                "CUBE CSS?",
+                `you can add it later with ${color.cyan("sugarcube cube")}`
+            );
             if (addCube) {
-                await runCube({ skipIntro: true, skipOutro: true, continueOnDecline: true });
+                await runCube({
+                    skipIntro: true,
+                    skipOutro: true,
+                    continueOnDecline: true,
+                    cubeDir: options.cubeDir,
+                });
             }
 
             // 3. Components
-            const addComponents =
-                options.components === true ||
-                (options.components == null &&
-                    (await promptOptional(
-                        "Components",
-                        `you can add them later with ${color.cyan("sugarcube components")}`
-                    )));
-            if (addComponents && isInteractive()) {
+            const addComponents = await promptOptional(
+                "Components?",
+                `you can add them later with ${color.cyan("sugarcube components")}`
+            );
+            if (addComponents) {
                 await runComponents([], {
                     skipIntro: true,
                     skipOutro: true,
@@ -176,13 +169,10 @@ export const init = new Command()
             }
 
             // 4. Vite plugin
-            const installVite =
-                options.vite === true ||
-                (options.vite == null &&
-                    (await promptOptional(
-                        `Vite plugin ${color.dim("(recommended for Vite-based frameworks: Astro, SvelteKit, Nuxt...)")}`,
-                        `you can install it later with ${color.cyan("npm i -D @sugarcube-sh/vite")}`
-                    )));
+            const installVite = await promptOptional(
+                `Vite plugin? ${color.dim("(recommended for Vite-based frameworks: Astro, SvelteKit, Nuxt...)")}`,
+                `you can install it later with ${color.cyan("npm i -D @sugarcube-sh/vite")}`
+            );
 
             // 5. Install dependencies
             const packageManager = await getPackageManager(process.cwd(), {
