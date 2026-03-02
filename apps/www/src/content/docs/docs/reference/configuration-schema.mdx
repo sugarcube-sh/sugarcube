@@ -65,7 +65,7 @@ The `output` object controls where files are written.
 **Type:** `string`
 **Default:** `"src/styles"`
 
-The base directory for generated CSS files. This is an absolute path from your project root. Other CSS output paths (`variables`, `utilities`, `cube`) use this as their default base, but can be overridden to point anywhere.
+The base directory for generated CSS files. Path is relative to your project root. Other CSS output paths (`variables`, `utilities`, `cube`) use this as their default base, but can be overridden to point anywhere.
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
@@ -83,7 +83,7 @@ export default defineConfig({
 **Type:** `string`
 **Default:** `"{cssRoot}/global"`
 
-The directory where CSS variable files (from design tokens) are written. This is an absolute path from your project root. If not specified, defaults to the `global` subdirectory under `cssRoot`.
+The directory where CSS variable files (from design tokens) are written. Path is relative to your project root. If not specified, defaults to the `global` subdirectory under `cssRoot`.
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
@@ -92,7 +92,7 @@ export default defineConfig({
   resolver: "src/design-tokens/tokens.resolver.json",
   output: {
     cssRoot: "src/styles",
-    variables: "src/tokens"  // Absolute path - can be anywhere
+    variables: "src/tokens"  // Can point anywhere relative to project root
   }
 });
 ```
@@ -102,7 +102,7 @@ export default defineConfig({
 **Type:** `string`
 **Default:** `"{cssRoot}/utilities"`
 
-The directory where utility class CSS files are written. This is an absolute path from your project root. If not specified, defaults to the `utilities` subdirectory under `cssRoot`.
+The directory where utility class CSS files are written. Path is relative to your project root. If not specified, defaults to the `utilities` subdirectory under `cssRoot`.
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
@@ -111,7 +111,7 @@ export default defineConfig({
   resolver: "src/design-tokens/tokens.resolver.json",
   output: {
     cssRoot: "src/styles",
-    utilities: "public/css/utils"  // Absolute path - can be anywhere
+    utilities: "public/css/utils"  // Can point anywhere relative to project root
   }
 });
 ```
@@ -157,7 +157,7 @@ export default defineConfig({
 **Type:** `string`
 **Default:** `"{cssRoot}"`
 
-The directory where CUBE CSS files are written when using the `cube` command. This is an absolute path from your project root. If not specified, defaults to the same directory as `cssRoot`.
+The directory where CUBE CSS files are written when using the `cube` command. Path is relative to your project root. If not specified, defaults to the same directory as `cssRoot`.
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
