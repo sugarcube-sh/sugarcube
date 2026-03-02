@@ -3,6 +3,7 @@ import type { SugarcubeConfig } from "@sugarcube-sh/core";
 export interface InitOptions {
     tokensDir?: string;
     cubeDir?: string;
+    componentsDir?: string;
 }
 
 export interface InitContext {

@@ -3,10 +3,22 @@ title: Advanced Setup
 description: Customize directory paths during init.
 ---
 
+import Table from "@/src/components/Table.astro";
+
 ## Custom directories
 
-By default, `init` places tokens in `src/design-tokens` (or `design-tokens` if there's no `src/` directory), and CUBE CSS in `src/styles` (or `styles` if there's no `src/` directory).
+By default, `init` places files based on whether your project has a `src/` directory:
 
-You can override both during `init`:
+<Table>
+| | With `src/` | Without `src/` |
+|---|---|---|
+| Design tokens | `src/design-tokens` | `design-tokens` |
+| CUBE CSS | `src/styles` | `styles` |
+| Components | `src/components/ui` | `components/ui` |
+</Table>
 
-<PackageManagerTabs command="npx @sugarcube-sh/cli init --tokens-dir ./tokens --cube-dir ./css" />
+You can override any of these during `init`:
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli init --tokens-dir ./tokens --cube-dir ./css --components-dir ./ui" />
+
+For ongoing customization beyond `init`, see [Configuration](/docs/configuration).

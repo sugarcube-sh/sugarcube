@@ -40,6 +40,7 @@ export default defineConfig({
                     items: [
                         "docs/introduction",
                         "docs/getting-started",
+                        "docs/advanced-setup",
                         "docs/configuration",
                         "docs/tokens",
                         "docs/working-with-tokens",

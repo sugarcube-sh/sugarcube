@@ -42,6 +42,7 @@ export const init = new Command()
     .description("Initialize a new sugarcube project")
     .option("--tokens-dir <dir>", "Design tokens directory")
     .option("--cube-dir <dir>", "CUBE CSS output directory")
+    .option("--components-dir <dir>", "Components output directory")
     .action(async (options: InitOptions) => {
         try {
             if (!process.stdin.isTTY) {
@@ -124,6 +125,7 @@ export const init = new Command()
                     skipIntro: true,
                     skipOutro: true,
                     continueOnDecline: true,
+                    componentsDir: options.componentsDir,
                 });
             }
 
