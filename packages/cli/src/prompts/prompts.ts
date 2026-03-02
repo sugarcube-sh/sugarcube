@@ -3,6 +3,44 @@ import { cancel, confirm, isCancel } from "@clack/prompts";
 import color from "picocolors";
 import type { ComponentChoice, RegistryItem } from "../types/index.js";
 
+export async function promptStarterKit(): Promise<string> {
+    const choice = await select({
+        message: "Choose a token starter kit",
+        options: [
+            {
+                label: "Fluid",
+                value: "fluid",
+                hint: "Fluid spacing and typography",
+            },
+            {
+                label: "Static",
+                value: "static",
+                hint: "Fixed spacing and typography",
+            },
+        ],
+    });
+
+    if (isCancel(choice)) {
+        process.exit(0);
+    }
+
+    return choice as string;
+}
+
+export async function promptOptional(message: string, skipHint: string): Promise<boolean> {
+    const result = await select({
+        message,
+        options: [
+            { label: "Add", value: true },
+            { label: "Skip", value: false, hint: skipHint },
+        ],
+    });
+    if (isCancel(result)) {
+        process.exit(0);
+    }
+    return result as boolean;
+}
+
 export async function promptComponentFramework(includeSkip = true): Promise<ComponentChoice> {
     const options = [
         { label: "React", value: "react", hint: ".tsx" },

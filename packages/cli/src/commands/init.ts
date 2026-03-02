@@ -1,5 +1,4 @@
 import { resolve } from "node:path";
-import { isCancel, select } from "@clack/prompts";
 import { Command } from "commander";
 import { basename, join } from "pathe";
 import color from "picocolors";
@@ -13,6 +12,7 @@ import { installDependencies } from "../installation/index.js";
 import { intro, label } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 import { next } from "../prompts/next-steps.js";
+import { promptOptional, promptStarterKit } from "../prompts/prompts.js";
 import type { Task } from "../prompts/tasks.js";
 import { welcome } from "../prompts/welcome.js";
 import { fetchStarterKit } from "../registry/client.js";
@@ -21,44 +21,6 @@ import { handleError } from "../utils/handle-error.js";
 import { preflightInit } from "../validation/preflight-init.js";
 import { runComponents } from "./components.js";
 import { runCube } from "./cube.js";
-
-async function promptStarterKit(): Promise<string> {
-    const choice = await select({
-        message: "Choose a token starter kit",
-        options: [
-            {
-                label: "Fluid",
-                value: "fluid",
-                hint: "Fluid spacing and typography",
-            },
-            {
-                label: "Static",
-                value: "static",
-                hint: "Fixed spacing and typography",
-            },
-        ],
-    });
-
-    if (isCancel(choice)) {
-        process.exit(0);
-    }
-
-    return choice as string;
-}
-
-async function promptOptional(message: string, skipHint: string): Promise<boolean> {
-    const result = await select({
-        message,
-        options: [
-            { label: "Add", value: true },
-            { label: "Skip", value: false, hint: skipHint },
-        ],
-    });
-    if (isCancel(result)) {
-        process.exit(0);
-    }
-    return result as boolean;
-}
 
 async function scaffoldTokens(ctx: InitContext): Promise<void> {
     if (!ctx.starterKit) return;
