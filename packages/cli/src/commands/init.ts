@@ -1,10 +1,10 @@
-import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { isCancel, select } from "@clack/prompts";
 import { Command } from "commander";
 import { basename, join } from "pathe";
 import color from "picocolors";
 import { CLI_PACKAGE, VITE_PLUGIN } from "../constants/index.js";
+import { getProjectInfo } from "../detection/framework.js";
 import { isPackageInstalled } from "../detection/is-package-installed.js";
 import { getPackageManager } from "../detection/package-manager.js";
 import { detectExistingTokens } from "../detection/tokens.js";
@@ -21,10 +21,6 @@ import { handleError } from "../utils/handle-error.js";
 import { preflightInit } from "../validation/preflight-init.js";
 import { runComponents } from "./components.js";
 import { runCube } from "./cube.js";
-
-function getDefaultTokensDir(): string {
-    return existsSync(resolve(process.cwd(), "src")) ? "src/design-tokens" : "design-tokens";
-}
 
 async function promptStarterKit(): Promise<string> {
     const choice = await select({
@@ -95,7 +91,8 @@ export const init = new Command()
 
             await preflightInit();
 
-            const tokensDir = options.tokensDir ?? getDefaultTokensDir();
+            const { tokensDir: defaultTokensDir } = getProjectInfo(process.cwd());
+            const tokensDir = options.tokensDir ?? defaultTokensDir;
             const hasExistingTokens = await detectExistingTokens(tokensDir);
 
             const ctx: InitContext = {
