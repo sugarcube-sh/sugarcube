@@ -313,6 +313,10 @@ function extractTokenDirs(config: InternalConfig): string[] {
     return [resolverDir];
 }
 
+// Returns Promise<any> rather than Promise<Plugin[]> to avoid exposing Vite's
+// Plugin type in the public API. Vite's Plugin type changes across major versions,
+// and pnpm's strict isolation can resolve multiple physical copies of the same
+// version, causing TypeScript to treat identical types as incompatible.
 export default async function sugarcubePlugin(options: SugarcubePluginOptions = {}): Promise<any> {
     const { unoOptions = {} } = options;
     const ctx = createSugarcubeContext();
