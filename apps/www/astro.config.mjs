@@ -65,6 +65,7 @@ export default defineConfig({
                         "docs/vite",
                         "docs/11ty",
                         "docs/tanstack-start",
+                        "docs/nuxt",
                     ],
                 },
                 {
