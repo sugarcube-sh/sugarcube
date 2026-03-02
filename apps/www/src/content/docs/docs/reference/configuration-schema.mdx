@@ -421,7 +421,7 @@ export default defineConfig({
 });
 ```
 
-These defaults are applied automatically when you have a config file, and the same values are used when running without a config (e.g. `cube` and `components` use `src/styles` and `src/components/ui` respectively). You only need to specify values when you want to override them.
+These defaults are applied automatically when you have a config file. When running without a config, paths are auto-detected based on whether your project has a `src/` directory (e.g. `cube` and `components` use `src/styles` or `styles`, and `src/components/ui` or `components/ui`). You only need to specify values when you want to override them.
 
 ## Examples
 
