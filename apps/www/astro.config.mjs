@@ -59,7 +59,13 @@ export default defineConfig({
                 },
                 {
                     label: "Integrations",
-                    items: ["docs/astro", "docs/vite", "docs/11ty", "docs/tanstack-start"],
+                    items: [
+                        "docs/astro",
+                        "docs/sveltekit",
+                        "docs/vite",
+                        "docs/11ty",
+                        "docs/tanstack-start",
+                    ],
                 },
                 {
                     label: "Reference",

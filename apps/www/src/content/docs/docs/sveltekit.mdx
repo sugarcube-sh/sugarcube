@@ -1,0 +1,52 @@
+---
+title: SvelteKit
+description: How to setup sugarcube with SvelteKit
+---
+
+## Create your project
+
+Start by creating a new SvelteKit project if you don't have one set up already:
+
+<PackageManagerTabs command="npx sv create my-app" />
+
+Then navigate into your project:
+
+```bash frame="none"
+cd my-app
+```
+
+## Initialize sugarcube
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli init" />
+
+## With the Vite plugin
+
+If you chose the Vite plugin during init, add it to your configuration:
+
+```ts title="vite.config.ts"
+import { sveltekit } from "@sveltejs/kit/vite";
+import sugarcube from "@sugarcube-sh/vite";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+    plugins: [sveltekit(), sugarcube()],
+});
+```
+
+Then import the virtual CSS module in your root layout:
+
+```svelte title="src/routes/+layout.svelte"
+<script>
+    import "virtual:sugarcube.css";
+</script>
+```
+
+## Without the Vite plugin
+
+If you skipped the Vite plugin during init, [generate CSS with the CLI](/docs/reference/cli-commands#generate) and import the files directly:
+
+```svelte title="src/routes/+layout.svelte"
+<script>
+    import "../styles/global/tokens.variables.gen.css";
+</script>
+```
