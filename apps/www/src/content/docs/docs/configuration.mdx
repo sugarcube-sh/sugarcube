@@ -10,7 +10,7 @@ Sugarcube works out of the box with sensible defaults and auto-discovery.
 
 ### When You Need a Config File
 
-**Using the Vite plugin?** You only need a config file if you want to customize any settings (output directories, fluid ranges, etc.).
+**Using the Vite plugin?** You only need a config file if you want to customize any settings (output directories, filenames, etc.).
 
 **Using the CLI?** Config file is optional. You can customize settings via CLI flags on each command, or put them in a config file to avoid repeating flags.
 
@@ -73,7 +73,7 @@ import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
   output: {
-    components: "src/components"
+    components: "components"
   }
 });
 ```

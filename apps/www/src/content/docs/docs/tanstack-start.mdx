@@ -47,15 +47,6 @@ Then import the virtual CSS module in your root component:
 import "virtual:sugarcube.css";
 ```
 
-If you have additional styles, import them and add to the links array:
-
-```tsx title="__root.tsx"
-import appCss from "../styles.css?url";
-import "virtual:sugarcube.css";
-
-links: [{ rel: "stylesheet", href: appCss }];
-```
-
 ## Without the Vite plugin
 
 If you skipped the Vite plugin during init, [generate CSS with the CLI](/docs/reference/cli-commands#generate) and import the files directly:

@@ -40,7 +40,7 @@ export default defineConfig({
                     items: [
                         "docs/introduction",
                         "docs/getting-started",
-                        "docs/advanced-setup",
+                        "docs/configuration",
                         "docs/tokens",
                         "docs/working-with-tokens",
                         "docs/starter-kits",
@@ -53,7 +53,6 @@ export default defineConfig({
                         "docs/fluid-space-and-type",
                         "docs/color-formats",
                         "docs/cascade-layers",
-                        "docs/configuration",
                         "docs/editor-setup",
                     ],
                 },
