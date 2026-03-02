@@ -313,9 +313,7 @@ function extractTokenDirs(config: InternalConfig): string[] {
     return [resolverDir];
 }
 
-export default async function sugarcubePlugin(
-    options: SugarcubePluginOptions = {}
-): Promise<Plugin[]> {
+export default async function sugarcubePlugin(options: SugarcubePluginOptions = {}): Promise<any> {
     const { unoOptions = {} } = options;
     const ctx = createSugarcubeContext();
     // It's imperative to await the ready state otherwise
