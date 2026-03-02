@@ -16,16 +16,10 @@ Sugarcube works out of the box with sensible defaults and auto-discovery.
 
 ## Creating a Config File
 
-When you run `init` with customization flags, sugarcube creates a minimal `sugarcube.config.{ts|js}` file containing the settings you customized:
+Create a `sugarcube.config.ts` (or `.js`) in your project root when you want to customize any defaults:
 
-```bash frame="none"
-npx @sugarcube-sh/cli init --styles-dir public/css --variables-dir public/tokens
-```
-
-Creates:
-
-```ts title="sugarcube.config.ts" frame="none"
-import { defineConfig } from "@sugarcube-sh/vite";
+```ts title="sugarcube.config.ts"
+import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
   output: {
@@ -34,8 +28,6 @@ export default defineConfig({
   }
 });
 ```
-
-If you run `init` without any flags, no config file is created.
 
 ## Configuring fluid spacing and typography
 

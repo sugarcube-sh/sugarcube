@@ -3,8 +3,6 @@ title: Astro
 description: How to setup sugarcube with Astro
 ---
 
-This guide covers Astro projects. For a complete introduction, see the [setup guide](/docs/getting-started).
-
 ## Create your project
 
 Start by creating a new Astro project if you don't have one set up already:
@@ -15,9 +13,9 @@ Start by creating a new Astro project if you don't have one set up already:
 
 <PackageManagerTabs command="npx @sugarcube-sh/cli init" />
 
-## Configure Plugin
+## With the Vite plugin
 
-If `init` installed the Vite plugin, add it to your Astro configuration:
+If you chose the Vite plugin during `init`, add it to your Astro configuration:
 
 ```js title="astro.config.mjs"
 import { defineConfig } from "astro/config";
@@ -30,9 +28,7 @@ export default defineConfig({
 });
 ```
 
-## Import CSS
-
-If the Vite plugin was installed, import the virtual CSS module in your Astro layout:
+Then import the virtual CSS module in your Astro layout:
 
 ```astro title="src/layouts/Layout.astro"
 ---
@@ -40,11 +36,9 @@ import "virtual:sugarcube.css";
 ---
 ```
 
-This single import includes both design token CSS variables and utility classes.
+## Without the Vite plugin
 
-### Without the plugin
-
-If not using the Vite plugin, import the generated CSS files directly:
+If you skipped the Vite plugin during init, [generate CSS with the CLI](/docs/reference/cli-commands#generate) and import the files directly:
 
 ```astro title="src/layouts/Layout.astro"
 ---

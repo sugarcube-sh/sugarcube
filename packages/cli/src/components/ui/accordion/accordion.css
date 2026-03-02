@@ -1,0 +1,46 @@
+.accordion {
+    width: 100%;
+}
+
+.accordion details {
+    border: 0;
+    border-block-end: var(--border-width-thin) var(--border-style) var(--color-surface-border);
+    display: block;
+    padding-inline: 0;
+    padding-block: var(--space-md);
+}
+
+.accordion details summary {
+    position: relative;
+    display: block;
+    line-height: var(--leading-tight);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+}
+
+.accordion details summary[open] {
+    margin-block-end: var(--space-xs, 0.75rem);
+}
+
+.accordion details summary::before {
+    position: absolute;
+    top: calc(50% - 0.5em);
+    right: 1em;
+    width: 1em;
+    height: 1em;
+    transform-origin: center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23222' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath stroke='none' d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='M9 6l6 6l-6 6' /%3E%3C/svg%3E");
+    background-position: center;
+    background-size: 1.25em;
+    background-repeat: no-repeat;
+    content: "";
+    transition: rotate 50ms ease;
+}
+
+.accordion details summary::-webkit-details-marker {
+    display: none;
+}
+
+.accordion details[open] summary::before {
+    rotate: 90deg;
+}
