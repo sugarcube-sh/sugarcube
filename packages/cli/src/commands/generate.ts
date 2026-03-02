@@ -150,7 +150,7 @@ function formatOutputPaths(output: CSSFileOutput): string[] {
     return unique.map((file) => relative(process.cwd(), file));
 }
 
-export async function generateSugarcubeUtilities(
+async function generateSugarcubeUtilities(
     tokens: NormalizedConvertedTokens,
     config: InternalConfig
 ): Promise<CSSFileOutput> {
