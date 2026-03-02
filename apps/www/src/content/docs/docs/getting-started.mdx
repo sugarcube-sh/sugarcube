@@ -57,6 +57,10 @@ Then import the output where you import your other styles:
 @import "./src/styles/global/tokens.variables.gen.css";
 ```
 
+<SiteAside type="note">
+    The path depends on your project structure and any customisation. Projects without `src/` use `./styles/...` by default; you can override with `--styles-dir` or [config](/docs/configuration).
+</SiteAside>
+
 <SiteAside type="tip">
     Add a script to your `package.json` for convenience, e.g. `"generate:styles": "sugarcube generate --watch"`
 </SiteAside>
