@@ -1,7 +1,7 @@
 <h1 align="center">sugarcube</h1>
 
 <p align="center">
-  <strong>Design tokens → CSS variables, utility classes, & components</strong><br/>
+  <strong>Design tokens in, CSS & components out</strong>
 </p>
 
 <p align="center">
@@ -12,7 +12,7 @@
 
 ---
 
-Sugarcube processes [W3C DTCG](https://www.designtokens.org/) design tokens into CSS variables, utility classes, and component styles. Change a token, your CSS updates. Use Vite for hot reloading, or generate CSS with the CLI.
+Sugarcube is a tool for building front ends on [DTCG design tokens](https://www.designtokens.org/). It connects your tokens to CSS variables, utility classes, CUBE architecture, and copy-to-own components — via the Vite plugin or CLI.
 
 ## Quick start
 
@@ -20,31 +20,36 @@ Sugarcube processes [W3C DTCG](https://www.designtokens.org/) design tokens into
 npx @sugarcube-sh/cli init
 ```
 
-This detects your project, adds a token starter kit (or uses your existing tokens), generates CSS, and installs either the Vite plugin or the CLI (pass `--skip-deps` for neither).
+This walks you through setup: starter tokens, CUBE CSS, components, and Vite plugin. The CLI is installed locally, so you can use `sugarcube` going forward.
 
-For Vite projects, the plugin provides hot reloading when tokens change:
+**With the Vite plugin:**
 
 ```ts
 // vite.config.ts
-import sugarcube from '@sugarcube-sh/vite';
+import sugarcube from "@sugarcube-sh/vite";
 
 export default {
-  plugins: [sugarcube()]
+  plugins: [sugarcube()],
 };
 ```
 
-For non-Vite projects, the CLI provides a `generate` command to generate CSS:
-
-```bash
-npx @sugarcube-sh/cli generate
+```ts
+import "virtual:sugarcube.css";
 ```
 
-If the CLI is installed as a dev dependency, you can use the `sugarcube` command in your npm scripts:
+**Without the Vite plugin:**
+
+```bash
+sugarcube generate
+```
+
+Or add it to your npm scripts:
 
 ```json
 {
   "scripts": {
     "styles:generate": "sugarcube generate",
+    "styles:generate:watch": "sugarcube generate --watch",
     "tokens:validate": "sugarcube validate"
   }
 }
@@ -52,16 +57,16 @@ If the CLI is installed as a dev dependency, you can use the `sugarcube` command
 
 ## Documentation
 
-[sugarcube.sh/docs](https://sugarcube.sh/docs) — Full setup guide, configuration reference, and component registry.
+[sugarcube.sh/docs](https://sugarcube.sh/docs)
 
 ## Packages
 
 | Package | Description |
 |---------|-------------|
-| [`@sugarcube-sh/cli`](https://npmx.dev/package/@sugarcube-sh/cli) | CLI for sugarcube |
-| [`@sugarcube-sh/vite`](https://npmx.dev/package/@sugarcube-sh/vite) | Vite plugin for sugarcube |
-| [`@sugarcube-sh/core`](https://npmx.dev/package/@sugarcube-sh/core) | Core functionality for sugarcube |
+| [`@sugarcube-sh/cli`](https://npmx.dev/package/@sugarcube-sh/cli) | CLI for initialization, generation, and components |
+| [`@sugarcube-sh/vite`](https://npmx.dev/package/@sugarcube-sh/vite) | Vite plugin with HMR |
+| [`@sugarcube-sh/core`](https://npmx.dev/package/@sugarcube-sh/core) | Core token processing |
 
 ## License
 
-See [LICENSE.md](./LICENSE.md) for terms.
+See [LICENSE.md](./LICENSE.md).
