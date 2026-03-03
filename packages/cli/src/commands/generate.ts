@@ -27,6 +27,7 @@ import { relative } from "pathe";
 import color from "picocolors";
 import packageJson from "../../package.json" with { type: "json" };
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
+import { getProjectInfo } from "../detection/framework.js";
 import { loadAndResolveTokensForCLI } from "../pipelines/load-and-resolve-for-cli.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
@@ -66,10 +67,12 @@ function buildFluidConfig(flags: GenerateFlags): FluidConfig | undefined {
 }
 
 function buildConfigFromFlags(flags: GenerateFlags): InternalConfig {
+    const { stylesDir } = getProjectInfo(process.cwd());
+
     const userConfig: SugarcubeConfig = {
         resolver: flags.resolver,
         output: {
-            cssRoot: flags.stylesDir,
+            cssRoot: flags.stylesDir ?? stylesDir,
             variables: flags.variablesDir,
             variablesFilename: flags.variablesFilename,
             utilities: flags.utilitiesDir,
