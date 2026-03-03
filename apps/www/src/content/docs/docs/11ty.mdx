@@ -13,7 +13,11 @@ Start by creating a new 11ty project if you don't have one set up already. 11ty 
 
 ## Without the Vite plugin
 
-[Generate CSS with the CLI](/docs/reference/cli-commands#generate), then configure 11ty to include the output. 11ty doesn't process CSS by default, so add a passthrough copy:
+Generate CSS with the CLI:
+
+<PackageManagerTabs command="sugarcube generate" />
+
+Then configure 11ty to include the output. 11ty doesn't process CSS by default, so add a passthrough copy:
 
 ```js title="eleventy.config.js"
 export default function (eleventyConfig) {

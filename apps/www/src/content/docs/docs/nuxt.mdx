@@ -37,7 +37,11 @@ export default defineNuxtConfig({
 
 ## Without the Vite plugin
 
-If you skipped the Vite plugin during init, [generate CSS with the CLI](/docs/reference/cli-commands#generate) and add the output to your Nuxt config:
+If you skipped the Vite plugin during init, generate CSS with the CLI:
+
+<PackageManagerTabs command="sugarcube generate" />
+
+Then add the output to your Nuxt config:
 
 ```ts title="nuxt.config.ts"
 export default defineNuxtConfig({
