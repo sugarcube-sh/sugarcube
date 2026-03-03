@@ -127,8 +127,8 @@ export const init = new Command()
             }
 
             const installVite = await promptOptional(
-                `Vite plugin? ${color.dim("(recommended for Vite-based frameworks: Astro, SvelteKit, Nuxt...)")}`,
-                `you can install it later with ${color.cyan("npm i -D @sugarcube-sh/vite")}`
+                `Vite plugin? ${color.dim("(recommended for Vite-based frameworks: Astro, SvelteKit...)")}`,
+                `you can install it later: ${color.cyan("@sugarcube-sh/vite")}`
             );
 
             const packageManager = await getPackageManager(process.cwd(), {
