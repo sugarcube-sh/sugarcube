@@ -23,7 +23,7 @@ export async function next(ctx: NextStepsContext): Promise<void> {
         lines.push(color.dim("    plugins: [await sugarcube()],"));
         lines.push(color.dim("  })"));
     } else {
-        lines.push(`Generate CSS: ${color.cyan("npx sugarcube generate")}`);
+        lines.push(`Generate styles: ${color.cyan("sugarcube generate")}`);
     }
 
     lines.push("");
