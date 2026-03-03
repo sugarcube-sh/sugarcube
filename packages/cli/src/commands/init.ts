@@ -70,7 +70,6 @@ export const init = new Command()
             intro(label("sugarcube"));
             await welcome();
 
-            // 1. Tokens
             const detectionTasks: Task[] = [
                 {
                     pending: "Detect existing tokens",
@@ -101,7 +100,6 @@ export const init = new Command()
                 ]);
             }
 
-            // 2. CUBE CSS
             const addCube = await promptOptional(
                 "CUBE CSS?",
                 `you can add it later with ${color.cyan("sugarcube cube")}`
@@ -115,7 +113,6 @@ export const init = new Command()
                 });
             }
 
-            // 3. Components
             const addComponents = await promptOptional(
                 "Components?",
                 `you can add them later with ${color.cyan("sugarcube components")}`
@@ -129,13 +126,11 @@ export const init = new Command()
                 });
             }
 
-            // 4. Vite plugin
             const installVite = await promptOptional(
                 `Vite plugin? ${color.dim("(recommended for Vite-based frameworks: Astro, SvelteKit, Nuxt...)")}`,
                 `you can install it later with ${color.cyan("npm i -D @sugarcube-sh/vite")}`
             );
 
-            // 5. Install dependencies
             const packageManager = await getPackageManager(process.cwd(), {
                 withFallback: true,
             });
