@@ -20,8 +20,8 @@ function transform(command: string, pm: "npm" | "pnpm" | "yarn" | "bun"): string
 
     if (pm === "pnpm") {
         // sugarcube CLI: use package name for dlx (binary name doesn't work)
-        result = result.replace(/^npx sugarcube(?=\s|$)/, `pnpm dlx "${PACKAGE}"`);
-        result = result.replace(new RegExp(`^npx ${PACKAGE}(?=\\s|$)`), `pnpm dlx "${PACKAGE}"`);
+        result = result.replace(/^npx sugarcube(?=\s|$)/, `pnpm dlx ${PACKAGE}`);
+        result = result.replace(new RegExp(`^npx ${PACKAGE}(?=\\s|$)`), `pnpm dlx ${PACKAGE}`);
         result = result.replace(/^sugarcube(?=\s|$)/, "pnpm sugarcube");
         result = result.replace(/^npx\s/, "pnpm dlx ");
         result = result.replace(/^npm\s/, "pnpm ");
@@ -31,8 +31,8 @@ function transform(command: string, pm: "npm" | "pnpm" | "yarn" | "bun"): string
     }
 
     if (pm === "yarn") {
-        result = result.replace(/^npx sugarcube(?=\s|$)/, `yarn dlx "${PACKAGE}"`);
-        result = result.replace(new RegExp(`^npx ${PACKAGE}(?=\\s|$)`), `yarn dlx "${PACKAGE}"`);
+        result = result.replace(/^npx sugarcube(?=\s|$)/, `yarn dlx ${PACKAGE}`);
+        result = result.replace(new RegExp(`^npx ${PACKAGE}(?=\\s|$)`), `yarn dlx ${PACKAGE}`);
         result = result.replace(/^sugarcube(?=\s|$)/, "yarn sugarcube");
         result = result.replace(/^npx\s/, "yarn dlx ");
         result = result.replace(/^npm\s/, "yarn ");
@@ -42,8 +42,8 @@ function transform(command: string, pm: "npm" | "pnpm" | "yarn" | "bun"): string
     }
 
     if (pm === "bun") {
-        result = result.replace(/^npx sugarcube(?=\s|$)/, `bunx "${PACKAGE}"`);
-        result = result.replace(new RegExp(`^npx ${PACKAGE}(?=\\s|$)`), `bunx "${PACKAGE}"`);
+        result = result.replace(/^npx sugarcube(?=\s|$)/, `bunx ${PACKAGE}`);
+        result = result.replace(new RegExp(`^npx ${PACKAGE}(?=\\s|$)`), `bunx ${PACKAGE}`);
         result = result.replace(/^sugarcube(?=\s|$)/, "bun sugarcube");
         result = result.replace(/^npx\s/, "bunx ");
         result = result.replace(/^npm\s/, "bun ");
