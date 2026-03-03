@@ -3,7 +3,7 @@ import { cancel, confirm, isCancel } from "@clack/prompts";
 import color from "picocolors";
 import type { ComponentChoice, RegistryItem } from "../types/index.js";
 
-export async function promptStarterKit(): Promise<string> {
+export async function promptStarterKit(): Promise<string | null> {
     const choice = await select({
         message: "Choose a token starter kit",
         options: [
@@ -17,6 +17,11 @@ export async function promptStarterKit(): Promise<string> {
                 value: "static",
                 hint: "Fixed spacing and typography",
             },
+            {
+                label: "Skip",
+                value: "skip",
+                hint: "Continue without design tokens",
+            },
         ],
     });
 
@@ -24,7 +29,7 @@ export async function promptStarterKit(): Promise<string> {
         process.exit(0);
     }
 
-    return choice as string;
+    return choice === "skip" ? null : (choice as string);
 }
 
 export async function promptOptional(message: string, skipHint: string): Promise<boolean> {

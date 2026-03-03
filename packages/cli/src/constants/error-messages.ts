@@ -133,7 +133,7 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
 
     GENERATE_NO_CONFIG_OR_RESOLVER: () =>
         `No design tokens found.\n\nRun ${color.cyan(COMMANDS.INIT)} to set up your design tokens.\n\nStuck? ${color.cyan(
-            LINKS.HOMEPAGE
+            LINKS.DOCS
         )}`,
 
     GENERATE_MULTIPLE_RESOLVERS_NO_CONFIG: (paths: string[]) =>
