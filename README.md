@@ -12,7 +12,7 @@
 
 ---
 
-Sugarcube is a tool for building front ends on [DTCG design tokens](https://www.designtokens.org/). It connects your tokens to CSS variables, utility classes, CUBE architecture, and copy-to-own components — via the Vite plugin or CLI.
+Sugarcube is a tool for building front ends on [DTCG design tokens](https://www.designtokens.org/). It connects your tokens to CSS variables, utility classes, CUBE CSS, and copy-to-own components — via the Vite plugin or CLI.
 
 ## Quick start
 
