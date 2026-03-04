@@ -52,4 +52,20 @@ describe("generate command", () => {
         expect(result.exitCode).toBe(0);
         expect(existsSync(join(testDir, "src/styles/global"))).toBe(true);
     });
+
+    it("respects --styles-dir flag", { timeout: TEST_TIMEOUT }, async () => {
+        const tokensDir = await createTokens(testDir);
+
+        const result = await execaCommand(
+            `node ${CLI_PATH} generate --resolver ${tokensDir}/tokens.resolver.json --styles-dir custom/css`,
+            {
+                cwd: testDir,
+                timeout: TEST_TIMEOUT,
+                reject: false,
+            }
+        );
+
+        expect(result.exitCode).toBe(0);
+        expect(existsSync(join(testDir, "custom/css/global"))).toBe(true);
+    });
 });

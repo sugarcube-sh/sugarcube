@@ -46,8 +46,7 @@
     "scripts": {
         "build": "tsc --noEmit && pkgroll --minify",
         "dev": "cross-env REGISTRY_URL=http://localhost:4321/r tsx src/index.ts",
-        "test": "vitest run --exclude 'tests/e2e/**'",
-        "test:e2e": "vitest run tests/e2e",
+        "test": "vitest run",
         "test:watch": "vitest --exclude 'tests/e2e/**'",
         "type-check": "tsc --noEmit",
         "start": "cross-env REGISTRY_URL=https://sugarcube.sh/r tsx src/index.ts"
