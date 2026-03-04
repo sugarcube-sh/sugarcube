@@ -35,6 +35,6 @@ describe("vite-plugin-sugarcube", () => {
         const plugins = await sugarcube();
         expect(Array.isArray(plugins)).toBe(true);
         const flat = plugins.flat();
-        expect(flat.every((p) => p.name)).toBe(true);
+        expect(flat.every((p: any) => p.name)).toBe(true);
     });
 });
