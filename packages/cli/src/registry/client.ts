@@ -1,11 +1,7 @@
-import { ERROR_MESSAGES } from "../constants/index.js";
-import {
-    CLIError,
-    type Framework,
-    type RegistryItemType,
-    fileContentResponseSchema,
-    registryIndexSchema,
-} from "../types/index.js";
+import { ERROR_MESSAGES } from "../constants/error-messages.js";
+import { CLIError } from "../types/errors.js";
+import type { Framework, RegistryItemType } from "../types/registry.js";
+import { fileContentResponseSchema, registryIndexSchema } from "../types/schema.js";
 
 const REGISTRY_URL = process.env.REGISTRY_URL ?? "https://sugarcube.sh/r";
 

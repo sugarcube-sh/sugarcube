@@ -1,5 +1,5 @@
 import { detect } from "@antfu/ni";
-import type { PackageManager } from "../types/index.js";
+import type { PackageManager } from "../types/install.js";
 
 /**
  * Detects the package manager for a project.

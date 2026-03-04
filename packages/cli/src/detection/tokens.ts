@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import { glob } from "tinyglobby";
-import { JSON_GLOB_PATTERN, MAX_TOKEN_DETECTION_DEPTH } from "../constants/index.js";
+import { JSON_GLOB_PATTERN } from "../constants/config.js";
+import { MAX_TOKEN_DETECTION_DEPTH } from "../constants/files.js";
 
 function hasAnyToken(obj: Record<string, any>, depth = 0): boolean {
     if (typeof obj !== "object" || obj === null || depth > MAX_TOKEN_DETECTION_DEPTH) {

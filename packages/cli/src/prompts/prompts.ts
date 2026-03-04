@@ -1,7 +1,7 @@
 import { log, multiselect, select } from "@clack/prompts";
 import { cancel, confirm, isCancel } from "@clack/prompts";
 import color from "picocolors";
-import type { ComponentChoice, RegistryItem } from "../types/index.js";
+import type { ComponentChoice, RegistryItem } from "../types/registry.js";
 
 export async function promptStarterKit(): Promise<string | null> {
     const choice = await select({

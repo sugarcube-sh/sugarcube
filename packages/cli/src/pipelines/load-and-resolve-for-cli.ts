@@ -1,7 +1,7 @@
 import { loadAndResolveTokens } from "@sugarcube-sh/core";
 import type { InternalConfig, TokenPipelineSource } from "@sugarcube-sh/core";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
-import { CLIError } from "../types/index.js";
+import { CLIError } from "../types/errors.js";
 
 // CLI needs special error handling so we wrap the token processing pipeline
 // I considered separating the two but this felt like the right abstraction

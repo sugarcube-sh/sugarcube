@@ -1,16 +1,17 @@
 import { Command } from "commander";
 import color from "picocolors";
-import { ERROR_MESSAGES } from "../constants/index.js";
+import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { collectComponentOverwriteWarnings } from "../fs/collect-overwrite-warnings.js";
 import { formatOverwriteWarnings } from "../fs/format-overwrite-warnings.js";
-import { installComponents, installDependencies } from "../installation/index.js";
+import { installComponents } from "../installation/components.js";
+import { installDependencies } from "../installation/dependencies.js";
 import {
     confirmOverwrite,
     promptComponentFramework,
     promptComponentSelectionFiltered,
 } from "../prompts/prompts.js";
 import { getRegistryIndex } from "../registry/client.js";
-import { CLIError } from "../types/index.js";
+import { CLIError } from "../types/errors.js";
 import { getComponentsDir } from "../utils/config-helpers.js";
 import { handleError } from "../utils/handle-error.js";
 import { resolveTree } from "../utils/resolve-dependencies.js";

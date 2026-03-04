@@ -1,4 +1,4 @@
-import type { Framework, RegistryItem } from "./index.js";
+import type { Framework, RegistryItem } from "./registry.js";
 
 export interface InstallComponentsOptions {
     registryIndex: RegistryItem[];

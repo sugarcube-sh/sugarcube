@@ -1,12 +1,9 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { basename, join } from "pathe";
 import { getRegistryFiles } from "../registry/client.js";
-import {
-    CLIError,
-    type InstallComponentsOptions,
-    type InstallComponentsResult,
-    type RegistryItem,
-} from "../types/index.js";
+import { CLIError } from "../types/errors.js";
+import type { InstallComponentsOptions, InstallComponentsResult } from "../types/install.js";
+import type { RegistryItem } from "../types/registry.js";
 import { resolveTree } from "../utils/resolve-dependencies.js";
 import { installDependencies } from "./dependencies.js";
 

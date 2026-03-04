@@ -32,7 +32,7 @@ import { loadAndResolveTokensForCLI } from "../pipelines/load-and-resolve-for-cl
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 import { getMarkupFiles, readMarkupSources } from "../scanning/markup.js";
-import { CLIError } from "../types/index.js";
+import { CLIError } from "../types/errors.js";
 import { handleError } from "../utils/handle-error.js";
 import { validateFilename } from "../validation/flags.js";
 import { startWatcher } from "../watch/watcher.js";
