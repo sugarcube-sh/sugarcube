@@ -5,8 +5,8 @@ description: Use the CLI to initialize a new sugarcube project, generate CSS, ad
 
 import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 
-<SiteAside type="tip" title="Shorter commands">
-    For shorter syntax, install `@sugarcube-sh/cli` as a dev dependency. This provides a `sugarcube` command you can use in npm scripts, e.g.: `"tokens:generate": "sugarcube generate"`
+<SiteAside type="note">
+    These commands (aside from `init`) assume you've run [`init`](/docs/getting-started), which installs the CLI locally.
 </SiteAside>
 
 ## Commands
@@ -19,36 +19,10 @@ import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 
 ## Typical Workflow
 
-1. **Initialize**: `npx @sugarcube-sh/cli init` - Sets up starter kit, detects framework, installs dependencies
-2. **Generate** CSS (if not using the Vite plugin): `npx @sugarcube-sh/cli generate` - Processes tokens, outputs CSS
-3. **Add components** as needed: `npx @sugarcube-sh/cli components`
-4. **Validate** tokens: `npx @sugarcube-sh/cli validate`
-
-## Using with UnoCSS CLI (if not using the Vite plugin)
-
-Want utilities like `flex`, `grid`, or `w-full` alongside your token-based utilities? Run the sugarcube CLI alongside the [UnoCSS CLI](https://unocss.dev/integrations/cli):
-
-```bash
-# Terminal 1: Token-based CSS
-sugarcube generate --watch
-
-# Terminal 2: Preset utilities
-unocss "src/**/*.tsx" --watch --preset wind4
-```
-
-Then import both:
-
-```css
-@import "./styles/global/tokens.variables.gen.css";
-@import "./styles/utilities/utilities.gen.css";
-@import "./uno.css";
-```
-
-Sugarcube handles your design token utilities (`.bg-primary`, `.text-heading`, etc.) while UnoCSS handles preset utilities (`.flex`, `.grid`, `.gap-4`, etc.).
-
-<SiteAside type="note">
-    Avoid token names that match preset utility names (like `color.red.500`) to prevent class name conflicts.
-</SiteAside>
+1. **Initialize**: `npx @sugarcube-sh/cli init` - Sets up design tokens, optionally adds CUBE CSS and components, installs dependencies
+2. **Generate** CSS (if not using the Vite plugin): `sugarcube generate` - Processes tokens, outputs CSS
+3. **Add components** as needed: `sugarcube components`
+4. **Validate** tokens: `sugarcube validate`
 
 ## Next steps
 

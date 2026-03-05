@@ -1,0 +1,52 @@
+---
+title: Nuxt
+description: How to setup sugarcube with Nuxt
+---
+
+## Create your project
+
+Start by creating a new Nuxt project if you don't have one set up already:
+
+<PackageManagerTabs command="npm create nuxt@latest" />
+
+Then navigate into your project:
+
+```bash frame="none"
+cd my-app
+```
+
+## Initialize sugarcube
+
+<PackageManagerTabs command="npx @sugarcube-sh/cli init" />
+
+## With the Vite plugin
+
+If you chose the Vite plugin during `init`, add it to your Nuxt configuration:
+
+```ts title="nuxt.config.ts"
+import sugarcube from "@sugarcube-sh/vite";
+
+export default defineNuxtConfig({
+    compatibilityDate: "2025-07-15",
+    devtools: { enabled: true },
+    vite: {
+        plugins: [sugarcube()],
+    },
+});
+```
+
+## Without the Vite plugin
+
+If you skipped the Vite plugin during init, generate CSS with the CLI:
+
+<PackageManagerTabs command="sugarcube generate" />
+
+Then add the output to your Nuxt config:
+
+```ts title="nuxt.config.ts"
+export default defineNuxtConfig({
+    compatibilityDate: "2025-07-15",
+    devtools: { enabled: true },
+    css: ["./styles/global/tokens.variables.gen.css"],
+});
+```

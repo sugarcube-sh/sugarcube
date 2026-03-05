@@ -5,7 +5,7 @@ import type {
     FileContentResponse,
     Framework,
     RegistryItem,
-} from "./index.js";
+} from "./registry.js";
 
 const frameworkEnum = z.enum([
     "react",

@@ -11,7 +11,7 @@ export interface CommonOptions {
 }
 
 const unicode = isUnicodeSupported();
-export const unicodeOr = (c: string, fallback: string) => (unicode ? c : fallback);
+const unicodeOr = (c: string, fallback: string) => (unicode ? c : fallback);
 export const S_STEP_SUBMIT = unicodeOr("◇", "o");
 
 export const S_BAR_START = unicodeOr("┌", "T");

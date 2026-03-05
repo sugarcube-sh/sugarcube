@@ -18,9 +18,19 @@ const frameworks = [
         href: "/docs/11ty",
     },
     {
+        name: "SvelteKit",
+        icon: "sveltekit",
+        href: "/docs/sveltekit",
+    },
+    {
         name: "TanStack Start",
         icon: "tanstack-start",
         href: "/docs/tanstack-start",
+    },
+    {
+        name: "Nuxt",
+        icon: "nuxt",
+        href: "/docs/nuxt",
     },
     // {
     //     name: "TanStack Router",
@@ -34,7 +44,7 @@ const frameworks = [
     {
         frameworks.map((framework) => (
             <a href={framework.href} class="site-card framework-card">
-                <Icon name={framework.icon} class="h-24 w-24" />
+                <Icon name={framework.icon} class="h-12 w-12" />
                 <p class="font-weight-medium">{framework.name}</p>
             </a>
         ))

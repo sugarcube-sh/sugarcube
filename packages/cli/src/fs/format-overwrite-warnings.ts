@@ -1,4 +1,4 @@
-import type { OverwriteWarnings } from "../types/index.js";
+import type { OverwriteWarnings } from "../types/overwrite-warnings.js";
 
 export function formatOverwriteWarnings(warnings: OverwriteWarnings): string | undefined {
     const sections: string[] = [];

@@ -6,13 +6,13 @@ description: "Complete reference for all sugarcube CLI commands, their options, 
 import Table from "@/src/components/Table.astro";
 import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 
-<SiteAside type="tip" title="Shorter commands">
-   For shorter syntax, install `@sugarcube-sh/cli` as a dev dependency. This provides a `sugarcube` command you can use in npm scripts: e.g.: `"tokens:generate": "sugarcube generate"`
+<SiteAside type="note">
+    These commands assume you've run [`init`](/docs/getting-started), which installs the CLI locally. You can also run without installing, e.g.: `pnpm dlx @sugarcube-sh/cli <command>`.
 </SiteAside>
 
 ## `init`
 
-Initialize a new sugarcube project with design tokens and build tool integration.
+Initialize a new sugarcube project interactively.
 
 ### Usage
 
@@ -22,79 +22,38 @@ npx @sugarcube-sh/cli init [options]
 
 ### Description
 
-The `init` command sets up a sugarcube project in your current directory. It:
+The `init` command walks you through setting up sugarcube in your project. It:
 
-- Detects your project framework and structure
-- Sets up design tokens (either from a starter kit or existing tokens)
-- Configures CSS output directories
-- Installs the Vite plugin if you're using Vite
-- Generates CSS variables and utilities (if not using the Vite plugin)
-- Creates a configuration file if you customize settings via flags
+- Detects existing design tokens, or prompts you to choose a starter kit
+- Optionally adds CUBE CSS files
+- Optionally adds components from the registry
+- Optionally installs the Vite plugin
+- Installs `@sugarcube-sh/cli` as a dev dependency
 
-### Zero-Config Mode
-
-If you run `init` without any customization flags, **no config file is created**. The project works with auto-discovery and defaults.
-
-```bash frame="none"
-npx @sugarcube-sh/cli init
-# No config file created - uses auto-discovery
-```
-
-### Config File Creation
-
-A config file is created **only** when you provide customization flags:
-
-```bash frame="none"
-npx @sugarcube-sh/cli init --styles-dir custom/styles
-# Creates sugarcube.config.ts with your custom settings
-```
+No config file is created — the project works with auto-discovery and sensible defaults. See [Configuration](/docs/configuration) for customizing settings later.
 
 ### Options
 
 <Table>
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--kit <kit>` | Starter kit to use when no existing tokens are found | `fluid` |
-| `--tokens-dir <dir>` | Design tokens directory (e.g., `src/design-tokens`) | Auto-detected |
-| `--styles-dir <dir>` | CSS root output directory (e.g., `src/styles`) | Auto-detected |
-| `--variables-dir <dir>` | Token variables output directory | `{styles-dir}/global` |
-| `--variables-filename <name>` | Token variables filename | `tokens.variables.gen.css` |
-| `--utilities-dir <dir>` | Utilities output directory | `{styles-dir}/utilities` |
-| `--utilities-filename <name>` | Utilities filename | `utilities.gen.css` |
-| `--fluid-min <number>` | Min viewport for fluid scaling (px) | `320` |
-| `--fluid-max <number>` | Max viewport for fluid scaling (px) | `1200` |
-| `--color-fallback <strategy>` | Color fallback: `native` or `polyfill` | `native` |
-| `--skip-deps` | Skip all sugarcube package installation | - |
+| `--tokens-dir <dir>` | Design tokens directory | Auto-detected based on `src/` |
+| `--cube-dir <dir>` | CUBE CSS output directory | Auto-detected based on `src/` |
+| `--components-dir <dir>` | Components output directory | Auto-detected based on `src/` |
 </Table>
 
 <SiteAside type="note">
-- Providing customization flags creates a **minimal config file containing only your customizations**
-- Omitted settings use auto-discovery and sensible defaults
+    Requires an interactive terminal. For CI or non-interactive use, use the individual commands (`generate`, `cube`, `components`) directly.
 </SiteAside>
 
 ### Examples
 
 ```bash frame="none"
-# Zero-config initialization - no config file created
+# Interactive initialization with defaults
 npx @sugarcube-sh/cli init
 
-# Use a specific starter kit (still no config file)
-npx @sugarcube-sh/cli init --kit static
-
-# Specify custom directories - creates config file
-npx @sugarcube-sh/cli init --tokens-dir my-tokens --styles-dir my-styles
-
-# Customize fluid ranges - creates config file
-npx @sugarcube-sh/cli init --fluid-min 375 --fluid-max 1440
-
-# Combine customizations - creates config file
-npx @sugarcube-sh/cli init \
-  --styles-dir src/css \
-  --fluid-max 1600 \
-  --color-fallback polyfill
-
-# Skip all sugarcube package installation
-npx @sugarcube-sh/cli init --skip-deps
+# Specify custom directories
+npx @sugarcube-sh/cli init --tokens-dir ./tokens --cube-dir ./css
 ```
 
 ---
@@ -106,7 +65,7 @@ Generate CSS variables and utility classes from your design tokens.
 ### Usage
 
 ```bash frame="none"
-npx @sugarcube-sh/cli generate [options]
+npx sugarcube generate [options]
 ```
 
 ### Description
@@ -129,7 +88,7 @@ The command supports **zero-config** usage with automatic resolver discovery, or
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--resolver <path>` | Path to token resolver file | Auto-discovered recursively |
-| `--styles-dir <dir>` | CSS output directory | `src/styles` |
+| `--styles-dir <dir>` | CSS output directory | Auto-detected based on `src/` |
 | `--variables-dir <dir>` | Token variables output directory | `{styles-dir}/global` |
 | `--variables-filename <name>` | Token variables filename | `tokens.variables.gen.css` |
 | `--utilities-dir <dir>` | Utilities output directory | `{styles-dir}/utilities` |
@@ -146,32 +105,33 @@ The command supports **zero-config** usage with automatic resolver discovery, or
 
 ```bash frame="none"
 # Zero-config - auto-discovers resolver, uses defaults
-npx @sugarcube-sh/cli generate
+npx sugarcube generate
 
 # Specify resolver explicitly
-npx @sugarcube-sh/cli generate --resolver ./tokens.resolver.json
+npx sugarcube generate --resolver ./tokens.resolver.json
 
 # Custom output directories
-npx @sugarcube-sh/cli generate --styles-dir dist/styles
+npx sugarcube generate --styles-dir dist/styles
 
 # Override fluid viewport range
-npx @sugarcube-sh/cli generate --fluid-min 375 --fluid-max 1440
+npx sugarcube generate --fluid-min 375 --fluid-max 1440
 
 # Use polyfill for wide gamut colors
-npx @sugarcube-sh/cli generate --color-fallback polyfill
+npx sugarcube generate --color-fallback polyfill
 
 # Combine multiple options
-npx @sugarcube-sh/cli generate \
+npx sugarcube generate \
   --resolver ./tokens.resolver.json \
   --styles-dir src/css \
+  --fluid-min 500 \
   --fluid-max 1600 \
   --silent
 
 # Override config file values temporarily
-npx @sugarcube-sh/cli generate --fluid-max 1600
+npx sugarcube generate --fluid-max 1600
 
 # Watch mode - regenerate on token or markup file changes
-npx @sugarcube-sh/cli generate --watch
+npx sugarcube generate --watch
 ```
 
 ### Watch Mode
@@ -184,7 +144,7 @@ The `--watch` flag enables continuous regeneration during development:
 - Shows timing information for each regeneration
 
 ```bash frame="none"
-npx @sugarcube-sh/cli generate --watch
+npx sugarcube generate --watch
 # [sugarcube] Generated in 42ms
 # [sugarcube] Watching 5 token files + markup files...
 # [sugarcube] colors.json → src/styles/global/tokens.variables.gen.css (38ms)
@@ -212,7 +172,7 @@ Press `Ctrl+C` to stop watching.
 ```bash frame="none"
 # Your config has fluid.max = 1200
 # Test with a larger viewport without changing config:
-npx @sugarcube-sh/cli generate --fluid-max 1600
+npx sugarcube generate --fluid-max 1600
 # Config file still has 1200 - only this run used 1600
 ```
 
@@ -241,7 +201,7 @@ Validate design token files for W3C compliance and correctness.
 ### Usage
 
 ```bash frame="none"
-npx @sugarcube-sh/cli validate [paths...]
+npx sugarcube validate [paths...]
 ```
 
 ### Description
@@ -265,14 +225,14 @@ The `validate` command checks your design token files for:
 
 ```bash frame="none"
 # Validate tokens using config file
-npx @sugarcube-sh/cli validate
+npx sugarcube validate
 
 # Validate specific files or directories
-npx @sugarcube-sh/cli validate src/design-tokens
-npx @sugarcube-sh/cli validate tokens/colors.json tokens/spacing.json
+npx sugarcube validate src/design-tokens
+npx sugarcube validate tokens/colors.json tokens/spacing.json
 
 # Validate multiple paths
-npx @sugarcube-sh/cli validate src/tokens/colors src/tokens/spacing
+npx sugarcube validate src/tokens/colors src/tokens/spacing
 ```
 
 ### Behavior
@@ -290,7 +250,7 @@ Install copy-to-use components for your framework.
 ### Usage
 
 ```bash frame="none"
-npx @sugarcube-sh/cli components [components...] [options]
+npx sugarcube components [components...] [options]
 ```
 
 ### Description
@@ -311,7 +271,7 @@ The `components` command allows you to browse and install pre-built components f
 | Option | Description |
 |--------|-------------|
 | `-f, --framework <type>` | Framework to use (`react`, `css-only`) |
-| `--components-dir <dir>` | Components output directory (default: `src/components/ui` when no config) |
+| `--components-dir <dir>` | Components output directory (auto-detected based on `src/`, or from config) |
 | `-s, --silent` | Suppress logs and prompts |
 | `-o, --overwrite` | Overwrite existing files without confirmation |
 </Table>
@@ -320,19 +280,19 @@ The `components` command allows you to browse and install pre-built components f
 
 ```bash frame="none" 
 # Interactive mode - browse and select components
-npx @sugarcube-sh/cli components
+npx sugarcube components
 
 # Install specific components
-npx @sugarcube-sh/cli components button card --framework react
+npx sugarcube components button card --framework react
 
 # Install CSS-only components
-npx @sugarcube-sh/cli components button --framework css-only
+npx sugarcube components button --framework css-only
 
 # Specify custom output directory
-npx @sugarcube-sh/cli components button --components-dir src/ui
+npx sugarcube components button --components-dir src/ui
 
 # Overwrite existing files
-npx @sugarcube-sh/cli components button --overwrite
+npx sugarcube components button --overwrite
 ```
 
 ### Behavior
@@ -341,13 +301,13 @@ npx @sugarcube-sh/cli components button --overwrite
 - **Non-interactive mode**: Requires `--framework` flag when specifying components
 - **Dependencies**: Automatically installs required npm dependencies for React components
 - **Overwrite warnings**: Shows warnings before overwriting existing files (unless `--overwrite` is used)
-- **Works without a config file**: Uses auto-discovery when a resolver exists; otherwise writes to the default directory (`src/components/ui`). Use `--components-dir` to override.
+- **Works without a config file**: Defaults to `src/components/ui` or `components/ui` based on whether your project has a `src/` directory. Use `--components-dir` to override.
 - **Does not modify config files** - flag values are temporary for the command run
 
 ### Supported Frameworks
 
 - `react` - React components with TypeScript
-- `css-only` - Pure CSS components with HTML examples
+- `css-only` - Pure CSS components
 
 ---
 
@@ -358,7 +318,7 @@ Add CUBE CSS architecture to your project.
 ### Usage
 
 ```bash frame="none"
-npx @sugarcube-sh/cli cube [options]
+npx sugarcube cube [options]
 ```
 
 ### Description
@@ -372,23 +332,23 @@ The `cube` command installs the CUBE CSS methodology files into your project. CU
 |--------|-------------|
 | `-s, --silent` | Suppress logs and prompts |
 | `-f, --force` | Skip overwrite confirmation |
-| `--cube-dir <dir>` | CUBE CSS output directory (default: `src/styles` when no config, otherwise config's cssRoot) |
+| `--cube-dir <dir>` | CUBE CSS output directory (auto-detected based on `src/`, or config's cssRoot) |
 </Table>
 
 ### Examples
 
 ```bash frame="none"
 # Add CUBE CSS files
-npx @sugarcube-sh/cli cube
+npx sugarcube cube
 
 # Specify custom output directory
-npx @sugarcube-sh/cli cube --cube-dir src/styles/cube
+npx sugarcube cube --cube-dir src/styles/cube
 
 # Skip overwrite confirmation
-npx @sugarcube-sh/cli cube --force
+npx sugarcube cube --force
 
 # Silent mode
-npx @sugarcube-sh/cli cube --silent
+npx sugarcube cube --silent
 ```
 
 ### Output
@@ -409,7 +369,7 @@ Each directory includes starter files. These are starting points that you can mo
 
 - Creates the output directory if it doesn't exist
 - Shows warnings before overwriting existing files (unless `--force` is used)
-- **Works without a config file**: Uses auto-discovery when a resolver exists; otherwise writes to the default directory (`src/styles`). Use `--cube-dir` to override.
+- **Works without a config file**: Defaults to `src/styles` or `styles` based on whether your project has a `src/` directory. Use `--cube-dir` to override.
 - **Does not modify config files** - flag values are temporary for the command run
 
 ---
@@ -435,25 +395,25 @@ A typical sugarcube workflow:
 
 2. **Generate CSS** (if not using Vite plugin):
    ```bash frame="none"
-   npx @sugarcube-sh/cli generate
+   npx sugarcube generate
 
    # Or use watch mode during development
-   npx @sugarcube-sh/cli generate --watch
+   npx sugarcube generate --watch
    ```
 
 3. **Add components** as needed:
    ```bash frame="none"
-   npx @sugarcube-sh/cli components
+   npx sugarcube components
    ```
 
 4. **Add CUBE CSS** (optional):
    ```bash frame="none"
-   npx @sugarcube-sh/cli cube
+   npx sugarcube cube
    ```
 
 5. **Validate tokens** during development:
    ```bash frame="none"
-   npx @sugarcube-sh/cli validate
+   npx sugarcube validate
    ```
 
 ## Getting Help

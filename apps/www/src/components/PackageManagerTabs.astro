@@ -7,20 +7,59 @@ interface Props {
 
 const { command } = Astro.props;
 
+const PACKAGE = "@sugarcube-sh/cli";
+
+function transform(command: string, pm: "npm" | "pnpm" | "yarn" | "bun"): string {
+    let result = command;
+
+    if (pm === "npm") {
+        // Bare sugarcube → npx sugarcube (npm doesn't support npm sugarcube)
+        result = result.replace(/^sugarcube(?=\s|$)/, "npx sugarcube");
+        return result;
+    }
+
+    if (pm === "pnpm") {
+        // sugarcube CLI: use package name for dlx (binary name doesn't work)
+        result = result.replace(/^npx sugarcube(?=\s|$)/, `pnpm dlx ${PACKAGE}`);
+        result = result.replace(new RegExp(`^npx ${PACKAGE}(?=\\s|$)`), `pnpm dlx ${PACKAGE}`);
+        result = result.replace(/^sugarcube(?=\s|$)/, "pnpm sugarcube");
+        result = result.replace(/^npx\s/, "pnpm dlx ");
+        result = result.replace(/^npm\s/, "pnpm ");
+        result = result.replace(/^npm install\s/, "pnpm add ");
+        result = result.replace(/^pnpm install\s/, "pnpm add ");
+        return result;
+    }
+
+    if (pm === "yarn") {
+        result = result.replace(/^npx sugarcube(?=\s|$)/, `yarn dlx ${PACKAGE}`);
+        result = result.replace(new RegExp(`^npx ${PACKAGE}(?=\\s|$)`), `yarn dlx ${PACKAGE}`);
+        result = result.replace(/^sugarcube(?=\s|$)/, "yarn sugarcube");
+        result = result.replace(/^npx\s/, "yarn dlx ");
+        result = result.replace(/^npm\s/, "yarn ");
+        result = result.replace(/^npm install\s/, "yarn add ");
+        result = result.replace(/^yarn install\s/, "yarn add ");
+        return result;
+    }
+
+    if (pm === "bun") {
+        result = result.replace(/^npx sugarcube(?=\s|$)/, `bunx ${PACKAGE}`);
+        result = result.replace(new RegExp(`^npx ${PACKAGE}(?=\\s|$)`), `bunx ${PACKAGE}`);
+        result = result.replace(/^sugarcube(?=\s|$)/, "bun sugarcube");
+        result = result.replace(/^npx\s/, "bunx ");
+        result = result.replace(/^npm\s/, "bun ");
+        result = result.replace(/^npm install\s/, "bun add ");
+        result = result.replace(/^bun install\s/, "bun add ");
+        return result;
+    }
+
+    return result;
+}
+
 const commands = {
-    pnpm: command
-        .replace(/^npx/, "pnpm dlx")
-        .replace(/^npm/, "pnpm")
-        .replace(/^pnpm install/, "pnpm add"),
-    npm: command,
-    yarn: command
-        .replace(/^npx/, "yarn dlx")
-        .replace(/^npm/, "yarn")
-        .replace(/^yarn install/, "yarn add"),
-    bun: command
-        .replace(/^npx/, "bunx --bun")
-        .replace(/^npm/, "bun")
-        .replace(/^bun install/, "bun add"),
+    pnpm: transform(command, "pnpm"),
+    npm: transform(command, "npm"),
+    yarn: transform(command, "yarn"),
+    bun: transform(command, "bun"),
 };
 ---
 

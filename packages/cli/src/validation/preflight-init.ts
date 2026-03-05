@@ -1,5 +1,5 @@
 import { configFileExists } from "@sugarcube-sh/core";
-import { ERROR_MESSAGES } from "../constants/index.js";
+import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { errorBoxWithBadge } from "../prompts/box-with-badge.js";
 
 export async function preflightInit(): Promise<void> {

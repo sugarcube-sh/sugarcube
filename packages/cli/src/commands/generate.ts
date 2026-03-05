@@ -27,12 +27,12 @@ import { relative } from "pathe";
 import color from "picocolors";
 import packageJson from "../../package.json" with { type: "json" };
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
-import { isPackageInstalled } from "../detection/is-package-installed.js";
+import { getProjectInfo } from "../detection/framework.js";
 import { loadAndResolveTokensForCLI } from "../pipelines/load-and-resolve-for-cli.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 import { getMarkupFiles, readMarkupSources } from "../scanning/markup.js";
-import { CLIError } from "../types/index.js";
+import { CLIError } from "../types/errors.js";
 import { handleError } from "../utils/handle-error.js";
 import { validateFilename } from "../validation/flags.js";
 import { startWatcher } from "../watch/watcher.js";
@@ -67,10 +67,12 @@ function buildFluidConfig(flags: GenerateFlags): FluidConfig | undefined {
 }
 
 function buildConfigFromFlags(flags: GenerateFlags): InternalConfig {
+    const { stylesDir } = getProjectInfo(process.cwd());
+
     const userConfig: SugarcubeConfig = {
         resolver: flags.resolver,
         output: {
-            cssRoot: flags.stylesDir,
+            cssRoot: flags.stylesDir ?? stylesDir,
             variables: flags.variablesDir,
             variablesFilename: flags.variablesFilename,
             utilities: flags.utilitiesDir,
@@ -151,7 +153,7 @@ function formatOutputPaths(output: CSSFileOutput): string[] {
     return unique.map((file) => relative(process.cwd(), file));
 }
 
-export async function generateSugarcubeUtilities(
+async function generateSugarcubeUtilities(
     tokens: NormalizedConvertedTokens,
     config: InternalConfig
 ): Promise<CSSFileOutput> {
@@ -341,12 +343,6 @@ export const generate = new Command()
 
             validateFilename(options.variablesFilename, "--variables-filename");
             validateFilename(options.utilitiesFilename, "--utilities-filename");
-
-            if (isPackageInstalled("@sugarcube-sh/vite")) {
-                throw new CLIError(
-                    "Sugarcube vite plugin detected. When using the plugin, CSS is generated automatically during your build process. Remove the plugin to use CLI generation instead."
-                );
-            }
 
             const finalConfig = await resolveConfig(options);
 

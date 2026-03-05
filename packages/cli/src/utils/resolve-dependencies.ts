@@ -1,4 +1,5 @@
-import { CLIError, type Framework, type RegistryItem } from "../types/index.js";
+import { CLIError } from "../types/errors.js";
+import type { Framework, RegistryItem } from "../types/registry.js";
 
 export async function resolveTree(index: RegistryItem[], names: string[], framework: Framework) {
     const tree: RegistryItem[] = [];

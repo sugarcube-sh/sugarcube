@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { glob } from "tinyglobby";
-import { CLIError } from "../types/index.js";
+import { CLIError } from "../types/errors.js";
 import { MARKUP_GLOB_PATTERN, MARKUP_IGNORE_PATTERNS } from "./constants.js";
 
 // Safety limits to prevent OOM crashes

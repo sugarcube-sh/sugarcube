@@ -1,0 +1,17 @@
+{
+  "version": "2025.10",
+  "name": "test",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "color": {
+            "primary": { "$type": "color", "$value": "#007bff" }
+          }
+        }
+      ]
+    }
+  ]
+}

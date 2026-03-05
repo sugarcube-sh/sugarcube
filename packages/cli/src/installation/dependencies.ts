@@ -1,7 +1,7 @@
 import { execa } from "execa";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { CLIError } from "../types/errors.js";
-import type { PackageManager } from "../types/index.js";
+import type { PackageManager } from "../types/install.js";
 
 export async function installDependencies(
     dependencies: string[],

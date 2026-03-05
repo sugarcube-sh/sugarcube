@@ -8,7 +8,7 @@ import { glob } from "tinyglobby";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { loadAndResolveTokensForCLI } from "../pipelines/load-and-resolve-for-cli.js";
 import { intro, label, outro } from "../prompts/common.js";
-import { CLIError } from "../types/index.js";
+import { CLIError } from "../types/errors.js";
 import { handleError } from "../utils/handle-error.js";
 
 export const validate = new Command()

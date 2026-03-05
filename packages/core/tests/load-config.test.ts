@@ -50,7 +50,7 @@ describe("loadInternalConfig", () => {
         const result = await loadInternalConfig();
 
         expect(result.config.resolver).toContain("tokens.resolver.json");
-        expect(result.config.output.cssRoot).toBe("src/styles");
+        expect(result.config.output.cssRoot).toBe("styles");
         expect(result.configPath).toContain("tokens.resolver.json");
     });
 });

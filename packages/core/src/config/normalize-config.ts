@@ -1,5 +1,15 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { DEFAULT_CONFIG } from "../constants/config.js";
 import type { InternalConfig, SugarcubeConfig } from "../types/config.js";
+
+function getDefaultCssRoot(cwd: string): string {
+    return existsSync(resolve(cwd, "src")) ? "src/styles" : "styles";
+}
+
+function getDefaultComponentsDir(cwd: string): string {
+    return existsSync(resolve(cwd, "src")) ? "src/components/ui" : "components/ui";
+}
 
 /**
  * Fills in default values for any omitted fields in a user configuration.
@@ -7,18 +17,18 @@ import type { InternalConfig, SugarcubeConfig } from "../types/config.js";
  * This function takes a user config (with optional fields) and
  * returns a complete internal config (with all required fields filled in).
  *
- * @param userConfig - The user configuration with optional fields
- * @returns A complete configuration with all defaults filled in
+ * Output paths default to `src/styles` or `styles` (and similar) depending on
+ * whether a `src/` directory exists in the project root.
  *
- * @example
- * const userConfig = {
- *   resolver: "./tokens.resolver.json"
- * };
- * const completeConfig = fillDefaults(userConfig);
- * // completeConfig.output.cssRoot === "src/styles"
+ * @param userConfig - The user configuration with optional fields
+ * @param cwd - The project root used for `src/` detection (defaults to `process.cwd()`)
+ * @returns A complete configuration with all defaults filled in
  */
-export function fillDefaults(userConfig: SugarcubeConfig): InternalConfig {
-    const cssRoot = userConfig.output?.cssRoot ?? DEFAULT_CONFIG.output.cssRoot;
+export function fillDefaults(
+    userConfig: SugarcubeConfig,
+    cwd: string = process.cwd()
+): InternalConfig {
+    const cssRoot = userConfig.output?.cssRoot ?? getDefaultCssRoot(cwd);
 
     const internalConfig: InternalConfig = {
         resolver: userConfig.resolver,
@@ -51,7 +61,7 @@ export function fillDefaults(userConfig: SugarcubeConfig): InternalConfig {
         DEFAULT_CONFIG.output.components !== undefined
     ) {
         internalConfig.output.components =
-            userConfig.output?.components ?? DEFAULT_CONFIG.output.components;
+            userConfig.output?.components ?? getDefaultComponentsDir(cwd);
     }
 
     if (userConfig.utilities) {

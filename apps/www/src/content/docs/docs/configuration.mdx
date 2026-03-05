@@ -1,45 +1,114 @@
 ---
 title: Configuration
+description: Customize sugarcube after init.
 ---
 
-This page is designed to help you achieve common configuration-based tasks quickly. If you're after a complete reference of configuration options instead, see the [configuration schema reference](/docs/reference/configuration-schema).
+import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 
-## Zero-Config by Default
+After running `init`, sugarcube works with zero configuration via sensible defaults. This page covers how to customize things when the defaults don't fit.
 
-Sugarcube works out of the box with sensible defaults and auto-discovery.
+<SiteAside type="tip">
+    Most of these options can also be passed as CLI flags if you don't want to create a config file — see the [CLI reference](/docs/reference/cli-commands) for details. For a complete reference of every config option, see the [configuration schema reference](/docs/reference/configuration-schema).
+</SiteAside>
 
-### When You Need a Config File
+## Creating a config file
 
-**Using the Vite plugin?** You only need a config file if you want to customize any settings (output directories, fluid ranges, etc.).
+Create a `sugarcube.config.{ts|js}` in your project root:
 
-**Using the CLI?** Config file is optional. You can customize settings via CLI flags on each command, or put them in a config file to avoid repeating flags.
+```ts title="sugarcube.config.ts"
+import { defineConfig } from "@sugarcube-sh/cli";
 
-## Creating a Config File
-
-When you run `init` with customization flags, sugarcube creates a minimal `sugarcube.config.{ts|js}` file containing the settings you customized:
-
-```bash frame="none"
-npx @sugarcube-sh/cli init --styles-dir public/css --variables-dir public/tokens
+export default defineConfig({});
 ```
 
-Creates:
+## Configuring utility classes
 
-```ts title="sugarcube.config.ts" frame="none"
-import { defineConfig } from "@sugarcube-sh/vite";
+Sugarcube can generate utility classes from your design tokens. Utilities are configured in the `utilities` key of your config file. See [CSS Utilities](/docs/utilities) for full details.
+
+## Changing where CSS files are written
+
+<SiteAside type="note">
+    `cssRoot`, `variables`, and `utilities` only apply when using the CLI. The Vite plugin serves token variables and utilities as virtual modules and doesn't write them to disk.
+</SiteAside>
+
+Set `output.cssRoot` to change the base output directory (defaults to `src/styles` or `styles`):
+
+```ts title="sugarcube.config.ts" ins={5}
+import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
   output: {
-    cssRoot: "public/css",
-    variables: "public/tokens"
+    cssRoot: "public/css"
   }
 });
 ```
 
-If you run `init` without any flags, no config file is created.
+Token variables, utilities, and CUBE CSS are all output relative to this directory. For example, with the default `cssRoot` of `src/styles`:
+
+- `variables` → `src/styles/global`
+- `utilities` → `src/styles/utilities`
+- `cube` → `src/styles`
+
+You can override individual paths if needed:
+
+```ts title="sugarcube.config.ts" ins={6-7}
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  output: {
+    cssRoot: "src/styles",
+    variables: "src/tokens",
+    utilities: "src/css/utilities"
+  }
+});
+```
+
+## Changing generated filenames
+
+By default, sugarcube generates `tokens.variables.gen.css` and `utilities.gen.css`. To change these:
+
+```ts title="sugarcube.config.ts" ins={5-6}
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  output: {
+    variablesFilename: "tokens.css",
+    utilitiesFilename: "utils.css"
+  }
+});
+```
+
+## Changing where components are copied to
+
+By default, components are copied to `src/components/ui` (or `components/ui` if there's no `src/` directory).
+
+```ts title="sugarcube.config.ts" ins={5}
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  output: {
+    components: "components"
+  }
+});
+```
+
+## Changing where CUBE CSS is copied to
+
+By default, CUBE CSS files are written to `cssRoot` (e.g. `src/styles`). To put them somewhere else:
+
+```ts title="sugarcube.config.ts" ins={5}
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  output: {
+    cube: "src/css/cube"
+  }
+});
+```
 
 ## Configuring fluid spacing and typography
 
-To adjust the 'slope' of the scaling curve for fluid calculations, configure the viewport range for fluid calculations:
+To adjust the 'slope' of the scaling curve for fluid calculations, configure the viewport range:
 
 ```ts title="sugarcube.config.ts" ins={5-8}
 import { defineConfig } from "@sugarcube-sh/cli";
@@ -55,6 +124,27 @@ export default defineConfig({
 ```
 
 For more on fluid spacing and typography in sugarcube, see [fluid spacing and typography](/docs/fluid-space-and-type).
+
+
+## CSS Cascade Layers
+
+When using the CLI, you can wrap generated CSS in `@layer` blocks:
+
+```ts title="sugarcube.config.ts" ins={5-8}
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  output: {
+    layers: {
+      variables: "base",
+      utilities: "utilities"
+    }
+  }
+});
+```
+
+For full details on cascade layers, see [CSS Cascade Layers](/docs/cascade-layers).
+
 
 ## Polyfilling modern CSS color formats
 
@@ -72,51 +162,3 @@ export default defineConfig({
 
 For more on color formats in sugarcube, see [color formats](/docs/color-formats).
 
-## Changing where components are copied to
-
-To change where components are copied to, set `output.components`:
-
-```ts title="sugarcube.config.ts" ins={5}
-import { defineConfig } from "@sugarcube-sh/cli";
-
-export default defineConfig({
-  output: {
-    components: "src/components"
-  }
-});
-```
-
-## Changing where CSS files are written
-
-To change where CSS files are written, set `output.cssRoot`:
-
-```ts title="sugarcube.config.ts" ins={5}
-import { defineConfig } from "@sugarcube-sh/cli";
-
-export default defineConfig({
-  output: {
-    cssRoot: "styles"
-  }
-});
-```
-
-This sets the base directory. Token variables, utilities, and CUBE CSS will be output under this directory by default. But you can override individual paths with `output.variables`, `output.utilities`, or `output.cube` if needed.
-
-## CSS Cascade Layers (CLI only)
-
-When using the CLI (without the Vite plugin), you can wrap generated CSS in `@layer` blocks:
-
-```ts title="sugarcube.config.ts" ins={5-8}
-import { defineConfig } from "@sugarcube-sh/cli";
-
-export default defineConfig({
-  output: {
-    layers: {
-      variables: "base",
-      utilities: "utilities"
-    }
-  }
-});
-```
-
-For full details on cascade layers, see [CSS Cascade Layers](/docs/cascade-layers).

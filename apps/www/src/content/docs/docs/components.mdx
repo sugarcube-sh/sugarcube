@@ -13,7 +13,7 @@ Rather than shipping as packages you install, sugarcube copies components into y
 
 ## Adding components
 
-Use the `components` command to add components to your project:
+You can add components during `init`, or anytime with the `components` command:
 
 <PackageManagerTabs command="sugarcube components" />
 
@@ -32,8 +32,8 @@ See [the CLI reference](/docs/reference/cli-commands) for full command options.
 When you add components, both the component implementation files and their CSS files are copied together to the same location.
 
 For example, adding a `button` component creates:
-- `src/ui/components/button/button.tsx`
-- `src/ui/components/button/button.css`
+- `src/components/ui/button/button.tsx`
+- `src/components/ui/button/button.css`
 
 ### Customizing output locations
 
@@ -55,7 +55,7 @@ You can customize where components are installed two different ways:
    ```
 
 <SiteAside type="note">
-    The `--components-dir` flag takes precedence over the config file and will update your config if the value differs.
+    The `--components-dir` flag overrides the config file for that run only. It does not modify your config.
 </SiteAside>
 
 ## Components & design tokens
