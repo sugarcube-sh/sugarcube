@@ -1,5 +1,13 @@
 # @sugarcube-sh/vite
 
+## 0.1.1
+
+### Patch Changes
+
+- a1f3363: Release retry after npm provenance bug
+- Updated dependencies [a1f3363]
+  - @sugarcube-sh/core@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes

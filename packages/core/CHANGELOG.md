@@ -1,5 +1,11 @@
 # @sugarcube-sh/core
 
+## 0.1.1
+
+### Patch Changes
+
+- a1f3363: Release retry after npm provenance bug
+
 ## 0.1.0
 
 ### Minor Changes
