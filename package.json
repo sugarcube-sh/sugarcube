@@ -39,7 +39,7 @@
         "@changesets/cli": "^2.27.9",
         "@types/node": "^22.15.27",
         "@vitest/coverage-istanbul": "^4.0.18",
-        "knip": "^5.59.1",
+        "knip": "^5.85.0",
         "lint-staged": "^16.2.7",
         "simple-git-hooks": "^2.13.1",
         "typescript": "^5.8.3",
