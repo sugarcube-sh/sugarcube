@@ -442,6 +442,11 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                     });
                 });
 
+                // DEBUG: Long delay to test timing hypothesis
+                console.log("[DEBUG] Adding 2s delay...");
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                console.log("[DEBUG] Delay complete");
+
                 server.watcher.setMaxListeners(30);
 
                 // Start memory monitoring when dev server starts
