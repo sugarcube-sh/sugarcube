@@ -448,13 +448,6 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 });
 
                 server.watcher.on("change", async (file) => {
-                    console.log("[DEBUG] Watcher saw:", file);
-                    console.log("[DEBUG] Token dirs:", tokenDirs);
-                    console.log(
-                        "[DEBUG] Match result:",
-                        file.endsWith(".json") && tokenDirs.some((dir) => file.includes(dir))
-                    );
-
                     // Check if it's a JSON file in one of our token directories
                     if (file.endsWith(".json") && tokenDirs.some((dir) => file.includes(dir))) {
                         server.config.logger.info(
