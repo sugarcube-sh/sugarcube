@@ -417,6 +417,10 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             name: "sugarcube:token-watcher",
             apply: "serve",
             async configureServer(server: ViteDevServer) {
+                console.log("[DEBUG] configureServer called");
+                console.log("[DEBUG] config:", ctx.config ? "loaded" : "NULL");
+                console.log("[DEBUG] config.resolver:", ctx.config?.resolver ?? "UNDEFINED");
+
                 server.watcher.setMaxListeners(30);
 
                 // Start memory monitoring when dev server starts
@@ -428,6 +432,8 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 );
 
                 const tokenDirs = ctx.getTokenDirs();
+                console.log("[DEBUG] tokenDirs:", tokenDirs);
+
                 if (tokenDirs.length === 0) {
                     server.config.logger.warn(
                         "[sugarcube] Could not determine token directories from config"
@@ -438,6 +444,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 // Watch all JSON files in the token directories
                 for (const dir of tokenDirs) {
                     const pattern = `${dir}/**/*.json`;
+                    console.log("[DEBUG] Adding watcher for pattern:", pattern);
                     perf.logWatcherSetup(pattern, dir);
                     server.watcher.add(pattern);
                 }
@@ -448,6 +455,8 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 });
 
                 server.watcher.on("change", async (file) => {
+                    console.log("[DEBUG] Change event:", file);
+
                     // Check if it's a JSON file in one of our token directories
                     if (file.endsWith(".json") && tokenDirs.some((dir) => file.includes(dir))) {
                         server.config.logger.info(
