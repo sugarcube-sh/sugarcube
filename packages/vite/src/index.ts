@@ -421,6 +421,26 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 console.log("[DEBUG] config:", ctx.config ? "loaded" : "NULL");
                 console.log("[DEBUG] config.resolver:", ctx.config?.resolver ?? "UNDEFINED");
 
+                // Wait for chokidar to be ready before adding watch patterns
+                await new Promise<void>((resolve) => {
+                    if ((server.watcher as any).closed) {
+                        resolve();
+                        return;
+                    }
+                    // Check if already ready (chokidar sets this internally)
+                    const watcher = server.watcher as any;
+                    if (watcher._readyCount === watcher._readyEmitted) {
+                        console.log("[DEBUG] Watcher already ready");
+                        resolve();
+                        return;
+                    }
+                    console.log("[DEBUG] Waiting for watcher ready event...");
+                    server.watcher.once("ready", () => {
+                        console.log("[DEBUG] Watcher ready event fired");
+                        resolve();
+                    });
+                });
+
                 server.watcher.setMaxListeners(30);
 
                 // Start memory monitoring when dev server starts
