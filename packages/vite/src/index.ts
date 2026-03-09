@@ -1,3 +1,4 @@
+import path from "node:path";
 import {
     Instrumentation,
     PerfMonitor,
@@ -463,8 +464,10 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
 
                 // Watch all JSON files in the token directories
                 for (const dir of tokenDirs) {
-                    const pattern = `${dir}/**/*.json`;
+                    const absoluteDir = path.resolve(server.config.root, dir);
+                    const pattern = `${absoluteDir}/**/*.json`;
                     console.log("[DEBUG] Adding watcher for pattern:", pattern);
+                    console.log("[DEBUG] server.config.root:", server.config.root);
                     perf.logWatcherSetup(pattern, dir);
                     server.watcher.add(pattern);
                 }
@@ -474,11 +477,20 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                     perf.trackWatcherEvent(file, server.moduleGraph.idToModuleMap.size);
                 });
 
+                // Compute absolute token dirs for matching
+                const absoluteTokenDirs = tokenDirs.map((dir) =>
+                    path.resolve(server.config.root, dir)
+                );
+                console.log("[DEBUG] absoluteTokenDirs:", absoluteTokenDirs);
+
                 server.watcher.on("change", async (file) => {
                     console.log("[DEBUG] Change event:", file);
 
                     // Check if it's a JSON file in one of our token directories
-                    if (file.endsWith(".json") && tokenDirs.some((dir) => file.includes(dir))) {
+                    if (
+                        file.endsWith(".json") &&
+                        absoluteTokenDirs.some((dir) => file.startsWith(dir))
+                    ) {
                         server.config.logger.info(
                             "[sugarcube] Design tokens changed, reloading..."
                         );
