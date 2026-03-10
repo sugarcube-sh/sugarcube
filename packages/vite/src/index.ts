@@ -422,31 +422,6 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 console.log("[DEBUG] config:", ctx.config ? "loaded" : "NULL");
                 console.log("[DEBUG] config.resolver:", ctx.config?.resolver ?? "UNDEFINED");
 
-                // Wait for chokidar to be ready before adding watch patterns
-                await new Promise<void>((resolve) => {
-                    if ((server.watcher as any).closed) {
-                        resolve();
-                        return;
-                    }
-                    // Check if already ready (chokidar sets this internally)
-                    const watcher = server.watcher as any;
-                    if (watcher._readyCount === watcher._readyEmitted) {
-                        console.log("[DEBUG] Watcher already ready");
-                        resolve();
-                        return;
-                    }
-                    console.log("[DEBUG] Waiting for watcher ready event...");
-                    server.watcher.once("ready", () => {
-                        console.log("[DEBUG] Watcher ready event fired");
-                        resolve();
-                    });
-                });
-
-                // DEBUG: Long delay to test timing hypothesis
-                console.log("[DEBUG] Adding 2s delay...");
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-                console.log("[DEBUG] Delay complete");
-
                 server.watcher.setMaxListeners(30);
 
                 // Start memory monitoring when dev server starts
@@ -467,15 +442,9 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                     return;
                 }
 
-                // Watch all JSON files in the token directories
-                for (const dir of tokenDirs) {
-                    const absoluteDir = path.resolve(server.config.root, dir);
-                    const pattern = `${absoluteDir}/**/*.json`;
-                    console.log("[DEBUG] Adding watcher for pattern:", pattern);
-                    console.log("[DEBUG] server.config.root:", server.config.root);
-                    perf.logWatcherSetup(pattern, dir);
-                    server.watcher.add(pattern);
-                }
+                // DEBUG: Skip adding watcher pattern - Vite should already watch src/
+                console.log("[DEBUG] NOT adding watcher pattern - testing if Vite already watches");
+                console.log("[DEBUG] server.config.root:", server.config.root);
 
                 // Track all watcher events to see what, if anything, is causing load
                 server.watcher.on("all", (event, file) => {
