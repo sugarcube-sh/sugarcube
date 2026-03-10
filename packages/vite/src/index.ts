@@ -1,4 +1,3 @@
-import path from "node:path";
 import {
     Instrumentation,
     PerfMonitor,
@@ -381,9 +380,8 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             name: "sugarcube:config-watcher",
             apply: "serve",
             configureServer(server: ViteDevServer) {
-                perf.logWatcherSetup("sugarcube.config.ts/js", process.cwd());
-                server.watcher.add(["sugarcube.config.ts", "sugarcube.config.js"]);
-
+                // Vite already watches the project root, so we just listen for changes
+                // to our config files without needing to call server.watcher.add()
                 server.watcher.on("change", async (file) => {
                     if (
                         file.endsWith("sugarcube.config.ts") ||
@@ -418,10 +416,6 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             name: "sugarcube:token-watcher",
             apply: "serve",
             async configureServer(server: ViteDevServer) {
-                console.log("[DEBUG] configureServer called");
-                console.log("[DEBUG] config:", ctx.config ? "loaded" : "NULL");
-                console.log("[DEBUG] config.resolver:", ctx.config?.resolver ?? "UNDEFINED");
-
                 server.watcher.setMaxListeners(30);
 
                 // Start memory monitoring when dev server starts
@@ -433,7 +427,6 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 );
 
                 const tokenDirs = ctx.getTokenDirs();
-                console.log("[DEBUG] tokenDirs:", tokenDirs);
 
                 if (tokenDirs.length === 0) {
                     server.config.logger.warn(
@@ -442,29 +435,18 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                     return;
                 }
 
-                // DEBUG: Skip adding watcher pattern - Vite should already watch src/
-                console.log("[DEBUG] NOT adding watcher pattern - testing if Vite already watches");
-                console.log("[DEBUG] server.config.root:", server.config.root);
+                // Vite already watches the project root by default, so we don't need
+                // to call server.watcher.add(). We just listen for change events and
+                // filter for our token directories.
 
-                // Track all watcher events to see what, if anything, is causing load
+                // Track all watcher events for performance monitoring
                 server.watcher.on("all", (event, file) => {
                     perf.trackWatcherEvent(file, server.moduleGraph.idToModuleMap.size);
                 });
 
-                // Compute absolute token dirs for matching
-                const absoluteTokenDirs = tokenDirs.map((dir) =>
-                    path.resolve(server.config.root, dir)
-                );
-                console.log("[DEBUG] absoluteTokenDirs:", absoluteTokenDirs);
-
                 server.watcher.on("change", async (file) => {
-                    console.log("[DEBUG] Change event:", file);
-
                     // Check if it's a JSON file in one of our token directories
-                    if (
-                        file.endsWith(".json") &&
-                        absoluteTokenDirs.some((dir) => file.startsWith(dir))
-                    ) {
+                    if (file.endsWith(".json") && tokenDirs.some((dir) => file.includes(dir))) {
                         server.config.logger.info(
                             "[sugarcube] Design tokens changed, reloading..."
                         );
