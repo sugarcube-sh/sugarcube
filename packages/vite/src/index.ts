@@ -380,9 +380,8 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             name: "sugarcube:config-watcher",
             apply: "serve",
             configureServer(server: ViteDevServer) {
-                perf.logWatcherSetup("sugarcube.config.ts/js", process.cwd());
-                server.watcher.add(["sugarcube.config.ts", "sugarcube.config.js"]);
-
+                // Vite already watches the project root, so we just listen for changes
+                // to our config files without needing to call server.watcher.add()
                 server.watcher.on("change", async (file) => {
                     if (
                         file.endsWith("sugarcube.config.ts") ||
@@ -428,6 +427,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 );
 
                 const tokenDirs = ctx.getTokenDirs();
+
                 if (tokenDirs.length === 0) {
                     server.config.logger.warn(
                         "[sugarcube] Could not determine token directories from config"
@@ -435,14 +435,11 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                     return;
                 }
 
-                // Watch all JSON files in the token directories
-                for (const dir of tokenDirs) {
-                    const pattern = `${dir}/**/*.json`;
-                    perf.logWatcherSetup(pattern, dir);
-                    server.watcher.add(pattern);
-                }
+                // Vite already watches the project root by default, so we don't need
+                // to call server.watcher.add(). We just listen for change events and
+                // filter for our token directories.
 
-                // Track all watcher events to see what, if anything, is causing load
+                // Track all watcher events for performance monitoring
                 server.watcher.on("all", (event, file) => {
                     perf.trackWatcherEvent(file, server.moduleGraph.idToModuleMap.size);
                 });
