@@ -43,7 +43,7 @@ export default defineConfig({
 
 Then import the virtual CSS module in your root component:
 
-```tsx title="__root.tsx"
+```tsx title="src/routes/__root.tsx"
 import "virtual:sugarcube.css";
 ```
 
@@ -53,8 +53,43 @@ If you skipped the Vite plugin during init, generate CSS with the CLI:
 
 <PackageManagerTabs command="sugarcube generate" />
 
-Then import the files directly:
+TanStack Start requires CSS to be added via the `head` function to avoid a flash of unstyled content during SSR:
 
-```tsx title="__root.tsx"
-import "./styles/global/tokens.variables.gen.css";
+```tsx title="src/routes/__root.tsx"
+/// <reference types="vite/client" />
+import tokensCss from "../styles/global/tokens.variables.gen.css?url";
+
+export const Route = createRootRoute({
+    head: () => ({
+        links: [{ rel: "stylesheet", href: tokensCss }],
+    }),
+    // ...
+});
 ```
+
+## If you added CUBE CSS
+
+CUBE CSS files are source files you own — not virtual modules. Create a CSS file that imports them:
+
+```css title="src/styles/index.css"
+/* CUBE CSS - your source files */
+@import "./global/global.css";
+@import "./compositions/flow.css";
+@import "./compositions/cluster.css";
+/* ... add the files you're using */
+```
+
+Then add it to the `head` links:
+
+```tsx title="src/routes/__root.tsx"
+/// <reference types="vite/client" />
+import styles from "../styles/index.css?url";
+
+export const Route = createRootRoute({
+    head: () => ({
+        links: [{ rel: "stylesheet", href: styles }],
+    }),
+    // ...
+});
+```
+

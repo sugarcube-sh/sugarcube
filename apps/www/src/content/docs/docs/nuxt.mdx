@@ -58,3 +58,19 @@ export default defineNuxtConfig({
     css: ["./styles/global/tokens.variables.gen.css"],
 });
 ```
+
+## If you added CUBE CSS
+
+CUBE CSS files are source files you own — not virtual modules. Add them to your Nuxt config:
+
+```ts title="nuxt.config.ts"
+export default defineNuxtConfig({
+    css: [
+        "./styles/global/global.css",
+        "./styles/compositions/flow.css",
+        "./styles/compositions/cluster.css",
+        // ... add the files you're using
+    ],
+});
+```
+

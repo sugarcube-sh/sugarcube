@@ -74,3 +74,21 @@ Add the script to your HTML template:
 ```
 
 The CSS will be injected automatically when the module loads.
+
+## If you added CUBE CSS
+
+CUBE CSS files are source files you own — not virtual modules. Import them separately. Create a CSS file that imports them:
+
+```css title="styles/index.css"
+@import "./global/global.css";
+@import "./compositions/flow.css";
+@import "./compositions/cluster.css";
+/* ... add the files you're using */
+```
+
+Then link to it in your base layout:
+
+```html frame="none"
+<link rel="stylesheet" href="/styles/index.css">
+```
+
