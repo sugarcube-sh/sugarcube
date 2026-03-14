@@ -67,6 +67,21 @@ Then import the output where you import your other styles:
     Add a script to your `package.json` for convenience, e.g. `"generate:styles": "sugarcube generate --watch"`
 </SiteAside>
 
+### If you added CUBE CSS
+
+If you chose CUBE CSS during `init`, those files need to be imported separately.
+
+**Why?** CUBE CSS files are **source files** — not virtual modules. They're generated once, then they're yours to own and modify. That's why they're not bundled into `virtual:sugarcube.css`.
+
+Import them alongside your other styles:
+
+```css title="styles/index.css"
+@import "./global/global.css";
+@import "./compositions/flow.css";
+@import "./compositions/cluster.css";
+/* ... add the files you're using */
+```
+
 ## Next steps
 
 - [Advanced Setup](/docs/advanced-setup) — customize directory paths during init

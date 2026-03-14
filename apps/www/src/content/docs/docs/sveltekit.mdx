@@ -54,3 +54,23 @@ Then import the files directly:
     import "../styles/global/tokens.variables.gen.css";
 </script>
 ```
+
+## If you added CUBE CSS
+
+CUBE CSS files are source files you own — not virtual modules. Create a CSS file that imports them:
+
+```css title="src/styles/index.css"
+@import "./global/global.css";
+@import "./compositions/flow.css";
+@import "./compositions/cluster.css";
+/* ... add the files you're using */
+```
+
+Then import it in your layout:
+
+```svelte title="src/routes/+layout.svelte"
+<script>
+    import "../styles/index.css";
+</script>
+```
+
