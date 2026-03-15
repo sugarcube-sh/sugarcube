@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { isAbsolute, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
+import { extractSelectorStrategy } from "../extensions/sugarcube-extensions.js";
 import { isInlineModifier, isInlineSet, isReference } from "../guards/resolver-guards.js";
 import { resolverDocumentSchema } from "../schemas/resolver.js";
 import type {
@@ -158,6 +159,25 @@ function checkModifierContexts(
                 Object.keys(modifier.contexts)
             ),
         });
+    }
+
+    const selector = extractSelectorStrategy(modifier.$extensions);
+    if (selector === "prefers-color-scheme") {
+        const contexts = Object.keys(modifier.contexts);
+        const validContexts = ["light", "dark"];
+        const invalidContexts = contexts.filter((c) => !validContexts.includes(c));
+
+        if (invalidContexts.length > 0) {
+            const modifierName =
+                "name" in modifier ? modifier.name : (path.split(".").pop() ?? path);
+            errors.push({
+                path: `${path}.contexts`,
+                message: ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS(
+                    modifierName,
+                    invalidContexts
+                ),
+            });
+        }
     }
 }
 

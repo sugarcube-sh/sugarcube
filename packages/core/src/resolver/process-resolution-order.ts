@@ -216,6 +216,8 @@ export type ModifierInfo = {
     defaultContext: string;
     /** Map of context name → tokens defined by that context's sources */
     contexts: Map<string, TokenGroup>;
+    /** Extensions from the modifier definition */
+    $extensions?: Record<string, unknown>;
 };
 
 /** Result of processing for layered CSS output. */
@@ -292,6 +294,7 @@ export async function processForLayeredCSS(
             name: mod.name,
             defaultContext,
             contexts: modifierContexts,
+            $extensions: mod.$extensions,
         });
     }
 
