@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/config/normalize-config.js";
 import { generate } from "../src/pipeline/generate.js";
 import type { NormalizedConvertedTokens } from "../src/types/convert.js";
+import type { ModifierMeta } from "../src/types/pipelines.js";
 import { configs } from "./__fixtures__/configs.js";
 import { convertedTokens, createConvertedToken } from "./__fixtures__/converted-tokens.js";
 
@@ -168,5 +169,146 @@ describe("generate", () => {
         expect(result.output).toHaveLength(1);
         expect(result.output[0]?.path).toBe("src/css/global/tokens.variables.gen.css");
         expect(result.output[0]?.css).toContain("--color-primary: #FF0000");
+    });
+
+    describe("prefers-color-scheme selector strategy", () => {
+        it("should generate media query for prefers-color-scheme modifier", async () => {
+            const tokens: NormalizedConvertedTokens = {
+                default: {
+                    "color.surface": createConvertedToken({
+                        $path: "color.surface",
+                        $value: "#ffffff",
+                        $resolvedValue: "#ffffff",
+                        $cssProperties: { value: "#ffffff" },
+                    }),
+                },
+                "theme:dark": {
+                    "color.surface": createConvertedToken({
+                        $path: "color.surface",
+                        $value: "#1a1a1a",
+                        $resolvedValue: "#1a1a1a",
+                        $cssProperties: { value: "#1a1a1a" },
+                    }),
+                },
+            };
+
+            const modifiers: ModifierMeta[] = [
+                {
+                    name: "theme",
+                    attribute: "data-theme",
+                    defaultContext: "light",
+                    contexts: ["dark"],
+                    selector: "prefers-color-scheme",
+                },
+            ];
+
+            const result = await generate(tokens, fillDefaults(configs.basic), modifiers);
+            const css = result.output[0]?.css ?? "";
+
+            expect(css).toContain(":root {");
+            expect(css).toContain("--color-surface: #ffffff;");
+            expect(css).toContain("@media (prefers-color-scheme: dark) {");
+            expect(css).toContain("--color-surface: #1a1a1a;");
+            // Should NOT contain data attribute selector
+            expect(css).not.toContain('[data-theme="dark"]');
+        });
+
+        it("should generate data attribute selector by default", async () => {
+            const tokens: NormalizedConvertedTokens = {
+                default: {
+                    "color.surface": createConvertedToken({
+                        $path: "color.surface",
+                        $value: "#ffffff",
+                        $resolvedValue: "#ffffff",
+                        $cssProperties: { value: "#ffffff" },
+                    }),
+                },
+                "theme:dark": {
+                    "color.surface": createConvertedToken({
+                        $path: "color.surface",
+                        $value: "#1a1a1a",
+                        $resolvedValue: "#1a1a1a",
+                        $cssProperties: { value: "#1a1a1a" },
+                    }),
+                },
+            };
+
+            const modifiers: ModifierMeta[] = [
+                {
+                    name: "theme",
+                    attribute: "data-theme",
+                    defaultContext: "light",
+                    contexts: ["dark"],
+                    selector: "data-attribute",
+                },
+            ];
+
+            const result = await generate(tokens, fillDefaults(configs.basic), modifiers);
+            const css = result.output[0]?.css ?? "";
+
+            expect(css).toContain(":root {");
+            expect(css).toContain("--color-surface: #ffffff;");
+            expect(css).toContain('[data-theme="dark"] {');
+            expect(css).toContain("--color-surface: #1a1a1a;");
+            // Should NOT contain media query
+            expect(css).not.toContain("@media (prefers-color-scheme");
+        });
+
+        it("should handle mixed modifiers with different selector strategies", async () => {
+            const tokens: NormalizedConvertedTokens = {
+                default: {
+                    "color.surface": createConvertedToken({
+                        $path: "color.surface",
+                        $value: "#ffffff",
+                        $resolvedValue: "#ffffff",
+                        $cssProperties: { value: "#ffffff" },
+                    }),
+                },
+                "theme:dark": {
+                    "color.surface": createConvertedToken({
+                        $path: "color.surface",
+                        $value: "#1a1a1a",
+                        $resolvedValue: "#1a1a1a",
+                        $cssProperties: { value: "#1a1a1a" },
+                    }),
+                },
+                "density:compact": {
+                    "spacing.base": createConvertedToken({
+                        $type: "dimension",
+                        $path: "spacing.base",
+                        $value: "4px",
+                        $resolvedValue: "4px",
+                        $cssProperties: { value: "4px" },
+                    }),
+                },
+            };
+
+            const modifiers: ModifierMeta[] = [
+                {
+                    name: "theme",
+                    attribute: "data-theme",
+                    defaultContext: "light",
+                    contexts: ["dark"],
+                    selector: "prefers-color-scheme",
+                },
+                {
+                    name: "density",
+                    attribute: "data-density",
+                    defaultContext: "normal",
+                    contexts: ["compact"],
+                    selector: "data-attribute",
+                },
+            ];
+
+            const result = await generate(tokens, fillDefaults(configs.basic), modifiers);
+            const css = result.output[0]?.css ?? "";
+
+            // Theme uses media query
+            expect(css).toContain("@media (prefers-color-scheme: dark) {");
+            expect(css).not.toContain('[data-theme="dark"]');
+
+            // Density uses data attribute
+            expect(css).toContain('[data-density="compact"] {');
+        });
     });
 });
