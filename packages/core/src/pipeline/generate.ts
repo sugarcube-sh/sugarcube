@@ -20,6 +20,14 @@ import type { TokenType } from "../types/tokens.js";
 import { deterministicEntries } from "../utils/deterministic-entries.js";
 import { toKebabCase } from "../utils/to-kebab-case.js";
 
+function indentCSS(css: string, spaces = 4): string {
+    const indent = " ".repeat(spaces);
+    return css
+        .split("\n")
+        .map((line) => (line.trim() ? `${indent}${line}` : line))
+        .join("\n");
+}
+
 function formatCSSVarPath(path: string): string {
     return path.split(".").join("-");
 }
@@ -135,12 +143,7 @@ function convertCSSVarsToString(css: CSSVariableBlocks): string {
             vars: feature.vars,
         });
 
-        const indentedBlock = featureBlock
-            .split("\n")
-            .map((line) => `    ${line}`)
-            .join("\n");
-
-        blocks.push(`${feature.query} {\n${indentedBlock}\n}`);
+        blocks.push(`${feature.query} {\n${indentCSS(featureBlock)}\n}`);
     }
 
     return blocks.filter(Boolean).join("\n\n");
@@ -162,43 +165,50 @@ function generateVariablesForToken<T extends TokenType>(token: ConvertedToken<T>
 }
 
 /**
- * Builds a CSS selector based on context.
- *
- * Context can be:
+ * Result of building a CSS selector.
+ * - `selector`: The CSS selector to use (:root, [data-theme="dark"], etc.)
+ * - `wrapper`: Optional at-rule wrapper (@media, @supports, etc.)
+ */
+type SelectorResult = {
+    selector: string;
+    wrapper?: string;
+};
+
+/**
+ * Context formats:
  * - undefined/"default" → :root
- * - Compound key "modifierName:contextName" → [data-modifierName="contextName"]
- * - Simple key "contextName" → [data-theme="contextName"]
- *
- * @param context - The context key (may be compound like "theme:dark")
- * @param modifiers - Optional modifier metadata for attribute lookup
- * @param config - Config for fallback themeAttribute
+ * - "modifierName:contextName" → [data-modifierName="contextName"] or @media wrapper
+ * - "contextName" → [data-theme="contextName"]
  */
 function buildSelector(
     context: string,
     modifiers: ModifierMeta[] | undefined,
     config: InternalConfig
-): string {
-    // Default context uses :root
+): SelectorResult {
     if (!context || context === "default") {
-        return ":root";
+        return { selector: ":root" };
     }
 
-    // Check for compound key format: "modifierName:contextName"
+    // Compound key format: "modifierName:contextName"
     const colonIndex = context.indexOf(":");
     if (colonIndex !== -1) {
         const modifierName = context.slice(0, colonIndex);
         const contextName = context.slice(colonIndex + 1);
-
-        // Find the modifier to get its attribute
         const modifier = modifiers?.find((m) => m.name === modifierName);
-        const attribute = modifier?.attribute ?? `data-${modifierName}`;
 
-        return `[${attribute}="${contextName}"]`;
+        if (modifier?.selector === "prefers-color-scheme") {
+            return {
+                selector: ":root",
+                wrapper: `@media (prefers-color-scheme: ${contextName})`,
+            };
+        }
+
+        const attribute = modifier?.attribute ?? `data-${modifierName}`;
+        return { selector: `[${attribute}="${contextName}"]` };
     }
 
-    // Legacy: simple context name, use config.themeAttribute
     // TODO: safe to delete this?
-    return `[${config.output.themeAttribute}="${context}"]`;
+    return { selector: `[${config.output.themeAttribute}="${context}"]` };
 }
 
 async function generateCSS(
@@ -213,7 +223,7 @@ async function generateCSS(
         .filter(([key, token]) => key !== "$extensions" && "$type" in token)
         .map(([_, token]) => generateVariablesForToken(token as ConvertedToken<TokenType>));
 
-    const selector = buildSelector(metadata.context, metadata.modifiers, config);
+    const selectorResult = buildSelector(metadata.context, metadata.modifiers, config);
 
     const rootVars = varSets.flatMap((set) => set.vars);
 
@@ -235,10 +245,8 @@ async function generateCSS(
         vars,
     }));
 
-    const css = convertCSSVarsToString({
-        root: { selector, vars: rootVars },
-        features: mergedFeatureBlocks,
-    });
+    // Handle media query wrapping
+    const css = generateCSSForSelector(selectorResult, rootVars, mergedFeatureBlocks);
 
     if (!css.trim()) {
         return {
@@ -259,6 +267,22 @@ async function generateCSS(
             },
         ],
     };
+}
+
+function generateCSSForSelector(
+    result: SelectorResult,
+    vars: CSSVariable[],
+    features: CSSFeatureBlock[]
+): string {
+    const innerCSS = convertCSSVarsToString({
+        root: { selector: result.selector, vars },
+        features,
+    });
+
+    if (!innerCSS.trim()) return "";
+    if (!result.wrapper) return innerCSS;
+
+    return `${result.wrapper} {\n${indentCSS(innerCSS)}\n}`;
 }
 
 function formatCSSVars(css: string): string {
