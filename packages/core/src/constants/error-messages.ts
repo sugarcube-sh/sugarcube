@@ -103,6 +103,12 @@ export const ErrorMessages = {
             `Invalid CSS value for property '${key}': ${value}`,
         INVALID_VARIABLE_NAME: (path: string, name: string) =>
             `Invalid CSS variable name at '${path}': ${name}`,
+        INVALID_CSS_VALUE_TYPE: (valueType: string) =>
+            `CSS value must be a string or number, but received ${valueType}. This is a bug in sugarcube. Please report it at https://github.com/sugarcube-sh/sugarcube/issues`,
+    },
+    CONVERT: {
+        COLOR_CONVERSION_FAILED: (error: string) =>
+            `Failed to convert color: ${error}. This is a bug in sugarcube. Please report it at https://github.com/sugarcube-sh/sugarcube/issues`,
     },
     CONFIG: {
         INVALID_JSON: (error: string) => `Invalid JSON in config file: ${error}`,

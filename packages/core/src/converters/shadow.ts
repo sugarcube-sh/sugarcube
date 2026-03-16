@@ -1,8 +1,27 @@
+import { convertColorToString } from "../color/color-conversion.js";
+import { isDTCGColorValue } from "../color/color-validation.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { isReference } from "../guards/token-guards.js";
-import type { CSSShadowProperties } from "../types/convert.js";
+import type { CSSShadowProperties, ConversionOptions } from "../types/convert.js";
 import type { ShadowObject, TokenValue } from "../types/tokens.js";
 
-function convertSingleShadow(shadow: ShadowObject): string {
+function convertShadowColor(color: ShadowObject["color"], options: ConversionOptions): string {
+    if (isReference(color)) {
+        return color;
+    }
+
+    if (isDTCGColorValue(color)) {
+        const result = convertColorToString(color, options.colorFallbackStrategy);
+        if (!result.success) {
+            throw new Error(ErrorMessages.CONVERT.COLOR_CONVERSION_FAILED(result.error));
+        }
+        return result.value;
+    }
+
+    return color;
+}
+
+function convertSingleShadow(shadow: ShadowObject, options: ConversionOptions): string {
     const offsetX = isReference(shadow.offsetX)
         ? shadow.offsetX
         : `${shadow.offsetX.value}${shadow.offsetX.unit}`;
@@ -17,19 +36,22 @@ function convertSingleShadow(shadow: ShadowObject): string {
         ? shadow.spread
         : `${shadow.spread.value}${shadow.spread.unit}`;
 
-    const color = isReference(shadow.color) ? shadow.color : shadow.color;
+    const color = convertShadowColor(shadow.color, options);
 
     return `${shadow.inset ? "inset " : ""}${offsetX} ${offsetY} ${blur} ${spread} ${color}`;
 }
 
-export function convertShadowToken(value: TokenValue<"shadow">): CSSShadowProperties {
+export function convertShadowToken(
+    value: TokenValue<"shadow">,
+    options: ConversionOptions
+): CSSShadowProperties {
     if (isReference(value)) {
         return { value };
     }
 
     if (!Array.isArray(value)) {
-        return { value: convertSingleShadow(value) };
+        return { value: convertSingleShadow(value, options) };
     }
 
-    return { value: value.map(convertSingleShadow).join(", ") };
+    return { value: value.map((shadow) => convertSingleShadow(shadow, options)).join(", ") };
 }

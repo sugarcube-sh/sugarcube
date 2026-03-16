@@ -1,5 +1,6 @@
 import { convertColorToString } from "../color/color-conversion.js";
 import { isDTCGColorValue } from "../color/color-validation.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { isReference } from "../guards/token-guards.js";
 import type { ConversionOptions, SimpleCSSProperties } from "../types/convert.js";
 import type { DTCGColorValue } from "../types/dtcg-color.js";
@@ -19,14 +20,11 @@ export function convertColorToken(
     }
 
     const result = convertColorToString(value, fallbackStrategy);
-    if (result.success) {
-        return { value: result.value };
+    if (!result.success) {
+        throw new Error(ErrorMessages.CONVERT.COLOR_CONVERSION_FAILED(result.error));
     }
 
-    // Return error info instead of falling back silently
-    const valueStr = typeof value === "string" ? value : "DTCG color object";
-    console.warn(`[sugarcube] Failed to convert color ${valueStr}: ${result.error}`);
-    return { value: typeof value === "string" ? value : "#000000" };
+    return { value: result.value };
 }
 
 function convertDTCGColorToken(
@@ -35,9 +33,7 @@ function convertDTCGColorToken(
 ): SimpleCSSProperties {
     const result = convertColorToString(dtcgColor, fallbackStrategy);
     if (!result.success) {
-        // Return error info instead of falling back silently
-        console.warn(`[sugarcube] Failed to convert DTCG color: ${result.error}`);
-        return { value: "#000000" };
+        throw new Error(ErrorMessages.CONVERT.COLOR_CONVERSION_FAILED(result.error));
     }
 
     const nativeColor = result.value;
