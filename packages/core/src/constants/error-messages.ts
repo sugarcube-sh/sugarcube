@@ -31,7 +31,7 @@ export const ErrorMessages = {
         UNKNOWN_TOKEN_TYPE: (type: string, path: string) =>
             `Unknown token type '${type}' at ${path}. Valid types are: color, dimension, fontFamily, fontWeight, duration, cubicBezier, strokeStyle, border, transition, shadow, gradient, typography`,
         INVALID_COLOR: (value: unknown, path: string) =>
-            `Invalid color at ${path}: '${value}'. Color should be a valid hex value or W3C color object`,
+            `Invalid color at ${path}: '${value}'. Color should be a valid hex value or DTCG color object`,
         INVALID_DIMENSION: (value: unknown, path: string) =>
             `Invalid dimension at '${path}': ${value}. Dimensions should have a numeric value and unit, like { "value": 16, "unit": "px" }`,
         INVALID_DIMENSION_UNIT: (unit: unknown, path: string) =>
