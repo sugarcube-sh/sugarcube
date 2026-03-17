@@ -225,5 +225,6 @@ export type {
     LineCap,
     StrokeStyleKeyword,
     ShadowObject,
+    GradientStop,
     Reference,
 };
