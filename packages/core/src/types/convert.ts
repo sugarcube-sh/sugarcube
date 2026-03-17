@@ -1,4 +1,5 @@
 import type { ColorFallbackStrategy, FluidConfig } from "./config.js";
+import type { SugarcubeExtensions } from "./extensions.js";
 import type { ResolvedToken, ResolvedTokens } from "./resolve.js";
 import type {
     AlwaysDecomposedType,
@@ -14,6 +15,7 @@ export interface ConversionOptions {
     colorFallbackStrategy: ColorFallbackStrategy;
     path?: string;
     resolvedTokens?: ResolvedTokens;
+    extensions?: SugarcubeExtensions;
 }
 
 /** Converts a token value to CSS properties. */

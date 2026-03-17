@@ -65,6 +65,7 @@ function convertTokens(
             colorFallbackStrategy: config.variables.transforms.colorFallbackStrategy,
             path: token.$path,
             resolvedTokens: tokens,
+            extensions: token.$extensions,
         };
 
         converted[key] = convertSingleToken(token, options);
