@@ -12,7 +12,7 @@ function convertFluidDimension(
 ): SimpleCSSProperties {
     const { min, max } = value;
     const fluidConfig = options.fluidConfig;
-    const rootSize = 16;
+    const rootSize = 16; // TODO: make this configurable??
 
     const minSize = normalizeToPixels(min, rootSize);
     const maxSize = normalizeToPixels(max, rootSize);
