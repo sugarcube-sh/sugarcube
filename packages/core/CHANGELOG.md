@@ -1,5 +1,11 @@
 # @sugarcube-sh/core
 
+## 0.1.2
+
+### Patch Changes
+
+- 81d2e33: fix: shadow token color objects no longer output as [object Object]. (Thanks @Kiwow for reporting).
+
 ## 0.1.1
 
 ### Patch Changes
