@@ -192,6 +192,6 @@ export const ErrorMessages = {
         RESOLVER_AS_TOKEN_SOURCE: (path: string) =>
             `File "${path}" is a resolver document, not a token file. Resolver documents (version: "2025.10") cannot be used as token sources. Did you mean to reference a specific token file instead?`,
         PREFERS_COLOR_SCHEME_INVALID_CONTEXTS: (name: string, invalidContexts: string[]) =>
-            `Modifier "${name}" uses selector "prefers-color-scheme" but has invalid contexts: ${invalidContexts.join(", ")}. Only "light" and "dark" are supported.`,
+            `Modifier "${name}" uses prefersColorScheme but has invalid contexts: ${invalidContexts.join(", ")}. Only "light" and "dark" are supported.`,
     },
 } as const;

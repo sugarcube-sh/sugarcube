@@ -201,7 +201,7 @@ describe("parseResolverDocument", () => {
                         default: "light",
                         contexts: { light: [], dark: [] },
                         $extensions: {
-                            "sh.sugarcube": { selector: "prefers-color-scheme" },
+                            "sh.sugarcube": { prefersColorScheme: true },
                         },
                     },
                 ],
@@ -209,7 +209,7 @@ describe("parseResolverDocument", () => {
 
             // Should only have the "single context" warning, not prefers-color-scheme errors
             const prefersColorSchemeErrors = result.errors.filter((e) =>
-                e.message.includes("prefers-color-scheme")
+                e.message.includes("prefersColorScheme")
             );
             expect(prefersColorSchemeErrors).toHaveLength(0);
         });
@@ -224,7 +224,7 @@ describe("parseResolverDocument", () => {
                         default: "light",
                         contexts: { light: [], dark: [], "high-contrast": [] },
                         $extensions: {
-                            "sh.sugarcube": { selector: "prefers-color-scheme" },
+                            "sh.sugarcube": { prefersColorScheme: true },
                         },
                     },
                 ],
@@ -250,7 +250,7 @@ describe("parseResolverDocument", () => {
                         default: "day",
                         contexts: { day: [], night: [] },
                         $extensions: {
-                            "sh.sugarcube": { selector: "prefers-color-scheme" },
+                            "sh.sugarcube": { prefersColorScheme: true },
                         },
                     },
                 ],
@@ -281,7 +281,7 @@ describe("parseResolverDocument", () => {
             });
 
             const prefersColorSchemeErrors = result.errors.filter((e) =>
-                e.message.includes("prefers-color-scheme")
+                e.message.includes("prefersColorScheme")
             );
             expect(prefersColorSchemeErrors).toHaveLength(0);
         });

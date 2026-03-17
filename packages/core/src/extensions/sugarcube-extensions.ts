@@ -3,21 +3,21 @@ import type { SelectorStrategy } from "../types/pipelines.js";
 /** Reverse domain namespace per DTCG spec recommendation */
 const SUGARCUBE_NAMESPACE = "sh.sugarcube";
 
-type SugarcubeExtensions = {
-    selector?: SelectorStrategy;
+type SugarcubeModifierExtensions = {
+    prefersColorScheme?: boolean;
 };
 
 export function getSugarcubeExtensions(
     extensions: Record<string, unknown> | undefined
-): SugarcubeExtensions | undefined {
+): SugarcubeModifierExtensions | undefined {
     if (!extensions?.[SUGARCUBE_NAMESPACE]) return undefined;
-    return extensions[SUGARCUBE_NAMESPACE] as SugarcubeExtensions;
+    return extensions[SUGARCUBE_NAMESPACE] as SugarcubeModifierExtensions;
 }
 
 export function extractSelectorStrategy(
     extensions: Record<string, unknown> | undefined
 ): SelectorStrategy {
     const ext = getSugarcubeExtensions(extensions);
-    if (ext?.selector === "prefers-color-scheme") return "prefers-color-scheme";
+    if (ext?.prefersColorScheme === true) return "prefers-color-scheme";
     return "data-attribute";
 }

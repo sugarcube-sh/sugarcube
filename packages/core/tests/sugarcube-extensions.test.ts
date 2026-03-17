@@ -17,12 +17,12 @@ describe("getSugarcubeExtensions", () => {
     it("returns sugarcube extensions when present", () => {
         const extensions = {
             "sh.sugarcube": {
-                selector: "prefers-color-scheme",
+                prefersColorScheme: true,
             },
         };
 
         const result = getSugarcubeExtensions(extensions);
-        expect(result).toEqual({ selector: "prefers-color-scheme" });
+        expect(result).toEqual({ prefersColorScheme: true });
     });
 });
 
@@ -35,35 +35,26 @@ describe("extractSelectorStrategy", () => {
         expect(extractSelectorStrategy({})).toBe("data-attribute");
     });
 
-    it("returns 'data-attribute' when selector is not specified", () => {
+    it("returns 'data-attribute' when prefersColorScheme is not specified", () => {
         const extensions = {
             "sh.sugarcube": {},
         };
         expect(extractSelectorStrategy(extensions)).toBe("data-attribute");
     });
 
-    it("returns 'prefers-color-scheme' when specified", () => {
+    it("returns 'prefers-color-scheme' when prefersColorScheme is true", () => {
         const extensions = {
             "sh.sugarcube": {
-                selector: "prefers-color-scheme",
+                prefersColorScheme: true,
             },
         };
         expect(extractSelectorStrategy(extensions)).toBe("prefers-color-scheme");
     });
 
-    it("returns 'data-attribute' for unknown selector values", () => {
+    it("returns 'data-attribute' when prefersColorScheme is false", () => {
         const extensions = {
             "sh.sugarcube": {
-                selector: "unknown-value",
-            },
-        };
-        expect(extractSelectorStrategy(extensions)).toBe("data-attribute");
-    });
-
-    it("returns 'data-attribute' when explicitly specified", () => {
-        const extensions = {
-            "sh.sugarcube": {
-                selector: "data-attribute",
+                prefersColorScheme: false,
             },
         };
         expect(extractSelectorStrategy(extensions)).toBe("data-attribute");

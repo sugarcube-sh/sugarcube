@@ -86,7 +86,7 @@ You can scope themes to specific containers:
 
 If you want themes to follow the user's OS preference without JavaScript, you can use `prefers-color-scheme` media queries instead of data attributes.
 
-Add the `selector` option to your modifier's `$extensions`:
+Add `prefersColorScheme: true` to your modifier's `$extensions`:
 
 ```json title="tokens.resolver.json"
 {
@@ -107,7 +107,7 @@ Add the `selector` option to your modifier's `$extensions`:
       },
       "$extensions": {
         "sh.sugarcube": {
-          "selector": "prefers-color-scheme"
+          "prefersColorScheme": true
         }
       }
     }
@@ -132,7 +132,7 @@ This generates media queries instead of data attributes:
 ```
 
 <SiteAside type="note">
-  The `prefers-color-scheme` selector only supports `light` and `dark` contexts. If your modifier has other contexts (like `high-contrast`), use the default data-attribute approach instead.
+  Context names must be `light` and `dark` — these map directly to `prefers-color-scheme: light` and `prefers-color-scheme: dark` in CSS. If your modifier has other contexts (like `high-contrast`), use the default data-attribute approach instead.
 </SiteAside>
 
 ### When to use each approach
