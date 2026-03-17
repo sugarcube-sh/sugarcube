@@ -1,6 +1,8 @@
 // DTCG (Design Tokens Community Group) Format Types
 // See: https://design-tokens.github.io/community-group/format/
 
+import type { DTCGColorSpace } from "./dtcg-color.js";
+
 type TokenValue<T extends TokenType> = RawTokenValue<T> | Reference<T>;
 
 type RawTokenValue<T extends TokenType> = T extends SimpleTokenType
@@ -98,7 +100,7 @@ type CompositeTokenValue<T extends CompositeTokenType = CompositeTokenType> = T 
 type Color =
     | string
     | {
-          colorSpace: "oklch" | "display-p3";
+          colorSpace: DTCGColorSpace;
           components: [number, number, number];
           alpha?: number;
           hex?: string;

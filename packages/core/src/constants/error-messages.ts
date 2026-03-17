@@ -31,7 +31,7 @@ export const ErrorMessages = {
         UNKNOWN_TOKEN_TYPE: (type: string, path: string) =>
             `Unknown token type '${type}' at ${path}. Valid types are: color, dimension, fontFamily, fontWeight, duration, cubicBezier, strokeStyle, border, transition, shadow, gradient, typography`,
         INVALID_COLOR: (value: unknown, path: string) =>
-            `Invalid color at ${path}: '${value}'. Color should be a valid hex value or W3C color object`,
+            `Invalid color at ${path}: '${value}'. Color should be a valid hex value or DTCG color object`,
         INVALID_DIMENSION: (value: unknown, path: string) =>
             `Invalid dimension at '${path}': ${value}. Dimensions should have a numeric value and unit, like { "value": 16, "unit": "px" }`,
         INVALID_DIMENSION_UNIT: (unit: unknown, path: string) =>
@@ -103,6 +103,12 @@ export const ErrorMessages = {
             `Invalid CSS value for property '${key}': ${value}`,
         INVALID_VARIABLE_NAME: (path: string, name: string) =>
             `Invalid CSS variable name at '${path}': ${name}`,
+        INVALID_CSS_VALUE_TYPE: (valueType: string) =>
+            `CSS value must be a string or number, but received ${valueType}. This is a bug in sugarcube. Please report it at https://github.com/sugarcube-sh/sugarcube/issues`,
+    },
+    CONVERT: {
+        COLOR_CONVERSION_FAILED: (error: string) =>
+            `Failed to convert color: ${error}. This is a bug in sugarcube. Please report it at https://github.com/sugarcube-sh/sugarcube/issues`,
     },
     CONFIG: {
         INVALID_JSON: (error: string) => `Invalid JSON in config file: ${error}`,

@@ -1,3 +1,4 @@
+import { ErrorMessages } from "../constants/error-messages.js";
 import { isTypographyToken } from "../guards/token-guards.js";
 import type { InternalConfig } from "../types/config.js";
 import type {
@@ -32,8 +33,7 @@ function convertReferenceToCSSVar(value: unknown): string | number {
     }
 
     if (typeof value !== "string") {
-        console.warn("[sugarcube] Unexpected value type in convertReferenceToCSSVar:", value);
-        return String(value);
+        throw new Error(ErrorMessages.GENERATE.INVALID_CSS_VALUE_TYPE(typeof value));
     }
 
     return value.replace(/\{([^}]+)\}/g, (_, ref) => {
