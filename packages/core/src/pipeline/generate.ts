@@ -196,7 +196,7 @@ function buildSelector(
         const contextName = context.slice(colonIndex + 1);
         const modifier = modifiers?.find((m) => m.name === modifierName);
 
-        if (modifier?.selector === "prefers-color-scheme") {
+        if (modifier?.contextStrategy === "prefers-color-scheme") {
             return {
                 selector: ":root",
                 wrapper: `@media (prefers-color-scheme: ${contextName})`,

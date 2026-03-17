@@ -1,4 +1,4 @@
-import type { SelectorStrategy } from "../types/pipelines.js";
+import type { ContextStrategy } from "../types/pipelines.js";
 
 /** Reverse domain namespace per DTCG spec recommendation */
 const SUGARCUBE_NAMESPACE = "sh.sugarcube";
@@ -14,9 +14,9 @@ export function getSugarcubeExtensions(
     return extensions[SUGARCUBE_NAMESPACE] as SugarcubeModifierExtensions;
 }
 
-export function extractSelectorStrategy(
+export function extractContextStrategy(
     extensions: Record<string, unknown> | undefined
-): SelectorStrategy {
+): ContextStrategy {
     const ext = getSugarcubeExtensions(extensions);
     if (ext?.prefersColorScheme === true) return "prefers-color-scheme";
     return "data-attribute";

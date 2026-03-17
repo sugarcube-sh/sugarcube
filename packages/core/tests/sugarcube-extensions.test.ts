@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-    extractSelectorStrategy,
+    extractContextStrategy,
     getSugarcubeExtensions,
 } from "../src/extensions/sugarcube-extensions.js";
 
@@ -26,20 +26,20 @@ describe("getSugarcubeExtensions", () => {
     });
 });
 
-describe("extractSelectorStrategy", () => {
+describe("extractContextStrategy", () => {
     it("returns 'data-attribute' when extensions is undefined", () => {
-        expect(extractSelectorStrategy(undefined)).toBe("data-attribute");
+        expect(extractContextStrategy(undefined)).toBe("data-attribute");
     });
 
     it("returns 'data-attribute' when sh.sugarcube namespace is missing", () => {
-        expect(extractSelectorStrategy({})).toBe("data-attribute");
+        expect(extractContextStrategy({})).toBe("data-attribute");
     });
 
     it("returns 'data-attribute' when prefersColorScheme is not specified", () => {
         const extensions = {
             "sh.sugarcube": {},
         };
-        expect(extractSelectorStrategy(extensions)).toBe("data-attribute");
+        expect(extractContextStrategy(extensions)).toBe("data-attribute");
     });
 
     it("returns 'prefers-color-scheme' when prefersColorScheme is true", () => {
@@ -48,7 +48,7 @@ describe("extractSelectorStrategy", () => {
                 prefersColorScheme: true,
             },
         };
-        expect(extractSelectorStrategy(extensions)).toBe("prefers-color-scheme");
+        expect(extractContextStrategy(extensions)).toBe("prefers-color-scheme");
     });
 
     it("returns 'data-attribute' when prefersColorScheme is false", () => {
@@ -57,6 +57,6 @@ describe("extractSelectorStrategy", () => {
                 prefersColorScheme: false,
             },
         };
-        expect(extractSelectorStrategy(extensions)).toBe("data-attribute");
+        expect(extractContextStrategy(extensions)).toBe("data-attribute");
     });
 });

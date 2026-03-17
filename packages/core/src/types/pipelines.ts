@@ -7,11 +7,11 @@ import type { TokenTree } from "./tokens.js";
 import type { ValidationError } from "./validate.js";
 
 /**
- * Selector strategy for CSS generation.
- * - "data-attribute": [data-{name}="{context}"] (default)
- * - "prefers-color-scheme": @media (prefers-color-scheme: {context})
+ * Strategy for how modifier contexts are output in CSS.
+ * - "data-attribute": [data-{name}="{context}"] selector (default)
+ * - "prefers-color-scheme": @media (prefers-color-scheme: {context}) wrapper
  */
-export type SelectorStrategy = "data-attribute" | "prefers-color-scheme";
+export type ContextStrategy = "data-attribute" | "prefers-color-scheme";
 
 /**
  * Metadata about a modifier (e.g., theme, density) for CSS generation.
@@ -26,8 +26,8 @@ export type ModifierMeta = {
     defaultContext: string;
     /** Available non-default context names. */
     contexts: string[];
-    /** CSS selector strategy for this modifier. */
-    selector: SelectorStrategy;
+    /** How this modifier's contexts are output in CSS. */
+    contextStrategy: ContextStrategy;
 };
 
 /**

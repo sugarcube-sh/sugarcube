@@ -198,7 +198,7 @@ describe("generate", () => {
                     attribute: "data-theme",
                     defaultContext: "light",
                     contexts: ["dark"],
-                    selector: "prefers-color-scheme",
+                    contextStrategy: "prefers-color-scheme",
                 },
             ];
 
@@ -239,7 +239,7 @@ describe("generate", () => {
                     attribute: "data-theme",
                     defaultContext: "light",
                     contexts: ["dark"],
-                    selector: "data-attribute",
+                    contextStrategy: "data-attribute",
                 },
             ];
 
@@ -289,14 +289,14 @@ describe("generate", () => {
                     attribute: "data-theme",
                     defaultContext: "light",
                     contexts: ["dark"],
-                    selector: "prefers-color-scheme",
+                    contextStrategy: "prefers-color-scheme",
                 },
                 {
                     name: "density",
                     attribute: "data-density",
                     defaultContext: "normal",
                     contexts: ["compact"],
-                    selector: "data-attribute",
+                    contextStrategy: "data-attribute",
                 },
             ];
 

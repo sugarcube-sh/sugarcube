@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { isAbsolute, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
-import { extractSelectorStrategy } from "../extensions/sugarcube-extensions.js";
+import { extractContextStrategy } from "../extensions/sugarcube-extensions.js";
 import { isInlineModifier, isInlineSet, isReference } from "../guards/resolver-guards.js";
 import { resolverDocumentSchema } from "../schemas/resolver.js";
 import type {
@@ -161,8 +161,8 @@ function checkModifierContexts(
         });
     }
 
-    const selector = extractSelectorStrategy(modifier.$extensions);
-    if (selector === "prefers-color-scheme") {
+    const contextStrategy = extractContextStrategy(modifier.$extensions);
+    if (contextStrategy === "prefers-color-scheme") {
         const contexts = Object.keys(modifier.contexts);
         const validContexts = ["light", "dark"];
         const invalidContexts = contexts.filter((c) => !validContexts.includes(c));
