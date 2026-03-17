@@ -1,36 +1,36 @@
 {
   "cluster-gap": {
-    "$type": "fluidDimension",
+    "$type": "dimension",
     "$value": "{space.sm}",
     "$description": "Base gap spacing for cluster composition"
   },
   "grid-gap": {
-    "$type": "fluidDimension",
+    "$type": "dimension",
     "$value": "{space.md}",
     "$description": "Default gap for grid composition"
   },
   "repel-gap": {
-    "$type": "fluidDimension",
+    "$type": "dimension",
     "$value": "{space.md}",
     "$description": "Default gap for repel composition"
   },
   "sidebar-gap": {
-    "$type": "fluidDimension",
+    "$type": "dimension",
     "$value": "{space.md}",
     "$description": "Default gap for sidebar composition"
   },
   "switcher-gap": {
-    "$type": "fluidDimension",
+    "$type": "dimension",
     "$value": "{space.md}",
     "$description": "Default gap for switcher composition"
   },
   "flow-space": {
-    "$type": "fluidDimension",
+    "$type": "dimension",
     "$value": "{space.md}",
     "$description": "Base vertical spacing in flow composition"
   },
   "region-space": {
-    "$type": "fluidDimension",
+    "$type": "dimension",
     "$value": "{space.xl}",
     "$description": "Base vertical padding for page sections"
   },
@@ -40,7 +40,7 @@
     "$description": "Max width for wrapper composition"
   },
   "wrapper-padding-inline": {
-    "$type": "fluidDimension",
+    "$type": "dimension",
     "$value": "{space.sm}",
     "$description": "Inline padding for wrapper composition"
   },
