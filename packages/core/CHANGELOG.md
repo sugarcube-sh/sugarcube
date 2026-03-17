@@ -1,5 +1,11 @@
 # @sugarcube-sh/core
 
+## 0.1.3
+
+### Patch Changes
+
+- a74b2ac: fix: border and gradient color object tokens no longer output as [object Object].
+
 ## 0.1.2
 
 ### Patch Changes
