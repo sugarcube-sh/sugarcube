@@ -12,7 +12,7 @@
     height: var(--_form-control-height);
     border: var(--form-control-border-width) var(--form-control-border-style)
         var(--form-control-border-color);
-    border-radius: var(--form-control-border-radius);
+    border-radius: var(--form-control-radius);
     box-shadow: var(--shadow-xs);
     background-color: var(--form-control-background-color);
     transition-property: border-color, box-shadow;

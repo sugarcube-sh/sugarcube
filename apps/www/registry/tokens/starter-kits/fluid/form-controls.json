@@ -15,7 +15,7 @@
     "border-color": {
       "$value": "{color.border.normal}"
     },
-    "border-radius": {
+    "radius": {
       "$value": "{radius.lg}"
     },
     "line-height": {

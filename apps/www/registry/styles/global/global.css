@@ -355,7 +355,7 @@ select {
     background-color: var(--form-control-background-color, transparent);
     border: var(--form-control-border-width, 1px) var(--form-control-border-style, solid)
         var(--form-control-border-color, currentColor);
-    border-radius: var(--form-control-border-radius, 0.25rem);
+    border-radius: var(--form-control-radius, 0.25rem);
 
     &::placeholder {
         color: var(--form-control-placeholder-color, currentColor);
@@ -393,7 +393,7 @@ input[type="color"] {
     background: transparent;
     border: var(--form-control-border-width, 1px) var(--border-style, solid)
         var(--form-control-border-color, currentColor);
-    border-radius: var(--form-control-border-radius, 0.25rem);
+    border-radius: var(--form-control-radius, 0.25rem);
     cursor: pointer;
 
     &::-webkit-color-swatch-wrapper {
@@ -404,7 +404,7 @@ input[type="color"] {
     &::-webkit-color-swatch {
         border: none;
         border-radius: calc(
-            var(--form-control-border-radius, 0.25rem) -
+            var(--form-control-radius, 0.25rem) -
             var(--form-control-border-width, 1px) *
             3
         );
@@ -413,7 +413,7 @@ input[type="color"] {
     &::-moz-color-swatch {
         border: none;
         border-radius: calc(
-            var(--form-control-border-radius, 0.25rem) -
+            var(--form-control-radius, 0.25rem) -
             var(--form-control-border-width, 1px) *
             3
         );

@@ -14,9 +14,9 @@
     border-color: transparent;
     padding-block: 0;
     background-color: var(--color-fill-loud, var(--color-neutral-fill-loud));
-    border-radius: var(--form-control-border-radius);
+    border-radius: var(--form-control-radius);
     border-style: var(--border-style);
-    border-width: var(--border-width-thin);
+    border-width: var(--form-control-border-width);
     box-shadow: var(--shadow-xs);
     color: var(--color-on-loud, var(--color-neutral-on-normal));
     font-weight: var(--font-weight-medium);
