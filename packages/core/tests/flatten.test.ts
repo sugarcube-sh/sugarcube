@@ -260,5 +260,48 @@ describe("flatten", () => {
 
             expect(errors[0]?.source.sourcePath).toBe("problematic-file.json");
         });
+
+        it("rejects tokens with literal values missing $type", () => {
+            const { errors } = flatten([
+                buildTree({
+                    color: {
+                        primary: { $value: "#ff0000" },
+                    },
+                }),
+            ]);
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0]?.message).toBe(
+                ErrorMessages.FLATTEN.TOKEN_MISSING_TYPE("color.primary")
+            );
+        });
+
+        it("allows reference tokens without $type", () => {
+            const { tokens, errors } = flatten([
+                buildTree({
+                    color: {
+                        primary: { $value: "{other.color}" },
+                    },
+                }),
+            ]);
+
+            expect(errors).toHaveLength(0);
+            expect(tokens.tokens["color.primary"]).toBeDefined();
+        });
+
+        it("allows tokens inheriting $type from parent group", () => {
+            const { tokens, errors } = flatten([
+                buildTree({
+                    color: {
+                        $type: "color",
+                        primary: { $value: "#ff0000" },
+                    },
+                }),
+            ]);
+
+            expect(errors).toHaveLength(0);
+            const token = tokens.tokens["color.primary"];
+            expect(isToken(token) && token.$type).toBe("color");
+        });
     });
 });
