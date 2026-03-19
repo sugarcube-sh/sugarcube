@@ -1,5 +1,5 @@
 import { ErrorMessages } from "../constants/error-messages.js";
-import { isCompositeToken } from "../guards/token-guards.js";
+import { isCompositeToken, isReference } from "../guards/token-guards.js";
 import type { FlattenError, FlattenedToken, FlattenedTokens } from "../types/flatten.js";
 import type { Token, TokenGroup, TokenSource, TokenTree } from "../types/tokens.js";
 import { mergeFlattenedInto } from "../utils/merge-flattened.js";
@@ -120,6 +120,18 @@ function flattenTree(
                         path: childPath,
                         source,
                         message: ErrorMessages.FLATTEN.COMPOSITE_TOKEN_MISSING_TYPE(childPath),
+                    });
+                    continue;
+                }
+
+                // Check if this is a simple token with a literal value missing its $type
+                // Reference tokens (like { "$value": "{color.primary}" }) can omit $type
+                // as the type is inferred from the referenced token.
+                if (!value.$type && !currentType && !isReference(value.$value)) {
+                    errors.push({
+                        path: childPath,
+                        source,
+                        message: ErrorMessages.FLATTEN.TOKEN_MISSING_TYPE(childPath),
                     });
                     continue;
                 }

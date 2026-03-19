@@ -332,11 +332,11 @@ async function processModifierContext(
     });
     errors.push(...fullResult.errors);
 
-    const contextTokens: TokenGroup = {};
+    const contextTokens = structuredClone(rawContextTokens);
     for (const path of contextPaths) {
-        const value = getTokenAtPath(fullResult.tokens, path);
-        if (value !== undefined) {
-            setTokenAtPath(contextTokens, path, value);
+        const resolvedValue = getTokenAtPath(fullResult.tokens, path);
+        if (resolvedValue !== undefined) {
+            updateTokenAtPath(contextTokens, path, resolvedValue);
         }
     }
 
@@ -390,17 +390,16 @@ function getTokenAtPath(tokens: TokenGroup, path: string): unknown {
     return current;
 }
 
-function setTokenAtPath(tokens: TokenGroup, path: string, value: unknown): void {
+function updateTokenAtPath(tokens: TokenGroup, path: string, value: unknown): void {
     const parts = path.split(".");
     let current: Record<string, unknown> = tokens;
 
     for (let i = 0; i < parts.length - 1; i++) {
         const part = parts[i];
         if (!part) continue;
-        if (!(part in current)) {
-            current[part] = {};
-        }
-        current = current[part] as Record<string, unknown>;
+        const next = current[part];
+        if (!next || typeof next !== "object") return;
+        current = next as Record<string, unknown>;
     }
 
     const lastPart = parts[parts.length - 1];
