@@ -365,4 +365,101 @@ describe("Layered CSS Generation", () => {
         expect(compactBlock).toContain("--spacing-");
         expect(compactBlock).not.toContain("--color-");
     });
+
+    it("preserves group-level $type inheritance in modifier context tokens", async () => {
+        const doc: ResolverDocument = {
+            version: "2025.10",
+            resolutionOrder: [
+                {
+                    type: "set",
+                    name: "base",
+                    sources: [
+                        {
+                            color: {
+                                $type: "color",
+                                primary: { $value: "#ff0000" },
+                            },
+                        } as TokenGroup,
+                    ],
+                },
+                {
+                    type: "modifier",
+                    name: "brand",
+                    default: "default",
+                    contexts: {
+                        default: [],
+                        ocean: [
+                            {
+                                color: {
+                                    $type: "color",
+                                    primary: { $value: "#20DBF5" },
+                                },
+                            } as TokenGroup,
+                        ],
+                    },
+                },
+            ],
+        };
+
+        const result = await processForLayeredCSS(doc, process.cwd());
+
+        expect(result.errors).toHaveLength(0);
+        expect(result.modifiers).toHaveLength(1);
+
+        const brandMod = result.modifiers[0];
+        expect(brandMod?.contexts.has("ocean")).toBe(true);
+
+        const oceanTokens = brandMod?.contexts.get("ocean");
+        expect(oceanTokens).toBeDefined();
+
+        const colorGroup = (oceanTokens as TokenGroup)?.color as TokenGroup | undefined;
+        const primaryToken = colorGroup?.primary;
+        expect(primaryToken).toBeDefined();
+        expect((primaryToken as { $value: string }).$value).toBe("#20DBF5");
+    });
+
+    it("generates CSS for modifier tokens using group-level $type inheritance", async () => {
+        const doc: ResolverDocument = {
+            version: "2025.10",
+            resolutionOrder: [
+                {
+                    type: "set",
+                    name: "base",
+                    sources: [
+                        {
+                            color: {
+                                $type: "color",
+                                primary: { $value: "#ff0000" },
+                            },
+                        } as TokenGroup,
+                    ],
+                },
+                {
+                    type: "modifier",
+                    name: "brand",
+                    default: "default",
+                    contexts: {
+                        default: [],
+                        ocean: [
+                            {
+                                color: {
+                                    $type: "color",
+                                    primary: { $value: "#20DBF5" },
+                                },
+                            } as TokenGroup,
+                        ],
+                    },
+                },
+            ],
+        };
+
+        const result = await processForLayeredCSS(doc, process.cwd());
+
+        const brandMod = result.modifiers.find((m) => m.name === "brand");
+        const oceanTokens = brandMod?.contexts.get("ocean");
+        const colorGroup = (oceanTokens as TokenGroup)?.color as TokenGroup | undefined;
+
+        expect(colorGroup).toBeDefined();
+        expect(colorGroup?.$type).toBe("color");
+    });
 });
