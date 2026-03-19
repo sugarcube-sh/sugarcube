@@ -231,11 +231,14 @@ CSS specificity makes this work correctly:
 
 ## Token override files
 
-Override files are ordinary [DTCG tokens](/docs/tokens). They only need to include the tokens you want to change — everything else inherits from base:
+Override files are ordinary [DTCG tokens](/docs/tokens). They only need to include the tokens you want to change — everything else inherits from base.
+
+Like any DTCG file, tokens need a `$type`. You can set it on individual tokens or use group-level inheritance:
 
 ```json title="dark.json"
 {
   "color": {
+    "$type": "color",
     "surface": { "$value": "#1a1a1a" },
     "text": { "$value": "#ffffff" }
   }
