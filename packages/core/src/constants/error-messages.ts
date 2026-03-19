@@ -14,6 +14,8 @@ export const ErrorMessages = {
             `Token at "${path}" cannot contain child tokens or groups. Only metadata properties (starting with $) are allowed.`,
         COMPOSITE_TOKEN_MISSING_TYPE: (path: string) =>
             `Composite token at '${path}' is missing the required "$type" property. Composite tokens (tokens with object values) must specify their type to define their structure.`,
+        TOKEN_MISSING_TYPE: (path: string) =>
+            `Token at '${path}' is missing "$type". Add "$type" to the token or its parent group.`,
         CONFLICT_TOKEN_VS_GROUP: (path: string) =>
             `Conflict at "${path}": token vs group. A token cannot be replaced by a group (or vice versa).`,
         CONFLICT_INCOMPATIBLE_TYPES: (expected: string, received: string, path: string) =>
