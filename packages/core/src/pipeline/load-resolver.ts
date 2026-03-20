@@ -1,23 +1,10 @@
 import { dirname, isAbsolute, relative, resolve as resolvePath } from "pathe";
+import { extractContextStrategy } from "../extensions/sugarcube-extensions.js";
 import { parseResolverDocument } from "../resolver/parse-resolver.js";
 import { processForLayeredCSS } from "../resolver/process-resolution-order.js";
 import type { LoadError } from "../types/load.js";
+import type { ModifierMeta } from "../types/pipelines.js";
 import type { TokenTree } from "../types/tokens.js";
-
-/**
- * Modifier metadata for CSS generation.
- * Used to build selectors like [data-theme="dark"].
- */
-export type ModifierMeta = {
-    /** The modifier name (e.g., "theme", "density") */
-    name: string;
-    /** Auto-derived CSS attribute (e.g., "data-theme", "data-density") */
-    attribute: string;
-    /** The default context name */
-    defaultContext: string;
-    /** Available non-default context names */
-    contexts: string[];
-};
 
 /**
  * Result of loading tokens from a resolver document.
@@ -98,6 +85,7 @@ export async function loadFromResolver(resolverPath: string): Promise<ResolverLo
             attribute: `data-${mod.name}`,
             defaultContext: mod.defaultContext,
             contexts: contextNames,
+            contextStrategy: extractContextStrategy(mod.$extensions),
         });
     }
 

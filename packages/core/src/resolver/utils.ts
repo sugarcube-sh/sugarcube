@@ -53,6 +53,7 @@ export type ExtractedModifier = {
     name: string;
     contexts: string[];
     default?: string;
+    $extensions?: Record<string, unknown>;
 };
 
 export function extractModifiers(document: ResolverDocument): ExtractedModifier[] {
@@ -101,6 +102,7 @@ function extractReferencedModifier(
         name,
         contexts: Object.keys(def.contexts),
         default: def.default,
+        $extensions: def.$extensions,
     };
 }
 
@@ -114,5 +116,6 @@ function extractInlineModifier(
         name: item.name,
         contexts: Object.keys(item.contexts),
         default: item.default,
+        $extensions: item.$extensions,
     };
 }

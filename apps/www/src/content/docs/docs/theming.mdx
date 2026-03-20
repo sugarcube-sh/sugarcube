@@ -82,6 +82,65 @@ You can scope themes to specific containers:
 </div>
 ```
 
+## Automatic theme switching
+
+If you want themes to follow the user's OS preference without JavaScript, you can use `prefers-color-scheme` media queries instead of data attributes.
+
+Add `prefersColorScheme: true` to your modifier's `$extensions`:
+
+```json title="tokens.resolver.json"
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [{ "$ref": "./base.json" }]
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [{ "$ref": "./dark.json" }]
+      },
+      "$extensions": {
+        "sh.sugarcube": {
+          "prefersColorScheme": true
+        }
+      }
+    }
+  ]
+}
+```
+
+This generates media queries instead of data attributes:
+
+```css
+:root {
+  --color-surface: #ffffff;
+  --color-text: #1a1a1a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: #1a1a1a;
+    --color-text: #ffffff;
+  }
+}
+```
+
+<SiteAside type="note">
+  Context names must be `light` and `dark` — these map directly to `prefers-color-scheme: light` and `prefers-color-scheme: dark` in CSS. If your modifier has other contexts (like `high-contrast`), use the default data-attribute approach instead.
+</SiteAside>
+
+### When to use each approach
+
+**Use data attributes** when users should be able to override their OS preference via a theme toggle.
+
+**Use `prefers-color-scheme`** when you don't need a toggle — the theme follows the OS automatically with zero JavaScript.
+
 ## Multiple theme contexts
 
 You can define more than two contexts:
