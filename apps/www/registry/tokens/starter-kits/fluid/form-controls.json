@@ -19,14 +19,12 @@
       "$value": "{radius.lg}"
     },
     "line-height": {
-      "$type": "number",
       "$value": "{leading.normal}"
     },
     "font-size": {
       "$value": "{text.sm}"
     },
     "placeholder-color": {
-      "$type": "color",
       "$value": "{color.text.placeholder}"
     },
     "toggle-size": {
