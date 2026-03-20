@@ -199,7 +199,7 @@ describe("parseResolverDocument", () => {
                         type: "modifier",
                         name: "theme",
                         default: "light",
-                        contexts: { light: [], dark: [] },
+                        contexts: { light: [], dark: [{ $ref: "./dark.json" }] },
                         $extensions: {
                             "sh.sugarcube": { prefersColorScheme: true },
                         },
@@ -207,7 +207,7 @@ describe("parseResolverDocument", () => {
                 ],
             });
 
-            // Should only have the "single context" warning, not prefers-color-scheme errors
+            // Should have no prefers-color-scheme errors
             const prefersColorSchemeErrors = result.errors.filter((e) =>
                 e.message.includes("prefersColorScheme")
             );
@@ -284,6 +284,55 @@ describe("parseResolverDocument", () => {
                 e.message.includes("prefersColorScheme")
             );
             expect(prefersColorSchemeErrors).toHaveLength(0);
+        });
+
+        it("errors when non-default context has empty sources", () => {
+            const result = parseInline({
+                version: "2025.10",
+                resolutionOrder: [
+                    {
+                        type: "modifier",
+                        name: "theme",
+                        default: "dark",
+                        contexts: { light: [], dark: [] },
+                        $extensions: {
+                            "sh.sugarcube": { prefersColorScheme: true },
+                        },
+                    },
+                ],
+            });
+
+            expect(
+                hasError(
+                    result.errors,
+                    ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT("theme", "light")
+                )
+            ).toBe(true);
+        });
+
+        it("accepts when non-default context has sources", () => {
+            const result = parseInline({
+                version: "2025.10",
+                resolutionOrder: [
+                    {
+                        type: "modifier",
+                        name: "theme",
+                        default: "light",
+                        contexts: {
+                            light: [],
+                            dark: [{ $ref: "./dark.json" }],
+                        },
+                        $extensions: {
+                            "sh.sugarcube": { prefersColorScheme: true },
+                        },
+                    },
+                ],
+            });
+
+            const emptySourceErrors = result.errors.filter((e) =>
+                e.message.includes("has no sources")
+            );
+            expect(emptySourceErrors).toHaveLength(0);
         });
     });
 

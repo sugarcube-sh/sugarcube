@@ -167,9 +167,9 @@ function checkModifierContexts(
         const validContexts = ["light", "dark"];
         const invalidContexts = contexts.filter((c) => !validContexts.includes(c));
 
+        const modifierName = "name" in modifier ? modifier.name : (path.split(".").pop() ?? path);
+
         if (invalidContexts.length > 0) {
-            const modifierName =
-                "name" in modifier ? modifier.name : (path.split(".").pop() ?? path);
             errors.push({
                 path: `${path}.contexts`,
                 message: ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS(
@@ -177,6 +177,21 @@ function checkModifierContexts(
                     invalidContexts
                 ),
             });
+        }
+
+        const defaultContext = modifier.default ?? contexts[0];
+        for (const contextName of contexts) {
+            if (contextName === defaultContext) continue;
+            const sources = modifier.contexts[contextName];
+            if (!sources || sources.length === 0) {
+                errors.push({
+                    path: `${path}.contexts.${contextName}`,
+                    message: ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT(
+                        modifierName,
+                        contextName
+                    ),
+                });
+            }
         }
     }
 }
