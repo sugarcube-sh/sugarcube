@@ -2,7 +2,7 @@
 "@sugarcube-sh/core": patch
 ---
 
-Add `prefersColorScheme` extension for automatic theme switching
+Add `prefersColorScheme` extension for automatic theme switching. Thanks @aninusmuffin, @arpit-agr.
 
 Modifiers can now use `@media (prefers-color-scheme)` queries instead of data attributes by adding `prefersColorScheme: true` to the modifier's `$extensions`:
 
