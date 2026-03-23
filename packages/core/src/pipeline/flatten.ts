@@ -73,7 +73,9 @@ function flattenTree(
             };
         }
 
-        const keys = Object.keys(node).filter((key) => !key.startsWith("$"));
+        // Filter out metadata properties (those starting with $), but allow $root
+        // which is a reserved token name per DTCG 2025.10 spec
+        const keys = Object.keys(node).filter((key) => !key.startsWith("$") || key === "$root");
 
         const currentType = node.$type || inheritedType;
 
