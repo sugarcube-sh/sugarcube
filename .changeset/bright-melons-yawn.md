@@ -36,6 +36,8 @@ The `{context}` placeholder is replaced with the context name (e.g., `dark`).
 
 **Backwards compatibility:** `prefersColorScheme: true` still works (converted to atRule internally).
 
+**Migration help:** If you have a modifier with multiple contexts but no extension, you'll now see a warning explaining which contexts will be skipped and how to fix it.
+
 ### Removed Dead Config Options
 
 - Removed `output.themeAttribute` (was unused - attributes auto-derive from modifier names)
