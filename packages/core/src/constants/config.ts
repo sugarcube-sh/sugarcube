@@ -4,7 +4,6 @@ export const DEFAULT_CONFIG = {
         variablesFilename: "tokens.variables.gen.css",
         utilitiesFilename: "utilities.gen.css",
         components: "src/components/ui",
-        themeAttribute: "data-theme",
     },
     transforms: {
         fluid: {

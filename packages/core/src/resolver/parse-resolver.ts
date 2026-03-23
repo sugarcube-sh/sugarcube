@@ -1,7 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { isAbsolute, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
-import { extractContextStrategy } from "../extensions/sugarcube-extensions.js";
+import {
+    getAtRule,
+    getSelector,
+    usesPrefersColorScheme,
+} from "../extensions/sugarcube-extensions.js";
 import { isInlineModifier, isInlineSet, isReference } from "../guards/resolver-guards.js";
 import { resolverDocumentSchema } from "../schemas/resolver.js";
 import type {
@@ -161,13 +165,40 @@ function checkModifierContexts(
         });
     }
 
-    const contextStrategy = extractContextStrategy(modifier.$extensions);
-    if (contextStrategy === "prefers-color-scheme") {
+    const modifierName = "name" in modifier ? modifier.name : (path.split(".").pop() ?? path);
+
+    // Validate selector/atRule extensions
+    const selector = getSelector(modifier.$extensions);
+    const atRule = getAtRule(modifier.$extensions);
+
+    // Can't have both selector and atRule
+    if (selector && atRule) {
+        errors.push({
+            path: `${path}.$extensions`,
+            message: ErrorMessages.RESOLVER.SELECTOR_AND_AT_RULE_MUTUALLY_EXCLUSIVE(modifierName),
+        });
+    }
+
+    // Selector must contain {context} placeholder
+    if (selector && !selector.includes("{context}")) {
+        errors.push({
+            path: `${path}.$extensions`,
+            message: ErrorMessages.RESOLVER.SELECTOR_PATTERN_NO_PLACEHOLDER(modifierName),
+        });
+    }
+
+    // AtRule must contain {context} placeholder
+    if (atRule && !atRule.includes("{context}")) {
+        errors.push({
+            path: `${path}.$extensions`,
+            message: ErrorMessages.RESOLVER.AT_RULE_PATTERN_NO_PLACEHOLDER(modifierName),
+        });
+    }
+
+    if (usesPrefersColorScheme(modifier.$extensions)) {
         const contexts = Object.keys(modifier.contexts);
         const validContexts = ["light", "dark"];
         const invalidContexts = contexts.filter((c) => !validContexts.includes(c));
-
-        const modifierName = "name" in modifier ? modifier.name : (path.split(".").pop() ?? path);
 
         if (invalidContexts.length > 0) {
             errors.push({

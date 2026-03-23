@@ -31,8 +31,6 @@ export type OutputConfig = {
     utilitiesFilename: string;
     cube?: string;
     components?: string;
-    themeAttribute: string;
-    defaultContext?: string;
     /** CSS cascade layers configuration. When set, output is wrapped in @layer blocks. */
     layers?: LayersConfig;
 };
@@ -117,17 +115,6 @@ export interface SugarcubeConfig {
         cube?: string;
         /** Directory path where component files will be written. */
         components?: string;
-        /**
-         * HTML attribute used for theme selectors.
-         * @default "data-theme"
-         */
-        themeAttribute?: string;
-        /**
-         * Which context should use the :root selector.
-         * Other contexts will use [themeAttribute="contextName"] selectors.
-         * @default The resolver's default context
-         */
-        defaultContext?: string;
         /**
          * CSS cascade layers configuration.
          * When set, generated CSS will be wrapped in @layer blocks.

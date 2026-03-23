@@ -21,19 +21,29 @@ describe("generate", () => {
         expect(css).toContain("--color-primary: #FF0000;");
     });
 
-    it("should handle theme context tokens", async () => {
+    it("should handle theme context tokens with selector extension", async () => {
         const tokens: NormalizedConvertedTokens = {
             default: {
                 "color.primary": convertedTokens.colorPrimary,
             },
-            dark: {
+            "theme:dark": {
                 "color.primary": convertedTokens.colorPrimaryDark,
             },
         };
 
+        const modifiers: ModifierMeta[] = [
+            {
+                name: "theme",
+                attribute: "data-theme",
+                defaultContext: "light",
+                contexts: ["dark"],
+                selector: '[data-theme="{context}"]',
+            },
+        ];
+
         const config = fillDefaults(configs.themes);
 
-        const result = await generate(tokens, config);
+        const result = await generate(tokens, config, modifiers);
 
         expect(result.output).toHaveLength(1);
 
@@ -44,12 +54,12 @@ describe("generate", () => {
         expect(css).toContain("--color-primary: #000000;");
     });
 
-    it("should handle named theme contexts", async () => {
+    it("should handle named theme contexts with selector extension", async () => {
         const tokens: NormalizedConvertedTokens = {
             default: {
                 "color.primary": convertedTokens.colorPrimary,
             },
-            ocean: {
+            "theme:ocean": {
                 "color.primary": createConvertedToken({
                     $value: "#0066FF",
                     $resolvedValue: "#0066FF",
@@ -58,9 +68,19 @@ describe("generate", () => {
             },
         };
 
+        const modifiers: ModifierMeta[] = [
+            {
+                name: "theme",
+                attribute: "data-theme",
+                defaultContext: "light",
+                contexts: ["ocean"],
+                selector: '[data-theme="{context}"]',
+            },
+        ];
+
         const config = fillDefaults(configs.themes);
 
-        const result = await generate(tokens, config);
+        const result = await generate(tokens, config, modifiers);
 
         const css = result.output[0]?.css ?? "";
         expect(css).toContain(":root {");
@@ -198,7 +218,7 @@ describe("generate", () => {
                     attribute: "data-theme",
                     defaultContext: "light",
                     contexts: ["dark"],
-                    contextStrategy: "prefers-color-scheme",
+                    atRule: "@media (prefers-color-scheme: {context})",
                 },
             ];
 
@@ -213,7 +233,7 @@ describe("generate", () => {
             expect(css).not.toContain('[data-theme="dark"]');
         });
 
-        it("should generate data attribute selector by default", async () => {
+        it("should generate data attribute selector with selector extension", async () => {
             const tokens: NormalizedConvertedTokens = {
                 default: {
                     "color.surface": createConvertedToken({
@@ -239,7 +259,7 @@ describe("generate", () => {
                     attribute: "data-theme",
                     defaultContext: "light",
                     contexts: ["dark"],
-                    contextStrategy: "data-attribute",
+                    selector: '[data-theme="{context}"]',
                 },
             ];
 
@@ -254,7 +274,7 @@ describe("generate", () => {
             expect(css).not.toContain("@media (prefers-color-scheme");
         });
 
-        it("should handle mixed modifiers with different selector strategies", async () => {
+        it("should handle mixed modifiers with different strategies", async () => {
             const tokens: NormalizedConvertedTokens = {
                 default: {
                     "color.surface": createConvertedToken({
@@ -289,14 +309,14 @@ describe("generate", () => {
                     attribute: "data-theme",
                     defaultContext: "light",
                     contexts: ["dark"],
-                    contextStrategy: "prefers-color-scheme",
+                    atRule: "@media (prefers-color-scheme: {context})",
                 },
                 {
                     name: "density",
                     attribute: "data-density",
                     defaultContext: "normal",
                     contexts: ["compact"],
-                    contextStrategy: "data-attribute",
+                    selector: '[data-density="{context}"]',
                 },
             ];
 

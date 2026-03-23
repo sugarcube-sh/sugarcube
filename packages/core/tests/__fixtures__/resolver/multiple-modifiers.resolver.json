@@ -39,6 +39,11 @@
       "type": "modifier",
       "name": "theme",
       "default": "light",
+      "$extensions": {
+        "sh.sugarcube": {
+          "selector": "[data-theme=\"{context}\"]"
+        }
+      },
       "contexts": {
         "light": [],
         "dark": [
@@ -61,6 +66,11 @@
       "type": "modifier",
       "name": "density",
       "default": "normal",
+      "$extensions": {
+        "sh.sugarcube": {
+          "selector": "[data-density=\"{context}\"]"
+        }
+      },
       "contexts": {
         "normal": [],
         "compact": [

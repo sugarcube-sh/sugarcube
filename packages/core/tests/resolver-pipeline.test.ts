@@ -201,11 +201,6 @@ describe("Resolver Pipeline Integration", () => {
             const config = validateConfig({ output: { cssRoot: "dist/css" } });
             expect(config.output.cssRoot).toBe("dist/css");
         });
-
-        it("fills default themeAttribute", () => {
-            const config = validateConfig({ resolver: "./tokens.resolver.json" });
-            expect(config.output.themeAttribute).toBe("data-theme");
-        });
     });
 });
 

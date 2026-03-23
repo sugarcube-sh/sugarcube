@@ -48,9 +48,6 @@ export function fillDefaults(
             utilitiesFilename:
                 userConfig.output?.utilitiesFilename ?? DEFAULT_CONFIG.output.utilitiesFilename,
             cube: userConfig.output?.cube ?? cssRoot,
-            themeAttribute:
-                userConfig.output?.themeAttribute ?? DEFAULT_CONFIG.output.themeAttribute,
-            defaultContext: userConfig.output?.defaultContext,
             layers: userConfig.output?.layers,
         },
     };

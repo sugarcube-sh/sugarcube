@@ -1,5 +1,5 @@
 import { dirname, isAbsolute, relative, resolve as resolvePath } from "pathe";
-import { extractContextStrategy } from "../extensions/sugarcube-extensions.js";
+import { getAtRule, getSelector } from "../extensions/sugarcube-extensions.js";
 import { parseResolverDocument } from "../resolver/parse-resolver.js";
 import { processForLayeredCSS } from "../resolver/process-resolution-order.js";
 import type { LoadError } from "../types/load.js";
@@ -85,7 +85,8 @@ export async function loadFromResolver(resolverPath: string): Promise<ResolverLo
             attribute: `data-${mod.name}`,
             defaultContext: mod.defaultContext,
             contexts: contextNames,
-            contextStrategy: extractContextStrategy(mod.$extensions),
+            selector: getSelector(mod.$extensions),
+            atRule: getAtRule(mod.$extensions),
         });
     }
 

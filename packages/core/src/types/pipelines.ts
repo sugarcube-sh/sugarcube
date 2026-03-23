@@ -8,13 +8,6 @@ import type { TokenTree } from "./tokens.js";
 import type { ValidationError } from "./validate.js";
 
 /**
- * Strategy for how modifier contexts are output in CSS.
- * - "data-attribute": [data-{name}="{context}"] selector (default)
- * - "prefers-color-scheme": @media (prefers-color-scheme: {context}) wrapper
- */
-export type ContextStrategy = "data-attribute" | "prefers-color-scheme";
-
-/**
  * Metadata about a modifier (e.g., theme, density) for CSS generation.
  * Used to build attribute selectors like [data-theme="dark"].
  */
@@ -27,8 +20,10 @@ export type ModifierMeta = {
     defaultContext: string;
     /** Available non-default context names. */
     contexts: string[];
-    /** How this modifier's contexts are output in CSS. */
-    contextStrategy: ContextStrategy;
+    /** Selector pattern, e.g. "[data-theme=\"{context}\"]". Use {context} placeholder. */
+    selector?: string;
+    /** At-rule pattern, e.g. "@media (prefers-color-scheme: {context})". Use {context} placeholder. */
+    atRule?: string;
 };
 
 /**

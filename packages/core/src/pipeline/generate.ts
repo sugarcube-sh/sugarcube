@@ -165,26 +165,27 @@ function generateVariablesForToken<T extends TokenType>(token: ConvertedToken<T>
 }
 
 /**
+ * A resolved CSS selector with optional at-rule wrapper.
+ */
+type ResolvedSelector = { selector: string; wrapper?: string };
+
+/**
  * Result of building a CSS selector.
  * - `selector`: The CSS selector to use (:root, [data-theme="dark"], etc.)
  * - `wrapper`: Optional at-rule wrapper (@media, @supports, etc.)
+ * - `skip`: If true, this context should not be output (no extension, non-default context)
  */
-type SelectorResult = {
-    selector: string;
-    wrapper?: string;
-};
+type SelectorResult = ResolvedSelector | { skip: true };
 
 /**
  * Context formats:
  * - undefined/"default" → :root
- * - "modifierName:contextName" → [data-modifierName="contextName"] or @media wrapper
- * - "contextName" → [data-theme="contextName"]
+ * - "modifierName:contextName" → depends on modifier extensions:
+ *   - Has `selector` extension → use pattern with {context} replaced
+ *   - Has `atRule` extension → :root wrapped in at-rule
+ *   - No extension (flat) → skip non-default contexts, output default to :root
  */
-function buildSelector(
-    context: string,
-    modifiers: ModifierMeta[] | undefined,
-    config: InternalConfig
-): SelectorResult {
+function buildSelector(context: string, modifiers: ModifierMeta[] | undefined): SelectorResult {
     if (!context || context === "default") {
         return { selector: ":root" };
     }
@@ -196,19 +197,26 @@ function buildSelector(
         const contextName = context.slice(colonIndex + 1);
         const modifier = modifiers?.find((m) => m.name === modifierName);
 
-        if (modifier?.contextStrategy === "prefers-color-scheme") {
-            return {
-                selector: ":root",
-                wrapper: `@media (prefers-color-scheme: ${contextName})`,
-            };
+        if (modifier?.selector) {
+            const selector = modifier.selector.replace("{context}", contextName);
+            return { selector };
         }
 
-        const attribute = modifier?.attribute ?? `data-${modifierName}`;
-        return { selector: `[${attribute}="${contextName}"]` };
+        if (modifier?.atRule) {
+            const wrapper = modifier.atRule.replace("{context}", contextName);
+            return { selector: ":root", wrapper };
+        }
+
+        if (modifier && contextName === modifier.defaultContext) {
+            return { selector: ":root" };
+        }
+
+        return { skip: true };
     }
 
-    // TODO: safe to delete this?
-    return { selector: `[${config.output.themeAttribute}="${context}"]` };
+    // Contexts without a compound key (shouldn't happen with new resolver format)
+    // Fall back to skipping - these contexts need explicit extension configuration
+    return { skip: true };
 }
 
 async function generateCSS(
@@ -219,11 +227,23 @@ async function generateCSS(
         modifiers?: ModifierMeta[];
     }
 ): Promise<{ output: SingleFileOutput }> {
+    const selectorResult = buildSelector(metadata.context, metadata.modifiers);
+
+    // Skip this context if the selector result indicates it should be skipped
+    if ("skip" in selectorResult) {
+        return {
+            output: [
+                {
+                    path: config.output.variablesFilename,
+                    css: "",
+                },
+            ],
+        };
+    }
+
     const varSets = deterministicEntries(tokens)
         .filter(([key, token]) => key !== "$extensions" && "$type" in token)
         .map(([_, token]) => generateVariablesForToken(token as ConvertedToken<TokenType>));
-
-    const selectorResult = buildSelector(metadata.context, metadata.modifiers, config);
 
     const rootVars = varSets.flatMap((set) => set.vars);
 
@@ -270,7 +290,7 @@ async function generateCSS(
 }
 
 function generateCSSForSelector(
-    result: SelectorResult,
+    result: ResolvedSelector,
     vars: CSSVariable[],
     features: CSSFeatureBlock[]
 ): string {
@@ -332,15 +352,16 @@ async function generateSingleFile(
  *
  * @param tokens - The normalized and converted design tokens to generate CSS from
  * @param config - The configuration object that controls output behavior
- * @param modifiers - Optional modifier metadata for generating per-modifier attribute selectors
+ * @param modifiers - Optional modifier metadata for generating per-modifier selectors
  * @returns A promise that resolves to the CSS generation result containing all output files
  *
  * All contexts are combined into a single 'tokens.variables.gen.css' file.
  *
  * Selector generation:
  * - Default context (undefined or "default"): `:root`
- * - Compound context "modifierName:contextName": `[data-modifierName="contextName"]`
- * - Simple context "contextName": `[data-theme="contextName"]` (legacy, uses config.themeAttribute)
+ * - Compound context with `selector` extension: pattern with {context} replaced
+ * - Compound context with `atRule` extension: `:root` wrapped in at-rule
+ * - No extension: only default context outputs to `:root`, others skipped
  */
 export async function generate(
     tokens: NormalizedConvertedTokens,

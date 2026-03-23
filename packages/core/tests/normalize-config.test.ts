@@ -19,7 +19,6 @@ describe("fillDefaults", () => {
             expect(result.output.utilitiesFilename).toBe("utilities.gen.css");
             expect(result.output.cube).toBe("src/styles");
             expect(result.output.components).toBe("src/components/ui");
-            expect(result.output.themeAttribute).toBe("data-theme");
         });
 
         it("preserves user-specified output.cssRoot", () => {
@@ -34,7 +33,6 @@ describe("fillDefaults", () => {
             expect(result.output.utilities).toBe("custom/styles/utilities");
             expect(result.output.cube).toBe("custom/styles");
             expect(result.output.components).toBe("src/components/ui");
-            expect(result.output.themeAttribute).toBe("data-theme");
         });
 
         it("preserves user-specified output.variables", () => {
@@ -85,26 +83,6 @@ describe("fillDefaults", () => {
 
             expect(result.output.components).toBe("lib/ui");
             expect(result.output.cssRoot).toBe("src/styles");
-        });
-
-        it("preserves user-specified output.themeAttribute", () => {
-            const result = fillDefaults(
-                minimalConfig({
-                    output: { themeAttribute: "data-color-scheme" },
-                })
-            );
-
-            expect(result.output.themeAttribute).toBe("data-color-scheme");
-        });
-
-        it("preserves user-specified output.defaultContext", () => {
-            const result = fillDefaults(
-                minimalConfig({
-                    output: { defaultContext: "light" },
-                })
-            );
-
-            expect(result.output.defaultContext).toBe("light");
         });
 
         it("preserves user-specified output.variablesFilename", () => {

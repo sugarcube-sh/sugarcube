@@ -8,7 +8,12 @@ Sugarcube supports theming through **modifiers** — named variations that overr
 
 ## How modifiers work
 
-A modifier defines a set of **contexts** (like "light" and "dark"), each providing different token values. The default context's values go into `:root`, while other contexts generate CSS under attribute selectors like `[data-theme="dark"]`.
+A modifier defines a set of **contexts** (like "light" and "dark"), each providing different token values. To output multi-context CSS, you specify how contexts should be rendered using the `$extensions` property:
+
+- **`selector`** — Outputs contexts to CSS selectors like `[data-theme="dark"]`
+- **`atRule`** — Wraps contexts in at-rules like `@media (prefers-color-scheme: dark)`
+
+Without an extension, only the default context outputs to `:root`.
 
 ## Defining a theme modifier
 
@@ -31,6 +36,11 @@ Modifiers are defined in your [resolver document](/docs/resolver). Here's a basi
       "type": "modifier",
       "name": "theme",
       "default": "light",
+      "$extensions": {
+        "sh.sugarcube": {
+          "selector": "[data-theme=\"{context}\"]"
+        }
+      },
       "contexts": {
         "light": [],
         "dark": [{ "$ref": "./dark.json" }]
@@ -56,13 +66,43 @@ This generates CSS variables like:
 
 ### Key concepts
 
-- **`name`**: The modifier name becomes the data attribute (`data-theme`)
+- **`name`**: The modifier name (used in the default selector pattern as `data-{name}`)
 - **`default`**: The context whose values appear in `:root`
 - **`contexts`**: Each context maps to an array of token sources
+- **`$extensions.sh.sugarcube.selector`**: Pattern for CSS selectors, with `{context}` placeholder
 
 <SiteAside type="note">
   The default context (here "light") doesn't need any sources — it uses the base token values. Only non-default contexts (like "dark") need override files.
 </SiteAside>
+
+## Selector patterns
+
+The `selector` extension uses a `{context}` placeholder that gets replaced with the context name:
+
+```json
+"$extensions": {
+  "sh.sugarcube": {
+    "selector": "[data-theme=\"{context}\"]"
+  }
+}
+```
+
+With contexts `light` and `dark`:
+- `light` → outputs to `:root` (it's the default)
+- `dark` → outputs to `[data-theme="dark"]`
+
+You can use any valid CSS selector pattern:
+
+```json
+// Data attribute (recommended)
+"selector": "[data-theme=\"{context}\"]"
+
+// Class-based
+"selector": ".theme-{context}"
+
+// Custom attribute name
+"selector": "[data-color-mode=\"{context}\"]"
+```
 
 ## Using themes in HTML
 
@@ -84,9 +124,7 @@ You can scope themes to specific containers:
 
 ## Automatic theme switching
 
-If you want themes to follow the user's OS preference without JavaScript, you can use `prefers-color-scheme` media queries instead of data attributes.
-
-Add `prefersColorScheme: true` to your modifier's `$extensions`:
+If you want themes to follow the user's OS preference without JavaScript, use the `atRule` extension with `prefers-color-scheme` media queries:
 
 ```json title="tokens.resolver.json"
 {
@@ -101,14 +139,14 @@ Add `prefersColorScheme: true` to your modifier's `$extensions`:
       "type": "modifier",
       "name": "theme",
       "default": "light",
+      "$extensions": {
+        "sh.sugarcube": {
+          "atRule": "@media (prefers-color-scheme: {context})"
+        }
+      },
       "contexts": {
         "light": [],
         "dark": [{ "$ref": "./dark.json" }]
-      },
-      "$extensions": {
-        "sh.sugarcube": {
-          "prefersColorScheme": true
-        }
       }
     }
   ]
@@ -132,14 +170,14 @@ This generates media queries instead of data attributes:
 ```
 
 <SiteAside type="note">
-  Context names must be `light` and `dark` — these map directly to `prefers-color-scheme: light` and `prefers-color-scheme: dark` in CSS. If your modifier has other contexts (like `high-contrast`), use the default data-attribute approach instead.
+  Context names must be `light` and `dark` when using `prefers-color-scheme` — these map directly to the CSS media query values.
 </SiteAside>
 
 ### When to use each approach
 
-**Use data attributes** when users should be able to override their OS preference via a theme toggle.
+**Use `selector`** when users should be able to override their OS preference via a theme toggle.
 
-**Use `prefers-color-scheme`** when you don't need a toggle — the theme follows the OS automatically with zero JavaScript.
+**Use `atRule`** when you don't need a toggle — the theme follows the OS automatically with zero JavaScript.
 
 ## Multiple theme contexts
 
@@ -158,6 +196,11 @@ You can define more than two contexts:
       "type": "modifier",
       "name": "theme",
       "default": "light",
+      "$extensions": {
+        "sh.sugarcube": {
+          "selector": "[data-theme=\"{context}\"]"
+        }
+      },
       "contexts": {
         "light": [],
         "dark": [{ "$ref": "./dark.json" }],
@@ -193,6 +236,11 @@ The modifier name can be anything — it doesn't have to be "theme". For brand v
       "type": "modifier",
       "name": "brand",
       "default": "default",
+      "$extensions": {
+        "sh.sugarcube": {
+          "selector": "[data-brand=\"{context}\"]"
+        }
+      },
       "contexts": {
         "default": [],
         "ocean": [{ "$ref": "./ocean.json" }],
@@ -228,6 +276,11 @@ You can use multiple modifiers together. A common pattern is having multiple bra
       "type": "modifier",
       "name": "brand",
       "default": "default",
+      "$extensions": {
+        "sh.sugarcube": {
+          "selector": "[data-brand=\"{context}\"]"
+        }
+      },
       "contexts": {
         "default": [],
         "ocean": [{ "$ref": "./ocean.json" }],
@@ -238,6 +291,11 @@ You can use multiple modifiers together. A common pattern is having multiple bra
       "type": "modifier",
       "name": "mode",
       "default": "light",
+      "$extensions": {
+        "sh.sugarcube": {
+          "selector": "[data-mode=\"{context}\"]"
+        }
+      },
       "contexts": {
         "light": [],
         "dark": [{ "$ref": "./dark.json" }],

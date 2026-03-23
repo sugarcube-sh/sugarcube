@@ -53,6 +53,11 @@
       "type": "modifier",
       "name": "theme",
       "default": "light",
+      "$extensions": {
+        "sh.sugarcube": {
+          "selector": "[data-theme=\"{context}\"]"
+        }
+      },
       "contexts": {
         "light": [],
         "dark": [

@@ -43,8 +43,6 @@ export const userConfigSchema = z.object({
             utilitiesFilename: z.string().optional(),
             cube: z.string().optional(),
             components: z.string().optional(),
-            themeAttribute: z.string().optional(),
-            defaultContext: z.string().optional(),
             layers: layersSchema.optional(),
         })
         .optional(),
@@ -68,8 +66,6 @@ export const internalConfigSchema = z.object({
         utilitiesFilename: z.string(),
         cube: z.string().optional(),
         components: z.string().optional(),
-        themeAttribute: z.string(),
-        defaultContext: z.string().optional(),
         layers: layersSchema.optional(),
     }),
 

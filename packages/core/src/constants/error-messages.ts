@@ -195,6 +195,12 @@ export const ErrorMessages = {
             `Modifier "${name}" uses prefersColorScheme but has invalid contexts: ${invalidContexts.join(", ")}. Only "light" and "dark" are supported.`,
         PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT: (name: string, emptyContext: string) =>
             `Modifier "${name}" uses prefersColorScheme but the "${emptyContext}" context has no sources. Since "${emptyContext}" is not the default, it needs token sources to generate the @media (prefers-color-scheme: ${emptyContext}) rule.`,
+        SELECTOR_PATTERN_NO_PLACEHOLDER: (name: string) =>
+            `Modifier "${name}" has a selector pattern without {context} placeholder. The pattern must include {context} to be substituted with the context name.`,
+        AT_RULE_PATTERN_NO_PLACEHOLDER: (name: string) =>
+            `Modifier "${name}" has an atRule pattern without {context} placeholder. The pattern must include {context} to be substituted with the context name.`,
+        SELECTOR_AND_AT_RULE_MUTUALLY_EXCLUSIVE: (name: string) =>
+            `Modifier "${name}" cannot have both selector and atRule extensions. Choose one output strategy.`,
     },
     EXPAND_TREE: {
         CIRCULAR_REFERENCE: (path: string, ref: string) =>
