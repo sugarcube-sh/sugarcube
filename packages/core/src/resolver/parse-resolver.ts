@@ -225,6 +225,25 @@ function checkModifierContexts(
             }
         }
     }
+
+    // Warn if modifier has multiple contexts but no output extension
+    // This helps users understand why non-default contexts aren't being output
+    if (!selector && !atRule && !usesPrefersColorScheme(modifier.$extensions)) {
+        const contexts = Object.keys(modifier.contexts);
+        const defaultContext = modifier.default ?? contexts[0];
+        const otherContexts = contexts.filter((c) => c !== defaultContext);
+
+        if (otherContexts.length > 0 && defaultContext) {
+            errors.push({
+                path: `${path}.$extensions`,
+                message: ErrorMessages.RESOLVER.MODIFIER_MISSING_OUTPUT_EXTENSION(
+                    modifierName,
+                    defaultContext,
+                    otherContexts
+                ),
+            });
+        }
+    }
 }
 
 function validateNameUniqueness(document: ResolverDocument, errors: ResolverError[]): void {

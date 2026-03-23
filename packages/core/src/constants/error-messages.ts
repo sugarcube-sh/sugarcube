@@ -201,6 +201,12 @@ export const ErrorMessages = {
             `Modifier "${name}" has an atRule pattern without {context} placeholder. The pattern must include {context} to be substituted with the context name.`,
         SELECTOR_AND_AT_RULE_MUTUALLY_EXCLUSIVE: (name: string) =>
             `Modifier "${name}" cannot have both selector and atRule extensions. Choose one output strategy.`,
+        MODIFIER_MISSING_OUTPUT_EXTENSION: (
+            name: string,
+            defaultContext: string,
+            otherContexts: string[]
+        ) =>
+            `Modifier "${name}" has no selector or atRule extension. Only the default context ("${defaultContext}") will output to :root. The following contexts will be skipped: ${otherContexts.join(", ")}. To enable multi-context output, add:\n\n  "$extensions": {\n    "sh.sugarcube": {\n      "selector": "[data-${name}=\\"{context}\\"]"\n    }\n  }`,
     },
     EXPAND_TREE: {
         CIRCULAR_REFERENCE: (path: string, ref: string) =>
