@@ -35,6 +35,17 @@ type TokenGroup = NodeMetadata & {
 
 type DesignTokens = TokenGroup;
 
+/** Token reference using JSON Pointer syntax (DTCG 2025.10 spec) */
+type TokenRef = {
+    $ref: string;
+};
+
+/** Group reference using JSON Pointer syntax, optionally with overrides (DTCG 2025.10 spec) */
+type GroupRef = {
+    $ref: string;
+    [key: string]: Token | TokenGroup | string | undefined;
+};
+
 // Simple Token Types
 
 type TokenType = SimpleTokenType | CompositeTokenType;
@@ -229,4 +240,6 @@ export type {
     ShadowObject,
     GradientStop,
     Reference,
+    TokenRef,
+    GroupRef,
 };

@@ -1,3 +1,4 @@
+import { expandRefs } from "../pipeline/expand-refs.js";
 import { flatten } from "../pipeline/flatten.js";
 import { loadFromResolver } from "../pipeline/load-resolver.js";
 import { loadTreesFromMemory } from "../pipeline/load.js";
@@ -50,17 +51,20 @@ export async function loadAndResolveTokens(
 ): Promise<LoadAndResolveResult> {
     const { trees, modifiers, errors: loadErrors } = await loadTokens(source);
 
-    const { tokens: flattenedTokens, errors: flattenErrors } = flatten(trees);
+    const { trees: expandedTrees, errors: expandRefsErrors } = await expandRefs(trees);
+
+    const { tokens: flattenedTokens, errors: flattenErrors } = flatten(expandedTrees);
     const validationErrors = validate(flattenedTokens);
 
     const { resolved, errors: resolutionErrors } = resolve(flattenedTokens);
 
     return {
-        trees,
+        trees: expandedTrees,
         resolved,
         modifiers,
         errors: {
             load: loadErrors,
+            expandRefs: expandRefsErrors,
             flatten: flattenErrors,
             validation: validationErrors,
             resolution: resolutionErrors,

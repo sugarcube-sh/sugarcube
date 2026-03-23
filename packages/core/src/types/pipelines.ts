@@ -1,3 +1,4 @@
+import type { ExpandRefsError } from "../pipeline/expand-refs.js";
 import type { InternalConfig } from "./config.js";
 import type { FlattenError } from "./flatten.js";
 import type { CSSFileOutput } from "./generate.js";
@@ -51,6 +52,8 @@ export type PipelineResult = {
 export type PipelineErrors = {
     /** Errors from loading token files. */
     load: LoadError[];
+    /** Errors from expanding $ref references. */
+    expandRefs: ExpandRefsError[];
     /** Errors from flattening token trees. */
     flatten: FlattenError[];
     /** Errors from validating token values. */

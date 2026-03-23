@@ -196,4 +196,17 @@ export const ErrorMessages = {
         PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT: (name: string, emptyContext: string) =>
             `Modifier "${name}" uses prefersColorScheme but the "${emptyContext}" context has no sources. Since "${emptyContext}" is not the default, it needs token sources to generate the @media (prefers-color-scheme: ${emptyContext}) rule.`,
     },
+    EXPAND_REFS: {
+        CIRCULAR_REFERENCE: (path: string, ref: string) =>
+            `Circular reference detected at "${path}": ${ref} references back to itself or a parent`,
+        INVALID_JSON_POINTER: (pointer: string, reason: string) =>
+            `Invalid JSON pointer "${pointer}": ${reason}`,
+        TARGET_NOT_FOUND: (ref: string, path: string) =>
+            `Reference target not found: "${ref}" at ${path}. Does the target exist?`,
+        EXTERNAL_FILE_NOT_FOUND: (filePath: string) => `Referenced file not found: ${filePath}`,
+        EXTERNAL_FILE_ERROR: (filePath: string, message: string) =>
+            `Failed to load "${filePath}": ${message}`,
+        INVALID_REF_TARGET: (ref: string, path: string) =>
+            `Invalid reference target at "${path}": "${ref}" does not point to a valid token or group`,
+    },
 } as const;
