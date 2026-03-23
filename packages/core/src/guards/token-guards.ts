@@ -24,3 +24,8 @@ export function isTypographyToken(
 ): token is ConvertedToken<"typography"> {
     return token.$type === "typography";
 }
+
+/** Checks if a key is the reserved $root token name (DTCG 2025.10 spec) */
+export function isRootToken(key: string): boolean {
+    return key === "$root";
+}
