@@ -1,0 +1,120 @@
+{
+  "bgColor": {
+    "default": {
+      "$value": "{base.color.neutral.0}"
+    },
+    "muted": {
+      "$value": "{base.color.neutral.1}"
+    },
+    "inset": {
+      "$value": "{bgColor.muted}"
+    },
+    "emphasis": {
+      "$value": "{base.color.neutral.12}"
+    },
+    "inverse": {
+      "$value": "{base.color.neutral.12}"
+    },
+    "white": {
+      "$value": "{base.color.neutral.0}"
+    },
+    "black": {
+      "$value": "{base.color.neutral.13}"
+    },
+    "disabled": {
+      "$value": "{base.color.neutral.2}"
+    },
+    "transparent": {
+      "$value": "{base.color.transparent}"
+    },
+    "neutral": {
+      "muted": {
+        "$value": "{base.color.neutral.8}"
+      },
+      "emphasis": {
+        "$value": "{base.color.neutral.9}"
+      }
+    },
+    "accent": {
+      "muted": {
+        "$value": "{base.color.blue.0}"
+      },
+      "emphasis": {
+        "$value": "{base.color.blue.5}"
+      }
+    },
+    "success": {
+      "muted": {
+        "$value": "{base.color.green.0}"
+      },
+      "emphasis": {
+        "$value": "#1f883d",
+        "$type": "color"
+      }
+    },
+    "open": {
+      "muted": {
+        "$value": "{bgColor.success.muted}"
+      },
+      "emphasis": {
+        "$value": "{bgColor.success.emphasis}"
+      }
+    },
+    "attention": {
+      "muted": {
+        "$value": "{base.color.yellow.0}"
+      },
+      "emphasis": {
+        "$value": "{base.color.yellow.5}"
+      }
+    },
+    "severe": {
+      "muted": {
+        "$value": "{base.color.orange.0}"
+      },
+      "emphasis": {
+        "$value": "{base.color.orange.5}"
+      }
+    },
+    "danger": {
+      "muted": {
+        "$value": "{base.color.red.0}"
+      },
+      "emphasis": {
+        "$value": "{base.color.red.5}"
+      }
+    },
+    "closed": {
+      "muted": {
+        "$value": "{bgColor.danger.muted}"
+      },
+      "emphasis": {
+        "$value": "{bgColor.danger.emphasis}"
+      }
+    },
+    "done": {
+      "muted": {
+        "$value": "{base.color.purple.0}"
+      },
+      "emphasis": {
+        "$value": "{base.color.purple.5}"
+      }
+    },
+    "upsell": {
+      "muted": {
+        "$value": "{bgColor.done.muted}"
+      },
+      "emphasis": {
+        "$value": "{bgColor.done.emphasis}"
+      }
+    },
+    "sponsors": {
+      "muted": {
+        "$value": "{base.color.pink.0}"
+      },
+      "emphasis": {
+        "$value": "{base.color.pink.5}"
+      }
+    }
+  }
+}

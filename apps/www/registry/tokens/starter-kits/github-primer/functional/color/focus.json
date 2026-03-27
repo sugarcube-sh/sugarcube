@@ -1,0 +1,7 @@
+{
+  "focus": {
+    "outlineColor": {
+      "$value": "{borderColor.accent.emphasis}"
+    }
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "name": "GitHub Primer",
+  "description": "GitHub’s official design system",
+  "version": "2025.10",
+  "sets": {
+    "base": {
+      "sources": [
+        {
+          "$ref": "base/motion/easing.json"
+        },
+        {
+          "$ref": "base/motion/timing.json"
+        },
+        {
+          "$ref": "base/size/size.json"
+        },
+        {
+          "$ref": "base/typography/typography.json"
+        },
+        {
+          "$ref": "base/color/light/light.json"
+        },
+        {
+          "$ref": "base/color/light/light.display-light.json"
+        }
+      ]
+    },
+    "functional": {
+      "sources": [
+        {
+          "$ref": "functional/size/border.json"
+        },
+        {
+          "$ref": "functional/size/breakpoints.json"
+        },
+        {
+          "$ref": "functional/border/border.json"
+        },
+        {
+          "$ref": "functional/color/bgColor.json"
+        },
+        {
+          "$ref": "functional/color/borderColor.json"
+        },
+        {
+          "$ref": "functional/color/control.json"
+        },
+        {
+          "$ref": "functional/color/data-vis.json"
+        },
+        {
+          "$ref": "functional/color/display.json"
+        },
+        {
+          "$ref": "functional/color/fgColor.json"
+        },
+        {
+          "$ref": "functional/color/focus.json"
+        },
+        {
+          "$ref": "functional/color/selection.json"
+        },
+        {
+          "$ref": "functional/color/syntax.json"
+        },
+        {
+          "$ref": "functional/shadow/shadow.json"
+        },
+        {
+          "$ref": "functional/size/size.json"
+        },
+        {
+          "$ref": "functional/typography/typography.json"
+        }
+      ]
+    }
+  },
+  "modifiers": {
+    "theme": {
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "light-hc": [
+          {
+            "$ref": "base/color/light/light.high-contrast.json"
+          },
+          {
+            "$ref": "functional/color/control.light-high-contrast.json"
+          },
+          {
+            "$ref": "functional/color/fgColor.light-high-contrast.json"
+          }
+        ],
+        "dark": [
+          {
+            "$ref": "base/color/dark/dark.json"
+          },
+          {
+            "$ref": "base/color/dark/display-dark.json"
+          },
+          {
+            "$ref": "functional/color/fgColor.dark.json"
+          },
+          {
+            "$ref": "functional/color/control.dark.json"
+          }
+        ],
+        "dark-dimmed": [
+          {
+            "$ref": "base/color/dark/dark.dimmed.json"
+          },
+          {
+            "$ref": "functional/color/control.dark-dimmed.json"
+          },
+          {
+            "$ref": "functional/color/fgColor.dark-dimmed.json"
+          }
+        ],
+        "dark-hc": [
+          {
+            "$ref": "base/color/dark/dark.high-contrast.json"
+          },
+          {
+            "$ref": "functional/color/control.dark-high-contrast.json"
+          },
+          {
+            "$ref": "functional/color/fgColor.dark-high-contrast.json"
+          }
+        ]
+      }
+    },
+    "size": {
+      "default": "default",
+      "contexts": {
+        "default": [],
+        "coarse": [
+          {
+            "$ref": "functional/size/size-coarse.json"
+          }
+        ],
+        "fine": [
+          {
+            "$ref": "functional/size/size-fine.json"
+          }
+        ]
+      }
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/sets/base"
+    },
+    {
+      "$ref": "#/sets/functional"
+    },
+    {
+      "$ref": "#/modifiers/theme"
+    },
+    {
+      "$ref": "#/modifiers/size"
+    }
+  ]
+}

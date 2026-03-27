@@ -1,0 +1,43 @@
+{
+  "base": {
+    "duration": {
+      "$type": "duration",
+      "0": {
+        "$value": { "value": 0, "unit": "ms" }
+      },
+      "50": {
+        "$value": { "value": 50, "unit": "ms" }
+      },
+      "100": {
+        "$value": { "value": 100, "unit": "ms" }
+      },
+      "200": {
+        "$value": { "value": 200, "unit": "ms" }
+      },
+      "300": {
+        "$value": { "value": 300, "unit": "ms" }
+      },
+      "400": {
+        "$value": { "value": 400, "unit": "ms" }
+      },
+      "500": {
+        "$value": { "value": 500, "unit": "ms" }
+      },
+      "600": {
+        "$value": { "value": 600, "unit": "ms" }
+      },
+      "700": {
+        "$value": { "value": 700, "unit": "ms" }
+      },
+      "800": {
+        "$value": { "value": 800, "unit": "ms" }
+      },
+      "900": {
+        "$value": { "value": 900, "unit": "ms" }
+      },
+      "1000": {
+        "$value": { "value": 1000, "unit": "ms" }
+      }
+    }
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "overlay": {
+    "borderColor": {
+      "$value": "{base.color.neutral.6}",
+      "$type": "color",
+      "$description": "Border color for overlay elements like modals and dropdowns"
+    }
+  },
+  "borderColor": {
+    "default": {
+      "$value": "{base.color.neutral.6}"
+    },
+    "muted": {
+      "$value": "{borderColor.default}",
+      "$extensions": { "alpha": 0.7 }
+    },
+    "emphasis": {
+      "$value": "{base.color.neutral.8}"
+    },
+    "disabled": {
+      "$value": "{base.color.neutral.8}",
+      "$extensions": { "alpha": 0.1 }
+    },
+    "transparent": {
+      "$value": "{base.color.transparent}"
+    },
+    "translucent": {
+      "$value": "{base.color.neutral.13}",
+      "$extensions": { "alpha": 0.15 }
+    },
+    "neutral": {
+      "muted": {
+        "$value": "{borderColor.muted}"
+      },
+      "emphasis": {
+        "$value": "{base.color.neutral.9}"
+      }
+    },
+    "accent": {
+      "muted": {
+        "$value": "{base.color.blue.3}",
+        "$extensions": { "alpha": 0.4 }
+      },
+      "emphasis": {
+        "$value": "{base.color.blue.5}"
+      }
+    },
+    "success": {
+      "muted": {
+        "$value": "{base.color.green.3}",
+        "$extensions": { "alpha": 0.4 }
+      },
+      "emphasis": {
+        "$value": "{base.color.green.5}"
+      }
+    },
+    "open": {
+      "muted": {
+        "$value": "{borderColor.success.muted}"
+      },
+      "emphasis": {
+        "$value": "{borderColor.success.emphasis}"
+      }
+    },
+    "attention": {
+      "muted": {
+        "$value": "{base.color.yellow.3}",
+        "$extensions": { "alpha": 0.4 }
+      },
+      "emphasis": {
+        "$value": "{base.color.yellow.5}"
+      }
+    },
+    "severe": {
+      "muted": {
+        "$value": "{base.color.orange.3}",
+        "$extensions": { "alpha": 0.4 }
+      },
+      "emphasis": {
+        "$value": "{base.color.orange.5}"
+      }
+    },
+    "danger": {
+      "muted": {
+        "$value": "{base.color.red.3}",
+        "$extensions": { "alpha": 0.4 }
+      },
+      "emphasis": {
+        "$value": "{base.color.red.5}"
+      }
+    },
+    "closed": {
+      "muted": {
+        "$value": "{borderColor.danger.muted}"
+      },
+      "emphasis": {
+        "$value": "{borderColor.danger.emphasis}"
+      }
+    },
+    "done": {
+      "muted": {
+        "$value": "{base.color.purple.3}",
+        "$extensions": { "alpha": 0.4 }
+      },
+      "emphasis": {
+        "$value": "{base.color.purple.5}"
+      }
+    },
+    "upsell": {
+      "muted": {
+        "$value": "{borderColor.done.muted}"
+      },
+      "emphasis": {
+        "$value": "{borderColor.done.emphasis}"
+      }
+    },
+    "sponsors": {
+      "muted": {
+        "$value": "{base.color.pink.3}",
+        "$extensions": { "alpha": 0.4 }
+      },
+      "emphasis": {
+        "$value": "{base.color.pink.5}"
+      }
+    }
+  }
+}

@@ -64,11 +64,6 @@
             "$ref": "./dark.json"
           }
         ]
-      },
-      "$extensions": {
-        "sh.sugarcube": {
-          "selector": "[data-{modifierName}=\"{context}\"]"
-        }
       }
     }
   ]

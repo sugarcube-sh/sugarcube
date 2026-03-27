@@ -1,0 +1,43 @@
+{
+  "color": {
+    "$type": "color",
+    "primary": {
+      "50": { "$value": "#f0fdf4" },
+      "100": { "$value": "#dcfce7" },
+      "200": { "$value": "#bbf7d0" },
+      "300": { "$value": "#86efac" },
+      "400": { "$value": "#4ade80" },
+      "500": { "$value": "#22c55e" },
+      "600": { "$value": "#16a34a" },
+      "700": { "$value": "#15803d" },
+      "800": { "$value": "#166534" },
+      "900": { "$value": "#14532d" }
+    },
+    "accent": {
+      "50": { "$value": "#fefce8" },
+      "100": { "$value": "#fef9c3" },
+      "500": { "$value": "#eab308" },
+      "700": { "$value": "#a16207" }
+    },
+    "neutral": {
+      "50": { "$value": "#fafaf9" },
+      "100": { "$value": "#f5f5f4" },
+      "200": { "$value": "#e7e5e4" },
+      "300": { "$value": "#d6d3d1" },
+      "400": { "$value": "#a8a29e" },
+      "500": { "$value": "#78716c" },
+      "600": { "$value": "#57534e" },
+      "700": { "$value": "#44403c" },
+      "800": { "$value": "#292524" },
+      "900": { "$value": "#1c1917" }
+    }
+  },
+  "semantic": {
+    "$type": "color",
+    "background": { "$value": "{color.neutral.50}" },
+    "foreground": { "$value": "{color.neutral.900}" },
+    "muted": { "$value": "{color.neutral.500}" },
+    "brand": { "$value": "{color.primary.500}" },
+    "brandSubtle": { "$value": "{color.primary.100}" }
+  }
+}

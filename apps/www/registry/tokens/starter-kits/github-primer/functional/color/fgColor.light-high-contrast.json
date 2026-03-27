@@ -1,0 +1,7 @@
+{
+  "fgColor": {
+    "muted": {
+      "$value": "{base.color.neutral.10}"
+    }
+  }
+}

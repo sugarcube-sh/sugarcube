@@ -1,0 +1,62 @@
+{
+  "fgColor": {
+    "default": {
+      "$value": "{base.color.neutral.13}"
+    },
+    "muted": {
+      "$value": "{base.color.neutral.9}"
+    },
+    "onEmphasis": {
+      "$value": "{base.color.neutral.0}"
+    },
+    "onInverse": {
+      "$value": "{base.color.neutral.0}"
+    },
+    "white": {
+      "$value": "{base.color.neutral.0}"
+    },
+    "black": {
+      "$value": "{base.color.neutral.13}"
+    },
+    "disabled": {
+      "$value": "{base.color.neutral.8}"
+    },
+    "link": {
+      "$value": "{fgColor.accent}"
+    },
+    "neutral": {
+      "$value": "{base.color.neutral.9}"
+    },
+    "accent": {
+      "$value": "{base.color.blue.5}"
+    },
+    "success": {
+      "$value": "{base.color.green.5}"
+    },
+    "open": {
+      "$value": "{fgColor.success}"
+    },
+    "attention": {
+      "$value": "{base.color.yellow.5}"
+    },
+    "severe": {
+      "$value": "{base.color.orange.5}"
+    },
+    "danger": {
+      "$value": "#d1242f",
+      "$type": "color"
+    },
+    "closed": {
+      "$value": "{fgColor.danger}"
+    },
+    "done": {
+      "$value": "{base.color.purple.5}"
+    },
+    "upsell": {
+      "$value": "{fgColor.done}"
+    },
+    "sponsors": {
+      "$value": "{base.color.pink.5}"
+    }
+  }
+}

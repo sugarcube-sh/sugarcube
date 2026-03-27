@@ -1,0 +1,16 @@
+{
+  "control": {
+    "transparent": {
+      "bgColor": {
+        "hover": {
+          "$value": "{base.color.neutral.8}",
+          "$extensions": { "alpha": 0.15 }
+        },
+        "active": {
+          "$value": "{base.color.neutral.8}",
+          "$extensions": { "alpha": 0.2 }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,207 @@
+{
+  "control": {
+    "bgColor": {
+      "rest": {
+        "$value": "{base.color.neutral.1}"
+      },
+      "hover": {
+        "$value": "{base.color.neutral.2}"
+      },
+      "active": {
+        "$value": "{base.color.neutral.3}"
+      },
+      "disabled": {
+        "$value": "{bgColor.disabled}"
+      },
+      "selected": {
+        "$value": "{control.bgColor.rest}"
+      }
+    },
+    "fgColor": {
+      "rest": {
+        "$value": "{base.color.neutral.12}"
+      },
+      "placeholder": {
+        "$value": "{fgColor.muted}"
+      },
+      "disabled": {
+        "$value": "{fgColor.disabled}"
+      }
+    },
+    "borderColor": {
+      "rest": {
+        "$value": "{borderColor.default}"
+      },
+      "emphasis": {
+        "$value": "{borderColor.emphasis}"
+      },
+      "disabled": {
+        "$value": "{borderColor.disabled}"
+      },
+      "selected": {
+        "$value": "{control.bgColor.selected}"
+      },
+      "success": {
+        "$value": "{borderColor.success.emphasis}"
+      },
+      "danger": {
+        "$value": "{borderColor.danger.emphasis}"
+      },
+      "warning": {
+        "$value": "{borderColor.attention.emphasis}"
+      }
+    },
+    "iconColor": {
+      "rest": {
+        "$value": "{fgColor.muted}"
+      }
+    },
+    "transparent": {
+      "bgColor": {
+        "rest": {
+          "$value": "{base.color.transparent}"
+        },
+        "hover": {
+          "$value": "{base.color.neutral.8}",
+          "$extensions": { "alpha": 0.1 }
+        },
+        "active": {
+          "$value": "{base.color.neutral.8}",
+          "$extensions": { "alpha": 0.15 }
+        },
+        "disabled": {
+          "$value": "{bgColor.disabled}"
+        },
+        "selected": {
+          "$value": "{base.color.neutral.8}",
+          "$extensions": { "alpha": 0.15 }
+        }
+      },
+      "borderColor": {
+        "rest": {
+          "$value": "{base.color.transparent}"
+        },
+        "hover": {
+          "$value": "{base.color.transparent}"
+        },
+        "active": {
+          "$value": "{base.color.transparent}"
+        }
+      }
+    },
+    "danger": {
+      "fgColor": {
+        "rest": {
+          "$value": "{fgColor.danger}"
+        },
+        "hover": {
+          "$value": "{fgColor.danger}"
+        }
+      },
+      "bgColor": {
+        "hover": {
+          "$value": "{bgColor.danger.muted}"
+        },
+        "active": {
+          "$value": "{bgColor.danger.muted}"
+        }
+      }
+    },
+    "checked": {
+      "bgColor": {
+        "rest": {
+          "$value": "{bgColor.accent.emphasis}"
+        },
+        "hover": {
+          "$value": "#0860ca",
+          "$type": "color"
+        },
+        "active": {
+          "$value": "#0757ba",
+          "$type": "color"
+        },
+        "disabled": {
+          "$value": "{fgColor.disabled}"
+        }
+      },
+      "fgColor": {
+        "rest": {
+          "$value": "{fgColor.onEmphasis}"
+        },
+        "disabled": {
+          "$value": "{fgColor.onEmphasis}"
+        }
+      },
+      "borderColor": {
+        "rest": {
+          "$value": "{control.checked.bgColor.rest}"
+        },
+        "hover": {
+          "$value": "{control.checked.bgColor.hover}"
+        },
+        "active": {
+          "$value": "{control.checked.bgColor.active}"
+        },
+        "disabled": {
+          "$value": "{control.checked.bgColor.disabled}"
+        }
+      }
+    }
+  },
+  "controlTrack": {
+    "bgColor": {
+      "rest": {
+        "$value": "{base.color.neutral.3}"
+      },
+      "hover": {
+        "$value": "{base.color.neutral.4}"
+      },
+      "active": {
+        "$value": "{base.color.neutral.5}"
+      },
+      "disabled": {
+        "$value": "{fgColor.disabled}"
+      }
+    },
+    "fgColor": {
+      "rest": {
+        "$value": "{base.color.neutral.9}"
+      },
+      "disabled": {
+        "$value": "{fgColor.onEmphasis}"
+      }
+    },
+    "borderColor": {
+      "rest": {
+        "$value": "{borderColor.default}"
+      },
+      "disabled": {
+        "$value": "{fgColor.disabled}"
+      }
+    }
+  },
+  "controlKnob": {
+    "bgColor": {
+      "rest": {
+        "$value": "{base.color.neutral.0}"
+      },
+      "disabled": {
+        "$value": "{control.bgColor.disabled}"
+      },
+      "checked": {
+        "$value": "{base.color.neutral.0}"
+      }
+    },
+    "borderColor": {
+      "rest": {
+        "$value": "{control.borderColor.emphasis}"
+      },
+      "disabled": {
+        "$value": "{control.bgColor.disabled}"
+      },
+      "checked": {
+        "$value": "{control.checked.bgColor.rest}"
+      }
+    }
+  }
+}
