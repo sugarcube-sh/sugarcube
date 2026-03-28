@@ -32,7 +32,7 @@ describe("generate command", () => {
         );
 
         expect(result.exitCode).toBe(0);
-        expect(existsSync(join(testDir, "styles/tokens.css"))).toBe(true);
+        expect(existsSync(join(testDir, "styles/variables.gen.css"))).toBe(true);
         expect(existsSync(join(testDir, "src/styles"))).toBe(false);
     });
 
@@ -50,7 +50,7 @@ describe("generate command", () => {
         );
 
         expect(result.exitCode).toBe(0);
-        expect(existsSync(join(testDir, "src/styles/tokens.css"))).toBe(true);
+        expect(existsSync(join(testDir, "src/styles/variables.gen.css"))).toBe(true);
     });
 
     it("respects --variables flag", { timeout: TEST_TIMEOUT }, async () => {
