@@ -1,8 +1,0 @@
-{
-  "selection": {
-    "bgColor": {
-      "$value": "{bgColor.accent.emphasis}",
-      "$extensions": { "alpha": 0.2 }
-    }
-  }
-}
