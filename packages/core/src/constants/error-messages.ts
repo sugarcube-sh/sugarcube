@@ -11,7 +11,7 @@ export const ErrorMessages = {
         MISSING_DOLLAR_PREFIX: (path: string) =>
             `Token at ${path} is using 'value' or 'type' without the required '$' prefix. Use '$value' and '$type' instead.`,
         INVALID_TOKEN_NESTING: (path: string) =>
-            `Token at "${path}" cannot contain child tokens or groups. Only metadata properties (starting with $) are allowed.`,
+            `Token at "${path}" has a $value but also contains child tokens or groups. Per the DTCG spec, an object with $value is definitively a token and cannot also be a group. Remove either the $value or the child properties.`,
         COMPOSITE_TOKEN_MISSING_TYPE: (path: string) =>
             `Composite token at '${path}' is missing the required "$type" property. Composite tokens (tokens with object values) must specify their type to define their structure.`,
         TOKEN_MISSING_TYPE: (path: string) =>
@@ -184,8 +184,10 @@ export const ErrorMessages = {
         UNKNOWN_MODIFIER: (name: string) => `Unknown modifier "${name}".`,
         INVALID_CONTEXT: (context: string, modifier: string, valid: string[]) =>
             `Invalid context "${context}" for modifier "${modifier}". Valid contexts: ${valid.join(", ")}`,
-        MISSING_REQUIRED_INPUT: (name: string) =>
-            `Missing required input for modifier "${name}". No default value is defined.`,
+        MISSING_REQUIRED_INPUT: (name: string, contexts?: string[]) =>
+            contexts
+                ? `Modifier "${name}" has no default context. Either add "default": "${contexts[0]}" to the modifier definition, or use --input ${name}=${contexts[0]} to specify which context to use.`
+                : `Modifier "${name}" has no default context. Either add a "default" property to the modifier definition, or use --input ${name}=<context> to specify which context to use.`,
         INVALID_INPUT_TYPE: (name: string) => `Input for modifier "${name}" must be a string.`,
         MALFORMED_REFERENCE: (key: string, value: string) =>
             `Malformed source reference: { "${key}": "${value}" }. Did you mean { "$ref": "${value}" }?`,
@@ -195,18 +197,13 @@ export const ErrorMessages = {
             `Modifier "${name}" uses prefersColorScheme but has invalid contexts: ${invalidContexts.join(", ")}. Only "light" and "dark" are supported.`,
         PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT: (name: string, emptyContext: string) =>
             `Modifier "${name}" uses prefersColorScheme but the "${emptyContext}" context has no sources. Since "${emptyContext}" is not the default, it needs token sources to generate the @media (prefers-color-scheme: ${emptyContext}) rule.`,
-        SELECTOR_PATTERN_NO_PLACEHOLDER: (name: string) =>
-            `Modifier "${name}" has a selector pattern without {context} placeholder. The pattern must include {context} to be substituted with the context name.`,
-        AT_RULE_PATTERN_NO_PLACEHOLDER: (name: string) =>
-            `Modifier "${name}" has an atRule pattern without {context} placeholder. The pattern must include {context} to be substituted with the context name.`,
-        SELECTOR_AND_AT_RULE_MUTUALLY_EXCLUSIVE: (name: string) =>
-            `Modifier "${name}" cannot have both selector and atRule extensions. Choose one output strategy.`,
-        MODIFIER_MISSING_OUTPUT_EXTENSION: (
-            name: string,
-            defaultContext: string,
-            otherContexts: string[]
-        ) =>
-            `Modifier "${name}" has no selector or atRule extension. Only the default context ("${defaultContext}") will output to :root. The following contexts will be skipped: ${otherContexts.join(", ")}. To enable multi-context output, add:\n\n  "$extensions": {\n    "sh.sugarcube": {\n      "selector": "[data-${name}=\\"{context}\\"]"\n    }\n  }`,
+    },
+    PERMUTATIONS: {
+        UNKNOWN_MODIFIER: (modifierName: string, validModifiers: string[]) =>
+            `Permutation references unknown modifier "${modifierName}". Valid modifiers: ${validModifiers.join(", ")}`,
+        UNKNOWN_CONTEXT: (modifierName: string, contextName: string, validContexts: string[]) =>
+            `Permutation references unknown context "${contextName}" for modifier "${modifierName}". Valid contexts: ${validContexts.join(", ")}`,
+        EMPTY_SELECTOR: () => "Permutation selector cannot be empty",
     },
     EXPAND_TREE: {
         CIRCULAR_REFERENCE: (path: string, ref: string) =>

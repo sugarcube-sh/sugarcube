@@ -106,8 +106,8 @@ function createMemoryData(
 function createConfig(): ReturnType<typeof fillDefaults> {
     const userConfig: SugarcubeConfig = {
         resolver: "virtual.resolver.json",
-        output: {
-            cssRoot: "virtual/css",
+        variables: {
+            path: "virtual/tokens.css",
         },
     };
     return fillDefaults(userConfig);

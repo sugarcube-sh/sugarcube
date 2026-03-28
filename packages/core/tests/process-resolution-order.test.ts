@@ -337,7 +337,7 @@ describe("processResolutionOrder", () => {
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]?.message).toBe(
-                ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT("theme")
+                ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT("theme", ["light", "dark"])
             );
         });
 

@@ -114,9 +114,8 @@ function flattenTree(
                 }
 
                 // Check if this is a composite token missing its $type
-                // While the w3c spec allows for reference tokens to be flattened without $type,
-                // it does not allow for composite tokens to be flattened without $type,
-                // even if they contain nothing but references.
+                // Per DTCG spec section 5.2.2: if no type can be determined from the token itself,
+                // parent groups, or referenced tokens, the token MUST be considered invalid.
                 if (isCompositeToken(value) && !value.$type && !currentType) {
                     errors.push({
                         path: childPath,

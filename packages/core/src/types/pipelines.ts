@@ -7,23 +7,12 @@ import type { ResolutionError } from "./resolve.js";
 import type { TokenTree } from "./tokens.js";
 import type { ValidationError } from "./validate.js";
 
-/**
- * Metadata about a modifier (e.g., theme, density) for CSS generation.
- * Used to build attribute selectors like [data-theme="dark"].
- */
-export type ModifierMeta = {
-    /** The modifier name (e.g., "theme", "density"). */
-    name: string;
-    /** The HTML attribute name (e.g., "data-theme", "data-density"). */
-    attribute: string;
-    /** The default context that uses :root selector. */
-    defaultContext: string;
-    /** Available non-default context names. */
-    contexts: string[];
-    /** Selector pattern, e.g. "[data-theme=\"{context}\"]". Use {context} placeholder. */
-    selector?: string;
-    /** At-rule pattern, e.g. "@media (prefers-color-scheme: {context})". Use {context} placeholder. */
-    atRule?: string;
+/** A non-blocking warning from the pipeline. */
+export type PipelineWarning = {
+    /** Location of the warning (file path or JSON path) */
+    path: string;
+    /** Human-readable warning message */
+    message: string;
 };
 
 /**
@@ -35,10 +24,10 @@ export type PipelineResult = {
     output: CSSFileOutput;
     /** The loaded and processed token trees. */
     trees: TokenTree[];
-    /** Modifier metadata for CSS selector generation. */
-    modifiers?: ModifierMeta[];
     /** Any errors that occurred during pipeline execution. */
     errors: PipelineErrors;
+    /** Non-blocking warnings that don't prevent generation. */
+    warnings: PipelineWarning[];
 };
 
 /**

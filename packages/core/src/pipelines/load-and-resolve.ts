@@ -4,7 +4,7 @@ import { loadFromResolver } from "../pipeline/load-resolver.js";
 import { loadTreesFromMemory } from "../pipeline/load.js";
 import { resolve } from "../pipeline/resolve.js";
 import { validate } from "../pipeline/validate.js";
-import type { ModifierMeta, PipelineResult, TokenPipelineSource } from "../types/pipelines.js";
+import type { PipelineResult, PipelineWarning, TokenPipelineSource } from "../types/pipelines.js";
 import type { ResolvedTokens } from "../types/resolve.js";
 import type { TokenTree } from "../types/tokens.js";
 
@@ -16,10 +16,10 @@ export type LoadAndResolveResult = {
     trees: TokenTree[];
     /** Resolved tokens after reference resolution */
     resolved: ResolvedTokens;
-    /** Modifier metadata for CSS selector generation */
-    modifiers: ModifierMeta[];
     /** Any errors that occurred */
     errors: PipelineResult["errors"];
+    /** Non-blocking warnings */
+    warnings: PipelineWarning[];
 };
 
 /**
@@ -31,25 +31,13 @@ export type LoadAndResolveResult = {
  * 3. Validates tokens for correctness
  * 4. Resolves all token references
  *
- * For resolver sources, loads ALL contexts (not just default) and returns
- * modifier metadata needed for CSS selector generation.
- *
  * @param source - The source of tokens to process (resolver or memory)
- * @returns Processed tokens with modifier metadata and any errors
- *
- * @example
- * const result = await loadAndResolveTokens({
- *   type: "resolver",
- *   resolverPath: "tokens.resolver.json",
- *   config
- * });
- * // result.trees - all token trees (base + modifier contexts)
- * // result.modifiers - metadata for CSS selectors
+ * @returns Processed tokens and any errors
  */
 export async function loadAndResolveTokens(
     source: TokenPipelineSource
 ): Promise<LoadAndResolveResult> {
-    const { trees, modifiers, errors: loadErrors } = await loadTokens(source);
+    const { trees, errors: loadErrors, warnings } = await loadTokens(source);
 
     const { trees: expandedTrees, errors: expandTreeErrors } = expandTree(trees);
 
@@ -61,7 +49,6 @@ export async function loadAndResolveTokens(
     return {
         trees: expandedTrees,
         resolved,
-        modifiers,
         errors: {
             load: loadErrors,
             expandTree: expandTreeErrors,
@@ -69,24 +56,34 @@ export async function loadAndResolveTokens(
             validation: validationErrors,
             resolution: resolutionErrors,
         },
+        warnings,
     };
 }
 
 type LoadResult = {
     trees: TokenTree[];
-    modifiers: ModifierMeta[];
     errors: PipelineResult["errors"]["load"];
+    warnings: PipelineWarning[];
 };
 
 async function loadTokens(source: TokenPipelineSource): Promise<LoadResult> {
     switch (source.type) {
         case "memory": {
             const result = await loadTreesFromMemory(source.data);
-            return { trees: result.trees, modifiers: [], errors: result.errors };
+            return { trees: result.trees, errors: result.errors, warnings: [] };
         }
         case "resolver": {
-            const result = await loadFromResolver(source.resolverPath);
-            return { trees: result.trees, modifiers: result.modifiers, errors: result.errors };
+            const result = await loadFromResolver(
+                source.resolverPath,
+                source.config.variables.permutations
+            );
+            // We set the resolved permutations on the config so generate can use them
+            source.config.variables.permutations = result.permutations;
+            return {
+                trees: result.trees,
+                errors: result.errors,
+                warnings: result.warnings,
+            };
         }
     }
 }

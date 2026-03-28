@@ -2,65 +2,68 @@ import type { PropertyUtilityConfig } from "./utilities.js";
 
 export type ColorFallbackStrategy = "native" | "polyfill";
 
+/**
+ * A permutation defines a single resolved token set and how to output it as CSS.
+ * Each permutation specifies a resolver input (which modifier contexts to use)
+ * and a CSS selector to wrap the output in.
+ *
+ * Aligned with the DTCG resolver spec's "permutation" concept:
+ * each permutation maps 1:1 to a resolver input.
+ */
+export type Permutation = {
+    /**
+     * Resolver input - map of modifier names to context values.
+     * Missing modifiers use their defaults (per DTCG spec).
+     * @example { theme: "dark" }
+     * @example { brand: "ocean", theme: "dark" }
+     */
+    input: Record<string, string>;
+    /**
+     * CSS selector(s) for this permutation's output.
+     * Can be a string or array of strings - multiple selectors get comma-joined.
+     * @example ":root"
+     * @example "[data-theme=\"dark\"]"
+     * @example ["[data-color-mode=dark][data-dark-theme=dark]", "[data-color-mode=auto][data-dark-theme=dark]"]
+     */
+    selector: string | string[];
+    /** Optional at-rule wrapper, e.g. "@media (prefers-color-scheme: dark)" */
+    atRule?: string;
+    /**
+     * Optional output path for this permutation's CSS file.
+     * When set, this permutation is written to its own file instead of the default variables path.
+     * @example "dist/brand-one.css"
+     */
+    path?: string;
+};
+
 export type FluidConfig = {
     min: number;
     max: number;
 };
 
 export type TransformsConfig = {
-    fluid: FluidConfig;
-    colorFallbackStrategy: ColorFallbackStrategy;
+    fluid?: FluidConfig;
+    colorFallbackStrategy?: ColorFallbackStrategy;
 };
+
+export type UtilityClassesConfig = Record<string, PropertyUtilityConfig | PropertyUtilityConfig[]>;
 
 /**
- * CSS cascade layers configuration.
- * When configured, generated CSS will be wrapped in @layer blocks.
+ * Configuration for CSS variables output.
  */
-export type LayersConfig = {
-    /** Layer name for CSS variables (e.g., "base", "tokens") */
-    variables: string;
-    /** Layer name for utility classes (e.g., "utilities") */
-    utilities: string;
-};
-
-export type OutputConfig = {
-    cssRoot: string;
-    variables?: string;
-    variablesFilename: string;
-    utilities?: string;
-    utilitiesFilename: string;
-    cube?: string;
-    components?: string;
-    /** CSS cascade layers configuration. When set, output is wrapped in @layer blocks. */
-    layers?: LayersConfig;
-};
-
-export type UtilitiesConfig = Record<string, PropertyUtilityConfig | PropertyUtilityConfig[]>;
-
-/**
- * Configuration for sugarcube.
- * This is the shape of your config file (sugarcube.config.ts).
- *
- * @example
- * // sugarcube.config.ts
- * import { defineConfig } from "@sugarcube-sh/vite";
- *
- * export default defineConfig({
- *   resolver: "./tokens.resolver.json",
- *   output: { cssRoot: "src/styles" }
- * });
- */
-export interface SugarcubeConfig {
+export interface VariablesConfig {
     /**
-     * Path to the DTCG resolver document (.resolver.json).
-     *
-     * **Optional** - If omitted, sugarcube will automatically discover
-     * `*.resolver.json` files in your project.
-     *
-     * Only specify this if you have multiple resolver files and need to
-     * choose a specific one.
+     * Default output path for the CSS variables file.
+     * @example "src/styles/tokens.css"
      */
-    resolver?: string;
+    path?: string;
+
+    /**
+     * CSS cascade layer name for variables.
+     * When set, output is wrapped in @layer block.
+     * @example "tokens"
+     */
+    layer?: string;
 
     /**
      * Token transformation options.
@@ -80,65 +83,135 @@ export interface SugarcubeConfig {
     };
 
     /**
-     * Output configuration.
+     * Permutations define how modifier contexts map to CSS selectors.
+     * Each permutation specifies a resolver input and a CSS selector.
+     *
+     * When no permutations are defined, sugarcube resolves with all defaults
+     * and outputs to :root.
+     *
+     * @example
+     * permutations: [
+     *   { input: { theme: "light" }, selector: ":root" },
+     *   { input: { theme: "dark" }, selector: "[data-theme=\"dark\"]" },
+     *   { input: { theme: "dark" }, selector: ":root", atRule: "@media (prefers-color-scheme: dark)" },
+     * ]
      */
-    output?: {
-        /**
-         * Base directory path where CSS files will be written.
-         * This is the primary output location for generated styles.
-         */
-        cssRoot?: string;
-        /**
-         * Directory path where token variable CSS files will be written.
-         * @default "{cssRoot}/global"
-         */
-        variables?: string;
-        /**
-         * Filename for the generated token variables CSS file.
-         * @default "tokens.variables.gen.css"
-         */
-        variablesFilename?: string;
-        /**
-         * Directory path where utility class CSS files will be written.
-         * @default "{cssRoot}/utilities"
-         */
-        utilities?: string;
-        /**
-         * Filename for the generated utilities CSS file.
-         * @default "utilities.gen.css"
-         */
-        utilitiesFilename?: string;
-        /**
-         * Directory path where CUBE CSS files will be written.
-         * @default "{cssRoot}"
-         */
-        cube?: string;
-        /** Directory path where component files will be written. */
-        components?: string;
-        /**
-         * CSS cascade layers configuration.
-         * When set, generated CSS will be wrapped in @layer blocks.
-         *
-         * @example
-         * layers: {
-         *   variables: "base",
-         *   utilities: "utilities"
-         * }
-         */
-        layers?: LayersConfig;
-    };
+    permutations?: Permutation[];
+}
+
+/**
+ * Configuration for utility classes output.
+ */
+export interface UtilitiesOutputConfig {
+    /**
+     * Output path for the utility classes CSS file.
+     * @example "src/styles/utilities.css"
+     */
+    path?: string;
 
     /**
-     * CSS utility class generation configuration.
+     * CSS cascade layer name for utilities.
+     * When set, output is wrapped in @layer block.
+     * @example "utilities"
+     */
+    layer?: string;
+
+    /**
+     * Utility class generation configuration.
      * Maps CSS property names to token sources and options.
      *
      * @example
-     * utilities: {
+     * classes: {
      *   "background-color": { source: "color.background.*" },
      *   "padding": { source: "space.*", directions: ["x", "y", "all"] }
      * }
      */
-    utilities?: UtilitiesConfig;
+    classes?: UtilityClassesConfig;
+}
+
+/**
+ * Configuration for sugarcube.
+ * This is the shape of your config file (sugarcube.config.ts).
+ *
+ * @example
+ * // sugarcube.config.ts
+ * import { defineConfig } from "@sugarcube-sh/vite";
+ *
+ * export default defineConfig({
+ *   resolver: "./tokens.resolver.json",
+ *   variables: {
+ *     path: "src/styles/tokens.css",
+ *   },
+ * });
+ */
+export interface SugarcubeConfig {
+    /**
+     * Path to the DTCG resolver document (.resolver.json).
+     *
+     * **Optional** - If omitted, sugarcube will automatically discover
+     * `*.resolver.json` files in your project.
+     *
+     * Only specify this if you have multiple resolver files and need to
+     * choose a specific one.
+     */
+    resolver?: string;
+
+    /**
+     * Resolver input for this build — selects which modifier contexts to use.
+     * Per the DTCG spec, each modifier not specified here uses its default.
+     *
+     * When set via CLI (`--input brand=ocean`), config permutations are ignored
+     * and a single :root output is produced.
+     *
+     * @example
+     * // Build for ocean brand
+     * input: { brand: "ocean" }
+     */
+    input?: Record<string, string>;
+
+    /**
+     * CSS variables output configuration.
+     * Controls where variables are written, transforms, layers, and permutations.
+     *
+     * @example
+     * variables: {
+     *   path: "src/styles/tokens.css",
+     *   layer: "tokens",
+     *   transforms: { fluid: { min: 375, max: 1440 } },
+     *   permutations: [
+     *     { input: { theme: "light" }, selector: ":root" },
+     *     { input: { theme: "dark" }, selector: "[data-theme=\"dark\"]" },
+     *   ],
+     * }
+     */
+    variables?: VariablesConfig;
+
+    /**
+     * Utility classes output configuration.
+     * Controls where utilities are written, layers, and class definitions.
+     *
+     * @example
+     * utilities: {
+     *   path: "src/styles/utilities.css",
+     *   layer: "utilities",
+     *   classes: {
+     *     "padding": { source: "space.*", directions: ["x", "y", "all"] },
+     *   },
+     * }
+     */
+    utilities?: UtilitiesOutputConfig;
+
+    /**
+     * Directory path where component files will be copied.
+     * @example "src/components/ui"
+     */
+    components?: string;
+
+    /**
+     * Directory path where CUBE CSS files will be copied.
+     * @example "src/styles"
+     */
+    cube?: string;
 }
 
 /**
@@ -147,7 +220,31 @@ export interface SugarcubeConfig {
  */
 export interface InternalConfig {
     resolver?: string;
-    transforms: TransformsConfig;
-    output: OutputConfig;
-    utilities?: UtilitiesConfig;
+
+    /** Resolver input for this build, e.g. { brand: "ocean" } */
+    input?: Record<string, string>;
+
+    /** CSS variables output configuration */
+    variables: {
+        path: string;
+        layer?: string;
+        transforms: {
+            fluid: FluidConfig;
+            colorFallbackStrategy: ColorFallbackStrategy;
+        };
+        permutations?: Permutation[];
+    };
+
+    /** Utility classes output configuration */
+    utilities: {
+        path: string;
+        layer?: string;
+        classes?: UtilityClassesConfig;
+    };
+
+    /** Directory path where component files will be copied */
+    components?: string;
+
+    /** Directory path where CUBE CSS files will be copied */
+    cube?: string;
 }

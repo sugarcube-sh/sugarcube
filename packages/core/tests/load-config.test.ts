@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadInternalConfig, loadSugarcubeConfig } from "../src/config/load-config.js";
+import { DEFAULT_CONFIG } from "../src/constants/config.js";
 
 describe("loadInternalConfig", () => {
     let tempDir: string;
@@ -23,8 +24,8 @@ describe("loadInternalConfig", () => {
         const configContent = `
             export default {
                 resolver: "./tokens.resolver.json",
-                output: {
-                    cssRoot: "styles"
+                variables: {
+                    path: "styles/tokens.css"
                 }
             };
         `;
@@ -33,11 +34,14 @@ describe("loadInternalConfig", () => {
         const result = await loadInternalConfig();
 
         expect(result.config.resolver).toBe("./tokens.resolver.json");
-        expect(result.config.output.cssRoot).toBe("styles");
-        expect(result.config.output.variables).toBe("styles/global");
-        expect(result.config.output.utilities).toBe("styles/utilities");
-        expect(result.config.transforms.fluid.min).toBe(320);
-        expect(result.config.transforms.fluid.max).toBe(1200);
+        expect(result.config.variables.path).toBe("styles/tokens.css");
+        expect(result.config.utilities.path).toContain(DEFAULT_CONFIG.utilities.filename);
+        expect(result.config.variables.transforms.fluid.min).toBe(
+            DEFAULT_CONFIG.variables.transforms.fluid.min
+        );
+        expect(result.config.variables.transforms.fluid.max).toBe(
+            DEFAULT_CONFIG.variables.transforms.fluid.max
+        );
         expect(result.configPath).toContain("sugarcube.config.js");
     });
 
@@ -50,7 +54,7 @@ describe("loadInternalConfig", () => {
         const result = await loadInternalConfig();
 
         expect(result.config.resolver).toContain("tokens.resolver.json");
-        expect(result.config.output.cssRoot).toBe("styles");
+        expect(result.config.variables.path).toContain(DEFAULT_CONFIG.variables.filename);
         expect(result.configPath).toContain("tokens.resolver.json");
     });
 });
@@ -74,7 +78,7 @@ describe("loadSugarcubeConfig", () => {
         const configContent = `
             export default {
                 resolver: "./tokens.resolver.json",
-                output: { cssRoot: "styles" }
+                variables: { path: "styles/tokens.css" }
             };
         `;
         await writeFile(join(tempDir, "sugarcube.config.js"), configContent);
@@ -82,7 +86,8 @@ describe("loadSugarcubeConfig", () => {
         const result = await loadSugarcubeConfig();
 
         expect(result.config.resolver).toBe("./tokens.resolver.json");
-        expect(result.config.output?.cssRoot).toBe("styles");
-        expect(result.config.output?.variables).toBeUndefined();
+        expect(result.config.variables?.path).toBe("styles/tokens.css");
+        // transforms should be undefined - not filled in yet
+        expect(result.config.variables?.transforms).toBeUndefined();
     });
 });

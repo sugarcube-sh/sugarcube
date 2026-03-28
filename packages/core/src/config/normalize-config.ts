@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { DEFAULT_CONFIG } from "../constants/config.js";
 import type { InternalConfig, SugarcubeConfig } from "../types/config.js";
 
-function getDefaultCssRoot(cwd: string): string {
+function getDefaultStylesDir(cwd: string): string {
     return existsSync(resolve(cwd, "src")) ? "src/styles" : "styles";
 }
 
@@ -28,42 +28,41 @@ export function fillDefaults(
     userConfig: SugarcubeConfig,
     cwd: string = process.cwd()
 ): InternalConfig {
-    const cssRoot = userConfig.output?.cssRoot ?? getDefaultCssRoot(cwd);
+    const stylesDir = getDefaultStylesDir(cwd);
+
+    // Build default paths
+    const defaultVariablesPath = `${stylesDir}/${DEFAULT_CONFIG.variables.filename}`;
+    const defaultUtilitiesPath = `${stylesDir}/${DEFAULT_CONFIG.utilities.filename}`;
 
     const internalConfig: InternalConfig = {
         resolver: userConfig.resolver,
 
-        transforms: {
-            fluid: userConfig.transforms?.fluid ?? DEFAULT_CONFIG.transforms.fluid,
-            colorFallbackStrategy:
-                userConfig.transforms?.colorFallbackStrategy ??
-                DEFAULT_CONFIG.transforms.colorFallbackStrategy,
+        input: userConfig.input,
+
+        variables: {
+            path: userConfig.variables?.path ?? defaultVariablesPath,
+            layer: userConfig.variables?.layer,
+            transforms: {
+                fluid:
+                    userConfig.variables?.transforms?.fluid ??
+                    DEFAULT_CONFIG.variables.transforms.fluid,
+                colorFallbackStrategy:
+                    userConfig.variables?.transforms?.colorFallbackStrategy ??
+                    DEFAULT_CONFIG.variables.transforms.colorFallbackStrategy,
+            },
+            permutations: userConfig.variables?.permutations,
         },
-        output: {
-            cssRoot,
-            variables: userConfig.output?.variables ?? `${cssRoot}/global`,
-            variablesFilename:
-                userConfig.output?.variablesFilename ?? DEFAULT_CONFIG.output.variablesFilename,
-            utilities: userConfig.output?.utilities ?? `${cssRoot}/utilities`,
-            utilitiesFilename:
-                userConfig.output?.utilitiesFilename ?? DEFAULT_CONFIG.output.utilitiesFilename,
-            cube: userConfig.output?.cube ?? cssRoot,
-            layers: userConfig.output?.layers,
+
+        utilities: {
+            path: userConfig.utilities?.path ?? defaultUtilitiesPath,
+            layer: userConfig.utilities?.layer,
+            classes: userConfig.utilities?.classes,
         },
+
+        components: userConfig.components ?? getDefaultComponentsDir(cwd),
+
+        cube: userConfig.cube ?? stylesDir,
     };
-
-    // Only add components path if it's provided or has a default
-    if (
-        userConfig.output?.components !== undefined ||
-        DEFAULT_CONFIG.output.components !== undefined
-    ) {
-        internalConfig.output.components =
-            userConfig.output?.components ?? getDefaultComponentsDir(cwd);
-    }
-
-    if (userConfig.utilities) {
-        internalConfig.utilities = userConfig.utilities;
-    }
 
     return internalConfig;
 }
