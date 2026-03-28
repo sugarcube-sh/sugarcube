@@ -41,16 +41,18 @@ The preferred value scales smoothly between min and max across the viewport rang
 - **Wider range** (e.g., 320px to 1440px) = gentler slope, slower scaling
 - **Narrower range** (e.g., 375px to 1200px) = steeper slope, faster scaling
 
-Customize viewport boundaries in your `transforms` configuration:
+Customize viewport boundaries in your config:
 
 ```ts title="sugarcube.config.ts"
 import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
-  transforms: {
-    fluid: {
-      min: 375,
-      max: 1440
+  variables: {
+    transforms: {
+      fluid: {
+        min: 375,
+        max: 1440
+      }
     }
   }
 });

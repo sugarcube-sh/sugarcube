@@ -78,32 +78,32 @@ Use CSS's native `@import ... layer()` syntax to assign layers at import time:
 ```css title="main.css" frame="none"
 @layer base, utilities;
 
-@import "./global/tokens.variables.gen.css" layer(base);
-@import "./utilities/utilities.gen.css" layer(utilities);
+@import "./variables.gen.css" layer(base);
+@import "./utilities.gen.css" layer(utilities);
 ```
 
 No sugarcube configuration needed - this works with the generated files as-is.
 
 ### Baked-in layers
 
-If you prefer the layer wrapper baked into the generated files, use `output.layers`:
+If you prefer the layer wrapper baked into the generated files, use the `layer` option:
 
 ```ts title="sugarcube.config.ts"
 import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
-    output: {
-        layers: {
-            variables: "base",
-            utilities: "utilities"
-        }
+    variables: {
+        layer: "base"
+    },
+    utilities: {
+        layer: "utilities"
     }
 });
 ```
 
 This produces files already wrapped in `@layer` blocks:
 
-```css title="tokens.variables.gen.css" frame="none"
+```css title="tokens.css" frame="none"
 @layer base {
     :root { --color-primary: ...; }
 }
@@ -114,6 +114,6 @@ Then import without the `layer()` syntax:
 ```css title="main.css" frame="none"
 @layer base, utilities;
 
-@import "./global/tokens.variables.gen.css";
-@import "./utilities/utilities.gen.css";
+@import "./variables.gen.css";
+@import "./utilities.gen.css";
 ```

@@ -37,9 +37,12 @@ export default defineConfig({
 
 This works for both TypeScript and JavaScript files — no JSDoc annotations needed.
 
-## Resolver
+## resolver
 
-The `resolver` property points to your resolver document — a JSON file that defines your token sources and theming structure.
+**Type:** `string`
+**Required:** No (auto-discovered if omitted)
+
+Path to your resolver document — a JSON file that defines your token sources and theming structure.
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
@@ -48,386 +51,352 @@ export default defineConfig({
   resolver: "src/design-tokens/tokens.resolver.json"
 });
 ```
-
-**Type:** `string`  
-**Required:** No (auto-discovered if omitted)
 
 If omitted, sugarcube will recursively search your project for `*.resolver.json` files. Only specify this if you have multiple resolver files and need to choose a specific one.
 
 For details on resolver documents, see [Resolver Document](/docs/resolver).
 
-## Output
+## input
 
-The `output` object controls where files are written.
+**Type:** `Record<string, string>`
+**Optional**
 
-### `output.cssRoot`
-
-**Type:** `string`
-**Default:** `"src/styles"`
-
-The base directory for generated CSS files. Path is relative to your project root. Other CSS output paths (`variables`, `utilities`, `cube`) use this as their default base, but can be overridden to point anywhere.
+Resolver input for this build — selects which modifier contexts to use. Per the DTCG spec, each modifier not specified here uses its default.
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
 
 export default defineConfig({
   resolver: "src/design-tokens/tokens.resolver.json",
-  output: {
-    cssRoot: "styles"
+  input: {
+    brand: "ocean"
   }
 });
 ```
 
-### `output.variables`
+When set, the specified modifier contexts are merged into the base token set. This is equivalent to the `--input` CLI flag. See [Theming](/docs/theming#using---input) for more details.
 
-**Type:** `string`
-**Default:** `"{cssRoot}/global"`
-
-The directory where CSS variable files (from design tokens) are written. Path is relative to your project root. If not specified, defaults to the `global` subdirectory under `cssRoot`.
-
-```ts
-import { defineConfig } from "@sugarcube-sh/vite";
-
-export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  output: {
-    cssRoot: "src/styles",
-    variables: "src/tokens"  // Can point anywhere relative to project root
-  }
-});
-```
-
-### `output.utilities`
-
-**Type:** `string`
-**Default:** `"{cssRoot}/utilities"`
-
-The directory where utility class CSS files are written. Path is relative to your project root. If not specified, defaults to the `utilities` subdirectory under `cssRoot`.
-
-```ts
-import { defineConfig } from "@sugarcube-sh/vite";
-
-export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  output: {
-    cssRoot: "src/styles",
-    utilities: "public/css/utils"  // Can point anywhere relative to project root
-  }
-});
-```
-
-### `output.variablesFilename`
-
-**Type:** `string`
-**Default:** `"tokens.variables.gen.css"`
-
-The filename for the generated CSS variables file. Change this if you want a different filename for your token variables CSS.
-
-```ts
-import { defineConfig } from "@sugarcube-sh/vite";
-
-export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  output: {
-    variablesFilename: "design-tokens.css"
-  }
-});
-```
-
-### `output.utilitiesFilename`
-
-**Type:** `string`
-**Default:** `"utilities.gen.css"`
-
-The filename for the generated utilities CSS file. Change this if you want a different filename for your utility classes CSS.
-
-```ts
-import { defineConfig } from "@sugarcube-sh/vite";
-
-export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  output: {
-    utilitiesFilename: "utils.css"
-  }
-});
-```
-
-### `output.cube`
-
-**Type:** `string`
-**Default:** `"{cssRoot}"`
-
-The directory where CUBE CSS files are written when using the `cube` command. Path is relative to your project root. If not specified, defaults to the same directory as `cssRoot`.
-
-```ts
-import { defineConfig } from "@sugarcube-sh/vite";
-
-export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  output: {
-    cssRoot: "src/styles",
-    cube: "src/css/cube"  // Absolute path - can be anywhere
-  }
-});
-```
-
-### `output.components`
-
-**Type:** `string`
-**Default:** `"src/components/ui"`
-
-The directory where components are copied when you run the `components` command.
-
-```ts
-import { defineConfig } from "@sugarcube-sh/vite";
-
-export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  output: {
-    components: "src/components"
-  }
-});
-```
-
-### `output.layers`
+## variables
 
 **Type:** `object`
 **Optional**
+
+Configuration for CSS variables output.
+
+### `variables.path`
+
+**Type:** `string`
+**Default:** `"src/styles/variables.gen.css"` or `"styles/variables.gen.css"`
+
+Output path for the CSS variables file. Default adapts based on whether your project has a `src/` directory.
+
+```ts
+import { defineConfig } from "@sugarcube-sh/vite";
+
+export default defineConfig({
+  variables: {
+    path: "dist/tokens.css"
+  }
+});
+```
+
+### `variables.layer`
+
+**Type:** `string`
+**Optional**
+
+CSS cascade layer name. When set, output is wrapped in an `@layer` block.
+
+```ts
+import { defineConfig } from "@sugarcube-sh/vite";
+
+export default defineConfig({
+  variables: {
+    layer: "tokens"
+  }
+});
+```
 
 <SiteAside type="note">
     This option only applies when using the CLI. For Vite plugin users, configure layers via `unoOptions.outputToCssLayers` instead. See [CSS Cascade Layers](/docs/cascade-layers).
 </SiteAside>
 
-Wraps generated CSS in `@layer` blocks for CSS Cascade Layers support.
-
-```ts
-import { defineConfig } from "@sugarcube-sh/cli";
-
-export default defineConfig({
-  output: {
-    layers: {
-      variables: "theme",
-      utilities: "utilities"
-    }
-  }
-});
-```
-
-- **`variables`** (required): The CSS layer name for token variables
-- **`utilities`** (required): The CSS layer name for utility classes
-
-## Transforms
-
-The `transforms` object configures how sugarcube processes design tokens.
-
-### `transforms.fluid`
+### `variables.transforms`
 
 **Type:** `object`
-**Default:** `{ "min": 320, "max": 1200 }`
+**Optional**
 
-Configures fluid scaling for numeric tokens. The `min` and `max` values define the viewport range for fluid calculations.
+Token transformation options.
+
+#### `variables.transforms.fluid`
+
+**Type:** `{ min: number, max: number }`
+**Default:** `{ min: 320, max: 1200 }`
+
+Viewport range for fluid typography calculations. Tokens with `$type: "fluidDimension"` will scale between these viewport widths.
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
 
 export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  transforms: {
-    fluid: {
-      min: 320,
-      max: 1200
+  variables: {
+    transforms: {
+      fluid: {
+        min: 375,
+        max: 1440
+      }
     }
   }
 });
 ```
 
-- **`min`** (required): Minimum viewport width in pixels
-- **`max`** (required): Maximum viewport width in pixels
-
-### `transforms.colorFallbackStrategy`
+#### `variables.transforms.colorFallbackStrategy`
 
 **Type:** `"native" | "polyfill"`
 **Default:** `"native"`
 
-Controls how color format fallbacks are generated for CSS variables.
+How to handle colors that can't be represented in sRGB.
 
-- **`"native"`**: Uses native CSS color functions (e.g., `rgb()`, `hsl()`) as fallbacks
-- **`"polyfill"`**: Generates polyfill-compatible fallback formats
-
-```ts
-import { defineConfig } from "@sugarcube-sh/vite";
-
-export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  transforms: {
-    colorFallbackStrategy: "native"
-  }
-});
-```
-
-## Utilities
-
-The `utilities` object maps CSS properties to utility class configurations. Each key is a CSS property name, and the value is either a single configuration object or an array of configuration objects.
-
-### Utility configuration structure
+- **`"native"`**: Use CSS color functions directly (modern browsers only)
+- **`"polyfill"`**: Generate fallback values for older browsers
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
 
 export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  utilities: {
-    color: {
-      source: "color.*",
-      prefix: "text",
-      stripLevels: 1
+  variables: {
+    transforms: {
+      colorFallbackStrategy: "polyfill"
     }
   }
 });
 ```
 
-### `source`
+### `variables.permutations`
 
-**Type:** `string`
-**Required**
-
-A glob-like pattern that matches token paths. The pattern uses dot notation to match token hierarchy.
-
-```ts
-{
-  source: "color.*"  // Matches color.primary, color.secondary, etc.
-}
-```
-
-Pattern examples:
-- `color.*` matches `color.primary`, `color.secondary`, etc.
-- `space.*` matches `space.sm`, `space.md`, etc.
-- `font.weight.*` matches `font.weight.regular`, `font.weight.bold`, etc.
-
-### `directions`
-
-**Type:** `string | string[]`
+**Type:** `Permutation[]`
 **Optional**
 
-Generates directional variants for spacing properties. Valid values: `"top"`, `"right"`, `"bottom"`, `"left"`, `"x"`, `"y"`, `"full"`, `"all"`.
+Defines how modifier contexts map to CSS selectors. Each permutation selects a resolver input and specifies where to output the result.
+
+When not defined, sugarcube auto-generates permutations:
+- Default contexts → `:root`
+- Non-default contexts → `[data-{modifierName}="{context}"]`
+
+Each permutation has:
+- **`input`**: Which modifier contexts to resolve (see below)
+- **`selector`**: CSS selector (string or array of strings for comma-joined selectors)
+- **`atRule`**: Optional at-rule wrapper (e.g., `@media (prefers-color-scheme: dark)`)
+- **`path`**: Optional output file path (defaults to `variables.path`)
+
+#### How `input` works
+
+The `input` object maps modifier names to context values. You only need to specify the modifiers that differ from their defaults — any modifier not listed uses its `default` value from the resolver.
+
+For example, given a resolver with `theme` (default: `"light"`) and `density` (default: `"normal"`):
 
 ```ts
-import { defineConfig } from "@sugarcube-sh/vite";
-
-export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  utilities: {
-    padding: {
-      source: "space.sm",
-      directions: ["top", "right", "bottom", "left", "x", "y", "all"]
-    }
-  }
-});
+// These two are equivalent — density defaults to "normal"
+{ input: { theme: "dark", density: "normal" }, selector: "..." }
+{ input: { theme: "dark" }, selector: "..." }
 ```
 
-This generates: `pt-sm`, `pr-sm`, `pb-sm`, `pl-sm`, `px-sm`, `py-sm`, `p-sm`.
-
-### `stripLevels`
-
-**Type:** `number`
-**Optional**
-
-Removes the specified number of levels from the token path when generating class names.
+This means you typically only specify one modifier per permutation. The default for everything else is implicit:
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
 
 export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  utilities: {
-    color: {
-      source: "color.*",
-      stripLevels: 1
-    }
-  }
-});
-```
-
-Without `stripLevels`, `color.primary` generates `.text-color-primary`. With `stripLevels: 1`, it generates `.text-primary`.
-
-### `prefix`
-
-**Type:** `string`
-**Optional**
-
-Custom prefix for generated class names. If not provided, the class name is based on the token path.
-
-```ts
-import { defineConfig } from "@sugarcube-sh/vite";
-
-export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  utilities: {
-    color: {
-      source: "color.*",
-      prefix: "text"
-    }
-  }
-});
-```
-
-### Multiple utility configs per property
-
-You can provide multiple configurations for the same CSS property by using an array:
-
-```ts
-import { defineConfig } from "@sugarcube-sh/vite";
-
-export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  utilities: {
-    color: [
-      {
-        source: "color.brand.*",
-        prefix: "text",
-        stripLevels: 2
-      },
-      {
-        source: "color.semantic.*",
-        prefix: "text",
-        stripLevels: 2
-      }
+  variables: {
+    permutations: [
+      // All defaults (theme: light, density: normal)
+      { input: { theme: "light" }, selector: ":root" },
+      // Only theme changes — density stays at its default
+      { input: { theme: "dark" }, selector: "[data-theme=\"dark\"]" },
+      // Only density changes — theme stays at its default
+      { input: { density: "compact" }, selector: "[data-density=\"compact\"]" },
     ]
   }
 });
 ```
 
-## Default values
+<SiteAside type="tip">
+  When no permutations are defined, sugarcube auto-generates them from your resolver's modifiers — defaults go to `:root`, non-defaults get `[data-{modifier}="{context}"]` selectors. Define explicit permutations when you need custom selectors, media queries, or per-brand output files.
+</SiteAside>
 
-When options are omitted, sugarcube uses these defaults:
+Permutations can target different output files:
+
+```ts
+permutations: [
+  { input: { brand: "base" }, selector: ":root", path: "dist/base.css" },
+  { input: { brand: "ocean" }, selector: ":root", path: "dist/ocean.css" },
+]
+```
+
+Selectors can be arrays for compound selectors (comma-joined in output):
+
+```ts
+permutations: [
+  {
+    input: { theme: "dark" },
+    selector: [
+      "[data-color-mode=light][data-light-theme*=dark]",
+      "[data-color-mode=dark][data-dark-theme*=dark]"
+    ]
+  },
+]
+```
+
+See [Theming](/docs/theming) for full documentation on permutations.
+
+## utilities
+
+**Type:** `object`
+**Optional**
+
+Configuration for utility classes output.
+
+### `utilities.path`
+
+**Type:** `string`
+**Default:** `"src/styles/utilities.gen.css"` or `"styles/utilities.gen.css"`
+
+Output path for the utility classes CSS file. Default adapts based on whether your project has a `src/` directory.
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
 
 export default defineConfig({
-  output: {
-    cssRoot: "src/styles",
-    variablesFilename: "tokens.variables.gen.css",
-    utilitiesFilename: "utilities.gen.css",
-    components: "src/components/ui"
-  },
-  transforms: {
-    fluid: {
-      min: 320,
-      max: 1200
-    },
-    colorFallbackStrategy: "native"
+  utilities: {
+    path: "dist/utilities.css"
   }
 });
 ```
 
-These defaults are applied automatically when you have a config file. When running without a config, paths are auto-detected based on whether your project has a `src/` directory (e.g. `cube` and `components` use `src/styles` or `styles`, and `src/components/ui` or `components/ui`). You only need to specify values when you want to override them.
+### `utilities.layer`
+
+**Type:** `string`
+**Optional**
+
+CSS cascade layer name. When set, output is wrapped in an `@layer` block.
+
+```ts
+import { defineConfig } from "@sugarcube-sh/vite";
+
+export default defineConfig({
+  utilities: {
+    layer: "utilities"
+  }
+});
+```
+
+### `utilities.classes`
+
+**Type:** `Record<string, UtilityConfig | UtilityConfig[]>`
+**Optional**
+
+Maps CSS property names to utility class configurations.
+
+```ts
+import { defineConfig } from "@sugarcube-sh/vite";
+
+export default defineConfig({
+  utilities: {
+    classes: {
+      color: {
+        source: "color.*",
+        prefix: "text"
+      },
+      padding: {
+        source: "space.*",
+        prefix: "p",
+        directions: ["all", "x", "y"]
+      }
+    }
+  }
+});
+```
+
+#### Utility config options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `source` | `string` | **Required.** Glob pattern matching token paths (e.g., `"color.*"`) |
+| `prefix` | `string` | Custom prefix for class names |
+| `directions` | `string[]` | Directional variants: `"top"`, `"right"`, `"bottom"`, `"left"`, `"x"`, `"y"`, `"all"` |
+| `stripDuplicates` | `boolean` | Remove duplicate values |
+
+#### Multiple configs per property
+
+Provide an array for multiple configurations:
+
+```ts
+utilities: {
+  classes: {
+    color: [
+      { source: "color.brand.*", prefix: "text" },
+      { source: "color.semantic.*", prefix: "text" }
+    ]
+  }
+}
+```
+
+## components
+
+**Type:** `string`
+**Default:** `"src/components/ui"` or `"components/ui"`
+
+Directory where components are copied when running the `components` command.
+
+```ts
+import { defineConfig } from "@sugarcube-sh/vite";
+
+export default defineConfig({
+  components: "src/ui"
+});
+```
+
+## cube
+
+**Type:** `string`
+**Default:** `"src/styles"` or `"styles"`
+
+Directory where CUBE CSS files are written when using the `cube` command.
+
+```ts
+import { defineConfig } from "@sugarcube-sh/vite";
+
+export default defineConfig({
+  cube: "src/css/cube"
+});
+```
+
+## Default values
+
+When options are omitted, sugarcube uses these defaults (paths adapt based on `src/` directory presence):
+
+```ts
+import { defineConfig } from "@sugarcube-sh/vite";
+
+export default defineConfig({
+  variables: {
+    path: "src/styles/variables.gen.css",
+    transforms: {
+      fluid: { min: 320, max: 1200 },
+      colorFallbackStrategy: "native"
+    }
+  },
+  utilities: {
+    path: "src/styles/utilities.gen.css"
+  },
+  components: "src/components/ui",
+  cube: "src/styles"
+});
+```
 
 ## Examples
 
 ### Minimal config
-
-The smallest valid configuration:
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
@@ -437,31 +406,34 @@ export default defineConfig({
 });
 ```
 
-### With custom output paths
+### With custom paths
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
 
 export default defineConfig({
   resolver: "src/design-tokens/tokens.resolver.json",
-  output: {
-    cssRoot: "src/styles",
-    components: "src/components"
-  }
+  variables: {
+    path: "dist/tokens.css"
+  },
+  utilities: {
+    path: "dist/utilities.css"
+  },
+  components: "src/components"
 });
 ```
 
-### With fluid configuration
+### With transforms
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
 
 export default defineConfig({
   resolver: "src/design-tokens/tokens.resolver.json",
-  transforms: {
-    fluid: {
-      min: 375,
-      max: 1440
+  variables: {
+    transforms: {
+      fluid: { min: 375, max: 1440 },
+      colorFallbackStrategy: "polyfill"
     }
   }
 });
@@ -475,21 +447,20 @@ import { defineConfig } from "@sugarcube-sh/vite";
 export default defineConfig({
   resolver: "src/design-tokens/tokens.resolver.json",
   utilities: {
-    color: {
-      source: "color.*",
-      prefix: "text",
-      stripLevels: 1
-    },
-    "background-color": {
-      source: "color.*",
-      prefix: "bg",
-      stripLevels: 1
-    },
-    padding: {
-      source: "space.*",
-      prefix: "p",
-      stripLevels: 1,
-      directions: ["top", "right", "bottom", "left", "x", "y", "all"]
+    classes: {
+      color: {
+        source: "color.*",
+        prefix: "text"
+      },
+      "background-color": {
+        source: "color.*",
+        prefix: "bg"
+      },
+      padding: {
+        source: "space.*",
+        prefix: "p",
+        directions: ["all", "x", "y"]
+      }
     }
   }
 });
@@ -497,38 +468,35 @@ export default defineConfig({
 
 ### Complete example
 
-A comprehensive configuration with all options:
-
 ```ts
 import { defineConfig } from "@sugarcube-sh/vite";
 
 export default defineConfig({
   resolver: "src/design-tokens/tokens.resolver.json",
-  output: {
-    cssRoot: "src/styles",
-    variablesFilename: "tokens.css",
-    utilitiesFilename: "utils.css",
-    components: "src/components"
-  },
-  transforms: {
-    fluid: {
-      min: 375,
-      max: 1440
+
+  variables: {
+    path: "src/styles/variables.gen.css",
+    layer: "tokens",
+    transforms: {
+      fluid: { min: 375, max: 1440 },
+      colorFallbackStrategy: "polyfill"
     },
-    colorFallbackStrategy: "polyfill"
+    permutations: [
+      { input: { theme: "light" }, selector: ":root" },
+      { input: { theme: "dark" }, selector: "[data-theme=\"dark\"]" },
+    ]
   },
+
   utilities: {
-    color: {
-      source: "color.*",
-      prefix: "text",
-      stripLevels: 1
-    },
-    padding: {
-      source: "space.*",
-      prefix: "p",
-      stripLevels: 1,
-      directions: ["all", "x", "y"]
+    path: "src/styles/utilities.gen.css",
+    layer: "utilities",
+    classes: {
+      color: { source: "color.*", prefix: "text" },
+      padding: { source: "space.*", prefix: "p", directions: ["all", "x", "y"] }
     }
-  }
+  },
+
+  components: "src/components/ui",
+  cube: "src/styles"
 });
 ```

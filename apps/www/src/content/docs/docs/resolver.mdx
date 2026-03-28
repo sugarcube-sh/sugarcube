@@ -113,11 +113,6 @@ Modifiers provide themed variations of your tokens. See [Theming](/docs/theming)
   "type": "modifier",
   "name": "theme",
   "default": "light",
-  "$extensions": {
-    "sh.sugarcube": {
-      "selector": "[data-theme=\"{context}\"]"
-    }
-  },
   "contexts": {
     "light": [],
     "dark": [{ "$ref": "./dark.json" }]
@@ -126,13 +121,10 @@ Modifiers provide themed variations of your tokens. See [Theming](/docs/theming)
 ```
 
 - **`name`** — The modifier name
-- **`default`** — Context whose values go in `:root`
+- **`default`** — Which context is the baseline (per the DTCG spec, this is the value used when no input is provided)
 - **`contexts`** — Map of context names to source arrays
-- **`$extensions.sh.sugarcube.selector`** — CSS selector pattern with `{context}` placeholder
 
-<SiteAside type="note">
-  Without a `selector` or `atRule` extension, only the default context outputs to `:root`. Add an extension to enable multi-context output.
-</SiteAside>
+The resolver defines *what* your modifier contexts are. How they map to CSS selectors is controlled by `permutations` in your config file. See [Theming](/docs/theming) for details.
 
 ## Resolution order
 
@@ -204,11 +196,6 @@ Here's a complete resolver with base tokens and a light/dark theme:
       "type": "modifier",
       "name": "theme",
       "default": "light",
-      "$extensions": {
-        "sh.sugarcube": {
-          "selector": "[data-theme=\"{context}\"]"
-        }
-      },
       "contexts": {
         "light": [],
         "dark": [{ "$ref": "./dark.json" }]

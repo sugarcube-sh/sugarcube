@@ -88,14 +88,15 @@ The command supports **zero-config** usage with automatic resolver discovery, or
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--resolver <path>` | Path to token resolver file | Auto-discovered recursively |
-| `--styles-dir <dir>` | CSS output directory | Auto-detected based on `src/` |
-| `--variables-dir <dir>` | Token variables output directory | `{styles-dir}/global` |
-| `--variables-filename <name>` | Token variables filename | `tokens.variables.gen.css` |
-| `--utilities-dir <dir>` | Utilities output directory | `{styles-dir}/utilities` |
-| `--utilities-filename <name>` | Utilities filename | `utilities.gen.css` |
+| `--variables <path>` | Output path for CSS variables | `src/styles/variables.gen.css` |
+| `--utilities <path>` | Output path for utility classes | `src/styles/utilities.gen.css` |
 | `--fluid-min <number>` | Min viewport for fluid scaling | `320` |
 | `--fluid-max <number>` | Max viewport for fluid scaling | `1200` |
 | `--color-fallback <strategy>` | Color fallback: `native` or `polyfill` | `native` |
+| `--input <modifier=value>` | Select a modifier context for this build (repeatable) | - |
+| `--selector <selector>` | CSS selector for `--input` output | `:root` |
+| `--variables-only` | Generate only CSS variables, skip utilities | - |
+| `--utilities-only` | Generate only utilities, skip CSS variables | - |
 | `--force` | Skip overwrite confirmation | - |
 | `-s, --silent` | Suppress logs and prompts | - |
 | `-w, --watch` | Watch for changes and regenerate automatically | - |
@@ -110,8 +111,8 @@ npx sugarcube generate
 # Specify resolver explicitly
 npx sugarcube generate --resolver ./tokens.resolver.json
 
-# Custom output directories
-npx sugarcube generate --styles-dir dist/styles
+# Custom output paths
+npx sugarcube generate --variables dist/tokens.css --utilities dist/utilities.css
 
 # Override fluid viewport range
 npx sugarcube generate --fluid-min 375 --fluid-max 1440
@@ -119,13 +120,13 @@ npx sugarcube generate --fluid-min 375 --fluid-max 1440
 # Use polyfill for wide gamut colors
 npx sugarcube generate --color-fallback polyfill
 
-# Combine multiple options
-npx sugarcube generate \
-  --resolver ./tokens.resolver.json \
-  --styles-dir src/css \
-  --fluid-min 500 \
-  --fluid-max 1600 \
-  --silent
+# Generate per-brand CSS files (each at :root)
+npx sugarcube generate --input brand=ocean --variables dist/ocean.css --variables-only
+npx sugarcube generate --input brand=forest --variables dist/forest.css --variables-only
+npx sugarcube generate --utilities-only
+
+# Generate with a custom selector
+npx sugarcube generate --input theme=dark --selector "[data-theme='dark']" --variables dist/dark.css
 
 # Override config file values temporarily
 npx sugarcube generate --fluid-max 1600
@@ -147,7 +148,7 @@ The `--watch` flag enables continuous regeneration during development:
 npx sugarcube generate --watch
 # [sugarcube] Generated in 42ms
 # [sugarcube] Watching 5 token files + markup files...
-# [sugarcube] colors.json → src/styles/global/tokens.variables.gen.css (38ms)
+# [sugarcube] colors.json → src/styles/tokens.css (38ms)
 ```
 
 Press `Ctrl+C` to stop watching.
@@ -187,10 +188,10 @@ If none are found, the command reports that no design tokens were found and sugg
 
 ### Output
 
-The command generates files in your configured styles directory:
+The command generates CSS files at your configured paths:
 
-- `{variables-dir}/{variables-filename}` - CSS custom properties (default: `tokens.variables.gen.css`)
-- `{utilities-dir}/{utilities-filename}` - Utility classes (default: `utilities.gen.css`)
+- CSS variables file (default: `src/styles/variables.gen.css`)
+- Utility classes file (default: `src/styles/utilities.gen.css`)
 
 ---
 
@@ -332,7 +333,7 @@ The `cube` command installs the CUBE CSS methodology files into your project. CU
 |--------|-------------|
 | `-s, --silent` | Suppress logs and prompts |
 | `-f, --force` | Skip overwrite confirmation |
-| `--cube-dir <dir>` | CUBE CSS output directory (auto-detected based on `src/`, or config's cssRoot) |
+| `--cube-dir <dir>` | CUBE CSS output directory (auto-detected based on `src/`, or from config) |
 </Table>
 
 ### Examples
