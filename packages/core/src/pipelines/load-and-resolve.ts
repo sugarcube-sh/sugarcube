@@ -51,7 +51,7 @@ export async function loadAndResolveTokens(
 ): Promise<LoadAndResolveResult> {
     const { trees, modifiers, errors: loadErrors } = await loadTokens(source);
 
-    const { trees: expandedTrees, errors: expandRefsErrors } = await expandRefs(trees);
+    const { trees: expandedTrees, errors: expandRefsErrors } = expandRefs(trees);
 
     const { tokens: flattenedTokens, errors: flattenErrors } = flatten(expandedTrees);
     const validationErrors = validate(flattenedTokens);

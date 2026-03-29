@@ -1,5 +1,3 @@
-import { readFile } from "node:fs/promises";
-import { dirname, isAbsolute, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
 import { hasRef } from "../guards/token-guards.js";
 import type { Token, TokenGroup } from "../types/dtcg.js";
@@ -17,9 +15,7 @@ export type ExpandRefsResult = {
 };
 
 type ExpandContext = {
-    basePath: string;
     visitedRefs: Set<string>;
-    fileCache: Map<string, unknown>;
     currentPath: string[];
     sourcePath: string;
 };
@@ -40,13 +36,13 @@ function containsRefs(obj: unknown): boolean {
 /**
  * Expand $ref references in token trees before flattening.
  *
- * This stage processes JSON Pointer references and normalizes them to
- * curly brace format for downstream compatibility.
+ * This stage processes same-document JSON Pointer references (`#/...`) and
+ * normalizes them to curly brace format for downstream resolution.
  *
- * For token refs: { "$ref": "#/colors/blue" } becomes { "$value": "{colors.blue}", "$type": "color" }
+ * For token refs: { "$ref": "#/colors/blue" } becomes { "$value": "{colors.blue}" }
  * For group refs: { "$ref": "#/button" } inlines the target group content
  */
-export async function expandRefs(trees: TokenTree[]): Promise<ExpandRefsResult> {
+export function expandRefs(trees: TokenTree[]): ExpandRefsResult {
     const results: TokenTree[] = [];
     const errors: ExpandRefsError[] = [];
 
@@ -57,18 +53,12 @@ export async function expandRefs(trees: TokenTree[]): Promise<ExpandRefsResult> 
         }
 
         const context: ExpandContext = {
-            basePath: tree.sourcePath ? dirname(tree.sourcePath) : process.cwd(),
             visitedRefs: new Set(),
-            fileCache: new Map(),
             currentPath: [],
             sourcePath: tree.sourcePath,
         };
 
-        const { result, errors: treeErrors } = await expandRefsInGroup(
-            tree.tokens,
-            tree.tokens,
-            context
-        );
+        const { result, errors: treeErrors } = expandRefsInGroup(tree.tokens, tree.tokens, context);
 
         results.push({ ...tree, tokens: result });
         errors.push(...treeErrors);
@@ -77,11 +67,11 @@ export async function expandRefs(trees: TokenTree[]): Promise<ExpandRefsResult> 
     return { trees: results, errors };
 }
 
-async function expandRefsInGroup(
+function expandRefsInGroup(
     node: TokenGroup,
     rootDocument: TokenGroup,
     context: ExpandContext
-): Promise<{ result: TokenGroup; errors: ExpandRefsError[] }> {
+): { result: TokenGroup; errors: ExpandRefsError[] } {
     const result: TokenGroup = {};
     const errors: ExpandRefsError[] = [];
 
@@ -96,7 +86,7 @@ async function expandRefsInGroup(
         const currentPathStr = context.currentPath.join(".");
 
         if (hasRef(value)) {
-            const refResult = await resolveRef(value, rootDocument, context);
+            const refResult = resolveRef(value, rootDocument, context);
 
             if (refResult.error) {
                 errors.push({
@@ -120,7 +110,7 @@ async function expandRefsInGroup(
                 } as Token;
             } else {
                 const { $ref, ...overrides } = value as { $ref: string; [k: string]: unknown };
-                const { result: expandedGroup, errors: groupErrors } = await expandRefsInGroup(
+                const { result: expandedGroup, errors: groupErrors } = expandRefsInGroup(
                     resolved as TokenGroup,
                     rootDocument,
                     context
@@ -131,7 +121,7 @@ async function expandRefsInGroup(
         } else if (isToken(value)) {
             result[key] = value;
         } else if (typeof value === "object" && value !== null) {
-            const { result: expandedGroup, errors: groupErrors } = await expandRefsInGroup(
+            const { result: expandedGroup, errors: groupErrors } = expandRefsInGroup(
                 value as TokenGroup,
                 rootDocument,
                 context
@@ -150,13 +140,22 @@ type ResolveRefResult =
     | { value: Token | TokenGroup; error?: undefined }
     | { value?: undefined; error: string };
 
-async function resolveRef(
+function resolveRef(
     refObj: { $ref: string },
     rootDocument: TokenGroup,
     context: ExpandContext
-): Promise<ResolveRefResult> {
+): ResolveRefResult {
     const ref = refObj.$ref;
     const currentPathStr = context.currentPath.join(".");
+
+    if (!ref.startsWith("#/")) {
+        return {
+            error: ErrorMessages.EXPAND_REFS.INVALID_JSON_POINTER(
+                ref,
+                "only same-document references (#/...) are supported in token files"
+            ),
+        };
+    }
 
     const refKey = `${context.sourcePath}:${ref}`;
     if (context.visitedRefs.has(refKey)) {
@@ -166,114 +165,31 @@ async function resolveRef(
     context.visitedRefs.add(refKey);
 
     try {
-        let result: ResolveRefResult;
+        const pointer = ref.slice(1);
+        const pointerResult = resolveJsonPointer(rootDocument, pointer);
 
-        if (ref.startsWith("#/")) {
-            result = resolveSameDocumentRef(ref, rootDocument, context);
-        } else if (ref.includes("#/")) {
-            result = await resolveExternalRef(ref, context);
-        } else {
-            result = await resolveExternalFileRef(ref, context);
+        if (pointerResult.error) {
+            return {
+                error: ErrorMessages.EXPAND_REFS.INVALID_JSON_POINTER(ref, pointerResult.error),
+            };
         }
 
-        if (!result.error && result.value && hasRef(result.value)) {
-            return resolveRef(result.value as { $ref: string }, rootDocument, context);
+        if (typeof pointerResult.value !== "object" || pointerResult.value === null) {
+            return {
+                error: ErrorMessages.EXPAND_REFS.INVALID_REF_TARGET(ref, currentPathStr),
+            };
         }
 
-        return result;
+        const resolved = pointerResult.value as Token | TokenGroup;
+
+        // Follow chained refs
+        if (hasRef(resolved)) {
+            return resolveRef(resolved as { $ref: string }, rootDocument, context);
+        }
+
+        return { value: resolved };
     } finally {
         context.visitedRefs.delete(refKey);
-    }
-}
-
-function resolveSameDocumentRef(
-    ref: string,
-    rootDocument: TokenGroup,
-    context: ExpandContext
-): ResolveRefResult {
-    const pointer = ref.slice(1);
-    const result = resolveJsonPointer(rootDocument, pointer);
-
-    if (result.error) {
-        return { error: ErrorMessages.EXPAND_REFS.INVALID_JSON_POINTER(ref, result.error) };
-    }
-
-    if (typeof result.value !== "object" || result.value === null) {
-        return {
-            error: ErrorMessages.EXPAND_REFS.INVALID_REF_TARGET(ref, context.currentPath.join(".")),
-        };
-    }
-
-    return { value: result.value as Token | TokenGroup };
-}
-
-async function resolveExternalRef(ref: string, context: ExpandContext): Promise<ResolveRefResult> {
-    const [filePart = "", fragmentPart = ""] = ref.split("#");
-    const filePath = isAbsolute(filePart) ? filePart : resolvePath(context.basePath, filePart);
-
-    let fileContent = context.fileCache.get(filePath);
-    if (!fileContent) {
-        const loadResult = await loadJsonFile(filePath);
-        if (loadResult.error) return { error: loadResult.error };
-        fileContent = loadResult.content;
-        context.fileCache.set(filePath, fileContent);
-    }
-
-    const pointer = fragmentPart.startsWith("/") ? fragmentPart : `/${fragmentPart}`;
-    const result = resolveJsonPointer(fileContent, pointer);
-
-    if (result.error) {
-        return { error: ErrorMessages.EXPAND_REFS.INVALID_JSON_POINTER(ref, result.error) };
-    }
-
-    if (typeof result.value !== "object" || result.value === null) {
-        return {
-            error: ErrorMessages.EXPAND_REFS.INVALID_REF_TARGET(ref, context.currentPath.join(".")),
-        };
-    }
-
-    return { value: result.value as Token | TokenGroup };
-}
-
-async function resolveExternalFileRef(
-    ref: string,
-    context: ExpandContext
-): Promise<ResolveRefResult> {
-    const filePath = isAbsolute(ref) ? ref : resolvePath(context.basePath, ref);
-
-    let fileContent = context.fileCache.get(filePath);
-    if (!fileContent) {
-        const loadResult = await loadJsonFile(filePath);
-        if (loadResult.error) return { error: loadResult.error };
-        fileContent = loadResult.content;
-        context.fileCache.set(filePath, fileContent);
-    }
-
-    if (typeof fileContent !== "object" || fileContent === null) {
-        return {
-            error: ErrorMessages.EXPAND_REFS.INVALID_REF_TARGET(ref, context.currentPath.join(".")),
-        };
-    }
-
-    return { value: fileContent as Token | TokenGroup };
-}
-
-type LoadResult = { content: unknown; error?: undefined } | { content?: undefined; error: string };
-
-async function loadJsonFile(filePath: string): Promise<LoadResult> {
-    try {
-        const content = await readFile(filePath, "utf-8");
-        return { content: JSON.parse(content) };
-    } catch (err) {
-        if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-            return { error: ErrorMessages.EXPAND_REFS.EXTERNAL_FILE_NOT_FOUND(filePath) };
-        }
-        return {
-            error: ErrorMessages.EXPAND_REFS.EXTERNAL_FILE_ERROR(
-                filePath,
-                err instanceof Error ? err.message : "Unknown error"
-            ),
-        };
     }
 }
 
@@ -316,7 +232,6 @@ function jsonPointerToPath(ref: string): string {
     let pointer = ref;
     if (pointer.startsWith("#/")) pointer = pointer.slice(2);
     else if (pointer.startsWith("#")) pointer = pointer.slice(1);
-    if (pointer.includes("#/")) pointer = pointer.split("#/")[1] || "";
     return pointer
         .split("/")
         .map((s) => s.replace(/~1/g, "/").replace(/~0/g, "~"))

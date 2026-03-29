@@ -1,6 +1,4 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { expandRefs } from "../src/pipeline/expand-refs.js";
 import type { TokenTree } from "../src/types/tokens.js";
 
@@ -15,7 +13,7 @@ const buildTree = (
 
 describe("expandRefs", () => {
     describe("fast path - no refs", () => {
-        it("passes through trees without $ref unchanged", async () => {
+        it("passes through trees without $ref unchanged", () => {
             const trees = [
                 buildTree({
                     color: {
@@ -25,7 +23,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             expect(result[0]?.tokens).toEqual(trees[0]?.tokens);
@@ -33,7 +31,7 @@ describe("expandRefs", () => {
     });
 
     describe("token $ref - same document", () => {
-        it("normalizes token $ref to curly brace format", async () => {
+        it("normalizes token $ref to curly brace format", () => {
             const trees = [
                 buildTree({
                     colors: {
@@ -46,14 +44,14 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as { background: { $value: string } };
             expect(buttonBg.background.$value).toBe("{colors.blue}");
         });
 
-        it("does not add $type (type resolution is downstream)", async () => {
+        it("does not add $type (type resolution is downstream)", () => {
             const trees = [
                 buildTree({
                     colors: {
@@ -66,7 +64,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as { background: Record<string, unknown> };
@@ -74,7 +72,7 @@ describe("expandRefs", () => {
             expect(buttonBg.background.$type).toBeUndefined();
         });
 
-        it("resolves deeply nested token refs", async () => {
+        it("resolves deeply nested token refs", () => {
             const trees = [
                 buildTree({
                     theme: {
@@ -91,7 +89,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             const components = result[0]?.tokens.components as {
@@ -100,7 +98,7 @@ describe("expandRefs", () => {
             expect(components.button.background.$value).toBe("{theme.colors.primary}");
         });
 
-        it("preserves $description and $extensions from target", async () => {
+        it("preserves $description and $extensions from target", () => {
             const trees = [
                 buildTree({
                     colors: {
@@ -117,7 +115,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as {
@@ -131,7 +129,7 @@ describe("expandRefs", () => {
     });
 
     describe("group $ref - same document", () => {
-        it("inlines group content at reference location", async () => {
+        it("inlines group content at reference location", () => {
             const trees = [
                 buildTree({
                     button: {
@@ -143,7 +141,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             const primaryButton = result[0]?.tokens["primary-button"] as {
@@ -156,7 +154,7 @@ describe("expandRefs", () => {
             expect(primaryButton.text.$value).toBe("#ffffff");
         });
 
-        it("applies overrides to referenced group", async () => {
+        it("applies overrides to referenced group", () => {
             const trees = [
                 buildTree({
                     button: {
@@ -171,7 +169,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             const dangerButton = result[0]?.tokens["danger-button"] as {
@@ -184,7 +182,7 @@ describe("expandRefs", () => {
     });
 
     describe("chained $ref resolution", () => {
-        it("follows chained refs without error", async () => {
+        it("follows chained refs without error", () => {
             const trees = [
                 buildTree({
                     colors: {
@@ -200,7 +198,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             // $value points to the immediate target
@@ -215,7 +213,7 @@ describe("expandRefs", () => {
     });
 
     describe("JSON Pointer escaping", () => {
-        it("handles ~1 encoding for slashes in property names", async () => {
+        it("handles ~1 encoding for slashes in property names", () => {
             const trees = [
                 buildTree({
                     "my/group": {
@@ -226,14 +224,14 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             const alias = result[0]?.tokens.alias as { $value: string };
             expect(alias.$value).toBe("{my/group.token}");
         });
 
-        it("handles ~0 encoding for tildes in property names", async () => {
+        it("handles ~0 encoding for tildes in property names", () => {
             const trees = [
                 buildTree({
                     "my~group": {
@@ -244,7 +242,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             const alias = result[0]?.tokens.alias as { $value: string };
@@ -253,16 +251,16 @@ describe("expandRefs", () => {
     });
 
     describe("circular reference detection", () => {
-        it("detects direct circular references", async () => {
+        it("detects direct circular references", () => {
             const trees = [buildTree({ a: { $ref: "#/a" } })];
 
-            const { errors } = await expandRefs(trees);
+            const { errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toContain("Circular reference");
         });
 
-        it("detects indirect circular references", async () => {
+        it("detects indirect circular references", () => {
             const trees = [
                 buildTree({
                     a: { $ref: "#/b" },
@@ -271,7 +269,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { errors } = await expandRefs(trees);
+            const { errors } = expandRefs(trees);
 
             expect(errors.length).toBeGreaterThan(0);
             expect(errors.some((e) => e.message.includes("Circular reference"))).toBe(true);
@@ -279,16 +277,16 @@ describe("expandRefs", () => {
     });
 
     describe("error handling", () => {
-        it("reports error for invalid JSON pointer", async () => {
+        it("reports error for invalid JSON pointer", () => {
             const trees = [buildTree({ button: { $ref: "#/nonexistent/path" } })];
 
-            const { errors } = await expandRefs(trees);
+            const { errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toContain("Invalid JSON pointer");
         });
 
-        it("reports error when $ref points to a primitive value", async () => {
+        it("reports error when $ref points to a primitive value", () => {
             const trees = [
                 buildTree({
                     colors: {
@@ -299,13 +297,13 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { errors } = await expandRefs(trees);
+            const { errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toContain("Invalid");
         });
 
-        it("continues processing valid tokens after errors", async () => {
+        it("continues processing valid tokens after errors", () => {
             const trees = [
                 buildTree({
                     colors: { $type: "color", valid: { $value: "#0066cc" } },
@@ -314,7 +312,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(1);
             const colors = result[0]?.tokens.colors as { valid: { $value: string } };
@@ -323,7 +321,7 @@ describe("expandRefs", () => {
     });
 
     describe("$root token compatibility", () => {
-        it("works with $root tokens", async () => {
+        it("works with $root tokens", () => {
             const trees = [
                 buildTree({
                     accent: {
@@ -336,7 +334,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as { background: { $value: string } };
@@ -345,7 +343,7 @@ describe("expandRefs", () => {
     });
 
     describe("multiple trees", () => {
-        it("processes multiple trees independently", async () => {
+        it("processes multiple trees independently", () => {
             const trees = [
                 buildTree({
                     colors: { $type: "color", blue: { $value: "#0066cc" } },
@@ -356,7 +354,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             expect(result).toHaveLength(2);
@@ -369,7 +367,7 @@ describe("expandRefs", () => {
             expect(sizes.small.$value).toBe("8px");
         });
 
-        it("does not resolve cross-tree references", async () => {
+        it("does not resolve cross-tree references", () => {
             const trees = [
                 buildTree({
                     colors: { $type: "color", blue: { $value: "#0066cc" } },
@@ -379,7 +377,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { errors } = await expandRefs(trees);
+            const { errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toContain("Invalid JSON pointer");
@@ -387,7 +385,7 @@ describe("expandRefs", () => {
     });
 
     describe("context handling", () => {
-        it("preserves context during expansion", async () => {
+        it("preserves context during expansion", () => {
             const trees = [
                 buildTree(
                     {
@@ -398,7 +396,7 @@ describe("expandRefs", () => {
                 ),
             ];
 
-            const { trees: result, errors } = await expandRefs(trees);
+            const { trees: result, errors } = expandRefs(trees);
 
             expect(errors).toHaveLength(0);
             expect(result[0]?.context).toBe("dark");
@@ -406,96 +404,30 @@ describe("expandRefs", () => {
     });
 });
 
-describe("expandRefs - external file references", () => {
-    const testDir = join(process.cwd(), "tests", "__fixtures__", "tokens", "refs");
-
-    beforeAll(async () => {
-        await mkdir(testDir, { recursive: true });
-
-        await writeFile(
-            join(testDir, "colors.json"),
-            JSON.stringify({
-                brand: {
-                    $type: "color",
-                    primary: { $value: "#0066cc" },
-                },
-            })
-        );
-
-        await writeFile(
-            join(testDir, "components.json"),
-            JSON.stringify({
-                button: {
-                    $type: "color",
-                    background: { $value: "#0066cc" },
-                },
-            })
-        );
-    });
-
-    afterAll(async () => {
-        await rm(testDir, { recursive: true, force: true });
-    });
-
-    it("resolves external file with JSON Pointer fragment", async () => {
+describe("expandRefs - unsupported references", () => {
+    it("rejects external file references", () => {
         const trees = [
-            buildTree(
-                { button: { background: { $ref: "colors.json#/brand/primary" } } },
-                { sourcePath: join(testDir, "main.json") }
-            ),
+            buildTree({
+                button: { background: { $ref: "colors.json#/brand/primary" } },
+            }),
         ];
 
-        const { trees: result, errors } = await expandRefs(trees);
-
-        expect(errors).toHaveLength(0);
-        const buttonBg = result[0]?.tokens.button as { background: { $value: string } };
-        expect(buttonBg.background.$value).toBe("{brand.primary}");
-    });
-
-    it("resolves external group reference", async () => {
-        const trees = [
-            buildTree(
-                { "primary-button": { $ref: "components.json#/button" } },
-                { sourcePath: join(testDir, "main.json") }
-            ),
-        ];
-
-        const { trees: result, errors } = await expandRefs(trees);
-
-        expect(errors).toHaveLength(0);
-        const primaryButton = result[0]?.tokens["primary-button"] as { $type: string };
-        expect(primaryButton.$type).toBe("color");
-    });
-
-    it("resolves external file ref without fragment (whole file as group)", async () => {
-        const trees = [
-            buildTree(
-                { "all-components": { $ref: "components.json" } },
-                { sourcePath: join(testDir, "main.json") }
-            ),
-        ];
-
-        const { trees: result, errors } = await expandRefs(trees);
-
-        expect(errors).toHaveLength(0);
-        const allComponents = result[0]?.tokens["all-components"] as {
-            button: { $type: string; background: { $value: string } };
-        };
-        expect(allComponents.button.$type).toBe("color");
-        expect(allComponents.button.background.$value).toBe("#0066cc");
-    });
-
-    it("reports error for missing external file", async () => {
-        const trees = [
-            buildTree(
-                { button: { background: { $ref: "nonexistent.json#/colors/blue" } } },
-                { sourcePath: join(testDir, "main.json") }
-            ),
-        ];
-
-        const { errors } = await expandRefs(trees);
+        const { errors } = expandRefs(trees);
 
         expect(errors).toHaveLength(1);
-        expect(errors[0]?.message).toContain("not found");
+        expect(errors[0]?.message).toContain("only same-document references");
+    });
+
+    it("rejects bare file references without fragment", () => {
+        const trees = [
+            buildTree({
+                "all-components": { $ref: "components.json" },
+            }),
+        ];
+
+        const { errors } = expandRefs(trees);
+
+        expect(errors).toHaveLength(1);
+        expect(errors[0]?.message).toContain("only same-document references");
     });
 });
