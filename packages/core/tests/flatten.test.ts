@@ -173,6 +173,101 @@ describe("flatten", () => {
         });
     });
 
+    describe("$root token support", () => {
+        it("recognizes $root as a valid token name within groups", () => {
+            const { tokens, errors } = flatten([
+                buildTree({
+                    accent: {
+                        $type: "color",
+                        $root: { $value: "#dd0000" },
+                        light: { $value: "#ff6666" },
+                    },
+                }),
+            ]);
+
+            expect(errors).toHaveLength(0);
+            expect(tokens.tokens["accent.$root"]).toBeDefined();
+            expect(tokens.tokens["accent.light"]).toBeDefined();
+        });
+
+        it("creates correct path for $root tokens", () => {
+            const { tokens } = flatten([
+                buildTree({
+                    accent: {
+                        $type: "color",
+                        $root: { $value: "#dd0000" },
+                    },
+                }),
+            ]);
+
+            const rootToken = tokens.tokens["accent.$root"];
+            expect(isToken(rootToken) && rootToken.$path).toBe("accent.$root");
+        });
+
+        it("preserves $root token value", () => {
+            const { tokens } = flatten([
+                buildTree({
+                    accent: {
+                        $type: "color",
+                        $root: { $value: "#dd0000" },
+                    },
+                }),
+            ]);
+
+            const rootToken = tokens.tokens["accent.$root"];
+            expect(isToken(rootToken) && rootToken.$value).toBe("#dd0000");
+        });
+
+        it("inherits $type from parent group for $root tokens", () => {
+            const { tokens } = flatten([
+                buildTree({
+                    accent: {
+                        $type: "color",
+                        $root: { $value: "#dd0000" },
+                    },
+                }),
+            ]);
+
+            const rootToken = tokens.tokens["accent.$root"];
+            expect(isToken(rootToken) && rootToken.$type).toBe("color");
+        });
+
+        it("allows $root at any nesting level", () => {
+            const { tokens, errors } = flatten([
+                buildTree({
+                    theme: {
+                        color: {
+                            accent: {
+                                $type: "color",
+                                $root: { $value: "#dd0000" },
+                            },
+                        },
+                    },
+                }),
+            ]);
+
+            expect(errors).toHaveLength(0);
+            expect(tokens.tokens["theme.color.accent.$root"]).toBeDefined();
+        });
+
+        it("handles $root with context prefix", () => {
+            const { tokens } = flatten([
+                buildTree(
+                    {
+                        accent: {
+                            $type: "color",
+                            $root: { $value: "#dd0000" },
+                        },
+                    },
+                    { context: "dark" }
+                ),
+            ]);
+
+            expect(tokens.tokens["dark.accent.$root"]).toBeDefined();
+            expect(tokens.pathIndex.get("accent.$root")).toBe("dark.accent.$root");
+        });
+    });
+
     describe("error handling", () => {
         it("rejects token names containing dots", () => {
             const { errors } = flatten([
