@@ -201,8 +201,6 @@ export const ErrorMessages = {
             `Circular reference detected at "${path}": ${ref} references back to itself or a parent`,
         INVALID_JSON_POINTER: (pointer: string, reason: string) =>
             `Invalid JSON pointer "${pointer}": ${reason}`,
-        TARGET_NOT_FOUND: (ref: string, path: string) =>
-            `Reference target not found: "${ref}" at ${path}. Does the target exist?`,
         INVALID_REF_TARGET: (ref: string, path: string) =>
             `Invalid reference target at "${path}": "${ref}" does not point to a valid token or group`,
     },
