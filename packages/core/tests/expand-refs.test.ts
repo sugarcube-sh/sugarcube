@@ -53,7 +53,7 @@ describe("expandRefs", () => {
             expect(buttonBg.background.$value).toBe("{colors.blue}");
         });
 
-        it("inherits $type from target token", async () => {
+        it("does not add $type (type resolution is downstream)", async () => {
             const trees = [
                 buildTree({
                     colors: {
@@ -69,8 +69,9 @@ describe("expandRefs", () => {
             const { trees: result, errors } = await expandRefs(trees);
 
             expect(errors).toHaveLength(0);
-            const buttonBg = result[0]?.tokens.button as { background: { $type: string } };
-            expect(buttonBg.background.$type).toBe("color");
+            const buttonBg = result[0]?.tokens.button as { background: Record<string, unknown> };
+            expect(buttonBg.background.$value).toBe("{colors.blue}");
+            expect(buttonBg.background.$type).toBeUndefined();
         });
 
         it("resolves deeply nested token refs", async () => {
@@ -97,49 +98,6 @@ describe("expandRefs", () => {
                 button: { background: { $value: string } };
             };
             expect(components.button.background.$value).toBe("{theme.colors.primary}");
-        });
-
-        it("inherits $type from closest parent group, not outermost", async () => {
-            const trees = [
-                buildTree({
-                    colors: {
-                        $type: "color",
-                        semantic: {
-                            $type: "dimension",
-                            primary: { $value: "#0066cc" },
-                        },
-                    },
-                    button: {
-                        background: { $ref: "#/colors/semantic/primary" },
-                    },
-                }),
-            ];
-
-            const { trees: result, errors } = await expandRefs(trees);
-
-            expect(errors).toHaveLength(0);
-            const buttonBg = result[0]?.tokens.button as { background: { $type: string } };
-            expect(buttonBg.background.$type).toBe("dimension");
-        });
-
-        it("omits $type when no ancestor or target has one", async () => {
-            const trees = [
-                buildTree({
-                    values: {
-                        primary: { $value: "#0066cc" },
-                    },
-                    button: {
-                        background: { $ref: "#/values/primary" },
-                    },
-                }),
-            ];
-
-            const { trees: result, errors } = await expandRefs(trees);
-
-            expect(errors).toHaveLength(0);
-            const buttonBg = result[0]?.tokens.button as { background: Record<string, unknown> };
-            expect(buttonBg.background.$value).toBe("{values.primary}");
-            expect(buttonBg.background.$type).toBeUndefined();
         });
 
         it("preserves $description and $extensions from target", async () => {
@@ -250,10 +208,9 @@ describe("expandRefs", () => {
             expect(buttonBg.background.$value).toBe("{aliases.primary}");
             // aliases.primary itself is expanded to reference colors.blue
             const aliases = result[0]?.tokens.aliases as {
-                primary: { $value: string; $type: string };
+                primary: { $value: string };
             };
             expect(aliases.primary.$value).toBe("{colors.blue}");
-            expect(aliases.primary.$type).toBe("color");
         });
     });
 
