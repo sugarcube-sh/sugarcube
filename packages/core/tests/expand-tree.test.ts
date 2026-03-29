@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { expandRefs } from "../src/pipeline/expand-refs.js";
+import { ErrorMessages } from "../src/constants/error-messages.js";
+import { expandTree } from "../src/pipeline/expand-tree.js";
 import type { TokenTree } from "../src/types/tokens.js";
 
 const buildTree = (
@@ -11,7 +12,7 @@ const buildTree = (
     tokens,
 });
 
-describe("expandRefs", () => {
+describe("expandTree", () => {
     describe("fast path - no refs", () => {
         it("passes through trees without $ref unchanged", () => {
             const trees = [
@@ -23,7 +24,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             expect(result[0]?.tokens).toEqual(trees[0]?.tokens);
@@ -44,11 +45,32 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as { background: { $value: string } };
             expect(buttonBg.background.$value).toBe("{colors.blue}");
+        });
+
+        it("produces clean output when target has no $description or $extensions", () => {
+            const trees = [
+                buildTree({
+                    colors: {
+                        $type: "color",
+                        blue: { $value: "#0066cc" },
+                    },
+                    button: {
+                        background: { $ref: "#/colors/blue" },
+                    },
+                }),
+            ];
+
+            const { trees: result, errors } = expandTree(trees);
+
+            expect(errors).toHaveLength(0);
+            const buttonBg = result[0]?.tokens.button as { background: Record<string, unknown> };
+            expect(buttonBg.background).toEqual({ $value: "{colors.blue}" });
+            expect(Object.keys(buttonBg.background)).toEqual(["$value"]);
         });
 
         it("does not add $type (type resolution is downstream)", () => {
@@ -64,7 +86,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as { background: Record<string, unknown> };
@@ -89,7 +111,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             const components = result[0]?.tokens.components as {
@@ -115,7 +137,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as {
@@ -141,7 +163,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             const primaryButton = result[0]?.tokens["primary-button"] as {
@@ -169,7 +191,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             const dangerButton = result[0]?.tokens["danger-button"] as {
@@ -198,7 +220,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             // $value points to the immediate target
@@ -224,7 +246,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             const alias = result[0]?.tokens.alias as { $value: string };
@@ -242,7 +264,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             const alias = result[0]?.tokens.alias as { $value: string };
@@ -254,10 +276,12 @@ describe("expandRefs", () => {
         it("detects direct circular references", () => {
             const trees = [buildTree({ a: { $ref: "#/a" } })];
 
-            const { errors } = expandRefs(trees);
+            const { errors } = expandTree(trees);
 
             expect(errors).toHaveLength(1);
-            expect(errors[0]?.message).toContain("Circular reference");
+            expect(errors[0]?.message).toBe(
+                ErrorMessages.EXPAND_TREE.CIRCULAR_REFERENCE("a", "#/a")
+            );
         });
 
         it("detects indirect circular references", () => {
@@ -269,10 +293,14 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { errors } = expandRefs(trees);
+            const { errors } = expandTree(trees);
 
             expect(errors.length).toBeGreaterThan(0);
-            expect(errors.some((e) => e.message.includes("Circular reference"))).toBe(true);
+            expect(
+                errors.some(
+                    (e) => e.message === ErrorMessages.EXPAND_TREE.CIRCULAR_REFERENCE("c", "#/a")
+                )
+            ).toBe(true);
         });
     });
 
@@ -280,10 +308,15 @@ describe("expandRefs", () => {
         it("reports error for invalid JSON pointer", () => {
             const trees = [buildTree({ button: { $ref: "#/nonexistent/path" } })];
 
-            const { errors } = expandRefs(trees);
+            const { errors } = expandTree(trees);
 
             expect(errors).toHaveLength(1);
-            expect(errors[0]?.message).toContain("Invalid JSON pointer");
+            expect(errors[0]?.message).toBe(
+                ErrorMessages.EXPAND_TREE.INVALID_JSON_POINTER(
+                    "#/nonexistent/path",
+                    'property "nonexistent" not found'
+                )
+            );
         });
 
         it("reports error when $ref points to a primitive value", () => {
@@ -297,10 +330,12 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { errors } = expandRefs(trees);
+            const { errors } = expandTree(trees);
 
             expect(errors).toHaveLength(1);
-            expect(errors[0]?.message).toContain("Invalid");
+            expect(errors[0]?.message).toBe(
+                ErrorMessages.EXPAND_TREE.INVALID_REF_TARGET("#/colors/blue/$value", "alias")
+            );
         });
 
         it("continues processing valid tokens after errors", () => {
@@ -312,7 +347,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(1);
             const colors = result[0]?.tokens.colors as { valid: { $value: string } };
@@ -334,7 +369,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as { background: { $value: string } };
@@ -354,7 +389,7 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             expect(result).toHaveLength(2);
@@ -377,10 +412,15 @@ describe("expandRefs", () => {
                 }),
             ];
 
-            const { errors } = expandRefs(trees);
+            const { errors } = expandTree(trees);
 
             expect(errors).toHaveLength(1);
-            expect(errors[0]?.message).toContain("Invalid JSON pointer");
+            expect(errors[0]?.message).toBe(
+                ErrorMessages.EXPAND_TREE.INVALID_JSON_POINTER(
+                    "#/colors/blue",
+                    'property "colors" not found'
+                )
+            );
         });
     });
 
@@ -396,7 +436,7 @@ describe("expandRefs", () => {
                 ),
             ];
 
-            const { trees: result, errors } = expandRefs(trees);
+            const { trees: result, errors } = expandTree(trees);
 
             expect(errors).toHaveLength(0);
             expect(result[0]?.context).toBe("dark");
@@ -404,7 +444,7 @@ describe("expandRefs", () => {
     });
 });
 
-describe("expandRefs - unsupported references", () => {
+describe("expandTree - unsupported references", () => {
     it("rejects external file references", () => {
         const trees = [
             buildTree({
@@ -412,10 +452,15 @@ describe("expandRefs - unsupported references", () => {
             }),
         ];
 
-        const { errors } = expandRefs(trees);
+        const { errors } = expandTree(trees);
 
         expect(errors).toHaveLength(1);
-        expect(errors[0]?.message).toContain("only same-document references");
+        expect(errors[0]?.message).toBe(
+            ErrorMessages.EXPAND_TREE.INVALID_JSON_POINTER(
+                "colors.json#/brand/primary",
+                "only same-document references (#/...) are supported in token files"
+            )
+        );
     });
 
     it("rejects bare file references without fragment", () => {
@@ -425,9 +470,241 @@ describe("expandRefs - unsupported references", () => {
             }),
         ];
 
-        const { errors } = expandRefs(trees);
+        const { errors } = expandTree(trees);
 
         expect(errors).toHaveLength(1);
-        expect(errors[0]?.message).toContain("only same-document references");
+        expect(errors[0]?.message).toBe(
+            ErrorMessages.EXPAND_TREE.INVALID_JSON_POINTER(
+                "components.json",
+                "only same-document references (#/...) are supported in token files"
+            )
+        );
+    });
+});
+
+describe("expandTree - $extends", () => {
+    it("inherits tokens from base group", () => {
+        const trees = [
+            buildTree({
+                button: {
+                    $type: "color",
+                    background: { $value: "#0066cc" },
+                    text: { $value: "#ffffff" },
+                },
+                "button-primary": {
+                    $extends: "{button}",
+                },
+            }),
+        ];
+
+        const { trees: result, errors } = expandTree(trees);
+
+        expect(errors).toHaveLength(0);
+        const primary = result[0]?.tokens["button-primary"] as Record<string, unknown>;
+        expect(primary.$type).toBe("color");
+        expect(primary.background).toEqual({ $value: "#0066cc" });
+        expect(primary.text).toEqual({ $value: "#ffffff" });
+    });
+
+    it("local tokens override inherited tokens", () => {
+        const trees = [
+            buildTree({
+                button: {
+                    $type: "color",
+                    background: { $value: "#0066cc" },
+                    text: { $value: "#ffffff" },
+                },
+                "button-primary": {
+                    $extends: "{button}",
+                    background: { $value: "#cc0066" },
+                },
+            }),
+        ];
+
+        const { trees: result, errors } = expandTree(trees);
+
+        expect(errors).toHaveLength(0);
+        const primary = result[0]?.tokens["button-primary"] as Record<string, unknown>;
+        expect(primary.background).toEqual({ $value: "#cc0066" });
+        expect(primary.text).toEqual({ $value: "#ffffff" });
+    });
+
+    it("adds new tokens alongside inherited", () => {
+        const trees = [
+            buildTree({
+                button: {
+                    background: { $value: "#0066cc" },
+                },
+                "button-primary": {
+                    $extends: "{button}",
+                    border: { $value: "1px solid" },
+                },
+            }),
+        ];
+
+        const { trees: result, errors } = expandTree(trees);
+
+        expect(errors).toHaveLength(0);
+        const primary = result[0]?.tokens["button-primary"] as Record<string, unknown>;
+        expect(primary.background).toEqual({ $value: "#0066cc" });
+        expect(primary.border).toEqual({ $value: "1px solid" });
+    });
+
+    it("deep merges nested groups (spec example 14)", () => {
+        const trees = [
+            buildTree({
+                input: {
+                    field: {
+                        width: { $value: "12rem" },
+                        background: { $value: "#ffffff" },
+                    },
+                },
+                "input-amount": {
+                    $extends: "{input}",
+                    field: {
+                        width: { $value: "100px" },
+                    },
+                },
+            }),
+        ];
+
+        const { trees: result, errors } = expandTree(trees);
+
+        expect(errors).toHaveLength(0);
+        const inputAmount = result[0]?.tokens["input-amount"] as Record<string, unknown>;
+        const field = inputAmount.field as Record<string, unknown>;
+        expect(field.width).toEqual({ $value: "100px" });
+        expect(field.background).toEqual({ $value: "#ffffff" });
+    });
+
+    it("extends nested group using dot path", () => {
+        const trees = [
+            buildTree({
+                color: {
+                    brand: {
+                        $type: "color",
+                        primary: { $value: "#0066cc" },
+                    },
+                },
+                semantic: {
+                    $extends: "{color.brand}",
+                    success: { $value: "#00cc66" },
+                },
+            }),
+        ];
+
+        const { trees: result, errors } = expandTree(trees);
+
+        expect(errors).toHaveLength(0);
+        const semantic = result[0]?.tokens.semantic as Record<string, unknown>;
+        expect(semantic.$type).toBe("color");
+        expect(semantic.primary).toEqual({ $value: "#0066cc" });
+        expect(semantic.success).toEqual({ $value: "#00cc66" });
+    });
+
+    it("multiple siblings can extend the same base", () => {
+        const trees = [
+            buildTree({
+                button: {
+                    background: { $value: "#0066cc" },
+                },
+                "button-secondary": {
+                    $extends: "{button}",
+                    background: { $value: "#666666" },
+                },
+                "button-large": {
+                    $extends: "{button}",
+                    padding: { $value: "16px" },
+                },
+            }),
+        ];
+
+        const { trees: result, errors } = expandTree(trees);
+
+        expect(errors).toHaveLength(0);
+        const secondary = result[0]?.tokens["button-secondary"] as Record<string, unknown>;
+        expect(secondary.background).toEqual({ $value: "#666666" });
+
+        const large = result[0]?.tokens["button-large"] as Record<string, unknown>;
+        expect(large.background).toEqual({ $value: "#0066cc" });
+        expect(large.padding).toEqual({ $value: "16px" });
+    });
+
+    it("removes $extends from the result", () => {
+        const trees = [
+            buildTree({
+                button: { background: { $value: "#0066cc" } },
+                "button-primary": { $extends: "{button}" },
+            }),
+        ];
+
+        const { trees: result } = expandTree(trees);
+
+        const primary = result[0]?.tokens["button-primary"] as Record<string, unknown>;
+        expect(primary.$extends).toBeUndefined();
+    });
+
+    it("detects direct circular $extends", () => {
+        const trees = [
+            buildTree({
+                groupA: { $extends: "{groupB}" },
+                groupB: { $extends: "{groupA}" },
+            }),
+        ];
+
+        const { errors } = expandTree(trees);
+
+        expect(errors).toHaveLength(1);
+        expect(errors[0]?.message).toBe(
+            ErrorMessages.EXPAND_TREE.CIRCULAR_EXTENDS("groupA", ["groupA", "groupB", "groupA"])
+        );
+    });
+
+    it("detects indirect circular $extends", () => {
+        const trees = [
+            buildTree({
+                a: { $extends: "{b}" },
+                b: { $extends: "{c}" },
+                c: { $extends: "{a}" },
+            }),
+        ];
+
+        const { errors } = expandTree(trees);
+
+        expect(errors).toHaveLength(1);
+        expect(errors[0]?.message).toBe(
+            ErrorMessages.EXPAND_TREE.CIRCULAR_EXTENDS("a", ["a", "b", "c", "a"])
+        );
+    });
+
+    it("errors when $extends target not found", () => {
+        const trees = [
+            buildTree({
+                "button-primary": { $extends: "{nonexistent}" },
+            }),
+        ];
+
+        const { errors } = expandTree(trees);
+
+        expect(errors).toHaveLength(1);
+        expect(errors[0]?.message).toBe(
+            ErrorMessages.EXPAND_TREE.EXTENDS_TARGET_NOT_FOUND("button-primary", "nonexistent")
+        );
+    });
+
+    it("errors when $extends targets a token instead of a group", () => {
+        const trees = [
+            buildTree({
+                color: { $value: "#0066cc", $type: "color" },
+                alias: { $extends: "{color}" },
+            }),
+        ];
+
+        const { errors } = expandTree(trees);
+
+        expect(errors).toHaveLength(1);
+        expect(errors[0]?.message).toBe(
+            ErrorMessages.EXPAND_TREE.INVALID_EXTENDS_TARGET("alias", "color")
+        );
     });
 });

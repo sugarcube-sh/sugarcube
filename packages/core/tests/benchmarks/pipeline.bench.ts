@@ -1,9 +1,11 @@
 import { bench, describe } from "vitest";
 import { fillDefaults } from "../../src/config/normalize-config.js";
+import { expandTree } from "../../src/pipeline/expand-tree.js";
 import { loadAndResolveTokens } from "../../src/pipelines/load-and-resolve.js";
 import { processAndConvertTokens } from "../../src/pipelines/process-and-convert.js";
 import type { SugarcubeConfig } from "../../src/types/config.js";
 import type { TokenMemoryData } from "../../src/types/load.js";
+import type { TokenGroup, TokenTree } from "../../src/types/tokens.js";
 
 function generateTokens(size: number) {
     const tokens: Record<string, unknown> = {
@@ -105,7 +107,7 @@ function createConfig(): ReturnType<typeof fillDefaults> {
     const userConfig: SugarcubeConfig = {
         resolver: "virtual.resolver.json",
         output: {
-            css: "virtual/css",
+            cssRoot: "virtual/css",
         },
     };
     return fillDefaults(userConfig);
@@ -209,6 +211,88 @@ describe("pipeline", () => {
             });
 
             await processAndConvertTokens(trees, resolved, config, errors.validation);
+        });
+    });
+
+    describe("expand-tree stage ($ref and $extends)", () => {
+        function buildRefTree(size: number): TokenTree {
+            const tokens: Record<string, unknown> = {
+                base: { $type: "color" as const },
+            };
+            const base = tokens.base as Record<string, unknown>;
+
+            for (let i = 0; i < size; i++) {
+                if (i % 3 === 0) {
+                    base[`color-${i}`] = { $value: "#ff0000" };
+                } else {
+                    base[`color-${i}`] = { $ref: `#/base/color-${Math.floor(i / 3) * 3}` };
+                }
+            }
+            return { sourcePath: "bench.json", tokens: tokens as TokenGroup };
+        }
+
+        function buildExtendsTree(groupCount: number, tokensPerGroup: number): TokenTree {
+            const tokens: Record<string, unknown> = {};
+
+            // Base group
+            const baseGroup: Record<string, unknown> = { $type: "color" as const };
+            for (let t = 0; t < tokensPerGroup; t++) {
+                baseGroup[`token-${t}`] = { $value: `#${t.toString(16).padStart(6, "0")}` };
+            }
+            tokens["base-group"] = baseGroup;
+
+            // Derived groups extending base
+            for (let g = 1; g < groupCount; g++) {
+                const group: Record<string, unknown> = { $extends: "{base-group}" };
+                // Override one token
+                group["token-0"] = {
+                    $value: `#${(g * 111111).toString(16).padStart(6, "0").slice(0, 6)}`,
+                };
+                tokens[`group-${g}`] = group;
+            }
+            return { sourcePath: "bench.json", tokens: tokens as TokenGroup };
+        }
+
+        function buildExtendsChainTree(chainLength: number, tokensPerGroup: number): TokenTree {
+            const tokens: Record<string, unknown> = {};
+
+            for (let g = 0; g < chainLength; g++) {
+                const group: Record<string, unknown> = { $type: "color" as const };
+                if (g > 0) {
+                    group.$extends = `{group-${g - 1}}`;
+                }
+                for (let t = 0; t < tokensPerGroup; t++) {
+                    group[`token-${t}`] = {
+                        $value: `#${(g * 1000 + t).toString(16).padStart(6, "0").slice(0, 6)}`,
+                    };
+                }
+                tokens[`group-${g}`] = group;
+            }
+            return { sourcePath: "bench.json", tokens: tokens as TokenGroup };
+        }
+
+        bench("with $ref - small (100 refs)", () => {
+            expandTree([buildRefTree(100)]);
+        });
+
+        bench("with $ref - medium (500 refs)", () => {
+            expandTree([buildRefTree(500)]);
+        });
+
+        bench("with $ref - large (1,000 refs)", () => {
+            expandTree([buildRefTree(1000)]);
+        });
+
+        bench("with $extends - shallow (10 groups, 50 tokens each)", () => {
+            expandTree([buildExtendsTree(10, 50)]);
+        });
+
+        bench("with $extends - deep chain (50 groups, 10 tokens each)", () => {
+            expandTree([buildExtendsChainTree(50, 10)]);
+        });
+
+        bench("with $extends - wide (100 groups, 5 tokens each)", () => {
+            expandTree([buildExtendsTree(100, 5)]);
         });
     });
 });

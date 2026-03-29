@@ -30,7 +30,9 @@ type TokenGroup = NodeMetadata & {
     $type?: TokenType;
     /** Reserved token name for the group's "root" value (DTCG 2025.10 spec) */
     $root?: Token;
-    [key: string]: Token | TokenGroup | TokenRef | GroupRef | TokenType | undefined;
+    /** Inherits tokens from another group using curly brace syntax (DTCG 2025.10 spec 6.4) */
+    $extends?: string;
+    [key: string]: Token | TokenGroup | TokenRef | GroupRef | TokenType | string | undefined;
 };
 
 type DesignTokens = TokenGroup;
