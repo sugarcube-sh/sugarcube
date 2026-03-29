@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, isAbsolute, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
 import { hasRef } from "../guards/token-guards.js";
-import type { Token, TokenGroup } from "../types/dtcg.js";
+import type { Token, TokenGroup, TokenType } from "../types/dtcg.js";
 import type { TokenTree } from "../types/tokens.js";
 
 export type ExpandRefsError = {
@@ -332,19 +332,19 @@ function isToken(value: unknown): value is Token {
     return typeof value === "object" && value !== null && "$value" in value;
 }
 
-function getInheritedType(rootDocument: TokenGroup, pointer: string): string | undefined {
+function getInheritedType(rootDocument: TokenGroup, pointer: string): TokenType | undefined {
     const segments = pointer
         .slice(1)
         .split("/")
         .map((s) => s.replace(/~1/g, "/").replace(/~0/g, "~"));
     let current: unknown = rootDocument;
-    let closestType: string | undefined;
+    let closestType: TokenType | undefined;
 
     for (const segment of segments) {
         if (current === null || typeof current !== "object") break;
         const record = current as Record<string, unknown>;
         if ("$type" in record && typeof record.$type === "string") {
-            closestType = record.$type;
+            closestType = record.$type as TokenType;
         }
         if (!(segment in record)) break;
         current = record[segment];
@@ -356,7 +356,7 @@ function getInheritedType(rootDocument: TokenGroup, pointer: string): string | u
         "$type" in current &&
         typeof (current as Record<string, unknown>).$type === "string"
     ) {
-        return (current as Record<string, unknown>).$type as string;
+        return (current as Record<string, unknown>).$type as TokenType;
     }
 
     return closestType;
