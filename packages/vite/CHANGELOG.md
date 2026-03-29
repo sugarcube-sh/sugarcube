@@ -1,5 +1,12 @@
 # @sugarcube-sh/vite
 
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies [8477fd8]
+  - @sugarcube-sh/core@0.1.6
+
 ## 0.1.6
 
 ### Patch Changes
