@@ -338,11 +338,14 @@ function getInheritedType(rootDocument: TokenGroup, pointer: string): string | u
         .split("/")
         .map((s) => s.replace(/~1/g, "/").replace(/~0/g, "~"));
     let current: unknown = rootDocument;
+    let closestType: string | undefined;
 
     for (const segment of segments) {
         if (current === null || typeof current !== "object") break;
         const record = current as Record<string, unknown>;
-        if ("$type" in record && typeof record.$type === "string") return record.$type;
+        if ("$type" in record && typeof record.$type === "string") {
+            closestType = record.$type;
+        }
         if (!(segment in record)) break;
         current = record[segment];
     }
@@ -356,5 +359,5 @@ function getInheritedType(rootDocument: TokenGroup, pointer: string): string | u
         return (current as Record<string, unknown>).$type as string;
     }
 
-    return undefined;
+    return closestType;
 }
