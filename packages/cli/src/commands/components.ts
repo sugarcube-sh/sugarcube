@@ -27,7 +27,7 @@ type SupportedFramework = "react" | "css-only";
 
 export interface RunComponentsOptions {
     framework?: string;
-    componentsDir?: string;
+    output?: string;
     silent?: boolean;
     overwrite?: boolean;
     skipIntro?: boolean;
@@ -43,7 +43,7 @@ export async function runComponents(
         intro(label(color.bgGreen(color.black("Components"))));
     }
 
-    const { directory: componentsOutputDirectory } = await getComponentsDir(options.componentsDir);
+    const { directory: componentsOutputDirectory } = await getComponentsDir(options.output);
 
     let selectedComponents: string[] = [];
     let componentType: SupportedFramework;
@@ -157,7 +157,7 @@ export const components = new Command()
     .description("Add components to your project")
     .argument("[components...]", "Components to add (e.g., button card)")
     .option("-f, --framework <type>", "Framework to use (react, css-only)")
-    .option("--components-dir <dir>", "Components output directory (e.g., 'src/components')")
+    .option("--output <dir>", "Components output directory (e.g., 'src/components')")
     .option("-s, --silent", "Suppress logs and prompts")
     .option("-o, --overwrite", "Overwrite existing files")
     .action(async (components, options) => {

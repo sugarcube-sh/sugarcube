@@ -37,9 +37,9 @@ No config file is created — the project works with auto-discovery and sensible
 <Table>
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--tokens-dir <dir>` | Design tokens directory | Auto-detected based on `src/` |
-| `--cube-dir <dir>` | CUBE CSS output directory | Auto-detected based on `src/` |
-| `--components-dir <dir>` | Components output directory | Auto-detected based on `src/` |
+| `--tokens <dir>` | Design tokens directory | Auto-detected based on `src/` |
+| `--cube <dir>` | CUBE CSS output directory | Auto-detected based on `src/` |
+| `--components <dir>` | Components output directory | Auto-detected based on `src/` |
 </Table>
 
 <SiteAside type="note">
@@ -53,7 +53,7 @@ No config file is created — the project works with auto-discovery and sensible
 npx @sugarcube-sh/cli init
 
 # Specify custom directories
-npx @sugarcube-sh/cli init --tokens-dir ./tokens --cube-dir ./css
+npx @sugarcube-sh/cli init --tokens ./tokens --cube ./css
 ```
 
 ---
@@ -272,7 +272,7 @@ The `components` command allows you to browse and install pre-built components f
 | Option | Description |
 |--------|-------------|
 | `-f, --framework <type>` | Framework to use (`react`, `css-only`) |
-| `--components-dir <dir>` | Components output directory (auto-detected based on `src/`, or from config) |
+| `--output <dir>` | Components output directory (auto-detected based on `src/`, or from config) |
 | `-s, --silent` | Suppress logs and prompts |
 | `-o, --overwrite` | Overwrite existing files without confirmation |
 </Table>
@@ -290,7 +290,7 @@ npx sugarcube components button card --framework react
 npx sugarcube components button --framework css-only
 
 # Specify custom output directory
-npx sugarcube components button --components-dir src/ui
+npx sugarcube components button --output src/ui
 
 # Overwrite existing files
 npx sugarcube components button --overwrite
@@ -302,7 +302,7 @@ npx sugarcube components button --overwrite
 - **Non-interactive mode**: Requires `--framework` flag when specifying components
 - **Dependencies**: Automatically installs required npm dependencies for React components
 - **Overwrite warnings**: Shows warnings before overwriting existing files (unless `--overwrite` is used)
-- **Works without a config file**: Defaults to `src/components/ui` or `components/ui` based on whether your project has a `src/` directory. Use `--components-dir` to override.
+- **Works without a config file**: Defaults to `src/components/ui` or `components/ui` based on whether your project has a `src/` directory. Use `--output` to override.
 - **Does not modify config files** - flag values are temporary for the command run
 
 ### Supported Frameworks
@@ -333,7 +333,7 @@ The `cube` command installs the CUBE CSS methodology files into your project. CU
 |--------|-------------|
 | `-s, --silent` | Suppress logs and prompts |
 | `-f, --force` | Skip overwrite confirmation |
-| `--cube-dir <dir>` | CUBE CSS output directory (auto-detected based on `src/`, or from config) |
+| `-o, --output <dir>` | CUBE CSS output directory (auto-detected based on `src/`, or from config) |
 </Table>
 
 ### Examples
@@ -343,7 +343,7 @@ The `cube` command installs the CUBE CSS methodology files into your project. CU
 npx sugarcube cube
 
 # Specify custom output directory
-npx sugarcube cube --cube-dir src/styles/cube
+npx sugarcube cube -o src/styles/cube
 
 # Skip overwrite confirmation
 npx sugarcube cube --force
@@ -370,7 +370,7 @@ Each directory includes starter files. These are starting points that you can mo
 
 - Creates the output directory if it doesn't exist
 - Shows warnings before overwriting existing files (unless `--force` is used)
-- **Works without a config file**: Defaults to `src/styles` or `styles` based on whether your project has a `src/` directory. Use `--cube-dir` to override.
+- **Works without a config file**: Defaults to `src/styles` or `styles` based on whether your project has a `src/` directory. Use `-o` to override.
 - **Does not modify config files** - flag values are temporary for the command run
 
 ---
