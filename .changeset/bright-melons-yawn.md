@@ -50,6 +50,20 @@ The `output` object has been replaced with a flatter structure:
 
 Modifier `selector`/`atRule` extensions are no longer read from the resolver document — output selectors and at-rules are now defined in config permutations.
 
+The top-level `input` config option has been removed. Use `variables.permutations` instead, or the `--input` CLI flag.
+
+`prefersColorScheme` modifier extension is now deprecated — it produces warnings instead of errors. Use `variables.permutations` with `atRule` instead.
+
+### Breaking: CLI flag renames
+
+| Before | After | Command |
+|---|---|---|
+| `--tokens-dir` | `--tokens` | `init` |
+| `--cube-dir` | `--cube` | `init` |
+| `--components-dir` | `--components` | `init` |
+| `--cube-dir` | `-o, --output` | `cube` |
+| `--components-dir` | `--output` | `components` |
+
 ### Migration
 
 1. Replace `output: { ... }` with `variables: { path }` and `utilities: { path }`
@@ -58,4 +72,6 @@ Modifier `selector`/`atRule` extensions are no longer read from the resolver doc
 4. Move layer config into `variables.layer` / `utilities.layer`
 5. Remove `sh.sugarcube.selector` and `sh.sugarcube.atRule` extensions from resolver modifiers
 6. Define `variables.permutations` for multi-theme/multi-brand output
-7. Update CLI invocations: `--variables <path>`, `--utilities <path>`, `--input` replaces old flags
+7. Replace `input: { ... }` in config with an equivalent `variables.permutations` entry
+8. Update CLI invocations: `--variables <path>`, `--utilities <path>`, `--input` replaces old flags
+9. Rename CLI flags: `--tokens-dir` → `--tokens`, `--cube-dir` → `--cube`/`-o`, `--components-dir` → `--components`/`--output`
