@@ -193,6 +193,8 @@ export const ErrorMessages = {
             `Malformed source reference: { "${key}": "${value}" }. Did you mean { "$ref": "${value}" }?`,
         RESOLVER_AS_TOKEN_SOURCE: (path: string) =>
             `File "${path}" is a resolver document, not a token file. Resolver documents (version: "2025.10") cannot be used as token sources. Did you mean to reference a specific token file instead?`,
+        PREFERS_COLOR_SCHEME_DEPRECATED: (name: string) =>
+            `Modifier "${name}" uses the deprecated prefersColorScheme extension. Use variables.permutations with atRule instead. See https://sugarcube.sh/docs/theming`,
         PREFERS_COLOR_SCHEME_INVALID_CONTEXTS: (name: string, invalidContexts: string[]) =>
             `Modifier "${name}" uses prefersColorScheme but has invalid contexts: ${invalidContexts.join(", ")}. Only "light" and "dark" are supported.`,
         PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT: (name: string, emptyContext: string) =>

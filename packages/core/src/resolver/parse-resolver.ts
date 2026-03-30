@@ -182,12 +182,17 @@ function checkModifierContexts(
 
     // Check for deprecated prefersColorScheme extension
     if (usesPrefersColorScheme(modifier.$extensions)) {
+        warnings.push({
+            path,
+            message: ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_DEPRECATED(modifierName),
+        });
+
         const contexts = Object.keys(modifier.contexts);
         const validContexts = ["light", "dark"];
         const invalidContexts = contexts.filter((c) => !validContexts.includes(c));
 
         if (invalidContexts.length > 0) {
-            errors.push({
+            warnings.push({
                 path: `${path}.contexts`,
                 message: ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS(
                     modifierName,
@@ -201,7 +206,7 @@ function checkModifierContexts(
             if (contextName === defaultContext) continue;
             const sources = modifier.contexts[contextName];
             if (!sources || sources.length === 0) {
-                errors.push({
+                warnings.push({
                     path: `${path}.contexts.${contextName}`,
                     message: ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT(
                         modifierName,
