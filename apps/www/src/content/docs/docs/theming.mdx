@@ -158,6 +158,10 @@ Output:
 
 The `atRule` option works with any CSS at-rule — `prefers-color-scheme`, `prefers-contrast`, `pointer`, etc.
 
+<SiteAside type="note">
+  When you define `permutations`, auto-generation is disabled entirely. You must include all contexts you want in the output — including the default. If you omit the light permutation above, only the dark media query block would be generated.
+</SiteAside>
+
 ### Compound selectors
 
 Selectors can be arrays — they get comma-joined in the output:
@@ -185,13 +189,13 @@ Output:
 
 The `--input` flag is equivalent to defining a single permutation. Use it for one-off builds:
 
-```bash
+```bash frame="none"
 sugarcube generate --input theme=dark --selector "[data-theme='dark']"
 ```
 
 Without `--selector`, output goes to `:root`:
 
-```bash
+```bash frame="none"
 sugarcube generate --input brand=ocean --variables dist/ocean.css --variables-only
 ```
 
@@ -294,7 +298,7 @@ variables: {
 
 Or from the CLI:
 
-```bash
+```bash frame="none"
 sugarcube generate --input brand=ocean --variables dist/ocean.css --variables-only
 sugarcube generate --input brand=forest --variables dist/forest.css --variables-only
 sugarcube generate --utilities-only

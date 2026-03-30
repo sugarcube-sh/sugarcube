@@ -85,7 +85,7 @@ export const cube = new Command()
     .description("Add CUBE CSS to your project")
     .option("-s, --silent", "Suppress logs and prompts")
     .option("-f, --force", "Skip overwrite confirmation")
-    .option("--cube-dir <dir>", "CUBE CSS output directory (defaults to cssRoot)")
+    .option("--cube-dir <dir>", "CUBE CSS output directory")
     .action(async (options) => {
         try {
             await runCube(options);

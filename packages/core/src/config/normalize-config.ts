@@ -37,8 +37,6 @@ export function fillDefaults(
     const internalConfig: InternalConfig = {
         resolver: userConfig.resolver,
 
-        input: userConfig.input,
-
         variables: {
             path: userConfig.variables?.path ?? defaultVariablesPath,
             layer: userConfig.variables?.layer,

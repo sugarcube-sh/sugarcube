@@ -3,6 +3,7 @@ title: "Configuration Schema"
 ---
 
 import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+import Table from "@/src/components/Table.astro";
 
 Complete reference for all configuration options in `sugarcube.config.ts` (or `sugarcube.config.js` for JavaScript projects).
 
@@ -55,26 +56,6 @@ export default defineConfig({
 If omitted, sugarcube will recursively search your project for `*.resolver.json` files. Only specify this if you have multiple resolver files and need to choose a specific one.
 
 For details on resolver documents, see [Resolver Document](/docs/resolver).
-
-## input
-
-**Type:** `Record<string, string>`
-**Optional**
-
-Resolver input for this build — selects which modifier contexts to use. Per the DTCG spec, each modifier not specified here uses its default.
-
-```ts
-import { defineConfig } from "@sugarcube-sh/vite";
-
-export default defineConfig({
-  resolver: "src/design-tokens/tokens.resolver.json",
-  input: {
-    brand: "ocean"
-  }
-});
-```
-
-When set, the specified modifier contexts are merged into the base token set. This is equivalent to the `--input` CLI flag. See [Theming](/docs/theming#using---input) for more details.
 
 ## variables
 
@@ -319,12 +300,14 @@ export default defineConfig({
 
 #### Utility config options
 
+<Table>
 | Option | Type | Description |
 |--------|------|-------------|
 | `source` | `string` | **Required.** Glob pattern matching token paths (e.g., `"color.*"`) |
 | `prefix` | `string` | Custom prefix for class names |
 | `directions` | `string[]` | Directional variants: `"top"`, `"right"`, `"bottom"`, `"left"`, `"x"`, `"y"`, `"all"` |
 | `stripDuplicates` | `boolean` | Remove duplicate values |
+</Table>
 
 #### Multiple configs per property
 

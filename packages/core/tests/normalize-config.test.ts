@@ -139,16 +139,6 @@ describe("fillDefaults", () => {
             expect(result.resolver).toBe("./custom/path.resolver.json");
         });
 
-        it("preserves input unchanged", () => {
-            const result = fillDefaults(
-                minimalConfig({
-                    input: { brand: "ocean" },
-                })
-            );
-
-            expect(result.input).toEqual({ brand: "ocean" });
-        });
-
         it("preserves cube path unchanged", () => {
             const result = fillDefaults(
                 minimalConfig({

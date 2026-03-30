@@ -54,8 +54,6 @@ const utilitiesOutputConfigSchema = z.object({
 export const userConfigSchema = z.object({
     resolver: z.string().optional(),
 
-    input: z.record(z.string(), z.string()).optional(),
-
     variables: variablesConfigSchema.optional(),
 
     utilities: utilitiesOutputConfigSchema.optional(),
@@ -67,8 +65,6 @@ export const userConfigSchema = z.object({
 
 export const internalConfigSchema = z.object({
     resolver: z.string().optional(),
-
-    input: z.record(z.string(), z.string()).optional(),
 
     variables: z.object({
         path: z.string(),

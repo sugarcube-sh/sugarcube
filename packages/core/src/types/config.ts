@@ -157,19 +157,6 @@ export interface SugarcubeConfig {
     resolver?: string;
 
     /**
-     * Resolver input for this build — selects which modifier contexts to use.
-     * Per the DTCG spec, each modifier not specified here uses its default.
-     *
-     * When set via CLI (`--input brand=ocean`), config permutations are ignored
-     * and a single :root output is produced.
-     *
-     * @example
-     * // Build for ocean brand
-     * input: { brand: "ocean" }
-     */
-    input?: Record<string, string>;
-
-    /**
      * CSS variables output configuration.
      * Controls where variables are written, transforms, layers, and permutations.
      *
@@ -220,9 +207,6 @@ export interface SugarcubeConfig {
  */
 export interface InternalConfig {
     resolver?: string;
-
-    /** Resolver input for this build, e.g. { brand: "ocean" } */
-    input?: Record<string, string>;
 
     /** CSS variables output configuration */
     variables: {

@@ -84,6 +84,32 @@ function buildFluidConfig(flags: GenerateFlags): FluidConfig | undefined {
     };
 }
 
+/**
+ * If --input flags are provided, convert them into a single permutation
+ * and override any existing config permutations.
+ */
+function applyInputFlags(config: InternalConfig, flags: GenerateFlags): InternalConfig {
+    const input = parseInputFlags(flags.input);
+    if (Object.keys(input).length === 0) return config;
+
+    if (config.variables.permutations && config.variables.permutations.length > 0) {
+        warningBoxWithBadge("Config permutations ignored due to --input flag");
+    }
+
+    return {
+        ...config,
+        variables: {
+            ...config.variables,
+            permutations: [
+                {
+                    input,
+                    selector: flags.selector ?? ":root",
+                },
+            ],
+        },
+    };
+}
+
 function buildConfigFromFlags(flags: GenerateFlags): InternalConfig {
     const userConfig: SugarcubeConfig = {
         resolver: flags.resolver,
@@ -99,14 +125,11 @@ function buildConfigFromFlags(flags: GenerateFlags): InternalConfig {
         },
     };
 
-    const config = fillDefaults(userConfig);
-    config.input = parseInputFlags(flags.input);
-    return config;
+    return applyInputFlags(fillDefaults(userConfig), flags);
 }
 
 function mergeConfigWithFlags(config: InternalConfig, flags: GenerateFlags): InternalConfig {
-    const inputFromFlags = parseInputFlags(flags.input);
-    return {
+    const merged: InternalConfig = {
         ...config,
         resolver: flags.resolver ?? config.resolver,
         variables: {
@@ -125,8 +148,9 @@ function mergeConfigWithFlags(config: InternalConfig, flags: GenerateFlags): Int
             ...config.utilities,
             path: flags.utilities ?? config.utilities.path,
         },
-        input: Object.keys(inputFromFlags).length > 0 ? inputFromFlags : config.input,
     };
+
+    return applyInputFlags(merged, flags);
 }
 
 function hasConfigFlags(flags: GenerateFlags): boolean {
@@ -417,25 +441,6 @@ export const generate = new Command()
             }
 
             const finalConfig = await resolveConfig(options);
-
-            // --input builds an inline permutation, overriding config permutations
-            if (finalConfig.input && Object.keys(finalConfig.input).length > 0) {
-                if (
-                    finalConfig.variables.permutations &&
-                    finalConfig.variables.permutations.length > 0
-                ) {
-                    warningBoxWithBadge("Config permutations ignored due to --input flag");
-                }
-
-                finalConfig.variables.permutations = [
-                    {
-                        input: finalConfig.input,
-                        selector: options.selector ?? ":root",
-                    },
-                ];
-                // We need to clear input so generate doesn't treat it as a special case
-                finalConfig.input = undefined;
-            }
 
             const run = options.watch ? runWatchMode : runOneTimeGeneration;
             await run(finalConfig, options);
