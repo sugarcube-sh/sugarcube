@@ -21,9 +21,9 @@ You can add CUBE CSS during `init`, or anytime with the `cube` command:
 
 <PackageManagerTabs command="sugarcube cube" />
 
-CUBE CSS is added to your project in the [styles output directory](/docs/configuration#changing-where-css-files-are-written). The command uses `output.cube` from your config (or `output.cssRoot` if cube isn't set), or without a config uses the default styles directory (`src/styles` or `styles` based on your project). Override with the `--cube-dir` flag:
+CUBE CSS is added to your project in the styles directory. The command uses `cube` from your config, or without a config uses the default styles directory (`src/styles` or `styles` based on your project). Override with the `-o` flag:
 
-<PackageManagerTabs command="sugarcube cube --cube-dir src/styles/cube" />
+<PackageManagerTabs command="sugarcube cube -o src/styles/cube" />
 
 ## File output
 

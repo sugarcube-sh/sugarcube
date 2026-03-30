@@ -63,8 +63,13 @@ export const validate = new Command()
 
             // Okay to use default config for standalone file validation
             const validationConfig = {
-                output: DEFAULT_CONFIG.output,
-                transforms: DEFAULT_CONFIG.transforms,
+                variables: {
+                    path: DEFAULT_CONFIG.variables.filename,
+                    transforms: DEFAULT_CONFIG.variables.transforms,
+                },
+                utilities: {
+                    path: DEFAULT_CONFIG.utilities.filename,
+                },
             };
 
             await loadAndResolveTokensForCLI(validationConfig, memoryData);

@@ -42,9 +42,12 @@ export type {
     SugarcubeConfig,
     ColorFallbackStrategy,
     FluidConfig,
-    LayersConfig,
+    Permutation,
+    VariablesConfig,
+    UtilitiesOutputConfig,
+    UtilityClassesConfig,
 } from "./types/config.js";
-export type { ModifierMeta, TokenPipelineSource } from "./types/pipelines.js";
+export type { PipelineWarning, TokenPipelineSource } from "./types/pipelines.js";
 export type { ResolvedTokens } from "./types/resolve.js";
 export type { TokenTree } from "./types/tokens.js";
 export type { NormalizedConvertedTokens } from "./types/convert.js";

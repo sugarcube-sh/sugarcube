@@ -32,7 +32,7 @@ describe("generate command", () => {
         );
 
         expect(result.exitCode).toBe(0);
-        expect(existsSync(join(testDir, "styles/global"))).toBe(true);
+        expect(existsSync(join(testDir, "styles/variables.gen.css"))).toBe(true);
         expect(existsSync(join(testDir, "src/styles"))).toBe(false);
     });
 
@@ -50,14 +50,14 @@ describe("generate command", () => {
         );
 
         expect(result.exitCode).toBe(0);
-        expect(existsSync(join(testDir, "src/styles/global"))).toBe(true);
+        expect(existsSync(join(testDir, "src/styles/variables.gen.css"))).toBe(true);
     });
 
-    it("respects --styles-dir flag", { timeout: TEST_TIMEOUT }, async () => {
+    it("respects --variables flag", { timeout: TEST_TIMEOUT }, async () => {
         const tokensDir = await createTokens(testDir);
 
         const result = await execaCommand(
-            `node ${CLI_PATH} generate --resolver ${tokensDir}/tokens.resolver.json --styles-dir custom/css`,
+            `node ${CLI_PATH} generate --resolver ${tokensDir}/tokens.resolver.json --variables custom/css/tokens.css`,
             {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
@@ -66,6 +66,6 @@ describe("generate command", () => {
         );
 
         expect(result.exitCode).toBe(0);
-        expect(existsSync(join(testDir, "custom/css/global"))).toBe(true);
+        expect(existsSync(join(testDir, "custom/css/tokens.css"))).toBe(true);
     });
 });

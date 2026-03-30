@@ -11,8 +11,14 @@ const fixturesPath = resolve(__dirname, "__fixtures__/resolver");
 
 const parseInline = (doc: object) => parseResolverDocumentFromString(JSON.stringify(doc));
 
+const hasMessage = (items: Array<{ message: string }>, expected: string): boolean =>
+    items.some((e) => e.message === expected);
+
 const hasError = (errors: Array<{ message: string }>, expected: string): boolean =>
-    errors.some((e) => e.message === expected);
+    hasMessage(errors, expected);
+
+const hasWarning = (warnings: Array<{ message: string }>, expected: string): boolean =>
+    hasMessage(warnings, expected);
 
 describe("parseResolverDocument", () => {
     describe("valid documents", () => {
@@ -190,8 +196,8 @@ describe("parseResolverDocument", () => {
         });
     });
 
-    describe("prefers-color-scheme validation", () => {
-        it("accepts modifier with prefers-color-scheme and light/dark contexts", () => {
+    describe("prefers-color-scheme deprecation", () => {
+        it("warns that prefersColorScheme is deprecated", () => {
             const result = parseInline({
                 version: "2025.10",
                 resolutionOrder: [
@@ -207,14 +213,34 @@ describe("parseResolverDocument", () => {
                 ],
             });
 
-            // Should have no prefers-color-scheme errors
-            const prefersColorSchemeErrors = result.errors.filter((e) =>
-                e.message.includes("prefersColorScheme")
-            );
-            expect(prefersColorSchemeErrors).toHaveLength(0);
+            expect(
+                hasWarning(
+                    result.warnings,
+                    ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_DEPRECATED("theme")
+                )
+            ).toBe(true);
         });
 
-        it("errors when prefers-color-scheme modifier has invalid contexts", () => {
+        it("does not block build (no errors) with valid light/dark contexts", () => {
+            const result = parseInline({
+                version: "2025.10",
+                resolutionOrder: [
+                    {
+                        type: "modifier",
+                        name: "theme",
+                        default: "light",
+                        contexts: { light: [], dark: [{ $ref: "./dark.json" }] },
+                        $extensions: {
+                            "sh.sugarcube": { prefersColorScheme: true },
+                        },
+                    },
+                ],
+            });
+
+            expect(result.errors).toHaveLength(0);
+        });
+
+        it("warns when prefers-color-scheme modifier has invalid contexts", () => {
             const result = parseInline({
                 version: "2025.10",
                 resolutionOrder: [
@@ -231,8 +257,8 @@ describe("parseResolverDocument", () => {
             });
 
             expect(
-                hasError(
-                    result.errors,
+                hasWarning(
+                    result.warnings,
                     ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS("theme", [
                         "high-contrast",
                     ])
@@ -240,7 +266,7 @@ describe("parseResolverDocument", () => {
             ).toBe(true);
         });
 
-        it("errors when prefers-color-scheme modifier has only non-light/dark contexts", () => {
+        it("warns when prefers-color-scheme modifier has only non-light/dark contexts", () => {
             const result = parseInline({
                 version: "2025.10",
                 resolutionOrder: [
@@ -257,8 +283,8 @@ describe("parseResolverDocument", () => {
             });
 
             expect(
-                hasError(
-                    result.errors,
+                hasWarning(
+                    result.warnings,
                     ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS("theme", [
                         "day",
                         "night",
@@ -267,7 +293,7 @@ describe("parseResolverDocument", () => {
             ).toBe(true);
         });
 
-        it("does not validate contexts when selector is data-attribute (default)", () => {
+        it("no warnings when modifier does not use prefersColorScheme", () => {
             const result = parseInline({
                 version: "2025.10",
                 resolutionOrder: [
@@ -280,13 +306,13 @@ describe("parseResolverDocument", () => {
                 ],
             });
 
-            const prefersColorSchemeErrors = result.errors.filter((e) =>
-                e.message.includes("prefersColorScheme")
+            const prefersWarnings = result.warnings.filter(
+                (w) => w.message.includes("prefersColorScheme") || w.message.includes("deprecated")
             );
-            expect(prefersColorSchemeErrors).toHaveLength(0);
+            expect(prefersWarnings).toHaveLength(0);
         });
 
-        it("errors when non-default context has empty sources", () => {
+        it("warns when non-default context has empty sources", () => {
             const result = parseInline({
                 version: "2025.10",
                 resolutionOrder: [
@@ -303,14 +329,14 @@ describe("parseResolverDocument", () => {
             });
 
             expect(
-                hasError(
-                    result.errors,
+                hasWarning(
+                    result.warnings,
                     ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT("theme", "light")
                 )
             ).toBe(true);
         });
 
-        it("accepts when non-default context has sources", () => {
+        it("no empty-source warning when non-default context has sources", () => {
             const result = parseInline({
                 version: "2025.10",
                 resolutionOrder: [
@@ -329,10 +355,10 @@ describe("parseResolverDocument", () => {
                 ],
             });
 
-            const emptySourceErrors = result.errors.filter((e) =>
-                e.message.includes("has no sources")
+            const emptySourceWarnings = result.warnings.filter((w) =>
+                w.message.includes("has no sources")
             );
-            expect(emptySourceErrors).toHaveLength(0);
+            expect(emptySourceWarnings).toHaveLength(0);
         });
     });
 

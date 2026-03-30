@@ -24,7 +24,7 @@ export async function loadAndResolveTokensForCLI(
         };
     }
 
-    const { trees, resolved, modifiers, errors } = await loadAndResolveTokens(source);
+    const { trees, resolved, errors, warnings } = await loadAndResolveTokens(source);
 
     if (errors.load.length > 0) {
         const errorMessages = errors.load.map((error) => {
@@ -60,5 +60,5 @@ export async function loadAndResolveTokensForCLI(
         throw new CLIError(ERROR_MESSAGES.TOKEN_VALIDATION_FAILED(errorsByFile));
     }
 
-    return { trees, resolved, modifiers };
+    return { trees, resolved, warnings };
 }

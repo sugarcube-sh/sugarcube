@@ -5,6 +5,18 @@ const fluidSchema = z.object({
     max: z.number(),
 });
 
+const permutationSchema = z.object({
+    input: z.record(z.string(), z.string()),
+    selector: z.union([
+        z.string().min(1, "Selector cannot be empty"),
+        z
+            .array(z.string().min(1, "Selector cannot be empty"))
+            .min(1, "Selector array cannot be empty"),
+    ]),
+    atRule: z.string().optional(),
+    path: z.string().optional(),
+});
+
 const utilityConfigSchema = z.object({
     source: z.string(),
     directions: z
@@ -19,59 +31,58 @@ const utilityConfigSchema = z.object({
 
 const utilityConfigOrArraySchema = z.union([utilityConfigSchema, z.array(utilityConfigSchema)]);
 
-const layersSchema = z.object({
-    variables: z.string(),
-    utilities: z.string(),
+const utilityClassesSchema = z.record(z.string(), utilityConfigOrArraySchema);
+
+const transformsSchema = z.object({
+    fluid: fluidSchema.optional(),
+    colorFallbackStrategy: z.enum(["native", "polyfill"]).optional(),
+});
+
+const variablesConfigSchema = z.object({
+    path: z.string().optional(),
+    layer: z.string().optional(),
+    transforms: transformsSchema.optional(),
+    permutations: z.array(permutationSchema).optional(),
+});
+
+const utilitiesOutputConfigSchema = z.object({
+    path: z.string().optional(),
+    layer: z.string().optional(),
+    classes: utilityClassesSchema.optional(),
 });
 
 export const userConfigSchema = z.object({
     resolver: z.string().optional(),
 
-    transforms: z
-        .object({
-            fluid: fluidSchema.optional(),
-            colorFallbackStrategy: z.enum(["native", "polyfill"]).optional(),
-        })
-        .optional(),
+    variables: variablesConfigSchema.optional(),
 
-    output: z
-        .object({
-            cssRoot: z.string().optional(),
-            variables: z.string().optional(),
-            variablesFilename: z.string().optional(),
-            utilities: z.string().optional(),
-            utilitiesFilename: z.string().optional(),
-            cube: z.string().optional(),
-            components: z.string().optional(),
-            themeAttribute: z.string().optional(),
-            defaultContext: z.string().optional(),
-            layers: layersSchema.optional(),
-        })
-        .optional(),
+    utilities: utilitiesOutputConfigSchema.optional(),
 
-    utilities: z.record(z.string(), utilityConfigOrArraySchema).optional(),
+    components: z.string().optional(),
+
+    cube: z.string().optional(),
 });
 
 export const internalConfigSchema = z.object({
     resolver: z.string().optional(),
 
-    transforms: z.object({
-        fluid: fluidSchema,
-        colorFallbackStrategy: z.enum(["native", "polyfill"]),
+    variables: z.object({
+        path: z.string(),
+        layer: z.string().optional(),
+        transforms: z.object({
+            fluid: fluidSchema,
+            colorFallbackStrategy: z.enum(["native", "polyfill"]),
+        }),
+        permutations: z.array(permutationSchema).optional(),
     }),
 
-    output: z.object({
-        cssRoot: z.string(),
-        variables: z.string().optional(),
-        variablesFilename: z.string(),
-        utilities: z.string().optional(),
-        utilitiesFilename: z.string(),
-        cube: z.string().optional(),
-        components: z.string().optional(),
-        themeAttribute: z.string(),
-        defaultContext: z.string().optional(),
-        layers: layersSchema.optional(),
+    utilities: z.object({
+        path: z.string(),
+        layer: z.string().optional(),
+        classes: utilityClassesSchema.optional(),
     }),
 
-    utilities: z.record(z.string(), utilityConfigOrArraySchema).optional(),
+    components: z.string().optional(),
+
+    cube: z.string().optional(),
 });

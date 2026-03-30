@@ -10,7 +10,6 @@ import {
 } from "@sugarcube-sh/core";
 import type {
     InternalConfig,
-    ModifierMeta,
     NormalizedConvertedTokens,
     SugarcubeConfig,
 } from "@sugarcube-sh/core";
@@ -78,7 +77,6 @@ export interface SugarcubePluginContext {
 function createSugarcubeContext(): SugarcubePluginContext {
     let config: InternalConfig | null = null;
     let tokens: NormalizedConvertedTokens | null = null;
-    let modifiers: ModifierMeta[] = [];
     let cachedCSS = "";
     let cachedRules: UnoRule[] = [];
     const reloadCallbacks: (() => void)[] = [];
@@ -113,7 +111,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
         using I = new Instrumentation();
         I.start("Build Rules");
-        const generatedRules = convertConfigToUnoRules(config.utilities ?? {}, tokens);
+        const generatedRules = convertConfigToUnoRules(config.utilities.classes ?? {}, tokens);
         I.end("Build Rules");
 
         return generatedRules;
@@ -127,7 +125,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
         using I = new Instrumentation();
         I.start("Generate CSS Variables");
-        const output = await generateCSSVariables(tokens, config, modifiers);
+        const output = await generateCSSVariables(tokens, config);
 
         // Combine all CSS output files
         cachedCSS = output.map((file) => file.css).join("\n");
@@ -162,9 +160,6 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
         I.end("Load Tokens From Resolver");
 
-        // Store modifiers for CSS generation
-        modifiers = tokenResult.modifiers ?? [];
-
         const allErrors = [
             ...tokenResult.errors.load,
             ...tokenResult.errors.flatten,
@@ -177,6 +172,12 @@ function createSugarcubeContext(): SugarcubePluginContext {
                 .map((error, index) => `  ${index + 1}. ${error.message}`)
                 .join("\n");
             log.warn(`[sugarcube] Found ${allErrors.length} token error(s):\n${errorList}`);
+        }
+
+        if (tokenResult.warnings.length > 0) {
+            for (const warning of tokenResult.warnings) {
+                log.warn(`[sugarcube] ${warning.message}`);
+            }
         }
 
         I.start("Process Tokens");

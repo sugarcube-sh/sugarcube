@@ -45,8 +45,8 @@ describe("cube command", () => {
         expect(existsSync(join(testDir, "src/styles/compositions/flow.css"))).toBe(true);
     });
 
-    it("respects --cube-dir flag", { timeout: TEST_TIMEOUT }, async () => {
-        const result = await execaCommand(`node ${CLI_PATH} cube --force --cube-dir custom/css`, {
+    it("respects --output flag", { timeout: TEST_TIMEOUT }, async () => {
+        const result = await execaCommand(`node ${CLI_PATH} cube --force --output custom/css`, {
             cwd: testDir,
             timeout: TEST_TIMEOUT,
             reject: false,

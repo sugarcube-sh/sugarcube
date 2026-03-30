@@ -10,7 +10,7 @@ import type { SugarcubeConfig } from "./types/config.js";
  *
  * export default defineConfig({
  *   resolver: "./tokens/resolver.json",
- *   output: { cssRoot: "src/styles" }
+ *   variables: { path: "src/styles/tokens.css" }
  * });
  * ```
  */

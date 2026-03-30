@@ -61,8 +61,8 @@ function convertTokens(
         if (!converters[token.$type as TokenType]) continue;
 
         const options: ConversionOptions = {
-            fluidConfig: config.transforms.fluid,
-            colorFallbackStrategy: config.transforms.colorFallbackStrategy,
+            fluidConfig: config.variables.transforms.fluid,
+            colorFallbackStrategy: config.variables.transforms.colorFallbackStrategy,
             path: token.$path,
             resolvedTokens: tokens,
         };

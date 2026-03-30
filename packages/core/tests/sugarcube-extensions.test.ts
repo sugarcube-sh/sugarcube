@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-    extractContextStrategy,
     getSugarcubeExtensions,
+    usesPrefersColorScheme,
 } from "../src/extensions/sugarcube-extensions.js";
 
 describe("getSugarcubeExtensions", () => {
@@ -26,37 +26,37 @@ describe("getSugarcubeExtensions", () => {
     });
 });
 
-describe("extractContextStrategy", () => {
-    it("returns 'data-attribute' when extensions is undefined", () => {
-        expect(extractContextStrategy(undefined)).toBe("data-attribute");
+describe("usesPrefersColorScheme", () => {
+    it("returns false when extensions is undefined", () => {
+        expect(usesPrefersColorScheme(undefined)).toBe(false);
     });
 
-    it("returns 'data-attribute' when sh.sugarcube namespace is missing", () => {
-        expect(extractContextStrategy({})).toBe("data-attribute");
+    it("returns false when sh.sugarcube namespace is missing", () => {
+        expect(usesPrefersColorScheme({})).toBe(false);
     });
 
-    it("returns 'data-attribute' when prefersColorScheme is not specified", () => {
+    it("returns false when prefersColorScheme is not specified", () => {
         const extensions = {
             "sh.sugarcube": {},
         };
-        expect(extractContextStrategy(extensions)).toBe("data-attribute");
+        expect(usesPrefersColorScheme(extensions)).toBe(false);
     });
 
-    it("returns 'prefers-color-scheme' when prefersColorScheme is true", () => {
+    it("returns true when prefersColorScheme is true", () => {
         const extensions = {
             "sh.sugarcube": {
                 prefersColorScheme: true,
             },
         };
-        expect(extractContextStrategy(extensions)).toBe("prefers-color-scheme");
+        expect(usesPrefersColorScheme(extensions)).toBe(true);
     });
 
-    it("returns 'data-attribute' when prefersColorScheme is false", () => {
+    it("returns false when prefersColorScheme is false", () => {
         const extensions = {
             "sh.sugarcube": {
                 prefersColorScheme: false,
             },
         };
-        expect(extractContextStrategy(extensions)).toBe("data-attribute");
+        expect(usesPrefersColorScheme(extensions)).toBe(false);
     });
 });

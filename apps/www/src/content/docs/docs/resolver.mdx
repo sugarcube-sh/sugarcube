@@ -120,9 +120,11 @@ Modifiers provide themed variations of your tokens. See [Theming](/docs/theming)
 }
 ```
 
-- **`name`** — Becomes the CSS data attribute (`data-theme`)
-- **`default`** — Context whose values go in `:root`
+- **`name`** — The modifier name
+- **`default`** — Which context is the baseline (per the DTCG spec, this is the value used when no input is provided)
 - **`contexts`** — Map of context names to source arrays
+
+The resolver defines *what* your modifier contexts are. How they map to CSS selectors is controlled by `permutations` in your config file. See [Theming](/docs/theming) for details.
 
 ## Resolution order
 
