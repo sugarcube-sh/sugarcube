@@ -52,8 +52,7 @@ export function convertFluidDimensionToken(
     if (!deprecationWarningShown) {
         console.warn(
             `[sugarcube] Deprecation warning: $type: "fluidDimension" is deprecated. ` +
-                `Use $type: "dimension" with $extensions["sh.sugarcube"].fluid instead. ` +
-                "See https://sugarcube.sh/docs/fluid-space-and-type for migration guide."
+                `Use $type: "dimension" with $extensions["sh.sugarcube"].fluid instead. `
         );
         deprecationWarningShown = true;
     }
