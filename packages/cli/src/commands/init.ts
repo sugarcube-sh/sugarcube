@@ -40,9 +40,9 @@ async function scaffoldTokens(ctx: InitContext): Promise<void> {
 export const init = new Command()
     .name("init")
     .description("Initialize a new sugarcube project")
-    .option("--tokens-dir <dir>", "Design tokens directory")
-    .option("--cube-dir <dir>", "CUBE CSS output directory")
-    .option("--components-dir <dir>", "Components output directory")
+    .option("--tokens <dir>", "Design tokens directory")
+    .option("--cube <dir>", "CUBE CSS output directory")
+    .option("--components <dir>", "Components output directory")
     .action(async (options: InitOptions) => {
         try {
             if (!process.stdin.isTTY) {
@@ -55,7 +55,7 @@ export const init = new Command()
             await preflightInit();
 
             const { tokensDir: defaultTokensDir } = getProjectInfo(process.cwd());
-            const tokensDir = options.tokensDir ?? defaultTokensDir;
+            const tokensDir = options.tokens ?? defaultTokensDir;
             const hasExistingTokens = await detectExistingTokens(tokensDir);
 
             const ctx: InitContext = {
@@ -109,7 +109,7 @@ export const init = new Command()
                     skipIntro: true,
                     skipOutro: true,
                     continueOnDecline: true,
-                    cubeDir: options.cubeDir,
+                    output: options.cube,
                 });
             }
 
@@ -122,7 +122,7 @@ export const init = new Command()
                     skipIntro: true,
                     skipOutro: true,
                     continueOnDecline: true,
-                    componentsDir: options.componentsDir,
+                    output: options.components,
                 });
             }
 

@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { isAbsolute, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
-import { extractContextStrategy } from "../extensions/sugarcube-extensions.js";
+import { usesPrefersColorScheme } from "../extensions/sugarcube-extensions.js";
 import { isInlineModifier, isInlineSet, isReference } from "../guards/resolver-guards.js";
 import { resolverDocumentSchema } from "../schemas/resolver.js";
 import type {
@@ -12,9 +12,15 @@ import type {
     ResolverError,
 } from "../types/resolver.js";
 
+export type ResolverWarning = {
+    path: string;
+    message: string;
+};
+
 export type ParseResult = {
     document: ResolverDocument;
     errors: ResolverError[];
+    warnings: ResolverWarning[];
 };
 
 export async function parseResolverDocument(resolverPath: string): Promise<ParseResult> {
@@ -24,40 +30,42 @@ export async function parseResolverDocument(resolverPath: string): Promise<Parse
 
     const rawContent = await loadFile(absolutePath);
     if (rawContent.error) {
-        return { document: createEmptyDocument(), errors: [rawContent.error] };
+        return { document: createEmptyDocument(), errors: [rawContent.error], warnings: [] };
     }
 
     const parsed = parseJson(rawContent.content);
     if (parsed.error) {
-        return { document: createEmptyDocument(), errors: [parsed.error] };
+        return { document: createEmptyDocument(), errors: [parsed.error], warnings: [] };
     }
 
     const validated = validateSchema(parsed.data);
     if (validated.errors.length > 0) {
-        return { document: createEmptyDocument(), errors: validated.errors };
+        return { document: createEmptyDocument(), errors: validated.errors, warnings: [] };
     }
 
     const errors: ResolverError[] = [];
-    validateDocument(validated.document, errors);
+    const warnings: ResolverWarning[] = [];
+    validateDocument(validated.document, errors, warnings);
 
-    return { document: validated.document, errors };
+    return { document: validated.document, errors, warnings };
 }
 
 export function parseResolverDocumentFromString(jsonContent: string): ParseResult {
     const parsed = parseJson(jsonContent);
     if (parsed.error) {
-        return { document: createEmptyDocument(), errors: [parsed.error] };
+        return { document: createEmptyDocument(), errors: [parsed.error], warnings: [] };
     }
 
     const validated = validateSchema(parsed.data);
     if (validated.errors.length > 0) {
-        return { document: createEmptyDocument(), errors: validated.errors };
+        return { document: createEmptyDocument(), errors: validated.errors, warnings: [] };
     }
 
     const errors: ResolverError[] = [];
-    validateDocument(validated.document, errors);
+    const warnings: ResolverWarning[] = [];
+    validateDocument(validated.document, errors, warnings);
 
-    return { document: validated.document, errors };
+    return { document: validated.document, errors, warnings };
 }
 
 type LoadResult =
@@ -108,23 +116,31 @@ function validateSchema(data: unknown): ValidateResult {
     return { document: validation.data as ResolverDocument, errors: [] };
 }
 
-function validateDocument(document: ResolverDocument, errors: ResolverError[]): void {
-    validateModifierContexts(document, errors);
+function validateDocument(
+    document: ResolverDocument,
+    errors: ResolverError[],
+    warnings: ResolverWarning[]
+): void {
+    validateModifierContexts(document, errors, warnings);
     validateNameUniqueness(document, errors);
     validateReferences(document, errors);
 }
 
-function validateModifierContexts(document: ResolverDocument, errors: ResolverError[]): void {
+function validateModifierContexts(
+    document: ResolverDocument,
+    errors: ResolverError[],
+    warnings: ResolverWarning[]
+): void {
     if (document.modifiers) {
         for (const [name, modifier] of Object.entries(document.modifiers)) {
-            checkModifierContexts(modifier, `modifiers.${name}`, errors);
+            checkModifierContexts(modifier, `modifiers.${name}`, errors, warnings);
         }
     }
 
     for (let i = 0; i < document.resolutionOrder.length; i++) {
         const item = document.resolutionOrder[i];
         if (isInlineModifier(item)) {
-            checkModifierContexts(item, `resolutionOrder[${i}]`, errors);
+            checkModifierContexts(item, `resolutionOrder[${i}]`, errors, warnings);
         }
     }
 }
@@ -132,7 +148,8 @@ function validateModifierContexts(document: ResolverDocument, errors: ResolverEr
 function checkModifierContexts(
     modifier: ModifierDefinition | InlineModifier,
     path: string,
-    errors: ResolverError[]
+    errors: ResolverError[],
+    warnings: ResolverWarning[]
 ): void {
     const contextCount = Object.keys(modifier.contexts).length;
 
@@ -161,16 +178,21 @@ function checkModifierContexts(
         });
     }
 
-    const contextStrategy = extractContextStrategy(modifier.$extensions);
-    if (contextStrategy === "prefers-color-scheme") {
+    const modifierName = "name" in modifier ? modifier.name : (path.split(".").pop() ?? path);
+
+    // Check for deprecated prefersColorScheme extension
+    if (usesPrefersColorScheme(modifier.$extensions)) {
+        warnings.push({
+            path,
+            message: ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_DEPRECATED(modifierName),
+        });
+
         const contexts = Object.keys(modifier.contexts);
         const validContexts = ["light", "dark"];
         const invalidContexts = contexts.filter((c) => !validContexts.includes(c));
 
-        const modifierName = "name" in modifier ? modifier.name : (path.split(".").pop() ?? path);
-
         if (invalidContexts.length > 0) {
-            errors.push({
+            warnings.push({
                 path: `${path}.contexts`,
                 message: ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS(
                     modifierName,
@@ -184,7 +206,7 @@ function checkModifierContexts(
             if (contextName === defaultContext) continue;
             const sources = modifier.contexts[contextName];
             if (!sources || sources.length === 0) {
-                errors.push({
+                warnings.push({
                     path: `${path}.contexts.${contextName}`,
                     message: ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT(
                         modifierName,
@@ -330,9 +352,6 @@ function createEmptyDocument(): ResolverDocument {
     return { version: "2025.10", resolutionOrder: [] };
 }
 
-/**
- * Quick check without full validation.
- */
 export function isResolverFormat(obj: unknown): boolean {
     if (typeof obj !== "object" || obj === null) return false;
     const o = obj as Record<string, unknown>;

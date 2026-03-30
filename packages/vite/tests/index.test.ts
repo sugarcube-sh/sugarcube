@@ -6,14 +6,18 @@ vi.mock("@sugarcube-sh/core", async () => {
         ...actual,
         loadInternalConfig: async () => ({
             config: {
-                tokens: { source: [] },
-                output: {
-                    cssRoot: "src/styles",
-                    variables: "src/styles/global",
-                    utilities: "src/styles/utilities",
-                    cube: "src/styles",
+                variables: {
+                    path: "src/styles/tokens.css",
+                    transforms: {
+                        fluid: { min: 320, max: 1200 },
+                        colorFallbackStrategy: "native",
+                    },
                 },
-                utilities: {},
+                utilities: {
+                    path: "src/styles/utilities.css",
+                    classes: {},
+                },
+                cube: "src/styles",
             },
         }),
         loadAndResolveTokens: async () => ({
@@ -21,6 +25,7 @@ vi.mock("@sugarcube-sh/core", async () => {
             resolved: {} as any,
             errors: { load: [], flatten: [], validation: [], resolution: [] },
             modifiers: [],
+            warnings: [],
         }),
         processAndConvertTokens: async () => ({ default: { default: {} } }),
         generateCSSVariables: async () => [{ css: "" }],

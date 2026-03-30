@@ -1,9 +1,14 @@
 {
   "typescript.tsdk": "node_modules/typescript/lib",
+  "json.schemaDownload.enable": true,
   "files.associations": {
     "**/tests/fixtures/outputs/**/*.json": "jsonc"
   },
   "json.schemas": [
+    {
+      "fileMatch": ["**/*.resolver.json"],
+      "url": "https://www.designtokens.org/schemas/2025.10/resolver.json"
+    },
     {
       "fileMatch": ["**/tests/fixtures/outputs/**/*.json"],
       "schema": {

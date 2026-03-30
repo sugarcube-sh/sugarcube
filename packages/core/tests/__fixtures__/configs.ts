@@ -7,68 +7,68 @@ import type { SugarcubeConfig } from "../../src/types/config";
  */
 export const configs = {
     basic: {
-        output: {
-            cssRoot: "src/css",
+        variables: {
+            path: "src/css/tokens.css",
         },
     },
 
     themes: {
-        output: {
-            cssRoot: "src/css",
+        variables: {
+            path: "src/css/tokens.css",
         },
     },
 
     fluid: {
-        transforms: {
-            fluid: {
-                min: 320,
-                max: 1200,
+        variables: {
+            path: "src/css/tokens.css",
+            transforms: {
+                fluid: {
+                    min: 320,
+                    max: 1200,
+                },
             },
-        },
-        output: {
-            cssRoot: "src/css",
         },
     },
 
     colorsHex: {
-        output: {
-            cssRoot: "src/css",
-        },
-        transforms: {
-            colorFallbackStrategy: "native",
+        variables: {
+            path: "src/css/tokens.css",
+            transforms: {
+                colorFallbackStrategy: "native",
+            },
         },
     },
 
     colorsRgb: {
-        output: {
-            cssRoot: "src/css",
-        },
-        transforms: {
-            colorFallbackStrategy: "native",
+        variables: {
+            path: "src/css/tokens.css",
+            transforms: {
+                colorFallbackStrategy: "native",
+            },
         },
     },
 
     colorsHsl: {
-        output: {
-            cssRoot: "src/css",
-        },
-        transforms: {
-            colorFallbackStrategy: "native",
+        variables: {
+            path: "src/css/tokens.css",
+            transforms: {
+                colorFallbackStrategy: "native",
+            },
         },
     },
 
     colorsP3: {
-        output: {
-            cssRoot: "src/css",
-        },
-        transforms: {
-            colorFallbackStrategy: "native",
+        variables: {
+            path: "src/css/tokens.css",
+            transforms: {
+                colorFallbackStrategy: "native",
+            },
         },
     },
 
     edgeCases: {
-        output: {
-            cssRoot: "src/css",
+        variables: {
+            path: "src/css/tokens.css",
         },
     },
 } satisfies Record<string, SugarcubeConfig>;

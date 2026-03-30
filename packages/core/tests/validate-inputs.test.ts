@@ -120,7 +120,10 @@ describe("validateInputs", () => {
                 name: "missing required modifier (no default)",
                 doc: buildDoc.withModifier("theme", ["light", "dark"]),
                 inputs: {},
-                expectedError: ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT("theme"),
+                expectedError: ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT("theme", [
+                    "light",
+                    "dark",
+                ]),
                 expectedModifier: "theme",
             },
             {
@@ -231,7 +234,7 @@ describe("getDefaultInputs", () => {
 
     it("throws if any modifier has no default", () => {
         expect(() => getDefaultInputs(buildDoc.withModifier("theme", ["light", "dark"]))).toThrow(
-            ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT("theme")
+            ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT("theme", ["light", "dark"])
         );
     });
 

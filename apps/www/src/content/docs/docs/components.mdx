@@ -39,23 +39,21 @@ For example, adding a `button` component creates:
 
 You can customize where components are installed two different ways:
 
-1. **Using the `--components-dir` flag**:
+1. **Using the `--output` flag**:
 
-    <PackageManagerTabs command="sugarcube components --components-dir custom-components-dir" />
+    <PackageManagerTabs command="sugarcube components --output custom-components-dir" />
 
 2. **In your config file**:
-   ```ts title="sugarcube.config.ts" ins={5}
+   ```ts title="sugarcube.config.ts" ins={4}
    import { defineConfig } from "@sugarcube-sh/cli";
 
    export default defineConfig({
-     output: {
-       components: "src/components",
-     }
+     components: "src/components",
    });
    ```
 
 <SiteAside type="note">
-    The `--components-dir` flag overrides the config file for that run only. It does not modify your config.
+    The `--output` flag overrides the config file for that run only. It does not modify your config.
 </SiteAside>
 
 ## Components & design tokens

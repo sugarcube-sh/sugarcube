@@ -1,5 +1,5 @@
 import { ErrorMessages } from "../constants/error-messages.js";
-import type { UtilitiesConfig } from "../types/config.js";
+import type { UtilityClassesConfig } from "../types/config.js";
 import type { ConvertedToken, NormalizedConvertedTokens } from "../types/convert.js";
 import type { TokenType } from "../types/dtcg.js";
 import type { NodeMetadata } from "../types/tokens.js";
@@ -358,7 +358,10 @@ function validateUtilityConfig(config: PropertyUtilityConfig, property: string):
     }
 }
 
-function validateInputs(utilitiesConfig: UtilitiesConfig, tokens: NormalizedConvertedTokens): void {
+function validateInputs(
+    utilitiesConfig: UtilityClassesConfig,
+    tokens: NormalizedConvertedTokens
+): void {
     if (!utilitiesConfig || typeof utilitiesConfig !== "object") {
         throw new Error(ErrorMessages.UTILITIES.INVALID_CONFIG_OBJECT);
     }
@@ -375,7 +378,7 @@ function validateInputs(utilitiesConfig: UtilitiesConfig, tokens: NormalizedConv
  * @returns Array of UnoCSS dynamic rules [pattern, handler]
  */
 export function convertConfigToUnoRules(
-    utilitiesConfig: UtilitiesConfig,
+    utilitiesConfig: UtilityClassesConfig,
     tokens: NormalizedConvertedTokens
 ): Array<[RegExp, (m: RegExpMatchArray) => CSSObject]> {
     validateInputs(utilitiesConfig, tokens);

@@ -16,7 +16,7 @@ import { handleError } from "../utils/handle-error.js";
 export interface RunCubeOptions {
     silent?: boolean;
     force?: boolean;
-    cubeDir?: string;
+    output?: string;
     skipIntro?: boolean;
     skipOutro?: boolean;
     continueOnDecline?: boolean;
@@ -27,7 +27,7 @@ export async function runCube(options: RunCubeOptions = {}): Promise<void> {
         intro(label("CUBE CSS"));
     }
 
-    const { directory: cssOutputDirectory } = await getCubeDir(options.cubeDir);
+    const { directory: cssOutputDirectory } = await getCubeDir(options.output);
 
     try {
         await mkdir(cssOutputDirectory, { recursive: true });
@@ -85,7 +85,7 @@ export const cube = new Command()
     .description("Add CUBE CSS to your project")
     .option("-s, --silent", "Suppress logs and prompts")
     .option("-f, --force", "Skip overwrite confirmation")
-    .option("--cube-dir <dir>", "CUBE CSS output directory (defaults to cssRoot)")
+    .option("-o, --output <dir>", "CUBE CSS output directory")
     .action(async (options) => {
         try {
             await runCube(options);

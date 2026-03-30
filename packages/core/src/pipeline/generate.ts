@@ -1,6 +1,6 @@
 import { ErrorMessages } from "../constants/error-messages.js";
 import { isTypographyToken } from "../guards/token-guards.js";
-import type { InternalConfig } from "../types/config.js";
+import type { InternalConfig, Permutation } from "../types/config.js";
 import type {
     ConvertedToken,
     ConvertedTokens,
@@ -12,10 +12,7 @@ import type {
     CSSGenerationResult,
     CSSVarSet,
     CSSVariable,
-    CSSVariableBlocks,
-    SingleFileOutput,
 } from "../types/generate.js";
-import type { ModifierMeta } from "../types/pipelines.js";
 import type { TokenType } from "../types/tokens.js";
 
 import { deterministicEntries } from "../utils/deterministic-entries.js";
@@ -101,19 +98,17 @@ function generateFeatureVariables(token: ConvertedToken<TokenType>): CSSFeatureB
     }));
 }
 
-// Generates a CSS block with proper formatting and indentation
-// Handles both the root variables and any feature-specific variables (like P3 colors)
-// Optionally includes a comment to document the block's purpose
-function generateCSSBlock(block: {
-    selector: string;
-    vars: CSSVariable[];
-    comment?: string;
-}): string {
-    const parts = [`${block.selector} {`];
-
-    if (block.comment) {
-        parts.push(`    /* ${block.comment} */`);
+function normalizeSelector(selector: string | string[]): string {
+    if (Array.isArray(selector)) {
+        return selector.join(",\n");
     }
+    return selector;
+}
+
+// Generates a CSS block with proper formatting and indentation
+function generateCSSBlock(block: { selector: string | string[]; vars: CSSVariable[] }): string {
+    const selectorStr = normalizeSelector(block.selector);
+    const parts = [`${selectorStr} {`];
 
     if (block.vars.length > 0) {
         const declarations = block.vars.map((v) => `    ${v.name}: ${v.value};`).join("\n");
@@ -123,30 +118,6 @@ function generateCSSBlock(block: {
     parts.push("}");
 
     return parts.join("\n");
-}
-
-function convertCSSVarsToString(css: CSSVariableBlocks): string {
-    const blocks: string[] = [];
-
-    if (css.root.vars.length > 0) {
-        blocks.push(
-            generateCSSBlock({
-                selector: css.root.selector,
-                vars: css.root.vars,
-            })
-        );
-    }
-
-    for (const feature of css.features) {
-        const featureBlock = generateCSSBlock({
-            selector: css.root.selector,
-            vars: feature.vars,
-        });
-
-        blocks.push(`${feature.query} {\n${indentCSS(featureBlock)}\n}`);
-    }
-
-    return blocks.filter(Boolean).join("\n\n");
 }
 
 function generateVariablesForToken<T extends TokenType>(token: ConvertedToken<T>): CSSVarSet {
@@ -165,196 +136,152 @@ function generateVariablesForToken<T extends TokenType>(token: ConvertedToken<T>
 }
 
 /**
- * Result of building a CSS selector.
- * - `selector`: The CSS selector to use (:root, [data-theme="dark"], etc.)
- * - `wrapper`: Optional at-rule wrapper (@media, @supports, etc.)
+ * Generate CSS variables for a set of converted tokens.
  */
-type SelectorResult = {
-    selector: string;
-    wrapper?: string;
-};
-
-/**
- * Context formats:
- * - undefined/"default" → :root
- * - "modifierName:contextName" → [data-modifierName="contextName"] or @media wrapper
- * - "contextName" → [data-theme="contextName"]
- */
-function buildSelector(
-    context: string,
-    modifiers: ModifierMeta[] | undefined,
-    config: InternalConfig
-): SelectorResult {
-    if (!context || context === "default") {
-        return { selector: ":root" };
-    }
-
-    // Compound key format: "modifierName:contextName"
-    const colonIndex = context.indexOf(":");
-    if (colonIndex !== -1) {
-        const modifierName = context.slice(0, colonIndex);
-        const contextName = context.slice(colonIndex + 1);
-        const modifier = modifiers?.find((m) => m.name === modifierName);
-
-        if (modifier?.contextStrategy === "prefers-color-scheme") {
-            return {
-                selector: ":root",
-                wrapper: `@media (prefers-color-scheme: ${contextName})`,
-            };
-        }
-
-        const attribute = modifier?.attribute ?? `data-${modifierName}`;
-        return { selector: `[${attribute}="${contextName}"]` };
-    }
-
-    // TODO: safe to delete this?
-    return { selector: `[${config.output.themeAttribute}="${context}"]` };
-}
-
-async function generateCSS(
-    tokens: ConvertedTokens,
-    config: InternalConfig,
-    metadata: {
-        context: string;
-        modifiers?: ModifierMeta[];
-    }
-): Promise<{ output: SingleFileOutput }> {
+function generateVariablesFromTokens(tokens: ConvertedTokens): {
+    vars: CSSVariable[];
+    features: CSSFeatureBlock[];
+} {
     const varSets = deterministicEntries(tokens)
         .filter(([key, token]) => key !== "$extensions" && "$type" in token)
         .map(([_, token]) => generateVariablesForToken(token as ConvertedToken<TokenType>));
 
-    const selectorResult = buildSelector(metadata.context, metadata.modifiers, config);
-
-    const rootVars = varSets.flatMap((set) => set.vars);
+    const vars = varSets.flatMap((set) => set.vars);
 
     const allFeatures = varSets.flatMap((set) => set.features || []);
-
     const mergedFeatures = new Map<string, CSSVariable[]>();
+
     for (const feature of allFeatures) {
         if (!mergedFeatures.has(feature.query)) {
             mergedFeatures.set(feature.query, []);
         }
-        const vars = mergedFeatures.get(feature.query);
-        if (vars) {
-            vars.push(...feature.vars);
+        const featureVars = mergedFeatures.get(feature.query);
+        if (featureVars) {
+            featureVars.push(...feature.vars);
         }
     }
 
-    const mergedFeatureBlocks = Array.from(mergedFeatures.entries()).map(([query, vars]) => ({
+    const features = Array.from(mergedFeatures.entries()).map(([query, featureVars]) => ({
         query,
-        vars,
+        vars: featureVars,
     }));
 
-    // Handle media query wrapping
-    const css = generateCSSForSelector(selectorResult, rootVars, mergedFeatureBlocks);
-
-    if (!css.trim()) {
-        return {
-            output: [
-                {
-                    path: config.output.variablesFilename,
-                    css: "",
-                },
-            ],
-        };
-    }
-
-    return {
-        output: [
-            {
-                path: config.output.variablesFilename,
-                css: formatCSSVars(css),
-            },
-        ],
-    };
+    return { vars, features };
 }
 
-function generateCSSForSelector(
-    result: SelectorResult,
+function generateCSSForPermutation(
+    perm: Permutation,
     vars: CSSVariable[],
     features: CSSFeatureBlock[]
 ): string {
-    const innerCSS = convertCSSVarsToString({
-        root: { selector: result.selector, vars },
-        features,
-    });
-
-    if (!innerCSS.trim()) return "";
-    if (!result.wrapper) return innerCSS;
-
-    return `${result.wrapper} {\n${indentCSS(innerCSS)}\n}`;
-}
-
-function formatCSSVars(css: string): string {
-    return css.endsWith("\n") ? css : `${css}\n`;
-}
-
-async function generateSingleFile(
-    tokens: NormalizedConvertedTokens,
-    config: InternalConfig,
-    modifiers?: ModifierMeta[]
-): Promise<CSSFileOutput> {
-    const variablesDir = config.output.variables;
-    const cssChunks: string[] = [];
-
-    // Sort contexts for deterministic output, with default context first
-    const sortedContexts = Object.entries(tokens).sort(([a], [b]) => {
-        if (!a || a === "default") return -1;
-        if (!b || b === "default") return 1;
-        return a.localeCompare(b);
-    });
-
-    for (const [context, contextTokens] of sortedContexts) {
-        const result = await generateCSS(contextTokens, config, {
-            context,
-            modifiers,
-        });
-
-        if (result.output[0].css.trim()) {
-            cssChunks.push(result.output[0].css);
-        }
+    if (vars.length === 0 && features.length === 0) {
+        return "";
     }
 
-    if (cssChunks.length === 0) {
-        return [];
+    const blocks: string[] = [];
+
+    // Main variables block
+    if (vars.length > 0) {
+        blocks.push(generateCSSBlock({ selector: perm.selector, vars }));
     }
 
-    return [
-        {
-            path: `${variablesDir}/${config.output.variablesFilename}`,
-            css: `${cssChunks.filter(Boolean).join("\n").trim()}\n`,
-        },
-    ];
+    // Feature blocks (e.g., color-gamut queries)
+    for (const feature of features) {
+        const featureBlock = generateCSSBlock({ selector: perm.selector, vars: feature.vars });
+        blocks.push(`${feature.query} {\n${indentCSS(featureBlock)}\n}`);
+    }
+
+    let css = blocks.join("\n\n");
+
+    // Wrap in atRule if specified
+    if (perm.atRule) {
+        css = `${perm.atRule} {\n${indentCSS(css)}\n}`;
+    }
+
+    return css;
+}
+
+/**
+ * Compute the delta between two sets of CSS variables.
+ * Returns only variables whose values differ from the base set.
+ */
+function deltaVars(vars: CSSVariable[], baseVars: CSSVariable[]): CSSVariable[] {
+    const baseMap = new Map(baseVars.map((v) => [v.name, v.value]));
+    return vars.filter((v) => {
+        const baseValue = baseMap.get(v.name);
+        return baseValue === undefined || baseValue !== v.value;
+    });
 }
 
 /**
  * Generates CSS variable files from normalized and converted design tokens.
  *
- * @param tokens - The normalized and converted design tokens to generate CSS from
- * @param config - The configuration object that controls output behavior
- * @param modifiers - Optional modifier metadata for generating per-modifier attribute selectors
- * @returns A promise that resolves to the CSS generation result containing all output files
+ * Tokens are keyed by "perm:{index}" — each permutation was resolved independently
+ * by the loading pipeline. This function looks up tokens by index, generates CSS
+ * variables, and wraps each in its permutation's selector.
  *
- * All contexts are combined into a single 'tokens.variables.gen.css' file.
+ * For multi-permutation output, non-first permutations are delta-optimized:
+ * only variables that differ from the first permutation are output.
  *
- * Selector generation:
- * - Default context (undefined or "default"): `:root`
- * - Compound context "modifierName:contextName": `[data-modifierName="contextName"]`
- * - Simple context "contextName": `[data-theme="contextName"]` (legacy, uses config.themeAttribute)
+ * Permutations are always on config.variables.permutations — either defined by the
+ * user or auto-generated from modifier metadata by the loading pipeline.
  */
 export async function generate(
     tokens: NormalizedConvertedTokens,
-    config: InternalConfig,
-    modifiers?: ModifierMeta[]
+    config: InternalConfig
 ): Promise<CSSGenerationResult> {
-    // Filter out empty contexts firsts, otherwise we'll get an empty file
-    const filteredTokens: NormalizedConvertedTokens = {};
+    const permutations = config.variables.permutations;
 
-    for (const [context, contextTokens] of Object.entries(tokens)) {
-        if (Object.keys(contextTokens).length > 0) {
-            filteredTokens[context] = contextTokens;
+    if (!permutations || permutations.length === 0) {
+        return { output: [] };
+    }
+
+    const byPath = new Map<string, { perm: Permutation; css: string }[]>();
+
+    // Track base vars per output path for delta optimisation
+    const baseVarsByPath = new Map<string, CSSVariable[]>();
+
+    for (let i = 0; i < permutations.length; i++) {
+        const perm = permutations[i];
+        if (!perm) continue;
+        const contextTokens = tokens[`perm:${i}`];
+
+        if (!contextTokens || Object.keys(contextTokens).length === 0) {
+            continue;
+        }
+
+        const outputPath = perm.path ?? config.variables.path;
+        let { vars, features } = generateVariablesFromTokens(contextTokens);
+
+        // Delta optimization: for non-first permutations in the same output file,
+        // only include variables that differ from the first permutation in that file
+        if (baseVarsByPath.has(outputPath)) {
+            vars = deltaVars(vars, baseVarsByPath.get(outputPath) ?? []);
+        } else {
+            baseVarsByPath.set(outputPath, vars);
+        }
+
+        const css = generateCSSForPermutation(perm, vars, features);
+
+        if (css.trim()) {
+            if (!byPath.has(outputPath)) {
+                byPath.set(outputPath, []);
+            }
+            byPath.get(outputPath)?.push({ perm, css });
         }
     }
 
-    return { output: await generateSingleFile(filteredTokens, config, modifiers) };
+    const output: CSSFileOutput = [];
+
+    for (const [path, chunks] of byPath) {
+        output.push({
+            path,
+            css: `${chunks
+                .map((c) => c.css)
+                .join("\n\n")
+                .trim()}\n`,
+        });
+    }
+
+    return { output };
 }

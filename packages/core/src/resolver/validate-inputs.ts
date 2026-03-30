@@ -101,7 +101,10 @@ function applyDefaults(
         } else {
             errors.push({
                 modifier: modifier.name,
-                message: ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT(modifier.name),
+                message: ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT(
+                    modifier.name,
+                    modifier.contexts
+                ),
             });
         }
     }
@@ -129,7 +132,9 @@ export function getDefaultInputs(document: ResolverDocument): ResolverInputs {
 
     for (const modifier of modifiers) {
         if (modifier.default === undefined) {
-            throw new Error(ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT(modifier.name));
+            throw new Error(
+                ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT(modifier.name, modifier.contexts)
+            );
         }
         inputs[modifier.name] = modifier.default;
     }

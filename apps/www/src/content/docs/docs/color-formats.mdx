@@ -37,14 +37,16 @@ By default, sugarcube outputs modern color spaces directly without fallbacks:
 }
 ```
 
-To support older browsers, add `colorFallbackStrategy: "polyfill"` to your `transforms` configuration:
+To support older browsers, add `colorFallbackStrategy: "polyfill"` to your config:
 
 ```ts title="sugarcube.config.ts"
 import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
-  transforms: {
-    colorFallbackStrategy: "polyfill"
+  variables: {
+    transforms: {
+      colorFallbackStrategy: "polyfill"
+    }
   }
 });
 ```

@@ -10,17 +10,19 @@ export async function getCubeDir(flagValue: string | undefined): Promise<{ direc
 
     try {
         const { config } = await loadInternalConfig();
-        const cubeDir = config.output.cube || config.output.cssRoot;
-        const { absolute } = resolveDirectoryFromFlag(cubeDir);
-        return { directory: absolute };
-    } catch (error) {
-        if (isNoConfigError(error)) {
-            const { stylesDir } = getProjectInfo(process.cwd());
-            const { absolute } = resolveDirectoryFromFlag(stylesDir);
+        if (config.cube) {
+            const { absolute } = resolveDirectoryFromFlag(config.cube);
             return { directory: absolute };
         }
-        throw error;
+    } catch (error) {
+        if (!isNoConfigError(error)) {
+            throw error;
+        }
     }
+
+    const { stylesDir } = getProjectInfo(process.cwd());
+    const { absolute } = resolveDirectoryFromFlag(stylesDir);
+    return { directory: absolute };
 }
 
 export async function getComponentsDir(
@@ -33,7 +35,7 @@ export async function getComponentsDir(
 
     try {
         const { config } = await loadInternalConfig();
-        const { absolute } = resolveDirectoryFromFlag(config.output.components ?? "components/ui");
+        const { absolute } = resolveDirectoryFromFlag(config.components ?? "components/ui");
         return { directory: absolute };
     } catch (error) {
         if (isNoConfigError(error)) {

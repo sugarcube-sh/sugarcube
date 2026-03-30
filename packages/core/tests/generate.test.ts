@@ -1,20 +1,36 @@
 import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/config/normalize-config.js";
 import { generate } from "../src/pipeline/generate.js";
+import type { InternalConfig } from "../src/types/config.js";
 import type { NormalizedConvertedTokens } from "../src/types/convert.js";
-import type { ModifierMeta } from "../src/types/pipelines.js";
 import { configs } from "./__fixtures__/configs.js";
 import { convertedTokens, createConvertedToken } from "./__fixtures__/converted-tokens.js";
+
+function configWith(
+    base: keyof typeof configs,
+    permutations: InternalConfig["variables"]["permutations"]
+): InternalConfig {
+    const baseConfig = fillDefaults(configs[base]);
+    return {
+        ...baseConfig,
+        variables: {
+            ...baseConfig.variables,
+            permutations,
+        },
+    };
+}
 
 describe("generate", () => {
     it("should generate basic CSS variables", async () => {
         const tokens: NormalizedConvertedTokens = {
-            default: {
+            "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
             },
         };
 
-        const result = await generate(tokens, fillDefaults(configs.basic));
+        const config = configWith("basic", [{ input: {}, selector: ":root" }]);
+
+        const result = await generate(tokens, config);
         const css = result.output[0]?.css ?? "";
 
         expect(css).toContain(":root {");
@@ -23,15 +39,18 @@ describe("generate", () => {
 
     it("should handle theme context tokens", async () => {
         const tokens: NormalizedConvertedTokens = {
-            default: {
+            "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
             },
-            dark: {
+            "perm:1": {
                 "color.primary": convertedTokens.colorPrimaryDark,
             },
         };
 
-        const config = fillDefaults(configs.themes);
+        const config = configWith("themes", [
+            { input: { theme: "light" }, selector: ":root" },
+            { input: { theme: "dark" }, selector: '[data-theme="dark"]' },
+        ]);
 
         const result = await generate(tokens, config);
 
@@ -46,10 +65,10 @@ describe("generate", () => {
 
     it("should handle named theme contexts", async () => {
         const tokens: NormalizedConvertedTokens = {
-            default: {
+            "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
             },
-            ocean: {
+            "perm:1": {
                 "color.primary": createConvertedToken({
                     $value: "#0066FF",
                     $resolvedValue: "#0066FF",
@@ -58,7 +77,10 @@ describe("generate", () => {
             },
         };
 
-        const config = fillDefaults(configs.themes);
+        const config = configWith("themes", [
+            { input: { theme: "light" }, selector: ":root" },
+            { input: { theme: "ocean" }, selector: '[data-theme="ocean"]' },
+        ]);
 
         const result = await generate(tokens, config);
 
@@ -71,12 +93,14 @@ describe("generate", () => {
 
     it("should handle typography tokens", async () => {
         const tokens: NormalizedConvertedTokens = {
-            default: {
+            "perm:0": {
                 "typography.body": convertedTokens.typographyBody,
             },
         };
 
-        const result = await generate(tokens, fillDefaults(configs.basic));
+        const config = configWith("basic", [{ input: {}, selector: ":root" }]);
+
+        const result = await generate(tokens, config);
         const css = result.output[0]?.css ?? "";
 
         expect(css).toContain("--typography-body-font-family: Arial;");
@@ -87,7 +111,7 @@ describe("generate", () => {
 
     it("should handle P3 color support", async () => {
         const tokens: NormalizedConvertedTokens = {
-            default: {
+            "perm:0": {
                 "color.primary": createConvertedToken({
                     $cssProperties: {
                         value: "#FF0000",
@@ -102,7 +126,9 @@ describe("generate", () => {
             },
         };
 
-        const result = await generate(tokens, fillDefaults(configs.colorsP3));
+        const config = configWith("colorsP3", [{ input: {}, selector: ":root" }]);
+
+        const result = await generate(tokens, config);
         const css = result.output[0]?.css ?? "";
 
         expect(css).toContain("--color-primary: #FF0000;");
@@ -112,203 +138,133 @@ describe("generate", () => {
 
     it("should handle references in CSS values", async () => {
         const tokens: NormalizedConvertedTokens = {
-            default: {
+            "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
                 "shadow.primary": convertedTokens.shadowPrimary,
             },
         };
 
-        const result = await generate(tokens, fillDefaults(configs.basic));
+        const config = configWith("basic", [{ input: {}, selector: ":root" }]);
+
+        const result = await generate(tokens, config);
         const css = result.output[0]?.css ?? "";
 
         expect(css).toContain("--shadow-primary: 0px 2px 4px 0px var(--color-primary);");
     });
 
-    it("should handle contexts with only metadata", async () => {
+    it("should skip empty permutations", async () => {
         const tokens: NormalizedConvertedTokens = {
-            default: {
+            "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
             },
-            empty: {}, // Truly empty context
-            metadataOnly: {
-                color: {
-                    $description: "Color tokens",
-                    $extensions: {
-                        custom: "value",
-                    },
-                },
-            },
+            "perm:1": {},
         };
 
-        const result = await generate(tokens, fillDefaults(configs.basic));
+        const config = configWith("basic", [
+            { input: {}, selector: ":root" },
+            { input: { theme: "dark" }, selector: '[data-theme="dark"]' },
+        ]);
+
+        const result = await generate(tokens, config);
 
         expect(result.output).toHaveLength(1);
         expect(result.output[0]?.css).toContain("--color-primary: #FF0000;");
     });
 
-    it("should filter out contexts with no tokens", async () => {
-        const tokens: NormalizedConvertedTokens = {
-            default: {
-                "color.primary": createConvertedToken({
-                    $source: { sourcePath: "tokens.json" },
-                }),
-            },
-            empty: {},
-            metadataOnly: {
-                metadata: {
-                    $description: "This is a metadata node",
-                    $extensions: {
-                        custom: "value",
-                    },
-                },
-            },
-        };
+    it("should return empty output when no permutations defined", async () => {
+        const tokens: NormalizedConvertedTokens = {};
+        const config = fillDefaults(configs.basic);
 
-        const result = await generate(tokens, fillDefaults(configs.basic));
+        const result = await generate(tokens, config);
 
-        expect(result.output).toHaveLength(1);
-        expect(result.output[0]?.path).toBe("src/css/global/tokens.variables.gen.css");
-        expect(result.output[0]?.css).toContain("--color-primary: #FF0000");
+        expect(result.output).toHaveLength(0);
     });
 
-    describe("prefers-color-scheme selector strategy", () => {
-        it("should generate media query for prefers-color-scheme modifier", async () => {
+    describe("permutations API", () => {
+        it("should generate media query when permutation has atRule", async () => {
             const tokens: NormalizedConvertedTokens = {
-                default: {
+                "perm:0": {
                     "color.surface": createConvertedToken({
                         $path: "color.surface",
-                        $value: "#ffffff",
-                        $resolvedValue: "#ffffff",
                         $cssProperties: { value: "#ffffff" },
                     }),
                 },
-                "theme:dark": {
+                "perm:1": {
                     "color.surface": createConvertedToken({
                         $path: "color.surface",
-                        $value: "#1a1a1a",
-                        $resolvedValue: "#1a1a1a",
                         $cssProperties: { value: "#1a1a1a" },
                     }),
                 },
             };
 
-            const modifiers: ModifierMeta[] = [
+            const config = configWith("basic", [
+                { input: { theme: "light" }, selector: ":root" },
                 {
-                    name: "theme",
-                    attribute: "data-theme",
-                    defaultContext: "light",
-                    contexts: ["dark"],
-                    contextStrategy: "prefers-color-scheme",
+                    input: { theme: "dark" },
+                    selector: ":root",
+                    atRule: "@media (prefers-color-scheme: dark)",
                 },
-            ];
+            ]);
 
-            const result = await generate(tokens, fillDefaults(configs.basic), modifiers);
+            const result = await generate(tokens, config);
             const css = result.output[0]?.css ?? "";
 
             expect(css).toContain(":root {");
             expect(css).toContain("--color-surface: #ffffff;");
             expect(css).toContain("@media (prefers-color-scheme: dark) {");
             expect(css).toContain("--color-surface: #1a1a1a;");
-            // Should NOT contain data attribute selector
             expect(css).not.toContain('[data-theme="dark"]');
         });
 
-        it("should generate data attribute selector by default", async () => {
+        it("should use inline permutation from --input (CLI converts input to permutation)", async () => {
             const tokens: NormalizedConvertedTokens = {
-                default: {
-                    "color.surface": createConvertedToken({
-                        $path: "color.surface",
-                        $value: "#ffffff",
-                        $resolvedValue: "#ffffff",
-                        $cssProperties: { value: "#ffffff" },
-                    }),
-                },
-                "theme:dark": {
-                    "color.surface": createConvertedToken({
-                        $path: "color.surface",
-                        $value: "#1a1a1a",
-                        $resolvedValue: "#1a1a1a",
-                        $cssProperties: { value: "#1a1a1a" },
+                "perm:0": {
+                    "color.primary": createConvertedToken({
+                        $path: "color.primary",
+                        $cssProperties: { value: "#0066FF" },
                     }),
                 },
             };
 
-            const modifiers: ModifierMeta[] = [
-                {
-                    name: "theme",
-                    attribute: "data-theme",
-                    defaultContext: "light",
-                    contexts: ["dark"],
-                    contextStrategy: "data-attribute",
-                },
-            ];
+            const config = configWith("basic", [
+                { input: { brand: "ocean" }, selector: "[data-brand='ocean']" },
+            ]);
 
-            const result = await generate(tokens, fillDefaults(configs.basic), modifiers);
+            const result = await generate(tokens, config);
             const css = result.output[0]?.css ?? "";
 
-            expect(css).toContain(":root {");
-            expect(css).toContain("--color-surface: #ffffff;");
-            expect(css).toContain('[data-theme="dark"] {');
-            expect(css).toContain("--color-surface: #1a1a1a;");
-            // Should NOT contain media query
-            expect(css).not.toContain("@media (prefers-color-scheme");
+            expect(css).toContain("[data-brand='ocean'] {");
+            expect(css).toContain("--color-primary: #0066FF;");
         });
 
-        it("should handle mixed modifiers with different selector strategies", async () => {
+        it("should group permutations by path", async () => {
             const tokens: NormalizedConvertedTokens = {
-                default: {
-                    "color.surface": createConvertedToken({
-                        $path: "color.surface",
-                        $value: "#ffffff",
-                        $resolvedValue: "#ffffff",
-                        $cssProperties: { value: "#ffffff" },
+                "perm:0": {
+                    "color.primary": createConvertedToken({
+                        $path: "color.primary",
+                        $cssProperties: { value: "#0066FF" },
                     }),
                 },
-                "theme:dark": {
-                    "color.surface": createConvertedToken({
-                        $path: "color.surface",
-                        $value: "#1a1a1a",
-                        $resolvedValue: "#1a1a1a",
-                        $cssProperties: { value: "#1a1a1a" },
-                    }),
-                },
-                "density:compact": {
-                    "spacing.base": createConvertedToken({
-                        $type: "dimension",
-                        $path: "spacing.base",
-                        $value: "4px",
-                        $resolvedValue: "4px",
-                        $cssProperties: { value: "4px" },
+                "perm:1": {
+                    "color.primary": createConvertedToken({
+                        $path: "color.primary",
+                        $cssProperties: { value: "#00FF66" },
                     }),
                 },
             };
 
-            const modifiers: ModifierMeta[] = [
-                {
-                    name: "theme",
-                    attribute: "data-theme",
-                    defaultContext: "light",
-                    contexts: ["dark"],
-                    contextStrategy: "prefers-color-scheme",
-                },
-                {
-                    name: "density",
-                    attribute: "data-density",
-                    defaultContext: "normal",
-                    contexts: ["compact"],
-                    contextStrategy: "data-attribute",
-                },
-            ];
+            const config = configWith("basic", [
+                { input: { brand: "ocean" }, selector: ":root", path: "dist/ocean.css" },
+                { input: { brand: "forest" }, selector: ":root", path: "dist/forest.css" },
+            ]);
 
-            const result = await generate(tokens, fillDefaults(configs.basic), modifiers);
-            const css = result.output[0]?.css ?? "";
+            const result = await generate(tokens, config);
 
-            // Theme uses media query
-            expect(css).toContain("@media (prefers-color-scheme: dark) {");
-            expect(css).not.toContain('[data-theme="dark"]');
-
-            // Density uses data attribute
-            expect(css).toContain('[data-density="compact"] {');
+            expect(result.output).toHaveLength(2);
+            expect(result.output[0]?.path).toBe("dist/ocean.css");
+            expect(result.output[0]?.css).toContain("#0066FF");
+            expect(result.output[1]?.path).toBe("dist/forest.css");
+            expect(result.output[1]?.css).toContain("#00FF66");
         });
     });
 });

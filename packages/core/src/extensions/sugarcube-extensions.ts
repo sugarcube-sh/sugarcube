@@ -1,9 +1,8 @@
-import type { ContextStrategy } from "../types/pipelines.js";
-
 /** Reverse domain namespace per DTCG spec recommendation */
 const SUGARCUBE_NAMESPACE = "sh.sugarcube";
 
 type SugarcubeModifierExtensions = {
+    /** @deprecated Use variables.permutations with atRule instead */
     prefersColorScheme?: boolean;
 };
 
@@ -14,10 +13,11 @@ export function getSugarcubeExtensions(
     return extensions[SUGARCUBE_NAMESPACE] as SugarcubeModifierExtensions;
 }
 
-export function extractContextStrategy(
-    extensions: Record<string, unknown> | undefined
-): ContextStrategy {
+/**
+ * Check if the modifier uses prefersColorScheme (for validation purposes).
+ * @deprecated Use variables.permutations with atRule instead
+ */
+export function usesPrefersColorScheme(extensions: Record<string, unknown> | undefined): boolean {
     const ext = getSugarcubeExtensions(extensions);
-    if (ext?.prefersColorScheme === true) return "prefers-color-scheme";
-    return "data-attribute";
+    return ext?.prefersColorScheme === true;
 }
