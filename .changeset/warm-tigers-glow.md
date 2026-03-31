@@ -27,7 +27,7 @@ The `$value` serves as a static fallback while `fluid.min` and `fluid.max` defin
 
 ### Fluid extension validation
 
-The `sh.sugarcube.fluid` extension is now validated — `min` and `max` must both be valid dimension objects with numeric values and `px`/`rem` units. Previously, invalid fluid values would pass validation and fail silently at conversion.
+The `sh.sugarcube.fluid` extension is validated — `min` and `max` must both be valid dimension objects with numeric values and `px`/`rem` units.
 
 ### Pipeline context
 
