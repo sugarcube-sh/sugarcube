@@ -40,6 +40,9 @@ function convertFluidDimension(
     };
 }
 
+/**
+ * @deprecated Use `$type: "dimension"` with `$extensions["sh.sugarcube.fluid"]` instead.
+ */
 export function convertFluidDimensionToken(
     value: TokenValue<"fluidDimension">,
     options: ConversionOptions

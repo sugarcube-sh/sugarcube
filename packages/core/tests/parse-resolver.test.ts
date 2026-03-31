@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ErrorMessages } from "../src/constants/error-messages.js";
+import { WarningMessages } from "../src/constants/warning-messages.js";
 import {
     isResolverFormat,
     parseResolverDocument,
@@ -216,7 +217,7 @@ describe("parseResolverDocument", () => {
             expect(
                 hasWarning(
                     result.warnings,
-                    ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_DEPRECATED("theme")
+                    WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_DEPRECATED("theme")
                 )
             ).toBe(true);
         });
@@ -259,7 +260,7 @@ describe("parseResolverDocument", () => {
             expect(
                 hasWarning(
                     result.warnings,
-                    ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS("theme", [
+                    WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS("theme", [
                         "high-contrast",
                     ])
                 )
@@ -285,7 +286,7 @@ describe("parseResolverDocument", () => {
             expect(
                 hasWarning(
                     result.warnings,
-                    ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS("theme", [
+                    WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS("theme", [
                         "day",
                         "night",
                     ])
@@ -331,7 +332,10 @@ describe("parseResolverDocument", () => {
             expect(
                 hasWarning(
                     result.warnings,
-                    ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT("theme", "light")
+                    WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT(
+                        "theme",
+                        "light"
+                    )
                 )
             ).toBe(true);
         });

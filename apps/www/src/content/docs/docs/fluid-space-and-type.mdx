@@ -4,15 +4,44 @@ title: Fluid Space & Type
 
 import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 
-Fluid spacing and typography create responsive designs that adapt naturally to different screen sizes. Sugarcube supports this with a special token type called `fluidDimension`.
-
-<SiteAside type="caution">
-    `fluidDimension` tokens are **not** part of the official [DTCG specification](https://www.designtokens.org/tr/2025.10/format/). They are sugarcube-specific and might not be recognized by other design token tools. If you need cross-tool compatibility, use standard `dimension` tokens instead.
-</SiteAside>
+Fluid spacing and typography create responsive designs that adapt naturally to different screen sizes. Sugarcube supports fluid dimensions using the standard DTCG `dimension` type with an extension.
 
 ## Adding fluid dimension tokens
 
-The syntax is based on the [DTCG `dimension` token type](https://www.designtokens.org/tr/2025.10/format/#dimension), with `min` and `max` properties that define the scaling range:
+Use a standard `dimension` token with the `sh.sugarcube.fluid` extension. The `$value` serves as a fallback for tools that don't understand the extension, while the extension defines the fluid scaling range:
+
+```json title="src/design-tokens/spacing.json"
+{
+  "spacing": {
+    "$type": "dimension",
+    "sm": {
+      "$value": { "value": 16, "unit": "px" },
+      "$extensions": {
+        "sh.sugarcube": {
+          "fluid": {
+            "min": { "value": 0.5, "unit": "rem" },
+            "max": { "value": 1, "unit": "rem" }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+This approach keeps your tokens DTCG-compliant. Other tools will see a valid `dimension` token and use the `$value` as a static fallback, while Sugarcube generates fluid `clamp()` values from the extension.
+
+<SiteAside type="note">
+    The namespace `sh.sugarcube` follows the [DTCG $extensions specification](https://www.designtokens.org/tr/2025.10/format/#extensions) using reverse domain notation. The `fluid` key is nested within this namespace.
+</SiteAside>
+
+## Legacy format (deprecated)
+
+<SiteAside type="caution">
+    The `fluidDimension` type is deprecated and will eventually be removed in v1.0.0. Please migrate to the extension-based format above.
+</SiteAside>
+
+The older `fluidDimension` type is still supported but not recommended:
 
 ```json title="src/design-tokens/spacing.json"
 {
@@ -27,6 +56,8 @@ The syntax is based on the [DTCG `dimension` token type](https://www.designtoken
   }
 }
 ```
+
+This format is not part of the DTCG specification and won't be recognized by other design token tools.
 
 ## Adjusting the scaling rate
 

@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { FlattenedToken } from "../../src/types/flatten";
 import { validateDimension } from "../../src/validators/dimension";
 import { loadFixture } from "../__fixtures__/helpers/load-fixture";
@@ -62,6 +62,53 @@ describe("dimension validator", () => {
             if (!token) throw new Error("Token not found");
             const errors = ValidationHelper.validateToken(validateDimension, token);
             ValidationHelper.expectInvalidDimensionError(errors, token.$value, token.$path);
+        });
+    });
+
+    describe("fluid extension validation", () => {
+        const source = { sourcePath: "test.json" };
+
+        it("should accept valid fluid extension", () => {
+            const errors = validateDimension({ value: 16, unit: "px" }, "spacing.fluid", source, {
+                "sh.sugarcube": {
+                    fluid: { min: { value: 0.875, unit: "rem" }, max: { value: 1.5, unit: "rem" } },
+                },
+            });
+            expect(errors).toHaveLength(0);
+        });
+
+        it("should reject fluid extension with missing min", () => {
+            const errors = validateDimension({ value: 16, unit: "px" }, "spacing.fluid", source, {
+                "sh.sugarcube": { fluid: { max: { value: 1.5, unit: "rem" } } },
+            });
+            expect(errors.length).toBeGreaterThan(0);
+            expect(errors[0]?.path).toContain("fluid");
+        });
+
+        it("should reject fluid extension with invalid unit", () => {
+            const errors = validateDimension({ value: 16, unit: "px" }, "spacing.fluid", source, {
+                "sh.sugarcube": {
+                    fluid: { min: { value: 14, unit: "em" }, max: { value: 24, unit: "px" } },
+                },
+            });
+            expect(errors.length).toBeGreaterThan(0);
+            expect(errors[0]?.message).toContain("em");
+        });
+
+        it("should reject fluid extension with non-numeric value", () => {
+            const errors = validateDimension({ value: 16, unit: "px" }, "spacing.fluid", source, {
+                "sh.sugarcube": {
+                    fluid: { min: { value: "banana", unit: "px" }, max: { value: 24, unit: "px" } },
+                },
+            });
+            expect(errors.length).toBeGreaterThan(0);
+        });
+
+        it("should not validate fluid when extension is absent", () => {
+            const errors = validateDimension({ value: 16, unit: "px" }, "spacing.normal", source, {
+                "sh.sugarcube": {},
+            });
+            expect(errors).toHaveLength(0);
         });
     });
 });

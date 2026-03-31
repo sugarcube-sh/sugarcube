@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { isAbsolute, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
+import { WarningMessages } from "../constants/warning-messages.js";
 import { usesPrefersColorScheme } from "../extensions/sugarcube-extensions.js";
 import { isInlineModifier, isInlineSet, isReference } from "../guards/resolver-guards.js";
 import { resolverDocumentSchema } from "../schemas/resolver.js";
@@ -184,7 +185,7 @@ function checkModifierContexts(
     if (usesPrefersColorScheme(modifier.$extensions)) {
         warnings.push({
             path,
-            message: ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_DEPRECATED(modifierName),
+            message: WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_DEPRECATED(modifierName),
         });
 
         const contexts = Object.keys(modifier.contexts);
@@ -194,7 +195,7 @@ function checkModifierContexts(
         if (invalidContexts.length > 0) {
             warnings.push({
                 path: `${path}.contexts`,
-                message: ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS(
+                message: WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS(
                     modifierName,
                     invalidContexts
                 ),
@@ -208,7 +209,7 @@ function checkModifierContexts(
             if (!sources || sources.length === 0) {
                 warnings.push({
                     path: `${path}.contexts.${contextName}`,
-                    message: ErrorMessages.RESOLVER.PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT(
+                    message: WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT(
                         modifierName,
                         contextName
                     ),

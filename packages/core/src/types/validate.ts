@@ -1,4 +1,3 @@
-import type { InternalConfig } from "./config.js";
 import type { BaseError } from "./errors.js";
 import type { FlattenedToken } from "./flatten.js";
 import type { NodeMetadata, RawTokenValue, TokenSource, TokenType } from "./tokens.js";
@@ -19,5 +18,5 @@ export type Validator<T extends TokenType> = (
     value: RawTokenValue<T>,
     path: string,
     source: TokenSource,
-    config?: InternalConfig
+    extensions?: { [key: string]: unknown }
 ) => ValidationError[];

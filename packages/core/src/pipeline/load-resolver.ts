@@ -1,22 +1,16 @@
 import { dirname, isAbsolute, relative, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
-import { parseResolverDocument } from "../resolver/parse-resolver.js";
 import { processResolutionOrder } from "../resolver/process-resolution-order.js";
 import { type ExtractedModifier, extractModifiers } from "../resolver/utils.js";
 import type { Permutation } from "../types/config.js";
 import type { LoadError } from "../types/load.js";
+import type { ResolverDocument } from "../types/resolver.js";
 import type { TokenTree } from "../types/tokens.js";
-
-export type ResolverWarning = {
-    path: string;
-    message: string;
-};
 
 export type ResolverLoadResult = {
     trees: TokenTree[];
     permutations: Permutation[];
     errors: LoadError[];
-    warnings: ResolverWarning[];
 };
 
 type PermutationResult = {
@@ -48,12 +42,13 @@ function getDefaultContext(mod: ExtractedModifier): string {
 // ============================================
 
 /**
- * Load tokens from a resolver document.
+ * Load tokens from a parsed resolver document.
  *
  * Resolves each permutation independently via processResolutionOrder.
  * When no permutations are provided, auto-generates them from the resolver's modifiers.
  */
 export async function loadFromResolver(
+    document: ResolverDocument,
     resolverPath: string,
     permutations?: Permutation[]
 ): Promise<ResolverLoadResult> {
@@ -64,22 +59,7 @@ export async function loadFromResolver(
     const basePath = dirname(absolutePath);
     const relativePath = relative(process.cwd(), absolutePath);
 
-    const parseResult = await parseResolverDocument(absolutePath);
-    if (parseResult.errors.length > 0) {
-        return {
-            trees: [],
-            permutations: [],
-            errors: parseResult.errors.map((e) => ({ file: e.path, message: e.message })),
-            warnings: [],
-        };
-    }
-
-    const warnings: ResolverWarning[] = parseResult.warnings.map((w) => ({
-        path: w.path,
-        message: w.message,
-    }));
-
-    const modifiers = extractModifiers(parseResult.document);
+    const modifiers = extractModifiers(document);
 
     const resolvedPermutations =
         permutations && permutations.length > 0
@@ -88,18 +68,18 @@ export async function loadFromResolver(
 
     const validationErrors = validatePermutationInputs(resolvedPermutations, modifiers);
     if (validationErrors.length > 0) {
-        return { trees: [], permutations: [], errors: validationErrors, warnings };
+        return { trees: [], permutations: [], errors: validationErrors };
     }
 
     const { trees, errors } = await resolvePermutations(
-        parseResult.document,
+        document,
         basePath,
         relativePath,
         resolvedPermutations,
         modifiers
     );
 
-    return { trees, permutations: resolvedPermutations, errors, warnings };
+    return { trees, permutations: resolvedPermutations, errors };
 }
 
 // ============================================
