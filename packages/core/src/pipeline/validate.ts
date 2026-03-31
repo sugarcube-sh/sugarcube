@@ -1,5 +1,7 @@
 import { ErrorMessages } from "../constants/error-messages.js";
+import { WarningMessages } from "../constants/warning-messages.js";
 import type { FlattenedToken, FlattenedTokens } from "../types/flatten.js";
+import type { PipelineContext } from "../types/pipelines.js";
 import type { TokenType } from "../types/tokens.js";
 import type { ValidationError, Validator } from "../types/validate.js";
 import { validateBorder } from "../validators/border.js";
@@ -64,7 +66,7 @@ const validators = {
  *   }
  * });
  */
-export function validate(tokens: FlattenedTokens): ValidationError[] {
+export function validate(tokens: FlattenedTokens, context?: PipelineContext): ValidationError[] {
     const errors: ValidationError[] = [];
 
     for (const [path, node] of Object.entries(tokens.tokens)) {
@@ -73,6 +75,13 @@ export function validate(tokens: FlattenedTokens): ValidationError[] {
             continue;
         }
         if (node.$path.startsWith("$")) continue;
+
+        if (node.$type === "fluidDimension") {
+            context?.warn({
+                path: node.$path,
+                message: WarningMessages.VALIDATE.DEPRECATED_FLUID_DIMENSION(node.$path),
+            });
+        }
 
         // Check for required fields before validation.
         // Validators should only have the responsibility of validating structurally sound tokens.
@@ -104,9 +113,23 @@ export function validate(tokens: FlattenedTokens): ValidationError[] {
 
         const flattenedToken = node as FlattenedToken;
         errors.push(
-            ...validator(flattenedToken.$value, flattenedToken.$path, flattenedToken.$source)
+            ...validator(
+                flattenedToken.$value,
+                flattenedToken.$path,
+                flattenedToken.$source,
+                flattenedToken.$extensions
+            )
         );
     }
 
-    return errors;
+    // Deduplicate errors — the same token can appear under multiple permutation
+    // keys (e.g., perm:0.color.invalid and perm:1.color.invalid) but with the
+    // same $path and message. Only report each unique error once.
+    const seen = new Set<string>();
+    return errors.filter((error) => {
+        const key = `${error.path}::${error.message}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 }

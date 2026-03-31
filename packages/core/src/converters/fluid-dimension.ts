@@ -40,8 +40,6 @@ function convertFluidDimension(
     };
 }
 
-let deprecationWarningShown = false;
-
 /**
  * @deprecated Use `$type: "dimension"` with `$extensions["sh.sugarcube.fluid"]` instead.
  */
@@ -49,14 +47,6 @@ export function convertFluidDimensionToken(
     value: TokenValue<"fluidDimension">,
     options: ConversionOptions
 ): SimpleCSSProperties {
-    if (!deprecationWarningShown) {
-        console.warn(
-            `[sugarcube] Deprecation warning: $type: "fluidDimension" is deprecated. ` +
-                `Use $type: "dimension" with $extensions["sh.sugarcube"].fluid instead. `
-        );
-        deprecationWarningShown = true;
-    }
-
     if (isReference(value)) {
         return { value };
     }

@@ -137,6 +137,34 @@ describe("validate", () => {
         });
     });
 
+    describe("duplicate errors across permutations", () => {
+        it("should deduplicate errors when the same invalid token appears in multiple permutations", () => {
+            const tokens: FlattenedTokens = {
+                tokens: {
+                    "perm:0.color.invalid": {
+                        $type: "color",
+                        $value: "not-a-color",
+                        $path: "color.invalid",
+                        $source: { sourcePath: "test.json" },
+                        $originalPath: "color.invalid",
+                    },
+                    "perm:1.color.invalid": {
+                        $type: "color",
+                        $value: "not-a-color",
+                        $path: "color.invalid",
+                        $source: { sourcePath: "test.json" },
+                        $originalPath: "color.invalid",
+                    },
+                },
+                pathIndex: new Map([["color.invalid", "perm:0.color.invalid"]]),
+            };
+            const errors = validate(tokens);
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0]?.path).toBe("color.invalid");
+        });
+    });
+
     describe("reference tokens without $type", () => {
         it("should skip validation for reference tokens", () => {
             const tokens: FlattenedTokens = {
