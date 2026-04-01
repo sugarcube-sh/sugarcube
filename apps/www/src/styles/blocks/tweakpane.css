@@ -1,0 +1,26 @@
+.tweakpane {
+    width: 24rem;
+    background-color: var(--color-neutral-fill-loud);
+    color: var(--color-neutral-300);
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono);
+}
+
+.tweakpane-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3xs);
+    border-bottom: var(--border-width-thin) solid var(--color-surface-border);
+    background-color: var(--color-neutral-600);
+    border-top-left-radius: var(--radius-md);
+    border-top-right-radius: var(--radius-md);
+}
+
+.tweakpane-body {
+    padding: var(--space-3xs);
+}
+
+.tweakpane-section {
+    width: 100%;
+}
