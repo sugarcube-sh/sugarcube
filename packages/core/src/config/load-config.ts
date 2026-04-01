@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { createJiti } from "jiti";
 import { resolve } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
 import type { InternalConfig, SugarcubeConfig } from "../types/config.js";
@@ -70,9 +71,9 @@ async function loadTSConfig(configPath: string): Promise<unknown> {
             );
         }
 
-        const { createJiti } = await import("jiti");
         const jiti = createJiti(import.meta.url, {
             interopDefault: true,
+            moduleCache: false,
         });
 
         const result = await jiti.import(configPath);
