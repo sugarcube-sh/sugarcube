@@ -226,6 +226,10 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
                 const { config: loadedConfig } = await loadInternalConfig();
                 config = loadedConfig;
+
+                // Permutation changes affect token resolution, so we need to re-run
+                // the full token pipeline, not just CSS regeneration
+                await loadTokens();
                 await updateAll();
 
                 for (const fn of reloadCallbacks) fn();
@@ -402,11 +406,10 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                         );
                         if (unocssPlugin?.api) {
                             const unoContext = unocssPlugin.api.getContext();
-                            perf.log("FORCING UNOCSS RELOAD");
                             await unoContext.reloadConfig();
-                            perf.log("UNO CSS RELOAD COMPLETE");
                         }
 
+                        // We use the same invalidation path as the token watcher as we know that approach works
                         ctx.invalidate(server);
                     }
                 });
