@@ -279,9 +279,58 @@ In HTML, set a data attribute for each active context:
 
 This works because the modifiers are **orthogonal** — they override different tokens, so there's no conflict. The DTCG spec [recommends this approach](https://www.designtokens.org/TR/2025.10/resolver/#orthogonality).
 
-<SiteAside type="tip">
-  If two modifiers need to override the same token (e.g., brand-one needs a different dark surface color than brand-two), compose them into one modifier's contexts in the resolver. For example, create `theme` contexts like `dark`, `ocean-dark`, `forest-dark` — each containing the specific overrides that combination needs.
-</SiteAside>
+### When modifiers aren't orthogonal
+
+The examples above work because brand and theme override different tokens — brand changes `color.primary`, theme changes `color.surface`. But what if Brand Ocean's dark surface needs to be a dark blue, while Brand Forest's dark surface is a dark green? Now both modifiers want to override `color.surface`, and the last one wins — you lose the brand-specific value.
+
+When this happens, add composed contexts to the theme modifier for each brand-specific combination:
+
+```json title="tokens.resolver.json"
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [{ "$ref": "./base.json" }]
+    },
+    {
+      "type": "modifier",
+      "name": "brand",
+      "default": "default",
+      "contexts": {
+        "default": [],
+        "ocean": [{ "$ref": "./ocean.json" }],
+        "forest": [{ "$ref": "./forest.json" }]
+      }
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [{ "$ref": "./dark.json" }],
+        "dark-ocean": [{ "$ref": "./dark.json" }, { "$ref": "./dark-ocean.json" }],
+        "dark-forest": [{ "$ref": "./dark.json" }, { "$ref": "./dark-forest.json" }]
+      }
+    }
+  ]
+}
+```
+
+The brand modifier stays separate — it handles brand colors. The theme modifier gets composed contexts for each brand that needs dark-mode-specific overrides. `dark.json` is shared across all of them, and `dark-ocean.json` only contains the exceptions:
+
+```json title="dark-ocean.json"
+{
+  "color": {
+    "$type": "color",
+    "surface": { "$value": "#0c2d3f" }
+  }
+}
+```
+
+The number of theme contexts grows with the number of brand × mode combinations, but each override file stays small — only the tokens that actually differ from the generic dark mode.
 
 ### Per-brand output files
 

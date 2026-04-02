@@ -210,6 +210,70 @@ describe("permutations", () => {
         });
     });
 
+    describe("non-orthogonal modifiers (brand-specific theme contexts)", () => {
+        it("composes brand + brand-specific dark theme correctly", async () => {
+            const config = validateConfig({
+                resolver: resolve(FIXTURES_DIR, "non-orthogonal-modifiers.resolver.json"),
+                variables: {
+                    permutations: [
+                        { input: { brand: "default", theme: "light" }, selector: ":root" },
+                        {
+                            input: { brand: "ocean", theme: "dark-ocean" },
+                            selector: "[data-brand='ocean'][data-theme='dark']",
+                        },
+                        {
+                            input: { brand: "forest", theme: "dark-forest" },
+                            selector: "[data-brand='forest'][data-theme='dark']",
+                        },
+                    ],
+                },
+            });
+
+            const css = await generateCSS(config);
+
+            // :root should have base values
+            expect(css).toContain("--color-primary: #3b82f6;");
+            expect(css).toContain("--color-surface: #ffffff;");
+
+            // ocean dark should have ocean's primary, ocean-specific dark surface, AND shared dark text
+            const oceanDarkSection =
+                css.split("[data-brand='ocean'][data-theme='dark']")[1]?.split("}")[0] ?? "";
+            expect(oceanDarkSection).toContain("--color-primary: #0ea5e9;");
+            expect(oceanDarkSection).toContain("--color-surface: #0c2d3f;");
+            expect(oceanDarkSection).toContain("--color-text: #ffffff;");
+
+            // forest dark should have forest's primary, forest-specific dark surface, AND shared dark text
+            const forestDarkSection =
+                css.split("[data-brand='forest'][data-theme='dark']")[1]?.split("}")[0] ?? "";
+            expect(forestDarkSection).toContain("--color-primary: #16a34a;");
+            expect(forestDarkSection).toContain("--color-surface: #1a2e1a;");
+            expect(forestDarkSection).toContain("--color-text: #ffffff;");
+        });
+
+        it("brand-specific dark contexts don't affect other brands", async () => {
+            const config = validateConfig({
+                resolver: resolve(FIXTURES_DIR, "non-orthogonal-modifiers.resolver.json"),
+                variables: {
+                    permutations: [
+                        { input: { brand: "default", theme: "light" }, selector: ":root" },
+                        {
+                            input: { brand: "default", theme: "dark" },
+                            selector: "[data-theme='dark']",
+                        },
+                    ],
+                },
+            });
+
+            const css = await generateCSS(config);
+
+            // Generic dark should have generic dark surface, not ocean or forest
+            const darkSection = css.split("[data-theme='dark']")[1]?.split("}")[0] ?? "";
+            expect(darkSection).toContain("--color-surface: #1a1a1a;");
+            expect(darkSection).not.toContain("#0c2d3f");
+            expect(darkSection).not.toContain("#1a2e1a");
+        });
+    });
+
     describe("auto-generated permutations (no config)", () => {
         it("generates :root for defaults and data-attribute selectors for non-defaults", async () => {
             const config = validateConfig({

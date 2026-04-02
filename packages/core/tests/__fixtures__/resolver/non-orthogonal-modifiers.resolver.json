@@ -1,0 +1,39 @@
+{
+  "version": "2025.10",
+  "name": "Non-Orthogonal Modifiers Test",
+  "description": "Tests brand + theme modifiers where theme has brand-specific composed contexts",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [{ "$ref": "./non-orthogonal/base.json" }]
+    },
+    {
+      "type": "modifier",
+      "name": "brand",
+      "default": "default",
+      "contexts": {
+        "default": [],
+        "ocean": [{ "$ref": "./non-orthogonal/ocean.json" }],
+        "forest": [{ "$ref": "./non-orthogonal/forest.json" }]
+      }
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [{ "$ref": "./non-orthogonal/dark.json" }],
+        "dark-ocean": [
+          { "$ref": "./non-orthogonal/dark.json" },
+          { "$ref": "./non-orthogonal/dark-ocean.json" }
+        ],
+        "dark-forest": [
+          { "$ref": "./non-orthogonal/dark.json" },
+          { "$ref": "./non-orthogonal/dark-forest.json" }
+        ]
+      }
+    }
+  ]
+}
