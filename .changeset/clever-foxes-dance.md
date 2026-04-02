@@ -4,6 +4,8 @@
 
 ### DTCG 2025.10 Format Module support
 
+Thanks @binyamin for raising this issue.
+
 Adds support for the remaining DTCG 2025.10 Format Module features:
 
 - **`$root`** — root tokens in groups (spec 6.2)

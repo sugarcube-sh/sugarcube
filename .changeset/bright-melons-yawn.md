@@ -4,6 +4,8 @@
 
 ### Permutations API
 
+Thanks @aarongeorge for the feature request!
+
 A new DTCG-aligned permutations API for multi-brand and multi-theme CSS builds. Each permutation declares an `input`, `selector`, and optional `atRule` and `path`:
 
 ```ts
@@ -11,7 +13,6 @@ defineConfig({
   variables: {
     permutations: [
       { input: { theme: "light" }, selector: ":root" },
-      { input: { theme: "dark" }, selector: "[data-theme='dark']" },
       { input: { theme: "dark" }, atRule: "@media (prefers-color-scheme: dark)" },
     ],
   },
@@ -20,7 +21,7 @@ defineConfig({
 
 When no permutations are defined, they are auto-generated from the resolver's modifiers (default context → `:root`, non-default → `[data-{modifier}="{context}"]`).
 
-Delta optimization: non-default permutations only emit tokens that differ from the base.
+Delta optimisation: non-default permutations only emit tokens that differ from the base.
 
 Per-permutation `path` allows splitting themes into separate output files.
 
