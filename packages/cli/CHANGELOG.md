@@ -1,5 +1,16 @@
 # @sugarcube-sh/cli
 
+## 0.1.6
+
+### Patch Changes
+
+- 170b9e3: Fix missing spacing before the permutations warning when using the `--input` flag.
+- Updated dependencies [c4fec95]
+- Updated dependencies [8477fd8]
+- Updated dependencies [7a60f94]
+- Updated dependencies [1c5833f]
+  - @sugarcube-sh/core@0.2.0
+
 ## 0.1.5
 
 ### Patch Changes

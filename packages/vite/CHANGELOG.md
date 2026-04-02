@@ -1,5 +1,25 @@
 # @sugarcube-sh/vite
 
+## 0.1.7
+
+### Patch Changes
+
+- 7a60f94: ### Fix: config changes now hot-reload in the browser
+
+  Changes to `sugarcube.config.ts` (permutation selectors, transforms, utility config, etc.) now take effect via HMR without restarting the dev server.
+
+  Previously, config changes were detected but the browser never received the updated CSS. Two issues:
+
+  1. **Stale config** — `jiti` cached the config module between reloads, so the pipeline regenerated CSS from the old config values.
+  2. **Missing token reload** — config changes that affect permutations require re-running the full token pipeline, not just regenerating CSS from already-resolved tokens.
+
+- 9c85ead: Fix HMR not triggering for token file changes when the `resolver` config option is specified with a relative path prefix (e.g., `./tokens/...`). The token watcher now resolves the resolver path to an absolute path before matching against Vite's watcher events.
+- Updated dependencies [c4fec95]
+- Updated dependencies [8477fd8]
+- Updated dependencies [7a60f94]
+- Updated dependencies [1c5833f]
+  - @sugarcube-sh/core@0.2.0
+
 ## 0.1.6
 
 ### Patch Changes
