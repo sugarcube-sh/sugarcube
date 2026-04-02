@@ -93,6 +93,7 @@ function applyInputFlags(config: InternalConfig, flags: GenerateFlags): Internal
     if (Object.keys(input).length === 0) return config;
 
     if (config.variables.permutations && config.variables.permutations.length > 0) {
+        log.space(1);
         warningBoxWithBadge("Config permutations ignored due to --input flag");
     }
 
