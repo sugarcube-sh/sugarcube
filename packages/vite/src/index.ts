@@ -14,6 +14,7 @@ import type {
     SugarcubeConfig,
 } from "@sugarcube-sh/core";
 
+import { resolve } from "node:path";
 import UnoCSS from "@unocss/vite";
 import type { Logger, Plugin, ViteDevServer } from "vite";
 
@@ -306,14 +307,16 @@ function createSugarcubeContext(): SugarcubePluginContext {
  * Assumes token files are in the same directory as the resolver document.
  * TODO: Support non-colocation of resolver and token files??
  */
-function extractTokenDirs(config: InternalConfig): string[] {
+export function extractTokenDirs(config: Pick<InternalConfig, "resolver">): string[] {
     if (!config.resolver) {
         return [];
     }
 
-    // Get directory containing the resolver document
-    const lastSlash = config.resolver.lastIndexOf("/");
-    const resolverDir = lastSlash === -1 ? "." : config.resolver.slice(0, lastSlash);
+    // Resolve to absolute path so it matches Vite's absolute watcher paths
+    // Without this working properly, the token watcher will not work correctly
+    const absolute = resolve(process.cwd(), config.resolver);
+    const lastSlash = absolute.lastIndexOf("/");
+    const resolverDir = absolute.slice(0, lastSlash);
 
     return [resolverDir];
 }
