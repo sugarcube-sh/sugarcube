@@ -71,7 +71,7 @@
     },
     "devDependencies": {
         "cross-env": "7.0.3",
-        "pkgroll": "^2.26.0",
+        "pkgroll": "^2.27.0",
         "tsx": "^4.21.0"
     },
     "engines": {
