@@ -65,6 +65,21 @@
           }
         }
       }
+    },
+    {
+      "include": [
+        "apps/www/src/components/tweakpane/components/CornerPresets.tsx",
+        "apps/www/src/components/tweakpane/components/BorderWidthPresets.tsx",
+        "apps/www/src/components/tweakpane/components/ColorGrid.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useSemanticElements": "off",
+            "useFocusableInteractive": "off"
+          }
+        }
+      }
     }
   ]
 }

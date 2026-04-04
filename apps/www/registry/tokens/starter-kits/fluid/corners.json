@@ -1,7 +1,7 @@
 {
   "radius": {
     "$type": "dimension",
-"none": { "$value": { "value": 0, "unit": "rem" } },
+    "none": { "$value": { "value": 0, "unit": "rem" } },
     "sm": {
       "$value": {
         "value": 0.125,

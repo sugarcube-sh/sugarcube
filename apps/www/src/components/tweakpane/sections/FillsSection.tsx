@@ -4,14 +4,13 @@ import { Section } from "../components/Section";
 import { TokenFolder } from "../components/TokenFolder";
 import { resetCSSVar, setCSSVar } from "../hooks/useCSSVariables";
 
-const SURFACES = [
-    { token: "default", label: "default" },
-    { token: "raised", label: "raised" },
-    { token: "lowered", label: "lowered" },
-    { token: "lowest", label: "lowest" },
+const FILLS = [
+    { token: "quiet", label: "quiet" },
+    { token: "normal", label: "normal" },
+    { token: "loud", label: "loud" },
 ];
 
-export function SurfacesSection() {
+export function FillsSection() {
     const [customColors, setCustomColors] = useState<Record<string, ColorSelection>>({});
     const [expandedToken, setExpandedToken] = useState<string | null>(null);
 
@@ -21,7 +20,7 @@ export function SurfacesSection() {
 
     const handleColorSelect = (token: string, selection: ColorSelection) => {
         setCustomColors((prev) => ({ ...prev, [token]: selection }));
-        setCSSVar(`--color-surface-${token}`, colorSelectionToCSSValue(selection));
+        setCSSVar(`--color-fill-${token}`, colorSelectionToCSSValue(selection));
     };
 
     const handleReset = (token: string) => {
@@ -30,26 +29,25 @@ export function SurfacesSection() {
             delete next[token];
             return next;
         });
-        resetCSSVar(`--color-surface-${token}`);
+        resetCSSVar(`--color-fill-${token}`);
         setExpandedToken(null);
     };
 
     return (
-        <Section title="SURFACES">
-            {SURFACES.map((surface) => (
+        <Section title="FILLS">
+            {FILLS.map((fill) => (
                 <TokenFolder
-                    key={surface.token}
-                    label={surface.label}
-                    cssVar={`--color-surface-${surface.token}`}
-                    expanded={expandedToken === surface.token}
-                    onToggle={() => handleToggle(surface.token)}
-                    isCustom={surface.token in customColors}
-                    onReset={() => handleReset(surface.token)}
+                    key={fill.token}
+                    label={fill.label}
+                    cssVar={`--color-fill-${fill.token}`}
+                    expanded={expandedToken === fill.token}
+                    onToggle={() => handleToggle(fill.token)}
+                    isCustom={fill.token in customColors}
+                    onReset={() => handleReset(fill.token)}
                 >
                     <ColorGrid
-                        currentValue={customColors[surface.token]}
-                        onSelect={(selection) => handleColorSelect(surface.token, selection)}
-                        showWhiteBlack
+                        currentValue={customColors[fill.token]}
+                        onSelect={(selection) => handleColorSelect(fill.token, selection)}
                     />
                 </TokenFolder>
             ))}

@@ -2,7 +2,7 @@
     --_padding-block: 0.65em;
     --_form-control-height: round(calc(2 * var(--_padding-block) + 1em * 1.25), 1px);
 
-    background-color: color-mix(in oklab, var(--color-fill-normal) 50%, transparent);
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
     border-radius: var(--form-control-radius);
     font-size: var(--text-sm);
     display: inline-flex;

@@ -29,15 +29,19 @@
 }
 
 .site-button:hover {
-    background-color: color-mix(in oklab,
-            var(--color-fill-loud, var(--color-neutral-fill-loud)),
-            var(--color-mix-hover, black 5%));
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-loud, var(--color-neutral-fill-loud)),
+        var(--color-mix-hover, black 5%)
+    );
 }
 
 .site-button:active {
-    background-color: color-mix(in oklab,
-            var(--color-fill-loud, var(--color-neutral-fill-loud)),
-            var(--color-mix-active, black 10%));
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-loud, var(--color-neutral-fill-loud)),
+        var(--color-mix-active, black 10%)
+    );
 }
 
 .site-button:focus-visible {
@@ -52,15 +56,19 @@
 }
 
 .site-button[data-appearance="soft"]:hover {
-    background-color: color-mix(in oklab,
-            var(--color-fill-normal, var(--color-neutral-fill-normal)),
-            black 5%);
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-normal, var(--color-neutral-fill-normal)),
+        black 5%
+    );
 }
 
 .site-button[data-appearance="soft"]:active {
-    background-color: color-mix(in oklab,
-            var(--color-fill-normal, var(--color-neutral-fill-normal)),
-            black 10%);
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-normal, var(--color-neutral-fill-normal)),
+        black 10%
+    );
 }
 
 .site-button[data-appearance="soft"]:focus-visible {
@@ -80,9 +88,11 @@
 }
 
 .site-button[data-appearance="outlined"]:active {
-    background-color: color-mix(in oklab,
-            var(--color-fill-normal, var(--color-neutral-fill-normal)),
-            black 10%);
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-normal, var(--color-neutral-fill-normal)),
+        black 10%
+    );
 }
 
 .site-button[data-appearance="outlined"]:focus-visible {
@@ -99,15 +109,19 @@
 }
 
 .site-button[data-appearance="soft-outlined"]:hover {
-    background-color: color-mix(in oklab,
-            var(--color-fill-normal, var(--color-neutral-fill-normal)),
-            black 5%);
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-normal, var(--color-neutral-fill-normal)),
+        black 5%
+    );
 }
 
 .site-button[data-appearance="soft-outlined"]:active {
-    background-color: color-mix(in oklab,
-            var(--color-fill-normal, var(--color-neutral-fill-normal)),
-            black 10%);
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-normal, var(--color-neutral-fill-normal)),
+        black 10%
+    );
 }
 
 .site-button[data-appearance="soft-outlined"]:focus-visible {
@@ -126,9 +140,11 @@
 }
 
 .site-button[data-appearance="ghost"]:active {
-    background-color: color-mix(in oklab,
-            var(--color-fill-normal, var(--color-neutral-fill-normal)),
-            black 10%);
+    background-color: color-mix(
+        in oklab,
+        var(--color-fill-normal, var(--color-neutral-fill-normal)),
+        black 10%
+    );
 }
 
 .site-button[data-appearance="ghost"]:focus-visible {
