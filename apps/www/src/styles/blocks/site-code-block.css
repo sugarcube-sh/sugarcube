@@ -4,7 +4,7 @@
 
     background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
     border-radius: var(--form-control-radius);
-    font-size: var(--text-sm);
+    font-size: var(--form-control-font-size, var(--text-sm));
     display: inline-flex;
     gap: var(--space-3xs);
     align-items: center;

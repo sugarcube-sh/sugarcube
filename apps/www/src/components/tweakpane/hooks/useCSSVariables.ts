@@ -202,6 +202,13 @@ export function setFontFamily(role: "body" | "heading", family: string): void {
 }
 
 /**
+ * Set form control font size
+ */
+export function setFormControlFontSize(textStep: string): void {
+    setCSSVar("--form-control-font-size", `var(--text-${textStep})`);
+}
+
+/**
  * Toggle dark/light mode by dispatching event
  * Integrates with ThemeProvider
  */

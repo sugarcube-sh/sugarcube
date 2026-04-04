@@ -183,6 +183,13 @@ export const FONTS = {
 export type FontFamily = keyof typeof FONTS;
 
 /**
+ * Form control size presets (maps to text scale steps)
+ */
+export const FORM_CONTROL_SIZES = ["xs", "sm", "base", "lg", "xl"] as const;
+
+export type FormControlSize = (typeof FORM_CONTROL_SIZES)[number];
+
+/**
  * Surface tokens that can be configured
  */
 export const SURFACE_TOKENS = ["default", "raised", "lowered", "lowest"] as const;

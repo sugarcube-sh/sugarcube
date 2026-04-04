@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Section } from "../components/Section";
-import { FONTS, type FontFamily } from "../data/palettes";
-import { setFontFamily } from "../hooks/useCSSVariables";
+import { FONTS, FORM_CONTROL_SIZES, type FontFamily, type FormControlSize } from "../data/palettes";
+import { setFontFamily, setFormControlFontSize } from "../hooks/useCSSVariables";
 
 export function TypeSection() {
     const [bodyFont, setBodyFont] = useState<FontFamily>("sans");
     const [headingFont, setHeadingFont] = useState<FontFamily>("sans");
+    const [controlSize, setControlSize] = useState<FormControlSize>("sm");
 
     const handleBodyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const font = e.target.value as FontFamily;
@@ -17,6 +18,13 @@ export function TypeSection() {
         const font = e.target.value as FontFamily;
         setHeadingFont(font);
         setFontFamily("heading", font);
+    };
+
+    const handleControlSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const size = FORM_CONTROL_SIZES[Number(e.target.value)];
+        if (!size) return;
+        setControlSize(size);
+        setFormControlFontSize(size);
     };
 
     const fontOptions = Object.entries(FONTS);
@@ -57,6 +65,22 @@ export function TypeSection() {
                         </option>
                     ))}
                 </select>
+            </div>
+
+            <div className="tweakpane-slider-row">
+                <span className="tweakpane-slider-label">controls</span>
+                <input
+                    type="range"
+                    className="tweakpane-slider"
+                    min={0}
+                    max={FORM_CONTROL_SIZES.length - 1}
+                    step={1}
+                    value={FORM_CONTROL_SIZES.indexOf(controlSize)}
+                    onChange={handleControlSizeChange}
+                    aria-label="Form control size"
+                    aria-valuetext={controlSize}
+                />
+                <span className="tweakpane-slider-value">{controlSize}</span>
             </div>
         </Section>
     );
