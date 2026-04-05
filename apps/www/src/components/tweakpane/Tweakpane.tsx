@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Logo } from "./components/Logo";
 import { DEFAULT_FAMILY_PALETTES, type Palette } from "./data/palettes";
 import {
@@ -10,10 +10,11 @@ import {
 import { useDraggable } from "./hooks/useDraggable";
 import { AccentSection } from "./sections/AccentSection";
 import { BaseSection } from "./sections/BaseSection";
-import { BorderColorsSection } from "./sections/BorderColorsSection";
 import { BordersSection } from "./sections/BordersSection";
+import { ControlsSection } from "./sections/ControlsSection";
 import { FillsSection } from "./sections/FillsSection";
 import { OnFillsSection } from "./sections/OnFillsSection";
+import { ScaleSection } from "./sections/ScaleSection";
 import { ShapeSection } from "./sections/ShapeSection";
 import { SurfacesSection } from "./sections/SurfacesSection";
 import { TextSection } from "./sections/TextSection";
@@ -25,6 +26,36 @@ export function Tweakpane() {
     const [basePalette, setBasePalette] = useState<Palette>(DEFAULT_FAMILY_PALETTES.neutral);
     const [accentPalette, setAccentPalette] = useState<Palette>(DEFAULT_FAMILY_PALETTES.accent);
     const { position, dragHandleProps } = useDraggable({ x: 16, y: 16 });
+    const launcherRef = useRef<HTMLButtonElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const lastFocusedRef = useRef<HTMLElement | null>(null);
+
+    // Restore focus when tweakpane reopens
+    useEffect(() => {
+        if (visible) {
+            requestAnimationFrame(() => {
+                // Try restoring last focused element
+                if (lastFocusedRef.current && panelRef.current?.contains(lastFocusedRef.current)) {
+                    lastFocusedRef.current.focus();
+                    return;
+                }
+                // Fall back to selected base swatch or first focusable
+                const panel = panelRef.current;
+                if (!panel) return;
+                const swatch = panel.querySelector<HTMLElement>(
+                    '[role="radio"][aria-checked="true"]'
+                );
+                if (swatch) {
+                    swatch.focus();
+                } else {
+                    const first = panel.querySelector<HTMLElement>(
+                        'button, input, select, [tabindex="0"]'
+                    );
+                    first?.focus();
+                }
+            });
+        }
+    }, [visible]);
 
     // Sync mode state with document and re-apply palettes on mode change
     useEffect(() => {
@@ -57,21 +88,29 @@ export function Tweakpane() {
 
     return (
         <>
-            {!visible && (
-                <button
-                    type="button"
-                    className="tweakpane-launcher"
-                    onClick={() => setVisible(true)}
-                    aria-label="Open Sugarcube tweakpane"
-                >
-                    <Logo size={20} />
-                </button>
-            )}
+            <button
+                ref={launcherRef}
+                type="button"
+                className="tweakpane-launcher"
+                onClick={() => setVisible(true)}
+                aria-label="Open Sugarcube tweakpane"
+                hidden={visible}
+            >
+                <Logo size={20} />
+            </button>
 
             <div
+                ref={panelRef}
                 className="tweakpane"
                 style={{ left: position.x, top: position.y }}
                 hidden={!visible}
+                onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                        lastFocusedRef.current = document.activeElement as HTMLElement;
+                        setVisible(false);
+                        requestAnimationFrame(() => launcherRef.current?.focus());
+                    }
+                }}
             >
                 <div className="tweakpane-header" {...dragHandleProps}>
                     <span className="tweakpane-logo">
@@ -91,7 +130,11 @@ export function Tweakpane() {
                         <button
                             type="button"
                             className="tweakpane-close"
-                            onClick={() => setVisible(false)}
+                            onClick={() => {
+                                lastFocusedRef.current = document.activeElement as HTMLElement;
+                                setVisible(false);
+                                requestAnimationFrame(() => launcherRef.current?.focus());
+                            }}
                             aria-label="Close tweakpane"
                         >
                             ✕
@@ -105,14 +148,15 @@ export function Tweakpane() {
                         accentPalette={accentPalette}
                         onAccentPaletteChange={setAccentPalette}
                     />
-                    <SurfacesSection />
-                    <TextSection />
-                    <FillsSection />
-                    <OnFillsSection />
-                    <BorderColorsSection />
-                    <BordersSection />
+                    <SurfacesSection basePalette={basePalette} mode={mode} />
+                    <TextSection basePalette={basePalette} mode={mode} />
+                    <FillsSection basePalette={basePalette} mode={mode} />
+                    <OnFillsSection basePalette={basePalette} mode={mode} />
+                    <BordersSection basePalette={basePalette} mode={mode} />
                     <ShapeSection />
+                    <ScaleSection />
                     <TypeSection />
+                    <ControlsSection />
                 </div>
             </div>
         </>

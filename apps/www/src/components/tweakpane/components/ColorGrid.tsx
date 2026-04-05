@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useCallback, useRef } from "react";
+import { type KeyboardEvent, useCallback, useEffect, useRef } from "react";
 import { ALL_PALETTES, type Palette, SCALE, type ScaleStep } from "../data/palettes";
 
 export type ColorSelection =
@@ -38,6 +38,16 @@ export function ColorGrid({ currentValue, onSelect, showWhiteBlack = false }: Co
     };
 
     const totalSwatches = SCALE.length * COLS;
+
+    // Auto-focus the selected swatch when the grid mounts (folder expands)
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
+    useEffect(() => {
+        const grid = gridRef.current;
+        if (!grid) return;
+        const buttons = grid.querySelectorAll<HTMLElement>("button");
+        const idx = getSelectedIndex();
+        buttons[idx]?.focus();
+    }, []);
 
     const focusAndSelect = useCallback(
         (index: number) => {

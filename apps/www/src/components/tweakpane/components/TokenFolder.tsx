@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type KeyboardEvent, type ReactNode, useRef } from "react";
 
 type TokenFolderProps = {
     label: string;
@@ -19,10 +19,21 @@ export function TokenFolder({
     isCustom = false,
     children,
 }: TokenFolderProps) {
+    const headerRef = useRef<HTMLButtonElement>(null);
+
+    const handleContentKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+            e.stopPropagation();
+            onToggle();
+            headerRef.current?.focus();
+        }
+    };
+
     return (
         <div className="tweakpane-folder" data-expanded={expanded}>
             <div className="tweakpane-folder-header-row">
                 <button
+                    ref={headerRef}
                     type="button"
                     className="tweakpane-folder-header"
                     onClick={onToggle}
@@ -58,7 +69,11 @@ export function TokenFolder({
                     </span>
                 </button>
             </div>
-            {expanded && <div className="tweakpane-folder-content">{children}</div>}
+            {expanded && (
+                <div className="tweakpane-folder-content" onKeyDown={handleContentKeyDown}>
+                    {children}
+                </div>
+            )}
         </div>
     );
 }

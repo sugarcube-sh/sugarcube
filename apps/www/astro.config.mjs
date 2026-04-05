@@ -20,6 +20,12 @@ export default defineConfig({
                 cssVariable: "--font-geist",
                 weights: ["100 900"],
             },
+            {
+                provider: fontProviders.google(),
+                name: "Geist Mono",
+                cssVariable: "--font-geist-mono",
+                weights: ["100 900"],
+            },
         ],
     },
     integrations: [

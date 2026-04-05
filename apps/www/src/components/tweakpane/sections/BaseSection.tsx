@@ -15,7 +15,7 @@ export function BaseSection({ basePalette, onBasePaletteChange }: BaseSectionPro
     };
 
     return (
-        <Section title="BASE">
+        <Section title="BASE" defaultExpanded>
             <PaletteSwatches
                 label=""
                 value={basePalette}

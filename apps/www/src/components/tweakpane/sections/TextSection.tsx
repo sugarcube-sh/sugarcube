@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ColorGrid, type ColorSelection, colorSelectionToCSSValue } from "../components/ColorGrid";
 import { Section } from "../components/Section";
 import { TokenFolder } from "../components/TokenFolder";
+import type { Palette } from "../data/palettes";
+import { getDefaultColorSelection } from "../data/tokenDefaults";
 import { resetCSSVar, setCSSVar } from "../hooks/useCSSVariables";
 
 const TEXT_TOKENS = [
@@ -10,7 +12,12 @@ const TEXT_TOKENS = [
     { token: "link", label: "link" },
 ];
 
-export function TextSection() {
+type TextSectionProps = {
+    basePalette: Palette;
+    mode: "light" | "dark";
+};
+
+export function TextSection({ basePalette, mode }: TextSectionProps) {
     const [customColors, setCustomColors] = useState<Record<string, ColorSelection>>({});
     const [expandedToken, setExpandedToken] = useState<string | null>(null);
 
@@ -46,7 +53,10 @@ export function TextSection() {
                     onReset={() => handleReset(text.token)}
                 >
                     <ColorGrid
-                        currentValue={customColors[text.token]}
+                        currentValue={
+                            customColors[text.token] ??
+                            getDefaultColorSelection(`text-${text.token}`, basePalette, mode)
+                        }
                         onSelect={(selection) => handleColorSelect(text.token, selection)}
                     />
                 </TokenFolder>

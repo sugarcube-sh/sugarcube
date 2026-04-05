@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ColorGrid, type ColorSelection, colorSelectionToCSSValue } from "../components/ColorGrid";
 import { Section } from "../components/Section";
 import { TokenFolder } from "../components/TokenFolder";
+import type { Palette } from "../data/palettes";
+import { getDefaultColorSelection } from "../data/tokenDefaults";
 import { resetCSSVar, setCSSVar } from "../hooks/useCSSVariables";
 
 const ON_FILLS = [
@@ -10,7 +12,12 @@ const ON_FILLS = [
     { token: "loud", label: "loud" },
 ];
 
-export function OnFillsSection() {
+type OnFillsSectionProps = {
+    basePalette: Palette;
+    mode: "light" | "dark";
+};
+
+export function OnFillsSection({ basePalette, mode }: OnFillsSectionProps) {
     const [customColors, setCustomColors] = useState<Record<string, ColorSelection>>({});
     const [expandedToken, setExpandedToken] = useState<string | null>(null);
 
@@ -46,7 +53,10 @@ export function OnFillsSection() {
                     onReset={() => handleReset(on.token)}
                 >
                     <ColorGrid
-                        currentValue={customColors[on.token]}
+                        currentValue={
+                            customColors[on.token] ??
+                            getDefaultColorSelection(`on-${on.token}`, basePalette, mode)
+                        }
                         onSelect={(selection) => handleColorSelect(on.token, selection)}
                     />
                 </TokenFolder>

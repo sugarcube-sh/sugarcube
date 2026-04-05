@@ -22,11 +22,10 @@
     gap: var(--space-sm);
     padding: var(--space-xs);
     border-radius: var(--panel-radius);
-    border: var(--panel-border-width) var(--panel-border-style) var(--panel-border-color);
+    border: solid 1px var(--color-border-loud);
     box-shadow: var(--shadow-xs);
 }
 
 .site-footer .footer-cta p {
-    color: var(--color-text-quiet);
     margin: 0;
 }

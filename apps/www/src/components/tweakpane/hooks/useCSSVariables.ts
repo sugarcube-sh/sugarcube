@@ -209,6 +209,10 @@ export function setFormControlFontSize(textStep: string): void {
 }
 
 /**
+ * Set typography preset (heading hierarchy + body sizes)
+ */
+
+/**
  * Toggle dark/light mode by dispatching event
  * Integrates with ThemeProvider
  */

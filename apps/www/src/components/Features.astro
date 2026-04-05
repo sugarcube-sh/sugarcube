@@ -90,18 +90,18 @@ const features = [
             features.map((feature) => {
                 const Icon = icons[feature.icon as keyof typeof icons];
                 return (
-                    <div
+                    <section
                         class="site-card p-sm flow"
                         data-appearance="soft-outlined"
                     >
-                        <div class="cluster cluster-gap-xs">
+                        <div class="cluster cluster-gap-xs" data-cluster-wrap="nowrap">
                             <div>
-                                <Icon class="text-quiet text-xl" />
+                                <Icon class="text-quiet" style="--icon-size: 1.25em" />
                             </div>
                             <h3 class="text-base">{feature.title}</h3>
                         </div>
                         <p>{feature.description}</p>
-                    </div>
+                    </section>
                 );
             })
         }

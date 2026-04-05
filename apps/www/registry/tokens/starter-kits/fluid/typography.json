@@ -21,7 +21,14 @@
       ]
     },
     "mono": {
-      "$value": ["SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", "monospace"]
+      "$value": [
+        "Geist Mono",
+        "SFMono-Regular",
+        "Consolas",
+        "Liberation Mono",
+        "Menlo",
+        "monospace"
+      ]
     },
     "serif": {
       "$value": ["Georgia", "Cambria", "Times New Roman", "Times", "serif"]
@@ -75,8 +82,28 @@
       "$value": "{size.step.10}"
     }
   },
+  "heading": {
+    "1": { "$value": "{text.4xl}" },
+    "2": { "$value": "{text.3xl}" },
+    "3": { "$value": "{text.2xl}" },
+    "4": { "$value": "{text.xl}" }
+  },
+  "body": {
+    "default": { "$value": "{text.base}" },
+    "large": { "$value": "{text.lg}" },
+    "small": { "$value": "{text.sm}" }
+  },
+  "caption": {
+    "$value": "{text.xs}"
+  },
   "leading": {
     "$type": "number",
+    "heading": {
+      "$value": "{leading.none}"
+    },
+    "body": {
+      "$value": "{leading.normal}"
+    },
     "title": {
       "$value": "{leading.tight}"
     },
