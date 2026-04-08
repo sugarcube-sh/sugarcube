@@ -59,3 +59,4 @@ export type { TokenTree } from "./types/tokens.js";
 export type { NormalizedConvertedTokens } from "./types/convert.js";
 export type { CSSFileOutput } from "./types/generate.js";
 export type { userConfigSchema } from "./schemas/config.js";
+export type { NodeMetadata } from "./types/dtcg.js";
