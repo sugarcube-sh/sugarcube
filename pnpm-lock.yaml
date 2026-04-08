@@ -104,6 +104,9 @@ importers:
       '@sugarcube-sh/cli':
         specifier: workspace:*
         version: link:../../packages/cli
+      '@sugarcube-sh/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@sugarcube-sh/vite':
         specifier: workspace:*
         version: link:../../packages/vite

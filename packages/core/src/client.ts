@@ -29,9 +29,12 @@ export {
     clearMatchCache,
 } from "./utils/convert-utility-config-to-uno-rules.js";
 
-// Performance utilities (pure)
-export { PerfMonitor } from "./utils/perf-monitor.js";
-export { Instrumentation } from "./utils/instrumentation.js";
+// PerfMonitor and Instrumentation are deliberately NOT exported here.
+// They use Node-only globals (process.env, process.stderr, process.hrtime,
+// process.memoryUsage) and are intended for instrumenting the Node-side
+// build pipeline. Browser/client consumers don't need them. If browser
+// instrumentation is wanted later, it should be a separate module that
+// uses Performance APIs available in non-Node contexts.
 
 // Types
 export type {
