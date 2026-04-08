@@ -1,7 +1,12 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { DEFAULT_CONFIG } from "../constants/config.js";
 import type { InternalConfig, SugarcubeConfig } from "../types/config.js";
+import { fillDefaultsCore } from "./fill-defaults-core.js";
+
+// Re-export the pure helpers so existing imports of fillDefaults from this
+// file continue to work, and so consumers can grab the type from one place.
+export { fillDefaultsCore } from "./fill-defaults-core.js";
+export type { DefaultDirs } from "./fill-defaults-core.js";
 
 function getDefaultStylesDir(cwd: string): string {
     return existsSync(resolve(cwd, "src")) ? "src/styles" : "styles";
@@ -20,6 +25,10 @@ function getDefaultComponentsDir(cwd: string): string {
  * Output paths default to `src/styles` or `styles` (and similar) depending on
  * whether a `src/` directory exists in the project root.
  *
+ * Node-only — uses `existsSync` to detect the `src/` directory. For
+ * browser/edge/worker contexts, use `fillDefaultsCore` directly with explicit
+ * directory parameters.
+ *
  * @param userConfig - The user configuration with optional fields
  * @param cwd - The project root used for `src/` detection (defaults to `process.cwd()`)
  * @returns A complete configuration with all defaults filled in
@@ -28,39 +37,8 @@ export function fillDefaults(
     userConfig: SugarcubeConfig,
     cwd: string = process.cwd()
 ): InternalConfig {
-    const stylesDir = getDefaultStylesDir(cwd);
-
-    // Build default paths
-    const defaultVariablesPath = `${stylesDir}/${DEFAULT_CONFIG.variables.filename}`;
-    const defaultUtilitiesPath = `${stylesDir}/${DEFAULT_CONFIG.utilities.filename}`;
-
-    const internalConfig: InternalConfig = {
-        resolver: userConfig.resolver,
-
-        variables: {
-            path: userConfig.variables?.path ?? defaultVariablesPath,
-            layer: userConfig.variables?.layer,
-            transforms: {
-                fluid:
-                    userConfig.variables?.transforms?.fluid ??
-                    DEFAULT_CONFIG.variables.transforms.fluid,
-                colorFallbackStrategy:
-                    userConfig.variables?.transforms?.colorFallbackStrategy ??
-                    DEFAULT_CONFIG.variables.transforms.colorFallbackStrategy,
-            },
-            permutations: userConfig.variables?.permutations,
-        },
-
-        utilities: {
-            path: userConfig.utilities?.path ?? defaultUtilitiesPath,
-            layer: userConfig.utilities?.layer,
-            classes: userConfig.utilities?.classes,
-        },
-
-        components: userConfig.components ?? getDefaultComponentsDir(cwd),
-
-        cube: userConfig.cube ?? stylesDir,
-    };
-
-    return internalConfig;
+    return fillDefaultsCore(userConfig, {
+        stylesDir: getDefaultStylesDir(cwd),
+        componentsDir: getDefaultComponentsDir(cwd),
+    });
 }

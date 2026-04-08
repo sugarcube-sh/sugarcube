@@ -30,7 +30,14 @@
     "types": "./dist/index.d.ts",
     "type": "module",
     "exports": {
-        ".": "./dist/index.js"
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "./client": {
+            "types": "./dist/client.d.ts",
+            "default": "./dist/client.js"
+        }
     },
     "engines": {
         "node": ">=18.0.0"
