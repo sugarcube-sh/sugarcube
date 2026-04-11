@@ -58,6 +58,8 @@ export function fillDefaultsCore(userConfig: SugarcubeConfig, dirs: DefaultDirs)
         components: userConfig.components ?? componentsDir,
 
         cube: userConfig.cube ?? stylesDir,
+
+        studio: userConfig.studio,
     };
 
     return internalConfig;

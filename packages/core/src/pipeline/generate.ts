@@ -16,6 +16,7 @@ import type {
 import type { TokenType } from "../types/tokens.js";
 
 import { deterministicEntries } from "../utils/deterministic-entries.js";
+import { formatCSSVarName } from "../utils/format-css-var-name.js";
 import { toKebabCase } from "../utils/to-kebab-case.js";
 
 function indentCSS(css: string, spaces = 4): string {
@@ -24,10 +25,6 @@ function indentCSS(css: string, spaces = 4): string {
         .split("\n")
         .map((line) => (line.trim() ? `${indent}${line}` : line))
         .join("\n");
-}
-
-function formatCSSVarPath(path: string): string {
-    return path.split(".").join("-");
 }
 
 // Converts token references like "{color.primary}" to CSS variable syntax
@@ -54,7 +51,7 @@ function generateSingleVariable(token: ConvertedToken<TokenType>): CSSVariable |
     }
 
     return {
-        name: `--${formatCSSVarPath(token.$path)}`,
+        name: `--${formatCSSVarName(token.$path)}`,
         value: convertReferenceToCSSVar(props.value),
     };
 }
@@ -63,7 +60,7 @@ function generateTypographyVariables(token: ConvertedToken<"typography">): CSSVa
     return Object.entries(token.$cssProperties)
         .filter(([_, value]) => value !== undefined)
         .map(([prop, value]) => ({
-            name: `--${formatCSSVarPath(token.$path)}-${prop}`,
+            name: `--${formatCSSVarName(token.$path)}-${prop}`,
             value: convertReferenceToCSSVar(value),
         }));
 }
@@ -86,7 +83,7 @@ function generateFeatureVariables(token: ConvertedToken<TokenType>): CSSFeatureB
         const vars = queryGroups.get(feature.query);
         if (vars) {
             vars.push({
-                name: `--${formatCSSVarPath(token.$path)}`,
+                name: `--${formatCSSVarName(token.$path)}`,
                 value: convertReferenceToCSSVar(feature.value),
             });
         }

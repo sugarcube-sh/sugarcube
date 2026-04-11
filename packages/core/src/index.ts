@@ -36,6 +36,9 @@ export { Instrumentation } from "./utils/instrumentation.js";
 // File writers
 export { writeCSSVariablesToDisk, writeCSSUtilitiesToDisk } from "./fs/css-writer.js";
 
+// Utilities
+export { formatCSSVarName } from "./utils/format-css-var-name.js";
+
 // Types
 export type {
     InternalConfig,
@@ -46,6 +49,12 @@ export type {
     VariablesConfig,
     UtilitiesOutputConfig,
     UtilityClassesConfig,
+    StudioConfig,
+    ColorScaleConfig,
+    PanelSection,
+    PaletteSwapSection,
+    BindingSection,
+    PanelBinding,
 } from "./types/config.js";
 export type {
     PipelineContext,

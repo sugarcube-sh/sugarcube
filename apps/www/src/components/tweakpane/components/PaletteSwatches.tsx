@@ -1,38 +1,36 @@
-import { useCallback, useEffect, useState } from "react";
-import { ALL_PALETTES, type Palette } from "../data/palettes";
-import { getCSSVar } from "../hooks/useCSSVariables";
+import { formatCSSVarName } from "@sugarcube-sh/core/client";
+import { useCallback } from "react";
+import { joinTokenPath } from "../controls/path-utils";
 import { useRovingIndex } from "../hooks/useRovingIndex";
 
 type PaletteSwatchesProps = {
     label: string;
-    value: Palette;
-    onChange: (palette: Palette) => void;
-    /** Which palettes to show. Defaults to all. */
-    palettes?: readonly Palette[];
-    /** Which scale step to use for the swatch preview. Defaults to "500". */
-    previewStep?: string;
+    value: string;
+    onChange: (palette: string) => void;
+    /** Which palettes to show. */
+    palettes: readonly string[];
+    /**
+     * The token path prefix where palettes live (e.g. `"color"`).
+     * Combined with the palette name and `previewStep` to build the
+     * CSS variable name each swatch previews.
+     */
+    prefix: string;
+    /** Which scale step to use for the swatch preview. */
+    previewStep: string;
 };
 
 export function PaletteSwatches({
     label,
     value,
     onChange,
-    palettes = ALL_PALETTES,
-    previewStep = "500",
+    palettes,
+    prefix,
+    previewStep,
 }: PaletteSwatchesProps) {
-    const [colors, setColors] = useState<Record<string, string>>({});
-
-    useEffect(() => {
-        const computed: Record<string, string> = {};
-        for (const palette of palettes) {
-            computed[palette] = getCSSVar(`--color-${palette}-${previewStep}`);
-        }
-        setColors(computed);
-    }, [palettes, previewStep]);
-
     const onActivate = useCallback(
         (index: number) => {
-            onChange(palettes[index]);
+            const palette = palettes[index];
+            if (palette) onChange(palette);
         },
         [palettes, onChange]
     );
@@ -53,21 +51,25 @@ export function PaletteSwatches({
                 aria-label={label || "Palette"}
                 {...containerProps}
             >
-                {palettes.map((palette, i) => (
-                    <button
-                        key={palette}
-                        type="button"
-                        role="radio"
-                        aria-checked={value === palette}
-                        aria-label={palette}
-                        className="tweakpane-swatch"
-                        data-palette={palette}
-                        data-selected={value === palette}
-                        tabIndex={i === selectedIndex ? 0 : -1}
-                        style={{ backgroundColor: colors[palette] || undefined }}
-                        onClick={() => onChange(palette)}
-                    />
-                ))}
+                {palettes.map((palette, i) => {
+                    const path = joinTokenPath(prefix, palette, previewStep);
+                    const cssVar = `--${formatCSSVarName(path)}`;
+                    return (
+                        <button
+                            key={palette}
+                            type="button"
+                            role="radio"
+                            aria-checked={value === palette}
+                            aria-label={palette}
+                            className="tweakpane-swatch"
+                            data-palette={palette}
+                            data-selected={value === palette}
+                            tabIndex={i === selectedIndex ? 0 : -1}
+                            style={{ backgroundColor: `var(${cssVar})` }}
+                            onClick={() => onChange(palette)}
+                        />
+                    );
+                })}
             </div>
             <span className="tweakpane-palette-value">{value}</span>
         </div>

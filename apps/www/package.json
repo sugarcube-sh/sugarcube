@@ -5,9 +5,11 @@
     "version": "1.0.0",
     "scripts": {
         "astro": "astro",
-        "build": "pnpm run build:registry && cross-env REGISTRY_URL=/r astro build",
+        "build": "pnpm run build:registry && pnpm run snapshot:build && cross-env REGISTRY_URL=/r astro build",
         "build:registry": "tsx scripts/build-registry.ts",
+        "snapshot:build": "tsx scripts/build-token-snapshot.ts",
         "deploy": "pnpm run build && wrangler deploy",
+        "predev": "pnpm run snapshot:build",
         "dev": "cross-env REGISTRY_URL=/r astro dev",
         "dev:debug": "cross-env DEBUG=true REGISTRY_URL=/r astro dev",
         "preview": "astro preview",
@@ -50,7 +52,8 @@
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "react-hook-form": "^7.55.0",
-        "ultrahtml": "^1.6.0"
+        "ultrahtml": "^1.6.0",
+        "zustand": "^5.0.12"
     },
     "devDependencies": {
         "@unocss/preset-wind3": "^66.6.0",

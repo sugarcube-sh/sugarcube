@@ -1,20 +1,46 @@
 import { type KeyboardEvent, useCallback, useEffect, useRef } from "react";
-import { ALL_PALETTES, type Palette, SCALE, type ScaleStep } from "../data/palettes";
+import { joinTokenPath } from "../controls/path-utils";
+import { parseReference } from "../store/palette-discovery";
 
 export type ColorSelection =
-    | { type: "palette"; palette: Palette; step: ScaleStep }
+    | { type: "palette"; palette: string; step: string }
     | { type: "white" }
     | { type: "black" };
 
 type ColorGridProps = {
+    /** Available palette names (columns). */
+    palettes: readonly string[];
+    /** Available step names (rows). */
+    steps: readonly string[];
     currentValue?: ColorSelection | undefined;
     onSelect: (selection: ColorSelection) => void;
-    showWhiteBlack?: boolean;
+    /**
+     * Optional DTCG reference string for a "pure white" escape-hatch
+     * swatch (e.g. `"{color.white}"`). If provided, the grid renders a
+     * white swatch next to the palette grid; picking it emits a
+     * `{ type: "white" }` selection.
+     */
+    whiteRef: string | undefined;
+    /** Same as `whiteRef` but for black. */
+    blackRef: string | undefined;
+    /**
+     * Construct the CSS `background-color` for a swatch.
+     * Receives `(palette, step)` and returns a CSS value string.
+     */
+    swatchColor: (palette: string, step: string) => string;
 };
 
-const COLS = ALL_PALETTES.length;
-
-export function ColorGrid({ currentValue, onSelect, showWhiteBlack = false }: ColorGridProps) {
+export function ColorGrid({
+    palettes,
+    steps,
+    currentValue,
+    onSelect,
+    whiteRef,
+    blackRef,
+    swatchColor,
+}: ColorGridProps) {
+    const showWhiteBlack = whiteRef !== undefined || blackRef !== undefined;
+    const COLS = palettes.length;
     const gridRef = useRef<HTMLDivElement>(null);
 
     const isSelected = (selection: ColorSelection): boolean => {
@@ -28,16 +54,15 @@ export function ColorGrid({ currentValue, onSelect, showWhiteBlack = false }: Co
         return true;
     };
 
-    // Find the flat index of the currently selected palette swatch
     const getSelectedIndex = (): number => {
         if (!currentValue || currentValue.type !== "palette") return 0;
-        const colIndex = ALL_PALETTES.indexOf(currentValue.palette);
-        const rowIndex = SCALE.indexOf(currentValue.step);
+        const colIndex = palettes.indexOf(currentValue.palette);
+        const rowIndex = steps.indexOf(currentValue.step);
         if (colIndex === -1 || rowIndex === -1) return 0;
         return rowIndex * COLS + colIndex;
     };
 
-    const totalSwatches = SCALE.length * COLS;
+    const totalSwatches = steps.length * COLS;
 
     // Auto-focus the selected swatch when the grid mounts (folder expands)
     // biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
@@ -60,13 +85,12 @@ export function ColorGrid({ currentValue, onSelect, showWhiteBlack = false }: Co
 
             const rowIndex = Math.floor(index / COLS);
             const colIndex = index % COLS;
-            onSelect({
-                type: "palette",
-                palette: ALL_PALETTES[colIndex],
-                step: SCALE[rowIndex],
-            });
+            const palette = palettes[colIndex];
+            const step = steps[rowIndex];
+            if (!palette || !step) return;
+            onSelect({ type: "palette", palette, step });
         },
-        [onSelect]
+        [COLS, palettes, steps, onSelect]
     );
 
     const onKeyDown = useCallback(
@@ -106,7 +130,7 @@ export function ColorGrid({ currentValue, onSelect, showWhiteBlack = false }: Co
             e.preventDefault();
             focusAndSelect(nextIndex);
         },
-        [totalSwatches, focusAndSelect]
+        [COLS, totalSwatches, focusAndSelect]
     );
 
     const selectedIndex = getSelectedIndex();
@@ -115,20 +139,24 @@ export function ColorGrid({ currentValue, onSelect, showWhiteBlack = false }: Co
         <div className="color-grid">
             {showWhiteBlack && (
                 <div className="color-grid-special">
-                    <button
-                        type="button"
-                        className="color-grid-swatch color-grid-swatch-white"
-                        data-selected={isSelected({ type: "white" })}
-                        onClick={() => onSelect({ type: "white" })}
-                        aria-label="White"
-                    />
-                    <button
-                        type="button"
-                        className="color-grid-swatch color-grid-swatch-black"
-                        data-selected={isSelected({ type: "black" })}
-                        onClick={() => onSelect({ type: "black" })}
-                        aria-label="Black"
-                    />
+                    {whiteRef !== undefined && (
+                        <button
+                            type="button"
+                            className="color-grid-swatch color-grid-swatch-white"
+                            data-selected={isSelected({ type: "white" })}
+                            onClick={() => onSelect({ type: "white" })}
+                            aria-label="White"
+                        />
+                    )}
+                    {blackRef !== undefined && (
+                        <button
+                            type="button"
+                            className="color-grid-swatch color-grid-swatch-black"
+                            data-selected={isSelected({ type: "black" })}
+                            onClick={() => onSelect({ type: "black" })}
+                            aria-label="Black"
+                        />
+                    )}
                 </div>
             )}
 
@@ -140,9 +168,9 @@ export function ColorGrid({ currentValue, onSelect, showWhiteBlack = false }: Co
                 aria-label="Color palette"
                 onKeyDown={onKeyDown}
             >
-                {SCALE.map((step, rowIndex) => (
+                {steps.map((step, rowIndex) => (
                     <div key={step} className="color-grid-row" role="row">
-                        {ALL_PALETTES.map((palette, colIndex) => {
+                        {palettes.map((palette, colIndex) => {
                             const flatIndex = rowIndex * COLS + colIndex;
                             return (
                                 <button
@@ -151,7 +179,7 @@ export function ColorGrid({ currentValue, onSelect, showWhiteBlack = false }: Co
                                     role="gridcell"
                                     className="color-grid-swatch"
                                     style={{
-                                        backgroundColor: `var(--color-${palette}-${step})`,
+                                        backgroundColor: swatchColor(palette, step),
                                     }}
                                     data-selected={isSelected({ type: "palette", palette, step })}
                                     tabIndex={flatIndex === selectedIndex ? 0 : -1}
@@ -168,21 +196,77 @@ export function ColorGrid({ currentValue, onSelect, showWhiteBlack = false }: Co
 }
 
 /**
- * Convert a ColorSelection to a CSS value
+ * Convert a ColorSelection to a DTCG token reference string, using
+ * the palette's parent group path to construct the full token path.
+ *
+ * @param selection    - The color selection from the grid.
+ * @param paletteParent - The parent path that palettes live under
+ *                        (e.g. `"color"` if palettes are `color.blue`, `color.red`).
+ *                        Pass `""` for palettes at the token tree root.
+ * @param whiteRef     - Reference to emit for a "white" selection. Required
+ *                        when the grid is showing a white swatch.
+ * @param blackRef     - Reference to emit for a "black" selection. Required
+ *                        when the grid is showing a black swatch.
  */
-export function colorSelectionToCSSValue(selection: ColorSelection): string {
+export function colorSelectionToTokenReference(
+    selection: ColorSelection,
+    paletteParent: string,
+    whiteRef?: string,
+    blackRef?: string
+): string {
     switch (selection.type) {
         case "white":
-            return "var(--color-white)";
+            return whiteRef ?? "";
         case "black":
-            return "var(--color-black)";
+            return blackRef ?? "";
         case "palette":
-            return `var(--color-${selection.palette}-${selection.step})`;
+            return `{${joinTokenPath(paletteParent, selection.palette, selection.step)}}`;
     }
 }
 
 /**
- * Convert a ColorSelection to a display string
+ * Inverse: parse a token reference back into a ColorSelection.
+ * Uses the palette parent path to determine the palette name and step.
+ *
+ * @param value         - The token `$value` (a DTCG reference string).
+ * @param paletteParent - The parent path (e.g. `"color"`). Pass `""`
+ *                        for palettes at the token tree root.
+ * @param whiteRef      - Reference that represents "white", if any.
+ * @param blackRef      - Reference that represents "black", if any.
+ */
+export function tokenReferenceToColorSelection(
+    value: unknown,
+    paletteParent: string,
+    whiteRef?: string,
+    blackRef?: string
+): ColorSelection | undefined {
+    if (typeof value !== "string") return undefined;
+
+    if (whiteRef !== undefined && value === whiteRef) return { type: "white" };
+    if (blackRef !== undefined && value === blackRef) return { type: "black" };
+
+    const refPath = parseReference(value);
+    if (!refPath) return undefined;
+
+    // Normalize the parent into its canonical dotted form so we can
+    // match the reference path regardless of how the user wrote it.
+    const normalizedParent = joinTokenPath(paletteParent);
+    const stripPrefix = normalizedParent ? `${normalizedParent}.` : "";
+    if (stripPrefix && !refPath.startsWith(stripPrefix)) return undefined;
+
+    const remainder = refPath.substring(stripPrefix.length);
+    const dotPos = remainder.indexOf(".");
+    if (dotPos === -1) return undefined;
+
+    const palette = remainder.substring(0, dotPos);
+    const step = remainder.substring(dotPos + 1);
+    if (!palette || !step) return undefined;
+
+    return { type: "palette", palette, step };
+}
+
+/**
+ * Convert a ColorSelection to a display string.
  */
 export function colorSelectionToDisplayValue(selection: ColorSelection): string {
     switch (selection.type) {

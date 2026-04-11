@@ -29,6 +29,9 @@ export {
     clearMatchCache,
 } from "./utils/convert-utility-config-to-uno-rules.js";
 
+// Utilities
+export { formatCSSVarName } from "./utils/format-css-var-name.js";
+
 // PerfMonitor and Instrumentation are deliberately NOT exported here.
 // They use Node-only globals (process.env, process.stderr, process.hrtime,
 // process.memoryUsage) and are intended for instrumenting the Node-side
@@ -46,6 +49,12 @@ export type {
     VariablesConfig,
     UtilitiesOutputConfig,
     UtilityClassesConfig,
+    StudioConfig,
+    ColorScaleConfig,
+    PanelSection,
+    PaletteSwapSection,
+    BindingSection,
+    PanelBinding,
 } from "./types/config.js";
 export type {
     PipelineContext,

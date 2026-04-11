@@ -1,30 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { Logo } from "./components/Logo";
-import { DEFAULT_FAMILY_PALETTES, type Palette } from "./data/palettes";
-import {
-    getMode,
-    switchAccentPalette,
-    switchBasePalette,
-    toggleMode,
-} from "./hooks/useCSSVariables";
+import { PanelSectionView } from "./controls/PanelSectionView";
+import { PANEL_CONFIG } from "./data/panel-config";
+import { toggleMode } from "./hooks/useCSSVariables";
 import { useDraggable } from "./hooks/useDraggable";
-import { AccentSection } from "./sections/AccentSection";
-import { BaseSection } from "./sections/BaseSection";
-import { BordersSection } from "./sections/BordersSection";
-import { ControlsSection } from "./sections/ControlsSection";
-import { FillsSection } from "./sections/FillsSection";
-import { OnFillsSection } from "./sections/OnFillsSection";
-import { ScaleSection } from "./sections/ScaleSection";
-import { ShapeSection } from "./sections/ShapeSection";
-import { SurfacesSection } from "./sections/SurfacesSection";
-import { TextSection } from "./sections/TextSection";
-import { TypeSection } from "./sections/TypeSection";
+import { useMode } from "./hooks/useMode";
+import { DiffSection } from "./sections/DiffSection";
+import { TokenStorePipelineRunner } from "./store/TokenStore";
 
+/**
+ * The Tweakpane is now fully config-driven. It iterates the panel
+ * sections from `data/panel-config.ts` and renders each through the
+ * generic `PanelSectionView`, which dispatches bindings to the right
+ * control component via the resolver.
+ *
+ * The only non-config-driven piece is `DiffSection`, which is a
+ * computed view of what's changed — not an editable control — so it
+ * lives outside the panel config and is always rendered at the bottom.
+ */
 export function Tweakpane() {
     const [visible, setVisible] = useState(false);
-    const [mode, setMode] = useState<"light" | "dark">("light");
-    const [basePalette, setBasePalette] = useState<Palette>(DEFAULT_FAMILY_PALETTES.neutral);
-    const [accentPalette, setAccentPalette] = useState<Palette>(DEFAULT_FAMILY_PALETTES.accent);
+    const mode = useMode();
     const { position, dragHandleProps } = useDraggable({ x: 16, y: 16 });
     const launcherRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
@@ -34,12 +30,10 @@ export function Tweakpane() {
     useEffect(() => {
         if (visible) {
             requestAnimationFrame(() => {
-                // Try restoring last focused element
                 if (lastFocusedRef.current && panelRef.current?.contains(lastFocusedRef.current)) {
                     lastFocusedRef.current.focus();
                     return;
                 }
-                // Fall back to selected base swatch or first focusable
                 const panel = panelRef.current;
                 if (!panel) return;
                 const swatch = panel.querySelector<HTMLElement>(
@@ -57,37 +51,16 @@ export function Tweakpane() {
         }
     }, [visible]);
 
-    // Sync mode state with document and re-apply palettes on mode change
-    useEffect(() => {
-        setMode(getMode());
-
-        const handleModeChange = (e: CustomEvent<{ mode: string }>) => {
-            const newMode = e.detail.mode as "light" | "dark";
-            setMode(newMode);
-            // Re-apply palette selections with new mode's scale mappings
-            // Use setTimeout to ensure data-mode is set before we read it
-            setTimeout(() => {
-                switchBasePalette(basePalette);
-                switchAccentPalette(accentPalette);
-            }, 0);
-        };
-
-        document.addEventListener("mode-change", handleModeChange as EventListener);
-        return () => {
-            document.removeEventListener("mode-change", handleModeChange as EventListener);
-        };
-    }, [basePalette, accentPalette]);
-
     const handleModeToggle = () => {
         toggleMode();
     };
 
-    const handleOpenStudio = () => {
-        window.open("/__sugarcube", "_blank");
-    };
+    const ctx = { colorScale: PANEL_CONFIG.colorScale };
+    const sections = PANEL_CONFIG.panel ?? [];
 
     return (
         <>
+            <TokenStorePipelineRunner />
             <button
                 ref={launcherRef}
                 type="button"
@@ -143,20 +116,15 @@ export function Tweakpane() {
                 </div>
 
                 <div className="tweakpane-body">
-                    <BaseSection basePalette={basePalette} onBasePaletteChange={setBasePalette} />
-                    <AccentSection
-                        accentPalette={accentPalette}
-                        onAccentPaletteChange={setAccentPalette}
-                    />
-                    <SurfacesSection basePalette={basePalette} mode={mode} />
-                    <TextSection basePalette={basePalette} mode={mode} />
-                    <FillsSection basePalette={basePalette} mode={mode} />
-                    <OnFillsSection basePalette={basePalette} mode={mode} />
-                    <BordersSection basePalette={basePalette} mode={mode} />
-                    <ShapeSection />
-                    <ScaleSection />
-                    <TypeSection />
-                    <ControlsSection />
+                    {sections.map((section, i) => (
+                        <PanelSectionView
+                            key={`${section.title}-${i}`}
+                            section={section}
+                            ctx={ctx}
+                            defaultExpanded={i === 0}
+                        />
+                    ))}
+                    <DiffSection />
                 </div>
             </div>
         </>

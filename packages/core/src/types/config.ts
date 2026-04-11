@@ -129,6 +129,163 @@ export interface UtilitiesOutputConfig {
     classes?: UtilityClassesConfig;
 }
 
+// ---------------------------------------------------------------------------
+// Studio panel config
+// ---------------------------------------------------------------------------
+
+/**
+ * A single token binding in a panel section. Describes which token to show,
+ * what control to render, and where to find available options.
+ */
+export type PanelBinding = {
+    /** Token path or glob pattern (e.g. `"panel.radius"` or `"size.step.*"`). */
+    token: string;
+    /** Optional label override — default is derived from the token path. */
+    label?: string;
+    /** Override the inferred control type. `"scale"` treats matching tokens as a group. */
+    type?: "scale";
+    /**
+     * Available options for a preset picker.
+     * - `string` — glob pattern, discovers values from the token graph.
+     * - `Record<string, string>` — explicit label-to-reference map.
+     */
+    options?: string | Record<string, string>;
+    /** Link this token group to another group's scale transform. */
+    scalesWith?: string;
+    /**
+     * For `type: "scale"` bindings: the path of the step that should be
+     * treated as the scale's anchor — the step whose current value is
+     * `1.0` multiplier relative to itself, and which the "base" slider
+     * directly controls. Required for cascade-mode scale bindings.
+     *
+     * Not required for scale-extension-backed bindings (the extension
+     * carries its own base).
+     *
+     * @example
+     * { token: "size.step.*", type: "scale", base: "size.step.0" }
+     */
+    base?: string;
+    /** Slider minimum (dimension / number tokens). */
+    min?: number;
+    /** Slider maximum (dimension / number tokens). */
+    max?: number;
+    /** Slider step increment (dimension / number tokens). */
+    step?: number;
+};
+
+/**
+ * A palette-swap section. Swaps which palette family a set of semantic tokens
+ * references by replacing the palette name in each token's `$value` reference.
+ *
+ * Uses the top-level `studio.colorScale.palettes` list as the set of
+ * available swap targets. An optional `palettes` override on the section
+ * itself can narrow that list to a subset.
+ *
+ * @example
+ * {
+ *   title: "Base",
+ *   type: "palette-swap",
+ *   family: "color.neutral"
+ * }
+ */
+export type PaletteSwapSection = {
+    title: string;
+    type: "palette-swap";
+    /** Token path prefix whose children will have their palette reference swapped. */
+    family: string;
+    /**
+     * Optional override of the palette list for this section only.
+     * Defaults to the top-level `studio.colorScale.palettes`.
+     */
+    palettes?: string[];
+};
+
+/**
+ * Declares the project's color palette scale structure. All color-related
+ * controls (palette-swap sections and color pickers) read from this.
+ *
+ * Separating this from the panel config means the palette scale is
+ * declared once and consumed everywhere — no duplication, no inference
+ * from token data.
+ */
+export type ColorScaleConfig = {
+    /**
+     * The token path prefix where palette scales live. Combined with
+     * palette name + step, forms a full token path.
+     *
+     * Pass `""` for projects whose palettes live at the token tree
+     * root (e.g. `blue.50` with no `color.` parent).
+     *
+     * @example
+     * prefix: "color"        // → color.blue.500, color.neutral.50
+     * prefix: ""             // → blue.500, red.100
+     * prefix: "brand.colors" // → brand.colors.primary.500
+     */
+    prefix: string;
+    /**
+     * Explicit list of palette names available in the editing surface.
+     * These are the swappable options in palette-swap sections and the
+     * columns in the color picker grid.
+     *
+     * @example
+     * palettes: ["neutral", "slate", "blue", "red", "pink"]
+     */
+    palettes: string[];
+    /**
+     * Explicit list of scale step names. These are the rows in the
+     * color picker grid. Combined with `prefix` and a palette name,
+     * they form full token paths like `color.blue.500`.
+     *
+     * @example
+     * steps: ["50", "100", "200", "300", "400", "500",
+     *         "600", "700", "800", "900", "950"]
+     */
+    steps: string[];
+    /**
+     * Optional token path for a "pure white" escape hatch in the
+     * color picker. When set, the color picker renders an extra
+     * white swatch; picking it writes a reference to this token.
+     *
+     * @example
+     * white: "color.white"
+     */
+    white?: string;
+    /**
+     * Optional token path for a "pure black" escape hatch in the
+     * color picker. Same behavior as `white` but for black.
+     *
+     * @example
+     * black: "color.black"
+     */
+    black?: string;
+};
+
+/**
+ * A binding section. Groups one or more token bindings under a titled folder.
+ * The control for each binding is inferred from the token's `$type` unless
+ * overridden via `type` or `options`.
+ */
+export type BindingSection = {
+    title: string;
+    type?: never;
+    bindings: PanelBinding[];
+};
+
+/** A single section in the Studio editing panel. */
+export type PanelSection = PaletteSwapSection | BindingSection;
+
+/** Configuration for the Studio visual editing panel. */
+export type StudioConfig = {
+    /**
+     * Declares the project's color palette scale structure. Consumed by
+     * palette-swap sections (for the swap list) and color picker controls
+     * (for the grid axes).
+     */
+    colorScale?: ColorScaleConfig;
+    /** Declarative panel sections that define the editing surface. */
+    panel?: PanelSection[];
+};
+
 /**
  * Configuration for sugarcube.
  * This is the shape of your config file (sugarcube.config.ts).
@@ -199,6 +356,13 @@ export interface SugarcubeConfig {
      * @example "src/styles"
      */
     cube?: string;
+
+    /**
+     * Studio visual editing configuration.
+     * Defines the editing panel — which tokens appear in which sections
+     * and which operations apply.
+     */
+    studio?: StudioConfig;
 }
 
 /**
@@ -231,4 +395,7 @@ export interface InternalConfig {
 
     /** Directory path where CUBE CSS files will be copied */
     cube?: string;
+
+    /** Studio visual editing configuration */
+    studio?: StudioConfig;
 }
