@@ -1,10 +1,7 @@
 import { isInlineModifier, isReference } from "../guards/resolver-guards.js";
+import { isToken } from "../guards/token-guards.js";
 import type { TokenGroup } from "../types/dtcg.js";
 import type { InlineModifier, ModifierDefinition, ResolverDocument } from "../types/resolver.js";
-
-function isToken(value: unknown): boolean {
-    return typeof value === "object" && value !== null && "$value" in value;
-}
 
 /**
  * Deep merge two token groups.
