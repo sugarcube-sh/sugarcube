@@ -675,6 +675,32 @@
     overflow-y: auto;
 }
 
+.tweakpane-diff-file-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tweakpane-diff-file-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 2px 0;
+}
+
+.tweakpane-diff-file-path {
+    color: var(--tp-text);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.tweakpane-diff-file-count {
+    color: var(--tp-text-quiet);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10px;
+}
+
 .tweakpane-diff-entry {
     border: 1px solid hsla(230, 7%, 22%, 1);
     border-radius: 4px;

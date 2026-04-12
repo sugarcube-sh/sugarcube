@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { isAbsolute, resolve as resolvePath } from "pathe";
+import { isAbsolute, relative, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
 import { isReference } from "../guards/resolver-guards.js";
 import { isGroup, isToken } from "../guards/token-guards.js";
@@ -255,7 +255,8 @@ export async function resolveSources(
 
         if (refResult.errors.length === 0) {
             const content = applyExtending(refResult.content as TokenGroup, source);
-            resolved.push(stampSourcePath(content, refResult.sourcePath));
+            const relPath = relative(process.cwd(), refResult.sourcePath);
+            resolved.push(stampSourcePath(content, relPath));
         }
     }
 

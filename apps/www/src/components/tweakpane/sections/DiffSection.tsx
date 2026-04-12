@@ -39,6 +39,20 @@ function formatTokenBlock(token: SlimToken, marker: string): string {
         .join("\n");
 }
 
+function groupBySourceFile(entries: TokenDiffEntry[]): [string, TokenDiffEntry[]][] {
+    const groups = new Map<string, TokenDiffEntry[]>();
+    for (const entry of entries) {
+        const key = entry.sourcePath || "unknown";
+        const list = groups.get(key);
+        if (list) {
+            list.push(entry);
+        } else {
+            groups.set(key, [entry]);
+        }
+    }
+    return [...groups.entries()];
+}
+
 function DiffEntry({ entry }: { entry: TokenDiffEntry }) {
     const fromBlock = useMemo(() => formatTokenBlock(entry.from, "-"), [entry.from]);
     const toBlock = useMemo(() => formatTokenBlock(entry.to, "+"), [entry.to]);
@@ -80,11 +94,22 @@ export function DiffSection() {
                         </button>
                     </div>
                     <div className="tweakpane-diff-list">
-                        {diff.map((entry) => (
-                            <DiffEntry
-                                key={`${entry.path}\u0000${entry.contexts.join(",")}`}
-                                entry={entry}
-                            />
+                        {groupBySourceFile(diff).map(([sourcePath, entries]) => (
+                            <div key={sourcePath} className="tweakpane-diff-file-group">
+                                <div className="tweakpane-diff-file-header">
+                                    <span className="tweakpane-diff-file-path">{sourcePath}</span>
+                                    <span className="tweakpane-diff-file-count">
+                                        {entries.length}{" "}
+                                        {entries.length === 1 ? "change" : "changes"}
+                                    </span>
+                                </div>
+                                {entries.map((entry) => (
+                                    <DiffEntry
+                                        key={`${entry.path}\u0000${entry.contexts.join(",")}`}
+                                        entry={entry}
+                                    />
+                                ))}
+                            </div>
                         ))}
                     </div>
                 </>

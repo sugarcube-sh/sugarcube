@@ -51,6 +51,8 @@ export type SlimToken = {
 export type TokenDiffEntry = {
     /** Token path WITHOUT the permutation prefix (e.g. `panel.radius`) */
     path: string;
+    /** The source file this token was defined in (e.g. `tokens/color/neutral.json`). */
+    sourcePath: string;
     /**
      * The set of permutation contexts this change applies to. Empty if
      * the change is identical across every permutation that owns this
@@ -570,6 +572,7 @@ function slimToken(token: ResolvedTokens[string] | undefined): SlimToken | null 
 export function computeDiff(resolved: ResolvedTokens): TokenDiffEntry[] {
     type RawChange = {
         context: string;
+        sourcePath: string;
         from: SlimToken;
         to: SlimToken;
         fromKey: string;
@@ -580,7 +583,8 @@ export function computeDiff(resolved: ResolvedTokens): TokenDiffEntry[] {
     const byPath = new Map<string, RawChange[]>();
     for (const [path, indexEntries] of pathIndex.entries()) {
         for (const { context, key } of indexEntries) {
-            const currentSlim = slimToken(resolved[key]);
+            const current = resolved[key];
+            const currentSlim = slimToken(current);
             const originalSlim = slimToken(snapshot.resolved[key]);
             if (!currentSlim || !originalSlim) continue;
 
@@ -590,9 +594,15 @@ export function computeDiff(resolved: ResolvedTokens): TokenDiffEntry[] {
             const toKey = JSON.stringify(currentSlim);
             if (fromKey === toKey) continue;
 
+            const sourcePath =
+                current && "$source" in current
+                    ? (current as { $source: { sourcePath: string } }).$source.sourcePath
+                    : "";
+
             const list = byPath.get(path);
             const change: RawChange = {
                 context,
+                sourcePath,
                 from: originalSlim,
                 to: currentSlim,
                 fromKey,
@@ -633,6 +643,7 @@ export function computeDiff(resolved: ResolvedTokens): TokenDiffEntry[] {
             const showContexts = !(collapseAll && group.length === totalIndex);
             entries.push({
                 path,
+                sourcePath: first.sourcePath,
                 contexts: showContexts ? group.map((c) => c.context) : [],
                 from: first.from,
                 to: first.to,

@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { validateConfig } from "../src/config/validate-config.js";
 import { DEFAULT_CONFIG } from "../src/constants/config.js";
@@ -150,8 +150,11 @@ describe("Resolver Pipeline Integration", () => {
 
             expect(errors.load).toHaveLength(0);
 
-            const colorsFile = resolve(FIXTURES_DIR, "tokens/colors.json");
-            const spacingFile = resolve(FIXTURES_DIR, "tokens/spacing.json");
+            const colorsFile = relative(process.cwd(), resolve(FIXTURES_DIR, "tokens/colors.json"));
+            const spacingFile = relative(
+                process.cwd(),
+                resolve(FIXTURES_DIR, "tokens/spacing.json")
+            );
 
             // Find a color token and a spacing token in the resolved output
             const colorToken = resolved["perm:0.color.primary"] as ResolvedToken;
