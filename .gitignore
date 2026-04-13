@@ -6,6 +6,7 @@ drafts
 .DS_Store
 .claude
 .env*
+.dev.vars
 .wrangler
 *.log
 *.tsbuildinfo

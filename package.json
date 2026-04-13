@@ -17,7 +17,7 @@
         "ci:prepublish": "pnpm build",
         "clean": "rm -rf packages/*/dist packages/*/.tsbuildinfo node_modules/.cache",
         "deploy:www": "pnpm --filter=www run deploy",
-        "dev": "pnpm --filter=!@sugarcube-sh/cli -r --parallel dev",
+        "dev": "pnpm --filter=!@sugarcube-sh/cli --filter=!studio -r --parallel dev",
         "dev:www": "pnpm --filter=www dev",
         "format": "biome check --write",
         "knip": "knip",
