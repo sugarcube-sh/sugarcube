@@ -643,6 +643,7 @@
 .tweakpane-diff-actions {
     display: flex;
     justify-content: flex-end;
+    gap: 6px;
     margin-bottom: 6px;
 }
 
@@ -749,6 +750,126 @@
 .tweakpane-diff-plus {
     background: hsla(140, 60%, 25%, 0.25);
     color: hsl(140, 60%, 85%);
+}
+
+/* ─── Submit PR ─── */
+
+.tweakpane-submit-pr-button {
+    all: unset;
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--tp-accent, #a0d2db);
+    color: hsla(230, 7%, 10%, 1);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.tweakpane-submit-pr-button:hover {
+    opacity: 0.85;
+}
+
+.tweakpane-submit-pr-button:focus-visible {
+    outline: 2px solid var(--tp-accent, #a0d2db);
+    outline-offset: 1px;
+}
+
+.tweakpane-submit-dialog {
+    max-width: 28rem;
+}
+
+.tweakpane-submit-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.tweakpane-submit-input,
+.tweakpane-submit-textarea {
+    padding: 6px 8px;
+    border: 1px solid hsl(230, 7%, 30%);
+    border-radius: 4px;
+    background: hsl(230, 7%, 12%);
+    color: inherit;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+}
+
+.tweakpane-submit-input:focus,
+.tweakpane-submit-textarea:focus {
+    outline: 2px solid var(--tp-accent, #a0d2db);
+    outline-offset: -1px;
+    border-color: transparent;
+}
+
+.tweakpane-submit-files {
+    font-size: 12px;
+}
+
+.tweakpane-submit-files-heading {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.tweakpane-submit-files ul {
+    margin: 4px 0 0;
+    padding-left: 1.2em;
+}
+
+.tweakpane-submit-files li {
+    margin-bottom: 2px;
+}
+
+.tweakpane-submit-files code {
+    font-size: 11px;
+}
+
+.tweakpane-submit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.tweakpane-submit-confirm {
+    all: unset;
+    cursor: pointer;
+    padding: 6px 16px;
+    border-radius: 4px;
+    background: var(--tp-accent, #a0d2db);
+    color: hsla(230, 7%, 10%, 1);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.tweakpane-submit-confirm:hover {
+    opacity: 0.85;
+}
+
+.tweakpane-submit-confirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tweakpane-submit-confirm:focus-visible {
+    outline: 2px solid var(--tp-accent, #a0d2db);
+    outline-offset: 2px;
+}
+
+.tweakpane-submit-success a {
+    color: var(--tp-accent, #a0d2db);
+    text-decoration: underline;
+}
+
+.tweakpane-submit-error {
+    color: hsl(0, 70%, 65%);
+    font-size: 12px;
+    margin: 0;
 }
 
 /* ─── Launcher button ─── */

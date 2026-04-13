@@ -6,6 +6,7 @@ import {
     computeDiff,
     useTokenStore,
 } from "../store/TokenStore";
+import { SubmitPRDialog } from "./SubmitPRDialog";
 
 /**
  * CHANGES — a code-shaped diff view of every token the user has edited
@@ -89,6 +90,7 @@ export function DiffSection() {
             ) : (
                 <>
                     <div className="tweakpane-diff-actions">
+                        <SubmitPRDialog />
                         <button type="button" className="tweakpane-diff-reset" onClick={resetAll}>
                             Reset all
                         </button>
