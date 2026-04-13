@@ -1,0 +1,43 @@
+{
+    "name": "@sugarcube-sh/studio",
+    "version": "0.0.1",
+    "type": "module",
+    "private": true,
+    "description": "Visual design system editor for sugarcube",
+    "license": "MIT",
+    "author": {
+        "name": "Mark Tomlinson",
+        "email": "mark@marktomlinson.dev",
+        "url": "https://marktomlinson.dev"
+    },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.mts",
+            "import": "./dist/index.mjs"
+        }
+    },
+    "scripts": {
+        "build": "pkgroll --minify && pnpm run build:client",
+        "build:client": "vite build --config src/client/vite.config.ts",
+        "dev": "pkgroll --watch",
+        "type-check": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@sugarcube-sh/core": "workspace:*",
+        "@vitejs/devtools-kit": "^0.1.13"
+    },
+    "devDependencies": {
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^6.0.1",
+        "pkgroll": "^2.26.0",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "react-router": "^7.14.0",
+        "typescript": "^5.8.3",
+        "vite": "^8.0.3"
+    },
+    "peerDependencies": {
+        "vite": "^6.0.0 || ^7 || ^8"
+    }
+}

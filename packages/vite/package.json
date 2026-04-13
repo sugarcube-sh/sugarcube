@@ -52,7 +52,7 @@
         "@unocss/vite": "^66.5.2"
     },
     "peerDependencies": {
-        "vite": "^6.0.0 || ^7"
+        "vite": "^6.0.0 || ^7 || ^8"
     },
     "devDependencies": {
         "pkgroll": "^2.26.0",
