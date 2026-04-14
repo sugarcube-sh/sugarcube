@@ -1,34 +1,25 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { RouterProvider, createHashRouter } from "react-router";
-import { App } from "./App";
-import { StudioProvider } from "./context";
-import { Category } from "./routes/Category";
-import { Overview } from "./routes/Overview";
-import { TokenDetail } from "./routes/TokenDetail";
+import { StudioProvider } from "./providers/StudioProvider";
+import type { TokenSource } from "./providers/token-source";
+import { Shell } from "./shell/Shell";
 import "./app.css";
-
-const router = createHashRouter([
-    {
-        path: "/",
-        element: <App />,
-        children: [
-            { index: true, element: <Overview /> },
-            { path: "system/*", element: <Category /> },
-            { path: "token/*", element: <TokenDetail /> },
-        ],
-    },
-]);
 
 const rootEl = document.getElementById("root");
 if (!rootEl) {
     throw new Error('Studio mount point "#root" not found in index.html');
 }
 
+// ?mode=embedded means we're inside the <sugarcube-studio> web component.
+// Otherwise we're in the DevTools dock.
+const params = new URLSearchParams(window.location.search);
+const source: TokenSource =
+    params.get("mode") === "embedded" ? { mode: "embedded" } : { mode: "devtools" };
+
 createRoot(rootEl).render(
     <StrictMode>
-        <StudioProvider>
-            <RouterProvider router={router} />
+        <StudioProvider source={source}>
+            <Shell />
         </StudioProvider>
     </StrictMode>
 );

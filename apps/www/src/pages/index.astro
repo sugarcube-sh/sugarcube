@@ -1,6 +1,5 @@
 ---
 import Readme from "@/src/components/Readme.astro";
-import { Tweakpane } from "@/src/components/tweakpane";
 import BaseLayout from "@/src/layouts/BaseLayout.astro";
 import { siteConfig } from "@/src/site.config";
 
@@ -12,5 +11,12 @@ const meta = {
 
 <BaseLayout meta={meta}>
     <Readme />
-    <Tweakpane client:load />
 </BaseLayout>
+
+{import.meta.env.SUGARCUBE_STUDIO === "true" && (
+    <sugarcube-studio src="/__studio/"></sugarcube-studio>
+)}
+
+<script>
+    import "@sugarcube-sh/studio/embed";
+</script>

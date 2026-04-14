@@ -1,0 +1,33 @@
+import { type ReactNode, useMemo } from "react";
+import type { TokenSnapshot } from "../../store/types";
+import { createTokenStore } from "../store/create-token-store";
+import { StudioContext } from "../store/hooks";
+import { createScaleState } from "../store/scale-state";
+
+type Props = {
+    snapshot: TokenSnapshot;
+    mode: "devtools" | "embedded";
+    children: ReactNode;
+};
+
+export function TokenStoreProvider({ snapshot, mode, children }: Props) {
+    const ctx = useMemo(() => {
+        const { store, pathIndex } = createTokenStore(snapshot);
+        const scaleState = createScaleState(
+            snapshot.config.studio?.panel ?? [],
+            snapshot,
+            pathIndex,
+            store
+        );
+
+        return {
+            mode,
+            store,
+            pathIndex,
+            scaleState,
+            studioConfig: snapshot.config.studio,
+        };
+    }, [snapshot, mode]);
+
+    return <StudioContext.Provider value={ctx}>{children}</StudioContext.Provider>;
+}
