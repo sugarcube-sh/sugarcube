@@ -1,14 +1,9 @@
 import { useCallback, useState } from "react";
 import { DiffSection } from "../../components/DiffSection";
+import { rpcDiscard, rpcSave } from "../../providers/rpc-client";
 import { useStudioMode } from "../../store/hooks";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
-
-async function rpcCall(method: string): Promise<void> {
-    const { getDevToolsRpcClient } = await import("@vitejs/devtools-kit/client");
-    const client = await getDevToolsRpcClient();
-    await (client as { call: (m: string) => Promise<unknown> }).call(method);
-}
 
 export function ChangesView() {
     const mode = useStudioMode();
@@ -17,7 +12,7 @@ export function ChangesView() {
     const handleSave = useCallback(async () => {
         setSaveState("saving");
         try {
-            await rpcCall("studio:save");
+            await rpcSave();
             setSaveState("saved");
             setTimeout(() => setSaveState("idle"), 2000);
         } catch {
@@ -26,7 +21,7 @@ export function ChangesView() {
     }, []);
 
     const handleDiscard = useCallback(async () => {
-        await rpcCall("studio:discard");
+        await rpcDiscard();
     }, []);
 
     return (

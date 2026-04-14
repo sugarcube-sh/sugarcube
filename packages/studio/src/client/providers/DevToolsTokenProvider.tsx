@@ -5,18 +5,12 @@ import { PathIndex } from "../../store/path-index";
 import type { TokenStoreState } from "../store/create-token-store";
 import { StudioContext } from "../store/hooks";
 import { createScaleState } from "../store/scale-state";
-
-type SharedResolvedState = {
-    resolved: ResolvedTokens;
-};
-
-type SharedStateHandle = {
-    value: () => SharedResolvedState;
-    mutate: (fn: (draft: SharedResolvedState) => void) => void;
-    on: (event: "updated", fn: (state: SharedResolvedState) => void) => () => void;
-};
-
-type RpcCallFn = (method: string, ...args: unknown[]) => Promise<unknown>;
+import {
+    type SharedStateHandle,
+    getResolvedSharedState,
+    rpcDiscard,
+    rpcGetTokens,
+} from "./rpc-client";
 
 type InitData = {
     config: InternalConfig;
@@ -26,21 +20,7 @@ type InitData = {
 };
 
 async function fetchInitData(): Promise<InitData> {
-    const { getDevToolsRpcClient } = await import("@vitejs/devtools-kit/client");
-    const client = await getDevToolsRpcClient();
-
-    const rpcCall = (client as { call: RpcCallFn }).call.bind(client);
-    const data = (await rpcCall("studio:get-tokens")) as {
-        config: InternalConfig;
-        trees: TokenTree[];
-    };
-
-    const sharedState = await (
-        client as {
-            sharedState: { get: (name: string) => Promise<SharedStateHandle> };
-        }
-    ).sharedState.get("sugarcube:studio:resolved");
-
+    const [data, sharedState] = await Promise.all([rpcGetTokens(), getResolvedSharedState()]);
     return {
         config: data.config,
         trees: data.trees,
@@ -132,10 +112,8 @@ function DevToolsProviderInner({
 
             resetToken: () => {},
 
-            resetAll: async () => {
-                const { getDevToolsRpcClient } = await import("@vitejs/devtools-kit/client");
-                const client = await getDevToolsRpcClient();
-                await (client as { call: RpcCallFn }).call("studio:discard");
+            resetAll: () => {
+                rpcDiscard();
             },
         })) as StoreApi<TokenStoreState>;
 

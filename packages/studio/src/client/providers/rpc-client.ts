@@ -1,41 +1,56 @@
 import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core";
 
-type TokenState = {
+type TokenData = {
     config: InternalConfig;
     trees: TokenTree[];
+};
+
+export type SharedResolvedState = {
     resolved: ResolvedTokens;
+};
+
+export type SharedStateHandle = {
+    value: () => SharedResolvedState;
+    mutate: (fn: (draft: SharedResolvedState) => void) => void;
+    on: (event: "updated", fn: (state: SharedResolvedState) => void) => () => void;
 };
 
 type RpcCallFn = (method: string, ...args: unknown[]) => Promise<unknown>;
 
-let rpcCall: RpcCallFn | null = null;
+type DevToolsClient = {
+    call: RpcCallFn;
+    sharedState: { get: (name: string) => Promise<SharedStateHandle> };
+};
 
-async function getRpc(): Promise<RpcCallFn> {
-    if (rpcCall) return rpcCall;
+let cachedClient: DevToolsClient | null = null;
+
+async function getClient(): Promise<DevToolsClient> {
+    if (cachedClient) return cachedClient;
     const { getDevToolsRpcClient } = await import("@vitejs/devtools-kit/client");
-    const client = await getDevToolsRpcClient();
-    rpcCall = (client as { call: RpcCallFn }).call.bind(client);
-    return rpcCall;
+    cachedClient = (await getDevToolsRpcClient()) as unknown as DevToolsClient;
+    return cachedClient;
 }
 
-export async function rpcGetTokens(): Promise<TokenState> {
-    const call = await getRpc();
-    return (await call("studio:get-tokens")) as TokenState;
+/** Fetch the static config + trees from the server. */
+export async function rpcGetTokens(): Promise<TokenData> {
+    const client = await getClient();
+    return (await client.call("studio:get-tokens")) as TokenData;
 }
 
-export async function rpcSetToken(key: string, newToken: Record<string, unknown>): Promise<void> {
-    const call = await getRpc();
-    await call("studio:set-token", { key, newToken });
+/** Subscribe to the live resolved-tokens state. */
+export async function getResolvedSharedState(): Promise<SharedStateHandle> {
+    const client = await getClient();
+    return client.sharedState.get("sugarcube:studio:resolved");
 }
 
-export async function rpcSetTokens(
-    updates: Array<{ key: string; newToken: Record<string, unknown> }>
-): Promise<void> {
-    const call = await getRpc();
-    await call("studio:set-tokens", { updates });
+/** Write staged edits from shared state to disk. */
+export async function rpcSave(): Promise<void> {
+    const client = await getClient();
+    await client.call("studio:save");
 }
 
-export async function rpcResetAll(): Promise<TokenState> {
-    const call = await getRpc();
-    return (await call("studio:reset-all")) as TokenState;
+/** Discard staged edits and reload from disk. */
+export async function rpcDiscard(): Promise<void> {
+    const client = await getClient();
+    await client.call("studio:discard");
 }
