@@ -1,9 +1,6 @@
 import { useMemo } from "react";
-import { computeDiff } from "../../store/compute-diff";
 import type { SlimToken, TokenDiffEntry } from "../../store/types";
-import { usePathIndex, useStudioMode, useTokenStore } from "../store/hooks";
-import { Section } from "./Section";
-import { SubmitPRDialog } from "./SubmitPRDialog";
+import { usePendingChanges } from "../store/hooks";
 
 function formatTokenBlock(token: SlimToken, marker: string): string {
     return JSON.stringify(token, null, 2)
@@ -31,63 +28,54 @@ function DiffEntry({ entry }: { entry: TokenDiffEntry }) {
     const toBlock = useMemo(() => formatTokenBlock(entry.to, "+"), [entry.to]);
 
     return (
-        <div>
-            <div>
-                <span>{entry.path}</span>
-                {entry.contexts.length > 0 && <span>{entry.contexts.join(", ")}</span>}
-            </div>
-            <pre>{fromBlock}</pre>
-            <pre>{toBlock}</pre>
-        </div>
+        <article aria-label={`Change to ${entry.path}`}>
+            <h3>
+                <code>{entry.path}</code>
+            </h3>
+            {entry.contexts.length > 0 && (
+                <p>
+                    <span>Applies to: </span>
+                    <span>{entry.contexts.join(", ")}</span>
+                </p>
+            )}
+            <pre aria-label="Previous value">{fromBlock}</pre>
+            <pre aria-label="New value">{toBlock}</pre>
+        </article>
     );
 }
 
 export function DiffSection() {
-    const mode = useStudioMode();
-    const resolved = useTokenStore((state) => state.resolved);
-    const resetAll = useTokenStore((state) => state.resetAll);
-    const pathIndex = usePathIndex();
-    const snapshotResolved = pathIndex.getSnapshot().resolved;
+    const diff = usePendingChanges();
 
-    const diff = useMemo(
-        () => computeDiff(resolved, snapshotResolved, pathIndex),
-        [resolved, snapshotResolved, pathIndex]
-    );
-    const count = diff.length;
+    if (diff.length === 0) {
+        return <p>No changes yet — tweak something.</p>;
+    }
+
+    const grouped = groupBySourceFile(diff);
 
     return (
-        <Section title={`CHANGES (${count})`} defaultExpanded={count > 0}>
-            {count === 0 ? (
-                <p>No changes yet — tweak something.</p>
-            ) : (
-                <>
-                    <div>
-                        {mode !== "devtools" && <SubmitPRDialog />}
-                        <button type="button" onClick={resetAll}>
-                            Reset all
-                        </button>
-                    </div>
-                    <div>
-                        {groupBySourceFile(diff).map(([sourcePath, entries]) => (
-                            <div key={sourcePath}>
-                                <div>
-                                    <span>{sourcePath}</span>
-                                    <span>
-                                        {entries.length}{" "}
-                                        {entries.length === 1 ? "change" : "changes"}
-                                    </span>
-                                </div>
-                                {entries.map((entry) => (
-                                    <DiffEntry
-                                        key={`${entry.path}\u0000${entry.contexts.join(",")}`}
-                                        entry={entry}
-                                    />
-                                ))}
-                            </div>
+        <div>
+            {grouped.map(([sourcePath, entries]) => {
+                const headingId = `diff-file-${sourcePath.replace(/[^a-z0-9]/gi, "-")}`;
+                return (
+                    <section key={sourcePath} aria-labelledby={headingId}>
+                        <header>
+                            <h2 id={headingId}>
+                                <code>{sourcePath}</code>
+                            </h2>
+                            <p>
+                                {entries.length} {entries.length === 1 ? "change" : "changes"}
+                            </p>
+                        </header>
+                        {entries.map((entry) => (
+                            <DiffEntry
+                                key={`${entry.path}\u0000${entry.contexts.join(",")}`}
+                                entry={entry}
+                            />
                         ))}
-                    </div>
-                </>
-            )}
-        </Section>
+                    </section>
+                );
+            })}
+        </div>
     );
 }

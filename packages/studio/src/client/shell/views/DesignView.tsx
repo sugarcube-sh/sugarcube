@@ -1,8 +1,7 @@
-import { Section } from "../../components/Section";
 import { type ControlContext, renderSectionContent } from "../../controls/resolver";
 import { usePathIndex, useStudioConfig } from "../../store/hooks";
 
-export function EditView() {
+export function DesignView() {
     const config = useStudioConfig();
     const pathIndex = usePathIndex();
 
@@ -19,15 +18,15 @@ export function EditView() {
 
     return (
         <div>
-            {sections.map((section, i) => (
-                <Section
-                    key={section.title}
-                    title={section.title.toUpperCase()}
-                    defaultExpanded={i === 0}
-                >
-                    {renderSectionContent(section, ctx)}
-                </Section>
-            ))}
+            {sections.map((section) => {
+                const headingId = `design-section-${section.title.toLowerCase().replace(/\s+/g, "-")}`;
+                return (
+                    <section key={section.title} aria-labelledby={headingId}>
+                        <h2 id={headingId}>{section.title}</h2>
+                        {renderSectionContent(section, ctx)}
+                    </section>
+                );
+            })}
         </div>
     );
 }

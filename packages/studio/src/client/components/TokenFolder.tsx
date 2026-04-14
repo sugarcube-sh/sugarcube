@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type ReactNode, useRef } from "react";
+import { type KeyboardEvent, type ReactNode, useId, useRef } from "react";
 
 type TokenFolderProps = {
     label: string;
@@ -20,6 +20,7 @@ export function TokenFolder({
     children,
 }: TokenFolderProps) {
     const headerRef = useRef<HTMLButtonElement>(null);
+    const panelId = useId();
 
     const handleContentKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
@@ -30,33 +31,34 @@ export function TokenFolder({
     };
 
     return (
-        <div data-expanded={expanded}>
+        <div>
             <div>
-                <button ref={headerRef} type="button" onClick={onToggle} aria-expanded={expanded}>
+                <button
+                    ref={headerRef}
+                    type="button"
+                    onClick={onToggle}
+                    aria-expanded={expanded}
+                    aria-controls={panelId}
+                >
+                    <span aria-hidden="true" style={{ backgroundColor: `var(${cssVar})` }} />
                     <span>{label}</span>
-                    <span style={{ backgroundColor: `var(${cssVar})` }} />
                 </button>
                 {onReset && (
                     <button
                         type="button"
                         onClick={onReset}
                         disabled={!isCustom}
-                        aria-label={`Reset ${label} to base palette`}
-                        title="Reset to base"
+                        aria-label={`Discard custom value for ${label}`}
                     >
-                        ↺
+                        Discard
                     </button>
                 )}
-                <button
-                    type="button"
-                    onClick={onToggle}
-                    aria-expanded={expanded}
-                    aria-label={`${expanded ? "Collapse" : "Expand"} ${label}`}
-                >
-                    <span aria-hidden="true">{expanded ? "▼" : "▶"}</span>
-                </button>
             </div>
-            {expanded && <div onKeyDown={handleContentKeyDown}>{children}</div>}
+            {expanded && (
+                <div id={panelId} onKeyDown={handleContentKeyDown}>
+                    {children}
+                </div>
+            )}
         </div>
     );
 }

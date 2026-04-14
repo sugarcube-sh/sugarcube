@@ -5,6 +5,12 @@ import type { ResolvedTokens } from "@sugarcube-sh/core";
 import { defineRpcFunction } from "@vitejs/devtools-kit";
 import type { Plugin } from "vite";
 
+declare module "@vitejs/devtools-kit" {
+    interface DevToolsRpcSharedStates {
+        "sugarcube:studio:resolved": { resolved: ResolvedTokens };
+    }
+}
+
 const clientPath = fileURLToPath(new URL("./client", import.meta.url));
 
 /**

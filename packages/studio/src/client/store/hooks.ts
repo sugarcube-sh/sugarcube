@@ -1,8 +1,10 @@
 import type { StudioConfig } from "@sugarcube-sh/core/client";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 import { useStore } from "zustand";
+import { computeDiff } from "../../store/compute-diff";
 import { currentPaletteFromReference } from "../../store/palette-discovery";
 import type { PathIndex } from "../../store/path-index";
+import type { TokenDiffEntry } from "../../store/types";
 import type { TokenStoreAPI, TokenStoreState } from "./create-token-store";
 import type { ScaleStateAPI, ScaleStateStore } from "./scale-state";
 
@@ -62,6 +64,25 @@ export function useToken<T = unknown>(path: string): [T | undefined, (value: T) 
         | undefined;
     const setToken = useTokenStore((state) => state.setToken);
     return [value, (next: T) => setToken(path, next)];
+}
+
+/**
+ * The current diff between edited and baseline tokens.
+ * Memoised — callers get a stable array reference when the diff hasn't changed.
+ */
+export function usePendingChanges(): TokenDiffEntry[] {
+    const { pathIndex } = useStudio();
+    const resolved = useTokenStore((state) => state.resolved);
+    const snapshotResolved = pathIndex.getSnapshot().resolved;
+    return useMemo(
+        () => computeDiff(resolved, snapshotResolved, pathIndex),
+        [resolved, snapshotResolved, pathIndex]
+    );
+}
+
+/** Count of pending (unsaved/unsubmitted) token changes. */
+export function usePendingChangesCount(): number {
+    return usePendingChanges().length;
 }
 
 /** Derive the currently-selected palette for a token family. */
