@@ -21,3 +21,7 @@ Can be any acceptable flexbox alignment value.
     justify-content: var(--cluster-horizontal-alignment, flex-start);
     align-items: var(--cluster-vertical-alignment, center);
 }
+
+.cluster[data-cluster-wrap="nowrap"] {
+    flex-wrap: nowrap;
+}

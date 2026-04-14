@@ -23,7 +23,9 @@
     "scripts": {
         "build": "pkgroll --minify && pnpm run build:client",
         "build:client": "vite build --config src/client/vite.config.ts",
-        "dev": "pkgroll --watch",
+        "dev": "pnpm run \"/^dev:.*/\"",
+        "dev:plugin": "pkgroll --watch",
+        "dev:client": "vite build --config src/client/vite.config.ts --watch",
         "type-check": "tsc --noEmit"
     },
     "dependencies": {

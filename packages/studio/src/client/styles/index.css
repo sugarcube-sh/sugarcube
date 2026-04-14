@@ -12,6 +12,8 @@
 
 /* Blocks */
 @import "./blocks/prose.css";
+@import "./blocks/header.css";
+@import "./blocks/design-actions.css";
 
 /* Utilities */
 @import "./utilities/region.css";
