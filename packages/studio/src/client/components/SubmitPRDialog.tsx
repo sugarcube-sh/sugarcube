@@ -108,19 +108,19 @@ export function SubmitPRDialog() {
 
     return (
         <>
-            <button type="button" className="tweakpane-submit-pr-button" onClick={handleOpen}>
+            <button type="button" onClick={handleOpen}>
                 Submit as PR
             </button>
-            <dialog ref={dialogRef} className="studio-submit-dialog">
+            <dialog ref={dialogRef}>
                 {state.status === "success" ? (
                     <>
                         <h2>PR opened</h2>
-                        <p className="tweakpane-submit-success">
+                        <p>
                             <a href={state.prURL} target="_blank" rel="noopener noreferrer">
                                 PR #{state.prNumber} — View on GitHub
                             </a>
                         </p>
-                        <div className="tweakpane-submit-actions">
+                        <div>
                             <button type="button" onClick={handleClose}>
                                 Close
                             </button>
@@ -131,21 +131,19 @@ export function SubmitPRDialog() {
                         <h2>Submit as pull request</h2>
                         <p>Your edits will be submitted as a PR to the demo repo.</p>
 
-                        <label className="tweakpane-submit-label">
+                        <label>
                             Title
                             <input
                                 type="text"
-                                className="tweakpane-submit-input"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder={defaultTitle}
                             />
                         </label>
 
-                        <label className="tweakpane-submit-label">
+                        <label>
                             Description (optional)
                             <textarea
-                                className="tweakpane-submit-textarea"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 rows={3}
@@ -153,8 +151,8 @@ export function SubmitPRDialog() {
                             />
                         </label>
 
-                        <div className="tweakpane-submit-files">
-                            <span className="tweakpane-submit-files-heading">Files to change</span>
+                        <div>
+                            <span>Files to change</span>
                             <ul>
                                 {summary.map((f) => (
                                     <li key={f.path}>
@@ -165,17 +163,14 @@ export function SubmitPRDialog() {
                             </ul>
                         </div>
 
-                        {state.status === "error" && (
-                            <p className="tweakpane-submit-error">{state.message}</p>
-                        )}
+                        {state.status === "error" && <p>{state.message}</p>}
 
-                        <div className="tweakpane-submit-actions">
+                        <div>
                             <button type="button" onClick={handleClose}>
                                 Cancel
                             </button>
                             <button
                                 type="button"
-                                className="tweakpane-submit-confirm"
                                 disabled={state.status === "submitting"}
                                 onClick={handleSubmit}
                             >

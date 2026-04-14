@@ -10,14 +10,14 @@ export function Sidebar() {
     const { status, tree } = useStudio();
 
     return (
-        <nav className="sidebar">
-            <div className="sidebar-header">
-                <span className="sidebar-icon">&#9670;</span>
-                <span className="sidebar-title">sugarcube studio</span>
-                <span className={`sidebar-status sidebar-status--${status}`} />
+        <nav>
+            <div>
+                <span>&#9670;</span>
+                <span>sugarcube studio</span>
+                <span>{status}</span>
             </div>
 
-            <div className="sidebar-tree">
+            <div>
                 {tree &&
                     Array.from(tree.roots.values()).map((node) => (
                         <TreeNode key={node.path} node={node} depth={0} />
@@ -37,27 +37,23 @@ function TreeNode({ node, depth }: { node: TokenTreeNode; depth: number }) {
     const isExpandable = !isLoneLeaf && (hasChildren || hasTokens);
 
     return (
-        <div className="tree-node">
-            <div className="tree-row" style={{ "--depth": depth } as React.CSSProperties}>
+        <div>
+            <div style={{ "--depth": depth } as React.CSSProperties}>
                 {isExpandable ? (
-                    <button
-                        type="button"
-                        className={`tree-chevron ${isOpen ? "tree-chevron--open" : ""}`}
-                        onClick={() => setIsOpen(!isOpen)}
-                    >
+                    <button type="button" onClick={() => setIsOpen(!isOpen)}>
                         ›
                     </button>
                 ) : (
-                    <span className="tree-spacer" />
+                    <span />
                 )}
-                <NavLink to={`/system/${node.path}`} className="tree-link">
-                    <span className="tree-label">{node.name}</span>
-                    <span className="tree-count">{countTokens(node)}</span>
+                <NavLink to={`/system/${node.path}`}>
+                    <span>{node.name}</span>
+                    <span>{countTokens(node)}</span>
                 </NavLink>
             </div>
 
             {isOpen && (
-                <div className="tree-children">
+                <div>
                     {/* Leaf tokens at this level */}
                     {node.tokens.map((token) => (
                         <TokenLeaf key={token.$path} token={token} depth={depth + 1} />
@@ -74,10 +70,10 @@ function TreeNode({ node, depth }: { node: TokenTreeNode; depth: number }) {
 
 function TokenLeaf({ token, depth }: { token: ConvertedToken; depth: number }) {
     return (
-        <div className="tree-row" style={{ "--depth": depth } as React.CSSProperties}>
-            <span className="tree-spacer" />
-            <NavLink to={`/token/${token.$path}`} className="tree-link tree-link--leaf">
-                <span className="tree-label">{getTokenName(token)}</span>
+        <div style={{ "--depth": depth } as React.CSSProperties}>
+            <span />
+            <NavLink to={`/token/${token.$path}`}>
+                <span>{getTokenName(token)}</span>
             </NavLink>
         </div>
     );

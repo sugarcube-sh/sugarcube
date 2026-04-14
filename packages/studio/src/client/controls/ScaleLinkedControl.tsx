@@ -16,8 +16,8 @@ export function ScaleLinkedControl({ binding }: ScaleLinkedControlProps) {
     const inputId = `studio-scale-linked-${binding.token.replace(/\./g, "-")}`;
 
     return (
-        <div className="tweakpane-type-row">
-            <label className="tweakpane-type-label" htmlFor={inputId} style={{ cursor: "pointer" }}>
+        <div>
+            <label htmlFor={inputId} style={{ cursor: "pointer" }}>
                 {label}
             </label>
             <input

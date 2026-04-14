@@ -45,7 +45,7 @@ function EmbeddedLoader({ children }: { children: ReactNode }) {
     }, []);
 
     if (!snapshot) {
-        return <div className="studio-loading">Waiting for host...</div>;
+        return <div>Waiting for host...</div>;
     }
 
     return (

@@ -9,9 +9,9 @@ export function Shell() {
     const [activeView, setActiveView] = useState<ViewId>("edit");
 
     return (
-        <div className="studio-shell">
+        <div>
             <NavRail active={activeView} onChange={setActiveView} />
-            <main className="studio-content">
+            <main>
                 {activeView === "edit" && <EditView />}
                 {activeView === "changes" && <ChangesView />}
                 {activeView === "tokens" && <TokensView />}

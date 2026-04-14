@@ -21,11 +21,27 @@ type InitData = {
 
 async function fetchInitData(): Promise<InitData> {
     const [data, sharedState] = await Promise.all([rpcGetTokens(), getResolvedSharedState()]);
+
+    // The shared state may not have synced from the server yet on first connect.
+    // Wait for a valid value before returning.
+    let state = sharedState.value();
+    if (!state?.resolved) {
+        await new Promise<void>((resolve) => {
+            const unsub = sharedState.on("updated", () => {
+                if (sharedState.value()?.resolved) {
+                    unsub();
+                    resolve();
+                }
+            });
+        });
+        state = sharedState.value();
+    }
+
     return {
         config: data.config,
         trees: data.trees,
         sharedState,
-        initialResolved: sharedState.value().resolved,
+        initialResolved: state.resolved,
     };
 }
 
@@ -42,11 +58,11 @@ export function DevToolsTokenProvider({ children }: { children: ReactNode }) {
     }, []);
 
     if (error) {
-        return <div className="studio-error">Failed to load Studio: {error}</div>;
+        return <div>Failed to load Studio: {error}</div>;
     }
 
     if (!initData) {
-        return <div className="studio-loading">Loading Studio...</div>;
+        return <div>Loading Studio...</div>;
     }
 
     return <DevToolsProviderInner initData={initData}>{children}</DevToolsProviderInner>;

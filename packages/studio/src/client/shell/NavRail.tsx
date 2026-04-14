@@ -21,12 +21,11 @@ type NavRailProps = {
 
 export function NavRail({ active, onChange }: NavRailProps) {
     return (
-        <nav className="studio-nav-rail" aria-label="Studio navigation">
+        <nav aria-label="Studio navigation">
             {NAV_ITEMS.map((item) => (
                 <button
                     key={item.id}
                     type="button"
-                    className="studio-nav-item"
                     data-active={active === item.id || undefined}
                     data-disabled={item.disabled || undefined}
                     disabled={item.disabled}
@@ -34,10 +33,8 @@ export function NavRail({ active, onChange }: NavRailProps) {
                     title={item.disabled ? `${item.label} (coming soon)` : item.label}
                     aria-current={active === item.id ? "page" : undefined}
                 >
-                    <span className="studio-nav-icon" aria-hidden="true">
-                        {item.icon}
-                    </span>
-                    <span className="studio-nav-label">{item.label}</span>
+                    <span aria-hidden="true">{item.icon}</span>
+                    <span>{item.label}</span>
                 </button>
             ))}
         </nav>

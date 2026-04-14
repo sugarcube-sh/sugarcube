@@ -19,22 +19,17 @@ export function PresetControl({ binding }: PresetControlProps) {
     );
 
     return (
-        <div className="tweakpane-preset-row">
-            <span className="tweakpane-preset-label">{label}</span>
-            <div className="tweakpane-preset-buttons">
+        <div>
+            <span>{label}</span>
+            <div>
                 {options.map(({ key, label: optLabel, reference }) => (
-                    <label
-                        key={key}
-                        data-selected={value === reference}
-                        className="tweakpane-preset-button"
-                    >
+                    <label key={key} data-selected={value === reference}>
                         <input
                             type="radio"
                             name={label}
                             value={reference}
                             checked={value === reference}
                             onChange={() => setValue(reference)}
-                            className="visually-hidden"
                         />
                         {optLabel}
                     </label>

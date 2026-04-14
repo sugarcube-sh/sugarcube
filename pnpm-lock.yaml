@@ -279,16 +279,28 @@ importers:
 
   packages/studio:
     dependencies:
+      '@radix-ui/react-tabs':
+        specifier: ^1.1.13
+        version: 1.1.13(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@sugarcube-sh/core':
         specifier: workspace:*
         version: link:../core
+      '@sugarcube-sh/vite':
+        specifier: workspace:*
+        version: link:../vite
       '@vitejs/devtools-kit':
         specifier: ^0.1.13
         version: 0.1.13(typescript@5.9.3)(vite@8.0.8)(ws@8.20.0)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       zustand:
         specifier: ^5.0.12
         version: 5.0.12(@types/react@19.2.14)(immer@11.1.4)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
     devDependencies:
+      '@sugarcube-sh/cli':
+        specifier: workspace:*
+        version: link:../cli
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14

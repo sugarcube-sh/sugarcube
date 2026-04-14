@@ -19,22 +19,22 @@ export function TokenDetail() {
     }
 
     if (!found) {
-        return <div className="page-status">No token found at "{tokenPath}"</div>;
+        return <div>No token found at "{tokenPath}"</div>;
     }
 
     const cssValue = getCSSValue(found);
 
     return (
-        <div className="token-detail">
-            <h1 className="page-title">{getTokenName(found)}</h1>
-            {found.$description && <p className="group-description">{found.$description}</p>}
-            <p className="page-subtitle">{found.$path}</p>
+        <div>
+            <h1>{getTokenName(found)}</h1>
+            {found.$description && <p>{found.$description}</p>}
+            <p>{found.$path}</p>
 
-            <div className="token-detail-preview">
+            <div>
                 <TokenRow token={found} />
             </div>
 
-            <dl className="token-detail-meta">
+            <dl>
                 <dt>type</dt>
                 <dd>{found.$type}</dd>
                 <dt>path</dt>

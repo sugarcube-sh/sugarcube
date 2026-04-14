@@ -44,11 +44,10 @@ function CascadeScaleControl({ binding }: CascadeScaleControlProps) {
 
     return (
         <>
-            <div className="tweakpane-slider-row">
-                <span className="tweakpane-slider-label">{baseLabel}</span>
+            <div>
+                <span>{baseLabel}</span>
                 <input
                     type="range"
-                    className="tweakpane-slider"
                     min={scale.baseMax * 0.75}
                     max={scale.baseMax * 1.5}
                     step={0.025}
@@ -57,13 +56,12 @@ function CascadeScaleControl({ binding }: CascadeScaleControlProps) {
                     aria-label={baseLabel}
                     aria-valuetext={`${base}rem`}
                 />
-                <span className="tweakpane-slider-value">{base.toFixed(3)}</span>
+                <span>{base.toFixed(3)}</span>
             </div>
-            <div className="tweakpane-slider-row">
-                <span className="tweakpane-slider-label">{spreadLabel}</span>
+            <div>
+                <span>{spreadLabel}</span>
                 <input
                     type="range"
-                    className="tweakpane-slider"
                     min={0.4}
                     max={1.6}
                     step={0.01}
@@ -72,7 +70,7 @@ function CascadeScaleControl({ binding }: CascadeScaleControlProps) {
                     aria-label={spreadLabel}
                     aria-valuetext={`${spread.toFixed(2)}`}
                 />
-                <span className="tweakpane-slider-value">{spread.toFixed(2)}</span>
+                <span>{spread.toFixed(2)}</span>
             </div>
         </>
     );

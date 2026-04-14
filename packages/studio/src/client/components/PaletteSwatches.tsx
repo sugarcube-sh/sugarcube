@@ -43,14 +43,9 @@ export function PaletteSwatches({
     const selectedIndex = palettes.indexOf(value);
 
     return (
-        <div className="tweakpane-palette-swatches">
-            {label && <span className="tweakpane-palette-label">{label}</span>}
-            <div
-                className="tweakpane-palette-row"
-                role="radiogroup"
-                aria-label={label || "Palette"}
-                {...containerProps}
-            >
+        <div>
+            {label && <span>{label}</span>}
+            <div role="radiogroup" aria-label={label || "Palette"} {...containerProps}>
                 {palettes.map((palette, i) => {
                     const path = joinTokenPath(prefix, palette, previewStep);
                     const cssVar = `--${formatCSSVarName(path)}`;
@@ -61,7 +56,6 @@ export function PaletteSwatches({
                             role="radio"
                             aria-checked={value === palette}
                             aria-label={palette}
-                            className="tweakpane-swatch"
                             data-palette={palette}
                             data-selected={value === palette}
                             tabIndex={i === selectedIndex ? 0 : -1}
@@ -71,7 +65,7 @@ export function PaletteSwatches({
                     );
                 })}
             </div>
-            <span className="tweakpane-palette-value">{value}</span>
+            <span>{value}</span>
         </div>
     );
 }

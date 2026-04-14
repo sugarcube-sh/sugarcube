@@ -10,29 +10,22 @@ export function TokenPreview({ tokens }: { tokens: ConvertedToken[] }) {
 
     if (hasColors) {
         return (
-            <div className="preview-swatches">
+            <div>
                 {tokens.map((t) => {
                     const v = getCSSValue(t);
                     if (!v || !isColorValue(v)) return null;
-                    return (
-                        <div
-                            key={t.$path}
-                            className="preview-swatch"
-                            style={{ background: v }}
-                            title={t.$path}
-                        />
-                    );
+                    return <div key={t.$path} style={{ background: v }} title={t.$path} />;
                 })}
             </div>
         );
     }
 
     return (
-        <div className="preview-values">
+        <div>
             {tokens.map((t) => {
                 const v = getCSSValue(t);
                 return (
-                    <span key={t.$path} className="preview-value" title={t.$path}>
+                    <span key={t.$path} title={t.$path}>
                         {v ?? t.$type}
                     </span>
                 );

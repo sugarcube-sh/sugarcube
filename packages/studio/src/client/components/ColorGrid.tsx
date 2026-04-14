@@ -136,13 +136,12 @@ export function ColorGrid({
     const selectedIndex = getSelectedIndex();
 
     return (
-        <div className="color-grid">
+        <div>
             {showWhiteBlack && (
-                <div className="color-grid-special">
+                <div>
                     {whiteRef !== undefined && (
                         <button
                             type="button"
-                            className="color-grid-swatch color-grid-swatch-white"
                             data-selected={isSelected({ type: "white" })}
                             onClick={() => onSelect({ type: "white" })}
                             aria-label="White"
@@ -151,7 +150,6 @@ export function ColorGrid({
                     {blackRef !== undefined && (
                         <button
                             type="button"
-                            className="color-grid-swatch color-grid-swatch-black"
                             data-selected={isSelected({ type: "black" })}
                             onClick={() => onSelect({ type: "black" })}
                             aria-label="Black"
@@ -161,15 +159,9 @@ export function ColorGrid({
             )}
 
             {/* All palettes in one grid — single Tab stop, arrow keys navigate */}
-            <div
-                className="color-grid-palettes"
-                ref={gridRef}
-                role="grid"
-                aria-label="Color palette"
-                onKeyDown={onKeyDown}
-            >
+            <div ref={gridRef} role="grid" aria-label="Color palette" onKeyDown={onKeyDown}>
                 {steps.map((step, rowIndex) => (
-                    <div key={step} className="color-grid-row" role="row">
+                    <div key={step} role="row">
                         {palettes.map((palette, colIndex) => {
                             const flatIndex = rowIndex * COLS + colIndex;
                             return (
@@ -177,7 +169,6 @@ export function ColorGrid({
                                     key={`${palette}-${step}`}
                                     type="button"
                                     role="gridcell"
-                                    className="color-grid-swatch"
                                     style={{
                                         backgroundColor: swatchColor(palette, step),
                                     }}

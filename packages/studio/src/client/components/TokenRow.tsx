@@ -37,10 +37,10 @@ export function TokenRow({ token }: { token: ConvertedToken }) {
 
     // Fallback for any other type
     return (
-        <div className="token-row">
-            <span className="token-name">{name}</span>
-            <span className="token-type">{token.$type}</span>
-            {cssValue && <span className="token-value">{cssValue}</span>}
+        <div>
+            <span>{name}</span>
+            <span>{token.$type}</span>
+            {cssValue && <span>{cssValue}</span>}
         </div>
     );
 }
@@ -55,11 +55,11 @@ function ColorRow({
     token: ConvertedToken;
 }) {
     return (
-        <div className="token-row token-row--color">
-            <div className="token-swatch" style={{ background: value }} />
-            <span className="token-name">{name}</span>
-            {token.$description && <span className="token-description">{token.$description}</span>}
-            <span className="token-value">{value}</span>
+        <div>
+            <div style={{ background: value }} />
+            <span>{name}</span>
+            {token.$description && <span>{token.$description}</span>}
+            <span>{value}</span>
         </div>
     );
 }
@@ -79,13 +79,13 @@ function DimensionRow({
     const pct = Number.isFinite(num) ? Math.min((num / 4) * 100, 100) : 0;
 
     return (
-        <div className="token-row token-row--dimension">
-            <span className="token-name">{name}</span>
-            <div className="token-bar-track">
-                <div className="token-bar-fill" style={{ width: `${pct}%` }} />
+        <div>
+            <span>{name}</span>
+            <div>
+                <div style={{ width: `${pct}%` }} />
             </div>
-            {token.$description && <span className="token-description">{token.$description}</span>}
-            <span className="token-value">{value}</span>
+            {token.$description && <span>{token.$description}</span>}
+            <span>{value}</span>
         </div>
     );
 }
@@ -101,16 +101,10 @@ function TypographyRow({
     const cssValue = getCSSValue(token);
 
     return (
-        <div className="token-row token-row--typography">
-            <span className="token-name">{name}</span>
-            {typoProps && (
-                <span className="token-type-preview" style={typoProps}>
-                    Aa
-                </span>
-            )}
-            <span className="token-value">
-                {typoProps ? Object.values(typoProps).join(" / ") : (cssValue ?? "")}
-            </span>
+        <div>
+            <span>{name}</span>
+            {typoProps && <span style={typoProps}>Aa</span>}
+            <span>{typoProps ? Object.values(typoProps).join(" / ") : (cssValue ?? "")}</span>
         </div>
     );
 }
@@ -125,11 +119,11 @@ function ShadowRow({
     token: ConvertedToken;
 }) {
     return (
-        <div className="token-row token-row--shadow">
-            <div className="token-shadow-preview" style={{ boxShadow: value }} />
-            <span className="token-name">{name}</span>
-            {token.$description && <span className="token-description">{token.$description}</span>}
-            <span className="token-value">{value}</span>
+        <div>
+            <div style={{ boxShadow: value }} />
+            <span>{name}</span>
+            {token.$description && <span>{token.$description}</span>}
+            <span>{value}</span>
         </div>
     );
 }
@@ -144,11 +138,11 @@ function BorderRow({
     token: ConvertedToken;
 }) {
     return (
-        <div className="token-row token-row--border">
-            <div className="token-border-preview" style={{ borderBottom: value }} />
-            <span className="token-name">{name}</span>
-            {token.$description && <span className="token-description">{token.$description}</span>}
-            <span className="token-value">{value}</span>
+        <div>
+            <div style={{ borderBottom: value }} />
+            <span>{name}</span>
+            {token.$description && <span>{token.$description}</span>}
+            <span>{value}</span>
         </div>
     );
 }
@@ -163,11 +157,11 @@ function MotionRow({
     token: ConvertedToken;
 }) {
     return (
-        <div className="token-row token-row--motion">
-            <span className="token-name">{name}</span>
-            <span className="token-type">{token.$type}</span>
-            {token.$description && <span className="token-description">{token.$description}</span>}
-            <span className="token-value">{value}</span>
+        <div>
+            <span>{name}</span>
+            <span>{token.$type}</span>
+            {token.$description && <span>{token.$description}</span>}
+            <span>{value}</span>
         </div>
     );
 }

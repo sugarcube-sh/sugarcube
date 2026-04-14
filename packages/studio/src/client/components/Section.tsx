@@ -19,24 +19,17 @@ export function Section({ title, defaultExpanded = false, children }: SectionPro
     };
 
     return (
-        <section className="tweakpane-section" data-expanded={expanded}>
+        <section data-expanded={expanded}>
             <button
                 ref={headerRef}
                 type="button"
-                className="tweakpane-section-header"
                 onClick={() => setExpanded(!expanded)}
                 aria-expanded={expanded}
             >
-                <span className="tweakpane-section-title">{title}</span>
-                <span className="tweakpane-section-chevron" aria-hidden="true">
-                    {expanded ? "▼" : "▶"}
-                </span>
+                <span>{title}</span>
+                <span aria-hidden="true">{expanded ? "▼" : "▶"}</span>
             </button>
-            {expanded && (
-                <div className="tweakpane-section-content" onKeyDown={handleContentKeyDown}>
-                    {children}
-                </div>
-            )}
+            {expanded && <div onKeyDown={handleContentKeyDown}>{children}</div>}
         </section>
     );
 }

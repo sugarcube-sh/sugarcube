@@ -30,25 +30,15 @@ export function TokenFolder({
     };
 
     return (
-        <div className="tweakpane-folder" data-expanded={expanded}>
-            <div className="tweakpane-folder-header-row">
-                <button
-                    ref={headerRef}
-                    type="button"
-                    className="tweakpane-folder-header"
-                    onClick={onToggle}
-                    aria-expanded={expanded}
-                >
-                    <span className="tweakpane-folder-label">{label}</span>
-                    <span
-                        className="tweakpane-folder-swatch"
-                        style={{ backgroundColor: `var(${cssVar})` }}
-                    />
+        <div data-expanded={expanded}>
+            <div>
+                <button ref={headerRef} type="button" onClick={onToggle} aria-expanded={expanded}>
+                    <span>{label}</span>
+                    <span style={{ backgroundColor: `var(${cssVar})` }} />
                 </button>
                 {onReset && (
                     <button
                         type="button"
-                        className="tweakpane-folder-reset"
                         onClick={onReset}
                         disabled={!isCustom}
                         aria-label={`Reset ${label} to base palette`}
@@ -59,21 +49,14 @@ export function TokenFolder({
                 )}
                 <button
                     type="button"
-                    className="tweakpane-folder-toggle"
                     onClick={onToggle}
                     aria-expanded={expanded}
                     aria-label={`${expanded ? "Collapse" : "Expand"} ${label}`}
                 >
-                    <span className="tweakpane-folder-chevron" aria-hidden="true">
-                        {expanded ? "▼" : "▶"}
-                    </span>
+                    <span aria-hidden="true">{expanded ? "▼" : "▶"}</span>
                 </button>
             </div>
-            {expanded && (
-                <div className="tweakpane-folder-content" onKeyDown={handleContentKeyDown}>
-                    {children}
-                </div>
-            )}
+            {expanded && <div onKeyDown={handleContentKeyDown}>{children}</div>}
         </div>
     );
 }

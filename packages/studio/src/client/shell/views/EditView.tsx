@@ -7,7 +7,7 @@ export function EditView() {
     const pathIndex = usePathIndex();
 
     if (!config) {
-        return <p className="studio-empty">No panel configuration provided.</p>;
+        return <p>No panel configuration provided.</p>;
     }
 
     const ctx: ControlContext = {
@@ -18,7 +18,7 @@ export function EditView() {
     const sections = config.panel ?? [];
 
     return (
-        <div className="studio-edit-view">
+        <div>
             {sections.map((section, i) => (
                 <Section
                     key={section.title}

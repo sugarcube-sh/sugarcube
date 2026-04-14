@@ -31,15 +31,13 @@ function DiffEntry({ entry }: { entry: TokenDiffEntry }) {
     const toBlock = useMemo(() => formatTokenBlock(entry.to, "+"), [entry.to]);
 
     return (
-        <div className="tweakpane-diff-entry">
-            <div className="tweakpane-diff-header">
-                <span className="tweakpane-diff-path">{entry.path}</span>
-                {entry.contexts.length > 0 && (
-                    <span className="tweakpane-diff-contexts">{entry.contexts.join(", ")}</span>
-                )}
+        <div>
+            <div>
+                <span>{entry.path}</span>
+                {entry.contexts.length > 0 && <span>{entry.contexts.join(", ")}</span>}
             </div>
-            <pre className="tweakpane-diff-code tweakpane-diff-minus">{fromBlock}</pre>
-            <pre className="tweakpane-diff-code tweakpane-diff-plus">{toBlock}</pre>
+            <pre>{fromBlock}</pre>
+            <pre>{toBlock}</pre>
         </div>
     );
 }
@@ -60,21 +58,21 @@ export function DiffSection() {
     return (
         <Section title={`CHANGES (${count})`} defaultExpanded={count > 0}>
             {count === 0 ? (
-                <p className="tweakpane-diff-empty">No changes yet — tweak something.</p>
+                <p>No changes yet — tweak something.</p>
             ) : (
                 <>
-                    <div className="tweakpane-diff-actions">
+                    <div>
                         {mode !== "devtools" && <SubmitPRDialog />}
-                        <button type="button" className="tweakpane-diff-reset" onClick={resetAll}>
+                        <button type="button" onClick={resetAll}>
                             Reset all
                         </button>
                     </div>
-                    <div className="tweakpane-diff-list">
+                    <div>
                         {groupBySourceFile(diff).map(([sourcePath, entries]) => (
-                            <div key={sourcePath} className="tweakpane-diff-file-group">
-                                <div className="tweakpane-diff-file-header">
-                                    <span className="tweakpane-diff-file-path">{sourcePath}</span>
-                                    <span className="tweakpane-diff-file-count">
+                            <div key={sourcePath}>
+                                <div>
+                                    <span>{sourcePath}</span>
+                                    <span>
                                         {entries.length}{" "}
                                         {entries.length === 1 ? "change" : "changes"}
                                     </span>

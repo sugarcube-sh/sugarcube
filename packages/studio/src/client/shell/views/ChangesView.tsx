@@ -25,22 +25,17 @@ export function ChangesView() {
     }, []);
 
     return (
-        <div className="studio-changes-view">
+        <div>
             {mode === "devtools" && (
-                <div className="studio-changes-actions">
-                    <button
-                        type="button"
-                        className="studio-save-button"
-                        onClick={handleSave}
-                        disabled={saveState === "saving"}
-                    >
+                <div>
+                    <button type="button" onClick={handleSave} disabled={saveState === "saving"}>
                         {saveState === "saving"
                             ? "Saving..."
                             : saveState === "saved"
                               ? "Saved"
                               : "Save to disk"}
                     </button>
-                    <button type="button" className="studio-discard-button" onClick={handleDiscard}>
+                    <button type="button" onClick={handleDiscard}>
                         Discard all
                     </button>
                 </div>

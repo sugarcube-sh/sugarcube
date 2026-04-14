@@ -22,16 +22,9 @@ export function DropdownControl({ binding }: DropdownControlProps) {
     );
 
     return (
-        <div className="tweakpane-type-row">
-            <label className="tweakpane-type-label" htmlFor={inputId}>
-                {label}
-            </label>
-            <select
-                id={inputId}
-                className="tweakpane-type-select"
-                value={value ?? ""}
-                onChange={(e) => setValue(e.target.value)}
-            >
+        <div>
+            <label htmlFor={inputId}>{label}</label>
+            <select id={inputId} value={value ?? ""} onChange={(e) => setValue(e.target.value)}>
                 {options.map(({ key, label: optLabel, reference }) => (
                     <option key={key} value={reference}>
                         {capitalize(optLabel)}

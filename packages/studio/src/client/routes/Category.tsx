@@ -13,7 +13,7 @@ export function Category() {
 
     const node = getNodeByPath(tree, splatPath);
     if (!node) {
-        return <div className="page-status">No group found at "{splatPath}"</div>;
+        return <div>No group found at "{splatPath}"</div>;
     }
 
     const totalCount = countTokens(node);
@@ -48,18 +48,16 @@ export function Category() {
     }
 
     return (
-        <div className="category-page">
-            <h1 className="page-title">{node.name}</h1>
-            {node.metadata?.$description && (
-                <p className="group-description">{node.metadata.$description}</p>
-            )}
-            <p className="page-subtitle">
+        <div>
+            <h1>{node.name}</h1>
+            {node.metadata?.$description && <p>{node.metadata.$description}</p>}
+            <p>
                 {totalCount} token{totalCount !== 1 ? "s" : ""}
             </p>
 
             {/* Direct tokens at this level */}
             {node.tokens.length > 0 && (
-                <div className="token-list">
+                <div>
                     {node.tokens.map((token) => (
                         <TokenRow key={token.$path} token={token} />
                     ))}
@@ -73,12 +71,12 @@ export function Category() {
 
             {/* Override diffs */}
             {overrideSections.map((section) => (
-                <section key={section.label} className="token-section token-section--context">
-                    <h2 className="token-section-title">
+                <section key={section.label}>
+                    <h2>
                         {section.label} overrides
-                        <span className="token-section-count">{section.tokens.length}</span>
+                        <span>{section.tokens.length}</span>
                     </h2>
-                    <div className="token-list">
+                    <div>
                         {section.tokens.map(({ token }) => (
                             <TokenRow key={token.$path} token={token} />
                         ))}
@@ -93,16 +91,14 @@ function GroupSection({ node }: { node: TokenTreeNode }) {
     const count = countTokens(node);
 
     return (
-        <section className="subgroup-section">
-            <div className="subgroup-header">
-                <span className="subgroup-name">{node.name}</span>
-                <span className="subgroup-count">{count}</span>
+        <section>
+            <div>
+                <span>{node.name}</span>
+                <span>{count}</span>
             </div>
-            {node.metadata?.$description && (
-                <p className="group-description">{node.metadata.$description}</p>
-            )}
+            {node.metadata?.$description && <p>{node.metadata.$description}</p>}
             {node.tokens.length > 0 && (
-                <div className="token-list">
+                <div>
                     {node.tokens.map((token) => (
                         <TokenRow key={token.$path} token={token} />
                     ))}

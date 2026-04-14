@@ -1,9 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import "virtual:sugarcube.css";
+import "./styles/index.css";
 import { StudioProvider } from "./providers/StudioProvider";
 import type { TokenSource } from "./providers/token-source";
 import { Shell } from "./shell/Shell";
-import "./app.css";
 
 const rootEl = document.getElementById("root");
 if (!rootEl) {

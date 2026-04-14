@@ -7,32 +7,30 @@ export function Overview() {
     const { status, error, tree } = useStudio();
 
     if (status === "connecting") {
-        return <div className="page-status">Connecting to dev server…</div>;
+        return <div>Connecting to dev server…</div>;
     }
 
     if (status === "error") {
-        return <div className="page-status page-status--error">Error: {error}</div>;
+        return <div>Error: {error}</div>;
     }
 
     if (!tree) {
-        return <div className="page-status">No tokens found.</div>;
+        return <div>No tokens found.</div>;
     }
 
     return (
-        <div className="overview">
-            <h1 className="page-title">system overview</h1>
+        <div>
+            <h1>system overview</h1>
 
-            <div className="overview-grid">
+            <div>
                 {Array.from(tree.roots.values()).map((node) => (
-                    <Link key={node.path} to={`/system/${node.path}`} className="overview-card">
-                        <div className="overview-card-header">
-                            <span className="overview-card-title">{node.name}</span>
-                            <span className="overview-card-count">{countTokens(node)}</span>
+                    <Link key={node.path} to={`/system/${node.path}`}>
+                        <div>
+                            <span>{node.name}</span>
+                            <span>{countTokens(node)}</span>
                         </div>
-                        {node.metadata?.$description && (
-                            <p className="group-description">{node.metadata.$description}</p>
-                        )}
-                        <div className="overview-card-preview">
+                        {node.metadata?.$description && <p>{node.metadata.$description}</p>}
+                        <div>
                             <TokenPreview tokens={collectTokens(node).slice(0, 8)} />
                         </div>
                     </Link>
