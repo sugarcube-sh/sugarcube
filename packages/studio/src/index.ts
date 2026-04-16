@@ -3,6 +3,7 @@
 import { fileURLToPath } from "node:url";
 import type { ResolvedTokens } from "@sugarcube-sh/core";
 import { defineRpcFunction } from "@vitejs/devtools-kit";
+import sirv from "sirv";
 import type { Plugin } from "vite";
 
 declare module "@vitejs/devtools-kit" {
@@ -43,6 +44,14 @@ function buildTokenEdits(
 export default function sugarcubeStudio(): Plugin {
     return {
         name: "sugarcube:studio",
+
+        // Serve the Studio client at /__studio/ for embedded mode in dev.
+        // DevTools mode uses ctx.views.hostStatic() instead (inside the
+        // devtools hook below), but embedded mode needs a standard Vite
+        // middleware since it runs outside the DevTools dock.
+        configureServer(server) {
+            server.middlewares.use("/__studio/", sirv(clientPath, { dev: true, single: true }));
+        },
 
         devtools: {
             async setup(ctx) {

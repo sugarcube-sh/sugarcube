@@ -154,7 +154,7 @@ class SugarcubeStudio extends HTMLElement {
      * to the Vite-served virtual module path.
      */
     private async sendSnapshot() {
-        const snapshotURL = this.getAttribute("snapshot") ?? "/.sugarcube/tokens-snapshot.json";
+        const snapshotURL = this.getAttribute("snapshot") ?? "/.sugarcube/snapshot.json";
 
         try {
             const res = await fetch(snapshotURL);
