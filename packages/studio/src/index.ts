@@ -112,6 +112,7 @@ export default function sugarcubeStudio(): Plugin {
                                 return {
                                     config: scCtx.config,
                                     trees: scCtx.trees,
+                                    resolved: scCtx.resolved,
                                 };
                             },
                         }),

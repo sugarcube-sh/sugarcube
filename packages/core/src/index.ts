@@ -52,9 +52,13 @@ export type {
     StudioConfig,
     ColorScaleConfig,
     PanelSection,
-    PaletteSwapSection,
     BindingSection,
     PanelBinding,
+    ColorBinding,
+    PresetBinding,
+    ScaleBinding,
+    ScaleLinkedBinding,
+    PaletteSwapBinding,
 } from "./types/config.js";
 export type {
     PipelineContext,

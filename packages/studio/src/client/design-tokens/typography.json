@@ -45,31 +45,31 @@
       "$value": "{size.step.0}"
     },
     "lg": {
-      "$value": "{size.step.1}"
-    },
-    "xl": {
       "$value": "{size.step.2}"
     },
-    "2xl": {
+    "xl": {
       "$value": "{size.step.3}"
     },
-    "3xl": {
+    "2xl": {
       "$value": "{size.step.4}"
     },
-    "4xl": {
+    "3xl": {
       "$value": "{size.step.5}"
     },
-    "5xl": {
+    "4xl": {
       "$value": "{size.step.6}"
     },
-    "6xl": {
+    "5xl": {
       "$value": "{size.step.7}"
     },
-    "7xl": {
+    "6xl": {
       "$value": "{size.step.8}"
     },
-    "8xl": {
+    "7xl": {
       "$value": "{size.step.9}"
+    },
+    "8xl": {
+      "$value": "{size.step.10}"
     },
     "9xl": {
       "$value": "{size.step.10}"
@@ -81,14 +81,16 @@
       "$value": "{leading.tight}"
     },
     "none": { "$value": 1 },
-    "tight": { "$value": 1.25 },
-    "normal": { "$value": 1.5 },
-    "relaxed": { "$value": 1.75 }
+    "tight": { "$value": 1.1667 },
+    "snug": { "$value": 1.3333 },
+    "normal": { "$value": 1.4545 },
+    "relaxed": { "$value": 1.6923 }
   },
   "tracking": {
     "$type": "dimension",
-    "tight": { "$value": { "value": -0.025, "unit": "rem" } },
+    "tight": { "$value": { "value": -0.002, "unit": "rem" } },
     "normal": { "$value": { "value": 0, "unit": "rem" } },
-    "wide": { "$value": { "value": 0.025, "unit": "rem" } }
+    "wide": { "$value": { "value": 0.00344, "unit": "rem" } },
+    "wider": { "$value": { "value": 0.00281, "unit": "rem" } }
   }
 }

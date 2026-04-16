@@ -72,7 +72,9 @@
         "apps/www/src/components/tweakpane/components/CornerPresets.tsx",
         "apps/www/src/components/tweakpane/components/BorderWidthPresets.tsx",
         "apps/www/src/components/tweakpane/components/ColorGrid.tsx",
-        "packages/studio/src/client/components/ColorGrid.tsx"
+        "packages/studio/src/client/components/ColorGrid.tsx",
+        "packages/studio/src/client/controls/pickers/ColorGrid.tsx",
+        "packages/studio/src/client/controls/PresetControl.tsx"
       ],
       "linter": {
         "rules": {

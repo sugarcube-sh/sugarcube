@@ -1,0 +1,62 @@
+/*
+ * Design panel sections — collapsible via native <details>/<summary>.
+ *
+ * All sections default to open. Click the header to collapse.
+ * Chevron rotates on open/close.
+ */
+
+.design-area-edit section {
+    padding-block: var(--space-sm) var(--space-2xs);
+    padding-inline: var(--space-2xs);
+    border-block-start: var(--border-width-hairline) solid var(--color-surface-border);
+}
+
+.design-area-edit section:first-of-type {
+    border-block-start: 0;
+}
+
+.design-area-edit details > summary {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+/* Remove default marker in Safari / Chrome */
+.design-area-edit details > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Chevron via pseudo-element */
+.design-area-edit details > summary::before {
+    content: "▸";
+    display: inline-block;
+    margin-inline-end: var(--space-3xs);
+    font-size: var(--text-sm);
+    color: var(--color-text-quiet);
+    transition: transform var(--transition-normal) var(--ease-out);
+    flex-shrink: 0;
+}
+
+.design-area-edit details[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.design-area-edit details > summary > h2 {
+    margin: 0;
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
+}
+
+.design-area-edit details > summary:focus-visible {
+    outline: 2px solid var(--color-border-normal);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm, 3px);
+}
+
+.design-area-edit .section-content {
+    padding-block-start: var(--space-3xs);
+}

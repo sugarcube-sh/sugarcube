@@ -16,7 +16,10 @@ type InitData = {
     config: InternalConfig;
     trees: TokenTree[];
     sharedState: SharedStateHandle;
-    initialResolved: ResolvedTokens;
+    /** Disk state — the canonical baseline for diffs and Discard. */
+    diskResolved: ResolvedTokens;
+    /** Shared state — the working copy, may contain unsaved edits. */
+    workingResolved: ResolvedTokens;
 };
 
 async function fetchInitData(): Promise<InitData> {
@@ -41,7 +44,8 @@ async function fetchInitData(): Promise<InitData> {
         config: data.config,
         trees: data.trees,
         sharedState,
-        initialResolved: state.resolved,
+        diskResolved: data.resolved,
+        workingResolved: state.resolved,
     };
 }
 
@@ -75,20 +79,24 @@ function DevToolsProviderInner({
     initData: InitData;
     children: ReactNode;
 }) {
-    const { config, trees, sharedState, initialResolved } = initData;
+    const { config, trees, sharedState, diskResolved, workingResolved } = initData;
 
     const studioCtx = useMemo(() => {
+        // PathIndex is built from DISK state — the canonical baseline.
+        // This is what diffs compare against and what Discard reverts to.
         const pathIndex = new PathIndex({
             formatVersion: 1,
             generatedAt: "",
             sourceConfigPath: "",
             config,
             trees,
-            resolved: initialResolved,
+            resolved: diskResolved,
         });
 
+        // Store starts with the WORKING copy (shared state) which may
+        // already contain edits from a previous dock session.
         const store = createStore<TokenStoreState>((_, get) => ({
-            resolved: initialResolved,
+            resolved: workingResolved,
             css: null,
             isComputing: false,
             error: null,
@@ -126,7 +134,21 @@ function DevToolsProviderInner({
                 });
             },
 
-            resetToken: () => {},
+            resetToken: (path) => {
+                sharedState.mutate((draft) => {
+                    const entries = pathIndex.entriesFor(path);
+                    for (const entry of entries) {
+                        const originalToken = diskResolved[entry.key];
+                        if (!originalToken || !("$value" in originalToken)) continue;
+                        const draftToken = draft.resolved[entry.key];
+                        if (draftToken && "$value" in draftToken) {
+                            (draftToken as { $value: unknown }).$value = (
+                                originalToken as { $value: unknown }
+                            ).$value;
+                        }
+                    }
+                });
+            },
 
             resetAll: () => {
                 rpcDiscard();
@@ -141,7 +163,7 @@ function DevToolsProviderInner({
                 sourceConfigPath: "",
                 config,
                 trees,
-                resolved: initialResolved,
+                resolved: diskResolved,
             },
             pathIndex,
             store,
@@ -161,7 +183,7 @@ function DevToolsProviderInner({
             scaleState,
             studioConfig: config.studio,
         };
-    }, [config, trees, sharedState, initialResolved]);
+    }, [config, trees, sharedState, diskResolved, workingResolved]);
 
     // Subscribe to shared state updates and push directly into the zustand store.
     // This is a valid useEffect: subscribing to an external system (DevTools shared state).

@@ -22,8 +22,14 @@ export function DesignView() {
                 const headingId = `design-section-${section.title.toLowerCase().replace(/\s+/g, "-")}`;
                 return (
                     <section key={section.title} aria-labelledby={headingId}>
-                        <h2 id={headingId}>{section.title}</h2>
-                        {renderSectionContent(section, ctx)}
+                        <details open>
+                            <summary>
+                                <h2 id={headingId}>{section.title}</h2>
+                            </summary>
+                            <div className="section-content">
+                                {renderSectionContent(section, ctx)}
+                            </div>
+                        </details>
                     </section>
                 );
             })}

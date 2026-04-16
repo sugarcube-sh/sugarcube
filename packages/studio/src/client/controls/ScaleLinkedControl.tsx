@@ -1,9 +1,9 @@
-import type { PanelBinding } from "@sugarcube-sh/core/client";
+import type { ScaleLinkedBinding } from "@sugarcube-sh/core/client";
 import { useScaleState } from "../store/hooks";
 import { labelForBinding } from "./resolver";
 
 type ScaleLinkedControlProps = {
-    binding: PanelBinding;
+    binding: ScaleLinkedBinding;
 };
 
 export function ScaleLinkedControl({ binding }: ScaleLinkedControlProps) {
@@ -16,11 +16,12 @@ export function ScaleLinkedControl({ binding }: ScaleLinkedControlProps) {
     const inputId = `studio-scale-linked-${binding.token.replace(/\./g, "-")}`;
 
     return (
-        <div>
-            <label htmlFor={inputId} style={{ cursor: "pointer" }}>
+        <div className="scale-linked-row">
+            <label className="scale-linked-label" htmlFor={inputId}>
                 {label}
             </label>
             <input
+                className="scale-linked-toggle"
                 id={inputId}
                 type="checkbox"
                 checked={slot.enabled}

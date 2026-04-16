@@ -34,63 +34,80 @@ const studio: StudioConfig = {
     },
     panel: [
         {
-            title: "Base",
-            type: "palette-swap",
-            family: "color.neutral",
-        },
-        {
-            title: "Accent",
-            type: "palette-swap",
-            family: "color.accent",
+            title: "Palettes",
+            bindings: [
+                { type: "palette-swap", family: "color.neutral", label: "Base" },
+                { type: "palette-swap", family: "color.accent", label: "Accent" },
+            ],
         },
         {
             title: "Surfaces",
-            bindings: [{ token: "color.surface.*" }],
+            bindings: [{ type: "color", token: "color.surface.*" }],
         },
         {
             title: "Text",
-            bindings: [{ token: "color.text.*" }],
+            bindings: [{ type: "color", token: "color.text.*" }],
         },
         {
             title: "Fills",
-            bindings: [{ token: "color.fill.*" }],
+            bindings: [{ type: "color", token: "color.fill.*" }],
         },
         {
             title: "On fills",
-            bindings: [{ token: "color.on.*" }],
+            bindings: [{ type: "color", token: "color.on.*" }],
         },
         {
             title: "Borders",
             bindings: [
-                { token: "panel.border-width", options: "border.width.*" },
-                { token: "form-control.border-width", options: "border.width.*" },
+                {
+                    type: "preset",
+                    token: "panel.border-width",
+                    options: "border.width.*",
+                    label: "Panels",
+                },
+                {
+                    type: "preset",
+                    token: "form-control.border-width",
+                    options: "border.width.*",
+                    label: "Form controls",
+                },
             ],
         },
         {
             title: "Corners",
             bindings: [
-                { token: "panel.radius", options: "radius.*" },
-                { token: "form-control.radius", options: "radius.*" },
+                { type: "preset", token: "panel.radius", options: "radius.*", label: "Panels" },
+                {
+                    type: "preset",
+                    token: "form-control.radius",
+                    options: "radius.*",
+                    label: "Form controls",
+                },
             ],
         },
         {
             title: "Type",
             bindings: [
-                { token: "font.body", options: "font.*", label: "body" },
-                { token: "font.heading", options: "font.*", label: "headings" },
+                { type: "preset", token: "font.body", options: "font.*", label: "body" },
+                { type: "preset", token: "font.heading", options: "font.*", label: "headings" },
             ],
         },
         {
             title: "Scale",
             bindings: [
-                { token: "size.step.*", type: "scale", base: "size.step.0" },
-                { token: "space.*", type: "scale", base: "space.sm" },
-                { token: "container.*", scalesWith: "size.step.*", label: "scale containers" },
+                { type: "scale", token: "size.step.*", base: "size.step.0" },
+                { type: "scale", token: "space.*", base: "space.sm" },
+                {
+                    type: "scale-linked",
+                    token: "container.*",
+                    scalesWith: "size.step.*",
+                    label: "scale containers",
+                },
             ],
         },
         {
             title: "Controls",
-            bindings: [{ token: "form-control.font-size", options: "text.*" }],
+            bindings: [{ type: "preset", token: "form-control.font-size", options: "text.*" }],
         },
     ],
 };

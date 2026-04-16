@@ -85,6 +85,11 @@ export function usePendingChangesCount(): number {
     return usePendingChanges().length;
 }
 
+/** Whether a specific token path has a pending (unsaved) change. */
+export function useHasPendingChange(path: string): boolean {
+    return usePendingChanges().some((entry) => entry.path === path);
+}
+
 /** Derive the currently-selected palette for a token family. */
 export function useFamilyPalette(family: string, palettes: readonly string[]): string | undefined {
     const { pathIndex } = useStudio();

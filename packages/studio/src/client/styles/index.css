@@ -14,6 +14,13 @@
 @import "./blocks/prose.css";
 @import "./blocks/header.css";
 @import "./blocks/design-actions.css";
+@import "./blocks/panel-section.css";
+@import "./blocks/pickers.css";
+
+/* Components */
+@import "../components/ui/tabs/tabs.css";
+@import "../components/ui/popover/popover.css";
+@import "../components/ui/command/command.css";
 
 /* Utilities */
 @import "./utilities/region.css";

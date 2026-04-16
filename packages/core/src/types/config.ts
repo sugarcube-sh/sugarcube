@@ -134,71 +134,136 @@ export interface UtilitiesOutputConfig {
 // ---------------------------------------------------------------------------
 
 /**
- * A single token binding in a panel section. Describes which token to show,
- * what control to render, and where to find available options.
+ * A color binding — renders a 2D palette grid picker using the top-level
+ * `studio.colorScale` config as the source of swatches. Options aren't
+ * declared inline; they come from the global palette scale.
+ *
+ * Glob tokens expand to one row per matching token path.
+ *
+ * @example
+ * { type: "color", token: "color.surface.*" }
  */
-export type PanelBinding = {
-    /** Token path or glob pattern (e.g. `"panel.radius"` or `"size.step.*"`). */
+export type ColorBinding = {
+    type: "color";
+    /** Token path or glob pattern (e.g. `"color.surface.default"` or `"color.surface.*"`). */
     token: string;
     /** Optional label override — default is derived from the token path. */
     label?: string;
-    /** Override the inferred control type. `"scale"` treats matching tokens as a group. */
-    type?: "scale";
+};
+
+/**
+ * A preset binding — picks a value from a constrained set of options,
+ * each of which is a reference to another token.
+ *
+ * Options can be:
+ * - `string` — glob pattern. Discovered at runtime from the token graph.
+ * - `Record<string, string>` — explicit label → reference map.
+ *
+ * Control style (segmented vs. dropdown) is chosen automatically based on
+ * the token's `$type` and the option count.
+ *
+ * @example
+ * { type: "preset", token: "panel.radius", options: "radius.*" }
+ */
+export type PresetBinding = {
+    type: "preset";
+    /** Token path (typically concrete; glob is supported and expands to multiple rows). */
+    token: string;
+    /** Source of options — glob pattern or explicit label-to-reference map. */
+    options: string | Record<string, string>;
+    /** Optional label override — default is derived from the token path. */
+    label?: string;
+};
+
+/**
+ * A scale binding — treats a group of matching tokens as a single scale,
+ * controlled by base / spread sliders.
+ */
+export type ScaleBinding = {
+    type: "scale";
+    /** Glob pattern matching the tokens that make up the scale. */
+    token: string;
+    /** Optional label override. */
+    label?: string;
     /**
-     * Available options for a preset picker.
-     * - `string` — glob pattern, discovers values from the token graph.
-     * - `Record<string, string>` — explicit label-to-reference map.
-     */
-    options?: string | Record<string, string>;
-    /** Link this token group to another group's scale transform. */
-    scalesWith?: string;
-    /**
-     * For `type: "scale"` bindings: the path of the step that should be
-     * treated as the scale's anchor — the step whose current value is
-     * `1.0` multiplier relative to itself, and which the "base" slider
-     * directly controls. Required for cascade-mode scale bindings.
-     *
-     * Not required for scale-extension-backed bindings (the extension
-     * carries its own base).
+     * The path of the step that should be treated as the scale's anchor —
+     * the step whose current value is `1.0` multiplier relative to itself,
+     * and which the "base" slider directly controls. Required for
+     * cascade-mode scale bindings.
      *
      * @example
-     * { token: "size.step.*", type: "scale", base: "size.step.0" }
+     * { type: "scale", token: "size.step.*", base: "size.step.0" }
      */
     base?: string;
-    /** Slider minimum (dimension / number tokens). */
+    /** Slider minimum. */
     min?: number;
-    /** Slider maximum (dimension / number tokens). */
+    /** Slider maximum. */
     max?: number;
-    /** Slider step increment (dimension / number tokens). */
+    /** Slider step increment. */
     step?: number;
 };
 
 /**
- * A palette-swap section. Swaps which palette family a set of semantic tokens
+ * A scale-linked binding — a family of tokens that follows another scale's
+ * transform. Toggle links the follower on/off; when on, the follower's
+ * values are derived from the source scale's base/spread multipliers.
+ *
+ * @example
+ * { type: "scale-linked", token: "container.*", scalesWith: "size.step.*" }
+ */
+export type ScaleLinkedBinding = {
+    type: "scale-linked";
+    /** Glob pattern matching the follower tokens. */
+    token: string;
+    /** Glob pattern of the scale whose transform is being mirrored. */
+    scalesWith: string;
+    /** Optional label override. */
+    label?: string;
+};
+
+/**
+ * A palette-swap binding — swaps which palette family a set of semantic tokens
  * references by replacing the palette name in each token's `$value` reference.
  *
  * Uses the top-level `studio.colorScale.palettes` list as the set of
- * available swap targets. An optional `palettes` override on the section
- * itself can narrow that list to a subset.
+ * available swap targets. An optional `palettes` field can narrow that list.
  *
  * @example
  * {
- *   title: "Base",
- *   type: "palette-swap",
- *   family: "color.neutral"
+ *   title: "Palette",
+ *   bindings: [
+ *     { type: "palette-swap", family: "color.neutral", label: "Base" },
+ *     { type: "palette-swap", family: "color.accent",  label: "Accent" },
+ *   ],
  * }
  */
-export type PaletteSwapSection = {
-    title: string;
+export type PaletteSwapBinding = {
     type: "palette-swap";
     /** Token path prefix whose children will have their palette reference swapped. */
     family: string;
+    /** Optional label shown in the row (defaults to the family's last segment). */
+    label?: string;
     /**
-     * Optional override of the palette list for this section only.
-     * Defaults to the top-level `studio.colorScale.palettes`.
+     * Optional override of the palette list for this binding.
+     * Defaults to `studio.colorScale.palettes`.
      */
     palettes?: string[];
 };
+
+/**
+ * A single binding inside a panel section. Discriminated by `type`:
+ *  - `"color"`        → {@link ColorBinding}        (2D palette grid picker)
+ *  - `"preset"`       → {@link PresetBinding}       (pick one of N options)
+ *  - `"scale"`        → {@link ScaleBinding}        (base/spread sliders)
+ *  - `"scale-linked"` → {@link ScaleLinkedBinding}  (follow another scale)
+ *  - `"palette-swap"` → {@link PaletteSwapBinding}  (swap a whole palette family)
+ */
+export type PanelBinding =
+    | ColorBinding
+    | PresetBinding
+    | ScaleBinding
+    | ScaleLinkedBinding
+    | PaletteSwapBinding;
 
 /**
  * Declares the project's color palette scale structure. All color-related
@@ -261,18 +326,17 @@ export type ColorScaleConfig = {
 };
 
 /**
- * A binding section. Groups one or more token bindings under a titled folder.
- * The control for each binding is inferred from the token's `$type` unless
- * overridden via `type` or `options`.
+ * A section in the Studio editing panel. Groups bindings under a titled folder.
+ * Each binding's control is determined by its discriminator (or inferred from
+ * the token's `$type` for default `TokenBinding`s).
  */
 export type BindingSection = {
     title: string;
-    type?: never;
     bindings: PanelBinding[];
 };
 
 /** A single section in the Studio editing panel. */
-export type PanelSection = PaletteSwapSection | BindingSection;
+export type PanelSection = BindingSection;
 
 /** Configuration for the Studio visual editing panel. */
 export type StudioConfig = {

@@ -29,7 +29,6 @@
 }
 
 .site-code-block [data-copy-button]:hover {
-    color: var(--color-text-normal);
     scale: 1.1;
 }
 

@@ -55,27 +55,53 @@ const utilitiesOutputConfigSchema = z.object({
 // Studio panel config schemas
 // ---------------------------------------------------------------------------
 
-const panelBindingSchema = z.object({
+const colorBindingSchema = z.object({
+    type: z.literal("color"),
     token: z.string().min(1, "Token path cannot be empty"),
     label: z.string().optional(),
-    type: z.literal("scale").optional(),
-    options: z.union([z.string().min(1), z.record(z.string(), z.string())]).optional(),
-    scalesWith: z.string().optional(),
+});
+
+const presetBindingSchema = z.object({
+    type: z.literal("preset"),
+    token: z.string().min(1, "Token path cannot be empty"),
+    options: z.union([z.string().min(1), z.record(z.string(), z.string())]),
+    label: z.string().optional(),
+});
+
+const scaleBindingSchema = z.object({
+    type: z.literal("scale"),
+    token: z.string().min(1, "Token path cannot be empty"),
+    label: z.string().optional(),
     base: z.string().min(1).optional(),
     min: z.number().optional(),
     max: z.number().optional(),
     step: z.number().optional(),
 });
 
-const paletteSwapSectionSchema = z.object({
-    title: z.string().min(1, "Section title cannot be empty"),
+const scaleLinkedBindingSchema = z.object({
+    type: z.literal("scale-linked"),
+    token: z.string().min(1, "Token path cannot be empty"),
+    scalesWith: z.string().min(1, "scalesWith path cannot be empty"),
+    label: z.string().optional(),
+});
+
+const paletteSwapBindingSchema = z.object({
     type: z.literal("palette-swap"),
     family: z.string().min(1, "Family path cannot be empty"),
+    label: z.string().optional(),
     palettes: z
         .array(z.string().min(1, "Palette name cannot be empty"))
         .min(1, "Palettes array cannot be empty")
         .optional(),
 });
+
+const panelBindingSchema = z.discriminatedUnion("type", [
+    colorBindingSchema,
+    presetBindingSchema,
+    scaleBindingSchema,
+    scaleLinkedBindingSchema,
+    paletteSwapBindingSchema,
+]);
 
 const colorScaleConfigSchema = z.object({
     // Empty string is valid — describes a project whose palettes live at
@@ -91,12 +117,10 @@ const colorScaleConfigSchema = z.object({
     black: z.string().min(1).optional(),
 });
 
-const bindingSectionSchema = z.object({
+const panelSectionSchema = z.object({
     title: z.string().min(1, "Section title cannot be empty"),
     bindings: z.array(panelBindingSchema).min(1, "Bindings array cannot be empty"),
 });
-
-const panelSectionSchema = z.union([paletteSwapSectionSchema, bindingSectionSchema]);
 
 const studioConfigSchema = z.object({
     colorScale: colorScaleConfigSchema.optional(),

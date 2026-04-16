@@ -3,6 +3,7 @@ import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/co
 type TokenData = {
     config: InternalConfig;
     trees: TokenTree[];
+    resolved: ResolvedTokens;
 };
 
 export type SharedResolvedState = {

@@ -1,9 +1,9 @@
-import type { PanelBinding } from "@sugarcube-sh/core/client";
+import type { ScaleBinding } from "@sugarcube-sh/core/client";
 import { usePathIndex, useScaleState } from "../store/hooks";
 import { labelForBinding } from "./resolver";
 
 type ScaleControlProps = {
-    binding: PanelBinding;
+    binding: ScaleBinding;
 };
 
 export function ScaleControl({ binding }: ScaleControlProps) {
@@ -27,7 +27,7 @@ function stripTrailingGlob(path: string): string {
 }
 
 type CascadeScaleControlProps = {
-    binding: PanelBinding;
+    binding: ScaleBinding;
 };
 
 function CascadeScaleControl({ binding }: CascadeScaleControlProps) {
@@ -42,25 +42,33 @@ function CascadeScaleControl({ binding }: CascadeScaleControlProps) {
     const baseLabel = `${label} base`;
     const spreadLabel = `${label} spread`;
 
+    const baseMin = scale.baseMax * 0.75;
+    const baseMax = scale.baseMax * 1.5;
+    const basePct = ((base - baseMin) / (baseMax - baseMin)) * 100;
+    const spreadPct = ((spread - 0.4) / (1.6 - 0.4)) * 100;
+
     return (
         <>
-            <div>
-                <span>{baseLabel}</span>
+            <div className="scale-row">
+                <span className="scale-label">{baseLabel}</span>
                 <input
+                    className="scale-slider"
                     type="range"
-                    min={scale.baseMax * 0.75}
-                    max={scale.baseMax * 1.5}
+                    min={baseMin}
+                    max={baseMax}
                     step={0.025}
                     value={base}
                     onChange={(e) => setBase(binding.token, Number(e.target.value))}
                     aria-label={baseLabel}
                     aria-valuetext={`${base}rem`}
+                    style={{ "--fill": `${basePct}%` } as React.CSSProperties}
                 />
-                <span>{base.toFixed(3)}</span>
+                <span className="scale-value">{base.toFixed(3)}</span>
             </div>
-            <div>
-                <span>{spreadLabel}</span>
+            <div className="scale-row">
+                <span className="scale-label">{spreadLabel}</span>
                 <input
+                    className="scale-slider"
                     type="range"
                     min={0.4}
                     max={1.6}
@@ -68,9 +76,10 @@ function CascadeScaleControl({ binding }: CascadeScaleControlProps) {
                     value={spread}
                     onChange={(e) => setSpread(binding.token, Number(e.target.value))}
                     aria-label={spreadLabel}
-                    aria-valuetext={`${spread.toFixed(2)}`}
+                    aria-valuetext={spread.toFixed(2)}
+                    style={{ "--fill": `${spreadPct}%` } as React.CSSProperties}
                 />
-                <span>{spread.toFixed(2)}</span>
+                <span className="scale-value">{spread.toFixed(2)}</span>
             </div>
         </>
     );

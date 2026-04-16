@@ -28,7 +28,7 @@
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 0.4375, "unit": "rem" },
+            "min": { "value": 0.5, "unit": "rem" },
             "max": { "value": 0.5, "unit": "rem" }
           }
         }
@@ -39,7 +39,7 @@
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 0.6875, "unit": "rem" },
+            "min": { "value": 0.75, "unit": "rem" },
             "max": { "value": 0.75, "unit": "rem" }
           }
         }
@@ -50,7 +50,7 @@
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 0.875, "unit": "rem" },
+            "min": { "value": 1, "unit": "rem" },
             "max": { "value": 1, "unit": "rem" }
           }
         }
@@ -61,7 +61,7 @@
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 1.3125, "unit": "rem" },
+            "min": { "value": 1.5, "unit": "rem" },
             "max": { "value": 1.5, "unit": "rem" }
           }
         }
@@ -72,41 +72,41 @@
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 1.75, "unit": "rem" },
+            "min": { "value": 2, "unit": "rem" },
             "max": { "value": 2, "unit": "rem" }
           }
         }
       }
     },
     "xl": {
-      "$value": { "value": 3, "unit": "rem" },
+      "$value": { "value": 2.5, "unit": "rem" },
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 2.625, "unit": "rem" },
-            "max": { "value": 3, "unit": "rem" }
+            "min": { "value": 2.5, "unit": "rem" },
+            "max": { "value": 2.5, "unit": "rem" }
           }
         }
       }
     },
     "2xl": {
-      "$value": { "value": 4, "unit": "rem" },
+      "$value": { "value": 3, "unit": "rem" },
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 3.5, "unit": "rem" },
-            "max": { "value": 4, "unit": "rem" }
+            "min": { "value": 3, "unit": "rem" },
+            "max": { "value": 3, "unit": "rem" }
           }
         }
       }
     },
     "3xl": {
-      "$value": { "value": 6, "unit": "rem" },
+      "$value": { "value": 4, "unit": "rem" },
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 5.25, "unit": "rem" },
-            "max": { "value": 6, "unit": "rem" }
+            "min": { "value": 4, "unit": "rem" },
+            "max": { "value": 4, "unit": "rem" }
           }
         }
       }
@@ -127,7 +127,7 @@
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 0.4375, "unit": "rem" },
+            "min": { "value": 0.5, "unit": "rem" },
             "max": { "value": 0.75, "unit": "rem" }
           }
         }
@@ -138,7 +138,7 @@
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 0.6875, "unit": "rem" },
+            "min": { "value": 0.75, "unit": "rem" },
             "max": { "value": 1, "unit": "rem" }
           }
         }
@@ -149,7 +149,7 @@
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 0.875, "unit": "rem" },
+            "min": { "value": 1, "unit": "rem" },
             "max": { "value": 1.5, "unit": "rem" }
           }
         }
@@ -160,41 +160,41 @@
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 1.3125, "unit": "rem" },
+            "min": { "value": 1.5, "unit": "rem" },
             "max": { "value": 2, "unit": "rem" }
           }
         }
       }
     },
     "lg-xl": {
-      "$value": { "value": 3, "unit": "rem" },
+      "$value": { "value": 2.5, "unit": "rem" },
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 1.75, "unit": "rem" },
-            "max": { "value": 3, "unit": "rem" }
+            "min": { "value": 2, "unit": "rem" },
+            "max": { "value": 2.5, "unit": "rem" }
           }
         }
       }
     },
     "xl-2xl": {
-      "$value": { "value": 4, "unit": "rem" },
+      "$value": { "value": 3, "unit": "rem" },
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 2.625, "unit": "rem" },
-            "max": { "value": 4, "unit": "rem" }
+            "min": { "value": 2.5, "unit": "rem" },
+            "max": { "value": 3, "unit": "rem" }
           }
         }
       }
     },
     "2xl-3xl": {
-      "$value": { "value": 6, "unit": "rem" },
+      "$value": { "value": 4, "unit": "rem" },
       "$extensions": {
         "sh.sugarcube": {
           "fluid": {
-            "min": { "value": 3.5, "unit": "rem" },
-            "max": { "value": 6, "unit": "rem" }
+            "min": { "value": 3, "unit": "rem" },
+            "max": { "value": 4, "unit": "rem" }
           }
         }
       }

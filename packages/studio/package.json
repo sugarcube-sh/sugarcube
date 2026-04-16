@@ -29,11 +29,14 @@
         "type-check": "tsc --noEmit"
     },
     "dependencies": {
+        "@radix-ui/react-popover": "^1.1.14",
         "@radix-ui/react-tabs": "^1.1.13",
         "@sugarcube-sh/core": "workspace:*",
         "@sugarcube-sh/vite": "workspace:*",
         "@vitejs/devtools-kit": "^0.1.13",
         "clsx": "^2.1.1",
+        "cmdk": "^1.1.1",
+        "lucide-react": "^0.468.0",
         "zustand": "^5.0.12"
     },
     "devDependencies": {
