@@ -1,7 +1,8 @@
 import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { type StoreApi, createStore } from "zustand";
 import { PathIndex } from "../../store/path-index";
+import type { TokenSnapshot } from "../../store/types";
 import type { TokenStoreState } from "../store/create-token-store";
 import { StudioContext } from "../store/hooks";
 import { createScaleState } from "../store/scale-state";
@@ -11,6 +12,16 @@ import {
     rpcDiscard,
     rpcGetTokens,
 } from "./rpc-client";
+
+/**
+ * Max time to wait for the DevTools shared state to populate on first connect.
+ * If the server is fully down, `rpcGetTokens()` fails immediately — this
+ * timeout only covers the edge case where the RPC connection succeeds but
+ * the shared state never arrives (e.g. server-side init bug). The DevTools
+ * kit doesn't expose a connection health signal, so a timeout is the best
+ * we can do.
+ */
+const INIT_TIMEOUT_MS = 10_000;
 
 type InitData = {
     config: InternalConfig;
@@ -22,19 +33,33 @@ type InitData = {
     workingResolved: ResolvedTokens;
 };
 
-async function fetchInitData(): Promise<InitData> {
+async function fetchInitData(signal: AbortSignal): Promise<InitData> {
     const [data, sharedState] = await Promise.all([rpcGetTokens(), getResolvedSharedState()]);
 
+    if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+
     // The shared state may not have synced from the server yet on first connect.
-    // Wait for a valid value before returning.
+    // Wait for a valid value before returning, with a timeout.
     let state = sharedState.value();
     if (!state?.resolved) {
-        await new Promise<void>((resolve) => {
+        await new Promise<void>((resolve, reject) => {
             const unsub = sharedState.on("updated", () => {
                 if (sharedState.value()?.resolved) {
                     unsub();
+                    clearTimeout(timer);
                     resolve();
                 }
+            });
+
+            const timer = setTimeout(() => {
+                unsub();
+                reject(new Error("Timed out waiting for shared state"));
+            }, INIT_TIMEOUT_MS);
+
+            signal.addEventListener("abort", () => {
+                unsub();
+                clearTimeout(timer);
+                reject(new DOMException("Aborted", "AbortError"));
             });
         });
         state = sharedState.value();
@@ -53,16 +78,32 @@ export function DevToolsTokenProvider({ children }: { children: ReactNode }) {
     const [initData, setInitData] = useState<InitData | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        fetchInitData()
-            .then(setInitData)
+    useEffect(function connectToDevTools() {
+        const controller = new AbortController();
+
+        fetchInitData(controller.signal)
+            .then((data) => {
+                if (!controller.signal.aborted) setInitData(data);
+            })
             .catch((err) => {
+                if (err instanceof DOMException && err.name === "AbortError") return;
                 setError(err instanceof Error ? err.message : "Failed to connect");
             });
+
+        return () => controller.abort();
     }, []);
 
     if (error) {
-        return <div>Failed to load Studio: {error}</div>;
+        return (
+            <div className="studio-error">
+                <p>Failed to connect to the dev server.</p>
+                <p>Make sure your Vite dev server is running and try reloading.</p>
+                <details>
+                    <summary>Details</summary>
+                    <pre>{error}</pre>
+                </details>
+            </div>
+        );
     }
 
     if (!initData) {
@@ -81,17 +122,19 @@ function DevToolsProviderInner({
 }) {
     const { config, trees, sharedState, diskResolved, workingResolved } = initData;
 
-    const studioCtx = useMemo(() => {
-        // PathIndex is built from DISK state — the canonical baseline.
-        // This is what diffs compare against and what Discard reverts to.
-        const pathIndex = new PathIndex({
+    const [studioCtx] = useState(() => {
+        const snapshot: TokenSnapshot = {
             formatVersion: 1,
             generatedAt: "",
             sourceConfigPath: "",
             config,
             trees,
             resolved: diskResolved,
-        });
+        };
+
+        // PathIndex is built from DISK state — the canonical baseline.
+        // This is what diffs compare against and what Discard reverts to.
+        const pathIndex = new PathIndex(snapshot);
 
         // Store starts with the WORKING copy (shared state) which may
         // already contain edits from a previous dock session.
@@ -157,20 +200,19 @@ function DevToolsProviderInner({
 
         const scaleState = createScaleState(
             config.studio?.panel ?? [],
-            {
-                formatVersion: 1,
-                generatedAt: "",
-                sourceConfigPath: "",
-                config,
-                trees,
-                resolved: diskResolved,
-            },
+            snapshot,
             pathIndex,
             store,
-            (changes) => {
+            (nextResolved) => {
+                const current = store.getState().resolved;
                 sharedState.mutate((draft) => {
-                    for (const { key, token } of changes) {
-                        draft.resolved[key] = token as ResolvedTokens[string];
+                    for (const [key, token] of Object.entries(nextResolved)) {
+                        if (!token || !("$value" in token)) continue;
+                        const original = current[key];
+                        if (!original || !("$value" in original)) continue;
+                        if (JSON.stringify(token) !== JSON.stringify(original)) {
+                            draft.resolved[key] = token as ResolvedTokens[string];
+                        }
                     }
                 });
             }
@@ -183,16 +225,19 @@ function DevToolsProviderInner({
             scaleState,
             studioConfig: config.studio,
         };
-    }, [config, trees, sharedState, diskResolved, workingResolved]);
+    });
 
-    // Subscribe to shared state updates and push directly into the zustand store.
-    // This is a valid useEffect: subscribing to an external system (DevTools shared state).
-    useEffect(() => {
-        const unsubscribe = sharedState.on("updated", (newState) => {
-            studioCtx.store.setState({ resolved: newState.resolved });
-        });
-        return unsubscribe;
-    }, [sharedState, studioCtx.store]);
+    // Subscribe to shared state updates and push into the zustand store.
+    // Valid useEffect: subscribing to an external system (DevTools shared state).
+    useEffect(
+        function syncSharedState() {
+            const unsubscribe = sharedState.on("updated", (newState) => {
+                studioCtx.store.setState({ resolved: newState.resolved });
+            });
+            return unsubscribe;
+        },
+        [sharedState, studioCtx.store]
+    );
 
     return <StudioContext.Provider value={studioCtx}>{children}</StudioContext.Provider>;
 }

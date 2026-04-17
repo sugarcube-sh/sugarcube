@@ -1,3 +1,4 @@
+import { CheckIcon } from "lucide-react";
 import { useState } from "react";
 import {
     Command,
@@ -67,8 +68,8 @@ export function TokenPicker({ currentPath, options, onSelect, label }: Props) {
                                     <CommandItem
                                         key={opt.path}
                                         value={opt.path}
-                                        onSelect={(value) => {
-                                            onSelect(value);
+                                        onSelect={() => {
+                                            onSelect(opt.path);
                                             setOpen(false);
                                         }}
                                     >
@@ -78,11 +79,7 @@ export function TokenPicker({ currentPath, options, onSelect, label }: Props) {
                                             aria-hidden="true"
                                         />
                                         <span>{opt.path}</span>
-                                        {opt.path === currentPath && (
-                                            <span className="token-picker-check" aria-hidden="true">
-                                                ✓
-                                            </span>
-                                        )}
+                                        {opt.path === currentPath && <CheckIcon />}
                                     </CommandItem>
                                 ))}
                             </CommandGroup>

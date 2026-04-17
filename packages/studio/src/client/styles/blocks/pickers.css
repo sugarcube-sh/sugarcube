@@ -171,14 +171,14 @@
     background-color: transparent;
 }
 
-.color-grid-swatch:focus-visible {
+.color-grid-swatch:focus {
     outline: 2px solid var(--color-text-normal);
     outline-offset: 1px;
     z-index: 1;
     position: relative;
 }
 
-.color-grid-swatch[data-selected] {
+.color-grid-swatch[aria-selected="true"] {
     outline: 2px solid var(--color-text-normal);
     outline-offset: 1px;
     z-index: 1;

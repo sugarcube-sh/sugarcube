@@ -1,5 +1,6 @@
 import type { ScaleBinding } from "@sugarcube-sh/core/client";
 import { usePathIndex, useScaleState } from "../store/hooks";
+import { stripTrailingGlob } from "./path-utils";
 import { labelForBinding } from "./resolver";
 
 type ScaleControlProps = {
@@ -20,16 +21,17 @@ export function ScaleControl({ binding }: ScaleControlProps) {
     return <CascadeScaleControl binding={binding} />;
 }
 
-function stripTrailingGlob(path: string): string {
-    let result = path;
-    while (result.endsWith(".*")) result = result.slice(0, -2);
-    return result;
-}
-
 type CascadeScaleControlProps = {
     binding: ScaleBinding;
 };
 
+/**
+ * Temporary scale control using abstract base/spread sliders.
+ *
+ * Will be replaced when the scale extension lands — the real controls
+ * will map directly to the scale config fields (base.min, base.max,
+ * ratio.min, ratio.max, viewport, step count, etc.).
+ */
 function CascadeScaleControl({ binding }: CascadeScaleControlProps) {
     const slot = useScaleState((state) => state.scales[binding.token]);
     const setBase = useScaleState((state) => state.setBase);

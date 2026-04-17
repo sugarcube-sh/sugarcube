@@ -1,27 +1,27 @@
-import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type KeyboardEvent, useCallback, useRef, useState } from "react";
 
 export type GridOption = {
     /** Token path to emit on selection (e.g. "color.neutral.500"). */
     path: string;
     /** Resolved CSS color for the swatch. */
     color: string;
-    /** Palette column this option belongs to. Undefined for neutrals (white/black). */
-    palette?: string;
-    /** Step row this option belongs to. Undefined for neutrals. */
-    step?: string;
     /** Label for accessibility. */
     label: string;
 };
 
+/**
+ * A cell in the grid matrix. `null` means an empty cell (no swatch rendered,
+ * but the cell still exists for keyboard navigation and grid structure).
+ */
+type GridCell = GridOption | null;
+
 type Props = {
-    /** Palette column order. */
-    palettes: readonly string[];
-    /** Step row order. */
-    steps: readonly string[];
-    /** All palette cells (rows × columns flattened). */
-    paletteOptions: GridOption[];
-    /** Optional neutral chips (white, black, etc.) rendered above the grid. */
-    neutralOptions: GridOption[];
+    /** Column headers (palette names + optional extra column for white/black). */
+    columns: readonly string[];
+    /** Row headers (step names). */
+    rows: readonly string[];
+    /** Row-major matrix of cells: `cells[row][col]`. Null entries are empty. */
+    cells: GridCell[][];
     /** Current value's token path. */
     currentPath: string;
     /** Fires on navigation (live apply) and on click. */
@@ -33,45 +33,72 @@ type Props = {
 };
 
 /**
- * 2D color picker grid.
+ * 2D color picker grid with ARIA grid semantics.
  *
- * - Columns = palettes, rows = steps; neutrals as a separate strip.
- * - Single tab stop; arrows navigate WITHIN the grid.
+ * - Columns = palettes, rows = steps.
+ * - Single tab stop; arrows navigate within the grid.
+ * - Arrow keys stop at row/column edges (no wrapping).
  * - Navigation fires `onSelect` immediately so the page updates live.
  * - Enter / click → commit (close popover).
  * - Escape → cancel (revert to initial, close popover).
  */
 export function ColorGrid({
-    palettes,
-    steps,
-    paletteOptions,
-    neutralOptions,
+    columns,
+    rows,
+    cells,
     currentPath,
     onSelect,
     onCommit,
     onCancel,
 }: Props) {
     const gridRef = useRef<HTMLDivElement>(null);
-    const COLS = palettes.length;
+    const colCount = columns.length;
 
     // Capture the value the grid opened with — used by Escape to revert.
     const [initialPath] = useState(currentPath);
 
-    // Auto-focus the current swatch on mount.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
-    useEffect(() => {
-        const el = gridRef.current?.querySelector<HTMLElement>(`[data-path="${currentPath}"]`);
-        el?.focus();
-    }, []);
-
-    const focusPath = useCallback(
-        (path: string) => {
-            const el = gridRef.current?.querySelector<HTMLElement>(`[data-path="${path}"]`);
+    const focusCell = useCallback(
+        (row: number, col: number) => {
+            const option = cells[row]?.[col];
+            if (!option) return;
+            const el = gridRef.current?.querySelector<HTMLElement>(`[data-path="${option.path}"]`);
             if (!el) return;
             el.focus();
-            onSelect(path);
+            onSelect(option.path);
         },
-        [onSelect]
+        [cells, onSelect]
+    );
+
+    /** Find the row/col of the currently focused swatch. */
+    const findActiveCell = useCallback((): [number, number] | null => {
+        const activePath = (document.activeElement as HTMLElement | null)?.dataset.path;
+        if (!activePath) return null;
+        for (let r = 0; r < cells.length; r++) {
+            const row = cells[r];
+            if (!row) continue;
+            for (let c = 0; c < row.length; c++) {
+                if (row[c]?.path === activePath) return [r, c];
+            }
+        }
+        return null;
+    }, [cells]);
+
+    /**
+     * Find the nearest non-empty cell in a direction from (row, col).
+     * Skips over null cells so navigation feels natural with sparse grids.
+     */
+    const findNext = useCallback(
+        (row: number, col: number, dr: number, dc: number): [number, number] | null => {
+            let r = row + dr;
+            let c = col + dc;
+            while (r >= 0 && r < rows.length && c >= 0 && c < colCount) {
+                if (cells[r]?.[c]) return [r, c];
+                r += dr;
+                c += dc;
+            }
+            return null;
+        },
+        [cells, rows.length, colCount]
     );
 
     const handleKeyDown = useCallback(
@@ -90,139 +117,100 @@ export function ColorGrid({
                 return;
             }
 
-            const activeEl = document.activeElement as HTMLElement | null;
-            const activePath = activeEl?.dataset.path;
-            if (!activePath) return;
+            const pos = findActiveCell();
+            if (!pos) return;
+            const [row, col] = pos;
 
-            const neutralIdx = neutralOptions.findIndex((o) => o.path === activePath);
-            const paletteIdx = paletteOptions.findIndex((o) => o.path === activePath);
+            const directions: Record<string, [number, number]> = {
+                ArrowUp: [-1, 0],
+                ArrowDown: [1, 0],
+                ArrowLeft: [0, -1],
+                ArrowRight: [0, 1],
+            };
 
-            // Focus is on a neutral chip (white/black row above the grid).
-            if (neutralIdx !== -1) {
-                let nextPath: string | null = null;
-                switch (e.key) {
-                    case "ArrowRight":
-                        nextPath =
-                            neutralIdx + 1 < neutralOptions.length
-                                ? (neutralOptions[neutralIdx + 1]?.path ?? null)
-                                : null;
-                        break;
-                    case "ArrowLeft":
-                        nextPath =
-                            neutralIdx - 1 >= 0
-                                ? (neutralOptions[neutralIdx - 1]?.path ?? null)
-                                : null;
-                        break;
-                    case "ArrowDown":
-                        // Drop into the palette grid, matching column if possible.
-                        nextPath =
-                            paletteOptions[Math.min(neutralIdx, paletteOptions.length - 1)]?.path ??
-                            null;
-                        break;
-                    default:
-                        return;
+            const dir = directions[e.key];
+            if (dir) {
+                const next = findNext(row, col, dir[0], dir[1]);
+                if (next) {
+                    e.preventDefault();
+                    focusCell(next[0], next[1]);
                 }
-                if (nextPath === null) return;
-                e.preventDefault();
-                focusPath(nextPath);
                 return;
             }
 
-            // Focus is on a palette swatch.
-            if (paletteIdx !== -1) {
-                let nextPath: string | null = null;
-                const col = paletteIdx % COLS;
-                switch (e.key) {
-                    case "ArrowRight":
-                        nextPath =
-                            paletteIdx + 1 < paletteOptions.length
-                                ? (paletteOptions[paletteIdx + 1]?.path ?? null)
-                                : null;
-                        break;
-                    case "ArrowLeft":
-                        nextPath =
-                            paletteIdx - 1 >= 0
-                                ? (paletteOptions[paletteIdx - 1]?.path ?? null)
-                                : null;
-                        break;
-                    case "ArrowDown":
-                        nextPath =
-                            paletteIdx + COLS < paletteOptions.length
-                                ? (paletteOptions[paletteIdx + COLS]?.path ?? null)
-                                : null;
-                        break;
-                    case "ArrowUp":
-                        if (paletteIdx - COLS >= 0) {
-                            nextPath = paletteOptions[paletteIdx - COLS]?.path ?? null;
-                        } else if (neutralOptions.length > 0) {
-                            // Top palette row → escape up into neutrals, matching column.
-                            const targetIdx = Math.min(col, neutralOptions.length - 1);
-                            nextPath = neutralOptions[targetIdx]?.path ?? null;
-                        }
-                        break;
-                    case "Home":
-                        nextPath = paletteOptions[0]?.path ?? null;
-                        break;
-                    case "End":
-                        nextPath = paletteOptions[paletteOptions.length - 1]?.path ?? null;
-                        break;
-                    default:
-                        return;
-                }
-                if (nextPath === null) return;
+            if (e.key === "Home") {
                 e.preventDefault();
-                focusPath(nextPath);
+                // First non-empty cell in current row
+                for (let c = 0; c < colCount; c++) {
+                    if (cells[row]?.[c]) {
+                        focusCell(row, c);
+                        break;
+                    }
+                }
+            } else if (e.key === "End") {
+                e.preventDefault();
+                // Last non-empty cell in current row
+                for (let c = colCount - 1; c >= 0; c--) {
+                    if (cells[row]?.[c]) {
+                        focusCell(row, c);
+                        break;
+                    }
+                }
             }
         },
-        [neutralOptions, paletteOptions, COLS, focusPath, onCommit, onCancel, onSelect, initialPath]
+        [
+            findActiveCell,
+            findNext,
+            focusCell,
+            onCommit,
+            onCancel,
+            onSelect,
+            initialPath,
+            cells,
+            colCount,
+        ]
+    );
+
+    const handlePick = useCallback(
+        (path: string) => {
+            onSelect(path);
+            onCommit();
+        },
+        [onSelect, onCommit]
     );
 
     return (
-        <div className="color-grid-wrapper" onKeyDown={handleKeyDown}>
-            {neutralOptions.length > 0 && (
-                <div className="color-grid-neutrals" role="group" aria-label="Neutral colors">
-                    {neutralOptions.map((opt) => (
-                        <Swatch
-                            key={opt.path}
-                            option={opt}
-                            selected={opt.path === currentPath}
-                            onPick={(path) => {
-                                onSelect(path);
-                                onCommit();
-                            }}
-                            onFocus={() => onSelect(opt.path)}
-                        />
-                    ))}
-                </div>
-            )}
-
-            <div
-                ref={gridRef}
-                role="grid"
-                aria-label="Palette colors"
-                className="color-grid"
-                style={{ gridTemplateColumns: `repeat(${COLS}, 1fr)` }}
-            >
-                {steps.map((step, rowIdx) =>
-                    palettes.map((palette, colIdx) => {
-                        const flatIdx = rowIdx * COLS + colIdx;
-                        const opt = paletteOptions[flatIdx];
-                        if (!opt) return null;
+        <div
+            ref={gridRef}
+            role="grid"
+            aria-label="Color picker"
+            className="color-grid"
+            style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}
+            onKeyDown={handleKeyDown}
+        >
+            {rows.map((row, rowIdx) => (
+                <div
+                    key={row}
+                    role="row"
+                    className="color-grid-row"
+                    style={{ display: "contents" }}
+                >
+                    {columns.map((col, colIdx) => {
+                        const option = cells[rowIdx]?.[colIdx];
                         return (
-                            <Swatch
-                                key={opt.path}
-                                option={opt}
-                                selected={opt.path === currentPath}
-                                onPick={(path) => {
-                                    onSelect(path);
-                                    onCommit();
-                                }}
-                                onFocus={() => onSelect(opt.path)}
-                            />
+                            <div key={col} role="gridcell">
+                                {option && (
+                                    <Swatch
+                                        option={option}
+                                        selected={option.path === currentPath}
+                                        onPick={handlePick}
+                                    />
+                                )}
+                            </div>
                         );
-                    })
-                )}
-            </div>
+                    })}
+                </div>
+            ))}
         </div>
     );
 }
@@ -231,24 +219,21 @@ function Swatch({
     option,
     selected,
     onPick,
-    onFocus,
 }: {
     option: GridOption;
     selected: boolean;
     onPick: (path: string) => void;
-    onFocus: () => void;
 }) {
     return (
         <button
             type="button"
             className="color-grid-swatch"
             data-path={option.path}
-            data-selected={selected || undefined}
             style={{ backgroundColor: option.color }}
             aria-label={option.label}
+            aria-selected={selected}
             tabIndex={selected ? 0 : -1}
             onClick={() => onPick(option.path)}
-            onFocus={onFocus}
         />
     );
 }

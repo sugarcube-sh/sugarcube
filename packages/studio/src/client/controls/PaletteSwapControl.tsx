@@ -1,5 +1,5 @@
 import { type ColorScaleConfig, formatCSSVarName } from "@sugarcube-sh/core/client";
-import { useContext, useMemo } from "react";
+import { useCallback, useContext, useMemo } from "react";
 import { familyPaletteSwapUpdates } from "../../store/palette-cascade";
 import { StudioContext, useFamilyPalette, usePathIndex, useTokenStore } from "../store/hooks";
 import { TokenRow } from "./TokenRow";
@@ -37,11 +37,14 @@ export function PaletteSwapControl({
 
     const options = useMemo(() => buildOptions(palettes, colorScale), [palettes, colorScale]);
 
-    const handleChange = (newPalette: string) => {
-        if (!ctx) return;
-        const readToken = ctx.store.getState().getToken;
-        setTokens(familyPaletteSwapUpdates(family, newPalette, palettes, readToken, pathIndex));
-    };
+    const handleChange = useCallback(
+        (newPalette: string) => {
+            if (!ctx) return;
+            const readToken = ctx.store.getState().getToken;
+            setTokens(familyPaletteSwapUpdates(family, newPalette, palettes, readToken, pathIndex));
+        },
+        [ctx, family, palettes, setTokens, pathIndex]
+    );
 
     const rowLabel = label ?? family.split(".").pop() ?? family;
 

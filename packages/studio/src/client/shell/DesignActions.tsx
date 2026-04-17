@@ -1,8 +1,138 @@
-import { useCallback, useState } from "react";
-import { rpcDiscard, rpcSave } from "../providers/rpc-client";
-import { usePendingChangesCount, useStudioMode } from "../store/hooks";
+import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { diffToFileEdits } from "../../store/diff-to-edits";
+import type { TokenDiffEntry } from "../../store/types";
+import { rpcSave } from "../providers/rpc-client";
+import {
+    usePendingChanges,
+    usePendingChangesCount,
+    useStudioMode,
+    useTokenStore,
+} from "../store/hooks";
 
-type SaveState = "idle" | "saving" | "saved" | "error";
+type SaveHook = {
+    saving: boolean;
+    saveLabel: string;
+    feedback: ReactNode;
+    handleSave: () => void;
+    reset: () => void;
+};
+
+// ── DevTools save: write to disk via RPC ────────────────────────────
+
+function useDevToolsSave(): SaveHook {
+    const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+    const [error, setError] = useState<string | null>(null);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+    useEffect(() => () => clearTimeout(timerRef.current), []);
+
+    const handleSave = useCallback(async () => {
+        clearTimeout(timerRef.current);
+        setStatus("saving");
+        setError(null);
+        try {
+            await rpcSave();
+            setStatus("saved");
+            timerRef.current = setTimeout(() => setStatus("idle"), 2000);
+        } catch (err) {
+            setStatus("error");
+            setError(err instanceof Error ? err.message : "Failed to save");
+        }
+    }, []);
+
+    const reset = useCallback(() => {
+        clearTimeout(timerRef.current);
+        setStatus("idle");
+        setError(null);
+    }, []);
+
+    const saveLabel = status === "saving" ? "Saving\u2026" : status === "saved" ? "Saved" : "Save";
+
+    return {
+        saving: status === "saving",
+        saveLabel,
+        feedback: error ? <span role="alert">{error}</span> : null,
+        handleSave,
+        reset,
+    };
+}
+
+// ── Embedded save: postMessage to host, host creates PR ─────────────
+
+function useEmbeddedSave(diffRef: React.RefObject<TokenDiffEntry[]>): SaveHook {
+    const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+    const [error, setError] = useState<string | null>(null);
+    const [pr, setPr] = useState<{ number: number; url: string } | null>(null);
+
+    useEffect(function listenForSaveResult() {
+        function handleMessage(event: MessageEvent) {
+            const data = event.data;
+            if (!data || typeof data !== "object") return;
+            if (data.type !== "studio:save-result") return;
+
+            if (data.error) {
+                setStatus("error");
+                setError(data.error);
+            } else {
+                setStatus("success");
+                setPr({ number: data.number, url: data.url });
+            }
+        }
+
+        window.addEventListener("message", handleMessage);
+        return () => window.removeEventListener("message", handleMessage);
+    }, []);
+
+    const handleSave = useCallback(() => {
+        setStatus("saving");
+        setError(null);
+
+        const currentDiff = diffRef.current ?? [];
+        const files = diffToFileEdits(currentDiff);
+        const title =
+            currentDiff.length === 1 && currentDiff[0]
+                ? `Update ${currentDiff[0].path}`
+                : `Update ${currentDiff.length} tokens`;
+
+        window.parent.postMessage(
+            { type: "studio:save", payload: { title, description: "", files } },
+            "*"
+        );
+    }, [diffRef]);
+
+    const reset = useCallback(() => {
+        setStatus("idle");
+        setError(null);
+        setPr(null);
+    }, []);
+
+    let feedback: ReactNode = null;
+    if (error) {
+        feedback = <span role="alert">{error}</span>;
+    } else if (pr) {
+        feedback = (
+            <a href={pr.url} target="_blank" rel="noopener noreferrer">
+                View PR #{pr.number}
+            </a>
+        );
+    }
+
+    const saveLabel =
+        status === "saving"
+            ? "Saving\u2026"
+            : status === "success" && pr
+              ? `PR #${pr.number} opened`
+              : "Submit as PR";
+
+    return {
+        saving: status === "saving",
+        saveLabel,
+        feedback,
+        handleSave,
+        reset,
+    };
+}
 
 type DesignActionsProps = {
     /** Whether the diff panel is currently open. */
@@ -22,32 +152,20 @@ type DesignActionsProps = {
 export function DesignActions({ diffOpen, onToggleDiff, diffPanelId }: DesignActionsProps) {
     const mode = useStudioMode();
     const pendingCount = usePendingChangesCount();
+    const diff = usePendingChanges();
+    const diffRef = useRef(diff);
+    diffRef.current = diff;
+    const resetAll = useTokenStore((state) => state.resetAll);
 
-    const [saveState, setSaveState] = useState<SaveState>("idle");
-
-    const handleSave = useCallback(async () => {
-        setSaveState("saving");
-        try {
-            await rpcSave();
-            setSaveState("saved");
-            setTimeout(() => setSaveState("idle"), 2000);
-        } catch {
-            setSaveState("error");
-        }
-    }, []);
+    const devtools = useDevToolsSave();
+    const embedded = useEmbeddedSave(diffRef);
+    const { saving, saveLabel, feedback, handleSave, reset } =
+        mode === "devtools" ? devtools : embedded;
 
     const handleDiscard = useCallback(() => {
-        rpcDiscard();
-    }, []);
-
-    const saveLabel =
-        saveState === "saving"
-            ? "Saving…"
-            : saveState === "saved"
-              ? "Saved"
-              : mode === "devtools"
-                ? "Save"
-                : "Submit as PR";
+        reset();
+        resetAll();
+    }, [reset, resetAll]);
 
     const changesLabel = `${pendingCount} ${pendingCount === 1 ? "change" : "changes"}`;
 
@@ -59,7 +177,7 @@ export function DesignActions({ diffOpen, onToggleDiff, diffPanelId }: DesignAct
                 aria-expanded={diffOpen}
                 aria-controls={diffPanelId}
             >
-                <span aria-hidden="true">{diffOpen ? "▾" : "▸"}</span>
+                {diffOpen ? <ChevronDownIcon aria-hidden /> : <ChevronRightIcon aria-hidden />}
                 <span>{changesLabel}</span>
             </button>
             <button
@@ -69,14 +187,10 @@ export function DesignActions({ diffOpen, onToggleDiff, diffPanelId }: DesignAct
             >
                 Discard
             </button>
-            <button
-                type="button"
-                onClick={handleSave}
-                disabled={saveState === "saving"}
-                aria-label={saveLabel}
-            >
+            <button type="button" onClick={handleSave} disabled={saving} aria-label={saveLabel}>
                 {saveLabel}
             </button>
+            {feedback}
         </div>
     );
 }

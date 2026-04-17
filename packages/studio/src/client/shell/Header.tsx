@@ -8,16 +8,16 @@ export function Header() {
                     viewBox="0 0 148 169"
                     aria-hidden="true"
                     focusable="false"
+                    style={{
+                        fillRule: "evenodd",
+                        clipRule: "evenodd",
+                        strokeLinecap: "round",
+                        strokeLinejoin: "round",
+                    }}
                 >
                     <path
                         d="m0-80.273-69.518-40.136-69.518 40.136L0 0l-69.518 40.136L-139.036 0"
-                        style={{
-                            fill: "none",
-                            stroke: "currentColor",
-                            strokeWidth: "8px",
-                            strokeLinecap: "round",
-                            strokeLinejoin: "round",
-                        }}
+                        style={{ fill: "none", stroke: "currentColor", strokeWidth: "8px" }}
                         transform="translate(143.036 124.409)"
                     />
                     <path
@@ -26,8 +26,6 @@ export function Header() {
                             fill: "none",
                             stroke: "currentColor",
                             strokeWidth: "5px",
-                            strokeLinecap: "round",
-                            strokeLinejoin: "round",
                             strokeDasharray: "12,12",
                         }}
                         transform="matrix(0 1 1 0 44.136 84.272)"
@@ -38,8 +36,6 @@ export function Header() {
                             fill: "none",
                             stroke: "currentColor",
                             strokeWidth: "5px",
-                            strokeLinecap: "round",
-                            strokeLinejoin: "round",
                             strokeDasharray: "12,12",
                         }}
                         transform="matrix(0 1 1 0 183.173 84.272)"
@@ -50,8 +46,6 @@ export function Header() {
                             fill: "none",
                             stroke: "currentColor",
                             strokeWidth: "5px",
-                            strokeLinecap: "round",
-                            strokeLinejoin: "round",
                             strokeDasharray: "12,12",
                         }}
                         transform="matrix(0 1 1 0 113.654 125.083)"
@@ -62,8 +56,6 @@ export function Header() {
                             fill: "none",
                             stroke: "currentColor",
                             strokeWidth: "5px",
-                            strokeLinecap: "round",
-                            strokeLinejoin: "round",
                             strokeDasharray: "12,12",
                         }}
                         transform="rotate(150 -3.913 81.368)scale(-1 1)"

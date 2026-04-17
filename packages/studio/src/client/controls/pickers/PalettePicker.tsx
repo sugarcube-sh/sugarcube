@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { CheckIcon } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
     Command,
     CommandEmpty,
@@ -34,6 +35,14 @@ export function PalettePicker({ currentName, options, onSelect }: Props) {
     const [open, setOpen] = useState(false);
     const current = options.find((o) => o.name === currentName);
 
+    // cmdk lowercases values internally — map back to the real name.
+    const nameByLower = useMemo(
+        () => new Map(options.map((o) => [o.name.toLowerCase(), o.name])),
+        [options]
+    );
+
+    const resolve = (lowered: string) => nameByLower.get(lowered) ?? lowered;
+
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger className="palette-picker-trigger">
@@ -41,7 +50,7 @@ export function PalettePicker({ currentName, options, onSelect }: Props) {
                 <span className="palette-picker-name">{currentName}</span>
             </PopoverTrigger>
             <PopoverContent align="start">
-                <Command>
+                <Command onValueChange={(v) => onSelect(resolve(v))}>
                     <CommandInput placeholder="Filter palettes…" />
                     <CommandList>
                         <CommandEmpty>No palettes found.</CommandEmpty>
@@ -50,18 +59,14 @@ export function PalettePicker({ currentName, options, onSelect }: Props) {
                                 <CommandItem
                                     key={opt.name}
                                     value={opt.name}
-                                    onSelect={(value) => {
-                                        onSelect(value);
+                                    onSelect={() => {
+                                        onSelect(opt.name);
                                         setOpen(false);
                                     }}
                                 >
                                     <PaletteStrip shades={opt.shades} />
                                     <span>{opt.name}</span>
-                                    {opt.name === currentName && (
-                                        <span className="palette-picker-check" aria-hidden="true">
-                                            ✓
-                                        </span>
-                                    )}
+                                    {opt.name === currentName && <CheckIcon />}
                                 </CommandItem>
                             ))}
                         </CommandGroup>

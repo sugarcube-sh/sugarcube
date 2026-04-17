@@ -14,10 +14,6 @@
         ".": {
             "types": "./dist/index.d.mts",
             "import": "./dist/index.mjs"
-        },
-        "./embed": {
-            "types": "./dist/web-component.d.mts",
-            "import": "./dist/web-component.mjs"
         }
     },
     "scripts": {

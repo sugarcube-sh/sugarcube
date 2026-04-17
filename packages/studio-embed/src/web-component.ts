@@ -13,6 +13,7 @@
  *   <sugarcube-studio src="/__studio/"></sugarcube-studio>
  */
 
+const DEFAULT_SUBMIT_URL = "https://studio.sugarcube.sh/submit-pr";
 const STUDIO_WIDTH = "22rem";
 
 const TEMPLATE = `
@@ -73,8 +74,17 @@ class SugarcubeStudio extends HTMLElement {
     private iframe: HTMLIFrameElement | null = null;
     private styleTag: HTMLStyleElement | null = null;
 
+    // We expose a save handler so users can override the default submit-url.
+    // This is for when the user doesn't want to use the sugarcube-sh bot backed PR submission infra.
+    onSave:
+        | ((payload: { title: string; description: string; files: unknown[] }) => Promise<{
+              number: number;
+              url: string;
+          }>)
+        | null = null;
+
     static get observedAttributes() {
-        return ["src", "hidden"];
+        return ["src", "hidden", "submit-url"];
     }
 
     connectedCallback() {
@@ -85,7 +95,7 @@ class SugarcubeStudio extends HTMLElement {
         const toggle = shadow.querySelector(".toggle");
 
         // Set iframe src with embedded marker so Studio knows it's
-        // inside our web component (not the DevTools dock)
+        // inside our web component and not the DevTools dock.
         const src = this.getAttribute("src") ?? "/__studio/";
         const url = new URL(src, window.location.origin);
         url.searchParams.set("mode", "embedded");
@@ -145,8 +155,44 @@ class SugarcubeStudio extends HTMLElement {
                     this.styleTag.textContent = data.css;
                 }
                 break;
+
+            case "studio:save":
+                this.handleSave(data.payload);
+                break;
         }
     };
+
+    private reply(data: Record<string, unknown>) {
+        this.iframe?.contentWindow?.postMessage({ type: "studio:save-result", ...data }, "*");
+    }
+
+    /**
+     * Submit token edits as a PR. Uses the programmatic `onSave` handler
+     * if set, otherwise POSTs to the `submit-url` attribute (defaults to
+     * the hosted sugarcube studio API).
+     */
+    private async handleSave(payload: { title: string; description: string; files: unknown[] }) {
+        try {
+            const result = this.onSave
+                ? await this.onSave(payload)
+                : await this.submitToAPI(payload);
+            this.reply({ number: result.number, url: result.url });
+        } catch (err) {
+            this.reply({ error: err instanceof Error ? err.message : "Submission failed" });
+        }
+    }
+
+    private async submitToAPI(payload: unknown): Promise<{ number: number; url: string }> {
+        const url = this.getAttribute("submit-url") ?? DEFAULT_SUBMIT_URL;
+        const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? `Submission failed (${res.status})`);
+        return data as { number: number; url: string };
+    }
 
     /**
      * Send the token snapshot to the iframe. The snapshot is loaded

@@ -331,8 +331,8 @@ export function applyScaleToResolved(
  * `scaleFactor` is 1.0, returns the original snapshot defaults. Otherwise
  * multiplies each captured default by the factor.
  *
- * If `enabled` is false, returns the input unchanged — the `scalesWith`
- * binding's toggle uses this to opt out.
+ * If `enabled` is false, restores the snapshot defaults (factor of 1.0)
+ * so that toggling the link off cleanly reverts the linked tokens.
  *
  * Values are rounded to integers: this path is specifically for static
  * dimension tokens (e.g. integer pixel containers). Fluid dimensions
@@ -345,7 +345,9 @@ export function applyLinkedScaleToResolved(
     enabled: boolean,
     pathIndex: PathIndex
 ): ResolvedTokens {
-    if (!enabled) return resolved;
+    // When disabled, apply with factor 1.0 to restore snapshot defaults
+    // rather than freezing at the last-scaled values.
+    const factor = enabled ? scaleFactor : 1;
 
     const updates: ResolvedTokens = {};
 
@@ -354,7 +356,7 @@ export function applyLinkedScaleToResolved(
         if (keys.length === 0) continue;
 
         const scaledValue: Dim = {
-            value: Math.round(defaultValue.value * scaleFactor),
+            value: Math.round(defaultValue.value * factor),
             unit: defaultValue.unit,
         };
 

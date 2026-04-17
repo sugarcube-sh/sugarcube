@@ -1,10 +1,12 @@
 import type { PresetBinding } from "@sugarcube-sh/core/client";
+import { CheckIcon } from "lucide-react";
 import { useContext, useMemo, useState } from "react";
 import type { PathIndex } from "../../store/path-index";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover/popover";
 import type { TokenStoreAPI } from "../store/create-token-store";
 import { StudioContext, usePathIndex, useToken } from "../store/hooks";
 import { TokenRow } from "./TokenRow";
+import { lastSegment, unwrapRef } from "./path-utils";
 import { labelForBinding } from "./resolver";
 
 type PresetControlProps = {
@@ -52,11 +54,7 @@ export function PresetControl({ binding }: PresetControlProps) {
                                     }}
                                 >
                                     <span>{capitalize(optLabel)}</span>
-                                    {value === reference && (
-                                        <span className="preset-check" aria-hidden="true">
-                                            ✓
-                                        </span>
-                                    )}
+                                    {value === reference && <CheckIcon />}
                                 </button>
                             </div>
                         ))}
@@ -84,16 +82,15 @@ function resolveOptions(
         const matchSet = new Set(matches);
         return matches
             .filter((path) => {
-                // Skip aliases whose TARGET is also in the matched set —
-                // avoids showing both `font.body` and `font.sans` when both
-                // match `font.*`. But keeps aliases to other namespaces
-                // (e.g. `text.base → size.step.0` stays because `size.step.0`
-                // is not in `text.*`).
+                // Skip aliases whose terminal target is also in the matched
+                // set. Walks the full ref chain so multi-hop aliases like
+                // font.body → {font.serif} → {font.sans} are caught.
+                // Keeps aliases to other namespaces (e.g. text.base →
+                // size.step.0) since the target isn't in the matched set.
                 if (!getToken) return true;
-                const val = getToken(path);
-                if (typeof val !== "string" || !val.startsWith("{")) return true;
-                const target = val.slice(1, -1);
-                return !matchSet.has(target);
+                const terminal = resolveTerminalPath(path, getToken);
+                if (!terminal || terminal === path) return true;
+                return !matchSet.has(terminal);
             })
             .map((path) => ({
                 key: path,
@@ -109,9 +106,22 @@ function resolveOptions(
     }));
 }
 
-function lastSegment(path: string): string {
-    const lastDot = path.lastIndexOf(".");
-    return lastDot === -1 ? path : path.substring(lastDot + 1);
+/** Walk a ref chain to its terminal path. Returns undefined if the value isn't a reference. */
+function resolveTerminalPath(
+    path: string,
+    getToken: (path: string) => unknown
+): string | undefined {
+    const seen = new Set<string>();
+    let current = path;
+
+    while (true) {
+        if (seen.has(current)) return current; // i.e. we've already seen this path, we're in a circle, so stop!
+        seen.add(current);
+        const val = getToken(current);
+        const next = unwrapRef(val);
+        if (!next) return current === path ? undefined : current;
+        current = next;
+    }
 }
 
 function capitalize(s: string): string {

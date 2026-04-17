@@ -20,3 +20,32 @@ export function joinTokenPath(...segments: string[]): string {
         .filter(Boolean)
         .join(".");
 }
+
+/** Wrap a token path in DTCG reference syntax: `path` → `{path}`. */
+export function wrapRef(path: string): string {
+    return `{${path}}`;
+}
+
+/** Unwrap a DTCG reference string: `{path}` → `path`. Returns undefined if not a reference. */
+export function unwrapRef(value: unknown): string | undefined {
+    if (typeof value !== "string") return undefined;
+    const trimmed = value.trim();
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        return trimmed.slice(1, -1);
+    }
+    return undefined;
+}
+
+/** Strip trailing glob segments (`.*`) from a path: `"size.step.*"` → `"size.step"`. */
+export function stripTrailingGlob(path: string): string {
+    let p = path;
+    while (p.endsWith(".*")) p = p.slice(0, -2);
+    return p;
+}
+
+/** Return the last dot-separated segment of a path, stripping any trailing glob (`.*`). */
+export function lastSegment(path: string): string {
+    const p = stripTrailingGlob(path);
+    const lastDot = p.lastIndexOf(".");
+    return lastDot === -1 ? p : p.substring(lastDot + 1);
+}

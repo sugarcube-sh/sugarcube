@@ -1,3 +1,4 @@
+import type { ResolvedTokens } from "@sugarcube-sh/core";
 import type { PanelSection } from "@sugarcube-sh/core/client";
 import { type StoreApi, createStore } from "zustand";
 import type { PathIndex } from "../../store/path-index";
@@ -9,7 +10,7 @@ import {
     captureLinkedScale,
     captureScale,
 } from "../../store/scale-cascade";
-import type { TokenSnapshot, TokenUpdate } from "../../store/types";
+import type { TokenSnapshot } from "../../store/types";
 import type { TokenStoreAPI } from "./create-token-store";
 
 const DEFAULT_SPREAD = 1;
@@ -45,27 +46,28 @@ export type ScaleStateAPI = StoreApi<ScaleStateStore>;
  * computed token values in one atomic update.
  */
 /**
- * Optional callback for routing scale writes externally (e.g. via RPC in DevTools mode).
- * When provided, applyAll sends the changed token entries (key → full token object)
- * through this callback instead of writing to the local token store.
+ * Callback that receives the fully-computed resolved map after every
+ * scale change. The caller decides how to write it (sharedState.mutate
+ * in DevTools, tokenStore.setState in embedded).
  */
-export type ScaleApplyCallback = (
-    changes: Array<{ key: string; token: Record<string, unknown> }>
-) => void;
+export type ScaleWriteCallback = (resolved: ResolvedTokens) => void;
 
 export function createScaleState(
     panelSections: PanelSection[],
     snapshot: TokenSnapshot,
     pathIndex: PathIndex,
     tokenStore: TokenStoreAPI,
-    onApply?: ScaleApplyCallback
+    onWrite?: ScaleWriteCallback
 ): ScaleStateAPI {
     const { scales, links } = buildInitialState(panelSections, snapshot, pathIndex);
+
+    /** Default writer: set resolved directly on the local token store. */
+    const writeResolved: ScaleWriteCallback =
+        onWrite ?? ((resolved) => tokenStore.setState({ resolved }));
 
     function applyAll() {
         const { scales: currentScales, links: currentLinks } = scaleStore.getState();
 
-        // Compute the new resolved state by applying all scales + links
         let next = tokenStore.getState().resolved;
 
         for (const slot of Object.values(currentScales)) {
@@ -79,24 +81,7 @@ export function createScaleState(
             next = applyLinkedScaleToResolved(next, link.scale, factor, link.enabled, pathIndex);
         }
 
-        if (onApply) {
-            // DevTools mode: find changed tokens and send full objects
-            const changes: Array<{ key: string; token: Record<string, unknown> }> = [];
-            const current = tokenStore.getState().resolved;
-            for (const [key, token] of Object.entries(next)) {
-                if (!token || !("$value" in token)) continue;
-                const original = current[key];
-                if (!original || !("$value" in original)) continue;
-                // Compare the full token, not just $value — extensions matter
-                if (JSON.stringify(token) !== JSON.stringify(original)) {
-                    changes.push({ key, token: token as Record<string, unknown> });
-                }
-            }
-            onApply(changes);
-        } else {
-            // Embedded mode: write directly to the local store
-            tokenStore.setState({ resolved: next });
-        }
+        writeResolved(next);
     }
 
     const scaleStore = createStore<ScaleStateStore>((set) => ({
@@ -149,7 +134,6 @@ function buildInitialState(
     const links: Record<string, LinkSlot> = {};
 
     for (const section of panelSections) {
-        if (section.type === "palette-swap") continue;
         for (const binding of section.bindings) {
             if (binding.type !== "scale" || !binding.base) continue;
             const captured = captureScale(
@@ -168,9 +152,8 @@ function buildInitialState(
     }
 
     for (const section of panelSections) {
-        if (section.type === "palette-swap") continue;
         for (const binding of section.bindings) {
-            if (!binding.scalesWith) continue;
+            if (binding.type !== "scale-linked") continue;
             const sourceSlot = scales[binding.scalesWith];
             if (!sourceSlot) continue;
             links[binding.token] = {

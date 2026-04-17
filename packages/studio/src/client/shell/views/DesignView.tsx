@@ -6,7 +6,11 @@ export function DesignView() {
     const pathIndex = usePathIndex();
 
     if (!config) {
-        return <p>No panel configuration provided.</p>;
+        return (
+            <p>
+                Add a <code>studio.panel</code> section to your sugarcube config to get started.
+            </p>
+        );
     }
 
     const ctx: ControlContext = {

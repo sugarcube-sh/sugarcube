@@ -4,12 +4,12 @@ import {
     type ColorScaleConfig,
     formatCSSVarName,
 } from "@sugarcube-sh/core/client";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { PathIndex } from "../../store/path-index";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover/popover";
 import { usePathIndex, useToken, useTokenStore } from "../store/hooks";
 import { TokenRow } from "./TokenRow";
-import { joinTokenPath } from "./path-utils";
+import { joinTokenPath, unwrapRef, wrapRef } from "./path-utils";
 import { ColorGrid, type GridOption } from "./pickers/ColorGrid";
 import { labelForBinding } from "./resolver";
 
@@ -26,7 +26,7 @@ type ColorTokenControlProps = {
  * + closes, Escape reverts to the value the popover opened with + closes.
  *
  * The grid shows every `colorScale.palettes × colorScale.steps` combination,
- * plus optional white/black "neutrals" above the grid. Follows the token's
+ * with optional white/black as an extra column. Follows the token's
  * reference chain down to the terminal palette.step so the current selection
  * highlights correctly even when tokens alias through intermediate semantics.
  */
@@ -36,14 +36,25 @@ export function ColorTokenControl({ binding, colorScale }: ColorTokenControlProp
     const resolved = useTokenStore((state) => state.resolved);
     const label = labelForBinding(binding);
     const [open, setOpen] = useState(false);
+    const popoverRef = useRef<HTMLDivElement>(null);
 
-    const { paletteOptions, neutralOptions, byPath } = useMemo(
-        () => buildOptions(colorScale),
-        [colorScale]
-    );
+    const { columns, rows, cells, byPath } = useMemo(() => buildGrid(colorScale), [colorScale]);
 
     const terminalPath = resolveRefChain(value, pathIndex, resolved) ?? "";
     const currentOption = byPath.get(terminalPath);
+
+    const handleOpenAutoFocus = useCallback(
+        (e: Event) => {
+            e.preventDefault();
+            requestAnimationFrame(() => {
+                const el = popoverRef.current?.querySelector<HTMLElement>(
+                    `[data-path="${terminalPath}"]`
+                );
+                el?.focus();
+            });
+        },
+        [terminalPath]
+    );
 
     return (
         <TokenRow path={binding.token} label={label}>
@@ -56,12 +67,15 @@ export function ColorTokenControl({ binding, colorScale }: ColorTokenControlProp
                     />
                     <span className="token-picker-path">{terminalPath}</span>
                 </PopoverTrigger>
-                <PopoverContent className="color-grid-popover">
+                <PopoverContent
+                    ref={popoverRef}
+                    className="color-grid-popover"
+                    onOpenAutoFocus={handleOpenAutoFocus}
+                >
                     <ColorGrid
-                        palettes={colorScale.palettes}
-                        steps={colorScale.steps}
-                        paletteOptions={paletteOptions}
-                        neutralOptions={neutralOptions}
+                        columns={columns}
+                        rows={rows}
+                        cells={cells}
                         currentPath={terminalPath}
                         onSelect={(path) => setValue(wrapRef(path))}
                         onCommit={() => setOpen(false)}
@@ -73,48 +87,53 @@ export function ColorTokenControl({ binding, colorScale }: ColorTokenControlProp
     );
 }
 
-type BuiltOptions = {
-    paletteOptions: GridOption[];
-    neutralOptions: GridOption[];
+type BuiltGrid = {
+    columns: string[];
+    rows: string[];
+    cells: (GridOption | null)[][];
     byPath: Map<string, GridOption>;
 };
 
-function buildOptions(colorScale: ColorScaleConfig): BuiltOptions {
+function buildGrid(colorScale: ColorScaleConfig): BuiltGrid {
     const { prefix, palettes, steps, white, black } = colorScale;
-    const paletteOptions: GridOption[] = [];
-    const neutralOptions: GridOption[] = [];
+    const hasExtras = Boolean(white || black);
+    const columns = hasExtras ? [...palettes, ""] : [...palettes];
+    const rows = [...steps];
     const byPath = new Map<string, GridOption>();
 
-    // Row-major: iterate steps (rows), then palettes (columns), so index order
-    // matches the grid's visual layout for arrow-key navigation.
-    for (const step of steps) {
-        for (const palette of palettes) {
+    const cells: (GridOption | null)[][] = rows.map((step, rowIdx) => {
+        const row: (GridOption | null)[] = palettes.map((palette) => {
             const path = joinTokenPath(prefix, palette, step);
             const option: GridOption = {
                 path,
                 color: `var(--${formatCSSVarName(path)})`,
-                palette,
-                step,
                 label: `${palette} ${step}`,
             };
-            paletteOptions.push(option);
             byPath.set(path, option);
+            return option;
+        });
+
+        // Extra column: white and black together at the top
+        if (hasExtras) {
+            const extraToken = rowIdx === 0 ? white : rowIdx === 1 ? black : undefined;
+            if (extraToken) {
+                const label = extraToken.split(".").pop() ?? extraToken;
+                const option: GridOption = {
+                    path: extraToken,
+                    color: `var(--${formatCSSVarName(extraToken)})`,
+                    label,
+                };
+                byPath.set(extraToken, option);
+                row.push(option);
+            } else {
+                row.push(null);
+            }
         }
-    }
 
-    for (const neutral of [white, black]) {
-        if (!neutral) continue;
-        const label = neutral.split(".").pop() ?? neutral;
-        const option: GridOption = {
-            path: neutral,
-            color: `var(--${formatCSSVarName(neutral)})`,
-            label,
-        };
-        neutralOptions.push(option);
-        byPath.set(neutral, option);
-    }
+        return row;
+    });
 
-    return { paletteOptions, neutralOptions, byPath };
+    return { columns, rows, cells, byPath };
 }
 
 /**
@@ -140,17 +159,4 @@ function resolveRefChain(
         current = pathIndex.readValue(resolved, path);
     }
     return lastPath;
-}
-
-function wrapRef(path: string): string {
-    return `{${path}}`;
-}
-
-function unwrapRef(value: unknown): string | undefined {
-    if (typeof value !== "string") return undefined;
-    const trimmed = value.trim();
-    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-        return trimmed.slice(1, -1);
-    }
-    return undefined;
 }

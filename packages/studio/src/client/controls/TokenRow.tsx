@@ -1,3 +1,4 @@
+import { Undo2Icon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useHasPendingChange, useTokenStore } from "../store/hooks";
 
@@ -42,7 +43,7 @@ function DiscardButton({ path, label }: { path: string; label: string }) {
             aria-label={`Discard change to ${label}`}
             title="Discard"
         >
-            ↺
+            <Undo2Icon />
         </button>
     );
 }

@@ -10,12 +10,8 @@ export function Shell() {
             <Tabs defaultValue="design">
                 <TabsList aria-label="Studio sections">
                     <TabsTrigger value="design">Design</TabsTrigger>
-                    <TabsTrigger value="tokens" disabled>
-                        Tokens
-                    </TabsTrigger>
-                    <TabsTrigger value="components" disabled>
-                        Components
-                    </TabsTrigger>
+                    <TabsTrigger value="tokens">Tokens</TabsTrigger>
+                    <TabsTrigger value="components">Components</TabsTrigger>
                 </TabsList>
 
                 <TabsPanel value="design">

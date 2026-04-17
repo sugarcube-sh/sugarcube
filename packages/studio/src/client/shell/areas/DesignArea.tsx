@@ -10,7 +10,7 @@ import { DiffView } from "../views/DiffView";
  * Default state: edit panel fills the area, no footer.
  * With pending changes: a sticky footer appears with the change count
  * (also a disclosure trigger) and Save/Discard actions.
- * Clicking the change count toggles the diff panel as a second column (styles not yet implmented).
+ * Clicking the change count toggles the diff panel as a second column (styles not yet implemented).
  */
 export function DesignArea() {
     const pendingCount = usePendingChangesCount();
@@ -18,7 +18,6 @@ export function DesignArea() {
     const [diffOpen, setDiffOpen] = useState(false);
     const diffPanelId = useId();
 
-    // We only want to show the diff panel when there are pending changes.
     const showDiff = hasChanges && diffOpen;
 
     return (

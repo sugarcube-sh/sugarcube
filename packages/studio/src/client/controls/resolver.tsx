@@ -12,6 +12,7 @@ import { PaletteSwapControl } from "./PaletteSwapControl";
 import { PresetControl } from "./PresetControl";
 import { ScaleControl } from "./ScaleControl";
 import { ScaleLinkedControl } from "./ScaleLinkedControl";
+import { lastSegment } from "./path-utils";
 
 export type ControlContext = {
     colorScale: ColorScaleConfig | undefined;
@@ -100,11 +101,4 @@ export function labelForBinding(binding: PanelBinding): string {
     if (binding.label) return binding.label;
     const path = binding.type === "palette-swap" ? binding.family : binding.token;
     return lastSegment(path);
-}
-
-function lastSegment(path: string): string {
-    let p = path;
-    while (p.endsWith(".*")) p = p.slice(0, -2);
-    const lastDot = p.lastIndexOf(".");
-    return lastDot === -1 ? p : p.substring(lastDot + 1);
 }
