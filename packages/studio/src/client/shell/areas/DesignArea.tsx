@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { usePendingChangesCount } from "../../store/hooks";
 import { DesignActions } from "../DesignActions";
 import { DesignView } from "../views/DesignView";
@@ -10,7 +10,7 @@ import { DiffView } from "../views/DiffView";
  * Default state: edit panel fills the area, no footer.
  * With pending changes: a sticky footer appears with the change count
  * (also a disclosure trigger) and Save/Discard actions.
- * Clicking the change count toggles the diff panel as a second column.
+ * Clicking the change count toggles the diff panel as a second column (styles not yet implmented).
  */
 export function DesignArea() {
     const pendingCount = usePendingChangesCount();
@@ -18,12 +18,8 @@ export function DesignArea() {
     const [diffOpen, setDiffOpen] = useState(false);
     const diffPanelId = useId();
 
-    // When all changes are dismissed (or saved), close the diff panel.
-    useEffect(() => {
-        if (!hasChanges && diffOpen) {
-            setDiffOpen(false);
-        }
-    }, [hasChanges, diffOpen]);
+    // We only want to show the diff panel when there are pending changes.
+    const showDiff = hasChanges && diffOpen;
 
     return (
         <div className="design-area">
@@ -31,7 +27,7 @@ export function DesignArea() {
                 <section className="design-area-edit" aria-label="Edit">
                     <DesignView />
                 </section>
-                {diffOpen && (
+                {showDiff && (
                     <section
                         id={diffPanelId}
                         className="design-area-diff"
@@ -43,7 +39,7 @@ export function DesignArea() {
             </div>
             {hasChanges && (
                 <DesignActions
-                    diffOpen={diffOpen}
+                    diffOpen={showDiff}
                     onToggleDiff={() => setDiffOpen((open) => !open)}
                     diffPanelId={diffPanelId}
                 />
