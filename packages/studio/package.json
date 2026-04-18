@@ -14,40 +14,40 @@
         ".": {
             "types": "./dist/index.d.mts",
             "import": "./dist/index.mjs"
+        },
+        "./client": {
+            "types": "./dist/client.d.mts",
+            "import": "./dist/client.mjs"
         }
     },
     "scripts": {
         "build": "pkgroll --minify && pnpm run build:client",
-        "build:client": "vite build --config src/client/vite.config.ts",
+        "build:client": "vite build",
         "dev": "pnpm run \"/^dev:.*/\"",
-        "dev:plugin": "pkgroll --watch",
-        "dev:client": "vite build --config src/client/vite.config.ts --watch",
+        "dev:lib": "pkgroll --watch",
+        "dev:client": "vite build --watch",
         "type-check": "tsc --noEmit"
     },
     "dependencies": {
-        "@radix-ui/react-popover": "^1.1.14",
-        "@radix-ui/react-tabs": "^1.1.13",
-        "@sugarcube-sh/core": "workspace:*",
-        "@sugarcube-sh/vite": "workspace:*",
-        "@vitejs/devtools-kit": "^0.1.13",
-        "clsx": "^2.1.1",
-        "sirv": "^3.0.1",
-        "cmdk": "^1.1.1",
-        "lucide-react": "^0.468.0",
-        "zustand": "^5.0.12"
+        "@sugarcube-sh/core": "workspace:*"
     },
     "devDependencies": {
+        "@radix-ui/react-popover": "^1.1.14",
+        "@radix-ui/react-tabs": "^1.1.13",
         "@sugarcube-sh/cli": "workspace:*",
+        "@sugarcube-sh/vite": "workspace:*",
         "@types/react": "^19.2.14",
         "@types/react-dom": "^19.2.3",
+        "@vitejs/devtools-kit": "^0.1.13",
         "@vitejs/plugin-react": "^6.0.1",
+        "clsx": "^2.1.1",
+        "cmdk": "^1.1.1",
+        "lucide-react": "^0.468.0",
         "pkgroll": "^2.26.0",
         "react": "^19.2.4",
         "react-dom": "^19.2.4",
         "typescript": "^5.8.3",
-        "vite": "^8.0.3"
-    },
-    "peerDependencies": {
-        "vite": "^6.0.0 || ^7 || ^8"
+        "vite": "^8.0.3",
+        "zustand": "^5.0.12"
     }
 }

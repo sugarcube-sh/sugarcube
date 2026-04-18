@@ -3,7 +3,7 @@ import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
-import studio from "@sugarcube-sh/studio";
+import studio from "@sugarcube-sh/studio-vite";
 import sugarcube from "@sugarcube-sh/vite";
 import presetWind3 from "@unocss/preset-wind3";
 import { DevTools } from "@vitejs/devtools";

@@ -9,6 +9,7 @@
       "**/.netlify/**",
       "**/.next/**",
       "**/.wrangler/**",
+      "**/.sugarcube/**",
       "**/coverage/**",
       "notes/**",
       "packages/core/tests/__fixtures__/tokens/invalid-json.json"
@@ -74,7 +75,9 @@
         "apps/www/src/components/tweakpane/components/ColorGrid.tsx",
         "packages/studio/src/client/components/ColorGrid.tsx",
         "packages/studio/src/client/controls/pickers/ColorGrid.tsx",
-        "packages/studio/src/client/controls/PresetControl.tsx"
+        "packages/studio/src/client/controls/PresetControl.tsx",
+        "packages/studio/src/controls/pickers/ColorGrid.tsx",
+        "packages/studio/src/controls/PresetControl.tsx"
       ],
       "linter": {
         "rules": {

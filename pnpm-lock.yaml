@@ -126,12 +126,12 @@ importers:
       '@sugarcube-sh/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@sugarcube-sh/studio':
-        specifier: workspace:*
-        version: link:../../packages/studio
       '@sugarcube-sh/studio-embed':
         specifier: workspace:*
         version: link:../../packages/studio-embed
+      '@sugarcube-sh/studio-vite':
+        specifier: workspace:*
+        version: link:../../packages/studio-vite
       '@sugarcube-sh/vite':
         specifier: workspace:*
         version: link:../../packages/vite
@@ -282,21 +282,34 @@ importers:
 
   packages/studio:
     dependencies:
+      '@sugarcube-sh/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
       '@radix-ui/react-popover':
         specifier: ^1.1.14
         version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@radix-ui/react-tabs':
         specifier: ^1.1.13
         version: 1.1.13(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@sugarcube-sh/core':
+      '@sugarcube-sh/cli':
         specifier: workspace:*
-        version: link:../core
+        version: link:../cli
       '@sugarcube-sh/vite':
         specifier: workspace:*
         version: link:../vite
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
       '@vitejs/devtools-kit':
         specifier: ^0.1.13
         version: 0.1.13(typescript@5.9.3)(vite@8.0.8)(ws@8.20.0)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.1
+        version: 6.0.1(vite@8.0.8)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -306,25 +319,6 @@ importers:
       lucide-react:
         specifier: ^0.468.0
         version: 0.468.0(react@19.2.4)
-      sirv:
-        specifier: ^3.0.1
-        version: 3.0.2
-      zustand:
-        specifier: ^5.0.12
-        version: 5.0.12(@types/react@19.2.14)(immer@11.1.4)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
-    devDependencies:
-      '@sugarcube-sh/cli':
-        specifier: workspace:*
-        version: link:../cli
-      '@types/react':
-        specifier: ^19.2.14
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-      '@vitejs/plugin-react':
-        specifier: ^6.0.1
-        version: 6.0.1(vite@8.0.8)
       pkgroll:
         specifier: ^2.26.0
         version: 2.26.0(typescript@5.9.3)(vite@8.0.8)
@@ -339,9 +333,42 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^8.0.3
-        version: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
+        version: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13(@pnpm/logger@1001.0.1)(typescript@5.9.3)(vite@8.0.8))(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
+      zustand:
+        specifier: ^5.0.12
+        version: 5.0.12(@types/react@19.2.14)(immer@11.1.4)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
 
   packages/studio-embed:
+    devDependencies:
+      pkgroll:
+        specifier: ^2.26.0
+        version: 2.26.0(typescript@5.9.3)(vite@8.0.8)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  packages/studio-node: {}
+
+  packages/studio-vite:
+    dependencies:
+      '@sugarcube-sh/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sugarcube-sh/studio':
+        specifier: workspace:*
+        version: link:../studio
+      '@sugarcube-sh/vite':
+        specifier: workspace:*
+        version: link:../vite
+      '@vitejs/devtools-kit':
+        specifier: ^0.1.13
+        version: 0.1.13(typescript@5.9.3)(vite@8.0.8)(ws@8.20.0)
+      sirv:
+        specifier: ^3.0.1
+        version: 3.0.2
+      vite:
+        specifier: ^8.0.3
+        version: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13(@pnpm/logger@1001.0.1)(typescript@5.9.3)(vite@8.0.8))(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
     devDependencies:
       pkgroll:
         specifier: ^2.26.0
@@ -367,7 +394,7 @@ importers:
         version: 2.26.0(typescript@5.9.3)(vite@8.0.8)
       vite:
         specifier: ^8.0.3
-        version: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
+        version: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13(@pnpm/logger@1001.0.1)(typescript@5.9.3)(vite@8.0.8))(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
 packages:
 
@@ -7325,7 +7352,7 @@ snapshots:
       '@vitejs/devtools-rpc': 0.1.13(typescript@5.9.3)(ws@8.20.0)
       birpc: 4.0.0
       ohash: 2.0.11
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13(@pnpm/logger@1001.0.1)(typescript@5.9.3)(vite@8.0.8))(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
     transitivePeerDependencies:
       - typescript
       - ws
@@ -7414,7 +7441,7 @@ snapshots:
       perfect-debounce: 2.1.0
       sirv: 3.0.2
       tinyexec: 1.1.1
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13(@pnpm/logger@1001.0.1)(typescript@5.9.3)(vite@8.0.8))(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
       vue: 3.5.32(typescript@5.9.3)
       ws: 8.20.0
     transitivePeerDependencies:
@@ -9997,7 +10024,7 @@ snapshots:
   rollup-plugin-import-trace@1.0.0(rollup@4.57.1)(vite@8.0.8):
     optionalDependencies:
       rollup: 4.57.1
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13(@pnpm/logger@1001.0.1)(typescript@5.9.3)(vite@8.0.8))(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
   rollup-pluginutils@2.8.2:
     dependencies:

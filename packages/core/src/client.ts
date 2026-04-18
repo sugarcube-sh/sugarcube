@@ -67,7 +67,8 @@ export type {
     TokenPipelineSource,
 } from "./types/pipelines.js";
 export { createPipelineContext } from "./types/pipelines.js";
-export type { ResolvedTokens } from "./types/resolve.js";
+export type { ResolvedToken, ResolvedTokens } from "./types/resolve.js";
+export { isResolvedToken } from "./guards/token-guards.js";
 export type { TokenTree } from "./types/tokens.js";
 export type {
     ConvertedToken,

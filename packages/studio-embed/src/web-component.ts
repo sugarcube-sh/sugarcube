@@ -75,7 +75,7 @@ class SugarcubeStudio extends HTMLElement {
     private styleTag: HTMLStyleElement | null = null;
 
     // We expose a save handler so users can override the default submit-url.
-    // This is for when the user doesn't want to use the sugarcube-sh bot backed PR submission infra.
+    // This is for when the user doesn't want to use the sugarcube-sh bot-backed PR submission infra.
     onSave:
         | ((payload: { title: string; description: string; files: unknown[] }) => Promise<{
               number: number;
