@@ -6,7 +6,8 @@ import {
 import type { PathIndex } from "./path-index";
 import type { SlimToken, TokenDiffEntry } from "./types";
 
-/** Reduce a resolved token to the DTCG-author shape ($value + optional $extensions). */
+// Reduce a resolved token to the DTCG-author shape.
+// Resolved tokens have a bunch of extra metadata we don't want or need here.
 function slimToken({ $value, $extensions }: ResolvedToken): SlimToken {
     if ($extensions && Object.keys($extensions).length > 0) {
         return { $value, $extensions };
@@ -15,10 +16,17 @@ function slimToken({ $value, $extensions }: ResolvedToken): SlimToken {
 }
 
 /**
- * Compute the diff between a resolved-tokens object and the snapshot defaults.
+ * Diff edited tokens against the baseline snapshot.
  *
- * Groups identical changes across permutations into a single entry.
- * Diverging changes get one entry per distinct (from, to) pair.
+ * Core resolves each permutation independently — a dark-mode project
+ * has two separate entries per path in the resolved map. A raw diff
+ * would show identical changes twice. This groups by (path, from, to)
+ * into one entry per distinct change, with `contexts` listing the
+ * affected perms — or empty when every perm shares the change
+ * (shorthand for "applies everywhere").
+ *
+ * Example: editing `space.md` from 16px → 20px in both light and dark
+ * produces one entry with `contexts: []`, not two.
  */
 export function computeDiff(
     resolved: ResolvedTokens,

@@ -10,7 +10,6 @@ export type TokenSnapshot = {
     resolved: ResolvedTokens;
 };
 
-/** One entry in the path index: a (context, key) pair for a given canonical $path. */
 export type PathIndexEntry = {
     /** The token's $source.context — canonical permutation identifier */
     context: string;
@@ -20,7 +19,7 @@ export type PathIndexEntry = {
 
 /**
  * The DTCG-author-facing slim shape of a token — just the fields a
- * designer would write in a token JSON file.
+ * designer/dev would write in a token JSON file.
  */
 export type SlimToken = {
     $value: unknown;
@@ -31,13 +30,10 @@ export type SlimToken = {
 export type TokenDiffEntry = {
     /** Token path WITHOUT the permutation prefix (e.g. `panel.radius`) */
     path: string;
-    /** The source file this token was defined in. */
     sourcePath: string;
     /** Permutation contexts this change applies to. Empty if identical across all. */
     contexts: string[];
-    /** The slim DTCG token shape from the snapshot. */
     from: SlimToken;
-    /** The slim DTCG token shape after edits. */
     to: SlimToken;
 };
 
@@ -48,7 +44,7 @@ export type TokenUpdate = {
     context?: string;
 };
 
-/** Reads a token's resolved value by canonical path (optionally scoped to a permutation context). */
+/** `context` scopes to a permutation; omitted reads the first variant. */
 export type TokenReader = (path: string, context?: string) => unknown;
 
 /**

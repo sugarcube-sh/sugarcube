@@ -60,12 +60,9 @@ export function useScaleState<T>(selector: (state: ScaleStateStore) => T): T {
 }
 
 /**
- * Read and write a single token by its bare path, scoped to the
- * current permutation context.
- *
- * Returns [value, setValue] like useState. Both reads and writes
- * target just the active permutation — edits do not fan out across
- * modes/brands.
+ * Read + write a token by path, scoped to the current permutation.
+ * Returns `[value, setValue]` like `useState`. Edits don't fan out
+ * across modes.
  */
 export function useToken<T = unknown>(path: string): [T | undefined, (value: T) => void] {
     const { pathIndex } = useStudio();

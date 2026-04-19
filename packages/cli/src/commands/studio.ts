@@ -27,8 +27,7 @@ studio
             const { config } = await loadInternalConfig();
             const { trees, resolved } = await loadAndResolveTokensForCLI(config);
 
-            // Strip fields that are filesystem-specific or unnecessary
-            // for the in-browser runtime.
+            // `resolver` is a filesystem path — useless in the browser.
             const { resolver, ...snapshotConfig } = config;
 
             const snapshot = {
@@ -45,12 +44,7 @@ studio
             await writeFile(snapshotPath, JSON.stringify(snapshot, null, 2), "utf-8");
             const snapshotSizeKB = (Buffer.byteLength(JSON.stringify(snapshot)) / 1024).toFixed(1);
 
-            // Copy the built Studio SPA (index.html + assets/) from
-            // @sugarcube-sh/studio's dist/client directory.
             await cp(clientPath, outDir, { recursive: true });
-
-            // Copy the web component bundle from @sugarcube-sh/studio-embed.
-            // Consumers load this with <script type="module" src="/studio/embed.js">.
             await cp(embedPath, path.join(outDir, "embed.js"));
 
             const ms = Date.now() - startedAt;

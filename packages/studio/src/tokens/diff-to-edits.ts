@@ -1,12 +1,10 @@
 import type { TokenDiffEntry } from "./types";
 
-/** A single token value edit: the path segments to the property and the new value. */
 export type TokenEdit = {
     jsonPath: string[];
     value: unknown;
 };
 
-/** Edits to apply to a single file. */
 export type FileEdits = {
     path: string;
     edits: TokenEdit[];

@@ -2,22 +2,13 @@ import { type ResolvedTokens, isResolvedToken } from "@sugarcube-sh/core/client"
 import type { PathIndexEntry } from "./types";
 
 /**
- * Looks up permutation variants of a token by its semantic name.
+ * Inverse lookup from a token's semantic `$path` to all its permutation
+ * variants in the resolved map.
  *
- * The resolver produces one big flat dictionary of tokens. A token
- * defined once per permutation (light, dark, brand-A, brand-B) becomes
- * that many entries — same `$path`, different internal key, different
- * `$value` per variant.
- *
- * PathIndex is the inverse lookup: given a `$path` like `color.primary`,
- * which entries represent it? Features then narrow to whichever scope
- * they need — a color picker targets just the current mode's variant;
- * a palette swap walks every variant to rebind per-mode references;
- * a diff iterates all variants to see what changed.
- *
- * It's the primitive every Studio feature is built on. Without it,
- * every picker, slider, swap, and diff would need to re-implement
- * the find-variants dance.
+ * A token defined once per permutation (light, dark, brand-A…) shows up
+ * as multiple entries in the flat resolved map — same `$path`, different
+ * internal keys. This class groups them so callers can work by path and
+ * narrow to a specific context when needed.
  */
 export class PathIndex {
     private index: Map<string, PathIndexEntry[]>;
@@ -42,7 +33,6 @@ export class PathIndex {
         return index;
     }
 
-    /** Read a token's $value by canonical path. */
     readValue(resolved: ResolvedTokens, barePath: string, context?: string): unknown {
         const entries = this.index.get(barePath);
         if (!entries || entries.length === 0) return undefined;
@@ -55,7 +45,7 @@ export class PathIndex {
         return token.$value;
     }
 
-    /** Immutably update a token's $value across all permutations (or a specific context). */
+    // Immutably update a token's $value across all permutations (or a specific context).
     setValue(
         resolved: ResolvedTokens,
         barePath: string,
@@ -79,7 +69,7 @@ export class PathIndex {
         return { ...resolved, ...updates };
     }
 
-    /** All permutation contexts in snapshot order. */
+    // In snapshot order.
     get contexts(): readonly string[] {
         const seen = new Set<string>();
         for (const entries of this.index.values()) {
@@ -90,27 +80,21 @@ export class PathIndex {
         return Array.from(seen);
     }
 
-    /** All lookup keys for a given canonical path. */
     keysFor(barePath: string): readonly string[] {
         const entries = this.index.get(barePath);
         if (!entries) return [];
         return entries.map((e) => e.key);
     }
 
-    /** All entries for a given path (context + key pairs). */
     entriesFor(barePath: string): readonly PathIndexEntry[] {
         return this.index.get(barePath) ?? [];
     }
 
-    /** All (path, entries) pairs. */
     entries(): IterableIterator<[string, PathIndexEntry[]]> {
         return this.index.entries();
     }
 
-    /**
-     * Find all token paths matching a glob pattern.
-     * `*` matches exactly one path segment.
-     */
+    // `*` matches exactly one path segment; `**` is not supported.
     matching(pattern: string): readonly string[] {
         const patternSegs = pattern.split(".");
         const matches: string[] = [];
@@ -130,7 +114,7 @@ export class PathIndex {
         return matches;
     }
 
-    /** Find all token paths under a prefix (any depth). */
+    // Find all token paths under a prefix (any depth).
     under(prefix: string): readonly string[] {
         const needle = `${prefix}.`;
         const matches: string[] = [];

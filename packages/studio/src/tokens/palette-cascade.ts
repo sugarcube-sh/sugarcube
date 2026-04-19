@@ -2,19 +2,6 @@ import { parseReference } from "./palette-discovery";
 import type { PathIndex } from "./path-index";
 import type { TokenReader, TokenUpdate } from "./types";
 
-/**
- * Build token updates to swap a family's palette to `newPalette`.
- *
- * For each token under `family`, in each permutation:
- *   1. Read the current $value
- *   2. Parse the DTCG reference
- *   3. Find the segment matching a known palette name
- *   4. Replace that segment with newPalette
- *
- * Per-mode scale mappings come for free: light references {color.neutral.50},
- * dark references {color.neutral.900}, so the swap preserves the step in
- * each context.
- */
 export function familyPaletteSwapUpdates(
     family: string,
     newPalette: string,
@@ -29,6 +16,9 @@ export function familyPaletteSwapUpdates(
 
     for (const path of familyPaths) {
         for (const context of contexts) {
+            // Reading per-context means light's {neutral.50} becomes
+            // {blue.50} and dark's {neutral.900} becomes {blue.900}
+            // automatically — no per-mode mapping logic needed here.
             const value = readToken(path, context);
             const refPath = parseReference(value);
             if (!refPath) continue;

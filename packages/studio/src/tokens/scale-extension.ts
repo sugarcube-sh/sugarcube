@@ -2,13 +2,8 @@ import type { TokenTree } from "@sugarcube-sh/core/client";
 import type { ScaleExtension } from "./types";
 
 /**
- * Walk the snapshot's source trees looking for a `sh.sugarcube.scale`
- * extension at the given path. Returns undefined if no scale extension
- * exists at that location.
- *
- * Scale extensions are authored at group level in source token files
- * (not on individual tokens), so we walk the raw trees rather than
- * querying resolved tokens.
+ * Find the `sh.sugarcube.scale` extension at a path, if any. Walks the
+ * raw source trees — scale extensions live on groups, not tokens.
  */
 export function getScaleExtension(trees: TokenTree[], path: string): ScaleExtension | undefined {
     const segments = path.split(".");

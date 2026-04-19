@@ -1,10 +1,6 @@
 import type { PathIndex } from "./path-index";
 import type { TokenReader } from "./types";
 
-/**
- * Parse a DTCG reference value (`{token.path}`) and return the inner
- * path. Returns `undefined` for non-reference values.
- */
 export function parseReference(value: unknown): string | undefined {
     if (typeof value !== "string") return undefined;
     const match = value.match(/^\{(.+)\}$/);

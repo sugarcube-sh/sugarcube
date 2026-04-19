@@ -81,8 +81,7 @@ class SugarcubeStudio extends HTMLElement {
     private styleTag: HTMLStyleElement | null = null;
     private toggle: HTMLButtonElement | null = null;
 
-    // We expose a save handler so users can override the default submit-url.
-    // This is for when the user doesn't want to use the sugarcube-sh bot-backed PR submission infra.
+    /** Override for the default POST-to-submit-url flow (e.g. custom PR infra). */
     onSave: SaveHandler | null = null;
 
     static get observedAttributes() {
@@ -96,8 +95,7 @@ class SugarcubeStudio extends HTMLElement {
         this.iframe = shadow.querySelector("iframe");
         this.toggle = shadow.querySelector(".toggle");
 
-        // Set iframe src with embedded marker so Studio knows it's
-        // inside our web component and not the DevTools dock.
+        // `?mode=embedded` tells the SPA it's inside our iframe, not the DevTools dock/iframe.
         const src = this.getAttribute("src") ?? "/__studio/";
         const url = new URL(src, window.location.origin);
         url.searchParams.set("mode", "embedded");
@@ -105,26 +103,22 @@ class SugarcubeStudio extends HTMLElement {
             this.iframe.src = url.toString();
         }
 
-        // Toggle visibility
         this.toggle?.addEventListener("click", () => {
             if (this.hasAttribute("hidden")) {
                 this.removeAttribute("hidden");
             } else {
                 this.setAttribute("hidden", "");
             }
-            // attributeChangedCallback handles padding + aria-expanded sync
+            // Padding + aria-expanded sync happens via attributeChangedCallback.
         });
 
-        // Listen for messages from the iframe
         window.addEventListener("message", this.handleMessage);
 
-        // Create style tag for injecting generated CSS
         this.styleTag = document.createElement("style");
         this.styleTag.setAttribute("data-sugarcube-studio", "");
         document.head.appendChild(this.styleTag);
 
-        // Sync padding + aria-expanded to the current hidden state.
-        // Respects an initial `hidden` attribute so the page isn't pushed
+        // Syncs with the initial `hidden` attribute so the page isn't pushed
         // over for an invisible sidebar.
         this.syncUI();
     }
@@ -144,12 +138,6 @@ class SugarcubeStudio extends HTMLElement {
         }
     }
 
-    /**
-     * Keep the host page's padding and the toggle button's aria-expanded
-     * in sync with the `hidden` attribute. Called from both the toggle
-     * click handler (via attribute mutation → callback) and attribute
-     * changes made externally.
-     */
     private syncUI() {
         const isOpen = !this.hasAttribute("hidden");
         document.body.style.paddingRight = isOpen ? STUDIO_WIDTH : "";
@@ -157,7 +145,6 @@ class SugarcubeStudio extends HTMLElement {
     }
 
     private handleMessage = (event: MessageEvent) => {
-        // Only accept messages from our iframe
         if (event.source !== this.iframe?.contentWindow) return;
 
         const data = event.data;
@@ -184,11 +171,7 @@ class SugarcubeStudio extends HTMLElement {
         this.iframe?.contentWindow?.postMessage({ type: "studio:save-result", ...data }, "*");
     }
 
-    /**
-     * Submit token edits as a PR. Uses the programmatic `onSave` handler
-     * if set, otherwise POSTs to the `submit-url` attribute (defaults to
-     * the hosted sugarcube studio API).
-     */
+    /** Submit via `onSave` if set, otherwise POST to `submit-url` (defaults to the hosted API). */
     private async handleSave(payload: SavePayload) {
         try {
             const result = this.onSave
@@ -212,11 +195,7 @@ class SugarcubeStudio extends HTMLElement {
         return data as SaveResult;
     }
 
-    /**
-     * Send the token snapshot to the iframe. The snapshot is loaded
-     * from the URL specified in the `snapshot` attribute, or defaults
-     * to the Vite-served virtual module path.
-     */
+    /** Fetch the snapshot (from `snapshot` attribute or default) and post it to the iframe. */
     private async sendSnapshot() {
         const snapshotURL = this.getAttribute("snapshot") ?? "/.sugarcube/snapshot.json";
 

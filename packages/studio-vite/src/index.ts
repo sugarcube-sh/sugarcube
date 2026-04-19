@@ -13,7 +13,6 @@ declare module "@vitejs/devtools-kit" {
     }
 }
 
-/** Name of the `@sugarcube-sh/vite` plugin we look up at runtime for its context. */
 const SUGARCUBE_VITE_PLUGIN_NAME = "sugarcube:api";
 
 export default function sugarcubeStudio(): Plugin {
@@ -55,18 +54,14 @@ export default function sugarcubeStudio(): Plugin {
                     return;
                 }
 
-                // ── Shared state ──
-                // Only `resolved` lives in shared state — it's the thing the
-                // client mutates. Config and trees are static during a session
-                // and fetched via RPC at init time.
+                // Only `resolved` is shared — config/trees are static and fetched via RPC at init.
                 const state = await ctx.rpc.sharedState.get("sugarcube:studio:resolved", {
                     initialValue: {
                         resolved: scCtx.resolved,
                     },
                 });
 
-                // When shared state is mutated (client editing tokens),
-                // re-run the pipeline and push CSS via HMR.
+                // Client edit → re-run pipeline + push CSS via HMR.
                 state.on("updated", async () => {
                     const current = state.value();
                     if (!current?.resolved) return;
@@ -78,8 +73,7 @@ export default function sugarcubeStudio(): Plugin {
                     }
                 });
 
-                // When tokens reload from disk (file watcher or explicit reload),
-                // update the shared state so the client sees the new data.
+                // Disk reload (file watcher or explicit) → push fresh state to the client.
                 scCtx.onReload(() => {
                     if (!scCtx.resolved) return;
                     state.mutate((draft) => {
@@ -87,7 +81,6 @@ export default function sugarcubeStudio(): Plugin {
                     });
                 });
 
-                // ── RPC: get static data (config + trees) ──
                 ctx.rpc.register(
                     defineRpcFunction({
                         name: "studio:get-tokens",
@@ -110,7 +103,6 @@ export default function sugarcubeStudio(): Plugin {
                     })
                 );
 
-                // ── RPC: save staged edits to disk ──
                 ctx.rpc.register(
                     defineRpcFunction({
                         name: "studio:save",
@@ -133,16 +125,14 @@ export default function sugarcubeStudio(): Plugin {
                     })
                 );
 
-                // ── RPC: discard staged edits ──
                 ctx.rpc.register(
                     defineRpcFunction({
                         name: "studio:discard",
                         type: "action",
                         setup: () => ({
                             handler: async () => {
+                                // `onReload` handler above writes the fresh disk state into shared state.
                                 await scCtx.reloadTokens();
-                                // No explicit state update here.`scCtx.onReload` (registered in
-                                // setup above) picks up the fresh disk state and does that for us.
                             },
                         }),
                     })

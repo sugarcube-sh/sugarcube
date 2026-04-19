@@ -11,13 +11,10 @@ export type TokenStoreState = {
     lastRunMs: number | null;
 
     /**
-     * The permutation context the user is currently editing
-     * (e.g. `"perm:0"`, `"perm:1"`). Reads and writes via {@link useToken}
-     * scope to this context so edits don't bleed across modes/brands.
-     *
-     * Map back to the structured input via
-     * `snapshot.config.variables.permutations[i]` where `i` is the
-     * numeric suffix of the `perm:i` tag.
+     * The permutation context the user is currently editing (e.g.
+     * `"perm:0"`). Reads and writes via `useToken` scope to this so
+     * edits don't bleed across modes/brands. Map back to structured
+     * input via `snapshot.config.variables.permutations[i]`.
      */
     currentContext: string;
     setCurrentContext: (ctx: string) => void;
@@ -31,12 +28,7 @@ export type TokenStoreState = {
 
 export type TokenStoreAPI = StoreApi<TokenStoreState>;
 
-/**
- * Create a zustand store + PathIndex from a snapshot.
- *
- * Returns both so the provider can supply each via context.
- * Each call creates an independent store — no singletons.
- */
+/** Create an independent zustand store + PathIndex pair from a snapshot. No singletons. */
 export function createTokenStore(snapshot: TokenSnapshot): {
     store: TokenStoreAPI;
     pathIndex: PathIndex;

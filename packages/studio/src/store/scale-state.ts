@@ -38,27 +38,13 @@ export type ScaleStateStore = {
 
 export type ScaleStateAPI = StoreApi<ScaleStateStore>;
 
-/**
- * Callback that receives the fully-computed resolved map after every
- * scale change. The caller decides how to write it (sharedState.mutate
- * in DevTools, tokenStore.setState in embedded).
- */
+/** Receives the computed resolved map after every scale change. Writing is the caller's job. */
 export type ScaleWriteCallback = (resolved: ResolvedTokens) => void;
 
 /**
- * Factory that creates a scale state store from the panel config,
- * snapshot, and path index.
- *
- * Captures every scale/linked-scale binding against the active
- * permutation context at mount, and recaptures whenever the user
- * switches context. Slider values (base/spread/enabled) are preserved
- * across mode switches — the slider represents the user's target,
- * which is applied against whichever mode's captured multipliers are
- * currently active.
- *
- * `tokenStore` is used both to read the active `currentContext` and to
- * write back computed token values via the `onWrite` callback (or a
- * default writer that sets resolved directly on the token store).
+ * Create a scale state store. Captures every scale binding against the
+ * active permutation context, and recaptures on context change — slider
+ * values (base/spread/enabled) are preserved across switches.
  */
 export function createScaleState(
     panelSections: PanelSection[],
@@ -146,12 +132,7 @@ export function createScaleState(
         writeResolved(next);
     }
 
-    /**
-     * Rebuild captures for every scale/linked-scale binding against the
-     * given context, preserving existing slider values. Called when the
-     * user switches permutation context so scales stay math-correct
-     * against the active mode's originals.
-     */
+    /** Rebuild captures for the given context, preserving slider values. */
     function recaptureAll(context: string) {
         const next = buildInitialState(panelSections, snapshot, pathIndex, context);
         scaleStore.setState((s) => ({
@@ -174,9 +155,8 @@ export function createScaleState(
         applyAll();
     }
 
-    // Recapture whenever the active context changes. Subscription lives
-    // for the session — scale state is created once per Studio session
-    // and isn't torn down explicitly.
+    // Subscription lives for the session — scale state is created once
+    // and never torn down.
     tokenStore.subscribe((state, prev) => {
         if (state.currentContext !== prev.currentContext) {
             recaptureAll(state.currentContext);
