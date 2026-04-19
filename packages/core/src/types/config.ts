@@ -129,10 +129,6 @@ export interface UtilitiesOutputConfig {
     classes?: UtilityClassesConfig;
 }
 
-// ---------------------------------------------------------------------------
-// Studio panel config
-// ---------------------------------------------------------------------------
-
 /**
  * A color binding — renders a 2D palette grid picker using the top-level
  * `studio.colorScale` config as the source of swatches. Options aren't
