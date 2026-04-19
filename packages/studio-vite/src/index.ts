@@ -1,10 +1,10 @@
 /// <reference types="@vitejs/devtools-kit" />
 
 import type { ResolvedTokens } from "@sugarcube-sh/core";
-import { PathIndex, type TokenSnapshot, computeDiff, diffToFileEdits } from "@sugarcube-sh/studio";
+import { PathIndex, computeDiff, diffToFileEdits } from "@sugarcube-sh/studio";
 import { clientPath } from "@sugarcube-sh/studio/client";
+import type { SugarcubePluginContext } from "@sugarcube-sh/vite";
 import { defineRpcFunction } from "@vitejs/devtools-kit";
-import sirv from "sirv";
 import type { Plugin } from "vite";
 
 declare module "@vitejs/devtools-kit" {
@@ -13,17 +13,12 @@ declare module "@vitejs/devtools-kit" {
     }
 }
 
+/** Name of the `@sugarcube-sh/vite` plugin we look up at runtime for its context. */
+const SUGARCUBE_VITE_PLUGIN_NAME = "sugarcube:api";
+
 export default function sugarcubeStudio(): Plugin {
     return {
         name: "sugarcube:studio",
-
-        // Serve the Studio client at /__studio/ for embedded mode in dev.
-        // DevTools mode uses ctx.views.hostStatic() instead (inside the
-        // devtools hook below), but embedded mode needs a standard Vite
-        // middleware since it runs outside the DevTools dock.
-        configureServer(server) {
-            server.middlewares.use("/__studio/", sirv(clientPath, { dev: true, single: true }));
-        },
 
         devtools: {
             async setup(ctx) {
@@ -38,9 +33,11 @@ export default function sugarcubeStudio(): Plugin {
                 });
 
                 const sugarcubePlugin = ctx.viteConfig.plugins.find(
-                    (p) => p.name === "sugarcube:api"
+                    (p) => p.name === SUGARCUBE_VITE_PLUGIN_NAME
                 );
-                const scCtx = sugarcubePlugin?.api?.getContext();
+                const scCtx = sugarcubePlugin?.api?.getContext() as
+                    | SugarcubePluginContext
+                    | undefined;
 
                 if (!scCtx) {
                     console.warn(
@@ -50,6 +47,13 @@ export default function sugarcubeStudio(): Plugin {
                 }
 
                 await scCtx.ready;
+
+                if (!scCtx.config || !scCtx.trees || !scCtx.resolved) {
+                    console.warn(
+                        "[studio] Sugarcube context resolved as ready but config/trees/resolved are missing. Skipping Studio setup."
+                    );
+                    return;
+                }
 
                 // ── Shared state ──
                 // Only `resolved` lives in shared state — it's the thing the
@@ -67,7 +71,7 @@ export default function sugarcubeStudio(): Plugin {
                     const current = state.value();
                     if (!current?.resolved) return;
 
-                    await scCtx.rerunPipeline(current.resolved as ResolvedTokens);
+                    await scCtx.rerunPipeline(current.resolved);
 
                     if (ctx.viteServer) {
                         scCtx.invalidate(ctx.viteServer);
@@ -77,8 +81,9 @@ export default function sugarcubeStudio(): Plugin {
                 // When tokens reload from disk (file watcher or explicit reload),
                 // update the shared state so the client sees the new data.
                 scCtx.onReload(() => {
+                    if (!scCtx.resolved) return;
                     state.mutate((draft) => {
-                        draft.resolved = scCtx.resolved as typeof draft.resolved;
+                        draft.resolved = scCtx.resolved as ResolvedTokens;
                     });
                 });
 
@@ -90,6 +95,11 @@ export default function sugarcubeStudio(): Plugin {
                         setup: () => ({
                             handler: async () => {
                                 await scCtx.ready;
+                                if (!scCtx.config || !scCtx.trees || !scCtx.resolved) {
+                                    throw new Error(
+                                        "[studio] Sugarcube context not fully initialised"
+                                    );
+                                }
                                 return {
                                     config: scCtx.config,
                                     trees: scCtx.trees,
@@ -111,15 +121,7 @@ export default function sugarcubeStudio(): Plugin {
                                 const baseline = scCtx.resolved;
                                 if (!current?.resolved || !baseline) return;
 
-                                const snapshot: TokenSnapshot = {
-                                    formatVersion: 1,
-                                    generatedAt: new Date().toISOString(),
-                                    sourceConfigPath: "",
-                                    config: scCtx.config,
-                                    trees: scCtx.trees,
-                                    resolved: baseline,
-                                };
-                                const pathIndex = new PathIndex(snapshot);
+                                const pathIndex = new PathIndex(baseline);
                                 const diff = computeDiff(current.resolved, baseline, pathIndex);
                                 const fileEdits = diffToFileEdits(diff);
 
@@ -139,7 +141,8 @@ export default function sugarcubeStudio(): Plugin {
                         setup: () => ({
                             handler: async () => {
                                 await scCtx.reloadTokens();
-                                // onReload callback updates shared state
+                                // No explicit state update here.`scCtx.onReload` (registered in
+                                // setup above) picks up the fresh disk state and does that for us.
                             },
                         }),
                     })

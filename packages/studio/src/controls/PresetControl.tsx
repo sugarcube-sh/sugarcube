@@ -1,8 +1,9 @@
+import type { ResolvedTokens } from "@sugarcube-sh/core/client";
 import type { PresetBinding } from "@sugarcube-sh/core/client";
 import { CheckIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover/popover";
-import { usePathIndex, useToken } from "../store/hooks";
+import { usePathIndex, useSnapshot, useToken } from "../store/hooks";
 import type { PathIndex } from "../tokens/path-index";
 import { TokenRow } from "./TokenRow";
 import { lastSegment, unwrapRef } from "./path-utils";
@@ -20,11 +21,12 @@ export function PresetControl({ binding }: PresetControlProps) {
     const [value, setValue] = useToken<string>(binding.token);
     const label = labelForBinding(binding);
     const pathIndex = usePathIndex();
+    const snapshot = useSnapshot();
     const [open, setOpen] = useState(false);
 
     const options = useMemo(
-        () => resolveOptions(binding.options, pathIndex),
-        [binding.options, pathIndex]
+        () => resolveOptions(binding.options, pathIndex, snapshot.resolved),
+        [binding.options, pathIndex, snapshot.resolved]
     );
 
     const currentLabel = options.find((o) => o.reference === value)?.label ?? "—";
@@ -69,12 +71,15 @@ type ResolvedOption = {
     reference: string;
 };
 
-function resolveOptions(options: PresetBinding["options"], pathIndex: PathIndex): ResolvedOption[] {
+function resolveOptions(
+    options: PresetBinding["options"],
+    pathIndex: PathIndex,
+    baseline: ResolvedTokens
+): ResolvedOption[] {
     if (typeof options === "string") {
         // Resolve alias chains against the immutable snapshot baseline so
         // the filter decision is stable across sessions and edits — not
         // dependent on which variant happens to be first in live state.
-        const baseline = pathIndex.getSnapshot().resolved;
         const getToken = (path: string) => pathIndex.readValue(baseline, path);
         const matches = pathIndex.matching(options);
         const matchSet = new Set(matches);

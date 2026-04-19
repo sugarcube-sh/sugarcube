@@ -41,8 +41,12 @@ export function TokenPicker({ currentPath, options, onSelect, label }: Props) {
     const current = options.find((o) => o.path === currentPath);
 
     const groups = options.reduce<Record<string, TokenOption[]>>((acc, opt) => {
-        acc[opt.group] ??= [];
-        acc[opt.group].push(opt);
+        let list = acc[opt.group];
+        if (!list) {
+            list = [];
+            acc[opt.group] = list;
+        }
+        list.push(opt);
         return acc;
     }, {});
 

@@ -67,24 +67,26 @@ const TEMPLATE = `
     }
 </style>
 <iframe></iframe>
-<button class="toggle" title="Toggle Studio">◆</button>
+<button class="toggle" aria-label="Toggle Studio" aria-expanded="false" title="Toggle Studio">
+    <span aria-hidden="true">◆</span>
+</button>
 `;
+
+type SavePayload = { title: string; description: string; files: unknown[] };
+type SaveResult = { number: number; url: string };
+type SaveHandler = (payload: SavePayload) => Promise<SaveResult>;
 
 class SugarcubeStudio extends HTMLElement {
     private iframe: HTMLIFrameElement | null = null;
     private styleTag: HTMLStyleElement | null = null;
+    private toggle: HTMLButtonElement | null = null;
 
     // We expose a save handler so users can override the default submit-url.
     // This is for when the user doesn't want to use the sugarcube-sh bot-backed PR submission infra.
-    onSave:
-        | ((payload: { title: string; description: string; files: unknown[] }) => Promise<{
-              number: number;
-              url: string;
-          }>)
-        | null = null;
+    onSave: SaveHandler | null = null;
 
     static get observedAttributes() {
-        return ["src", "hidden", "submit-url"];
+        return ["src", "hidden"];
     }
 
     connectedCallback() {
@@ -92,7 +94,7 @@ class SugarcubeStudio extends HTMLElement {
         shadow.innerHTML = TEMPLATE;
 
         this.iframe = shadow.querySelector("iframe");
-        const toggle = shadow.querySelector(".toggle");
+        this.toggle = shadow.querySelector(".toggle");
 
         // Set iframe src with embedded marker so Studio knows it's
         // inside our web component and not the DevTools dock.
@@ -104,18 +106,14 @@ class SugarcubeStudio extends HTMLElement {
         }
 
         // Toggle visibility
-        toggle?.addEventListener("click", () => {
+        this.toggle?.addEventListener("click", () => {
             if (this.hasAttribute("hidden")) {
                 this.removeAttribute("hidden");
-                document.body.style.paddingRight = STUDIO_WIDTH;
             } else {
                 this.setAttribute("hidden", "");
-                document.body.style.paddingRight = "";
             }
+            // attributeChangedCallback handles padding + aria-expanded sync
         });
-
-        // Push page content over to make room for the sidebar
-        document.body.style.paddingRight = STUDIO_WIDTH;
 
         // Listen for messages from the iframe
         window.addEventListener("message", this.handleMessage);
@@ -124,6 +122,11 @@ class SugarcubeStudio extends HTMLElement {
         this.styleTag = document.createElement("style");
         this.styleTag.setAttribute("data-sugarcube-studio", "");
         document.head.appendChild(this.styleTag);
+
+        // Sync padding + aria-expanded to the current hidden state.
+        // Respects an initial `hidden` attribute so the page isn't pushed
+        // over for an invisible sidebar.
+        this.syncUI();
     }
 
     disconnectedCallback() {
@@ -136,6 +139,21 @@ class SugarcubeStudio extends HTMLElement {
         if (name === "src" && this.iframe) {
             this.iframe.src = value ?? "/__studio/";
         }
+        if (name === "hidden") {
+            this.syncUI();
+        }
+    }
+
+    /**
+     * Keep the host page's padding and the toggle button's aria-expanded
+     * in sync with the `hidden` attribute. Called from both the toggle
+     * click handler (via attribute mutation → callback) and attribute
+     * changes made externally.
+     */
+    private syncUI() {
+        const isOpen = !this.hasAttribute("hidden");
+        document.body.style.paddingRight = isOpen ? STUDIO_WIDTH : "";
+        this.toggle?.setAttribute("aria-expanded", String(isOpen));
     }
 
     private handleMessage = (event: MessageEvent) => {
@@ -171,7 +189,7 @@ class SugarcubeStudio extends HTMLElement {
      * if set, otherwise POSTs to the `submit-url` attribute (defaults to
      * the hosted sugarcube studio API).
      */
-    private async handleSave(payload: { title: string; description: string; files: unknown[] }) {
+    private async handleSave(payload: SavePayload) {
         try {
             const result = this.onSave
                 ? await this.onSave(payload)
@@ -182,7 +200,7 @@ class SugarcubeStudio extends HTMLElement {
         }
     }
 
-    private async submitToAPI(payload: unknown): Promise<{ number: number; url: string }> {
+    private async submitToAPI(payload: SavePayload): Promise<SaveResult> {
         const url = this.getAttribute("submit-url") ?? DEFAULT_SUBMIT_URL;
         const res = await fetch(url, {
             method: "POST",
@@ -191,7 +209,7 @@ class SugarcubeStudio extends HTMLElement {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? `Submission failed (${res.status})`);
-        return data as { number: number; url: string };
+        return data as SaveResult;
     }
 
     /**

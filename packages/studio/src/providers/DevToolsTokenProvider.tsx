@@ -134,7 +134,7 @@ function DevToolsProviderInner({
 
         // PathIndex is built from DISK state — the canonical baseline.
         // This is what diffs compare against and what Discard reverts to.
-        const pathIndex = new PathIndex(snapshot);
+        const pathIndex = new PathIndex(snapshot.resolved);
 
         // Store starts with the WORKING copy (shared state) which may
         // already contain edits from a previous dock session.
@@ -228,6 +228,7 @@ function DevToolsProviderInner({
             mode: "devtools" as const,
             store,
             pathIndex,
+            snapshot,
             scaleState,
             studioConfig: config.studio,
         };

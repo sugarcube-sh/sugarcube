@@ -38,6 +38,7 @@
         "@radix-ui/react-tabs": "^1.1.4",
         "@sugarcube-sh/cli": "workspace:*",
         "@sugarcube-sh/core": "workspace:*",
+        "@sugarcube-sh/studio": "workspace:*",
         "@sugarcube-sh/studio-embed": "workspace:*",
         "@sugarcube-sh/studio-vite": "workspace:*",
         "@sugarcube-sh/vite": "workspace:*",
@@ -54,6 +55,7 @@
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "react-hook-form": "^7.55.0",
+        "sirv": "^3.0.1",
         "ultrahtml": "^1.6.0",
         "zustand": "^5.0.12"
     },

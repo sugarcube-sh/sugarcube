@@ -56,7 +56,7 @@ export function EmbeddedTokenProvider({ children }: { children: ReactNode }) {
 /**
  * Runs the sugarcube pipeline in-browser whenever resolved tokens change.
  * Writes the generated CSS to the store; CSSBridge picks it up and sends
- * it to the host page via postMessage.
+ * it to the host page.
  */
 function PipelineRunner({ snapshot }: { snapshot: TokenSnapshot }) {
     const ctx = useContext(StudioContext);
@@ -71,6 +71,7 @@ function PipelineRunner({ snapshot }: { snapshot: TokenSnapshot }) {
 
             // Defer to next frame so rapid changes (e.g. slider drags) batch
             // into a single pipeline run instead of firing on every mousemove.
+            // Better way to do this?
             const frameId = requestAnimationFrame(() => {
                 const runId = ++runIdRef.current;
                 store.setState({ isComputing: true });
@@ -118,9 +119,7 @@ function PipelineRunner({ snapshot }: { snapshot: TokenSnapshot }) {
     return null;
 }
 
-/**
- * Sends generated CSS to the host page via postMessage.
- */
+// This is how we send the generated CSS to the host page
 function CSSBridge() {
     const css = useTokenStore((state) => state.css);
 
@@ -136,7 +135,6 @@ function CSSBridge() {
     return null;
 }
 
-/** Minimal shape check at the postMessage boundary. */
 function isTokenSnapshot(value: unknown): value is TokenSnapshot {
     if (!value || typeof value !== "object") return false;
     const obj = value as Record<string, unknown>;

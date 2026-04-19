@@ -15,25 +15,25 @@ async function getRpc() {
     return rpc;
 }
 
-/** Fetch the static config + trees from the server. */
+// Fetch the static config + trees from the server.
 export async function rpcGetTokens() {
     const client = await getRpc();
     return client.call("studio:get-tokens");
 }
 
-/** Subscribe to the live resolved-tokens state. */
+// Subscribe to the live resolved-tokens state.
 export async function getResolvedSharedState(): Promise<SharedStateHandle> {
     const client = await getRpc();
     return client.sharedState.get("sugarcube:studio:resolved");
 }
 
-/** Write staged edits from shared state to disk. */
+// Write staged edits from shared state to disk.
 export async function rpcSave(): Promise<void> {
     const client = await getRpc();
     await client.call("studio:save");
 }
 
-/** Discard staged edits and reload from disk. */
+// Discard staged edits and reload from disk.
 export async function rpcDiscard(): Promise<void> {
     const client = await getRpc();
     await client.call("studio:discard");

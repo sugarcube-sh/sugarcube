@@ -4,7 +4,7 @@ import { useStore } from "zustand";
 import { computeDiff } from "../tokens/compute-diff";
 import { currentPaletteFromReference } from "../tokens/palette-discovery";
 import type { PathIndex } from "../tokens/path-index";
-import type { TokenDiffEntry } from "../tokens/types";
+import type { TokenDiffEntry, TokenSnapshot } from "../tokens/types";
 import type { TokenStoreAPI, TokenStoreState } from "./create-token-store";
 import type { ScaleStateAPI, ScaleStateStore } from "./scale-state";
 
@@ -16,6 +16,7 @@ export type StudioContextValue = {
     mode: "devtools" | "embedded";
     store: TokenStoreAPI;
     pathIndex: PathIndex;
+    snapshot: TokenSnapshot;
     scaleState: ScaleStateAPI;
     studioConfig: StudioConfig | undefined;
 };
@@ -41,6 +42,11 @@ export function useStudioConfig(): StudioConfig | undefined {
 /** The PathIndex for token discovery and lookups. */
 export function usePathIndex(): PathIndex {
     return useStudio().pathIndex;
+}
+
+/** The immutable baseline snapshot this session was initialised from. */
+export function useSnapshot(): TokenSnapshot {
+    return useStudio().snapshot;
 }
 
 /** Select from the token store (zustand selector for fine-grained subscriptions). */
@@ -86,12 +92,11 @@ export function useSetCurrentContext(): (ctx: string) => void {
  * Memoised — callers get a stable array reference when the diff hasn't changed.
  */
 export function usePendingChanges(): TokenDiffEntry[] {
-    const { pathIndex } = useStudio();
+    const { pathIndex, snapshot } = useStudio();
     const resolved = useTokenStore((state) => state.resolved);
-    const snapshotResolved = pathIndex.getSnapshot().resolved;
     return useMemo(
-        () => computeDiff(resolved, snapshotResolved, pathIndex),
-        [resolved, snapshotResolved, pathIndex]
+        () => computeDiff(resolved, snapshot.resolved, pathIndex),
+        [resolved, snapshot.resolved, pathIndex]
     );
 }
 

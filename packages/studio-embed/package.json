@@ -14,6 +14,10 @@
         ".": {
             "types": "./dist/web-component.d.mts",
             "import": "./dist/web-component.mjs"
+        },
+        "./path": {
+            "types": "./dist/path.d.mts",
+            "import": "./dist/path.mjs"
         }
     },
     "scripts": {

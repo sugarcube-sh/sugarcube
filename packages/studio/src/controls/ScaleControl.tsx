@@ -1,5 +1,6 @@
 import type { ScaleBinding } from "@sugarcube-sh/core/client";
-import { usePathIndex, useScaleState } from "../store/hooks";
+import { useScaleState, useSnapshot } from "../store/hooks";
+import { getScaleExtension } from "../tokens/scale-extension";
 import { stripTrailingGlob } from "./path-utils";
 import { labelForBinding } from "./resolver";
 
@@ -9,8 +10,8 @@ type ScaleControlProps = {
 
 export function ScaleControl({ binding }: ScaleControlProps) {
     const parent = stripTrailingGlob(binding.token);
-    const pathIndex = usePathIndex();
-    const scaleExt = pathIndex.getScaleExtension(parent);
+    const snapshot = useSnapshot();
+    const scaleExt = getScaleExtension(snapshot.trees, parent);
 
     if (scaleExt) {
         console.warn(

@@ -41,7 +41,7 @@ export function createTokenStore(snapshot: TokenSnapshot): {
     store: TokenStoreAPI;
     pathIndex: PathIndex;
 } {
-    const pathIndex = new PathIndex(snapshot);
+    const pathIndex = new PathIndex(snapshot.resolved);
     const initialContext = pathIndex.contexts[0] ?? "default";
 
     const store = createStore<TokenStoreState>((set, get) => ({

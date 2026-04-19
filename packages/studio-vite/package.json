@@ -25,8 +25,7 @@
         "@sugarcube-sh/core": "workspace:*",
         "@sugarcube-sh/studio": "workspace:*",
         "@sugarcube-sh/vite": "workspace:*",
-        "@vitejs/devtools-kit": "^0.1.13",
-        "sirv": "^3.0.1"
+        "@vitejs/devtools-kit": "^0.1.13"
     },
     "devDependencies": {
         "pkgroll": "^2.26.0",

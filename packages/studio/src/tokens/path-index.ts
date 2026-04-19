@@ -1,5 +1,5 @@
 import { type ResolvedTokens, isResolvedToken } from "@sugarcube-sh/core/client";
-import type { PathIndexEntry, ScaleExtension, TokenSnapshot } from "./types";
+import type { PathIndexEntry } from "./types";
 
 /**
  * Looks up permutation variants of a token by its semantic name.
@@ -21,11 +21,9 @@ import type { PathIndexEntry, ScaleExtension, TokenSnapshot } from "./types";
  */
 export class PathIndex {
     private index: Map<string, PathIndexEntry[]>;
-    private snapshot: TokenSnapshot;
 
-    constructor(snapshot: TokenSnapshot) {
-        this.snapshot = snapshot;
-        this.index = PathIndex.build(snapshot.resolved);
+    constructor(resolved: ResolvedTokens) {
+        this.index = PathIndex.build(resolved);
     }
 
     private static build(resolved: ResolvedTokens): Map<string, PathIndexEntry[]> {
@@ -141,48 +139,4 @@ export class PathIndex {
         }
         return matches;
     }
-
-    /** The original snapshot this index was built from. */
-    getSnapshot(): TokenSnapshot {
-        return this.snapshot;
-    }
-
-    /**
-     * Walk snapshot trees looking for a scale extension at the given path.
-     * Returns undefined if no scale extension exists.
-     */
-    getScaleExtension(path: string): ScaleExtension | undefined {
-        const segments = path.split(".");
-        for (const tree of this.snapshot.trees) {
-            const node = walkTree(tree, segments);
-            const scale = extractScaleExtension(node);
-            if (scale) return scale;
-        }
-        return undefined;
-    }
-}
-
-function walkTree(tree: unknown, segments: string[]): unknown {
-    let node: unknown = tree;
-    for (const segment of segments) {
-        if (!node || typeof node !== "object") return undefined;
-        node = (node as Record<string, unknown>)[segment];
-    }
-    return node;
-}
-
-function extractScaleExtension(node: unknown): ScaleExtension | undefined {
-    if (!node || typeof node !== "object") return undefined;
-    const extensions = (node as { $extensions?: Record<string, unknown> }).$extensions;
-    const sugarcube = extensions?.["sh.sugarcube"] as { scale?: unknown } | undefined;
-    const scale = sugarcube?.scale;
-    if (
-        scale &&
-        typeof scale === "object" &&
-        "mode" in scale &&
-        (scale.mode === "exponential" || scale.mode === "multipliers")
-    ) {
-        return scale as ScaleExtension;
-    }
-    return undefined;
 }

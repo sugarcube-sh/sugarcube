@@ -1,6 +1,8 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { cp, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { loadInternalConfig } from "@sugarcube-sh/core";
+import { embedPath } from "@sugarcube-sh/studio-embed/path";
+import { clientPath } from "@sugarcube-sh/studio/client";
 import { Command } from "commander";
 import color from "picocolors";
 import { loadAndResolveTokensForCLI } from "../pipelines/load-and-resolve-for-cli.js";
@@ -11,7 +13,9 @@ export const studio = new Command().name("studio").description("Studio tools for
 
 studio
     .command("build")
-    .description("Generate a token snapshot for Studio (published/embedded mode)")
+    .description(
+        "Generate a token snapshot and copy the Studio SPA assets for embedded/published mode"
+    )
     .option("-o, --out <path>", "Output directory", ".sugarcube")
     .action(async (opts) => {
         try {
@@ -39,12 +43,21 @@ studio
 
             const snapshotPath = path.join(outDir, "snapshot.json");
             await writeFile(snapshotPath, JSON.stringify(snapshot, null, 2), "utf-8");
+            const snapshotSizeKB = (Buffer.byteLength(JSON.stringify(snapshot)) / 1024).toFixed(1);
 
-            const sizeKB = (Buffer.byteLength(JSON.stringify(snapshot)) / 1024).toFixed(1);
+            // Copy the built Studio SPA (index.html + assets/) from
+            // @sugarcube-sh/studio's dist/client directory.
+            await cp(clientPath, outDir, { recursive: true });
+
+            // Copy the web component bundle from @sugarcube-sh/studio-embed.
+            // Consumers load this with <script type="module" src="/studio/embed.js">.
+            await cp(embedPath, path.join(outDir, "embed.js"));
+
             const ms = Date.now() - startedAt;
+            const relOut = path.relative(process.cwd(), outDir);
 
             outro(
-                `Snapshot written in ${ms}ms → ${color.cyan(path.relative(process.cwd(), snapshotPath))} (${sizeKB} KB)`
+                `Studio assets written in ${ms}ms → ${color.cyan(relOut)} (snapshot: ${snapshotSizeKB} KB)`
             );
         } catch (err) {
             handleError(err);

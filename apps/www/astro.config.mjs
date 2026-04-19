@@ -4,13 +4,24 @@ import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
 import studio from "@sugarcube-sh/studio-vite";
+import { clientPath } from "@sugarcube-sh/studio/client";
 import sugarcube from "@sugarcube-sh/vite";
 import presetWind3 from "@unocss/preset-wind3";
 import { DevTools } from "@vitejs/devtools";
 import AutoImport from "astro-auto-import";
 import robotsTxt from "astro-robots-txt";
 import { defineConfig, fontProviders } from "astro/config";
+import sirv from "sirv";
 import { siteConfig } from "./src/site.config";
+
+// This is just here for me so I can develop <sugarcube-studio> in dev
+const serveStudioSPA = {
+    name: "sugarcube-studio-serve",
+    /** @param {{ middlewares: { use: (path: string, handler: unknown) => void } }} server */
+    configureServer(server) {
+        server.middlewares.use("/__studio/", sirv(clientPath, { dev: true, single: true }));
+    },
+};
 
 export default defineConfig({
     site: siteConfig.url,
@@ -147,6 +158,7 @@ export default defineConfig({
         plugins: [
             DevTools(),
             studio(),
+            serveStudioSPA,
             sugarcube({
                 unoOptions: {
                     presets: [presetWind3({ preflight: false })],

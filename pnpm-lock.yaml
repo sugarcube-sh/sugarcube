@@ -126,6 +126,9 @@ importers:
       '@sugarcube-sh/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@sugarcube-sh/studio':
+        specifier: workspace:*
+        version: link:../../packages/studio
       '@sugarcube-sh/studio-embed':
         specifier: workspace:*
         version: link:../../packages/studio-embed
@@ -174,6 +177,9 @@ importers:
       react-hook-form:
         specifier: ^7.55.0
         version: 7.71.1(react@19.2.4)
+      sirv:
+        specifier: ^3.0.1
+        version: 3.0.2
       ultrahtml:
         specifier: ^1.6.0
         version: 1.6.0
@@ -211,6 +217,12 @@ importers:
       '@sugarcube-sh/core':
         specifier: workspace:*
         version: link:../core
+      '@sugarcube-sh/studio':
+        specifier: workspace:*
+        version: link:../studio
+      '@sugarcube-sh/studio-embed':
+        specifier: workspace:*
+        version: link:../studio-embed
       '@unocss/core':
         specifier: ^66.5.2
         version: 66.6.0
@@ -363,9 +375,6 @@ importers:
       '@vitejs/devtools-kit':
         specifier: ^0.1.13
         version: 0.1.13(typescript@5.9.3)(vite@8.0.8)(ws@8.20.0)
-      sirv:
-        specifier: ^3.0.1
-        version: 3.0.2
       vite:
         specifier: ^8.0.3
         version: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13(@pnpm/logger@1001.0.1)(typescript@5.9.3)(vite@8.0.8))(esbuild@0.27.3)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)

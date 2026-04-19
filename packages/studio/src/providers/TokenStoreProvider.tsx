@@ -24,6 +24,7 @@ export function TokenStoreProvider({ snapshot, mode, children }: Props) {
             mode,
             store,
             pathIndex,
+            snapshot,
             scaleState,
             studioConfig: snapshot.config.studio,
         };
