@@ -5,15 +5,15 @@
     "version": "1.0.0",
     "scripts": {
         "astro": "astro",
-        "build": "pnpm run build:registry && pnpm run snapshot:build && cross-env REGISTRY_URL=/r astro build",
+        "build": "pnpm run build:registry && pnpm run build:studio && cross-env REGISTRY_URL=/r astro build",
         "build:registry": "tsx scripts/build-registry.ts",
         "build:studio": "sugarcube studio build --out .sugarcube",
         "deploy": "pnpm run build && wrangler deploy",
-        "predev": "pnpm run snapshot:build",
+        "predev": "pnpm run build:studio",
         "dev": "cross-env REGISTRY_URL=/r astro dev",
         "dev:debug": "cross-env DEBUG=true REGISTRY_URL=/r astro dev",
         "preview": "astro preview",
-        "type-check": "astro sync && tsc --noEmit"
+        "type-check": "pnpm run build:studio && astro sync && tsc --noEmit"
     },
     "dependencies": {
         "@ariakit/react": "^0.4.17",
