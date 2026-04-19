@@ -38,7 +38,7 @@ function setTokenValue<TValue>(
     };
 }
 
-export function SpikePipeline() {
+export function Pipeline() {
     const initialRadiusRem = useMemo(() => {
         const token = snapshot.resolved[RADIUS_MD_PATH];
         if (!token || !("$value" in token)) return 0.25;
