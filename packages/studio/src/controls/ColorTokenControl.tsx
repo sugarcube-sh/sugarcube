@@ -115,6 +115,7 @@ function buildGrid(colorScale: ColorScaleConfig): BuiltGrid {
         });
 
         // Extra column: white and black together at the top
+        // TODO: this is causing jank and I hate the current implementation.
         if (hasExtras) {
             const extraToken = rowIdx === 0 ? white : rowIdx === 1 ? black : undefined;
             if (extraToken) {
@@ -138,10 +139,8 @@ function buildGrid(colorScale: ColorScaleConfig): BuiltGrid {
 }
 
 /**
- * Walk a DTCG reference chain to its terminal token path, staying in the
+ * Walk a DTCG reference chain to its terminal (i.e. not a reference) token path, staying in the
  * active permutation context so cross-mode references don't get confused.
- *
- * Returns the path whose `$value` is not itself a reference string.
  */
 function resolveRefChain(
     value: unknown,

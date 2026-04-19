@@ -51,10 +51,6 @@ const utilitiesOutputConfigSchema = z.object({
     classes: utilityClassesSchema.optional(),
 });
 
-// ---------------------------------------------------------------------------
-// Studio panel config schemas
-// ---------------------------------------------------------------------------
-
 const colorBindingSchema = z.object({
     type: z.literal("color"),
     token: z.string().min(1, "Token path cannot be empty"),

@@ -5,24 +5,17 @@ export type GridOption = {
     path: string;
     /** Resolved CSS color for the swatch. */
     color: string;
-    /** Label for accessibility. */
     label: string;
 };
 
-/**
- * A cell in the grid matrix. `null` means an empty cell (no swatch rendered,
- * but the cell still exists for keyboard navigation and grid structure).
- */
 type GridCell = GridOption | null;
 
 type Props = {
     /** Column headers (palette names + optional extra column for white/black). */
     columns: readonly string[];
-    /** Row headers (step names). */
     rows: readonly string[];
     /** Row-major matrix of cells: `cells[row][col]`. Null entries are empty. */
     cells: GridCell[][];
-    /** Current value's token path. */
     currentPath: string;
     /** Fires on navigation (live apply) and on click. */
     onSelect: (path: string) => void;
@@ -69,7 +62,6 @@ export function ColorGrid({
         [cells, onSelect]
     );
 
-    /** Find the row/col of the currently focused swatch. */
     const findActiveCell = useCallback((): [number, number] | null => {
         const activePath = (document.activeElement as HTMLElement | null)?.dataset.path;
         if (!activePath) return null;
@@ -140,7 +132,6 @@ export function ColorGrid({
 
             if (e.key === "Home") {
                 e.preventDefault();
-                // First non-empty cell in current row
                 for (let c = 0; c < colCount; c++) {
                     if (cells[row]?.[c]) {
                         focusCell(row, c);
@@ -149,7 +140,6 @@ export function ColorGrid({
                 }
             } else if (e.key === "End") {
                 e.preventDefault();
-                // Last non-empty cell in current row
                 for (let c = colCount - 1; c >= 0; c--) {
                     if (cells[row]?.[c]) {
                         focusCell(row, c);

@@ -3,7 +3,6 @@ import { DevToolsTokenProvider } from "./DevToolsTokenProvider";
 import { EmbeddedTokenProvider } from "./EmbeddedTokenProvider";
 import type { TokenSource } from "./token-source";
 
-// Re-export hooks that consumers use
 export { useStudioConfig, useStudioMode } from "../store/hooks";
 
 type Props = {

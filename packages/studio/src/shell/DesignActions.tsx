@@ -18,8 +18,6 @@ type SaveHook = {
     reset: () => void;
 };
 
-// ── DevTools save: write to disk via RPC ────────────────────────────
-
 function useDevToolsSave(): SaveHook {
     const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
     const [error, setError] = useState<string | null>(null);
@@ -57,8 +55,6 @@ function useDevToolsSave(): SaveHook {
         reset,
     };
 }
-
-// ── Embedded save: postMessage to host, host creates PR ─────────────
 
 function useEmbeddedSave(diffRef: React.RefObject<TokenDiffEntry[]>): SaveHook {
     const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
@@ -135,20 +131,11 @@ function useEmbeddedSave(diffRef: React.RefObject<TokenDiffEntry[]>): SaveHook {
 }
 
 type DesignActionsProps = {
-    /** Whether the diff panel is currently open. */
     diffOpen: boolean;
-    /** Toggle the diff panel open/closed. */
     onToggleDiff: () => void;
-    /** ID of the diff panel element this control toggles. */
     diffPanelId: string;
 };
 
-/**
- * Sticky footer for the Design area. Renders only when there are pending changes.
- * Contains:
- *   - A change-count disclosure that toggles the diff panel open/closed
- *   - Discard and Save actions
- */
 export function DesignActions({ diffOpen, onToggleDiff, diffPanelId }: DesignActionsProps) {
     const mode = useStudioMode();
     const pendingCount = usePendingChangesCount();

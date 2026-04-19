@@ -9,7 +9,7 @@ import type { TokenStoreAPI, TokenStoreState } from "./create-token-store";
 import type { ScaleStateAPI, ScaleStateStore } from "./scale-state";
 
 /**
- * Single context for all Studio state. Stable references — set once
+ * Single context for all Studio state. Stable references. Set once
  * at init, never changes during a session.
  */
 export type StudioContextValue = {
@@ -29,7 +29,6 @@ function useStudio(): StudioContextValue {
     return ctx;
 }
 
-/** The current mode (devtools, embedded, embedded-iframe). */
 export function useStudioMode(): StudioContextValue["mode"] {
     return useStudio().mode;
 }
@@ -39,7 +38,6 @@ export function useStudioConfig(): StudioConfig | undefined {
     return useStudio().studioConfig;
 }
 
-/** The PathIndex for token discovery and lookups. */
 export function usePathIndex(): PathIndex {
     return useStudio().pathIndex;
 }
@@ -49,12 +47,10 @@ export function useSnapshot(): TokenSnapshot {
     return useStudio().snapshot;
 }
 
-/** Select from the token store (zustand selector for fine-grained subscriptions). */
 export function useTokenStore<T>(selector: (state: TokenStoreState) => T): T {
     return useStore(useStudio().store, selector);
 }
 
-/** Select from the scale state store. */
 export function useScaleState<T>(selector: (state: ScaleStateStore) => T): T {
     return useStore(useStudio().scaleState, selector);
 }
@@ -62,7 +58,7 @@ export function useScaleState<T>(selector: (state: ScaleStateStore) => T): T {
 /**
  * Read + write a token by path, scoped to the current permutation.
  * Returns `[value, setValue]` like `useState`. Edits don't fan out
- * across modes.
+ * across permutations (which would be confusing and unwanted, most likely!).
  */
 export function useToken<T = unknown>(path: string): [T | undefined, (value: T) => void] {
     const { pathIndex } = useStudio();
@@ -79,7 +75,6 @@ export function useCurrentContext(): string {
     return useTokenStore((state) => state.currentContext);
 }
 
-/** Setter for the currently-active permutation context. */
 export function useSetCurrentContext(): (ctx: string) => void {
     return useTokenStore((state) => state.setCurrentContext);
 }
@@ -97,12 +92,10 @@ export function usePendingChanges(): TokenDiffEntry[] {
     );
 }
 
-/** Count of pending (unsaved/unsubmitted) token changes. */
 export function usePendingChangesCount(): number {
     return usePendingChanges().length;
 }
 
-/** Whether a specific token path has a pending (unsaved) change. */
 export function useHasPendingChange(path: string): boolean {
     return usePendingChanges().some((entry) => entry.path === path);
 }

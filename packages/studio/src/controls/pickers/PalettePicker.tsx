@@ -18,11 +18,8 @@ export type PaletteOption = {
 };
 
 type Props = {
-    /** Name of the currently selected palette */
     currentName: string;
-    /** All palettes the user can pick from */
     options: PaletteOption[];
-    /** Fires with the newly picked palette name */
     onSelect: (name: string) => void;
 };
 

@@ -20,9 +20,7 @@ export type TokenOption = {
 };
 
 type Props = {
-    /** Path of the currently bound token */
     currentPath: string;
-    /** All options the user can pick from */
     options: TokenOption[];
     /** Fires with the newly picked path */
     onSelect: (path: string) => void;

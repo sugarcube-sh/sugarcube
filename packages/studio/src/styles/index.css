@@ -1,7 +1,5 @@
-/* Global reset and base styles */
 @import "./global/global.css";
 
-/* CUBE CSS compositions */
 @import "./compositions/wrapper.css";
 @import "./compositions/flow.css";
 @import "./compositions/cluster.css";
@@ -10,18 +8,15 @@
 @import "./compositions/sidebar.css";
 @import "./compositions/switcher.css";
 
-/* Blocks */
 @import "./blocks/prose.css";
 @import "./blocks/header.css";
 @import "./blocks/design-actions.css";
 @import "./blocks/panel-section.css";
 @import "./blocks/pickers.css";
 
-/* Components */
 @import "../components/ui/tabs/tabs.css";
 @import "../components/ui/popover/popover.css";
 @import "../components/ui/command/command.css";
 
-/* Utilities */
 @import "./utilities/region.css";
 @import "./utilities/visually-hidden.css";

@@ -13,10 +13,6 @@ type PresetControlProps = {
     binding: PresetBinding;
 };
 
-/**
- * Pick-from-options control. Renders a Framer-style trigger that shows the
- * current value, and opens a popover with a plain list of options. No search.
- */
 export function PresetControl({ binding }: PresetControlProps) {
     const [value, setValue] = useToken<string>(binding.token);
     const label = labelForBinding(binding);
