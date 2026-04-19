@@ -4,30 +4,28 @@ import { loadInternalConfig } from "@sugarcube-sh/core";
 import { embedPath } from "@sugarcube-sh/studio-embed/path";
 import { clientPath } from "@sugarcube-sh/studio/client";
 import { Command } from "commander";
+import { relative } from "pathe";
 import color from "picocolors";
 import { loadAndResolveTokensForCLI } from "../pipelines/load-and-resolve-for-cli.js";
-import { intro, outro } from "../prompts/common.js";
+import { intro, label, outro } from "../prompts/common.js";
+import { log } from "../prompts/log.js";
 import { handleError } from "../utils/handle-error.js";
 
 export const studio = new Command().name("studio").description("Studio tools for sugarcube");
 
 studio
     .command("build")
-    .description(
-        "Generate a token snapshot and copy the Studio SPA assets for embedded/published mode"
-    )
+    .description("Build Studio assets for embedded mode")
     .option("-o, --out <path>", "Output directory", ".sugarcube")
     .action(async (opts) => {
         try {
-            intro("studio build");
+            intro(label("Studio build"));
 
             const outDir = path.resolve(opts.out);
-            const startedAt = Date.now();
 
             const { config } = await loadInternalConfig();
             const { trees, resolved } = await loadAndResolveTokensForCLI(config);
 
-            // `resolver` is a filesystem path — useless in the browser.
             const { resolver, ...snapshotConfig } = config;
 
             const snapshot = {
@@ -40,19 +38,52 @@ studio
 
             await mkdir(outDir, { recursive: true });
 
-            const snapshotPath = path.join(outDir, "snapshot.json");
-            await writeFile(snapshotPath, JSON.stringify(snapshot, null, 2), "utf-8");
-            const snapshotSizeKB = (Buffer.byteLength(JSON.stringify(snapshot)) / 1024).toFixed(1);
+            const relOut = relative(process.cwd(), outDir);
+            const snapshotTarget = `${path.join(relOut, "snapshot.json")}`;
+            const spaTarget = `${relOut}/`;
+            const embedTarget = `${path.join(relOut, "embed.js")}`;
 
-            await cp(clientPath, outDir, { recursive: true });
-            await cp(embedPath, path.join(outDir, "embed.js"));
+            log.space(1);
 
-            const ms = Date.now() - startedAt;
-            const relOut = path.relative(process.cwd(), outDir);
-
-            outro(
-                `Studio assets written in ${ms}ms → ${color.cyan(relOut)} (snapshot: ${snapshotSizeKB} KB)`
+            await log.tasks(
+                [
+                    {
+                        pending: `Write snapshot to ${snapshotTarget}`,
+                        start: `Writing snapshot to ${snapshotTarget}`,
+                        end: `Wrote snapshot to ${snapshotTarget}`,
+                        while: async () => {
+                            await writeFile(
+                                path.join(outDir, "snapshot.json"),
+                                JSON.stringify(snapshot, null, 2),
+                                "utf-8"
+                            );
+                        },
+                    },
+                    {
+                        pending: `Write Studio SPA to ${spaTarget}`,
+                        start: `Writing Studio SPA to ${spaTarget}`,
+                        end: `Wrote Studio SPA to ${spaTarget}`,
+                        while: async () => {
+                            await cp(clientPath, outDir, { recursive: true });
+                        },
+                    },
+                    {
+                        pending: `Write embed script to ${embedTarget}`,
+                        start: `Writing embed script to ${embedTarget}`,
+                        end: `Wrote embed script to ${embedTarget}`,
+                        while: async () => {
+                            await cp(embedPath, path.join(outDir, "embed.js"));
+                        },
+                    },
+                ],
+                {
+                    spacing: 0,
+                    minDurationMs: 0,
+                    successPauseMs: 100,
+                }
             );
+
+            outro(color.green("Studio assets ready."));
         } catch (err) {
             handleError(err);
         }
