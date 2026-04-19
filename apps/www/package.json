@@ -7,7 +7,7 @@
         "astro": "astro",
         "build": "pnpm run build:registry && pnpm run build:studio && cross-env REGISTRY_URL=/r astro build",
         "build:registry": "tsx scripts/build-registry.ts",
-        "build:studio": "sugarcube studio build --out .sugarcube",
+        "build:studio": "node ../../packages/cli/dist/index.mjs studio build --out .sugarcube",
         "deploy": "pnpm run build && wrangler deploy",
         "predev": "pnpm run build:studio",
         "dev": "cross-env REGISTRY_URL=/r astro dev",
