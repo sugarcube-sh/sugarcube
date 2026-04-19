@@ -1,45 +1,30 @@
 /**
- * Client entry point for @sugarcube-sh/core.
+ * Browser-safe entry point for @sugarcube-sh/core.
  *
- * Use this entry point in any non-Node context — browsers, web workers,
- * edge functions, the studio dock, or anywhere else without filesystem access:
+ * Use this in any non-Node context — browsers, web workers, edge functions:
  *
  *     import { processAndConvertTokens, generateCSSVariables } from "@sugarcube-sh/core/client";
  *
- * For Node contexts (CLI, Vite plugin, build scripts) use the main entry
- * point `@sugarcube-sh/core`, which includes file loaders, writers, and
- * `fillDefaults` (the Node version that detects `src/` via `existsSync`).
+ * For Node contexts use the main `@sugarcube-sh/core` entry, which adds
+ * file loaders, writers, and the Node-side `fillDefaults`.
  */
 
-// Config
 export { defineConfig } from "./define-config.js";
 export { DEFAULT_CONFIG } from "./constants/config.js";
 export { fillDefaultsCore } from "./config/fill-defaults-core.js";
 export type { DefaultDirs } from "./config/fill-defaults-core.js";
 
-// Pipelines (pure transformation orchestrators)
 export { processAndConvertTokens } from "./pipelines/process-and-convert.js";
 
-// Generators
 export { generateCSSVariables } from "./generators/generate-css-variables.js";
 
-// UnoCSS adapter (pure)
 export {
     convertConfigToUnoRules,
     clearMatchCache,
 } from "./utils/convert-utility-config-to-uno-rules.js";
 
-// Utilities
 export { formatCSSVarName } from "./utils/format-css-var-name.js";
 
-// PerfMonitor and Instrumentation are deliberately NOT exported here.
-// They use Node-only globals (process.env, process.stderr, process.hrtime,
-// process.memoryUsage) and are intended for instrumenting the Node-side
-// build pipeline. Browser/client consumers don't need them. If browser
-// instrumentation is wanted later, it should be a separate module that
-// uses Performance APIs available in non-Node contexts.
-
-// Types
 export type {
     InternalConfig,
     SugarcubeConfig,
@@ -78,8 +63,7 @@ export type {
 export type { CSSFileOutput } from "./types/generate.js";
 export type { userConfigSchema } from "./schemas/config.js";
 
-// DTCG types — including NodeMetadata, which studio's client currently
-// has to redefine locally because it's not exposed from the main entry.
+// DTCG types
 export type {
     NodeMetadata,
     Token,
