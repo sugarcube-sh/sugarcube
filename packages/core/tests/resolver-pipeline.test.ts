@@ -1,10 +1,11 @@
 import { relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { validateConfig } from "../src/config/validate-config.js";
-import { DEFAULT_CONFIG } from "../src/constants/config.js";
-import { generateCSSVariables } from "../src/generators/generate-css-variables.js";
-import { loadAndResolveTokens } from "../src/pipelines/load-and-resolve.js";
-import { processAndConvertTokens } from "../src/pipelines/process-and-convert.js";
+import { validateConfig } from "../src/node/config/normalize.js";
+import { loadTokens } from "../src/node/load-tokens.js";
+import { DEFAULT_CONFIG } from "../src/shared/constants/config.js";
+import { convertTokens } from "../src/shared/convert-tokens.js";
+import { generateCSSVariables } from "../src/shared/generate-css-variables.js";
+import { resolveTokens } from "../src/shared/resolve-tokens.js";
 import type { ResolvedToken } from "../src/types/resolve.js";
 
 const FIXTURES_DIR = resolve(__dirname, "__fixtures__/resolver");
@@ -13,25 +14,28 @@ async function generateFromResolver(
     resolverPath: string,
     config: ReturnType<typeof validateConfig>
 ) {
-    const { trees, resolved, errors } = await loadAndResolveTokens({
+    const loaded = await loadTokens({
         type: "resolver",
         resolverPath,
         config,
     });
 
+    const resolved = resolveTokens(loaded.trees);
+    const errors = { load: loaded.errors, ...resolved.errors };
+
     if (errors.load.length > 0) {
-        return { trees, output: [], errors };
+        return { trees: resolved.trees, output: [], resolved: resolved.resolved, errors };
     }
 
-    const convertedTokens = await processAndConvertTokens(
-        trees,
-        resolved,
+    const converted = await convertTokens(
+        resolved.trees,
+        resolved.resolved,
         config,
         errors.validation
     );
-    const output = await generateCSSVariables(convertedTokens, config);
+    const output = await generateCSSVariables(converted, config);
 
-    return { trees, output, errors };
+    return { trees: resolved.trees, output, resolved: resolved.resolved, errors };
 }
 
 const getCss = (result: Awaited<ReturnType<typeof generateFromResolver>>): string => {
@@ -142,11 +146,7 @@ describe("Resolver Pipeline Integration", () => {
                 resolver: resolverPath,
             });
 
-            const { resolved, errors } = await loadAndResolveTokens({
-                type: "resolver",
-                resolverPath,
-                config,
-            });
+            const { resolved, errors } = await generateFromResolver(resolverPath, config);
 
             expect(errors.load).toHaveLength(0);
 

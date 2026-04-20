@@ -1,4 +1,4 @@
-import type { ResolvedTokens } from "@sugarcube-sh/core";
+import type { ResolvedTokens } from "@sugarcube-sh/core/client";
 import { getDevToolsRpcClient } from "@vitejs/devtools-kit/client";
 import type { SharedState } from "@vitejs/devtools-kit/utils/shared-state";
 

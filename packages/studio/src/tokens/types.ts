@@ -1,4 +1,4 @@
-import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core";
+import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core/client";
 
 /** The snapshot shape that initializes a Studio session. */
 export type TokenSnapshot = {

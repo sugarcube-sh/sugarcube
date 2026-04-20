@@ -20,14 +20,17 @@ vi.mock("@sugarcube-sh/core", async () => {
                 cube: "src/styles",
             },
         }),
-        loadAndResolveTokens: async () => ({
+        loadTokens: async () => ({
+            trees: [],
+            errors: [],
+        }),
+        resolveTokens: () => ({
             trees: [],
             resolved: {} as any,
-            errors: { load: [], flatten: [], validation: [], resolution: [] },
-            modifiers: [],
+            errors: { expandTree: [], flatten: [], validation: [], resolution: [] },
             warnings: [],
         }),
-        processAndConvertTokens: async () => ({ default: { default: {} } }),
+        convertTokens: async () => ({ default: { default: {} } }),
         generateCSSVariables: async () => [{ css: "" }],
         convertConfigToUnoRules: () => [],
     };

@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
+import { validateTransition } from "../../src/shared/validators/transition";
 import type { FlattenedToken } from "../../src/types/flatten";
-import { validateTransition } from "../../src/validators/transition";
 import { loadFixture } from "../__fixtures__/helpers/load-fixture";
 import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 

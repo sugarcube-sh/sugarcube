@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { NormalizedConvertedTokens } from "../src/types/convert.js";
 import {
     convertConfigToUnoRules,
     findMatchingToken,
     getDirectionAbbreviation,
     getLogicalProperty,
-} from "../src/utils/convert-utility-config-to-uno-rules.js";
+} from "../src/shared/uno-rules.js";
+import type { NormalizedConvertedTokens } from "../src/types/convert.js";
 import { createConvertedToken } from "./__fixtures__/converted-tokens.js";
 
 const buildTokens = (

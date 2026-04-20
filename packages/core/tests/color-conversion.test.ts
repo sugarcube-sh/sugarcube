@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertColorToString } from "../src/color/color-conversion.js";
+import { convertColorToString } from "../src/shared/color/color-conversion.js";
 import type { DTCGColorValue } from "../src/types/dtcg-color.js";
 
 describe("convertColorToString", () => {

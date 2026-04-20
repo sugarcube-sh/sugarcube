@@ -1,4 +1,4 @@
-import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core";
+import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core/client";
 import { type ReactNode, useEffect, useState } from "react";
 import { type StoreApi, createStore } from "zustand";
 import type { TokenStoreState } from "../store/create-token-store";

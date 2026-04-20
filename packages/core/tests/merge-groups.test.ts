@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeGroups } from "../src/utils/merge-groups.js";
+import { mergeGroups } from "../src/shared/pipeline/merge-groups.js";
 
 describe("mergeGroups", () => {
     it("inherits all tokens from base when local is empty", () => {

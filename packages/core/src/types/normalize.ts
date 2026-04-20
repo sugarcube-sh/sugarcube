@@ -6,14 +6,3 @@ import type { ResolvedTokens } from "./resolve.js";
  * and the value is the resolved tokens for that context.
  */
 export type NormalizedTokens = Record<string, ResolvedTokens>;
-
-/**
- * Result of the normalization process.
- * Contains tokens organized by context and the default context name.
- */
-export type NormalizeResult = {
-    /** Tokens organized by context name. */
-    tokens: NormalizedTokens;
-    /** The context that should use :root selector in CSS output. */
-    defaultContext?: string;
-};

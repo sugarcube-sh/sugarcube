@@ -3,28 +3,40 @@
  *
  * Use this in any non-Node context — browsers, web workers, edge functions:
  *
- *     import { processAndConvertTokens, generateCSSVariables } from "@sugarcube-sh/core/client";
+ *     import { convertTokens, generateCSSVariables } from "@sugarcube-sh/core/client";
  *
  * For Node contexts use the main `@sugarcube-sh/core` entry, which adds
  * file loaders, writers, and the Node-side `fillDefaults`.
  */
 
-export { defineConfig } from "./define-config.js";
-export { DEFAULT_CONFIG } from "./constants/config.js";
-export { fillDefaultsCore } from "./config/fill-defaults-core.js";
-export type { DefaultDirs } from "./config/fill-defaults-core.js";
-
-export { processAndConvertTokens } from "./pipelines/process-and-convert.js";
-
-export { generateCSSVariables } from "./generators/generate-css-variables.js";
-
+// Config
 export {
-    convertConfigToUnoRules,
-    clearMatchCache,
-} from "./utils/convert-utility-config-to-uno-rules.js";
+    defineConfig,
+    fillDefaultsCore,
+    validateConfig,
+    validateInternalConfig,
+    validateSugarcubeConfig,
+} from "./shared/config.js";
+export type { DefaultDirs } from "./shared/config.js";
+export { DEFAULT_CONFIG } from "./shared/constants/config.js";
 
-export { formatCSSVarName } from "./utils/format-css-var-name.js";
+// Pipeline orchestrators (pure)
+export { resolveTokens } from "./shared/resolve-tokens.js";
+export type { ResolveResult, ResolveErrors } from "./shared/resolve-tokens.js";
+export { convertTokens } from "./shared/convert-tokens.js";
+export type { ConvertResult } from "./shared/convert-tokens.js";
+export { generateCSSVariables } from "./shared/generate-css-variables.js";
 
+// Utility-class UnoCSS rules
+export { convertConfigToUnoRules, clearMatchCache } from "./shared/uno-rules.js";
+
+// Formatting helpers
+export { formatCSSVarName } from "./shared/format-css-var-name.js";
+
+// Guards
+export { isResolvedToken } from "./shared/guards.js";
+
+// Types
 export type {
     InternalConfig,
     SugarcubeConfig,
@@ -53,7 +65,6 @@ export type {
 } from "./types/pipelines.js";
 export { createPipelineContext } from "./types/pipelines.js";
 export type { ResolvedToken, ResolvedTokens } from "./types/resolve.js";
-export { isResolvedToken } from "./guards/token-guards.js";
 export type { TokenTree } from "./types/tokens.js";
 export type {
     ConvertedToken,
@@ -61,7 +72,7 @@ export type {
     NormalizedConvertedTokens,
 } from "./types/convert.js";
 export type { CSSFileOutput } from "./types/generate.js";
-export type { userConfigSchema } from "./schemas/config.js";
+export type { userConfigSchema } from "./shared/schemas/config.js";
 
 // DTCG types
 export type {

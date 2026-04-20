@@ -2,8 +2,8 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadInternalConfig, loadSugarcubeConfig } from "../src/config/load-config.js";
-import { DEFAULT_CONFIG } from "../src/constants/config.js";
+import { loadInternalConfig, loadSugarcubeConfig } from "../src/node/config/load.js";
+import { DEFAULT_CONFIG } from "../src/shared/constants/config.js";
 
 describe("loadInternalConfig", () => {
     let tempDir: string;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ErrorMessages } from "../src/constants/error-messages.js";
-import { resolve } from "../src/pipeline/resolve.js";
+import { ErrorMessages } from "../src/shared/constants/error-messages.js";
+import { dereference } from "../src/shared/pipeline/dereference.js";
 import type { FlattenedTokens } from "../src/types/flatten.js";
 import type { ResolvedToken } from "../src/types/resolve.js";
 import { createFlattenedToken, flattenedTokens } from "./__fixtures__/flattened-tokens.js";
@@ -18,7 +18,7 @@ describe("resolve", () => {
                 pathIndex: new Map([["color.primary", "color.primary"]]),
             };
 
-            const result = resolve(input);
+            const result = dereference(input);
 
             expect(result.errors).toHaveLength(0);
             expect((result.resolved["color.text"] as ResolvedToken).$resolvedValue).toBe("#FF0000");
@@ -35,7 +35,7 @@ describe("resolve", () => {
                 pathIndex: new Map([["color.primary", "color.primary"]]),
             };
 
-            const result = resolve(input);
+            const result = dereference(input);
 
             expect(result.errors).toHaveLength(0);
             expect((result.resolved["shadow.small"] as ResolvedToken).$resolvedValue).toEqual({
@@ -58,7 +58,7 @@ describe("resolve", () => {
                 pathIndex: new Map([["color.primary", "color.primary"]]),
             };
 
-            const result = resolve(input);
+            const result = dereference(input);
 
             expect(result.errors).toHaveLength(0);
             expect((result.resolved["gradient.primary"] as ResolvedToken).$resolvedValue).toEqual([
@@ -95,7 +95,7 @@ describe("resolve", () => {
                 ]),
             };
 
-            const result = resolve(input);
+            const result = dereference(input);
 
             expect(result.errors).toHaveLength(2);
             expect(result.errors[0]).toEqual({
@@ -119,7 +119,7 @@ describe("resolve", () => {
                 pathIndex: new Map(),
             };
 
-            const result = resolve(input);
+            const result = dereference(input);
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]).toEqual({
@@ -153,7 +153,7 @@ describe("resolve", () => {
         //         pathIndex: new Map([["spacing.small", "spacing.small"]]),
         //     };
 
-        //     const result = resolve(input);
+        //     const result = dereference(input);
 
         //     expect(result.errors).toHaveLength(1);
         //     expect(result.errors[0]).toEqual({
@@ -191,7 +191,7 @@ describe("resolve", () => {
                 ]),
             };
 
-            const result = resolve(input);
+            const result = dereference(input);
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]).toEqual({
@@ -227,7 +227,7 @@ describe("resolve", () => {
                 pathIndex: new Map([["color", "color"]]),
             };
 
-            const result = resolve(input);
+            const result = dereference(input);
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]).toEqual({
@@ -265,7 +265,7 @@ describe("resolve", () => {
                 ]),
             };
 
-            const result = resolve(input);
+            const result = dereference(input);
 
             expect(result.errors).toHaveLength(0);
             expect((result.resolved["shadow.medium"] as ResolvedToken).$resolvedValue).toEqual({

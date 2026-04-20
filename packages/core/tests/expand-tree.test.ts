@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ErrorMessages } from "../src/constants/error-messages.js";
-import { expandTree } from "../src/pipeline/expand-tree.js";
+import { ErrorMessages } from "../src/shared/constants/error-messages.js";
+import { expand } from "../src/shared/pipeline/expand.js";
 import type { TokenTree } from "../src/types/tokens.js";
 
 const buildTree = (
@@ -24,7 +24,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             expect(result[0]?.tokens).toEqual(trees[0]?.tokens);
@@ -45,7 +45,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as { background: { $value: string } };
@@ -65,7 +65,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as { background: Record<string, unknown> };
@@ -86,7 +86,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as { background: Record<string, unknown> };
@@ -111,7 +111,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             const components = result[0]?.tokens.components as {
@@ -137,7 +137,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as {
@@ -163,7 +163,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             const primaryButton = result[0]?.tokens["primary-button"] as {
@@ -191,7 +191,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             const dangerButton = result[0]?.tokens["danger-button"] as {
@@ -220,7 +220,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             // $value points to the immediate target
@@ -246,7 +246,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             const alias = result[0]?.tokens.alias as { $value: string };
@@ -264,7 +264,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             const alias = result[0]?.tokens.alias as { $value: string };
@@ -276,7 +276,7 @@ describe("expandTree", () => {
         it("detects direct circular references", () => {
             const trees = [buildTree({ a: { $ref: "#/a" } })];
 
-            const { errors } = expandTree(trees);
+            const { errors } = expand(trees);
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
@@ -293,7 +293,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { errors } = expandTree(trees);
+            const { errors } = expand(trees);
 
             expect(errors.length).toBeGreaterThan(0);
             expect(
@@ -308,7 +308,7 @@ describe("expandTree", () => {
         it("reports error for invalid JSON pointer", () => {
             const trees = [buildTree({ button: { $ref: "#/nonexistent/path" } })];
 
-            const { errors } = expandTree(trees);
+            const { errors } = expand(trees);
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
@@ -330,7 +330,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { errors } = expandTree(trees);
+            const { errors } = expand(trees);
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
@@ -347,7 +347,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(1);
             const colors = result[0]?.tokens.colors as { valid: { $value: string } };
@@ -369,7 +369,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             const buttonBg = result[0]?.tokens.button as { background: { $value: string } };
@@ -389,7 +389,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             expect(result).toHaveLength(2);
@@ -412,7 +412,7 @@ describe("expandTree", () => {
                 }),
             ];
 
-            const { errors } = expandTree(trees);
+            const { errors } = expand(trees);
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
@@ -436,7 +436,7 @@ describe("expandTree", () => {
                 ),
             ];
 
-            const { trees: result, errors } = expandTree(trees);
+            const { trees: result, errors } = expand(trees);
 
             expect(errors).toHaveLength(0);
             expect(result[0]?.context).toBe("dark");
@@ -452,7 +452,7 @@ describe("expandTree - unsupported references", () => {
             }),
         ];
 
-        const { errors } = expandTree(trees);
+        const { errors } = expand(trees);
 
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
@@ -470,7 +470,7 @@ describe("expandTree - unsupported references", () => {
             }),
         ];
 
-        const { errors } = expandTree(trees);
+        const { errors } = expand(trees);
 
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
@@ -497,7 +497,7 @@ describe("expandTree - $extends", () => {
             }),
         ];
 
-        const { trees: result, errors } = expandTree(trees);
+        const { trees: result, errors } = expand(trees);
 
         expect(errors).toHaveLength(0);
         const primary = result[0]?.tokens["button-primary"] as Record<string, unknown>;
@@ -521,7 +521,7 @@ describe("expandTree - $extends", () => {
             }),
         ];
 
-        const { trees: result, errors } = expandTree(trees);
+        const { trees: result, errors } = expand(trees);
 
         expect(errors).toHaveLength(0);
         const primary = result[0]?.tokens["button-primary"] as Record<string, unknown>;
@@ -542,7 +542,7 @@ describe("expandTree - $extends", () => {
             }),
         ];
 
-        const { trees: result, errors } = expandTree(trees);
+        const { trees: result, errors } = expand(trees);
 
         expect(errors).toHaveLength(0);
         const primary = result[0]?.tokens["button-primary"] as Record<string, unknown>;
@@ -568,7 +568,7 @@ describe("expandTree - $extends", () => {
             }),
         ];
 
-        const { trees: result, errors } = expandTree(trees);
+        const { trees: result, errors } = expand(trees);
 
         expect(errors).toHaveLength(0);
         const inputAmount = result[0]?.tokens["input-amount"] as Record<string, unknown>;
@@ -593,7 +593,7 @@ describe("expandTree - $extends", () => {
             }),
         ];
 
-        const { trees: result, errors } = expandTree(trees);
+        const { trees: result, errors } = expand(trees);
 
         expect(errors).toHaveLength(0);
         const semantic = result[0]?.tokens.semantic as Record<string, unknown>;
@@ -619,7 +619,7 @@ describe("expandTree - $extends", () => {
             }),
         ];
 
-        const { trees: result, errors } = expandTree(trees);
+        const { trees: result, errors } = expand(trees);
 
         expect(errors).toHaveLength(0);
         const secondary = result[0]?.tokens["button-secondary"] as Record<string, unknown>;
@@ -638,7 +638,7 @@ describe("expandTree - $extends", () => {
             }),
         ];
 
-        const { trees: result } = expandTree(trees);
+        const { trees: result } = expand(trees);
 
         const primary = result[0]?.tokens["button-primary"] as Record<string, unknown>;
         expect(primary.$extends).toBeUndefined();
@@ -652,7 +652,7 @@ describe("expandTree - $extends", () => {
             }),
         ];
 
-        const { errors } = expandTree(trees);
+        const { errors } = expand(trees);
 
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
@@ -669,7 +669,7 @@ describe("expandTree - $extends", () => {
             }),
         ];
 
-        const { errors } = expandTree(trees);
+        const { errors } = expand(trees);
 
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
@@ -684,7 +684,7 @@ describe("expandTree - $extends", () => {
             }),
         ];
 
-        const { errors } = expandTree(trees);
+        const { errors } = expand(trees);
 
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
@@ -700,7 +700,7 @@ describe("expandTree - $extends", () => {
             }),
         ];
 
-        const { errors } = expandTree(trees);
+        const { errors } = expand(trees);
 
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertDimensionToken } from "../../src/converters/dimension.js";
+import { convertDimensionToken } from "../../src/shared/converters/dimension.js";
 import type { ConversionOptions } from "../../src/types/convert.js";
 import type { TokenValue } from "../../src/types/tokens.js";
 

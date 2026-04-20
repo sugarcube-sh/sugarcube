@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ErrorMessages } from "../src/constants/error-messages";
-import { validate } from "../src/pipeline/validate";
+import { ErrorMessages } from "../src/shared/constants/error-messages";
+import { validate } from "../src/shared/pipeline/validate";
 import type { FlattenedTokens } from "../src/types/flatten";
 
 describe("validate", () => {

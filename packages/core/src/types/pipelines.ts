@@ -1,4 +1,4 @@
-import type { ExpandTreeError } from "../pipeline/expand-tree.js";
+import type { ExpandError } from "../shared/pipeline/expand.js";
 import type { InternalConfig } from "./config.js";
 import type { FlattenError } from "./flatten.js";
 import type { CSSFileOutput } from "./generate.js";
@@ -89,7 +89,7 @@ export type PipelineErrors = {
     /** Errors from loading token files. */
     load: LoadError[];
     /** Errors from expanding $ref and $extends in token trees. */
-    expandTree: ExpandTreeError[];
+    expandTree: ExpandError[];
     /** Errors from flattening token trees. */
     flatten: FlattenError[];
     /** Errors from validating token values. */

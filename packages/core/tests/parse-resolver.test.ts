@@ -1,12 +1,12 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ErrorMessages } from "../src/constants/error-messages.js";
-import { WarningMessages } from "../src/constants/warning-messages.js";
 import {
     isResolverFormat,
     parseResolverDocument,
     parseResolverDocumentFromString,
-} from "../src/resolver/parse-resolver.js";
+} from "../src/node/resolver/parse.js";
+import { ErrorMessages } from "../src/shared/constants/error-messages.js";
+import { WarningMessages } from "../src/shared/constants/warning-messages.js";
 
 const fixturesPath = resolve(__dirname, "__fixtures__/resolver");
 

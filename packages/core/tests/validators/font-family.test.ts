@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
+import { validateFontFamily } from "../../src/shared/validators/font-family";
 import type { FlattenedToken } from "../../src/types/flatten";
-import { validateFontFamily } from "../../src/validators/font-family";
 import { loadFixture } from "../__fixtures__/helpers/load-fixture";
 import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 

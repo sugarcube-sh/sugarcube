@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loadTreesFromMemory } from "../src/pipeline/load.js";
+import { loadTreesFromMemory } from "../src/node/load-tokens.js";
 import type { TokenMemoryData } from "../src/types/load.js";
 
 describe("loadTreesFromMemory", () => {

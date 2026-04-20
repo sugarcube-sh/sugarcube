@@ -1,7 +1,7 @@
 import { describe, it } from "vitest";
+import { validateBorder } from "../../src/shared/validators/border";
 import type { FlattenedToken } from "../../src/types/flatten";
 import type { ValidationError } from "../../src/types/validate";
-import { validateBorder } from "../../src/validators/border";
 import { loadFixture } from "../__fixtures__/helpers/load-fixture";
 import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertFontWeightToken } from "../../src/converters/font-weight.js";
+import { convertFontWeightToken } from "../../src/shared/converters/font-weight.js";
 
 describe("convertFontWeight", () => {
     it("should handle reference values", () => {

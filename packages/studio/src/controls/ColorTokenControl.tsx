@@ -1,7 +1,7 @@
-import type { ResolvedTokens } from "@sugarcube-sh/core";
 import {
     type ColorBinding,
     type ColorScaleConfig,
+    type ResolvedTokens,
     formatCSSVarName,
 } from "@sugarcube-sh/core/client";
 import { useCallback, useMemo, useRef, useState } from "react";

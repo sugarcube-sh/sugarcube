@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { fillDefaults } from "../src/config/normalize-config.js";
-import { DEFAULT_CONFIG } from "../src/constants/config.js";
+import { fillDefaults } from "../src/node/config/normalize.js";
+import { DEFAULT_CONFIG } from "../src/shared/constants/config.js";
 import type { SugarcubeConfig } from "../src/types/config.js";
 
 const minimalConfig = (overrides: Partial<SugarcubeConfig> = {}): SugarcubeConfig => ({
