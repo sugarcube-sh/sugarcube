@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { ErrorMessages } from "../../src/constants/error-messages";
+import { ErrorMessages } from "../../src/shared/constants/error-messages";
+import { validateShadow } from "../../src/shared/validators/shadow";
 import type { FlattenedToken } from "../../src/types/flatten";
-import { validateShadow } from "../../src/validators/shadow";
 import { loadFixture } from "../__fixtures__/helpers/load-fixture";
 import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { validateDimension } from "../../src/shared/validators/dimension";
 import type { FlattenedToken } from "../../src/types/flatten";
-import { validateDimension } from "../../src/validators/dimension";
 import { loadFixture } from "../__fixtures__/helpers/load-fixture";
 import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 

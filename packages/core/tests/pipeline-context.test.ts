@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { validate } from "../src/pipeline/validate";
+import { validate } from "../src/shared/pipeline/validate";
 import type { FlattenedTokens } from "../src/types/flatten";
 import { createPipelineContext } from "../src/types/pipelines";
 

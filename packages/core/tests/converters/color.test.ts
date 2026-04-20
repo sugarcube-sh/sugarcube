@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertColorToken } from "../../src/converters/color.js";
+import { convertColorToken } from "../../src/shared/converters/color.js";
 import type { ConversionOptions } from "../../src/types/convert.js";
 
 const createOptions = (overrides: Partial<ConversionOptions> = {}): ConversionOptions => ({

@@ -1,8 +1,8 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ErrorMessages } from "../src/constants/error-messages.js";
-import { parseResolverDocument } from "../src/resolver/parse-resolver.js";
-import { processResolutionOrder } from "../src/resolver/process-resolution-order.js";
+import { parseResolverDocument } from "../src/node/resolver/parse.js";
+import { processResolutionOrder } from "../src/node/resolver/resolution-order.js";
+import { ErrorMessages } from "../src/shared/constants/error-messages.js";
 import type { TokenGroup } from "../src/types/dtcg.js";
 import type { ResolverDocument } from "../src/types/resolver.js";
 

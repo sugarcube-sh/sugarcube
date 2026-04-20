@@ -1,24 +1,26 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { validateConfig } from "../src/config/validate-config.js";
-import { generateCSSVariables } from "../src/generators/generate-css-variables.js";
-import { loadAndResolveTokens } from "../src/pipelines/load-and-resolve.js";
-import { processAndConvertTokens } from "../src/pipelines/process-and-convert.js";
+import { validateConfig } from "../src/node/config/normalize.js";
+import { loadTokens } from "../src/node/load-tokens.js";
+import { convertTokens } from "../src/shared/convert-tokens.js";
+import { generateCSSVariables } from "../src/shared/generate-css-variables.js";
+import { resolveTokens } from "../src/shared/resolve-tokens.js";
 import type { InternalConfig } from "../src/types/config.js";
 
 const FIXTURES_DIR = resolve(__dirname, "__fixtures__/resolver");
 
 async function generateCSS(config: InternalConfig): Promise<string> {
-    const { trees, resolved, errors } = await loadAndResolveTokens({
+    const loaded = await loadTokens({
         type: "resolver",
         resolverPath: config.resolver as string,
         config,
     });
 
-    expect(errors.load).toHaveLength(0);
+    expect(loaded.errors).toHaveLength(0);
 
-    const convertedTokens = await processAndConvertTokens(trees, resolved, config);
-    const output = await generateCSSVariables(convertedTokens, config);
+    const resolved = resolveTokens(loaded.trees);
+    const converted = await convertTokens(resolved.trees, resolved.resolved, config);
+    const output = await generateCSSVariables(converted, config);
 
     return output.map((f) => f.css).join("\n");
 }
@@ -148,14 +150,14 @@ describe("permutations", () => {
                 },
             });
 
-            const { errors } = await loadAndResolveTokens({
+            const loaded = await loadTokens({
                 type: "resolver",
                 resolverPath: config.resolver as string,
                 config,
             });
 
-            expect(errors.load.length).toBeGreaterThan(0);
-            expect(errors.load[0]?.message).toContain("nonexistent");
+            expect(loaded.errors.length).toBeGreaterThan(0);
+            expect(loaded.errors[0]?.message).toContain("nonexistent");
         });
 
         it("errors on invalid context value in permutation input", async () => {
@@ -166,14 +168,14 @@ describe("permutations", () => {
                 },
             });
 
-            const { errors } = await loadAndResolveTokens({
+            const loaded = await loadTokens({
                 type: "resolver",
                 resolverPath: config.resolver as string,
                 config,
             });
 
-            expect(errors.load.length).toBeGreaterThan(0);
-            expect(errors.load[0]?.message).toContain("nonexistent");
+            expect(loaded.errors.length).toBeGreaterThan(0);
+            expect(loaded.errors[0]?.message).toContain("nonexistent");
         });
     });
 
@@ -189,16 +191,17 @@ describe("permutations", () => {
                 },
             });
 
-            const { trees, resolved, errors } = await loadAndResolveTokens({
+            const loaded = await loadTokens({
                 type: "resolver",
                 resolverPath: config.resolver as string,
                 config,
             });
 
-            expect(errors.load).toHaveLength(0);
+            expect(loaded.errors).toHaveLength(0);
 
-            const convertedTokens = await processAndConvertTokens(trees, resolved, config);
-            const output = await generateCSSVariables(convertedTokens, config);
+            const resolved = resolveTokens(loaded.trees);
+            const converted = await convertTokens(resolved.trees, resolved.resolved, config);
+            const output = await generateCSSVariables(converted, config);
 
             expect(output).toHaveLength(2);
             expect(output[0]?.path).toBe("dist/light.css");

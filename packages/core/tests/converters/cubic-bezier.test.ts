@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertCubicBezierToken } from "../../src/converters/cubic-bezier.js";
+import { convertCubicBezierToken } from "../../src/shared/converters/cubic-bezier.js";
 
 describe("convertCubicBezier", () => {
     it("should handle reference values", () => {

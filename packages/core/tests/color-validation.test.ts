@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { convertColorToString } from "../src/color/color-conversion.js";
+import { convertColorToString } from "../src/shared/color/color-conversion.js";
 import {
     formatDTCGColorToOKLCH,
     isDTCGColorValue,
     validateDTCGColorValue,
-} from "../src/color/color-validation.js";
-import { convertColorToken } from "../src/converters/color.js";
+} from "../src/shared/color/color-validation.js";
+import { convertColorToken } from "../src/shared/converters/color.js";
 import type { ConversionOptions } from "../src/types/convert.js";
 import type { DTCGColorValue } from "../src/types/dtcg-color.js";
 

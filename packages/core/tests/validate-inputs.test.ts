@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { ErrorMessages } from "../src/constants/error-messages.js";
 import {
     getAvailableContexts,
     getDefaultInputs,
     hasModifiers,
     validateInputs,
-} from "../src/resolver/validate-inputs.js";
+} from "../src/node/resolver/validate-inputs.js";
+import { ErrorMessages } from "../src/shared/constants/error-messages.js";
 import type { ResolverDocument } from "../src/types/resolver.js";
 
 const buildDoc = {

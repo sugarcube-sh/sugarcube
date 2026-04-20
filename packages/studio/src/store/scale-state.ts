@@ -1,4 +1,4 @@
-import type { ResolvedTokens } from "@sugarcube-sh/core";
+import type { ResolvedTokens } from "@sugarcube-sh/core/client";
 import type { PanelSection } from "@sugarcube-sh/core/client";
 import { type StoreApi, createStore } from "zustand";
 import type { PathIndex } from "../tokens/path-index";

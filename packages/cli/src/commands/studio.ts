@@ -4,7 +4,7 @@ import { loadInternalConfig } from "@sugarcube-sh/core";
 import { Command } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
-import { loadAndResolveTokensForCLI } from "../pipelines/load-and-resolve-for-cli.js";
+import { prepareTokensForCLI } from "../pipelines/prepare-tokens-for-cli.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 import { CLIError } from "../types/errors.js";
@@ -38,7 +38,7 @@ studio
 
             const { clientPath, embedPath } = await loadStudioAssets();
             const { config } = await loadInternalConfig();
-            const { trees, resolved } = await loadAndResolveTokensForCLI(config);
+            const { trees, resolved } = await prepareTokensForCLI(config);
 
             const { resolver, ...snapshotConfig } = config;
 

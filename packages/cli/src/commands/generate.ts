@@ -6,11 +6,11 @@ import {
     clearMatchCache,
     configFileExists,
     convertConfigToUnoRules,
+    convertTokens,
     fillDefaults,
     findResolverDocument,
     generateCSSVariables,
     loadInternalConfig,
-    processAndConvertTokens,
     writeCSSUtilitiesToDisk,
     writeCSSVariablesToDisk,
 } from "@sugarcube-sh/core";
@@ -27,7 +27,7 @@ import color from "picocolors";
 import packageJson from "../../package.json" with { type: "json" };
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { getProjectInfo } from "../detection/framework.js";
-import { loadAndResolveTokensForCLI } from "../pipelines/load-and-resolve-for-cli.js";
+import { prepareTokensForCLI } from "../pipelines/prepare-tokens-for-cli.js";
 import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
@@ -270,7 +270,7 @@ async function generateAllCSS(
 ): Promise<CSSFileOutput> {
     const output: CSSFileOutput = [];
 
-    const convertedTokens = await processAndConvertTokens(trees, resolved, config);
+    const convertedTokens = await convertTokens(trees, resolved, config);
 
     if (!options.utilitiesOnly) {
         let cssVariables = await generateCSSVariables(convertedTokens, config);
@@ -305,7 +305,7 @@ async function runGeneration(
     options: GenerateAllCSSOptions = {}
 ): Promise<GenerationResult> {
     clearMatchCache();
-    const { trees, resolved, warnings } = await loadAndResolveTokensForCLI(config);
+    const { trees, resolved, warnings } = await prepareTokensForCLI(config);
     const output = await generateAllCSS(trees, resolved, config, options);
     return { output, warnings };
 }

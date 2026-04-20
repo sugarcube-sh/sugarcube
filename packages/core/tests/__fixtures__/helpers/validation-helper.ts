@@ -1,5 +1,5 @@
 import { expect } from "vitest";
-import { ErrorMessages } from "../../../src/constants/error-messages";
+import { ErrorMessages } from "../../../src/shared/constants/error-messages";
 import type { TokenSource } from "../../../src/types/tokens";
 import type { ValidationError } from "../../../src/types/validate";
 

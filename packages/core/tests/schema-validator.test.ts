@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { ErrorMessages } from "../src/constants/error-messages";
+import { ErrorMessages } from "../src/shared/constants/error-messages";
+import { validateSchema } from "../src/shared/validators/schema-validator";
 import type { ArraySchema, ObjectSchema, SimpleSchema, UnionSchema } from "../src/types/schema";
 import type { ValidationError } from "../src/types/validate";
-import { validateSchema } from "../src/validators/schema-validator";
 
 const testSource = { sourcePath: "test.json" };
 

@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-    getSugarcubeExtensions,
-    usesPrefersColorScheme,
-} from "../src/extensions/sugarcube-extensions.js";
+import { getSugarcubeExtensions, usesPrefersColorScheme } from "../src/shared/extensions.js";
 
 describe("getSugarcubeExtensions", () => {
     it("returns undefined when extensions is undefined", () => {

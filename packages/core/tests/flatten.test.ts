@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ErrorMessages } from "../src/constants/error-messages.js";
-import { flatten } from "../src/pipeline/flatten.js";
+import { ErrorMessages } from "../src/shared/constants/error-messages.js";
+import { flatten } from "../src/shared/pipeline/flatten.js";
 import type { FlattenedToken } from "../src/types/flatten.js";
 import type { TokenTree } from "../src/types/tokens.js";
 

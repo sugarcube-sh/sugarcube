@@ -6,7 +6,7 @@ import { join, relative } from "pathe";
 import color from "picocolors";
 import { glob } from "tinyglobby";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
-import { loadAndResolveTokensForCLI } from "../pipelines/load-and-resolve-for-cli.js";
+import { prepareTokensForCLI } from "../pipelines/prepare-tokens-for-cli.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { CLIError } from "../types/errors.js";
 import { handleError } from "../utils/handle-error.js";
@@ -23,7 +23,7 @@ export const validate = new Command()
             if (!paths.length) {
                 try {
                     const { config } = await loadInternalConfig();
-                    await loadAndResolveTokensForCLI(config);
+                    await prepareTokensForCLI(config);
                     outro(color.greenBright("All tokens valid ✨"));
                     return;
                 } catch {
@@ -72,7 +72,7 @@ export const validate = new Command()
                 },
             };
 
-            await loadAndResolveTokensForCLI(validationConfig, memoryData);
+            await prepareTokensForCLI(validationConfig, memoryData);
 
             outro(color.greenBright("All tokens valid ✨"));
         } catch (error) {

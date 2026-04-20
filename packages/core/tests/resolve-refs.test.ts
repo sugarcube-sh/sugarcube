@@ -1,13 +1,13 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ErrorMessages } from "../src/constants/error-messages.js";
-import { parseResolverDocument } from "../src/resolver/parse-resolver.js";
+import { parseResolverDocument } from "../src/node/resolver/parse.js";
 import {
     createResolveContext,
     resolveDocumentReferences,
     resolveReference,
     resolveSources,
-} from "../src/resolver/resolve-refs.js";
+} from "../src/node/resolver/resolve-refs.js";
+import { ErrorMessages } from "../src/shared/constants/error-messages.js";
 import type {
     ModifierDefinition,
     ResolverDocument,

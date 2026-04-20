@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
+import { validateStrokeStyle } from "../../src/shared/validators/stroke";
 import type { FlattenedToken } from "../../src/types/flatten";
-import { validateStrokeStyle } from "../../src/validators/stroke";
 import { loadFixture } from "../__fixtures__/helpers/load-fixture";
 import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 

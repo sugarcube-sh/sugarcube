@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { flatten } from "../src/pipeline/flatten.js";
+import { flatten } from "../src/shared/pipeline/flatten.js";
 import type { FlattenedToken } from "../src/types/flatten.js";
 import type { TokenTree } from "../src/types/tokens.js";
 

@@ -1,6 +1,6 @@
 /// <reference types="@vitejs/devtools-kit" />
 
-import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core";
+import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core/client";
 
 type TokenData = {
     config: InternalConfig;

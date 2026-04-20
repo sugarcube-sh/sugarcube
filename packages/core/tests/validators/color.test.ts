@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { validateColor } from "../../src/shared/validators/color";
 import type { FlattenedToken } from "../../src/types/flatten";
-import { validateColor } from "../../src/validators/color";
 import { loadFixture } from "../__fixtures__/helpers/load-fixture";
 import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 

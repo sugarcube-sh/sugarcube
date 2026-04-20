@@ -1,11 +1,22 @@
 import { bench, describe } from "vitest";
-import { fillDefaults } from "../../src/config/normalize-config.js";
-import { expandTree } from "../../src/pipeline/expand-tree.js";
-import { loadAndResolveTokens } from "../../src/pipelines/load-and-resolve.js";
-import { processAndConvertTokens } from "../../src/pipelines/process-and-convert.js";
+import { fillDefaults } from "../../src/node/config/normalize.js";
+import { loadTokens } from "../../src/node/load-tokens.js";
+import { convertTokens } from "../../src/shared/convert-tokens.js";
+import { expand } from "../../src/shared/pipeline/expand.js";
+import { resolveTokens } from "../../src/shared/resolve-tokens.js";
 import type { SugarcubeConfig } from "../../src/types/config.js";
 import type { TokenMemoryData } from "../../src/types/load.js";
 import type { TokenGroup, TokenTree } from "../../src/types/tokens.js";
+
+async function runPipeline(source: Parameters<typeof loadTokens>[0]) {
+    const loaded = await loadTokens(source);
+    const resolved = resolveTokens(loaded.trees);
+    return {
+        trees: resolved.trees,
+        resolved: resolved.resolved,
+        errors: { load: loaded.errors, ...resolved.errors },
+    };
+}
 
 function generateTokens(size: number) {
     const tokens: Record<string, unknown> = {
@@ -119,7 +130,7 @@ describe("pipeline", () => {
             const tokens = generateTokens(100);
             const config = createConfig();
 
-            await loadAndResolveTokens({
+            await runPipeline({
                 type: "memory",
                 data: createMemoryData(tokens),
                 config,
@@ -130,7 +141,7 @@ describe("pipeline", () => {
             const tokens = generateTokens(1000);
             const config = createConfig();
 
-            await loadAndResolveTokens({
+            await runPipeline({
                 type: "memory",
                 data: createMemoryData(tokens),
                 config,
@@ -141,7 +152,7 @@ describe("pipeline", () => {
             const tokens = generateTokens(10000);
             const config = createConfig();
 
-            await loadAndResolveTokens({
+            await runPipeline({
                 type: "memory",
                 data: createMemoryData(tokens),
                 config,
@@ -152,7 +163,7 @@ describe("pipeline", () => {
             const { baseTokens, contextTokens } = generateTokensWithModifiers(1000, 3);
             const config = createConfig();
 
-            await loadAndResolveTokens({
+            await runPipeline({
                 type: "memory",
                 data: createMemoryData(baseTokens, contextTokens),
                 config,
@@ -165,52 +176,52 @@ describe("pipeline", () => {
             const tokens = generateTokens(100);
             const config = createConfig();
 
-            const { trees, resolved, errors } = await loadAndResolveTokens({
+            const { trees, resolved, errors } = await runPipeline({
                 type: "memory",
                 data: createMemoryData(tokens),
                 config,
             });
 
-            await processAndConvertTokens(trees, resolved, config, errors.validation);
+            await convertTokens(trees, resolved, config, errors.validation);
         });
 
         bench("medium token set (1,000 tokens)", async () => {
             const tokens = generateTokens(1000);
             const config = createConfig();
 
-            const { trees, resolved, errors } = await loadAndResolveTokens({
+            const { trees, resolved, errors } = await runPipeline({
                 type: "memory",
                 data: createMemoryData(tokens),
                 config,
             });
 
-            await processAndConvertTokens(trees, resolved, config, errors.validation);
+            await convertTokens(trees, resolved, config, errors.validation);
         });
 
         bench("large token set (10,000 tokens)", async () => {
             const tokens = generateTokens(10000);
             const config = createConfig();
 
-            const { trees, resolved, errors } = await loadAndResolveTokens({
+            const { trees, resolved, errors } = await runPipeline({
                 type: "memory",
                 data: createMemoryData(tokens),
                 config,
             });
 
-            await processAndConvertTokens(trees, resolved, config, errors.validation);
+            await convertTokens(trees, resolved, config, errors.validation);
         });
 
         bench("with modifiers (1,000 base + 3 contexts)", async () => {
             const { baseTokens, contextTokens } = generateTokensWithModifiers(1000, 3);
             const config = createConfig();
 
-            const { trees, resolved, errors } = await loadAndResolveTokens({
+            const { trees, resolved, errors } = await runPipeline({
                 type: "memory",
                 data: createMemoryData(baseTokens, contextTokens),
                 config,
             });
 
-            await processAndConvertTokens(trees, resolved, config, errors.validation);
+            await convertTokens(trees, resolved, config, errors.validation);
         });
     });
 
@@ -272,27 +283,27 @@ describe("pipeline", () => {
         }
 
         bench("with $ref - small (100 refs)", () => {
-            expandTree([buildRefTree(100)]);
+            expand([buildRefTree(100)]);
         });
 
         bench("with $ref - medium (500 refs)", () => {
-            expandTree([buildRefTree(500)]);
+            expand([buildRefTree(500)]);
         });
 
         bench("with $ref - large (1,000 refs)", () => {
-            expandTree([buildRefTree(1000)]);
+            expand([buildRefTree(1000)]);
         });
 
         bench("with $extends - shallow (10 groups, 50 tokens each)", () => {
-            expandTree([buildExtendsTree(10, 50)]);
+            expand([buildExtendsTree(10, 50)]);
         });
 
         bench("with $extends - deep chain (50 groups, 10 tokens each)", () => {
-            expandTree([buildExtendsChainTree(50, 10)]);
+            expand([buildExtendsChainTree(50, 10)]);
         });
 
         bench("with $extends - wide (100 groups, 5 tokens each)", () => {
-            expandTree([buildExtendsTree(100, 5)]);
+            expand([buildExtendsTree(100, 5)]);
         });
     });
 });

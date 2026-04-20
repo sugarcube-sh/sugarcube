@@ -1,76 +1,38 @@
-// Config
-export { defineConfig } from "./define-config.js";
-export { DEFAULT_CONFIG } from "./constants/config.js";
+/**
+ * Node entry point for @sugarcube-sh/core.
+ *
+ * Exports everything the browser/client entry exports, plus Node-only
+ * additions (file loaders, writers, perf tooling) and Node-flavoured
+ * overrides (one-arg `validateConfig` / `fillDefaults` that auto-detect
+ * default directories via the filesystem).
+ *
+ * For browser/worker/edge contexts, import from `@sugarcube-sh/core/client`.
+ */
+
+// Full browser/pure surface (orchestrators, pure config helpers, types, guards, etc.)
+export * from "./client.js";
+
+// Node-flavoured config helpers (these override `validateConfig` and add `fillDefaults`)
+export { fillDefaults, validateConfig } from "./node/config/normalize.js";
 export {
     configFileExists,
     isNoConfigError,
     loadInternalConfig,
     loadSugarcubeConfig,
-} from "./config/load-config.js";
-export { validateConfig } from "./config/validate-config.js";
-export { fillDefaults } from "./config/normalize-config.js";
+} from "./node/config/load.js";
 
-// Discovery
-export { findResolverDocument } from "./utils/find-resolver.js";
-export type { ResolverDiscoveryResult } from "./utils/find-resolver.js";
+// Resolver discovery + static analysis (Node filesystem only)
+export { findResolverDocument } from "./node/resolver/find.js";
+export type { ResolverDiscoveryResult } from "./node/resolver/find.js";
+export { extractFileRefs } from "./node/resolver/extract-refs.js";
+export type { ExtractFileRefsResult } from "./node/resolver/extract-refs.js";
 
-// Resolver utilities
-export { extractFileRefs } from "./resolver/extract-file-refs.js";
-export type { ExtractFileRefsResult } from "./resolver/extract-file-refs.js";
+// Node loader (the first step of the pipeline — reads from disk)
+export { loadTokens } from "./node/load-tokens.js";
+export type { LoadResult } from "./node/load-tokens.js";
 
-// Pipelines
-export { loadAndResolveTokens } from "./pipelines/load-and-resolve.js";
-export { processAndConvertTokens } from "./pipelines/process-and-convert.js";
+// Perf / instrumentation (Node-only: uses process.hrtime, process.memoryUsage, etc.)
+export { PerfMonitor, Instrumentation } from "./node/perf.js";
 
-// Generators
-export { generateCSSVariables } from "./generators/generate-css-variables.js";
-export {
-    convertConfigToUnoRules,
-    clearMatchCache,
-} from "./utils/convert-utility-config-to-uno-rules.js";
-
-// Utils (for vite plugin)
-export { PerfMonitor } from "./utils/perf-monitor.js";
-export { Instrumentation } from "./utils/instrumentation.js";
-
-// File writers
-export { writeCSSVariablesToDisk, writeCSSUtilitiesToDisk } from "./fs/css-writer.js";
-
-// Utilities
-export { formatCSSVarName } from "./utils/format-css-var-name.js";
-
-// Types
-export type {
-    InternalConfig,
-    SugarcubeConfig,
-    ColorFallbackStrategy,
-    FluidConfig,
-    Permutation,
-    VariablesConfig,
-    UtilitiesOutputConfig,
-    UtilityClassesConfig,
-    StudioConfig,
-    ColorScaleConfig,
-    PanelSection,
-    BindingSection,
-    PanelBinding,
-    ColorBinding,
-    PresetBinding,
-    ScaleBinding,
-    ScaleLinkedBinding,
-    PaletteSwapBinding,
-} from "./types/config.js";
-export type {
-    PipelineContext,
-    PipelineEvent,
-    PipelineWarning,
-    TokenPipelineSource,
-} from "./types/pipelines.js";
-export { createPipelineContext } from "./types/pipelines.js";
-export type { ResolvedToken, ResolvedTokens } from "./types/resolve.js";
-export { isResolvedToken } from "./guards/token-guards.js";
-export type { TokenTree } from "./types/tokens.js";
-export type { NormalizedConvertedTokens } from "./types/convert.js";
-export type { CSSFileOutput } from "./types/generate.js";
-export type { userConfigSchema } from "./schemas/config.js";
-export type { NodeMetadata } from "./types/dtcg.js";
+// Filesystem writers
+export { writeCSSVariablesToDisk, writeCSSUtilitiesToDisk } from "./node/write-css.js";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { fillDefaults } from "../src/config/normalize-config.js";
-import { generate } from "../src/pipeline/generate.js";
+import { fillDefaults } from "../src/node/config/normalize.js";
+import { formatCSSVariables } from "../src/shared/pipeline/format-css-variables.js";
 import type { InternalConfig } from "../src/types/config.js";
 import type { NormalizedConvertedTokens } from "../src/types/convert.js";
 import { configs } from "./__fixtures__/configs.js";
@@ -30,7 +30,7 @@ describe("generate", () => {
 
         const config = configWith("basic", [{ input: {}, selector: ":root" }]);
 
-        const result = await generate(tokens, config);
+        const result = await formatCSSVariables(tokens, config);
         const css = result.output[0]?.css ?? "";
 
         expect(css).toContain(":root {");
@@ -52,7 +52,7 @@ describe("generate", () => {
             { input: { theme: "dark" }, selector: '[data-theme="dark"]' },
         ]);
 
-        const result = await generate(tokens, config);
+        const result = await formatCSSVariables(tokens, config);
 
         expect(result.output).toHaveLength(1);
 
@@ -82,7 +82,7 @@ describe("generate", () => {
             { input: { theme: "ocean" }, selector: '[data-theme="ocean"]' },
         ]);
 
-        const result = await generate(tokens, config);
+        const result = await formatCSSVariables(tokens, config);
 
         const css = result.output[0]?.css ?? "";
         expect(css).toContain(":root {");
@@ -100,7 +100,7 @@ describe("generate", () => {
 
         const config = configWith("basic", [{ input: {}, selector: ":root" }]);
 
-        const result = await generate(tokens, config);
+        const result = await formatCSSVariables(tokens, config);
         const css = result.output[0]?.css ?? "";
 
         expect(css).toContain("--typography-body-font-family: Arial;");
@@ -128,7 +128,7 @@ describe("generate", () => {
 
         const config = configWith("colorsP3", [{ input: {}, selector: ":root" }]);
 
-        const result = await generate(tokens, config);
+        const result = await formatCSSVariables(tokens, config);
         const css = result.output[0]?.css ?? "";
 
         expect(css).toContain("--color-primary: #FF0000;");
@@ -146,7 +146,7 @@ describe("generate", () => {
 
         const config = configWith("basic", [{ input: {}, selector: ":root" }]);
 
-        const result = await generate(tokens, config);
+        const result = await formatCSSVariables(tokens, config);
         const css = result.output[0]?.css ?? "";
 
         expect(css).toContain("--shadow-primary: 0px 2px 4px 0px var(--color-primary);");
@@ -165,7 +165,7 @@ describe("generate", () => {
             { input: { theme: "dark" }, selector: '[data-theme="dark"]' },
         ]);
 
-        const result = await generate(tokens, config);
+        const result = await formatCSSVariables(tokens, config);
 
         expect(result.output).toHaveLength(1);
         expect(result.output[0]?.css).toContain("--color-primary: #FF0000;");
@@ -175,7 +175,7 @@ describe("generate", () => {
         const tokens: NormalizedConvertedTokens = {};
         const config = fillDefaults(configs.basic);
 
-        const result = await generate(tokens, config);
+        const result = await formatCSSVariables(tokens, config);
 
         expect(result.output).toHaveLength(0);
     });
@@ -206,7 +206,7 @@ describe("generate", () => {
                 },
             ]);
 
-            const result = await generate(tokens, config);
+            const result = await formatCSSVariables(tokens, config);
             const css = result.output[0]?.css ?? "";
 
             expect(css).toContain(":root {");
@@ -230,7 +230,7 @@ describe("generate", () => {
                 { input: { brand: "ocean" }, selector: "[data-brand='ocean']" },
             ]);
 
-            const result = await generate(tokens, config);
+            const result = await formatCSSVariables(tokens, config);
             const css = result.output[0]?.css ?? "";
 
             expect(css).toContain("[data-brand='ocean'] {");
@@ -258,7 +258,7 @@ describe("generate", () => {
                 { input: { brand: "forest" }, selector: ":root", path: "dist/forest.css" },
             ]);
 
-            const result = await generate(tokens, config);
+            const result = await formatCSSVariables(tokens, config);
 
             expect(result.output).toHaveLength(2);
             expect(result.output[0]?.path).toBe("dist/ocean.css");

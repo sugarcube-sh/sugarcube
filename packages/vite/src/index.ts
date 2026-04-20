@@ -3,10 +3,11 @@ import {
     PerfMonitor,
     clearMatchCache,
     convertConfigToUnoRules,
+    convertTokens,
     generateCSSVariables,
-    loadAndResolveTokens,
     loadInternalConfig,
-    processAndConvertTokens,
+    loadTokens,
+    resolveTokens,
 } from "@sugarcube-sh/core";
 import type {
     InternalConfig,
@@ -152,7 +153,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
         cachedRules = buildRules();
     };
 
-    const loadTokens = async () => {
+    const runPipeline = async () => {
         if (!config) return;
 
         if (!config.resolver) {
@@ -166,19 +167,21 @@ function createSugarcubeContext(): SugarcubePluginContext {
         using I = new Instrumentation();
         I.start("Load Tokens From Resolver");
 
-        const tokenResult = await loadAndResolveTokens({
+        const loaded = await loadTokens({
             type: "resolver",
             resolverPath: config.resolver,
             config: config,
         });
 
+        const resolveResult = resolveTokens(loaded.trees);
+
         I.end("Load Tokens From Resolver");
 
         const allErrors = [
-            ...tokenResult.errors.load,
-            ...tokenResult.errors.flatten,
-            ...tokenResult.errors.validation,
-            ...tokenResult.errors.resolution,
+            ...loaded.errors,
+            ...resolveResult.errors.flatten,
+            ...resolveResult.errors.validation,
+            ...resolveResult.errors.resolution,
         ];
 
         if (allErrors.length > 0) {
@@ -188,22 +191,17 @@ function createSugarcubeContext(): SugarcubePluginContext {
             log.warn(`[sugarcube] Found ${allErrors.length} token error(s):\n${errorList}`);
         }
 
-        if (tokenResult.warnings.length > 0) {
-            for (const warning of tokenResult.warnings) {
+        if (resolveResult.warnings.length > 0) {
+            for (const warning of resolveResult.warnings) {
                 log.warn(`[sugarcube] ${warning.message}`);
             }
         }
 
-        trees = tokenResult.trees;
-        resolved = tokenResult.resolved;
+        trees = resolveResult.trees;
+        resolved = resolveResult.resolved;
 
         I.start("Process Tokens");
-        tokens = await processAndConvertTokens(
-            trees,
-            resolved,
-            config,
-            tokenResult.errors.validation
-        );
+        tokens = await convertTokens(trees, resolved, config, resolveResult.errors.validation);
         I.end("Process Tokens");
     };
 
@@ -213,7 +211,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
         const { config: loadedConfig } = await loadInternalConfig();
         config = loadedConfig;
-        await loadTokens();
+        await runPipeline();
         await updateAll();
 
         I.end("Initial total process");
@@ -247,7 +245,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
             const localTrees = trees;
             if (!localConfig || !localTrees) return;
             const task = (async () => {
-                tokens = await processAndConvertTokens(localTrees, modifiedResolved, localConfig);
+                tokens = await convertTokens(localTrees, modifiedResolved, localConfig);
                 await generateCSS();
                 cachedRules = buildRules();
             })();
@@ -264,7 +262,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
                 // Permutation changes affect token resolution, so we need to re-run
                 // the full token pipeline, not just CSS regeneration
-                await loadTokens();
+                await runPipeline();
                 await updateAll();
 
                 for (const fn of reloadCallbacks) fn();
@@ -279,7 +277,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
                 using I = new Instrumentation();
                 I.start("Reload total process");
 
-                await loadTokens();
+                await runPipeline();
                 await updateAll();
 
                 for (const fn of reloadCallbacks) fn();

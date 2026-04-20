@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
+import { validateCubicBezier } from "../../src/shared/validators/cubic-bezier";
 import type { FlattenedToken } from "../../src/types/flatten";
-import { validateCubicBezier } from "../../src/validators/cubic-bezier";
 import { loadFixture } from "../__fixtures__/helpers/load-fixture";
 import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
