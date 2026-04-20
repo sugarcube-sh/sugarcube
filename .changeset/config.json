@@ -9,9 +9,9 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "www",
-    "packages/studio",
-    "packages/studio-embed",
-    "packages/studio-vite",
-    "packages/studio-node"
+    "@sugarcube-sh/studio",
+    "@sugarcube-sh/studio-embed",
+    "@sugarcube-sh/studio-vite",
+    "@sugarcube-sh/studio-node"
   ]
 }
