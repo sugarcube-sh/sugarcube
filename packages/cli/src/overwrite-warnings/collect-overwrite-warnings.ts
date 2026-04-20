@@ -1,9 +1,9 @@
 import { existsSync } from "node:fs";
 import { join, relative } from "pathe";
 import { getRegistryIndex } from "../registry/client.js";
+import { resolveTree } from "../registry/dependency-tree.js";
 import type { OverwriteWarnings } from "../types/overwrite-warnings.js";
 import type { ComponentFile, Framework, RegistryItem } from "../types/registry.js";
-import { resolveTree } from "../utils/resolve-dependencies.js";
 
 export async function collectComponentOverwriteWarnings({
     selectedComponents,

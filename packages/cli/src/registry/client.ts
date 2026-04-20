@@ -1,5 +1,5 @@
+import { CLIError } from "../cli-error.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
-import { CLIError } from "../types/errors.js";
 import type { Framework, RegistryItemType } from "../types/registry.js";
 import { fileContentResponseSchema, registryIndexSchema } from "../types/schema.js";
 

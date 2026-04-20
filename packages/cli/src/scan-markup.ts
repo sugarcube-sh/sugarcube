@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { glob } from "tinyglobby";
-import { CLIError } from "../types/errors.js";
-import { MARKUP_GLOB_PATTERN, MARKUP_IGNORE_PATTERNS } from "./constants.js";
+import { CLIError } from "./cli-error.js";
+import { MARKUP_GLOB_PATTERN, MARKUP_IGNORE_PATTERNS } from "./constants/markup.js";
 
 // Safety limits to prevent OOM crashes
 // Can't just search up etc because CLI has to work with the simplest possible setup

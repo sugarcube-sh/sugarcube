@@ -2,16 +2,16 @@ import { mkdir } from "node:fs/promises";
 import { Command } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
-import { collectCubeOverwriteWarnings } from "../fs/collect-overwrite-warnings.js";
-import { formatOverwriteWarnings } from "../fs/format-overwrite-warnings.js";
+import { CLIError } from "../cli-error.js";
+import { handleError } from "../handle-error.js";
 import { installCUBE } from "../installation/cube.js";
+import { collectCubeOverwriteWarnings } from "../overwrite-warnings/collect-overwrite-warnings.js";
+import { formatOverwriteWarnings } from "../overwrite-warnings/format-overwrite-warnings.js";
+import { getCubeDir } from "../project/output-dirs.js";
 import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 import { confirmOverwrite } from "../prompts/prompts.js";
-import { CLIError } from "../types/errors.js";
-import { getCubeDir } from "../utils/config-helpers.js";
-import { handleError } from "../utils/handle-error.js";
 
 export interface RunCubeOptions {
     silent?: boolean;

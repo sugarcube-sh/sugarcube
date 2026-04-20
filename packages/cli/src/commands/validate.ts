@@ -5,11 +5,11 @@ import { Command } from "commander";
 import { join, relative } from "pathe";
 import color from "picocolors";
 import { glob } from "tinyglobby";
+import { CLIError } from "../cli-error.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
-import { prepareTokensForCLI } from "../pipelines/prepare-tokens-for-cli.js";
+import { handleError } from "../handle-error.js";
+import { prepareTokens } from "../prepare-tokens.js";
 import { intro, label, outro } from "../prompts/common.js";
-import { CLIError } from "../types/errors.js";
-import { handleError } from "../utils/handle-error.js";
 
 export const validate = new Command()
     .name("validate")
@@ -23,7 +23,7 @@ export const validate = new Command()
             if (!paths.length) {
                 try {
                     const { config } = await loadInternalConfig();
-                    await prepareTokensForCLI(config);
+                    await prepareTokens(config);
                     outro(color.greenBright("All tokens valid ✨"));
                     return;
                 } catch {
@@ -72,7 +72,7 @@ export const validate = new Command()
                 },
             };
 
-            await prepareTokensForCLI(validationConfig, memoryData);
+            await prepareTokens(validationConfig, memoryData);
 
             outro(color.greenBright("All tokens valid ✨"));
         } catch (error) {
