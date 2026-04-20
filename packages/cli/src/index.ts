@@ -5,7 +5,6 @@ import { components } from "./commands/components.js";
 import { cube } from "./commands/cube.js";
 import { generate } from "./commands/generate.js";
 import { init } from "./commands/init.js";
-import { studio } from "./commands/studio.js";
 import { validate } from "./commands/validate.js";
 
 process.on("SIGINT", () => process.exit(0));
@@ -22,8 +21,7 @@ async function main() {
         .addCommand(generate)
         .addCommand(validate)
         .addCommand(components)
-        .addCommand(cube)
-        .addCommand(studio);
+        .addCommand(cube);
 
     program.parse();
 }

@@ -1,15 +1,28 @@
 import { cp, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { loadInternalConfig } from "@sugarcube-sh/core";
-import { embedPath } from "@sugarcube-sh/studio-embed/path";
-import { clientPath } from "@sugarcube-sh/studio/client";
 import { Command } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
 import { loadAndResolveTokensForCLI } from "../pipelines/load-and-resolve-for-cli.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
+import { CLIError } from "../types/errors.js";
 import { handleError } from "../utils/handle-error.js";
+
+async function loadStudioAssets(): Promise<{ clientPath: string; embedPath: string }> {
+    try {
+        const [{ clientPath }, { embedPath }] = await Promise.all([
+            import("@sugarcube-sh/studio/client"),
+            import("@sugarcube-sh/studio-embed/path"),
+        ]);
+        return { clientPath, embedPath };
+    } catch {
+        throw new CLIError(
+            "Studio isn't available yet. `sugarcube studio build` will work once @sugarcube-sh/studio and @sugarcube-sh/studio-embed are published."
+        );
+    }
+}
 
 export const studio = new Command().name("studio").description("Studio tools for sugarcube");
 
@@ -23,6 +36,7 @@ studio
 
             const outDir = path.resolve(opts.out);
 
+            const { clientPath, embedPath } = await loadStudioAssets();
             const { config } = await loadInternalConfig();
             const { trees, resolved } = await loadAndResolveTokensForCLI(config);
 
