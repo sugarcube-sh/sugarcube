@@ -1,24 +1,24 @@
 import { Command } from "commander";
 import color from "picocolors";
+import { CLIError } from "../cli-error.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
-import { collectComponentOverwriteWarnings } from "../fs/collect-overwrite-warnings.js";
-import { formatOverwriteWarnings } from "../fs/format-overwrite-warnings.js";
+import { handleError } from "../handle-error.js";
 import { installComponents } from "../installation/components.js";
 import { installDependencies } from "../installation/dependencies.js";
+import { collectComponentOverwriteWarnings } from "../overwrite-warnings/collect-overwrite-warnings.js";
+import { formatOverwriteWarnings } from "../overwrite-warnings/format-overwrite-warnings.js";
+import { getComponentsDir } from "../project/output-dirs.js";
 import {
     confirmOverwrite,
     promptComponentFramework,
     promptComponentSelectionFiltered,
 } from "../prompts/prompts.js";
 import { getRegistryIndex } from "../registry/client.js";
-import { CLIError } from "../types/errors.js";
-import { getComponentsDir } from "../utils/config-helpers.js";
-import { handleError } from "../utils/handle-error.js";
-import { resolveTree } from "../utils/resolve-dependencies.js";
+import { resolveTree } from "../registry/dependency-tree.js";
 
 import { cancel } from "@clack/prompts";
-import { isPackageInstalled } from "../detection/is-package-installed.js";
-import { getPackageManager } from "../detection/package-manager.js";
+import { isPackageInstalled } from "../project/is-package-installed.js";
+import { getPackageManager } from "../project/package-manager.js";
 import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label } from "../prompts/common.js";
 import { log, rawLog } from "../prompts/log.js";

@@ -4,11 +4,11 @@ import { loadInternalConfig } from "@sugarcube-sh/core";
 import { Command } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
-import { prepareTokensForCLI } from "../pipelines/prepare-tokens-for-cli.js";
+import { CLIError } from "../cli-error.js";
+import { handleError } from "../handle-error.js";
+import { prepareTokens } from "../prepare-tokens.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
-import { CLIError } from "../types/errors.js";
-import { handleError } from "../utils/handle-error.js";
 
 async function loadStudioAssets(): Promise<{ clientPath: string; embedPath: string }> {
     try {
@@ -38,7 +38,7 @@ studio
 
             const { clientPath, embedPath } = await loadStudioAssets();
             const { config } = await loadInternalConfig();
-            const { trees, resolved } = await prepareTokensForCLI(config);
+            const { trees, resolved } = await prepareTokens(config);
 
             const { resolver, ...snapshotConfig } = config;
 

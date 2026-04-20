@@ -1,4 +1,4 @@
-import { CLIError } from "../types/errors.js";
+import { CLIError } from "../cli-error.js";
 import type { Framework, RegistryItem } from "../types/registry.js";
 
 export async function resolveTree(index: RegistryItem[], names: string[], framework: Framework) {

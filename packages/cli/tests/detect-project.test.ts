@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { getProjectInfo, hasSrcDir } from "../src/detection/framework.js";
+import { getProjectInfo, hasSrcDir } from "../src/project/framework.js";
 
 const testDir = join(process.cwd(), "test-fixtures");
 

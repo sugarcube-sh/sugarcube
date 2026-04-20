@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "pathe";
+import { CLIError } from "../cli-error.js";
 import { getRegistryFiles, getRegistryIndex } from "../registry/client.js";
-import { CLIError } from "../types/errors.js";
 
 function isWithinDirectory(filePath: string, directory: string): boolean {
     const resolvedPath = resolve(filePath);

@@ -1,7 +1,7 @@
 import colors from "picocolors";
-import { errorBoxWithBadge } from "../prompts/box-with-badge.js";
-import { log } from "../prompts/log.js";
-import { CLIError } from "../types/errors.js";
+import { CLIError } from "./cli-error.js";
+import { errorBoxWithBadge } from "./prompts/box-with-badge.js";
+import { log } from "./prompts/log.js";
 
 export function handleError(error: unknown) {
     if (error instanceof CLIError) {

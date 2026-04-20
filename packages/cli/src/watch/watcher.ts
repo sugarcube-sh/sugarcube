@@ -1,7 +1,7 @@
 import type { InternalConfig } from "@sugarcube-sh/core";
 import { extractFileRefs } from "@sugarcube-sh/core";
 import { watch as chokidarWatch } from "chokidar";
-import { IGNORED_DIR_NAMES, MARKUP_EXTENSIONS } from "../scanning/constants.js";
+import { IGNORED_DIR_NAMES, MARKUP_EXTENSIONS } from "../constants/markup.js";
 import { debounce } from "./debounce.js";
 
 export type WatchCallbacks = {

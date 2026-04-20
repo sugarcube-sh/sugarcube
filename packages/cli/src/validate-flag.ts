@@ -1,5 +1,5 @@
-import { ERROR_MESSAGES } from "../constants/error-messages.js";
-import { CLIError } from "../types/errors.js";
+import { CLIError } from "./cli-error.js";
+import { ERROR_MESSAGES } from "./constants/error-messages.js";
 
 /**
  * Validates that a value is a filename, not a path.

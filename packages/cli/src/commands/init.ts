@@ -1,14 +1,17 @@
 import { resolve } from "node:path";
+import { configFileExists } from "@sugarcube-sh/core";
 import { Command } from "commander";
 import { basename, join } from "pathe";
 import color from "picocolors";
+import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { CLI_PACKAGE, VITE_PLUGIN } from "../constants/plugins.js";
-import { getProjectInfo } from "../detection/framework.js";
-import { isPackageInstalled } from "../detection/is-package-installed.js";
-import { getPackageManager } from "../detection/package-manager.js";
-import { detectExistingTokens } from "../detection/tokens.js";
-import { writeTokenFiles } from "../fs/write-token-files.js";
+import { handleError } from "../handle-error.js";
 import { installDependencies } from "../installation/dependencies.js";
+import { getProjectInfo } from "../project/framework.js";
+import { isPackageInstalled } from "../project/is-package-installed.js";
+import { getPackageManager } from "../project/package-manager.js";
+import { detectExistingTokens } from "../project/tokens.js";
+import { errorBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 import { next } from "../prompts/next-steps.js";
@@ -17,10 +20,16 @@ import type { Task } from "../prompts/tasks.js";
 import { welcome } from "../prompts/welcome.js";
 import { fetchStarterKit } from "../registry/client.js";
 import type { InitContext, InitOptions } from "../types/commands.js";
-import { handleError } from "../utils/handle-error.js";
-import { preflightInit } from "../validation/preflight-init.js";
+import { writeTokenFiles } from "../write-token-files.js";
 import { runComponents } from "./components.js";
 import { runCube } from "./cube.js";
+
+async function preflightInit(): Promise<void> {
+    if (configFileExists()) {
+        errorBoxWithBadge(ERROR_MESSAGES.CONFIG_EXISTS(), {});
+        process.exit(1);
+    }
+}
 
 async function scaffoldTokens(ctx: InitContext): Promise<void> {
     if (!ctx.starterKit) return;

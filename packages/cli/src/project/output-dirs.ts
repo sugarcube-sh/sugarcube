@@ -1,18 +1,20 @@
 import { isNoConfigError, loadInternalConfig } from "@sugarcube-sh/core";
-import { getProjectInfo } from "../detection/framework.js";
-import { resolveDirectoryFromFlag } from "./directory-resolver.js";
+import { resolve } from "pathe";
+import { getProjectInfo } from "./framework.js";
+
+function absolutePath(flagValue: string): string {
+    return resolve(process.cwd(), flagValue);
+}
 
 export async function getCubeDir(flagValue: string | undefined): Promise<{ directory: string }> {
     if (flagValue) {
-        const { absolute } = resolveDirectoryFromFlag(flagValue);
-        return { directory: absolute };
+        return { directory: absolutePath(flagValue) };
     }
 
     try {
         const { config } = await loadInternalConfig();
         if (config.cube) {
-            const { absolute } = resolveDirectoryFromFlag(config.cube);
-            return { directory: absolute };
+            return { directory: absolutePath(config.cube) };
         }
     } catch (error) {
         if (!isNoConfigError(error)) {
@@ -21,27 +23,23 @@ export async function getCubeDir(flagValue: string | undefined): Promise<{ direc
     }
 
     const { stylesDir } = getProjectInfo(process.cwd());
-    const { absolute } = resolveDirectoryFromFlag(stylesDir);
-    return { directory: absolute };
+    return { directory: absolutePath(stylesDir) };
 }
 
 export async function getComponentsDir(
     flagValue: string | undefined
 ): Promise<{ directory: string }> {
     if (flagValue) {
-        const { absolute } = resolveDirectoryFromFlag(flagValue);
-        return { directory: absolute };
+        return { directory: absolutePath(flagValue) };
     }
 
     try {
         const { config } = await loadInternalConfig();
-        const { absolute } = resolveDirectoryFromFlag(config.components ?? "components/ui");
-        return { directory: absolute };
+        return { directory: absolutePath(config.components ?? "components/ui") };
     } catch (error) {
         if (isNoConfigError(error)) {
             const { componentDir } = getProjectInfo(process.cwd());
-            const { absolute } = resolveDirectoryFromFlag(componentDir);
-            return { directory: absolute };
+            return { directory: absolutePath(componentDir) };
         }
         throw error;
     }
