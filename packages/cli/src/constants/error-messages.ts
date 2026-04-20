@@ -106,8 +106,11 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
 
     TOKEN_FILE_GENERIC_ERROR: (fileName: string, message: string) => `File ${fileName}: ${message}`,
 
-    DEPENDENCY_INSTALL_FAILED: (packageManager: string) =>
-        `Failed to install dependencies using ${packageManager}.\nPlease check your package manager configuration and try again.`,
+    DEPENDENCY_INSTALL_FAILED: (packageManager: string, stderr?: string) => {
+        const base = `Failed to install dependencies using ${packageManager}.\nPlease check your package manager configuration and try again.`;
+        if (!stderr) return base;
+        return `${base}\n\n${color.dim(`${packageManager} output:`)}\n${stderr}`;
+    },
 
     VALIDATE_NO_PATH_SPECIFIED: () =>
         `No path specified.\n\nRun ${color.cyan("sugarcube validate --help")} for more information.`,

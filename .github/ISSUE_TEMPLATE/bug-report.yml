@@ -103,7 +103,7 @@ body:
       render: bash
       placeholder: |
         OS: macOS 14.0
-        Node: v18.17.0
+        Node: v20.19.0
         Package Manager: pnpm 8.6.0
         Framework: Astro 4.0
     validations:

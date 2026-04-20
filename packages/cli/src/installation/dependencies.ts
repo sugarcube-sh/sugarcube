@@ -35,6 +35,16 @@ export async function installDependencies(
             cwd: targetDir,
         });
     } catch (error) {
-        throw new CLIError(ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED(packageManager));
+        const stderr = extractStderr(error);
+        throw new CLIError(
+            ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED(packageManager, stderr),
+            error instanceof Error ? error : undefined
+        );
     }
+}
+
+function extractStderr(error: unknown): string | undefined {
+    if (!(error instanceof Error)) return undefined;
+    const stderr = (error as Error & { stderr?: string }).stderr;
+    return stderr?.trim() || error.message.trim() || undefined;
 }
