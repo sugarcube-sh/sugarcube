@@ -2,15 +2,15 @@
     --_padding-block: 0.65em;
     --_form-control-height: round(calc(2 * var(--_padding-block) + 1em * 1.25), 1px);
 
-    background-color: color-mix(in oklab, var(--color-fill-normal) 50%, transparent);
-    border-radius: var(--form-control-border-radius);
-    font-size: var(--text-sm);
+    background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
+    border-radius: var(--form-control-radius);
+    font-size: var(--form-control-font-size, var(--text-sm));
     display: inline-flex;
     gap: var(--space-3xs);
     align-items: center;
     position: relative;
     padding-inline-start: var(--space-2xs);
-    border: var(--border-width-thin) var(--border-style) var(--color-border-normal);
+    border: var(--form-control-border-width) var(--border-style) var(--color-border-normal);
     min-height: var(--_form-control-height);
 }
 
@@ -29,7 +29,6 @@
 }
 
 .site-code-block [data-copy-button]:hover {
-    color: var(--color-text-normal);
     scale: 1.1;
 }
 
@@ -55,6 +54,6 @@
     color: var(--color-accent-on-normal);
     padding-inline: var(--space-2xs);
     padding-block: var(--space-3xs);
-    border-radius: var(--form-control-border-radius);
+    border-radius: var(--form-control-radius);
     border: var(--border-width-thin) var(--border-style) var(--color-accent-border-normal);
 }

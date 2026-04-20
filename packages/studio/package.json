@@ -1,0 +1,52 @@
+{
+    "name": "@sugarcube-sh/studio",
+    "version": "0.0.1",
+    "type": "module",
+    "private": true,
+    "description": "Visual design system editor for sugarcube",
+    "license": "MIT",
+    "author": {
+        "name": "Mark Tomlinson",
+        "email": "mark@marktomlinson.dev",
+        "url": "https://marktomlinson.dev"
+    },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.mts",
+            "import": "./dist/index.mjs"
+        },
+        "./client": {
+            "types": "./dist/client.d.mts",
+            "import": "./dist/client.mjs"
+        }
+    },
+    "scripts": {
+        "build": "pkgroll --minify && pnpm run build:client",
+        "build:client": "vite build",
+        "dev": "pnpm run \"/^dev:.*/\"",
+        "dev:lib": "pkgroll --watch",
+        "dev:client": "vite build --watch",
+        "type-check": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@sugarcube-sh/core": "workspace:*"
+    },
+    "devDependencies": {
+        "@radix-ui/react-popover": "^1.1.14",
+        "@radix-ui/react-tabs": "^1.1.13",
+        "@sugarcube-sh/vite": "workspace:*",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/devtools-kit": "^0.1.13",
+        "@vitejs/plugin-react": "^6.0.1",
+        "clsx": "^2.1.1",
+        "cmdk": "^1.1.1",
+        "lucide-react": "^0.468.0",
+        "pkgroll": "^2.26.0",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "typescript": "^5.8.3",
+        "vite": "^8.0.3",
+        "zustand": "^5.0.12"
+    }
+}

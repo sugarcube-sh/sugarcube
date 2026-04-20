@@ -1,7 +1,120 @@
+import type { StudioConfig } from "@sugarcube-sh/core/client";
 import { defineConfig } from "@sugarcube-sh/vite";
+
+const studio: StudioConfig = {
+    colorScale: {
+        prefix: "color",
+        palettes: [
+            "neutral",
+            "slate",
+            "zinc",
+            "gray",
+            "stone",
+            "red",
+            "orange",
+            "amber",
+            "yellow",
+            "lime",
+            "green",
+            "emerald",
+            "teal",
+            "cyan",
+            "sky",
+            "blue",
+            "indigo",
+            "violet",
+            "purple",
+            "fuchsia",
+            "pink",
+            "rose",
+        ],
+        steps: ["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"],
+        white: "color.white",
+        black: "color.black",
+    },
+    panel: [
+        {
+            title: "Palettes",
+            bindings: [
+                { type: "palette-swap", family: "color.neutral", label: "Base" },
+                { type: "palette-swap", family: "color.accent", label: "Accent" },
+            ],
+        },
+        {
+            title: "Surfaces",
+            bindings: [{ type: "color", token: "color.surface.*" }],
+        },
+        {
+            title: "Text",
+            bindings: [{ type: "color", token: "color.text.*" }],
+        },
+        {
+            title: "Fills",
+            bindings: [{ type: "color", token: "color.fill.*" }],
+        },
+        {
+            title: "On fills",
+            bindings: [{ type: "color", token: "color.on.*" }],
+        },
+        {
+            title: "Borders",
+            bindings: [
+                {
+                    type: "preset",
+                    token: "panel.border-width",
+                    options: "border.width.*",
+                    label: "Panels",
+                },
+                {
+                    type: "preset",
+                    token: "form-control.border-width",
+                    options: "border.width.*",
+                    label: "Form controls",
+                },
+            ],
+        },
+        {
+            title: "Corners",
+            bindings: [
+                { type: "preset", token: "panel.radius", options: "radius.*", label: "Panels" },
+                {
+                    type: "preset",
+                    token: "form-control.radius",
+                    options: "radius.*",
+                    label: "Form controls",
+                },
+            ],
+        },
+        {
+            title: "Type",
+            bindings: [
+                { type: "preset", token: "font.body", options: "font.*", label: "body" },
+                { type: "preset", token: "font.heading", options: "font.*", label: "headings" },
+            ],
+        },
+        {
+            title: "Scale",
+            bindings: [
+                { type: "scale", token: "size.step.*", base: "size.step.0" },
+                { type: "scale", token: "space.*", base: "space.sm" },
+                {
+                    type: "scale-linked",
+                    token: "container.*",
+                    scalesWith: "size.step.*",
+                    label: "scale containers",
+                },
+            ],
+        },
+        {
+            title: "Controls",
+            bindings: [{ type: "preset", token: "form-control.font-size", options: "text.*" }],
+        },
+    ],
+};
 
 export default defineConfig({
     resolver: "registry/tokens/starter-kits/fluid/tokens.resolver.json",
+    studio,
     utilities: {
         classes: {
             padding: {

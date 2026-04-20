@@ -18,6 +18,8 @@ const isCssOnlyComponentRoute = pathname.includes("/docs/components/css-only/");
 
 <CSSLayers />
 
+{import.meta.env.DEV && <script is:inline type="module" src="/@id/@vitejs/devtools/client/inject" />}
+
 <DefaultHead {...Astro.props}>
     <slot />
     {/* Favicons */}

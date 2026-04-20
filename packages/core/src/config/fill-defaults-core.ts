@@ -22,9 +22,6 @@ export type DefaultDirs = {
  * wrapper around this function that handles `src/` detection via
  * `existsSync`.
  *
- * @param userConfig - The user configuration with optional fields
- * @param dirs - The default directories to use for path defaults
- * @returns A complete configuration with all defaults filled in
  */
 export function fillDefaultsCore(userConfig: SugarcubeConfig, dirs: DefaultDirs): InternalConfig {
     const { stylesDir, componentsDir } = dirs;
@@ -58,6 +55,8 @@ export function fillDefaultsCore(userConfig: SugarcubeConfig, dirs: DefaultDirs)
         components: userConfig.components ?? componentsDir,
 
         cube: userConfig.cube ?? stylesDir,
+
+        studio: userConfig.studio,
     };
 
     return internalConfig;

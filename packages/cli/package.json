@@ -69,6 +69,10 @@
         "tinyglobby": "^0.2.9",
         "zod": "^3.23.8"
     },
+    "optionalDependencies": {
+        "@sugarcube-sh/studio": "workspace:*",
+        "@sugarcube-sh/studio-embed": "workspace:*"
+    },
     "devDependencies": {
         "cross-env": "7.0.3",
         "pkgroll": "^2.26.0",

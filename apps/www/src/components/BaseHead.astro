@@ -16,6 +16,7 @@ const socialImageURL = new URL(ogImage ?? siteConfig.ogImage ?? "/social-card.pn
 ---
 
 <head>
+    {import.meta.env.DEV && <script is:inline type="module" src="/@id/@vitejs/devtools/client/inject" />}
     <CSSLayers />
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
@@ -23,6 +24,7 @@ const socialImageURL = new URL(ogImage ?? siteConfig.ogImage ?? "/social-card.pn
 
     {/* Fonts */}
     <Font cssVariable="--font-geist" preload />
+    <Font cssVariable="--font-geist-mono" preload />
     {/* Favicons */}
     <link href="/favicon.ico" rel="icon" sizes="32x32" />
     <link href="/favicon.svg" rel="icon" type="image/svg+xml" />

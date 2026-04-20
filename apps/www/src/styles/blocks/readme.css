@@ -4,13 +4,11 @@
 
 .readme :is(p) {
     max-width: 45rem;
-    color: var(--color-text-quiet);
-    line-height: var(--leading-relaxed);
+    line-height: var(--leading-body);
 }
 
 .readme :is(h2) {
     font-size: var(--text-2xl);
-    font-weight: var(--font-weight-semibold);
 }
 
 .readme :is(h2) > span {
@@ -23,16 +21,11 @@
 }
 
 .readme :is(ul > li > a) {
-    color: var(--color-text-quiet);
     transition: color var(--transition-normal) var(--ease-out);
 }
 
-.readme :is(ul > li > a):hover {
-    color: var(--color-text-normal);
-}
-
 .readme .site-hero :is(p) {
-    font-size: var(--text-lg);
+    font-size: var(--body-large);
 }
 
 .readme :is(a):not(.site-button) {

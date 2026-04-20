@@ -1,0 +1,32 @@
+{
+    "name": "@sugarcube-sh/studio-embed",
+    "version": "0.0.1",
+    "type": "module",
+    "private": true,
+    "description": "<sugarcube-studio> web component for embedding Studio in any page",
+    "license": "MIT",
+    "author": {
+        "name": "Mark Tomlinson",
+        "email": "mark@marktomlinson.dev",
+        "url": "https://marktomlinson.dev"
+    },
+    "exports": {
+        ".": {
+            "types": "./dist/web-component.d.mts",
+            "import": "./dist/web-component.mjs"
+        },
+        "./path": {
+            "types": "./dist/path.d.mts",
+            "import": "./dist/path.mjs"
+        }
+    },
+    "scripts": {
+        "build": "pkgroll --minify",
+        "dev": "pkgroll --watch",
+        "type-check": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "pkgroll": "^2.26.0",
+        "typescript": "^5.8.3"
+    }
+}

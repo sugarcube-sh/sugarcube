@@ -25,13 +25,10 @@ function getDefaultComponentsDir(cwd: string): string {
  * Output paths default to `src/styles` or `styles` (and similar) depending on
  * whether a `src/` directory exists in the project root.
  *
- * Node-only — uses `existsSync` to detect the `src/` directory. For
+ * Node-only. Uses `existsSync` to detect the `src/` directory. For
  * browser/edge/worker contexts, use `fillDefaultsCore` directly with explicit
  * directory parameters.
  *
- * @param userConfig - The user configuration with optional fields
- * @param cwd - The project root used for `src/` detection (defaults to `process.cwd()`)
- * @returns A complete configuration with all defaults filled in
  */
 export function fillDefaults(
     userConfig: SugarcubeConfig,

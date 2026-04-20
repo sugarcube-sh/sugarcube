@@ -4,41 +4,75 @@
 
     "surface": {
       "default": {
-        "$value": "{color.neutral.950}"
+        "$value": "{color.neutral.surface.default}"
       },
       "raised": {
-        "$value": "{color.neutral.900}"
+        "$value": "{color.neutral.surface.raised}"
       },
       "lowered": {
-        "$value": "{color.neutral.900}"
+        "$value": "{color.neutral.surface.lowered}"
       },
       "lowest": {
-        "$value": "{color.neutral.800}"
+        "$value": "{color.neutral.surface.lowest}"
       },
       "border": {
-        "$value": "{color.neutral.800}"
+        "$value": "{color.neutral.surface.border}"
       }
     },
 
     "text": {
       "normal": {
-        "$value": "{color.neutral.300}"
+        "$value": "{color.neutral.text.normal}"
       },
       "quiet": {
-        "$value": "{color.neutral.400}"
+        "$value": "{color.neutral.text.quiet}"
       },
       "quieter": {
-        "$value": "{color.neutral.500}"
+        "$value": "{color.neutral.text.quieter}"
       },
       "placeholder": {
-        "$value": "{color.neutral.500}"
+        "$value": "{color.neutral.text.placeholder}"
       },
       "link": {
-        "$value": "{color.pink.400}"
+        "$value": "{color.neutral.text.link}"
       }
     },
 
     "neutral": {
+      "surface": {
+        "default": {
+          "$value": "{color.neutral.950}"
+        },
+        "raised": {
+          "$value": "{color.neutral.900}"
+        },
+        "lowered": {
+          "$value": "{color.neutral.900}"
+        },
+        "lowest": {
+          "$value": "{color.neutral.800}"
+        },
+        "border": {
+          "$value": "{color.neutral.800}"
+        }
+      },
+      "text": {
+        "normal": {
+          "$value": "{color.neutral.300}"
+        },
+        "quiet": {
+          "$value": "{color.neutral.400}"
+        },
+        "quieter": {
+          "$value": "{color.neutral.500}"
+        },
+        "placeholder": {
+          "$value": "{color.neutral.500}"
+        },
+        "link": {
+          "$value": "{color.pink.400}"
+        }
+      },
       "fill": {
         "quiet": {
           "$value": "{color.neutral.900}"
@@ -71,9 +105,6 @@
         "loud": {
           "$value": "{color.neutral.600}"
         }
-      },
-      "link": {
-        "$value": "{color.neutral.50}"
       }
     },
 

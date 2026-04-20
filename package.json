@@ -17,7 +17,7 @@
         "ci:prepublish": "pnpm build",
         "clean": "rm -rf packages/*/dist packages/*/.tsbuildinfo node_modules/.cache",
         "deploy:www": "pnpm --filter=www run deploy",
-        "dev": "pnpm --filter=!@sugarcube-sh/cli -r --parallel dev",
+        "dev": "pnpm --filter=!@sugarcube-sh/cli --filter=!studio -r --parallel dev",
         "dev:www": "pnpm --filter=www dev",
         "format": "biome check --write",
         "knip": "knip",
@@ -46,5 +46,10 @@
         "vite-tsconfig-paths": "^5.0.1",
         "vitest": "^4.0.18"
     },
-    "packageManager": "pnpm@10.17.1"
+    "packageManager": "pnpm@10.17.1",
+    "pnpm": {
+        "overrides": {
+            "vite": "^8.0.3"
+        }
+    }
 }

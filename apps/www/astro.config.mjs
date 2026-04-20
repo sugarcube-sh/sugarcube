@@ -3,25 +3,42 @@ import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
+import studio from "@sugarcube-sh/studio-vite";
+import { clientPath } from "@sugarcube-sh/studio/client";
 import sugarcube from "@sugarcube-sh/vite";
 import presetWind3 from "@unocss/preset-wind3";
+import { DevTools } from "@vitejs/devtools";
 import AutoImport from "astro-auto-import";
 import robotsTxt from "astro-robots-txt";
 import { defineConfig, fontProviders } from "astro/config";
+import sirv from "sirv";
 import { siteConfig } from "./src/site.config";
+
+// This is just here for me so I can develop <sugarcube-studio> in dev
+const serveStudioSPA = {
+    name: "sugarcube-studio-serve",
+    /** @param {{ middlewares: { use: (path: string, handler: unknown) => void } }} server */
+    configureServer(server) {
+        server.middlewares.use("/__studio/", sirv(clientPath, { dev: true, single: true }));
+    },
+};
 
 export default defineConfig({
     site: siteConfig.url,
-    experimental: {
-        fonts: [
-            {
-                provider: fontProviders.google(),
-                name: "Geist",
-                cssVariable: "--font-geist",
-                weights: ["100 900"],
-            },
-        ],
-    },
+    fonts: [
+        {
+            provider: fontProviders.google(),
+            name: "Geist",
+            cssVariable: "--font-geist",
+            weights: ["100 900"],
+        },
+        {
+            provider: fontProviders.google(),
+            name: "Geist Mono",
+            cssVariable: "--font-geist-mono",
+            weights: ["100 900"],
+        },
+    ],
     integrations: [
         AutoImport({
             imports: ["src/components/SourceCode.astro", "src/components/PackageManagerTabs.astro"],
@@ -139,6 +156,9 @@ export default defineConfig({
     ],
     vite: {
         plugins: [
+            DevTools(),
+            studio(),
+            serveStudioSPA,
             sugarcube({
                 unoOptions: {
                     presets: [presetWind3({ preflight: false })],

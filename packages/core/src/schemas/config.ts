@@ -51,6 +51,78 @@ const utilitiesOutputConfigSchema = z.object({
     classes: utilityClassesSchema.optional(),
 });
 
+const colorBindingSchema = z.object({
+    type: z.literal("color"),
+    token: z.string().min(1, "Token path cannot be empty"),
+    label: z.string().optional(),
+});
+
+const presetBindingSchema = z.object({
+    type: z.literal("preset"),
+    token: z.string().min(1, "Token path cannot be empty"),
+    options: z.union([z.string().min(1), z.record(z.string(), z.string())]),
+    label: z.string().optional(),
+});
+
+const scaleBindingSchema = z.object({
+    type: z.literal("scale"),
+    token: z.string().min(1, "Token path cannot be empty"),
+    label: z.string().optional(),
+    base: z.string().min(1).optional(),
+    min: z.number().optional(),
+    max: z.number().optional(),
+    step: z.number().optional(),
+});
+
+const scaleLinkedBindingSchema = z.object({
+    type: z.literal("scale-linked"),
+    token: z.string().min(1, "Token path cannot be empty"),
+    scalesWith: z.string().min(1, "scalesWith path cannot be empty"),
+    label: z.string().optional(),
+});
+
+const paletteSwapBindingSchema = z.object({
+    type: z.literal("palette-swap"),
+    family: z.string().min(1, "Family path cannot be empty"),
+    label: z.string().optional(),
+    palettes: z
+        .array(z.string().min(1, "Palette name cannot be empty"))
+        .min(1, "Palettes array cannot be empty")
+        .optional(),
+});
+
+const panelBindingSchema = z.discriminatedUnion("type", [
+    colorBindingSchema,
+    presetBindingSchema,
+    scaleBindingSchema,
+    scaleLinkedBindingSchema,
+    paletteSwapBindingSchema,
+]);
+
+const colorScaleConfigSchema = z.object({
+    // Empty string is valid — describes a project whose palettes live at
+    // the token tree root (e.g. `blue.50` with no `color.` parent).
+    prefix: z.string(),
+    palettes: z
+        .array(z.string().min(1, "Palette name cannot be empty"))
+        .min(1, "Palettes array cannot be empty"),
+    steps: z
+        .array(z.string().min(1, "Step name cannot be empty"))
+        .min(1, "Steps array cannot be empty"),
+    white: z.string().min(1).optional(),
+    black: z.string().min(1).optional(),
+});
+
+const panelSectionSchema = z.object({
+    title: z.string().min(1, "Section title cannot be empty"),
+    bindings: z.array(panelBindingSchema).min(1, "Bindings array cannot be empty"),
+});
+
+const studioConfigSchema = z.object({
+    colorScale: colorScaleConfigSchema.optional(),
+    panel: z.array(panelSectionSchema).optional(),
+});
+
 export const userConfigSchema = z.object({
     resolver: z.string().optional(),
 
@@ -61,6 +133,8 @@ export const userConfigSchema = z.object({
     components: z.string().optional(),
 
     cube: z.string().optional(),
+
+    studio: studioConfigSchema.optional(),
 });
 
 export const internalConfigSchema = z.object({
@@ -85,4 +159,6 @@ export const internalConfigSchema = z.object({
     components: z.string().optional(),
 
     cube: z.string().optional(),
+
+    studio: studioConfigSchema.optional(),
 });

@@ -1,0 +1,35 @@
+/* 
+SIDEBAR
+More info: https://piccalil.li/blog/a-revisit-of-the-every-layout-sidebar-with-has-and-selector-performance/ and https://every-layout.dev/layouts/sidebar/
+A layout that allows you to have a flexible main content area
+and a "fixed" width sidebar that sits on the left or right.
+If there is not enough viewport space to fit both the sidebar
+width *and* the main content minimum width, they will stack
+on top of each other
+
+CUSTOM PROPERTIES AND CONFIGURATION
+--sidebar-gap: This defines the space
+between the sidebar and main content.
+
+--sidebar-size: How large the sidebar should be
+
+--sidebar-wrap-at: The minimum size of the main content area
+*/
+
+:has(> .sidebar) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sidebar-gap, 1rem);
+    align-items: var(--align, flex-start);
+}
+
+.sidebar {
+    flex-basis: var(--sidebar-size, 20rem);
+    flex-grow: 1;
+}
+
+:has(> .sidebar) > :not(.sidebar) {
+    flex-basis: 0;
+    flex-grow: 999;
+    min-inline-size: var(--sidebar-wrap-at, 50%);
+}

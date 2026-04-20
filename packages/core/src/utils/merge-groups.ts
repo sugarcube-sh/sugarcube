@@ -1,4 +1,5 @@
-import type { Token, TokenGroup } from "../types/dtcg.js";
+import { isGroup, isToken } from "../guards/token-guards.js";
+import type { TokenGroup } from "../types/dtcg.js";
 
 /**
  * Deep merge two token groups per DTCG 2025.10 spec section 6.4.3.
@@ -41,12 +42,4 @@ export function mergeGroups(base: TokenGroup, local: TokenGroup): TokenGroup {
     }
 
     return result;
-}
-
-function isToken(value: unknown): value is Token {
-    return typeof value === "object" && value !== null && "$value" in value;
-}
-
-function isGroup(value: unknown): value is TokenGroup {
-    return typeof value === "object" && value !== null && !("$value" in value);
 }

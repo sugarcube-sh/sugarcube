@@ -11,6 +11,7 @@
 html {
     -moz-text-size-adjust: none;
     -webkit-text-size-adjust: none;
+    -webkit-font-smoothing: antialiased;
     text-size-adjust: none;
 }
 
@@ -45,9 +46,9 @@ body {
     min-height: 100vh;
     color: var(--color-text-normal);
     background: var(--color-surface-default);
-    font-size: var(--text-base, 1rem);
+    font-size: var(--body-default, var(--text-base, 1rem));
     font-family: var(--font-body, system-ui, sans-serif);
-    line-height: var(--leading-normal, 1.5);
+    line-height: var(--leading-body, var(--leading-normal, 1.5));
 }
 
 /* ============================================
@@ -62,25 +63,25 @@ h5,
 h6 {
     font-weight: var(--font-weight-bold, bold);
     font-family: var(--font-heading, inherit);
-    line-height: var(--leading-none, 1.1);
+    line-height: var(--leading-heading, var(--leading-none, 1.1));
     text-wrap: balance;
     overflow-wrap: break-word;
 }
 
 h1 {
-    font-size: var(--text-4xl, 2.25rem);
+    font-size: var(--heading-1, var(--text-4xl, 2.25rem));
 }
 
 h2 {
-    font-size: var(--text-3xl, 1.875rem);
+    font-size: var(--heading-2, var(--text-3xl, 1.875rem));
 }
 
 h3 {
-    font-size: var(--text-2xl, 1.5rem);
+    font-size: var(--heading-3, var(--text-2xl, 1.5rem));
 }
 
 h4 {
-    font-size: var(--text-xl, 1.25rem);
+    font-size: var(--heading-4, var(--text-xl, 1.25rem));
 }
 
 h5 {
@@ -355,7 +356,7 @@ select {
     background-color: var(--form-control-background-color, transparent);
     border: var(--form-control-border-width, 1px) var(--form-control-border-style, solid)
         var(--form-control-border-color, currentColor);
-    border-radius: var(--form-control-border-radius, 0.25rem);
+    border-radius: var(--form-control-radius, 0.25rem);
 
     &::placeholder {
         color: var(--form-control-placeholder-color, currentColor);
@@ -393,7 +394,7 @@ input[type="color"] {
     background: transparent;
     border: var(--form-control-border-width, 1px) var(--border-style, solid)
         var(--form-control-border-color, currentColor);
-    border-radius: var(--form-control-border-radius, 0.25rem);
+    border-radius: var(--form-control-radius, 0.25rem);
     cursor: pointer;
 
     &::-webkit-color-swatch-wrapper {
@@ -404,7 +405,7 @@ input[type="color"] {
     &::-webkit-color-swatch {
         border: none;
         border-radius: calc(
-            var(--form-control-border-radius, 0.25rem) -
+            var(--form-control-radius, 0.25rem) -
             var(--form-control-border-width, 1px) *
             3
         );
@@ -413,7 +414,7 @@ input[type="color"] {
     &::-moz-color-swatch {
         border: none;
         border-radius: calc(
-            var(--form-control-border-radius, 0.25rem) -
+            var(--form-control-radius, 0.25rem) -
             var(--form-control-border-width, 1px) *
             3
         );
@@ -527,7 +528,7 @@ figure {
 
 figcaption {
     padding-block-start: 0.5em;
-    font-size: var(--text-sm, 0.875rem);
+    font-size: var(--caption, var(--text-xs, 0.75rem));
     font-family: var(--font-mono, monospace);
 }
 

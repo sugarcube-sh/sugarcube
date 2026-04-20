@@ -1,10 +1,11 @@
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { validateConfig } from "../src/config/validate-config.js";
 import { DEFAULT_CONFIG } from "../src/constants/config.js";
 import { generateCSSVariables } from "../src/generators/generate-css-variables.js";
 import { loadAndResolveTokens } from "../src/pipelines/load-and-resolve.js";
 import { processAndConvertTokens } from "../src/pipelines/process-and-convert.js";
+import type { ResolvedToken } from "../src/types/resolve.js";
 
 const FIXTURES_DIR = resolve(__dirname, "__fixtures__/resolver");
 
@@ -131,6 +132,44 @@ describe("Resolver Pipeline Integration", () => {
             const result = await generateFromResolver(resolverPath, config);
 
             expect(result.errors.load).toHaveLength(1);
+        });
+    });
+
+    describe("source file attribution", () => {
+        it("tokens loaded via resolver have sourcePath pointing to the actual token file, not the resolver", async () => {
+            const resolverPath = resolve(FIXTURES_DIR, "with-file-refs.resolver.json");
+            const config = validateConfig({
+                resolver: resolverPath,
+            });
+
+            const { resolved, errors } = await loadAndResolveTokens({
+                type: "resolver",
+                resolverPath,
+                config,
+            });
+
+            expect(errors.load).toHaveLength(0);
+
+            const colorsFile = relative(process.cwd(), resolve(FIXTURES_DIR, "tokens/colors.json"));
+            const spacingFile = relative(
+                process.cwd(),
+                resolve(FIXTURES_DIR, "tokens/spacing.json")
+            );
+
+            // Find a color token and a spacing token in the resolved output
+            const colorToken = resolved["perm:0.color.primary"] as ResolvedToken;
+            const spaceToken = resolved["perm:0.space.xs"] as ResolvedToken;
+
+            expect(colorToken).toBeDefined();
+            expect(spaceToken).toBeDefined();
+
+            // sourcePath should point to the actual token file, not the resolver
+            expect(colorToken.$source.sourcePath).toBe(colorsFile);
+            expect(spaceToken.$source.sourcePath).toBe(spacingFile);
+
+            // Crucially, they should NOT point to the resolver file
+            expect(colorToken.$source.sourcePath).not.toContain("resolver.json");
+            expect(spaceToken.$source.sourcePath).not.toContain("resolver.json");
         });
     });
 

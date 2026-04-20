@@ -1,0 +1,37 @@
+{
+    "name": "@sugarcube-sh/studio-vite",
+    "version": "0.0.1",
+    "type": "module",
+    "private": true,
+    "description": "Vite plugin for Sugarcube Studio (DevTools dock + dev server)",
+    "license": "MIT",
+    "author": {
+        "name": "Mark Tomlinson",
+        "email": "mark@marktomlinson.dev",
+        "url": "https://marktomlinson.dev"
+    },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.mts",
+            "import": "./dist/index.mjs"
+        }
+    },
+    "scripts": {
+        "build": "pkgroll --minify",
+        "dev": "pkgroll --watch",
+        "type-check": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@sugarcube-sh/core": "workspace:*",
+        "@sugarcube-sh/studio": "workspace:*",
+        "@sugarcube-sh/vite": "workspace:*",
+        "@vitejs/devtools-kit": "^0.1.13"
+    },
+    "devDependencies": {
+        "pkgroll": "^2.26.0",
+        "typescript": "^5.8.3"
+    },
+    "peerDependencies": {
+        "vite": "^6.0.0 || ^7 || ^8"
+    }
+}

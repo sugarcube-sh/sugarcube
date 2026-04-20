@@ -1,0 +1,84 @@
+.command {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    overflow: hidden;
+    max-width: calc(100vw - 2rem);
+    background-color: var(--color-surface-raised);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+}
+
+.command svg,
+.command [cmdk-group-heading] {
+    color: var(--color-text-quiet);
+}
+
+.command-separator {
+    height: 1px;
+    background-color: var(--color-surface-border);
+}
+
+.command-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding-inline: var(--space-xs);
+    border-block-end: var(--border-width-hairline) solid var(--color-surface-border);
+}
+
+.command-input {
+    padding-inline: 0;
+    padding-block: var(--space-2xs);
+    flex: 1;
+    border: none;
+    box-shadow: none;
+    outline-style: none;
+    background: transparent;
+    color: var(--color-text-normal);
+    font: inherit;
+}
+
+.command-group {
+    padding: var(--space-3xs);
+    overflow: hidden;
+}
+
+.command-group [cmdk-group-heading] {
+    font-size: var(--text-sm);
+    padding-block: var(--space-3xs);
+    padding-inline: var(--space-2xs);
+}
+
+.command-item {
+    display: flex;
+    align-items: center;
+    user-select: none;
+    gap: var(--space-2xs);
+    padding-block: var(--space-3xs);
+    padding-inline: var(--space-2xs);
+    border-radius: var(--radius-sm, var(--radius-md));
+    cursor: pointer;
+}
+
+.command-item[data-selected="true"] {
+    background-color: var(--color-surface-lowered);
+    color: var(--color-text-normal);
+}
+
+.command-item[data-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.command-empty {
+    text-align: center;
+    padding-block: var(--space-sm);
+    color: var(--color-text-quiet);
+}
+
+.command-list {
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 300px;
+}

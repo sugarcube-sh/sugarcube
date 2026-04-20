@@ -1,8 +1,22 @@
 import type { ConvertedToken } from "../types/convert.js";
+import type { Token, TokenGroup } from "../types/dtcg.js";
+import type { ResolvedToken } from "../types/resolve.js";
 import type { GroupRef, Reference, TokenRef, TokenType } from "../types/tokens.js";
 
 export function isReference<T extends TokenType>(value: unknown): value is Reference<T> {
     return typeof value === "string" && value.startsWith("{") && value.endsWith("}");
+}
+
+export function isToken(value: unknown): value is Token {
+    return typeof value === "object" && value !== null && "$value" in value;
+}
+
+export function isResolvedToken(value: unknown): value is ResolvedToken {
+    return typeof value === "object" && value !== null && "$value" in value;
+}
+
+export function isGroup(value: unknown): value is TokenGroup {
+    return typeof value === "object" && value !== null && !("$value" in value);
 }
 
 export function isCompositeToken(value: unknown): boolean {

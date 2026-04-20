@@ -1,0 +1,153 @@
+{
+  "size": {
+    "$type": "dimension",
+    "body": {
+      "$value": "{text.base}"
+    },
+    "step": {
+      "-2": {
+        "$value": { "value": 0.5625, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 0.5625, "unit": "rem" },
+              "max": { "value": 0.5625, "unit": "rem" }
+            }
+          }
+        }
+      },
+      "-1": {
+        "$value": { "value": 0.625, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 0.625, "unit": "rem" },
+              "max": { "value": 0.625, "unit": "rem" }
+            }
+          }
+        }
+      },
+      "0": {
+        "$value": { "value": 0.6875, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 0.6875, "unit": "rem" },
+              "max": { "value": 0.6875, "unit": "rem" }
+            }
+          }
+        }
+      },
+      "1": {
+        "$value": { "value": 0.75, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 0.75, "unit": "rem" },
+              "max": { "value": 0.75, "unit": "rem" }
+            }
+          }
+        }
+      },
+      "2": {
+        "$value": { "value": 0.8125, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 0.8125, "unit": "rem" },
+              "max": { "value": 0.8125, "unit": "rem" }
+            }
+          }
+        }
+      },
+      "3": {
+        "$value": { "value": 0.9375, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 0.9375, "unit": "rem" },
+              "max": { "value": 0.9375, "unit": "rem" }
+            }
+          }
+        }
+      },
+      "4": {
+        "$value": { "value": 1.125, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 1.125, "unit": "rem" },
+              "max": { "value": 1.125, "unit": "rem" }
+            }
+          }
+        }
+      },
+      "5": {
+        "$value": { "value": 1.5, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 1.5, "unit": "rem" },
+              "max": { "value": 1.5, "unit": "rem" }
+            }
+          }
+        }
+      },
+      "6": {
+        "$value": { "value": 2, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 2, "unit": "rem" },
+              "max": { "value": 2, "unit": "rem" }
+            }
+          }
+        }
+      },
+      "7": {
+        "$value": { "value": 2.5, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 2.5, "unit": "rem" },
+              "max": { "value": 2.5, "unit": "rem" }
+            }
+          }
+        }
+      },
+      "8": {
+        "$value": { "value": 3, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 3, "unit": "rem" },
+              "max": { "value": 3, "unit": "rem" }
+            }
+          }
+        }
+      },
+      "9": {
+        "$value": { "value": 4, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 4, "unit": "rem" },
+              "max": { "value": 4, "unit": "rem" }
+            }
+          }
+        }
+      },
+      "10": {
+        "$value": { "value": 5, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 5, "unit": "rem" },
+              "max": { "value": 5, "unit": "rem" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

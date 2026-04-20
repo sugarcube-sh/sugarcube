@@ -15,6 +15,10 @@
         "$schema": "http://json-schema.org/draft-07/schema#",
         "allowTrailingCommas": true
       }
+    },
+    {
+      "fileMatch": ["**/wrangler.jsonc"],
+      "url": "node_modules/wrangler/config-schema.json"
     }
   ]
 }

@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
-import { isAbsolute, resolve as resolvePath } from "pathe";
+import { isAbsolute, relative, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../constants/error-messages.js";
 import { isReference } from "../guards/resolver-guards.js";
+import { isGroup, isToken } from "../guards/token-guards.js";
 import type { TokenGroup } from "../types/dtcg.js";
 import type {
     ModifierDefinition,
@@ -203,6 +204,36 @@ function resolveJsonPointer(obj: unknown, pointer: string): PointerResult {
 }
 
 /**
+ * Recursively stamp `$sourcePath` on every token (node with `$value`) in a token group.
+ * This preserves per-file attribution through deep merges.
+ */
+function stampSourcePath(group: TokenGroup, sourcePath: string): TokenGroup {
+    const result: TokenGroup = {};
+
+    for (const [key, value] of Object.entries(group)) {
+        if (value === undefined) continue;
+
+        if (key.startsWith("$")) {
+            result[key] = value as TokenGroup[typeof key];
+            continue;
+        }
+
+        if (isToken(value)) {
+            result[key] = { ...value, $sourcePath: sourcePath } as TokenGroup[typeof key];
+        } else if (isGroup(value)) {
+            result[key] = stampSourcePath(
+                value as TokenGroup,
+                sourcePath
+            ) as TokenGroup[typeof key];
+        } else {
+            result[key] = value as TokenGroup[typeof key];
+        }
+    }
+
+    return result;
+}
+
+/**
  * Resolve all sources in an array, handling $ref and inline sources.
  * Applies extending (shallow merge) for references with additional properties.
  */
@@ -223,7 +254,9 @@ export async function resolveSources(
         errors.push(...refResult.errors);
 
         if (refResult.errors.length === 0) {
-            resolved.push(applyExtending(refResult.content as TokenGroup, source));
+            const content = applyExtending(refResult.content as TokenGroup, source);
+            const relPath = relative(process.cwd(), refResult.sourcePath);
+            resolved.push(stampSourcePath(content, relPath));
         }
     }
 

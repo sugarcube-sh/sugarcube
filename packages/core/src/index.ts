@@ -36,6 +36,9 @@ export { Instrumentation } from "./utils/instrumentation.js";
 // File writers
 export { writeCSSVariablesToDisk, writeCSSUtilitiesToDisk } from "./fs/css-writer.js";
 
+// Utilities
+export { formatCSSVarName } from "./utils/format-css-var-name.js";
+
 // Types
 export type {
     InternalConfig,
@@ -46,6 +49,16 @@ export type {
     VariablesConfig,
     UtilitiesOutputConfig,
     UtilityClassesConfig,
+    StudioConfig,
+    ColorScaleConfig,
+    PanelSection,
+    BindingSection,
+    PanelBinding,
+    ColorBinding,
+    PresetBinding,
+    ScaleBinding,
+    ScaleLinkedBinding,
+    PaletteSwapBinding,
 } from "./types/config.js";
 export type {
     PipelineContext,
@@ -54,7 +67,8 @@ export type {
     TokenPipelineSource,
 } from "./types/pipelines.js";
 export { createPipelineContext } from "./types/pipelines.js";
-export type { ResolvedTokens } from "./types/resolve.js";
+export type { ResolvedToken, ResolvedTokens } from "./types/resolve.js";
+export { isResolvedToken } from "./guards/token-guards.js";
 export type { TokenTree } from "./types/tokens.js";
 export type { NormalizedConvertedTokens } from "./types/convert.js";
 export type { CSSFileOutput } from "./types/generate.js";

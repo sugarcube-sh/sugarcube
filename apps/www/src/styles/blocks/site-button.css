@@ -15,9 +15,9 @@
     padding-block: 0;
     padding-inline: var(--_padding-inline);
     background-color: var(--color-fill-loud, var(--color-neutral-fill-loud));
-    border-radius: var(--form-control-border-radius);
+    border-radius: var(--form-control-radius);
     border-style: var(--border-style);
-    border-width: var(--border-width-thin);
+    border-width: var(--form-control-border-width);
     box-shadow: var(--shadow-xs);
     color: var(--color-on-loud, var(--color-neutral-on-normal));
     font-weight: var(--font-weight-medium);
@@ -105,7 +105,7 @@
     color: var(--color-on-normal, var(--color-neutral-on-normal));
     border-color: var(--color-border-normal, var(--color-neutral-border-normal));
     border-style: var(--border-style);
-    border-width: var(--border-width-thin);
+    border-width: var(--form-control-border-width);
 }
 
 .site-button[data-appearance="soft-outlined"]:hover {

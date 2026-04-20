@@ -8,6 +8,8 @@
       "**/.astro/**",
       "**/.netlify/**",
       "**/.next/**",
+      "**/.wrangler/**",
+      "**/.sugarcube/**",
       "**/coverage/**",
       "notes/**",
       "packages/core/tests/__fixtures__/tokens/invalid-json.json"
@@ -62,6 +64,26 @@
           "style": {
             "useConst": "off",
             "useImportType": "off"
+          }
+        }
+      }
+    },
+    {
+      "include": [
+        "apps/www/src/components/tweakpane/components/CornerPresets.tsx",
+        "apps/www/src/components/tweakpane/components/BorderWidthPresets.tsx",
+        "apps/www/src/components/tweakpane/components/ColorGrid.tsx",
+        "packages/studio/src/client/components/ColorGrid.tsx",
+        "packages/studio/src/client/controls/pickers/ColorGrid.tsx",
+        "packages/studio/src/client/controls/PresetControl.tsx",
+        "packages/studio/src/controls/pickers/ColorGrid.tsx",
+        "packages/studio/src/controls/PresetControl.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useSemanticElements": "off",
+            "useFocusableInteractive": "off"
           }
         }
       }

@@ -130,6 +130,223 @@ export interface UtilitiesOutputConfig {
 }
 
 /**
+ * A color binding — renders a 2D palette grid picker using the top-level
+ * `studio.colorScale` config as the source of swatches. Options aren't
+ * declared inline; they come from the global palette scale.
+ *
+ * Glob tokens expand to one row per matching token path.
+ *
+ * @example
+ * { type: "color", token: "color.surface.*" }
+ */
+export type ColorBinding = {
+    type: "color";
+    /** Token path or glob pattern (e.g. `"color.surface.default"` or `"color.surface.*"`). */
+    token: string;
+    /** Optional label override — default is derived from the token path. */
+    label?: string;
+};
+
+/**
+ * A preset binding — picks a value from a constrained set of options,
+ * each of which is a reference to another token.
+ *
+ * Options can be:
+ * - `string` — glob pattern. Discovered at runtime from the token graph.
+ * - `Record<string, string>` — explicit label → reference map.
+ *
+ * Control style (segmented vs. dropdown) is chosen automatically based on
+ * the token's `$type` and the option count.
+ *
+ * @example
+ * { type: "preset", token: "panel.radius", options: "radius.*" }
+ */
+export type PresetBinding = {
+    type: "preset";
+    /** Token path (typically concrete; glob is supported and expands to multiple rows). */
+    token: string;
+    /** Source of options — glob pattern or explicit label-to-reference map. */
+    options: string | Record<string, string>;
+    /** Optional label override — default is derived from the token path. */
+    label?: string;
+};
+
+/**
+ * A scale binding — treats a group of matching tokens as a single scale,
+ * controlled by base / spread sliders.
+ */
+export type ScaleBinding = {
+    type: "scale";
+    /** Glob pattern matching the tokens that make up the scale. */
+    token: string;
+    /** Optional label override. */
+    label?: string;
+    /**
+     * The path of the step that should be treated as the scale's anchor —
+     * the step whose current value is `1.0` multiplier relative to itself,
+     * and which the "base" slider directly controls. Required for
+     * cascade-mode scale bindings.
+     *
+     * @example
+     * { type: "scale", token: "size.step.*", base: "size.step.0" }
+     */
+    base?: string;
+    /** Slider minimum. */
+    min?: number;
+    /** Slider maximum. */
+    max?: number;
+    /** Slider step increment. */
+    step?: number;
+};
+
+/**
+ * A scale-linked binding — a family of tokens that follows another scale's
+ * transform. Toggle links the follower on/off; when on, the follower's
+ * values are derived from the source scale's base/spread multipliers.
+ *
+ * @example
+ * { type: "scale-linked", token: "container.*", scalesWith: "size.step.*" }
+ */
+export type ScaleLinkedBinding = {
+    type: "scale-linked";
+    /** Glob pattern matching the follower tokens. */
+    token: string;
+    /** Glob pattern of the scale whose transform is being mirrored. */
+    scalesWith: string;
+    /** Optional label override. */
+    label?: string;
+};
+
+/**
+ * A palette-swap binding — swaps which palette family a set of semantic tokens
+ * references by replacing the palette name in each token's `$value` reference.
+ *
+ * Uses the top-level `studio.colorScale.palettes` list as the set of
+ * available swap targets. An optional `palettes` field can narrow that list.
+ *
+ * @example
+ * {
+ *   title: "Palette",
+ *   bindings: [
+ *     { type: "palette-swap", family: "color.neutral", label: "Base" },
+ *     { type: "palette-swap", family: "color.accent",  label: "Accent" },
+ *   ],
+ * }
+ */
+export type PaletteSwapBinding = {
+    type: "palette-swap";
+    /** Token path prefix whose children will have their palette reference swapped. */
+    family: string;
+    /** Optional label shown in the row (defaults to the family's last segment). */
+    label?: string;
+    /**
+     * Optional override of the palette list for this binding.
+     * Defaults to `studio.colorScale.palettes`.
+     */
+    palettes?: string[];
+};
+
+/**
+ * A single binding inside a panel section. Discriminated by `type`:
+ *  - `"color"`        → {@link ColorBinding}        (2D palette grid picker)
+ *  - `"preset"`       → {@link PresetBinding}       (pick one of N options)
+ *  - `"scale"`        → {@link ScaleBinding}        (base/spread sliders)
+ *  - `"scale-linked"` → {@link ScaleLinkedBinding}  (follow another scale)
+ *  - `"palette-swap"` → {@link PaletteSwapBinding}  (swap a whole palette family)
+ */
+export type PanelBinding =
+    | ColorBinding
+    | PresetBinding
+    | ScaleBinding
+    | ScaleLinkedBinding
+    | PaletteSwapBinding;
+
+/**
+ * Declares the project's color palette scale structure. All color-related
+ * controls (palette-swap sections and color pickers) read from this.
+ *
+ * Separating this from the panel config means the palette scale is
+ * declared once and consumed everywhere — no duplication, no inference
+ * from token data.
+ */
+export type ColorScaleConfig = {
+    /**
+     * The token path prefix where palette scales live. Combined with
+     * palette name + step, forms a full token path.
+     *
+     * Pass `""` for projects whose palettes live at the token tree
+     * root (e.g. `blue.50` with no `color.` parent).
+     *
+     * @example
+     * prefix: "color"        // → color.blue.500, color.neutral.50
+     * prefix: ""             // → blue.500, red.100
+     * prefix: "brand.colors" // → brand.colors.primary.500
+     */
+    prefix: string;
+    /**
+     * Explicit list of palette names available in the editing surface.
+     * These are the swappable options in palette-swap sections and the
+     * columns in the color picker grid.
+     *
+     * @example
+     * palettes: ["neutral", "slate", "blue", "red", "pink"]
+     */
+    palettes: string[];
+    /**
+     * Explicit list of scale step names. These are the rows in the
+     * color picker grid. Combined with `prefix` and a palette name,
+     * they form full token paths like `color.blue.500`.
+     *
+     * @example
+     * steps: ["50", "100", "200", "300", "400", "500",
+     *         "600", "700", "800", "900", "950"]
+     */
+    steps: string[];
+    /**
+     * Optional token path for a "pure white" escape hatch in the
+     * color picker. When set, the color picker renders an extra
+     * white swatch; picking it writes a reference to this token.
+     *
+     * @example
+     * white: "color.white"
+     */
+    white?: string;
+    /**
+     * Optional token path for a "pure black" escape hatch in the
+     * color picker. Same behavior as `white` but for black.
+     *
+     * @example
+     * black: "color.black"
+     */
+    black?: string;
+};
+
+/**
+ * A section in the Studio editing panel. Groups bindings under a titled folder.
+ * Each binding's control is determined by its discriminator (or inferred from
+ * the token's `$type` for default `TokenBinding`s).
+ */
+export type BindingSection = {
+    title: string;
+    bindings: PanelBinding[];
+};
+
+/** A single section in the Studio editing panel. */
+export type PanelSection = BindingSection;
+
+/** Configuration for the Studio visual editing panel. */
+export type StudioConfig = {
+    /**
+     * Declares the project's color palette scale structure. Consumed by
+     * palette-swap sections (for the swap list) and color picker controls
+     * (for the grid axes).
+     */
+    colorScale?: ColorScaleConfig;
+    /** Declarative panel sections that define the editing surface. */
+    panel?: PanelSection[];
+};
+
+/**
  * Configuration for sugarcube.
  * This is the shape of your config file (sugarcube.config.ts).
  *
@@ -199,6 +416,13 @@ export interface SugarcubeConfig {
      * @example "src/styles"
      */
     cube?: string;
+
+    /**
+     * Studio visual editing configuration.
+     * Defines the editing panel — which tokens appear in which sections
+     * and which operations apply.
+     */
+    studio?: StudioConfig;
 }
 
 /**
@@ -231,4 +455,7 @@ export interface InternalConfig {
 
     /** Directory path where CUBE CSS files will be copied */
     cube?: string;
+
+    /** Studio visual editing configuration */
+    studio?: StudioConfig;
 }

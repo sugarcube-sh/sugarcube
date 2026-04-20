@@ -1,0 +1,17 @@
+{
+    "name": "@sugarcube-sh/studio-node",
+    "version": "0.0.0",
+    "type": "module",
+    "private": true,
+    "description": "Standalone Node host for Sugarcube Studio (framework-agnostic — no dev server required)",
+    "license": "MIT",
+    "author": {
+        "name": "Mark Tomlinson",
+        "email": "mark@marktomlinson.dev",
+        "url": "https://marktomlinson.dev"
+    },
+    "scripts": {
+        "build": "echo 'studio-node not yet implemented' && exit 0",
+        "type-check": "echo 'studio-node not yet implemented' && exit 0"
+    }
+}

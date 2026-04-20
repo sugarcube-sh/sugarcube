@@ -1,0 +1,18 @@
+{
+    "name": "studio",
+    "version": "0.0.1",
+    "private": true,
+    "scripts": {
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy",
+        "type-check": "tsc --noEmit"
+    },
+    "dependencies": {
+        "jsonc-parser": "^3.3.1"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20260413.1",
+        "wrangler": "^4.81.1",
+        "typescript": "^5.8.3"
+    }
+}

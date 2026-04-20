@@ -49,10 +49,11 @@
     },
     "dependencies": {
         "@sugarcube-sh/core": "workspace:*",
-        "@unocss/vite": "^66.5.2"
+        "@unocss/vite": "^66.5.2",
+        "jsonc-parser": "^3.3.1"
     },
     "peerDependencies": {
-        "vite": "^6.0.0 || ^7"
+        "vite": "^6.0.0 || ^7 || ^8"
     },
     "devDependencies": {
         "pkgroll": "^2.26.0",

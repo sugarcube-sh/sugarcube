@@ -9,7 +9,7 @@
 .separator::after {
     content: "";
     flex: 1;
-    border-bottom: 1px solid var(--color-border-normal);
+    border-bottom: 1px solid var(--color-surface-border);
 }
 
 .separator[data-orientation="vertical"] {
@@ -21,7 +21,7 @@
 .separator[data-orientation="vertical"]::after {
     flex: none;
     border-bottom: none;
-    border-inline-start: 1px solid var(--color-border-normal);
+    border-inline-start: 1px solid var(--color-surface-border);
     block-size: 50%;
     min-block-size: 0;
 }

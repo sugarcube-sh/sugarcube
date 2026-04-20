@@ -43,6 +43,12 @@ function flattenTree(
     };
     const errors: FlattenError[] = [];
 
+    function getSourcePath(node: TokenGroup | Token): string {
+        return "$sourcePath" in node && typeof node.$sourcePath === "string"
+            ? node.$sourcePath
+            : source.sourcePath;
+    }
+
     function createLookupKey(path: string[] = []): string {
         const parts: string[] = [];
         if (source.context) parts.push(source.context);
@@ -68,7 +74,7 @@ function flattenTree(
                 $path: path.join("."),
                 $source: {
                     context: source.context,
-                    sourcePath: source.sourcePath,
+                    sourcePath: getSourcePath(node),
                 },
             };
         }
@@ -140,8 +146,12 @@ function flattenTree(
                 const namespacedKey = createLookupKey(pathSegments);
                 const originalPath = pathSegments.join(".");
 
+                const { $sourcePath: _stamp, ...tokenWithoutStamp } = value as Record<
+                    string,
+                    unknown
+                >;
                 result.tokens[namespacedKey] = {
-                    ...value,
+                    ...tokenWithoutStamp,
                     // Only add $type if the token has an explicit $type or inherits one from parent.
                     // This allows reference tokens to be flattened without $type (per W3C spec),
                     // while ensuring non-reference tokens get proper type inheritance.
@@ -149,7 +159,7 @@ function flattenTree(
                     $path: originalPath,
                     $source: {
                         context: source.context,
-                        sourcePath: source.sourcePath,
+                        sourcePath: getSourcePath(value),
                     },
                     $originalPath: originalPath,
                 } as FlattenedToken;

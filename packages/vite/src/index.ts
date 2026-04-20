@@ -11,11 +11,15 @@ import {
 import type {
     InternalConfig,
     NormalizedConvertedTokens,
+    ResolvedTokens,
     SugarcubeConfig,
+    TokenTree,
 } from "@sugarcube-sh/core";
 
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import UnoCSS from "@unocss/vite";
+import { applyEdits, modify } from "jsonc-parser";
 import type { Logger, Plugin, ViteDevServer } from "vite";
 
 /** CSS object for UnoCSS rules - matches @unocss/core CSSObject */
@@ -63,7 +67,14 @@ export interface SugarcubePluginContext {
     ready: Promise<void>;
     config: InternalConfig | null;
     tokens: NormalizedConvertedTokens | null;
+    trees: TokenTree[] | null;
+    resolved: ResolvedTokens | null;
     getCSS: () => string;
+    writeTokenEdits: (
+        sourcePath: string,
+        edits: Array<{ jsonPath: string[]; value: unknown }>
+    ) => Promise<void>;
+    rerunPipeline: (modifiedResolved: ResolvedTokens) => Promise<void>;
     reloadConfig: () => Promise<void>;
     reloadTokens: () => Promise<void>;
     getRules: () => UnoRule[];
@@ -78,6 +89,8 @@ export interface SugarcubePluginContext {
 function createSugarcubeContext(): SugarcubePluginContext {
     let config: InternalConfig | null = null;
     let tokens: NormalizedConvertedTokens | null = null;
+    let trees: TokenTree[] | null = null;
+    let resolved: ResolvedTokens | null = null;
     let cachedCSS = "";
     let cachedRules: UnoRule[] = [];
     const reloadCallbacks: (() => void)[] = [];
@@ -181,10 +194,13 @@ function createSugarcubeContext(): SugarcubePluginContext {
             }
         }
 
+        trees = tokenResult.trees;
+        resolved = tokenResult.resolved;
+
         I.start("Process Tokens");
         tokens = await processAndConvertTokens(
-            tokenResult.trees,
-            tokenResult.resolved,
+            trees,
+            resolved,
             config,
             tokenResult.errors.validation
         );
@@ -212,12 +228,30 @@ function createSugarcubeContext(): SugarcubePluginContext {
         get tokens() {
             return tokens;
         },
+        get trees() {
+            return trees;
+        },
+        get resolved() {
+            return resolved;
+        },
         get tasks() {
             return tasks;
         },
 
         getRules() {
             return cachedRules;
+        },
+
+        async rerunPipeline(modifiedResolved: ResolvedTokens) {
+            const localConfig = config;
+            const localTrees = trees;
+            if (!localConfig || !localTrees) return;
+            const task = (async () => {
+                tokens = await processAndConvertTokens(localTrees, modifiedResolved, localConfig);
+                await generateCSS();
+                cachedRules = buildRules();
+            })();
+            return addTask(task);
         },
 
         async reloadConfig() {
@@ -284,6 +318,21 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
         onReload(fn: () => void) {
             reloadCallbacks.push(fn);
+        },
+
+        async writeTokenEdits(
+            sourcePath: string,
+            edits: Array<{ jsonPath: string[]; value: unknown }>
+        ) {
+            const fmt = { formattingOptions: { tabSize: 2, insertSpaces: true } };
+            let raw = await readFile(sourcePath, "utf-8");
+
+            for (const edit of edits) {
+                const textEdits = modify(raw, edit.jsonPath, edit.value, fmt);
+                raw = applyEdits(raw, textEdits);
+            }
+
+            await writeFile(sourcePath, raw, "utf-8");
         },
 
         async flushTasks() {

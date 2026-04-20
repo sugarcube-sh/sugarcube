@@ -29,10 +29,7 @@ const { class: className } = Astro.props;
             .querySelectorAll<HTMLElement>("[data-code-block]")
             .forEach((block) => {
                 const code = block.querySelector<HTMLElement>("[data-code]");
-                const button =
-                    block.querySelector<HTMLButtonElement>(
-                        "[data-copy-button]",
-                    );
+                const button = block.querySelector<HTMLButtonElement>("[data-copy-button]");
                 const tooltip =
                     block.querySelector<HTMLElement>(".site-code-block-tooltip");
 
