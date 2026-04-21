@@ -22,7 +22,7 @@ jobs:
                   node-version: 22
                   cache: "pnpm"
                   registry-url: https://registry.npmjs.org/
-            - run: npm install -g npm@latest
+            - run: npm install -g npm@11 --force
             - run: pnpm run ci:install
             - run: pnpm run ci:prepublish
             - name: Create Release Pull Request or Publish to npm
