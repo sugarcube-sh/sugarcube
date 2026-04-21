@@ -263,13 +263,6 @@ importers:
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
-    optionalDependencies:
-      '@sugarcube-sh/studio':
-        specifier: workspace:*
-        version: link:../studio
-      '@sugarcube-sh/studio-embed':
-        specifier: workspace:*
-        version: link:../studio-embed
 
   packages/core:
     dependencies:
