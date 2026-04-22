@@ -10,6 +10,7 @@ import type { NormalizedTokens } from "../../types/normalize.js";
 import type { ResolvedToken, ResolvedTokens } from "../../types/resolve.js";
 import type { TokenType, TokenValue } from "../../types/tokens.js";
 import { converters } from "../converters/index.js";
+import { formatCSSVarName } from "../format-css-var-name.js";
 
 function convertSingleToken<T extends TokenType>(
     token: ResolvedToken<T>,
@@ -30,6 +31,7 @@ function convertSingleToken<T extends TokenType>(
         $originalPath: token.$originalPath,
         $resolvedValue: token.$resolvedValue,
         $cssProperties: converter(token.$value as TokenValue<T>, options),
+        $names: { css: formatCSSVarName(token.$path) },
     };
 }
 
