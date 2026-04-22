@@ -48,6 +48,7 @@ interface GenerateFlags {
     fluidMin?: string;
     fluidMax?: string;
     colorFallback?: ColorFallbackStrategy;
+    prefix?: string;
     input?: string[];
     selector?: string;
     variablesOnly?: boolean;
@@ -116,6 +117,7 @@ function buildConfigFromFlags(flags: GenerateFlags): InternalConfig {
         resolver: flags.resolver,
         variables: {
             path: flags.variables,
+            prefix: flags.prefix,
             transforms: {
                 fluid: buildFluidConfig(flags),
                 colorFallbackStrategy: flags.colorFallback,
@@ -136,6 +138,7 @@ function mergeConfigWithFlags(config: InternalConfig, flags: GenerateFlags): Int
         variables: {
             ...config.variables,
             path: flags.variables ?? config.variables.path,
+            prefix: flags.prefix ?? config.variables.prefix,
             transforms: {
                 fluid: {
                     min: parseFluidValue(flags.fluidMin, config.variables.transforms.fluid.min),
@@ -161,7 +164,8 @@ function hasConfigFlags(flags: GenerateFlags): boolean {
         flags.utilities ||
         flags.fluidMin ||
         flags.fluidMax ||
-        flags.colorFallback
+        flags.colorFallback ||
+        flags.prefix
     );
 }
 
@@ -426,6 +430,7 @@ export const generate = new Command()
         "--color-fallback <strategy>",
         "Color fallback strategy: 'native' or 'polyfill' (default: native)"
     )
+    .option("--prefix <string>", "Prefix prepended to every generated CSS variable name")
     .option(
         "--input <modifier=value>",
         "Select a modifier context for this build (repeatable)",

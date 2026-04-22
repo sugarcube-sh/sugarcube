@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, rm } from "node:fs/promises";
+import { mkdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execaCommand } from "execa";
@@ -67,5 +67,26 @@ describe("generate command", () => {
 
         expect(result.exitCode).toBe(0);
         expect(existsSync(join(testDir, "custom/css/tokens.css"))).toBe(true);
+    });
+
+    it("respects --prefix flag", { timeout: TEST_TIMEOUT }, async () => {
+        const tokensDir = await createTokens(testDir);
+
+        const result = await execaCommand(
+            `node ${CLI_PATH} generate --resolver ${tokensDir}/tokens.resolver.json --prefix ds`,
+            {
+                cwd: testDir,
+                timeout: TEST_TIMEOUT,
+                reject: false,
+            }
+        );
+
+        expect(result.exitCode).toBe(0);
+        const css = await readFile(join(testDir, "styles/variables.gen.css"), "utf-8");
+        const declared = [...css.matchAll(/^\s*(--[\w-]+):/gm)].map((m) => m[1]);
+        expect(declared.length).toBeGreaterThan(0);
+        for (const name of declared) {
+            expect(name).toMatch(/^--ds-/);
+        }
     });
 });
