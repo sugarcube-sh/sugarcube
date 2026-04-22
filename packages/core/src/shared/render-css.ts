@@ -18,11 +18,18 @@ import { converters } from "./converters/index.js";
  * Today delegates to the existing converter registry; future formats
  * (JS, SCSS, Android) will add their own render functions alongside
  * this one without changing the pipeline.
+ *
+ * `options` carries pipeline-wide settings (fluid config, color-fallback
+ * strategy). Per-token state (`$extensions`) is merged in automatically so
+ * callers don't have to rebuild options per token.
  */
 export function renderCSS<T extends TokenType>(
     token: ConvertedToken<T>,
     options: ConversionOptions
 ): CSSProperties<T> {
     const converter = converters[token.$type] as TokenConverter<T>;
-    return converter(token.$value as TokenValue<T>, options);
+    const finalOptions = token.$extensions
+        ? { ...options, extensions: token.$extensions }
+        : options;
+    return converter(token.$value as TokenValue<T>, finalOptions);
 }

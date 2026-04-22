@@ -69,11 +69,7 @@ describe("generate", () => {
                 "color.primary": convertedTokens.colorPrimary,
             },
             "perm:1": {
-                "color.primary": createConvertedToken({
-                    $value: "#0066FF",
-                    $resolvedValue: "#0066FF",
-                    $cssProperties: { value: "#0066FF" },
-                }),
+                "color.primary": createConvertedToken({ $value: "#0066FF" }),
             },
         };
 
@@ -113,20 +109,21 @@ describe("generate", () => {
         const tokens: NormalizedConvertedTokens = {
             "perm:0": {
                 "color.primary": createConvertedToken({
-                    $cssProperties: {
-                        value: "#FF0000",
-                        featureValues: [
-                            {
-                                query: "@supports (color: color(display-p3 1 1 1))",
-                                value: "color(display-p3 1 0 0)",
-                            },
-                        ],
+                    $value: {
+                        colorSpace: "display-p3",
+                        components: [1, 0, 0],
+                        hex: "#FF0000",
+                    },
+                    $resolvedValue: {
+                        colorSpace: "display-p3",
+                        components: [1, 0, 0],
+                        hex: "#FF0000",
                     },
                 }),
             },
         };
 
-        const config = configWith("colorsP3", [{ input: {}, selector: ":root" }]);
+        const config = configWith("colorsP3Polyfill", [{ input: {}, selector: ":root" }]);
 
         const result = await formatCSSVariables(tokens, config);
         const css = result.output[0]?.css ?? "";
@@ -186,13 +183,13 @@ describe("generate", () => {
                 "perm:0": {
                     "color.surface": createConvertedToken({
                         $path: "color.surface",
-                        $cssProperties: { value: "#ffffff" },
+                        $value: "#ffffff",
                     }),
                 },
                 "perm:1": {
                     "color.surface": createConvertedToken({
                         $path: "color.surface",
-                        $cssProperties: { value: "#1a1a1a" },
+                        $value: "#1a1a1a",
                     }),
                 },
             };
@@ -221,7 +218,7 @@ describe("generate", () => {
                 "perm:0": {
                     "color.primary": createConvertedToken({
                         $path: "color.primary",
-                        $cssProperties: { value: "#0066FF" },
+                        $value: "#0066FF",
                     }),
                 },
             };
@@ -242,13 +239,13 @@ describe("generate", () => {
                 "perm:0": {
                     "color.primary": createConvertedToken({
                         $path: "color.primary",
-                        $cssProperties: { value: "#0066FF" },
+                        $value: "#0066FF",
                     }),
                 },
                 "perm:1": {
                     "color.primary": createConvertedToken({
                         $path: "color.primary",
-                        $cssProperties: { value: "#00FF66" },
+                        $value: "#00FF66",
                     }),
                 },
             };
@@ -279,7 +276,7 @@ describe("generate", () => {
                     "color.button": createConvertedToken({
                         $path: "color.button",
                         $value: "{color.primary}",
-                        $cssProperties: { value: "{color.primary}" },
+                        $resolvedValue: "#FF0000",
                         $names: { css: "ds-color-button" },
                     }),
                     "typography.body": createConvertedToken({
@@ -287,15 +284,9 @@ describe("generate", () => {
                         $path: "typography.body",
                         $value: {
                             fontFamily: "Arial",
-                            fontSize: "16px",
+                            fontSize: { value: 16, unit: "px" },
                             lineHeight: 1.5,
                             fontWeight: 400,
-                        },
-                        $cssProperties: {
-                            "font-family": "Arial",
-                            "font-size": "16px",
-                            "line-height": 1.5,
-                            "font-weight": 400,
                         },
                         $names: { css: "ds-typography-body" },
                     }),
@@ -322,14 +313,11 @@ describe("generate", () => {
                     "color.brandPrimary": createConvertedToken({
                         $path: "color.brandPrimary",
                         $value: "#FF0000",
-                        $resolvedValue: "#FF0000",
-                        $cssProperties: { value: "#FF0000" },
                     }),
                     "color.button": createConvertedToken({
                         $path: "color.button",
                         $value: "{color.brandPrimary}",
                         $resolvedValue: "#FF0000",
-                        $cssProperties: { value: "{color.brandPrimary}" },
                     }),
                 },
             };

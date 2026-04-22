@@ -66,6 +66,15 @@ export const configs = {
         },
     },
 
+    colorsP3Polyfill: {
+        variables: {
+            path: "src/css/tokens.css",
+            transforms: {
+                colorFallbackStrategy: "polyfill",
+            },
+        },
+    },
+
     edgeCases: {
         variables: {
             path: "src/css/tokens.css",

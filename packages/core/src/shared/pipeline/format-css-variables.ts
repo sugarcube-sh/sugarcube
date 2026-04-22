@@ -1,5 +1,6 @@
 import type { InternalConfig, Permutation } from "../../types/config.js";
 import type {
+    ConversionOptions,
     ConvertedToken,
     ConvertedTokens,
     NormalizedConvertedTokens,
@@ -15,6 +16,7 @@ import type { TokenType } from "../../types/tokens.js";
 import { ErrorMessages } from "../constants/error-messages.js";
 import { formatCSSVarName } from "../format-css-var-name.js";
 import { isTypographyToken } from "../guards.js";
+import { renderCSS } from "../render-css.js";
 
 function indentCSS(css: string, spaces = 4): string {
     const indent = " ".repeat(spaces);
@@ -60,9 +62,10 @@ function convertReferenceToCSSVar(
 
 function generateSingleVariable(
     token: ConvertedToken<TokenType>,
-    nameLookup: Map<string, string>
+    nameLookup: Map<string, string>,
+    options: ConversionOptions
 ): CSSVariable | undefined {
-    const props = token.$cssProperties;
+    const props = renderCSS(token, options);
     if (!("value" in props)) {
         return undefined;
     }
@@ -75,9 +78,10 @@ function generateSingleVariable(
 
 function generateTypographyVariables(
     token: ConvertedToken<"typography">,
-    nameLookup: Map<string, string>
+    nameLookup: Map<string, string>,
+    options: ConversionOptions
 ): CSSVariable[] {
-    return Object.entries(token.$cssProperties)
+    return Object.entries(renderCSS(token, options))
         .filter(([_, value]) => value !== undefined)
         .map(([prop, value]) => ({
             name: `--${token.$names.css}-${prop}`,
@@ -90,11 +94,12 @@ function generateTypographyVariables(
 // when the display supports the specific color space
 function generateFeatureVariables(
     token: ConvertedToken<TokenType>,
-    nameLookup: Map<string, string>
+    nameLookup: Map<string, string>,
+    options: ConversionOptions
 ): CSSFeatureBlock[] {
     if (token.$type !== "color") return [];
 
-    const props = token.$cssProperties;
+    const props = renderCSS(token, options);
     if (!("featureValues" in props)) return [];
 
     const queryGroups = new Map<string, CSSVariable[]>();
@@ -142,26 +147,30 @@ function generateCSSBlock(block: { selector: string | string[]; vars: CSSVariabl
 
 function generateVariablesForToken<T extends TokenType>(
     token: ConvertedToken<T>,
-    nameLookup: Map<string, string>
+    nameLookup: Map<string, string>,
+    options: ConversionOptions
 ): CSSVarSet {
     if (isTypographyToken(token)) {
         return {
-            vars: generateTypographyVariables(token, nameLookup),
-            features: generateFeatureVariables(token, nameLookup),
+            vars: generateTypographyVariables(token, nameLookup, options),
+            features: generateFeatureVariables(token, nameLookup, options),
         };
     }
 
-    const mainVar = generateSingleVariable(token, nameLookup);
+    const mainVar = generateSingleVariable(token, nameLookup, options);
     return {
         vars: mainVar ? [mainVar] : [],
-        features: generateFeatureVariables(token, nameLookup),
+        features: generateFeatureVariables(token, nameLookup, options),
     };
 }
 
 /**
  * Generate CSS variables for a set of converted tokens.
  */
-function generateVariablesFromTokens(tokens: ConvertedTokens): {
+function generateVariablesFromTokens(
+    tokens: ConvertedTokens,
+    options: ConversionOptions
+): {
     vars: CSSVariable[];
     features: CSSFeatureBlock[];
 } {
@@ -171,7 +180,7 @@ function generateVariablesFromTokens(tokens: ConvertedTokens): {
     const varSets = Object.entries(tokens)
         .filter(([key, token]) => key !== "$extensions" && "$type" in token)
         .map(([_, token]) =>
-            generateVariablesForToken(token as ConvertedToken<TokenType>, nameLookup)
+            generateVariablesForToken(token as ConvertedToken<TokenType>, nameLookup, options)
         );
 
     const vars = varSets.flatMap((set) => set.vars);
@@ -264,6 +273,13 @@ export async function formatCSSVariables(
         return { output: [] };
     }
 
+    // Base options for render-time CSS generation; per-token $extensions
+    // are merged in by renderCSS itself.
+    const options: ConversionOptions = {
+        fluidConfig: config.variables.transforms.fluid,
+        colorFallbackStrategy: config.variables.transforms.colorFallbackStrategy,
+    };
+
     const byPath = new Map<string, { perm: Permutation; css: string }[]>();
 
     // Track base vars per output path for delta optimisation
@@ -279,7 +295,7 @@ export async function formatCSSVariables(
         }
 
         const outputPath = perm.path ?? config.variables.path;
-        let { vars, features } = generateVariablesFromTokens(contextTokens);
+        let { vars, features } = generateVariablesFromTokens(contextTokens, options);
 
         // Delta optimization: for non-first permutations in the same output file,
         // only include variables that differ from the first permutation in that file
