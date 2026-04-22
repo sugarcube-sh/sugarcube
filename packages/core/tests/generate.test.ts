@@ -268,6 +268,49 @@ describe("generate", () => {
         });
     });
 
+    describe("prefix", () => {
+        it("emits the prefixed name in declarations, references, and typography sub-vars", async () => {
+            const tokens: NormalizedConvertedTokens = {
+                "perm:0": {
+                    "color.primary": createConvertedToken({
+                        $path: "color.primary",
+                        $names: { css: "ds-color-primary" },
+                    }),
+                    "color.button": createConvertedToken({
+                        $path: "color.button",
+                        $value: "{color.primary}",
+                        $cssProperties: { value: "{color.primary}" },
+                        $names: { css: "ds-color-button" },
+                    }),
+                    "typography.body": createConvertedToken({
+                        $type: "typography",
+                        $path: "typography.body",
+                        $value: {
+                            fontFamily: "Arial",
+                            fontSize: "16px",
+                            lineHeight: 1.5,
+                            fontWeight: 400,
+                        },
+                        $cssProperties: {
+                            "font-family": "Arial",
+                            "font-size": "16px",
+                            "line-height": 1.5,
+                            "font-weight": 400,
+                        },
+                        $names: { css: "ds-typography-body" },
+                    }),
+                },
+            };
+
+            const config = configWith("basic", [{ input: {}, selector: ":root" }]);
+            const css = (await formatCSSVariables(tokens, config)).output[0]?.css ?? "";
+
+            expect(css).toContain("--ds-color-primary: #FF0000;");
+            expect(css).toContain("--ds-color-button: var(--ds-color-primary);");
+            expect(css).toContain("--ds-typography-body-font-family: Arial;");
+        });
+    });
+
     describe("path case preservation", () => {
         // Declarations and references must use the same var name even when
         // path segments contain camelCase characters. Pre-$names, declarations

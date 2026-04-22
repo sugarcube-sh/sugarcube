@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+    clearMatchCache,
     convertConfigToUnoRules,
     findMatchingToken,
     getDirectionAbbreviation,
@@ -53,6 +54,27 @@ describe("convertConfigToUnoRules", () => {
             testRule(rules, "text-primary", { color: "var(--color-primary)" });
             testRule(rules, "text-secondary", { color: "var(--color-secondary)" });
             testRule(rules, "bg-primary", null);
+        });
+
+        it("emits prefixed var() when tokens carry a prefixed $names.css", () => {
+            // Match cache is keyed on config+tokenName, not token identity —
+            // clear it so this test doesn't see the unprefixed token cached
+            // by the previous test using the same (source, prefix, name) key.
+            clearMatchCache();
+
+            const prefixedTokens = buildTokens({
+                "color-primary": createConvertedToken({
+                    $path: "color.primary",
+                    $names: { css: "ds-color-primary" },
+                }),
+            });
+
+            const rules = convertConfigToUnoRules(
+                { color: { source: "color.*", prefix: "text" } },
+                prefixedTokens
+            );
+
+            testRule(rules, "text-primary", { color: "var(--ds-color-primary)" });
         });
 
         it("uses source path base as prefix when no prefix specified", () => {

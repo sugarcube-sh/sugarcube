@@ -92,6 +92,10 @@ const pathIndexCache = new WeakMap<
 
 // Cache for findMatchingToken results to avoid repeated lookups for the same class
 // Key format: `${source}:${tokenName}` → matched token or null
+// TODO: key on tokens identity (WeakMap) like pathIndexCache above — current
+// cache collides across tokens objects with the same (source, prefix, name)
+// key, which can return stale $names.css when configs differ. Harmless in a
+// single-build production path; manifests in tests and multi-instance use.
 const matchCache = new Map<string, ConvertedToken | null>();
 
 /**

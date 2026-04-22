@@ -59,6 +59,15 @@ export interface VariablesConfig {
     path?: string;
 
     /**
+     * Prefix prepended to every generated CSS variable name.
+     *
+     * @example
+     * // prefix: "ds"
+     * // color.brandPrimary → --ds-color-brandPrimary
+     */
+    prefix?: string;
+
+    /**
      * CSS cascade layer name for variables.
      * When set, output is wrapped in @layer block.
      * @example "tokens"
@@ -435,6 +444,7 @@ export interface InternalConfig {
     /** CSS variables output configuration */
     variables: {
         path: string;
+        prefix?: string;
         layer?: string;
         transforms: {
             fluid: FluidConfig;

@@ -40,6 +40,7 @@ const transformsSchema = z.object({
 
 const variablesConfigSchema = z.object({
     path: z.string().optional(),
+    prefix: z.string().optional(),
     layer: z.string().optional(),
     transforms: transformsSchema.optional(),
     permutations: z.array(permutationSchema).optional(),
@@ -142,6 +143,7 @@ export const internalConfigSchema = z.object({
 
     variables: z.object({
         path: z.string(),
+        prefix: z.string().optional(),
         layer: z.string().optional(),
         transforms: z.object({
             fluid: fluidSchema,
