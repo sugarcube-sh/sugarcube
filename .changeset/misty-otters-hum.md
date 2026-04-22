@@ -15,6 +15,11 @@ Add `variables.prefix` and `variables.variableName` config options for controlli
 - Export `VariableNameFn` type.
 - Internal: CSS variable names are now computed once per token during the convert step and stored on `token.$names.css`. Declarations, references (`{color.primary}` -> `var(--…)`), and utility-class rules all read from this single source — eliminating a latent bug where references with camelCase path segments (e.g. `{color.brandPrimary}`) produced names that didn't match their declarations.
 
-**`@sugarcube-sh/cli`, `@sugarcube-sh/vite`**
+**`@sugarcube-sh/cli`**
+
+- New `--prefix <string>` flag on `sugarcube generate`. Mirrors `variables.prefix` so users can prepend a CSS variable prefix without needing a config file. Pass the prefix without the leading `--` (e.g. `--prefix ds` produces `--ds-color-foo`). Overrides `variables.prefix` if a config file is present.
+- Re-export `kebabCase` and the `VariableNameFn` type.
+
+**`@sugarcube-sh/vite`**
 
 - Re-export `kebabCase` and the `VariableNameFn` type so users can import everything they need from whichever entry point they already use.
