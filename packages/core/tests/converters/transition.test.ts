@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertTransitionToken } from "../../src/shared/converters/transition.js";
+import { convertTransitionToken } from "../../src/shared/renderers/css/transition.js";
 
 describe("convertTransition", () => {
     it("should handle reference values", () => {

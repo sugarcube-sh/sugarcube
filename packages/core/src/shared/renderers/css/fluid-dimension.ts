@@ -1,6 +1,6 @@
-import type { ConversionOptions, SimpleCSSProperties } from "../../types/convert.js";
-import type { Dimension, FluidDimension, TokenValue } from "../../types/tokens.js";
-import { isReference } from "../guards.js";
+import type { ConversionOptions, SimpleCSSProperties } from "../../../types/convert.js";
+import type { Dimension, FluidDimension, TokenValue } from "../../../types/tokens.js";
+import { isReference } from "../../guards.js";
 
 function normalizeToPixels(value: Dimension, rootSize = 16): number {
     return value.unit === "px" ? value.value : value.value * rootSize;
@@ -40,20 +40,16 @@ function convertFluidDimension(
     };
 }
 
-export function convertDimensionToken(
-    value: TokenValue<"dimension">,
+/**
+ * @deprecated Use `$type: "dimension"` with `$extensions["sh.sugarcube.fluid"]` instead.
+ */
+export function convertFluidDimensionToken(
+    value: TokenValue<"fluidDimension">,
     options: ConversionOptions
 ): SimpleCSSProperties {
     if (isReference(value)) {
-        return { value: value };
+        return { value };
     }
 
-    const fluidExtension = options.extensions?.["sh.sugarcube"]?.fluid;
-    if (fluidExtension) {
-        return convertFluidDimension(fluidExtension, options);
-    }
-
-    return {
-        value: `${value.value}${value.unit}`,
-    };
+    return convertFluidDimension(value, options);
 }

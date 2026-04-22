@@ -1,9 +1,9 @@
-import type { CSSBorderProperties, ConversionOptions } from "../../types/convert.js";
-import type { TokenValue } from "../../types/tokens.js";
-import { convertColorToString } from "../color/color-conversion.js";
-import { isDTCGColorValue } from "../color/color-validation.js";
-import { ErrorMessages } from "../constants/error-messages.js";
-import { isReference } from "../guards.js";
+import type { CSSBorderProperties, ConversionOptions } from "../../../types/convert.js";
+import type { TokenValue } from "../../../types/tokens.js";
+import { convertColorToString } from "../../color/color-conversion.js";
+import { isDTCGColorValue } from "../../color/color-validation.js";
+import { ErrorMessages } from "../../constants/error-messages.js";
+import { isReference } from "../../guards.js";
 import { convertStrokeStyleToken } from "./stroke.js";
 
 function convertBorderColor(color: TokenValue<"color">, options: ConversionOptions): string {

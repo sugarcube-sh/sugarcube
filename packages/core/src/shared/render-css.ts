@@ -5,7 +5,7 @@ import type {
     TokenConverter,
 } from "../types/convert.js";
 import type { TokenType, TokenValue } from "../types/tokens.js";
-import { converters } from "./converters/index.js";
+import { converters } from "./renderers/css/index.js";
 
 /**
  * Render a resolved token to its CSS-shaped value.

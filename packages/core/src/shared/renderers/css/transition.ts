@@ -1,6 +1,6 @@
-import type { CSSTransitionProperties } from "../../types/convert.js";
-import type { Duration, TokenValue } from "../../types/tokens.js";
-import { isReference } from "../guards.js";
+import type { CSSTransitionProperties } from "../../../types/convert.js";
+import type { Duration, TokenValue } from "../../../types/tokens.js";
+import { isReference } from "../../guards.js";
 
 function formatDuration(duration: Duration | undefined): string {
     if (!duration) return "0ms";

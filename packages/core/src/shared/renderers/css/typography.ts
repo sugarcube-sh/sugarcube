@@ -1,6 +1,6 @@
-import type { CSSTypographyProperties } from "../../types/convert.js";
-import type { TokenValue } from "../../types/tokens.js";
-import { isReference } from "../guards.js";
+import type { CSSTypographyProperties } from "../../../types/convert.js";
+import type { TokenValue } from "../../../types/tokens.js";
+import { isReference } from "../../guards.js";
 import { convertFontWeightToken } from "./font-weight.js";
 import { quoteFont } from "./quote-font.js";
 

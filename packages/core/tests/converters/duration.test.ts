@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertDurationToken } from "../../src/shared/converters/duration.js";
+import { convertDurationToken } from "../../src/shared/renderers/css/duration.js";
 
 describe("convertDuration", () => {
     it("should handle reference values", () => {

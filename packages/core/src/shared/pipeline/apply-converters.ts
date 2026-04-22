@@ -9,7 +9,7 @@ import type {
 import type { NormalizedTokens } from "../../types/normalize.js";
 import type { ResolvedToken, ResolvedTokens } from "../../types/resolve.js";
 import type { TokenType, TokenValue } from "../../types/tokens.js";
-import { converters } from "../converters/index.js";
+import { converters } from "../renderers/css/index.js";
 import { createVariableNameResolver } from "../resolve-variable-name.js";
 
 function convertSingleToken<T extends TokenType>(

@@ -1,6 +1,6 @@
-import type { SimpleCSSProperties } from "../../types/convert.js";
-import type { TokenValue } from "../../types/tokens.js";
-import { isReference } from "../guards.js";
+import type { SimpleCSSProperties } from "../../../types/convert.js";
+import type { TokenValue } from "../../../types/tokens.js";
+import { isReference } from "../../guards.js";
 
 const fontWeightAliases: Record<string, number> = {
     "thin": 100,

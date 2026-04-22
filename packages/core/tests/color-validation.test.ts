@@ -5,7 +5,7 @@ import {
     isDTCGColorValue,
     validateDTCGColorValue,
 } from "../src/shared/color/color-validation.js";
-import { convertColorToken } from "../src/shared/converters/color.js";
+import { convertColorToken } from "../src/shared/renderers/css/color.js";
 import type { ConversionOptions } from "../src/types/convert.js";
 import type { DTCGColorValue } from "../src/types/dtcg-color.js";
 

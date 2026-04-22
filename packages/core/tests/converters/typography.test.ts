@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertTypographyToken } from "../../src/shared/converters/typography.js";
+import { convertTypographyToken } from "../../src/shared/renderers/css/typography.js";
 
 describe("convertTypography", () => {
     it("should handle reference values", () => {

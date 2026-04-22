@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertGradientToken } from "../../src/shared/converters/gradient.js";
+import { convertGradientToken } from "../../src/shared/renderers/css/gradient.js";
 import type { ConversionOptions } from "../../src/types/convert.js";
 
 const defaultOptions: ConversionOptions = {

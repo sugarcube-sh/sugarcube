@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertStrokeStyleToken } from "../../src/shared/converters/stroke.js";
+import { convertStrokeStyleToken } from "../../src/shared/renderers/css/stroke.js";
 
 describe("convertStrokeStyle", () => {
     it("should handle reference values", () => {

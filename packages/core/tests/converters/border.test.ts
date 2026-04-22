@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertBorderToken } from "../../src/shared/converters/border.js";
+import { convertBorderToken } from "../../src/shared/renderers/css/border.js";
 import type { ConversionOptions } from "../../src/types/convert.js";
 
 const defaultOptions: ConversionOptions = {

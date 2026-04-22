@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertShadowToken } from "../../src/shared/converters/shadow.js";
+import { convertShadowToken } from "../../src/shared/renderers/css/shadow.js";
 import type { ConversionOptions } from "../../src/types/convert.js";
 
 const defaultOptions: ConversionOptions = {

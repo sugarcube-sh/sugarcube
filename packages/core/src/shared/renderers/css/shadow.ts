@@ -1,9 +1,9 @@
-import type { CSSShadowProperties, ConversionOptions } from "../../types/convert.js";
-import type { ShadowObject, TokenValue } from "../../types/tokens.js";
-import { convertColorToString } from "../color/color-conversion.js";
-import { isDTCGColorValue } from "../color/color-validation.js";
-import { ErrorMessages } from "../constants/error-messages.js";
-import { isReference } from "../guards.js";
+import type { CSSShadowProperties, ConversionOptions } from "../../../types/convert.js";
+import type { ShadowObject, TokenValue } from "../../../types/tokens.js";
+import { convertColorToString } from "../../color/color-conversion.js";
+import { isDTCGColorValue } from "../../color/color-validation.js";
+import { ErrorMessages } from "../../constants/error-messages.js";
+import { isReference } from "../../guards.js";
 
 function convertShadowColor(color: ShadowObject["color"], options: ConversionOptions): string {
     if (isReference(color)) {

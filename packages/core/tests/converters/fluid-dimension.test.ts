@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertFluidDimensionToken } from "../../src/shared/converters/fluid-dimension.js";
+import { convertFluidDimensionToken } from "../../src/shared/renderers/css/fluid-dimension.js";
 import type { ConversionOptions } from "../../src/types/convert.js";
 import type { TokenValue } from "../../src/types/tokens.js";
 

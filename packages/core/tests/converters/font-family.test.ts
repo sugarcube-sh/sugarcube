@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertFontFamilyToken } from "../../src/shared/converters/font-family.js";
+import { convertFontFamilyToken } from "../../src/shared/renderers/css/font-family.js";
 
 describe("convertFontFamily", () => {
     it("should handle reference values", () => {

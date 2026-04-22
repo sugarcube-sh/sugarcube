@@ -1,5 +1,5 @@
-import type { TokenConverter } from "../../types/convert.js";
-import type { TokenType } from "../../types/tokens.js";
+import type { TokenConverter } from "../../../types/convert.js";
+import type { TokenType } from "../../../types/tokens.js";
 import { convertBorderToken } from "./border.js";
 import { convertColorToken } from "./color.js";
 import { convertCubicBezierToken } from "./cubic-bezier.js";
