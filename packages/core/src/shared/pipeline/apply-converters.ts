@@ -10,12 +10,12 @@ import type { NormalizedTokens } from "../../types/normalize.js";
 import type { ResolvedToken, ResolvedTokens } from "../../types/resolve.js";
 import type { TokenType, TokenValue } from "../../types/tokens.js";
 import { converters } from "../converters/index.js";
-import { resolveVariableName } from "../resolve-variable-name.js";
+import { createVariableNameResolver } from "../resolve-variable-name.js";
 
 function convertSingleToken<T extends TokenType>(
     token: ResolvedToken<T>,
     options: ConversionOptions,
-    config: InternalConfig
+    varName: (path: string) => string
 ): ConvertedToken<T> {
     const converter = converters[token.$type] as TokenConverter<T>;
 
@@ -32,13 +32,14 @@ function convertSingleToken<T extends TokenType>(
         $originalPath: token.$originalPath,
         $resolvedValue: token.$resolvedValue,
         $cssProperties: converter(token.$value as TokenValue<T>, options),
-        $names: { css: resolveVariableName(token.$path, config) },
+        $names: { css: varName(token.$path) },
     };
 }
 
 function convertContext(
     tokens: ResolvedTokens,
     config: InternalConfig,
+    varName: (path: string) => string,
     isTokenInvalid?: (tokenPath: string) => boolean
 ): ConvertedTokens {
     const converted: ConvertedTokens = {};
@@ -71,7 +72,7 @@ function convertContext(
             extensions: token.$extensions,
         };
 
-        converted[key] = convertSingleToken(token, options, config);
+        converted[key] = convertSingleToken(token, options, varName);
     }
 
     return converted;
@@ -122,9 +123,11 @@ export function applyConverters(
     isTokenInvalid?: (tokenPath: string) => boolean
 ): NormalizedConvertedTokens {
     const converted: NormalizedConvertedTokens = {};
+    // Bind once for perf! If you change this, you need to run a benchmark.
+    const varName = createVariableNameResolver(config.variables);
 
     for (const [context, contextTokens] of Object.entries(tokens)) {
-        converted[context] = convertContext(contextTokens, config, isTokenInvalid);
+        converted[context] = convertContext(contextTokens, config, varName, isTokenInvalid);
     }
 
     return converted;
