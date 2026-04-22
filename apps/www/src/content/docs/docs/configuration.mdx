@@ -92,6 +92,39 @@ export default defineConfig({
 For more on fluid spacing and typography in sugarcube, see [fluid spacing and typography](/docs/fluid-space-and-type).
 
 
+## Prefixing CSS variable names
+
+Add a prefix to all generated CSS variables. Useful for scoping variables to your design system and tracking adoption across a codebase.
+
+```ts title="sugarcube.config.ts" ins={5}
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  variables: {
+    prefix: "ds"
+  }
+});
+```
+
+With `prefix: "ds"`, a token at `color.brand.primary` becomes `--ds-color-brand-primary`. The prefix flows through declarations, references (`var(--ds-…)`), and generated utility classes automatically.
+
+### Full control with `variableName`
+
+For anything beyond a simple prefix (e.g. casing, custom separators), provide a `variableName` callback. It receives the token path and returns the variable name (without the leading `--`).
+
+```ts title="sugarcube.config.ts" ins={5}
+import { defineConfig, kebabCase } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  variables: {
+    variableName: (path) => `ds-${kebabCase(path.replaceAll(".", "-"))}`
+  }
+});
+```
+
+`variableName` overrides `prefix` entirely when both are set.
+
+
 ## CSS Cascade Layers
 
 When using the CLI, you can wrap generated CSS in `@layer` blocks:

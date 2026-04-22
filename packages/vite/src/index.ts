@@ -556,5 +556,5 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
     return plugins;
 }
 
-export { defineConfig } from "@sugarcube-sh/core";
-export type { SugarcubeConfig };
+export { defineConfig, kebabCase } from "@sugarcube-sh/core";
+export type { SugarcubeConfig, VariableNameFn } from "@sugarcube-sh/core";
