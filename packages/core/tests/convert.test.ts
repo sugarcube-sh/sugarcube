@@ -117,4 +117,45 @@ describe("convert", () => {
         const token = result.default?.["color.primary"] as ConvertedToken<TokenType>;
         expect(token.$names.css).toBe("ds-color-primary");
     });
+
+    it("uses variables.variableName callback when set", () => {
+        const tokens: NormalizedTokens = {
+            default: {
+                "color.primary": createResolvedToken(),
+            },
+        };
+
+        const result = applyConverters(
+            tokens,
+            fillDefaults({
+                variables: {
+                    variableName: (path) => `custom--${path.replaceAll(".", "_")}`,
+                },
+            })
+        );
+
+        const token = result.default?.["color.primary"] as ConvertedToken<TokenType>;
+        expect(token.$names.css).toBe("custom--color_primary");
+    });
+
+    it("variableName overrides prefix when both are set", () => {
+        const tokens: NormalizedTokens = {
+            default: {
+                "color.primary": createResolvedToken(),
+            },
+        };
+
+        const result = applyConverters(
+            tokens,
+            fillDefaults({
+                variables: {
+                    prefix: "ignored",
+                    variableName: (path) => `only-${path.replaceAll(".", "-")}`,
+                },
+            })
+        );
+
+        const token = result.default?.["color.primary"] as ConvertedToken<TokenType>;
+        expect(token.$names.css).toBe("only-color-primary");
+    });
 });
