@@ -213,14 +213,13 @@ describe("findMatchingToken", () => {
     });
 
     it("finds token by matching source pattern", () => {
-        expect(findMatchingToken("primary", { source: "color.*", prefix: "text" }, tokens)).toEqual(
-            ["color", "primary"]
-        );
+        expect(
+            findMatchingToken("primary", { source: "color.*", prefix: "text" }, tokens)?.$path
+        ).toBe("color.primary");
 
-        expect(findMatchingToken("small", { source: "spacing.*", prefix: "p" }, tokens)).toEqual([
-            "spacing",
-            "small",
-        ]);
+        expect(
+            findMatchingToken("small", { source: "spacing.*", prefix: "p" }, tokens)?.$path
+        ).toBe("spacing.small");
     });
 
     it("returns null when no token matches", () => {
