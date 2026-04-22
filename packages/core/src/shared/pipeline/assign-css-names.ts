@@ -7,13 +7,9 @@ import type {
 import type { NormalizedTokens } from "../../types/normalize.js";
 import type { ResolvedToken, ResolvedTokens } from "../../types/resolve.js";
 import type { TokenType } from "../../types/tokens.js";
-// Used as a "which token types have a CSS renderer?" lookup — not for calling the
-// renderers themselves. Apply-converters no longer renders; it populates metadata
-// and filters unsupported types.
-import { converters } from "../renderers/css/index.js";
 import { createVariableNameResolver } from "../resolve-variable-name.js";
 
-function convertSingleToken<T extends TokenType>(
+function assignSingleTokenNames<T extends TokenType>(
     token: ResolvedToken<T>,
     varName: (path: string) => string
 ): ConvertedToken<T> {
@@ -32,7 +28,7 @@ function convertSingleToken<T extends TokenType>(
     };
 }
 
-function convertContext(
+function assignContextNames(
     tokens: ResolvedTokens,
     varName: (path: string) => string,
     isTokenInvalid?: (tokenPath: string) => boolean
@@ -50,61 +46,32 @@ function convertContext(
             continue;
         }
 
-        // Skip tokens with validation errors — prevents invalid CSS generation.
-        // Validation errors are captured earlier in the pipeline (by resolveTokens).
-        if (isTokenInvalid?.(token.$path)) {
-            continue;
-        }
+        // Skip tokens flagged as invalid by the validation step — prevents
+        // invalid tokens (including unknown $type) from leaking into output.
+        if (isTokenInvalid?.(token.$path)) continue;
 
-        // Skip tokens whose type has no CSS renderer.
-        if (!converters[token.$type as TokenType]) continue;
-
-        converted[key] = convertSingleToken(token, varName);
+        converted[key] = assignSingleTokenNames(token, varName);
     }
 
     return converted;
 }
 
 /**
- * Converts normalized tokens into their CSS representations.
+ * Populate each token's CSS variable name on `$names.css`.
  *
- * The function maintains the context structure while adding
- * CSS-specific properties to each token.
+ * Honours `variables.prefix` / `variables.variableName` config. Called once
+ * per pipeline run; downstream emission sites (`format-css-variables`,
+ * utility class rules, Studio) all read `token.$names.css` — single source
+ * of truth for CSS variable naming.
  *
- * @param tokens - The normalized tokens to convert
- * @param config - The sugarcube configuration containing conversion options
- * @returns The converted tokens with CSS properties, organized by context
+ * Invalid tokens (flagged by the prior validation step) are dropped.
  *
  * @example
- * // Input tokens
- * {
- *   default: {
- *     "color.primary": { $type: "color", $value: "#FF0000" }
- *   },
- *   dark: {
- *     "color.primary": { $type: "color", $value: "#000000" }
- *   }
- * }
- *
- * // Output after conversion
- * {
- *   default: {
- *     "color.primary": {
- *       $type: "color",
- *       $value: "#FF0000",
- *       $cssProperties: { value: "#FF0000" }
- *     }
- *   },
- *   dark: {
- *     "color.primary": {
- *       $type: "color",
- *       $value: "#000000",
- *       $cssProperties: { value: "#000000" }
- *     }
- *   }
- * }
+ *   // With variables.prefix = "ds"
+ *   input:  ResolvedTokens { "color.primary": { $value: "#FF0000", ... } }
+ *   output: ConvertedTokens { "color.primary": { ..., $names: { css: "ds-color-primary" } } }
  */
-export function applyConverters(
+export function assignCSSNames(
     tokens: NormalizedTokens,
     config: InternalConfig,
     isTokenInvalid?: (tokenPath: string) => boolean
@@ -114,7 +81,7 @@ export function applyConverters(
     const varName = createVariableNameResolver(config.variables);
 
     for (const [context, contextTokens] of Object.entries(tokens)) {
-        converted[context] = convertContext(contextTokens, varName, isTokenInvalid);
+        converted[context] = assignContextNames(contextTokens, varName, isTokenInvalid);
     }
 
     return converted;

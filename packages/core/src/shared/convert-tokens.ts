@@ -3,7 +3,7 @@ import type { NormalizedConvertedTokens } from "../types/convert.js";
 import type { ResolvedTokens } from "../types/resolve.js";
 import type { TokenTree } from "../types/tokens.js";
 import type { ValidationError } from "../types/validate.js";
-import { applyConverters } from "./pipeline/apply-converters.js";
+import { assignCSSNames } from "./pipeline/assign-css-names.js";
 import { groupByContext } from "./pipeline/group-by-context.js";
 
 export type ConvertResult = {
@@ -11,9 +11,9 @@ export type ConvertResult = {
 };
 
 /**
- * Pure pipeline: resolved tokens + trees → converted tokens ready for CSS emission.
+ * Pure pipeline: resolved tokens + trees → tokens ready for CSS emission.
  *
- * Runs groupByContext → applyConverters.
+ * Runs groupByContext → assignCSSNames.
  *
  * @param trees - The token trees (used to discover the set of contexts)
  * @param resolved - The resolved tokens
@@ -39,5 +39,5 @@ export async function convertTokens(
               )
         : undefined;
 
-    return applyConverters(grouped, config, isTokenInvalid);
+    return assignCSSNames(grouped, config, isTokenInvalid);
 }

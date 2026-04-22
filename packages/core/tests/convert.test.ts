@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
-import { applyConverters } from "../src/shared/pipeline/apply-converters.js";
+import { assignCSSNames } from "../src/shared/pipeline/assign-css-names.js";
 import type { ConvertedToken } from "../src/types/convert.js";
 import type { NormalizedTokens } from "../src/types/normalize.js";
 import type { ResolvedToken } from "../src/types/resolve.js";
@@ -9,7 +9,9 @@ import { configs } from "./__fixtures__/configs.js";
 import { createResolvedToken } from "./__fixtures__/resolved-tokens.js";
 
 describe("convert", () => {
-    it("should skip unsupported token types", () => {
+    it("should drop tokens flagged as invalid by validation", () => {
+        // Unknown $type is caught by the validation step; assignCSSNames
+        // consumes the validation error via isTokenInvalid and drops the token.
         const tokens: NormalizedTokens = {
             default: {
                 "color.primary": createResolvedToken(),
@@ -24,7 +26,8 @@ describe("convert", () => {
             },
         };
 
-        const result = applyConverters(tokens, fillDefaults(configs.basic));
+        const isTokenInvalid = (path: string) => path === "unsupported.type";
+        const result = assignCSSNames(tokens, fillDefaults(configs.basic), isTokenInvalid);
         expect(result.default?.["color.primary"]).toBeDefined();
         expect(result.default?.["unsupported.type"]).toBeUndefined();
     });
@@ -42,7 +45,7 @@ describe("convert", () => {
             },
         };
 
-        const result = applyConverters(tokens, fillDefaults(configs.basic));
+        const result = assignCSSNames(tokens, fillDefaults(configs.basic));
         expect(result.default?.["color.primary"]).toBeUndefined();
         expect(result.default?.["color.secondary"]).toBeUndefined();
         expect(result.default?.["color.tertiary"]).toBeUndefined();
@@ -67,7 +70,7 @@ describe("convert", () => {
             },
         };
 
-        const result = applyConverters(tokens, fillDefaults(configs.basic));
+        const result = assignCSSNames(tokens, fillDefaults(configs.basic));
 
         const metadataNode = result.default?.color as NodeMetadata;
         expect(metadataNode.$description).toBe("Color tokens");
@@ -85,7 +88,7 @@ describe("convert", () => {
             },
         };
 
-        const result = applyConverters(tokens, fillDefaults(configs.basic));
+        const result = assignCSSNames(tokens, fillDefaults(configs.basic));
 
         const token = result.default?.["color.primary"] as ConvertedToken<TokenType>;
         expect(token.$names.css).toBe("color-primary");
@@ -98,7 +101,7 @@ describe("convert", () => {
             },
         };
 
-        const result = applyConverters(tokens, fillDefaults({ variables: { prefix: "ds" } }));
+        const result = assignCSSNames(tokens, fillDefaults({ variables: { prefix: "ds" } }));
 
         const token = result.default?.["color.primary"] as ConvertedToken<TokenType>;
         expect(token.$names.css).toBe("ds-color-primary");
@@ -111,7 +114,7 @@ describe("convert", () => {
             },
         };
 
-        const result = applyConverters(
+        const result = assignCSSNames(
             tokens,
             fillDefaults({
                 variables: {
@@ -131,7 +134,7 @@ describe("convert", () => {
             },
         };
 
-        const result = applyConverters(
+        const result = assignCSSNames(
             tokens,
             fillDefaults({
                 variables: {
