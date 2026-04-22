@@ -1,13 +1,13 @@
-import type { ConversionOptions, SimpleCSSProperties } from "../../../types/convert.js";
 import type { DTCGColorValue } from "../../../types/dtcg-color.js";
+import type { CSSRenderOptions, SimpleCSSProperties } from "../../../types/render.js";
 import { convertColorToString } from "../../color/color-conversion.js";
 import { isDTCGColorValue } from "../../color/color-validation.js";
 import { ErrorMessages } from "../../constants/error-messages.js";
 import { isReference } from "../../guards.js";
 
-export function convertColorToken(
+export function renderColor(
     value: string | DTCGColorValue,
-    options: ConversionOptions
+    options: CSSRenderOptions
 ): SimpleCSSProperties {
     if (typeof value === "string" && isReference(value)) {
         return { value };

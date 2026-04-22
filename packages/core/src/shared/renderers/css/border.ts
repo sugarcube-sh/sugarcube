@@ -1,12 +1,12 @@
-import type { CSSBorderProperties, ConversionOptions } from "../../../types/convert.js";
+import type { CSSBorderProperties, CSSRenderOptions } from "../../../types/render.js";
 import type { TokenValue } from "../../../types/tokens.js";
 import { convertColorToString } from "../../color/color-conversion.js";
 import { isDTCGColorValue } from "../../color/color-validation.js";
 import { ErrorMessages } from "../../constants/error-messages.js";
 import { isReference } from "../../guards.js";
-import { convertStrokeStyleToken } from "./stroke.js";
+import { renderStrokeStyle } from "./stroke.js";
 
-function convertBorderColor(color: TokenValue<"color">, options: ConversionOptions): string {
+function convertBorderColor(color: TokenValue<"color">, options: CSSRenderOptions): string {
     if (isReference(color)) {
         return color;
     }
@@ -22,9 +22,9 @@ function convertBorderColor(color: TokenValue<"color">, options: ConversionOptio
     return color;
 }
 
-export function convertBorderToken(
+export function renderBorder(
     value: TokenValue<"border">,
-    options: ConversionOptions
+    options: CSSRenderOptions
 ): CSSBorderProperties {
     if (isReference(value)) {
         return { value };
@@ -34,7 +34,7 @@ export function convertBorderToken(
         : `${value.width.value}${value.width.unit}`;
     const color = convertBorderColor(value.color, options);
     const style =
-        typeof value.style === "string" ? value.style : convertStrokeStyleToken(value.style).value;
+        typeof value.style === "string" ? value.style : renderStrokeStyle(value.style).value;
 
     return { value: `${width} ${style} ${color}` };
 }

@@ -1,4 +1,4 @@
-import type { CSSTransitionProperties } from "../../../types/convert.js";
+import type { CSSTransitionProperties } from "../../../types/render.js";
 import type { Duration, TokenValue } from "../../../types/tokens.js";
 import { isReference } from "../../guards.js";
 
@@ -7,7 +7,7 @@ function formatDuration(duration: Duration | undefined): string {
     return `${duration.value}${duration.unit}`;
 }
 
-export function convertTransitionToken(value: TokenValue<"transition">): CSSTransitionProperties {
+export function renderTransition(value: TokenValue<"transition">): CSSTransitionProperties {
     if (isReference(value)) {
         return { value };
     }

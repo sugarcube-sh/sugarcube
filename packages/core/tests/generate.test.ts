@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
 import { formatCSSVariables } from "../src/shared/pipeline/format-css-variables.js";
 import type { InternalConfig } from "../src/types/config.js";
-import type { NormalizedConvertedTokens } from "../src/types/convert.js";
+import type { NormalizedRenderableTokens } from "../src/types/render.js";
 import { configs } from "./__fixtures__/configs.js";
-import { convertedTokens, createConvertedToken } from "./__fixtures__/converted-tokens.js";
+import { convertedTokens, createRenderableToken } from "./__fixtures__/renderable-tokens.js";
 
 function configWith(
     base: keyof typeof configs,
@@ -22,7 +22,7 @@ function configWith(
 
 describe("generate", () => {
     it("should generate basic CSS variables", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
             },
@@ -38,7 +38,7 @@ describe("generate", () => {
     });
 
     it("should handle theme context tokens", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
             },
@@ -64,12 +64,12 @@ describe("generate", () => {
     });
 
     it("should handle named theme contexts", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
             },
             "perm:1": {
-                "color.primary": createConvertedToken({ $value: "#0066FF" }),
+                "color.primary": createRenderableToken({ $value: "#0066FF" }),
             },
         };
 
@@ -88,7 +88,7 @@ describe("generate", () => {
     });
 
     it("should handle typography tokens", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "typography.body": convertedTokens.typographyBody,
             },
@@ -106,9 +106,9 @@ describe("generate", () => {
     });
 
     it("should handle P3 color support", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
-                "color.primary": createConvertedToken({
+                "color.primary": createRenderableToken({
                     $value: {
                         colorSpace: "display-p3",
                         components: [1, 0, 0],
@@ -129,7 +129,7 @@ describe("generate", () => {
     });
 
     it("should handle references in CSS values", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
                 "shadow.primary": convertedTokens.shadowPrimary,
@@ -145,7 +145,7 @@ describe("generate", () => {
     });
 
     it("should skip empty permutations", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
             },
@@ -164,7 +164,7 @@ describe("generate", () => {
     });
 
     it("should return empty output when no permutations defined", async () => {
-        const tokens: NormalizedConvertedTokens = {};
+        const tokens: NormalizedRenderableTokens = {};
         const config = fillDefaults(configs.basic);
 
         const result = await formatCSSVariables(tokens, config);
@@ -174,15 +174,15 @@ describe("generate", () => {
 
     describe("permutations API", () => {
         it("should generate media query when permutation has atRule", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "color.surface": createConvertedToken({
+                    "color.surface": createRenderableToken({
                         $path: "color.surface",
                         $value: "#ffffff",
                     }),
                 },
                 "perm:1": {
-                    "color.surface": createConvertedToken({
+                    "color.surface": createRenderableToken({
                         $path: "color.surface",
                         $value: "#1a1a1a",
                     }),
@@ -209,9 +209,9 @@ describe("generate", () => {
         });
 
         it("should use inline permutation from --input (CLI converts input to permutation)", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "color.primary": createConvertedToken({
+                    "color.primary": createRenderableToken({
                         $path: "color.primary",
                         $value: "#0066FF",
                     }),
@@ -230,15 +230,15 @@ describe("generate", () => {
         });
 
         it("should group permutations by path", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "color.primary": createConvertedToken({
+                    "color.primary": createRenderableToken({
                         $path: "color.primary",
                         $value: "#0066FF",
                     }),
                 },
                 "perm:1": {
-                    "color.primary": createConvertedToken({
+                    "color.primary": createRenderableToken({
                         $path: "color.primary",
                         $value: "#00FF66",
                     }),
@@ -262,18 +262,18 @@ describe("generate", () => {
 
     describe("prefix", () => {
         it("emits the prefixed name in declarations, references, and typography sub-vars", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "color.primary": createConvertedToken({
+                    "color.primary": createRenderableToken({
                         $path: "color.primary",
                         $names: { css: "ds-color-primary" },
                     }),
-                    "color.button": createConvertedToken({
+                    "color.button": createRenderableToken({
                         $path: "color.button",
                         $value: "{color.primary}",
                         $names: { css: "ds-color-button" },
                     }),
-                    "typography.body": createConvertedToken({
+                    "typography.body": createRenderableToken({
                         $type: "typography",
                         $path: "typography.body",
                         $value: {
@@ -302,13 +302,13 @@ describe("generate", () => {
         // preserved case (--color-brandPrimary) while references kebab-cased
         // (var(--color-brand-primary)) — producing a dangling reference.
         it("keeps declaration and reference names in sync for camelCase paths", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "color.brandPrimary": createConvertedToken({
+                    "color.brandPrimary": createRenderableToken({
                         $path: "color.brandPrimary",
                         $value: "#FF0000",
                     }),
-                    "color.button": createConvertedToken({
+                    "color.button": createRenderableToken({
                         $path: "color.button",
                         $value: "{color.brandPrimary}",
                     }),

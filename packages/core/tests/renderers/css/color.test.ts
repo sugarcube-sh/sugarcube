@@ -1,36 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { convertColorToken } from "../../src/shared/renderers/css/color.js";
-import type { ConversionOptions } from "../../src/types/convert.js";
+import { renderColor } from "../../../src/shared/renderers/css/color.js";
+import type { CSSRenderOptions } from "../../../src/types/render.js";
 
-const createOptions = (overrides: Partial<ConversionOptions> = {}): ConversionOptions => ({
+const createOptions = (overrides: Partial<CSSRenderOptions> = {}): CSSRenderOptions => ({
     fluidConfig: { min: 320, max: 1200 },
     colorFallbackStrategy: "native",
     ...overrides,
 });
 
-describe("convertColorToken", () => {
+describe("renderColor", () => {
     it("should preserve references", () => {
         const reference = "{color.primary.500}";
-        expect(convertColorToken(reference, createOptions({ path: "test" }))).toEqual({
+        expect(renderColor(reference, createOptions({ path: "test" }))).toEqual({
             value: reference,
         });
     });
 
     it("should pass through hex strings unchanged", () => {
         const hex = "#FF0000";
-        expect(convertColorToken(hex, createOptions({ path: "test" }))).toEqual({
+        expect(renderColor(hex, createOptions({ path: "test" }))).toEqual({
             value: "#FF0000",
         });
 
         const hexWithAlpha = "#FF000080";
-        expect(convertColorToken(hexWithAlpha, createOptions({ path: "test" }))).toEqual({
+        expect(renderColor(hexWithAlpha, createOptions({ path: "test" }))).toEqual({
             value: "#FF000080",
         });
     });
 
     it("should handle invalid hex strings gracefully", () => {
         const invalidHex = "#XY0000";
-        expect(convertColorToken(invalidHex, createOptions({ path: "test" }))).toEqual({
+        expect(renderColor(invalidHex, createOptions({ path: "test" }))).toEqual({
             value: invalidHex,
         });
     });
@@ -42,10 +42,7 @@ describe("convertColorToken", () => {
             alpha: 0.8,
         };
 
-        const result = convertColorToken(
-            oklchColor,
-            createOptions({ colorFallbackStrategy: "native" })
-        );
+        const result = renderColor(oklchColor, createOptions({ colorFallbackStrategy: "native" }));
         expect(result.value).toBe("oklch(0.7016 0.3225 328.363 / 0.8)");
         expect(result.featureValues).toBeUndefined();
     });
@@ -58,7 +55,7 @@ describe("convertColorToken", () => {
             hex: "#ff00ff",
         };
 
-        const result = convertColorToken(
+        const result = renderColor(
             oklchColorWithHex,
             createOptions({ colorFallbackStrategy: "polyfill" })
         );
@@ -75,7 +72,7 @@ describe("convertColorToken", () => {
         };
 
         expect(() => {
-            convertColorToken(oklchColor, createOptions({ colorFallbackStrategy: "polyfill" }));
+            renderColor(oklchColor, createOptions({ colorFallbackStrategy: "polyfill" }));
         }).toThrow("oklch colors require a 'hex' fallback when using 'polyfill' strategy");
     });
 });

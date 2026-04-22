@@ -1,11 +1,11 @@
-import type { CSSShadowProperties, ConversionOptions } from "../../../types/convert.js";
+import type { CSSRenderOptions, CSSShadowProperties } from "../../../types/render.js";
 import type { ShadowObject, TokenValue } from "../../../types/tokens.js";
 import { convertColorToString } from "../../color/color-conversion.js";
 import { isDTCGColorValue } from "../../color/color-validation.js";
 import { ErrorMessages } from "../../constants/error-messages.js";
 import { isReference } from "../../guards.js";
 
-function convertShadowColor(color: ShadowObject["color"], options: ConversionOptions): string {
+function convertShadowColor(color: ShadowObject["color"], options: CSSRenderOptions): string {
     if (isReference(color)) {
         return color;
     }
@@ -21,7 +21,7 @@ function convertShadowColor(color: ShadowObject["color"], options: ConversionOpt
     return color;
 }
 
-function convertSingleShadow(shadow: ShadowObject, options: ConversionOptions): string {
+function convertSingleShadow(shadow: ShadowObject, options: CSSRenderOptions): string {
     const offsetX = isReference(shadow.offsetX)
         ? shadow.offsetX
         : `${shadow.offsetX.value}${shadow.offsetX.unit}`;
@@ -41,9 +41,9 @@ function convertSingleShadow(shadow: ShadowObject, options: ConversionOptions): 
     return `${shadow.inset ? "inset " : ""}${offsetX} ${offsetY} ${blur} ${spread} ${color}`;
 }
 
-export function convertShadowToken(
+export function renderShadow(
     value: TokenValue<"shadow">,
-    options: ConversionOptions
+    options: CSSRenderOptions
 ): CSSShadowProperties {
     if (isReference(value)) {
         return { value };

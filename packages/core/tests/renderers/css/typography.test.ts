@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { convertTypographyToken } from "../../src/shared/renderers/css/typography.js";
+import { renderTypography } from "../../../src/shared/renderers/css/typography.js";
 
 describe("convertTypography", () => {
     it("should handle reference values", () => {
-        const result = convertTypographyToken("{typography.body}");
+        const result = renderTypography("{typography.body}");
         expect(result).toEqual({
             "font-family": "{typography.body}",
             "font-size": "{typography.body}",
@@ -11,7 +11,7 @@ describe("convertTypography", () => {
     });
 
     it("should convert typography object with all properties", () => {
-        const result = convertTypographyToken({
+        const result = renderTypography({
             fontFamily: ["Arial", "sans-serif"],
             fontSize: { value: 16, unit: "px" },
             fontWeight: 400,
@@ -29,7 +29,7 @@ describe("convertTypography", () => {
     });
 
     it("should convert typography object with string font weight", () => {
-        const result = convertTypographyToken({
+        const result = renderTypography({
             fontFamily: ["Arial"],
             fontSize: { value: 16, unit: "px" },
             fontWeight: "bold",
@@ -45,7 +45,7 @@ describe("convertTypography", () => {
     });
 
     it("should handle reference values for individual properties", () => {
-        const result = convertTypographyToken({
+        const result = renderTypography({
             fontFamily: "{typography.family.sans}",
             fontSize: "{typography.size.base}",
             fontWeight: "{typography.weight.bold}",
@@ -63,7 +63,7 @@ describe("convertTypography", () => {
     });
 
     it("should handle optional properties correctly", () => {
-        const result = convertTypographyToken({
+        const result = renderTypography({
             fontFamily: ["Arial"],
             fontSize: { value: 16, unit: "px" },
         });
@@ -75,7 +75,7 @@ describe("convertTypography", () => {
     });
 
     it("should handle single string font family", () => {
-        const result = convertTypographyToken({
+        const result = renderTypography({
             fontFamily: "Arial",
             fontSize: { value: 16, unit: "px" },
         });

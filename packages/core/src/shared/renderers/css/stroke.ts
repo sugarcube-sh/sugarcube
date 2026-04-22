@@ -1,8 +1,8 @@
-import type { SimpleCSSProperties } from "../../../types/convert.js";
+import type { SimpleCSSProperties } from "../../../types/render.js";
 import type { TokenValue } from "../../../types/tokens.js";
 import { isReference } from "../../guards.js";
 
-export function convertStrokeStyleToken(
+export function renderStrokeStyle(
     value: TokenValue<"strokeStyle">
 ): SimpleCSSProperties & { value: string } {
     if (isReference(value)) {

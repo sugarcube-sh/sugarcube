@@ -1,8 +1,9 @@
 import { bench, describe } from "vitest";
 import { fillDefaults } from "../../src/node/config/normalize.js";
 import { loadTokens } from "../../src/node/load-tokens.js";
-import { convertTokens } from "../../src/shared/convert-tokens.js";
+import { assignCSSNames } from "../../src/shared/pipeline/assign-css-names.js";
 import { expand } from "../../src/shared/pipeline/expand.js";
+import { groupByContext } from "../../src/shared/pipeline/group-by-context.js";
 import { resolveTokens } from "../../src/shared/resolve-tokens.js";
 import type { SugarcubeConfig } from "../../src/types/config.js";
 import type { TokenMemoryData } from "../../src/types/load.js";
@@ -182,7 +183,7 @@ describe("pipeline", () => {
                 config,
             });
 
-            await convertTokens(trees, resolved, config, errors.validation);
+            assignCSSNames(groupByContext(trees, resolved), config, errors.validation);
         });
 
         bench("medium token set (1,000 tokens)", async () => {
@@ -195,7 +196,7 @@ describe("pipeline", () => {
                 config,
             });
 
-            await convertTokens(trees, resolved, config, errors.validation);
+            assignCSSNames(groupByContext(trees, resolved), config, errors.validation);
         });
 
         bench("large token set (10,000 tokens)", async () => {
@@ -208,7 +209,7 @@ describe("pipeline", () => {
                 config,
             });
 
-            await convertTokens(trees, resolved, config, errors.validation);
+            assignCSSNames(groupByContext(trees, resolved), config, errors.validation);
         });
 
         bench("with modifiers (1,000 base + 3 contexts)", async () => {
@@ -221,7 +222,7 @@ describe("pipeline", () => {
                 config,
             });
 
-            await convertTokens(trees, resolved, config, errors.validation);
+            assignCSSNames(groupByContext(trees, resolved), config, errors.validation);
         });
     });
 

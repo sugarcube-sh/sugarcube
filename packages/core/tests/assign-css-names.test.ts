@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
 import { assignCSSNames } from "../src/shared/pipeline/assign-css-names.js";
-import type { ConvertedToken } from "../src/types/convert.js";
 import type { NormalizedTokens } from "../src/types/normalize.js";
+import type { RenderableToken } from "../src/types/render.js";
 import type { ResolvedToken } from "../src/types/resolve.js";
 import type { NodeMetadata, TokenType } from "../src/types/tokens.js";
 import { configs } from "./__fixtures__/configs.js";
@@ -26,8 +26,14 @@ describe("convert", () => {
             },
         };
 
-        const isTokenInvalid = (path: string) => path === "unsupported.type";
-        const result = assignCSSNames(tokens, fillDefaults(configs.basic), isTokenInvalid);
+        const validationErrors = [
+            {
+                path: "unsupported.type",
+                message: "unknown token type",
+                source: { sourcePath: "test.json" },
+            },
+        ];
+        const result = assignCSSNames(tokens, fillDefaults(configs.basic), validationErrors);
         expect(result.default?.["color.primary"]).toBeDefined();
         expect(result.default?.["unsupported.type"]).toBeUndefined();
     });
@@ -90,7 +96,7 @@ describe("convert", () => {
 
         const result = assignCSSNames(tokens, fillDefaults(configs.basic));
 
-        const token = result.default?.["color.primary"] as ConvertedToken<TokenType>;
+        const token = result.default?.["color.primary"] as RenderableToken<TokenType>;
         expect(token.$names.css).toBe("color-primary");
     });
 
@@ -103,7 +109,7 @@ describe("convert", () => {
 
         const result = assignCSSNames(tokens, fillDefaults({ variables: { prefix: "ds" } }));
 
-        const token = result.default?.["color.primary"] as ConvertedToken<TokenType>;
+        const token = result.default?.["color.primary"] as RenderableToken<TokenType>;
         expect(token.$names.css).toBe("ds-color-primary");
     });
 
@@ -123,7 +129,7 @@ describe("convert", () => {
             })
         );
 
-        const token = result.default?.["color.primary"] as ConvertedToken<TokenType>;
+        const token = result.default?.["color.primary"] as RenderableToken<TokenType>;
         expect(token.$names.css).toBe("custom--color_primary");
     });
 
@@ -144,7 +150,7 @@ describe("convert", () => {
             })
         );
 
-        const token = result.default?.["color.primary"] as ConvertedToken<TokenType>;
+        const token = result.default?.["color.primary"] as RenderableToken<TokenType>;
         expect(token.$names.css).toBe("only-color-primary");
     });
 });

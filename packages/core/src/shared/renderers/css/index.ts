@@ -1,35 +1,35 @@
-import type { TokenConverter } from "../../../types/convert.js";
+import type { CSSRenderer } from "../../../types/render.js";
 import type { TokenType } from "../../../types/tokens.js";
-import { convertBorderToken } from "./border.js";
-import { convertColorToken } from "./color.js";
-import { convertCubicBezierToken } from "./cubic-bezier.js";
-import { convertDimensionToken } from "./dimension.js";
-import { convertDurationToken } from "./duration.js";
-import { convertFluidDimensionToken } from "./fluid-dimension.js";
-import { convertFontFamilyToken } from "./font-family.js";
-import { convertFontWeightToken } from "./font-weight.js";
-import { convertGradientToken } from "./gradient.js";
-import { convertNumberToken } from "./number.js";
-import { convertShadowToken } from "./shadow.js";
-import { convertStrokeStyleToken } from "./stroke.js";
-import { convertTransitionToken } from "./transition.js";
-import { convertTypographyToken } from "./typography.js";
+import { renderBorder } from "./border.js";
+import { renderColor } from "./color.js";
+import { renderCubicBezier } from "./cubic-bezier.js";
+import { renderDimension } from "./dimension.js";
+import { renderDuration } from "./duration.js";
+import { renderFluidDimension } from "./fluid-dimension.js";
+import { renderFontFamily } from "./font-family.js";
+import { renderFontWeight } from "./font-weight.js";
+import { renderGradient } from "./gradient.js";
+import { renderNumber } from "./number.js";
+import { renderShadow } from "./shadow.js";
+import { renderStrokeStyle } from "./stroke.js";
+import { renderTransition } from "./transition.js";
+import { renderTypography } from "./typography.js";
 
-export const converters: {
-    [T in TokenType]: TokenConverter<T>;
+export const cssRenderers: {
+    [T in TokenType]: CSSRenderer<T>;
 } = {
-    duration: convertDurationToken,
-    number: convertNumberToken,
-    cubicBezier: convertCubicBezierToken,
-    color: convertColorToken,
-    dimension: convertDimensionToken,
-    fluidDimension: convertFluidDimensionToken,
-    typography: convertTypographyToken,
-    border: convertBorderToken,
-    shadow: convertShadowToken,
-    gradient: convertGradientToken,
-    transition: convertTransitionToken,
-    strokeStyle: convertStrokeStyleToken,
-    fontFamily: convertFontFamilyToken,
-    fontWeight: convertFontWeightToken,
+    duration: renderDuration,
+    number: renderNumber,
+    cubicBezier: renderCubicBezier,
+    color: renderColor,
+    dimension: renderDimension,
+    fluidDimension: renderFluidDimension,
+    typography: renderTypography,
+    border: renderBorder,
+    shadow: renderShadow,
+    gradient: renderGradient,
+    transition: renderTransition,
+    strokeStyle: renderStrokeStyle,
+    fontFamily: renderFontFamily,
+    fontWeight: renderFontWeight,
 } as const;

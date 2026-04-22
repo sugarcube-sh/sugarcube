@@ -6,12 +6,12 @@ import {
     getDirectionAbbreviation,
     getLogicalProperty,
 } from "../src/shared/uno-rules.js";
-import type { NormalizedConvertedTokens } from "../src/types/convert.js";
-import { createConvertedToken } from "./__fixtures__/converted-tokens.js";
+import type { NormalizedRenderableTokens } from "../src/types/render.js";
+import { createRenderableToken } from "./__fixtures__/renderable-tokens.js";
 
 const buildTokens = (
-    tokens: Record<string, ReturnType<typeof createConvertedToken>>
-): NormalizedConvertedTokens => ({ default: tokens });
+    tokens: Record<string, ReturnType<typeof createRenderableToken>>
+): NormalizedRenderableTokens => ({ default: tokens });
 
 const testRule = (
     rules: ReturnType<typeof convertConfigToUnoRules>,
@@ -37,8 +37,8 @@ const testRule = (
 describe("convertConfigToUnoRules", () => {
     describe("basic utility generation", () => {
         const tokens = buildTokens({
-            "color-primary": createConvertedToken({ $path: "color.primary" }),
-            "color-secondary": createConvertedToken({
+            "color-primary": createRenderableToken({ $path: "color.primary" }),
+            "color-secondary": createRenderableToken({
                 $path: "color.secondary",
                 $value: "#64748b",
             }),
@@ -63,7 +63,7 @@ describe("convertConfigToUnoRules", () => {
             clearMatchCache();
 
             const prefixedTokens = buildTokens({
-                "color-primary": createConvertedToken({
+                "color-primary": createRenderableToken({
                     $path: "color.primary",
                     $names: { css: "ds-color-primary" },
                 }),
@@ -79,7 +79,7 @@ describe("convertConfigToUnoRules", () => {
 
         it("uses source path base as prefix when no prefix specified", () => {
             const textTokens = buildTokens({
-                "text-lg": createConvertedToken({
+                "text-lg": createRenderableToken({
                     $type: "dimension",
                     $path: "text.lg",
                     $value: "18px",
@@ -99,12 +99,12 @@ describe("convertConfigToUnoRules", () => {
 
     describe("directional utilities", () => {
         const tokens = buildTokens({
-            "space-sm": createConvertedToken({
+            "space-sm": createRenderableToken({
                 $type: "dimension",
                 $path: "space.sm",
                 $value: "8px",
             }),
-            "space-md": createConvertedToken({
+            "space-md": createRenderableToken({
                 $type: "dimension",
                 $path: "space.md",
                 $value: "16px",
@@ -152,11 +152,11 @@ describe("convertConfigToUnoRules", () => {
     describe("stripDuplicates option", () => {
         it("matches nested tokens by stripping duplicate prefix from path", () => {
             const tokens = buildTokens({
-                "color-text-muted": createConvertedToken({
+                "color-text-muted": createRenderableToken({
                     $path: "color.text.muted",
                     $value: "#64748b",
                 }),
-                "color-text-primary": createConvertedToken({
+                "color-text-primary": createRenderableToken({
                     $path: "color.text.primary",
                     $value: "#000",
                 }),
@@ -180,7 +180,7 @@ describe("convertConfigToUnoRules", () => {
     describe("smart rules (multiple configs sharing prefix)", () => {
         it("generates single rule when multiple configs share same prefix and source", () => {
             const tokens = buildTokens({
-                "color-primary": createConvertedToken({ $path: "color.primary" }),
+                "color-primary": createRenderableToken({ $path: "color.primary" }),
             });
 
             const rules = convertConfigToUnoRules(
@@ -200,8 +200,8 @@ describe("convertConfigToUnoRules", () => {
 
         it("tries each config in order until finding a match", () => {
             const tokens = buildTokens({
-                "color-primary": createConvertedToken({ $path: "color.primary" }),
-                "color-secondary": createConvertedToken({
+                "color-primary": createRenderableToken({ $path: "color.primary" }),
+                "color-secondary": createRenderableToken({
                     $path: "color.secondary",
                     $value: "#64748b",
                 }),
@@ -225,13 +225,13 @@ describe("convertConfigToUnoRules", () => {
 
 describe("findMatchingToken", () => {
     const tokens = buildTokens({
-        "color-primary": createConvertedToken({ $path: "color.primary" }),
-        "spacing-small": createConvertedToken({
+        "color-primary": createRenderableToken({ $path: "color.primary" }),
+        "spacing-small": createRenderableToken({
             $type: "dimension",
             $path: "spacing.small",
             $value: "8px",
         }),
-        "button-primary": createConvertedToken({ $path: "button.primary", $value: "#00f" }),
+        "button-primary": createRenderableToken({ $path: "button.primary", $value: "#00f" }),
     });
 
     it("finds token by matching source pattern", () => {

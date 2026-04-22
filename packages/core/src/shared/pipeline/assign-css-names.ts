@@ -1,18 +1,20 @@
 import type { InternalConfig } from "../../types/config.js";
-import type {
-    ConvertedToken,
-    ConvertedTokens,
-    NormalizedConvertedTokens,
-} from "../../types/convert.js";
 import type { NormalizedTokens } from "../../types/normalize.js";
+import type {
+    NormalizedRenderableTokens,
+    RenderableToken,
+    RenderableTokens,
+} from "../../types/render.js";
 import type { ResolvedToken, ResolvedTokens } from "../../types/resolve.js";
 import type { TokenType } from "../../types/tokens.js";
+import type { ValidationError } from "../../types/validate.js";
 import { createVariableNameResolver } from "../resolve-variable-name.js";
+import { toInvalidPredicate } from "../to-invalid-predicate.js";
 
 function assignSingleTokenNames<T extends TokenType>(
     token: ResolvedToken<T>,
     varName: (path: string) => string
-): ConvertedToken<T> {
+): RenderableToken<T> {
     return {
         // Preserve all metadata properties
         ...(token.$description ? { $description: token.$description } : {}),
@@ -32,8 +34,8 @@ function assignContextNames(
     tokens: ResolvedTokens,
     varName: (path: string) => string,
     isTokenInvalid?: (tokenPath: string) => boolean
-): ConvertedTokens {
-    const converted: ConvertedTokens = {};
+): RenderableTokens {
+    const converted: RenderableTokens = {};
 
     for (const [key, token] of Object.entries(tokens)) {
         if (!token || typeof token !== "object") continue;
@@ -69,16 +71,17 @@ function assignContextNames(
  * @example
  *   // With variables.prefix = "ds"
  *   input:  ResolvedTokens { "color.primary": { $value: "#FF0000", ... } }
- *   output: ConvertedTokens { "color.primary": { ..., $names: { css: "ds-color-primary" } } }
+ *   output: RenderableTokens { "color.primary": { ..., $names: { css: "ds-color-primary" } } }
  */
 export function assignCSSNames(
     tokens: NormalizedTokens,
     config: InternalConfig,
-    isTokenInvalid?: (tokenPath: string) => boolean
-): NormalizedConvertedTokens {
-    const converted: NormalizedConvertedTokens = {};
+    validationErrors?: ValidationError[]
+): NormalizedRenderableTokens {
+    const converted: NormalizedRenderableTokens = {};
     // Bind once for perf! If you change this, you need to run a benchmark.
     const varName = createVariableNameResolver(config.variables);
+    const isTokenInvalid = toInvalidPredicate(validationErrors);
 
     for (const [context, contextTokens] of Object.entries(tokens)) {
         converted[context] = assignContextNames(contextTokens, varName, isTokenInvalid);

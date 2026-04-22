@@ -1,17 +1,18 @@
 import {
     Instrumentation,
     PerfMonitor,
+    assignCSSNames,
     clearMatchCache,
     convertConfigToUnoRules,
-    convertTokens,
     generateCSSVariables,
+    groupByContext,
     loadInternalConfig,
     loadTokens,
     resolveTokens,
 } from "@sugarcube-sh/core";
 import type {
     InternalConfig,
-    NormalizedConvertedTokens,
+    NormalizedRenderableTokens,
     ResolvedTokens,
     SugarcubeConfig,
     TokenTree,
@@ -67,7 +68,7 @@ const perf = new PerfMonitor();
 export interface SugarcubePluginContext {
     ready: Promise<void>;
     config: InternalConfig | null;
-    tokens: NormalizedConvertedTokens | null;
+    tokens: NormalizedRenderableTokens | null;
     trees: TokenTree[] | null;
     resolved: ResolvedTokens | null;
     getCSS: () => string;
@@ -89,7 +90,7 @@ export interface SugarcubePluginContext {
 
 function createSugarcubeContext(): SugarcubePluginContext {
     let config: InternalConfig | null = null;
-    let tokens: NormalizedConvertedTokens | null = null;
+    let tokens: NormalizedRenderableTokens | null = null;
     let trees: TokenTree[] | null = null;
     let resolved: ResolvedTokens | null = null;
     let cachedCSS = "";
@@ -201,7 +202,11 @@ function createSugarcubeContext(): SugarcubePluginContext {
         resolved = resolveResult.resolved;
 
         I.start("Process Tokens");
-        tokens = await convertTokens(trees, resolved, config, resolveResult.errors.validation);
+        tokens = assignCSSNames(
+            groupByContext(trees, resolved),
+            config,
+            resolveResult.errors.validation
+        );
         I.end("Process Tokens");
     };
 
@@ -245,7 +250,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
             const localTrees = trees;
             if (!localConfig || !localTrees) return;
             const task = (async () => {
-                tokens = await convertTokens(localTrees, modifiedResolved, localConfig);
+                tokens = assignCSSNames(groupByContext(localTrees, modifiedResolved), localConfig);
                 await generateCSS();
                 cachedRules = buildRules();
             })();

@@ -1,10 +1,10 @@
-import type { CSSTypographyProperties } from "../../../types/convert.js";
+import type { CSSTypographyProperties } from "../../../types/render.js";
 import type { TokenValue } from "../../../types/tokens.js";
 import { isReference } from "../../guards.js";
-import { convertFontWeightToken } from "./font-weight.js";
+import { renderFontWeight } from "./font-weight.js";
 import { quoteFont } from "./quote-font.js";
 
-export function convertTypographyToken(value: TokenValue<"typography">): CSSTypographyProperties {
+export function renderTypography(value: TokenValue<"typography">): CSSTypographyProperties {
     if (isReference(value)) {
         return {
             "font-family": value,
@@ -26,7 +26,7 @@ export function convertTypographyToken(value: TokenValue<"typography">): CSSTypo
     if (value.fontWeight) {
         properties["font-weight"] = isReference(value.fontWeight)
             ? value.fontWeight
-            : convertFontWeightToken(value.fontWeight).value;
+            : renderFontWeight(value.fontWeight).value;
     }
 
     if (value.letterSpacing) {

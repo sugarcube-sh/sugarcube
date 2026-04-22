@@ -1,8 +1,8 @@
-import type { SimpleCSSProperties } from "../../../types/convert.js";
+import type { SimpleCSSProperties } from "../../../types/render.js";
 import type { TokenValue } from "../../../types/tokens.js";
 import { isReference } from "../../guards.js";
 
-export function convertCubicBezierToken(value: TokenValue<"cubicBezier">): SimpleCSSProperties {
+export function renderCubicBezier(value: TokenValue<"cubicBezier">): SimpleCSSProperties {
     if (isReference(value)) {
         return { value };
     }

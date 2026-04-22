@@ -1,22 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { convertShadowToken } from "../../src/shared/renderers/css/shadow.js";
-import type { ConversionOptions } from "../../src/types/convert.js";
+import { renderShadow } from "../../../src/shared/renderers/css/shadow.js";
+import type { CSSRenderOptions } from "../../../src/types/render.js";
 
-const defaultOptions: ConversionOptions = {
+const defaultOptions: CSSRenderOptions = {
     fluidConfig: { min: 320, max: 1200 },
     colorFallbackStrategy: "native",
 };
 
 describe("convertShadow", () => {
     it("should handle reference values", () => {
-        const result = convertShadowToken("{shadows.default}", defaultOptions);
+        const result = renderShadow("{shadows.default}", defaultOptions);
         expect(result).toEqual({
             value: "{shadows.default}",
         });
     });
 
     it("should convert single shadow object", () => {
-        const result = convertShadowToken(
+        const result = renderShadow(
             {
                 offsetX: { value: 0, unit: "px" },
                 offsetY: { value: 2, unit: "px" },
@@ -33,7 +33,7 @@ describe("convertShadow", () => {
     });
 
     it("should handle inset shadows", () => {
-        const result = convertShadowToken(
+        const result = renderShadow(
             {
                 offsetX: { value: 0, unit: "px" },
                 offsetY: { value: 2, unit: "px" },
@@ -51,7 +51,7 @@ describe("convertShadow", () => {
     });
 
     it("should handle multiple shadows", () => {
-        const result = convertShadowToken(
+        const result = renderShadow(
             [
                 {
                     offsetX: { value: 0, unit: "px" },
@@ -78,7 +78,7 @@ describe("convertShadow", () => {
     });
 
     it("should handle references in properties", () => {
-        const result = convertShadowToken(
+        const result = renderShadow(
             {
                 offsetX: "{spacing.none}",
                 offsetY: "{spacing.small}",
@@ -96,7 +96,7 @@ describe("convertShadow", () => {
 
     describe("DTCG color objects", () => {
         it("should convert sRGB color object", () => {
-            const result = convertShadowToken(
+            const result = renderShadow(
                 {
                     offsetX: { value: 0, unit: "px" },
                     offsetY: { value: 2, unit: "px" },
@@ -117,7 +117,7 @@ describe("convertShadow", () => {
         });
 
         it("should convert HSL color object", () => {
-            const result = convertShadowToken(
+            const result = renderShadow(
                 {
                     offsetX: { value: 5, unit: "px" },
                     offsetY: { value: 5, unit: "px" },
@@ -138,7 +138,7 @@ describe("convertShadow", () => {
         });
 
         it("should convert OKLCH color object", () => {
-            const result = convertShadowToken(
+            const result = renderShadow(
                 {
                     offsetX: { value: 0, unit: "rem" },
                     offsetY: { value: 0.5, unit: "rem" },
@@ -159,7 +159,7 @@ describe("convertShadow", () => {
         });
 
         it("should convert Display P3 color object", () => {
-            const result = convertShadowToken(
+            const result = renderShadow(
                 {
                     offsetX: { value: 2, unit: "px" },
                     offsetY: { value: 2, unit: "px" },
@@ -179,7 +179,7 @@ describe("convertShadow", () => {
         });
 
         it("should convert multiple shadows with DTCG color objects", () => {
-            const result = convertShadowToken(
+            const result = renderShadow(
                 [
                     {
                         offsetX: { value: 0.3, unit: "px" },

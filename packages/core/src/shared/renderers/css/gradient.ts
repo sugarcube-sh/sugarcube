@@ -1,11 +1,11 @@
-import type { CSSGradientProperties, ConversionOptions } from "../../../types/convert.js";
+import type { CSSGradientProperties, CSSRenderOptions } from "../../../types/render.js";
 import type { GradientStop, TokenValue } from "../../../types/tokens.js";
 import { convertColorToString } from "../../color/color-conversion.js";
 import { isDTCGColorValue } from "../../color/color-validation.js";
 import { ErrorMessages } from "../../constants/error-messages.js";
 import { isReference } from "../../guards.js";
 
-function convertGradientColor(color: GradientStop["color"], options: ConversionOptions): string {
+function convertGradientColor(color: GradientStop["color"], options: CSSRenderOptions): string {
     if (isReference(color)) {
         return color;
     }
@@ -34,7 +34,7 @@ function convertGradientPosition(position: GradientStop["position"]): string {
     return `${clampPosition(position) * 100}%`;
 }
 
-function convertSingleStop(stop: GradientStop, options: ConversionOptions): string {
+function convertSingleStop(stop: GradientStop, options: CSSRenderOptions): string {
     const color = convertGradientColor(stop.color, options);
     const position = convertGradientPosition(stop.position);
     return `${color} ${position}`;
@@ -61,9 +61,9 @@ function flattenStops(value: ResolvedGradientArray): GradientStop[] {
     return stops;
 }
 
-export function convertGradientToken(
+export function renderGradient(
     value: TokenValue<"gradient">,
-    options: ConversionOptions
+    options: CSSRenderOptions
 ): CSSGradientProperties {
     if (isReference(value)) {
         return { value };

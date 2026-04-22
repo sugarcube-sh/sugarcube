@@ -30,7 +30,8 @@ vi.mock("@sugarcube-sh/core", async () => {
             errors: { expandTree: [], flatten: [], validation: [], resolution: [] },
             warnings: [],
         }),
-        convertTokens: async () => ({ default: { default: {} } }),
+        groupByContext: () => ({ default: {} }),
+        assignCSSNames: () => ({ default: { default: {} } }),
         generateCSSVariables: async () => [{ css: "" }],
         convertConfigToUnoRules: () => [],
     };

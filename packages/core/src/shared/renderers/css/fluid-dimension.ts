@@ -1,4 +1,4 @@
-import type { ConversionOptions, SimpleCSSProperties } from "../../../types/convert.js";
+import type { CSSRenderOptions, SimpleCSSProperties } from "../../../types/render.js";
 import type { Dimension, FluidDimension, TokenValue } from "../../../types/tokens.js";
 import { isReference } from "../../guards.js";
 
@@ -8,7 +8,7 @@ function normalizeToPixels(value: Dimension, rootSize = 16): number {
 
 function convertFluidDimension(
     value: FluidDimension,
-    options: ConversionOptions
+    options: CSSRenderOptions
 ): SimpleCSSProperties {
     const { min, max } = value;
     const fluidConfig = options.fluidConfig;
@@ -43,9 +43,9 @@ function convertFluidDimension(
 /**
  * @deprecated Use `$type: "dimension"` with `$extensions["sh.sugarcube.fluid"]` instead.
  */
-export function convertFluidDimensionToken(
+export function renderFluidDimension(
     value: TokenValue<"fluidDimension">,
-    options: ConversionOptions
+    options: CSSRenderOptions
 ): SimpleCSSProperties {
     if (isReference(value)) {
         return { value };

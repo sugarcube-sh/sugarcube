@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { convertFluidDimensionToken } from "../../src/shared/renderers/css/fluid-dimension.js";
-import type { ConversionOptions } from "../../src/types/convert.js";
-import type { TokenValue } from "../../src/types/tokens.js";
+import { renderFluidDimension } from "../../../src/shared/renderers/css/fluid-dimension.js";
+import type { CSSRenderOptions } from "../../../src/types/render.js";
+import type { TokenValue } from "../../../src/types/tokens.js";
 
 describe("convertFluidDimension", () => {
-    const defaultOptions: ConversionOptions = {
+    const defaultOptions: CSSRenderOptions = {
         path: "some.token.path",
         fluidConfig: {
             min: 320,
@@ -15,7 +15,7 @@ describe("convertFluidDimension", () => {
 
     it("should handle reference values", () => {
         const reference = "{dimension.fluid.base}";
-        const result = convertFluidDimensionToken(reference, defaultOptions);
+        const result = renderFluidDimension(reference, defaultOptions);
         expect(result).toEqual({ value: reference });
     });
 
@@ -25,10 +25,7 @@ describe("convertFluidDimension", () => {
             max: { value: 24, unit: "px" },
         };
 
-        const result = convertFluidDimensionToken(
-            value as TokenValue<"fluidDimension">,
-            defaultOptions
-        );
+        const result = renderFluidDimension(value as TokenValue<"fluidDimension">, defaultOptions);
         expect(result.value).toMatch(/^clamp\(1rem, .* \+ .*vw, 1.5rem\)$/);
     });
 
@@ -38,10 +35,7 @@ describe("convertFluidDimension", () => {
             max: { value: 1.5, unit: "rem" },
         };
 
-        const result = convertFluidDimensionToken(
-            value as TokenValue<"fluidDimension">,
-            defaultOptions
-        );
+        const result = renderFluidDimension(value as TokenValue<"fluidDimension">, defaultOptions);
         expect(result.value).toMatch(/^clamp\(1rem, .* \+ .*vw, 1.5rem\)$/);
     });
 
@@ -51,15 +45,12 @@ describe("convertFluidDimension", () => {
             max: { value: 16, unit: "px" },
         };
 
-        const result = convertFluidDimensionToken(
-            value as TokenValue<"fluidDimension">,
-            defaultOptions
-        );
+        const result = renderFluidDimension(value as TokenValue<"fluidDimension">, defaultOptions);
         expect(result).toEqual({ value: "1rem" });
     });
 
     it("should handle different viewport units", () => {
-        const options: ConversionOptions = {
+        const options: CSSRenderOptions = {
             path: defaultOptions.path,
             fluidConfig: {
                 min: 320,
@@ -73,7 +64,7 @@ describe("convertFluidDimension", () => {
             max: { value: 2, unit: "rem" },
         };
 
-        const result = convertFluidDimensionToken(value as TokenValue<"fluidDimension">, options);
+        const result = renderFluidDimension(value as TokenValue<"fluidDimension">, options);
         expect(result.value).toMatch(/^clamp\(1rem, .* \+ .*vw, 2rem\)$/);
     });
 
@@ -83,10 +74,7 @@ describe("convertFluidDimension", () => {
             max: { value: 32, unit: "px" },
         };
 
-        const result = convertFluidDimensionToken(
-            value as TokenValue<"fluidDimension">,
-            defaultOptions
-        );
+        const result = renderFluidDimension(value as TokenValue<"fluidDimension">, defaultOptions);
         const [min, calc, max] = String(result.value)
             .replace("clamp(", "")
             .replace(")", "")

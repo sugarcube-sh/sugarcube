@@ -1,6 +1,6 @@
 import type { InternalConfig } from "../types/config.js";
-import type { NormalizedConvertedTokens } from "../types/convert.js";
 import type { CSSFileOutput } from "../types/generate.js";
+import type { NormalizedRenderableTokens } from "../types/render.js";
 import { formatCSSVariables } from "./pipeline/format-css-variables.js";
 
 /**
@@ -11,7 +11,7 @@ import { formatCSSVariables } from "./pipeline/format-css-variables.js";
  * @returns Array of CSS file outputs
  */
 export async function generateCSSVariables(
-    convertedTokens: NormalizedConvertedTokens,
+    convertedTokens: NormalizedRenderableTokens,
     config: InternalConfig
 ): Promise<CSSFileOutput> {
     const { output } = await formatCSSVariables(convertedTokens, config);

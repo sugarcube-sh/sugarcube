@@ -1,5 +1,5 @@
-import type { ConvertedToken } from "../types/convert.js";
 import type { Token, TokenGroup } from "../types/dtcg.js";
+import type { RenderableToken } from "../types/render.js";
 import type { ResolvedToken } from "../types/resolve.js";
 import type { GroupRef, Reference, TokenRef, TokenType } from "../types/tokens.js";
 
@@ -38,8 +38,8 @@ export function isCompositeToken(value: unknown): boolean {
 }
 
 export function isTypographyToken(
-    token: ConvertedToken<TokenType>
-): token is ConvertedToken<"typography"> {
+    token: RenderableToken<TokenType>
+): token is RenderableToken<"typography"> {
     return token.$type === "typography";
 }
 

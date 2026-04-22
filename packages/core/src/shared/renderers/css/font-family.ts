@@ -1,9 +1,9 @@
-import type { SimpleCSSProperties } from "../../../types/convert.js";
+import type { SimpleCSSProperties } from "../../../types/render.js";
 import type { FontFamily } from "../../../types/tokens.js";
 import { isReference } from "../../guards.js";
 import { quoteFont } from "./quote-font.js";
 
-export function convertFontFamilyToken(value: FontFamily): SimpleCSSProperties {
+export function renderFontFamily(value: FontFamily): SimpleCSSProperties {
     if (isReference(value)) {
         return { value };
     }

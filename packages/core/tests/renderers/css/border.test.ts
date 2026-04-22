@@ -1,22 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { convertBorderToken } from "../../src/shared/renderers/css/border.js";
-import type { ConversionOptions } from "../../src/types/convert.js";
+import { renderBorder } from "../../../src/shared/renderers/css/border.js";
+import type { CSSRenderOptions } from "../../../src/types/render.js";
 
-const defaultOptions: ConversionOptions = {
+const defaultOptions: CSSRenderOptions = {
     fluidConfig: { min: 320, max: 1200 },
     colorFallbackStrategy: "native",
 };
 
 describe("convertBorder", () => {
     it("should preserve references", () => {
-        const result = convertBorderToken("{border.default}", defaultOptions);
+        const result = renderBorder("{border.default}", defaultOptions);
         expect(result).toEqual({
             value: "{border.default}",
         });
     });
 
     it("should convert basic border object", () => {
-        const result = convertBorderToken(
+        const result = renderBorder(
             {
                 color: "#000000",
                 width: { value: 1, unit: "px" },
@@ -31,7 +31,7 @@ describe("convertBorder", () => {
     });
 
     it("should handle references in individual properties", () => {
-        const result = convertBorderToken(
+        const result = renderBorder(
             {
                 color: "{color.primary}",
                 width: "{spacing.hairline}",
@@ -46,7 +46,7 @@ describe("convertBorder", () => {
     });
 
     it("should handle custom stroke style objects", () => {
-        const result = convertBorderToken(
+        const result = renderBorder(
             {
                 color: "#000000",
                 width: { value: 1, unit: "px" },
@@ -68,7 +68,7 @@ describe("convertBorder", () => {
 
     describe("DTCG color objects", () => {
         it("should convert sRGB color object", () => {
-            const result = convertBorderToken(
+            const result = renderBorder(
                 {
                     color: {
                         colorSpace: "srgb",
@@ -86,7 +86,7 @@ describe("convertBorder", () => {
         });
 
         it("should convert OKLCH color object", () => {
-            const result = convertBorderToken(
+            const result = renderBorder(
                 {
                     color: {
                         colorSpace: "oklch",
@@ -105,7 +105,7 @@ describe("convertBorder", () => {
         });
 
         it("should convert Display P3 color object", () => {
-            const result = convertBorderToken(
+            const result = renderBorder(
                 {
                     color: {
                         colorSpace: "display-p3",

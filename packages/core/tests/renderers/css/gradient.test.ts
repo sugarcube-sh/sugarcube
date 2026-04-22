@@ -1,22 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { convertGradientToken } from "../../src/shared/renderers/css/gradient.js";
-import type { ConversionOptions } from "../../src/types/convert.js";
+import { renderGradient } from "../../../src/shared/renderers/css/gradient.js";
+import type { CSSRenderOptions } from "../../../src/types/render.js";
 
-const defaultOptions: ConversionOptions = {
+const defaultOptions: CSSRenderOptions = {
     fluidConfig: { min: 320, max: 1200 },
     colorFallbackStrategy: "native",
 };
 
 describe("convertGradient", () => {
     it("should handle reference values", () => {
-        const result = convertGradientToken("{gradients.primary}", defaultOptions);
+        const result = renderGradient("{gradients.primary}", defaultOptions);
         expect(result).toEqual({
             value: "{gradients.primary}",
         });
     });
 
     it("should convert basic gradient", () => {
-        const result = convertGradientToken(
+        const result = renderGradient(
             [
                 { color: "#000000", position: 0 },
                 { color: "#FFFFFF", position: 1 },
@@ -30,7 +30,7 @@ describe("convertGradient", () => {
     });
 
     it("should handle references in color values", () => {
-        const result = convertGradientToken(
+        const result = renderGradient(
             [
                 { color: "{color.primary}", position: 0 },
                 { color: "{color.secondary}", position: 1 },
@@ -44,7 +44,7 @@ describe("convertGradient", () => {
     });
 
     it("should handle references in position values", () => {
-        const result = convertGradientToken(
+        const result = renderGradient(
             [
                 { color: "#000000", position: "{position.start}" },
                 { color: "#FFFFFF", position: "{position.end}" },
@@ -58,7 +58,7 @@ describe("convertGradient", () => {
     });
 
     it("should handle multiple color stops", () => {
-        const result = convertGradientToken(
+        const result = renderGradient(
             [
                 { color: "#000000", position: 0 },
                 { color: "#808080", position: 0.5 },
@@ -74,7 +74,7 @@ describe("convertGradient", () => {
 
     describe("DTCG color objects", () => {
         it("should convert sRGB color object", () => {
-            const result = convertGradientToken(
+            const result = renderGradient(
                 [
                     {
                         color: {
@@ -102,7 +102,7 @@ describe("convertGradient", () => {
         });
 
         it("should convert OKLCH color object", () => {
-            const result = convertGradientToken(
+            const result = renderGradient(
                 [
                     {
                         color: {
@@ -128,7 +128,7 @@ describe("convertGradient", () => {
         });
 
         it("should convert mixed hex and DTCG color objects", () => {
-            const result = convertGradientToken(
+            const result = renderGradient(
                 [
                     { color: "#FF0000", position: 0 },
                     {
@@ -148,7 +148,7 @@ describe("convertGradient", () => {
         });
 
         it("should convert Display P3 color object", () => {
-            const result = convertGradientToken(
+            const result = renderGradient(
                 [
                     {
                         color: {
@@ -176,7 +176,7 @@ describe("convertGradient", () => {
 
     describe("position clamping", () => {
         it("should clamp positions greater than 1 to 100%", () => {
-            const result = convertGradientToken(
+            const result = renderGradient(
                 [
                     { color: "#000000", position: 0 },
                     { color: "#FFFFFF", position: 42 },
@@ -190,7 +190,7 @@ describe("convertGradient", () => {
         });
 
         it("should clamp negative positions to 0%", () => {
-            const result = convertGradientToken(
+            const result = renderGradient(
                 [
                     { color: "#000000", position: -99 },
                     { color: "#FFFFFF", position: 1 },
@@ -204,7 +204,7 @@ describe("convertGradient", () => {
         });
 
         it("should clamp both out-of-range positions", () => {
-            const result = convertGradientToken(
+            const result = renderGradient(
                 [
                     { color: "#FF0000", position: -5 },
                     { color: "#00FF00", position: 0.5 },
@@ -221,12 +221,12 @@ describe("convertGradient", () => {
 
     describe("nested array flattening", () => {
         it("should flatten nested arrays from resolved gradient references", () => {
-            const result = convertGradientToken(
+            const result = renderGradient(
                 [
                     [{ color: "#FFFFFF", position: 0 }],
                     { color: "#808080", position: 0.5 },
                     [{ color: "#000000", position: 1 }],
-                ] as unknown as Parameters<typeof convertGradientToken>[0],
+                ] as unknown as Parameters<typeof renderGradient>[0],
                 defaultOptions
             );
 
@@ -236,11 +236,11 @@ describe("convertGradient", () => {
         });
 
         it("should handle deeply nested arrays", () => {
-            const result = convertGradientToken(
+            const result = renderGradient(
                 [
                     [[{ color: "#FF0000", position: 0 }]],
                     { color: "#0000FF", position: 1 },
-                ] as unknown as Parameters<typeof convertGradientToken>[0],
+                ] as unknown as Parameters<typeof renderGradient>[0],
                 defaultOptions
             );
 
@@ -250,14 +250,14 @@ describe("convertGradient", () => {
         });
 
         it("should flatten multiple stops from a single reference", () => {
-            const result = convertGradientToken(
+            const result = renderGradient(
                 [
                     [
                         { color: "#FF0000", position: 0 },
                         { color: "#00FF00", position: 0.5 },
                     ],
                     { color: "#0000FF", position: 1 },
-                ] as unknown as Parameters<typeof convertGradientToken>[0],
+                ] as unknown as Parameters<typeof renderGradient>[0],
                 defaultOptions
             );
 

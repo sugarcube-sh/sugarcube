@@ -1,15 +1,15 @@
 import { formatCSSVarName } from "../../src/shared/format-css-var-name.js";
-import type { ConvertedToken } from "../../src/types/convert.js";
+import type { RenderableToken } from "../../src/types/render.js";
 import type { TokenType } from "../../src/types/tokens.js";
 
 /**
- * Build a ConvertedToken from an intent-shaped spec. `$names` derives from
+ * Build a RenderableToken from an intent-shaped spec. `$names` derives from
  * `$path`; everything else is a direct override. Reference-bearing `$value`s
  * are fine here — the CSS emitter preserves them to `var(--…)` at emit time.
  */
-export const createConvertedToken = (
-    overrides: Partial<ConvertedToken<TokenType>> = {}
-): ConvertedToken<TokenType> => {
+export const createRenderableToken = (
+    overrides: Partial<RenderableToken<TokenType>> = {}
+): RenderableToken<TokenType> => {
     const $type = overrides.$type ?? "color";
     const $value = overrides.$value ?? "#FF0000";
     const $path = overrides.$path ?? "color.primary";
@@ -31,9 +31,9 @@ export const createConvertedToken = (
 };
 
 export const convertedTokens = {
-    colorPrimary: createConvertedToken(),
-    colorPrimaryDark: createConvertedToken({ $value: "#000000" }),
-    typographyBody: createConvertedToken({
+    colorPrimary: createRenderableToken(),
+    colorPrimaryDark: createRenderableToken({ $value: "#000000" }),
+    typographyBody: createRenderableToken({
         $type: "typography",
         $value: {
             fontFamily: "Arial",
@@ -43,18 +43,18 @@ export const convertedTokens = {
         },
         $path: "typography.body",
     }),
-    spacingSmall: createConvertedToken({
+    spacingSmall: createRenderableToken({
         $type: "dimension",
         $value: { value: 8, unit: "px" },
         $path: "spacing.small",
     }),
-    buttonPrimary: createConvertedToken({ $value: "#0000FF", $path: "button.primary" }),
-    buttonSize: createConvertedToken({
+    buttonPrimary: createRenderableToken({ $value: "#0000FF", $path: "button.primary" }),
+    buttonSize: createRenderableToken({
         $type: "dimension",
         $value: { value: 40, unit: "px" },
         $path: "button.size",
     }),
-    shadowPrimary: createConvertedToken({
+    shadowPrimary: createRenderableToken({
         $type: "shadow",
         $value: {
             color: "{color.primary}",

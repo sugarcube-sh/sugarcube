@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { convertDimensionToken } from "../../src/shared/renderers/css/dimension.js";
-import type { ConversionOptions } from "../../src/types/convert.js";
-import type { TokenValue } from "../../src/types/tokens.js";
+import { renderDimension } from "../../../src/shared/renderers/css/dimension.js";
+import type { CSSRenderOptions } from "../../../src/types/render.js";
+import type { TokenValue } from "../../../src/types/tokens.js";
 
-describe("convertDimensionToken", () => {
-    const defaultOptions: ConversionOptions = {
+describe("renderDimension", () => {
+    const defaultOptions: CSSRenderOptions = {
         path: "some.token.path",
         fluidConfig: {
             min: 320,
@@ -15,7 +15,7 @@ describe("convertDimensionToken", () => {
 
     it("should handle reference values", () => {
         const reference = "{dimension.spacing.1}";
-        const result = convertDimensionToken(reference, defaultOptions);
+        const result = renderDimension(reference, defaultOptions);
         expect(result).toEqual({ value: reference });
     });
 
@@ -24,7 +24,7 @@ describe("convertDimensionToken", () => {
             value: 16,
             unit: "px",
         };
-        const result = convertDimensionToken(dimension, defaultOptions);
+        const result = renderDimension(dimension, defaultOptions);
         expect(result).toEqual({ value: "16px" });
     });
 
@@ -33,7 +33,7 @@ describe("convertDimensionToken", () => {
             value: 1.5,
             unit: "rem",
         };
-        const result = convertDimensionToken(dimension, defaultOptions);
+        const result = renderDimension(dimension, defaultOptions);
         expect(result).toEqual({ value: "1.5rem" });
     });
 
@@ -42,7 +42,7 @@ describe("convertDimensionToken", () => {
             value: 0.75,
             unit: "rem",
         };
-        const result = convertDimensionToken(dimension, defaultOptions);
+        const result = renderDimension(dimension, defaultOptions);
         expect(result).toEqual({ value: "0.75rem" });
     });
 
@@ -51,7 +51,7 @@ describe("convertDimensionToken", () => {
             value: 0,
             unit: "px",
         };
-        const result = convertDimensionToken(dimension, defaultOptions);
+        const result = renderDimension(dimension, defaultOptions);
         expect(result).toEqual({ value: "0px" });
     });
 
@@ -61,7 +61,7 @@ describe("convertDimensionToken", () => {
                 value: 24,
                 unit: "px",
             };
-            const options: ConversionOptions = {
+            const options: CSSRenderOptions = {
                 ...defaultOptions,
                 extensions: {
                     "sh.sugarcube": {
@@ -72,7 +72,7 @@ describe("convertDimensionToken", () => {
                     },
                 },
             };
-            const result = convertDimensionToken(dimension, options);
+            const result = renderDimension(dimension, options);
             expect(result.value).toMatch(/^clamp\(1rem, .* \+ .*vw, 1.5rem\)$/);
         });
 
@@ -81,7 +81,7 @@ describe("convertDimensionToken", () => {
                 value: 1.5,
                 unit: "rem",
             };
-            const options: ConversionOptions = {
+            const options: CSSRenderOptions = {
                 ...defaultOptions,
                 extensions: {
                     "sh.sugarcube": {
@@ -92,7 +92,7 @@ describe("convertDimensionToken", () => {
                     },
                 },
             };
-            const result = convertDimensionToken(dimension, options);
+            const result = renderDimension(dimension, options);
             expect(result.value).toMatch(/^clamp\(1rem, .* \+ .*vw, 1.5rem\)$/);
         });
 
@@ -101,7 +101,7 @@ describe("convertDimensionToken", () => {
                 value: 16,
                 unit: "px",
             };
-            const options: ConversionOptions = {
+            const options: CSSRenderOptions = {
                 ...defaultOptions,
                 extensions: {
                     "sh.sugarcube": {
@@ -112,7 +112,7 @@ describe("convertDimensionToken", () => {
                     },
                 },
             };
-            const result = convertDimensionToken(dimension, options);
+            const result = renderDimension(dimension, options);
             expect(result).toEqual({ value: "1rem" });
         });
 
@@ -121,7 +121,7 @@ describe("convertDimensionToken", () => {
                 value: 32,
                 unit: "px",
             };
-            const options: ConversionOptions = {
+            const options: CSSRenderOptions = {
                 ...defaultOptions,
                 extensions: {
                     "sh.sugarcube": {
@@ -132,7 +132,7 @@ describe("convertDimensionToken", () => {
                     },
                 },
             };
-            const result = convertDimensionToken(dimension, options);
+            const result = renderDimension(dimension, options);
             const [min, calc, max] = String(result.value)
                 .replace("clamp(", "")
                 .replace(")", "")

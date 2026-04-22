@@ -1,23 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { convertStrokeStyleToken } from "../../src/shared/renderers/css/stroke.js";
+import { renderStrokeStyle } from "../../../src/shared/renderers/css/stroke.js";
 
 describe("convertStrokeStyle", () => {
     it("should handle reference values", () => {
-        const result = convertStrokeStyleToken("{stroke.solid}");
+        const result = renderStrokeStyle("{stroke.solid}");
         expect(result).toEqual({
             value: "{stroke.solid}",
         });
     });
 
     it("should handle keyword values", () => {
-        const result = convertStrokeStyleToken("solid");
+        const result = renderStrokeStyle("solid");
         expect(result).toEqual({
             value: "solid",
         });
     });
 
     it("should convert custom stroke style objects", () => {
-        const result = convertStrokeStyleToken({
+        const result = renderStrokeStyle({
             dashArray: [
                 { value: 4, unit: "px" },
                 { value: 2, unit: "px" },
@@ -31,7 +31,7 @@ describe("convertStrokeStyle", () => {
     });
 
     it("should handle references in dash array", () => {
-        const result = convertStrokeStyleToken({
+        const result = renderStrokeStyle({
             dashArray: ["{spacing.small}", "{spacing.medium}"],
             lineCap: "round",
         });

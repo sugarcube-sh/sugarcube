@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { convertDurationToken } from "../../src/shared/renderers/css/duration.js";
+import { renderDuration } from "../../../src/shared/renderers/css/duration.js";
 
 describe("convertDuration", () => {
     it("should handle reference values", () => {
-        const result = convertDurationToken("{duration.quick}");
+        const result = renderDuration("{duration.quick}");
         expect(result).toEqual({
             value: "{duration.quick}",
         });
     });
 
     it("should handle duration values in milliseconds", () => {
-        const result = convertDurationToken({
+        const result = renderDuration({
             value: 150,
             unit: "ms",
         });
@@ -20,7 +20,7 @@ describe("convertDuration", () => {
     });
 
     it("should handle duration values in seconds", () => {
-        const result = convertDurationToken({
+        const result = renderDuration({
             value: 1.5,
             unit: "s",
         });

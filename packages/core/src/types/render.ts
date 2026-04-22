@@ -10,7 +10,11 @@ import type {
     TokenValue,
 } from "./tokens.js";
 
-export interface ConversionOptions {
+/**
+ * Options passed to CSS renderers at emit time. Swift/JS/etc. would each
+ * define their own option type containing format-specific settings.
+ */
+export interface CSSRenderOptions {
     fluidConfig: FluidConfig;
     colorFallbackStrategy: ColorFallbackStrategy;
     path?: string;
@@ -18,10 +22,10 @@ export interface ConversionOptions {
     extensions?: SugarcubeExtensions;
 }
 
-/** Converts a token value to CSS properties. */
-export type TokenConverter<T extends TokenType> = (
+/** Renders a token value to CSS properties. One implementation per TokenType. */
+export type CSSRenderer<T extends TokenType> = (
     value: TokenValue<T>,
-    options: ConversionOptions
+    options: CSSRenderOptions
 ) => CSSProperties<T>;
 
 /**
@@ -39,27 +43,27 @@ export type TokenNames = {
  * A resolved token enriched with format-specific output metadata.
  *
  * `$resolvedValue` lives on `ResolvedToken` (the resolver's observable output)
- * and is omitted here — convert-stage consumers only care about `$value`
+ * and is omitted here — render-stage consumers only care about `$value`
  * (which preserves references for CSS `var(--…)` emission) and the format-
  * specific metadata added at this step (currently just `$names`).
  */
-export type ConvertedToken<T extends TokenType = TokenType> = Omit<
+export type RenderableToken<T extends TokenType = TokenType> = Omit<
     ResolvedToken<T>,
     "$resolvedValue"
 > & {
     $names: TokenNames;
 };
 
-export type ConvertedTokens = {
-    [lookupKey: string]: ConvertedToken | NodeMetadata;
+export type RenderableTokens = {
+    [lookupKey: string]: RenderableToken | NodeMetadata;
 };
 
 /**
- * Tokens that have been converted to CSS properties, organized by context.
- * Each context (e.g., "default", "dark") maps to its converted tokens.
+ * Tokens enriched with format-specific output metadata, organized by context.
+ * Each context (e.g., "default", "dark") maps to its render-ready tokens.
  */
-export type NormalizedConvertedTokens = {
-    [context: string]: ConvertedTokens;
+export type NormalizedRenderableTokens = {
+    [context: string]: RenderableTokens;
 };
 
 export type CSSProperties<T extends TokenType> = T extends SimpleTokenType
