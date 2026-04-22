@@ -438,4 +438,35 @@ describe("generate", () => {
             }
         });
     });
+
+    describe("path case preservation", () => {
+        // Declarations and references must use the same var name even when
+        // path segments contain camelCase characters. Pre-$names, declarations
+        // preserved case (--color-brandPrimary) while references kebab-cased
+        // (var(--color-brand-primary)) — producing a dangling reference.
+        it("keeps declaration and reference names in sync for camelCase paths", async () => {
+            const tokens: NormalizedConvertedTokens = {
+                "perm:0": {
+                    "color.brandPrimary": createConvertedToken({
+                        $path: "color.brandPrimary",
+                        $value: "#FF0000",
+                        $resolvedValue: "#FF0000",
+                        $cssProperties: { value: "#FF0000" },
+                    }),
+                    "color.button": createConvertedToken({
+                        $path: "color.button",
+                        $value: "{color.brandPrimary}",
+                        $resolvedValue: "#FF0000",
+                        $cssProperties: { value: "{color.brandPrimary}" },
+                    }),
+                },
+            };
+
+            const config = configWith("basic", [{ input: {}, selector: ":root" }]);
+            const css = (await formatCSSVariables(tokens, config)).output[0]?.css ?? "";
+
+            expect(css).toContain("--color-brandPrimary: #FF0000;");
+            expect(css).toContain("--color-button: var(--color-brandPrimary);");
+        });
+    });
 });
