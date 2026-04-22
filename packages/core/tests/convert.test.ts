@@ -78,20 +78,6 @@ describe("convert", () => {
         expect(token.$extensions?.custom).toBe("value");
     });
 
-    it("should handle conversion options correctly", () => {
-        const tokens: NormalizedTokens = {
-            default: {
-                "color.primary": createResolvedToken(),
-            },
-        };
-
-        const result = applyConverters(tokens, fillDefaults(configs.colorsRgb));
-
-        const token = result.default?.["color.primary"] as ConvertedToken<TokenType>;
-        expect(token.$cssProperties).toBeDefined();
-        // We don't test the exact CSS properties here as that's covered by the individual converter tests
-    });
-
     it("populates $names.css from the token path", () => {
         const tokens: NormalizedTokens = {
             default: {

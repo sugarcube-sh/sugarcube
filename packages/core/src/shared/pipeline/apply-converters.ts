@@ -1,24 +1,22 @@
 import type { InternalConfig } from "../../types/config.js";
 import type {
-    ConversionOptions,
     ConvertedToken,
     ConvertedTokens,
     NormalizedConvertedTokens,
-    TokenConverter,
 } from "../../types/convert.js";
 import type { NormalizedTokens } from "../../types/normalize.js";
 import type { ResolvedToken, ResolvedTokens } from "../../types/resolve.js";
-import type { TokenType, TokenValue } from "../../types/tokens.js";
+import type { TokenType } from "../../types/tokens.js";
+// Used as a "which token types have a CSS renderer?" lookup — not for calling the
+// renderers themselves. Apply-converters no longer renders; it populates metadata
+// and filters unsupported types.
 import { converters } from "../renderers/css/index.js";
 import { createVariableNameResolver } from "../resolve-variable-name.js";
 
 function convertSingleToken<T extends TokenType>(
     token: ResolvedToken<T>,
-    options: ConversionOptions,
     varName: (path: string) => string
 ): ConvertedToken<T> {
-    const converter = converters[token.$type] as TokenConverter<T>;
-
     return {
         // Preserve all metadata properties
         ...(token.$description ? { $description: token.$description } : {}),
@@ -31,14 +29,12 @@ function convertSingleToken<T extends TokenType>(
         $source: token.$source,
         $originalPath: token.$originalPath,
         $resolvedValue: token.$resolvedValue,
-        $cssProperties: converter(token.$value as TokenValue<T>, options),
         $names: { css: varName(token.$path) },
     };
 }
 
 function convertContext(
     tokens: ResolvedTokens,
-    config: InternalConfig,
     varName: (path: string) => string,
     isTokenInvalid?: (tokenPath: string) => boolean
 ): ConvertedTokens {
@@ -61,18 +57,10 @@ function convertContext(
             continue;
         }
 
-        // Skip tokens with unsupported types
+        // Skip tokens whose type has no CSS renderer.
         if (!converters[token.$type as TokenType]) continue;
 
-        const options: ConversionOptions = {
-            fluidConfig: config.variables.transforms.fluid,
-            colorFallbackStrategy: config.variables.transforms.colorFallbackStrategy,
-            path: token.$path,
-            resolvedTokens: tokens,
-            extensions: token.$extensions,
-        };
-
-        converted[key] = convertSingleToken(token, options, varName);
+        converted[key] = convertSingleToken(token, varName);
     }
 
     return converted;
@@ -127,7 +115,7 @@ export function applyConverters(
     const varName = createVariableNameResolver(config.variables);
 
     for (const [context, contextTokens] of Object.entries(tokens)) {
-        converted[context] = convertContext(contextTokens, config, varName, isTokenInvalid);
+        converted[context] = convertContext(contextTokens, varName, isTokenInvalid);
     }
 
     return converted;

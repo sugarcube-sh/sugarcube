@@ -36,7 +36,8 @@ export type TokenNames = {
 };
 
 export type ConvertedToken<T extends TokenType = TokenType> = ResolvedToken<T> & {
-    $cssProperties: CSSProperties<T>;
+    /** @deprecated Populated nowhere; kept optional during the convert-step refactor. Removed in Step 5. */
+    $cssProperties?: CSSProperties<T>;
     $names: TokenNames;
 };
 

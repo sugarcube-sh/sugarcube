@@ -1,14 +1,7 @@
-import { DEFAULT_CONFIG } from "../../src/shared/constants/config.js";
 import { formatCSSVarName } from "../../src/shared/format-css-var-name.js";
 import { isReference } from "../../src/shared/guards.js";
-import { renderCSS } from "../../src/shared/render-css.js";
-import type { ConversionOptions, ConvertedToken } from "../../src/types/convert.js";
+import type { ConvertedToken } from "../../src/types/convert.js";
 import type { TokenType } from "../../src/types/tokens.js";
-
-const defaultOptions: ConversionOptions = {
-    fluidConfig: DEFAULT_CONFIG.variables.transforms.fluid,
-    colorFallbackStrategy: DEFAULT_CONFIG.variables.transforms.colorFallbackStrategy,
-};
 
 /**
  * Build a ConvertedToken from an intent-shaped spec. Dependent fields are
@@ -16,12 +9,10 @@ const defaultOptions: ConversionOptions = {
  *
  *  - `$resolvedValue` defaults to `$value` (valid for non-reference tokens;
  *     reference-bearing fixtures must opt in with an explicit override).
- *  - `$cssProperties` defaults to `renderCSS(token)` — the same entry point
- *     the emitter uses, so fixtures match real pipeline output by construction.
  *  - `$names` derives from `$path`.
  *
- * Explicit overrides remain available when a test genuinely needs to assert
- * against hand-crafted values.
+ * `$cssProperties` is no longer populated — the emitter renders from `$value`
+ * at emit time via `renderCSS`.
  */
 export const createConvertedToken = (
     overrides: Partial<ConvertedToken<TokenType>> = {}
@@ -47,7 +38,7 @@ export const createConvertedToken = (
         );
     }
 
-    const partial = {
+    return {
         $type,
         $value,
         $path,
@@ -56,12 +47,8 @@ export const createConvertedToken = (
         $resolvedValue,
         ...($description !== undefined ? { $description } : {}),
         ...($extensions !== undefined ? { $extensions } : {}),
+        $names: overrides.$names ?? { css: formatCSSVarName($path) },
     } as ConvertedToken<TokenType>;
-
-    const $cssProperties = overrides.$cssProperties ?? renderCSS(partial, defaultOptions);
-    const $names = overrides.$names ?? { css: formatCSSVarName($path) };
-
-    return { ...partial, $cssProperties, $names };
 };
 
 export const convertedTokens = {
