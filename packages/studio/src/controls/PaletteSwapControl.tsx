@@ -1,6 +1,12 @@
-import { type ColorScaleConfig, formatCSSVarName } from "@sugarcube-sh/core/client";
+import type { ColorScaleConfig } from "@sugarcube-sh/core/client";
 import { useCallback, useContext, useMemo } from "react";
-import { StudioContext, useFamilyPalette, usePathIndex, useTokenStore } from "../store/hooks";
+import {
+    StudioContext,
+    useFamilyPalette,
+    usePathIndex,
+    useTokenStore,
+    useVariableName,
+} from "../store/hooks";
 import { familyPaletteSwapUpdates } from "../tokens/palette-cascade";
 import { TokenRow } from "./TokenRow";
 import { joinTokenPath } from "./path-utils";
@@ -33,9 +39,13 @@ export function PaletteSwapControl({
     const ctx = useContext(StudioContext);
     const pathIndex = usePathIndex();
     const setTokens = useTokenStore((state) => state.setTokens);
+    const variableName = useVariableName();
     const current = useFamilyPalette(family, palettes) ?? palettes[0] ?? "";
 
-    const options = useMemo(() => buildOptions(palettes, colorScale), [palettes, colorScale]);
+    const options = useMemo(
+        () => buildOptions(palettes, colorScale, variableName),
+        [palettes, colorScale, variableName]
+    );
 
     const handleChange = useCallback(
         (newPalette: string) => {
@@ -55,12 +65,16 @@ export function PaletteSwapControl({
     );
 }
 
-function buildOptions(palettes: readonly string[], colorScale: ColorScaleConfig): PaletteOption[] {
+function buildOptions(
+    palettes: readonly string[],
+    colorScale: ColorScaleConfig,
+    variableName: (path: string) => string
+): PaletteOption[] {
     return palettes.map((palette) => ({
         name: palette,
         shades: colorScale.steps.map((step) => {
             const path = joinTokenPath(colorScale.prefix, palette, step);
-            return `var(--${formatCSSVarName(path)})`;
+            return `var(--${variableName(path)})`;
         }),
     }));
 }

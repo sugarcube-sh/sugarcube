@@ -1,12 +1,13 @@
-import {
-    type ColorBinding,
-    type ColorScaleConfig,
-    type ResolvedTokens,
-    formatCSSVarName,
-} from "@sugarcube-sh/core/client";
+import type { ColorBinding, ColorScaleConfig, ResolvedTokens } from "@sugarcube-sh/core/client";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover/popover";
-import { useCurrentContext, usePathIndex, useToken, useTokenStore } from "../store/hooks";
+import {
+    useCurrentContext,
+    usePathIndex,
+    useToken,
+    useTokenStore,
+    useVariableName,
+} from "../store/hooks";
 import type { PathIndex } from "../tokens/path-index";
 import { TokenRow } from "./TokenRow";
 import { joinTokenPath, unwrapRef, wrapRef } from "./path-utils";
@@ -35,11 +36,15 @@ export function ColorTokenControl({ binding, colorScale }: ColorTokenControlProp
     const pathIndex = usePathIndex();
     const resolved = useTokenStore((state) => state.resolved);
     const currentContext = useCurrentContext();
+    const variableName = useVariableName();
     const label = labelForBinding(binding);
     const [open, setOpen] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
 
-    const { columns, rows, cells, byPath } = useMemo(() => buildGrid(colorScale), [colorScale]);
+    const { columns, rows, cells, byPath } = useMemo(
+        () => buildGrid(colorScale, variableName),
+        [colorScale, variableName]
+    );
 
     const terminalPath = resolveRefChain(value, pathIndex, resolved, currentContext) ?? "";
     const currentOption = byPath.get(terminalPath);
@@ -95,7 +100,10 @@ type BuiltGrid = {
     byPath: Map<string, GridOption>;
 };
 
-function buildGrid(colorScale: ColorScaleConfig): BuiltGrid {
+function buildGrid(
+    colorScale: ColorScaleConfig,
+    variableName: (path: string) => string
+): BuiltGrid {
     const { prefix, palettes, steps, white, black } = colorScale;
     const hasExtras = Boolean(white || black);
     const columns = hasExtras ? [...palettes, ""] : [...palettes];
@@ -107,7 +115,7 @@ function buildGrid(colorScale: ColorScaleConfig): BuiltGrid {
             const path = joinTokenPath(prefix, palette, step);
             const option: GridOption = {
                 path,
-                color: `var(--${formatCSSVarName(path)})`,
+                color: `var(--${variableName(path)})`,
                 label: `${palette} ${step}`,
             };
             byPath.set(path, option);
@@ -122,7 +130,7 @@ function buildGrid(colorScale: ColorScaleConfig): BuiltGrid {
                 const label = extraToken.split(".").pop() ?? extraToken;
                 const option: GridOption = {
                     path: extraToken,
-                    color: `var(--${formatCSSVarName(extraToken)})`,
+                    color: `var(--${variableName(extraToken)})`,
                     label,
                 };
                 byPath.set(extraToken, option);
