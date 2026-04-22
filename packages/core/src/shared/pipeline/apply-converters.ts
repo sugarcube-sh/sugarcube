@@ -28,7 +28,6 @@ function convertSingleToken<T extends TokenType>(
         $path: token.$path,
         $source: token.$source,
         $originalPath: token.$originalPath,
-        $resolvedValue: token.$resolvedValue,
         $names: { css: varName(token.$path) },
     };
 }

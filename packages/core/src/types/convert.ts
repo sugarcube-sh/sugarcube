@@ -35,9 +35,18 @@ export type TokenNames = {
     css: string;
 };
 
-export type ConvertedToken<T extends TokenType = TokenType> = ResolvedToken<T> & {
-    /** @deprecated Populated nowhere; kept optional during the convert-step refactor. Removed in Step 5. */
-    $cssProperties?: CSSProperties<T>;
+/**
+ * A resolved token enriched with format-specific output metadata.
+ *
+ * `$resolvedValue` lives on `ResolvedToken` (the resolver's observable output)
+ * and is omitted here — convert-stage consumers only care about `$value`
+ * (which preserves references for CSS `var(--…)` emission) and the format-
+ * specific metadata added at this step (currently just `$names`).
+ */
+export type ConvertedToken<T extends TokenType = TokenType> = Omit<
+    ResolvedToken<T>,
+    "$resolvedValue"
+> & {
     $names: TokenNames;
 };
 

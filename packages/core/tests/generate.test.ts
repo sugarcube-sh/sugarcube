@@ -114,11 +114,6 @@ describe("generate", () => {
                         components: [1, 0, 0],
                         hex: "#FF0000",
                     },
-                    $resolvedValue: {
-                        colorSpace: "display-p3",
-                        components: [1, 0, 0],
-                        hex: "#FF0000",
-                    },
                 }),
             },
         };
@@ -276,7 +271,6 @@ describe("generate", () => {
                     "color.button": createConvertedToken({
                         $path: "color.button",
                         $value: "{color.primary}",
-                        $resolvedValue: "#FF0000",
                         $names: { css: "ds-color-button" },
                     }),
                     "typography.body": createConvertedToken({
@@ -317,7 +311,6 @@ describe("generate", () => {
                     "color.button": createConvertedToken({
                         $path: "color.button",
                         $value: "{color.brandPrimary}",
-                        $resolvedValue: "#FF0000",
                     }),
                 },
             };

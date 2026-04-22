@@ -1,18 +1,11 @@
 import { formatCSSVarName } from "../../src/shared/format-css-var-name.js";
-import { isReference } from "../../src/shared/guards.js";
 import type { ConvertedToken } from "../../src/types/convert.js";
 import type { TokenType } from "../../src/types/tokens.js";
 
 /**
- * Build a ConvertedToken from an intent-shaped spec. Dependent fields are
- * derived automatically so fixtures can't drift apart:
- *
- *  - `$resolvedValue` defaults to `$value` (valid for non-reference tokens;
- *     reference-bearing fixtures must opt in with an explicit override).
- *  - `$names` derives from `$path`.
- *
- * `$cssProperties` is no longer populated — the emitter renders from `$value`
- * at emit time via `renderCSS`.
+ * Build a ConvertedToken from an intent-shaped spec. `$names` derives from
+ * `$path`; everything else is a direct override. Reference-bearing `$value`s
+ * are fine here — the CSS emitter preserves them to `var(--…)` at emit time.
  */
 export const createConvertedToken = (
     overrides: Partial<ConvertedToken<TokenType>> = {}
@@ -25,30 +18,16 @@ export const createConvertedToken = (
     const $description = overrides.$description;
     const $extensions = overrides.$extensions;
 
-    // Non-reference leaves resolve to themselves. Reference-bearing tokens
-    // must specify what they resolve to — the factory can't know without
-    // the other tokens.
-    const $resolvedValue =
-        overrides.$resolvedValue ??
-        (typeof $value === "string" && isReference($value) ? undefined : $value);
-
-    if ($resolvedValue === undefined) {
-        throw new Error(
-            `createConvertedToken: $value "${String($value)}" is a reference; pass an explicit $resolvedValue.`
-        );
-    }
-
     return {
         $type,
         $value,
         $path,
         $source,
         $originalPath,
-        $resolvedValue,
         ...($description !== undefined ? { $description } : {}),
         ...($extensions !== undefined ? { $extensions } : {}),
         $names: overrides.$names ?? { css: formatCSSVarName($path) },
-    } as ConvertedToken<TokenType>;
+    };
 };
 
 export const convertedTokens = {
@@ -79,15 +58,6 @@ export const convertedTokens = {
         $type: "shadow",
         $value: {
             color: "{color.primary}",
-            offsetX: { value: 0, unit: "px" },
-            offsetY: { value: 2, unit: "px" },
-            blur: { value: 4, unit: "px" },
-            spread: { value: 0, unit: "px" },
-        },
-        // Reference-bearing: $resolvedValue must be explicit because the factory
-        // can't walk references without the other tokens.
-        $resolvedValue: {
-            color: "#FF0000",
             offsetX: { value: 0, unit: "px" },
             offsetY: { value: 2, unit: "px" },
             blur: { value: 4, unit: "px" },
