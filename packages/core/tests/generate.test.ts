@@ -267,4 +267,68 @@ describe("generate", () => {
             expect(result.output[1]?.css).toContain("#00FF66");
         });
     });
+
+    // DTCG 2025.10 §6.2: a $root token represents the group's base value.
+    // Its CSS variable should be the group's path — "$root" is a reference-only
+    // disambiguator and must not appear in emitted identifiers.
+    it("emits $root tokens using the group path without a $root segment", async () => {
+        const tokens: NormalizedConvertedTokens = {
+            "perm:0": {
+                "blue.$root": createConvertedToken({
+                    $value: "#0000FF",
+                    $path: "blue.$root",
+                    $originalPath: "blue.$root",
+                    $resolvedValue: "#0000FF",
+                    $cssProperties: { value: "#0000FF" },
+                }),
+                "blue.50": createConvertedToken({
+                    $value: "#ADD8E6",
+                    $path: "blue.50",
+                    $originalPath: "blue.50",
+                    $resolvedValue: "#ADD8E6",
+                    $cssProperties: { value: "#ADD8E6" },
+                }),
+            },
+        };
+
+        const config = configWith("basic", [{ input: {}, selector: ":root" }]);
+
+        const result = await formatCSSVariables(tokens, config);
+        const css = result.output[0]?.css ?? "";
+
+        expect(css).toContain("--blue: #0000FF;");
+        expect(css).toContain("--blue-50: #ADD8E6;");
+        expect(css).not.toContain("$root");
+    });
+
+    // References to a $root token (e.g. {blue.$root}) must emit the group's
+    // CSS variable — var(--blue) — not var(--blue-$root).
+    it("emits var(--…) references to $root tokens using the group path", async () => {
+        const tokens: NormalizedConvertedTokens = {
+            "perm:0": {
+                "blue.$root": createConvertedToken({
+                    $value: "#0000FF",
+                    $path: "blue.$root",
+                    $originalPath: "blue.$root",
+                    $resolvedValue: "#0000FF",
+                    $cssProperties: { value: "#0000FF" },
+                }),
+                "border.primary": createConvertedToken({
+                    $value: "{blue.$root}",
+                    $path: "border.primary",
+                    $originalPath: "border.primary",
+                    $resolvedValue: "#0000FF",
+                    $cssProperties: { value: "{blue.$root}" },
+                }),
+            },
+        };
+
+        const config = configWith("basic", [{ input: {}, selector: ":root" }]);
+
+        const result = await formatCSSVariables(tokens, config);
+        const css = result.output[0]?.css ?? "";
+
+        expect(css).toContain("--border-primary: var(--blue);");
+        expect(css).not.toContain("$root");
+    });
 });

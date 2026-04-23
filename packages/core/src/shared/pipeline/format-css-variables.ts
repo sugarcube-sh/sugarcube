@@ -45,6 +45,9 @@ function indentCSS(css: string, spaces = 4): string {
 
 // Converts token references like "{color.primary}" to CSS variable syntax
 // Preserves numbers as-is since they're valid CSS values (e.g. for font weights)
+// A trailing .$root is dropped per DTCG 2025.10 §6.2 — {blue.$root} emits var(--blue).
+const ROOT_REF_SUFFIX = ".$root";
+
 function convertReferenceToCSSVar(value: unknown): string | number {
     if (typeof value === "number") {
         return value;
@@ -54,8 +57,11 @@ function convertReferenceToCSSVar(value: unknown): string | number {
         throw new Error(ErrorMessages.GENERATE.INVALID_CSS_VALUE_TYPE(typeof value));
     }
 
-    return value.replace(/\{([^}]+)\}/g, (_, ref) => {
-        const varName = ref.split(".").map(toKebabCase).join("-");
+    return value.replace(/\{([^}]+)\}/g, (_, ref: string) => {
+        const normalized = ref.endsWith(ROOT_REF_SUFFIX)
+            ? ref.slice(0, -ROOT_REF_SUFFIX.length)
+            : ref;
+        const varName = normalized.split(".").map(toKebabCase).join("-");
         return `var(--${varName})`;
     });
 }
