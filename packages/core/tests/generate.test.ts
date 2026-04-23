@@ -328,21 +328,17 @@ describe("generate", () => {
         // Its CSS variable should be the group's path — "$root" is a reference-only
         // disambiguator and must not appear in emitted identifiers.
         it("emits $root tokens using the group path without a $root segment", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "blue.$root": createConvertedToken({
+                    "blue.$root": createRenderableToken({
                         $value: "#0000FF",
                         $path: "blue.$root",
                         $originalPath: "blue.$root",
-                        $resolvedValue: "#0000FF",
-                        $cssProperties: { value: "#0000FF" },
                     }),
-                    "blue.50": createConvertedToken({
+                    "blue.50": createRenderableToken({
                         $value: "#ADD8E6",
                         $path: "blue.50",
                         $originalPath: "blue.50",
-                        $resolvedValue: "#ADD8E6",
-                        $cssProperties: { value: "#ADD8E6" },
                     }),
                 },
             };
@@ -360,21 +356,17 @@ describe("generate", () => {
         // References to a $root token (e.g. {blue.$root}) must emit the group's
         // CSS variable — var(--blue) — not var(--blue-$root).
         it("emits var(--…) references to $root tokens using the group path", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "blue.$root": createConvertedToken({
+                    "blue.$root": createRenderableToken({
                         $value: "#0000FF",
                         $path: "blue.$root",
                         $originalPath: "blue.$root",
-                        $resolvedValue: "#0000FF",
-                        $cssProperties: { value: "#0000FF" },
                     }),
-                    "border.primary": createConvertedToken({
+                    "border.primary": createRenderableToken({
                         $value: "{blue.$root}",
                         $path: "border.primary",
                         $originalPath: "border.primary",
-                        $resolvedValue: "#0000FF",
-                        $cssProperties: { value: "{blue.$root}" },
                     }),
                 },
             };
@@ -426,19 +418,15 @@ describe("generate", () => {
         // preserved case (--color-brandPrimary) while references kebab-cased
         // (var(--color-brand-primary)) — producing a dangling reference.
         it("keeps declaration and reference names in sync for camelCase paths", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "color.brandPrimary": createConvertedToken({
+                    "color.brandPrimary": createRenderableToken({
                         $path: "color.brandPrimary",
                         $value: "#FF0000",
-                        $resolvedValue: "#FF0000",
-                        $cssProperties: { value: "#FF0000" },
                     }),
-                    "color.button": createConvertedToken({
+                    "color.button": createRenderableToken({
                         $path: "color.button",
                         $value: "{color.brandPrimary}",
-                        $resolvedValue: "#FF0000",
-                        $cssProperties: { value: "{color.brandPrimary}" },
                     }),
                 },
             };
