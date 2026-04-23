@@ -1,5 +1,33 @@
 # @sugarcube-sh/core
 
+## 0.2.2
+
+### Patch Changes
+
+- 5c23423: Fix `$root` tokens so they produce clean CSS variables.
+
+  If you had a group like `blue` with a `$root` child for the base colour plus variants (`50`, `100`, etc.), the base colour was coming out as `--blue-$root` — not valid CSS. Now it simply becomes `--blue`, which is what you'd expect. References like `{blue.$root}` compile to `var(--blue)` too.
+
+  ```json
+  {
+    "blue": {
+      "$type": "color",
+      "$root": { "$value": "#0000FF" },
+      "50": { "$value": "#ADD8E6" }
+    }
+  }
+  ```
+
+  ```css
+  /* Before */
+  --blue-$root: #0000ff;
+  --blue-50: #add8e6;
+
+  /* After */
+  --blue: #0000ff;
+  --blue-50: #add8e6;
+  ```
+
 ## 0.2.1
 
 ### Patch Changes
