@@ -1,4 +1,4 @@
-import type { InternalConfig, VariableNameFn } from "../types/config.js";
+import type { VariableNameFn } from "../types/config.js";
 import { formatCSSVarName } from "./format-css-var-name.js";
 
 /** Subset of config needed to resolve a variable name — works against both user and internal configs. */
@@ -8,29 +8,21 @@ type VariablesNameConfig = {
 };
 
 /**
- * Resolve the CSS variable name for a token path, honouring the user's
- * `variables.prefix` and `variables.variableName` config. Called once per
- * token during the pipeline and stored on `token.$names.css` — every
- * emission site (declarations, references, utility classes) reads that
- * cached name.
+ * Build a reusable CSS variable-name resolver from a `variables` config.
+ *
+ * Bind once, call many times. Used by the pipeline (once at the start of
+ * the render pass, then per token) and by consumers like Studio that
+ * repeatedly build `var(--…)` strings and want names guaranteed to match
+ * the pipeline's emitted CSS.
  *
  * Resolution order:
- *   1. If `variableName` is set, it owns everything — `prefix` is ignored.
- *   2. Otherwise, `prefix` is prepended to the default path → hyphen form.
- *   3. Otherwise, default: dots become hyphens, case preserved.
+ *   1. `variableName` callback — owns everything. `prefix` is ignored.
+ *   2. `prefix` — prepended to the default path → hyphen form.
+ *   3. Default — dots become hyphens, case preserved.
  *
- * This function is the single source of truth for CSS variable naming.
- */
-export function resolveVariableName(path: string, config: InternalConfig): string {
-    return createVariableNameResolver(config.variables)(path);
-}
-
-/**
- * Build a reusable variable-name resolver from a `variables` config.
- *
- * Bind once, call many times. Useful for consumers (Studio, external tools)
- * that repeatedly build `var(--…)` strings and want names guaranteed to
- * match the pipeline's emitted CSS.
+ * This is the single source of truth for CSS variable naming. Every
+ * emission site (declarations, references, utility classes) goes through
+ * this function.
  *
  * @example
  *   const varName = createVariableNameResolver(config.variables);

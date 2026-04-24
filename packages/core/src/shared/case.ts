@@ -2,7 +2,8 @@
  * Convert a string to kebab-case. Handles camelCase, PascalCase, and
  * consecutive capitals (e.g. `XMLParser` → `xml-parser`).
  *
- * Shipped so users migrating from Style Dictionary can write:
+ * Useful inside `variables.variableName` when you want kebab-cased output
+ * regardless of how the source token paths are cased.
  *
  * @example
  *   variableName: (path) => `ds-${kebabCase(path.replaceAll(".", "-"))}`

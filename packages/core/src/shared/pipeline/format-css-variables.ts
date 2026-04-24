@@ -28,9 +28,10 @@ function indentCSS(css: string, spaces = 4): string {
         .join("\n");
 }
 
-// Build a path → CSS var name lookup for a permutation's tokens.
-// Used by reference resolution so `{color.primary}` emits the token's
-// canonical $names.css, keeping declarations and references in sync.
+// Map each token's path to its CSS variable name. When emitting values,
+// a reference like `{color.primary}` looks up its target here to produce
+// `var(--color-primary)` — the same name the token's declaration uses,
+// so they can't drift apart.
 function buildNameLookup(tokens: ConvertedTokens): Map<string, string> {
     const lookup = new Map<string, string>();
     for (const entry of Object.values(tokens)) {

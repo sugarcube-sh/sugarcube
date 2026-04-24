@@ -11,7 +11,7 @@ export type ColorFallbackStrategy = "native" | "polyfill";
  * @returns The CSS variable name without the leading `--`.
  *
  * @example
- * // Style-Dictionary-compatible kebab-case with prefix
+ * // Kebab-case everything, with a prefix
  * variableName: (path) => `ds-${path.replaceAll(".", "-").toLowerCase()}`
  */
 export type VariableNameFn = (path: string) => string;
