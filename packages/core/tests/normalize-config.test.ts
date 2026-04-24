@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { validateConfig } from "../src/node/config/normalize.js";
 import { fillDefaults } from "../src/node/config/normalize.js";
 import { DEFAULT_CONFIG } from "../src/shared/constants/config.js";
 import type { SugarcubeConfig } from "../src/types/config.js";
@@ -158,5 +159,43 @@ describe("fillDefaults", () => {
 
             expect(result.components).toBe("lib/ui");
         });
+    });
+});
+
+describe("validateConfig — variables.variableName", () => {
+    it("accepts a function and preserves reference identity", () => {
+        const userFn = (path: string) => `custom-${path}`;
+        const result = validateConfig({
+            resolver: "./tokens.resolver.json",
+            variables: { variableName: userFn },
+        });
+
+        // Reference identity matters — z.function() wraps and would break this.
+        expect(result.variables.variableName).toBe(userFn);
+        expect(result.variables.variableName?.("color.primary")).toBe("custom-color.primary");
+    });
+
+    it("leaves variableName undefined when omitted", () => {
+        const result = validateConfig({
+            resolver: "./tokens.resolver.json",
+        });
+
+        expect(result.variables.variableName).toBeUndefined();
+    });
+
+    it.each([
+        ["string", "not a function"],
+        ["number", 42],
+        ["object", {}],
+        ["array", [1, 2, 3]],
+        ["null", null],
+    ])("rejects %s", (_label, value) => {
+        expect(() =>
+            validateConfig({
+                resolver: "./tokens.resolver.json",
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                variables: { variableName: value as any },
+            })
+        ).toThrow(/variableName must be a function/);
     });
 });

@@ -1,18 +1,25 @@
+import { formatCSSVarName } from "../../src/shared/format-css-var-name.js";
 import type { ConvertedToken } from "../../src/types/convert.js";
 import type { TokenType } from "../../src/types/tokens.js";
 
 export const createConvertedToken = (
     overrides: Partial<ConvertedToken<TokenType>> = {}
-): ConvertedToken<TokenType> => ({
-    $type: "color" as const,
-    $value: "#FF0000",
-    $path: "color.primary",
-    $source: { sourcePath: "test.json" },
-    $originalPath: "color.primary",
-    $resolvedValue: "#FF0000",
-    $cssProperties: { value: "#FF0000" },
-    ...overrides,
-});
+): ConvertedToken<TokenType> => {
+    const base = {
+        $type: "color" as const,
+        $value: "#FF0000",
+        $path: "color.primary",
+        $source: { sourcePath: "test.json" },
+        $originalPath: "color.primary",
+        $resolvedValue: "#FF0000",
+        $cssProperties: { value: "#FF0000" },
+        ...overrides,
+    };
+    return {
+        ...base,
+        $names: overrides.$names ?? { css: formatCSSVarName(base.$path) },
+    };
+};
 
 export const convertedTokens = {
     colorPrimary: createConvertedToken(),

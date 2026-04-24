@@ -38,8 +38,17 @@ const transformsSchema = z.object({
     colorFallbackStrategy: z.enum(["native", "polyfill"]).optional(),
 });
 
+// Zod's built-in z.function() wraps the callback with runtime arg validation,
+// which would break reference identity — users pass their own function in and
+// expect the same function back. We just verify it's callable and pass through.
+const variableNameFnSchema = z.custom<(path: string) => string>((v) => typeof v === "function", {
+    message: "variableName must be a function",
+});
+
 const variablesConfigSchema = z.object({
     path: z.string().optional(),
+    prefix: z.string().optional(),
+    variableName: variableNameFnSchema.optional(),
     layer: z.string().optional(),
     transforms: transformsSchema.optional(),
     permutations: z.array(permutationSchema).optional(),
@@ -142,6 +151,8 @@ export const internalConfigSchema = z.object({
 
     variables: z.object({
         path: z.string(),
+        prefix: z.string().optional(),
+        variableName: variableNameFnSchema.optional(),
         layer: z.string().optional(),
         transforms: z.object({
             fluid: fluidSchema,

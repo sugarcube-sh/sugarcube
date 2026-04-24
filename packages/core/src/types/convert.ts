@@ -24,8 +24,20 @@ export type TokenConverter<T extends TokenType> = (
     options: ConversionOptions
 ) => CSSProperties<T>;
 
+/**
+ * Per-format output names for a token. Today CSS is the only format populated;
+ * future formats (js, scss, …) will add their own keys.
+ *
+ * Computed once during the pipeline and read by every emission site so
+ * declarations, references, and utility classes cannot drift apart.
+ */
+export type TokenNames = {
+    css: string;
+};
+
 export type ConvertedToken<T extends TokenType = TokenType> = ResolvedToken<T> & {
     $cssProperties: CSSProperties<T>;
+    $names: TokenNames;
 };
 
 export type ConvertedTokens = {

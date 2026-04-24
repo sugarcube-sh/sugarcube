@@ -20,21 +20,6 @@ function deterministicEntries<T>(obj: Record<string, T>): [string, T][] {
     return Object.entries(obj).sort(([a], [b]) => a.localeCompare(b));
 }
 
-const kebabCache = new Map<string, string>();
-
-function toKebabCase(str: string): string {
-    const cached = kebabCache.get(str);
-    if (cached) return cached;
-
-    const kebab = str
-        .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-        .replace(/([A-Z])([A-Z])(?=[a-z])/g, "$1-$2")
-        .toLowerCase();
-
-    kebabCache.set(str, kebab);
-    return kebab;
-}
-
 function indentCSS(css: string, spaces = 4): string {
     const indent = " ".repeat(spaces);
     return css
@@ -43,12 +28,26 @@ function indentCSS(css: string, spaces = 4): string {
         .join("\n");
 }
 
+// Map each token's path to its CSS variable name. When emitting values,
+// a reference like `{color.primary}` looks up its target here to produce
+// `var(--color-primary)` — the same name the token's declaration uses,
+// so they can't drift apart.
+function buildNameLookup(tokens: ConvertedTokens): Map<string, string> {
+    const lookup = new Map<string, string>();
+    for (const entry of Object.values(tokens)) {
+        if ("$path" in entry && "$names" in entry) {
+            lookup.set(entry.$path, entry.$names.css);
+        }
+    }
+    return lookup;
+}
+
 // Converts token references like "{color.primary}" to CSS variable syntax
 // Preserves numbers as-is since they're valid CSS values (e.g. for font weights)
-// A trailing .$root is dropped per DTCG 2025.10 §6.2 — {blue.$root} emits var(--blue).
-const ROOT_REF_SUFFIX = ".$root";
-
-function convertReferenceToCSSVar(value: unknown): string | number {
+function convertReferenceToCSSVar(
+    value: unknown,
+    nameLookup: Map<string, string>
+): string | number {
     if (typeof value === "number") {
         return value;
     }
@@ -57,40 +56,46 @@ function convertReferenceToCSSVar(value: unknown): string | number {
         throw new Error(ErrorMessages.GENERATE.INVALID_CSS_VALUE_TYPE(typeof value));
     }
 
-    return value.replace(/\{([^}]+)\}/g, (_, ref: string) => {
-        const normalized = ref.endsWith(ROOT_REF_SUFFIX)
-            ? ref.slice(0, -ROOT_REF_SUFFIX.length)
-            : ref;
-        const varName = normalized.split(".").map(toKebabCase).join("-");
+    return value.replace(/\{([^}]+)\}/g, (_, ref) => {
+        const varName = nameLookup.get(ref) ?? formatCSSVarName(ref);
         return `var(--${varName})`;
     });
 }
 
-function generateSingleVariable(token: ConvertedToken<TokenType>): CSSVariable | undefined {
+function generateSingleVariable(
+    token: ConvertedToken<TokenType>,
+    nameLookup: Map<string, string>
+): CSSVariable | undefined {
     const props = token.$cssProperties;
     if (!("value" in props)) {
         return undefined;
     }
 
     return {
-        name: `--${formatCSSVarName(token.$path)}`,
-        value: convertReferenceToCSSVar(props.value),
+        name: `--${token.$names.css}`,
+        value: convertReferenceToCSSVar(props.value, nameLookup),
     };
 }
 
-function generateTypographyVariables(token: ConvertedToken<"typography">): CSSVariable[] {
+function generateTypographyVariables(
+    token: ConvertedToken<"typography">,
+    nameLookup: Map<string, string>
+): CSSVariable[] {
     return Object.entries(token.$cssProperties)
         .filter(([_, value]) => value !== undefined)
         .map(([prop, value]) => ({
-            name: `--${formatCSSVarName(token.$path)}-${prop}`,
-            value: convertReferenceToCSSVar(value),
+            name: `--${token.$names.css}-${prop}`,
+            value: convertReferenceToCSSVar(value, nameLookup),
         }));
 }
 
 // Color tokens can have enhanced values for displays that support modern color spaces
 // This function extracts those enhanced values and creates CSS variables that will only be used
 // when the display supports the specific color space
-function generateFeatureVariables(token: ConvertedToken<TokenType>): CSSFeatureBlock[] {
+function generateFeatureVariables(
+    token: ConvertedToken<TokenType>,
+    nameLookup: Map<string, string>
+): CSSFeatureBlock[] {
     if (token.$type !== "color") return [];
 
     const props = token.$cssProperties;
@@ -105,8 +110,8 @@ function generateFeatureVariables(token: ConvertedToken<TokenType>): CSSFeatureB
         const vars = queryGroups.get(feature.query);
         if (vars) {
             vars.push({
-                name: `--${formatCSSVarName(token.$path)}`,
-                value: convertReferenceToCSSVar(feature.value),
+                name: `--${token.$names.css}`,
+                value: convertReferenceToCSSVar(feature.value, nameLookup),
             });
         }
     }
@@ -139,18 +144,21 @@ function generateCSSBlock(block: { selector: string | string[]; vars: CSSVariabl
     return parts.join("\n");
 }
 
-function generateVariablesForToken<T extends TokenType>(token: ConvertedToken<T>): CSSVarSet {
+function generateVariablesForToken<T extends TokenType>(
+    token: ConvertedToken<T>,
+    nameLookup: Map<string, string>
+): CSSVarSet {
     if (isTypographyToken(token)) {
         return {
-            vars: generateTypographyVariables(token),
-            features: generateFeatureVariables(token),
+            vars: generateTypographyVariables(token, nameLookup),
+            features: generateFeatureVariables(token, nameLookup),
         };
     }
 
-    const mainVar = generateSingleVariable(token);
+    const mainVar = generateSingleVariable(token, nameLookup);
     return {
         vars: mainVar ? [mainVar] : [],
-        features: generateFeatureVariables(token),
+        features: generateFeatureVariables(token, nameLookup),
     };
 }
 
@@ -161,9 +169,12 @@ function generateVariablesFromTokens(tokens: ConvertedTokens): {
     vars: CSSVariable[];
     features: CSSFeatureBlock[];
 } {
+    const nameLookup = buildNameLookup(tokens);
     const varSets = deterministicEntries(tokens)
         .filter(([key, token]) => key !== "$extensions" && "$type" in token)
-        .map(([_, token]) => generateVariablesForToken(token as ConvertedToken<TokenType>));
+        .map(([_, token]) =>
+            generateVariablesForToken(token as ConvertedToken<TokenType>, nameLookup)
+        );
 
     const vars = varSets.flatMap((set) => set.vars);
 

@@ -1,2 +1,2 @@
-export { defineConfig } from "@sugarcube-sh/core";
-export type { SugarcubeConfig } from "@sugarcube-sh/core";
+export { defineConfig, kebabCase } from "@sugarcube-sh/core";
+export type { SugarcubeConfig, VariableNameFn } from "@sugarcube-sh/core";

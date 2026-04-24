@@ -81,6 +81,44 @@ export default defineConfig({
 });
 ```
 
+### `variables.prefix`
+
+**Type:** `string`
+**Optional**
+
+Prepended to every generated CSS variable name. Flows through declarations, references, and utility classes.
+
+```ts
+import { defineConfig } from "@sugarcube-sh/vite";
+
+export default defineConfig({
+  variables: {
+    prefix: "ds"
+  }
+});
+```
+
+With `prefix: "ds"`, a token at `color.brand.primary` produces `--ds-color-brand-primary`. Case is preserved from the source token path — use `variableName` for case transforms.
+
+### `variables.variableName`
+
+**Type:** `(path: string) => string`
+**Optional**
+
+Full-control callback for computing the CSS variable name from a token path. Receives the DTCG path, returns the name (without the leading `--`). Overrides `prefix` entirely when set.
+
+```ts
+import { defineConfig, kebabCase } from "@sugarcube-sh/vite";
+
+export default defineConfig({
+  variables: {
+    variableName: (path) => `ds-${kebabCase(path.replaceAll(".", "-"))}`
+  }
+});
+```
+
+The `kebabCase` helper is exported from `@sugarcube-sh/cli` and `@sugarcube-sh/vite`.
+
 ### `variables.layer`
 
 **Type:** `string`

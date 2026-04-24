@@ -7,7 +7,6 @@ import { ErrorMessages } from "./constants/error-messages.js";
 
 type CSSObject = Record<string, string | number | undefined>;
 
-const CSS_VAR_PREFIX = "--";
 const DIRECTION_SEPARATOR = "-";
 const EXCLUDED_DIRECTIONS = ["all", "full"] as const;
 const DIRECTION_ABBREVIATIONS: Record<DirectionalVariant, string> = {
@@ -92,8 +91,12 @@ const pathIndexCache = new WeakMap<
 >();
 
 // Cache for findMatchingToken results to avoid repeated lookups for the same class
-// Key format: `${source}:${tokenName}` → token path or null
-const matchCache = new Map<string, string[] | null>();
+// Key format: `${source}:${tokenName}` → matched token or null
+// TODO: key on tokens identity (WeakMap) like pathIndexCache above — current
+// cache collides across tokens objects with the same (source, prefix, name)
+// key, which can return stale $names.css when configs differ. Harmless in a
+// single-build production path; manifests in tests and multi-instance use.
+const matchCache = new Map<string, ConvertedToken | null>();
 
 /**
  * Clears the token matching cache.
@@ -150,7 +153,7 @@ export function findMatchingToken(
     tokenName: string,
     config: PropertyUtilityConfig & { property?: string },
     tokens: NormalizedConvertedTokens
-): string[] | null {
+): ConvertedToken | null {
     const cacheKey = `${config.source}:${config.prefix ?? ""}:${config.property ?? ""}:${tokenName}`;
     if (matchCache.has(cacheKey)) {
         return matchCache.get(cacheKey) ?? null;
@@ -199,9 +202,8 @@ export function findMatchingToken(
                 }
             }
 
-            const result = token.$path.split(".");
-            matchCache.set(cacheKey, result);
-            return result;
+            matchCache.set(cacheKey, token);
+            return token;
         }
     }
 
@@ -241,9 +243,9 @@ function createSimpleRule(
 
             const processedTokenName = stripDuplicatePrefix(tokenName, config);
             const configWithProperty = { ...config, property };
-            const tokenPath = findMatchingToken(processedTokenName, configWithProperty, tokens);
-            if (!tokenPath) return {};
-            return { [property]: `var(${CSS_VAR_PREFIX}${tokenPath.join(DIRECTION_SEPARATOR)})` };
+            const matched = findMatchingToken(processedTokenName, configWithProperty, tokens);
+            if (!matched) return {};
+            return { [property]: `var(--${matched.$names.css})` };
         },
     ];
 }
@@ -269,11 +271,11 @@ function createDirectionalRule(
 
             const processedTokenName = stripDuplicatePrefix(tokenName, config);
             const configWithProperty = { ...config, property };
-            const tokenPath = findMatchingToken(processedTokenName, configWithProperty, tokens);
-            if (!tokenPath) return {};
+            const matched = findMatchingToken(processedTokenName, configWithProperty, tokens);
+            if (!matched) return {};
             const logicalProperty = getLogicalProperty(property, direction);
             return {
-                [logicalProperty]: `var(${CSS_VAR_PREFIX}${tokenPath.join(DIRECTION_SEPARATOR)})`,
+                [logicalProperty]: `var(--${matched.$names.css})`,
             };
         },
     ];
@@ -301,16 +303,16 @@ function createSmartRule(
             for (const { property, config, direction, tokens } of rulesForPrefix) {
                 const processedTokenName = stripDuplicatePrefix(tokenName, config);
                 const configWithProperty = { ...config, property };
-                const tokenPath = findMatchingToken(processedTokenName, configWithProperty, tokens);
-                if (tokenPath) {
+                const matched = findMatchingToken(processedTokenName, configWithProperty, tokens);
+                if (matched) {
                     if (direction) {
                         const logicalProperty = getLogicalProperty(property, direction);
                         return {
-                            [logicalProperty]: `var(${CSS_VAR_PREFIX}${tokenPath.join(DIRECTION_SEPARATOR)})`,
+                            [logicalProperty]: `var(--${matched.$names.css})`,
                         };
                     }
                     return {
-                        [property]: `var(${CSS_VAR_PREFIX}${tokenPath.join(DIRECTION_SEPARATOR)})`,
+                        [property]: `var(--${matched.$names.css})`,
                     };
                 }
             }
@@ -337,9 +339,9 @@ function createDirectTokenPathRule(
             const tokenName = match[1];
             if (!tokenName) return {};
             const configWithProperty = { ...config, property };
-            const tokenPath = findMatchingToken(tokenName, configWithProperty, tokens);
-            if (!tokenPath) return {};
-            return { [property]: `var(${CSS_VAR_PREFIX}${tokenPath.join(DIRECTION_SEPARATOR)})` };
+            const matched = findMatchingToken(tokenName, configWithProperty, tokens);
+            if (!matched) return {};
+            return { [property]: `var(--${matched.$names.css})` };
         },
     ];
 }

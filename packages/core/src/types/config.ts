@@ -3,6 +3,20 @@ import type { PropertyUtilityConfig } from "./utilities.js";
 export type ColorFallbackStrategy = "native" | "polyfill";
 
 /**
+ * Callback that maps a token's DTCG path to its final CSS variable name
+ * (without the leading `--`). Escape hatch for users who need full control —
+ * overrides `variables.prefix` entirely when set.
+ *
+ * @param path - The DTCG path of the token (e.g. `"color.brandPrimary"`).
+ * @returns The CSS variable name without the leading `--`.
+ *
+ * @example
+ * // Kebab-case everything, with a prefix
+ * variableName: (path) => `ds-${path.replaceAll(".", "-").toLowerCase()}`
+ */
+export type VariableNameFn = (path: string) => string;
+
+/**
  * A permutation defines a single resolved token set and how to output it as CSS.
  * Each permutation specifies a resolver input (which modifier contexts to use)
  * and a CSS selector to wrap the output in.
@@ -57,6 +71,27 @@ export interface VariablesConfig {
      * @example "src/styles/tokens.css"
      */
     path?: string;
+
+    /**
+     * Prefix prepended to every generated CSS variable name.
+     *
+     * @example
+     * // prefix: "ds"
+     * // color.brandPrimary → --ds-color-brandPrimary
+     */
+    prefix?: string;
+
+    /**
+     * Full-control callback for computing the CSS variable name from a
+     * token path. Overrides `prefix` entirely when set — the user owns
+     * both prefixing and case-handling.
+     *
+     * Returns the name *without* the leading `--`.
+     *
+     * @example
+     * variableName: (path) => `ds-${path.replaceAll(".", "-").toLowerCase()}`
+     */
+    variableName?: VariableNameFn;
 
     /**
      * CSS cascade layer name for variables.
@@ -435,6 +470,8 @@ export interface InternalConfig {
     /** CSS variables output configuration */
     variables: {
         path: string;
+        prefix?: string;
+        variableName?: VariableNameFn;
         layer?: string;
         transforms: {
             fluid: FluidConfig;

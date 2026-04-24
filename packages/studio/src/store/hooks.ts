@@ -1,4 +1,4 @@
-import type { StudioConfig } from "@sugarcube-sh/core/client";
+import { type StudioConfig, createVariableNameResolver } from "@sugarcube-sh/core/client";
 import { createContext, useContext, useMemo } from "react";
 import { useStore } from "zustand";
 import { computeDiff } from "../tokens/compute-diff";
@@ -36,6 +36,11 @@ export function useStudioMode(): StudioContextValue["mode"] {
 /** The project's studio panel config. */
 export function useStudioConfig(): StudioConfig | undefined {
     return useStudio().studioConfig;
+}
+
+export function useVariableName(): (path: string) => string {
+    const { snapshot } = useStudio();
+    return useMemo(() => createVariableNameResolver(snapshot.config.variables), [snapshot]);
 }
 
 export function usePathIndex(): PathIndex {

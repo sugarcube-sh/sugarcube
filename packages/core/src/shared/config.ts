@@ -60,6 +60,8 @@ export function fillDefaultsCore(userConfig: SugarcubeConfig, dirs: DefaultDirs)
 
         variables: {
             path: userConfig.variables?.path ?? defaultVariablesPath,
+            prefix: userConfig.variables?.prefix,
+            variableName: userConfig.variables?.variableName,
             layer: userConfig.variables?.layer,
             transforms: {
                 fluid:

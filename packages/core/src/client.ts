@@ -32,6 +32,8 @@ export { convertConfigToUnoRules, clearMatchCache } from "./shared/uno-rules.js"
 
 // Formatting helpers
 export { formatCSSVarName } from "./shared/format-css-var-name.js";
+export { createVariableNameResolver } from "./shared/resolve-variable-name.js";
+export { kebabCase } from "./shared/case.js";
 
 // Guards
 export { isResolvedToken } from "./shared/guards.js";
@@ -56,6 +58,7 @@ export type {
     ScaleBinding,
     ScaleLinkedBinding,
     PaletteSwapBinding,
+    VariableNameFn,
 } from "./types/config.js";
 export type {
     PipelineContext,
