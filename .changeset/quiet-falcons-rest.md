@@ -4,19 +4,19 @@
 "@sugarcube-sh/vite": patch
 ---
 
-Refactor the token pipeline so rendering is format-specific and happens at emit time. Tokens now leave the pipeline format-neutral — CSS-specific output is no longer baked into the token type. This is the foundation for future format outputs (Swift, JS, SCSS, Android) without further restructuring.
+Refactor: CSS rendering moved out of the token pipeline and into the CSS output step. Tokens stay generic all the way through. This makes it easy to add other output formats (Swift, JS, SCSS, Android) later without touching the token type.
 
-**Breaking: public type and helper renames.** The token type, pipeline composition helpers, and internal converter vocabulary have been renamed to use "render/renderer/renderable" terminology consistently. Import renames are mechanical; no behavioural changes for existing CSS-only consumers.
+Anything called "convert"/"converter" is now "render"/"renderer". Existing imports just need a find-and-replace.
 
 **`@sugarcube-sh/core`**
 
-- **Tokens are format-neutral after the pipeline.** `$cssProperties` (eager CSS rendering baked into each token) has been removed from the `RenderableToken` type. CSS rendering now happens lazily at emit time, via `renderCSS(token, options)`. Anyone who previously read `token.$cssProperties` should call `renderCSS(token, options)` instead.
-- **`$resolvedValue` dropped from `RenderableToken`.** Still present on `ResolvedToken` (the resolver's observable output); nothing downstream consumed it on the converted token. Saves carrying a duplicate field.
-- **Public type renames (breaking):**
-  - `ConvertedToken` → `RenderableToken`
-  - `ConvertedTokens` → `RenderableTokens`
-  - `NormalizedConvertedTokens` → `NormalizedRenderableTokens`
-- **Pipeline composition changed (breaking):** `convertTokens()` has been removed. Consumers now compose the pipeline explicitly:
+- **Tokens no longer carry CSS output.** The `$cssProperties` field is gone from `RenderableToken`.
+- **`$resolvedValue` removed from `RenderableToken`.** It's still on `ResolvedToken`, but nothing downstream used it on the renderable token, so we stopped duplicating it.
+- **Public type renames:**
+  - `ConvertedToken` -> `RenderableToken`
+  - `ConvertedTokens` -> `RenderableTokens`
+  - `NormalizedConvertedTokens` -> `NormalizedRenderableTokens`
+- **Pipeline composition changed.** `convertTokens()` is gone. Compose the two steps yourself:
   ```ts
   // Before
   const tokens = await convertTokens(trees, resolved, config, validationErrors);
@@ -25,18 +25,18 @@ Refactor the token pipeline so rendering is format-specific and happens at emit 
   const tokens = assignCSSNames(groupByContext(trees, resolved), config, validationErrors);
   ```
   Both `groupByContext` and `assignCSSNames` are exported from `@sugarcube-sh/core` and `/client`.
-- **New module**: `renderCSS(token, options)` — the emit-time CSS rendering entry point. Used by the CSS emitter; future format entries (`renderSwift`, `renderJS`) will live alongside.
-- **New module**: `assignCSSNames(tokens, config, validationErrors?)` — populates `$names.css` on each token and drops validation-flagged tokens. Replaces the naming step previously bundled inside `convertTokens`.
-- **Directory rename**: `src/shared/converters/` → `src/shared/renderers/css/`. Anticipates `renderers/js/`, `renderers/swift/` etc. as sibling directories.
-- **Internal symbol renames**:
-  - `converters` registry → `cssRenderers`
-  - 14 × `convert<Type>Token` functions → `render<Type>` (e.g. `convertColorToken` → `renderColor`)
-  - `ConversionOptions` → `CSSRenderOptions`
-  - `TokenConverter<T>` → `CSSRenderer<T>`
-  - `convertReferenceToCSSVar` → `substituteReferencesAsCSSVars`
-- **Architectural move**: `apply-converters` pipeline step renamed to `assign-css-names`. The step no longer runs any converters; its current job is populating `$names.css` and filtering tokens flagged by validation.
-- **Fixture/bug fix**: typography and shadow test fixtures had non-DTCG `$value` shapes (e.g. `fontSize: "16px"` as a string instead of `{ value: 16, unit: "px" }`). The old emitter read a hand-authored `$cssProperties` cache that hid the mismatch; the new pipeline renders from `$value` and surfaces these. Fixtures are now DTCG-valid by construction.
+- **New: `renderCSS(token, options)`**. Turns a single token into its CSS-shaped value. The CSS emitter calls this; future formats will get sibling functions like `renderJS` and `renderSwift`.
+- **New: `assignCSSNames(tokens, config, validationErrors?)`**. Sets `$names.css` on every token and drops any flagged invalid by validation. This is the new home for the naming work that used to live inside `convertTokens`.
+- **Directory rename**: `src/shared/converters/` -> `src/shared/renderers/css/`. Other formats will live next to it: `renderers/js/`, `renderers/swift/`, etc.
+- **Internal symbol renames:**
+  - `converters` registry -> `cssRenderers`
+  - 14 × `convert<Type>Token` functions -> `render<Type>` (e.g. `convertColorToken` -> `renderColor`)
+  - `ConversionOptions` -> `CSSRenderOptions`
+  - `TokenConverter<T>` -> `CSSRenderer<T>`
+  - `convertReferenceToCSSVar` -> `substituteReferencesAsCSSVars`
+- **Pipeline step rename:** `apply-converters` -> `assign-css-names`. The step no longer runs converters; it just sets `$names.css` and drops invalid tokens.
+- **Fixture fix:** typography and shadow test fixtures had `$value` shapes that didn't match DTCG (e.g. `fontSize: "16px"` instead of `{ value: 16, unit: "px" }`). The old emitter masked this by reading a hand-written `$cssProperties` cache. The new pipeline reads `$value` directly, so the broken fixtures started failing — they're now DTCG-valid.
 
 **`@sugarcube-sh/cli`, `@sugarcube-sh/vite`**
 
-- Internal: callers updated to the new pipeline composition (`groupByContext` + `assignCSSNames` instead of `convertTokens`). No user-facing change.
+- Internal: updated to the new pipeline shape (`groupByContext` + `assignCSSNames` instead of `convertTokens`). No user-visible change.
