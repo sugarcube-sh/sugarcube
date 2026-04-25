@@ -3,9 +3,15 @@ import type { RenderableToken } from "../../src/types/render.js";
 import type { TokenType } from "../../src/types/tokens.js";
 
 /**
- * Build a RenderableToken from an intent-shaped spec. `$names` derives from
- * `$path`; everything else is a direct override. Reference-bearing `$value`s
- * are fine here — the CSS emitter preserves them to `var(--…)` at emit time.
+ * Test helper: builds a RenderableToken with sensible defaults so each test
+ * only spells out the fields it actually cares about.
+ *
+ * `$names.css` is auto-derived from `$path`, the same way the real pipeline
+ * does it. Everything else comes straight from `overrides`.
+ *
+ * DTCG references like `"{color.primary}"` are fine to use in `$value` —
+ * the CSS emitter turns them into `var(--…)` later, so tests don't need
+ * to pre-resolve them.
  */
 export const createRenderableToken = (
     overrides: Partial<RenderableToken<TokenType>> = {}

@@ -59,19 +59,22 @@ function assignContextNames(
 }
 
 /**
- * Populate each token's CSS variable name on `$names.css`.
+ * Decide each token's CSS custom property name (e.g. `ds-color-primary`,
+ * which the writer emits as `--ds-color-primary`) and store it on
+ * `$names.css`.
  *
- * Honours `variables.prefix` / `variables.variableName` config. Called once
- * per pipeline run; downstream emission sites (`format-css-variables`,
- * utility class rules, Studio) all read `token.$names.css` — single source
- * of truth for CSS variable naming.
+ * Runs once per pipeline and is the single source of truth for the name —
+ * every downstream emitter (variable declarations, utility classes,
+ * Studio) reads `$names.css` rather than deriving it from `$path` again.
+ * Future formats will get their own sibling fields (`$names.js`,
+ * `$names.scss`).
  *
- * Invalid tokens (flagged by the prior validation step) are dropped.
+ * Honours `variables.prefix` / `variables.variableName` config. Tokens
+ * flagged invalid by the validation step are dropped.
  *
  * @example
- *   // With variables.prefix = "ds"
- *   input:  ResolvedTokens { "color.primary": { $value: "#FF0000", ... } }
- *   output: RenderableTokens { "color.primary": { ..., $names: { css: "ds-color-primary" } } }
+ *   // With variables.prefix = "ds", a token at path "color.primary" gets:
+ *   //   $names: { css: "ds-color-primary" }
  */
 export function assignCSSNames(
     tokens: NormalizedTokens,

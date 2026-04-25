@@ -1,14 +1,17 @@
 import type { ValidationError } from "../types/validate.js";
 
 /**
- * Build a `(tokenPath) => boolean` predicate from validation errors.
+ * Returns a function that answers: "is this token broken?"
  *
- * Validation errors may have property-level paths (e.g., `"token.path.unit"`),
- * so the predicate returns `true` if the error's path equals the token path or
- * is nested under it. Used by format-specific name-assigners to drop tokens
- * that failed validation.
+ * Pass it a list of validation errors and it gives you back a checker.
+ * The checker takes a token's path (e.g. `color.primary`) and returns
+ * `true` if anything inside that token failed validation.
  *
- * Returns `undefined` when there are no errors — callers can skip the check.
+ * The "anything inside" part matters: an error can point at the token
+ * itself (`color.primary`) or at one of its fields (`color.primary.unit`).
+ * Both count as the token being broken.
+ *
+ * If there are no errors, returns `undefined` so callers can skip checking.
  */
 export function toInvalidPredicate(
     validationErrors?: ValidationError[]
