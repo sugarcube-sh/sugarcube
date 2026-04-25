@@ -1,6 +1,5 @@
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
-import { pathToFileURL } from "node:url";
 import { createJiti } from "jiti";
 import { resolve } from "pathe";
 import { validateInternalConfig, validateSugarcubeConfig } from "../../shared/config.js";
@@ -49,28 +48,6 @@ export function configFileExists(basePath = "sugarcube.config"): boolean {
 
 async function loadTSConfig(configPath: string): Promise<unknown> {
     try {
-        // Check if we're running in Bun (which has native TypeScript support)
-        // Use globalThis to avoid TypeScript errors about Bun types
-        const isBun = typeof (globalThis as { Bun?: unknown }).Bun !== "undefined";
-
-        if (isBun) {
-            // Bun has native TypeScript support
-            const fileUrl = pathToFileURL(configPath).href;
-            const dynamicImport = new Function("url", "return import(url)");
-            const result = await dynamicImport(fileUrl);
-
-            if (result && typeof result === "object" && "default" in result) {
-                return result.default;
-            }
-
-            throw new Error(
-                ErrorMessages.CONFIG.INVALID_CONFIG(
-                    "root",
-                    "Config file must export a default object"
-                )
-            );
-        }
-
         const jiti = createJiti(import.meta.url, {
             interopDefault: true,
             moduleCache: false,
