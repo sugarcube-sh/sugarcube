@@ -15,6 +15,8 @@ export type ResolverDiscoveryResult =
  */
 export async function findResolverDocument(directory: string): Promise<ResolverDiscoveryResult> {
     const pattern = "**/*.resolver.json";
+    // tinyglobby returns files in filesystem-enumeration order, which varies cross-OS.
+    // Don't rely on this list being stably ordered. Sort explicitly if we need that.
     const files = await glob([pattern], {
         cwd: directory,
         onlyFiles: true,

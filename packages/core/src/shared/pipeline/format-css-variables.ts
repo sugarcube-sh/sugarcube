@@ -16,10 +16,6 @@ import { ErrorMessages } from "../constants/error-messages.js";
 import { formatCSSVarName } from "../format-css-var-name.js";
 import { isTypographyToken } from "../guards.js";
 
-function deterministicEntries<T>(obj: Record<string, T>): [string, T][] {
-    return Object.entries(obj).sort(([a], [b]) => a.localeCompare(b));
-}
-
 function indentCSS(css: string, spaces = 4): string {
     const indent = " ".repeat(spaces);
     return css
@@ -170,7 +166,9 @@ function generateVariablesFromTokens(tokens: ConvertedTokens): {
     features: CSSFeatureBlock[];
 } {
     const nameLookup = buildNameLookup(tokens);
-    const varSets = deterministicEntries(tokens)
+    // Iterate in insertion order so output mirrors the order tokens were authored
+    // in source DTCG files (and the order modifier expansions emit them).
+    const varSets = Object.entries(tokens)
         .filter(([key, token]) => key !== "$extensions" && "$type" in token)
         .map(([_, token]) =>
             generateVariablesForToken(token as ConvertedToken<TokenType>, nameLookup)
