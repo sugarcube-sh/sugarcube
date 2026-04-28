@@ -292,6 +292,46 @@ describe("resolveDocumentReferences", () => {
         expect(result.modifiers[0]?.name).toBe("theme");
     });
 
+    it("expands #/sets/* references inside modifier contexts (DTCG §4.1.5.1, Example 4)", async () => {
+        const doc: ResolverDocument = {
+            version: "2025.10",
+            sets: {
+                darkColors: {
+                    sources: [
+                        {
+                            color: {
+                                brand: { blue: { $type: "color", $value: "#0000FF" } },
+                            },
+                        },
+                    ],
+                },
+            },
+            modifiers: {
+                theme: {
+                    default: "light",
+                    contexts: {
+                        light: [],
+                        dark: [{ $ref: "#/sets/darkColors" }],
+                    },
+                },
+            },
+            resolutionOrder: [{ $ref: "#/modifiers/theme" }],
+        };
+
+        const result = await resolveDocumentReferences(doc, fixturesPath);
+
+        expect(result.errors).toHaveLength(0);
+        const themeModifier = result.modifiers[0];
+        expect(themeModifier?.resolvedContexts.dark).toHaveLength(1);
+        const darkSource = themeModifier?.resolvedContexts.dark?.[0] as
+            | Record<string, unknown>
+            | undefined;
+        expect(darkSource).toBeDefined();
+        const colorGroup = darkSource?.color as Record<string, unknown> | undefined;
+        const brandGroup = colorGroup?.brand as Record<string, unknown> | undefined;
+        expect(brandGroup?.blue).toMatchObject({ $type: "color", $value: "#0000FF" });
+    });
+
     it("handles extending references with shallow merge", async () => {
         const { parseResult } = await loadFixture("with-extending.resolver.json");
 

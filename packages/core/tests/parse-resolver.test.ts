@@ -140,6 +140,41 @@ describe("parseResolverDocument", () => {
             ).toBe(true);
         });
 
+        it("errors when extending properties accompany a #/sets/* source ref", () => {
+            const result = parseInline({
+                version: "2025.10",
+                sets: {
+                    base: {
+                        sources: [{ color: { primary: { $type: "color", $value: "#3b82f6" } } }],
+                    },
+                },
+                modifiers: {
+                    theme: {
+                        default: "light",
+                        contexts: {
+                            light: [],
+                            dark: [
+                                {
+                                    $ref: "#/sets/base",
+                                    color: {
+                                        accent: { $type: "color", $value: "#f59e0b" },
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                },
+                resolutionOrder: [{ $ref: "#/modifiers/theme" }],
+            });
+
+            expect(
+                hasError(
+                    result.errors,
+                    ErrorMessages.RESOLVER.EXTENDING_ON_SET_REF("#/sets/base", ["color"])
+                )
+            ).toBe(true);
+        });
+
         it("errors when modifier context references another modifier (spec 4.1.5)", () => {
             const result = parseInline({
                 version: "2025.10",

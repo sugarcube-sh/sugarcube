@@ -250,6 +250,33 @@ export async function resolveSources(
             continue;
         }
 
+        if (source.$ref.startsWith("#/sets/")) {
+            // Per DTCG §4.1.5.1 Example 4: a set ref inside a sources array
+            // is equivalent to that set's sources being inlined here.
+            const refResult = await resolveReference(source.$ref, context);
+            errors.push(...refResult.errors);
+            if (refResult.errors.length > 0) continue;
+
+            if (context.visitedRefs.has(source.$ref)) {
+                errors.push({
+                    path: source.$ref,
+                    message: ErrorMessages.RESOLVER.CIRCULAR_REFERENCE(source.$ref),
+                });
+                continue;
+            }
+
+            const setDef = refResult.content as SetDefinition;
+            context.visitedRefs.add(source.$ref);
+            try {
+                const inner = await resolveSources(setDef.sources, context);
+                errors.push(...inner.errors);
+                resolved.push(...inner.resolved);
+            } finally {
+                context.visitedRefs.delete(source.$ref);
+            }
+            continue;
+        }
+
         const refResult = await resolveReference(source.$ref, context);
         errors.push(...refResult.errors);
 

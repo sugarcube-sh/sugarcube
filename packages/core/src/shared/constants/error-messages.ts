@@ -165,6 +165,8 @@ export const ErrorMessages = {
             `Invalid reference "${ref}". References must use format #/sets/<name> or #/modifiers/<name>.`,
         INVALID_SOURCE_REFERENCE: (ref: string) =>
             `Invalid source reference "${ref}". Sources can only reference sets (#/sets/<name>), not modifiers.`,
+        EXTENDING_ON_SET_REF: (ref: string, keys: string[]) =>
+            `Extending properties (${keys.map((k) => `"${k}"`).join(", ")}) cannot be combined with set reference "${ref}". A set ref expands to multiple sources, so there is no single merge target. Add the extra properties as a separate inline source in the same array instead.`,
         UNDEFINED_SET: (name: string) =>
             `Reference to undefined set "${name}". Define it in the "sets" section first.`,
         UNDEFINED_MODIFIER: (name: string) =>

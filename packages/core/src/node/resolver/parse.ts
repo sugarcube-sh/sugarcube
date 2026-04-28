@@ -312,6 +312,19 @@ function validateSourcesReferences(
                 path: `${basePath}[${i}].$ref`,
                 message: ErrorMessages.RESOLVER.INVALID_SOURCE_REFERENCE(ref),
             });
+            continue;
+        }
+
+        // A #/sets/* ref expands to the set's sources array (spec §4.1.5.1
+        // Example 4). Extending properties (spec §4.2.2) shallow-merge onto
+        // a single target — undefined for an array of sources — so block the
+        // combo to prevent silent token loss.
+        const extendingKeys = Object.keys(source).filter((k) => k !== "$ref");
+        if (extendingKeys.length > 0) {
+            errors.push({
+                path: `${basePath}[${i}]`,
+                message: ErrorMessages.RESOLVER.EXTENDING_ON_SET_REF(ref, extendingKeys),
+            });
         }
     }
 }
