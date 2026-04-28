@@ -1,6 +1,8 @@
 import type { FlattenError, FlattenedToken, FlattenedTokens } from "../../types/flatten.js";
+import type { PipelineContext } from "../../types/pipelines.js";
 import type { Token, TokenGroup, TokenSource, TokenTree } from "../../types/tokens.js";
 import { ErrorMessages } from "../constants/error-messages.js";
+import { WarningMessages } from "../constants/warning-messages.js";
 import { isCompositeToken, isReference } from "../guards.js";
 import { mergeFlattenedInto } from "./merge-flattened.js";
 
@@ -32,7 +34,8 @@ function looksLikeUnprefixedToken(obj: unknown): boolean {
 
 function flattenTree(
     tree: TokenGroup,
-    source: TokenSource
+    source: TokenSource,
+    context?: PipelineContext
 ): {
     tokens: FlattenedTokens;
     errors: FlattenError[];
@@ -106,6 +109,17 @@ function flattenTree(
                     message: ErrorMessages.FLATTEN.INVALID_TOKEN_NAME(key),
                 });
                 continue;
+            }
+
+            // Per DTCG 2025.10 §5.1.1, whitespace is not forbidden — names like
+            // "acid green" (spec example 27) are legal. But leading/trailing
+            // whitespace is virtually always a typo, and we sanitize it when
+            // emitting CSS variable names; warn so the source gets fixed.
+            if (key !== key.trim()) {
+                context?.warn({
+                    path: childPath,
+                    message: WarningMessages.FLATTEN.WHITESPACE_IN_NAME(key),
+                });
             }
 
             if ("$value" in value) {
@@ -210,7 +224,10 @@ function flattenTree(
  * //   "color.primary": { $value: "#ff0000", $path: "color.primary", ... }
  * // }
  */
-export function flatten(trees: TokenTree[]): {
+export function flatten(
+    trees: TokenTree[],
+    context?: PipelineContext
+): {
     tokens: FlattenedTokens;
     errors: FlattenError[];
 } {
@@ -221,10 +238,14 @@ export function flatten(trees: TokenTree[]): {
     const errors: FlattenError[] = [];
 
     for (const tree of trees) {
-        const { tokens: flattened, errors: treeErrors } = flattenTree(tree.tokens, {
-            context: tree.context,
-            sourcePath: tree.sourcePath,
-        });
+        const { tokens: flattened, errors: treeErrors } = flattenTree(
+            tree.tokens,
+            {
+                context: tree.context,
+                sourcePath: tree.sourcePath,
+            },
+            context
+        );
 
         errors.push(...treeErrors);
         mergeFlattenedInto(result, flattened, errors);

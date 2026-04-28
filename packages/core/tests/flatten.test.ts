@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { ErrorMessages } from "../src/shared/constants/error-messages.js";
+import { WarningMessages } from "../src/shared/constants/warning-messages.js";
 import { flatten } from "../src/shared/pipeline/flatten.js";
 import type { FlattenedToken } from "../src/types/flatten.js";
+import { createPipelineContext } from "../src/types/pipelines.js";
 import type { TokenTree } from "../src/types/tokens.js";
 
 const isToken = (entry: unknown): entry is FlattenedToken =>
@@ -285,6 +287,28 @@ describe("flatten", () => {
             );
         });
 
+        // DTCG 2025.10 §5.1.1: token/group names MUST NOT contain `{` or `}`
+        // (collision with the curly-brace alias syntax).
+        it("rejects token names containing curly braces", () => {
+            const { errors } = flatten([
+                buildTree({
+                    color: {
+                        $type: "color",
+                        "invalid{name": { $value: "#ff0000" },
+                        "invalid}name": { $value: "#00ff00" },
+                        "invalid{name}": { $value: "#0000ff" },
+                    },
+                }),
+            ]);
+
+            expect(errors).toHaveLength(3);
+            expect(errors.map((e) => e.message)).toEqual([
+                ErrorMessages.FLATTEN.INVALID_TOKEN_NAME("invalid{name"),
+                ErrorMessages.FLATTEN.INVALID_TOKEN_NAME("invalid}name"),
+                ErrorMessages.FLATTEN.INVALID_TOKEN_NAME("invalid{name}"),
+            ]);
+        });
+
         it("rejects tokens using unprefixed value/type properties", () => {
             const { errors } = flatten([
                 buildTree({
@@ -397,6 +421,47 @@ describe("flatten", () => {
             expect(errors).toHaveLength(0);
             const token = tokens.tokens["color.primary"];
             expect(isToken(token) && token.$type).toBe("color");
+        });
+    });
+
+    describe("whitespace in token names", () => {
+        it("warns on group keys with trailing", () => {
+            const ctx = createPipelineContext();
+            const { errors } = flatten(
+                [
+                    buildTree({
+                        "color ": {
+                            $type: "color",
+                            blue: { $value: "#F8F9FF" },
+                        },
+                    } as TokenTree["tokens"]),
+                ],
+                ctx
+            );
+
+            expect(errors).toHaveLength(0);
+            expect(ctx.warnings).toHaveLength(1);
+            expect(ctx.warnings[0]?.message).toBe(
+                WarningMessages.FLATTEN.WHITESPACE_IN_NAME("color ")
+            );
+        });
+
+        it("does not warn on internal whitespace (DTCG §6.10.1 'acid green')", () => {
+            const ctx = createPipelineContext();
+            const { errors } = flatten(
+                [
+                    buildTree({
+                        brand: {
+                            $type: "color",
+                            "acid green": { $value: "#00ff66" },
+                        },
+                    }),
+                ],
+                ctx
+            );
+
+            expect(errors).toHaveLength(0);
+            expect(ctx.warnings).toHaveLength(0);
         });
     });
 });

@@ -24,5 +24,8 @@ const ROOT_SUFFIX = ".$root";
 
 export function formatCSSVarName(path: string): string {
     const normalized = path.endsWith(ROOT_SUFFIX) ? path.slice(0, -ROOT_SUFFIX.length) : path;
-    return normalized.split(".").join("-");
+    return normalized
+        .split(".")
+        .map((segment) => segment.trim().replace(/\s+/g, "-"))
+        .join("-");
 }
