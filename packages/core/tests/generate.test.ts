@@ -407,4 +407,35 @@ describe("generate", () => {
             expect(css).not.toContain("$root");
         });
     });
+
+    describe("source order preservation", () => {
+        it("emits declarations in authored order, not alphabetical", async () => {
+            const sizes = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl"];
+            const tokens: NormalizedConvertedTokens = {
+                "perm:0": Object.fromEntries(
+                    sizes.map((size) => [
+                        `radius.${size}`,
+                        createConvertedToken({
+                            $type: "dimension",
+                            $value: `${size}-value`,
+                            $path: `radius.${size}`,
+                            $originalPath: `radius.${size}`,
+                            $resolvedValue: `${size}-value`,
+                            $cssProperties: { value: `${size}-value` },
+                        }),
+                    ])
+                ),
+            };
+
+            const config = configWith("basic", [{ input: {}, selector: ":root" }]);
+            const result = await formatCSSVariables(tokens, config);
+            const css = result.output[0]?.css ?? "";
+
+            const indices = sizes.map((size) => css.indexOf(`--radius-${size}:`));
+            expect(indices.every((i) => i >= 0)).toBe(true);
+            for (let i = 1; i < indices.length; i++) {
+                expect(indices[i]).toBeGreaterThan(indices[i - 1] ?? -1);
+            }
+        });
+    });
 });
