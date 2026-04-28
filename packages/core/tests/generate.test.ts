@@ -384,17 +384,16 @@ describe("generate", () => {
     describe("source order preservation", () => {
         it("emits declarations in authored order, not alphabetical", async () => {
             const sizes = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl"];
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": Object.fromEntries(
                     sizes.map((size) => [
                         `radius.${size}`,
-                        createConvertedToken({
+                        createRenderableToken({
                             $type: "dimension",
                             $value: `${size}-value`,
                             $path: `radius.${size}`,
                             $originalPath: `radius.${size}`,
-                            $resolvedValue: `${size}-value`,
-                            $cssProperties: { value: `${size}-value` },
+                            $names: { css: `radius-${size}` },
                         }),
                     ])
                 ),
