@@ -3,7 +3,8 @@
  *
  * Use this in any non-Node context — browsers, web workers, edge functions:
  *
- *     import { convertTokens, generateCSSVariables } from "@sugarcube-sh/core/client";
+ *     import { groupByContext, assignCSSNames, generateCSSVariables }
+ *         from "@sugarcube-sh/core/client";
  *
  * For Node contexts use the main `@sugarcube-sh/core` entry, which adds
  * file loaders, writers, and the Node-side `fillDefaults`.
@@ -20,11 +21,12 @@ export {
 export type { DefaultDirs } from "./shared/config.js";
 export { DEFAULT_CONFIG } from "./shared/constants/config.js";
 
-// Pipeline orchestrators (pure)
+// Pipeline primitives (pure) — compose explicitly per output format.
+// e.g. for CSS: groupByContext → assignCSSNames → generateCSSVariables
 export { resolveTokens } from "./shared/resolve-tokens.js";
 export type { ResolveResult, ResolveErrors } from "./shared/resolve-tokens.js";
-export { convertTokens } from "./shared/convert-tokens.js";
-export type { ConvertResult } from "./shared/convert-tokens.js";
+export { groupByContext } from "./shared/pipeline/group-by-context.js";
+export { assignCSSNames } from "./shared/pipeline/assign-css-names.js";
 export { generateCSSVariables } from "./shared/generate-css-variables.js";
 
 // Utility-class UnoCSS rules
@@ -70,10 +72,10 @@ export { createPipelineContext } from "./types/pipelines.js";
 export type { ResolvedToken, ResolvedTokens } from "./types/resolve.js";
 export type { TokenTree } from "./types/tokens.js";
 export type {
-    ConvertedToken,
-    ConvertedTokens,
-    NormalizedConvertedTokens,
-} from "./types/convert.js";
+    RenderableToken,
+    RenderableTokens,
+    NormalizedRenderableTokens,
+} from "./types/render.js";
 export type { CSSFileOutput } from "./types/generate.js";
 export type { userConfigSchema } from "./shared/schemas/config.js";
 

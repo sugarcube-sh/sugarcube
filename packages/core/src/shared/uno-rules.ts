@@ -1,6 +1,6 @@
 import type { UtilityClassesConfig } from "../types/config.js";
-import type { ConvertedToken, NormalizedConvertedTokens } from "../types/convert.js";
 import type { TokenType } from "../types/dtcg.js";
+import type { NormalizedRenderableTokens, RenderableToken } from "../types/render.js";
 import type { NodeMetadata } from "../types/tokens.js";
 import type { DirectionalVariant, PropertyUtilityConfig } from "../types/utilities.js";
 import { ErrorMessages } from "./constants/error-messages.js";
@@ -86,8 +86,8 @@ function isTokenTypeValidForProperty(tokenType: TokenType, property: string): bo
 
 // Cache for path-to-token maps to avoid rebuilding on every lookup
 const pathIndexCache = new WeakMap<
-    Record<string, ConvertedToken | NodeMetadata>,
-    Map<string, ConvertedToken>
+    Record<string, RenderableToken | NodeMetadata>,
+    Map<string, RenderableToken>
 >();
 
 // Cache for findMatchingToken results to avoid repeated lookups for the same class
@@ -96,7 +96,7 @@ const pathIndexCache = new WeakMap<
 // cache collides across tokens objects with the same (source, prefix, name)
 // key, which can return stale $names.css when configs differ. Harmless in a
 // single-build production path; manifests in tests and multi-instance use.
-const matchCache = new Map<string, ConvertedToken | null>();
+const matchCache = new Map<string, RenderableToken | null>();
 
 /**
  * Clears the token matching cache.
@@ -110,17 +110,17 @@ export function clearMatchCache(): void {
  * We build a path-to-token index for O(1) lookups instead of O(n) iteration.
  */
 function buildPathIndex(
-    contextTokens: Record<string, ConvertedToken | NodeMetadata>
-): Map<string, ConvertedToken> {
+    contextTokens: Record<string, RenderableToken | NodeMetadata>
+): Map<string, RenderableToken> {
     const cached = pathIndexCache.get(contextTokens);
     if (cached) return cached;
 
-    const index = new Map<string, ConvertedToken>();
+    const index = new Map<string, RenderableToken>();
     for (const tokenOrMetadata of Object.values(contextTokens)) {
         // Metadata, so skip it
         if (!("$path" in tokenOrMetadata)) continue;
 
-        const token = tokenOrMetadata as ConvertedToken;
+        const token = tokenOrMetadata as RenderableToken;
         index.set(token.$path, token);
     }
 
@@ -134,16 +134,16 @@ function buildPathIndex(
  * For utilities, we use the default context to find matching tokens.
  */
 function getDefaultContextTokens(
-    tokens: NormalizedConvertedTokens
-): Record<string, ConvertedToken | NodeMetadata> | null {
+    tokens: NormalizedRenderableTokens
+): Record<string, RenderableToken | NodeMetadata> | null {
     if (tokens.default) {
-        return tokens.default as Record<string, ConvertedToken | NodeMetadata>;
+        return tokens.default as Record<string, RenderableToken | NodeMetadata>;
     }
 
     // Fall back to the first context if "default" doesn't exist
     const contexts = Object.keys(tokens);
     if (contexts.length > 0 && contexts[0]) {
-        return tokens[contexts[0]] as Record<string, ConvertedToken | NodeMetadata>;
+        return tokens[contexts[0]] as Record<string, RenderableToken | NodeMetadata>;
     }
 
     return null;
@@ -152,8 +152,8 @@ function getDefaultContextTokens(
 export function findMatchingToken(
     tokenName: string,
     config: PropertyUtilityConfig & { property?: string },
-    tokens: NormalizedConvertedTokens
-): ConvertedToken | null {
+    tokens: NormalizedRenderableTokens
+): RenderableToken | null {
     const cacheKey = `${config.source}:${config.prefix ?? ""}:${config.property ?? ""}:${tokenName}`;
     if (matchCache.has(cacheKey)) {
         return matchCache.get(cacheKey) ?? null;
@@ -231,7 +231,7 @@ function createUtilityPattern(prefix?: string, directionAbbr = ""): RegExp {
 function createSimpleRule(
     property: string,
     config: PropertyUtilityConfig,
-    tokens: NormalizedConvertedTokens
+    tokens: NormalizedRenderableTokens
 ): [RegExp, (m: RegExpMatchArray) => CSSObject] {
     const pattern = createUtilityPattern(config.prefix);
 
@@ -254,7 +254,7 @@ function createDirectionalRule(
     property: string,
     config: PropertyUtilityConfig,
     direction: DirectionalVariant,
-    tokens: NormalizedConvertedTokens
+    tokens: NormalizedRenderableTokens
 ): [RegExp, (m: RegExpMatchArray) => CSSObject] {
     if (direction === "all") {
         return createSimpleRule(property, config, tokens);
@@ -285,7 +285,7 @@ interface RuleForPrefix {
     property: string;
     config: PropertyUtilityConfig;
     direction: DirectionalVariant | null;
-    tokens: NormalizedConvertedTokens;
+    tokens: NormalizedRenderableTokens;
 }
 
 function createSmartRule(
@@ -324,7 +324,7 @@ function createSmartRule(
 function createDirectTokenPathRule(
     property: string,
     config: PropertyUtilityConfig,
-    tokens: NormalizedConvertedTokens
+    tokens: NormalizedRenderableTokens
 ): [RegExp, (m: RegExpMatchArray) => CSSObject] {
     // For utilities without prefix, use the first part of the source path as the pattern base
     // Extract the base path before the first dot (e.g., "text" from "text.*")
@@ -362,7 +362,7 @@ function validateUtilityConfig(config: PropertyUtilityConfig, property: string):
 
 function validateInputs(
     utilitiesConfig: UtilityClassesConfig,
-    tokens: NormalizedConvertedTokens
+    tokens: NormalizedRenderableTokens
 ): void {
     if (!utilitiesConfig || typeof utilitiesConfig !== "object") {
         throw new Error(ErrorMessages.UTILITIES.INVALID_CONFIG_OBJECT);
@@ -381,7 +381,7 @@ function validateInputs(
  */
 export function convertConfigToUnoRules(
     utilitiesConfig: UtilityClassesConfig,
-    tokens: NormalizedConvertedTokens
+    tokens: NormalizedRenderableTokens
 ): Array<[RegExp, (m: RegExpMatchArray) => CSSObject]> {
     validateInputs(utilitiesConfig, tokens);
 

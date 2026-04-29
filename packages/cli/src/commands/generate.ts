@@ -3,20 +3,21 @@ import {
     type ColorFallbackStrategy,
     type FluidConfig,
     type SugarcubeConfig,
+    assignCSSNames,
     clearMatchCache,
     configFileExists,
     convertConfigToUnoRules,
-    convertTokens,
     fillDefaults,
     findResolverDocument,
     generateCSSVariables,
+    groupByContext,
     loadInternalConfig,
     writeCSSUtilitiesToDisk,
     writeCSSVariablesToDisk,
 } from "@sugarcube-sh/core";
 import type {
     InternalConfig,
-    NormalizedConvertedTokens,
+    NormalizedRenderableTokens,
     ResolvedTokens,
     TokenTree,
 } from "@sugarcube-sh/core";
@@ -29,7 +30,6 @@ import { CLIError } from "../cli-error.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import { prepareTokens } from "../prepare-tokens.js";
-import { getProjectInfo } from "../project/framework.js";
 import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
@@ -204,7 +204,7 @@ function formatOutputPaths(output: CSSFileOutput): string[] {
 }
 
 async function generateSugarcubeUtilities(
-    tokens: NormalizedConvertedTokens,
+    tokens: NormalizedRenderableTokens,
     config: InternalConfig
 ): Promise<CSSFileOutput> {
     if (!config.utilities.classes || Object.keys(config.utilities.classes).length === 0) {
@@ -274,7 +274,7 @@ async function generateAllCSS(
 ): Promise<CSSFileOutput> {
     const output: CSSFileOutput = [];
 
-    const convertedTokens = await convertTokens(trees, resolved, config);
+    const convertedTokens = assignCSSNames(groupByContext(trees, resolved), config);
 
     if (!options.utilitiesOnly) {
         let cssVariables = await generateCSSVariables(convertedTokens, config);

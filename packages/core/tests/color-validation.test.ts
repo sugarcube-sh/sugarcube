@@ -5,11 +5,11 @@ import {
     isDTCGColorValue,
     validateDTCGColorValue,
 } from "../src/shared/color/color-validation.js";
-import { convertColorToken } from "../src/shared/converters/color.js";
-import type { ConversionOptions } from "../src/types/convert.js";
+import { renderColor } from "../src/shared/renderers/css/color.js";
 import type { DTCGColorValue } from "../src/types/dtcg-color.js";
+import type { CSSRenderOptions } from "../src/types/render.js";
 
-const createOptions = (overrides: Partial<ConversionOptions> = {}): ConversionOptions => ({
+const createOptions = (overrides: Partial<CSSRenderOptions> = {}): CSSRenderOptions => ({
     fluidConfig: { min: 320, max: 1200 },
     colorFallbackStrategy: "native",
     ...overrides,
@@ -302,7 +302,7 @@ describe("DTCG Color Support", () => {
         });
     });
 
-    describe("convertColorToken", () => {
+    describe("renderColor", () => {
         describe("native strategy", () => {
             const nativeCases = [
                 {
@@ -332,7 +332,7 @@ describe("DTCG Color Support", () => {
             ] as const;
 
             it.each(nativeCases)("converts $name without featureValues", ({ color, expected }) => {
-                const result = convertColorToken(
+                const result = renderColor(
                     color as DTCGColorValue,
                     createOptions({ colorFallbackStrategy: "native" })
                 );
@@ -341,7 +341,7 @@ describe("DTCG Color Support", () => {
             });
 
             it("passes through hex strings", () => {
-                const result = convertColorToken(
+                const result = renderColor(
                     "#ff0000",
                     createOptions({ colorFallbackStrategy: "native" })
                 );
@@ -349,7 +349,7 @@ describe("DTCG Color Support", () => {
             });
 
             it("passes through references", () => {
-                const result = convertColorToken(
+                const result = renderColor(
                     "{color.primary}",
                     createOptions({ colorFallbackStrategy: "native" })
                 );
@@ -365,7 +365,7 @@ describe("DTCG Color Support", () => {
                     alpha: 0.8,
                     hex: "#ff00ff",
                 };
-                const result = convertColorToken(
+                const result = renderColor(
                     color,
                     createOptions({ colorFallbackStrategy: "polyfill" })
                 );
@@ -380,7 +380,7 @@ describe("DTCG Color Support", () => {
                     components: [0.9, 0.2, 0.1],
                     hex: "#e63946",
                 };
-                const result = convertColorToken(
+                const result = renderColor(
                     color,
                     createOptions({ colorFallbackStrategy: "polyfill" })
                 );
@@ -398,7 +398,7 @@ describe("DTCG Color Support", () => {
                     alpha: 0.8,
                 };
                 expect(() =>
-                    convertColorToken(color, createOptions({ colorFallbackStrategy: "polyfill" }))
+                    renderColor(color, createOptions({ colorFallbackStrategy: "polyfill" }))
                 ).toThrow("oklch colors require a 'hex' fallback when using 'polyfill' strategy");
             });
 
@@ -408,7 +408,7 @@ describe("DTCG Color Support", () => {
                     components: [0.8, 0.4, 0.2],
                     alpha: 0.9,
                 };
-                const result = convertColorToken(
+                const result = renderColor(
                     color,
                     createOptions({ colorFallbackStrategy: "polyfill" })
                 );
@@ -422,7 +422,7 @@ describe("DTCG Color Support", () => {
                     components: [270, 80, 60],
                     alpha: 0.7,
                 };
-                const result = convertColorToken(
+                const result = renderColor(
                     color,
                     createOptions({ colorFallbackStrategy: "polyfill" })
                 );
@@ -431,7 +431,7 @@ describe("DTCG Color Support", () => {
             });
 
             it("passes through hex strings without polyfill", () => {
-                const result = convertColorToken(
+                const result = renderColor(
                     "#ff0000",
                     createOptions({ colorFallbackStrategy: "polyfill" })
                 );

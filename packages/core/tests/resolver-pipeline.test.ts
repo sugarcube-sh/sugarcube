@@ -3,8 +3,9 @@ import { describe, expect, it } from "vitest";
 import { validateConfig } from "../src/node/config/normalize.js";
 import { loadTokens } from "../src/node/load-tokens.js";
 import { DEFAULT_CONFIG } from "../src/shared/constants/config.js";
-import { convertTokens } from "../src/shared/convert-tokens.js";
 import { generateCSSVariables } from "../src/shared/generate-css-variables.js";
+import { assignCSSNames } from "../src/shared/pipeline/assign-css-names.js";
+import { groupByContext } from "../src/shared/pipeline/group-by-context.js";
 import { resolveTokens } from "../src/shared/resolve-tokens.js";
 import type { ResolvedToken } from "../src/types/resolve.js";
 
@@ -27,9 +28,8 @@ async function generateFromResolver(
         return { trees: resolved.trees, output: [], resolved: resolved.resolved, errors };
     }
 
-    const converted = await convertTokens(
-        resolved.trees,
-        resolved.resolved,
+    const converted = assignCSSNames(
+        groupByContext(resolved.trees, resolved.resolved),
         config,
         errors.validation
     );

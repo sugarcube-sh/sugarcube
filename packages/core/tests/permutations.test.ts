@@ -2,8 +2,9 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { validateConfig } from "../src/node/config/normalize.js";
 import { loadTokens } from "../src/node/load-tokens.js";
-import { convertTokens } from "../src/shared/convert-tokens.js";
 import { generateCSSVariables } from "../src/shared/generate-css-variables.js";
+import { assignCSSNames } from "../src/shared/pipeline/assign-css-names.js";
+import { groupByContext } from "../src/shared/pipeline/group-by-context.js";
 import { resolveTokens } from "../src/shared/resolve-tokens.js";
 import type { InternalConfig } from "../src/types/config.js";
 
@@ -19,7 +20,7 @@ async function generateCSS(config: InternalConfig): Promise<string> {
     expect(loaded.errors).toHaveLength(0);
 
     const resolved = resolveTokens(loaded.trees);
-    const converted = await convertTokens(resolved.trees, resolved.resolved, config);
+    const converted = assignCSSNames(groupByContext(resolved.trees, resolved.resolved), config);
     const output = await generateCSSVariables(converted, config);
 
     return output.map((f) => f.css).join("\n");
@@ -200,7 +201,10 @@ describe("permutations", () => {
             expect(loaded.errors).toHaveLength(0);
 
             const resolved = resolveTokens(loaded.trees);
-            const converted = await convertTokens(resolved.trees, resolved.resolved, config);
+            const converted = assignCSSNames(
+                groupByContext(resolved.trees, resolved.resolved),
+                config
+            );
             const output = await generateCSSVariables(converted, config);
 
             expect(output).toHaveLength(2);

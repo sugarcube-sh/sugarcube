@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
 import { formatCSSVariables } from "../src/shared/pipeline/format-css-variables.js";
 import type { InternalConfig } from "../src/types/config.js";
-import type { NormalizedConvertedTokens } from "../src/types/convert.js";
+import type { NormalizedRenderableTokens } from "../src/types/render.js";
 import { configs } from "./__fixtures__/configs.js";
-import { convertedTokens, createConvertedToken } from "./__fixtures__/converted-tokens.js";
+import { convertedTokens, createRenderableToken } from "./__fixtures__/renderable-tokens.js";
 
 function configWith(
     base: keyof typeof configs,
@@ -22,7 +22,7 @@ function configWith(
 
 describe("generate", () => {
     it("should generate basic CSS variables", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
             },
@@ -38,7 +38,7 @@ describe("generate", () => {
     });
 
     it("should handle theme context tokens", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
             },
@@ -64,16 +64,12 @@ describe("generate", () => {
     });
 
     it("should handle named theme contexts", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
             },
             "perm:1": {
-                "color.primary": createConvertedToken({
-                    $value: "#0066FF",
-                    $resolvedValue: "#0066FF",
-                    $cssProperties: { value: "#0066FF" },
-                }),
+                "color.primary": createRenderableToken({ $value: "#0066FF" }),
             },
         };
 
@@ -92,7 +88,7 @@ describe("generate", () => {
     });
 
     it("should handle typography tokens", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "typography.body": convertedTokens.typographyBody,
             },
@@ -110,23 +106,19 @@ describe("generate", () => {
     });
 
     it("should handle P3 color support", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
-                "color.primary": createConvertedToken({
-                    $cssProperties: {
-                        value: "#FF0000",
-                        featureValues: [
-                            {
-                                query: "@supports (color: color(display-p3 1 1 1))",
-                                value: "color(display-p3 1 0 0)",
-                            },
-                        ],
+                "color.primary": createRenderableToken({
+                    $value: {
+                        colorSpace: "display-p3",
+                        components: [1, 0, 0],
+                        hex: "#FF0000",
                     },
                 }),
             },
         };
 
-        const config = configWith("colorsP3", [{ input: {}, selector: ":root" }]);
+        const config = configWith("colorsP3Polyfill", [{ input: {}, selector: ":root" }]);
 
         const result = await formatCSSVariables(tokens, config);
         const css = result.output[0]?.css ?? "";
@@ -137,7 +129,7 @@ describe("generate", () => {
     });
 
     it("should handle references in CSS values", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
                 "shadow.primary": convertedTokens.shadowPrimary,
@@ -153,7 +145,7 @@ describe("generate", () => {
     });
 
     it("should skip empty permutations", async () => {
-        const tokens: NormalizedConvertedTokens = {
+        const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "color.primary": convertedTokens.colorPrimary,
             },
@@ -172,7 +164,7 @@ describe("generate", () => {
     });
 
     it("should return empty output when no permutations defined", async () => {
-        const tokens: NormalizedConvertedTokens = {};
+        const tokens: NormalizedRenderableTokens = {};
         const config = fillDefaults(configs.basic);
 
         const result = await formatCSSVariables(tokens, config);
@@ -182,17 +174,17 @@ describe("generate", () => {
 
     describe("permutations API", () => {
         it("should generate media query when permutation has atRule", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "color.surface": createConvertedToken({
+                    "color.surface": createRenderableToken({
                         $path: "color.surface",
-                        $cssProperties: { value: "#ffffff" },
+                        $value: "#ffffff",
                     }),
                 },
                 "perm:1": {
-                    "color.surface": createConvertedToken({
+                    "color.surface": createRenderableToken({
                         $path: "color.surface",
-                        $cssProperties: { value: "#1a1a1a" },
+                        $value: "#1a1a1a",
                     }),
                 },
             };
@@ -217,11 +209,11 @@ describe("generate", () => {
         });
 
         it("should use inline permutation from --input (CLI converts input to permutation)", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "color.primary": createConvertedToken({
+                    "color.primary": createRenderableToken({
                         $path: "color.primary",
-                        $cssProperties: { value: "#0066FF" },
+                        $value: "#0066FF",
                     }),
                 },
             };
@@ -238,17 +230,17 @@ describe("generate", () => {
         });
 
         it("should group permutations by path", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "color.primary": createConvertedToken({
+                    "color.primary": createRenderableToken({
                         $path: "color.primary",
-                        $cssProperties: { value: "#0066FF" },
+                        $value: "#0066FF",
                     }),
                 },
                 "perm:1": {
-                    "color.primary": createConvertedToken({
+                    "color.primary": createRenderableToken({
                         $path: "color.primary",
-                        $cssProperties: { value: "#00FF66" },
+                        $value: "#00FF66",
                     }),
                 },
             };
@@ -270,32 +262,25 @@ describe("generate", () => {
 
     describe("prefix", () => {
         it("emits the prefixed name in declarations, references, and typography sub-vars", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "color.primary": createConvertedToken({
+                    "color.primary": createRenderableToken({
                         $path: "color.primary",
                         $names: { css: "ds-color-primary" },
                     }),
-                    "color.button": createConvertedToken({
+                    "color.button": createRenderableToken({
                         $path: "color.button",
                         $value: "{color.primary}",
-                        $cssProperties: { value: "{color.primary}" },
                         $names: { css: "ds-color-button" },
                     }),
-                    "typography.body": createConvertedToken({
+                    "typography.body": createRenderableToken({
                         $type: "typography",
                         $path: "typography.body",
                         $value: {
                             fontFamily: "Arial",
-                            fontSize: "16px",
+                            fontSize: { value: 16, unit: "px" },
                             lineHeight: 1.5,
                             fontWeight: 400,
-                        },
-                        $cssProperties: {
-                            "font-family": "Arial",
-                            "font-size": "16px",
-                            "line-height": 1.5,
-                            "font-weight": 400,
                         },
                         $names: { css: "ds-typography-body" },
                     }),
@@ -317,19 +302,15 @@ describe("generate", () => {
         // preserved case (--color-brandPrimary) while references kebab-cased
         // (var(--color-brand-primary)) — producing a dangling reference.
         it("keeps declaration and reference names in sync for camelCase paths", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "color.brandPrimary": createConvertedToken({
+                    "color.brandPrimary": createRenderableToken({
                         $path: "color.brandPrimary",
                         $value: "#FF0000",
-                        $resolvedValue: "#FF0000",
-                        $cssProperties: { value: "#FF0000" },
                     }),
-                    "color.button": createConvertedToken({
+                    "color.button": createRenderableToken({
                         $path: "color.button",
                         $value: "{color.brandPrimary}",
-                        $resolvedValue: "#FF0000",
-                        $cssProperties: { value: "{color.brandPrimary}" },
                     }),
                 },
             };
@@ -347,21 +328,17 @@ describe("generate", () => {
         // Its CSS variable should be the group's path — "$root" is a reference-only
         // disambiguator and must not appear in emitted identifiers.
         it("emits $root tokens using the group path without a $root segment", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "blue.$root": createConvertedToken({
+                    "blue.$root": createRenderableToken({
                         $value: "#0000FF",
                         $path: "blue.$root",
                         $originalPath: "blue.$root",
-                        $resolvedValue: "#0000FF",
-                        $cssProperties: { value: "#0000FF" },
                     }),
-                    "blue.50": createConvertedToken({
+                    "blue.50": createRenderableToken({
                         $value: "#ADD8E6",
                         $path: "blue.50",
                         $originalPath: "blue.50",
-                        $resolvedValue: "#ADD8E6",
-                        $cssProperties: { value: "#ADD8E6" },
                     }),
                 },
             };
@@ -379,21 +356,17 @@ describe("generate", () => {
         // References to a $root token (e.g. {blue.$root}) must emit the group's
         // CSS variable — var(--blue) — not var(--blue-$root).
         it("emits var(--…) references to $root tokens using the group path", async () => {
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
-                    "blue.$root": createConvertedToken({
+                    "blue.$root": createRenderableToken({
                         $value: "#0000FF",
                         $path: "blue.$root",
                         $originalPath: "blue.$root",
-                        $resolvedValue: "#0000FF",
-                        $cssProperties: { value: "#0000FF" },
                     }),
-                    "border.primary": createConvertedToken({
+                    "border.primary": createRenderableToken({
                         $value: "{blue.$root}",
                         $path: "border.primary",
                         $originalPath: "border.primary",
-                        $resolvedValue: "#0000FF",
-                        $cssProperties: { value: "{blue.$root}" },
                     }),
                 },
             };
@@ -411,17 +384,16 @@ describe("generate", () => {
     describe("source order preservation", () => {
         it("emits declarations in authored order, not alphabetical", async () => {
             const sizes = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl"];
-            const tokens: NormalizedConvertedTokens = {
+            const tokens: NormalizedRenderableTokens = {
                 "perm:0": Object.fromEntries(
                     sizes.map((size) => [
                         `radius.${size}`,
-                        createConvertedToken({
+                        createRenderableToken({
                             $type: "dimension",
                             $value: `${size}-value`,
                             $path: `radius.${size}`,
                             $originalPath: `radius.${size}`,
-                            $resolvedValue: `${size}-value`,
-                            $cssProperties: { value: `${size}-value` },
+                            $names: { css: `radius-${size}` },
                         }),
                     ])
                 ),
@@ -436,6 +408,33 @@ describe("generate", () => {
             for (let i = 1; i < indices.length; i++) {
                 expect(indices[i]).toBeGreaterThan(indices[i - 1] ?? -1);
             }
+        });
+    });
+
+    describe("path case preservation", () => {
+        // Declarations and references must use the same var name even when
+        // path segments contain camelCase characters. Pre-$names, declarations
+        // preserved case (--color-brandPrimary) while references kebab-cased
+        // (var(--color-brand-primary)) — producing a dangling reference.
+        it("keeps declaration and reference names in sync for camelCase paths", async () => {
+            const tokens: NormalizedRenderableTokens = {
+                "perm:0": {
+                    "color.brandPrimary": createRenderableToken({
+                        $path: "color.brandPrimary",
+                        $value: "#FF0000",
+                    }),
+                    "color.button": createRenderableToken({
+                        $path: "color.button",
+                        $value: "{color.brandPrimary}",
+                    }),
+                },
+            };
+
+            const config = configWith("basic", [{ input: {}, selector: ":root" }]);
+            const css = (await formatCSSVariables(tokens, config)).output[0]?.css ?? "";
+
+            expect(css).toContain("--color-brandPrimary: #FF0000;");
+            expect(css).toContain("--color-button: var(--color-brandPrimary);");
         });
     });
 });

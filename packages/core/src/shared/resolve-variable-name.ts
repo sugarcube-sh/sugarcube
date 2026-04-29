@@ -8,21 +8,18 @@ type VariablesNameConfig = {
 };
 
 /**
- * Build a reusable CSS variable-name resolver from a `variables` config.
+ * Generates CSS variable names from token paths, e.g.
+ * `color.primary` → `ds-color-primary`.
  *
- * Bind once, call many times. Used by the pipeline (once at the start of
- * the render pass, then per token) and by consumers like Studio that
- * repeatedly build `var(--…)` strings and want names guaranteed to match
- * the pipeline's emitted CSS.
+ * The exact name depends on your `variables` config:
+ *   1. If you provided a `variableName` callback, that wins — `prefix`
+ *      is ignored. You're in full control.
+ *   2. If you set `prefix`, names look like `{prefix}-{path-with-hyphens}`.
+ *   3. Otherwise, it's just the path with dots swapped for hyphens.
  *
- * Resolution order:
- *   1. `variableName` callback — owns everything. `prefix` is ignored.
- *   2. `prefix` — prepended to the default path → hyphen form.
- *   3. Default — dots become hyphens, case preserved.
- *
- * This is the single source of truth for CSS variable naming. Every
- * emission site (declarations, references, utility classes) goes through
- * this function.
+ * Notice the two-step usage in the example below: you give it the config
+ * once, and the result does the per-token work. The pipeline runs this
+ * for every token, and we don't want to re-check the config each time.
  *
  * @example
  *   const varName = createVariableNameResolver(config.variables);

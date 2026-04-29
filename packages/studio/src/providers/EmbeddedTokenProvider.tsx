@@ -1,4 +1,4 @@
-import { convertTokens, generateCSSVariables } from "@sugarcube-sh/core/client";
+import { assignCSSNames, generateCSSVariables, groupByContext } from "@sugarcube-sh/core/client";
 import { type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { StudioContext, useTokenStore } from "../store/hooks";
 import type { TokenSnapshot } from "../tokens/types";
@@ -79,9 +79,8 @@ function PipelineRunner({ snapshot }: { snapshot: TokenSnapshot }) {
                 async function run() {
                     try {
                         const startedAt = performance.now();
-                        const converted = await convertTokens(
-                            snapshot.trees,
-                            resolved,
+                        const converted = assignCSSNames(
+                            groupByContext(snapshot.trees, resolved),
                             snapshot.config
                         );
                         const result = await generateCSSVariables(converted, snapshot.config);
