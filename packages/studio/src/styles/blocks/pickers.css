@@ -272,6 +272,45 @@
     font-feature-settings: "tnum";
 }
 
+.per-step-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding-block: 2px;
+}
+
+.per-step-row .scale-label {
+    flex-shrink: 0;
+}
+
+.per-step-input {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--color-surface-lowered);
+    border-radius: var(--radius-sm, 3px);
+    padding-inline: var(--space-2xs);
+}
+
+.per-step-input input {
+    inline-size: 4rem;
+    background: transparent;
+    border: 0;
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm);
+    color: var(--color-text-normal);
+}
+
+.per-step-input input:focus {
+    outline: none;
+}
+
+.per-step-unit {
+    color: var(--color-text-quiet);
+    font-size: var(--text-sm);
+    font-family: var(--font-mono, monospace);
+}
+
 .scale-label {
     color: var(--color-text-quiet);
     font-size: var(--text-base);

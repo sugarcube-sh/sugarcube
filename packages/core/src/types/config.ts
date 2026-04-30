@@ -207,21 +207,17 @@ export type PresetBinding = {
 };
 
 /**
- * A scale binding — declares a panel control for a group of fluid tokens
- * (whether authored as a recipe or as hardcoded values).
+ * A scale binding — declares a panel control for a group of fluid tokens.
  *
- * `scaleType` is the user's declared intent — exponential or multipliers —
- * which the studio uses to render the right control panel. The studio does
- * not detect the type from token values; the user states it.
+ * The studio dispatches purely on whether a recipe (`sh.sugarcube.scale`
+ * extension) is authored at the bound path:
+ * - Recipe present → recipe-aware controls; the recipe's `mode` field
+ *   tells the studio whether to render exponential or multipliers UI.
+ * - No recipe → bulk controls (base + spread) and per-step inputs render
+ *   together for direct editing of the concrete tokens.
  *
- * @example Recipe-authored scale
- * { type: "scale", token: "size.step", scaleType: "exponential" }
- *
- * @example Hardcoded fluid tokens declared as multipliers-shaped
- * { type: "scale", token: "space.*", scaleType: "multipliers" }
- *
- * @example Legacy cascade binding (transitional — `scaleType` omitted)
- * { type: "scale", token: "size.step.*", base: "size.step.0", min: 0.5, max: 4, step: 0.05 }
+ * @example
+ * { type: "scale", token: "size.step.*", base: "size.step.0" }
  */
 export type ScaleBinding = {
     type: "scale";
@@ -230,18 +226,16 @@ export type ScaleBinding = {
     /** Optional label override. */
     label?: string;
     /**
-     * The scale's authoring intent. Required for the recipe-aware UI path
-     * (Phase 5 onward). Existing bindings that omit `scaleType` continue
-     * to render the legacy cascade UI as a transitional fallback.
-     */
-    scaleType?: "exponential" | "multipliers";
-    /**
-     * Legacy cascade binding fields. Used only when `scaleType` is omitted.
-     * Slated for deprecation once existing users migrate to `scaleType`.
+     * The path of the step that anchors the bulk slider. The slider's
+     * value directly controls this step's max-viewport value, and other
+     * steps adjust proportionally.
      */
     base?: string;
+    /** Bulk slider minimum. */
     min?: number;
+    /** Bulk slider maximum. */
     max?: number;
+    /** Bulk slider step increment. */
     step?: number;
 };
 

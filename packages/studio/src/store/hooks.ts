@@ -56,6 +56,16 @@ export function useTokenStore<T>(selector: (state: TokenStoreState) => T): T {
     return useStore(useStudio().store, selector);
 }
 
+/**
+ * The underlying token-store API. Use when a caller needs `getState` /
+ * `setState` directly — e.g. updating a fluid token's `$value` and
+ * `$extensions` together in one write, which `setToken` (which only
+ * touches `$value`) can't express.
+ */
+export function useTokenStoreApi(): TokenStoreAPI {
+    return useStudio().store;
+}
+
 export function useScaleState<T>(selector: (state: ScaleStateStore) => T): T {
     return useStore(useStudio().scaleState, selector);
 }
