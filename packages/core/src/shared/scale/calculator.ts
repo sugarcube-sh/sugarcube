@@ -67,29 +67,47 @@ function calculateMultiplierScale(config: MultiplierScaleConfig): GeneratedStep[
         });
     }
 
-    if (pairs) {
-        const entries = Object.entries(multipliers);
-        for (let i = 0; i < entries.length - 1; i++) {
-            const from = entries[i];
-            const to = entries[i + 1];
-            if (!from || !to) continue;
-            const [fromName, fromMultiplier] = from;
-            const [toName, toMultiplier] = to;
-            result.push({
-                name: `${fromName}-${toName}`,
-                min: {
-                    value: roundTo(base.min.value * fromMultiplier, ROUND_PRECISION),
-                    unit: base.min.unit,
-                },
-                max: {
-                    value: roundTo(base.max.value * toMultiplier, ROUND_PRECISION),
-                    unit: base.max.unit,
-                },
-            });
-        }
+    const pairList = resolvePairList(pairs, Object.keys(multipliers));
+    for (const [fromName, toName] of pairList) {
+        const fromMultiplier = multipliers[fromName];
+        const toMultiplier = multipliers[toName];
+        if (fromMultiplier === undefined || toMultiplier === undefined) continue;
+        result.push({
+            name: `${fromName}-${toName}`,
+            min: {
+                value: roundTo(base.min.value * fromMultiplier, ROUND_PRECISION),
+                unit: base.min.unit,
+            },
+            max: {
+                value: roundTo(base.max.value * toMultiplier, ROUND_PRECISION),
+                unit: base.max.unit,
+            },
+        });
     }
 
     return result;
+}
+
+function resolvePairList(
+    pairs: MultiplierScaleConfig["pairs"],
+    names: string[]
+): [string, string][] {
+    if (pairs === undefined) return [];
+
+    if (pairs === "adjacent") {
+        const result: [string, string][] = [];
+        for (let i = 0; i < names.length - 1; i++) {
+            const from = names[i];
+            const to = names[i + 1];
+            if (from && to) result.push([from, to]);
+        }
+        return result;
+    }
+
+    return pairs.map((spec) => {
+        const dash = spec.indexOf("-");
+        return [spec.slice(0, dash), spec.slice(dash + 1)] as [string, string];
+    });
 }
 
 function roundTo(value: number, precision: number): number {

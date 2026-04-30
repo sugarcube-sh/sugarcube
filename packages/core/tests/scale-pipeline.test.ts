@@ -75,6 +75,38 @@ describe("scale extension - pipeline integration", () => {
         expect(result.resolved["space.md"]).toBeDefined();
     });
 
+    it('emits adjacent pair tokens when pairs is "adjacent"', () => {
+        const trees = [
+            buildTree({
+                space: scaleAuthoringGroup({ ...multipliersScale, pairs: "adjacent" }),
+            }),
+        ];
+
+        const result = resolveTokens(trees);
+
+        expect(result.errors.expandTree).toHaveLength(0);
+        expect(result.resolved["space.sm-md"]).toBeDefined();
+    });
+
+    it("emits exactly the listed pair tokens when pairs is an explicit list", () => {
+        const trees = [
+            buildTree({
+                space: scaleAuthoringGroup({
+                    ...multipliersScale,
+                    multipliers: { sm: 1, md: 1.5, lg: 2 },
+                    pairs: ["sm-lg"],
+                }),
+            }),
+        ];
+
+        const result = resolveTokens(trees);
+
+        expect(result.errors.expandTree).toHaveLength(0);
+        expect(result.resolved["space.sm-lg"]).toBeDefined();
+        expect(result.resolved["space.sm-md"]).toBeUndefined();
+        expect(result.resolved["space.md-lg"]).toBeUndefined();
+    });
+
     it("emits the scale's viewport on each generated token's fluid extension", () => {
         const trees = [
             buildTree({

@@ -46,7 +46,13 @@ export type ExponentialScaleConfig = BaseScaleConfig & {
 export type MultiplierScaleConfig = BaseScaleConfig & {
     mode: "multipliers";
     multipliers: Record<string, number>;
-    pairs?: boolean;
+    /**
+     * Generate space pairs from named multipliers.
+     * - omitted: no pairs
+     * - "adjacent": one pair for each consecutive multiplier (sm-md, md-lg, …)
+     * - string[]: explicit list like ["sm-lg", "xs-xl"]; each name must exist in `multipliers`
+     */
+    pairs?: "adjacent" | string[];
 };
 
 /**

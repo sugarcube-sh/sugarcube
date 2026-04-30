@@ -31,10 +31,16 @@ describe("validateScaleExtension - well-formed configs", () => {
         expect(validateScaleExtension(validExponential, path, source)).toEqual([]);
     });
 
-    it("returns no errors for a valid multipliers config (with pairs)", () => {
-        expect(validateScaleExtension({ ...validMultipliers, pairs: true }, path, source)).toEqual(
-            []
-        );
+    it('returns no errors for a valid multipliers config with pairs: "adjacent"', () => {
+        expect(
+            validateScaleExtension({ ...validMultipliers, pairs: "adjacent" }, path, source)
+        ).toEqual([]);
+    });
+
+    it("returns no errors for a valid multipliers config with an explicit pair list", () => {
+        expect(
+            validateScaleExtension({ ...validMultipliers, pairs: ["sm-lg"] }, path, source)
+        ).toEqual([]);
     });
 
     it("returns no errors for a valid multipliers config (without pairs)", () => {
@@ -180,10 +186,22 @@ describe("validateScaleExtension - multipliers-only fields", () => {
         expect(errors.some((e) => e.path === `${path}.multipliers.md`)).toBe(true);
     });
 
-    it("rejects non-boolean `pairs`", () => {
+    it('rejects pairs values that are neither "adjacent" nor an array', () => {
         const config = { ...validMultipliers, pairs: "yes" };
         const errors = validateScaleExtension(config, path, source);
         expect(errors.some((e) => e.path === `${path}.pairs`)).toBe(true);
+    });
+
+    it("rejects pair entries that don't contain a hyphen", () => {
+        const config = { ...validMultipliers, pairs: ["sm_lg"] };
+        const errors = validateScaleExtension(config, path, source);
+        expect(errors.some((e) => e.path === `${path}.pairs[0]`)).toBe(true);
+    });
+
+    it("rejects pair entries that reference unknown multipliers", () => {
+        const config = { ...validMultipliers, pairs: ["sm-xxl"] };
+        const errors = validateScaleExtension(config, path, source);
+        expect(errors.some((e) => e.path === `${path}.pairs[0]`)).toBe(true);
     });
 });
 

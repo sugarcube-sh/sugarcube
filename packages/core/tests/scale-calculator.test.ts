@@ -128,13 +128,13 @@ describe("calculateScale - multipliers mode", () => {
         ]);
     });
 
-    it("appends pair steps after named steps when pairs: true", () => {
+    it('appends pair steps after named steps when pairs is "adjacent"', () => {
         const config: MultiplierScaleConfig = {
             mode: "multipliers",
             viewport,
             base: remBase(1, 2),
             multipliers: { sm: 1, md: 1.5, lg: 2 },
-            pairs: true,
+            pairs: "adjacent",
         };
 
         const result = calculateScale(config);
@@ -143,13 +143,13 @@ describe("calculateScale - multipliers mode", () => {
         expect(result.map((step) => step.name)).toEqual(["sm", "md", "lg", "sm-md", "md-lg"]);
     });
 
-    it("uses from.min and to.max for each pair (asymmetric growth)", () => {
+    it("uses from.min and to.max for each adjacent pair (asymmetric growth)", () => {
         const config: MultiplierScaleConfig = {
             mode: "multipliers",
             viewport,
             base: remBase(1, 2),
             multipliers: { sm: 1, lg: 2 },
-            pairs: true,
+            pairs: "adjacent",
         };
 
         const result = calculateScale(config);
@@ -162,7 +162,7 @@ describe("calculateScale - multipliers mode", () => {
         });
     });
 
-    it("emits no pair steps when pairs is omitted or false", () => {
+    it("emits no pair steps when pairs is omitted", () => {
         const config: MultiplierScaleConfig = {
             mode: "multipliers",
             viewport,
@@ -173,6 +173,35 @@ describe("calculateScale - multipliers mode", () => {
         const result = calculateScale(config);
 
         expect(result).toHaveLength(3);
+    });
+
+    it("emits exactly the listed pairs when pairs is a string array", () => {
+        const config: MultiplierScaleConfig = {
+            mode: "multipliers",
+            viewport,
+            base: remBase(1, 2),
+            multipliers: { sm: 1, md: 1.5, lg: 2, xl: 3 },
+            pairs: ["sm-xl", "md-lg"],
+        };
+
+        const result = calculateScale(config);
+
+        const pairSteps = result.filter((step) => step.name.includes("-"));
+        expect(pairSteps.map((step) => step.name)).toEqual(["sm-xl", "md-lg"]);
+    });
+
+    it("does not include adjacent pairs when an explicit list is provided", () => {
+        const config: MultiplierScaleConfig = {
+            mode: "multipliers",
+            viewport,
+            base: remBase(1, 2),
+            multipliers: { sm: 1, md: 1.5, lg: 2 },
+            pairs: ["sm-lg"],
+        };
+
+        const result = calculateScale(config);
+
+        expect(result.map((step) => step.name)).toEqual(["sm", "md", "lg", "sm-lg"]);
     });
 });
 

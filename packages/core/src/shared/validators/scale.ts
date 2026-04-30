@@ -274,14 +274,59 @@ function validateMultiplierFields(
         }
     }
 
-    const pairs = ext.pairs;
-    if (pairs !== undefined && typeof pairs !== "boolean") {
+    validatePairs(
+        ext.pairs,
+        isObject(multipliers) ? Object.keys(multipliers) : [],
+        `${path}.pairs`,
+        source,
+        errors
+    );
+}
+
+function validatePairs(
+    value: unknown,
+    multiplierNames: string[],
+    path: string,
+    source: TokenSource,
+    errors: ValidationError[]
+): void {
+    if (value === undefined) return;
+    if (value === "adjacent") return;
+
+    if (!Array.isArray(value)) {
         errors.push({
-            path: `${path}.pairs`,
-            message: ErrorMessages.VALIDATE.INVALID_TYPE("boolean", pairs, `${path}.pairs`),
+            path,
+            message: ErrorMessages.VALIDATE.SCALE_INVALID_PAIRS(path),
             source,
         });
+        return;
     }
+
+    value.forEach((entry, i) => {
+        if (typeof entry !== "string" || !entry.includes("-")) {
+            errors.push({
+                path: `${path}[${i}]`,
+                message: ErrorMessages.VALIDATE.SCALE_INVALID_PAIR_ENTRY(entry, `${path}[${i}]`),
+                source,
+            });
+            return;
+        }
+        const dash = entry.indexOf("-");
+        const from = entry.slice(0, dash);
+        const to = entry.slice(dash + 1);
+        for (const name of [from, to]) {
+            if (!multiplierNames.includes(name)) {
+                errors.push({
+                    path: `${path}[${i}]`,
+                    message: ErrorMessages.VALIDATE.SCALE_PAIR_UNKNOWN_MULTIPLIER(
+                        name,
+                        `${path}[${i}]`
+                    ),
+                    source,
+                });
+            }
+        }
+    });
 }
 
 function collectReferenceErrors(

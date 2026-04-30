@@ -126,8 +126,6 @@ export function expand(trees: TokenTree[]): ExpandResult {
     // Third pass: expand scale recipes into the tokens they describe.
     // Runs after refs/extends settle, so a recipe inherited from another
     // group resolves before it generates anything.
-    // Runs across the result trees once refs/extends have settled, so a scale
-    // recipe inherited from another group resolves before scale expansion.
     const { trees: withGenerators, errors: generatorErrors } = expandGenerators(results);
     errors.push(...generatorErrors);
 
