@@ -37,6 +37,18 @@ export { formatCSSVarName } from "./shared/format-css-var-name.js";
 export { createVariableNameResolver } from "./shared/resolve-variable-name.js";
 export { kebabCase } from "./shared/case.js";
 
+// Scale generation (public API for studio + userland tooling)
+export { calculateScale } from "./shared/scale/calculator.js";
+export type { GeneratedStep } from "./shared/scale/calculator.js";
+export type {
+    FluidExtension,
+    ViewportConfig,
+    ScaleExtension,
+    ExponentialScaleConfig,
+    MultiplierScaleConfig,
+    SugarcubeExtensions,
+} from "./types/extensions.js";
+
 // Guards
 export { isResolvedToken } from "./shared/guards.js";
 
