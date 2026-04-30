@@ -116,6 +116,50 @@ describe("renderDimension", () => {
             expect(result).toEqual({ value: "1rem" });
         });
 
+        it("uses viewport from the fluid extension when present (overrides global config)", () => {
+            const dimension: TokenValue<"dimension"> = { value: 24, unit: "px" };
+            const options: CSSRenderOptions = {
+                ...defaultOptions,
+                fluidConfig: { min: 320, max: 1200 }, // global default
+                extensions: {
+                    "sh.sugarcube": {
+                        fluid: {
+                            min: { value: 16, unit: "px" },
+                            max: { value: 24, unit: "px" },
+                            viewport: { min: 480, max: 1920 }, // per-token override
+                        },
+                    },
+                },
+            };
+            const result = renderDimension(dimension, options);
+
+            // Slope is (1.5 - 1) / (1920/16 - 480/16) = 0.5 / 90 ≈ 0.00556
+            // Intersection = -30 * 0.00556 + 1 ≈ 0.83
+            // The vw component would be different if the global config (320/1200) were used.
+            expect(result.value).toMatch(/^clamp\(1rem, 0.83rem \+ 0.56vw, 1.5rem\)$/);
+        });
+
+        it("falls back to global fluidConfig when extension has no viewport", () => {
+            const dimension: TokenValue<"dimension"> = { value: 24, unit: "px" };
+            const options: CSSRenderOptions = {
+                ...defaultOptions,
+                fluidConfig: { min: 320, max: 1200 },
+                extensions: {
+                    "sh.sugarcube": {
+                        fluid: {
+                            min: { value: 16, unit: "px" },
+                            max: { value: 24, unit: "px" },
+                        },
+                    },
+                },
+            };
+            const result = renderDimension(dimension, options);
+
+            // Same min/max as the override test but different viewport;
+            // expect the historical (pre-Phase-2) output.
+            expect(result.value).toMatch(/^clamp\(1rem, .* \+ .*vw, 1.5rem\)$/);
+        });
+
         it("should generate mathematically correct clamp values", () => {
             const dimension: TokenValue<"dimension"> = {
                 value: 32,

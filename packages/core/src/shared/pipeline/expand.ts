@@ -2,6 +2,7 @@ import type { Token, TokenGroup } from "../../types/dtcg.js";
 import type { TokenTree } from "../../types/tokens.js";
 import { ErrorMessages } from "../constants/error-messages.js";
 import { hasRef } from "../guards.js";
+import { expandGenerators } from "./expand-generators.js";
 import { mergeGroups } from "./merge-groups.js";
 
 export type ExpandError = {
@@ -75,15 +76,18 @@ function containsRefsOrExtends(obj: unknown): boolean {
 }
 
 /**
- * Expand $ref and $extends in token trees before flattening.
+ * Expand $ref, $extends, and sugarcube generator extensions in token trees
+ * before flattening.
  *
- * Two passes:
+ * Three passes:
  * 1. $ref: convert JSON Pointer references to curly brace format
  * 2. $extends: resolve group inheritance via deep merge
+ * 3. generators: expand sh.sugarcube.scale (and future palette) recipes
  *
  * For token refs: { "$ref": "#/colors/blue" } becomes { "$value": "{colors.blue}" }
  * For group refs: { "$ref": "#/button" } inlines the target group content
  * For extends: { "$extends": "{button}" } inherits from the button group
+ * For generators: a group's sh.sugarcube.scale recipe expands to child tokens
  */
 export function expand(trees: TokenTree[]): ExpandResult {
     const results: TokenTree[] = [];
@@ -119,7 +123,15 @@ export function expand(trees: TokenTree[]): ExpandResult {
         results.push({ ...tree, tokens: extendsExpanded });
     }
 
-    return { trees: results, errors };
+    // Third pass: expand scale recipes into the tokens they describe.
+    // Runs after refs/extends settle, so a recipe inherited from another
+    // group resolves before it generates anything.
+    // Runs across the result trees once refs/extends have settled, so a scale
+    // recipe inherited from another group resolves before scale expansion.
+    const { trees: withGenerators, errors: generatorErrors } = expandGenerators(results);
+    errors.push(...generatorErrors);
+
+    return { trees: withGenerators, errors };
 }
 
 // ============================================
