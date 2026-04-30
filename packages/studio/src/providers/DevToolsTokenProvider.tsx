@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { type StoreApi, createStore } from "zustand";
 import type { TokenStoreState } from "../store/create-token-store";
 import { StudioContext } from "../store/hooks";
+import { createRecipeState } from "../store/recipe-state";
 import { createScaleState } from "../store/scale-state";
 import { PathIndex } from "../tokens/path-index";
 import type { TokenSnapshot } from "../tokens/types";
@@ -204,25 +205,23 @@ function DevToolsProviderInner({
             },
         })) as StoreApi<TokenStoreState>;
 
-        const scaleState = createScaleState(
-            config.studio?.panel ?? [],
-            snapshot,
-            pathIndex,
-            store,
-            (nextResolved) => {
-                const current = store.getState().resolved;
-                sharedState.mutate((draft) => {
-                    for (const [key, token] of Object.entries(nextResolved)) {
-                        if (!token || !("$value" in token)) continue;
-                        const original = current[key];
-                        if (!original || !("$value" in original)) continue;
-                        if (JSON.stringify(token) !== JSON.stringify(original)) {
-                            draft.resolved[key] = token as ResolvedTokens[string];
-                        }
+        const sharedWrite = (nextResolved: ResolvedTokens) => {
+            const current = store.getState().resolved;
+            sharedState.mutate((draft) => {
+                for (const [key, token] of Object.entries(nextResolved)) {
+                    if (!token || !("$value" in token)) continue;
+                    const original = current[key];
+                    if (!original || !("$value" in original)) continue;
+                    if (JSON.stringify(token) !== JSON.stringify(original)) {
+                        draft.resolved[key] = token as ResolvedTokens[string];
                     }
-                });
-            }
-        );
+                }
+            });
+        };
+
+        const panel = config.studio?.panel ?? [];
+        const scaleState = createScaleState(panel, snapshot, pathIndex, store, sharedWrite);
+        const recipeState = createRecipeState(panel, snapshot, pathIndex, store, sharedWrite);
 
         return {
             mode: "devtools" as const,
@@ -230,6 +229,7 @@ function DevToolsProviderInner({
             pathIndex,
             snapshot,
             scaleState,
+            recipeState,
             studioConfig: config.studio,
         };
     });

@@ -7,7 +7,7 @@ import type { ScaleExtension, TokenTree } from "@sugarcube-sh/core/client";
 export function getScaleExtension(trees: TokenTree[], path: string): ScaleExtension | undefined {
     const segments = path.split(".");
     for (const tree of trees) {
-        const node = walkTree(tree, segments);
+        const node = walkTree(tree.tokens, segments);
         const scale = extractScaleExtension(node);
         if (scale) return scale;
     }

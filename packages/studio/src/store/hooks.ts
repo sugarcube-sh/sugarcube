@@ -6,6 +6,7 @@ import { currentPaletteFromReference } from "../tokens/palette-discovery";
 import type { PathIndex } from "../tokens/path-index";
 import type { TokenDiffEntry, TokenSnapshot } from "../tokens/types";
 import type { TokenStoreAPI, TokenStoreState } from "./create-token-store";
+import type { RecipeStateAPI, RecipeStateStore } from "./recipe-state";
 import type { ScaleStateAPI, ScaleStateStore } from "./scale-state";
 
 /**
@@ -18,6 +19,7 @@ export type StudioContextValue = {
     pathIndex: PathIndex;
     snapshot: TokenSnapshot;
     scaleState: ScaleStateAPI;
+    recipeState: RecipeStateAPI;
     studioConfig: StudioConfig | undefined;
 };
 
@@ -70,6 +72,10 @@ export function useScaleState<T>(selector: (state: ScaleStateStore) => T): T {
     return useStore(useStudio().scaleState, selector);
 }
 
+export function useRecipeState<T>(selector: (state: RecipeStateStore) => T): T {
+    return useStore(useStudio().recipeState, selector);
+}
+
 /**
  * Read + write a token by path, scoped to the current permutation.
  * Returns `[value, setValue]` like `useState`. Edits don't fan out
@@ -101,9 +107,10 @@ export function useSetCurrentContext(): (ctx: string) => void {
 export function usePendingChanges(): TokenDiffEntry[] {
     const { pathIndex, snapshot } = useStudio();
     const resolved = useTokenStore((state) => state.resolved);
+    const recipeSlots = useRecipeState((state) => state.slots);
     return useMemo(
-        () => computeDiff(resolved, snapshot.resolved, pathIndex),
-        [resolved, snapshot.resolved, pathIndex]
+        () => computeDiff(resolved, snapshot.resolved, pathIndex, recipeSlots),
+        [resolved, snapshot.resolved, pathIndex, recipeSlots]
     );
 }
 

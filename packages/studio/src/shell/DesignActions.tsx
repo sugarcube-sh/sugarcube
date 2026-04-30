@@ -4,6 +4,7 @@ import { rpcSave } from "../providers/rpc-client";
 import {
     usePendingChanges,
     usePendingChangesCount,
+    useRecipeState,
     useStudioMode,
     useTokenStore,
 } from "../store/hooks";
@@ -143,6 +144,7 @@ export function DesignActions({ diffOpen, onToggleDiff, diffPanelId }: DesignAct
     const diffRef = useRef(diff);
     diffRef.current = diff;
     const resetAll = useTokenStore((state) => state.resetAll);
+    const resetAllRecipes = useRecipeState((state) => state.resetAll);
 
     const devtools = useDevToolsSave();
     const embedded = useEmbeddedSave(diffRef);
@@ -152,7 +154,8 @@ export function DesignActions({ diffOpen, onToggleDiff, diffPanelId }: DesignAct
     const handleDiscard = useCallback(() => {
         reset();
         resetAll();
-    }, [reset, resetAll]);
+        resetAllRecipes();
+    }, [reset, resetAll, resetAllRecipes]);
 
     const changesLabel = `${pendingCount} ${pendingCount === 1 ? "change" : "changes"}`;
 

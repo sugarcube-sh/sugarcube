@@ -311,6 +311,50 @@
     font-family: var(--font-mono, monospace);
 }
 
+.recipe-control {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+}
+
+.recipe-select,
+.recipe-number {
+    flex: 1;
+    background: var(--color-surface-lowered);
+    border: 0;
+    border-radius: var(--radius-sm, 3px);
+    padding-block: 2px;
+    padding-inline: var(--space-2xs);
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm);
+    color: var(--color-text-normal);
+}
+
+.recipe-number {
+    inline-size: 4rem;
+    flex: 0 0 auto;
+}
+
+.recipe-multipliers {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-block: var(--space-2xs);
+}
+
+.multiplier-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+}
+
+.multiplier-name {
+    min-inline-size: 3rem;
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm);
+    color: var(--color-text-quiet);
+}
+
 .scale-label {
     color: var(--color-text-quiet);
     font-size: var(--text-base);
