@@ -1,5 +1,4 @@
-import type { TokenTree } from "@sugarcube-sh/core/client";
-import type { ScaleExtension } from "./types";
+import type { ScaleExtension, TokenTree } from "@sugarcube-sh/core/client";
 
 /**
  * Find the `sh.sugarcube.scale` extension at a path, if any. Walks the

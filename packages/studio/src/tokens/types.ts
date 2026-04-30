@@ -20,9 +20,13 @@ export type PathIndexEntry = {
 /**
  * The DTCG-author-facing slim shape of a token — just the fields a
  * designer/dev would write in a token JSON file.
+ *
+ * `$value` is optional because diff entries can describe group-level
+ * changes (e.g. an edited `$extensions.sh.sugarcube.scale` recipe on
+ * a parent group node, which has no `$value` of its own).
  */
 export type SlimToken = {
-    $value: unknown;
+    $value?: unknown;
     $extensions?: Record<string, unknown>;
 };
 
@@ -47,11 +51,5 @@ export type TokenUpdate = {
 /** `context` scopes to a permutation; omitted reads the first variant. */
 export type TokenReader = (path: string, context?: string) => unknown;
 
-/**
- * Placeholder type for the sugarcube scale extension.
- * Will be replaced by the real type from core when implemented.
- */
-export type ScaleExtension = {
-    mode: "exponential" | "multipliers";
-    [key: string]: unknown;
-};
+// `ScaleExtension` now lives in `@sugarcube-sh/core/client`. Studio code
+// should import it directly from there.

@@ -207,30 +207,41 @@ export type PresetBinding = {
 };
 
 /**
- * A scale binding — treats a group of matching tokens as a single scale,
- * controlled by base / spread sliders.
+ * A scale binding — declares a panel control for a group of fluid tokens
+ * (whether authored as a recipe or as hardcoded values).
+ *
+ * `scaleType` is the user's declared intent — exponential or multipliers —
+ * which the studio uses to render the right control panel. The studio does
+ * not detect the type from token values; the user states it.
+ *
+ * @example Recipe-authored scale
+ * { type: "scale", token: "size.step", scaleType: "exponential" }
+ *
+ * @example Hardcoded fluid tokens declared as multipliers-shaped
+ * { type: "scale", token: "space.*", scaleType: "multipliers" }
+ *
+ * @example Legacy cascade binding (transitional — `scaleType` omitted)
+ * { type: "scale", token: "size.step.*", base: "size.step.0", min: 0.5, max: 4, step: 0.05 }
  */
 export type ScaleBinding = {
     type: "scale";
-    /** Glob pattern matching the tokens that make up the scale. */
+    /** Glob pattern (or concrete path) matching the scale's tokens. */
     token: string;
     /** Optional label override. */
     label?: string;
     /**
-     * The path of the step that should be treated as the scale's anchor —
-     * the step whose current value is `1.0` multiplier relative to itself,
-     * and which the "base" slider directly controls. Required for
-     * cascade-mode scale bindings.
-     *
-     * @example
-     * { type: "scale", token: "size.step.*", base: "size.step.0" }
+     * The scale's authoring intent. Required for the recipe-aware UI path
+     * (Phase 5 onward). Existing bindings that omit `scaleType` continue
+     * to render the legacy cascade UI as a transitional fallback.
+     */
+    scaleType?: "exponential" | "multipliers";
+    /**
+     * Legacy cascade binding fields. Used only when `scaleType` is omitted.
+     * Slated for deprecation once existing users migrate to `scaleType`.
      */
     base?: string;
-    /** Slider minimum. */
     min?: number;
-    /** Slider maximum. */
     max?: number;
-    /** Slider step increment. */
     step?: number;
 };
 

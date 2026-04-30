@@ -260,6 +260,18 @@
     padding-block: 2px;
 }
 
+.recipe-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.recipe-preview .scale-value {
+    flex: 1;
+    text-align: start;
+    font-feature-settings: "tnum";
+}
+
 .scale-label {
     color: var(--color-text-quiet);
     font-size: var(--text-base);
