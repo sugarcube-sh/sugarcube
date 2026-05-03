@@ -1,6 +1,6 @@
 /// <reference types="@vitejs/devtools-kit" />
 
-import type { ResolvedTokens } from "@sugarcube-sh/core";
+import type { ResolvedTokens, TokenTree } from "@sugarcube-sh/core";
 import { PathIndex, computeDiff, diffToFileEdits } from "@sugarcube-sh/studio";
 import { clientPath } from "@sugarcube-sh/studio/client";
 import type { SugarcubePluginContext } from "@sugarcube-sh/vite";
@@ -9,7 +9,19 @@ import type { Plugin } from "vite";
 
 declare module "@vitejs/devtools-kit" {
     interface DevToolsRpcSharedStates {
-        "sugarcube:studio:resolved": { resolved: ResolvedTokens };
+        /** Working copy — mutated by client edits, watched by host to re-run pipeline. */
+        "sugarcube:studio:working": { resolved: ResolvedTokens };
+        /**
+         * Canonical disk state — updated only by `scCtx.onReload`. Carries
+         * `trees` so the client can refresh its baseline (recipes live on
+         * group nodes in trees, not in resolved). `version` is monotonic so
+         * subscribers can cheaply detect a new emission.
+         */
+        "sugarcube:studio:disk": {
+            trees: TokenTree[];
+            resolved: ResolvedTokens;
+            version: number;
+        };
     }
 }
 
@@ -54,16 +66,23 @@ export default function sugarcubeStudio(): Plugin {
                     return;
                 }
 
-                // Only `resolved` is shared — config/trees are static and fetched via RPC at init.
-                const state = await ctx.rpc.sharedState.get("sugarcube:studio:resolved", {
+                let diskVersion = 0;
+
+                const working = await ctx.rpc.sharedState.get("sugarcube:studio:working", {
+                    initialValue: { resolved: scCtx.resolved },
+                });
+
+                const disk = await ctx.rpc.sharedState.get("sugarcube:studio:disk", {
                     initialValue: {
+                        trees: scCtx.trees,
                         resolved: scCtx.resolved,
+                        version: diskVersion,
                     },
                 });
 
                 // Client edit → re-run pipeline + push CSS via HMR.
-                state.on("updated", async () => {
-                    const current = state.value();
+                working.on("updated", async () => {
+                    const current = working.value();
                     if (!current?.resolved) return;
 
                     await scCtx.rerunPipeline(current.resolved);
@@ -73,10 +92,19 @@ export default function sugarcubeStudio(): Plugin {
                     }
                 });
 
-                // Disk reload (file watcher or explicit) → push fresh state to the client.
+                // Disk reload (file watcher, post-save, post-discard) →
+                // push the new disk state to the client AND reset the
+                // working copy to match (preserves today's "external file
+                // edit blows away pending edits" semantics).
                 scCtx.onReload(() => {
-                    if (!scCtx.resolved) return;
-                    state.mutate((draft) => {
+                    if (!scCtx.resolved || !scCtx.trees) return;
+                    diskVersion += 1;
+                    disk.mutate((draft) => {
+                        draft.trees = scCtx.trees as TokenTree[];
+                        draft.resolved = scCtx.resolved as ResolvedTokens;
+                        draft.version = diskVersion;
+                    });
+                    working.mutate((draft) => {
                         draft.resolved = scCtx.resolved as ResolvedTokens;
                     });
                 });
@@ -109,12 +137,33 @@ export default function sugarcubeStudio(): Plugin {
                         type: "action",
                         setup: () => ({
                             handler: async () => {
-                                const current = state.value();
-                                const baseline = scCtx.resolved;
-                                if (!current?.resolved || !baseline) return;
+                                const current = working.value();
+                                const baselineResolved = scCtx.resolved;
+                                const baselineTrees = scCtx.trees;
+                                const baselineConfig = scCtx.config;
+                                if (
+                                    !current?.resolved ||
+                                    !baselineResolved ||
+                                    !baselineTrees ||
+                                    !baselineConfig
+                                ) {
+                                    return;
+                                }
 
-                                const pathIndex = new PathIndex(baseline);
-                                const diff = computeDiff(current.resolved, baseline, pathIndex);
+                                const pathIndex = new PathIndex(baselineResolved);
+                                const baselineSnapshot = {
+                                    formatVersion: 1,
+                                    generatedAt: "",
+                                    sourceConfigPath: "",
+                                    config: baselineConfig,
+                                    trees: baselineTrees,
+                                    resolved: baselineResolved,
+                                };
+                                const diff = computeDiff(
+                                    current.resolved,
+                                    baselineSnapshot,
+                                    pathIndex
+                                );
                                 const fileEdits = diffToFileEdits(diff);
 
                                 for (const { path, edits } of fileEdits) {
@@ -131,7 +180,7 @@ export default function sugarcubeStudio(): Plugin {
                         type: "action",
                         setup: () => ({
                             handler: async () => {
-                                // `onReload` handler above writes the fresh disk state into shared state.
+                                // `onReload` writes fresh disk state into both shared states.
                                 await scCtx.reloadTokens();
                             },
                         }),

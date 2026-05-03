@@ -1,5 +1,6 @@
 import type { ExponentialScaleConfig, ScaleBinding } from "@sugarcube-sh/core/client";
-import { useRecipeState } from "../store/hooks";
+import { useBaseline, useRecipeState } from "../store/hooks";
+import { selectEffective } from "../store/recipe-state";
 import { RecipeScalePreview } from "./RecipeScalePreview";
 import { labelForBinding } from "./resolver";
 
@@ -27,9 +28,12 @@ const RATIO_PRESETS = [
 export function ExponentialRecipeControl({ binding }: ExponentialRecipeControlProps) {
     const slot = useRecipeState((s) => s.slots[binding.token]);
     const update = useRecipeState((s) => s.update);
+    const baseline = useBaseline();
 
-    if (!slot || slot.current.mode !== "exponential") return null;
-    const recipe = slot.current as ExponentialScaleConfig;
+    if (!slot) return null;
+    const effective = selectEffective(baseline, slot);
+    if (!effective || effective.mode !== "exponential") return null;
+    const recipe = effective as ExponentialScaleConfig;
     const label = labelForBinding(binding);
 
     return (

@@ -8,8 +8,14 @@ type TokenData = {
     resolved: ResolvedTokens;
 };
 
-type SharedResolvedState = {
+type WorkingState = {
     resolved: ResolvedTokens;
+};
+
+type DiskState = {
+    trees: TokenTree[];
+    resolved: ResolvedTokens;
+    version: number;
 };
 
 declare module "@vitejs/devtools-kit" {
@@ -20,6 +26,7 @@ declare module "@vitejs/devtools-kit" {
     }
 
     interface DevToolsRpcSharedStates {
-        "sugarcube:studio:resolved": SharedResolvedState;
+        "sugarcube:studio:working": WorkingState;
+        "sugarcube:studio:disk": DiskState;
     }
 }

@@ -1,135 +1,17 @@
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { rpcSave } from "../providers/rpc-client";
-import {
-    usePendingChanges,
-    usePendingChangesCount,
-    useRecipeState,
-    useStudioMode,
-    useTokenStore,
-} from "../store/hooks";
+import { useHost } from "../host/host-provider";
+import type { SaveResult } from "../host/types";
+import { useDiscard, usePendingChanges, usePendingChangesCount } from "../store/hooks";
 import { diffToFileEdits } from "../tokens/diff-to-edits";
 import type { TokenDiffEntry } from "../tokens/types";
 
-type SaveHook = {
-    saving: boolean;
-    saveLabel: string;
-    feedback: ReactNode;
-    handleSave: () => void;
-    reset: () => void;
-};
-
-function useDevToolsSave(): SaveHook {
-    const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-    const [error, setError] = useState<string | null>(null);
-    const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-    useEffect(() => () => clearTimeout(timerRef.current), []);
-
-    const handleSave = useCallback(async () => {
-        clearTimeout(timerRef.current);
-        setStatus("saving");
-        setError(null);
-        try {
-            await rpcSave();
-            setStatus("saved");
-            timerRef.current = setTimeout(() => setStatus("idle"), 2000);
-        } catch (err) {
-            setStatus("error");
-            setError(err instanceof Error ? err.message : "Failed to save");
-        }
-    }, []);
-
-    const reset = useCallback(() => {
-        clearTimeout(timerRef.current);
-        setStatus("idle");
-        setError(null);
-    }, []);
-
-    const saveLabel = status === "saving" ? "Saving\u2026" : status === "saved" ? "Saved" : "Save";
-
-    return {
-        saving: status === "saving",
-        saveLabel,
-        feedback: error ? <span role="alert">{error}</span> : null,
-        handleSave,
-        reset,
-    };
-}
-
-function useEmbeddedSave(diffRef: React.RefObject<TokenDiffEntry[]>): SaveHook {
-    const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
-    const [error, setError] = useState<string | null>(null);
-    const [pr, setPr] = useState<{ number: number; url: string } | null>(null);
-
-    useEffect(function listenForSaveResult() {
-        function handleMessage(event: MessageEvent) {
-            const data = event.data;
-            if (!data || typeof data !== "object") return;
-            if (data.type !== "studio:save-result") return;
-
-            if (data.error) {
-                setStatus("error");
-                setError(data.error);
-            } else {
-                setStatus("success");
-                setPr({ number: data.number, url: data.url });
-            }
-        }
-
-        window.addEventListener("message", handleMessage);
-        return () => window.removeEventListener("message", handleMessage);
-    }, []);
-
-    const handleSave = useCallback(() => {
-        setStatus("saving");
-        setError(null);
-
-        const currentDiff = diffRef.current ?? [];
-        const files = diffToFileEdits(currentDiff);
-        const title =
-            currentDiff.length === 1 && currentDiff[0]
-                ? `Update ${currentDiff[0].path}`
-                : `Update ${currentDiff.length} tokens`;
-
-        window.parent.postMessage(
-            { type: "studio:save", payload: { title, description: "", files } },
-            "*"
-        );
-    }, [diffRef]);
-
-    const reset = useCallback(() => {
-        setStatus("idle");
-        setError(null);
-        setPr(null);
-    }, []);
-
-    let feedback: ReactNode = null;
-    if (error) {
-        feedback = <span role="alert">{error}</span>;
-    } else if (pr) {
-        feedback = (
-            <a href={pr.url} target="_blank" rel="noopener noreferrer">
-                View PR #{pr.number}
-            </a>
-        );
-    }
-
-    const saveLabel =
-        status === "saving"
-            ? "Saving\u2026"
-            : status === "success" && pr
-              ? `PR #${pr.number} opened`
-              : "Submit as PR";
-
-    return {
-        saving: status === "saving",
-        saveLabel,
-        feedback,
-        handleSave,
-        reset,
-    };
-}
+type SaveStatus =
+    | { kind: "idle" }
+    | { kind: "saving" }
+    | { kind: "persisted" }
+    | { kind: "pr-submitted"; number: number; url: string }
+    | { kind: "failed"; error: string };
 
 type DesignActionsProps = {
     diffOpen: boolean;
@@ -138,24 +20,43 @@ type DesignActionsProps = {
 };
 
 export function DesignActions({ diffOpen, onToggleDiff, diffPanelId }: DesignActionsProps) {
-    const mode = useStudioMode();
+    const host = useHost();
     const pendingCount = usePendingChangesCount();
     const diff = usePendingChanges();
     const diffRef = useRef(diff);
     diffRef.current = diff;
-    const resetAll = useTokenStore((state) => state.resetAll);
-    const resetAllRecipes = useRecipeState((state) => state.resetAll);
+    const discard = useDiscard();
 
-    const devtools = useDevToolsSave();
-    const embedded = useEmbeddedSave(diffRef);
-    const { saving, saveLabel, feedback, handleSave, reset } =
-        mode === "devtools" ? devtools : embedded;
+    const [status, setStatus] = useState<SaveStatus>({ kind: "idle" });
+    const idleTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-    const handleDiscard = useCallback(() => {
-        reset();
-        resetAll();
-        resetAllRecipes();
-    }, [reset, resetAll, resetAllRecipes]);
+    useEffect(() => () => clearTimeout(idleTimerRef.current), []);
+
+    const handleSave = useCallback(async () => {
+        clearTimeout(idleTimerRef.current);
+        setStatus({ kind: "saving" });
+
+        const bundle = buildSaveBundle(diffRef.current ?? []);
+        const result = await host.save(bundle);
+
+        setStatus(result);
+
+        if (result.kind === "persisted") {
+            // Auto-clear the "Saved" pip after 2s. PR-submitted state
+            // sticks around so the user can click through to the PR.
+            idleTimerRef.current = setTimeout(() => setStatus({ kind: "idle" }), 2000);
+        }
+    }, [host]);
+
+    const handleDiscard = useCallback(async () => {
+        clearTimeout(idleTimerRef.current);
+        setStatus({ kind: "idle" });
+        await discard();
+    }, [discard]);
+
+    const saveLabel = renderSaveLabel(status, host.capabilities.saveLabel);
+    const feedback = renderFeedback(status);
+    const saving = status.kind === "saving";
 
     const changesLabel = `${pendingCount} ${pendingCount === 1 ? "change" : "changes"}`;
 
@@ -173,9 +74,9 @@ export function DesignActions({ diffOpen, onToggleDiff, diffPanelId }: DesignAct
             <button
                 type="button"
                 onClick={handleDiscard}
-                aria-label="Discard all pending design changes"
+                aria-label={`${host.capabilities.discardLabel} all pending design changes`}
             >
-                Discard
+                {host.capabilities.discardLabel}
             </button>
             <button type="button" onClick={handleSave} disabled={saving} aria-label={saveLabel}>
                 {saveLabel}
@@ -184,3 +85,43 @@ export function DesignActions({ diffOpen, onToggleDiff, diffPanelId }: DesignAct
         </div>
     );
 }
+
+function buildSaveBundle(diff: TokenDiffEntry[]) {
+    const files = diffToFileEdits(diff);
+    const title =
+        diff.length === 1 && diff[0] ? `Update ${diff[0].path}` : `Update ${diff.length} tokens`;
+    return { title, description: "", files };
+}
+
+function renderSaveLabel(status: SaveStatus, defaultLabel: string): string {
+    switch (status.kind) {
+        case "saving":
+            return "Saving…";
+        case "persisted":
+            return "Saved";
+        case "pr-submitted":
+            return `PR #${status.number} opened`;
+        case "failed":
+        case "idle":
+            return defaultLabel;
+    }
+}
+
+function renderFeedback(status: SaveStatus): ReactNode {
+    switch (status.kind) {
+        case "failed":
+            return <span role="alert">{status.error}</span>;
+        case "pr-submitted":
+            return (
+                <a href={status.url} target="_blank" rel="noopener noreferrer">
+                    View PR #{status.number}
+                </a>
+            );
+        default:
+            return null;
+    }
+}
+
+// Result type re-exported from host/types via this module so callers
+// downstream that previously imported from this file keep working.
+export type { SaveResult };

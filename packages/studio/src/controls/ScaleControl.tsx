@@ -1,5 +1,5 @@
 import type { ScaleBinding } from "@sugarcube-sh/core/client";
-import { useSnapshot } from "../store/hooks";
+import { useBaseline } from "../store/hooks";
 import { getScaleExtension } from "../tokens/scale-extension";
 import { DirectScaleControl } from "./DirectScaleControl";
 import { ExponentialRecipeControl } from "./ExponentialRecipeControl";
@@ -22,8 +22,8 @@ type ScaleControlProps = {
  */
 export function ScaleControl({ binding }: ScaleControlProps) {
     const parent = stripTrailingGlob(binding.token);
-    const snapshot = useSnapshot();
-    const recipe = getScaleExtension(snapshot.trees, parent);
+    const baseline = useBaseline();
+    const recipe = getScaleExtension(baseline.trees, parent);
 
     if (recipe?.mode === "exponential") {
         return <ExponentialRecipeControl binding={binding} />;

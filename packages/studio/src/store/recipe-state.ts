@@ -1,17 +1,23 @@
-import {
-    type PanelSection,
-    type ResolvedTokens,
-    type ScaleExtension,
-    calculateScale,
-    isResolvedToken,
-} from "@sugarcube-sh/core/client";
+/**
+ * Zustand store for recipe-driven scale bindings. Slots own only the
+ * user's pending recipe override (`edits: ScaleExtension | null`); the
+ * "original" recipe is derived from the live baseline on every read.
+ *
+ * Subscribes to baseline changes — when the host pushes a new disk
+ * snapshot (file watcher, save, discard, external editor edit), all
+ * pending edits are blown away to match today's "external write wins"
+ * semantics. This is what makes the post-save phantom-diff bug
+ * structurally impossible.
+ */
+
+import type { PanelSection, ResolvedTokens, ScaleExtension } from "@sugarcube-sh/core/client";
 import { type StoreApi, createStore } from "zustand";
 import type { PathIndex } from "../tokens/path-index";
 import { getScaleExtension } from "../tokens/scale-extension";
 import type { TokenSnapshot } from "../tokens/types";
 import type { TokenStoreAPI } from "./create-token-store";
-
-type Dim = { value: number; unit: "rem" | "px" };
+import { applyRecipeOverlay } from "./recipe-apply";
+import { subscribeBaselineEditClear } from "./subscribe-baseline-edit-clear";
 
 export type RecipeSlot = {
     /** The binding's `token` field — used as the slot key. */
@@ -20,24 +26,19 @@ export type RecipeSlot = {
     parentPath: string;
     /** The JSON file path the recipe is authored in. */
     sourcePath: string;
-    /** The recipe captured from the snapshot — never mutated. */
-    original: ScaleExtension;
-    /** The recipe currently being edited. Updated by `update`. */
-    current: ScaleExtension;
+    /** User's pending edit. Null = no override; effective recipe = the on-disk recipe. */
+    edits: ScaleExtension | null;
 };
 
 export type RecipeStateStore = {
     slots: Record<string, RecipeSlot>;
     /**
-     * Apply a functional update to a recipe. Live preview tokens are
-     * regenerated and written to resolved on every call.
+     * Apply a functional update to a slot's recipe. The updater receives
+     * the *effective* recipe (edits ?? on-disk original). The result is
+     * stored in `edits` and live-applied to resolved.
      */
     update: (token: string, updater: (recipe: ScaleExtension) => ScaleExtension) => void;
-    /**
-     * Revert every slot's `current` to its `original`. Pairs with the
-     * token store's `resetAll` for the discard-changes flow — call both
-     * and the studio is back to its snapshot baseline.
-     */
+    /** Clear every slot's edits. Used by the discard flow. */
     resetAll: () => void;
 };
 
@@ -45,50 +46,48 @@ export type RecipeStateAPI = StoreApi<RecipeStateStore>;
 
 export type RecipeWriteCallback = (resolved: ResolvedTokens) => void;
 
-/**
- * Captures recipe-driven scale bindings from the snapshot and exposes a
- * mutation surface that updates resolved tokens live as the user edits.
- *
- * Parallels `createScaleState` (cascade) — same pattern: build slots
- * from panel bindings, mutate via setter actions, apply on every change.
- */
+/** The recipe authored on disk for this slot, derived from the live baseline. */
+export function selectOriginal(baseline: TokenSnapshot, slot: RecipeSlot): ScaleExtension | null {
+    return getScaleExtension(baseline.trees, slot.parentPath) ?? null;
+}
+
+/** The effective recipe — the user's edit if present, otherwise the on-disk original. */
+export function selectEffective(baseline: TokenSnapshot, slot: RecipeSlot): ScaleExtension | null {
+    return slot.edits ?? selectOriginal(baseline, slot);
+}
+
 export function createRecipeState(
     panelSections: PanelSection[],
     snapshot: TokenSnapshot,
     pathIndex: PathIndex,
     tokenStore: TokenStoreAPI,
+    baseline: StoreApi<TokenSnapshot>,
     onWrite?: RecipeWriteCallback
 ): RecipeStateAPI {
-    const slots = buildInitialSlots(panelSections, snapshot);
-
     const writeResolved: RecipeWriteCallback =
         onWrite ?? ((resolved) => tokenStore.setState({ resolved }));
 
     const recipeStore = createStore<RecipeStateStore>((set) => ({
-        slots,
+        slots: buildInitialSlots(panelSections, snapshot),
+
         update: (token, updater) => {
-            set((state) => {
-                const slot = state.slots[token];
-                if (!slot) return state;
-                return {
-                    slots: { ...state.slots, [token]: { ...slot, current: updater(slot.current) } },
-                };
-            });
+            const slot = recipeStore.getState().slots[token];
+            if (!slot) return;
+            const effective = selectEffective(baseline.getState(), slot);
+            if (!effective) return;
+            const next = updater(effective);
+            set((state) => ({
+                slots: { ...state.slots, [token]: { ...slot, edits: next } },
+            }));
             applyAll();
         },
+
         resetAll: () => {
-            // Revert every slot to its captured original. We deliberately
-            // skip applyAll here — discard pairs this with the token
-            // store's resetAll, which has already restored resolved to
-            // the snapshot. Re-applying would just rewrite the same values.
-            set((state) => ({
-                slots: Object.fromEntries(
-                    Object.entries(state.slots).map(([key, slot]) => [
-                        key,
-                        { ...slot, current: slot.original },
-                    ])
-                ),
-            }));
+            // Discard pairs this with the host's discard (DevTools) or the
+            // local store reset (Embedded). Either way the working state
+            // lands at baseline values; re-applying a now-null overlay is
+            // a no-op, so we skip applyAll here.
+            set((state) => ({ slots: clearEdits(state.slots) }));
         },
     }));
 
@@ -98,11 +97,28 @@ export function createRecipeState(
 
         let next = resolved;
         for (const slot of Object.values(currentSlots)) {
-            next = applyRecipeToResolved(next, slot, pathIndex, currentContext);
+            if (slot.edits === null) continue;
+            next = applyRecipeOverlay(next, slot.edits, slot.parentPath, pathIndex, currentContext);
         }
 
         writeResolved(next);
     }
+
+    // Re-apply on context change so slider edits propagate to the new
+    // permutation's keys. Slot.edits persist across context switches —
+    // a user-set base size is a global intent.
+    tokenStore.subscribe((state, prev) => {
+        if (state.currentContext !== prev.currentContext) {
+            applyAll();
+        }
+    });
+
+    // The load-bearing change for the staleness bug: after a save, edits
+    // clear, baseline shows the saved values, diff machinery sees no
+    // pending changes. No phantom diff possible.
+    subscribeBaselineEditClear(baseline, () => {
+        recipeStore.setState((state) => ({ slots: clearEdits(state.slots) }));
+    });
 
     return recipeStore;
 }
@@ -120,13 +136,11 @@ function buildInitialSlots(
             const recipe = getScaleExtension(snapshot.trees, parentPath);
             if (!recipe) continue;
 
-            const sourcePath = findSourcePath(snapshot, parentPath);
             slots[binding.token] = {
                 bindingToken: binding.token,
                 parentPath,
-                sourcePath,
-                original: recipe,
-                current: recipe,
+                sourcePath: findSourcePath(snapshot, parentPath),
+                edits: null,
             };
         }
     }
@@ -138,8 +152,8 @@ function stripTrailingGlob(pattern: string): string {
     return pattern.endsWith(".*") ? pattern.slice(0, -2) : pattern;
 }
 
+/** Walk the snapshot's trees to find which file authored the group at `parentPath`. */
 function findSourcePath(snapshot: TokenSnapshot, parentPath: string): string {
-    // Walk the snapshot's trees to find which file authored the group at parentPath.
     const segments = parentPath.split(".");
     for (const tree of snapshot.trees) {
         let node: unknown = tree.tokens;
@@ -156,55 +170,8 @@ function findSourcePath(snapshot: TokenSnapshot, parentPath: string): string {
     return snapshot.trees[0]?.sourcePath ?? "";
 }
 
-function applyRecipeToResolved(
-    resolved: ResolvedTokens,
-    slot: RecipeSlot,
-    pathIndex: PathIndex,
-    context: string
-): ResolvedTokens {
-    const steps = calculateScale(slot.current);
-    const updates: ResolvedTokens = {};
-
-    for (const step of steps) {
-        const stepPath = `${slot.parentPath}.${step.name}`;
-        const entries = pathIndex.entriesFor(stepPath).filter((e) => e.context === context);
-        for (const { key } of entries) {
-            const next = buildRecipeDimensionToken(
-                resolved[key],
-                step.min,
-                step.max,
-                slot.current.viewport
-            );
-            if (next) updates[key] = next;
-        }
-    }
-
-    return { ...resolved, ...updates };
-}
-
-function buildRecipeDimensionToken(
-    existing: ResolvedTokens[string] | undefined,
-    min: Dim,
-    max: Dim,
-    viewport: { min: number; max: number }
-): ResolvedTokens[string] | null {
-    if (!isResolvedToken(existing)) return null;
-
-    const existingSugarcube = (existing.$extensions?.["sh.sugarcube"] ?? {}) as Record<
-        string,
-        unknown
-    >;
-
-    return {
-        ...existing,
-        $value: max,
-        $resolvedValue: max,
-        $extensions: {
-            ...existing.$extensions,
-            "sh.sugarcube": {
-                ...existingSugarcube,
-                fluid: { min, max, viewport },
-            },
-        },
-    } as ResolvedTokens[string];
+function clearEdits(slots: Record<string, RecipeSlot>): Record<string, RecipeSlot> {
+    return Object.fromEntries(
+        Object.entries(slots).map(([key, slot]) => [key, { ...slot, edits: null }])
+    );
 }

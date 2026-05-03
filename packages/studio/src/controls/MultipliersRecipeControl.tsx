@@ -1,5 +1,6 @@
 import type { MultiplierScaleConfig, ScaleBinding } from "@sugarcube-sh/core/client";
-import { useRecipeState } from "../store/hooks";
+import { useBaseline, useRecipeState } from "../store/hooks";
+import { selectEffective } from "../store/recipe-state";
 import { RecipeScalePreview } from "./RecipeScalePreview";
 import { labelForBinding } from "./resolver";
 
@@ -18,9 +19,12 @@ type PairsMode = "none" | "adjacent" | "custom";
 export function MultipliersRecipeControl({ binding }: MultipliersRecipeControlProps) {
     const slot = useRecipeState((s) => s.slots[binding.token]);
     const update = useRecipeState((s) => s.update);
+    const baseline = useBaseline();
 
-    if (!slot || slot.current.mode !== "multipliers") return null;
-    const recipe = slot.current as MultiplierScaleConfig;
+    if (!slot) return null;
+    const effective = selectEffective(baseline, slot);
+    if (!effective || effective.mode !== "multipliers") return null;
+    const recipe = effective as MultiplierScaleConfig;
     const label = labelForBinding(binding);
 
     const pairsMode = pairsToMode(recipe.pairs);

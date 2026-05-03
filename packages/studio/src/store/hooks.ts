@@ -1,6 +1,14 @@
+/**
+ * React hooks over the studio's state — the React-facing surface that
+ * controls and shell components consume. Wraps the underlying zustand
+ * stores (token store, scale state, recipe state) and the host's
+ * reactive baseline.
+ */
+
 import { type StudioConfig, createVariableNameResolver } from "@sugarcube-sh/core/client";
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { useStore } from "zustand";
+import { useHost } from "../host/host-provider";
 import { computeDiff } from "../tokens/compute-diff";
 import { currentPaletteFromReference } from "../tokens/palette-discovery";
 import type { PathIndex } from "../tokens/path-index";
@@ -9,15 +17,10 @@ import type { TokenStoreAPI, TokenStoreState } from "./create-token-store";
 import type { RecipeStateAPI, RecipeStateStore } from "./recipe-state";
 import type { ScaleStateAPI, ScaleStateStore } from "./scale-state";
 
-/**
- * Single context for all Studio state. Stable references. Set once
- * at init, never changes during a session.
- */
+/** Stable references for the session — set once at TokenStoreProvider mount. */
 export type StudioContextValue = {
-    mode: "devtools" | "embedded";
     store: TokenStoreAPI;
     pathIndex: PathIndex;
-    snapshot: TokenSnapshot;
     scaleState: ScaleStateAPI;
     recipeState: RecipeStateAPI;
     studioConfig: StudioConfig | undefined;
@@ -31,27 +34,28 @@ function useStudio(): StudioContextValue {
     return ctx;
 }
 
-export function useStudioMode(): StudioContextValue["mode"] {
-    return useStudio().mode;
-}
-
 /** The project's studio panel config. */
 export function useStudioConfig(): StudioConfig | undefined {
     return useStudio().studioConfig;
 }
 
 export function useVariableName(): (path: string) => string {
-    const { snapshot } = useStudio();
-    return useMemo(() => createVariableNameResolver(snapshot.config.variables), [snapshot]);
+    const baseline = useBaseline();
+    return useMemo(() => createVariableNameResolver(baseline.config.variables), [baseline]);
 }
 
 export function usePathIndex(): PathIndex {
     return useStudio().pathIndex;
 }
 
-/** The immutable baseline snapshot this session was initialised from. */
-export function useSnapshot(): TokenSnapshot {
-    return useStudio().snapshot;
+/**
+ * The current baseline snapshot — what the world considers "saved."
+ * Reactive: re-renders consumers when the host pushes a new baseline
+ * (DevTools: file watcher / save / discard / external edit).
+ */
+export function useBaseline(): TokenSnapshot {
+    const host = useHost();
+    return useSyncExternalStore(host.baseline.subscribe, host.baseline.getState);
 }
 
 export function useTokenStore<T>(selector: (state: TokenStoreState) => T): T {
@@ -88,7 +92,11 @@ export function useToken<T = unknown>(path: string): [T | undefined, (value: T) 
         | T
         | undefined;
     const setToken = useTokenStore((state) => state.setToken);
-    return [value, (next: T) => setToken(path, next, context)];
+    const setValue = useCallback(
+        (next: T) => setToken(path, next, context),
+        [setToken, path, context]
+    );
+    return [value, setValue];
 }
 
 /** The currently-active permutation context (e.g. `"perm:0"`, `"perm:1"`). */
@@ -105,12 +113,13 @@ export function useSetCurrentContext(): (ctx: string) => void {
  * Memoised — callers get a stable array reference when the diff hasn't changed.
  */
 export function usePendingChanges(): TokenDiffEntry[] {
-    const { pathIndex, snapshot } = useStudio();
+    const { pathIndex } = useStudio();
+    const baseline = useBaseline();
     const resolved = useTokenStore((state) => state.resolved);
     const recipeSlots = useRecipeState((state) => state.slots);
     return useMemo(
-        () => computeDiff(resolved, snapshot.resolved, pathIndex, recipeSlots),
-        [resolved, snapshot.resolved, pathIndex, recipeSlots]
+        () => computeDiff(resolved, baseline, pathIndex, recipeSlots),
+        [resolved, baseline, pathIndex, recipeSlots]
     );
 }
 
@@ -120,6 +129,21 @@ export function usePendingChangesCount(): number {
 
 export function useHasPendingChange(path: string): boolean {
     return usePendingChanges().some((entry) => entry.path === path);
+}
+
+/**
+ * Discard every kind of pending edit — token-store overlays and recipe
+ * edits — in one call. Returns when host-side discard has resolved
+ * (relevant in DevTools, where the server re-reads disk before the
+ * working subscription pushes new state).
+ */
+export function useDiscard(): () => Promise<void> {
+    const discardTokens = useTokenStore((s) => s.discard);
+    const discardRecipes = useRecipeState((s) => s.resetAll);
+    return useCallback(async () => {
+        discardRecipes();
+        await discardTokens();
+    }, [discardTokens, discardRecipes]);
 }
 
 /** Derive the currently-selected palette for a token family, scoped to the active context. */
