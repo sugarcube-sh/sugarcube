@@ -50,13 +50,12 @@ export async function createDevToolsHost(signal: AbortSignal): Promise<Host> {
     return {
         baseline,
         working: workingChannelFor(initData),
-        save: async () => {
-            // The bundle parameter is ignored: in DevTools the server reads
-            // working state and computes its own diff before writing to
-            // disk. A future PR may flip this to client-side diff and use
-            // the bundle's `files` directly.
+        save: async (bundle) => {
+            // Send the SPA-computed bundle to the server, which applies
+            // bundle.files to disk as-is. Server doesn't re-diff —
+            // what the diff panel shows is exactly what gets written.
             try {
-                await rpcSave();
+                await rpcSave(bundle);
                 return { kind: "persisted" };
             } catch (err) {
                 return { kind: "failed", error: err instanceof Error ? err.message : String(err) };

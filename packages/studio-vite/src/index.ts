@@ -1,7 +1,6 @@
 /// <reference types="@vitejs/devtools-kit" />
 
 import type { ResolvedTokens, TokenTree } from "@sugarcube-sh/core";
-import { PathIndex, computeDiff, diffToFileEdits } from "@sugarcube-sh/studio";
 import { clientPath } from "@sugarcube-sh/studio/client";
 import type { SugarcubePluginContext } from "@sugarcube-sh/vite";
 import { defineRpcFunction } from "@vitejs/devtools-kit";
@@ -136,37 +135,11 @@ export default function sugarcubeStudio(): Plugin {
                         name: "studio:save",
                         type: "action",
                         setup: () => ({
-                            handler: async () => {
-                                const current = working.value();
-                                const baselineResolved = scCtx.resolved;
-                                const baselineTrees = scCtx.trees;
-                                const baselineConfig = scCtx.config;
-                                if (
-                                    !current?.resolved ||
-                                    !baselineResolved ||
-                                    !baselineTrees ||
-                                    !baselineConfig
-                                ) {
-                                    return;
-                                }
-
-                                const pathIndex = new PathIndex(baselineResolved);
-                                const baselineSnapshot = {
-                                    formatVersion: 1,
-                                    generatedAt: "",
-                                    sourceConfigPath: "",
-                                    config: baselineConfig,
-                                    trees: baselineTrees,
-                                    resolved: baselineResolved,
-                                };
-                                const diff = computeDiff(
-                                    current.resolved,
-                                    baselineSnapshot,
-                                    pathIndex
-                                );
-                                const fileEdits = diffToFileEdits(diff);
-
-                                for (const { path, edits } of fileEdits) {
+                            handler: async (bundle) => {
+                                // The SPA computed the diff and packaged it
+                                // — apply the file edits as-given. What the
+                                // diff panel shows is what gets written.
+                                for (const { path, edits } of bundle.files) {
                                     await scCtx.writeTokenEdits(path, edits);
                                 }
                             },

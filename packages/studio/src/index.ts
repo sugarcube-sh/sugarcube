@@ -4,10 +4,8 @@
  * stores, controls) are deliberately not re-exported here.
  */
 
-export { computeDiff } from "./tokens/compute-diff";
-export { diffToFileEdits } from "./tokens/diff-to-edits";
-export { PathIndex } from "./tokens/path-index";
 export type { FileEdits, TokenEdit } from "./tokens/diff-to-edits";
+export type { SaveBundle } from "./host/types";
 export type {
     PathIndexEntry,
     SlimToken,

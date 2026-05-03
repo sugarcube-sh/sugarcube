@@ -1,6 +1,7 @@
 import type { ResolvedTokens, TokenTree } from "@sugarcube-sh/core/client";
 import { getDevToolsRpcClient } from "@vitejs/devtools-kit/client";
 import type { SharedState } from "@vitejs/devtools-kit/utils/shared-state";
+import type { SaveBundle } from "../host/types";
 
 export type WorkingSharedState = { resolved: ResolvedTokens };
 export type DiskSharedState = { trees: TokenTree[]; resolved: ResolvedTokens; version: number };
@@ -39,10 +40,11 @@ export async function getDiskSharedState(): Promise<DiskSharedStateHandle> {
     return client.sharedState.get("sugarcube:studio:disk");
 }
 
-// Write staged edits from the working state to disk.
-export async function rpcSave(): Promise<void> {
+// Write the bundle's file edits to disk. The SPA computes the diff and
+// hands it over — the server applies the edits as-given (no re-diff).
+export async function rpcSave(bundle: SaveBundle): Promise<void> {
     const client = await getRpc();
-    await client.call("studio:save");
+    await client.call("studio:save", bundle);
 }
 
 // Discard staged edits and reload from disk.
