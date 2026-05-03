@@ -30,7 +30,7 @@ export type UseSaveResult = {
     feedback: ReactNode;
     /** Trigger a save with the current diff. */
     onSave: () => Promise<void>;
-    /** Clear status + cancel the auto-dismiss timer. Called by the discard flow. */
+    /** Clear status. Called by the discard flow to reset the pip. */
     reset: () => void;
 };
 
@@ -45,27 +45,25 @@ export function useSave(diff: TokenDiffEntry[]): UseSaveResult {
     diffRef.current = diff;
 
     const [status, setStatus] = useState<SaveStatus>({ kind: "idle" });
-    const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-    useEffect(() => () => clearTimeout(timerRef.current), []);
+    // Auto-clear the "Saved" pip after the duration. Cleanup runs on
+    // every status change, so any subsequent setStatus (next save,
+    // discard, etc.) cancels the in-flight timer for free — no manual
+    // clearTimeout calls scattered through the action handlers.
+    useEffect(() => {
+        if (status.kind !== "persisted") return;
+        const t = setTimeout(() => setStatus({ kind: "idle" }), SAVED_PIP_DURATION_MS);
+        return () => clearTimeout(t);
+    }, [status.kind]);
 
-    const reset = useCallback(() => {
-        clearTimeout(timerRef.current);
-        setStatus({ kind: "idle" });
-    }, []);
+    const reset = useCallback(() => setStatus({ kind: "idle" }), []);
 
     const onSave = useCallback(async () => {
-        clearTimeout(timerRef.current);
         setStatus({ kind: "saving" });
-
         const result = await host.save(buildSaveBundle(diffRef.current));
         setStatus(result);
-
-        if (result.kind === "persisted") {
-            // Auto-clear the "Saved" pip. PR-submitted state sticks around
-            // so the user can click through to the PR.
-            timerRef.current = setTimeout(() => setStatus({ kind: "idle" }), SAVED_PIP_DURATION_MS);
-        }
+        // PR-submitted state sticks around so the user can click through
+        // to the PR; persisted state auto-dismisses via the effect above.
     }, [host]);
 
     return {
