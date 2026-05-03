@@ -49,7 +49,7 @@ export async function fetchInitData(signal: AbortSignal): Promise<InitData> {
     // Cast away the kit's ImmutableObject<T> wrapper at the boundary —
     // downstream consumers expect mutable types and don't actually mutate.
     const diskValue = diskState.value() as
-        | { trees: TokenTree[]; resolved: ResolvedTokens; version: number }
+        | { trees: TokenTree[]; resolved: ResolvedTokens }
         | undefined;
     const workingValue = workingState.value() as { resolved: ResolvedTokens } | undefined;
 

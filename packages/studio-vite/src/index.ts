@@ -13,14 +13,9 @@ declare module "@vitejs/devtools-kit" {
         /**
          * Canonical disk state — updated only by `scCtx.onReload`. Carries
          * `trees` so the client can refresh its baseline (recipes live on
-         * group nodes in trees, not in resolved). `version` is monotonic so
-         * subscribers can cheaply detect a new emission.
+         * group nodes in trees, not in resolved).
          */
-        "sugarcube:studio:disk": {
-            trees: TokenTree[];
-            resolved: ResolvedTokens;
-            version: number;
-        };
+        "sugarcube:studio:disk": { trees: TokenTree[]; resolved: ResolvedTokens };
     }
 }
 
@@ -65,18 +60,12 @@ export default function sugarcubeStudio(): Plugin {
                     return;
                 }
 
-                let diskVersion = 0;
-
                 const working = await ctx.rpc.sharedState.get("sugarcube:studio:working", {
                     initialValue: { resolved: scCtx.resolved },
                 });
 
                 const disk = await ctx.rpc.sharedState.get("sugarcube:studio:disk", {
-                    initialValue: {
-                        trees: scCtx.trees,
-                        resolved: scCtx.resolved,
-                        version: diskVersion,
-                    },
+                    initialValue: { trees: scCtx.trees, resolved: scCtx.resolved },
                 });
 
                 // Client edit → re-run pipeline + push CSS via HMR.
@@ -97,11 +86,9 @@ export default function sugarcubeStudio(): Plugin {
                 // edit blows away pending edits" semantics).
                 scCtx.onReload(() => {
                     if (!scCtx.resolved || !scCtx.trees) return;
-                    diskVersion += 1;
                     disk.mutate((draft) => {
                         draft.trees = scCtx.trees as TokenTree[];
                         draft.resolved = scCtx.resolved as ResolvedTokens;
-                        draft.version = diskVersion;
                     });
                     working.mutate((draft) => {
                         draft.resolved = scCtx.resolved as ResolvedTokens;

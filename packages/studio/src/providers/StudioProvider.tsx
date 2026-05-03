@@ -35,7 +35,7 @@ export function StudioProvider({ source, children }: Props) {
         const promise =
             source.mode === "devtools"
                 ? createDevToolsHost(controller.signal)
-                : createEmbeddedHost();
+                : createEmbeddedHost(controller.signal);
 
         promise
             .then((h) => {

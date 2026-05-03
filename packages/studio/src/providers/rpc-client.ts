@@ -4,7 +4,7 @@ import type { SharedState } from "@vitejs/devtools-kit/utils/shared-state";
 import type { SaveBundle } from "../host/types";
 
 export type WorkingSharedState = { resolved: ResolvedTokens };
-export type DiskSharedState = { trees: TokenTree[]; resolved: ResolvedTokens; version: number };
+export type DiskSharedState = { trees: TokenTree[]; resolved: ResolvedTokens };
 
 export type WorkingSharedStateHandle = SharedState<WorkingSharedState>;
 export type DiskSharedStateHandle = SharedState<DiskSharedState>;

@@ -16,7 +16,6 @@ type WorkingState = {
 type DiskState = {
     trees: TokenTree[];
     resolved: ResolvedTokens;
-    version: number;
 };
 
 declare module "@vitejs/devtools-kit" {
