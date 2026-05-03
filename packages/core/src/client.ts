@@ -10,7 +10,6 @@
  * file loaders, writers, and the Node-side `fillDefaults`.
  */
 
-// Config
 export {
     defineConfig,
     fillDefaultsCore,
@@ -21,23 +20,18 @@ export {
 export type { DefaultDirs } from "./shared/config.js";
 export { DEFAULT_CONFIG } from "./shared/constants/config.js";
 
-// Pipeline primitives (pure) — compose explicitly per output format.
-// e.g. for CSS: groupByContext → assignCSSNames → generateCSSVariables
 export { resolveTokens } from "./shared/resolve-tokens.js";
 export type { ResolveResult, ResolveErrors } from "./shared/resolve-tokens.js";
 export { groupByContext } from "./shared/pipeline/group-by-context.js";
 export { assignCSSNames } from "./shared/pipeline/assign-css-names.js";
 export { generateCSSVariables } from "./shared/generate-css-variables.js";
 
-// Utility-class UnoCSS rules
 export { convertConfigToUnoRules, clearMatchCache } from "./shared/uno-rules.js";
 
-// Formatting helpers
 export { formatCSSVarName } from "./shared/format-css-var-name.js";
 export { createVariableNameResolver } from "./shared/resolve-variable-name.js";
 export { kebabCase } from "./shared/case.js";
 
-// Scale generation (public API for studio + userland tooling)
 export { calculateScale } from "./shared/scale/calculator.js";
 export type { GeneratedStep } from "./shared/scale/calculator.js";
 export type {
@@ -49,10 +43,8 @@ export type {
     SugarcubeExtensions,
 } from "./types/extensions.js";
 
-// Guards
 export { isResolvedToken } from "./shared/guards.js";
 
-// Types
 export type {
     InternalConfig,
     SugarcubeConfig,
@@ -91,7 +83,6 @@ export type {
 export type { CSSFileOutput } from "./types/generate.js";
 export type { userConfigSchema } from "./shared/schemas/config.js";
 
-// DTCG types
 export type {
     NodeMetadata,
     Token,

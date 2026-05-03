@@ -1,12 +1,3 @@
-/**
- * Pure scale calculator. Given a `ScaleExtension` recipe, returns the
- * concrete steps the recipe describes. No I/O, no pipeline coupling.
- *
- * Exposed as public API (`@sugarcube-sh/core`) so the studio's live preview
- * table and userland tooling can compute steps without re-running the
- * whole resolve pipeline.
- */
-
 import type { Dimension } from "../../types/dtcg.js";
 import type {
     ExponentialScaleConfig,

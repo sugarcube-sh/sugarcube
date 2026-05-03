@@ -3,7 +3,7 @@
  * Each step gets a `$type: "dimension"` token whose `$value` is the max
  * end of the fluid range, with the full fluid bounds carried on the
  * sh.sugarcube.fluid extension. The fluid renderer reads from there
- * to emit clamp() — so virtual scale tokens are indistinguishable from
+ * to emit clamp(), so virtual scale tokens are indistinguishable from
  * manually-authored fluid tokens once they reach the renderer.
  */
 
