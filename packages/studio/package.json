@@ -26,6 +26,8 @@
         "dev": "pnpm run \"/^dev:.*/\"",
         "dev:lib": "pkgroll --watch",
         "dev:client": "vite build --watch",
+        "test": "vitest run",
+        "test:watch": "vitest",
         "type-check": "tsc --noEmit"
     },
     "dependencies": {

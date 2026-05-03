@@ -14,6 +14,7 @@ import { createTokenStore } from "../store/create-token-store";
 import { StudioContext } from "../store/hooks";
 import { createRecipeState } from "../store/recipe-state";
 import { createScaleState } from "../store/scale-state";
+import { sameKeySet } from "../tokens/same-key-set";
 import { EmbeddedCSSBridge, EmbeddedPipelineRunner } from "./embedded-pipeline";
 
 export function TokenStoreProvider({ children }: { children: ReactNode }) {
@@ -74,13 +75,4 @@ export function TokenStoreProvider({ children }: { children: ReactNode }) {
             {children}
         </StudioContext.Provider>
     );
-}
-
-function sameKeySet(a: IterableIterator<string>, b: readonly string[]): boolean {
-    const aSet = new Set(a);
-    if (aSet.size !== b.length) return false;
-    for (const key of b) {
-        if (!aSet.has(key)) return false;
-    }
-    return true;
 }
