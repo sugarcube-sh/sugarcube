@@ -17,6 +17,32 @@ export class PathIndex {
         this.index = PathIndex.build(resolved);
     }
 
+    /**
+     * Rebuild the internal index against a new resolved map. The instance
+     * reference is preserved — long-lived closures (store actions like
+     * `setToken`, recipe/scale apply functions) hold this reference and
+     * pick up the fresh internals on their next call without rebinding.
+     *
+     * Called by `TokenStoreProvider` when the host pushes a baseline whose
+     * key set has changed (e.g. an externally-added token in a JSON file).
+     */
+    refresh(resolved: ResolvedTokens): void {
+        this.index = PathIndex.build(resolved);
+    }
+
+    /**
+     * The set of resolved-map keys this index covers. Used by the baseline
+     * subscription as a cheap "did the structure change?" check before
+     * triggering a refresh on a value-only update.
+     */
+    resolvedKeys(): IterableIterator<string> {
+        const keys: string[] = [];
+        for (const entries of this.index.values()) {
+            for (const { key } of entries) keys.push(key);
+        }
+        return keys[Symbol.iterator]();
+    }
+
     private static build(resolved: ResolvedTokens): Map<string, PathIndexEntry[]> {
         const index = new Map<string, PathIndexEntry[]>();
         for (const [key, token] of Object.entries(resolved)) {
