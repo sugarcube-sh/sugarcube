@@ -68,7 +68,7 @@ export function EmbeddedPipelineRunner({ snapshot }: { snapshot: TokenSnapshot }
     return null;
 }
 
-/** Sends generated CSS to the host page via postMessage. */
+// This sends generated CSS to the host page.
 export function EmbeddedCSSBridge() {
     const css = useTokenStore((state) => state.css);
 

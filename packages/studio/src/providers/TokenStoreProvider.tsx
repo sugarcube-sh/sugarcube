@@ -48,7 +48,6 @@ export function TokenStoreProvider({ children }: { children: ReactNode }) {
                 pathIndex,
                 scaleState,
                 recipeState,
-                studioConfig: initialSnapshot.config.studio,
             },
         };
     });

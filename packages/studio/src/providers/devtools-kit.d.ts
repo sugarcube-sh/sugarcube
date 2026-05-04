@@ -3,24 +3,18 @@
 import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core/client";
 import type { SaveBundle } from "../host/types";
 
-type TokenData = {
-    config: InternalConfig;
-    trees: TokenTree[];
-    resolved: ResolvedTokens;
-};
-
 type WorkingState = {
     resolved: ResolvedTokens;
 };
 
 type DiskState = {
+    config: InternalConfig;
     trees: TokenTree[];
     resolved: ResolvedTokens;
 };
 
 declare module "@vitejs/devtools-kit" {
     interface DevToolsRpcServerFunctions {
-        "studio:get-tokens": () => Promise<TokenData>;
         "studio:save": (bundle: SaveBundle) => Promise<void>;
         "studio:discard": () => Promise<void>;
     }

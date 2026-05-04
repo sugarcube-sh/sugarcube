@@ -1,10 +1,14 @@
-import type { ResolvedTokens, TokenTree } from "@sugarcube-sh/core/client";
+import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core/client";
 import { getDevToolsRpcClient } from "@vitejs/devtools-kit/client";
 import type { SharedState } from "@vitejs/devtools-kit/utils/shared-state";
 import type { SaveBundle } from "../host/types";
 
 export type WorkingSharedState = { resolved: ResolvedTokens };
-export type DiskSharedState = { trees: TokenTree[]; resolved: ResolvedTokens };
+export type DiskSharedState = {
+    config: InternalConfig;
+    trees: TokenTree[];
+    resolved: ResolvedTokens;
+};
 
 export type WorkingSharedStateHandle = SharedState<WorkingSharedState>;
 export type DiskSharedStateHandle = SharedState<DiskSharedState>;
@@ -14,14 +18,6 @@ let rpc: Awaited<ReturnType<typeof getDevToolsRpcClient>> | null = null;
 async function getRpc() {
     rpc ??= await getDevToolsRpcClient();
     return rpc;
-}
-
-// Fetch the static config + trees from the server. Used at init for
-// `config` (which doesn't change at runtime); trees + resolved are
-// also delivered live via the disk shared state.
-export async function rpcGetTokens() {
-    const client = await getRpc();
-    return client.call("studio:get-tokens");
 }
 
 /** Subscribe to the working-copy resolved state (mutated by client edits). */
@@ -40,14 +36,13 @@ export async function getDiskSharedState(): Promise<DiskSharedStateHandle> {
     return client.sharedState.get("sugarcube:studio:disk");
 }
 
-// Write the bundle's file edits to disk. The SPA computes the diff and
-// hands it over — the server applies the edits as-given (no re-diff).
+// Persist the bundle's file edits. The SPA has already computed the
+// diff; the server applies the edits as-given (no re-diff).
 export async function rpcSave(bundle: SaveBundle): Promise<void> {
     const client = await getRpc();
     await client.call("studio:save", bundle);
 }
 
-// Discard staged edits and reload from disk.
 export async function rpcDiscard(): Promise<void> {
     const client = await getRpc();
     await client.call("studio:discard");

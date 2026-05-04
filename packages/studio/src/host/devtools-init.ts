@@ -1,8 +1,7 @@
 /**
- * Init-time fetching for the DevTools Host. Pulls config + trees +
- * resolved via RPC, subscribes to both shared states, and waits for
- * them to populate before resolving — first-connect can race ahead
- * of the host registering its initial values.
+ * Init-time fetching for the DevTools Host. Subscribes to both shared
+ * states and waits for them to populate before resolving — first-connect
+ * can race ahead of the host registering its initial values.
  *
  * Returns the raw building blocks (`InitData`); the Host adapter wraps
  * them in the public Host shape.
@@ -10,16 +9,16 @@
 
 import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core/client";
 import {
+    type DiskSharedState,
     type DiskSharedStateHandle,
+    type WorkingSharedState,
     type WorkingSharedStateHandle,
     getDiskSharedState,
     getWorkingSharedState,
-    rpcGetTokens,
 } from "../providers/rpc-client";
 
 /**
- * Max time to wait for both shared states to populate. `rpcGetTokens()`
- * fails fast if the server is down — this timeout only covers the edge
+ * Max time to wait for both shared states to populate. Covers the edge
  * case where RPC connects but shared state never arrives. The kit
  * doesn't expose a connection health signal, so a timeout is the best
  * we can do.
@@ -36,8 +35,7 @@ export type InitData = {
 };
 
 export async function fetchInitData(signal: AbortSignal): Promise<InitData> {
-    const [data, diskState, workingState] = await Promise.all([
-        rpcGetTokens(),
+    const [diskState, workingState] = await Promise.all([
         getDiskSharedState(),
         getWorkingSharedState(),
     ]);
@@ -48,16 +46,19 @@ export async function fetchInitData(signal: AbortSignal): Promise<InitData> {
 
     // Cast away the kit's ImmutableObject<T> wrapper at the boundary —
     // downstream consumers expect mutable types and don't actually mutate.
-    const diskValue = diskState.value() as
-        | { trees: TokenTree[]; resolved: ResolvedTokens }
-        | undefined;
-    const workingValue = workingState.value() as { resolved: ResolvedTokens } | undefined;
+    const diskValue = diskState.value() as DiskSharedState | undefined;
+    const workingValue = workingState.value() as WorkingSharedState | undefined;
+
+    if (!diskValue || !workingValue) {
+        // waitForSharedStates resolved, so values must be present.
+        throw new Error("Shared state ready but values missing");
+    }
 
     return {
-        config: data.config,
-        trees: diskValue?.trees ?? data.trees,
-        diskResolved: diskValue?.resolved ?? data.resolved,
-        workingResolved: workingValue?.resolved ?? data.resolved,
+        config: diskValue.config,
+        trees: diskValue.trees,
+        diskResolved: diskValue.resolved,
+        workingResolved: workingValue.resolved,
         diskState,
         workingState,
     };
@@ -69,10 +70,12 @@ function waitForSharedStates(
     signal: AbortSignal
 ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-        const isReady = () =>
-            Boolean(diskState.value()?.resolved) &&
-            Boolean(diskState.value()?.trees) &&
-            Boolean(workingState.value()?.resolved);
+        const isReady = () => {
+            const disk = diskState.value();
+            return Boolean(
+                disk?.config && disk?.trees && disk?.resolved && workingState.value()?.resolved
+            );
+        };
 
         if (isReady()) {
             resolve();

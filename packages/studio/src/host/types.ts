@@ -8,7 +8,6 @@
  * state, write to disk) and EmbeddedHost (web component iframe,
  * postMessage, submit-PR via host callback).
  *
- * Spec: notes/studio-host-architecture.md
  */
 
 import type { ResolvedTokens } from "@sugarcube-sh/core/client";
@@ -72,10 +71,7 @@ export type SaveResult =
     | { kind: "failed"; error: string };
 
 export interface HostCapabilities {
-    /** Button label for Save. e.g. "Save" (DevTools) or "Submit as PR" (Embedded). */
     saveLabel: string;
-    /** Button label for Discard. */
     discardLabel: string;
-    /** Whether the studio should render a title/description form before save. */
     requiresSaveMetadata: boolean;
 }

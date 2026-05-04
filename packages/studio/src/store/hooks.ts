@@ -23,7 +23,6 @@ export type StudioContextValue = {
     pathIndex: PathIndex;
     scaleState: ScaleStateAPI;
     recipeState: RecipeStateAPI;
-    studioConfig: StudioConfig | undefined;
 };
 
 export const StudioContext = createContext<StudioContextValue | null>(null);
@@ -34,9 +33,9 @@ function useStudio(): StudioContextValue {
     return ctx;
 }
 
-/** The project's studio panel config. */
+/** The project's studio panel config. Reactive: re-renders when the host pushes a new baseline. */
 export function useStudioConfig(): StudioConfig | undefined {
-    return useStudio().studioConfig;
+    return useBaseline().config.studio;
 }
 
 export function useVariableName(): (path: string) => string {

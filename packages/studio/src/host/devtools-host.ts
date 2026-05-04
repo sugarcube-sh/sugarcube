@@ -12,7 +12,7 @@
  * both shared states, which propagates back to baseline + working.
  */
 
-import type { ResolvedTokens, TokenTree } from "@sugarcube-sh/core/client";
+import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core/client";
 import { createStore } from "zustand/vanilla";
 import { rpcDiscard, rpcSave } from "../providers/rpc-client";
 import type { TokenSnapshot } from "../tokens/types";
@@ -28,22 +28,30 @@ import type { Host } from "./types";
 export async function createDevToolsHost(signal: AbortSignal): Promise<Host> {
     const initData = await fetchInitData(signal);
 
-    const buildSnapshot = (trees: TokenTree[], resolved: ResolvedTokens): TokenSnapshot => ({
+    const buildSnapshot = (
+        config: InternalConfig,
+        trees: TokenTree[],
+        resolved: ResolvedTokens
+    ): TokenSnapshot => ({
         formatVersion: 1,
         generatedAt: "",
         sourceConfigPath: "",
-        config: initData.config,
+        config,
         trees,
         resolved,
     });
 
     const baseline = createStore<TokenSnapshot>(() =>
-        buildSnapshot(initData.trees, initData.diskResolved)
+        buildSnapshot(initData.config, initData.trees, initData.diskResolved)
     );
 
     initData.diskState.on("updated", (next) => {
         baseline.setState(
-            buildSnapshot(next.trees as TokenTree[], next.resolved as ResolvedTokens)
+            buildSnapshot(
+                next.config as InternalConfig,
+                next.trees as TokenTree[],
+                next.resolved as ResolvedTokens
+            )
         );
     });
 

@@ -1,6 +1,6 @@
 /// <reference types="@vitejs/devtools-kit" />
 
-import type { ResolvedTokens, TokenTree } from "@sugarcube-sh/core";
+import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core";
 import { clientPath } from "@sugarcube-sh/studio/client";
 import type { SugarcubePluginContext } from "@sugarcube-sh/vite";
 import { defineRpcFunction } from "@vitejs/devtools-kit";
@@ -12,10 +12,15 @@ declare module "@vitejs/devtools-kit" {
         "sugarcube:studio:working": { resolved: ResolvedTokens };
         /**
          * Canonical disk state — updated only by `scCtx.onReload`. Carries
-         * `trees` so the client can refresh its baseline (recipes live on
-         * group nodes in trees, not in resolved).
+         * `trees` (recipes live on group nodes, not in resolved) and
+         * `config` (so client picks up live edits to the user's config
+         * file — e.g. panel structure).
          */
-        "sugarcube:studio:disk": { trees: TokenTree[]; resolved: ResolvedTokens };
+        "sugarcube:studio:disk": {
+            config: InternalConfig;
+            trees: TokenTree[];
+            resolved: ResolvedTokens;
+        };
     }
 }
 
@@ -65,7 +70,11 @@ export default function sugarcubeStudio(): Plugin {
                 });
 
                 const disk = await ctx.rpc.sharedState.get("sugarcube:studio:disk", {
-                    initialValue: { trees: scCtx.trees, resolved: scCtx.resolved },
+                    initialValue: {
+                        config: scCtx.config,
+                        trees: scCtx.trees,
+                        resolved: scCtx.resolved,
+                    },
                 });
 
                 // Client edit → re-run pipeline + push CSS via HMR.
@@ -85,8 +94,9 @@ export default function sugarcubeStudio(): Plugin {
                 // working copy to match (preserves today's "external file
                 // edit blows away pending edits" semantics).
                 scCtx.onReload(() => {
-                    if (!scCtx.resolved || !scCtx.trees) return;
+                    if (!scCtx.config || !scCtx.resolved || !scCtx.trees) return;
                     disk.mutate((draft) => {
+                        draft.config = scCtx.config as InternalConfig;
                         draft.trees = scCtx.trees as TokenTree[];
                         draft.resolved = scCtx.resolved as ResolvedTokens;
                     });
@@ -94,28 +104,6 @@ export default function sugarcubeStudio(): Plugin {
                         draft.resolved = scCtx.resolved as ResolvedTokens;
                     });
                 });
-
-                ctx.rpc.register(
-                    defineRpcFunction({
-                        name: "studio:get-tokens",
-                        type: "query",
-                        setup: () => ({
-                            handler: async () => {
-                                await scCtx.ready;
-                                if (!scCtx.config || !scCtx.trees || !scCtx.resolved) {
-                                    throw new Error(
-                                        "[studio] Sugarcube context not fully initialised"
-                                    );
-                                }
-                                return {
-                                    config: scCtx.config,
-                                    trees: scCtx.trees,
-                                    resolved: scCtx.resolved,
-                                };
-                            },
-                        }),
-                    })
-                );
 
                 ctx.rpc.register(
                     defineRpcFunction({

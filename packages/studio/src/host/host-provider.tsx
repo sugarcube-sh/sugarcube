@@ -1,9 +1,3 @@
-/**
- * React context for the active Host. Sits at the top of the studio
- * component tree (inside StudioProvider) and exposes the Host to all
- * downstream hooks (`useBaseline`, `DesignActions`'s save/discard, etc.).
- */
-
 import { type ReactNode, createContext, useContext } from "react";
 import type { Host } from "./types";
 
