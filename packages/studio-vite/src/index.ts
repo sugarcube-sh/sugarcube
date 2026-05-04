@@ -69,9 +69,14 @@ export default function sugarcubeStudio(): Plugin {
                     initialValue: { resolved: scCtx.resolved },
                 });
 
+                // Clone before publishing: the kit deep-freezes anything
+                // assigned into shared state, and `loadTokens` mutates
+                // `config.variables.permutations` in-place on every pipeline
+                // run. Handing over the live reference would freeze it and
+                // crash subsequent reloads.
                 const disk = await ctx.rpc.sharedState.get("sugarcube:studio:disk", {
                     initialValue: {
-                        config: scCtx.config,
+                        config: structuredClone(scCtx.config),
                         trees: scCtx.trees,
                         resolved: scCtx.resolved,
                     },
@@ -95,8 +100,10 @@ export default function sugarcubeStudio(): Plugin {
                 // edit blows away pending edits" semantics).
                 scCtx.onReload(() => {
                     if (!scCtx.config || !scCtx.resolved || !scCtx.trees) return;
+                    // structuredClone — see initialValue above.
+                    const configClone = structuredClone(scCtx.config) as InternalConfig;
                     disk.mutate((draft) => {
-                        draft.config = scCtx.config as InternalConfig;
+                        draft.config = configClone;
                         draft.trees = scCtx.trees as TokenTree[];
                         draft.resolved = scCtx.resolved as ResolvedTokens;
                     });
