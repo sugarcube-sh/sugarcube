@@ -1,10 +1,3 @@
-/**
- * React hooks over the studio's state — the React-facing surface that
- * controls and shell components consume. Wraps the underlying zustand
- * stores (token store, scale state, recipe state) and the host's
- * reactive baseline.
- */
-
 import { type StudioConfig, createVariableNameResolver } from "@sugarcube-sh/core/client";
 import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { useStore } from "zustand";
@@ -17,7 +10,6 @@ import type { TokenStoreAPI, TokenStoreState } from "./create-token-store";
 import type { RecipeStateAPI, RecipeStateStore } from "./recipe-state";
 import type { ScaleStateAPI, ScaleStateStore } from "./scale-state";
 
-/** Stable references for the session — set once at TokenStoreProvider mount. */
 export type StudioContextValue = {
     store: TokenStoreAPI;
     pathIndex: PathIndex;
@@ -33,7 +25,6 @@ function useStudio(): StudioContextValue {
     return ctx;
 }
 
-/** The project's studio panel config. Reactive: re-renders when the host pushes a new baseline. */
 export function useStudioConfig(): StudioConfig | undefined {
     return useBaseline().config.studio;
 }
@@ -47,11 +38,6 @@ export function usePathIndex(): PathIndex {
     return useStudio().pathIndex;
 }
 
-/**
- * The current baseline snapshot — what the world considers "saved."
- * Reactive: re-renders consumers when the host pushes a new baseline
- * (DevTools: file watcher / save / discard / external edit).
- */
 export function useBaseline(): TokenSnapshot {
     const host = useHost();
     return useSyncExternalStore(host.baseline.subscribe, host.baseline.getState);
@@ -61,12 +47,6 @@ export function useTokenStore<T>(selector: (state: TokenStoreState) => T): T {
     return useStore(useStudio().store, selector);
 }
 
-/**
- * The underlying token-store API. Use when a caller needs `getState` /
- * `setState` directly — e.g. updating a fluid token's `$value` and
- * `$extensions` together in one write, which `setToken` (which only
- * touches `$value`) can't express.
- */
 export function useTokenStoreApi(): TokenStoreAPI {
     return useStudio().store;
 }
@@ -107,10 +87,7 @@ export function useSetCurrentContext(): (ctx: string) => void {
     return useTokenStore((state) => state.setCurrentContext);
 }
 
-/**
- * The current diff between edited and baseline tokens.
- * Memoised — callers get a stable array reference when the diff hasn't changed.
- */
+// The current diff between edited and baseline tokens.
 export function usePendingChanges(): TokenDiffEntry[] {
     const { pathIndex } = useStudio();
     const baseline = useBaseline();
@@ -130,12 +107,7 @@ export function useHasPendingChange(path: string): boolean {
     return usePendingChanges().some((entry) => entry.path === path);
 }
 
-/**
- * Discard every kind of pending edit — token-store overlays and recipe
- * edits — in one call. Returns when host-side discard has resolved
- * (relevant in DevTools, where the server re-reads disk before the
- * working subscription pushes new state).
- */
+// Discard every kind of pending edit — token-store overlays and recipe edits — in one call.
 export function useDiscard(): () => Promise<void> {
     const discardTokens = useTokenStore((s) => s.discard);
     const discardRecipes = useRecipeState((s) => s.resetAll);
@@ -145,7 +117,6 @@ export function useDiscard(): () => Promise<void> {
     }, [discardTokens, discardRecipes]);
 }
 
-/** Derive the currently-selected palette for a token family, scoped to the active context. */
 export function useFamilyPalette(family: string, palettes: readonly string[]): string | undefined {
     const { pathIndex } = useStudio();
     return useTokenStore((state) => {

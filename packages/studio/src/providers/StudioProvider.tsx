@@ -20,11 +20,6 @@ type Props = {
     children: ReactNode;
 };
 
-/**
- * Top-level Studio provider. Builds the appropriate Host adapter from
- * the launch source, then wraps children in HostProvider + the unified
- * TokenStoreProvider.
- */
 export function StudioProvider({ source, children }: Props) {
     const [host, setHost] = useState<Host | null>(null);
     const [error, setError] = useState<string | null>(null);

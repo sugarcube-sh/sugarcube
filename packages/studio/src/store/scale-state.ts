@@ -1,14 +1,3 @@
-/**
- * Zustand store for cascade-style scale bindings (hardcoded scales,
- * edited via base + spread sliders). Slots own only the user's pending
- * slider state; the captured baseline values are derived from the live
- * baseline per call (see scale-selectors.ts).
- *
- * Subscribes to baseline changes — when the host pushes a new disk
- * snapshot, all pending edits are blown away to match today's
- * "external write wins" semantics.
- */
-
 import type { PanelSection, ResolvedTokens } from "@sugarcube-sh/core/client";
 import { type StoreApi, createStore } from "zustand";
 import type { PathIndex } from "../tokens/path-index";
@@ -25,7 +14,6 @@ export type ScaleStateStore = {
     setBase: (binding: string, value: number) => void;
     setSpread: (binding: string, value: number) => void;
     setLinkEnabled: (binding: string, enabled: boolean) => void;
-    /** Clear every slot's edits. Used by the discard flow. */
     resetAll: () => void;
 };
 
@@ -126,15 +114,12 @@ export function createScaleState(
         writeResolved(next);
     }
 
-    // Re-apply on context change (slider values persist across switches).
     tokenStore.subscribe((state, prev) => {
         if (state.currentContext !== prev.currentContext) {
             applyAll();
         }
     });
 
-    // Baseline change blows away pending edits — matches today's "external
-    // write wins" semantics. Sliders snap back to derived defaults.
     subscribeBaselineEditClear(baseline, () => {
         scaleStore.setState((state) => ({
             scales: clearEdits(state.scales),
@@ -162,8 +147,6 @@ function buildSlots(panelSections: PanelSection[]): {
         }
     }
 
-    // Resolve links after all scales are known so cross-references work
-    // regardless of declaration order in the panel config.
     const links: Record<string, LinkSlot> = {};
     for (const { token, sourceBinding } of linkBindings) {
         if (!scales[sourceBinding]) continue;
@@ -179,5 +162,4 @@ function clearEdits<T extends { edits: unknown }>(slots: Record<string, T>): Rec
     );
 }
 
-// Re-export for ScaleLinkedControl convenience.
 export type { CapturedLinkedScale, CapturedScale } from "../tokens/scale-cascade";

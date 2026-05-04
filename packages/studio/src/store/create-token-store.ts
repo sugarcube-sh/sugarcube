@@ -1,13 +1,3 @@
-/**
- * Token store factory — the studio's primary state container for the
- * resolved token map. Mutations route through the host's working
- * channel when present (DevTools — server owns the pipeline) or stay
- * local (Embedded — SPA owns the pipeline).
- *
- * Returns `{ store, pathIndex, writeResolved }`. `writeResolved` is the
- * write surface used by scale/recipe state to commit derived overlays.
- */
-
 import type { ResolvedTokens } from "@sugarcube-sh/core/client";
 import { type StoreApi, createStore } from "zustand";
 import type { Host } from "../host/types";
@@ -58,11 +48,7 @@ export type CreateTokenStoreResult = {
 
 /**
  * Create a token store wired to a Host. Mutations route through the
- * host's working channel when present (DevTools — server owns pipeline)
- * or stay local (Embedded — SPA owns pipeline).
- *
- * PathIndex is built from the baseline at mount. PR 3 will refresh it
- * on baseline change; for now it's static for the session.
+ * host's working channel when present.
  */
 export function createTokenStore(host: Host): CreateTokenStoreResult {
     const baselineSnap = host.baseline.getState();
@@ -72,7 +58,6 @@ export function createTokenStore(host: Host): CreateTokenStoreResult {
 
     const writeResolved = (next: ResolvedTokens) => {
         if (host.working) {
-            // Push to host; subscription updates the store.
             host.working.push(next);
         } else {
             store.setState({ resolved: next });
@@ -115,9 +100,6 @@ export function createTokenStore(host: Host): CreateTokenStoreResult {
         discard: async () => {
             await host.discard();
             if (!host.working) {
-                // No working channel means host.discard() was a no-op;
-                // reset locally. With a working channel, the subscription
-                // above writes the server's fresh disk state into `resolved`.
                 set({ resolved: baselineSnap.resolved });
             }
         },

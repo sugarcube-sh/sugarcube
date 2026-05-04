@@ -44,13 +44,10 @@ export async function fetchInitData(signal: AbortSignal): Promise<InitData> {
 
     await waitForSharedStates(diskState, workingState, signal);
 
-    // Cast away the kit's ImmutableObject<T> wrapper at the boundary —
-    // downstream consumers expect mutable types and don't actually mutate.
     const diskValue = diskState.value() as DiskSharedState | undefined;
     const workingValue = workingState.value() as WorkingSharedState | undefined;
 
     if (!diskValue || !workingValue) {
-        // waitForSharedStates resolved, so values must be present.
         throw new Error("Shared state ready but values missing");
     }
 

@@ -1,17 +1,3 @@
-/**
- * DevTools mode Host — wraps the Vite plugin's RPC + shared-state surface.
- *
- * Two shared states underpin the model:
- *   - disk: canonical on-disk state, updated by the host's file watcher
- *     / save / discard handlers. Drives baseline reactivity.
- *   - working: the user's pending working copy, watched by the host to
- *     re-run the pipeline and HMR the page.
- *
- * Save writes the diff to disk via `jsonc-parser`. Discard tells the
- * server to re-read disk; the resulting onReload pushes new state into
- * both shared states, which propagates back to baseline + working.
- */
-
 import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core/client";
 import { createStore } from "zustand/vanilla";
 import { rpcDiscard, rpcSave } from "../providers/rpc-client";
@@ -21,7 +7,7 @@ import type { Host } from "./types";
 
 /**
  * Build a DevTools Host. Subscribes to the disk channel so every disk
- * emission rebuilds the baseline snapshot — downstream consumers
+ * emission rebuilds the baseline snapshot. Downstream consumers
  * (computeDiff, recipe selectors, scale captures) see the new on-disk
  * state without needing to remount.
  */
@@ -59,9 +45,6 @@ export async function createDevToolsHost(signal: AbortSignal): Promise<Host> {
         baseline,
         working: workingChannelFor(initData),
         save: async (bundle) => {
-            // Send the SPA-computed bundle to the server, which applies
-            // bundle.files to disk as-is. Server doesn't re-diff —
-            // what the diff panel shows is exactly what gets written.
             try {
                 await rpcSave(bundle);
                 return { kind: "persisted" };
@@ -70,9 +53,6 @@ export async function createDevToolsHost(signal: AbortSignal): Promise<Host> {
             }
         },
         discard: async () => {
-            // Server re-reads disk and pushes new state into both shared
-            // states. The disk subscription updates baseline; the working
-            // subscription (in createTokenStore) updates the store's resolved.
             await rpcDiscard();
         },
         capabilities: {

@@ -1,13 +1,3 @@
-/**
- * Mode-agnostic token-store provider. Consumes the active Host (via
- * useHost) and wires up the token store, scale state, recipe state,
- * and — in modes without a working channel (Embedded) — the in-browser
- * pipeline + CSS bridge.
- *
- * Mode-specific differences live in the Host adapters; this provider
- * has no `if (mode === ...)` branches.
- */
-
 import { type ReactNode, useEffect, useState } from "react";
 import { useHost } from "../host/host-provider";
 import { createTokenStore } from "../store/create-token-store";
@@ -56,8 +46,6 @@ export function TokenStoreProvider({ children }: { children: ReactNode }) {
     // externally-added or -removed token), refresh the PathIndex in place.
     // Mutation is deliberate: long-lived store-action closures hold this
     // reference and would otherwise be left pointing at a stale instance.
-    // The key-set guard skips the rebuild on the common case (value-only
-    // changes are most baseline updates).
     useEffect(() => {
         return host.baseline.subscribe((nextSnapshot) => {
             if (sameKeySet(ctx.pathIndex.resolvedKeys(), Object.keys(nextSnapshot.resolved))) {

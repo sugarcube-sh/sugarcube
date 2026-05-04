@@ -1,13 +1,3 @@
-/**
- * Pure overlay logic for recipe edits. Given a recipe and the current
- * resolved tokens, computes the new dimension tokens for each step the
- * recipe describes and merges them into a fresh resolved map.
- *
- * Stateless: no store coupling, no side effects. Imported by recipe-state's
- * applyAll to materialize the user's pending recipe edit on top of whatever
- * the working channel last delivered.
- */
-
 import {
     type ResolvedTokens,
     type ScaleExtension,

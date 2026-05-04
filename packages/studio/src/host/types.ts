@@ -34,7 +34,7 @@ export interface Host {
 
     /**
      * Persist the diff. Return value is host-specific via the discriminated
-     * SaveResult union. UI switches on `kind` to render the right toast.
+     * SaveResult union. UI switches on `kind` to render the right notification.
      */
     save(bundle: SaveBundle): Promise<SaveResult>;
 
@@ -46,7 +46,6 @@ export interface Host {
      */
     discard(): Promise<void>;
 
-    /** Static capabilities. UI reads these to decide labels and affordances. */
     capabilities: HostCapabilities;
 }
 
@@ -55,7 +54,7 @@ export interface WorkingChannel {
     get(): ResolvedTokens;
     /** Push the studio's current resolved state to the working channel. */
     push(resolved: ResolvedTokens): void;
-    /** Subscribe to working-channel updates from elsewhere (other tabs, server pushes). */
+    /** Subscribe to working-channel updates from elsewhere (e.g. other tabs, server pushes). */
     subscribe(callback: (resolved: ResolvedTokens) => void): () => void;
 }
 

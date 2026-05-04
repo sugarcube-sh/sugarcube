@@ -1,11 +1,3 @@
-/**
- * Pure overlay orchestration for cascade scale edits. Iterates user-edited
- * scale slots and link slots, derives captures from the live baseline,
- * applies the cascade transforms, and returns the new resolved map.
- *
- * Stateless: no store coupling. Imported by scale-state's applyAll.
- */
-
 import type { ResolvedTokens } from "@sugarcube-sh/core/client";
 import type { PathIndex } from "../tokens/path-index";
 import {

@@ -1,8 +1,7 @@
 import type { ScaleExtension, TokenTree } from "@sugarcube-sh/core/client";
 
 /**
- * Find the `sh.sugarcube.scale` extension at a path, if any. Walks the
- * raw source trees — scale extensions live on groups, not tokens.
+ * Find the `sh.sugarcube.scale` extension at a path, if any.
  */
 export function getScaleExtension(trees: TokenTree[], path: string): ScaleExtension | undefined {
     const segments = path.split(".");

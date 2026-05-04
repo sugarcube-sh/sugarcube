@@ -1,11 +1,3 @@
-/**
- * Encapsulates the save button's state machine: status (idle / saving /
- * persisted / pr-submitted / failed), the auto-clear timer for the
- * "Saved" pip, and the rendering of the button label + feedback element.
- *
- * Returns a render-ready surface so DesignActions can stay purely layout.
- */
-
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useHost } from "../host/host-provider";
 import type { SaveBundle } from "../host/types";
@@ -22,23 +14,13 @@ type SaveStatus =
 const SAVED_PIP_DURATION_MS = 2000;
 
 export type UseSaveResult = {
-    /** True while a save is in flight; the button should be disabled. */
     saving: boolean;
-    /** Button label for the current status (e.g. "Save", "Saving…", "PR #12 opened"). */
     label: string;
-    /** Feedback element to render alongside the button (error span, PR link, or null). */
     feedback: ReactNode;
-    /** Trigger a save with the current diff. */
     onSave: () => Promise<void>;
-    /** Clear status. Called by the discard flow to reset the pip. */
     reset: () => void;
 };
 
-/**
- * `diff` is read by reference at save time, not at hook-call time — so a
- * caller can pass an unstable diff array without retriggering the
- * `onSave` callback identity on every render.
- */
 export function useSave(diff: TokenDiffEntry[]): UseSaveResult {
     const host = useHost();
     const diffRef = useRef(diff);
@@ -46,10 +28,6 @@ export function useSave(diff: TokenDiffEntry[]): UseSaveResult {
 
     const [status, setStatus] = useState<SaveStatus>({ kind: "idle" });
 
-    // Auto-clear the "Saved" pip after the duration. Cleanup runs on
-    // every status change, so any subsequent setStatus (next save,
-    // discard, etc.) cancels the in-flight timer for free — no manual
-    // clearTimeout calls scattered through the action handlers.
     useEffect(() => {
         if (status.kind !== "persisted") return;
         const t = setTimeout(() => setStatus({ kind: "idle" }), SAVED_PIP_DURATION_MS);

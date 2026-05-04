@@ -20,8 +20,9 @@ export function EmbeddedPipelineRunner({ snapshot }: { snapshot: TokenSnapshot }
         function runPipeline() {
             let cancelled = false;
 
-            // Defer to next frame so rapid changes (e.g. slider drags) batch
+            // This is me trying to debounce/batch slider changes
             // into a single pipeline run instead of firing on every mousemove.
+            // TODO: find a better way to do this.
             const frameId = requestAnimationFrame(() => {
                 const runId = ++runIdRef.current;
                 store.setState({ isComputing: true });
@@ -68,7 +69,6 @@ export function EmbeddedPipelineRunner({ snapshot }: { snapshot: TokenSnapshot }
     return null;
 }
 
-// This sends generated CSS to the host page.
 export function EmbeddedCSSBridge() {
     const css = useTokenStore((state) => state.css);
 
