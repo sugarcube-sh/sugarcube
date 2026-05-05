@@ -30,29 +30,12 @@ export function expandGenerators(trees: TokenTree[]): GeneratorResult {
             sourcePath: tree.sourcePath,
             ...(tree.context && { context: tree.context }),
         };
-
-        if (!treeHasGenerators(tree.tokens)) {
-            result.push(tree);
-            continue;
-        }
-
-        const expanded = expandGroup(tree.tokens, [], source, errors);
-        result.push({ ...tree, tokens: expanded });
+        const path: string[] = [];
+        const expanded = expandGroup(tree.tokens, path, source, errors);
+        result.push(expanded === tree.tokens ? tree : { ...tree, tokens: expanded });
     }
 
     return { trees: result, errors };
-}
-
-function treeHasGenerators(node: unknown): boolean {
-    if (typeof node !== "object" || node === null) return false;
-    const record = node as Record<string, unknown>;
-    const ext = record.$extensions as Record<string, { scale?: unknown } | undefined> | undefined;
-    if (ext?.["sh.sugarcube"]?.scale !== undefined) return true;
-    for (const [key, value] of Object.entries(record)) {
-        if (key.startsWith("$")) continue;
-        if (treeHasGenerators(value)) return true;
-    }
-    return false;
 }
 
 function expandGroup(
@@ -61,7 +44,7 @@ function expandGroup(
     source: TokenSource,
     errors: ExpandError[]
 ): TokenGroup {
-    const result: TokenGroup = { ...node };
+    let result: TokenGroup | null = null;
 
     const sugarcube = node.$extensions?.["sh.sugarcube"] as { scale?: unknown } | undefined;
     const scaleExt = sugarcube?.scale;
@@ -79,21 +62,29 @@ function expandGroup(
             }
         } else {
             const generated = resolveScaleExtension(scaleExt as ScaleExtension);
-            for (const [name, token] of Object.entries(generated)) {
-                if (name in result) continue;
-                result[name] = token;
+            for (const name in generated) {
+                if (name in node) continue;
+                if (result === null) result = { ...node };
+                result[name] = generated[name];
             }
         }
     }
 
-    for (const [key, value] of Object.entries(node)) {
+    for (const key in node) {
         if (key.startsWith("$") && key !== "$root") continue;
+        const value = (node as Record<string, unknown>)[key];
         if (isToken(value)) continue;
         if (typeof value !== "object" || value === null) continue;
-        result[key] = expandGroup(value as TokenGroup, [...path, key], source, errors);
+        path.push(key);
+        const expanded = expandGroup(value as TokenGroup, path, source, errors);
+        path.pop();
+        if (expanded !== value) {
+            if (result === null) result = { ...node };
+            result[key] = expanded;
+        }
     }
 
-    return result;
+    return result ?? node;
 }
 
 function isToken(value: unknown): value is Token {
