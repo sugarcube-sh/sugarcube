@@ -180,6 +180,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
         const allErrors = [
             ...loaded.errors,
+            ...resolveResult.errors.expandTree,
             ...resolveResult.errors.flatten,
             ...resolveResult.errors.validation,
             ...resolveResult.errors.resolution,
