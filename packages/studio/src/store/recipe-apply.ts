@@ -22,12 +22,7 @@ export function applyRecipeOverlay(
         const stepPath = `${parentPath}.${step.name}`;
         const entries = pathIndex.entriesFor(stepPath).filter((e) => e.context === context);
         for (const { key } of entries) {
-            const next = buildRecipeDimensionToken(
-                resolved[key],
-                step.min,
-                step.max,
-                recipe.viewport
-            );
+            const next = buildRecipeDimensionToken(resolved[key], step.min, step.max);
             if (next) updates[key] = next;
         }
     }
@@ -38,8 +33,7 @@ export function applyRecipeOverlay(
 function buildRecipeDimensionToken(
     existing: ResolvedTokens[string] | undefined,
     min: Dim,
-    max: Dim,
-    viewport: { min: number; max: number }
+    max: Dim
 ): ResolvedTokens[string] | null {
     if (!isResolvedToken(existing)) return null;
 
@@ -56,7 +50,7 @@ function buildRecipeDimensionToken(
             ...existing.$extensions,
             "sh.sugarcube": {
                 ...existingSugarcube,
-                fluid: { min, max, viewport },
+                fluid: { min, max },
             },
         },
     } as ResolvedTokens[string];

@@ -3,8 +3,8 @@
  *
  * Scale expansion runs before reference resolution, so any DTCG reference
  * inside the config would never resolve and is rejected at validation
- * time. Other rules cover required fields, mode-specific fields, viewport
- * sanity, and exponential ratio bounds.
+ * time. Other rules cover required fields, mode-specific fields, and
+ * exponential ratio bounds.
  */
 
 import type { TokenSource } from "../../types/tokens.js";
@@ -49,7 +49,6 @@ export function validateScaleExtension(
         });
     }
 
-    validateViewport(ext.viewport, `${path}.viewport`, source, errors);
     validateBase(ext.base, `${path}.base`, source, errors);
 
     if (mode === "exponential") {
@@ -59,56 +58,6 @@ export function validateScaleExtension(
     }
 
     return errors;
-}
-
-function validateViewport(
-    value: unknown,
-    path: string,
-    source: TokenSource,
-    errors: ValidationError[]
-): void {
-    if (value === undefined) {
-        errors.push({
-            path,
-            message: ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY("viewport", path),
-            source,
-        });
-        return;
-    }
-
-    if (!isObject(value)) {
-        errors.push({
-            path,
-            message: ErrorMessages.VALIDATE.INVALID_VIEWPORT_CONFIG(value, path),
-            source,
-        });
-        return;
-    }
-
-    const min = value.min;
-    const max = value.max;
-
-    if (typeof min !== "number") {
-        errors.push({
-            path: `${path}.min`,
-            message: ErrorMessages.VALIDATE.INVALID_TYPE("number", min, `${path}.min`),
-            source,
-        });
-    }
-    if (typeof max !== "number") {
-        errors.push({
-            path: `${path}.max`,
-            message: ErrorMessages.VALIDATE.INVALID_TYPE("number", max, `${path}.max`),
-            source,
-        });
-    }
-    if (typeof min === "number" && typeof max === "number" && min >= max) {
-        errors.push({
-            path,
-            message: ErrorMessages.VALIDATE.SCALE_INVALID_VIEWPORT_RANGE(path),
-            source,
-        });
-    }
 }
 
 function validateBase(

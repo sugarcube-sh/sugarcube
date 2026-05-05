@@ -1,28 +1,12 @@
 import type { Dimension } from "./dtcg.js";
 
 /**
- * Viewport bounds in CSS pixels, used to anchor fluid clamp() math.
- * Required on scale extensions (so scales are portable); optional on
- * a manually-authored `FluidExtension` (falls back to `transforms.fluid`
- * in the global config).
- */
-export type ViewportConfig = {
-    min: number;
-    max: number;
-};
-
-/**
  * Fluid extension configuration for dimension tokens.
  * Enables responsive scaling between viewport sizes.
- *
- * `viewport` takes precedence over the global `transforms.fluid` config
- * when present. Scale-generated tokens always populate it; manually
- * authored fluid tokens may omit it.
  */
 export type FluidExtension = {
     min: Dimension;
     max: Dimension;
-    viewport?: ViewportConfig;
 };
 
 /**
@@ -33,7 +17,6 @@ export type FluidExtension = {
 export type ScaleExtension = ExponentialScaleConfig | MultiplierScaleConfig;
 
 type BaseScaleConfig = {
-    viewport: ViewportConfig;
     base: { min: Dimension; max: Dimension };
 };
 

@@ -7,13 +7,10 @@ const remBase = (min: number, max: number) => ({
     max: { value: max, unit: "rem" as const },
 });
 
-const viewport = { min: 320, max: 1440 };
-
 describe("calculateScale - exponential mode", () => {
     it("generates negative + zero + positive steps for the configured count", () => {
         const config: ExponentialScaleConfig = {
             mode: "exponential",
-            viewport,
             base: remBase(1, 1.125),
             ratio: { min: 1.2, max: 1.25 },
             steps: { negative: 2, positive: 5 },
@@ -28,7 +25,6 @@ describe("calculateScale - exponential mode", () => {
     it("computes step values as base × ratio^n with separate min/max ratios", () => {
         const config: ExponentialScaleConfig = {
             mode: "exponential",
-            viewport,
             base: remBase(1, 1.125),
             ratio: { min: 1.2, max: 1.25 },
             steps: { negative: 1, positive: 2 },
@@ -61,7 +57,6 @@ describe("calculateScale - exponential mode", () => {
     it("returns flat values when min and max ratios both equal 1", () => {
         const config: ExponentialScaleConfig = {
             mode: "exponential",
-            viewport,
             base: remBase(1, 1),
             ratio: { min: 1, max: 1 },
             steps: { negative: 2, positive: 2 },
@@ -78,7 +73,6 @@ describe("calculateScale - exponential mode", () => {
     it("preserves the unit from the base config on every step", () => {
         const config: ExponentialScaleConfig = {
             mode: "exponential",
-            viewport,
             base: {
                 min: { value: 16, unit: "px" },
                 max: { value: 18, unit: "px" },
@@ -100,7 +94,6 @@ describe("calculateScale - multipliers mode", () => {
     it("generates one step per named multiplier", () => {
         const config: MultiplierScaleConfig = {
             mode: "multipliers",
-            viewport,
             base: remBase(0.875, 1),
             multipliers: { xs: 0.75, sm: 1, md: 1.5 },
         };
@@ -114,7 +107,6 @@ describe("calculateScale - multipliers mode", () => {
     it("computes each step as base × multiplier", () => {
         const config: MultiplierScaleConfig = {
             mode: "multipliers",
-            viewport,
             base: remBase(1, 2),
             multipliers: { sm: 1, md: 1.5, lg: 2 },
         };
@@ -131,7 +123,6 @@ describe("calculateScale - multipliers mode", () => {
     it('appends pair steps after named steps when pairs is "adjacent"', () => {
         const config: MultiplierScaleConfig = {
             mode: "multipliers",
-            viewport,
             base: remBase(1, 2),
             multipliers: { sm: 1, md: 1.5, lg: 2 },
             pairs: "adjacent",
@@ -146,7 +137,6 @@ describe("calculateScale - multipliers mode", () => {
     it("uses from.min and to.max for each adjacent pair (asymmetric growth)", () => {
         const config: MultiplierScaleConfig = {
             mode: "multipliers",
-            viewport,
             base: remBase(1, 2),
             multipliers: { sm: 1, lg: 2 },
             pairs: "adjacent",
@@ -165,7 +155,6 @@ describe("calculateScale - multipliers mode", () => {
     it("emits no pair steps when pairs is omitted", () => {
         const config: MultiplierScaleConfig = {
             mode: "multipliers",
-            viewport,
             base: remBase(1, 2),
             multipliers: { sm: 1, md: 1.5, lg: 2 },
         };
@@ -178,7 +167,6 @@ describe("calculateScale - multipliers mode", () => {
     it("emits exactly the listed pairs when pairs is a string array", () => {
         const config: MultiplierScaleConfig = {
             mode: "multipliers",
-            viewport,
             base: remBase(1, 2),
             multipliers: { sm: 1, md: 1.5, lg: 2, xl: 3 },
             pairs: ["sm-xl", "md-lg"],
@@ -193,7 +181,6 @@ describe("calculateScale - multipliers mode", () => {
     it("does not include adjacent pairs when an explicit list is provided", () => {
         const config: MultiplierScaleConfig = {
             mode: "multipliers",
-            viewport,
             base: remBase(1, 2),
             multipliers: { sm: 1, md: 1.5, lg: 2 },
             pairs: ["sm-lg"],
@@ -209,7 +196,6 @@ describe("calculateScale - rounding", () => {
     it("rounds to 4 decimal places", () => {
         const config: ExponentialScaleConfig = {
             mode: "exponential",
-            viewport,
             base: remBase(1, 1),
             ratio: { min: 1.333, max: 1.333 },
             steps: { negative: 0, positive: 3 },

@@ -18,7 +18,6 @@ const buildTree = (
 
 const exponentialScale = {
     mode: "exponential",
-    viewport: { min: 320, max: 1440 },
     base: {
         min: { value: 1, unit: "rem" },
         max: { value: 1.125, unit: "rem" },
@@ -29,7 +28,6 @@ const exponentialScale = {
 
 const multipliersScale = {
     mode: "multipliers",
-    viewport: { min: 320, max: 1440 },
     base: {
         min: { value: 0.875, unit: "rem" },
         max: { value: 1, unit: "rem" },
@@ -105,23 +103,6 @@ describe("scale extension - pipeline integration", () => {
         expect(result.resolved["space.sm-lg"]).toBeDefined();
         expect(result.resolved["space.sm-md"]).toBeUndefined();
         expect(result.resolved["space.md-lg"]).toBeUndefined();
-    });
-
-    it("emits the scale's viewport on each generated token's fluid extension", () => {
-        const trees = [
-            buildTree({
-                size: {
-                    step: scaleAuthoringGroup(exponentialScale),
-                },
-            }),
-        ];
-
-        const result = resolveTokens(trees);
-
-        const token = result.resolved["size.step.0"] as ResolvedToken;
-        const fluid = (token.$extensions as { "sh.sugarcube": { fluid: unknown } })["sh.sugarcube"]
-            .fluid as { min: unknown; max: unknown; viewport: { min: number; max: number } };
-        expect(fluid.viewport).toEqual({ min: 320, max: 1440 });
     });
 
     it("resolves references from another tree to a scale-generated token", () => {
@@ -203,7 +184,6 @@ describe("scale extension - validation errors", () => {
                 size: {
                     step: scaleAuthoringGroup({
                         mode: "exponential",
-                        viewport: { min: 320, max: 1440 },
                         base: {
                             min: { value: 1, unit: "rem" },
                             max: { value: 1.125, unit: "rem" },
@@ -227,7 +207,7 @@ describe("scale extension - validation errors", () => {
             buildTree({
                 size: {
                     step: scaleAuthoringGroup({
-                        mode: "exponential", // missing viewport, base, ratio, steps
+                        mode: "exponential", // missing base, ratio, steps
                     }),
                 },
             }),

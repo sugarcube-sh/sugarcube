@@ -7,7 +7,6 @@ const path = "size.step.$extensions.sh.sugarcube.scale";
 
 const validExponential = {
     mode: "exponential",
-    viewport: { min: 320, max: 1440 },
     base: {
         min: { value: 1, unit: "rem" },
         max: { value: 1.125, unit: "rem" },
@@ -18,7 +17,6 @@ const validExponential = {
 
 const validMultipliers = {
     mode: "multipliers",
-    viewport: { min: 320, max: 1440 },
     base: {
         min: { value: 0.875, unit: "rem" },
         max: { value: 1, unit: "rem" },
@@ -70,36 +68,10 @@ describe("validateScaleExtension - top-level shape", () => {
         expect(errors.some((e) => e.path === `${path}.mode`)).toBe(true);
     });
 
-    it("requires `viewport`", () => {
-        const { viewport: _omit, ...rest } = validExponential;
-        const errors = validateScaleExtension(rest, path, source);
-        expect(errors.some((e) => e.path === `${path}.viewport`)).toBe(true);
-    });
-
     it("requires `base`", () => {
         const { base: _omit, ...rest } = validExponential;
         const errors = validateScaleExtension(rest, path, source);
         expect(errors.some((e) => e.path === `${path}.base`)).toBe(true);
-    });
-});
-
-describe("validateScaleExtension - viewport rules", () => {
-    it("rejects viewport.min >= viewport.max", () => {
-        const config = { ...validExponential, viewport: { min: 1440, max: 320 } };
-        const errors = validateScaleExtension(config, path, source);
-        expect(errors.some((e) => e.path === `${path}.viewport`)).toBe(true);
-    });
-
-    it("rejects viewport.min === viewport.max (not just less-than)", () => {
-        const config = { ...validExponential, viewport: { min: 1000, max: 1000 } };
-        const errors = validateScaleExtension(config, path, source);
-        expect(errors.some((e) => e.path === `${path}.viewport`)).toBe(true);
-    });
-
-    it("rejects non-number viewport bounds", () => {
-        const config = { ...validExponential, viewport: { min: "320px", max: 1440 } };
-        const errors = validateScaleExtension(config, path, source);
-        expect(errors.some((e) => e.path === `${path}.viewport.min`)).toBe(true);
     });
 });
 
@@ -206,12 +178,6 @@ describe("validateScaleExtension - multipliers-only fields", () => {
 });
 
 describe("validateScaleExtension - reference rejection", () => {
-    it("rejects a reference at the top level of viewport", () => {
-        const config = { ...validExponential, viewport: "{viewport.default}" };
-        const errors = validateScaleExtension(config, path, source);
-        expect(errors.some((e) => e.path === `${path}.viewport`)).toBe(true);
-    });
-
     it("rejects a reference inside a nested dimension value", () => {
         const config = {
             ...validExponential,

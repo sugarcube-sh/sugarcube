@@ -12,7 +12,6 @@ import { resolved } from "./fixtures";
 
 const recipe: ScaleExtension = {
     mode: "exponential",
-    viewport: { min: 320, max: 1440 },
     base: {
         min: { value: 1, unit: "rem" },
         max: { value: 1, unit: "rem" },
@@ -40,7 +39,6 @@ describe("applyRecipeOverlay", () => {
         expect(step0.$extensions["sh.sugarcube"].fluid).toEqual({
             min: { value: 1, unit: "rem" },
             max: { value: 1, unit: "rem" },
-            viewport: { min: 320, max: 1440 },
         });
 
         // step.1 = base * 1.2^1 = 1.2

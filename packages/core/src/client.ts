@@ -36,7 +36,6 @@ export { calculateScale } from "./shared/scale/calculator.js";
 export type { GeneratedStep } from "./shared/scale/calculator.js";
 export type {
     FluidExtension,
-    ViewportConfig,
     ScaleExtension,
     ExponentialScaleConfig,
     MultiplierScaleConfig,

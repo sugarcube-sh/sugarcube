@@ -1,5 +1,6 @@
 import { type ScaleExtension, calculateScale } from "@sugarcube-sh/core/client";
 import type { GeneratedStep } from "@sugarcube-sh/core/client";
+import { useBaseline } from "../store/hooks";
 
 type RecipeScalePreviewProps = {
     extension: ScaleExtension;
@@ -11,8 +12,8 @@ type RecipeScalePreviewProps = {
  * in a follow-up commit.
  */
 export function RecipeScalePreview({ extension }: RecipeScalePreviewProps) {
+    const viewport = useBaseline().config.variables.transforms.fluid;
     const steps = calculateScale(extension);
-    const viewport = extension.viewport;
 
     return (
         <div className="recipe-preview">

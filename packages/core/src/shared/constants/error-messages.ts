@@ -94,8 +94,6 @@ export const ErrorMessages = {
             )} at ${path}`,
         SCALE_CONTAINS_REFERENCE: (path: string) =>
             `Scale config at ${path} cannot contain references — recipes must use literal numbers and units.`,
-        SCALE_INVALID_VIEWPORT_RANGE: (path: string) =>
-            `Invalid viewport at ${path}: 'min' must be less than 'max'.`,
         SCALE_INVALID_RATIO: (value: unknown, path: string) =>
             `Invalid exponential ratio at ${path}: '${value}'. Ratio must be greater than 1 (a ratio ≤ 1 produces a flat or inverted scale).`,
         SCALE_EMPTY_MULTIPLIERS: (path: string) =>

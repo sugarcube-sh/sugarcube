@@ -12,10 +12,7 @@ function convertFluidDimension(
     options: CSSRenderOptions
 ): SimpleCSSProperties {
     const { min, max } = value;
-    // Per-token `viewport` (carried on the fluid extension) wins over the
-    // global `transforms.fluid` config — scale-generated tokens always
-    // populate it; manually-authored fluid tokens fall back to the global.
-    const viewport = value.viewport ?? options.fluidConfig;
+    const viewport = options.fluidConfig;
     const rootSize = 16; // TODO: make this configurable??
 
     const minSize = normalizeToPixels(min, rootSize);

@@ -24,7 +24,6 @@ export function resolveScaleExtension(scaleConfig: ScaleExtension): Record<strin
                     fluid: {
                         min: step.min,
                         max: step.max,
-                        viewport: scaleConfig.viewport,
                     },
                 },
             },
