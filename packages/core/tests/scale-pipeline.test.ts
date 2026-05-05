@@ -86,6 +86,44 @@ describe("scale extension - pipeline integration", () => {
         expect(result.resolved["space.sm-md"]).toBeDefined();
     });
 
+    it("lets a hand-authored token shadow a generated one with the same name", () => {
+        const trees = [
+            buildTree({
+                space: {
+                    ...scaleAuthoringGroup(multipliersScale),
+                    md: {
+                        $type: "dimension",
+                        $value: { value: 10, unit: "rem" },
+                        $extensions: {
+                            "sh.sugarcube": {
+                                fluid: {
+                                    min: { value: 5, unit: "rem" },
+                                    max: { value: 10, unit: "rem" },
+                                },
+                            },
+                        },
+                    },
+                } as TokenGroup,
+            }),
+        ];
+
+        const result = resolveTokens(trees);
+
+        expect(result.errors.expandTree).toHaveLength(0);
+        const md = result.resolved["space.md"] as ResolvedToken;
+        expect(md.$value).toEqual({ value: 10, unit: "rem" });
+        // The hand-authored fluid range survived — not the recipe-generated one
+        // (which would have been 1.3125rem → 1.5rem from base × 1.5).
+        const fluid = (md.$extensions as { "sh.sugarcube": { fluid: unknown } })["sh.sugarcube"]
+            .fluid as { min: unknown; max: unknown };
+        expect(fluid).toEqual({
+            min: { value: 5, unit: "rem" },
+            max: { value: 10, unit: "rem" },
+        });
+        // Sibling generated tokens are unaffected.
+        expect(result.resolved["space.sm"]).toBeDefined();
+    });
+
     it("emits exactly the listed pair tokens when pairs is an explicit list", () => {
         const trees = [
             buildTree({
