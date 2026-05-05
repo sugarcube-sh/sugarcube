@@ -18,7 +18,7 @@
     cursor: pointer;
 }
 
-.accordion details summary[open] {
+.accordion details[open] summary {
     margin-block-end: var(--space-xs, 0.75rem);
 }
 
