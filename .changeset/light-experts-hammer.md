@@ -28,10 +28,7 @@ Two modes:
 
 Malformed recipes surface as `ExpandError`s; the group is left intact (without generated children) and the rest of the pipeline continues.
 
-**New exports (from `@sugarcube-sh/core` and `/client`):**
-
-- `calculateScale(config)` — pure function that returns the generated steps without going through the pipeline. Useful for previews / studio controls.
-- Types: `ScaleExtension`, `ExponentialScaleConfig`, `MultiplierScaleConfig`, `FluidExtension`, `SugarcubeExtensions`, `GeneratedStep`.
+**New exported types (from `@sugarcube-sh/core` and `/client`):** `ScaleExtension`, `ExponentialScaleConfig`, `MultiplierScaleConfig`, `FluidExtension`, `SugarcubeExtensions`.
 
 **`ScaleBinding` semantics clarified.** A scale binding now dispatches purely on whether a recipe is authored at the bound path:
 
