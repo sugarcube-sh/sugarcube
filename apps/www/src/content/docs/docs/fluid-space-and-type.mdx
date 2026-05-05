@@ -3,6 +3,7 @@ title: Fluid Space & Type
 ---
 
 import SiteAside from "@/src/components/site-alert/SiteAside.astro";
+import Table from "@/src/components/Table.astro";
 
 Fluid spacing and typography create responsive designs that adapt naturally to different screen sizes. Sugarcube supports fluid dimensions using the standard DTCG `dimension` type with an extension.
 
@@ -88,6 +89,117 @@ export default defineConfig({
   }
 });
 ```
+
+## Generating a scale
+
+If you've ever iterated on a type or spacing scale, you know the loop: open [Utopia.fyi](https://utopia.fyi/), tweak the parameters, copy the generated values into your tokens, save, decide you don't like the rhythm, repeat. It works, but you end up spending more time bouncing between tools than thinking about the scale itself.
+
+Sugarcube can generate scales for you from a single block of configuration authored alongside your tokens. The feature is heavily inspired by Utopia but keeps everything in one place - iterating means editing one config block instead of round-tripping through another tool. For scales where each step needs bespoke values or fluid ranges, hand-authoring (covered above) is still the right approach.
+
+The scale config goes under `$extensions["sh.sugarcube"].scale` on the group where you want the generated tokens to live. Sugarcube produces them at build time; once they reach the renderer they're indistinguishable from fluid tokens you've authored yourself.
+
+<SiteAside type="note">
+    Scale recipes intentionally don't generate token files on disk. The recipe is the source of truth. Keeping it that way avoids the problem of mixing generated and hand-authored tokens.
+
+    The tradeoff is interoperability: other DTCG tools see a group with an unknown `$extensions` block and produce nothing for it, since the children only exist once sugarcube generates them in-memory. If you need the generated tokens to land somewhere other tools can read, hand-author them using the `fluid` extension (covered above) instead.
+</SiteAside>
+
+Two modes are available: **exponential** for ratio-based scales (typically typography) and **multipliers** for arbitrary-step scales (typically spacing).
+
+### Exponential mode
+
+For typography-style scales, where each step is `base × ratio^n`. You can set the same ratio for `min` and `max`, or split them so the scale grows more dramatically on wide screens — a familiar typographic pattern.
+
+```json title="src/design-tokens/type.json"
+{
+  "size": {
+    "step": {
+      "$type": "dimension",
+      "$extensions": {
+        "sh.sugarcube": {
+          "scale": {
+            "mode": "exponential",
+            "base": {
+              "min": { "value": 1, "unit": "rem" },
+              "max": { "value": 1.125, "unit": "rem" }
+            },
+            "ratio": { "min": 1.2, "max": 1.25 },
+            "steps": { "negative": 2, "positive": 5 }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+This produces `size.step.-2` through `size.step.5`, each clamping between its computed min and max as the viewport changes. Step `0` is your base — in the example above, `1rem` on small screens growing to `1.125rem` on large ones. Negative steps shrink from there; positive ones grow.
+
+### Multipliers mode
+
+For scales where the steps are named values rather than a fixed ratio — most often spacing. Each token is `base × multiplier`:
+
+```json title="src/design-tokens/space.json"
+{
+  "space": {
+    "$type": "dimension",
+    "$extensions": {
+      "sh.sugarcube": {
+        "scale": {
+          "mode": "multipliers",
+          "base": {
+            "min": { "value": 0.5, "unit": "rem" },
+            "max": { "value": 1, "unit": "rem" }
+          },
+          "multipliers": {
+            "xs": 0.5,
+            "sm": 1,
+            "md": 1.5,
+            "lg": 2,
+            "xl": 3
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+That gives you `space.xs`, `space.sm`, `space.md`, `space.lg`, and `space.xl`. Note that `base` itself isn't generated as a token — it's just the value that "1x" resolves to. In the example above, `sm` has multiplier `1`, so `sm` ends up matching the base. If none of your multipliers equal `1`, the base value never appears as its own token.
+
+#### Pair tokens
+
+Multipliers mode can also generate "from-to" pair tokens — perfect for fluid spacing that *transitions* between named steps as the viewport grows. A `sm-md` pair starts at the `sm` value on small screens and stretches up to `md` on large screens, smoothly clamping in between.
+
+Two formats are supported:
+
+```json frame="none"
+"pairs": "adjacent"
+```
+
+…generates one pair for each consecutive multiplier: `space.xs-sm`, `space.sm-md`, `space.md-lg`, `space.lg-xl`.
+
+```json frame="none"
+"pairs": ["sm-lg", "xs-xl"]
+```
+
+…generates the explicit list. Each name on either side of the dash must exist in `multipliers`.
+
+### Generated token names
+
+<Table>
+| Mode        | Token name        | Example                              |
+| ----------- | ----------------- | ------------------------------------ |
+| Exponential | step number       | `size.step.-1`, `size.step.0`        |
+| Multipliers | multiplier name   | `space.sm`, `space.md`               |
+| Pair        | `<from>-<to>`     | `space.sm-md`, `space.md-lg`         |
+</Table>
+
+Generated tokens behave like any other dimension — they pick up the global `transforms.fluid` viewport, render to `clamp()`, and can be referenced from elsewhere in your design system.
+
+<SiteAside type="note">
+    A scale config replaces what you'd otherwise write by hand. If you also author a token with the same name as one the scale generates, your version wins — handy for one-off overrides without abandoning the scale.
+</SiteAside>
 
 ## Resources
 

@@ -47,8 +47,22 @@ export async function prepareTokens(
 
     const { trees, resolved, errors, warnings } = resolveTokens(loaded.trees);
 
-    if (errors.validation.length > 0 || errors.flatten.length > 0 || errors.resolution.length > 0) {
-        const allErrors = [...errors.flatten, ...errors.validation, ...errors.resolution];
+    if (
+        errors.expandTree.length > 0 ||
+        errors.validation.length > 0 ||
+        errors.flatten.length > 0 ||
+        errors.resolution.length > 0
+    ) {
+        const expandTreeAsCommon = errors.expandTree.map((e) => ({
+            message: e.message,
+            source: { sourcePath: e.sourcePath },
+        }));
+        const allErrors = [
+            ...expandTreeAsCommon,
+            ...errors.flatten,
+            ...errors.validation,
+            ...errors.resolution,
+        ];
         const errorsByFile = new Map<string, string[]>();
 
         for (const error of allErrors) {
