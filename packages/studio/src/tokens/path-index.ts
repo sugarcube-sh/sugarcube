@@ -6,7 +6,7 @@ import type { PathIndexEntry } from "./types";
  * variants in the resolved map.
  *
  * A token defined once per permutation (light, dark, brand-A…) shows up
- * as multiple entries in the flat resolved map — same `$path`, different
+ * as multiple entries in the flat resolved map - same `$path`, different
  * internal keys. This class groups them so callers can work by path and
  * narrow to a specific context when needed.
  */
@@ -15,6 +15,32 @@ export class PathIndex {
 
     constructor(resolved: ResolvedTokens) {
         this.index = PathIndex.build(resolved);
+    }
+
+    /**
+     * Rebuild the internal index against a new resolved map. The instance
+     * reference is preserved - long-lived closures (store actions like
+     * `setToken`, recipe/scale apply functions) hold this reference and
+     * pick up the fresh internals on their next call without rebinding.
+     *
+     * Called by `TokenStoreProvider` when the host pushes a baseline whose
+     * key set has changed (e.g. an externally-added token in a JSON file).
+     */
+    refresh(resolved: ResolvedTokens): void {
+        this.index = PathIndex.build(resolved);
+    }
+
+    /**
+     * The set of resolved-map keys this index covers. Used by the baseline
+     * subscription as a cheap "did the structure change?" check before
+     * triggering a refresh on a value-only update.
+     */
+    resolvedKeys(): IterableIterator<string> {
+        const keys: string[] = [];
+        for (const entries of this.index.values()) {
+            for (const { key } of entries) keys.push(key);
+        }
+        return keys[Symbol.iterator]();
     }
 
     private static build(resolved: ResolvedTokens): Map<string, PathIndexEntry[]> {
@@ -69,7 +95,6 @@ export class PathIndex {
         return { ...resolved, ...updates };
     }
 
-    // In snapshot order.
     get contexts(): readonly string[] {
         const seen = new Set<string>();
         for (const entries of this.index.values()) {
@@ -94,7 +119,6 @@ export class PathIndex {
         return this.index.entries();
     }
 
-    // `*` matches exactly one path segment; `**` is not supported.
     matching(pattern: string): readonly string[] {
         const patternSegs = pattern.split(".");
         const matches: string[] = [];
@@ -114,7 +138,6 @@ export class PathIndex {
         return matches;
     }
 
-    // Find all token paths under a prefix (any depth).
     under(prefix: string): readonly string[] {
         const needle = `${prefix}.`;
         const matches: string[] = [];

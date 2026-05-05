@@ -162,7 +162,7 @@ class SugarcubeStudio extends HTMLElement {
                 break;
 
             case "studio:save":
-                this.handleSave(data.payload);
+                this.handleSave(data.payload, data.requestId);
                 break;
         }
     };
@@ -171,15 +171,22 @@ class SugarcubeStudio extends HTMLElement {
         this.iframe?.contentWindow?.postMessage({ type: "studio:save-result", ...data }, "*");
     }
 
-    /** Submit via `onSave` if set, otherwise POST to `submit-url` (defaults to the hosted API). */
-    private async handleSave(payload: SavePayload) {
+    /**
+     * Submit via `onSave` if set, otherwise POST to `submit-url`. The
+     * `requestId` (when provided by the SPA) is echoed back on the
+     * reply so the caller can correlate concurrent saves.
+     */
+    private async handleSave(payload: SavePayload, requestId?: string) {
         try {
             const result = this.onSave
                 ? await this.onSave(payload)
                 : await this.submitToAPI(payload);
-            this.reply({ number: result.number, url: result.url });
+            this.reply({ requestId, number: result.number, url: result.url });
         } catch (err) {
-            this.reply({ error: err instanceof Error ? err.message : "Submission failed" });
+            this.reply({
+                requestId,
+                error: err instanceof Error ? err.message : "Submission failed",
+            });
         }
     }
 
