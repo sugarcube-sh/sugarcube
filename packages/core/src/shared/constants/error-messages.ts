@@ -92,6 +92,18 @@ export const ErrorMessages = {
             `Expected value to be one of [${enumValues.join(", ")}], but got ${String(
                 value
             )} at ${path}`,
+        SCALE_CONTAINS_REFERENCE: (path: string) =>
+            `Scale config at ${path} cannot contain references — recipes must use literal numbers and units.`,
+        SCALE_INVALID_RATIO: (value: unknown, path: string) =>
+            `Invalid exponential ratio at ${path}: '${value}'. Ratio must be greater than 1 (a ratio ≤ 1 produces a flat or inverted scale).`,
+        SCALE_EMPTY_MULTIPLIERS: (path: string) =>
+            `Multipliers at ${path} must be a non-empty record of step name → number.`,
+        SCALE_INVALID_PAIRS: (path: string) =>
+            `Invalid \`pairs\` at ${path}: must be the string "adjacent" or an array of pair names like ["sm-lg"].`,
+        SCALE_INVALID_PAIR_ENTRY: (value: unknown, path: string) =>
+            `Invalid pair entry at ${path}: ${String(value)}. Each pair must be a string in the form "<from>-<to>".`,
+        SCALE_PAIR_UNKNOWN_MULTIPLIER: (name: string, path: string) =>
+            `Pair at ${path} references unknown multiplier '${name}'. The name must match a key in the scale's \`multipliers\`.`,
     },
     RESOLVE: {
         CIRCULAR_REFERENCE: (path: string, ref: string) =>
