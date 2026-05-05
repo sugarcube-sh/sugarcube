@@ -98,6 +98,12 @@ Sugarcube can generate scales for you from a single block of configuration autho
 
 The scale config goes under `$extensions["sh.sugarcube"].scale` on the group where you want the generated tokens to live. Sugarcube produces them at build time; once they reach the renderer they're indistinguishable from fluid tokens you've authored yourself.
 
+<SiteAside type="note">
+    Scale recipes intentionally don't generate token files on disk. The recipe is the source of truth. Keeping it that way avoids the problem of mixing generated and hand-authored tokens.
+
+    The tradeoff is interoperability: other DTCG tools see a group with an unknown `$extensions` block and produce nothing for it, since the children only exist once sugarcube generates them in-memory. If you need the generated tokens to land somewhere other tools can read, hand-author them using the `fluid` extension (covered above) instead.
+</SiteAside>
+
 Two modes are available: **exponential** for ratio-based scales (typically typography) and **multipliers** for arbitrary-step scales (typically spacing).
 
 ### Exponential mode
