@@ -1,7 +1,6 @@
 /**
- * Materialises sugarcube generator extensions into tree nodes during the
- * expand pass. A "generator" extension is one where the user authors a
- * recipe at a group level (e.g. sh.sugarcube.scale) and sugarcube
+ * Materialises sh.sugarcube.scale recipes into tree nodes during the
+ * expand pass. A scale recipe is authored at a group level and sugarcube
  * synthesizes the resulting child tokens at build time.
  *
  * Validation runs here too: a malformed scale recipe surfaces an
@@ -17,12 +16,12 @@ import { resolveScaleExtension } from "../scale/resolver.js";
 import { validateScaleExtension } from "../validators/scale.js";
 import type { ExpandError } from "./expand.js";
 
-type GeneratorResult = {
+type ExpandScaleResult = {
     trees: TokenTree[];
     errors: ExpandError[];
 };
 
-export function expandGenerators(trees: TokenTree[]): GeneratorResult {
+export function expandScale(trees: TokenTree[]): ExpandScaleResult {
     const result: TokenTree[] = [];
     const errors: ExpandError[] = [];
 

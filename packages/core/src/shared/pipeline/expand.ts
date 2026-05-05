@@ -2,7 +2,7 @@ import type { Token, TokenGroup } from "../../types/dtcg.js";
 import type { TokenTree } from "../../types/tokens.js";
 import { ErrorMessages } from "../constants/error-messages.js";
 import { hasRef } from "../guards.js";
-import { expandGenerators } from "./expand-generators.js";
+import { expandScale } from "./expand-scale.js";
 import { mergeGroups } from "./merge-groups.js";
 
 export type ExpandError = {
@@ -82,7 +82,7 @@ function containsRefsOrExtends(obj: unknown): boolean {
  * Three passes:
  * 1. $ref: convert JSON Pointer references to curly brace format
  * 2. $extends: resolve group inheritance via deep merge
- * 3. generators: expand sh.sugarcube.scale (and future palette) recipes
+ * 3. scale: expand sh.sugarcube.scale recipes into child tokens
  *
  * For token refs: { "$ref": "#/colors/blue" } becomes { "$value": "{colors.blue}" }
  * For group refs: { "$ref": "#/button" } inlines the target group content
@@ -126,10 +126,10 @@ export function expand(trees: TokenTree[]): ExpandResult {
     // Third pass: expand scale recipes into the tokens they describe.
     // Runs after refs/extends settle, so a recipe inherited from another
     // group resolves before it generates anything.
-    const { trees: withGenerators, errors: generatorErrors } = expandGenerators(results);
-    errors.push(...generatorErrors);
+    const { trees: withScale, errors: scaleErrors } = expandScale(results);
+    errors.push(...scaleErrors);
 
-    return { trees: withGenerators, errors };
+    return { trees: withScale, errors };
 }
 
 // ============================================
