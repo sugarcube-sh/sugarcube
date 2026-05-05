@@ -1,17 +1,18 @@
 /**
- * Materializes Sugarcube generator extensions into tree nodes during the
+ * Materialises sugarcube generator extensions into tree nodes during the
  * expand pass. A "generator" extension is one where the user authors a
  * recipe at a group level (e.g. sh.sugarcube.scale) and sugarcube
  * synthesizes the resulting child tokens at build time.
  *
  * Validation runs here too: a malformed scale recipe surfaces an
- * ExpandError, the group is left intact (without materialized children),
+ * ExpandError, the group is left intact (without materialised children),
  * and the rest of the pipeline continues.
  */
 
-import type { Token, TokenGroup } from "../../types/dtcg.js";
+import type { TokenGroup } from "../../types/dtcg.js";
 import type { ScaleExtension } from "../../types/extensions.js";
 import type { TokenSource, TokenTree } from "../../types/tokens.js";
+import { isToken } from "../guards.js";
 import { resolveScaleExtension } from "../scale/resolver.js";
 import { validateScaleExtension } from "../validators/scale.js";
 import type { ExpandError } from "./expand.js";
@@ -85,8 +86,4 @@ function expandGroup(
     }
 
     return result ?? node;
-}
-
-function isToken(value: unknown): value is Token {
-    return typeof value === "object" && value !== null && "$value" in value;
 }
