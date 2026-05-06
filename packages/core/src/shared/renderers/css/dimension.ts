@@ -1,5 +1,6 @@
+import type { FluidExtension } from "../../../types/extensions.js";
 import type { CSSRenderOptions, SimpleCSSProperties } from "../../../types/render.js";
-import type { Dimension, FluidDimension, TokenValue } from "../../../types/tokens.js";
+import type { Dimension, TokenValue } from "../../../types/tokens.js";
 import { isReference } from "../../guards.js";
 
 function normalizeToPixels(value: Dimension, rootSize = 16): number {
@@ -7,17 +8,17 @@ function normalizeToPixels(value: Dimension, rootSize = 16): number {
 }
 
 function convertFluidDimension(
-    value: FluidDimension,
+    value: FluidExtension,
     options: CSSRenderOptions
 ): SimpleCSSProperties {
     const { min, max } = value;
-    const fluidConfig = options.fluidConfig;
+    const viewport = options.fluidConfig;
     const rootSize = 16; // TODO: make this configurable??
 
     const minSize = normalizeToPixels(min, rootSize);
     const maxSize = normalizeToPixels(max, rootSize);
-    const minViewport = fluidConfig.min;
-    const maxViewport = fluidConfig.max;
+    const minViewport = viewport.min;
+    const maxViewport = viewport.max;
 
     if (minSize === maxSize) {
         return {

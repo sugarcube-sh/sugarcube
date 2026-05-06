@@ -2,6 +2,7 @@ import { bench, describe } from "vitest";
 import { fillDefaults } from "../../src/node/config/normalize.js";
 import { loadTokens } from "../../src/node/load-tokens.js";
 import { assignCSSNames } from "../../src/shared/pipeline/assign-css-names.js";
+import { expandScale } from "../../src/shared/pipeline/expand-scale.js";
 import { expand } from "../../src/shared/pipeline/expand.js";
 import { groupByContext } from "../../src/shared/pipeline/group-by-context.js";
 import { resolveTokens } from "../../src/shared/resolve-tokens.js";
@@ -305,6 +306,73 @@ describe("pipeline", () => {
 
         bench("with $extends - wide (100 groups, 5 tokens each)", () => {
             expand([buildExtendsTree(100, 5)]);
+        });
+    });
+
+    describe("expand-scale stage", () => {
+        function buildPlainGroupTree(groupCount: number, tokensPerGroup: number): TokenTree {
+            const tokens: Record<string, unknown> = {};
+            for (let g = 0; g < groupCount; g++) {
+                const group: Record<string, unknown> = { $type: "color" };
+                for (let t = 0; t < tokensPerGroup; t++) {
+                    group[`token-${t}`] = { $value: "#ff0000" };
+                }
+                tokens[`group-${g}`] = group;
+            }
+            return { sourcePath: "bench.json", tokens: tokens as TokenGroup };
+        }
+
+        function buildScaleRecipeTree(
+            recipeCount: number,
+            stepsPositive: number,
+            stepsNegative: number
+        ): TokenTree {
+            const tokens: Record<string, unknown> = {};
+            for (let g = 0; g < recipeCount; g++) {
+                tokens[`scale-${g}`] = {
+                    $extensions: {
+                        "sh.sugarcube": {
+                            scale: {
+                                mode: "exponential",
+                                base: {
+                                    min: { value: 1, unit: "rem" },
+                                    max: { value: 1.25, unit: "rem" },
+                                },
+                                ratio: { min: 1.2, max: 1.25 },
+                                steps: { negative: stepsNegative, positive: stepsPositive },
+                            },
+                        },
+                    },
+                };
+            }
+            return { sourcePath: "bench.json", tokens: tokens as TokenGroup };
+        }
+
+        // Walk-only: measures the recursive group walk with no recipes to expand.
+        bench("walk only - 100 groups, 10 tokens each (no recipes)", () => {
+            expandScale([buildPlainGroupTree(100, 10)]);
+        });
+
+        bench("walk only - 1,000 groups, 10 tokens each (no recipes)", () => {
+            expandScale([buildPlainGroupTree(1000, 10)]);
+        });
+
+        bench("walk only - 10,000 groups, 10 tokens each (no recipes)", () => {
+            expandScale([buildPlainGroupTree(10000, 10)]);
+        });
+
+        // Recipe-heavy: measures validate + calculate + merge per recipe.
+        // Same shape as walk-only but every group is a recipe.
+        bench("recipes - 100 recipes × 8 steps", () => {
+            expandScale([buildScaleRecipeTree(100, 5, 2)]);
+        });
+
+        bench("recipes - 1,000 recipes × 8 steps", () => {
+            expandScale([buildScaleRecipeTree(1000, 5, 2)]);
+        });
+
+        bench("recipes - 10 recipes × 100 steps (deep recipe)", () => {
+            expandScale([buildScaleRecipeTree(10, 80, 19)]);
         });
     });
 });

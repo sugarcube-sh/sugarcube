@@ -207,30 +207,35 @@ export type PresetBinding = {
 };
 
 /**
- * A scale binding — treats a group of matching tokens as a single scale,
- * controlled by base / spread sliders.
+ * A scale binding — declares a panel control for a group of fluid tokens.
+ *
+ * The studio dispatches purely on whether a recipe (`sh.sugarcube.scale`
+ * extension) is authored at the bound path:
+ * - Recipe present → recipe-aware controls; the recipe's `mode` field
+ *   tells the studio whether to render exponential or multipliers UI.
+ * - No recipe → bulk controls (base + spread) and per-step inputs render
+ *   together for direct editing of the concrete tokens.
+ *
+ * @example
+ * { type: "scale", token: "size.step.*", base: "size.step.0" }
  */
 export type ScaleBinding = {
     type: "scale";
-    /** Glob pattern matching the tokens that make up the scale. */
+    /** Glob pattern (or concrete path) matching the scale's tokens. */
     token: string;
     /** Optional label override. */
     label?: string;
     /**
-     * The path of the step that should be treated as the scale's anchor —
-     * the step whose current value is `1.0` multiplier relative to itself,
-     * and which the "base" slider directly controls. Required for
-     * cascade-mode scale bindings.
-     *
-     * @example
-     * { type: "scale", token: "size.step.*", base: "size.step.0" }
+     * The path of the step that anchors the bulk slider. The slider's
+     * value directly controls this step's max-viewport value, and other
+     * steps adjust proportionally.
      */
     base?: string;
-    /** Slider minimum. */
+    /** Bulk slider minimum. */
     min?: number;
-    /** Slider maximum. */
+    /** Bulk slider maximum. */
     max?: number;
-    /** Slider step increment. */
+    /** Bulk slider step increment. */
     step?: number;
 };
 
