@@ -92,14 +92,12 @@ export default defineConfig({
 
 ## Generating a scale
 
-If you've ever iterated on a type or spacing scale, you know the loop: open [Utopia.fyi](https://utopia.fyi/), tweak the parameters, copy the generated values into your tokens, save, decide you don't like the rhythm, repeat. It works, but you end up spending more time bouncing between tools than thinking about the scale itself.
+Sugarcube can generate type and space scales for you from an `$extensions` block authored alongside your tokens. The feature is heavily inspired by [Utopia](https://utopia.fyi/) but keeps everything in one place, meaning you don't have to bounce between tools. Iterating means editing values within the extension instead of round-tripping Utopia. For scales where each step needs bespoke values or fluid ranges, hand-authoring (covered above) is still the right approach.
 
-Sugarcube can generate scales for you from a single block of configuration authored alongside your tokens. The feature is heavily inspired by Utopia but keeps everything in one place - iterating means editing one config block instead of round-tripping through another tool. For scales where each step needs bespoke values or fluid ranges, hand-authoring (covered above) is still the right approach.
-
-The scale config goes under `$extensions["sh.sugarcube"].scale` on the group where you want the generated tokens to live. Sugarcube produces them at build time; once they reach the renderer they're indistinguishable from fluid tokens you've authored yourself.
+The scale config goes under `$extensions["sh.sugarcube"].scale` on the group where you want the generated tokens to live. Sugarcube produces them at build time; once they reach the renderer they’re indistinguishable from fluid tokens you’ve authored yourself.
 
 <SiteAside type="note">
-    Scale recipes intentionally don't generate token files on disk. The recipe is the source of truth. Keeping it that way avoids the problem of mixing generated and hand-authored tokens.
+    Scale recipes intentionally don’t generate token files on disk. The recipe is the source of truth. Keeping it that way avoids the problem of mixing generated and hand-authored tokens.
 
     The tradeoff is interoperability: other DTCG tools see a group with an unknown `$extensions` block and produce nothing for it, since the children only exist once sugarcube generates them in-memory. If you need the generated tokens to land somewhere other tools can read, hand-author them using the `fluid` extension (covered above) instead.
 </SiteAside>
@@ -108,7 +106,7 @@ Two modes are available: **exponential** for ratio-based scales (typically typog
 
 ### Exponential mode
 
-For typography-style scales, where each step is `base × ratio^n`. You can set the same ratio for `min` and `max`, or split them so the scale grows more dramatically on wide screens — a familiar typographic pattern.
+For typography-style scales, where each step is `base × ratio^n`. You can set the same ratio for `min` and `max`, or split them so the scale grows more dramatically on wide screens — a common typographic pattern.
 
 ```json title="src/design-tokens/type.json"
 {
@@ -169,7 +167,7 @@ That gives you `space.xs`, `space.sm`, `space.md`, `space.lg`, and `space.xl`. N
 
 #### Pair tokens
 
-Multipliers mode can also generate "from-to" pair tokens — perfect for fluid spacing that *transitions* between named steps as the viewport grows. A `sm-md` pair starts at the `sm` value on small screens and stretches up to `md` on large screens, smoothly clamping in between.
+Multipliers mode can also generate "from-to" pair tokens, which are perfect for fluid spacing that *transitions* between named steps as the viewport grows. A `sm-md` pair starts at the `sm` value on small screens and stretches up to `md` on large screens, smoothly clamping in between.
 
 Two formats are supported:
 
@@ -195,10 +193,10 @@ Two formats are supported:
 | Pair        | `<from>-<to>`     | `space.sm-md`, `space.md-lg`         |
 </Table>
 
-Generated tokens behave like any other dimension — they pick up the global `transforms.fluid` viewport, render to `clamp()`, and can be referenced from elsewhere in your design system.
+Generated tokens behave like any other dimension: they pick up the global `transforms.fluid` viewport, render to `clamp()`, and can be referenced from elsewhere in your design system.
 
 <SiteAside type="note">
-    A scale config replaces what you'd otherwise write by hand. If you also author a token with the same name as one the scale generates, your version wins — handy for one-off overrides without abandoning the scale.
+    A scale config replaces what you'd otherwise write by hand. If you also author a token with the same name as one the scale generates, your version wins. This is handy for one-off overrides without abandoning the scale.
 </SiteAside>
 
 ## Resources
