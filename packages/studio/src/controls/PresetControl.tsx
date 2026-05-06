@@ -3,7 +3,7 @@ import type { PresetBinding } from "@sugarcube-sh/core/client";
 import { CheckIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover/popover";
-import { usePathIndex, useSnapshot, useToken } from "../store/hooks";
+import { useBaseline, usePathIndex, useToken } from "../store/hooks";
 import type { PathIndex } from "../tokens/path-index";
 import { TokenRow } from "./TokenRow";
 import { lastSegment, unwrapRef } from "./path-utils";
@@ -17,12 +17,12 @@ export function PresetControl({ binding }: PresetControlProps) {
     const [value, setValue] = useToken<string>(binding.token);
     const label = labelForBinding(binding);
     const pathIndex = usePathIndex();
-    const snapshot = useSnapshot();
+    const baseline = useBaseline();
     const [open, setOpen] = useState(false);
 
     const options = useMemo(
-        () => resolveOptions(binding.options, pathIndex, snapshot.resolved),
-        [binding.options, pathIndex, snapshot.resolved]
+        () => resolveOptions(binding.options, pathIndex, baseline.resolved),
+        [binding.options, pathIndex, baseline.resolved]
     );
 
     const currentLabel = options.find((o) => o.reference === value)?.label ?? "—";

@@ -14,7 +14,6 @@ export {
 } from "./scale-cascade";
 export type {
     PathIndexEntry,
-    ScaleExtension,
     SlimToken,
     TokenDiffEntry,
     TokenReader,

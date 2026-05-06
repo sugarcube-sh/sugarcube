@@ -4,14 +4,6 @@ import { DesignActions } from "../DesignActions";
 import { DesignView } from "../views/DesignView";
 import { DiffView } from "../views/DiffView";
 
-/**
- * The Design area: edit controls with an optional inline diff panel.
- *
- * Default state: edit panel fills the area, no footer.
- * With pending changes: a sticky footer appears with the change count
- * (also a disclosure trigger) and Save/Discard actions.
- * Clicking the change count toggles the diff panel as a second column (styles not yet implemented).
- */
 export function DesignArea() {
     const pendingCount = usePendingChangesCount();
     const hasChanges = pendingCount > 0;

@@ -95,8 +95,8 @@ const studio: StudioConfig = {
         {
             title: "Scale",
             bindings: [
-                { type: "scale", token: "size.step.*", base: "size.step.0" },
-                { type: "scale", token: "space.*", base: "space.sm" },
+                { type: "scale", token: "size.step.*", label: "Type scale" },
+                { type: "scale", token: "space.*", base: "space.sm", label: "Space scale" },
                 {
                     type: "scale-linked",
                     token: "container.*",

@@ -1,20 +1,6 @@
 import { type ResolvedTokens, isResolvedToken } from "@sugarcube-sh/core/client";
 import type { PathIndex } from "./path-index";
 
-/**
- * Base + spread cascade over a group of dimension tokens.
- *
- * Given a captured scale (original min/max per step, relative to a base
- * step), apply a new base size and a spread factor. `spread = 1`
- * reproduces the project's curated scale; `0` collapses every step to
- * the base; `>1` amplifies the gaps between steps.
- *
- * This is Model A: the cascade used when source tokens are explicit.
- * Model B (when the core scale extension lands) will read a recipe and
- * regenerate values directly, bypassing this module for bindings whose
- * parent has a scale extension.
- */
-
 type Dim = { value: number; unit: string };
 
 type CapturedStep = {
@@ -38,7 +24,6 @@ export type CapturedLinkedScale = {
     defaults: Map<string, Dim>;
 };
 
-/** Read a token's fluid min/max if present, otherwise fall back to its static `$value`. */
 function readFluidValues(
     token: ResolvedTokens[string] | undefined
 ): { min: number; max: number; unit: string; hasFluid: boolean } | null {
@@ -69,11 +54,6 @@ function readFluidValues(
     };
 }
 
-/**
- * Capture a scale from the snapshot: the original min/max per step plus
- * each step's multiplier relative to `basePath`'s base step. Returns
- * null if the base step is missing or zero (multiplier would be NaN).
- */
 export function captureScale(
     pathPattern: string,
     basePath: string,
@@ -114,7 +94,6 @@ export function captureScale(
     };
 }
 
-/** Capture the snapshot defaults for every static dimension token matching `pathPattern`. */
 export function captureLinkedScale(
     pathPattern: string,
     snapshotResolved: ResolvedTokens,
@@ -149,7 +128,6 @@ function cleanFloat(value: number, precision = 4): number {
     return Math.round(value * factor) / factor;
 }
 
-/** Immutable token update: sets `$value`/`$resolvedValue` and optionally the sugarcube fluid extension. */
 function buildFluidDimensionToken(
     existing: ResolvedTokens[string] | undefined,
     min: Dim,
@@ -195,11 +173,6 @@ function buildStaticDimensionToken(
     } as ResolvedTokens[string];
 }
 
-/**
- * Apply `(userBase, spread)` to a captured scale and write the new
- * values into `resolved`. `userBase` is the scale's new max-viewport
- * base step; see the module docstring for what spread does.
- */
 export function applyScaleToResolved(
     resolved: ResolvedTokens,
     scale: CapturedScale | null,
@@ -236,11 +209,6 @@ export function applyScaleToResolved(
     return { ...resolved, ...updates };
 }
 
-/**
- * Apply a linked scale factor to static dimension tokens. Rounded to
- * integers. When `enabled` is false the
- * factor drops to 1.0 — toggling link-off cleanly reverts the tokens.
- */
 export function applyLinkedScaleToResolved(
     resolved: ResolvedTokens,
     scale: CapturedLinkedScale,

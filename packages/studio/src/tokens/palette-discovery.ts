@@ -7,11 +7,6 @@ export function parseReference(value: unknown): string | undefined {
     return match?.[1];
 }
 
-/**
- * Derive the currently-selected palette for a family by scanning
- * the family's token references for a segment matching the known
- * palette list.
- */
 export function currentPaletteFromReference(
     readToken: TokenReader,
     family: string,

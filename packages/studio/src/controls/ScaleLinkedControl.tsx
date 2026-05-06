@@ -19,6 +19,7 @@ export function ScaleLinkedControl({ binding }: ScaleLinkedControlProps) {
 
     if (!slot) return null;
 
+    const enabled = slot.edits?.enabled ?? true;
     const label = labelForBinding(binding);
     const inputId = `studio-scale-linked-${binding.token.replace(/\./g, "-")}`;
 
@@ -31,7 +32,7 @@ export function ScaleLinkedControl({ binding }: ScaleLinkedControlProps) {
                 className="scale-linked-toggle"
                 id={inputId}
                 type="checkbox"
-                checked={slot.enabled}
+                checked={enabled}
                 onChange={(e) => setLinkEnabled(binding.token, e.target.checked)}
                 aria-label={label}
             />
