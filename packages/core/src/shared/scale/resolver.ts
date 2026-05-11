@@ -9,6 +9,7 @@
 
 import type { Token } from "../../types/dtcg.js";
 import type { ScaleExtension } from "../../types/extensions.js";
+import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { calculateScale } from "./calculator.js";
 
 export function resolveScaleExtension(scaleConfig: ScaleExtension): Record<string, Token> {
@@ -20,7 +21,7 @@ export function resolveScaleExtension(scaleConfig: ScaleExtension): Record<strin
             $type: "dimension",
             $value: step.max,
             $extensions: {
-                "sh.sugarcube": {
+                [SUGARCUBE_NAMESPACE]: {
                     fluid: {
                         min: step.min,
                         max: step.max,

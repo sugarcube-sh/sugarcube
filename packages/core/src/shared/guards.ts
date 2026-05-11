@@ -1,4 +1,5 @@
 import type { Token, TokenGroup } from "../types/dtcg.js";
+import type { ScaleExtension } from "../types/extensions.js";
 import type { RenderableToken } from "../types/render.js";
 import type { ResolvedToken } from "../types/resolve.js";
 import type { GroupRef, Reference, TokenRef, TokenType } from "../types/tokens.js";
@@ -71,6 +72,16 @@ export function hasRef(value: unknown): value is { $ref: string } {
         "$ref" in value &&
         typeof (value as Record<string, unknown>).$ref === "string"
     );
+}
+
+// ============================================
+// Sugarcube extension guards
+// ============================================
+
+export function isScaleExtension(value: unknown): value is ScaleExtension {
+    if (typeof value !== "object" || value === null || !("mode" in value)) return false;
+    const mode = (value as { mode: unknown }).mode;
+    return mode === "exponential" || mode === "multipliers";
 }
 
 // ============================================

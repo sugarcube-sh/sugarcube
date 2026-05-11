@@ -1,6 +1,7 @@
 import type { FluidExtension } from "../../../types/extensions.js";
 import type { CSSRenderOptions, SimpleCSSProperties } from "../../../types/render.js";
 import type { Dimension, TokenValue } from "../../../types/tokens.js";
+import { SUGARCUBE_NAMESPACE } from "../../extensions.js";
 import { isReference } from "../../guards.js";
 
 function normalizeToPixels(value: Dimension, rootSize = 16): number {
@@ -49,7 +50,7 @@ export function renderDimension(
         return { value: value };
     }
 
-    const fluidExtension = options.extensions?.["sh.sugarcube"]?.fluid;
+    const fluidExtension = options.extensions?.[SUGARCUBE_NAMESPACE]?.fluid;
     if (fluidExtension) {
         return convertFluidDimension(fluidExtension, options);
     }

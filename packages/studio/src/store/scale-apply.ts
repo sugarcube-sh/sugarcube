@@ -1,5 +1,6 @@
 import {
     type ResolvedTokens,
+    SUGARCUBE_NAMESPACE,
     type ScaleExtension,
     calculateScale,
     isResolvedToken,
@@ -123,7 +124,7 @@ function buildScaleStepToken(
 ): ResolvedTokens[string] | null {
     if (!isResolvedToken(existing)) return null;
 
-    const existingSugarcube = (existing.$extensions?.["sh.sugarcube"] ?? {}) as Record<
+    const existingSugarcube = (existing.$extensions?.[SUGARCUBE_NAMESPACE] ?? {}) as Record<
         string,
         unknown
     >;
@@ -134,7 +135,7 @@ function buildScaleStepToken(
         $resolvedValue: max,
         $extensions: {
             ...existing.$extensions,
-            "sh.sugarcube": {
+            [SUGARCUBE_NAMESPACE]: {
                 ...existingSugarcube,
                 fluid: { min, max },
             },

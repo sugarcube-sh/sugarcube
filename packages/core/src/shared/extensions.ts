@@ -1,5 +1,5 @@
 /** Reverse domain namespace per DTCG spec recommendation */
-const SUGARCUBE_NAMESPACE = "sh.sugarcube";
+export const SUGARCUBE_NAMESPACE = "sh.sugarcube";
 
 type SugarcubeModifierExtensions = {
     /** @deprecated Use variables.permutations with atRule instead */

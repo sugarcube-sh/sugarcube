@@ -11,6 +11,7 @@
 import type { TokenGroup } from "../../types/dtcg.js";
 import type { ScaleExtension } from "../../types/extensions.js";
 import type { TokenSource, TokenTree } from "../../types/tokens.js";
+import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { isToken } from "../guards.js";
 import { resolveScaleExtension } from "../scale/resolver.js";
 import { validateScaleExtension } from "../validators/scale.js";
@@ -46,10 +47,10 @@ function expandGroup(
 ): TokenGroup {
     let result: TokenGroup | null = null;
 
-    const sugarcube = node.$extensions?.["sh.sugarcube"] as { scale?: unknown } | undefined;
+    const sugarcube = node.$extensions?.[SUGARCUBE_NAMESPACE] as { scale?: unknown } | undefined;
     const scaleExt = sugarcube?.scale;
     if (scaleExt !== undefined) {
-        const errorPath = [...path, "$extensions", "sh.sugarcube", "scale"].join(".");
+        const errorPath = [...path, "$extensions", SUGARCUBE_NAMESPACE, "scale"].join(".");
         const validationErrors = validateScaleExtension(scaleExt, errorPath, source);
 
         if (validationErrors.length > 0) {

@@ -2,6 +2,7 @@ import type { ObjectSchema, TokenValidationSchema } from "../../types/schema.js"
 import type { TokenSource } from "../../types/tokens.js";
 import type { ValidationError } from "../../types/validate.js";
 import { ErrorMessages } from "../constants/error-messages.js";
+import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { NumberSchema } from "./number.js";
 import { validateSchema } from "./schema-validator.js";
 
@@ -51,13 +52,13 @@ export function validateDimension(
 ): ValidationError[] {
     const errors = validateSchema(DimensionSchema.schema, value, path, source);
 
-    const fluid = (extensions?.["sh.sugarcube"] as { fluid?: unknown } | undefined)?.fluid;
+    const fluid = (extensions?.[SUGARCUBE_NAMESPACE] as { fluid?: unknown } | undefined)?.fluid;
     if (fluid) {
         errors.push(
             ...validateSchema(
                 FluidExtensionSchema,
                 fluid,
-                `${path}.$extensions.sh.sugarcube.fluid`,
+                `${path}.$extensions.${SUGARCUBE_NAMESPACE}.fluid`,
                 source
             )
         );

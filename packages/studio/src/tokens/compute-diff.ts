@@ -13,6 +13,7 @@
 import {
     type ResolvedToken,
     type ResolvedTokens,
+    SUGARCUBE_NAMESPACE,
     isResolvedToken,
 } from "@sugarcube-sh/core/client";
 import { selectOriginalScale } from "../store/scale-state";
@@ -117,12 +118,12 @@ function collectScaleOwnedPrefixes(
     if (!bindings) return [];
     return Object.values(bindings)
         .filter((meta) => meta.kind === "scale")
-        .map((meta) => `${meta.parentPath}.`);
+        .map((meta) => meta.parentPath);
 }
 
 function isOwnedByScale(path: string, prefixes: string[]): boolean {
     for (const prefix of prefixes) {
-        if (path === prefix.slice(0, -1) || path.startsWith(prefix)) return true;
+        if (path === prefix || path.startsWith(`${prefix}.`)) return true;
     }
     return false;
 }
@@ -150,10 +151,10 @@ function computeScaleDiffs(
             sourcePath: meta.sourcePath,
             contexts: [],
             from: {
-                $extensions: { "sh.sugarcube": { scale: original } },
+                $extensions: { [SUGARCUBE_NAMESPACE]: { scale: original } },
             },
             to: {
-                $extensions: { "sh.sugarcube": { scale: edit.scale } },
+                $extensions: { [SUGARCUBE_NAMESPACE]: { scale: edit.scale } },
             },
         });
     }

@@ -1,4 +1,9 @@
-import { type ResolvedTokens, isResolvedToken, roundTo } from "@sugarcube-sh/core/client";
+import {
+    type ResolvedTokens,
+    SUGARCUBE_NAMESPACE,
+    isResolvedToken,
+    roundTo,
+} from "@sugarcube-sh/core/client";
 import type { PathIndex } from "./path-index";
 
 type Dim = { value: number; unit: string };
@@ -32,7 +37,7 @@ function readFluidValues(
     const $value = token.$value as Dim;
     if (!$value || typeof $value.value !== "number") return null;
 
-    const sugarcube = token.$extensions?.["sh.sugarcube"] as
+    const sugarcube = token.$extensions?.[SUGARCUBE_NAMESPACE] as
         | { fluid?: { min: Dim; max: Dim } }
         | undefined;
     const fluid = sugarcube?.fluid;
@@ -133,7 +138,7 @@ function buildFluidDimensionToken(
 
     if (!emitFluid) return base as ResolvedTokens[string];
 
-    const existingSugarcube = (existing.$extensions?.["sh.sugarcube"] ?? {}) as Record<
+    const existingSugarcube = (existing.$extensions?.[SUGARCUBE_NAMESPACE] ?? {}) as Record<
         string,
         unknown
     >;
@@ -142,7 +147,7 @@ function buildFluidDimensionToken(
         ...base,
         $extensions: {
             ...existing.$extensions,
-            "sh.sugarcube": {
+            [SUGARCUBE_NAMESPACE]: {
                 ...existingSugarcube,
                 fluid: { min, max },
             },

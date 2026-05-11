@@ -1,6 +1,7 @@
 import {
     type ResolvedToken,
     type ResolvedTokens,
+    SUGARCUBE_NAMESPACE,
     type ScaleBinding,
     isResolvedToken,
 } from "@sugarcube-sh/core/client";
@@ -75,7 +76,7 @@ function readDims(token: ResolvedToken): { min: Dim; max: Dim } | null {
     const value = token.$value as Dim | undefined;
     if (!value || typeof value.value !== "number") return null;
 
-    const sugarcube = token.$extensions?.["sh.sugarcube"] as
+    const sugarcube = token.$extensions?.[SUGARCUBE_NAMESPACE] as
         | { fluid?: { min?: Dim; max?: Dim } }
         | undefined;
     const fluid = sugarcube?.fluid;

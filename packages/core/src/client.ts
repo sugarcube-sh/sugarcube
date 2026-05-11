@@ -43,7 +43,8 @@ export type {
     SugarcubeExtensions,
 } from "./types/extensions.js";
 
-export { isResolvedToken } from "./shared/guards.js";
+export { isResolvedToken, isScaleExtension } from "./shared/guards.js";
+export { SUGARCUBE_NAMESPACE } from "./shared/extensions.js";
 
 export type {
     InternalConfig,
