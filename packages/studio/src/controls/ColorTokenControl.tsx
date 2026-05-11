@@ -8,9 +8,10 @@ import {
     useTokenStore,
     useVariableName,
 } from "../store/hooks";
+import { resolveTerminalPath, unwrapRef, wrapRef } from "../tokens/paths";
 import { TokenRow } from "./TokenRow";
 import { buildColorGrid } from "./color-grid";
-import { labelForBinding, resolveTerminalPath, unwrapRef, wrapRef } from "./path-utils";
+import { labelForBinding } from "./path-utils";
 import { ColorGrid } from "./pickers/ColorGrid";
 
 type ColorTokenControlProps = {

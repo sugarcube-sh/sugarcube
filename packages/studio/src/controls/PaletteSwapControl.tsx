@@ -1,15 +1,15 @@
 import type { ColorScaleConfig } from "@sugarcube-sh/core/client";
-import { useCallback, useContext, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
-    StudioContext,
     useFamilyPalette,
     usePathIndex,
     useTokenStore,
+    useTokenStoreApi,
     useVariableName,
 } from "../store/hooks";
-import { familyPaletteSwapUpdates } from "../tokens/palette-cascade";
+import { familyPaletteSwapUpdates } from "../tokens/palette";
+import { joinTokenPath, lastSegment } from "../tokens/paths";
 import { TokenRow } from "./TokenRow";
-import { joinTokenPath } from "./path-utils";
 import { type PaletteOption, PalettePicker } from "./pickers/PalettePicker";
 
 type PaletteSwapControlProps = {
@@ -19,24 +19,13 @@ type PaletteSwapControlProps = {
     colorScale: ColorScaleConfig;
 };
 
-/**
- * Renders a palette picker for a whole token family (e.g. "base", "accent"),
- * wrapped in a standard `TokenRow` so it sits flush with other bindings.
- *
- * Selecting a palette rebinds every `${family}.*` token to point at the
- * chosen palette's equivalent step. One logical change, N diffed writes.
- *
- * No per-row Discard — swaps affect many tokens, so the row-level Discard
- * (which targets a single path) would be ambiguous here. Use the footer
- * Discard to revert instead. (TODO if we ever want per-swap discard.)
- */
 export function PaletteSwapControl({
     family,
     label,
     palettes,
     colorScale,
 }: PaletteSwapControlProps) {
-    const ctx = useContext(StudioContext);
+    const tokenStore = useTokenStoreApi();
     const pathIndex = usePathIndex();
     const setTokens = useTokenStore((state) => state.setTokens);
     const variableName = useVariableName();
@@ -49,17 +38,14 @@ export function PaletteSwapControl({
 
     const handleChange = useCallback(
         (newPalette: string) => {
-            if (!ctx) return;
-            const readToken = ctx.store.getState().getToken;
+            const readToken = tokenStore.getState().getToken;
             setTokens(familyPaletteSwapUpdates(family, newPalette, palettes, readToken, pathIndex));
         },
-        [ctx, family, palettes, setTokens, pathIndex]
+        [tokenStore, family, palettes, setTokens, pathIndex]
     );
 
-    const rowLabel = label ?? family.split(".").pop() ?? family;
-
     return (
-        <TokenRow label={rowLabel}>
+        <TokenRow label={label ?? lastSegment(family)}>
             <PalettePicker currentName={current} options={options} onSelect={handleChange} />
         </TokenRow>
     );

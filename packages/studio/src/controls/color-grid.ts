@@ -1,5 +1,5 @@
 import type { ColorScaleConfig } from "@sugarcube-sh/core/client";
-import { joinTokenPath } from "./path-utils";
+import { joinTokenPath } from "../tokens/paths";
 import type { GridOption } from "./pickers/ColorGrid";
 
 export type ColorGridData = {

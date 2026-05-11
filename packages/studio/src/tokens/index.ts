@@ -1,8 +1,7 @@
 export { PathIndex } from "./path-index";
 export { computeDiff } from "./compute-diff";
 export { diffToFileEdits, type FileEdits, type TokenEdit } from "./diff-to-edits";
-export { familyPaletteSwapUpdates } from "./palette-cascade";
-export { currentPaletteFromReference, parseReference } from "./palette-discovery";
+export { currentPaletteFromReference, familyPaletteSwapUpdates } from "./palette";
 export { getScaleExtension } from "./scale-extension";
 export {
     type CapturedLinkedScale,

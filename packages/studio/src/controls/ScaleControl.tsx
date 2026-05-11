@@ -1,11 +1,11 @@
 import type { ScaleBinding } from "@sugarcube-sh/core/client";
 import { useBaseline } from "../store/hooks";
+import { stripTrailingGlob } from "../tokens/paths";
 import { getScaleExtension } from "../tokens/scale-extension";
 import { DirectScaleControl } from "./DirectScaleControl";
 import { ExponentialScaleControl } from "./ExponentialScaleControl";
 import { MultipliersScaleControl } from "./MultipliersScaleControl";
 import { PerStepScaleControl } from "./PerStepScaleControl";
-import { stripTrailingGlob } from "./path-utils";
 
 type ScaleControlProps = {
     binding: ScaleBinding;

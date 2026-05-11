@@ -2,7 +2,7 @@ import { type StudioConfig, createVariableNameResolver } from "@sugarcube-sh/cor
 import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { useStore } from "zustand";
 import { useHost } from "../host/host-provider";
-import { currentPaletteFromReference } from "../tokens/palette-discovery";
+import { currentPaletteFromReference } from "../tokens/palette";
 import type { PathIndex, PathIndexAccessor } from "../tokens/path-index";
 import type { TokenDiffEntry, TokenSnapshot } from "../tokens/types";
 import type { DiffState, DiffStoreAPI } from "./create-diff-store";

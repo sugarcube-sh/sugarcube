@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveTerminalPath, unwrapRef } from "../src/controls/path-utils";
+import { resolveTerminalPath, unwrapRef } from "../src/tokens/paths";
 
 describe("unwrapRef", () => {
     it("returns undefined when the value is not a string", () => {
@@ -25,6 +25,11 @@ describe("unwrapRef", () => {
 
     it("trims inner whitespace inside the braces", () => {
         expect(unwrapRef("{ font.body }")).toBe("font.body");
+    });
+
+    it("returns undefined for empty content inside the braces", () => {
+        expect(unwrapRef("{}")).toBeUndefined();
+        expect(unwrapRef("{ }")).toBeUndefined();
     });
 
     it("returns undefined for an unbalanced reference string", () => {

@@ -1,6 +1,27 @@
-import { parseReference } from "./palette-discovery";
 import type { PathIndex } from "./path-index";
+import { unwrapRef } from "./paths";
 import type { TokenReader, TokenUpdate } from "./types";
+
+export function currentPaletteFromReference(
+    readToken: TokenReader,
+    family: string,
+    palettes: readonly string[],
+    pathIndex: PathIndex,
+    context?: string
+): string | undefined {
+    const paletteSet = new Set(palettes);
+    const paths = pathIndex.under(family);
+
+    for (const path of paths) {
+        const refPath = unwrapRef(readToken(path, context));
+        if (!refPath) continue;
+        for (const segment of refPath.split(".")) {
+            if (paletteSet.has(segment)) return segment;
+        }
+    }
+
+    return undefined;
+}
 
 export function familyPaletteSwapUpdates(
     family: string,
@@ -16,11 +37,7 @@ export function familyPaletteSwapUpdates(
 
     for (const path of familyPaths) {
         for (const context of contexts) {
-            // Reading per-context means light's {neutral.50} becomes
-            // {blue.50} and dark's {neutral.900} becomes {blue.900}
-            // automatically — no per-mode mapping logic needed here.
-            const value = readToken(path, context);
-            const refPath = parseReference(value);
+            const refPath = unwrapRef(readToken(path, context));
             if (!refPath) continue;
 
             const segments = refPath.split(".");

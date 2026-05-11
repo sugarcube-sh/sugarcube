@@ -1,6 +1,6 @@
 import type { PresetBinding, ResolvedTokens } from "@sugarcube-sh/core/client";
 import type { PathIndex } from "../tokens/path-index";
-import { lastSegment, resolveTerminalPath } from "./path-utils";
+import { lastSegment, resolveTerminalPath } from "../tokens/paths";
 
 export type ResolvedOption = {
     key: string;

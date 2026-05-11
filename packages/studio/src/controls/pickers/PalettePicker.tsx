@@ -11,9 +11,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "../../components/ui/popover/popover";
 
 export type PaletteOption = {
-    /** Palette identifier (e.g. "slate", "blue") */
     name: string;
-    /** Resolved CSS colors for the strip preview, ordered light → dark */
     shades: string[];
 };
 
@@ -23,11 +21,6 @@ type Props = {
     onSelect: (name: string) => void;
 };
 
-/**
- * Searchable popover for picking a full palette (ramp) to assign
- * to a role like "Base" or "Accent". Selecting a palette rebinds
- * the whole ramp's tokens in one logical change.
- */
 export function PalettePicker({ currentName, options, onSelect }: Props) {
     const [open, setOpen] = useState(false);
     const current = options.find((o) => o.name === currentName);
