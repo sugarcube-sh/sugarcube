@@ -1,11 +1,3 @@
-/**
- * Apply the scale-state's user edits over the resolved tokens. Handles
- * both `tokens`-kind edits (base/spread sliders + per-step overrides
- * preserving the original shape) and `scale`-kind edits (scale extension
- * parameters re-materialised into step tokens) plus follower
- * scale-linked bindings.
- */
-
 import {
     type ResolvedTokens,
     type ScaleExtension,
@@ -100,8 +92,7 @@ export function applyScaleEdits(
 /**
  * Materialise a scale extension into per-step dimension tokens (with
  * fluid extension), merged into the resolved map. Turns abstract scale
- * parameters into concrete tokens. Exported for tests; production code
- * reaches it via `applyScaleEdits`.
+ * parameters into concrete tokens.
  */
 export function materializeScale(
     resolved: ResolvedTokens,

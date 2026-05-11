@@ -53,16 +53,17 @@ function setup(initialBaseline: TokenSnapshot) {
     const baseline = createVanillaStore<TokenSnapshot>(() => initialBaseline);
 
     const writes: ResolvedTokens[] = [];
-    const scaleState = createScaleState(
+    const { store: scaleState, activate } = createScaleState(
         panel,
         initialBaseline,
-        pathIndex,
+        () => pathIndex,
         tokenStore,
         baseline,
         (resolved) => writes.push(resolved)
     );
+    const teardown = activate();
 
-    return { scaleState, baseline, writes };
+    return { scaleState, baseline, writes, teardown };
 }
 
 describe("createScaleState — baseline subscription", () => {

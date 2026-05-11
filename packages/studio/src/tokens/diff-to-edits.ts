@@ -19,7 +19,7 @@ export type FileEdits = {
  * extension). Group-level entries (e.g. an edited scale extension on a
  * parent group) have no `$value` — only the relevant `$extensions` slot.
  */
-export function diffToFileEdits(entries: TokenDiffEntry[]): FileEdits[] {
+export function diffToFileEdits(entries: readonly TokenDiffEntry[]): FileEdits[] {
     const byFile = new Map<string, TokenEdit[]>();
 
     for (const entry of entries) {

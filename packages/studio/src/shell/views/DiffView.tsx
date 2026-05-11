@@ -9,7 +9,7 @@ function formatTokenBlock(token: SlimToken, marker: string): string {
         .join("\n");
 }
 
-function groupBySourceFile(entries: TokenDiffEntry[]): [string, TokenDiffEntry[]][] {
+function groupBySourceFile(entries: readonly TokenDiffEntry[]): [string, TokenDiffEntry[]][] {
     const groups = new Map<string, TokenDiffEntry[]>();
     for (const entry of entries) {
         const key = entry.sourcePath || "unknown";

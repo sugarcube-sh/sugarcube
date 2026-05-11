@@ -21,7 +21,7 @@ export type UseSaveResult = {
     reset: () => void;
 };
 
-export function useSave(diff: TokenDiffEntry[]): UseSaveResult {
+export function useSave(diff: readonly TokenDiffEntry[]): UseSaveResult {
     const host = useHost();
     const diffRef = useRef(diff);
     diffRef.current = diff;
@@ -53,7 +53,7 @@ export function useSave(diff: TokenDiffEntry[]): UseSaveResult {
     };
 }
 
-function buildSaveBundle(diff: TokenDiffEntry[]): SaveBundle {
+function buildSaveBundle(diff: readonly TokenDiffEntry[]): SaveBundle {
     const files = diffToFileEdits(diff);
     const title =
         diff.length === 1 && diff[0] ? `Update ${diff[0].path}` : `Update ${diff.length} tokens`;

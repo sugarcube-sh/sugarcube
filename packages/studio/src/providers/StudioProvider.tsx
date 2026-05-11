@@ -1,10 +1,3 @@
-/**
- * Top-level studio provider. Picks the right Host adapter for the launch
- * source (DevTools dock vs. embedded iframe), then wraps children in
- * HostProvider + the unified TokenStoreProvider. Renders error and
- * loading states while the host adapter initializes.
- */
-
 import { type ReactNode, useEffect, useState } from "react";
 import { createDevToolsHost } from "../host/devtools-host";
 import { createEmbeddedHost } from "../host/embedded-host";

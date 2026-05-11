@@ -1,15 +1,3 @@
-/**
- * Scale state — the unified store for everything the user can edit on a
- * `type: "scale"` binding. Discriminates internally between two edit
- * kinds: `"tokens"` (hand-written scales, edited via base/spread sliders
- * + per-step overrides) and `"scale"` (scale-extension-driven, edited
- * via the extension's parameters).
- *
- * Edits are kept as a flat map keyed by binding token. Static binding
- * metadata (kind, parentPath, sourcePath) is captured once at init and
- * looked up at action/apply time.
- */
-
 import type {
     PanelSection,
     ResolvedTokens,
@@ -17,7 +5,7 @@ import type {
     ScaleExtension,
 } from "@sugarcube-sh/core/client";
 import { type StoreApi, createStore } from "zustand";
-import type { PathIndex } from "../tokens/path-index";
+import type { PathIndexAccessor } from "../tokens/path-index";
 import { getScaleExtension } from "../tokens/scale-extension";
 import type { TokenSnapshot } from "../tokens/types";
 import type { TokenStoreAPI } from "./create-token-store";
@@ -30,16 +18,11 @@ import type {
     ScaleEdit,
     StepOverrides,
 } from "./scale-types";
-import { subscribeBaselineEditClear } from "./subscribe-baseline-edit-clear";
 
 export type ScaleStateStore = {
-    /** Active edits keyed by binding token. Absent token = no user edits yet. */
     edits: Record<string, ScaleEdit>;
-    /** Active link toggles keyed by follower binding token. */
     links: Record<string, LinkEdit>;
-    /** Static binding metadata keyed by binding token. */
     bindings: Record<string, ScaleBindingMeta>;
-    /** Static link metadata keyed by follower binding token. */
     linkBindings: Record<string, LinkBindingMeta>;
 
     setBase: (token: string, value: number) => void;
@@ -57,13 +40,13 @@ export type ScaleStateStore = {
 
 export type ScaleStateAPI = StoreApi<ScaleStateStore>;
 
+export type ScaleStateHandle = {
+    store: ScaleStateAPI;
+    activate: () => () => void;
+};
+
 export type ScaleWriteCallback = (resolved: ResolvedTokens) => void;
 
-/**
- * Read the on-disk scale extension for a scale-kind binding. Always
- * reads from the *live* baseline so post-save phantom diffs are
- * structurally impossible — once disk updates, "original" tracks it.
- */
 export function selectOriginalScale(
     baseline: TokenSnapshot,
     parentPath: string
@@ -71,10 +54,6 @@ export function selectOriginalScale(
     return getScaleExtension(baseline.trees, parentPath) ?? null;
 }
 
-/**
- * Read the scale extension currently in effect: user's edit if present,
- * otherwise the live on-disk original.
- */
 export function selectEffectiveScale(
     baseline: TokenSnapshot,
     edit: ScaleEdit | undefined,
@@ -87,11 +66,11 @@ export function selectEffectiveScale(
 export function createScaleState(
     panelSections: PanelSection[],
     snapshot: TokenSnapshot,
-    pathIndex: PathIndex,
+    getPathIndex: PathIndexAccessor,
     tokenStore: TokenStoreAPI,
     baseline: StoreApi<TokenSnapshot>,
     onWrite?: ScaleWriteCallback
-): ScaleStateAPI {
+): ScaleStateHandle {
     const writeResolved: ScaleWriteCallback =
         onWrite ?? ((resolved) => tokenStore.setState({ resolved }));
 
@@ -101,7 +80,9 @@ export function createScaleState(
         if (edit?.kind === "tokens" && edit.base !== undefined) return edit.base;
         const meta = bindings[token];
         if (!meta) return 0;
-        return selectCapture(baseline.getState(), pathIndex, meta.binding, context)?.baseMax ?? 0;
+        return (
+            selectCapture(baseline.getState(), getPathIndex(), meta.binding, context)?.baseMax ?? 0
+        );
     };
 
     const scaleStore = createStore<ScaleStateStore>((set) => ({
@@ -212,23 +193,26 @@ export function createScaleState(
             bindings,
             linkBindings,
             baseline.getState(),
-            pathIndex,
+            getPathIndex(),
             currentContext
         );
         writeResolved(next);
     }
 
-    tokenStore.subscribe((state, prev) => {
-        if (state.currentContext !== prev.currentContext) {
-            applyAll();
-        }
-    });
+    const activate = (): (() => void) => {
+        const unsubToken = tokenStore.subscribe((state, prev) => {
+            if (state.currentContext !== prev.currentContext) applyAll();
+        });
+        const unsubBaseline = baseline.subscribe(() => {
+            scaleStore.setState(() => ({ edits: {}, links: {} }));
+        });
+        return () => {
+            unsubToken();
+            unsubBaseline();
+        };
+    };
 
-    subscribeBaselineEditClear(baseline, () => {
-        scaleStore.setState(() => ({ edits: {}, links: {} }));
-    });
-
-    return scaleStore;
+    return { store: scaleStore, activate };
 }
 
 function nextTokensEdit(
@@ -247,7 +231,6 @@ function nextTokensEdit(
             overrides: "overrides" in patch ? patch.overrides : existing.overrides,
         };
     }
-    // No prior edit (or wrong kind — shouldn't happen for valid binding).
     return {
         kind: "tokens",
         base: patch.base,
@@ -279,7 +262,6 @@ function collectBindings(
         }
     }
 
-    // Drop link bindings whose source binding wasn't registered.
     for (const token of Object.keys(linkBindings)) {
         const link = linkBindings[token];
         if (!link || !bindings[link.sourceBinding]) {
