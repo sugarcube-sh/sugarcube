@@ -56,7 +56,7 @@ export function createEmbeddedHost(signal: AbortSignal): Promise<Host> {
         window.addEventListener("message", listener);
         signal.addEventListener("abort", onAbort);
 
-        // Bootstrap to '*' — we don't know the parent's origin yet; we'll capture it from init.
+        // Bootstrap to '*'. We don't know the parent's origin yet; we'll capture it from init.
         window.parent.postMessage({ type: STUDIO_MESSAGE.READY }, "*");
     });
 }
