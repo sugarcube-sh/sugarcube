@@ -3,7 +3,7 @@
     "version": "0.1.12",
     "publishConfig": {
         "access": "public",
-        "provenance": false
+        "provenance": true
     },
     "description": "CLI for sugarcube",
     "license": "MIT",
