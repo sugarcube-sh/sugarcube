@@ -12,7 +12,7 @@ import type { TokenGroup } from "../../types/dtcg.js";
 import type { ScaleExtension } from "../../types/extensions.js";
 import type { TokenSource, TokenTree } from "../../types/tokens.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
-import { isToken } from "../guards.js";
+import { isGroup, isRootToken } from "../guards.js";
 import { resolveScaleExtension } from "../scale/resolver.js";
 import { validateScaleExtension } from "../validators/scale.js";
 import type { ExpandError } from "./expand.js";
@@ -72,12 +72,11 @@ function expandGroup(
     }
 
     for (const key in node) {
-        if (key.startsWith("$") && key !== "$root") continue;
+        if (key.startsWith("$") && !isRootToken(key)) continue;
         const value = (node as Record<string, unknown>)[key];
-        if (isToken(value)) continue;
-        if (typeof value !== "object" || value === null) continue;
+        if (!isGroup(value)) continue;
         path.push(key);
-        const expanded = expandGroup(value as TokenGroup, path, source, errors);
+        const expanded = expandGroup(value, path, source, errors);
         path.pop();
         if (expanded !== value) {
             if (result === null) result = { ...node };
