@@ -3,6 +3,7 @@ packages:
   - packages/*
 
 trustPolicy: no-downgrade
+minimumReleaseAgeStrict: true
 
 onlyBuiltDependencies:
   - '@biomejs/biome'

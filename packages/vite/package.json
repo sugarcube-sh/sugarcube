@@ -4,7 +4,7 @@
     "type": "module",
     "publishConfig": {
         "access": "public",
-        "provenance": false
+        "provenance": true
     },
     "description": "Vite plugin for sugarcube",
     "license": "MIT",
