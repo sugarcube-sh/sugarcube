@@ -1,5 +1,15 @@
 # @sugarcube-sh/vite
 
+## 0.1.14
+
+### Patch Changes
+
+- eab58f5: Harden some npm practices. Make minimum release age strict. Set provenance to true (which mirrors the actual state of things already (provenance: false was misleading))
+- Updated dependencies [94f379a]
+- Updated dependencies [cef63ae]
+- Updated dependencies [eab58f5]
+  - @sugarcube-sh/core@0.2.7
+
 ## 0.1.13
 
 ### Patch Changes
