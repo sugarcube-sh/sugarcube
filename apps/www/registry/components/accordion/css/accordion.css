@@ -16,6 +16,7 @@
     line-height: var(--leading-tight);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
+    padding-inline-end: var(--space-lg, 2.5em);
 }
 
 .accordion details[open] summary {
