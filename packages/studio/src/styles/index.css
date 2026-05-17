@@ -8,15 +8,17 @@
 @import "./compositions/sidebar.css";
 @import "./compositions/switcher.css";
 
+@import "../components/ui/tabs/tabs.css";
+@import "../components/ui/popover/popover.css";
+@import "../components/ui/command/command.css";
+
 @import "./blocks/prose.css";
 @import "./blocks/header.css";
 @import "./blocks/design-actions.css";
 @import "./blocks/panel-section.css";
 @import "./blocks/pickers.css";
-
-@import "../components/ui/tabs/tabs.css";
-@import "../components/ui/popover/popover.css";
-@import "../components/ui/command/command.css";
+@import "./blocks/studio-tabs.css";
+@import "./blocks/studio-collapsible.css";
 
 @import "./utilities/region.css";
 @import "./utilities/visually-hidden.css";

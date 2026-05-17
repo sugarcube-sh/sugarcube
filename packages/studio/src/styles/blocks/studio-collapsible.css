@@ -1,0 +1,22 @@
+.studio-collapsible-trigger {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    border-color: transparent;
+    background-color: transparent;
+    height: 22px;
+}
+
+.studio-collapsible-trigger:hover {
+    background-color: var(--color-surface-lowered);
+}
+
+.studio-collapsible-trigger-icon {
+    transition: transform var(--transition-normal);
+}
+
+.studio-collapsible-trigger[data-state="closed"] .studio-collapsible-trigger-icon {
+    transform: rotate(-90deg);
+}

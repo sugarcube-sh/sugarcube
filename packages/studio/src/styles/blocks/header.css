@@ -1,10 +1,11 @@
 .header {
     display: flex;
     align-items: center;
-    height: 3rem;
+    height: 1.875rem;
     padding-inline: var(--space-2xs);
-    border-block-end: var(--border-width-hairline) solid var(--color-surface-border);
+    border-block-end: var(--border-width-thin) solid var(--color-surface-border);
     color: var(--color-text-normal);
+    background: var(--gradient-surface);
 }
 
 .header a {
@@ -23,4 +24,16 @@
     display: block;
     width: 1.25rem;
     height: 1.25rem;
+}
+
+.header .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-green-600);
+}
+
+.header .dot.live {
+    background: var(--color-green-600);
+    box-shadow: 0 0 3px var(--color-green-600);
 }

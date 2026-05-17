@@ -1,0 +1,17 @@
+{
+  "gradient": {
+    "$type": "gradient",
+    "surface": {
+      "$value": [
+        {
+          "color": "#f0f0f3",
+          "position": 0
+        },
+        {
+          "color": "#e6e6ea",
+          "position": 1
+        }
+      ]
+    }
+  }
+}

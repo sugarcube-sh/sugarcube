@@ -4,19 +4,19 @@
 
     "surface": {
       "default": {
-        "$value": "{color.white}"
+        "$value": "#f6f6f8"
       },
       "raised": {
         "$value": "{color.white}"
       },
       "lowered": {
-        "$value": "{color.neutral.100}"
+        "$value": "#eeeef1"
       },
       "lowest": {
         "$value": "{color.neutral.200}"
       },
       "border": {
-        "$value": "{color.neutral.200}"
+        "$value": "#d8d8de"
       }
     },
 
@@ -25,10 +25,13 @@
         "$value": "{color.neutral.900}"
       },
       "quiet": {
-        "$value": "{color.neutral.600}"
+        "$value": "#383a41"
       },
       "quieter": {
-        "$value": "{color.neutral.500}"
+        "$value": "#94979f"
+      },
+      "quietest": {
+        "$value": "#b8bac1"
       },
       "placeholder": {
         "$value": "{color.neutral.500}"
@@ -100,7 +103,7 @@
           "$value": "{color.neutral.100}"
         },
         "normal": {
-          "$value": "{color.neutral.200}"
+          "$value": "#e4e4e9"
         },
         "loud": {
           "$value": "{color.neutral.300}"

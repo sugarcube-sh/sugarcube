@@ -31,6 +31,7 @@
         "type-check": "tsc --noEmit"
     },
     "dependencies": {
+        "@radix-ui/react-collapsible": "^1.1.12",
         "@sugarcube-sh/core": "workspace:*",
         "@sugarcube-sh/studio-protocol": "workspace:*"
     },
@@ -40,6 +41,7 @@
         "@sugarcube-sh/vite": "workspace:*",
         "@types/react": "^19.2.15",
         "@types/react-dom": "^19.2.3",
+        "@unocss/preset-wind3": "^66.6.0",
         "@vitejs/devtools-kit": "^0.1.13",
         "@vitejs/plugin-react": "^6.0.1",
         "clsx": "^2.1.1",

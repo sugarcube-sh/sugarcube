@@ -87,6 +87,16 @@
           }
         }
       }
+    },
+    {
+      "include": ["packages/studio/src/shell/Shell.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noSvgWithoutTitle": "off"
+          }
+        }
+      }
     }
   ]
 }

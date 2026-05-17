@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import sugarcube from "@sugarcube-sh/vite";
+import presetWind3 from "@unocss/preset-wind3";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
@@ -9,7 +10,7 @@ const outDir = fileURLToPath(new URL("./dist/client", import.meta.url));
 export default defineConfig({
     root,
     base: "/__studio/",
-    plugins: [react(), sugarcube()],
+    plugins: [react(), sugarcube({ unoOptions: { presets: [presetWind3({ preflight: false })] } })],
     build: {
         outDir,
         emptyOutDir: true,
