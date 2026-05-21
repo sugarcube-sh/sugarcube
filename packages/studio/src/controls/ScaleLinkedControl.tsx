@@ -24,13 +24,16 @@ export function ScaleLinkedControl({ binding }: ScaleLinkedControlProps) {
                 {label}
             </label>
             <input
-                className="scale-linked-toggle"
+                className="switch"
                 id={inputId}
                 type="checkbox"
+                role="switch"
                 checked={enabled}
+                aria-checked={enabled}
                 onChange={(e) => setLinkEnabled(binding.token, e.target.checked)}
                 aria-label={label}
             />
+            <span className="switch-state" aria-hidden="true" />
         </div>
     );
 }

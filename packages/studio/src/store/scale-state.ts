@@ -251,8 +251,15 @@ function collectBindings(
 
     for (const section of panelSections) {
         for (const binding of section.bindings) {
-            if (binding.type === "scale" && binding.base) {
-                bindings[binding.token] = buildScaleBindingMeta(binding, snapshot);
+            if (binding.type === "scale") {
+                const meta = buildScaleBindingMeta(binding, snapshot);
+                if (meta.kind === "scale" || binding.base) {
+                    bindings[binding.token] = meta;
+                } else {
+                    console.warn(
+                        `[studio] scale binding "${binding.token}" has no \`base\` and no sh.sugarcube.scale recipe; direct-mode controls need an anchor step. Add \`base\` to the binding or author a scale recipe on the bound group.`
+                    );
+                }
             } else if (binding.type === "scale-linked") {
                 linkBindings[binding.token] = {
                     bindingToken: binding.token,

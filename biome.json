@@ -77,6 +77,7 @@
         "packages/studio/src/client/controls/pickers/ColorGrid.tsx",
         "packages/studio/src/client/controls/PresetControl.tsx",
         "packages/studio/src/controls/pickers/ColorGrid.tsx",
+        "packages/studio/src/controls/pickers/PalettePicker.tsx",
         "packages/studio/src/controls/PresetControl.tsx"
       ],
       "linter": {

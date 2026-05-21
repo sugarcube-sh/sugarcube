@@ -55,9 +55,7 @@ export function applyScaleEdits(
         }
     }
 
-    for (const [token, link] of Object.entries(links)) {
-        const linkMeta = linkBindings[token];
-        if (!linkMeta) continue;
+    for (const [token, linkMeta] of Object.entries(linkBindings)) {
         const sourceMeta = bindings[linkMeta.sourceBinding];
         if (!sourceMeta) continue;
 
@@ -71,17 +69,20 @@ export function applyScaleEdits(
         );
 
         const sourceEdit = edits[linkMeta.sourceBinding];
-        const sourceBase =
-            sourceEdit?.kind === "tokens" && sourceEdit.base !== undefined
-                ? sourceEdit.base
-                : sourceCaptured.baseMax;
+        let sourceBase = sourceCaptured.baseMax;
+        if (sourceEdit?.kind === "tokens" && sourceEdit.base !== undefined) {
+            sourceBase = sourceEdit.base;
+        } else if (sourceEdit?.kind === "scale") {
+            sourceBase = sourceEdit.scale.base.max.value;
+        }
         const factor = sourceBase / sourceCaptured.baseMax;
+        const enabled = links[token]?.enabled ?? true;
 
         next = applyLinkedScaleToResolved(
             next,
             linkedCaptured,
             factor,
-            link.enabled,
+            enabled,
             pathIndex,
             context
         );

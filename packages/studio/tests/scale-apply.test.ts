@@ -291,6 +291,100 @@ describe("applyScaleEdits", () => {
         );
     });
 
+    it("applies a configured link by default even with no explicit toggle edit", () => {
+        const baselineMap = resolved(
+            {
+                path: "size.step.0",
+                value: { value: 1, unit: "rem" },
+                extensions: {
+                    "sh.sugarcube": {
+                        fluid: {
+                            min: { value: 1, unit: "rem" },
+                            max: { value: 1, unit: "rem" },
+                        },
+                    },
+                },
+            },
+            { path: "container.sm", value: { value: 100, unit: "px" } }
+        );
+        const baseline = snapshot({ resolved: baselineMap });
+        const pathIndex = new PathIndex(baselineMap);
+
+        const sourceEdit: ScaleEdit = { kind: "tokens", base: 2, spread: 1 };
+        const linkMeta: LinkBindingMeta = {
+            bindingToken: "container.*",
+            sourceBinding: "size.step.*",
+        };
+
+        const after = applyScaleEdits(
+            baselineMap,
+            { "size.step.*": sourceEdit },
+            {},
+            { "size.step.*": sizeMeta },
+            { "container.*": linkMeta },
+            baseline,
+            pathIndex,
+            "default"
+        );
+
+        expect((after["default::container.sm"] as { $value: { value: number } }).$value.value).toBe(
+            200
+        );
+    });
+
+    it("propagates a recipe-mode source's base edit to linked tokens", () => {
+        const baselineMap = resolved(
+            {
+                path: "size.step.0",
+                value: { value: 1, unit: "rem" },
+                extensions: {
+                    "sh.sugarcube": {
+                        fluid: {
+                            min: { value: 1, unit: "rem" },
+                            max: { value: 1, unit: "rem" },
+                        },
+                    },
+                },
+            },
+            { path: "container.sm", value: { value: 100, unit: "px" } }
+        );
+        const baseline = snapshot({ resolved: baselineMap });
+        const pathIndex = new PathIndex(baselineMap);
+
+        const recipeSourceMeta: ScaleBindingMeta = {
+            ...sizeMeta,
+            kind: "scale",
+        };
+        const recipeEdit: ScaleEdit = {
+            kind: "scale",
+            scale: {
+                mode: "exponential",
+                base: { min: { value: 2, unit: "rem" }, max: { value: 2, unit: "rem" } },
+                ratio: { min: 1.2, max: 1.2 },
+                steps: { negative: 0, positive: 2 },
+            },
+        };
+        const linkMeta: LinkBindingMeta = {
+            bindingToken: "container.*",
+            sourceBinding: "size.step.*",
+        };
+
+        const after = applyScaleEdits(
+            baselineMap,
+            { "size.step.*": recipeEdit },
+            {},
+            { "size.step.*": recipeSourceMeta },
+            { "container.*": linkMeta },
+            baseline,
+            pathIndex,
+            "default"
+        );
+
+        expect((after["default::container.sm"] as { $value: { value: number } }).$value.value).toBe(
+            200
+        );
+    });
+
     it("applies factor 1.0 (restoring baseline) when a linked binding is disabled", () => {
         const baselineMap = resolved(
             {
