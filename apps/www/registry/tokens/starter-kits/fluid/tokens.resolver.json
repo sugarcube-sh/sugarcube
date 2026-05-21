@@ -43,10 +43,10 @@
           "$ref": "./shadows.json"
         },
         {
-          "$ref": "./size.json"
+          "$ref": "./size-demo.json"
         },
         {
-          "$ref": "./space.json"
+          "$ref": "./space-demo.json"
         },
         {
           "$ref": "./typography.json"
