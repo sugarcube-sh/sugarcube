@@ -12,9 +12,9 @@ export function Header() {
                     <span className="text-quiet">design</span>
                 </div>
             </div>
-            <div className="dots">
+            {/* <div className="dots">
                 <div className="dot live" title="connected" />
-            </div>
+            </div> */}
         </header>
     );
 }

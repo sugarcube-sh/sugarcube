@@ -1,7 +1,9 @@
 .header {
+    flex-shrink: 0;
+
     display: flex;
     align-items: center;
-    height: 1.875rem;
+    block-size: var(--studio-header-h);
     padding-inline: var(--space-2xs);
     border-block-end: var(--border-width-thin) solid var(--color-surface-border);
     color: var(--color-text-normal);

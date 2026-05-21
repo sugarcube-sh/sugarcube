@@ -1,9 +1,29 @@
 .design-area-edit section {
-    /* padding-block: var(--space-sm) var(--space-2xs);
-    padding-inline: var(--space-2xs); */
     border-block-start: var(--border-width-thin) solid var(--color-border-normal);
+    padding-block-end: 4px;
 }
 
 .section-content {
     padding-inline: 10px;
+}
+
+.design-area-diff {
+    flex-shrink: 0;
+    max-block-size: 50%;
+    overflow-y: auto;
+
+    background: var(--color-surface-default);
+    border-block-start: var(--border-width-thin) solid var(--color-surface-border);
+
+    animation: design-diff-reveal var(--transition-normal) var(--ease-out, ease-out);
+}
+
+@keyframes design-diff-reveal {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }

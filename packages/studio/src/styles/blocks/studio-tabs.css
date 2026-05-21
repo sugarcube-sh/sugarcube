@@ -1,9 +1,11 @@
 .studio-tabs-list {
     --_tabs-list-padding: 6px 6px 0 6px;
 
+    flex-shrink: 0;
+
     border-block-end: var(--border-width-thin) solid var(--color-surface-border);
     border-radius: 0;
-    width: 100%;
+    inline-size: 100%;
     background-color: var(--color-surface-default);
 }
 

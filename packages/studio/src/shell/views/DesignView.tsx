@@ -48,7 +48,9 @@ export function DesignView() {
                                         <span className="text-quietest text-sm">
                                             {String(i + 1).padStart(2, "0")}
                                         </span>
-                                        <span className="text-sm uppercase">{section.title}</span>
+                                        <span className="text-sm uppercase text-quieter">
+                                            {section.title}
+                                        </span>
                                     </div>
                                 </button>
                             </CollapsibleTrigger>

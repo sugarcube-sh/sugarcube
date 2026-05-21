@@ -1,0 +1,54 @@
+input[type="checkbox"].switch {
+    --_switch-height: 1.25em;
+    --_switch-width: 2.5em;
+    --_switch-thumb-size: calc(var(--_switch-height) - var(--form-control-border-width) * 2);
+    --_switch-thumb-travel: calc(var(--_switch-width) - var(--_switch-height));
+
+    appearance: none;
+    cursor: pointer;
+    position: relative;
+    font-size: var(--form-control-font-size, var(--text-base));
+    width: var(--_switch-width);
+    height: var(--_switch-height);
+    margin: 0;
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface-lowest);
+    border: 1px var(--border-style) #0000;
+    box-shadow: none;
+    transition: background-color var(--transition-normal) var(--ease-in-out);
+}
+
+input[type="checkbox"].switch::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: var(--_switch-thumb-size);
+    height: var(--_switch-thumb-size);
+    border: var(--form-control-border-width) var(--border-style) #0000;
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface-default);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-normal) var(--ease-in-out);
+}
+
+input[type="checkbox"].switch:checked {
+    background-color: var(--color-accent-fill-loud, var(--color-neutral-fill-loud));
+}
+
+input[type="checkbox"].switch:checked::before {
+    transform: translateX(var(--_switch-thumb-travel));
+}
+
+.switch-state {
+    color: var(--color-text-quiet);
+    font-size: var(--text-sm);
+    user-select: none;
+}
+
+.switch-state::before {
+    content: "off";
+}
+
+input[type="checkbox"].switch:checked + .switch-state::before {
+    content: "on";
+}

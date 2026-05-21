@@ -2,6 +2,7 @@ import type { PresetBinding } from "@sugarcube-sh/core/client";
 import { CheckIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover/popover";
+import { Icon } from "../shell/Shell";
 import { useBaseline, usePathIndex, useToken } from "../store/hooks";
 import { TokenRow } from "./TokenRow";
 import { labelForBinding } from "./path-utils";
@@ -30,9 +31,7 @@ export function PresetControl({ binding }: PresetControlProps) {
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger className="preset-trigger">
                     <span className="preset-trigger-value">{currentLabel}</span>
-                    <span className="preset-trigger-chevron" aria-hidden="true">
-                        ▾
-                    </span>
+                    <Icon name="caret" className="preset-trigger-chevron" />
                 </PopoverTrigger>
                 <PopoverContent align="start" className="preset-popover">
                     <div className="preset-list" role="listbox" tabIndex={0}>

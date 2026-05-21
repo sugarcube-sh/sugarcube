@@ -9,6 +9,7 @@ import {
     useVariableName,
 } from "../store/hooks";
 import { resolveTerminalPath, unwrapRef, wrapRef } from "../tokens/paths";
+import { TokenPath } from "./TokenPath";
 import { TokenRow } from "./TokenRow";
 import { buildColorGrid } from "./color-grid";
 import { labelForBinding } from "./path-utils";
@@ -62,7 +63,7 @@ export function ColorTokenControl({ binding, colorScale }: ColorTokenControlProp
                         style={{ backgroundColor: currentOption?.color ?? "transparent" }}
                         aria-hidden="true"
                     />
-                    <span className="token-picker-path">{terminalPath}</span>
+                    <TokenPath className="token-picker-path" path={terminalPath} />
                 </PopoverTrigger>
                 <PopoverContent
                     ref={popoverRef}

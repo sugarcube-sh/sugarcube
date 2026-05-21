@@ -1,0 +1,152 @@
+.diff-view {
+    --diff-removed: var(--color-red-600, #d4554a);
+    --diff-added: var(--color-green-600, #4cae5a);
+}
+
+.diff-empty {
+    padding: var(--space-sm);
+    color: var(--color-text-quiet);
+    font-size: var(--text-sm);
+    font-family: var(--font-mono, monospace);
+    text-align: center;
+}
+
+.diff-file-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2xs);
+
+    padding-inline: var(--space-2xs);
+    height: 22px;
+
+    background: var(--color-surface-lowered);
+    border-block: var(--border-width-thin) solid var(--color-surface-border);
+
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm);
+}
+
+.diff-file:first-child .diff-file-header {
+    border-block-start: 0;
+}
+
+.diff-file-path {
+    background: transparent;
+    padding: 0;
+
+    color: var(--color-text-quiet);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-inline-size: 0;
+}
+
+.diff-file-count {
+    flex-shrink: 0;
+    color: var(--color-text-quietest);
+    font-variant-numeric: tabular-nums;
+}
+
+.diff-entry:not(:first-child) {
+    border-block-start: var(--border-width-thin) solid var(--color-surface-border);
+}
+
+.diff-entry-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding-inline: var(--space-2xs);
+    height: 22px;
+}
+
+.diff-entry-path {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm);
+}
+
+.diff-entry-contexts {
+    margin-inline-start: auto;
+    color: var(--color-text-quietest);
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-xs, 0.75rem);
+}
+
+.diff-block {
+    margin: 0;
+    padding-block: var(--space-3xs);
+    background: transparent;
+    color: var(--color-text-normal);
+
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    white-space: pre;
+    overflow-x: auto;
+}
+
+.diff-block:has(code) {
+    background: transparent;
+    color: var(--color-text-normal);
+}
+
+.diff-line {
+    display: grid;
+    grid-template-columns: 1.5em 1fr;
+    align-items: baseline;
+}
+
+.diff-gutter {
+    color: var(--color-text-quietest);
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.diff-code {
+    padding-inline-end: var(--space-2xs);
+}
+
+.diff-line-removed {
+    background: color-mix(in oklab, var(--diff-removed) 12%, transparent);
+}
+
+.diff-line-removed .diff-gutter {
+    color: var(--diff-removed);
+    font-weight: var(--font-weight-medium);
+}
+
+.diff-line-added {
+    background: color-mix(in oklab, var(--diff-added) 14%, transparent);
+}
+
+.diff-line-added .diff-gutter {
+    color: var(--diff-added);
+    font-weight: var(--font-weight-medium);
+}
+
+.diff-json-key {
+    color: var(--color-text-quiet);
+}
+
+.diff-json-string {
+    color: var(--color-text-normal);
+}
+
+.diff-json-quote {
+    color: var(--color-text-quietest);
+}
+
+.diff-json-ref {
+    color: var(--color-accent-fill-loud);
+    font-weight: var(--font-weight-medium);
+}
+
+.diff-json-num,
+.diff-json-bool {
+    color: var(--color-text-normal);
+}
+
+.diff-json-punct {
+    color: var(--color-text-quietest);
+}
