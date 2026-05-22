@@ -28,29 +28,30 @@ const socialImageURL = new URL(siteConfig.ogImage ?? "/social-card.png", Astro.s
 
 {import.meta.env.DEV && <script is:inline type="module" src="/@id/@vitejs/devtools/client/inject" />}
 
-<DefaultHead {...Astro.props}>
-    <slot />
-    {/* Favicons */}
-    <link href="/favicon.ico" rel="icon" sizes="32x32" />
-    <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
-    <link href="/apple-touch-icon.png" rel="apple-touch-icon" />
-    {/* Open Graph */}
-    <meta content="website" property="og:type" />
-    <meta content={pageTitle} property="og:title" />
-    <meta content={pageDescription} property="og:description" />
-    <meta content={canonicalURL} property="og:url" />
-    <meta content={siteConfig.title} property="og:site_name" />
-    <meta content={siteConfig.ogLocale} property="og:locale" />
-    <meta content={socialImageURL} property="og:image" />
-    <meta content="1200" property="og:image:width" />
-    <meta content="630" property="og:image:height" />
-    {/* Twitter */}
-    <meta content="summary_large_image" property="twitter:card" />
-    <meta content={canonicalURL} property="twitter:url" />
-    <meta content={pageTitle} property="twitter:title" />
-    <meta content={pageDescription} property="twitter:description" />
-    <meta content={socialImageURL} property="twitter:image" />
-</DefaultHead>
+<DefaultHead {...Astro.props} />
+
+{/* Favicons */}
+<link href="/favicon.ico" rel="icon" sizes="32x32" />
+<link href="/favicon.svg" rel="icon" type="image/svg+xml" />
+<link href="/apple-touch-icon.png" rel="apple-touch-icon" />
+
+{/* Open Graph */}
+<meta content="website" property="og:type" />
+<meta content={pageTitle} property="og:title" />
+<meta content={pageDescription} property="og:description" />
+<meta content={canonicalURL} property="og:url" />
+<meta content={siteConfig.title} property="og:site_name" />
+<meta content={siteConfig.ogLocale} property="og:locale" />
+<meta content={socialImageURL} property="og:image" />
+<meta content="1200" property="og:image:width" />
+<meta content="630" property="og:image:height" />
+
+{/* Twitter */}
+<meta content="summary_large_image" property="twitter:card" />
+<meta content={canonicalURL} property="twitter:url" />
+<meta content={pageTitle} property="twitter:title" />
+<meta content={pageDescription} property="twitter:description" />
+<meta content={socialImageURL} property="twitter:image" />
 
 {/* Mode & theme provider - must run early to prevent FOUC */}
 <ThemeProvider />
