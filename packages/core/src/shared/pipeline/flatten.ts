@@ -84,7 +84,16 @@ function flattenTree(
 
         // Filter out metadata properties (those starting with $), but allow $root
         // which is a reserved token name per DTCG 2025.10 spec
-        const keys = Object.keys(node).filter((key) => !key.startsWith("$") || key === "$root");
+        const keys = Object.keys(node)
+            .filter((key) => !key.startsWith("$") || key === "$root")
+            .sort((a, b) => {
+                // Object.keys() reorders integer-index keys ("0","1","2") before string keys ("-2","-1").
+                // Resort only numeric keys to handle this discrepancy without affecting other ordering.
+                if (!isNaN(Number(a)) && !isNaN(Number(b))) {
+                    return Number(a) - Number(b);
+                }
+                return 0;
+            });
 
         const currentType = node.$type || inheritedType;
 
