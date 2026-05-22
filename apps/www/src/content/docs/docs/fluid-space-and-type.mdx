@@ -90,25 +90,27 @@ export default defineConfig({
 });
 ```
 
-## Generating a scale
+## Scale recipes
 
-Sugarcube can generate type and space scales for you from an `$extensions` block authored alongside your tokens. The feature is heavily inspired by [Utopia](https://utopia.fyi/) but keeps everything in one place, meaning you don't have to bounce between tools. Iterating means editing values within the extension instead of round-tripping Utopia. For scales where each step needs bespoke values or fluid ranges, hand-authoring (covered above) is still the right approach.
+Hand-authoring a fluid scale means writing every step yourself, then re-writing them all whenever you want the base, ratio, or viewport to shift. [Utopia](https://utopia.fyi/) takes the pain out of computing the values, but you still have to convert the values into DTCG tokens. This makes iteration painful.
 
-The scale config goes under `$extensions["sh.sugarcube"].scale` on the group where you want the generated tokens to live. Sugarcube produces them at build time; once they reach the renderer they’re indistinguishable from fluid tokens you’ve authored yourself.
+Scale *recipes* flip that around. You describe the scale once — in a small config block that lives next to your other tokens — and sugarcube generates the tokens for you. For scales where each step needs bespoke values or fluid ranges, hand-authoring (covered above) is still the right approach.
+
+A recipe lives under `$extensions["sh.sugarcube"].scale` on the group where you want the generated tokens to land. Once they reach the renderer they’re indistinguishable from fluid tokens you’ve authored yourself.
 
 <SiteAside type="note">
     Scale recipes intentionally don’t generate token files on disk. The recipe is the source of truth. Keeping it that way avoids the problem of mixing generated and hand-authored tokens.
 
     The tradeoff is interoperability: other DTCG tools see a group with an unknown `$extensions` block and produce nothing for it, since the children only exist once sugarcube generates them in-memory. If you need the generated tokens to land somewhere other tools can read, hand-author them using the `fluid` extension (covered above) instead.
 
-    An option to output or introspect the generated tokens is in active development. Open an [issue](https://github.com/sugarcube-sh/sugarcube/issues) or [discussion](https://github.com/sugarcube-sh/sugarcube/discussions) if you’d like to see this feature.
+    An option to output or introspect the generated tokens is being considered. Open an [issue](https://github.com/sugarcube-sh/sugarcube/issues) or [discussion](https://github.com/sugarcube-sh/sugarcube/discussions) if you would like to shape the direction of this feature.
 </SiteAside>
 
-Two modes are available: **exponential** for ratio-based scales (typically typography) and **multipliers** for arbitrary-step scales (typically spacing).
+Two modes are available: **exponential**, where each step is derived from a single ratio (typically typography), and **multipliers**, where you set each step yourself (typically spacing).
 
 ### Exponential mode
 
-For typography-style scales, where each step is `base × ratio^n`. You can set the same ratio for `min` and `max`, or split them so the scale grows more dramatically on wide screens — a common typographic pattern.
+For typography-style scales, where each step is `base × ratio^n`. You can set the same ratio for `min` and `max`, or split them so the scale grows more dramatically on wide screens.
 
 ```json title="src/design-tokens/type.json"
 {
