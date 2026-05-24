@@ -89,7 +89,7 @@ function flattenTree(
             .sort((a, b) => {
                 // Object.keys() reorders integer-index keys ("0","1","2") before string keys ("-2","-1").
                 // Resort only numeric keys to handle this discrepancy without affecting other ordering.
-                if (!isNaN(Number(a)) && !isNaN(Number(b))) {
+                if (!Number.isNaN(Number(a)) && !Number.isNaN(Number(b))) {
                     return Number(a) - Number(b);
                 }
                 return 0;
