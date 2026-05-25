@@ -464,4 +464,44 @@ describe("flatten", () => {
             expect(ctx.warnings).toHaveLength(0);
         });
     });
+
+    describe("key ordering", () => {
+        it("preserves authored order for both string and numeric (including negative) keys", () => {
+            const { tokens } = flatten([
+                buildTree({
+                    step: {
+                        $type: "dimension",
+                        "-2": { $value: "2px" },
+                        "-1": { $value: "4px" },
+                        "0": { $value: "8px" },
+                        "1": { $value: "16px" },
+                        "2": { $value: "32px" },
+                    },
+                    tshirt: {
+                        $type: "dimension",
+                        "xs": { $value: "2px" },
+                        "sm": { $value: "4px" },
+                        "md": { $value: "8px" },
+                        "lg": { $value: "16px" },
+                        "xl": { $value: "32px" },
+                    },
+                }),
+            ]);
+
+            expect(Object.keys(tokens.tokens)).toEqual([
+                "step",
+                "step.-2",
+                "step.-1",
+                "step.0",
+                "step.1",
+                "step.2",
+                "tshirt",
+                "tshirt.xs",
+                "tshirt.sm",
+                "tshirt.md",
+                "tshirt.lg",
+                "tshirt.xl",
+            ]);
+        });
+    });
 });
