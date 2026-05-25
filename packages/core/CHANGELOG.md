@@ -1,5 +1,11 @@
 # @sugarcube-sh/core
 
+## 0.2.8
+
+### Patch Changes
+
+- 6bebfb6: fix: maintain numeric order for positive/negative integer token keys
+
 ## 0.2.7
 
 ### Patch Changes
