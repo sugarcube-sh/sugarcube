@@ -13,13 +13,15 @@ Sugarcube generates utility classes from your design tokens. You tell it which C
 
 ## The mental model
 
-A utility configuration maps **tokens** to **CSS classes**. Each configuration has three parts:
+A utility configuration maps **tokens** to **CSS classes**. Each entry in `utilities.classes` has three parts:
 
 ```ts
-{
-  "background-color": {     // ← CSS property (what gets applied)
-    source: "color.*",      // ← Token pattern (which tokens to use)
-    prefix: "bg"            // ← Class prefix (what the class starts with)
+utilities: {
+  classes: {
+    "background-color": {   // ← CSS property (what gets applied)
+      source: "color.*",    // ← Token pattern (which tokens to use)
+      prefix: "bg"          // ← Class prefix (what the class starts with)
+    }
   }
 }
 ```
@@ -57,9 +59,11 @@ import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
   utilities: {
-    "background-color": {
-      source: "color.*",
-      prefix: "bg"
+    classes: {
+      "background-color": {
+        source: "color.*",
+        prefix: "bg"
+      }
     }
   }
 });
@@ -86,20 +90,22 @@ import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
   utilities: {
-    // Text colors
-    color: {
-      source: "color.*",
-      prefix: "text"
-    },
-    // Background colors
-    "background-color": {
-      source: "color.*",
-      prefix: "bg"
-    },
-    // Border colors
-    "border-color": {
-      source: "color.*",
-      prefix: "border"
+    classes: {
+      // Text colors
+      color: {
+        source: "color.*",
+        prefix: "text"
+      },
+      // Background colors
+      "background-color": {
+        source: "color.*",
+        prefix: "bg"
+      },
+      // Border colors
+      "border-color": {
+        source: "color.*",
+        prefix: "border"
+      }
     }
   }
 });
@@ -113,8 +119,8 @@ If you omit `prefix`, sugarcube uses the first part of `source` (before the firs
 
 ```ts
 // These are equivalent:
-color: { source: "color.*" }
-color: { source: "color.*", prefix: "color" }
+utilities: { classes: { color: { source: "color.*" } } }
+utilities: { classes: { color: { source: "color.*", prefix: "color" } } }
 ```
 
 Both generate `.color-primary`, `.color-secondary`, etc.
@@ -136,9 +142,11 @@ import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
   utilities: {
-    "--flow-space": {
-      source: "space.*",
-      prefix: "flow-space"
+    classes: {
+      "--flow-space": {
+        source: "space.*",
+        prefix: "flow-space"
+      }
     }
   }
 });
@@ -193,9 +201,13 @@ With `source: "color.*"` and `prefix: "bg"`:
 To only match tokens in a specific nested path, be more specific in `source`:
 
 ```ts
-color: {
-  source: "color.text.*",  // Only tokens under color.text
-  prefix: "text"
+utilities: {
+  classes: {
+    color: {
+      source: "color.text.*",  // Only tokens under color.text
+      prefix: "text"
+    }
+  }
 }
 ```
 
@@ -208,10 +220,14 @@ Sometimes your prefix matches part of the token path, creating awkward names lik
 Use `stripDuplicates` to clean this up:
 
 ```ts
-color: {
-  source: "color.*",
-  prefix: "text",
-  stripDuplicates: true
+utilities: {
+  classes: {
+    color: {
+      source: "color.*",
+      prefix: "text",
+      stripDuplicates: true
+    }
+  }
 }
 ```
 
@@ -227,10 +243,12 @@ import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
   utilities: {
-    padding: {
-      source: "space.*",
-      prefix: "p",
-      directions: ["all", "top", "right", "bottom", "left", "x", "y"]
+    classes: {
+      padding: {
+        source: "space.*",
+        prefix: "p",
+        directions: ["all", "top", "right", "bottom", "left", "x", "y"]
+      }
     }
   }
 });
