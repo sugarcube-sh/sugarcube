@@ -11,6 +11,7 @@ import {
     applyScaleToResolved,
     captureLinkedScale,
 } from "../tokens/scale-cascade";
+import { getScaleExtension } from "../tokens/scale-extension";
 import type { TokenSnapshot } from "../tokens/types";
 import { selectCapture } from "./scale-selectors";
 import type { LinkBindingMeta, LinkEdit, ScaleBindingMeta, ScaleEdit } from "./scale-types";
@@ -59,8 +60,6 @@ export function applyScaleEdits(
         const sourceMeta = bindings[linkMeta.sourceBinding];
         if (!sourceMeta) continue;
 
-        const sourceCaptured = selectCapture(baseline, pathIndex, sourceMeta.binding, context);
-        if (!sourceCaptured) continue;
         const linkedCaptured = captureLinkedScale(
             linkMeta.bindingToken,
             baseline.resolved,
@@ -68,14 +67,18 @@ export function applyScaleEdits(
             context
         );
 
+        // Containers track the source's ratio (proportional shape), not its
+        // base (body font size — a side effect we don't want bundled into
+        // layout). Only exponential-mode scale edits carry a ratio; other
+        // edit kinds leave the factor at 1 and the link is a no-op.
         const sourceEdit = edits[linkMeta.sourceBinding];
-        let sourceBase = sourceCaptured.baseMax;
-        if (sourceEdit?.kind === "tokens" && sourceEdit.base !== undefined) {
-            sourceBase = sourceEdit.base;
-        } else if (sourceEdit?.kind === "scale") {
-            sourceBase = sourceEdit.scale.base.max.value;
+        let factor = 1;
+        if (sourceEdit?.kind === "scale" && sourceEdit.scale.mode === "exponential") {
+            const original = getScaleExtension(baseline.trees, sourceMeta.parentPath);
+            if (original?.mode === "exponential" && original.ratio.max > 0) {
+                factor = sourceEdit.scale.ratio.max / original.ratio.max;
+            }
         }
-        const factor = sourceBase / sourceCaptured.baseMax;
         const enabled = links[token]?.enabled ?? true;
 
         next = applyLinkedScaleToResolved(
