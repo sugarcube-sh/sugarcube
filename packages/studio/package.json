@@ -25,7 +25,8 @@
         "build:client": "vite build",
         "dev": "pnpm run \"/^dev:.*/\"",
         "dev:lib": "pkgroll --watch",
-        "dev:client": "vite build --watch",
+        "dev:client": "vite build --watch --mode development",
+        "serve": "vite",
         "test": "vitest run",
         "test:watch": "vitest",
         "type-check": "tsc --noEmit"
