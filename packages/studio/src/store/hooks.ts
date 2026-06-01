@@ -90,6 +90,15 @@ export function usePendingChangesCount(): number {
     return useDiffStore((state) => state.entries.length);
 }
 
+// Boolean form of the count check. Returning the boolean *inside* the
+// selector means Zustand's Object.is bail kicks in when the count
+// fluctuates between non-zero values (e.g. linked containers crossing
+// rounding thresholds during a slider drag) — the boolean stays `true`
+// and consumers don't re-render.
+export function useHasPendingChanges(): boolean {
+    return useDiffStore((state) => state.entries.length > 0);
+}
+
 export function useHasPendingChange(path: string): boolean {
     return useDiffStore((state) => state.pendingPaths.has(path));
 }

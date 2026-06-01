@@ -1,6 +1,7 @@
 import { type MultiplierScaleConfig, type ScaleBinding, roundTo } from "@sugarcube-sh/core/client";
 import { useBaseline, useScaleState } from "../store/hooks";
 import { selectEffectiveScale } from "../store/scale-state";
+import { useRafThrottle } from "../use-raf-throttle";
 import { labelForBinding } from "./path-utils";
 
 type MultipliersScaleControlProps = {
@@ -20,6 +21,22 @@ export function MultipliersScaleControl({ binding }: MultipliersScaleControlProp
     const updateScale = useScaleState((s) => s.updateScale);
     const baseline = useBaseline();
 
+    function applyBase(next: number) {
+        if (!Number.isFinite(next)) return;
+        updateScale(binding.token, (s) => {
+            const ratio = s.base.max.value > 0 ? s.base.min.value / s.base.max.value : 1;
+            return {
+                ...s,
+                base: {
+                    min: { ...s.base.min, value: roundTo(next * ratio) },
+                    max: { ...s.base.max, value: next },
+                },
+            };
+        });
+    }
+
+    const setBaseThrottled = useRafThrottle(applyBase);
+
     if (!meta || meta.kind !== "scale") return null;
     const effective = selectEffectiveScale(baseline, edit, meta.parentPath);
     if (!effective || effective.mode !== "multipliers") return null;
@@ -35,23 +52,9 @@ export function MultipliersScaleControl({ binding }: MultipliersScaleControlProp
                     type="range"
                     min={BASE_MIN}
                     max={BASE_MAX}
-                    step={0.025}
+                    step={0.05}
                     value={scale.base.max.value}
-                    onChange={(e) => {
-                        const next = Number(e.target.value);
-                        if (!Number.isFinite(next)) return;
-                        updateScale(binding.token, (s) => {
-                            const ratio =
-                                s.base.max.value > 0 ? s.base.min.value / s.base.max.value : 1;
-                            return {
-                                ...s,
-                                base: {
-                                    min: { ...s.base.min, value: roundTo(next * ratio) },
-                                    max: { ...s.base.max, value: next },
-                                },
-                            };
-                        });
-                    }}
+                    onChange={(e) => setBaseThrottled(Number(e.target.value))}
                     aria-label="base"
                     aria-valuetext={`${scale.base.max.value}${scale.base.max.unit}`}
                     style={
@@ -60,7 +63,16 @@ export function MultipliersScaleControl({ binding }: MultipliersScaleControlProp
                         } as React.CSSProperties
                     }
                 />
-                <span className="scale-value">{scale.base.max.value.toFixed(3)}</span>
+                <input
+                    className="scale-number"
+                    type="number"
+                    min={BASE_MIN}
+                    max={BASE_MAX}
+                    step={0.05}
+                    value={scale.base.max.value}
+                    onChange={(e) => applyBase(Number(e.target.value))}
+                    aria-label="base value"
+                />
             </div>
         </div>
     );

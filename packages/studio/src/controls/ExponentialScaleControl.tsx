@@ -1,6 +1,7 @@
 import { type ExponentialScaleConfig, type ScaleBinding, roundTo } from "@sugarcube-sh/core/client";
 import { useBaseline, useScaleState } from "../store/hooks";
 import { selectEffectiveScale } from "../store/scale-state";
+import { useRafThrottle } from "../use-raf-throttle";
 import { labelForBinding } from "./path-utils";
 
 type ExponentialScaleControlProps = {
@@ -20,6 +21,16 @@ export function ExponentialScaleControl({ binding }: ExponentialScaleControlProp
     const updateScale = useScaleState((s) => s.updateScale);
     const baseline = useBaseline();
 
+    function applyRatio(next: number) {
+        if (!Number.isFinite(next)) return;
+        updateScale(binding.token, (s) => ({
+            ...s,
+            ratio: { min: next, max: next },
+        }));
+    }
+
+    const setRatioThrottled = useRafThrottle(applyRatio);
+
     if (!meta || meta.kind !== "scale") return null;
     const effective = selectEffectiveScale(baseline, edit, meta.parentPath);
     if (!effective || effective.mode !== "exponential") return null;
@@ -35,25 +46,27 @@ export function ExponentialScaleControl({ binding }: ExponentialScaleControlProp
                     type="range"
                     min={RATIO_MIN}
                     max={RATIO_MAX}
-                    step={0.001}
+                    step={0.01}
                     value={scale.ratio.max}
-                    onChange={(e) => {
-                        const next = Number(e.target.value);
-                        if (!Number.isFinite(next)) return;
-                        updateScale(binding.token, (s) => ({
-                            ...s,
-                            ratio: { min: next, max: next },
-                        }));
-                    }}
+                    onChange={(e) => setRatioThrottled(Number(e.target.value))}
                     aria-label="ratio"
-                    aria-valuetext={scale.ratio.max.toFixed(3)}
+                    aria-valuetext={scale.ratio.max.toFixed(2)}
                     style={
                         {
                             "--fill": `${ratioFillPercent(scale.ratio.max)}%`,
                         } as React.CSSProperties
                     }
                 />
-                <span className="scale-value">{scale.ratio.max.toFixed(3)}</span>
+                <input
+                    className="scale-number"
+                    type="number"
+                    min={RATIO_MIN}
+                    max={RATIO_MAX}
+                    step={0.01}
+                    value={scale.ratio.max}
+                    onChange={(e) => applyRatio(Number(e.target.value))}
+                    aria-label="ratio value"
+                />
             </div>
 
             <div className="scale-row">

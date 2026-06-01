@@ -15,7 +15,6 @@ export function ScaleControl({ binding }: ScaleControlProps) {
     const parent = stripTrailingGlob(binding.token);
     const baseline = useBaseline();
     const scale = getScaleExtension(baseline.trees, parent);
-    console.log(binding);
 
     if (scale?.mode === "exponential") {
         return <ExponentialScaleControl binding={binding} />;

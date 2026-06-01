@@ -1,10 +1,10 @@
 import {
     type ResolvedToken,
-    type ResolvedTokens,
     SUGARCUBE_NAMESPACE,
     type ScaleBinding,
     isResolvedToken,
 } from "@sugarcube-sh/core/client";
+import { useMemo } from "react";
 import { useCurrentContext, usePathIndex, useScaleState, useTokenStore } from "../store/hooks";
 import type { PathIndex } from "../tokens/path-index";
 
@@ -16,60 +16,74 @@ type PerStepScaleControlProps = {
 
 export function PerStepScaleControl({ binding }: PerStepScaleControlProps) {
     const pathIndex = usePathIndex();
-    const resolved = useTokenStore((s) => s.resolved);
     const context = useCurrentContext();
     const setStepOverride = useScaleState((s) => s.setStepOverride);
 
-    const rows = collectRows(binding.token, resolved, pathIndex, context);
-    if (rows.length === 0) return null;
-
-    function applyEdit(path: string, next: { min: Dim; max: Dim }) {
-        const stepName = path.split(".").pop() ?? path;
-        setStepOverride(binding.token, stepName, next);
-    }
+    // Paths are derived from the (stable) pathIndex, not the resolved map,
+    // so this list only changes when the index rebuilds. Each row then
+    // subscribes to its own token below.
+    const paths = useMemo(() => pathIndex.matching(binding.token), [pathIndex, binding.token]);
+    if (paths.length === 0) return null;
 
     return (
         <>
-            {rows.map((row) => (
+            {paths.map((path) => (
                 <PerStepRow
-                    key={row.path}
-                    row={row}
-                    onChange={(next) => applyEdit(row.path, next)}
+                    key={path}
+                    path={path}
+                    pathIndex={pathIndex}
+                    context={context}
+                    onChange={(next) => {
+                        const stepName = path.split(".").pop() ?? path;
+                        setStepOverride(binding.token, stepName, next);
+                    }}
                 />
             ))}
         </>
     );
 }
 
-type Row = {
+type PerStepRowProps = {
     path: string;
-    label: string;
-    min: Dim;
-    max: Dim;
+    pathIndex: PathIndex;
+    context: string;
+    onChange: (next: { min: Dim; max: Dim }) => void;
 };
 
-function collectRows(
-    pattern: string,
-    resolved: ResolvedTokens,
-    pathIndex: PathIndex,
-    context: string
-): Row[] {
-    const paths = pathIndex.matching(pattern);
-    const rows: Row[] = [];
-    for (const path of paths) {
+function PerStepRow({ path, pathIndex, context, onChange }: PerStepRowProps) {
+    // Subscribe to just this row's token. Unchanged tokens keep their
+    // object identity across edits (writeResolved merges via spread), so
+    // Object.is bails and this row only renders when its own value moves.
+    const token = useTokenStore((state) => {
         const entry = pathIndex.entriesFor(path).find((e) => e.context === context);
-        const token = entry ? resolved[entry.key] : undefined;
-        if (!isResolvedToken(token)) continue;
-        const dims = readDims(token);
-        if (!dims) continue;
-        rows.push({
-            path,
-            label: path.split(".").pop() ?? path,
-            min: dims.min,
-            max: dims.max,
-        });
-    }
-    return rows;
+        return entry ? state.resolved[entry.key] : undefined;
+    });
+    const dims = useMemo(() => (isResolvedToken(token) ? readDims(token) : null), [token]);
+    if (!dims) return null;
+
+    const label = path.split(".").pop() ?? path;
+
+    return (
+        <div className="per-step-row">
+            <span className="scale-label">{label}</span>
+            <NumberInput
+                value={dims.min.value}
+                unit={dims.min.unit}
+                ariaLabel={`${label} min`}
+                onChange={(value) =>
+                    onChange({ min: { value, unit: dims.min.unit }, max: dims.max })
+                }
+            />
+            <NumberInput
+                value={dims.max.value}
+                unit={dims.max.unit}
+                ariaLabel={`${label} max`}
+                onChange={(value) =>
+                    onChange({ min: dims.min, max: { value, unit: dims.max.unit } })
+                }
+            />
+        </div>
+    );
 }
 
 function readDims(token: ResolvedToken): { min: Dim; max: Dim } | null {
@@ -82,31 +96,6 @@ function readDims(token: ResolvedToken): { min: Dim; max: Dim } | null {
     const fluid = sugarcube?.fluid;
     if (fluid?.min && fluid.max) return { min: fluid.min, max: fluid.max };
     return { min: value, max: value };
-}
-
-type PerStepRowProps = {
-    row: Row;
-    onChange: (next: { min: Dim; max: Dim }) => void;
-};
-
-function PerStepRow({ row, onChange }: PerStepRowProps) {
-    return (
-        <div className="per-step-row">
-            <span className="scale-label">{row.label}</span>
-            <NumberInput
-                value={row.min.value}
-                unit={row.min.unit}
-                ariaLabel={`${row.label} min`}
-                onChange={(value) => onChange({ min: { value, unit: row.min.unit }, max: row.max })}
-            />
-            <NumberInput
-                value={row.max.value}
-                unit={row.max.unit}
-                ariaLabel={`${row.label} max`}
-                onChange={(value) => onChange({ min: row.min, max: { value, unit: row.max.unit } })}
-            />
-        </div>
-    );
 }
 
 type NumberInputProps = {

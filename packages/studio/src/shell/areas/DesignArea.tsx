@@ -1,11 +1,11 @@
 import { useEffect, useId, useState } from "react";
-import { usePendingChangesCount } from "../../store/hooks";
+import { useHasPendingChanges } from "../../store/hooks";
 import { DesignActions } from "../DesignActions";
 import { DesignView } from "../views/DesignView";
 import { DiffView } from "../views/DiffView";
 
 export function DesignArea() {
-    const hasChanges = usePendingChangesCount() > 0;
+    const hasChanges = useHasPendingChanges();
     const [diffOpen, setDiffOpen] = useState(false);
     const diffPanelId = useId();
 
