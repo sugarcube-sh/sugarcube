@@ -5,8 +5,38 @@ packages:
 trustPolicy: no-downgrade
 minimumReleaseAgeStrict: true
 
-onlyBuiltDependencies:
-  - '@biomejs/biome'
-  - esbuild
-  - sharp
-  - workerd
+# Vetted exemptions from trustPolicy:no-downgrade.
+# Each entry is a specific version whose maintainer published outside their
+# usual CI flow, losing some trust evidence, with no indication of compromise.
+# Remove an entry when the maintainer ships a new version with restored evidence.
+trustPolicyExclude:
+  # Transitive of @base-ui-components/react@1.0.0-beta.1.
+  # acemarke (Mark Erikson, Redux lead) hotfix-published manually; 5.0.x by
+  # same author had no provenance either, 5.1.0 (eskimojo via CI) had it,
+  # 5.2.0 is OIDC trusted-publisher. Remove once @base-ui-components/react
+  # transitively resolves to reselect ≥ 5.2.0.
+  - 'reselect@5.1.1'
+  # Transitive via various build tools.
+  # lukekarrys (npm team) backport ReDoS fix for the 6.x line; npm-team
+  # publishes 7.x via OIDC trusted-publisher. Remove once nothing in the
+  # tree requires semver@^6.
+  - 'semver@6.3.1'
+
+overrides:
+  vite: ^8.0.3
+
+# pnpm 11 replaces onlyBuiltDependencies. Each detected lifecycle-script package
+# needs an explicit opt-in. Keep this list minimal — only allow what you trust
+# AND that genuinely needs its install script (typically: native binary fetch).
+allowBuilds:
+  # Native binary; biome won't run without it.
+  '@biomejs/biome': true
+  # Native binary; esbuild won't run without it.
+  esbuild: true
+  # libvips native bindings; sharp won't run without it.
+  sharp: true
+  # Cloudflare workerd native binary.
+  workerd: true
+  # Install script only writes to .git/hooks — convenience, not necessity.
+  # Fresh clones run `pnpx simple-git-hooks` once to install the pre-commit hook.
+  simple-git-hooks: false
