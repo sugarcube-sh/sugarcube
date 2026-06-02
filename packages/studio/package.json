@@ -46,8 +46,8 @@
         "cmdk": "^1.1.1",
         "lucide-react": "^0.468.0",
         "pkgroll": "^2.26.0",
-        "react": "^19.2.6",
-        "react-dom": "^19.2.4",
+        "react": "^19.2.7",
+        "react-dom": "^19.2.7",
         "typescript": "^5.8.3",
         "vite": "^8.0.3",
         "zustand": "^5.0.12"
