@@ -72,7 +72,7 @@
     "devDependencies": {
         "cross-env": "7.0.3",
         "pkgroll": "^2.26.0",
-        "tsx": "^4.21.0"
+        "tsx": "^4.22.3"
     },
     "engines": {
         "node": ">=20.19.0"
