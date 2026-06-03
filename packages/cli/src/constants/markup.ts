@@ -23,6 +23,11 @@ export const MARKUP_EXTENSIONS = new Set([
     "twig",
     "erb",
     "ejs",
+    "heex",
+    "eex",
+    "leex",
+    "ex",
+    "exs",
 ]);
 
 /** Directory names to ignore when scanning or watching */
