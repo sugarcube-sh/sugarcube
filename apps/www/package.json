@@ -14,7 +14,7 @@
         "type-check": "astro sync && tsc --noEmit"
     },
     "dependencies": {
-        "@ariakit/react": "^0.4.17",
+        "@ariakit/react": "^0.4.28",
         "@astrojs/mdx": "^5.0.3",
         "@astrojs/react": "^5.0.2",
         "@astrojs/sitemap": "3.7.2",

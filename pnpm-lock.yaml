@@ -61,8 +61,8 @@ importers:
   apps/www:
     dependencies:
       '@ariakit/react':
-        specifier: ^0.4.17
-        version: 0.4.21(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^0.4.28
+        version: 0.4.28(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@astrojs/mdx':
         specifier: ^5.0.3
         version: 5.0.3(astro@6.1.5(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(typescript@5.9.3)(yaml@2.8.2))
@@ -421,20 +421,36 @@ packages:
     resolution: {integrity: sha512-H3avrIQMnmo8rJu9w62vE/c4WGgLCGemnBDg83pgdARIttKgyJpTOX5hQ4JFjeZ7fRfrzkRCCDg3vLxseH4Xtg==}
     hasBin: true
 
-  '@ariakit/core@0.4.18':
-    resolution: {integrity: sha512-9urEa+GbZTSyredq3B/3thQjTcSZSUC68XctwCkJNH/xNfKN5O+VThiem2rcJxpsGw8sRUQenhagZi0yB4foyg==}
+  '@ariakit/components@0.1.1':
+    resolution: {integrity: sha512-AiJ//FpXGQi8NauMhUTRKtXjEx1mbFMK1gYltFSOpRRmBaz/VU9GzMZ0cto1hp/tG305Hi1jxc5NpCtYEaDuBQ==}
 
-  '@ariakit/react-core@0.4.21':
-    resolution: {integrity: sha512-rUI9uB/gT3mROFja/ka7/JukkdljIZR3eq3BGiQqX4Ni/KBMDvPK8FvVLnC0TGzWcqNY2bbfve8QllvHzuw4fQ==}
+  '@ariakit/react-components@0.1.1':
+    resolution: {integrity: sha512-k+YjepGIf092wMkUGRFlhGo9kMzcSnmgvl3CCo6o7rTwEmM1VmLX0yAnTxfIET3CkC5JYzi5hIaVEPgDNj5Hmg==}
     peerDependencies:
       react: ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  '@ariakit/react@0.4.21':
-    resolution: {integrity: sha512-UjP99Y7cWxA5seRECEE0RPZFImkLGFIWPflp65t0BVZwlMw4wp9OJZRHMrnkEkKl5KBE2NR/gbbzwHc6VNGzsA==}
+  '@ariakit/react-store@0.1.1':
+    resolution: {integrity: sha512-7zkDWpz/LFdwCCotKwZ6a17vtg3tKqw/xTP7KhuT5/CqzvFaWDR8yWl+p4sj3eUZicrJbJEsN8rLQAzZWKMseA==}
+    peerDependencies:
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@ariakit/react-utils@0.1.1':
+    resolution: {integrity: sha512-rnRlbWx7qlsrHxFggBgnfeBK14WEmKTLnSmH4MwWwqGC5ufiKWe+XfPKSj0wb+jCDw+l1FS6wAM7g+rmSmxXVg==}
+    peerDependencies:
+      react: ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@ariakit/react@0.4.28':
+    resolution: {integrity: sha512-KHCSAbL6BaDCKrVakLR1TF+18wdmNIaNcYm/bsInLMiJEt6DY6Q/U3FxBHKmKCuPyEZDuqTn88YAIov+1cTF3w==}
     peerDependencies:
       react: ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@ariakit/store@0.1.1':
+    resolution: {integrity: sha512-bq03zWDo44oAKipWQ678SN87fNcL63LCmCRJh3dh6cZuKyA120WgXIRBmCQYUg+eKLVpheFiizQPB8tcVXppyg==}
+
+  '@ariakit/utils@0.1.1':
+    resolution: {integrity: sha512-uXbQPOoVjzy6l+MUfmyzY1GiN1ciC4IsQMoGTeW1dUT6URpU5ULDB3dvpNDkrbh/gcxdckK3kmQDtg7uN8klkw==}
 
   '@astrojs/compiler@3.0.1':
     resolution: {integrity: sha512-z97oYbdebO5aoWzuJ/8q5hLK232+17KcLZ7cJ8BCWk6+qNzVxn/gftC0KzMBUTD8WAaBkPpNSQK6PXLnNrZ0CA==}
@@ -5502,21 +5518,47 @@ snapshots:
 
   '@antfu/ni@23.3.0': {}
 
-  '@ariakit/core@0.4.18': {}
-
-  '@ariakit/react-core@0.4.21(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@ariakit/components@0.1.1':
     dependencies:
-      '@ariakit/core': 0.4.18
-      '@floating-ui/dom': 1.7.5
+      '@ariakit/store': 0.1.1
+      '@ariakit/utils': 0.1.1
+
+  '@ariakit/react-components@0.1.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+    dependencies:
+      '@ariakit/components': 0.1.1
+      '@ariakit/react-store': 0.1.1(react@19.2.7)
+      '@ariakit/react-utils': 0.1.1(react@19.2.7)
+      '@ariakit/store': 0.1.1
+      '@ariakit/utils': 0.1.1
+      '@floating-ui/dom': 1.7.6
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
+
+  '@ariakit/react-store@0.1.1(react@19.2.7)':
+    dependencies:
+      '@ariakit/react-utils': 0.1.1(react@19.2.7)
+      '@ariakit/store': 0.1.1
+      '@ariakit/utils': 0.1.1
+      react: 19.2.7
       use-sync-external-store: 1.6.0(react@19.2.7)
 
-  '@ariakit/react@0.4.21(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@ariakit/react-utils@0.1.1(react@19.2.7)':
     dependencies:
-      '@ariakit/react-core': 0.4.21(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@ariakit/store': 0.1.1
+      '@ariakit/utils': 0.1.1
+      react: 19.2.7
+
+  '@ariakit/react@0.4.28(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+    dependencies:
+      '@ariakit/react-components': 0.1.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
+
+  '@ariakit/store@0.1.1':
+    dependencies:
+      '@ariakit/utils': 0.1.1
+
+  '@ariakit/utils@0.1.1': {}
 
   '@astrojs/compiler@3.0.1': {}
 
