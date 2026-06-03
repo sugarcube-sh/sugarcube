@@ -55,7 +55,7 @@
         "react-hook-form": "^7.55.0",
         "sirv": "^3.0.1",
         "ultrahtml": "^1.6.0",
-        "zustand": "^5.0.12"
+        "zustand": "^5.0.13"
     },
     "devDependencies": {
         "@unocss/preset-wind3": "^66.6.0",
