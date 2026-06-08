@@ -23,6 +23,11 @@ export const MARKUP_EXTENSIONS = new Set([
     "twig",
     "erb",
     "ejs",
+    "heex",
+    "eex",
+    "leex",
+    "ex",
+    "exs",
 ]);
 
 /** Directory names to ignore when scanning or watching */
@@ -44,6 +49,9 @@ export const IGNORED_DIR_NAMES = new Set([
     ".svelte-kit",
     "out",
     "__snapshots__",
+    "deps",
+    "_build",
+    "cover",
 ]);
 
 /** Glob ignore patterns for markup scanning (dirs + extra file patterns) */
