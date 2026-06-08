@@ -1,5 +1,11 @@
 # @sugarcube-sh/cli
 
+## 0.1.15
+
+### Patch Changes
+
+- 801a593: feat: add elixir/phoenix support to CLI util generation
+
 ## 0.1.14
 
 ### Patch Changes
