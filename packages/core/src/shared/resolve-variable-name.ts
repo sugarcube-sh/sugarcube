@@ -1,5 +1,5 @@
 import type { VariableNameFn } from "../types/config.js";
-import { formatCSSVarName } from "./format-css-var-name.js";
+import { formatCSSVarName, stripRootSuffix } from "./format-css-var-name.js";
 
 /** Subset of config needed to resolve a variable name — works against both user and internal configs. */
 type VariablesNameConfig = {
@@ -29,7 +29,7 @@ export function createVariableNameResolver(
     variables: VariablesNameConfig | undefined
 ): (path: string) => string {
     const variableName = variables?.variableName;
-    if (variableName) return variableName;
+    if (variableName) return (path: string) => variableName(stripRootSuffix(path));
 
     const prefix = variables?.prefix;
     if (prefix) return (path: string) => `${prefix}-${formatCSSVarName(path)}`;

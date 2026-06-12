@@ -153,4 +153,33 @@ describe("convert", () => {
         const token = result.default?.["color.primary"] as RenderableToken<TokenType>;
         expect(token.$names.css).toBe("only-color-primary");
     });
+
+    describe("$root tokens", () => {
+        const rootToken: NormalizedTokens = {
+            default: {
+                "blue.$root": createResolvedToken({
+                    $path: "blue.$root",
+                    $originalPath: "blue.$root",
+                }),
+            },
+        };
+
+        it("strips $root on the default path", () => {
+            const result = assignCSSNames(rootToken, fillDefaults({}));
+
+            const token = result.default?.["blue.$root"] as RenderableToken<TokenType>;
+            expect(token.$names.css).toBe("blue");
+        });
+
+        it("strips $root even when variableName is set", () => {
+            const result = assignCSSNames(
+                rootToken,
+                fillDefaults({ variables: { variableName: (path) => path.replaceAll(".", "_") } })
+            );
+
+            const token = result.default?.["blue.$root"] as RenderableToken<TokenType>;
+            expect(token.$names.css).not.toContain("$root");
+            expect(token.$names.css).toBe("blue");
+        });
+    });
 });

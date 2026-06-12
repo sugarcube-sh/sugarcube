@@ -22,9 +22,12 @@
  */
 const ROOT_SUFFIX = ".$root";
 
+export function stripRootSuffix(path: string): string {
+    return path.endsWith(ROOT_SUFFIX) ? path.slice(0, -ROOT_SUFFIX.length) : path;
+}
+
 export function formatCSSVarName(path: string): string {
-    const normalized = path.endsWith(ROOT_SUFFIX) ? path.slice(0, -ROOT_SUFFIX.length) : path;
-    return normalized
+    return stripRootSuffix(path)
         .split(".")
         .map((segment) => segment.trim().replace(/\s+/g, "-"))
         .join("-");
