@@ -1,51 +1,17 @@
 .diff-view {
-    --diff-removed: var(--color-red-600, #d4554a);
-    --diff-added: var(--color-green-600, #4cae5a);
-}
-
-.diff-empty {
-    padding: var(--space-sm);
-    color: var(--color-text-quiet);
-    font-size: var(--text-sm);
-    font-family: var(--font-mono, monospace);
-    text-align: center;
+    --diff-removed: var(--color-red-600);
+    --diff-added: var(--color-green-600);
 }
 
 .diff-file-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2xs);
-
+    block-size: var(--studio-control-height);
     padding-inline: var(--space-2xs);
-    height: 22px;
-
     background: var(--color-surface-lowered);
     border-block: var(--border-width-thin) solid var(--color-surface-border);
-
-    font-family: var(--font-mono, monospace);
-    font-size: var(--text-sm);
 }
 
 .diff-file:first-child .diff-file-header {
     border-block-start: 0;
-}
-
-.diff-file-path {
-    background: transparent;
-    padding: 0;
-
-    color: var(--color-text-quiet);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-inline-size: 0;
-}
-
-.diff-file-count {
-    flex-shrink: 0;
-    color: var(--color-text-quietest);
-    font-variant-numeric: tabular-nums;
 }
 
 .diff-entry:not(:first-child) {
@@ -53,23 +19,8 @@
 }
 
 .diff-entry-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2xs);
+    block-size: var(--studio-control-height);
     padding-inline: var(--space-2xs);
-    height: 22px;
-}
-
-.diff-entry-path {
-    font-family: var(--font-mono, monospace);
-    font-size: var(--text-sm);
-}
-
-.diff-entry-contexts {
-    margin-inline-start: auto;
-    color: var(--color-text-quietest);
-    font-family: var(--font-mono, monospace);
-    font-size: var(--text-xs, 0.75rem);
 }
 
 .diff-block {
@@ -83,11 +34,6 @@
     line-height: 1.5;
     white-space: pre;
     overflow-x: auto;
-}
-
-.diff-block:has(code) {
-    background: transparent;
-    color: var(--color-text-normal);
 }
 
 .diff-line {

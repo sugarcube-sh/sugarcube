@@ -1,0 +1,30 @@
+{
+  "studio": {
+    "$type": "dimension",
+    "bar": {
+      "height": {
+        "$value": { "value": 1.875, "unit": "rem" }
+      }
+    },
+    "control": {
+      "height": {
+        "$value": { "value": 1.375, "unit": "rem" }
+      }
+    },
+    "trigger": {
+      "height": {
+        "$value": { "value": 1.125, "unit": "rem" }
+      }
+    },
+    "row": {
+      "label-width": {
+        "$value": { "value": 6.25, "unit": "rem" }
+      }
+    },
+    "swatch": {
+      "size": {
+        "$value": { "value": 0.875, "unit": "rem" }
+      }
+    }
+  }
+}

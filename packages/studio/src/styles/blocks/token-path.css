@@ -1,0 +1,18 @@
+.token-path {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm);
+}
+
+.token-path-ns,
+.token-path-dot {
+    color: var(--color-text-quieter);
+}
+
+.token-path-leaf {
+    color: var(--color-text-normal);
+}
+
+.token-path-num,
+.token-path-tail {
+    color: var(--color-teal-600);
+}

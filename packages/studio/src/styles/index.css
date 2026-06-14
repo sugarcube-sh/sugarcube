@@ -8,6 +8,7 @@
 @import "./compositions/sidebar.css";
 @import "./compositions/switcher.css";
 
+@import "../components/ui/button/button.css";
 @import "../components/ui/tabs/tabs.css";
 @import "../components/ui/popover/popover.css";
 @import "../components/ui/command/command.css";
@@ -16,9 +17,12 @@
 @import "./blocks/prose.css";
 @import "./blocks/shell.css";
 @import "./blocks/header.css";
+@import "./blocks/button.css";
 @import "./blocks/design-actions.css";
 @import "./blocks/panel-section.css";
+@import "./blocks/token-path.css";
 @import "./blocks/pickers.css";
+@import "./blocks/scale-control.css";
 @import "./blocks/diff.css";
 @import "./blocks/studio-tabs.css";
 @import "./blocks/studio-collapsible.css";

@@ -26,7 +26,7 @@ export function PerStepScaleControl({ binding }: PerStepScaleControlProps) {
     if (paths.length === 0) return null;
 
     return (
-        <>
+        <div className="flow flow-space-3xs">
             {paths.map((path) => (
                 <PerStepRow
                     key={path}
@@ -39,7 +39,7 @@ export function PerStepScaleControl({ binding }: PerStepScaleControlProps) {
                     }}
                 />
             ))}
-        </>
+        </div>
     );
 }
 
@@ -64,7 +64,7 @@ function PerStepRow({ path, pathIndex, context, onChange }: PerStepRowProps) {
     const label = path.split(".").pop() ?? path;
 
     return (
-        <div className="per-step-row">
+        <div className="cluster cluster-gap-2xs" data-cluster-wrap="nowrap">
             <span className="scale-label">{label}</span>
             <NumberInput
                 value={dims.min.value}
@@ -118,7 +118,7 @@ function NumberInput({ value, unit, ariaLabel, onChange }: NumberInputProps) {
                 }}
                 aria-label={ariaLabel}
             />
-            <span className="per-step-unit">{unit}</span>
+            <span className="font-mono text-sm">{unit}</span>
         </label>
     );
 }

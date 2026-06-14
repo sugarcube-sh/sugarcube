@@ -1,10 +1,11 @@
 .design-area-edit section {
     border-block-start: var(--border-width-thin) solid var(--color-border-normal);
-    padding-block-end: 4px;
+    padding-block-end: var(--space-3xs);
 }
 
 .section-content {
-    padding-inline: 10px;
+    padding-inline: var(--space-2xs);
+    color: var(--color-text-quiet);
 }
 
 .design-area-diff {

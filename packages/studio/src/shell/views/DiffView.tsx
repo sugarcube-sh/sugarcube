@@ -12,7 +12,11 @@ export function DiffView() {
     const diff = usePendingChanges();
 
     if (diff.length === 0) {
-        return <p className="diff-empty">No changes yet — tweak something.</p>;
+        return (
+            <p className="text-quiet text-sm font-mono text-center p-sm">
+                No changes yet — tweak something.
+            </p>
+        );
     }
 
     const grouped = groupBySourceFile(diff);
@@ -23,11 +27,14 @@ export function DiffView() {
                 const headingId = `diff-file-${sourcePath.replace(/[^a-z0-9]/gi, "-")}-${i}`;
                 return (
                     <section key={sourcePath} className="diff-file" aria-labelledby={headingId}>
-                        <header className="diff-file-header">
-                            <code id={headingId} className="diff-file-path">
+                        <header className="diff-file-header repel font-mono text-sm">
+                            <code
+                                id={headingId}
+                                className="bg-transparent p-0 text-quiet truncate min-w-0"
+                            >
                                 {sourcePath}
                             </code>
-                            <span className="diff-file-count">
+                            <span className="shrink-0 text-quietest tabular-nums">
                                 {entries.length} {entries.length === 1 ? "change" : "changes"}
                             </span>
                         </header>
@@ -51,10 +58,13 @@ function DiffEntry({ entry }: { entry: TokenDiffEntry }) {
 
     return (
         <article className="diff-entry" aria-label={`Change to ${entry.path}`}>
-            <header className="diff-entry-header">
-                <TokenPath className="diff-entry-path" path={entry.path} />
+            <header className="diff-entry-header cluster cluster-gap-2xs">
+                <TokenPath path={entry.path} />
                 {entry.contexts.length > 0 && (
-                    <span className="diff-entry-contexts" title={entry.contexts.join(", ")}>
+                    <span
+                        className="ms-auto text-quietest font-mono text-xs"
+                        title={entry.contexts.join(", ")}
+                    >
                         {entry.contexts.join(", ")}
                     </span>
                 )}

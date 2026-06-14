@@ -24,27 +24,29 @@ export function DesignActions({ diffOpen, onToggleDiff, diffPanelId }: DesignAct
     };
 
     return (
-        <div className="design-actions" role="toolbar" aria-label="Design changes actions">
+        <div className="design-actions repel" role="toolbar" aria-label="Design changes actions">
             <button
                 type="button"
-                className="design-actions-toggle"
+                className="button design-actions-toggle"
+                data-appearance="ghost"
+                data-size="xs"
                 data-state={diffOpen ? "open" : "closed"}
                 onClick={onToggleDiff}
                 disabled={!hasChanges}
                 aria-expanded={diffOpen}
                 aria-controls={diffPanelId}
             >
-                <Icon name="caret" className="design-actions-toggle-icon" />
-                <span className="design-actions-toggle-count">{pendingCount}</span>
-                <span className="design-actions-toggle-word">
-                    {pendingCount === 1 ? "change" : "changes"}
-                </span>
+                <Icon name="caret" className="design-actions-toggle-icon text-quieter" />
+                <span className="tabular-nums">{pendingCount}</span>
+                <span className="text-quiet">{pendingCount === 1 ? "change" : "changes"}</span>
             </button>
-            <div className="design-actions-end">
+            <div className="cluster" data-cluster-wrap="nowrap">
                 {feedback}
                 <button
                     type="button"
-                    className="design-actions-discard"
+                    className="button"
+                    data-appearance="ghost"
+                    data-size="xs"
                     onClick={handleDiscard}
                     disabled={!hasChanges || saving}
                     aria-label={`${discardLabel} all pending design changes`}
@@ -53,7 +55,9 @@ export function DesignActions({ diffOpen, onToggleDiff, diffPanelId }: DesignAct
                 </button>
                 <button
                     type="button"
-                    className="design-actions-save"
+                    className="button"
+                    data-variant="accent"
+                    data-size="xs"
                     onClick={onSave}
                     disabled={saving || !hasChanges}
                     data-state={saving ? "saving" : "idle"}

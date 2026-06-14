@@ -59,17 +59,20 @@ export function ColorTokenControl({ binding, colorScale }: ColorTokenControlProp
     return (
         <TokenRow path={binding.token} label={label}>
             <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger className="token-picker-trigger">
+                <PopoverTrigger
+                    className="select-trigger cluster w-full"
+                    data-cluster-wrap="nowrap"
+                >
                     <span
                         className="token-swatch"
                         style={{ backgroundColor: currentOption?.color ?? "transparent" }}
                         aria-hidden="true"
                     />
-                    <TokenPath className="token-picker-path" path={terminalPath} />
+                    <TokenPath path={terminalPath} />
                 </PopoverTrigger>
                 <PopoverContent
                     ref={popoverRef}
-                    className="color-grid-popover"
+                    className="p-2xs"
                     onOpenAutoFocus={handleOpenAutoFocus}
                 >
                     <ColorGrid

@@ -5,8 +5,8 @@
 
 .popover-content {
     outline: none;
-    min-width: fit-content;
-    background-color: #f6f6f8;
+    min-inline-size: fit-content;
+    background-color: var(--color-surface-raised);
     transform-origin: var(--radix-popover-content-transform-origin);
     border-width: var(--border-width-thin);
     border-style: var(--border-style);

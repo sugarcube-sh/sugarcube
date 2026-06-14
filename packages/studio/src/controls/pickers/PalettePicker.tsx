@@ -18,12 +18,9 @@ export function PalettePicker({ currentName, options, onSelect }: Props) {
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger className="palette-picker-trigger">
+            <PopoverTrigger className="select-trigger cluster w-full" data-cluster-wrap="nowrap">
                 <PaletteStrip shades={current?.shades ?? []} />
-                <span className="palette-picker-name">{currentName}</span>
-                <span className="palette-picker-action" aria-hidden="true">
-                    <span className="text-quietest">swap</span>
-                </span>
+                <span className="font-mono text-sm">{currentName}</span>
             </PopoverTrigger>
             <PopoverContent align="start" className="preset-popover palette-picker-popover">
                 <div className="preset-list" role="listbox" tabIndex={0}>
@@ -31,7 +28,7 @@ export function PalettePicker({ currentName, options, onSelect }: Props) {
                         <div key={opt.name} role="option" aria-selected={opt.name === currentName}>
                             <button
                                 type="button"
-                                className="preset-option"
+                                className="preset-option cluster w-full"
                                 data-selected={opt.name === currentName || undefined}
                                 onClick={() => {
                                     onSelect(opt.name);
@@ -39,7 +36,7 @@ export function PalettePicker({ currentName, options, onSelect }: Props) {
                                 }}
                             >
                                 <PaletteStrip shades={opt.shades} />
-                                <span className="palette-picker-option-name">{opt.name}</span>
+                                <span className="ms-auto">{opt.name}</span>
                                 <span
                                     className="palette-picker-option-indicator"
                                     aria-hidden="true"

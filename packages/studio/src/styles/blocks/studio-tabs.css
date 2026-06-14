@@ -26,10 +26,9 @@
     &::after {
         content: "";
         position: absolute;
-        left: 0;
-        right: 0;
-        bottom: -1px;
-        height: 1px;
+        inset-inline: 0;
+        inset-block-end: -1px;
+        block-size: 1px;
         background: var(--color-accent-on-normal);
     }
 }

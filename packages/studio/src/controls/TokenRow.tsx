@@ -11,8 +11,8 @@ type Props = {
 export function TokenRow({ path, label, children }: Props) {
     return (
         <div className="token-row">
-            <span className="token-row-label">{label}</span>
-            <div className="token-row-control">{children}</div>
+            <span className="whitespace-nowrap">{label}</span>
+            <div className="min-w-0">{children}</div>
             {path && <DiscardButton path={path} label={label} />}
         </div>
     );
@@ -21,11 +21,17 @@ export function TokenRow({ path, label, children }: Props) {
 function DiscardButton({ path, label }: { path: string; label: string }) {
     const hasChange = useHasPendingChange(path);
     const resetToken = useTokenStore((state) => state.resetToken);
-    if (!hasChange) return null;
+
     return (
         <button
             type="button"
-            className="token-row-discard"
+            className="button"
+            data-appearance="ghost"
+            data-size="xs"
+            style={hasChange ? undefined : { visibility: "hidden" }}
+            aria-hidden={hasChange ? undefined : true}
+            tabIndex={hasChange ? undefined : -1}
+            disabled={!hasChange}
             onClick={() => resetToken(path)}
             aria-label={`Discard change to ${label}`}
             title="Discard"

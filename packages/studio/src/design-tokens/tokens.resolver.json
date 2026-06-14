@@ -52,6 +52,9 @@
           "$ref": "./space.json"
         },
         {
+          "$ref": "./studio.json"
+        },
+        {
           "$ref": "./typography.json"
         }
       ]

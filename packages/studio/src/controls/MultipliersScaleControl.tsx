@@ -43,9 +43,9 @@ export function MultipliersScaleControl({ binding }: MultipliersScaleControlProp
     const scale: MultiplierScaleConfig = effective;
 
     return (
-        <div className="scale-control">
+        <div className="scale-control flow flow-space-3xs">
             <div className="scale-control-heading">{labelForBinding(binding)}</div>
-            <div className="scale-row">
+            <div className="cluster cluster-gap-2xs" data-cluster-wrap="nowrap">
                 <span className="scale-label">Base</span>
                 <input
                     className="scale-slider"

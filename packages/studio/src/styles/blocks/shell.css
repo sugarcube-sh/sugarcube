@@ -5,9 +5,6 @@ body {
 }
 
 .shell {
-    --studio-header-h: 1.875rem;
-    --studio-actions-h: 1.875rem;
-
     display: flex;
     flex-direction: column;
     block-size: 100dvh;

@@ -37,9 +37,9 @@ export function ExponentialScaleControl({ binding }: ExponentialScaleControlProp
     const scale: ExponentialScaleConfig = effective;
 
     return (
-        <div className="scale-control">
+        <div className="scale-control flow flow-space-3xs">
             <div className="scale-control-heading">{labelForBinding(binding)}</div>
-            <div className="scale-row">
+            <div className="cluster cluster-gap-2xs" data-cluster-wrap="nowrap">
                 <span className="scale-label">Ratio</span>
                 <input
                     className="scale-slider"
@@ -69,7 +69,7 @@ export function ExponentialScaleControl({ binding }: ExponentialScaleControlProp
                 />
             </div>
 
-            <div className="scale-row">
+            <div className="cluster cluster-gap-2xs" data-cluster-wrap="nowrap">
                 <span className="scale-label">Base</span>
                 <input
                     className="scale-number"
@@ -94,47 +94,6 @@ export function ExponentialScaleControl({ binding }: ExponentialScaleControlProp
                         });
                     }}
                     aria-label="base"
-                />
-            </div>
-
-            <div className="scale-row">
-                <span className="scale-label">Steps</span>
-                <input
-                    className="scale-number"
-                    type="number"
-                    min={0}
-                    max={20}
-                    step={1}
-                    value={scale.steps.negative}
-                    onChange={(e) => {
-                        const next = Number.parseInt(e.target.value, 10);
-                        if (!Number.isFinite(next) || next < 0) return;
-                        updateScale(binding.token, (s) => {
-                            const exp = s as ExponentialScaleConfig;
-                            return { ...exp, steps: { ...exp.steps, negative: next } };
-                        });
-                    }}
-                    aria-label="steps down"
-                />
-                <span className="scale-step-divider" aria-hidden="true">
-                    /
-                </span>
-                <input
-                    className="scale-number"
-                    type="number"
-                    min={0}
-                    max={20}
-                    step={1}
-                    value={scale.steps.positive}
-                    onChange={(e) => {
-                        const next = Number.parseInt(e.target.value, 10);
-                        if (!Number.isFinite(next) || next < 0) return;
-                        updateScale(binding.token, (s) => {
-                            const exp = s as ExponentialScaleConfig;
-                            return { ...exp, steps: { ...exp.steps, positive: next } };
-                        });
-                    }}
-                    aria-label="steps up"
                 />
             </div>
         </div>
