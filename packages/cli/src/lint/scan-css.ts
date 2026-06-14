@@ -85,24 +85,3 @@ export function findDangling(
 
     return { broken, masked };
 }
-
-/**
- * Names that are declared (by sugarcube or the user) but never referenced in a
- * `var(…)` anywhere we scanned. Sorted, prefix-filtered the same way.
- *
- * Caveat: usage is only as complete as the files we scan. In phase 1 (CSS only)
- * a token consumed solely in a component `<style>` block or inline/JS will be
- * reported here even though it's used — so this list over-reports until the
- * usage scan covers those too.
- */
-export function findUnused(
-    declared: Set<string>,
-    used: VarRef[],
-    ignorePrefixes: string[]
-): string[] {
-    const usedNames = new Set(used.map((ref) => ref.name));
-    return [...declared]
-        .filter((name) => !usedNames.has(name))
-        .filter((name) => !ignorePrefixes.some((prefix) => name.startsWith(prefix)))
-        .sort();
-}
