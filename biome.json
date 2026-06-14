@@ -77,6 +77,7 @@
         "packages/studio/src/client/controls/pickers/ColorGrid.tsx",
         "packages/studio/src/client/controls/PresetControl.tsx",
         "packages/studio/src/controls/pickers/ColorGrid.tsx",
+        "packages/studio/src/controls/pickers/PalettePicker.tsx",
         "packages/studio/src/controls/PresetControl.tsx"
       ],
       "linter": {
@@ -84,6 +85,16 @@
           "a11y": {
             "useSemanticElements": "off",
             "useFocusableInteractive": "off"
+          }
+        }
+      }
+    },
+    {
+      "include": ["packages/studio/src/shell/Shell.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noSvgWithoutTitle": "off"
           }
         }
       }

@@ -37,21 +37,14 @@ export function createDiffStore(
 
     const activate = (): (() => void) => {
         store.setState(recompute());
-
         const unsubBaseline = host.baseline.subscribe(() => store.setState(recompute()));
         const unsubToken = tokenStore.subscribe((state, prev) => {
             if (state.resolved !== prev.resolved) store.setState(recompute());
-        });
-        const unsubScale = scaleState.subscribe((state, prev) => {
-            if (state.edits !== prev.edits || state.bindings !== prev.bindings) {
-                store.setState(recompute());
-            }
         });
 
         return () => {
             unsubBaseline();
             unsubToken();
-            unsubScale();
         };
     };
 

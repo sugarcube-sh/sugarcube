@@ -1,0 +1,32 @@
+.button[data-variant="accent"] {
+    --color-fill-loud: var(--color-accent-fill-loud);
+    --color-on-loud: var(--color-accent-on-loud);
+    --color-border-normal: var(--color-accent-border-normal);
+    --color-fill-normal: var(--color-accent-fill-normal);
+    --color-on-normal: var(--color-accent-on-normal);
+    --color-border-quiet: var(--color-accent-border-quiet);
+}
+
+.button[data-appearance="ghost"] {
+    background-color: transparent;
+    color: var(--color-on-normal, var(--color-text-quiet));
+    box-shadow: none;
+}
+
+.button[data-appearance="ghost"]:hover {
+    background-color: var(--color-surface-lowered);
+    color: var(--color-text-normal);
+}
+
+.button[data-appearance="ghost"]:active {
+    background-color: color-mix(in oklab, var(--color-surface-lowered), black 10%);
+}
+
+.button[data-size="xs"] {
+    --_padding-block: 0;
+    --_padding-inline: var(--space-2xs);
+
+    min-block-size: var(--studio-control-height);
+    gap: var(--space-3xs);
+    font-size: var(--text-sm);
+}

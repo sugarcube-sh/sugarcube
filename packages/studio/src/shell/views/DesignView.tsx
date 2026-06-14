@@ -1,5 +1,11 @@
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "../../components/ui/collapsible/collapsible";
 import { type ControlContext, renderSectionContent } from "../../controls/resolver";
 import { usePathIndex, useStudioConfig } from "../../store/hooks";
+import { Icon } from "../Shell";
 
 export function DesignView() {
     const config = useStudioConfig();
@@ -27,14 +33,31 @@ export function DesignView() {
                 const headingId = `design-section-${slug}-${i}`;
                 return (
                     <section key={headingId} aria-labelledby={headingId}>
-                        <details open>
-                            <summary>
-                                <h2 id={headingId}>{section.title}</h2>
-                            </summary>
-                            <div className="section-content">
+                        <Collapsible key={headingId} defaultOpen>
+                            <CollapsibleTrigger asChild>
+                                <button
+                                    id={headingId}
+                                    className="studio-collapsible-trigger font-mono w-full cluster cluster-gap-xs"
+                                    type="button"
+                                >
+                                    <Icon
+                                        name="caret"
+                                        className="studio-collapsible-trigger-icon text-quieter"
+                                    />
+                                    <div className="cluster cluster-gap-2xs">
+                                        <span className="text-quietest text-sm">
+                                            {String(i + 1).padStart(2, "0")}
+                                        </span>
+                                        <span className="text-sm uppercase text-quieter">
+                                            {section.title}
+                                        </span>
+                                    </div>
+                                </button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="section-content">
                                 {renderSectionContent(section, ctx)}
-                            </div>
-                        </details>
+                            </CollapsibleContent>
+                        </Collapsible>
                     </section>
                 );
             })}

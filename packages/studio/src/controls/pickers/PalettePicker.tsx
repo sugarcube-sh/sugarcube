@@ -1,13 +1,4 @@
-import { CheckIcon } from "lucide-react";
-import { useMemo, useState } from "react";
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from "../../components/ui/command/command";
+import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "../../components/ui/popover/popover";
 
 export type PaletteOption = {
@@ -25,52 +16,47 @@ export function PalettePicker({ currentName, options, onSelect }: Props) {
     const [open, setOpen] = useState(false);
     const current = options.find((o) => o.name === currentName);
 
-    // cmdk lowercases values internally — map back to the real name.
-    const nameByLower = useMemo(
-        () => new Map(options.map((o) => [o.name.toLowerCase(), o.name])),
-        [options]
-    );
-
-    const resolve = (lowered: string) => nameByLower.get(lowered) ?? lowered;
-
     return (
         <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger className="palette-picker-trigger">
+            <PopoverTrigger className="select-trigger cluster w-full" data-cluster-wrap="nowrap">
                 <PaletteStrip shades={current?.shades ?? []} />
-                <span className="palette-picker-name">{currentName}</span>
+                <span className="font-mono text-sm">{currentName}</span>
             </PopoverTrigger>
-            <PopoverContent align="start">
-                <Command onValueChange={(v) => onSelect(resolve(v))}>
-                    <CommandInput placeholder="Filter palettes…" />
-                    <CommandList>
-                        <CommandEmpty>No palettes found.</CommandEmpty>
-                        <CommandGroup>
-                            {options.map((opt) => (
-                                <CommandItem
-                                    key={opt.name}
-                                    value={opt.name}
-                                    onSelect={() => {
-                                        onSelect(opt.name);
-                                        setOpen(false);
-                                    }}
-                                >
-                                    <PaletteStrip shades={opt.shades} />
-                                    <span>{opt.name}</span>
-                                    {opt.name === currentName && <CheckIcon />}
-                                </CommandItem>
-                            ))}
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
+            <PopoverContent align="start" className="preset-popover palette-picker-popover">
+                <div className="preset-list" role="listbox" tabIndex={0}>
+                    {options.map((opt) => (
+                        <div key={opt.name} role="option" aria-selected={opt.name === currentName}>
+                            <button
+                                type="button"
+                                className="preset-option cluster w-full"
+                                data-selected={opt.name === currentName || undefined}
+                                onClick={() => {
+                                    onSelect(opt.name);
+                                    setOpen(false);
+                                }}
+                            >
+                                <PaletteStrip shades={opt.shades} />
+                                <span className="ms-auto">{opt.name}</span>
+                                <span
+                                    className="palette-picker-option-indicator"
+                                    aria-hidden="true"
+                                />
+                            </button>
+                        </div>
+                    ))}
+                </div>
             </PopoverContent>
         </Popover>
     );
 }
 
+const STRIP_SHADE_COUNT = 11;
+
 function PaletteStrip({ shades }: { shades: string[] }) {
+    const sampled = sampleShades(shades, STRIP_SHADE_COUNT);
     return (
         <span className="palette-strip" aria-hidden="true">
-            {shades.map((color, i) => (
+            {sampled.map((color, i) => (
                 <span
                     // biome-ignore lint/suspicious/noArrayIndexKey: shades are a fixed-order ramp
                     key={i}
@@ -80,4 +66,12 @@ function PaletteStrip({ shades }: { shades: string[] }) {
             ))}
         </span>
     );
+}
+
+function sampleShades(shades: string[], count: number): string[] {
+    if (shades.length <= count) return shades;
+    return Array.from({ length: count }, (_, i) => {
+        const idx = Math.round((i * (shades.length - 1)) / (count - 1));
+        return shades[idx] as string;
+    });
 }

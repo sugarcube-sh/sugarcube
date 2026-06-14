@@ -1,14 +1,19 @@
 import { type MultiplierScaleConfig, type ScaleBinding, roundTo } from "@sugarcube-sh/core/client";
 import { useBaseline, useScaleState } from "../store/hooks";
 import { selectEffectiveScale } from "../store/scale-state";
-import { ScalePreview } from "./ScalePreview";
+import { useRafThrottle } from "../use-raf-throttle";
 import { labelForBinding } from "./path-utils";
 
 type MultipliersScaleControlProps = {
     binding: ScaleBinding;
 };
 
-type PairsMode = "none" | "adjacent" | "custom";
+const BASE_MIN = 0.5;
+const BASE_MAX = 2;
+
+function baseFillPercent(value: number): number {
+    return ((value - BASE_MIN) / (BASE_MAX - BASE_MIN)) * 100;
+}
 
 export function MultipliersScaleControl({ binding }: MultipliersScaleControlProps) {
     const meta = useScaleState((s) => s.bindings[binding.token]);
@@ -16,105 +21,59 @@ export function MultipliersScaleControl({ binding }: MultipliersScaleControlProp
     const updateScale = useScaleState((s) => s.updateScale);
     const baseline = useBaseline();
 
+    function applyBase(next: number) {
+        if (!Number.isFinite(next)) return;
+        updateScale(binding.token, (s) => {
+            const ratio = s.base.max.value > 0 ? s.base.min.value / s.base.max.value : 1;
+            return {
+                ...s,
+                base: {
+                    min: { ...s.base.min, value: roundTo(next * ratio) },
+                    max: { ...s.base.max, value: next },
+                },
+            };
+        });
+    }
+
+    const setBaseThrottled = useRafThrottle(applyBase);
+
     if (!meta || meta.kind !== "scale") return null;
     const effective = selectEffectiveScale(baseline, edit, meta.parentPath);
     if (!effective || effective.mode !== "multipliers") return null;
     const scale: MultiplierScaleConfig = effective;
-    const label = labelForBinding(binding);
-
-    const pairsMode = pairsToMode(scale.pairs);
 
     return (
-        <div className="scale-control">
-            <div className="scale-row">
-                <span className="scale-label">{label} base</span>
+        <div className="scale-control flow flow-space-3xs">
+            <div className="scale-control-heading">{labelForBinding(binding)}</div>
+            <div className="cluster cluster-gap-2xs" data-cluster-wrap="nowrap">
+                <span className="scale-label">Base</span>
                 <input
                     className="scale-slider"
                     type="range"
-                    min={0.5}
-                    max={2}
-                    step={0.025}
+                    min={BASE_MIN}
+                    max={BASE_MAX}
+                    step={0.05}
                     value={scale.base.max.value}
-                    onChange={(e) => {
-                        const next = Number(e.target.value);
-                        if (!Number.isFinite(next)) return;
-                        updateScale(binding.token, (s) => {
-                            const ratio =
-                                s.base.max.value > 0 ? s.base.min.value / s.base.max.value : 1;
-                            return {
-                                ...s,
-                                base: {
-                                    min: { ...s.base.min, value: roundTo(next * ratio) },
-                                    max: { ...s.base.max, value: next },
-                                },
-                            };
-                        });
-                    }}
-                    aria-label={`${label} base`}
+                    onChange={(e) => setBaseThrottled(Number(e.target.value))}
+                    aria-label="base"
+                    aria-valuetext={`${scale.base.max.value}${scale.base.max.unit}`}
+                    style={
+                        {
+                            "--fill": `${baseFillPercent(scale.base.max.value)}%`,
+                        } as React.CSSProperties
+                    }
                 />
-                <span className="scale-value">{scale.base.max.value.toFixed(3)}</span>
+                <input
+                    className="scale-number"
+                    type="number"
+                    min={BASE_MIN}
+                    max={BASE_MAX}
+                    step={0.05}
+                    value={scale.base.max.value}
+                    onChange={(e) => applyBase(Number(e.target.value))}
+                    aria-label="base value"
+                />
             </div>
-
-            <div className="scale-multipliers">
-                <span className="scale-label">Sizes</span>
-                {Object.entries(scale.multipliers).map(([name, value]) => (
-                    <div className="multiplier-row" key={name}>
-                        <span className="multiplier-name">{name}</span>
-                        <input
-                            className="scale-number"
-                            type="number"
-                            min={0}
-                            step={0.05}
-                            value={value}
-                            onChange={(e) => {
-                                const next = Number(e.target.value);
-                                if (!Number.isFinite(next)) return;
-                                updateScale(binding.token, (s) => ({
-                                    ...s,
-                                    multipliers: {
-                                        ...(s as MultiplierScaleConfig).multipliers,
-                                        [name]: next,
-                                    },
-                                }));
-                            }}
-                            aria-label={`${name} multiplier`}
-                        />
-                    </div>
-                ))}
-            </div>
-
-            <div className="scale-row">
-                <span className="scale-label">Pairs</span>
-                <select
-                    className="scale-select"
-                    value={pairsMode}
-                    onChange={(e) => {
-                        const nextMode = e.target.value as PairsMode;
-                        updateScale(binding.token, (s) => {
-                            const multi = s as MultiplierScaleConfig;
-                            const { pairs: _drop, ...rest } = multi;
-                            if (nextMode === "none") return rest;
-                            if (nextMode === "adjacent") {
-                                return { ...rest, pairs: "adjacent" } as MultiplierScaleConfig;
-                            }
-                            return { ...rest, pairs: [] as string[] } as MultiplierScaleConfig;
-                        });
-                    }}
-                    aria-label="pairs mode"
-                >
-                    <option value="none">None</option>
-                    <option value="adjacent">Adjacent</option>
-                    <option value="custom">Custom list</option>
-                </select>
-            </div>
-
-            <ScalePreview extension={scale} />
         </div>
     );
-}
-
-function pairsToMode(pairs: MultiplierScaleConfig["pairs"]): PairsMode {
-    if (pairs === "adjacent") return "adjacent";
-    if (Array.isArray(pairs)) return "custom";
-    return "none";
 }

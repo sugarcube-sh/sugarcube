@@ -1,4 +1,26 @@
 .design-actions {
-    position: sticky;
-    bottom: 0;
+    block-size: var(--studio-bar-height);
+    padding-inline: var(--space-2xs);
+    background: var(--gradient-surface);
+    border-block-start: var(--border-width-thin) solid var(--color-surface-border);
+}
+
+.design-actions-toggle-icon {
+    transition: transform var(--transition-normal);
+}
+
+.design-actions-toggle[data-state="closed"] .design-actions-toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.save-pr-link {
+    padding-inline: var(--space-2xs);
+}
+
+.save-pr-link:hover {
+    text-decoration: underline;
+}
+
+.save-error {
+    padding-inline: var(--space-2xs);
 }

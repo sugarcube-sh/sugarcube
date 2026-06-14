@@ -14,7 +14,38 @@ import type {
     ScaleEdit,
 } from "../src/store/scale-types";
 import { PathIndex } from "../src/tokens/path-index";
-import { resolved, snapshot } from "./fixtures";
+import { resolved, snapshot, tree } from "./fixtures";
+
+function sizeStepTrees() {
+    return [
+        tree("size.json", {
+            size: {
+                step: {
+                    $extensions: {
+                        "sh.sugarcube": {
+                            scale: {
+                                mode: "exponential",
+                                base: {
+                                    min: { value: 1, unit: "rem" },
+                                    max: { value: 1, unit: "rem" },
+                                },
+                                ratio: { min: 1.2, max: 1.2 },
+                                steps: { negative: 0, positive: 2 },
+                            },
+                        },
+                    },
+                },
+            },
+        }),
+    ];
+}
+
+const sizeScaleMeta: ScaleBindingMeta = {
+    binding: { type: "scale", token: "size.step.*", base: "size.step.0" },
+    kind: "scale",
+    parentPath: "size.step",
+    sourcePath: "size.json",
+};
 
 const sizeBinding: ScaleBinding = {
     type: "scale",
@@ -162,9 +193,10 @@ describe("applyScaleEdits", () => {
         expect(after).toBe(baselineMap);
     });
 
-    it("applies the source's base/baseMax factor to enabled linked tokens", () => {
-        // Source scale (size.step.0 = 1rem) + linked container tokens.
-        // Source base doubled → factor = 2; container values should double.
+    it("scales linked tokens by the source scale's ratio change", () => {
+        // Source scale exponential, baseline ratio 1.2; edit doubles ratio
+        // to 2.4 → factor 2 → container values double. Base is unchanged
+        // (containers track ratio, not base).
         const baselineMap = resolved(
             {
                 path: "size.step.0",
@@ -181,10 +213,18 @@ describe("applyScaleEdits", () => {
             { path: "container.sm", value: { value: 100, unit: "px" } },
             { path: "container.md", value: { value: 200, unit: "px" } }
         );
-        const baseline = snapshot({ resolved: baselineMap });
+        const baseline = snapshot({ resolved: baselineMap, trees: sizeStepTrees() });
         const pathIndex = new PathIndex(baselineMap);
 
-        const sourceEdit: ScaleEdit = { kind: "tokens", base: 2, spread: 1 };
+        const sourceEdit: ScaleEdit = {
+            kind: "scale",
+            scale: {
+                mode: "exponential",
+                base: { min: { value: 1, unit: "rem" }, max: { value: 1, unit: "rem" } },
+                ratio: { min: 2.4, max: 2.4 },
+                steps: { negative: 0, positive: 2 },
+            },
+        };
         const linkMeta: LinkBindingMeta = {
             bindingToken: "container.*",
             sourceBinding: "size.step.*",
@@ -195,7 +235,7 @@ describe("applyScaleEdits", () => {
             baselineMap,
             { "size.step.*": sourceEdit },
             { "container.*": linkEdit },
-            { "size.step.*": sizeMeta },
+            { "size.step.*": sizeScaleMeta },
             { "container.*": linkMeta },
             baseline,
             pathIndex,
@@ -207,6 +247,100 @@ describe("applyScaleEdits", () => {
         );
         expect((after["default::container.md"] as { $value: { value: number } }).$value.value).toBe(
             400
+        );
+    });
+
+    it("leaves linked tokens unchanged when only the source base changes", () => {
+        // Scale-mode edit that doubles base but keeps ratio at baseline:
+        // container width is layout, not type size, so base alone is a no-op.
+        const baselineMap = resolved(
+            {
+                path: "size.step.0",
+                value: { value: 1, unit: "rem" },
+                extensions: {
+                    "sh.sugarcube": {
+                        fluid: {
+                            min: { value: 1, unit: "rem" },
+                            max: { value: 1, unit: "rem" },
+                        },
+                    },
+                },
+            },
+            { path: "container.sm", value: { value: 100, unit: "px" } }
+        );
+        const baseline = snapshot({ resolved: baselineMap, trees: sizeStepTrees() });
+        const pathIndex = new PathIndex(baselineMap);
+
+        const sourceEdit: ScaleEdit = {
+            kind: "scale",
+            scale: {
+                mode: "exponential",
+                base: { min: { value: 2, unit: "rem" }, max: { value: 2, unit: "rem" } },
+                ratio: { min: 1.2, max: 1.2 },
+                steps: { negative: 0, positive: 2 },
+            },
+        };
+        const linkMeta: LinkBindingMeta = {
+            bindingToken: "container.*",
+            sourceBinding: "size.step.*",
+        };
+
+        const after = applyScaleEdits(
+            baselineMap,
+            { "size.step.*": sourceEdit },
+            {},
+            { "size.step.*": sizeScaleMeta },
+            { "container.*": linkMeta },
+            baseline,
+            pathIndex,
+            "default"
+        );
+
+        expect((after["default::container.sm"] as { $value: { value: number } }).$value.value).toBe(
+            100
+        );
+    });
+
+    it("ignores tokens-mode (base/spread) edits on linked tokens", () => {
+        // DirectScaleControl produces `kind: "tokens"` edits which have no
+        // ratio; containers should stay at baseline regardless of base.
+        const baselineMap = resolved(
+            {
+                path: "size.step.0",
+                value: { value: 1, unit: "rem" },
+                extensions: {
+                    "sh.sugarcube": {
+                        fluid: {
+                            min: { value: 1, unit: "rem" },
+                            max: { value: 1, unit: "rem" },
+                        },
+                    },
+                },
+            },
+            { path: "container.sm", value: { value: 100, unit: "px" } }
+        );
+        const baseline = snapshot({ resolved: baselineMap, trees: sizeStepTrees() });
+        const pathIndex = new PathIndex(baselineMap);
+
+        const sourceEdit: ScaleEdit = { kind: "tokens", base: 2, spread: 1 };
+        const linkMeta: LinkBindingMeta = {
+            bindingToken: "container.*",
+            sourceBinding: "size.step.*",
+        };
+
+        const after = applyScaleEdits(
+            baselineMap,
+            { "size.step.*": sourceEdit },
+            {},
+            { "size.step.*": sizeMeta },
+            { "container.*": linkMeta },
+            baseline,
+            pathIndex,
+            "default"
+        );
+
+        expect((after["default::container.sm"] as { $value: { value: number } }).$value.value).toBe(
+            100
         );
     });
 
@@ -291,6 +425,55 @@ describe("applyScaleEdits", () => {
         );
     });
 
+    it("applies a configured link by default even with no explicit toggle edit", () => {
+        const baselineMap = resolved(
+            {
+                path: "size.step.0",
+                value: { value: 1, unit: "rem" },
+                extensions: {
+                    "sh.sugarcube": {
+                        fluid: {
+                            min: { value: 1, unit: "rem" },
+                            max: { value: 1, unit: "rem" },
+                        },
+                    },
+                },
+            },
+            { path: "container.sm", value: { value: 100, unit: "px" } }
+        );
+        const baseline = snapshot({ resolved: baselineMap, trees: sizeStepTrees() });
+        const pathIndex = new PathIndex(baselineMap);
+
+        const sourceEdit: ScaleEdit = {
+            kind: "scale",
+            scale: {
+                mode: "exponential",
+                base: { min: { value: 1, unit: "rem" }, max: { value: 1, unit: "rem" } },
+                ratio: { min: 2.4, max: 2.4 },
+                steps: { negative: 0, positive: 2 },
+            },
+        };
+        const linkMeta: LinkBindingMeta = {
+            bindingToken: "container.*",
+            sourceBinding: "size.step.*",
+        };
+
+        const after = applyScaleEdits(
+            baselineMap,
+            { "size.step.*": sourceEdit },
+            {},
+            { "size.step.*": sizeScaleMeta },
+            { "container.*": linkMeta },
+            baseline,
+            pathIndex,
+            "default"
+        );
+
+        expect((after["default::container.sm"] as { $value: { value: number } }).$value.value).toBe(
+            200
+        );
+    });
+
     it("applies factor 1.0 (restoring baseline) when a linked binding is disabled", () => {
         const baselineMap = resolved(
             {
@@ -307,10 +490,18 @@ describe("applyScaleEdits", () => {
             },
             { path: "container.sm", value: { value: 100, unit: "px" } }
         );
-        const baseline = snapshot({ resolved: baselineMap });
+        const baseline = snapshot({ resolved: baselineMap, trees: sizeStepTrees() });
         const pathIndex = new PathIndex(baselineMap);
 
-        const sourceEdit: ScaleEdit = { kind: "tokens", base: 2, spread: 1 };
+        const sourceEdit: ScaleEdit = {
+            kind: "scale",
+            scale: {
+                mode: "exponential",
+                base: { min: { value: 1, unit: "rem" }, max: { value: 1, unit: "rem" } },
+                ratio: { min: 2.4, max: 2.4 },
+                steps: { negative: 0, positive: 2 },
+            },
+        };
         const linkMeta: LinkBindingMeta = {
             bindingToken: "container.*",
             sourceBinding: "size.step.*",
@@ -321,7 +512,7 @@ describe("applyScaleEdits", () => {
             baselineMap,
             { "size.step.*": sourceEdit },
             { "container.*": linkEdit },
-            { "size.step.*": sizeMeta },
+            { "size.step.*": sizeScaleMeta },
             { "container.*": linkMeta },
             baseline,
             pathIndex,

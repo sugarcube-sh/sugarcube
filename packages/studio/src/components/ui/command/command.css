@@ -1,9 +1,9 @@
 .command {
     display: flex;
-    height: 100%;
+    block-size: 100%;
     flex-direction: column;
     overflow: hidden;
-    max-width: calc(100vw - 2rem);
+    max-inline-size: calc(100vw - 2rem);
     background-color: var(--color-surface-raised);
     border-radius: var(--radius-md);
     font-size: var(--text-base);
@@ -15,7 +15,7 @@
 }
 
 .command-separator {
-    height: 1px;
+    block-size: 1px;
     background-color: var(--color-surface-border);
 }
 
@@ -57,7 +57,7 @@
     gap: var(--space-2xs);
     padding-block: var(--space-3xs);
     padding-inline: var(--space-2xs);
-    border-radius: var(--radius-sm, var(--radius-md));
+    border-radius: var(--radius-sm);
     cursor: pointer;
 }
 
@@ -80,5 +80,5 @@
 .command-list {
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: 300px;
+    max-block-size: 300px;
 }

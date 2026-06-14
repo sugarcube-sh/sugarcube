@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useRef, useState } from "react";
 import { useHost } from "../host/host-provider";
 import type { SaveBundle } from "../host/types";
 import { diffToFileEdits } from "../tokens/diff-to-edits";
@@ -10,8 +10,6 @@ type SaveStatus =
     | { kind: "persisted" }
     | { kind: "pr-submitted"; number: number; url: string }
     | { kind: "failed"; error: string };
-
-const SAVED_PIP_DURATION_MS = 2000;
 
 type UseSaveResult = {
     saving: boolean;
@@ -27,12 +25,6 @@ export function useSave(diff: readonly TokenDiffEntry[]): UseSaveResult {
     diffRef.current = diff;
 
     const [status, setStatus] = useState<SaveStatus>({ kind: "idle" });
-
-    useEffect(() => {
-        if (status.kind !== "persisted") return;
-        const t = setTimeout(() => setStatus({ kind: "idle" }), SAVED_PIP_DURATION_MS);
-        return () => clearTimeout(t);
-    }, [status.kind]);
 
     const reset = useCallback(() => setStatus({ kind: "idle" }), []);
 
@@ -60,16 +52,10 @@ function buildSaveBundle(diff: readonly TokenDiffEntry[]): SaveBundle {
 
 function renderFeedback(status: SaveStatus): ReactNode {
     switch (status.kind) {
-        case "persisted":
-            return (
-                <output className="save-pip">
-                    <span>Saved</span>
-                </output>
-            );
         case "pr-submitted":
             return (
                 <a
-                    className="save-pr-link"
+                    className="save-pr-link inline-flex items-center text-sm text-accent-fill-loud no-underline"
                     href={status.url}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -79,7 +65,10 @@ function renderFeedback(status: SaveStatus): ReactNode {
             );
         case "failed":
             return (
-                <span className="save-error" role="alert">
+                <span
+                    className="save-error inline-flex items-center text-sm text-error-fill-loud"
+                    role="alert"
+                >
                     {status.error}
                 </span>
             );

@@ -34,6 +34,9 @@
           "$ref": "./form-controls.json"
         },
         {
+          "$ref": "./gradients.json"
+        },
+        {
           "$ref": "./motion.json"
         },
         {
@@ -47,6 +50,9 @@
         },
         {
           "$ref": "./space.json"
+        },
+        {
+          "$ref": "./studio.json"
         },
         {
           "$ref": "./typography.json"

@@ -1,10 +1,11 @@
 .header {
-    display: flex;
-    align-items: center;
-    height: 3rem;
+    flex-shrink: 0;
+
+    block-size: var(--studio-bar-height);
     padding-inline: var(--space-2xs);
-    border-block-end: var(--border-width-hairline) solid var(--color-surface-border);
+    border-block-end: var(--border-width-thin) solid var(--color-surface-border);
     color: var(--color-text-normal);
+    background: var(--gradient-surface);
 }
 
 .header a {
@@ -21,6 +22,18 @@
 
 .header .logo {
     display: block;
-    width: 1.25rem;
-    height: 1.25rem;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+}
+
+.header .dot {
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-green-600);
+}
+
+.header .dot.live {
+    background: var(--color-green-600);
+    box-shadow: 0 0 3px var(--color-green-600);
 }

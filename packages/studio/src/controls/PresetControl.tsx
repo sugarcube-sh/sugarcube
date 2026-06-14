@@ -2,6 +2,7 @@ import type { PresetBinding } from "@sugarcube-sh/core/client";
 import { CheckIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover/popover";
+import { Icon } from "../shell/Shell";
 import { useBaseline, usePathIndex, useToken } from "../store/hooks";
 import { TokenRow } from "./TokenRow";
 import { labelForBinding } from "./path-utils";
@@ -28,11 +29,12 @@ export function PresetControl({ binding }: PresetControlProps) {
     return (
         <TokenRow path={binding.token} label={label}>
             <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger className="preset-trigger">
-                    <span className="preset-trigger-value">{currentLabel}</span>
-                    <span className="preset-trigger-chevron" aria-hidden="true">
-                        ▾
-                    </span>
+                <PopoverTrigger
+                    className="select-trigger cluster w-full"
+                    data-cluster-wrap="nowrap"
+                >
+                    <span className="flex-1 min-w-0 truncate">{currentLabel}</span>
+                    <Icon name="caret" className="shrink-0 text-quiet" />
                 </PopoverTrigger>
                 <PopoverContent align="start" className="preset-popover">
                     <div className="preset-list" role="listbox" tabIndex={0}>
@@ -40,7 +42,7 @@ export function PresetControl({ binding }: PresetControlProps) {
                             <div key={key} role="option" aria-selected={value === reference}>
                                 <button
                                     type="button"
-                                    className="preset-option"
+                                    className="preset-option cluster w-full"
                                     data-selected={value === reference || undefined}
                                     onClick={() => {
                                         setValue(reference);
@@ -48,7 +50,7 @@ export function PresetControl({ binding }: PresetControlProps) {
                                     }}
                                 >
                                     <span>{optLabel}</span>
-                                    {value === reference && <CheckIcon />}
+                                    {value === reference && <CheckIcon className="ms-auto" />}
                                 </button>
                             </div>
                         ))}

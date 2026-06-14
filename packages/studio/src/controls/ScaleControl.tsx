@@ -26,7 +26,7 @@ export function ScaleControl({ binding }: ScaleControlProps) {
     return (
         <>
             <DirectScaleControl binding={binding} />
-            <PerStepScaleControl binding={binding} />
+            {/* <PerStepScaleControl binding={binding} /> */}
         </>
     );
 }

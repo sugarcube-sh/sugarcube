@@ -19,18 +19,21 @@ export function ScaleLinkedControl({ binding }: ScaleLinkedControlProps) {
     const inputId = `studio-scale-linked-${binding.token.replace(/\./g, "-")}`;
 
     return (
-        <div className="scale-linked-row">
-            <label className="scale-linked-label" htmlFor={inputId}>
+        <div className="cluster cluster-gap-2xs" data-cluster-wrap="nowrap">
+            <label className="cursor-pointer" htmlFor={inputId}>
                 {label}
             </label>
             <input
-                className="scale-linked-toggle"
+                className="switch"
                 id={inputId}
                 type="checkbox"
+                role="switch"
                 checked={enabled}
+                aria-checked={enabled}
                 onChange={(e) => setLinkEnabled(binding.token, e.target.checked)}
                 aria-label={label}
             />
+            <span className="switch-state" aria-hidden="true" />
         </div>
     );
 }

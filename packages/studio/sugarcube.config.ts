@@ -60,6 +60,10 @@ export default defineConfig({
                 source: "font.weight.*",
                 prefix: "font-weight",
             },
+            "font-family": {
+                source: "font.*",
+                prefix: "font",
+            },
             "letter-spacing": {
                 source: "tracking.*",
             },

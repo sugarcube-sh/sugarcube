@@ -9,6 +9,7 @@ import {
     useVariableName,
 } from "../store/hooks";
 import { resolveTerminalPath, unwrapRef, wrapRef } from "../tokens/paths";
+import { TokenPath } from "./TokenPath";
 import { TokenRow } from "./TokenRow";
 import { buildColorGrid } from "./color-grid";
 import { labelForBinding } from "./path-utils";
@@ -22,7 +23,6 @@ type ColorTokenControlProps = {
 export function ColorTokenControl({ binding, colorScale }: ColorTokenControlProps) {
     const [value, setValue] = useToken<string>(binding.token);
     const pathIndex = usePathIndex();
-    const resolved = useTokenStore((state) => state.resolved);
     const currentContext = useCurrentContext();
     const variableName = useVariableName();
     const label = labelForBinding(binding);
@@ -35,9 +35,12 @@ export function ColorTokenControl({ binding, colorScale }: ColorTokenControlProp
     );
 
     const refPath = unwrapRef(value);
-    const terminalPath = refPath
-        ? resolveTerminalPath(refPath, (p) => pathIndex.readValue(resolved, p, currentContext))
-        : "";
+    const terminalPath = useTokenStore((state) => {
+        if (!refPath) return "";
+        return resolveTerminalPath(refPath, (p) =>
+            pathIndex.readValue(state.resolved, p, currentContext)
+        );
+    });
     const currentOption = byPath.get(terminalPath);
 
     const handleOpenAutoFocus = useCallback(
@@ -56,17 +59,20 @@ export function ColorTokenControl({ binding, colorScale }: ColorTokenControlProp
     return (
         <TokenRow path={binding.token} label={label}>
             <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger className="token-picker-trigger">
+                <PopoverTrigger
+                    className="select-trigger cluster w-full"
+                    data-cluster-wrap="nowrap"
+                >
                     <span
                         className="token-swatch"
                         style={{ backgroundColor: currentOption?.color ?? "transparent" }}
                         aria-hidden="true"
                     />
-                    <span className="token-picker-path">{terminalPath}</span>
+                    <TokenPath path={terminalPath} />
                 </PopoverTrigger>
                 <PopoverContent
                     ref={popoverRef}
-                    className="color-grid-popover"
+                    className="p-2xs"
                     onOpenAutoFocus={handleOpenAutoFocus}
                 >
                     <ColorGrid

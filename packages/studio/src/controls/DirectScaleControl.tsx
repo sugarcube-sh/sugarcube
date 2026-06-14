@@ -35,8 +35,8 @@ export function DirectScaleControl({ binding }: DirectScaleControlProps) {
     const spreadPct = ((spread - 0.4) / (1.6 - 0.4)) * 100;
 
     return (
-        <>
-            <div className="scale-row">
+        <div className="flow flow-space-3xs">
+            <div className="cluster cluster-gap-2xs" data-cluster-wrap="nowrap">
                 <span className="scale-label">{baseLabel}</span>
                 <input
                     className="scale-slider"
@@ -52,7 +52,7 @@ export function DirectScaleControl({ binding }: DirectScaleControlProps) {
                 />
                 <span className="scale-value">{base.toFixed(3)}</span>
             </div>
-            <div className="scale-row">
+            <div className="cluster cluster-gap-2xs" data-cluster-wrap="nowrap">
                 <span className="scale-label">{spreadLabel}</span>
                 <input
                     className="scale-slider"
@@ -68,6 +68,6 @@ export function DirectScaleControl({ binding }: DirectScaleControlProps) {
                 />
                 <span className="scale-value">{spread.toFixed(2)}</span>
             </div>
-        </>
+        </div>
     );
 }

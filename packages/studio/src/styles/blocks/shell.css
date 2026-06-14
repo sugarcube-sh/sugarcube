@@ -1,0 +1,38 @@
+body {
+    block-size: 100dvh;
+    min-block-size: 0;
+    overflow: hidden;
+}
+
+.shell {
+    display: flex;
+    flex-direction: column;
+    block-size: 100dvh;
+}
+
+.shell > .tabs {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-block-size: 0;
+}
+
+.tabs-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-block-size: 0;
+}
+
+.design-area {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-block-size: 0;
+}
+
+.design-area-body {
+    flex: 1;
+    min-block-size: 0;
+    overflow-y: auto;
+}

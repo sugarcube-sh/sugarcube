@@ -5,14 +5,14 @@
 
 .popover-content {
     outline: none;
-    min-width: fit-content;
+    min-inline-size: fit-content;
     background-color: var(--color-surface-raised);
     transform-origin: var(--radix-popover-content-transform-origin);
     border-width: var(--border-width-thin);
     border-style: var(--border-style);
     border-color: var(--color-surface-border);
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-xs);
+    box-shadow: var(--shadow-2xl);
 }
 
 .popover-content:has(.command) {
