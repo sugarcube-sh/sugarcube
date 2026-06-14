@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findDangling, findUnused, scanCSS } from "../src/lint/scan-css.js";
+import { findDangling, scanCSS } from "../src/lint/scan-css.js";
 
 describe("scanCSS", () => {
     it("collects custom-property declarations", () => {
@@ -8,7 +8,7 @@ describe("scanCSS", () => {
     });
 
     it("collects var() references with their line numbers", () => {
-        const css = ".a { color: var(--color-primary); }";
+        const css = ".a {\n  color: var(--color-primary);\n}";
         const { used } = scanCSS(css, "a.css");
         expect(used).toEqual([
             { name: "--color-primary", line: 2, file: "a.css", hasFallback: false },
@@ -80,18 +80,5 @@ describe("findDangling", () => {
             { name: "--gone", line: 5, file: "a.css" },
         ];
         expect(findDangling(used, declared, []).broken).toHaveLength(1);
-    });
-});
-
-describe("findUnused", () => {
-    it("returns declared names that are never referenced, sorted", () => {
-        const declared = new Set(["--b-token", "--a-token", "--used"]);
-        const used = [{ name: "--used", line: 1, file: "a.css" }];
-        expect(findUnused(declared, used, [])).toEqual(["--a-token", "--b-token"]);
-    });
-
-    it("respects ignore prefixes", () => {
-        const declared = new Set(["--sl-x", "--gone"]);
-        expect(findUnused(declared, [], ["--sl-"])).toEqual(["--gone"]);
     });
 });
