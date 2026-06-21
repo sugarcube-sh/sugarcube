@@ -104,6 +104,65 @@ You can define multiple sets. Tokens from later sets override earlier ones:
 }
 ```
 
+## Private sets
+
+Sometimes you want tokens to take part in resolution — so other tokens can reference them — without emitting them as CSS variables. A common case is a raw or primitive token set that exists only as scaffolding for your semantic tokens.
+
+Mark a set or an individual source as private with the `sh.sugarcube` extension:
+
+```json title="tokens.resolver.json"
+{
+  "type": "set",
+  "name": "base",
+  "sources": [
+    {
+      "$ref": "./palette.json",
+      "$extensions": { "sh.sugarcube": { "emit": false } }
+    },
+    { "$ref": "./colors.json" }
+  ]
+}
+```
+
+Now `palette.json`'s tokens resolve as normal, but no variables are emitted for them. Any public token that references a private one is inlined to its resolved value:
+
+```css
+:root {
+  /* color.danger -> {palette.red.600} gets inlined like so */
+  --color-danger: #e11d48;
+}
+```
+
+You can set visibility per source:
+
+```json
+{
+  "type": "set",
+  "name": "base",
+  "sources": [
+    {
+      "$ref": "./palette.json",
+      "$extensions": { "sh.sugarcube": { "emit": false } }
+    },
+    { "$ref": "./colors.json" }
+  ]
+}
+```
+
+Or per set:
+
+```json
+{
+  "type": "set",
+  "name": "raw",
+  "$extensions": { "sh.sugarcube": { "emit": false } },
+  "sources": [
+    { "$ref": "./palette.json" },
+    { "$ref": "./colors.json" }
+  ]
+}
+```
+
 ## Modifiers
 
 Modifiers provide themed variations of your tokens. See [Theming](/docs/theming) for full details.
