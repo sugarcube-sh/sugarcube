@@ -1,0 +1,28 @@
+{
+  "version": "2025.10",
+  "name": "Private Sets",
+  "sets": {
+    "raw": {
+      "description": "Tier-1 scaffolding — resolves but does not emit",
+      "sources": [
+        {
+          "rose": {
+            "600": { "$type": "color", "$value": "#e11d48" }
+          }
+        }
+      ],
+      "$extensions": { "sh.sugarcube": { "emit": false } }
+    },
+    "semantic": {
+      "description": "Public, intent-driven tokens",
+      "sources": [
+        {
+          "color": {
+            "danger": { "$type": "color", "$value": "{rose.600}" }
+          }
+        }
+      ]
+    }
+  },
+  "resolutionOrder": [{ "$ref": "#/sets/raw" }, { "$ref": "#/sets/semantic" }]
+}

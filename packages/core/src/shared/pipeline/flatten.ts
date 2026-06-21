@@ -169,21 +169,25 @@ function flattenTree(
                 const namespacedKey = createLookupKey(pathSegments);
                 const originalPath = pathSegments.join(".");
 
-                const { $sourcePath: _stamp, ...tokenWithoutStamp } = value as Record<
-                    string,
-                    unknown
-                >;
+                const {
+                    $sourcePath: _sourcePath,
+                    $emit: emitStamp,
+                    ...tokenWithoutStamps
+                } = value as Record<string, unknown>;
+                const tokenSource: TokenSource = {
+                    context: source.context,
+                    sourcePath: getSourcePath(value),
+                };
+                if (emitStamp === false) tokenSource.emit = false;
+
                 result.tokens[namespacedKey] = {
-                    ...tokenWithoutStamp,
+                    ...tokenWithoutStamps,
                     // Only add $type if the token has an explicit $type or inherits one from parent.
                     // This allows reference tokens to be flattened without $type (per W3C spec),
                     // while ensuring non-reference tokens get proper type inheritance.
                     ...(value.$type || currentType ? { $type: value.$type || currentType } : {}),
                     $path: originalPath,
-                    $source: {
-                        context: source.context,
-                        sourcePath: getSourcePath(value),
-                    },
+                    $source: tokenSource,
                     $originalPath: originalPath,
                 } as FlattenedToken;
 

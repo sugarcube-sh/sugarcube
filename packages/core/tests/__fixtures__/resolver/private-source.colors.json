@@ -1,0 +1,5 @@
+{
+  "color": {
+    "danger": { "$type": "color", "$value": "{rose.600}" }
+  }
+}

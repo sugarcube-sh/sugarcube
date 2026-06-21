@@ -43,6 +43,28 @@ export function deepMerge(target: TokenGroup, source: TokenGroup): TokenGroup {
     return result;
 }
 
+export function isPrivate(node: unknown): boolean {
+    if (!node || typeof node !== "object") return false;
+    const ext = (node as { $extensions?: unknown }).$extensions;
+    if (!ext || typeof ext !== "object") return false;
+    const ns = (ext as Record<string, unknown>)["sh.sugarcube"];
+    return !!ns && typeof ns === "object" && (ns as { emit?: boolean }).emit === false;
+}
+
+export function markPrivate(node: TokenGroup): TokenGroup {
+    const out: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(node)) {
+        if ((key.startsWith("$") && key !== "$root") || !child || typeof child !== "object") {
+            out[key] = child;
+        } else if (isToken(child)) {
+            out[key] = { ...(child as object), $emit: false };
+        } else {
+            out[key] = markPrivate(child as TokenGroup);
+        }
+    }
+    return out as TokenGroup;
+}
+
 /**
  * Extracted modifier information for validation and processing.
  */

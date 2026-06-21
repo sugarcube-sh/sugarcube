@@ -3,14 +3,7 @@ import type { ResolutionError, ResolvedToken, ResolvedTokens } from "../../types
 import type { NodeMetadata, TokenType, TokenValue } from "../../types/tokens.js";
 import { ErrorMessages } from "../constants/error-messages.js";
 import { isReference } from "../guards.js";
-
-function deriveContext(lookupKey: string, path: string): string {
-    if (lookupKey === path) return "";
-    if (lookupKey.endsWith(`.${path}`)) {
-        return lookupKey.slice(0, lookupKey.length - path.length - 1);
-    }
-    return "";
-}
+import { deriveContext } from "./permutation-context.js";
 
 function lookupNamespacedKey(
     refKey: string,
@@ -118,7 +111,7 @@ export function dereference(tokens: FlattenedTokens): {
             const flattenedToken = token as FlattenedToken<TokenType>;
 
             // The permutation this token belongs to. References resolve within it
-            // so a chain stays in its own permutation (SUG-74).
+            // so a chain stays in its own permutation.
             const context = deriveContext(key, flattenedToken.$path);
 
             // Check if this is a reference token (has $value but no $type)

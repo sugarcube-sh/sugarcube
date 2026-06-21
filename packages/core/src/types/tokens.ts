@@ -12,6 +12,10 @@ export type TokenSource = {
     context?: string;
     /** The file path where this token was defined. */
     sourcePath: string;
+    /**
+     * Whether this token's set emits output.
+     */
+    emit?: boolean;
 };
 
 /**
