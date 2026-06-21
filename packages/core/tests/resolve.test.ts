@@ -277,4 +277,79 @@ describe("resolve", () => {
             });
         });
     });
+
+    describe("permutation context", () => {
+        const input: FlattenedTokens = {
+            tokens: {
+                "perm:0.color.neutral.50": createFlattenedToken({
+                    $value: "#fafafa",
+                    $path: "color.neutral.50",
+                    $originalPath: "color.neutral.50",
+                }),
+                "perm:0.color.neutral.950": createFlattenedToken({
+                    $value: "#0a0a0a",
+                    $path: "color.neutral.950",
+                    $originalPath: "color.neutral.950",
+                }),
+                "perm:0.color.neutral.text.link": createFlattenedToken({
+                    $value: "{color.neutral.950}",
+                    $path: "color.neutral.text.link",
+                    $originalPath: "color.neutral.text.link",
+                }),
+                "perm:0.color.text.link": createFlattenedToken({
+                    $value: "{color.neutral.text.link}",
+                    $path: "color.text.link",
+                    $originalPath: "color.text.link",
+                }),
+                "perm:1.color.neutral.50": createFlattenedToken({
+                    $value: "#fafafa",
+                    $path: "color.neutral.50",
+                    $originalPath: "color.neutral.50",
+                }),
+                "perm:1.color.neutral.950": createFlattenedToken({
+                    $value: "#0a0a0a",
+                    $path: "color.neutral.950",
+                    $originalPath: "color.neutral.950",
+                }),
+                "perm:1.color.neutral.text.link": createFlattenedToken({
+                    $value: "{color.neutral.50}",
+                    $path: "color.neutral.text.link",
+                    $originalPath: "color.neutral.text.link",
+                }),
+                "perm:1.color.text.link": createFlattenedToken({
+                    $value: "{color.neutral.text.link}",
+                    $path: "color.text.link",
+                    $originalPath: "color.text.link",
+                }),
+            },
+            pathIndex: new Map([
+                ["color.neutral.50", "perm:1.color.neutral.50"],
+                ["color.neutral.950", "perm:1.color.neutral.950"],
+                ["color.neutral.text.link", "perm:1.color.neutral.text.link"],
+                ["color.text.link", "perm:1.color.text.link"],
+            ]),
+        };
+
+        it("resolves the intermediate token directly to its per-permutation value", () => {
+            const { resolved } = dereference(input);
+
+            expect(
+                (resolved["perm:0.color.neutral.text.link"] as ResolvedToken).$resolvedValue
+            ).toBe("#0a0a0a");
+            expect(
+                (resolved["perm:1.color.neutral.text.link"] as ResolvedToken).$resolvedValue
+            ).toBe("#fafafa");
+        });
+
+        it("resolves a chained reference to the perm-correct value", () => {
+            const { resolved } = dereference(input);
+
+            expect((resolved["perm:1.color.text.link"] as ResolvedToken).$resolvedValue).toBe(
+                "#fafafa"
+            );
+            expect((resolved["perm:0.color.text.link"] as ResolvedToken).$resolvedValue).toBe(
+                "#0a0a0a"
+            );
+        });
+    });
 });

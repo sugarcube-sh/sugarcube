@@ -4,20 +4,42 @@ import type { NodeMetadata, TokenType, TokenValue } from "../../types/tokens.js"
 import { ErrorMessages } from "../constants/error-messages.js";
 import { isReference } from "../guards.js";
 
+function deriveContext(lookupKey: string, path: string): string {
+    if (lookupKey === path) return "";
+    if (lookupKey.endsWith(`.${path}`)) {
+        return lookupKey.slice(0, lookupKey.length - path.length - 1);
+    }
+    return "";
+}
+
+function lookupNamespacedKey(
+    refKey: string,
+    context: string,
+    tokens: FlattenedTokens
+): string | undefined {
+    if (context) {
+        const scoped = `${context}.${refKey}`;
+        if (Object.hasOwn(tokens.tokens, scoped)) return scoped;
+    }
+    if (Object.hasOwn(tokens.tokens, refKey)) return refKey;
+    return tokens.pathIndex.get(refKey);
+}
+
 function resolveValue<T extends TokenType>(
     key: string,
     value: TokenValue<T>,
     tokens: FlattenedTokens,
-    resolving: Set<string>
+    resolving: Set<string>,
+    context: string
 ): TokenValue<T> {
     if (typeof value === "string" && isReference(value)) {
-        return resolveReferenceChain(key, value, tokens, resolving) as TokenValue<T>;
+        return resolveReferenceChain(key, value, tokens, resolving, context) as TokenValue<T>;
     }
 
     // Handle arrays (for gradients, shadow arrays)
     if (Array.isArray(value)) {
         return value.map((v) =>
-            resolveValue(key, v as TokenValue<T>, tokens, resolving)
+            resolveValue(key, v as TokenValue<T>, tokens, resolving, context)
         ) as TokenValue<T>;
     }
 
@@ -26,7 +48,13 @@ function resolveValue<T extends TokenType>(
         const resolved = Object.entries(value).reduce(
             (acc, [k, v]) =>
                 Object.assign(acc, {
-                    [k]: resolveValue(`${key}.${k}`, v as TokenValue<T>, tokens, resolving),
+                    [k]: resolveValue(
+                        `${key}.${k}`,
+                        v as TokenValue<T>,
+                        tokens,
+                        resolving,
+                        context
+                    ),
                 }),
             {}
         );
@@ -37,9 +65,13 @@ function resolveValue<T extends TokenType>(
 }
 
 /** Follows a reference chain to find $type (reference tokens can omit it per DTCG spec). */
-function inferTypeFromReference(value: string, tokens: FlattenedTokens): TokenType | undefined {
+function inferTypeFromReference(
+    value: string,
+    tokens: FlattenedTokens,
+    context: string
+): TokenType | undefined {
     const refKey = value.slice(1, -1); // Remove { and }
-    const namespacedKey = tokens.pathIndex.get(refKey);
+    const namespacedKey = lookupNamespacedKey(refKey, context, tokens);
 
     if (!namespacedKey) {
         return undefined;
@@ -56,7 +88,7 @@ function inferTypeFromReference(value: string, tokens: FlattenedTokens): TokenTy
 
     // If the referenced token is also a reference, follow it recursively
     if (typeof referencedToken.$value === "string" && isReference(referencedToken.$value)) {
-        return inferTypeFromReference(referencedToken.$value, tokens);
+        return inferTypeFromReference(referencedToken.$value, tokens, context);
     }
 
     return undefined;
@@ -85,6 +117,10 @@ export function dereference(tokens: FlattenedTokens): {
             // At this point we know token is a FlattenedToken
             const flattenedToken = token as FlattenedToken<TokenType>;
 
+            // The permutation this token belongs to. References resolve within it
+            // so a chain stays in its own permutation (SUG-74).
+            const context = deriveContext(key, flattenedToken.$path);
+
             // Check if this is a reference token (has $value but no $type)
             // According to W3C spec, reference tokens don't need $type since they inherit from target.
             // However, our conversion process requires $type to generate proper CSS. This inference
@@ -97,7 +133,7 @@ export function dereference(tokens: FlattenedTokens): {
             ) {
                 // This is a reference token, we need to infer the type from the referenced token
                 // Follow the reference chain recursively until we find a token with $type
-                inferredType = inferTypeFromReference(flattenedToken.$value, tokens);
+                inferredType = inferTypeFromReference(flattenedToken.$value, tokens, context);
             }
 
             resolved[key] = {
@@ -107,7 +143,8 @@ export function dereference(tokens: FlattenedTokens): {
                     flattenedToken.$path,
                     flattenedToken.$value,
                     tokens,
-                    resolving
+                    resolving,
+                    context
                 ),
             } as ResolvedToken<TokenType>;
         } catch (error: unknown) {
@@ -146,12 +183,13 @@ function resolveReferenceChain(
     key: string,
     value: string,
     tokens: FlattenedTokens,
-    resolving: Set<string>
+    resolving: Set<string>,
+    context: string
 ): TokenValue<TokenType> {
     const refKey = value.slice(1, -1); // Remove { and }
 
-    // O(1) lookup using pathIndex
-    const namespacedKey = tokens.pathIndex.get(refKey);
+    // O(1) lookup, scoped to the referrer's permutation context (SUG-74).
+    const namespacedKey = lookupNamespacedKey(refKey, context, tokens);
 
     if (!namespacedKey) {
         throw new Error(ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key));
@@ -172,7 +210,14 @@ function resolveReferenceChain(
 
     resolving.add(namespacedKey);
 
-    const resolvedValue = resolveValue(namespacedKey, referencedToken.$value, tokens, resolving);
+    // Stay in the same context as the chain continues.
+    const resolvedValue = resolveValue(
+        namespacedKey,
+        referencedToken.$value,
+        tokens,
+        resolving,
+        context
+    );
 
     resolving.delete(namespacedKey);
 
