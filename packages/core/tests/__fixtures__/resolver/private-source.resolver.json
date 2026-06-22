@@ -1,0 +1,17 @@
+{
+  "version": "2025.10",
+  "name": "Private Source",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "$ref": "./private-source.palette.json",
+          "$extensions": { "sh.sugarcube": { "emit": false } }
+        },
+        { "$ref": "./private-source.colors.json" }
+      ]
+    }
+  ]
+}

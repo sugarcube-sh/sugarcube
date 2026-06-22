@@ -1,6 +1,7 @@
 import type { NormalizedTokens } from "../../types/normalize.js";
 import type { ResolvedTokens } from "../../types/resolve.js";
 import type { TokenTree } from "../../types/tokens.js";
+import { inlinePrivateReferences } from "./inline-private-references.js";
 
 /**
  * Organizes resolved tokens by context into a `Record<context, tokens>` lookup map.
@@ -31,6 +32,8 @@ import type { TokenTree } from "../../types/tokens.js";
  *     // }
  */
 export function groupByContext(trees: TokenTree[], resolved: ResolvedTokens): NormalizedTokens {
+    const renderable = inlinePrivateReferences(resolved);
+
     const result: NormalizedTokens = {};
 
     for (const tree of trees) {
@@ -38,7 +41,7 @@ export function groupByContext(trees: TokenTree[], resolved: ResolvedTokens): No
         if (!result[contextName]) result[contextName] = {};
     }
 
-    for (const [path, node] of Object.entries(resolved)) {
+    for (const [path, node] of Object.entries(renderable)) {
         if (!("$source" in node)) {
             for (const tree of trees) {
                 const contextName = tree.context ?? "default";

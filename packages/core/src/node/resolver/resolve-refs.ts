@@ -13,6 +13,7 @@ import type {
     Source,
 } from "../../types/resolver.js";
 import { isResolverFormat } from "./parse.js";
+import { isPrivate, markPrivate } from "./utils.js";
 
 /** Result of resolving a reference. */
 export type ResolveResult<T> = {
@@ -283,7 +284,9 @@ export async function resolveSources(
         if (refResult.errors.length === 0) {
             const content = applyExtending(refResult.content as TokenGroup, source);
             const relPath = relative(process.cwd(), refResult.sourcePath);
-            resolved.push(stampSourcePath(content, relPath));
+            const stamped = stampSourcePath(content, relPath);
+
+            resolved.push(isPrivate(source) ? markPrivate(stamped) : stamped);
         }
     }
 

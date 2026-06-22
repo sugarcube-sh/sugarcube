@@ -11,7 +11,7 @@ import type {
     Source,
 } from "../../types/resolver.js";
 import { createResolveContext, resolveReference, resolveSources } from "./resolve-refs.js";
-import { deepMerge } from "./utils.js";
+import { deepMerge, isPrivate, markPrivate } from "./utils.js";
 import { validateInputs } from "./validate-inputs.js";
 
 type SourceInfo = {
@@ -19,6 +19,7 @@ type SourceInfo = {
     type: "set" | "modifier";
     name: string;
     context?: string;
+    emit?: boolean;
 };
 
 export type ResolutionOrderResult = {
@@ -119,9 +120,11 @@ async function processReference(
     if (!name) return;
 
     if (item.$ref.startsWith("#/sets/")) {
-        const result = await mergeSources((refResult.content as SetDefinition).sources, context, {
+        const def = refResult.content as SetDefinition;
+        const result = await mergeSources(def.sources, context, {
             type: "set",
             name,
+            emit: !isPrivate(def),
         });
         applyResult(result, state);
         return;
@@ -149,7 +152,11 @@ async function processInlineSet(
     context: ResolveContext,
     state: ProcessingState
 ): Promise<void> {
-    const result = await mergeSources(set.sources, context, { type: "set", name: set.name });
+    const result = await mergeSources(set.sources, context, {
+        type: "set",
+        name: set.name,
+        emit: !isPrivate(set),
+    });
     applyResult(result, state);
 }
 
@@ -177,6 +184,7 @@ type SourceMeta = {
     type: "set" | "modifier";
     name: string;
     context?: string;
+    emit?: boolean;
 };
 
 type MergeResult = {
@@ -195,6 +203,10 @@ async function mergeSources(
     let tokens: TokenGroup = {};
     for (const source of sourcesResult.resolved) {
         tokens = deepMerge(tokens, source);
+    }
+
+    if (meta.emit === false) {
+        tokens = markPrivate(tokens);
     }
 
     return {
