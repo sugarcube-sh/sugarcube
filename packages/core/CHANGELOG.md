@@ -1,5 +1,12 @@
 # @sugarcube-sh/core
 
+## 0.2.10
+
+### Patch Changes
+
+- 0d1fb4e: Add private sets. Mark a set or a source in your resolver with `$extensions.sh.sugarcube.emit: false` and its tokens still resolve — so other tokens can reference them — but no CSS variables are emitted for them. References to a private token are inlined to its resolved value. Handy for keeping internal scaffolding, like a raw colour palette, out of your published CSS.
+- f14989c: fix: $resolvedValue for a chained reference was using whichever permutation was flattened last. This scopes resolution to the referrer's perm:N context so a chain stays in its own permutation.
+
 ## 0.2.9
 
 ### Patch Changes
