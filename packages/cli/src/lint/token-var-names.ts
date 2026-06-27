@@ -18,9 +18,9 @@ import { prepareTokens } from "../prepare-tokens.js";
  * the current config, not whatever stale file is on disk.
  */
 export async function getGeneratedVarNames(config: InternalConfig): Promise<Set<string>> {
-    const { trees, resolved } = await prepareTokens(config);
+    const { trees, resolved, permutations } = await prepareTokens(config);
     const convertedTokens = assignCSSNames(groupByContext(trees, resolved), config);
-    const output = await generateCSSVariables(convertedTokens, config);
+    const output = await generateCSSVariables(convertedTokens, config, permutations);
 
     const names = new Set<string>();
     for (const file of output) {
