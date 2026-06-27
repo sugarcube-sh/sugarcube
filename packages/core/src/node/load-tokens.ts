@@ -1,5 +1,6 @@
 import { relative } from "pathe";
 import { ErrorMessages } from "../shared/constants/error-messages.js";
+import type { Permutation } from "../types/config.js";
 import type { LoadError, TokenMemoryData } from "../types/load.js";
 import type { PipelineContext, TokenPipelineSource } from "../types/pipelines.js";
 import { createPipelineContext } from "../types/pipelines.js";
@@ -12,14 +13,17 @@ export type LoadResult = {
     trees: TokenTree[];
     /** Any errors that occurred during loading */
     errors: LoadError[];
+    /** The effective permutations: user-defined, or auto-derived from the resolver's modifiers. */
+    permutations: Permutation[];
 };
 
 /**
  * Node-only pipeline: `TokenPipelineSource` → loaded token trees.
  *
  * Reads tokens from disk (or in-memory data) and returns the raw trees, ready
- * to be fed into `resolveTokens`. Populates `source.config.variables.permutations`
- * with the resolver-derived permutations when using a resolver source.
+ * to be fed into `resolveTokens`, alongside the effective permutations — either
+ * the user-defined ones or the resolver-derived ones. Permutations travel as
+ * return data rather than being stamped onto the config.
  *
  * @param source - Where to read tokens from (memory or resolver path)
  * @param context - Optional pipeline context for warnings/events
@@ -31,8 +35,12 @@ export async function loadTokens(
     const ctx = context ?? createPipelineContext();
 
     switch (source.type) {
-        case "memory":
-            return loadTreesFromMemory(source.data);
+        case "memory": {
+            const result = await loadTreesFromMemory(source.data);
+            // Memory sources have no resolver to derive from; the user config is
+            // the only source of permutations.
+            return { ...result, permutations: source.config.variables.permutations ?? [] };
+        }
 
         case "resolver": {
             const parseResult = await parseResolverDocument(source.resolverPath);
@@ -41,6 +49,7 @@ export async function loadTokens(
                 return {
                     trees: [],
                     errors: parseResult.errors.map((e) => ({ file: e.path, message: e.message })),
+                    permutations: [],
                 };
             }
 
@@ -54,11 +63,11 @@ export async function loadTokens(
                 source.config.variables.permutations
             );
 
-            // Surface resolved permutations on the config so downstream stages
-            // (CSS generation) can read them.
-            source.config.variables.permutations = result.permutations;
-
-            return { trees: result.trees, errors: result.errors };
+            return {
+                trees: result.trees,
+                errors: result.errors,
+                permutations: result.permutations,
+            };
         }
     }
 }
@@ -109,5 +118,5 @@ export async function loadTreesFromMemory(data: TokenMemoryData): Promise<LoadRe
         }
     }
 
-    return { trees, errors };
+    return { trees, errors, permutations: [] };
 }

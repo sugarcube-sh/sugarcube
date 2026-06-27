@@ -13,6 +13,7 @@ import {
 import type {
     InternalConfig,
     NormalizedRenderableTokens,
+    Permutation,
     ResolvedTokens,
     SugarcubeConfig,
     TokenTree,
@@ -93,6 +94,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
     let tokens: NormalizedRenderableTokens | null = null;
     let trees: TokenTree[] | null = null;
     let resolved: ResolvedTokens | null = null;
+    let permutations: Permutation[] = [];
     let cachedCSS = "";
     let cachedRules: UnoRule[] = [];
     const reloadCallbacks: (() => void)[] = [];
@@ -141,7 +143,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
         using I = new Instrumentation();
         I.start("Generate CSS Variables");
-        const output = await generateCSSVariables(tokens, config);
+        const output = await generateCSSVariables(tokens, config, permutations);
 
         // Combine all CSS output files
         cachedCSS = output.map((file) => file.css).join("\n");
@@ -175,6 +177,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
         });
 
         const resolveResult = resolveTokens(loaded.trees);
+        permutations = loaded.permutations;
 
         I.end("Load Tokens From Resolver");
 

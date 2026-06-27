@@ -21,7 +21,7 @@ async function generateCSS(config: InternalConfig): Promise<string> {
 
     const resolved = resolveTokens(loaded.trees);
     const converted = assignCSSNames(groupByContext(resolved.trees, resolved.resolved), config);
-    const output = await generateCSSVariables(converted, config);
+    const output = await generateCSSVariables(converted, config, loaded.permutations);
 
     return output.map((f) => f.css).join("\n");
 }
@@ -205,7 +205,7 @@ describe("permutations", () => {
                 groupByContext(resolved.trees, resolved.resolved),
                 config
             );
-            const output = await generateCSSVariables(converted, config);
+            const output = await generateCSSVariables(converted, config, loaded.permutations);
 
             expect(output).toHaveLength(2);
             expect(output[0]?.path).toBe("dist/light.css");

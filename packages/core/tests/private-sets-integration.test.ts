@@ -43,7 +43,9 @@ describe("private sets — resolver → flatten → inline", () => {
         const { resolved } = resolveTokens(loaded.trees);
 
         const renderable = assignCSSNames(groupByContext(loaded.trees, resolved), config);
-        const css = JSON.stringify(await generateCSSVariables(renderable, config));
+        const css = JSON.stringify(
+            await generateCSSVariables(renderable, config, loaded.permutations)
+        );
 
         expect(css).toContain("#e11d48");
         expect(css).not.toContain("rose-600");
@@ -66,7 +68,9 @@ describe("private sets — resolver → flatten → inline", () => {
         expect(byPath(resolved, "color.danger")?.$source.emit).toBeUndefined();
 
         const renderable = assignCSSNames(groupByContext(loaded.trees, resolved), config);
-        const css = JSON.stringify(await generateCSSVariables(renderable, config));
+        const css = JSON.stringify(
+            await generateCSSVariables(renderable, config, loaded.permutations)
+        );
 
         expect(css).toContain("#e11d48");
         expect(css).not.toContain("rose-600");
