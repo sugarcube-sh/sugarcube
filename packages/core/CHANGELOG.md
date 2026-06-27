@@ -1,5 +1,12 @@
 # @sugarcube-sh/core
 
+## 0.2.11
+
+### Patch Changes
+
+- 055f233: refactor: resolve reference errors via a typed discriminator rather than matching message strings
+- 6995930: refactor: thread permutations through the pipeline as return data instead of mutating the config during loadTokens
+
 ## 0.2.10
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @sugarcube-sh/vite
 
+## 0.1.18
+
+### Patch Changes
+
+- 6995930: refactor: thread permutations through the pipeline as return data instead of mutating the config during loadTokens
+- Updated dependencies [055f233]
+- Updated dependencies [6995930]
+  - @sugarcube-sh/core@0.2.11
+
 ## 0.1.17
 
 ### Patch Changes
