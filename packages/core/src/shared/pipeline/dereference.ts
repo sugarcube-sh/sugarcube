@@ -5,6 +5,16 @@ import { ErrorMessages } from "../constants/error-messages.js";
 import { isReference } from "../guards.js";
 import { deriveContext } from "./permutation-context.js";
 
+class ResolutionThrow extends Error {
+    constructor(
+        readonly kind: "circular" | "missing",
+        message: string
+    ) {
+        super(message);
+        this.name = "ResolutionThrow";
+    }
+}
+
 function lookupNamespacedKey(
     refKey: string,
     context: string,
@@ -141,28 +151,18 @@ export function dereference(tokens: FlattenedTokens): {
                 ),
             } as ResolvedToken<TokenType>;
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-
             // At this point we know token is a FlattenedToken
             const flattenedToken = token as FlattenedToken<TokenType>;
             const tokenPath = flattenedToken.$path;
             const source = flattenedToken.$source;
 
-            let type: ResolutionError["type"];
-            let message: string;
-
-            // TODO: This is fragile. We should use the error messages directly
-            // instead of checking for substrings. But TS is making this hard.
-            if (errorMessage.includes("Circular reference detected")) {
-                type = "circular";
-                message = errorMessage;
-            } else if (errorMessage.includes("Reference not found")) {
-                type = "missing";
-                message = errorMessage;
-            } else {
-                type = "type-mismatch";
-                message = ErrorMessages.RESOLVE.TYPE_MISMATCH(tokenPath);
-            }
+            const { type, message } =
+                error instanceof ResolutionThrow
+                    ? { type: error.kind, message: error.message }
+                    : {
+                          type: "type-mismatch" as const,
+                          message: ErrorMessages.RESOLVE.TYPE_MISMATCH(tokenPath),
+                      };
 
             errors.push({ type, path: tokenPath, source, message });
         }
@@ -185,20 +185,32 @@ function resolveReferenceChain(
     const namespacedKey = lookupNamespacedKey(refKey, context, tokens);
 
     if (!namespacedKey) {
-        throw new Error(ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key));
+        throw new ResolutionThrow(
+            "missing",
+            ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key)
+        );
     }
 
     if (resolving.has(namespacedKey)) {
         const referencedToken = tokens.tokens[namespacedKey];
         if (!referencedToken || !("$path" in referencedToken)) {
-            throw new Error(ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key));
+            throw new ResolutionThrow(
+                "missing",
+                ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key)
+            );
         }
-        throw new Error(ErrorMessages.RESOLVE.CIRCULAR_REFERENCE(key, referencedToken.$path));
+        throw new ResolutionThrow(
+            "circular",
+            ErrorMessages.RESOLVE.CIRCULAR_REFERENCE(key, referencedToken.$path)
+        );
     }
 
     const referencedToken = tokens.tokens[namespacedKey];
     if (!referencedToken || !("$value" in referencedToken)) {
-        throw new Error(ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key));
+        throw new ResolutionThrow(
+            "missing",
+            ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key)
+        );
     }
 
     resolving.add(namespacedKey);
