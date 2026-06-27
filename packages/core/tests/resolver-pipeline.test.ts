@@ -33,7 +33,7 @@ async function generateFromResolver(
         config,
         errors.validation
     );
-    const output = await generateCSSVariables(converted, config);
+    const output = await generateCSSVariables(converted, config, loaded.permutations);
 
     return { trees: resolved.trees, output, resolved: resolved.resolved, errors };
 }

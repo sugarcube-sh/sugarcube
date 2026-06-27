@@ -34,7 +34,13 @@ export function attachEmbeddedPipeline(
                 groupByContext(snapshot.trees, resolved),
                 snapshot.config
             );
-            const result = await generateCSSVariables(converted, snapshot.config);
+            // Snapshots are an in-browser memory source: permutations live on the
+            // config (the same convention loadTokens uses for memory sources).
+            const result = await generateCSSVariables(
+                converted,
+                snapshot.config,
+                snapshot.config.variables.permutations ?? []
+            );
             if (signal.aborted) return;
             store.setState({
                 css: result.map((file) => file.css).join("\n\n"),

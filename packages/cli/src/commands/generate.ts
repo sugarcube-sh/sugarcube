@@ -18,6 +18,7 @@ import {
 import type {
     InternalConfig,
     NormalizedRenderableTokens,
+    Permutation,
     ResolvedTokens,
     TokenTree,
 } from "@sugarcube-sh/core";
@@ -270,6 +271,7 @@ async function generateAllCSS(
     trees: TokenTree[],
     resolved: ResolvedTokens,
     config: InternalConfig,
+    permutations: Permutation[],
     options: GenerateAllCSSOptions = {}
 ): Promise<CSSFileOutput> {
     const output: CSSFileOutput = [];
@@ -277,7 +279,7 @@ async function generateAllCSS(
     const convertedTokens = assignCSSNames(groupByContext(trees, resolved), config);
 
     if (!options.utilitiesOnly) {
-        let cssVariables = await generateCSSVariables(convertedTokens, config);
+        let cssVariables = await generateCSSVariables(convertedTokens, config, permutations);
         if (config.variables.layer) {
             cssVariables = wrapInLayer(cssVariables, config.variables.layer);
         }
@@ -309,8 +311,8 @@ async function runGeneration(
     options: GenerateAllCSSOptions = {}
 ): Promise<GenerationResult> {
     clearMatchCache();
-    const { trees, resolved, warnings } = await prepareTokens(config);
-    const output = await generateAllCSS(trees, resolved, config, options);
+    const { trees, resolved, warnings, permutations } = await prepareTokens(config);
+    const output = await generateAllCSS(trees, resolved, config, permutations, options);
     return { output, warnings };
 }
 

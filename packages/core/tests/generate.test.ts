@@ -20,6 +20,9 @@ function configWith(
     };
 }
 
+const formatWith = (tokens: NormalizedRenderableTokens, config: InternalConfig) =>
+    formatCSSVariables(tokens, config, config.variables.permutations ?? []);
+
 describe("generate", () => {
     it("should generate basic CSS variables", async () => {
         const tokens: NormalizedRenderableTokens = {
@@ -30,7 +33,7 @@ describe("generate", () => {
 
         const config = configWith("basic", [{ input: {}, selector: ":root" }]);
 
-        const result = await formatCSSVariables(tokens, config);
+        const result = await formatWith(tokens, config);
         const css = result.output[0]?.css ?? "";
 
         expect(css).toContain(":root {");
@@ -52,7 +55,7 @@ describe("generate", () => {
             { input: { theme: "dark" }, selector: '[data-theme="dark"]' },
         ]);
 
-        const result = await formatCSSVariables(tokens, config);
+        const result = await formatWith(tokens, config);
 
         expect(result.output).toHaveLength(1);
 
@@ -78,7 +81,7 @@ describe("generate", () => {
             { input: { theme: "ocean" }, selector: '[data-theme="ocean"]' },
         ]);
 
-        const result = await formatCSSVariables(tokens, config);
+        const result = await formatWith(tokens, config);
 
         const css = result.output[0]?.css ?? "";
         expect(css).toContain(":root {");
@@ -96,7 +99,7 @@ describe("generate", () => {
 
         const config = configWith("basic", [{ input: {}, selector: ":root" }]);
 
-        const result = await formatCSSVariables(tokens, config);
+        const result = await formatWith(tokens, config);
         const css = result.output[0]?.css ?? "";
 
         expect(css).toContain("--typography-body-font-family: Arial;");
@@ -120,7 +123,7 @@ describe("generate", () => {
 
         const config = configWith("colorsP3Polyfill", [{ input: {}, selector: ":root" }]);
 
-        const result = await formatCSSVariables(tokens, config);
+        const result = await formatWith(tokens, config);
         const css = result.output[0]?.css ?? "";
 
         expect(css).toContain("--color-primary: #FF0000;");
@@ -138,7 +141,7 @@ describe("generate", () => {
 
         const config = configWith("basic", [{ input: {}, selector: ":root" }]);
 
-        const result = await formatCSSVariables(tokens, config);
+        const result = await formatWith(tokens, config);
         const css = result.output[0]?.css ?? "";
 
         expect(css).toContain("--shadow-primary: 0px 2px 4px 0px var(--color-primary);");
@@ -157,7 +160,7 @@ describe("generate", () => {
             { input: { theme: "dark" }, selector: '[data-theme="dark"]' },
         ]);
 
-        const result = await formatCSSVariables(tokens, config);
+        const result = await formatWith(tokens, config);
 
         expect(result.output).toHaveLength(1);
         expect(result.output[0]?.css).toContain("--color-primary: #FF0000;");
@@ -167,7 +170,7 @@ describe("generate", () => {
         const tokens: NormalizedRenderableTokens = {};
         const config = fillDefaults(configs.basic);
 
-        const result = await formatCSSVariables(tokens, config);
+        const result = await formatWith(tokens, config);
 
         expect(result.output).toHaveLength(0);
     });
@@ -198,7 +201,7 @@ describe("generate", () => {
                 },
             ]);
 
-            const result = await formatCSSVariables(tokens, config);
+            const result = await formatWith(tokens, config);
             const css = result.output[0]?.css ?? "";
 
             expect(css).toContain(":root {");
@@ -222,7 +225,7 @@ describe("generate", () => {
                 { input: { brand: "ocean" }, selector: "[data-brand='ocean']" },
             ]);
 
-            const result = await formatCSSVariables(tokens, config);
+            const result = await formatWith(tokens, config);
             const css = result.output[0]?.css ?? "";
 
             expect(css).toContain("[data-brand='ocean'] {");
@@ -250,7 +253,7 @@ describe("generate", () => {
                 { input: { brand: "forest" }, selector: ":root", path: "dist/forest.css" },
             ]);
 
-            const result = await formatCSSVariables(tokens, config);
+            const result = await formatWith(tokens, config);
 
             expect(result.output).toHaveLength(2);
             expect(result.output[0]?.path).toBe("dist/ocean.css");
@@ -288,7 +291,7 @@ describe("generate", () => {
             };
 
             const config = configWith("basic", [{ input: {}, selector: ":root" }]);
-            const css = (await formatCSSVariables(tokens, config)).output[0]?.css ?? "";
+            const css = (await formatWith(tokens, config)).output[0]?.css ?? "";
 
             expect(css).toContain("--ds-color-primary: #FF0000;");
             expect(css).toContain("--ds-color-button: var(--ds-color-primary);");
@@ -316,7 +319,7 @@ describe("generate", () => {
             };
 
             const config = configWith("basic", [{ input: {}, selector: ":root" }]);
-            const css = (await formatCSSVariables(tokens, config)).output[0]?.css ?? "";
+            const css = (await formatWith(tokens, config)).output[0]?.css ?? "";
 
             expect(css).toContain("--color-brandPrimary: #FF0000;");
             expect(css).toContain("--color-button: var(--color-brandPrimary);");
@@ -345,7 +348,7 @@ describe("generate", () => {
 
             const config = configWith("basic", [{ input: {}, selector: ":root" }]);
 
-            const result = await formatCSSVariables(tokens, config);
+            const result = await formatWith(tokens, config);
             const css = result.output[0]?.css ?? "";
 
             expect(css).toContain("--blue: #0000FF;");
@@ -373,7 +376,7 @@ describe("generate", () => {
 
             const config = configWith("basic", [{ input: {}, selector: ":root" }]);
 
-            const result = await formatCSSVariables(tokens, config);
+            const result = await formatWith(tokens, config);
             const css = result.output[0]?.css ?? "";
 
             expect(css).toContain("--border-primary: var(--blue);");
@@ -400,7 +403,7 @@ describe("generate", () => {
             };
 
             const config = configWith("basic", [{ input: {}, selector: ":root" }]);
-            const result = await formatCSSVariables(tokens, config);
+            const result = await formatWith(tokens, config);
             const css = result.output[0]?.css ?? "";
 
             const indices = sizes.map((size) => css.indexOf(`--radius-${size}:`));
@@ -431,7 +434,7 @@ describe("generate", () => {
             };
 
             const config = configWith("basic", [{ input: {}, selector: ":root" }]);
-            const css = (await formatCSSVariables(tokens, config)).output[0]?.css ?? "";
+            const css = (await formatWith(tokens, config)).output[0]?.css ?? "";
 
             expect(css).toContain("--color-brandPrimary: #FF0000;");
             expect(css).toContain("--color-button: var(--color-brandPrimary);");

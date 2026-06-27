@@ -260,15 +260,14 @@ function deltaVars(vars: CSSVariable[], baseVars: CSSVariable[]): CSSVariable[] 
  * For multi-permutation output, non-first permutations are delta-optimized:
  * only variables that differ from the first permutation are output.
  *
- * Permutations are always on config.variables.permutations — either defined by the
- * user or auto-generated from modifier metadata by the loading pipeline.
+ * Permutations are passed in from the loading pipeline — either defined by the
+ * user or auto-generated from modifier metadata.
  */
 export async function formatCSSVariables(
     tokens: NormalizedRenderableTokens,
-    config: InternalConfig
+    config: InternalConfig,
+    permutations: Permutation[]
 ): Promise<CSSGenerationResult> {
-    const permutations = config.variables.permutations;
-
     if (!permutations || permutations.length === 0) {
         return { output: [] };
     }
