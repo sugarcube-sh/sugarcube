@@ -3,6 +3,8 @@
  * Keeps watcher and scanning in sync for extensions and ignored dirs.
  */
 
+import { buildExtensionGlob } from "../glob.js";
+
 /** Markup file extensions to scan for utility classes */
 export const MARKUP_EXTENSIONS = new Set([
     "html",
@@ -54,9 +56,11 @@ export const IGNORED_DIR_NAMES = new Set([
     "cover",
 ]);
 
+export const IGNORED_DIR_GLOBS = Array.from(IGNORED_DIR_NAMES, (dir) => `**/${dir}/**`);
+
 /** Glob ignore patterns for markup scanning (dirs + extra file patterns) */
 export const MARKUP_IGNORE_PATTERNS = [
-    ...Array.from(IGNORED_DIR_NAMES, (dir) => `**/${dir}/**`),
+    ...IGNORED_DIR_GLOBS,
     "**/*.config.{js,ts,mjs}",
     "**/*.min.js",
     "**/*.bundle.js",
@@ -64,4 +68,4 @@ export const MARKUP_IGNORE_PATTERNS = [
 ];
 
 /** Glob pattern for markup files */
-export const MARKUP_GLOB_PATTERN = `**/*.{${[...MARKUP_EXTENSIONS].join(",")}}`;
+export const MARKUP_GLOB_PATTERN = buildExtensionGlob([...MARKUP_EXTENSIONS]);
