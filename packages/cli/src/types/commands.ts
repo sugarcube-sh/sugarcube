@@ -12,7 +12,6 @@ export interface ScanOutput {
     fallback: VarRef[];
     refCount: number;
     scannedFiles: number;
-    skipped: Map<string, number>;
 }
 
 export interface InitOptions {
