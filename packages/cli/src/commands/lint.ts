@@ -6,26 +6,29 @@ import color from "picocolors";
 import { glob } from "tinyglobby";
 import { CLIError } from "../cli-error.js";
 import { handleError } from "../handle-error.js";
-import { type VarRef, findDangling, scanCSS } from "../lint/scan-css.js";
+import { type VarRef, findUndeclared, scanCSS } from "../lint/scan-css.js";
+import { type SyntaxResolver, createSyntaxResolver } from "../lint/syntaxes.js";
 import { getGeneratedVarNames } from "../lint/token-var-names.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 
-// Phase 1 scans plain stylesheets only. Component `<style>` blocks
-// (.astro/.vue/.svelte via postcss-html) are phase 2.
-const STYLESHEET_GLOB = "**/*.css";
+function globForExtensions(extensions: string[]): string {
+    const exts = extensions.map((ext) => ext.replace(/^\./, "")).join(",");
+    return `**/*.{${exts}}`;
+}
 
 interface LintFlags {
     ignore?: string;
-    quiet?: boolean;
     strict?: boolean;
     json?: boolean;
 }
 
 interface ScanOutput {
     broken: VarRef[];
-    masked: VarRef[];
+    fallback: VarRef[];
     refCount: number;
+    scannedFiles: number;
+    skipped: Map<string, number>;
 }
 
 function parseIgnore(value: string | undefined): string[] {
@@ -36,34 +39,48 @@ function parseIgnore(value: string | undefined): string[] {
         .filter(Boolean);
 }
 
-// Scan the project's CSS and classify undefined references. Shared by the human
-// (task-wrapped) and `--json` paths so they can't drift.
 async function runScan(
     config: InternalConfig,
     files: string[],
-    ignorePrefixes: string[]
+    ignorePrefixes: string[],
+    resolver: SyntaxResolver
 ): Promise<ScanOutput> {
-    // Authoritative set of names sugarcube generates from the current config.
     const declared = await getGeneratedVarNames(config);
 
-    // Collect every declaration (so a var declared in one file legitimises its
-    // use in another) and every reference across the project.
     const allUsed: VarRef[] = [];
+    let scannedFiles = 0;
+    const skipped = new Map<string, number>();
+
     for (const file of files) {
+        const resolution = await resolver.resolve(file);
+        if (resolution.kind === "unsupported") continue;
+        if (resolution.kind === "missing") {
+            skipped.set(resolution.module, (skipped.get(resolution.module) ?? 0) + 1);
+            continue;
+        }
+
         const css = await readFile(file, "utf-8");
-        const { declared: fileDeclared, used } = scanCSS(css, file);
+        const { declared: fileDeclared, used } = scanCSS(css, file, resolution.parse);
         for (const name of fileDeclared) declared.add(name);
         allUsed.push(...used);
+        scannedFiles++;
     }
 
-    const { broken, masked } = findDangling(allUsed, declared, ignorePrefixes);
-    return { broken, masked, refCount: allUsed.length };
+    const { broken, fallback } = findUndeclared(allUsed, declared, ignorePrefixes);
+    return { broken, fallback, refCount: allUsed.length, scannedFiles, skipped };
 }
 
-// Group references by file (like eslint/stylelint) so the path is shown once as
-// a sub-header instead of repeated on every line. Returns the content lines for
-// the `log` helper, which prepends the `│` bar to each. Line numbers are
-// right-aligned within a file so the `var(…)` column lines up.
+function formatSkipped(skipped: Map<string, number>): string[] {
+    const lines: string[] = [];
+    for (const [module, count] of skipped) {
+        const files = count === 1 ? "file" : "files";
+        lines.push(
+            `${count} ${files} need ${color.bold(module)}  ${color.cyan(`npm i -D ${module}`)}`
+        );
+    }
+    return lines;
+}
+
 function formatGroupedRefs(refs: VarRef[]): string[] {
     const byFile = new Map<string, VarRef[]>();
     for (const ref of refs) {
@@ -88,14 +105,13 @@ function formatGroupedRefs(refs: VarRef[]): string[] {
 
 export const lint = new Command()
     .name("lint")
-    .description("Find var() references that point to a token that doesn't exist")
-    .argument("[paths...]", "Globs of files to scan (default: project CSS)")
+    .description("Find var() references to variables your tokens and CSS don't declare")
+    .argument("[paths...]", "Globs of files to scan (default: project CSS and components)")
     .option(
         "--ignore <prefixes>",
         'Comma-separated var-name prefixes to ignore (e.g. "--sl-,--radix-,--ec-")'
     )
-    .option("-q, --quiet", "Show only broken references, hide fallback-masked ones")
-    .option("--strict", "Also fail the exit code on masked findings, not just broken")
+    .option("--strict", "Treat references that have a fallback as errors too")
     .option("--json", "Output machine-readable JSON")
     .action(async (paths: string[], options: LintFlags) => {
         try {
@@ -110,64 +126,95 @@ export const lint = new Command()
                 );
             }
 
-            // Don't scan our own generated output — its declarations come from the
-            // config (in runScan), and it isn't authored CSS.
+            const resolver = createSyntaxResolver();
+
             const generatedOutput = resolve(process.cwd(), config.variables.path);
-            const files = await glob(paths.length > 0 ? paths : [STYLESHEET_GLOB], {
-                cwd: process.cwd(),
-                absolute: true,
-                ignore: ["**/node_modules/**", "**/dist/**", generatedOutput],
-            });
+            const files = await glob(
+                paths.length > 0 ? paths : [globForExtensions(resolver.extensions())],
+                {
+                    cwd: process.cwd(),
+                    absolute: true,
+                    ignore: ["**/node_modules/**", "**/dist/**", generatedOutput],
+                }
+            );
             const ignorePrefixes = parseIgnore(options.ignore);
 
             if (options.json) {
-                const { broken, masked } = await runScan(config, files, ignorePrefixes);
-                console.log(JSON.stringify({ broken, masked }, null, 2));
-                if (broken.length > 0 || (options.strict === true && masked.length > 0)) {
+                const { broken, fallback, skipped } = await runScan(
+                    config,
+                    files,
+                    ignorePrefixes,
+                    resolver
+                );
+                console.log(
+                    JSON.stringify(
+                        { broken, fallback, skipped: Object.fromEntries(skipped) },
+                        null,
+                        2
+                    )
+                );
+                if (broken.length > 0 || (options.strict === true && fallback.length > 0)) {
                     process.exitCode = 1;
                 }
                 return;
             }
 
-            const { broken, masked, refCount } = await runScan(config, files, ignorePrefixes);
-            const showMasked = !options.quiet && masked.length > 0;
+            const { broken, fallback, refCount, scannedFiles, skipped } = await runScan(
+                config,
+                files,
+                ignorePrefixes,
+                resolver
+            );
+            const undefinedTotal = broken.length + fallback.length;
+            const skippedTotal = [...skipped.values()].reduce((sum, n) => sum + n, 0);
+
+            const fallbackIsError = options.strict === true;
+            const reportFallback = fallbackIsError ? log.error : log.warn;
 
             if (broken.length > 0) {
                 log.error(
                     [
-                        color.bold(`Undefined (${broken.length})`),
+                        color.bold(`Undefined references (${broken.length})`),
                         "",
                         ...formatGroupedRefs(broken),
                     ].join("\n")
                 );
             }
 
-            if (showMasked) {
-                log.warn(
+            if (fallback.length > 0) {
+                reportFallback(
                     [
-                        color.bold(`Undefined with fallback (${masked.length})`),
+                        color.bold(`Undefined, but with a fallback (${fallback.length})`),
                         "",
-                        ...formatGroupedRefs(masked),
+                        ...formatGroupedRefs(fallback),
                     ].join("\n")
                 );
             }
 
-            const scanned = color.dim(`${refCount} refs · ${files.length} files`);
-
-            if (broken.length === 0) {
-                const maskedNote =
-                    !options.quiet && masked.length > 0
-                        ? color.dim(` · ${masked.length} with fallback`)
-                        : "";
-                outro(color.greenBright(`No undefined references ✨  ${scanned}${maskedNote}`));
-            } else {
-                const maskedNote = showMasked
-                    ? color.yellow(` · ${masked.length} with fallback`)
-                    : "";
-                outro(`${color.red(`${broken.length} undefined`)}${maskedNote}  ${scanned}`);
+            if (skippedTotal > 0) {
+                log.warn(
+                    [
+                        color.bold(`Not scanned (${skippedTotal})`),
+                        "",
+                        ...formatSkipped(skipped),
+                    ].join("\n")
+                );
             }
 
-            if (broken.length > 0 || (options.strict === true && masked.length > 0)) {
+            const skippedNote = skippedTotal > 0 ? ` · ${skippedTotal} skipped` : "";
+            const scanned = color.dim(`${refCount} refs · ${scannedFiles} files${skippedNote}`);
+
+            if (undefinedTotal === 0) {
+                outro(color.greenBright(`No undefined references ✨  ${scanned}`));
+            } else {
+                const parts: string[] = [];
+                if (broken.length > 0) parts.push(color.red(`${broken.length} undefined`));
+                if (fallback.length > 0)
+                    parts.push(color.dim(`${fallback.length} with a fallback`));
+                outro(`${parts.join(color.dim(", "))}  ${scanned}`);
+            }
+
+            if (broken.length > 0 || (fallbackIsError && fallback.length > 0)) {
                 process.exitCode = 1;
             }
         } catch (error) {
