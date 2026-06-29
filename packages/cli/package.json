@@ -67,6 +67,8 @@
         "pathe": "^2.0.3",
         "picocolors": "1.1.1",
         "postcss": "^8.5.9",
+        "postcss-html": "1.8.1",
+        "postcss-value-parser": "^4.2.0",
         "tinyglobby": "^0.2.9",
         "zod": "^3.23.8"
     },

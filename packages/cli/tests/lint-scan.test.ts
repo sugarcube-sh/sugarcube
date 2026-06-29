@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findDangling, scanCSS } from "../src/lint/scan-css.js";
+import { findUndeclared, scanCSS } from "../src/lint/scan-css.js";
 
 describe("scanCSS", () => {
     it("collects custom-property declarations", () => {
@@ -33,9 +33,41 @@ describe("scanCSS", () => {
         expect([...declared]).toEqual(["--x"]);
         expect(used.map((u) => u.name)).toEqual(["--y"]);
     });
+
+    it("is case-insensitive about the var() function name", () => {
+        const { used } = scanCSS(".a { color: VAR(--a); border-color: Var(--b); }", "a.css");
+        expect(used.map((u) => u.name)).toEqual(["--a", "--b"]);
+    });
+
+    it("tolerates arbitrary whitespace and newlines inside var()", () => {
+        const css = ".a {\n  color: var(\n    --a\n    ,\n    var( --b )\n  );\n}";
+        const { used } = scanCSS(css, "a.css");
+        expect(used.map((u) => u.name)).toEqual(["--a", "--b"]);
+        expect(used[0]?.hasFallback).toBe(true);
+        expect(used[1]?.hasFallback).toBe(false);
+    });
+
+    it("reports the line of the reference within a multi-line value", () => {
+        const css = ".a {\n  grid-template:\n    var(--rows)\n    / var(--cols);\n}";
+        const { used } = scanCSS(css, "a.css");
+        expect(used).toEqual([
+            { name: "--rows", line: 3, file: "a.css", hasFallback: false },
+            { name: "--cols", line: 4, file: "a.css", hasFallback: false },
+        ]);
+    });
+
+    it("ignores function names that merely contain 'var'", () => {
+        const { used } = scanCSS(".a { width: calc(var(--a) + 1px); --avar: 0; }", "a.css");
+        expect(used.map((u) => u.name)).toEqual(["--a"]);
+    });
+
+    it("handles escaped characters in custom-property names", () => {
+        const { used } = scanCSS(".a { color: var(--my\\.color); }", "a.css");
+        expect(used.map((u) => u.name)).toEqual(["--my\\.color"]);
+    });
 });
 
-describe("findDangling", () => {
+describe("findUndeclared", () => {
     const declared = new Set(["--color-primary", "--space-md"]);
 
     it("puts undeclared, no-fallback refs in broken", () => {
@@ -43,35 +75,35 @@ describe("findDangling", () => {
             { name: "--color-primary", line: 1, file: "a.css" },
             { name: "--color-old", line: 2, file: "a.css" },
         ];
-        const { broken, masked } = findDangling(used, declared, []);
+        const { broken, fallback } = findUndeclared(used, declared, []);
         expect(broken).toEqual([{ name: "--color-old", line: 2, file: "a.css" }]);
-        expect(masked).toEqual([]);
+        expect(fallback).toEqual([]);
     });
 
-    it("puts undeclared refs that have a fallback in masked, not broken", () => {
+    it("puts undeclared refs that have a fallback in fallback, not broken", () => {
         const used = [{ name: "--color-old", line: 1, file: "a.css", hasFallback: true }];
-        const { broken, masked } = findDangling(used, declared, []);
+        const { broken, fallback } = findUndeclared(used, declared, []);
         expect(broken).toEqual([]);
-        expect(masked).toHaveLength(1);
+        expect(fallback).toHaveLength(1);
     });
 
     it("does not flag references that are declared", () => {
         const used = [{ name: "--space-md", line: 1, file: "a.css" }];
-        const { broken, masked } = findDangling(used, declared, []);
+        const { broken, fallback } = findUndeclared(used, declared, []);
         expect(broken).toEqual([]);
-        expect(masked).toEqual([]);
+        expect(fallback).toEqual([]);
     });
 
     it("flags private --_ vars when undeclared (they are still vars)", () => {
         const used = [{ name: "--_button-color", line: 1, file: "a.css" }];
-        expect(findDangling(used, declared, []).broken).toHaveLength(1);
+        expect(findUndeclared(used, declared, []).broken).toHaveLength(1);
     });
 
     it("drops names matching an ignore prefix", () => {
         const used = [{ name: "--tw-ring-color", line: 1, file: "a.css" }];
-        const { broken, masked } = findDangling(used, declared, ["--tw-"]);
+        const { broken, fallback } = findUndeclared(used, declared, ["--tw-"]);
         expect(broken).toEqual([]);
-        expect(masked).toEqual([]);
+        expect(fallback).toEqual([]);
     });
 
     it("de-dupes identical findings", () => {
@@ -79,6 +111,6 @@ describe("findDangling", () => {
             { name: "--gone", line: 5, file: "a.css" },
             { name: "--gone", line: 5, file: "a.css" },
         ];
-        expect(findDangling(used, declared, []).broken).toHaveLength(1);
+        expect(findUndeclared(used, declared, []).broken).toHaveLength(1);
     });
 });

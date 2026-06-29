@@ -418,7 +418,7 @@ describe("generate", () => {
         // Declarations and references must use the same var name even when
         // path segments contain camelCase characters. Pre-$names, declarations
         // preserved case (--color-brandPrimary) while references kebab-cased
-        // (var(--color-brand-primary)) — producing a dangling reference.
+        // (var(--color-brand-primary)) — producing an undeclared reference.
         it("keeps declaration and reference names in sync for camelCase paths", async () => {
             const tokens: NormalizedRenderableTokens = {
                 "perm:0": {
