@@ -13,20 +13,7 @@ import { type SyntaxResolver, createSyntaxResolver } from "../lint/syntaxes.js";
 import { getGeneratedVarNames } from "../lint/token-var-names.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
-
-interface LintFlags {
-    ignore?: string;
-    strict?: boolean;
-    json?: boolean;
-}
-
-interface ScanOutput {
-    broken: VarRef[];
-    fallback: VarRef[];
-    refCount: number;
-    scannedFiles: number;
-    skipped: Map<string, number>;
-}
+import type { LintOptions, ScanOutput } from "../types/commands.js";
 
 function parseIgnore(value: string | undefined): string[] {
     if (!value) return [];
@@ -110,7 +97,7 @@ export const lint = new Command()
     )
     .option("--strict", "Treat references that have a fallback as errors too")
     .option("--json", "Output machine-readable JSON")
-    .action(async (paths: string[], options: LintFlags) => {
+    .action(async (paths: string[], options: LintOptions) => {
         try {
             if (!options.json) intro(label("Lint"));
 
