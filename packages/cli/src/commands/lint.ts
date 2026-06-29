@@ -5,17 +5,14 @@ import { relative, resolve } from "pathe";
 import color from "picocolors";
 import { glob } from "tinyglobby";
 import { CLIError } from "../cli-error.js";
+import { IGNORED_DIR_GLOBS } from "../constants/markup.js";
+import { buildExtensionGlob } from "../glob.js";
 import { handleError } from "../handle-error.js";
 import { type VarRef, findUndeclared, scanCSS } from "../lint/scan-css.js";
 import { type SyntaxResolver, createSyntaxResolver } from "../lint/syntaxes.js";
 import { getGeneratedVarNames } from "../lint/token-var-names.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
-
-function globForExtensions(extensions: string[]): string {
-    const exts = extensions.map((ext) => ext.replace(/^\./, "")).join(",");
-    return `**/*.{${exts}}`;
-}
 
 interface LintFlags {
     ignore?: string;
@@ -130,11 +127,12 @@ export const lint = new Command()
 
             const generatedOutput = resolve(process.cwd(), config.variables.path);
             const files = await glob(
-                paths.length > 0 ? paths : [globForExtensions(resolver.extensions())],
+                paths.length > 0 ? paths : [buildExtensionGlob(resolver.extensions())],
                 {
                     cwd: process.cwd(),
                     absolute: true,
-                    ignore: ["**/node_modules/**", "**/dist/**", generatedOutput],
+                    caseSensitiveMatch: false,
+                    ignore: [...IGNORED_DIR_GLOBS, generatedOutput],
                 }
             );
             const ignorePrefixes = parseIgnore(options.ignore);

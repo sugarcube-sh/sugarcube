@@ -16,6 +16,7 @@ export async function getMarkupFiles(): Promise<string[]> {
         dot: false,
         onlyFiles: true,
         absolute: false,
+        caseSensitiveMatch: false,
     });
 
     if (files.length > MAX_FILES) {
