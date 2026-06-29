@@ -288,6 +288,15 @@ To know which token variables exist, `lint` runs the same name-generation logic 
 
 By default `lint` scans `.css` files plus component files with embedded `<style>` blocks: `.html`, `.vue`, `.svelte`, `.astro`, and `.php`. Build and dependency folders are ignored automatically, as is your generated variables file. Files with other extensions are skipped.
 
+### Not supported yet
+
+A few things are out of scope for now:
+
+- Styles written in JavaScript or TypeScript (styled-components, Emotion, vanilla-extract, and other CSS-in-JS) aren't scanned.
+- Preprocessor files like `.scss`, `.sass`, `.less`, and `.styl` are skipped.
+
+These are additive improvements that may land later. They don't affect ordinary CSS or `<style>` blocks, which are checked fully.
+
 ### Examples
 
 ```bash frame="none"
