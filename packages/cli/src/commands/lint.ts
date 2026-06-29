@@ -33,15 +33,10 @@ async function runScan(
 
     const allUsed: VarRef[] = [];
     let scannedFiles = 0;
-    const skipped = new Map<string, number>();
 
     for (const file of files) {
-        const resolution = await resolver.resolve(file);
+        const resolution = resolver.resolve(file);
         if (resolution.kind === "unsupported") continue;
-        if (resolution.kind === "missing") {
-            skipped.set(resolution.module, (skipped.get(resolution.module) ?? 0) + 1);
-            continue;
-        }
 
         const css = await readFile(file, "utf-8");
         const { declared: fileDeclared, used } = scanCSS(css, file, resolution.parse);
@@ -51,18 +46,7 @@ async function runScan(
     }
 
     const { broken, fallback } = findUndeclared(allUsed, declared, ignorePrefixes);
-    return { broken, fallback, refCount: allUsed.length, scannedFiles, skipped };
-}
-
-function formatSkipped(skipped: Map<string, number>): string[] {
-    const lines: string[] = [];
-    for (const [module, count] of skipped) {
-        const files = count === 1 ? "file" : "files";
-        lines.push(
-            `${count} ${files} need ${color.bold(module)}  ${color.cyan(`npm i -D ${module}`)}`
-        );
-    }
-    return lines;
+    return { broken, fallback, refCount: allUsed.length, scannedFiles };
 }
 
 function formatGroupedRefs(refs: VarRef[]): string[] {
@@ -125,33 +109,21 @@ export const lint = new Command()
             const ignorePrefixes = parseIgnore(options.ignore);
 
             if (options.json) {
-                const { broken, fallback, skipped } = await runScan(
-                    config,
-                    files,
-                    ignorePrefixes,
-                    resolver
-                );
-                console.log(
-                    JSON.stringify(
-                        { broken, fallback, skipped: Object.fromEntries(skipped) },
-                        null,
-                        2
-                    )
-                );
+                const { broken, fallback } = await runScan(config, files, ignorePrefixes, resolver);
+                console.log(JSON.stringify({ broken, fallback }, null, 2));
                 if (broken.length > 0 || (options.strict === true && fallback.length > 0)) {
                     process.exitCode = 1;
                 }
                 return;
             }
 
-            const { broken, fallback, refCount, scannedFiles, skipped } = await runScan(
+            const { broken, fallback, refCount, scannedFiles } = await runScan(
                 config,
                 files,
                 ignorePrefixes,
                 resolver
             );
             const undefinedTotal = broken.length + fallback.length;
-            const skippedTotal = [...skipped.values()].reduce((sum, n) => sum + n, 0);
 
             const fallbackIsError = options.strict === true;
             const reportFallback = fallbackIsError ? log.error : log.warn;
@@ -176,18 +148,7 @@ export const lint = new Command()
                 );
             }
 
-            if (skippedTotal > 0) {
-                log.warn(
-                    [
-                        color.bold(`Not scanned (${skippedTotal})`),
-                        "",
-                        ...formatSkipped(skipped),
-                    ].join("\n")
-                );
-            }
-
-            const skippedNote = skippedTotal > 0 ? ` · ${skippedTotal} skipped` : "";
-            const scanned = color.dim(`${refCount} refs · ${scannedFiles} files${skippedNote}`);
+            const scanned = color.dim(`${refCount} refs · ${scannedFiles} files`);
 
             if (undefinedTotal === 0) {
                 outro(color.greenBright(`No undefined references ✨  ${scanned}`));
