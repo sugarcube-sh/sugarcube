@@ -8,7 +8,7 @@ import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 Sugarcube generates utility classes from your design tokens. You tell it which CSS properties to create utilities for and which tokens to use.
 
 <SiteAside type="note">
-    Utilities are only generated if they're actually used in your markup. If a class doesn't appear in your code, it won't be generated.
+    By default, utilities are only generated if they're actually used in your markup. If a class doesn't appear in your code, it won't be generated. When you need a class that the scanner can't see — one built at runtime, or living in a file it doesn't scan — reach for [`safelist`](#forcing-generation-with-safelist).
 </SiteAside>
 
 ## The mental model
@@ -270,9 +270,73 @@ With a `space.sm` token, this generates:
 
 Note: Directions use CSS logical properties for better internationalization support.
 
+## Forcing generation with `safelist`
+
+By default a utility only exists if its class appears somewhere the scanner can read. Two common situations slip through that net. The first is a class name your code assembles at runtime, like `bg-${tone}`, which never appears literally in the source for the scanner to find. The second is a class that lives outside the scanned files altogether — CMS content, Markdown, or a third-party script. `safelist` tells sugarcube to generate a utility whether or not it shows up in your markup.
+
+You add it to whichever entry you want to force, alongside `source` and `prefix`.
+
+### Forcing the whole family
+
+Set `safelist: true` to generate a class for every token that `source` matches, exactly as if each one had appeared in your code:
+
+```ts title="sugarcube.config.ts"
+utilities: {
+  classes: {
+    "background-color": {
+      source: "color.*",
+      prefix: "bg",
+      safelist: true
+    }
+  }
+}
+```
+
+Every token under `color` now gets a `.bg-*` class, used or not. If the entry also has `directions`, the full directional set is generated for each token as well.
+
+### Forcing a specific subset
+
+Set `safelist` to an array to force only the classes you name.
+
+```ts title="sugarcube.config.ts"
+utilities: {
+  classes: {
+    "background-color": {
+      source: "color.*",
+      prefix: "bg",
+      safelist: ["primary", "danger", "success"]
+    }
+  }
+}
+```
+
+That forces `.bg-primary`, `.bg-danger`, and `.bg-success` to be written to your CSS even if they never appear in your markup.
+
+### What to write in the array
+
+Each string is a **segment**, not a full class name and not a token path. Write it the same way you'd write the class in your markup, with the prefix removed. Sugarcube adds the prefix back for you — and when the entry has `directions`, it generates every direction variant from that one segment. In the example above you write `primary`, not `bg-primary` and not `color.primary`.
+
+Three situations change what the segment looks like:
+
+<Table>
+| Situation | Tokens / config | Segment you write | Classes it forces |
+|-----------|-----------------|-------------------|-------------------|
+| Nested token | `color.fill.solid`, prefix `bg` | `fill-solid` | `.bg-fill-solid` |
+| `stripDuplicates` | `color.text.muted`, prefix `text` | `muted` | `.text-muted` |
+| `directions` | `space.sm`, prefix `p`, `directions: ["all"]` | `sm` | `.p-sm`, `.pt-sm`, `.pr-sm`, `.pb-sm`, `.pl-sm`, `.px-sm`, `.py-sm` |
+</Table>
+
+For a nested token, join the path below the wildcard with hyphens, so `color.fill.solid` under `source: "color.*"` becomes `fill-solid`. With `stripDuplicates` turned on, write the shortened form you'd actually type, so `color.text.muted` with prefix `text` is `muted`, not `text-muted`. With `directions`, write only the token part and let sugarcube expand the variants, so `space.sm` is just `sm`.
+
+If a segment doesn't correspond to a real token under `source`, no class is produced for it — a typo costs you nothing worse than a missing utility.
+
+<SiteAside type="note">
+    `safelist` works the same way with both the Vite plugin and the CLI, and it doesn't change anything about classes you already use in markup — those are still generated on demand as usual.
+</SiteAside>
+
 ## Just-in-time compilation
 
-Only utilities actually used in your code are generated — you don't pay for unused utilities. This works automatically with both the Vite plugin and CLI.
+Only utilities actually used in your code are generated — you don't pay for unused utilities. This works automatically with both the Vite plugin and CLI. The one exception is anything you've marked with [`safelist`](#forcing-generation-with-safelist), which is generated regardless of use.
 
 ## Using the Vite plugin vs CLI
 
