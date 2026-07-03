@@ -84,6 +84,16 @@ function isTokenTypeValidForProperty(tokenType: TokenType, property: string): bo
     return validTypes.includes(tokenType);
 }
 
+function sourceWildcardBase(source: string): string {
+    const wildcardIndex = source.lastIndexOf(".*");
+    return wildcardIndex !== -1 ? source.slice(0, wildcardIndex) : source;
+}
+
+function sourcePathBase(source: string): string {
+    const firstDotIndex = source.indexOf(".");
+    return firstDotIndex !== -1 ? source.slice(0, firstDotIndex) : source;
+}
+
 // Cache for path-to-token maps to avoid rebuilding on every lookup
 const pathIndexCache = new WeakMap<
     Record<string, RenderableToken | NodeMetadata>,
@@ -173,15 +183,12 @@ export function findMatchingToken(
     // So we also search for tokens where the prefix appears as a path segment, not just in the class name.
     // Example: config { source: "color.*", prefix: "text" }, class "text-muted" → searches "color.text.muted"
     if (config.stripDuplicates && config.prefix) {
-        const wildcardIndex = config.source.lastIndexOf(".*");
-        if (wildcardIndex !== -1) {
-            const sourceBase = config.source.slice(0, wildcardIndex);
-            if (sourceBase) {
-                searchPaths.push(
-                    `${sourceBase}.${config.prefix}.${tokenName}`,
-                    `${sourceBase}.${config.prefix}.${tokenName.split("-").join(".")}`
-                );
-            }
+        const sourceBase = sourceWildcardBase(config.source);
+        if (sourceBase && sourceBase !== config.source) {
+            searchPaths.push(
+                `${sourceBase}.${config.prefix}.${tokenName}`,
+                `${sourceBase}.${config.prefix}.${tokenName.split("-").join(".")}`
+            );
         }
     }
 
@@ -327,10 +334,8 @@ function createDirectTokenPathRule(
     tokens: NormalizedRenderableTokens
 ): [RegExp, (m: RegExpMatchArray) => CSSObject] {
     // For utilities without prefix, use the first part of the source path as the pattern base
-    // Extract the base path before the first dot (e.g., "text" from "text.*")
-    // Token paths use dots as separators, so we split on the first dot
-    const firstDotIndex = config.source.indexOf(".");
-    const sourceBase = firstDotIndex !== -1 ? config.source.slice(0, firstDotIndex) : config.source;
+    // (e.g., "text" from "text.*").
+    const sourceBase = sourcePathBase(config.source);
     const pattern = createUtilityPattern(sourceBase);
 
     return [
@@ -370,6 +375,94 @@ function validateInputs(
     if (!tokens || typeof tokens !== "object") {
         throw new Error(ErrorMessages.UTILITIES.INVALID_TOKENS_OBJECT);
     }
+}
+
+function segmentsFromTokens(
+    config: PropertyUtilityConfig,
+    property: string,
+    tokens: NormalizedRenderableTokens
+): string[] {
+    const defaultTokens = getDefaultContextTokens(tokens);
+    if (!defaultTokens) return [];
+
+    const base = sourceWildcardBase(config.source);
+    const segments: string[] = [];
+
+    for (const tokenOrMetadata of Object.values(defaultTokens)) {
+        if (!("$path" in tokenOrMetadata)) continue;
+        const token = tokenOrMetadata as RenderableToken;
+
+        if (!token.$path.startsWith(`${base}.`)) continue;
+        if (token.$type && !isTokenTypeValidForProperty(token.$type, property)) continue;
+
+        const slot = token.$path
+            .slice(base.length + 1)
+            .split(".")
+            .join(DIRECTION_SEPARATOR);
+        segments.push(stripDuplicatePrefix(slot, config));
+    }
+
+    return segments;
+}
+
+function classNamesForSegment(segment: string, config: PropertyUtilityConfig): string[] {
+    if (!config.prefix) {
+        return [`${sourcePathBase(config.source)}${DIRECTION_SEPARATOR}${segment}`];
+    }
+
+    if (!config.directions) {
+        return [`${config.prefix}${DIRECTION_SEPARATOR}${segment}`];
+    }
+
+    const directionsArray = Array.isArray(config.directions)
+        ? config.directions
+        : [config.directions];
+    const names: string[] = [];
+
+    if (directionsArray.includes("all")) {
+        names.push(`${config.prefix}${DIRECTION_SEPARATOR}${segment}`);
+    }
+
+    for (const direction of expandDirections(config.directions)) {
+        if ((EXCLUDED_DIRECTIONS as readonly string[]).includes(direction)) continue;
+        const abbr = getDirectionAbbreviation(direction);
+        names.push(`${config.prefix}${abbr}${DIRECTION_SEPARATOR}${segment}`);
+    }
+
+    return names;
+}
+
+/**
+ * Enumerates the concrete class names a config wants force-generated, so they
+ * can be handed to UnoCSS's native safelist. This runs token -> class name,
+ * the inverse of the on-demand rules, and deliberately reads the token index
+ * straight (not findMatchingToken) to sidestep the shared match cache.
+ */
+export function enumerateSafelistClasses(
+    utilitiesConfig: UtilityClassesConfig,
+    tokens: NormalizedRenderableTokens
+): string[] {
+    const classes = new Set<string>();
+
+    for (const [property, config] of Object.entries(utilitiesConfig)) {
+        const configs = Array.isArray(config) ? config : [config];
+
+        for (const singleConfig of configs) {
+            if (!singleConfig.safelist) continue;
+
+            const segments = Array.isArray(singleConfig.safelist)
+                ? singleConfig.safelist
+                : segmentsFromTokens(singleConfig, property, tokens);
+
+            for (const segment of segments) {
+                for (const className of classNamesForSegment(segment, singleConfig)) {
+                    classes.add(className);
+                }
+            }
+        }
+    }
+
+    return [...classes];
 }
 
 /**

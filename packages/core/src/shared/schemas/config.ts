@@ -27,6 +27,7 @@ const utilityConfigSchema = z.object({
         .optional(),
     prefix: z.string().optional(),
     stripDuplicates: z.boolean().optional(),
+    safelist: z.union([z.boolean(), z.array(z.string())]).optional(),
 });
 
 const utilityConfigOrArraySchema = z.union([utilityConfigSchema, z.array(utilityConfigSchema)]);

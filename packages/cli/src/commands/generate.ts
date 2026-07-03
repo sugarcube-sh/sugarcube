@@ -7,6 +7,7 @@ import {
     clearMatchCache,
     configFileExists,
     convertConfigToUnoRules,
+    enumerateSafelistClasses,
     fillDefaults,
     findResolverDocument,
     generateCSSVariables,
@@ -212,6 +213,8 @@ async function generateSugarcubeUtilities(
         return [];
     }
 
+    const safelist = enumerateSafelistClasses(config.utilities.classes, tokens);
+
     const sugarcubePreset = {
         name: "sugarcube",
         rules: convertConfigToUnoRules(config.utilities.classes, tokens),
@@ -220,12 +223,13 @@ async function generateSugarcubeUtilities(
 
     const generatorOptions: UserConfig = {
         presets: [sugarcubePreset],
+        safelist,
     };
 
     const generator = await createGenerator(generatorOptions);
 
     const files = await getMarkupFiles();
-    if (files.length === 0) return [];
+    if (files.length === 0 && safelist.length === 0) return [];
 
     const sources = await readMarkupSources(files);
     const combinedSource = sources.join("\n");

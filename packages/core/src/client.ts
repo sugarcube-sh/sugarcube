@@ -26,7 +26,11 @@ export { groupByContext } from "./shared/pipeline/group-by-context.js";
 export { assignCSSNames } from "./shared/pipeline/assign-css-names.js";
 export { generateCSSVariables } from "./shared/generate-css-variables.js";
 
-export { convertConfigToUnoRules, clearMatchCache } from "./shared/uno-rules.js";
+export {
+    convertConfigToUnoRules,
+    enumerateSafelistClasses,
+    clearMatchCache,
+} from "./shared/uno-rules.js";
 
 export { formatCSSVarName } from "./shared/format-css-var-name.js";
 export { createVariableNameResolver } from "./shared/resolve-variable-name.js";
