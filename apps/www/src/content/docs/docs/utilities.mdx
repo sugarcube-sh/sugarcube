@@ -272,7 +272,7 @@ Note: Directions use CSS logical properties for better internationalization supp
 
 ## Forcing generation with `safelist`
 
-By default a utility only exists if its class appears somewhere the scanner can read. Two common situations slip through that net. The first is a class name your code assembles at runtime, like `bg-${tone}`, which never appears literally in the source for the scanner to find. The second is a class that lives outside the scanned files altogether — CMS content, Markdown, or a third-party script. `safelist` tells sugarcube to generate a utility whether or not it shows up in your markup.
+By default a utility is only generated if its class appears somewhere the scanner can read. Two common situations slip through that net. The first is a class name your code assembles at runtime, like `bg-${tone}`, which never appears literally in the source for the scanner to find. The second is a class that lives outside the scanned files altogether — CMS content, Markdown, or a third-party script. `safelist` tells sugarcube to generate a utility whether or not it shows up in your markup.
 
 You add it to whichever entry you want to force, alongside `source` and `prefix`.
 
