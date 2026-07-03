@@ -4,6 +4,7 @@ import {
     assignCSSNames,
     clearMatchCache,
     convertConfigToUnoRules,
+    enumerateSafelistClasses,
     generateCSSVariables,
     groupByContext,
     loadInternalConfig,
@@ -81,6 +82,7 @@ export interface SugarcubePluginContext {
     reloadConfig: () => Promise<void>;
     reloadTokens: () => Promise<void>;
     getRules: () => UnoRule[];
+    getSafelist: () => string[];
     getTokenDirs: () => string[];
     invalidate: (server: ViteDevServer) => void;
     onReload: (fn: () => void) => void;
@@ -97,6 +99,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
     let permutations: Permutation[] = [];
     let cachedCSS = "";
     let cachedRules: UnoRule[] = [];
+    let cachedSafelist: string[] = [];
     const reloadCallbacks: (() => void)[] = [];
     const tasks: Promise<void>[] = [];
     let logger: Logger | null = null;
@@ -135,6 +138,13 @@ function createSugarcubeContext(): SugarcubePluginContext {
         return generatedRules;
     };
 
+    const buildSafelist = () => {
+        if (!tokens || !config) {
+            return [];
+        }
+        return enumerateSafelistClasses(config.utilities.classes ?? {}, tokens);
+    };
+
     const generateCSS = async () => {
         if (!tokens || !config) {
             cachedCSS = "";
@@ -154,6 +164,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
     const updateAll = async () => {
         await generateCSS();
         cachedRules = buildRules();
+        cachedSafelist = buildSafelist();
     };
 
     const runPipeline = async () => {
@@ -249,6 +260,10 @@ function createSugarcubeContext(): SugarcubePluginContext {
             return cachedRules;
         },
 
+        getSafelist() {
+            return cachedSafelist;
+        },
+
         async rerunPipeline(modifiedResolved: ResolvedTokens) {
             const localConfig = config;
             const localTrees = trees;
@@ -257,6 +272,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
                 tokens = assignCSSNames(groupByContext(localTrees, modifiedResolved), localConfig);
                 await generateCSS();
                 cachedRules = buildRules();
+                cachedSafelist = buildSafelist();
             })();
             return addTask(task);
         },
@@ -392,6 +408,9 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
         name: "sugarcube",
         get rules() {
             return ctx.getRules();
+        },
+        get safelist() {
+            return ctx.getSafelist();
         },
         // Variables are always included via preflight now
         preflights: [

@@ -9,4 +9,12 @@ export type PropertyUtilityConfig = {
     prefix?: string;
     /** Strip duplicate prefix (e.g., "text-text-quiet" → "text-quiet"). */
     stripDuplicates?: boolean;
+    /**
+     * Force-generate classes regardless of markup usage (non-JIT).
+     * - omitted / `false` — on-demand only (default).
+     * - `true` — emit the whole family: every token under `source`.
+     * - `string[]` — emit only the listed `*`-slot values, reusing this
+     *   entry's own `source` / `prefix` / `directions`.
+     */
+    safelist?: boolean | string[];
 };
