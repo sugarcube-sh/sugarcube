@@ -314,7 +314,7 @@ That forces `.bg-primary`, `.bg-danger`, and `.bg-success` to be written to your
 
 ### What to write in the array
 
-Each string is a **segment**, not a full class name and not a token path. Write it the same way you'd write the class in your markup, with the prefix removed. Sugarcube adds the prefix back for you — and when the entry has `directions`, it generates every direction variant from that one segment. In the example above you write `primary`, not `bg-primary` and not `color.primary`.
+Each string is a **segment**, not a full class name and not a token path. Write it the same way you'd write the class in your markup, with the prefix removed. Sugarcube adds the prefix back for you. In the example above you write `primary`, not `bg-primary` and not `color.primary`.
 
 Three situations change what the segment looks like:
 
@@ -328,7 +328,7 @@ Three situations change what the segment looks like:
 
 For a nested token, join the path below the wildcard with hyphens, so `color.fill.solid` under `source: "color.*"` becomes `fill-solid`. With `stripDuplicates` turned on, write the shortened form you'd actually type, so `color.text.muted` with prefix `text` is `muted`, not `text-muted`. With `directions`, write only the token part and let sugarcube expand the variants, so `space.sm` is just `sm`.
 
-If a segment doesn't correspond to a real token under `source`, no class is produced for it — a typo costs you nothing worse than a missing utility.
+If a segment doesn't correspond to a real token under `source`, no class is produced for it; a typo costs you nothing worse than a missing utility.
 
 <SiteAside type="note">
     `safelist` works the same way with both the Vite plugin and the CLI, and it doesn't change anything about classes you already use in markup — those are still generated on demand as usual.
