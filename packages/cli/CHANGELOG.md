@@ -1,5 +1,13 @@
 # @sugarcube-sh/cli
 
+## 0.1.19
+
+### Patch Changes
+
+- 6d3aee2: feat: adds non-JIT utility class generation via safelist config option.
+- Updated dependencies [6d3aee2]
+  - @sugarcube-sh/core@0.2.12
+
 ## 0.1.18
 
 ### Patch Changes

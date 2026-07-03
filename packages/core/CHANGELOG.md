@@ -1,5 +1,11 @@
 # @sugarcube-sh/core
 
+## 0.2.12
+
+### Patch Changes
+
+- 6d3aee2: feat: adds non-JIT utility class generation via safelist config option.
+
 ## 0.2.11
 
 ### Patch Changes

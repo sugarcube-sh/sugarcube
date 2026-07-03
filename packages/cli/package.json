@@ -1,6 +1,6 @@
 {
     "name": "@sugarcube-sh/cli",
-    "version": "0.1.18",
+    "version": "0.1.19",
     "publishConfig": {
         "access": "public",
         "provenance": true
