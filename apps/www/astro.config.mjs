@@ -8,7 +8,6 @@ import { clientPath } from "@sugarcube-sh/studio/client";
 import sugarcube from "@sugarcube-sh/vite";
 import presetWind3 from "@unocss/preset-wind3";
 import { DevTools } from "@vitejs/devtools";
-import AutoImport from "astro-auto-import";
 import robotsTxt from "astro-robots-txt";
 import { defineConfig, fontProviders } from "astro/config";
 import sirv from "sirv";
@@ -40,9 +39,6 @@ export default defineConfig({
         },
     ],
     integrations: [
-        AutoImport({
-            imports: ["src/components/SourceCode.astro", "src/components/PackageManagerTabs.astro"],
-        }),
         sitemap(),
         robotsTxt(),
         react(),
