@@ -23,9 +23,19 @@ export function PalettePicker({ currentName, options, onSelect }: Props) {
                 <span className="font-mono text-sm">{currentName}</span>
             </PopoverTrigger>
             <PopoverContent align="start" className="preset-popover palette-picker-popover">
-                <div className="preset-list" role="listbox" tabIndex={0}>
+                <div
+                    className="preset-list"
+                    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom listbox: options contain buttons and color strips, not plain text
+                    role="listbox"
+                    tabIndex={0}
+                >
                     {options.map((opt) => (
-                        <div key={opt.name} role="option" aria-selected={opt.name === currentName}>
+                        <div
+                            key={opt.name}
+                            // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom option with rich button content, not a native <option>
+                            role="option"
+                            aria-selected={opt.name === currentName}
+                        >
                             <button
                                 type="button"
                                 className="preset-option cluster w-full"
@@ -58,7 +68,7 @@ function PaletteStrip({ shades }: { shades: string[] }) {
         <span className="palette-strip" aria-hidden="true">
             {sampled.map((color, i) => (
                 <span
-                    // oxlint-disable-line lint/suspicious/noArrayIndexKey: shades are a fixed-order ramp
+                    // oxlint-disable-next-line react/no-array-index-key -- shades are a fixed-order ramp
                     key={i}
                     className="palette-strip-shade"
                     style={{ backgroundColor: color }}

@@ -83,7 +83,7 @@ describe("generate command", () => {
 
         expect(result.exitCode).toBe(0);
         const css = await readFile(join(testDir, "styles/variables.gen.css"), "utf-8");
-        const declared = [...css.matchAll(/^\s*(--[\w-]+):/gm)].map((m) => m[1]);
+        const declared = [...css.matchAll(/^[ \t]*(--[\w-]+):/gm)].map((m) => m[1]);
         expect(declared.length).toBeGreaterThan(0);
         for (const name of declared) {
             expect(name).toMatch(/^--ds-/);

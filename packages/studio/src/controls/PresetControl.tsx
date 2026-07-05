@@ -37,9 +37,19 @@ export function PresetControl({ binding }: PresetControlProps) {
                     <Icon name="caret" className="shrink-0 text-quiet" />
                 </PopoverTrigger>
                 <PopoverContent align="start" className="preset-popover">
-                    <div className="preset-list" role="listbox" tabIndex={0}>
+                    <div
+                        className="preset-list"
+                        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom listbox: options contain buttons and icons, not plain text
+                        role="listbox"
+                        tabIndex={0}
+                    >
                         {options.map(({ key, label: optLabel, reference }) => (
-                            <div key={key} role="option" aria-selected={value === reference}>
+                            <div
+                                key={key}
+                                // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom option with rich button content, not a native <option>
+                                role="option"
+                                aria-selected={value === reference}
+                            >
                                 <button
                                     type="button"
                                     className="preset-option cluster w-full"

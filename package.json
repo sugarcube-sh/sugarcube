@@ -40,6 +40,7 @@
         "@changesets/cli": "^2.27.9",
         "@types/node": "^24.9.2",
         "@vitest/coverage-istanbul": "^4.0.18",
+        "eslint-plugin-regexp": "^3.1.1",
         "knip": "^5.59.1",
         "lint-staged": "^16.2.7",
         "oxlint": "^1.72.0",

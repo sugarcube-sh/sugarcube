@@ -152,6 +152,7 @@ export function ColorGrid({
             ref={gridRef}
             role="grid"
             aria-label="Color picker"
+            tabIndex={0}
             className="color-grid"
             style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}
             onKeyDown={handleKeyDown}
@@ -159,6 +160,7 @@ export function ColorGrid({
             {rows.map((row, rowIdx) => (
                 <div
                     key={row}
+                    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- CSS grid layout with display:contents, not an HTML <table>
                     role="row"
                     className="color-grid-row"
                     style={{ display: "contents" }}
@@ -166,7 +168,11 @@ export function ColorGrid({
                     {columns.map((col, colIdx) => {
                         const option = cells[rowIdx]?.[colIdx];
                         return (
-                            <div key={col} role="gridcell">
+                            <div
+                                key={col}
+                                // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- CSS grid layout, not an HTML <table> cell
+                                role="gridcell"
+                            >
                                 {option && (
                                     <Swatch
                                         option={option}
@@ -199,7 +205,7 @@ function Swatch({
             data-path={option.path}
             style={{ backgroundColor: option.color }}
             aria-label={option.label}
-            aria-selected={selected}
+            aria-pressed={selected}
             tabIndex={selected ? 0 : -1}
             onClick={() => onPick(option.path)}
         />
