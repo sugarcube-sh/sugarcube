@@ -1,6 +1,9 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "import", "unicorn", "oxc"],
+  "plugins": ["typescript", "react", "jsx-a11y", "import", "unicorn", "oxc"],
+  "jsPlugins": [
+    "eslint-plugin-regexp",
+  ],
   "categories": {
     "correctness": "error",
     "suspicious": "warn",
@@ -12,7 +15,10 @@
     "unicorn/no-array-sort": "off",
     "unicorn/prefer-set-has": "off",
     "import/no-unassigned-import": "off",
-    "import/no-named-as-default": "off"
+    "import/no-named-as-default": "off",
+    "react/react-in-jsx-scope": "off",
+    "regexp/no-super-linear-backtracking": "error",
+    "regexp/no-super-linear-move": "error"
   },
   "env": {
     "builtin": true

@@ -140,7 +140,7 @@ describe("renderDimension", () => {
                 .map((s: string) => s.trim());
 
             expect(min).toBe("1rem");
-            expect(calc).toMatch(/^-?\d+\.?\d*rem \+ \d+\.?\d*vw$/);
+            expect(calc).toMatch(/^-?\d+(?:\.\d*)?rem \+ \d+(?:\.\d*)?vw$/);
             expect(max).toBe("2rem");
         });
     });

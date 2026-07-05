@@ -8,7 +8,9 @@ function base64url(data: Uint8Array): string {
     for (const byte of data) {
         binary += String.fromCharCode(byte);
     }
-    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const encoded = btoa(binary).replace(/\+/g, "-").replace(/\//g, "_");
+    const pad = encoded.indexOf("=");
+    return pad === -1 ? encoded : encoded.slice(0, pad);
 }
 
 function base64urlEncodeJSON(obj: Record<string, unknown>): string {

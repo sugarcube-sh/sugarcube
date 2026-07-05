@@ -119,14 +119,16 @@ export function ComboboxDemo() {
 function FrameworkCombobox({ frameworks }: { frameworks: Framework[] }) {
     const [open, setOpen] = React.useState(false);
     const [value, setValue] = React.useState("");
+    const listId = React.useId();
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
                     data-appearance="outlined"
-                    // oxlint-disable-line lint/a11y/useSemanticElements: Custom combobox implementation
+                    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom combobox trigger with popover + command list, not a native input/select
                     role="combobox"
+                    aria-controls={listId}
                     aria-expanded={open}
                     className=""
                 >
@@ -139,7 +141,7 @@ function FrameworkCombobox({ frameworks }: { frameworks: Framework[] }) {
             <PopoverContent className="">
                 <Command>
                     <CommandInput placeholder="Search framework..." />
-                    <CommandList>
+                    <CommandList id={listId}>
                         <CommandEmpty>No framework found.</CommandEmpty>
                         <CommandGroup>
                             {frameworks.map((framework) => (
@@ -177,6 +179,7 @@ function UserCombobox({
 }) {
     const [open, setOpen] = React.useState(false);
     const [value, setValue] = React.useState(selectedUserId);
+    const listId = React.useId();
 
     const selectedUser = React.useMemo(
         () => users.find((user) => user.id === value),
@@ -187,9 +190,10 @@ function UserCombobox({
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
-                    // oxlint-disable-line lint/a11y/useSemanticElements: Custom combobox implementation
+                    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom combobox trigger with popover + command list, not a native input/select
                     role="combobox"
                     data-appearance="outlined"
+                    aria-controls={listId}
                     aria-expanded={open}
                     className=""
                 >
@@ -212,7 +216,7 @@ function UserCombobox({
             <PopoverContent className="">
                 <Command>
                     <CommandInput placeholder="Search user..." />
-                    <CommandList>
+                    <CommandList id={listId}>
                         <CommandEmpty>No user found.</CommandEmpty>
                         <CommandGroup>
                             {users.map((user) => (
@@ -343,6 +347,7 @@ function TimezoneCombobox({
 function ComboboxWithCheckbox({ frameworks }: { frameworks: Framework[] }) {
     const [open, setOpen] = React.useState(false);
     const [selectedFrameworks, setSelectedFrameworks] = React.useState<Framework[]>([]);
+    const listId = React.useId();
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -353,8 +358,9 @@ function ComboboxWithCheckbox({ frameworks }: { frameworks: Framework[] }) {
             >
                 <Button
                     data-appearance="outlined"
-                    // oxlint-disable-line lint/a11y/useSemanticElements: Custom combobox implementation
+                    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom combobox trigger with popover + command list, not a native input/select
                     role="combobox"
+                    aria-controls={listId}
                     aria-expanded={open}
                     className=""
                 >
@@ -367,7 +373,7 @@ function ComboboxWithCheckbox({ frameworks }: { frameworks: Framework[] }) {
             <PopoverContent className="w-[300px]" align="start">
                 <Command>
                     <CommandInput placeholder="Search framework..." />
-                    <CommandList>
+                    <CommandList id={listId}>
                         <CommandEmpty>No framework found.</CommandEmpty>
                         <CommandGroup>
                             {frameworks.map((framework) => (

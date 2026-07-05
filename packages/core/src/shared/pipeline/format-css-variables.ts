@@ -54,7 +54,7 @@ function substituteReferencesAsCSSVars(
         throw new Error(ErrorMessages.GENERATE.INVALID_CSS_VALUE_TYPE(typeof value));
     }
 
-    return value.replace(/\{([^}]+)\}/g, (_, ref) => {
+    return value.replace(/\{([^{}]+)\}/g, (_, ref) => {
         const varName = nameLookup.get(ref) ?? formatCSSVarName(ref);
         return `var(--${varName})`;
     });

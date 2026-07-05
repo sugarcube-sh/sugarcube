@@ -43,14 +43,16 @@ const frameworks = [
 export function ComboboxDemo() {
     const [open, setOpen] = React.useState(false);
     const [value, setValue] = React.useState("");
+    const listId = React.useId();
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
                     data-appearance="outlined"
-                    // oxlint-disable-line lint/a11y/useSemanticElements: Custom combobox implementation
+                    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom combobox trigger with popover + command list, not a native input/select
                     role="combobox"
+                    aria-controls={listId}
                     aria-expanded={open}
                 >
                     {value
@@ -62,7 +64,7 @@ export function ComboboxDemo() {
             <PopoverContent>
                 <Command>
                     <CommandInput placeholder="Search framework..." />
-                    <CommandList>
+                    <CommandList id={listId}>
                         <CommandEmpty>No framework found.</CommandEmpty>
                         <CommandGroup>
                             {frameworks.map((framework) => (

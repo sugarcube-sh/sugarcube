@@ -71,7 +71,7 @@ function DiffEntry({ entry }: { entry: TokenDiffEntry }) {
             </header>
             <pre className="diff-block" aria-label="Change">
                 {lines.map((line, i) => (
-                    // oxlint-disable-line lint/suspicious/noArrayIndexKey: lines are positional
+                    // oxlint-disable-next-line react/no-array-index-key -- lines are positional
                     <span key={i} className={`diff-line diff-line-${line.kind}`}>
                         <span className="diff-gutter" aria-hidden>
                             {line.kind === "added" ? "+" : line.kind === "removed" ? "−" : " "}
