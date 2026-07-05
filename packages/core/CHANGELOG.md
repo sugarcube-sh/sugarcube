@@ -26,9 +26,9 @@
 
 - f2fd182: fix: strip `$root` from CSS variable names when a `variableName` callback is set
 
-  A `$root` token's path (e.g. `blue.$root`) is meant to emit under its group path (`--blue`). The `$root` segment is a reference-only disambiguator and must never reach an identifier. The default and `prefix` naming paths already stripped it, but a custom `variableName` callback received the raw path including `.$root`, producing names like `--blue_$root`. That isn't a valid CSS custom property (`$` is not a valid identifier character), so browsers drop the declaration and the token's value silently disappears.
+    A `$root` token's path (e.g. `blue.$root`) is meant to emit under its group path (`--blue`). The `$root` segment is a reference-only disambiguator and must never reach an identifier. The default and `prefix` naming paths already stripped it, but a custom `variableName` callback received the raw path including `.$root`, producing names like `--blue_$root`. That isn't a valid CSS custom property (`$` is not a valid identifier character), so browsers drop the declaration and the token's value silently disappears.
 
-  The strip now happens in the resolver, before the `variableName` callback runs, so every naming route - default, `prefix`, and `variableName` (including Studio, which builds names through the same resolver) - honours the invariant. Alias references keep resolving because the lookup is still the full `$path`.
+    The strip now happens in the resolver, before the `variableName` callback runs, so every naming route - default, `prefix`, and `variableName` (including Studio, which builds names through the same resolver) - honours the invariant. Alias references keep resolving because the lookup is still the full `$path`.
 
 ## 0.2.8
 
@@ -43,36 +43,36 @@
 - 94f379a: Export shared primitives for studio packages: `SUGARCUBE_NAMESPACE`, `isScaleExtension`, and `roundTo`.
 - cef63ae: **New: scale recipes.** Generate a family of fluid dimension tokens from a single group node by authoring a recipe under `$extensions["sh.sugarcube"].scale`. Sugarcube generates (virtually) the children during the expand pass, and each generated token carries a `sh.sugarcube.fluid` extension so the existing fluid renderer emits `clamp()` — virtual scale tokens are indistinguishable from hand-authored fluid tokens by the time they hit CSS.
 
-  At present, no actual tokens are written to disk or outputted.
+    At present, no actual tokens are written to disk or outputted.
 
-  Two modes:
+    Two modes:
 
-  - **`exponential`**: base min/max + a min/max ratio + step counts. Generates symmetric steps around the base (e.g. `-2, -1, 0, 1, 2`).
-  - **`multipliers`**: base min/max + a `Record<string, number>` of named multipliers. Optionally generates space pairs (`"adjacent"` for `sm-md`, `md-lg`, …, or an explicit list like `["sm-lg", "xs-xl"]`).
+    - **`exponential`**: base min/max + a min/max ratio + step counts. Generates symmetric steps around the base (e.g. `-2, -1, 0, 1, 2`).
+    - **`multipliers`**: base min/max + a `Record<string, number>` of named multipliers. Optionally generates space pairs (`"adjacent"` for `sm-md`, `md-lg`, …, or an explicit list like `["sm-lg", "xs-xl"]`).
 
-  ```ts
-  {
-    $extensions: {
-      "sh.sugarcube": {
-        scale: {
-          mode: "exponential",
-          base: { min: { value: 1, unit: "rem" }, max: { value: 1.125, unit: "rem" } },
-          ratio: { min: 1.2, max: 1.25 },
-          steps: { negative: 2, positive: 5 },
+    ```ts
+    {
+      $extensions: {
+        "sh.sugarcube": {
+          scale: {
+            mode: "exponential",
+            base: { min: { value: 1, unit: "rem" }, max: { value: 1.125, unit: "rem" } },
+            ratio: { min: 1.2, max: 1.25 },
+            steps: { negative: 2, positive: 5 },
+          },
         },
       },
-    },
-  }
-  ```
+    }
+    ```
 
-  Malformed recipes surface as `ExpandError`s; the group is left intact (without generated children) and the rest of the pipeline continues.
+    Malformed recipes surface as `ExpandError`s; the group is left intact (without generated children) and the rest of the pipeline continues.
 
-  **New exported types (from `@sugarcube-sh/core` and `/client`):** `ScaleExtension`, `ExponentialScaleConfig`, `MultiplierScaleConfig`, `FluidExtension`, `SugarcubeExtensions`.
+    **New exported types (from `@sugarcube-sh/core` and `/client`):** `ScaleExtension`, `ExponentialScaleConfig`, `MultiplierScaleConfig`, `FluidExtension`, `SugarcubeExtensions`.
 
-  **`ScaleBinding` semantics clarified.** A scale binding now dispatches purely on whether a recipe is authored at the bound path:
+    **`ScaleBinding` semantics clarified.** A scale binding now dispatches purely on whether a recipe is authored at the bound path:
 
-  - Recipe present -> recipe-aware controls; the recipe's `mode` field tells consumers whether to render exponential or multipliers UI.
-  - No recipe -> bulk controls (base + spread) plus per-step inputs for direct editing of the concrete tokens.
+    - Recipe present -> recipe-aware controls; the recipe's `mode` field tells consumers whether to render exponential or multipliers UI.
+    - No recipe -> bulk controls (base + spread) plus per-step inputs for direct editing of the concrete tokens.
 
 - eab58f5: Harden some npm practices. Make minimum release age strict. Set provenance to true (which mirrors the actual state of things already (provenance: false was misleading))
 
@@ -82,52 +82,43 @@
 
 - 8bd47d3: Refactor: CSS rendering moved out of the token pipeline and into the CSS output step. Tokens stay generic all the way through. This makes it easy to add other output formats (Swift, JS, SCSS, Android) later without touching the token type.
 
-  Anything called "convert"/"converter" is now "render"/"renderer". Existing imports just need a find-and-replace.
+    Anything called "convert"/"converter" is now "render"/"renderer". Existing imports just need a find-and-replace.
 
-  **`@sugarcube-sh/core`**
+    **`@sugarcube-sh/core`**
 
-  - **Tokens no longer carry CSS output.** The `$cssProperties` field is gone from `RenderableToken`.
-  - **`$resolvedValue` removed from `RenderableToken`.** It's still on `ResolvedToken`, but nothing downstream used it on the renderable token, so we stopped duplicating it.
-  - **Public type renames:**
-    - `ConvertedToken` -> `RenderableToken`
-    - `ConvertedTokens` -> `RenderableTokens`
-    - `NormalizedConvertedTokens` -> `NormalizedRenderableTokens`
-  - **Pipeline composition changed.** `convertTokens()` is gone. Compose the two steps yourself:
+    - **Tokens no longer carry CSS output.** The `$cssProperties` field is gone from `RenderableToken`.
+    - **`$resolvedValue` removed from `RenderableToken`.** It's still on `ResolvedToken`, but nothing downstream used it on the renderable token, so we stopped duplicating it.
+    - **Public type renames:**
+        - `ConvertedToken` -> `RenderableToken`
+        - `ConvertedTokens` -> `RenderableTokens`
+        - `NormalizedConvertedTokens` -> `NormalizedRenderableTokens`
+    - **Pipeline composition changed.** `convertTokens()` is gone. Compose the two steps yourself:
 
-    ```ts
-    // Before
-    const tokens = await convertTokens(
-      trees,
-      resolved,
-      config,
-      validationErrors
-    );
+        ```ts
+        // Before
+        const tokens = await convertTokens(trees, resolved, config, validationErrors);
 
-    // After
-    const tokens = assignCSSNames(
-      groupByContext(trees, resolved),
-      config,
-      validationErrors
-    );
-    ```
+        // After
+        const tokens = assignCSSNames(groupByContext(trees, resolved), config, validationErrors);
+        ```
 
-    Both `groupByContext` and `assignCSSNames` are exported from `@sugarcube-sh/core` and `/client`.
+        Both `groupByContext` and `assignCSSNames` are exported from `@sugarcube-sh/core` and `/client`.
 
-  - **New: `renderCSS(token, options)`**. Turns a single token into its CSS-shaped value. The CSS emitter calls this; future formats will get sibling functions like `renderJS` and `renderSwift`.
-  - **New: `assignCSSNames(tokens, config, validationErrors?)`**. Sets `$names.css` on every token and drops any flagged invalid by validation. This is the new home for the naming work that used to live inside `convertTokens`.
-  - **Directory rename**: `src/shared/converters/` -> `src/shared/renderers/css/`. Other formats will live next to it: `renderers/js/`, `renderers/swift/`, etc.
-  - **Internal symbol renames:**
-    - `converters` registry -> `cssRenderers`
-    - 14 × `convert<Type>Token` functions -> `render<Type>` (e.g. `convertColorToken` -> `renderColor`)
-    - `ConversionOptions` -> `CSSRenderOptions`
-    - `TokenConverter<T>` -> `CSSRenderer<T>`
-    - `convertReferenceToCSSVar` -> `substituteReferencesAsCSSVars`
-  - **Pipeline step rename:** `apply-converters` -> `assign-css-names`. The step no longer runs converters; it just sets `$names.css` and drops invalid tokens.
-  - **Fixture fix:** typography and shadow test fixtures had `$value` shapes that didn't match DTCG (e.g. `fontSize: "16px"` instead of `{ value: 16, unit: "px" }`). The old emitter masked this by reading a hand-written `$cssProperties` cache. The new pipeline reads `$value` directly, so the broken fixtures started failing — they're now DTCG-valid.
+    - **New: `renderCSS(token, options)`**. Turns a single token into its CSS-shaped value. The CSS emitter calls this; future formats will get sibling functions like `renderJS` and `renderSwift`.
+    - **New: `assignCSSNames(tokens, config, validationErrors?)`**. Sets `$names.css` on every token and drops any flagged invalid by validation. This is the new home for the naming work that used to live inside `convertTokens`.
+    - **Directory rename**: `src/shared/converters/` -> `src/shared/renderers/css/`. Other formats will live next to it: `renderers/js/`, `renderers/swift/`, etc.
+    - **Internal symbol renames:**
+        - `converters` registry -> `cssRenderers`
+        - 14 × `convert<Type>Token` functions -> `render<Type>` (e.g. `convertColorToken` -> `renderColor`)
+        - `ConversionOptions` -> `CSSRenderOptions`
+        - `TokenConverter<T>` -> `CSSRenderer<T>`
+        - `convertReferenceToCSSVar` -> `substituteReferencesAsCSSVars`
+    - **Pipeline step rename:** `apply-converters` -> `assign-css-names`. The step no longer runs converters; it just sets `$names.css` and drops invalid tokens.
+    - **Fixture fix:** typography and shadow test fixtures had `$value` shapes that didn't match DTCG (e.g. `fontSize: "16px"` instead of `{ value: 16, unit: "px" }`). The old emitter masked this by reading a hand-written `$cssProperties` cache. The new pipeline reads `$value` directly, so the broken fixtures started failing — they're now DTCG-valid.
 
-  **`@sugarcube-sh/cli`, `@sugarcube-sh/vite`**
+    **`@sugarcube-sh/cli`, `@sugarcube-sh/vite`**
 
-  - Internal: updated to the new pipeline shape (`groupByContext` + `assignCSSNames` instead of `convertTokens`). No user-visible change.
+    - Internal: updated to the new pipeline shape (`groupByContext` + `assignCSSNames` instead of `convertTokens`). No user-visible change.
 
 ## 0.2.5
 
@@ -149,23 +140,23 @@
 
 - 06cd5cb: Add `variables.prefix` and `variables.variableName` config options for controlling generated CSS variable names.
 
-  **`@sugarcube-sh/core`**
+    **`@sugarcube-sh/core`**
 
-  - New `variables.prefix` option: prepends a string to every generated CSS variable name (e.g. `prefix: "ds"` → `--ds-color-brand-primary`). Flows through declarations, `var(--…)` references, and utility-class output automatically.
-  - New `variables.variableName` option: `(path: string) => string` callback for full control over naming. Overrides `prefix` when both are set. Useful for kebab-casing, custom separators, etc.
-  - Export `kebabCase(str)` helper. Shipped as a convenience for users.
-  - Export `createVariableNameResolver(variables)` — builds a bound resolver function from a `variables` config, for consumers (Studio, external tools) that need to construct `var(--…)` strings matching emitted CSS.
-  - Export `VariableNameFn` type.
-  - Internal: CSS variable names are now computed once per token during the convert step and stored on `token.$names.css`. Declarations, references (`{color.primary}` -> `var(--…)`), and utility-class rules all read from this single source — eliminating a latent bug where references with camelCase path segments (e.g. `{color.brandPrimary}`) produced names that didn't match their declarations.
+    - New `variables.prefix` option: prepends a string to every generated CSS variable name (e.g. `prefix: "ds"` → `--ds-color-brand-primary`). Flows through declarations, `var(--…)` references, and utility-class output automatically.
+    - New `variables.variableName` option: `(path: string) => string` callback for full control over naming. Overrides `prefix` when both are set. Useful for kebab-casing, custom separators, etc.
+    - Export `kebabCase(str)` helper. Shipped as a convenience for users.
+    - Export `createVariableNameResolver(variables)` — builds a bound resolver function from a `variables` config, for consumers (Studio, external tools) that need to construct `var(--…)` strings matching emitted CSS.
+    - Export `VariableNameFn` type.
+    - Internal: CSS variable names are now computed once per token during the convert step and stored on `token.$names.css`. Declarations, references (`{color.primary}` -> `var(--…)`), and utility-class rules all read from this single source — eliminating a latent bug where references with camelCase path segments (e.g. `{color.brandPrimary}`) produced names that didn't match their declarations.
 
-  **`@sugarcube-sh/cli`**
+    **`@sugarcube-sh/cli`**
 
-  - New `--prefix <string>` flag on `sugarcube generate`. Mirrors `variables.prefix` so users can prepend a CSS variable prefix without needing a config file. Pass the prefix without the leading `--` (e.g. `--prefix ds` produces `--ds-color-foo`). Overrides `variables.prefix` if a config file is present.
-  - Re-export `kebabCase` and the `VariableNameFn` type.
+    - New `--prefix <string>` flag on `sugarcube generate`. Mirrors `variables.prefix` so users can prepend a CSS variable prefix without needing a config file. Pass the prefix without the leading `--` (e.g. `--prefix ds` produces `--ds-color-foo`). Overrides `variables.prefix` if a config file is present.
+    - Re-export `kebabCase` and the `VariableNameFn` type.
 
-  **`@sugarcube-sh/vite`**
+    **`@sugarcube-sh/vite`**
 
-  - Re-export `kebabCase` and the `VariableNameFn` type so users can import everything they need from whichever entry point they already use.
+    - Re-export `kebabCase` and the `VariableNameFn` type so users can import everything they need from whichever entry point they already use.
 
 ## 0.2.2
 
@@ -173,27 +164,27 @@
 
 - 5c23423: Fix `$root` tokens so they produce clean CSS variables.
 
-  If you had a group like `blue` with a `$root` child for the base colour plus variants (`50`, `100`, etc.), the base colour was coming out as `--blue-$root` — not valid CSS. Now it simply becomes `--blue`, which is what you'd expect. References like `{blue.$root}` compile to `var(--blue)` too.
+    If you had a group like `blue` with a `$root` child for the base colour plus variants (`50`, `100`, etc.), the base colour was coming out as `--blue-$root` — not valid CSS. Now it simply becomes `--blue`, which is what you'd expect. References like `{blue.$root}` compile to `var(--blue)` too.
 
-  ```json
-  {
-    "blue": {
-      "$type": "color",
-      "$root": { "$value": "#0000FF" },
-      "50": { "$value": "#ADD8E6" }
+    ```json
+    {
+        "blue": {
+            "$type": "color",
+            "$root": { "$value": "#0000FF" },
+            "50": { "$value": "#ADD8E6" }
+        }
     }
-  }
-  ```
+    ```
 
-  ```css
-  /* Before */
-  --blue-$root: #0000ff;
-  --blue-50: #add8e6;
+    ```css
+    /* Before */
+    --blue-$root: #0000ff;
+    --blue-50: #add8e6;
 
-  /* After */
-  --blue: #0000ff;
-  --blue-50: #add8e6;
-  ```
+    /* After */
+    --blue: #0000ff;
+    --blue-50: #add8e6;
+    ```
 
 ## 0.2.1
 
@@ -201,55 +192,55 @@
 
 - 3a06216: **`@sugarcube-sh/cli`**
 
-  - Bump `chokidar` to `^5.0.0`. v4.0.3 was published without provenance, causing `pnpm install` to fail silently under `trustPolicy: no-downgrade`. ([#75](https://github.com/sugarcube-sh/sugarcube/issues/75))
-  - Surface package-manager stderr when `sugarcube init` fails to install dependencies. Previously the underlying error (e.g. pnpm trust-policy rejections, network failures) was swallowed and replaced with a generic message, making install failures hard to diagnose.
-  - Raise minimum Node version to `>=20.19.0`. Node 18 has been EOL since April 2025 and the effective floor was already 20.19 via transitive deps.
+    - Bump `chokidar` to `^5.0.0`. v4.0.3 was published without provenance, causing `pnpm install` to fail silently under `trustPolicy: no-downgrade`. ([#75](https://github.com/sugarcube-sh/sugarcube/issues/75))
+    - Surface package-manager stderr when `sugarcube init` fails to install dependencies. Previously the underlying error (e.g. pnpm trust-policy rejections, network failures) was swallowed and replaced with a generic message, making install failures hard to diagnose.
+    - Raise minimum Node version to `>=20.19.0`. Node 18 has been EOL since April 2025 and the effective floor was already 20.19 via transitive deps.
 
-  **`@sugarcube-sh/core`**
+    **`@sugarcube-sh/core`**
 
-  - Raise minimum Node version to `>=20.19.0` to match the CLI.
+    - Raise minimum Node version to `>=20.19.0` to match the CLI.
 
 - 454cdbd: Thread Studio support through `core`, `cli`, and `vite`. Studio itself ships as separate workspace packages (`@sugarcube-sh/studio`, `-vite`, `-embed`, `-node`) that aren't published yet.
 
-  **`@sugarcube-sh/core`**
+    **`@sugarcube-sh/core`**
 
-  - Add Studio config types and schema: `StudioConfig`, `ColorScaleConfig`, `PanelSection`, `BindingSection`, `PanelBinding` (discriminated union of `ColorBinding` | `PresetBinding` |
-    `ScaleBinding` | `ScaleLinkedBinding` | `PaletteSwapBinding`). Exported from both main and `/client` entries. `SugarcubeConfig.studio` is now a validated optional field.
-  - Export `isResolvedToken` type guard and `ResolvedToken` type from both entries, so browser-side consumers can narrow resolved tokens without importing Node-only code.
-  - Export `formatCSSVarName(path)` — the canonical path→CSS-variable-name formatter used by the pipeline, so external tools can build `var(--…)` strings guaranteed to match emitted CSS.
-  - Flattened tokens now carry per-file `$source.sourcePath` attribution. Dursolution each merged source file stamps `$sourcePath` on its tokens, so resolved tokens trace back to the
-    actual file that defined them rather than the root resolver document.
-  - Internal: consolidate `isToken` / `isGroup` helpers into `guards/token-guards.ts`; reuse `formatCSSVarName` in `pipeline/generate.ts` in place of the duplicated local `formatCSSVarPath`.
-  - Remove `PerfMonitor` / `Instrumentation` from the `/client` entry (still available from the main entry). These are Node-oriented debugging helpers not intended for browser use.
+    - Add Studio config types and schema: `StudioConfig`, `ColorScaleConfig`, `PanelSection`, `BindingSection`, `PanelBinding` (discriminated union of `ColorBinding` | `PresetBinding` |
+      `ScaleBinding` | `ScaleLinkedBinding` | `PaletteSwapBinding`). Exported from both main and `/client` entries. `SugarcubeConfig.studio` is now a validated optional field.
+    - Export `isResolvedToken` type guard and `ResolvedToken` type from both entries, so browser-side consumers can narrow resolved tokens without importing Node-only code.
+    - Export `formatCSSVarName(path)` — the canonical path→CSS-variable-name formatter used by the pipeline, so external tools can build `var(--…)` strings guaranteed to match emitted CSS.
+    - Flattened tokens now carry per-file `$source.sourcePath` attribution. Dursolution each merged source file stamps `$sourcePath` on its tokens, so resolved tokens trace back to the
+      actual file that defined them rather than the root resolver document.
+    - Internal: consolidate `isToken` / `isGroup` helpers into `guards/token-guards.ts`; reuse `formatCSSVarName` in `pipeline/generate.ts` in place of the duplicated local `formatCSSVarPath`.
+    - Remove `PerfMonitor` / `Instrumentation` from the `/client` entry (still available from the main entry). These are Node-oriented debugging helpers not intended for browser use.
 
-  **`@sugarcube-sh/cli`**
+    **`@sugarcube-sh/cli`**
 
-  - Add `sugarcube studio build`. Writes a token snapshot (`snapshot.json`) alongside the Studio SPA and embed script to an output directory (default `.sugarcube/`), ready to be served as
-    static assets for an embedded Studio surface.
+    - Add `sugarcube studio build`. Writes a token snapshot (`snapshot.json`) alongside the Studio SPA and embed script to an output directory (default `.sugarcube/`), ready to be served as
+      static assets for an embedded Studio surface.
 
-  **`@sugarcube-sh/vite`**
+    **`@sugarcube-sh/vite`**
 
-  - Widen Vite peer range to include `^8`.
-  - Expose `trees` and `resolved` on the plugin context, so external tools can inspect raw token trees and resolved tokens without re-running the pipeline.
-  - Add `ctx.writeTokenEdits(sourcePath, edits)` — persists JSON Pointer-style edits to a token source file using `jsonc-parser` so comments and formatting are preserved.
-  - Add `ctx.rerunPipeline(modifiedResolved)` — re-runs token conversion and CSS generation against a mutated resolved-tokens object without re-reading files. Enables live-preview of edits
-    before persistence.
-  - New runtime dep: `jsonc-parser`.
+    - Widen Vite peer range to include `^8`.
+    - Expose `trees` and `resolved` on the plugin context, so external tools can inspect raw token trees and resolved tokens without re-running the pipeline.
+    - Add `ctx.writeTokenEdits(sourcePath, edits)` — persists JSON Pointer-style edits to a token source file using `jsonc-parser` so comments and formatting are preserved.
+    - Add `ctx.rerunPipeline(modifiedResolved)` — re-runs token conversion and CSS generation against a mutated resolved-tokens object without re-reading files. Enables live-preview of edits
+      before persistence.
+    - New runtime dep: `jsonc-parser`.
 
 - a74bfa1: Restructure `@sugarcube-sh/core` internals with a clearer pure/Node split and a four-function pipeline. No config, CLI, or Vite plugin API changes.
 
-  **Internal**
+    **Internal**
 
-  - `packages/core/src/` is now split into `shared/` (runs anywhere) and `node/` (Node-only). The Node/pure boundary is visible at the directory level.
-  - `@sugarcube-sh/core/client` is now structurally pure — zero `node:` imports in the browser bundle.
-  - Pipeline functions renamed to the four-function chain:
-    - `loadAndResolveTokens` → `loadTokens` (Node) + `resolveTokens` (pure)
-    - `processAndConvertTokens` → `convertTokens`
-    - `generateCSSVariables` unchanged
-  - The main entry now re-exports the full `/client` surface, so types like `ConvertedToken`, `ConvertedTokens`, and the full DTCG type set are available from both entries.
-  - `utils/` junk drawer eliminated; `process-trees` + `normalize` pipeline stages merged into a single `groupByContext`.
+    - `packages/core/src/` is now split into `shared/` (runs anywhere) and `node/` (Node-only). The Node/pure boundary is visible at the directory level.
+    - `@sugarcube-sh/core/client` is now structurally pure — zero `node:` imports in the browser bundle.
+    - Pipeline functions renamed to the four-function chain:
+        - `loadAndResolveTokens` → `loadTokens` (Node) + `resolveTokens` (pure)
+        - `processAndConvertTokens` → `convertTokens`
+        - `generateCSSVariables` unchanged
+    - The main entry now re-exports the full `/client` surface, so types like `ConvertedToken`, `ConvertedTokens`, and the full DTCG type set are available from both entries.
+    - `utils/` junk drawer eliminated; `process-trees` + `normalize` pipeline stages merged into a single `groupByContext`.
 
-  If you were importing `loadAndResolveTokens` or `processAndConvertTokens` directly from `@sugarcube-sh/core`, see the new four-function chain in `src/node/load-tokens.ts` and `src/shared/*-tokens.ts`.
+    If you were importing `loadAndResolveTokens` or `processAndConvertTokens` directly from `@sugarcube-sh/core`, see the new four-function chain in `src/node/load-tokens.ts` and `src/shared/*-tokens.ts`.
 
 - c59cf38: Added client entry point for non-node environments
 
@@ -259,154 +250,153 @@
 
 - c4fec95: ### Permutations API
 
-  Thanks @aarongeorge for the feature request!
+    Thanks @aarongeorge for the feature request!
 
-  A new DTCG-aligned permutations API for multi-brand and multi-theme CSS builds. Each permutation declares an `input`, `selector`, and optional `atRule` and `path`:
+    A new DTCG-aligned permutations API for multi-brand and multi-theme CSS builds. Each permutation declares an `input`, `selector`, and optional `atRule` and `path`:
 
-  ```ts
-  defineConfig({
-    variables: {
-      permutations: [
-        { input: { theme: "light" }, selector: ":root" },
-        {
-          input: { theme: "dark" },
-          atRule: "@media (prefers-color-scheme: dark)",
+    ```ts
+    defineConfig({
+        variables: {
+            permutations: [
+                { input: { theme: "light" }, selector: ":root" },
+                {
+                    input: { theme: "dark" },
+                    atRule: "@media (prefers-color-scheme: dark)",
+                },
+            ],
         },
-      ],
-    },
-  });
-  ```
+    });
+    ```
 
-  When no permutations are defined, they are auto-generated from the resolver's modifiers (default context → `:root`, non-default → `[data-{modifier}="{context}"]`).
+    When no permutations are defined, they are auto-generated from the resolver's modifiers (default context → `:root`, non-default → `[data-{modifier}="{context}"]`).
 
-  Delta optimisation: non-default permutations only emit tokens that differ from the base.
+    Delta optimisation: non-default permutations only emit tokens that differ from the base.
 
-  Per-permutation `path` allows splitting themes into separate output files.
+    Per-permutation `path` allows splitting themes into separate output files.
 
-  ### CLI: `--input` flag
+    ### CLI: `--input` flag
 
-  The new `--input` flag builds a single inline permutation, ignoring any config permutations. Pair with `--selector` to control the output selector (defaults to `:root`):
+    The new `--input` flag builds a single inline permutation, ignoring any config permutations. Pair with `--selector` to control the output selector (defaults to `:root`):
 
-  ```sh
-  sugarcube generate --input theme=dark --input brand=ocean
-  ```
+    ```sh
+    sugarcube generate --input theme=dark --input brand=ocean
+    ```
 
-  Also adds `--variables-only` and `--utilities-only` flags, and replaces the old directory/filename flags with `--variables <path>` and `--utilities <path>`.
+    Also adds `--variables-only` and `--utilities-only` flags, and replaces the old directory/filename flags with `--variables <path>` and `--utilities <path>`.
 
-  ### Breaking: Config schema reworked
+    ### Breaking: Config schema reworked
 
-  The `output` object has been replaced with a flatter structure:
+    The `output` object has been replaced with a flatter structure:
 
-  | Before                                                | After                                 |
-  | ----------------------------------------------------- | ------------------------------------- |
-  | `output.variables` + `output.variablesFilename`       | `variables.path`                      |
-  | `output.utilities` + `output.utilitiesFilename`       | `utilities.path`                      |
-  | `output.layers.variables` / `output.layers.utilities` | `variables.layer` / `utilities.layer` |
-  | `output.components`                                   | `components` (top-level)              |
-  | `output.cube`                                         | `cube` (top-level)                    |
-  | top-level `transforms`                                | `variables.transforms`                |
-  | top-level `utilities` (record)                        | `utilities.classes`                   |
+    | Before                                                | After                                 |
+    | ----------------------------------------------------- | ------------------------------------- |
+    | `output.variables` + `output.variablesFilename`       | `variables.path`                      |
+    | `output.utilities` + `output.utilitiesFilename`       | `utilities.path`                      |
+    | `output.layers.variables` / `output.layers.utilities` | `variables.layer` / `utilities.layer` |
+    | `output.components`                                   | `components` (top-level)              |
+    | `output.cube`                                         | `cube` (top-level)                    |
+    | top-level `transforms`                                | `variables.transforms`                |
+    | top-level `utilities` (record)                        | `utilities.classes`                   |
 
-  Modifier `selector`/`atRule` extensions are no longer read from the resolver document — output selectors and at-rules are now defined in config permutations.
+    Modifier `selector`/`atRule` extensions are no longer read from the resolver document — output selectors and at-rules are now defined in config permutations.
 
-  The top-level `input` config option has been removed. Use `variables.permutations` instead, or the `--input` CLI flag.
+    The top-level `input` config option has been removed. Use `variables.permutations` instead, or the `--input` CLI flag.
 
-  `prefersColorScheme` modifier extension is now deprecated — it produces warnings instead of errors. Use `variables.permutations` with `atRule` instead.
+    `prefersColorScheme` modifier extension is now deprecated — it produces warnings instead of errors. Use `variables.permutations` with `atRule` instead.
 
-  ### Breaking: CLI flag renames
+    ### Breaking: CLI flag renames
 
-  | Before             | After          | Command      |
-  | ------------------ | -------------- | ------------ |
-  | `--tokens-dir`     | `--tokens`     | `init`       |
-  | `--cube-dir`       | `--cube`       | `init`       |
-  | `--components-dir` | `--components` | `init`       |
-  | `--cube-dir`       | `-o, --output` | `cube`       |
-  | `--components-dir` | `--output`     | `components` |
+    | Before             | After          | Command      |
+    | ------------------ | -------------- | ------------ |
+    | `--tokens-dir`     | `--tokens`     | `init`       |
+    | `--cube-dir`       | `--cube`       | `init`       |
+    | `--components-dir` | `--components` | `init`       |
+    | `--cube-dir`       | `-o, --output` | `cube`       |
+    | `--components-dir` | `--output`     | `components` |
 
-  ### Migration
-
-  1. Replace `output: { ... }` with `variables: { path }` and `utilities: { path }`
-  2. Move `transforms` into `variables.transforms`
-  3. Move utility class definitions into `utilities.classes`
-  4. Move layer config into `variables.layer` / `utilities.layer`
-  5. Remove `sh.sugarcube.selector` and `sh.sugarcube.atRule` extensions from resolver modifiers
-  6. Define `variables.permutations` for multi-theme/multi-brand output
-  7. Replace `input: { ... }` in config with an equivalent `variables.permutations` entry
-  8. Update CLI invocations: `--variables <path>`, `--utilities <path>`, `--input` replaces old flags
-  9. Rename CLI flags: `--tokens-dir` → `--tokens`, `--cube-dir` → `--cube`/`-o`, `--components-dir` → `--components`/`--output`
+    ### Migration
+    1. Replace `output: { ... }` with `variables: { path }` and `utilities: { path }`
+    2. Move `transforms` into `variables.transforms`
+    3. Move utility class definitions into `utilities.classes`
+    4. Move layer config into `variables.layer` / `utilities.layer`
+    5. Remove `sh.sugarcube.selector` and `sh.sugarcube.atRule` extensions from resolver modifiers
+    6. Define `variables.permutations` for multi-theme/multi-brand output
+    7. Replace `input: { ... }` in config with an equivalent `variables.permutations` entry
+    8. Update CLI invocations: `--variables <path>`, `--utilities <path>`, `--input` replaces old flags
+    9. Rename CLI flags: `--tokens-dir` → `--tokens`, `--cube-dir` → `--cube`/`-o`, `--components-dir` → `--components`/`--output`
 
 ### Patch Changes
 
 - 8477fd8: ### DTCG 2025.10 Format Module support
 
-  Thanks @binyamin for raising this issue.
+    Thanks @binyamin for raising this issue.
 
-  Adds support for the remaining DTCG 2025.10 Format Module features:
+    Adds support for the remaining DTCG 2025.10 Format Module features:
 
-  - **`$root`** — root tokens in groups (spec 6.2)
-  - **`$extends`** — group inheritance via deep merge (spec 6.4)
-  - **`$ref`** — JSON Pointer references for tokens and groups (spec 6.6.2)
+    - **`$root`** — root tokens in groups (spec 6.2)
+    - **`$extends`** — group inheritance via deep merge (spec 6.4)
+    - **`$ref`** — JSON Pointer references for tokens and groups (spec 6.6.2)
 
-  `$ref` references are normalised to curly brace format before flattening. `$extends` performs a deep merge where local tokens override inherited ones at the same path. Both support circular reference detection.
+    `$ref` references are normalised to curly brace format before flattening. `$extends` performs a deep merge where local tokens override inherited ones at the same path. Both support circular reference detection.
 
-  Closes #57
+    Closes #57
 
 - 7a60f94: ### Fix: config changes now hot-reload in the browser
 
-  Changes to `sugarcube.config.ts` (permutation selectors, transforms, utility config, etc.) now take effect via HMR without restarting the dev server.
+    Changes to `sugarcube.config.ts` (permutation selectors, transforms, utility config, etc.) now take effect via HMR without restarting the dev server.
 
-  Previously, config changes were detected but the browser never received the updated CSS. Two issues:
+    Previously, config changes were detected but the browser never received the updated CSS. Two issues:
 
-  1. **Stale config** — `jiti` cached the config module between reloads, so the pipeline regenerated CSS from the old config values.
-  2. **Missing token reload** — config changes that affect permutations require re-running the full token pipeline, not just regenerating CSS from already-resolved tokens.
+    1. **Stale config** — `jiti` cached the config module between reloads, so the pipeline regenerated CSS from the old config values.
+    2. **Missing token reload** — config changes that affect permutations require re-running the full token pipeline, not just regenerating CSS from already-resolved tokens.
 
 - 1c5833f: ### Fluid dimensions as extension
 
-  Fluid dimensions are now expressed as a standard `dimension` token with an `sh.sugarcube.fluid` extension, replacing the non-standard `fluidDimension` token type:
+    Fluid dimensions are now expressed as a standard `dimension` token with an `sh.sugarcube.fluid` extension, replacing the non-standard `fluidDimension` token type:
 
-  ```json
-  {
-    "$type": "dimension",
-    "$value": { "value": 1, "unit": "rem" },
-    "$extensions": {
-      "sh.sugarcube": {
-        "fluid": {
-          "min": { "value": 0.875, "unit": "rem" },
-          "max": { "value": 1.5, "unit": "rem" }
+    ```json
+    {
+        "$type": "dimension",
+        "$value": { "value": 1, "unit": "rem" },
+        "$extensions": {
+            "sh.sugarcube": {
+                "fluid": {
+                    "min": { "value": 0.875, "unit": "rem" },
+                    "max": { "value": 1.5, "unit": "rem" }
+                }
+            }
         }
-      }
     }
-  }
-  ```
+    ```
 
-  The `$value` serves as a static fallback while `fluid.min` and `fluid.max` define the clamp range. This aligns with the DTCG spec's extension mechanism and makes fluid tokens interoperable with tools that understand standard `dimension` tokens.
+    The `$value` serves as a static fallback while `fluid.min` and `fluid.max` define the clamp range. This aligns with the DTCG spec's extension mechanism and makes fluid tokens interoperable with tools that understand standard `dimension` tokens.
 
-  `$type: "fluidDimension"` still works but produces a deprecation warning.
+    `$type: "fluidDimension"` still works but produces a deprecation warning.
 
-  ### Fluid extension validation
+    ### Fluid extension validation
 
-  The `sh.sugarcube.fluid` extension is validated — `min` and `max` must both be valid dimension objects with numeric values and `px`/`rem` units.
+    The `sh.sugarcube.fluid` extension is validated — `min` and `max` must both be valid dimension objects with numeric values and `px`/`rem` units.
 
-  ### Pipeline context
+    ### Pipeline context
 
-  Introduces `PipelineContext`, a shared context threaded through pipeline stages for emitting warnings and events:
+    Introduces `PipelineContext`, a shared context threaded through pipeline stages for emitting warnings and events:
 
-  - Any pipeline stage can emit warnings via `context.warn()` without changing its return type
-  - Warnings are automatically deduplicated by path + message (fixes duplicate warnings when tokens appear across multiple permutations)
-  - Consumers (CLI, Vite plugin, Studio) can provide an `emit` handler for real-time pipeline events
-  - Exported as `createPipelineContext()` for consumer use
+    - Any pipeline stage can emit warnings via `context.warn()` without changing its return type
+    - Warnings are automatically deduplicated by path + message (fixes duplicate warnings when tokens appear across multiple permutations)
+    - Consumers (CLI, Vite plugin, Studio) can provide an `emit` handler for real-time pipeline events
+    - Exported as `createPipelineContext()` for consumer use
 
-  ### Warning and error deduplication
+    ### Warning and error deduplication
 
-  Validation errors are now deduplicated — the same token appearing across multiple permutations no longer produces duplicate error messages.
+    Validation errors are now deduplicated — the same token appearing across multiple permutations no longer produces duplicate error messages.
 
-  ### Warning messages
+    ### Warning messages
 
-  Warning messages are now centralized in `WarningMessages` (mirroring the existing `ErrorMessages` pattern), separating them from error messages.
+    Warning messages are now centralized in `WarningMessages` (mirroring the existing `ErrorMessages` pattern), separating them from error messages.
 
-  ### Pipeline refactor
+    ### Pipeline refactor
 
-  Resolver document parsing is now a distinct pipeline stage (`parseResolver`), separating it from token loading. This gives the pipeline context access to resolver warnings directly rather than forwarding them after the fact.
+    Resolver document parsing is now a distinct pipeline stage (`parseResolver`), separating it from token loading. This gives the pipeline context access to resolver warnings directly rather than forwarding them after the fact.
 
 ## 0.1.5
 
@@ -414,42 +404,42 @@
 
 - ef0695d: Add `prefersColorScheme` extension for automatic theme switching. Thanks @aninusmuffin, @arpit-agr.
 
-  Modifiers can now use `@media (prefers-color-scheme)` queries instead of data attributes by adding `prefersColorScheme: true` to the modifier's `$extensions`:
+    Modifiers can now use `@media (prefers-color-scheme)` queries instead of data attributes by adding `prefersColorScheme: true` to the modifier's `$extensions`:
 
-  ```json
-  {
-    "type": "modifier",
-    "name": "theme",
-    "default": "light",
-    "contexts": {
-      "light": [],
-      "dark": [{ "$ref": "./dark.json" }]
-    },
-    "$extensions": {
-      "sh.sugarcube": {
-        "prefersColorScheme": true
-      }
+    ```json
+    {
+        "type": "modifier",
+        "name": "theme",
+        "default": "light",
+        "contexts": {
+            "light": [],
+            "dark": [{ "$ref": "./dark.json" }]
+        },
+        "$extensions": {
+            "sh.sugarcube": {
+                "prefersColorScheme": true
+            }
+        }
     }
-  }
-  ```
+    ```
 
-  This generates CSS that automatically follows the user's OS preference:
+    This generates CSS that automatically follows the user's OS preference:
 
-  ```css
-  :root {
-    /* light values */
-  }
-  @media (prefers-color-scheme: dark) {
+    ```css
     :root {
-      /* dark overrides */
+        /* light values */
     }
-  }
-  ```
+    @media (prefers-color-scheme: dark) {
+        :root {
+            /* dark overrides */
+        }
+    }
+    ```
 
-  Validation ensures:
+    Validation ensures:
 
-  - Context names must be `light` and `dark` only
-  - Non-default contexts must have token sources (otherwise the media query would be empty)
+    - Context names must be `light` and `dark` only
+    - Non-default contexts must have token sources (otherwise the media query would be empty)
 
 ## 0.1.4
 
@@ -457,9 +447,9 @@
 
 - 16fba95: fix: preserve group-level $type inheritance in modifier contexts. Thanks @leannerenard.
 
-  Modifier override files using group-level $type (e.g., `{ "color": { "$type": "color", "primary": { "$value": "#fff" } } }`) now correctly generate CSS. Previously, the group structure was lost during context processing, causing tokens to be silently filtered out.
+    Modifier override files using group-level $type (e.g., `{ "color": { "$type": "color", "primary": { "$value": "#fff" } } }`) now correctly generate CSS. Previously, the group structure was lost during context processing, causing tokens to be silently filtered out.
 
-  Also adds validation to error when tokens have literal values but no $type (either explicit or inherited), rather than silently producing no output.
+    Also adds validation to error when tokens have literal values but no $type (either explicit or inherited), rather than silently producing no output.
 
 ## 0.1.3
 
@@ -485,22 +475,22 @@
 
 - 4746a39: Redesign init as an interactive wizard @mark-tomlinson-dev
 
-  `init` now walks you through setup step-by-step, prompting for starter kit, CUBE CSS, components, and Vite plugin. The CLI is installed locally by default, enabling the shorter `sugarcube` command.
+    `init` now walks you through setup step-by-step, prompting for starter kit, CUBE CSS, components, and Vite plugin. The CLI is installed locally by default, enabling the shorter `sugarcube` command.
 
-  Init flags are now limited to directories it writes directly:
+    Init flags are now limited to directories it writes directly:
 
-  - `--tokens-dir`, `--cube-dir`, `--components-dir`
+    - `--tokens-dir`, `--cube-dir`, `--components-dir`
 
-  Removed flags that belong to CSS generation:
+    Removed flags that belong to CSS generation:
 
-  - `--styles-dir`, `--variables-dir`, `--variables-filename`
-  - `--utilities-dir`, `--utilities-filename`
-  - `--fluid-min`, `--fluid-max`, `--color-fallback`
-  - `--skip-deps`, `--kit` (now a prompt)
+    - `--styles-dir`, `--variables-dir`, `--variables-filename`
+    - `--utilities-dir`, `--utilities-filename`
+    - `--fluid-min`, `--fluid-max`, `--color-fallback`
+    - `--skip-deps`, `--kit` (now a prompt)
 
-  Use `sugarcube.config.ts` or `generate` flags to customize CSS output.
+    Use `sugarcube.config.ts` or `generate` flags to customize CSS output.
 
-  Also: `generate` no longer errors when the Vite plugin is installed.
+    Also: `generate` no longer errors when the Vite plugin is installed.
 
 ## 0.0.4
 
@@ -515,31 +505,31 @@
 
 - 544810b: Add CSS cascade layers support
 
-  **Vite plugin**: Pass `outputToCssLayers` via `unoOptions` to wrap output in `@layer` blocks:
+    **Vite plugin**: Pass `outputToCssLayers` via `unoOptions` to wrap output in `@layer` blocks:
 
-  ```ts title="vite.config.ts"
-  sugarcube({
-    unoOptions: {
-      outputToCssLayers: {
-        cssLayerName: (layer) => {
-          if (layer === "preflights") return "base";
-          if (layer === "default") return "utilities";
-          return layer;
+    ```ts title="vite.config.ts"
+    sugarcube({
+        unoOptions: {
+            outputToCssLayers: {
+                cssLayerName: (layer) => {
+                    if (layer === "preflights") return "base";
+                    if (layer === "default") return "utilities";
+                    return layer;
+                },
+            },
         },
-      },
-    },
-  });
-  ```
+    });
+    ```
 
-  CLI: Use output.layers to wrap generated CSS in @layer blocks:
+    CLI: Use output.layers to wrap generated CSS in @layer blocks:
 
-  ```ts title="sugarcube.config.ts"
-  defineConfig({
-    output: {
-      layers: {
-        variables: "base",
-        utilities: "utilities",
-      },
-    },
-  });
-  ```
+    ```ts title="sugarcube.config.ts"
+    defineConfig({
+        output: {
+            layers: {
+                variables: "base",
+                utilities: "utilities",
+            },
+        },
+    });
+    ```

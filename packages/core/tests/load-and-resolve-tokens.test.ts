@@ -44,7 +44,7 @@ describe("validation pipeline", () => {
         describe("load errors", () => {
             it("should handle invalid JSON files", async () => {
                 const result = await runLoadAndResolve(
-                    "tests/__fixtures__/resolver/invalid-source.resolver.json"
+                    "tests/__fixtures__/resolver/invalid-source.resolver.json",
                 );
 
                 expect(result.errors.load.length).toBeGreaterThan(0);
@@ -54,14 +54,14 @@ describe("validation pipeline", () => {
         describe("flatten errors", () => {
             it("should handle invalid token structure", async () => {
                 const result = await runLoadAndResolve(
-                    "tests/__fixtures__/resolver/invalid-structure.resolver.json"
+                    "tests/__fixtures__/resolver/invalid-structure.resolver.json",
                 );
 
                 expect(result.errors.flatten).toHaveLength(1);
                 expect(result.errors.flatten[0]?.message).toBe(
                     ErrorMessages.FLATTEN.MISSING_DOLLAR_PREFIX(
-                        result.errors.flatten[0]?.path ?? ""
-                    )
+                        result.errors.flatten[0]?.path ?? "",
+                    ),
                 );
             });
         });
@@ -69,13 +69,13 @@ describe("validation pipeline", () => {
         describe("validation errors", () => {
             it("should identify invalid token values", async () => {
                 const result = await runLoadAndResolve(
-                    "tests/__fixtures__/resolver/invalid-token.resolver.json"
+                    "tests/__fixtures__/resolver/invalid-token.resolver.json",
                 );
 
                 ValidationHelper.expectInvalidFontFamilyError(
                     result.errors.validation,
                     123,
-                    "font.invalid.type.number"
+                    "font.invalid.type.number",
                 );
 
                 expect(result.trees.length).toBeGreaterThan(0);
@@ -85,7 +85,7 @@ describe("validation pipeline", () => {
         describe("resolution errors", () => {
             it("should handle circular references", async () => {
                 const result = await runLoadAndResolve(
-                    "tests/__fixtures__/tokens/circular.resolver.json"
+                    "tests/__fixtures__/tokens/circular.resolver.json",
                 );
 
                 expect(result.errors.resolution).toHaveLength(2);

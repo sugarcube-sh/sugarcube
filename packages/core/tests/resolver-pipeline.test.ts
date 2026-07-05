@@ -13,7 +13,7 @@ const FIXTURES_DIR = resolve(__dirname, "__fixtures__/resolver");
 
 async function generateFromResolver(
     resolverPath: string,
-    config: ReturnType<typeof validateConfig>
+    config: ReturnType<typeof validateConfig>,
 ) {
     const loaded = await loadTokens({
         type: "resolver",
@@ -31,7 +31,7 @@ async function generateFromResolver(
     const converted = assignCSSNames(
         groupByContext(resolved.trees, resolved.resolved),
         config,
-        errors.validation
+        errors.validation,
     );
     const output = await generateCSSVariables(converted, config, loaded.permutations);
 
@@ -153,7 +153,7 @@ describe("Resolver Pipeline Integration", () => {
             const colorsFile = relative(process.cwd(), resolve(FIXTURES_DIR, "tokens/colors.json"));
             const spacingFile = relative(
                 process.cwd(),
-                resolve(FIXTURES_DIR, "tokens/spacing.json")
+                resolve(FIXTURES_DIR, "tokens/spacing.json"),
             );
 
             // Find a color token and a spacing token in the resolved output

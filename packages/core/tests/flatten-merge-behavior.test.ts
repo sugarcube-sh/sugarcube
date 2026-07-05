@@ -17,11 +17,11 @@ describe("flatten merge behavior", () => {
             const { tokens, errors } = flatten([
                 buildTree(
                     { color: { $type: "color", primary: { $value: "#000000" } } },
-                    "first.json"
+                    "first.json",
                 ),
                 buildTree(
                     { color: { $type: "color", primary: { $value: "#111111" } } },
-                    "second.json"
+                    "second.json",
                 ),
             ]);
 
@@ -37,7 +37,7 @@ describe("flatten merge behavior", () => {
             const { tokens, errors } = flatten([
                 buildTree(
                     { text: { error: { $type: "color", $value: "#cc1a00" } } },
-                    "token-first.json"
+                    "token-first.json",
                 ),
                 buildTree(
                     {
@@ -48,7 +48,7 @@ describe("flatten merge behavior", () => {
                             },
                         },
                     },
-                    "group-second.json"
+                    "group-second.json",
                 ),
             ]);
 
@@ -70,11 +70,11 @@ describe("flatten merge behavior", () => {
                             },
                         },
                     },
-                    "group-first.json"
+                    "group-first.json",
                 ),
                 buildTree(
                     { text: { error: { $type: "color", $value: "#cc1a00" } } },
-                    "token-second.json"
+                    "token-second.json",
                 ),
             ]);
 
@@ -91,7 +91,7 @@ describe("flatten merge behavior", () => {
             const { tokens, errors } = flatten([
                 buildTree(
                     { space: { sm: { $type: "dimension", $value: { value: 8, unit: "px" } } } },
-                    "dimension.json"
+                    "dimension.json",
                 ),
                 buildTree({ space: { sm: { $type: "number", $value: 8 } } }, "number.json"),
             ]);
@@ -108,11 +108,11 @@ describe("flatten merge behavior", () => {
             const { tokens, errors } = flatten([
                 buildTree(
                     { brand: { primary: { $type: "color", $value: "#ff0000" } } },
-                    "red.json"
+                    "red.json",
                 ),
                 buildTree(
                     { brand: { primary: { $type: "color", $value: "#00ff00" } } },
-                    "green.json"
+                    "green.json",
                 ),
             ]);
 

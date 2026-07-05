@@ -9,7 +9,7 @@ function isTokenNode(node: unknown): node is FlattenedToken {
 export function mergeFlattenedInto(
     base: FlattenedTokens,
     incoming: FlattenedTokens,
-    errors: FlattenError[]
+    errors: FlattenError[],
 ): void {
     for (const [key, node] of Object.entries(incoming.tokens)) {
         const existing = base.tokens[key];
@@ -58,7 +58,7 @@ export function mergeFlattenedInto(
                 message: ErrorMessages.FLATTEN.CONFLICT_INCOMPATIBLE_TYPES(
                     String(exTok.$type ?? "unknown"),
                     String(inTok.$type ?? "unknown"),
-                    inTok.$path
+                    inTok.$path,
                 ),
             });
             continue;

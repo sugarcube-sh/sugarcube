@@ -11,7 +11,7 @@ export type ColorGridData = {
 
 export function buildColorGrid(
     colorScale: ColorScaleConfig,
-    variableName: (path: string) => string
+    variableName: (path: string) => string,
 ): ColorGridData {
     const { prefix, palettes, steps, white, black } = colorScale;
     const hasExtras = Boolean(white || black);

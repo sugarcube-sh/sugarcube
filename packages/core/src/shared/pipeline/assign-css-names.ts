@@ -13,7 +13,7 @@ import { toInvalidPredicate } from "../to-invalid-predicate.js";
 
 function assignSingleTokenNames<T extends TokenType>(
     token: ResolvedToken<T>,
-    varName: (path: string) => string
+    varName: (path: string) => string,
 ): RenderableToken<T> {
     return {
         // Preserve all metadata properties
@@ -33,7 +33,7 @@ function assignSingleTokenNames<T extends TokenType>(
 function assignContextNames(
     tokens: ResolvedTokens,
     varName: (path: string) => string,
-    isTokenInvalid?: (tokenPath: string) => boolean
+    isTokenInvalid?: (tokenPath: string) => boolean,
 ): RenderableTokens {
     const converted: RenderableTokens = {};
 
@@ -79,7 +79,7 @@ function assignContextNames(
 export function assignCSSNames(
     tokens: NormalizedTokens,
     config: InternalConfig,
-    validationErrors?: ValidationError[]
+    validationErrors?: ValidationError[],
 ): NormalizedRenderableTokens {
     const converted: NormalizedRenderableTokens = {};
     // Bind once for perf! If you change this, you need to run a benchmark.

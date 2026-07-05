@@ -16,7 +16,7 @@ export async function resolveTree(index: RegistryItem[], names: string[], framew
                 .map((item) => item.name)
                 .join(", ");
             throw new CLIError(
-                `Component '${name}' not found in registry\nAvailable components: ${available}`
+                `Component '${name}' not found in registry\nAvailable components: ${available}`,
             );
         }
 

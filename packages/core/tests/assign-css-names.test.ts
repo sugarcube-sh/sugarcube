@@ -126,7 +126,7 @@ describe("convert", () => {
                 variables: {
                     variableName: (path) => `custom--${path.replaceAll(".", "_")}`,
                 },
-            })
+            }),
         );
 
         const token = result.default?.["color.primary"] as RenderableToken<TokenType>;
@@ -147,7 +147,7 @@ describe("convert", () => {
                     prefix: "ignored",
                     variableName: (path) => `only-${path.replaceAll(".", "-")}`,
                 },
-            })
+            }),
         );
 
         const token = result.default?.["color.primary"] as RenderableToken<TokenType>;
@@ -174,7 +174,7 @@ describe("convert", () => {
         it("strips $root even when variableName is set", () => {
             const result = assignCSSNames(
                 rootToken,
-                fillDefaults({ variables: { variableName: (path) => path.replaceAll(".", "_") } })
+                fillDefaults({ variables: { variableName: (path) => path.replaceAll(".", "_") } }),
             );
 
             const token = result.default?.["blue.$root"] as RenderableToken<TokenType>;

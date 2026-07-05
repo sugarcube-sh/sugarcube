@@ -6,10 +6,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("font family validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/font-family/valid.json"
+        "tokens/validators/font-family/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/font-family/invalid.json"
+        "tokens/validators/font-family/invalid.json",
     );
 
     describe("valid cases", () => {

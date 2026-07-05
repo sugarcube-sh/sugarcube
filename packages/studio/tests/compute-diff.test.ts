@@ -54,11 +54,11 @@ describe("computeDiff", () => {
     it("collapses identical changes across all permutations into contexts: []", () => {
         const baselineMap = resolved(
             { path: "color.bg", value: "#fff", context: "light" },
-            { path: "color.bg", value: "#fff", context: "dark" }
+            { path: "color.bg", value: "#fff", context: "dark" },
         );
         const current = resolved(
             { path: "color.bg", value: "#eee", context: "light" },
-            { path: "color.bg", value: "#eee", context: "dark" }
+            { path: "color.bg", value: "#eee", context: "dark" },
         );
         const baseline = snapshot({ resolved: baselineMap });
         const pathIndex = new PathIndex(baselineMap);
@@ -76,7 +76,7 @@ describe("computeDiff", () => {
         // PathIndex was built from a richer map that included color.fg.
         const indexedFromOlderMap = resolved(
             { path: "color.bg", value: "#fff" },
-            { path: "color.fg", value: "#000" }
+            { path: "color.fg", value: "#000" },
         );
         const baseline = snapshot({ resolved: baselineMap });
         const pathIndex = new PathIndex(indexedFromOlderMap);
@@ -88,11 +88,11 @@ describe("computeDiff", () => {
     it("keeps contexts populated when only some permutations changed", () => {
         const baselineMap = resolved(
             { path: "color.bg", value: "#fff", context: "light" },
-            { path: "color.bg", value: "#000", context: "dark" }
+            { path: "color.bg", value: "#000", context: "dark" },
         );
         const current = resolved(
             { path: "color.bg", value: "#eee", context: "light" },
-            { path: "color.bg", value: "#000", context: "dark" }
+            { path: "color.bg", value: "#000", context: "dark" },
         );
         const baseline = snapshot({ resolved: baselineMap });
         const pathIndex = new PathIndex(baselineMap);
@@ -115,7 +115,7 @@ describe("computeDiff", () => {
             const onDisk = makeScale();
             const baselineMap = resolved(
                 { path: "size.step.0", value: { value: 1, unit: "rem" } },
-                { path: "size.step.1", value: { value: 1.2, unit: "rem" } }
+                { path: "size.step.1", value: { value: 1.2, unit: "rem" } },
             );
             const baseline = snapshot({
                 resolved: baselineMap,
@@ -144,11 +144,11 @@ describe("computeDiff", () => {
             const onDisk = makeScale();
             const baselineMap = resolved(
                 { path: "size.step.0", value: { value: 1, unit: "rem" } },
-                { path: "size.step.1", value: { value: 1.2, unit: "rem" } }
+                { path: "size.step.1", value: { value: 1.2, unit: "rem" } },
             );
             const overlaidLeaves = resolved(
                 { path: "size.step.0", value: { value: 1, unit: "rem" } },
-                { path: "size.step.1", value: { value: 1.5, unit: "rem" } }
+                { path: "size.step.1", value: { value: 1.5, unit: "rem" } },
             );
             const baseline = snapshot({
                 resolved: baselineMap,
@@ -202,7 +202,7 @@ describe("computeDiff", () => {
             };
 
             expect(computeDiff(baselineMap, baseline, pathIndex, editsEqualDisk, bindings)).toEqual(
-                []
+                [],
             );
         });
     });

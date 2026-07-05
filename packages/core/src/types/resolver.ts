@@ -111,7 +111,6 @@ export type ResolverError = BaseError & {
     path: string;
 };
 
-
 /**
  * Input values for modifier contexts.
  * Keys are modifier names, values are context names.

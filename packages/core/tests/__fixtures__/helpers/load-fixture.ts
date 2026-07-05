@@ -11,7 +11,9 @@ export function loadFixture<T>(fixturePath: string): T {
         return JSON.parse(fixture);
     } catch (error) {
         if (error instanceof Error) {
-            throw new Error(`Failed to load fixture at ${fixturePath}: ${error.message}`, { cause: error });
+            throw new Error(`Failed to load fixture at ${fixturePath}: ${error.message}`, {
+                cause: error,
+            });
         }
         throw error;
     }

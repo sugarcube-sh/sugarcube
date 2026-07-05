@@ -35,7 +35,7 @@ function looksLikeUnprefixedToken(obj: unknown): boolean {
 function flattenTree(
     tree: TokenGroup,
     source: TokenSource,
-    context?: PipelineContext
+    context?: PipelineContext,
 ): {
     tokens: FlattenedTokens;
     errors: FlattenError[];
@@ -237,7 +237,7 @@ function flattenTree(
  */
 export function flatten(
     trees: TokenTree[],
-    context?: PipelineContext
+    context?: PipelineContext,
 ): {
     tokens: FlattenedTokens;
     errors: FlattenError[];
@@ -255,7 +255,7 @@ export function flatten(
                 context: tree.context,
                 sourcePath: tree.sourcePath,
             },
-            context
+            context,
         );
 
         errors.push(...treeErrors);

@@ -91,7 +91,7 @@ export function validate(tokens: FlattenedTokens, context?: PipelineContext): Va
                 path: (node as { $path: string }).$path,
                 message: ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY(
                     "$value",
-                    (node as { $path: string }).$path
+                    (node as { $path: string }).$path,
                 ),
                 source: (node as { $source: any }).$source,
             });
@@ -104,7 +104,7 @@ export function validate(tokens: FlattenedTokens, context?: PipelineContext): Va
                 path: node.$path,
                 message: ErrorMessages.VALIDATE.UNKNOWN_TOKEN_TYPE(
                     node.$type as TokenType,
-                    node.$path
+                    node.$path,
                 ),
                 source: node.$source,
             });
@@ -117,8 +117,8 @@ export function validate(tokens: FlattenedTokens, context?: PipelineContext): Va
                 flattenedToken.$value,
                 flattenedToken.$path,
                 flattenedToken.$source,
-                flattenedToken.$extensions
-            )
+                flattenedToken.$extensions,
+            ),
         );
     }
 

@@ -27,7 +27,7 @@ export const log = {
             secondarySymbol = color.gray(S_BAR),
             output = process.stdout,
             spacing = 1,
-        }: LogMessageOptions = {}
+        }: LogMessageOptions = {},
     ) => {
         const parts: string[] = [];
         for (let i = 0; i < spacing; i++) {
@@ -74,7 +74,7 @@ export const log = {
             output = process.stdout,
             clear = false,
             ...opts
-        }: LogMessageOptions & { clear?: boolean } = {}
+        }: LogMessageOptions & { clear?: boolean } = {},
     ) => {
         return sayAnimatedInSidebar(messages, {
             sidebarSymbol: secondarySymbol,
@@ -103,7 +103,7 @@ export const log = {
             successPauseMs?: number;
             successMessage?: string;
             successAsOutro?: boolean;
-        } = {}
+        } = {},
     ) => {
         return executeTasksInSidebar(
             tasks as any,
@@ -112,7 +112,7 @@ export const log = {
                 spacing,
                 stdout: output as NodeJS.WriteStream,
                 ...opts,
-            } as any
+            } as any,
         );
     },
 

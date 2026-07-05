@@ -120,7 +120,7 @@ function validateSchema(data: unknown): ValidateResult {
 function validateDocument(
     document: ResolverDocument,
     errors: ResolverError[],
-    warnings: ResolverWarning[]
+    warnings: ResolverWarning[],
 ): void {
     validateModifierContexts(document, errors, warnings);
     validateNameUniqueness(document, errors);
@@ -130,7 +130,7 @@ function validateDocument(
 function validateModifierContexts(
     document: ResolverDocument,
     errors: ResolverError[],
-    warnings: ResolverWarning[]
+    warnings: ResolverWarning[],
 ): void {
     if (document.modifiers) {
         for (const [name, modifier] of Object.entries(document.modifiers)) {
@@ -150,7 +150,7 @@ function checkModifierContexts(
     modifier: ModifierDefinition | InlineModifier,
     path: string,
     errors: ResolverError[],
-    warnings: ResolverWarning[]
+    warnings: ResolverWarning[],
 ): void {
     const contextCount = Object.keys(modifier.contexts).length;
 
@@ -174,7 +174,7 @@ function checkModifierContexts(
             path: `${path}.default`,
             message: ErrorMessages.RESOLVER.INVALID_DEFAULT(
                 modifier.default,
-                Object.keys(modifier.contexts)
+                Object.keys(modifier.contexts),
             ),
         });
     }
@@ -197,7 +197,7 @@ function checkModifierContexts(
                 path: `${path}.contexts`,
                 message: WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS(
                     modifierName,
-                    invalidContexts
+                    invalidContexts,
                 ),
             });
         }
@@ -211,7 +211,7 @@ function checkModifierContexts(
                     path: `${path}.contexts.${contextName}`,
                     message: WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT(
                         modifierName,
-                        contextName
+                        contextName,
                     ),
                 });
             }
@@ -250,7 +250,7 @@ function validateReferences(document: ResolverDocument, errors: ResolverError[])
                 validateSourcesReferences(
                     sources,
                     `resolutionOrder[${i}].contexts.${contextName}`,
-                    errors
+                    errors,
                 );
             }
         }
@@ -268,7 +268,7 @@ function validateReferences(document: ResolverDocument, errors: ResolverError[])
                 validateSourcesReferences(
                     sources,
                     `modifiers.${name}.contexts.${contextName}`,
-                    errors
+                    errors,
                 );
             }
         }
@@ -278,7 +278,7 @@ function validateReferences(document: ResolverDocument, errors: ResolverError[])
 function validateSourcesReferences(
     sources: Array<{ $ref?: string } | Record<string, unknown>>,
     basePath: string,
-    errors: ResolverError[]
+    errors: ResolverError[],
 ): void {
     for (let i = 0; i < sources.length; i++) {
         const source = sources[i] as Record<string, unknown> | undefined;
@@ -333,7 +333,7 @@ function validateReference(
     ref: string,
     path: string,
     document: ResolverDocument,
-    errors: ResolverError[]
+    errors: ResolverError[],
 ): void {
     if (!ref.startsWith("#/")) return;
 

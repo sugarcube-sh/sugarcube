@@ -62,7 +62,9 @@ async function loadTSConfig(configPath: string): Promise<unknown> {
         return result;
     } catch (error) {
         if (error instanceof Error) {
-            throw new Error(ErrorMessages.CONFIG.INVALID_CONFIG("root", error.message), { cause: error });
+            throw new Error(ErrorMessages.CONFIG.INVALID_CONFIG("root", error.message), {
+                cause: error,
+            });
         }
         throw error;
     }
@@ -168,7 +170,9 @@ export async function loadInternalConfig(configPath?: string): Promise<LoadedCon
             };
         } catch (error) {
             if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-                throw new Error(ErrorMessages.CONFIG.FILE_NOT_FOUND(foundConfigPath), { cause: error });
+                throw new Error(ErrorMessages.CONFIG.FILE_NOT_FOUND(foundConfigPath), {
+                    cause: error,
+                });
             }
 
             if (error instanceof SyntaxError) {

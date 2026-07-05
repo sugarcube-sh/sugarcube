@@ -200,7 +200,7 @@ describe("resolve", () => {
                 source: { sourcePath: "tokens.json" },
                 message: ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(
                     "shadow.small.color",
-                    "shadow.medium.color"
+                    "shadow.medium.color",
                 ),
             });
         });
@@ -334,10 +334,10 @@ describe("resolve", () => {
             const { resolved } = dereference(input);
 
             expect(
-                (resolved["perm:0.color.neutral.text.link"] as ResolvedToken).$resolvedValue
+                (resolved["perm:0.color.neutral.text.link"] as ResolvedToken).$resolvedValue,
             ).toBe("#0a0a0a");
             expect(
-                (resolved["perm:1.color.neutral.text.link"] as ResolvedToken).$resolvedValue
+                (resolved["perm:1.color.neutral.text.link"] as ResolvedToken).$resolvedValue,
             ).toBe("#fafafa");
         });
 
@@ -345,10 +345,10 @@ describe("resolve", () => {
             const { resolved } = dereference(input);
 
             expect((resolved["perm:1.color.text.link"] as ResolvedToken).$resolvedValue).toBe(
-                "#fafafa"
+                "#fafafa",
             );
             expect((resolved["perm:0.color.text.link"] as ResolvedToken).$resolvedValue).toBe(
-                "#0a0a0a"
+                "#0a0a0a",
             );
         });
     });

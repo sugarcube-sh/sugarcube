@@ -21,7 +21,7 @@ describe("convertGradient", () => {
                 { color: "#000000", position: 0 },
                 { color: "#FFFFFF", position: 1 },
             ],
-            defaultOptions
+            defaultOptions,
         );
 
         expect(result).toEqual({
@@ -35,7 +35,7 @@ describe("convertGradient", () => {
                 { color: "{color.primary}", position: 0 },
                 { color: "{color.secondary}", position: 1 },
             ],
-            defaultOptions
+            defaultOptions,
         );
 
         expect(result).toEqual({
@@ -49,7 +49,7 @@ describe("convertGradient", () => {
                 { color: "#000000", position: "{position.start}" },
                 { color: "#FFFFFF", position: "{position.end}" },
             ],
-            defaultOptions
+            defaultOptions,
         );
 
         expect(result).toEqual({
@@ -64,7 +64,7 @@ describe("convertGradient", () => {
                 { color: "#808080", position: 0.5 },
                 { color: "#FFFFFF", position: 1 },
             ],
-            defaultOptions
+            defaultOptions,
         );
 
         expect(result).toEqual({
@@ -93,7 +93,7 @@ describe("convertGradient", () => {
                         position: 1,
                     },
                 ],
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -119,7 +119,7 @@ describe("convertGradient", () => {
                         position: 1,
                     },
                 ],
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -139,7 +139,7 @@ describe("convertGradient", () => {
                         position: 1,
                     },
                 ],
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -165,7 +165,7 @@ describe("convertGradient", () => {
                         position: 1,
                     },
                 ],
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -181,7 +181,7 @@ describe("convertGradient", () => {
                     { color: "#000000", position: 0 },
                     { color: "#FFFFFF", position: 42 },
                 ],
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -195,7 +195,7 @@ describe("convertGradient", () => {
                     { color: "#000000", position: -99 },
                     { color: "#FFFFFF", position: 1 },
                 ],
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -210,7 +210,7 @@ describe("convertGradient", () => {
                     { color: "#00FF00", position: 0.5 },
                     { color: "#0000FF", position: 100 },
                 ],
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -227,7 +227,7 @@ describe("convertGradient", () => {
                     { color: "#808080", position: 0.5 },
                     [{ color: "#000000", position: 1 }],
                 ] as unknown as Parameters<typeof renderGradient>[0],
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -241,7 +241,7 @@ describe("convertGradient", () => {
                     [[{ color: "#FF0000", position: 0 }]],
                     { color: "#0000FF", position: 1 },
                 ] as unknown as Parameters<typeof renderGradient>[0],
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -258,7 +258,7 @@ describe("convertGradient", () => {
                     ],
                     { color: "#0000FF", position: 1 },
                 ] as unknown as Parameters<typeof renderGradient>[0],
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({

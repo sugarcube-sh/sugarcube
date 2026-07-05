@@ -80,7 +80,7 @@ export function ComboboxDemo() {
                                     <Check
                                         className={cn(
                                             "ml-auto",
-                                            value === framework.value ? "opacity-1" : "opacity-0"
+                                            value === framework.value ? "opacity-1" : "opacity-0",
                                         )}
                                     />
                                 </CommandItem>

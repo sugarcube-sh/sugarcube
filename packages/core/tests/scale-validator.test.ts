@@ -31,13 +31,13 @@ describe("validateScaleExtension - well-formed configs", () => {
 
     it('returns no errors for a valid multipliers config with pairs: "adjacent"', () => {
         expect(
-            validateScaleExtension({ ...validMultipliers, pairs: "adjacent" }, path, source)
+            validateScaleExtension({ ...validMultipliers, pairs: "adjacent" }, path, source),
         ).toEqual([]);
     });
 
     it("returns no errors for a valid multipliers config with an explicit pair list", () => {
         expect(
-            validateScaleExtension({ ...validMultipliers, pairs: ["sm-lg"] }, path, source)
+            validateScaleExtension({ ...validMultipliers, pairs: ["sm-lg"] }, path, source),
         ).toEqual([]);
     });
 
@@ -63,7 +63,7 @@ describe("validateScaleExtension - top-level shape", () => {
         const errors = validateScaleExtension(
             { ...validExponential, mode: "linear" },
             path,
-            source
+            source,
         );
         expect(errors.some((e) => e.path === `${path}.mode`)).toBe(true);
     });

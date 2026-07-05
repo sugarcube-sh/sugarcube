@@ -50,7 +50,7 @@ export async function fetchInitData(signal: AbortSignal): Promise<InitData> {
 function waitForSharedStates(
     diskState: DiskSharedStateHandle,
     workingState: WorkingSharedStateHandle,
-    signal: AbortSignal
+    signal: AbortSignal,
 ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         if (signal.aborted) {
@@ -61,7 +61,7 @@ function waitForSharedStates(
         const isReady = () => {
             const disk = diskState.value();
             return Boolean(
-                disk?.config && disk?.trees && disk?.resolved && workingState.value()?.resolved
+                disk?.config && disk?.trees && disk?.resolved && workingState.value()?.resolved,
             );
         };
 

@@ -6,10 +6,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("stroke style validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/stroke/valid.json"
+        "tokens/validators/stroke/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/stroke/invalid.json"
+        "tokens/validators/stroke/invalid.json",
     );
 
     describe("valid cases", () => {
@@ -63,7 +63,7 @@ describe("stroke style validator", () => {
                     errors,
                     "string or object",
                     token.$value,
-                    token.$path
+                    token.$path,
                 );
             });
         });
@@ -76,7 +76,7 @@ describe("stroke style validator", () => {
                 ValidationHelper.expectInvalidStrokeLineCapError(
                     errors,
                     (token.$value as { lineCap: string }).lineCap,
-                    `${token.$path}.lineCap`
+                    `${token.$path}.lineCap`,
                 );
             });
 
@@ -94,7 +94,7 @@ describe("stroke style validator", () => {
                 ValidationHelper.expectInvalidNumberError(
                     errors,
                     "four",
-                    `${token.$path}.dashArray.0.value`
+                    `${token.$path}.dashArray.0.value`,
                 );
             });
         });

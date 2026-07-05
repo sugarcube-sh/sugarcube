@@ -43,7 +43,7 @@ function expandGroup(
     node: TokenGroup,
     path: string[],
     source: TokenSource,
-    errors: ExpandError[]
+    errors: ExpandError[],
 ): TokenGroup {
     let result: TokenGroup | null = null;
 

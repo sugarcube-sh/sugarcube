@@ -24,12 +24,12 @@ describe("installDependencies error surfacing", () => {
         mockedExeca.mockRejectedValueOnce(execaError);
 
         const thrown = await captureError(() =>
-            installDependencies(["chokidar"], "/tmp/test", "pnpm")
+            installDependencies(["chokidar"], "/tmp/test", "pnpm"),
         );
 
         expect(thrown).toBeInstanceOf(CLIError);
         expect((thrown as CLIError).message).toBe(
-            ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED("pnpm", stderr)
+            ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED("pnpm", stderr),
         );
         expect((thrown as CLIError).cause).toBe(execaError);
     });
@@ -41,11 +41,11 @@ describe("installDependencies error surfacing", () => {
         mockedExeca.mockRejectedValueOnce(execaError);
 
         const thrown = await captureError(() =>
-            installDependencies(["anything"], "/tmp/test", "pnpm")
+            installDependencies(["anything"], "/tmp/test", "pnpm"),
         );
 
         expect((thrown as CLIError).message).toBe(
-            ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED("pnpm", "spawn pnpm ENOENT")
+            ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED("pnpm", "spawn pnpm ENOENT"),
         );
     });
 
@@ -54,7 +54,7 @@ describe("installDependencies error surfacing", () => {
         mockedExeca.mockRejectedValueOnce(execaError);
 
         const thrown = await captureError(() =>
-            installDependencies(["anything"], "/tmp/test", "pnpm")
+            installDependencies(["anything"], "/tmp/test", "pnpm"),
         );
 
         expect((thrown as CLIError).message).toBe(ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED("pnpm"));

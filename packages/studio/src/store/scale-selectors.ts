@@ -9,7 +9,7 @@ export function selectCapture(
     baseline: TokenSnapshot,
     pathIndex: PathIndex,
     binding: ScaleBinding,
-    context: string
+    context: string,
 ): CapturedScale | null {
     if (!binding.base) return null;
     return captureScale(binding.token, binding.base, baseline.resolved, pathIndex, context);

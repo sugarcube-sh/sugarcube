@@ -8,7 +8,7 @@ export const FIXTURES_PATH = join(__dirname, "__fixtures__");
 export async function createPackageJson(dir: string): Promise<void> {
     await writeFile(
         join(dir, "package.json"),
-        JSON.stringify({ name: "test-project", version: "1.0.0" })
+        JSON.stringify({ name: "test-project", version: "1.0.0" }),
     );
 }
 

@@ -25,7 +25,7 @@ describe("materializeScale", () => {
         const before = resolved(
             { path: "size.step.0", value: { value: 0, unit: "rem" } },
             { path: "size.step.1", value: { value: 0, unit: "rem" } },
-            { path: "size.step.2", value: { value: 0, unit: "rem" } }
+            { path: "size.step.2", value: { value: 0, unit: "rem" } },
         );
         const pathIndex = new PathIndex(before);
 
@@ -49,7 +49,7 @@ describe("materializeScale", () => {
     it("only touches entries in the matching context", () => {
         const before = resolved(
             { path: "size.step.0", value: { value: 0, unit: "rem" }, context: "light" },
-            { path: "size.step.0", value: { value: 0, unit: "rem" }, context: "dark" }
+            { path: "size.step.0", value: { value: 0, unit: "rem" }, context: "dark" },
         );
         const pathIndex = new PathIndex(before);
 
@@ -63,7 +63,7 @@ describe("materializeScale", () => {
     it("preserves unrelated tokens", () => {
         const before = resolved(
             { path: "size.step.0", value: { value: 0, unit: "rem" } },
-            { path: "color.bg", value: "#fff", type: "color" }
+            { path: "color.bg", value: "#fff", type: "color" },
         );
         const pathIndex = new PathIndex(before);
 

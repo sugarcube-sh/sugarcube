@@ -89,7 +89,7 @@ function buildBaseline() {
                     fluid: { min: { value: 1.44, unit: "rem" }, max: { value: 1.44, unit: "rem" } },
                 },
             },
-        }
+        },
     );
 }
 
@@ -107,7 +107,7 @@ describe("applyScaleEdits", () => {
             {},
             baseline,
             pathIndex,
-            "default"
+            "default",
         );
         expect(after).toBe(baselineMap);
     });
@@ -126,16 +126,16 @@ describe("applyScaleEdits", () => {
             {},
             baseline,
             pathIndex,
-            "default"
+            "default",
         );
 
         // step.0 was the base (1rem); doubling base → step.0 = 2rem.
         expect((after["default::size.step.0"] as { $value: { value: number } }).$value.value).toBe(
-            2
+            2,
         );
         // step.1 multiplier was 1.2 → 1.2 * 2 = 2.4rem.
         expect(
-            (after["default::size.step.1"] as { $value: { value: number } }).$value.value
+            (after["default::size.step.1"] as { $value: { value: number } }).$value.value,
         ).toBeCloseTo(2.4, 4);
     });
 
@@ -165,7 +165,7 @@ describe("applyScaleEdits", () => {
             {},
             baseline,
             pathIndex,
-            "default"
+            "default",
         );
         expect(after).toBe(baselineMap);
     });
@@ -188,7 +188,7 @@ describe("applyScaleEdits", () => {
             { "container.*": linkMeta },
             baseline,
             pathIndex,
-            "default"
+            "default",
         );
         expect(after).toBe(baselineMap);
     });
@@ -211,7 +211,7 @@ describe("applyScaleEdits", () => {
                 },
             },
             { path: "container.sm", value: { value: 100, unit: "px" } },
-            { path: "container.md", value: { value: 200, unit: "px" } }
+            { path: "container.md", value: { value: 200, unit: "px" } },
         );
         const baseline = snapshot({ resolved: baselineMap, trees: sizeStepTrees() });
         const pathIndex = new PathIndex(baselineMap);
@@ -239,14 +239,14 @@ describe("applyScaleEdits", () => {
             { "container.*": linkMeta },
             baseline,
             pathIndex,
-            "default"
+            "default",
         );
 
         expect((after["default::container.sm"] as { $value: { value: number } }).$value.value).toBe(
-            200
+            200,
         );
         expect((after["default::container.md"] as { $value: { value: number } }).$value.value).toBe(
-            400
+            400,
         );
     });
 
@@ -266,7 +266,7 @@ describe("applyScaleEdits", () => {
                     },
                 },
             },
-            { path: "container.sm", value: { value: 100, unit: "px" } }
+            { path: "container.sm", value: { value: 100, unit: "px" } },
         );
         const baseline = snapshot({ resolved: baselineMap, trees: sizeStepTrees() });
         const pathIndex = new PathIndex(baselineMap);
@@ -293,11 +293,11 @@ describe("applyScaleEdits", () => {
             { "container.*": linkMeta },
             baseline,
             pathIndex,
-            "default"
+            "default",
         );
 
         expect((after["default::container.sm"] as { $value: { value: number } }).$value.value).toBe(
-            100
+            100,
         );
     });
 
@@ -317,7 +317,7 @@ describe("applyScaleEdits", () => {
                     },
                 },
             },
-            { path: "container.sm", value: { value: 100, unit: "px" } }
+            { path: "container.sm", value: { value: 100, unit: "px" } },
         );
         const baseline = snapshot({ resolved: baselineMap, trees: sizeStepTrees() });
         const pathIndex = new PathIndex(baselineMap);
@@ -336,11 +336,11 @@ describe("applyScaleEdits", () => {
             { "container.*": linkMeta },
             baseline,
             pathIndex,
-            "default"
+            "default",
         );
 
         expect((after["default::container.sm"] as { $value: { value: number } }).$value.value).toBe(
-            100
+            100,
         );
     });
 
@@ -371,20 +371,20 @@ describe("applyScaleEdits", () => {
             {},
             baseline,
             pathIndex,
-            "default"
+            "default",
         );
 
         // step.0 is bulk-recomputed: base = 2, multiplier = 1 → 2rem.
         expect((after["default::size.step.0"] as { $value: { value: number } }).$value.value).toBe(
-            2
+            2,
         );
         // step.1 is overridden — should keep the pinned 99, NOT 2.4 from bulk.
         expect((after["default::size.step.1"] as { $value: { value: number } }).$value.value).toBe(
-            99
+            99,
         );
         // step.2 is bulk-recomputed: 2 * 1.44 ≈ 2.88.
         expect(
-            (after["default::size.step.2"] as { $value: { value: number } }).$value.value
+            (after["default::size.step.2"] as { $value: { value: number } }).$value.value,
         ).toBeCloseTo(2.88, 4);
     });
 
@@ -412,16 +412,16 @@ describe("applyScaleEdits", () => {
             {},
             baseline,
             pathIndex,
-            "default"
+            "default",
         );
 
         // step.1 overridden.
         expect((after["default::size.step.1"] as { $value: { value: number } }).$value.value).toBe(
-            5
+            5,
         );
         // step.0 untouched by bulk (base defaults to baseline.baseMax = 1, multiplier 1 → 1rem).
         expect((after["default::size.step.0"] as { $value: { value: number } }).$value.value).toBe(
-            1
+            1,
         );
     });
 
@@ -439,7 +439,7 @@ describe("applyScaleEdits", () => {
                     },
                 },
             },
-            { path: "container.sm", value: { value: 100, unit: "px" } }
+            { path: "container.sm", value: { value: 100, unit: "px" } },
         );
         const baseline = snapshot({ resolved: baselineMap, trees: sizeStepTrees() });
         const pathIndex = new PathIndex(baselineMap);
@@ -466,11 +466,11 @@ describe("applyScaleEdits", () => {
             { "container.*": linkMeta },
             baseline,
             pathIndex,
-            "default"
+            "default",
         );
 
         expect((after["default::container.sm"] as { $value: { value: number } }).$value.value).toBe(
-            200
+            200,
         );
     });
 
@@ -488,7 +488,7 @@ describe("applyScaleEdits", () => {
                     },
                 },
             },
-            { path: "container.sm", value: { value: 100, unit: "px" } }
+            { path: "container.sm", value: { value: 100, unit: "px" } },
         );
         const baseline = snapshot({ resolved: baselineMap, trees: sizeStepTrees() });
         const pathIndex = new PathIndex(baselineMap);
@@ -516,12 +516,12 @@ describe("applyScaleEdits", () => {
             { "container.*": linkMeta },
             baseline,
             pathIndex,
-            "default"
+            "default",
         );
 
         // Disabled link → factor 1.0 → container value reverts to baseline.
         expect((after["default::container.sm"] as { $value: { value: number } }).$value.value).toBe(
-            100
+            100,
         );
     });
 });

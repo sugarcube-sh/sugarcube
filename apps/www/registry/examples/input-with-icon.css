@@ -11,7 +11,9 @@
     border-radius: var(--form-control-radius);
     box-shadow: var(--shadow-xs);
     background-color: var(--color-bg, Canvas);
-    transition: border-color 150ms ease, box-shadow 150ms ease;
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease;
 }
 
 .input-wrapper:focus-within {
@@ -33,8 +35,8 @@
 /* Reset all visual styles from base .input class */
 /* Using .input.input-no-border for higher specificity to override base styles */
 .input.input-no-border:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
-        [type="file"]
-    ) {
+    [type="file"]
+) {
     border: none;
     border-radius: 0;
     box-shadow: none;
@@ -66,7 +68,9 @@
     cursor: pointer;
     flex-shrink: 0;
     border-radius: var(--radius-sm);
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+        background-color 150ms ease,
+        color 150ms ease;
 }
 
 .input-clear:hover {

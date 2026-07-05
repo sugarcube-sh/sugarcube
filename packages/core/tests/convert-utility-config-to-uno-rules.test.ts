@@ -10,13 +10,13 @@ import type { NormalizedRenderableTokens } from "../src/types/render.js";
 import { createRenderableToken } from "./__fixtures__/renderable-tokens.js";
 
 const buildTokens = (
-    tokens: Record<string, ReturnType<typeof createRenderableToken>>
+    tokens: Record<string, ReturnType<typeof createRenderableToken>>,
 ): NormalizedRenderableTokens => ({ default: tokens });
 
 const testRule = (
     rules: ReturnType<typeof convertConfigToUnoRules>,
     className: string,
-    expectedCss: Record<string, string> | null
+    expectedCss: Record<string, string> | null,
 ) => {
     const matchingRule = rules.find(([pattern]) => pattern.test(className));
     if (expectedCss === null) {
@@ -47,7 +47,7 @@ describe("convertConfigToUnoRules", () => {
         it("generates rules matching prefix + token name", () => {
             const rules = convertConfigToUnoRules(
                 { color: { source: "color.*", prefix: "text" } },
-                tokens
+                tokens,
             );
 
             expect(rules).toHaveLength(1);
@@ -71,7 +71,7 @@ describe("convertConfigToUnoRules", () => {
 
             const rules = convertConfigToUnoRules(
                 { color: { source: "color.*", prefix: "text" } },
-                prefixedTokens
+                prefixedTokens,
             );
 
             testRule(rules, "text-primary", { color: "var(--ds-color-primary)" });
@@ -88,7 +88,7 @@ describe("convertConfigToUnoRules", () => {
 
             const rules = convertConfigToUnoRules(
                 { "font-size": { source: "text.*" } },
-                textTokens
+                textTokens,
             );
 
             expect(rules).toHaveLength(1);
@@ -120,7 +120,7 @@ describe("convertConfigToUnoRules", () => {
                         directions: ["top", "right", "bottom", "left", "x", "y"],
                     },
                 },
-                tokens
+                tokens,
             );
 
             expect(rules).toHaveLength(6);
@@ -136,7 +136,7 @@ describe("convertConfigToUnoRules", () => {
         it("expands 'all' direction to simple + directional rules", () => {
             const rules = convertConfigToUnoRules(
                 { padding: { source: "space.*", prefix: "p", directions: ["all"] } },
-                tokens
+                tokens,
             );
 
             // 'all' expands to: 1 simple rule + 6 directional rules = 7 total
@@ -164,7 +164,7 @@ describe("convertConfigToUnoRules", () => {
 
             const rules = convertConfigToUnoRules(
                 { color: { source: "color.*", prefix: "text", stripDuplicates: true } },
-                tokens
+                tokens,
             );
 
             expect(rules).toHaveLength(1);
@@ -185,11 +185,11 @@ describe("convertConfigToUnoRules", () => {
 
             const rules = convertConfigToUnoRules(
                 {
-                    color: { source: "color.*", prefix: "brand" },
+                    "color": { source: "color.*", prefix: "brand" },
                     "background-color": { source: "color.*", prefix: "brand" },
                     "border-color": { source: "color.*", prefix: "brand" },
                 },
-                tokens
+                tokens,
             );
 
             expect(rules).toHaveLength(1);
@@ -209,10 +209,10 @@ describe("convertConfigToUnoRules", () => {
 
             const rules = convertConfigToUnoRules(
                 {
-                    color: { source: "color.*", prefix: "brand" },
+                    "color": { source: "color.*", prefix: "brand" },
                     "background-color": { source: "color.*", prefix: "brand" },
                 },
-                tokens
+                tokens,
             );
 
             expect(rules).toHaveLength(1);
@@ -236,17 +236,17 @@ describe("findMatchingToken", () => {
 
     it("finds token by matching source pattern", () => {
         expect(
-            findMatchingToken("primary", { source: "color.*", prefix: "text" }, tokens)?.$path
+            findMatchingToken("primary", { source: "color.*", prefix: "text" }, tokens)?.$path,
         ).toBe("color.primary");
 
         expect(
-            findMatchingToken("small", { source: "spacing.*", prefix: "p" }, tokens)?.$path
+            findMatchingToken("small", { source: "spacing.*", prefix: "p" }, tokens)?.$path,
         ).toBe("spacing.small");
     });
 
     it("returns null when no token matches", () => {
         expect(
-            findMatchingToken("nonexistent", { source: "color.*", prefix: "text" }, tokens)
+            findMatchingToken("nonexistent", { source: "color.*", prefix: "text" }, tokens),
         ).toBeNull();
     });
 
@@ -255,8 +255,8 @@ describe("findMatchingToken", () => {
             findMatchingToken(
                 "sm",
                 { source: "space.*", prefix: "text", property: "color" },
-                tokens
-            )
+                tokens,
+            ),
         ).toBeNull();
     });
 });
@@ -296,6 +296,6 @@ describe("getLogicalProperty", () => {
         "returns '$expected' for base='$base', direction='$direction'",
         ({ base, direction, expected }) => {
             expect(getLogicalProperty(base, direction)).toBe(expected);
-        }
+        },
     );
 });

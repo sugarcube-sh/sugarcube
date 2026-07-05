@@ -21,7 +21,7 @@ export function PresetControl({ binding }: PresetControlProps) {
 
     const options = useMemo(
         () => resolveOptions(binding.options, pathIndex, resolved),
-        [binding.options, pathIndex, resolved]
+        [binding.options, pathIndex, resolved],
     );
 
     const currentLabel = options.find((o) => o.reference === value)?.label ?? "—";

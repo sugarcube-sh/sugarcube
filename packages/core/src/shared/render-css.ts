@@ -18,7 +18,7 @@ import { cssRenderers } from "./renderers/css/index.js";
  */
 export function renderCSS<T extends TokenType>(
     token: RenderableToken<T>,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ): CSSProperties<T> {
     const render = cssRenderers[token.$type] as CSSRenderer<T>;
     const finalOptions = token.$extensions

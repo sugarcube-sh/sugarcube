@@ -3,7 +3,7 @@ import type { TokenValue } from "../../../types/tokens.js";
 import { isReference } from "../../guards.js";
 
 export function renderStrokeStyle(
-    value: TokenValue<"strokeStyle">
+    value: TokenValue<"strokeStyle">,
 ): SimpleCSSProperties & { value: string } {
     if (isReference(value)) {
         return { value };

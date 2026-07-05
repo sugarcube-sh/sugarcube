@@ -27,7 +27,7 @@ async function build() {
         await fs.writeFile(
             path.join(publicDir, "index.json"),
             JSON.stringify(registry, null, 2),
-            "utf-8"
+            "utf-8",
         );
 
         for (const item of registry) {
@@ -68,9 +68,9 @@ async function build() {
                             registryDependencies: frameworkRegistryDependencies || [],
                         },
                         null,
-                        2
+                        2,
                     ),
-                    "utf-8"
+                    "utf-8",
                 );
             }
         }

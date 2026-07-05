@@ -90,7 +90,7 @@ export const ErrorMessages = {
             `Expected ${expected}, received ${typeof value} at ${path}`,
         INVALID_ENUM_VALUE: (enumValues: unknown[], value: unknown, path: string) =>
             `Expected value to be one of [${enumValues.join(", ")}], but got ${String(
-                value
+                value,
             )} at ${path}`,
         SCALE_CONTAINS_REFERENCE: (path: string) =>
             `Scale config at ${path} cannot contain references — recipes must use literal numbers and units.`,
@@ -146,7 +146,7 @@ export const ErrorMessages = {
 
         DUPLICATE_CLASS_NAME: (className: string, paths: string[]) =>
             `Ambiguous utility class "${className}" would be generated from multiple token paths: ${paths.join(
-                ", "
+                ", ",
             )}. This would make it impossible to know which token value should be used when this class is applied in HTML. To fix this, configure one or more paths with custom prefixes to make the intent clear.`,
 
         INVALID_PROPERTY_MAPPING: (tokenType: string) =>

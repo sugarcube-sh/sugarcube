@@ -38,7 +38,11 @@ export function Icon({
     name,
     size = 12,
     className,
-}: { name: string; size?: number; className?: string }) {
+}: {
+    name: string;
+    size?: number;
+    className?: string;
+}) {
     const s = size;
     const common = {
         width: s,

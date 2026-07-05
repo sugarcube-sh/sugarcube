@@ -23,10 +23,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["@radix-ui/react-accordion", "lucide-react", "clsx"],
+            react: ["@radix-ui/react-accordion", "lucide-react", "clsx"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -51,7 +51,7 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["clsx"],
+            react: ["clsx"],
         },
     },
     {
@@ -76,10 +76,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["@radix-ui/react-avatar", "lucide-react", "clsx"],
+            react: ["@radix-ui/react-avatar", "lucide-react", "clsx"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -104,10 +104,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["clsx"],
+            react: ["clsx"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -132,10 +132,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["@radix-ui/react-slot", "clsx"],
+            react: ["@radix-ui/react-slot", "clsx"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -160,10 +160,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["clsx"],
+            react: ["clsx"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -188,10 +188,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["@radix-ui/react-checkbox", "lucide-react"],
+            react: ["@radix-ui/react-checkbox", "lucide-react"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -206,10 +206,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["lucide-react"],
+            react: ["lucide-react"],
         },
         registryDependencies: {
-            "react": ["button", "popover", "command"],
+            react: ["button", "popover", "command"],
         },
     },
     {
@@ -229,10 +229,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["clsx", "cmdk"],
+            react: ["clsx", "cmdk"],
         },
         registryDependencies: {
-            "react": ["dialog"],
+            react: ["dialog"],
         },
     },
     {
@@ -257,10 +257,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["clsx", "@radix-ui/react-dialog"],
+            react: ["clsx", "@radix-ui/react-dialog"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -280,10 +280,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["@radix-ui/react-dropdown-menu", "lucide-react", "clsx"],
+            react: ["@radix-ui/react-dropdown-menu", "lucide-react", "clsx"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -308,10 +308,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["react", "react-dom", "clsx"],
+            react: ["react", "react-dom", "clsx"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -331,10 +331,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["clsx", "@radix-ui/react-label"],
+            react: ["clsx", "@radix-ui/react-label"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -354,10 +354,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["@radix-ui/react-popover", "clsx"],
+            react: ["@radix-ui/react-popover", "clsx"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -382,10 +382,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["@radix-ui/react-radio-group", "lucide-react", "clsx"],
+            react: ["@radix-ui/react-radio-group", "lucide-react", "clsx"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -410,10 +410,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["@radix-ui/react-select", "lucide-react"],
+            react: ["@radix-ui/react-select", "lucide-react"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -438,10 +438,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["react", "react-dom", "clsx", "@radix-ui/react-switch"],
+            react: ["react", "react-dom", "clsx", "@radix-ui/react-switch"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -461,10 +461,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["clsx", "@radix-ui/react-tabs"],
+            react: ["clsx", "@radix-ui/react-tabs"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
     {
@@ -484,10 +484,10 @@ export const components: RegistryItem[] = [
             },
         ],
         dependencies: {
-            "react": ["clsx"],
+            react: ["clsx"],
         },
         registryDependencies: {
-            "react": [],
+            react: [],
         },
     },
 ];

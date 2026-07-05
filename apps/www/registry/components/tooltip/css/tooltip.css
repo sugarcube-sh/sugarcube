@@ -19,8 +19,9 @@
     opacity: 0;
     pointer-events: none;
     z-index: var(--z-tooltip);
-    transition: opacity var(--transition-normal) var(--ease-out), transform var(--transition-normal)
-        var(--ease-out);
+    transition:
+        opacity var(--transition-normal) var(--ease-out),
+        transform var(--transition-normal) var(--ease-out);
 }
 
 [data-tooltip]::before {

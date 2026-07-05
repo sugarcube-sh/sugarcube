@@ -18,7 +18,7 @@ export function TokenStoreProvider({ children }: { children: ReactNode }) {
             tokens.getPathIndex,
             tokens.store,
             host.baseline,
-            tokens.writeResolved
+            tokens.writeResolved,
         );
         const diff = createDiffStore(host, tokens.store, scale.store, tokens.getPathIndex);
 

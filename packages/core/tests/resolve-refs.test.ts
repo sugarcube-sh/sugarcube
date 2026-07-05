@@ -34,7 +34,7 @@ const buildDoc = {
     }),
 
     withResolutionOrder: (
-        resolutionOrder: ResolverDocument["resolutionOrder"]
+        resolutionOrder: ResolverDocument["resolutionOrder"],
     ): ResolverDocument => ({
         ...emptyDoc(),
         resolutionOrder,
@@ -91,7 +91,7 @@ describe("resolveReference", () => {
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]?.message).toBe(
-                ErrorMessages.RESOLVER.UNDEFINED_SET("nonexistent")
+                ErrorMessages.RESOLVER.UNDEFINED_SET("nonexistent"),
             );
         });
 
@@ -102,7 +102,7 @@ describe("resolveReference", () => {
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]?.message).toBe(
-                ErrorMessages.RESOLVER.INVALID_REFERENCE("#/resolutionOrder/0")
+                ErrorMessages.RESOLVER.INVALID_REFERENCE("#/resolutionOrder/0"),
             );
         });
 
@@ -111,7 +111,7 @@ describe("resolveReference", () => {
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]?.message).toBe(
-                ErrorMessages.RESOLVER.INVALID_REFERENCE("#/invalid/path/format")
+                ErrorMessages.RESOLVER.INVALID_REFERENCE("#/invalid/path/format"),
             );
         });
     });
@@ -131,7 +131,7 @@ describe("resolveReference", () => {
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]?.message).toBe(
-                ErrorMessages.RESOLVER.EXTERNAL_FILE_NOT_FOUND(expectedPath)
+                ErrorMessages.RESOLVER.EXTERNAL_FILE_NOT_FOUND(expectedPath),
             );
         });
 
@@ -159,15 +159,15 @@ describe("resolveReference", () => {
         it("errors on invalid fragment path", async () => {
             const result = await resolveReference(
                 "tokens/colors.json#/nonexistent",
-                createTestContext()
+                createTestContext(),
             );
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]?.message).toBe(
                 ErrorMessages.RESOLVER.INVALID_JSON_POINTER(
                     "/nonexistent",
-                    `property "nonexistent" not found`
-                )
+                    `property "nonexistent" not found`,
+                ),
             );
         });
     });
@@ -193,7 +193,7 @@ describe("resolveReference", () => {
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]?.message).toBe(
-                ErrorMessages.RESOLVER.CIRCULAR_REFERENCE("#/sets/self")
+                ErrorMessages.RESOLVER.CIRCULAR_REFERENCE("#/sets/self"),
             );
         });
     });
@@ -239,7 +239,7 @@ describe("resolveDocumentReferences", () => {
     const loadFixture = async (filename: string) => {
         const parseResult = await parseResolverDocument(resolve(fixturesPath, filename));
         const nonWarningErrors = parseResult.errors.filter(
-            (e) => e.message !== ErrorMessages.RESOLVER.MODIFIER_SINGLE_CONTEXT
+            (e) => e.message !== ErrorMessages.RESOLVER.MODIFIER_SINGLE_CONTEXT,
         );
         return { parseResult, nonWarningErrors };
     };

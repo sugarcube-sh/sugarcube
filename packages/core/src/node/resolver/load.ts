@@ -24,7 +24,7 @@ type PermutationResult = {
 
 function buildFullInput(
     permInput: Record<string, string>,
-    modifiers: ExtractedModifier[]
+    modifiers: ExtractedModifier[],
 ): Record<string, string> {
     const full: Record<string, string> = {};
     for (const mod of modifiers) {
@@ -50,7 +50,7 @@ function getDefaultContext(mod: ExtractedModifier): string {
 export async function loadFromResolver(
     document: ResolverDocument,
     resolverPath: string,
-    permutations?: Permutation[]
+    permutations?: Permutation[],
 ): Promise<ResolverLoadResult> {
     const absolutePath = isAbsolute(resolverPath)
         ? resolverPath
@@ -76,7 +76,7 @@ export async function loadFromResolver(
         basePath,
         relativePath,
         resolvedPermutations,
-        modifiers
+        modifiers,
     );
 
     return { trees, permutations: resolvedPermutations, errors };
@@ -120,7 +120,7 @@ function generateDefaultPermutations(modifiers: ExtractedModifier[]): Permutatio
 
 function validatePermutationInputs(
     permutations: Permutation[],
-    modifiers: ExtractedModifier[]
+    modifiers: ExtractedModifier[],
 ): LoadError[] {
     const errors: LoadError[] = [];
     const modifierMap = new Map(modifiers.map((m) => [m.name, m]));
@@ -134,7 +134,7 @@ function validatePermutationInputs(
                     file: "sugarcube.config",
                     message: ErrorMessages.PERMUTATIONS.UNKNOWN_MODIFIER(
                         modName,
-                        modifiers.map((m) => m.name)
+                        modifiers.map((m) => m.name),
                     ),
                 });
                 continue;
@@ -146,7 +146,7 @@ function validatePermutationInputs(
                     message: ErrorMessages.PERMUTATIONS.UNKNOWN_CONTEXT(
                         modName,
                         ctxValue,
-                        modifier.contexts
+                        modifier.contexts,
                     ),
                 });
             }
@@ -165,7 +165,7 @@ async function resolvePermutations(
     basePath: string,
     relativePath: string,
     permutations: Permutation[],
-    modifiers: ExtractedModifier[]
+    modifiers: ExtractedModifier[],
 ): Promise<PermutationResult> {
     const trees: TokenTree[] = [];
     const errors: LoadError[] = [];

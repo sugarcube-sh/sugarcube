@@ -109,14 +109,14 @@ export function expand(trees: TokenTree[]): ExpandResult {
         const { result: refsExpanded, errors: refErrors } = expandRefsInGroup(
             tree.tokens,
             tree.tokens,
-            context
+            context,
         );
         errors.push(...refErrors);
 
         // Second pass: expand $extends inheritance
         const { result: extendsExpanded, errors: extendsErrors } = expandExtendsInTree(
             refsExpanded,
-            context.sourcePath
+            context.sourcePath,
         );
         errors.push(...extendsErrors);
 
@@ -157,7 +157,7 @@ function expandGroupRef(
     value: { $ref: string; [k: string]: unknown },
     resolved: TokenGroup,
     rootDocument: TokenGroup,
-    context: ExpandContext
+    context: ExpandContext,
 ): GroupResult {
     const { $ref: _$ref, ...overrides } = value;
     const { result: expandedGroup, errors } = expandRefsInGroup(resolved, rootDocument, context);
@@ -167,7 +167,7 @@ function expandGroupRef(
 function expandRefEntry(
     value: { $ref: string; [k: string]: unknown },
     rootDocument: TokenGroup,
-    context: ExpandContext
+    context: ExpandContext,
 ): EntryResult {
     const refResult = resolveRef(value, rootDocument, context);
 
@@ -192,7 +192,7 @@ function expandRefEntry(
 function expandEntry(
     value: unknown,
     rootDocument: TokenGroup,
-    context: ExpandContext
+    context: ExpandContext,
 ): EntryResult {
     if (hasRef(value)) {
         return expandRefEntry(value, rootDocument, context);
@@ -210,7 +210,7 @@ function expandEntry(
 function expandRefsInGroup(
     node: TokenGroup,
     rootDocument: TokenGroup,
-    context: ExpandContext
+    context: ExpandContext,
 ): GroupResult {
     const result = copyGroupProperties(node);
     const errors: ExpandError[] = [];
@@ -241,7 +241,7 @@ function expandRefsInGroup(
 function resolveRef(
     refObj: { $ref: string },
     rootDocument: TokenGroup,
-    context: ExpandContext
+    context: ExpandContext,
 ): ResolveRefResult {
     const ref = refObj.$ref;
     const currentPathStr = context.currentPath.join(".");
@@ -250,7 +250,7 @@ function resolveRef(
         return {
             error: ErrorMessages.EXPAND_TREE.INVALID_JSON_POINTER(
                 ref,
-                "only same-document references (#/...) are supported in token files"
+                "only same-document references (#/...) are supported in token files",
             ),
         };
     }
@@ -270,7 +270,7 @@ function resolveRefPointer(
     ref: string,
     currentPathStr: string,
     rootDocument: TokenGroup,
-    context: ExpandContext
+    context: ExpandContext,
 ): ResolveRefResult {
     const pointer = ref.slice(1);
     const pointerResult = resolveJsonPointer(rootDocument, pointer);
@@ -353,7 +353,7 @@ function expandExtendsInTree(tokens: TokenGroup, sourcePath: string): GroupResul
             path: sortResult.cycle[0] || "",
             message: ErrorMessages.EXPAND_TREE.CIRCULAR_EXTENDS(
                 sortResult.cycle[0] || "",
-                sortResult.cycle
+                sortResult.cycle,
             ),
             sourcePath,
         });
@@ -379,7 +379,7 @@ function expandExtendsInTree(tokens: TokenGroup, sourcePath: string): GroupResul
 function collectExtendsDependencies(
     node: TokenGroup,
     currentPath: string[],
-    extendsMap: Map<string, string>
+    extendsMap: Map<string, string>,
 ): void {
     if (node.$extends && typeof node.$extends === "string") {
         extendsMap.set(currentPath.join("."), curlyBraceToPath(node.$extends));
@@ -429,7 +429,7 @@ function expandSingleExtends(
     root: TokenGroup,
     path: string,
     targetPath: string,
-    sourcePath: string
+    sourcePath: string,
 ): ExpandSingleResult {
     const localGroup = getGroupAtPath(root, path);
     if (!localGroup || isToken(localGroup)) {

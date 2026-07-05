@@ -76,7 +76,7 @@ export async function promptComponentFramework(includeSkip = true): Promise<Comp
 
     if (componentType === "web-components") {
         log.info(
-            color.blue("Web components are coming soon! Please choose React or CSS Only for now.")
+            color.blue("Web components are coming soon! Please choose React or CSS Only for now."),
         );
         return promptComponentFramework(includeSkip);
     }
@@ -86,7 +86,7 @@ export async function promptComponentFramework(includeSkip = true): Promise<Comp
 
 export async function promptComponentSelectionFiltered(
     registryIndex: RegistryItem[],
-    componentType: string
+    componentType: string,
 ) {
     const filtered = registryIndex.filter((entry) => {
         return entry.type === "component" && entry.frameworks?.includes(componentType);
@@ -112,7 +112,7 @@ export async function promptComponentSelectionFiltered(
 export async function confirmOverwrite(
     message: string,
     initialValue = false,
-    { exitOnDecline = true }: { exitOnDecline?: boolean } = {}
+    { exitOnDecline = true }: { exitOnDecline?: boolean } = {},
 ): Promise<boolean> {
     const proceed = await confirm({
         message,

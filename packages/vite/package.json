@@ -1,62 +1,62 @@
 {
-    "name": "@sugarcube-sh/vite",
-    "version": "0.1.19",
-    "type": "module",
-    "publishConfig": {
-        "access": "public",
-        "provenance": true
-    },
-    "description": "Vite plugin for sugarcube",
-    "license": "MIT",
-    "author": {
-        "name": "Mark Tomlinson",
-        "email": "mark@marktomlinson.dev",
-        "url": "https://marktomlinson.dev"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/sugarcube-sh/sugarcube"
-    },
-    "bugs": {
-        "url": "https://github.com/sugarcube-sh/sugarcube/issues"
-    },
-    "keywords": [
-        "vite",
-        "vite-plugin",
-        "design-tokens",
-        "design-system",
-        "cube-css",
-        "css",
-        "sugarcube"
-    ],
-    "files": [
-        "dist/",
-        "README.md",
-        "LICENSE.md"
-    ],
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.mts",
-            "import": "./dist/index.mjs"
-        }
-    },
-    "scripts": {
-        "build": "pkgroll --minify",
-        "dev": "pkgroll --watch",
-        "test": "vitest run",
-        "test:watch": "vitest",
-        "type-check": "tsc --noEmit"
-    },
-    "dependencies": {
-        "@sugarcube-sh/core": "workspace:*",
-        "@unocss/vite": "^66.5.2",
-        "jsonc-parser": "^3.3.1"
-    },
-    "peerDependencies": {
-        "vite": "^6.0.0 || ^7 || ^8"
-    },
-    "devDependencies": {
-        "pkgroll": "^2.26.0",
-        "vite": "^6.0.0"
+  "name": "@sugarcube-sh/vite",
+  "version": "0.1.19",
+  "description": "Vite plugin for sugarcube",
+  "keywords": [
+    "css",
+    "cube-css",
+    "design-system",
+    "design-tokens",
+    "sugarcube",
+    "vite",
+    "vite-plugin"
+  ],
+  "bugs": {
+    "url": "https://github.com/sugarcube-sh/sugarcube/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Mark Tomlinson",
+    "email": "mark@marktomlinson.dev",
+    "url": "https://marktomlinson.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sugarcube-sh/sugarcube"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "pkgroll --minify",
+    "dev": "pkgroll --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sugarcube-sh/core": "workspace:*",
+    "@unocss/vite": "^66.5.2",
+    "jsonc-parser": "^3.3.1"
+  },
+  "devDependencies": {
+    "pkgroll": "^2.26.0",
+    "vite": "^6.0.0"
+  },
+  "peerDependencies": {
+    "vite": "^6.0.0 || ^7 || ^8"
+  }
 }

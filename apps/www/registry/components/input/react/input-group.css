@@ -10,7 +10,9 @@
     border-radius: var(--form-control-radius);
     box-shadow: var(--shadow-xs);
     background-color: var(--color-bg, Canvas);
-    transition: border-color 150ms ease, box-shadow 150ms ease;
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease;
     gap: var(--space-2xs, 0.5rem);
 }
 
@@ -89,7 +91,9 @@
     background-color: transparent;
     color: var(--color-text-quiet, #a3a6b5);
     cursor: pointer;
-    transition: background-color 150ms ease, color 150ms ease;
+    transition:
+        background-color 150ms ease,
+        color 150ms ease;
 }
 
 .input-group-button:hover {

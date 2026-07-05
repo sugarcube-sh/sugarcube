@@ -35,7 +35,7 @@ function detectDefaultDirs(cwd: string = process.cwd()): DefaultDirs {
  */
 export function fillDefaults(
     userConfig: SugarcubeConfig,
-    cwd: string = process.cwd()
+    cwd: string = process.cwd(),
 ): InternalConfig {
     return fillDefaultsCore(userConfig, detectDefaultDirs(cwd));
 }

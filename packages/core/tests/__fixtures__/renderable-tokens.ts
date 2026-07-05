@@ -14,7 +14,7 @@ import type { TokenType } from "../../src/types/tokens.js";
  * to pre-resolve them.
  */
 export const createRenderableToken = (
-    overrides: Partial<RenderableToken<TokenType>> = {}
+    overrides: Partial<RenderableToken<TokenType>> = {},
 ): RenderableToken<TokenType> => {
     const $type = overrides.$type ?? "color";
     const $value = overrides.$value ?? "#FF0000";

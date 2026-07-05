@@ -32,7 +32,10 @@
   "stroke.custom.multiple": {
     "$type": "strokeStyle",
     "$value": {
-      "dashArray": [{ "value": 4, "unit": "px" }, { "value": 2, "unit": "px" }],
+      "dashArray": [
+        { "value": 4, "unit": "px" },
+        { "value": 2, "unit": "px" }
+      ],
       "lineCap": "butt"
     },
     "$path": "stroke.custom.multiple",

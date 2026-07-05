@@ -10,7 +10,7 @@ describe("resolveOptions", () => {
         const options = resolveOptions(
             { small: "{size.step.0}", medium: "{size.step.2}" },
             pathIndex,
-            {}
+            {},
         );
 
         expect(options).toEqual([
@@ -23,7 +23,7 @@ describe("resolveOptions", () => {
         const baseline = resolved(
             { path: "size.step.0", value: 16 },
             { path: "size.step.1", value: 18 },
-            { path: "size.step.2", value: 20 }
+            { path: "size.step.2", value: 20 },
         );
         const pathIndex = new PathIndex(baseline);
 
@@ -40,7 +40,7 @@ describe("resolveOptions", () => {
         const baseline = resolved(
             { path: "font.sans", value: "Inter" },
             { path: "font.serif", value: "Georgia" },
-            { path: "font.body", value: "{font.sans}" }
+            { path: "font.body", value: "{font.sans}" },
         );
         const pathIndex = new PathIndex(baseline);
 
@@ -53,7 +53,7 @@ describe("resolveOptions", () => {
         const baseline = resolved(
             { path: "size.step.0", value: 16 },
             { path: "size.step.1", value: 18 },
-            { path: "text.base", value: "{size.step.0}" }
+            { path: "text.base", value: "{size.step.0}" },
         );
         const pathIndex = new PathIndex(baseline);
 

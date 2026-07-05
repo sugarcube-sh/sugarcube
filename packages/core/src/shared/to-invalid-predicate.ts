@@ -14,11 +14,11 @@ import type { ValidationError } from "../types/validate.js";
  * If there are no errors, returns `undefined` so callers can skip checking.
  */
 export function toInvalidPredicate(
-    validationErrors?: ValidationError[]
+    validationErrors?: ValidationError[],
 ): ((tokenPath: string) => boolean) | undefined {
     if (!validationErrors || validationErrors.length === 0) return undefined;
     return (tokenPath) =>
         validationErrors.some(
-            (error) => error.path === tokenPath || error.path.startsWith(`${tokenPath}.`)
+            (error) => error.path === tokenPath || error.path.startsWith(`${tokenPath}.`),
         );
 }

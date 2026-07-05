@@ -24,7 +24,7 @@ const BorderSchema: TokenValidationSchema = {
 export function validateBorder(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     return validateSchema(BorderSchema.schema, value, path, source);
 }

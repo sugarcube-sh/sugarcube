@@ -45,7 +45,7 @@ export function validateDTCGColorValue(value: DTCGColorValue): string[] {
     const supportedColorSpaces: DTCGColorSpace[] = ["oklch", "display-p3", "srgb", "hsl"];
     if (!supportedColorSpaces.includes(value.colorSpace)) {
         errors.push(
-            `Unsupported colorSpace: "${value.colorSpace}". Supported color spaces: ${supportedColorSpaces.join(", ")}.`
+            `Unsupported colorSpace: "${value.colorSpace}". Supported color spaces: ${supportedColorSpaces.join(", ")}.`,
         );
     }
 

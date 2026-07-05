@@ -7,32 +7,32 @@ export function formatOverwriteWarnings(warnings: OverwriteWarnings): string | u
         sections.push(
             `CSS variables files:\n${warnings.variableCSS
                 .map((f: string) => `  - ${f}`)
-                .join("\n")}`
+                .join("\n")}`,
         );
     }
 
     if (warnings.utilityCSS.length > 0) {
         sections.push(
-            `CSS utility files:\n${warnings.utilityCSS.map((f: string) => `  - ${f}`).join("\n")}`
+            `CSS utility files:\n${warnings.utilityCSS.map((f: string) => `  - ${f}`).join("\n")}`,
         );
     }
 
     if (warnings.cubeCSS.length > 0) {
         sections.push(
-            `CUBE CSS files:\n${warnings.cubeCSS.map((f: string) => `  - ${f}`).join("\n")}`
+            `CUBE CSS files:\n${warnings.cubeCSS.map((f: string) => `  - ${f}`).join("\n")}`,
         );
     }
 
     if (warnings.componentFiles.length > 0 || warnings.componentCSS.length > 0) {
         const allComponentFiles = [...warnings.componentFiles, ...warnings.componentCSS];
         sections.push(
-            `Component files:\n${allComponentFiles.map((f: string) => `  - ${f}`).join("\n")}`
+            `Component files:\n${allComponentFiles.map((f: string) => `  - ${f}`).join("\n")}`,
         );
     }
 
     if (warnings.indexFiles.length > 0) {
         sections.push(
-            `Index files:\n${warnings.indexFiles.map((f: string) => `  - ${f}`).join("\n")}`
+            `Index files:\n${warnings.indexFiles.map((f: string) => `  - ${f}`).join("\n")}`,
         );
     }
 
@@ -41,7 +41,7 @@ export function formatOverwriteWarnings(warnings: OverwriteWarnings): string | u
     }
 
     const message = `The following file(s) already exist and will be overwritten:\n\n${sections.join(
-        "\n\n"
+        "\n\n",
     )}`;
     return message;
 }

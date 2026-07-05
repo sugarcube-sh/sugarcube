@@ -1,72 +1,72 @@
 {
-    "name": "@sugarcube-sh/core",
-    "version": "0.2.12",
-    "publishConfig": {
-        "access": "public",
-        "provenance": true
+  "name": "@sugarcube-sh/core",
+  "version": "0.2.12",
+  "description": "Core functionality for sugarcube",
+  "keywords": [
+    "css",
+    "cube-css",
+    "design-system",
+    "design-tokens",
+    "sugarcube"
+  ],
+  "bugs": {
+    "url": "https://github.com/sugarcube-sh/sugarcube/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Mark Tomlinson",
+    "email": "mark@marktomlinson.dev",
+    "url": "https://marktomlinson.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sugarcube-sh/sugarcube"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
-    "description": "Core functionality for sugarcube",
-    "license": "MIT",
-    "author": {
-        "name": "Mark Tomlinson",
-        "email": "mark@marktomlinson.dev",
-        "url": "https://marktomlinson.dev"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/sugarcube-sh/sugarcube"
-    },
-    "bugs": {
-        "url": "https://github.com/sugarcube-sh/sugarcube/issues"
-    },
-    "keywords": [
-        "design-tokens",
-        "design-system",
-        "cube-css",
-        "css",
-        "sugarcube"
-    ],
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "type": "module",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "default": "./dist/index.js"
-        },
-        "./client": {
-            "types": "./dist/client.d.ts",
-            "default": "./dist/client.js"
-        }
-    },
-    "engines": {
-        "node": ">=20.19.0"
-    },
-    "files": [
-        "dist",
-        "README.md",
-        "LICENSE.md"
-    ],
-    "scripts": {
-        "build": "pkgroll --minify",
-        "build:clean": "rm -rf dist && pkgroll --minify",
-        "dev": "pkgroll --watch",
-        "test": "vitest run",
-        "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage",
-        "test:bench": "vitest bench --no-watch",
-        "test:bench:save": "vitest bench --no-watch --outputJson benchmarks/$(date +%Y-%m-%d)-results.json",
-        "test:bench:compare": "./scripts/bench-compare.sh",
-        "type-check": "tsc --noEmit"
-    },
-    "devDependencies": {
-        "pkgroll": "^2.26.0",
-        "vitest": "^4.0.18"
-    },
-    "dependencies": {
-        "jiti": "^2.6.1",
-        "pathe": "^2.0.3",
-        "tinyglobby": "^0.2.9",
-        "zod": "^3.23.8"
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "pkgroll --minify",
+    "build:clean": "rm -rf dist && pkgroll --minify",
+    "dev": "pkgroll --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:bench": "vitest bench --no-watch",
+    "test:bench:save": "vitest bench --no-watch --outputJson benchmarks/$(date +%Y-%m-%d)-results.json",
+    "test:bench:compare": "./scripts/bench-compare.sh",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "jiti": "^2.6.1",
+    "pathe": "^2.0.3",
+    "tinyglobby": "^0.2.9",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "pkgroll": "^2.26.0",
+    "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
 }

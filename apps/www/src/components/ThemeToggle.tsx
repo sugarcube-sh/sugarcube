@@ -51,7 +51,7 @@ export function ThemeToggle({ compact = false, className }: ThemeToggleProps) {
         document.dispatchEvent(
             new CustomEvent("theme-change", {
                 detail: { theme: selectedTheme },
-            })
+            }),
         );
     };
 

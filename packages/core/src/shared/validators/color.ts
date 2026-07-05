@@ -60,7 +60,7 @@ export const ColorSchema: TokenValidationSchema = {
 export function validateColor(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     return validateSchema(ColorSchema.schema, value, path, source);
 }

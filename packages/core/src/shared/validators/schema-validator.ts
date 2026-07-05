@@ -9,7 +9,7 @@ export function validateSchema(
     schema: SimpleSchema | ObjectSchema | ArraySchema | UnionSchema,
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     if (isReference(value)) {
         return [];
@@ -31,7 +31,7 @@ function validateSimpleValue(
     schema: SimpleSchema,
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     // Type checking
     const expectedType = schema.type;
@@ -55,7 +55,7 @@ function validateObject(
     schema: ObjectSchema,
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     if (!typeCheckers.isObject(value)) {
         return [
@@ -97,7 +97,7 @@ function validateUnion(
     schema: UnionSchema,
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     let bestMatchErrors: ValidationError[] = [];
     let bestMatchLength = Number.POSITIVE_INFINITY;
@@ -128,7 +128,7 @@ function validateUnion(
                 message: ErrorMessages.VALIDATE.INVALID_TYPE(
                     schema.oneOf.map((s) => s.type).join(" or "),
                     value,
-                    path
+                    path,
                 ),
                 source,
             },
@@ -142,7 +142,7 @@ function validateArray(
     schema: ArraySchema,
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     if (!Array.isArray(value)) {
         return [

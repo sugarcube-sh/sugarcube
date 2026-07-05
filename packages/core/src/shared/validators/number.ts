@@ -27,7 +27,7 @@ export const NumberSchema: TokenValidationSchema = {
 export function validateNumber(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     return validateSchema(NumberSchema.schema, value, path, source);
 }

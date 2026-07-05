@@ -59,7 +59,7 @@ function setup(initialBaseline: TokenSnapshot) {
         () => pathIndex,
         tokenStore,
         baseline,
-        (resolved) => writes.push(resolved)
+        (resolved) => writes.push(resolved),
     );
     const teardown = activate();
 

@@ -19,7 +19,7 @@ const GradientStopSchema: ObjectSchema = {
                             path,
                             message: ErrorMessages.VALIDATE.INVALID_GRADIENT_STOP_POSITION(
                                 value,
-                                path
+                                path,
                             ),
                             source,
                         },
@@ -43,7 +43,7 @@ const GradientSchema: TokenValidationSchema = {
 
             array.forEach((stop, index) => {
                 errors.push(
-                    ...validateSchema(GradientStopSchema, stop, `${path}[${index}]`, source)
+                    ...validateSchema(GradientStopSchema, stop, `${path}[${index}]`, source),
                 );
             });
 
@@ -55,7 +55,7 @@ const GradientSchema: TokenValidationSchema = {
 export function validateGradient(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     return validateSchema(GradientSchema.schema, value, path, source);
 }

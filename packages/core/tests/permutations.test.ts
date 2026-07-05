@@ -203,7 +203,7 @@ describe("permutations", () => {
             const resolved = resolveTokens(loaded.trees);
             const converted = assignCSSNames(
                 groupByContext(resolved.trees, resolved.resolved),
-                config
+                config,
             );
             const output = await generateCSSVariables(converted, config, loaded.permutations);
 

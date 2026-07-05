@@ -10,7 +10,7 @@ import type { PackageManager } from "../types/install.js";
  */
 export async function getPackageManager(
     targetDir: string,
-    { withFallback = false } = {}
+    { withFallback = false } = {},
 ): Promise<PackageManager> {
     const detected = await detect({ programmatic: true, cwd: targetDir });
 

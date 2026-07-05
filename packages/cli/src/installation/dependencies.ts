@@ -7,7 +7,7 @@ export async function installDependencies(
     dependencies: string[],
     targetDir: string,
     packageManager: PackageManager,
-    options: { devDependency?: boolean } = {}
+    options: { devDependency?: boolean } = {},
 ) {
     if (dependencies.length === 0) {
         return;
@@ -38,7 +38,7 @@ export async function installDependencies(
         const stderr = extractStderr(error);
         throw new CLIError(
             ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED(packageManager, stderr),
-            error instanceof Error ? error : undefined
+            error instanceof Error ? error : undefined,
         );
     }
 }

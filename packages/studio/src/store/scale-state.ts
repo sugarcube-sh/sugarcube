@@ -30,7 +30,7 @@ export type ScaleStateStore = {
     setStepOverride: (
         token: string,
         step: string,
-        value: { min: { value: number; unit: string }; max: { value: number; unit: string } }
+        value: { min: { value: number; unit: string }; max: { value: number; unit: string } },
     ) => void;
     clearStepOverride: (token: string, step: string) => void;
     updateScale: (token: string, updater: (scale: ScaleExtension) => ScaleExtension) => void;
@@ -49,7 +49,7 @@ export type ScaleWriteCallback = (resolved: ResolvedTokens) => void;
 
 export function selectOriginalScale(
     baseline: TokenSnapshot,
-    parentPath: string
+    parentPath: string,
 ): ScaleExtension | null {
     return getScaleExtension(baseline.trees, parentPath) ?? null;
 }
@@ -57,7 +57,7 @@ export function selectOriginalScale(
 export function selectEffectiveScale(
     baseline: TokenSnapshot,
     edit: ScaleEdit | undefined,
-    parentPath: string
+    parentPath: string,
 ): ScaleExtension | null {
     if (edit?.kind === "scale") return edit.scale;
     return selectOriginalScale(baseline, parentPath);
@@ -69,7 +69,7 @@ export function createScaleState(
     getPathIndex: PathIndexAccessor,
     tokenStore: TokenStoreAPI,
     baseline: StoreApi<TokenSnapshot>,
-    onWrite?: ScaleWriteCallback
+    onWrite?: ScaleWriteCallback,
 ): ScaleStateHandle {
     const writeResolved: ScaleWriteCallback =
         onWrite ?? ((resolved) => tokenStore.setState({ resolved }));
@@ -194,7 +194,7 @@ export function createScaleState(
             linkBindings,
             baseline.getState(),
             getPathIndex(),
-            currentContext
+            currentContext,
         );
         writeResolved(next);
     }
@@ -221,7 +221,7 @@ function nextTokensEdit(
         base?: number;
         spread?: number;
         overrides?: StepOverrides | undefined;
-    }
+    },
 ): ScaleEdit {
     if (existing?.kind === "tokens") {
         return {
@@ -241,7 +241,7 @@ function nextTokensEdit(
 
 function collectBindings(
     panelSections: PanelSection[],
-    snapshot: TokenSnapshot
+    snapshot: TokenSnapshot,
 ): {
     bindings: Record<string, ScaleBindingMeta>;
     linkBindings: Record<string, LinkBindingMeta>;
@@ -257,7 +257,7 @@ function collectBindings(
                     bindings[binding.token] = meta;
                 } else {
                     console.warn(
-                        `[studio] scale binding "${binding.token}" has no \`base\` and no sh.sugarcube.scale recipe; direct-mode controls need an anchor step. Add \`base\` to the binding or author a scale recipe on the bound group.`
+                        `[studio] scale binding "${binding.token}" has no \`base\` and no sh.sugarcube.scale recipe; direct-mode controls need an anchor step. Add \`base\` to the binding or author a scale recipe on the bound group.`,
                     );
                 }
             } else if (binding.type === "scale-linked") {

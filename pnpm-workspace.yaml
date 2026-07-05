@@ -15,12 +15,12 @@ trustPolicyExclude:
   # same author had no provenance either, 5.1.0 (eskimojo via CI) had it,
   # 5.2.0 is OIDC trusted-publisher. Remove once @base-ui-components/react
   # transitively resolves to reselect ≥ 5.2.0.
-  - 'reselect@5.1.1'
+  - "reselect@5.1.1"
   # Transitive via various build tools.
   # lukekarrys (npm team) backport ReDoS fix for the 6.x line; npm-team
   # publishes 7.x via OIDC trusted-publisher. Remove once nothing in the
   # tree requires semver@^6.
-  - 'semver@6.3.1'
+  - "semver@6.3.1"
 
 overrides:
   vite: ^8.0.3

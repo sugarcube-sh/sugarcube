@@ -13,7 +13,7 @@ import { Button } from "@/registry/components/button/react/button";
 
 export function AlertDemo() {
     return (
-        <div className="flow" style={{ "maxWidth": "36rem" } as React.CSSProperties}>
+        <div className="flow" style={{ maxWidth: "36rem" } as React.CSSProperties}>
             <Alert className="alert-outline">
                 <CheckCircle2Icon />
                 <AlertTitle>Success! Your changes have been saved</AlertTitle>

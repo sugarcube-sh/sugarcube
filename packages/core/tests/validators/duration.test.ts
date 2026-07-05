@@ -6,10 +6,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("duration validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/duration/valid.json"
+        "tokens/validators/duration/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/duration/invalid.json"
+        "tokens/validators/duration/invalid.json",
     );
 
     describe("valid cases", () => {
@@ -53,7 +53,7 @@ describe("duration validator", () => {
                 ValidationHelper.expectInvalidDurationUnitError(
                     errors,
                     "mins",
-                    `${token.$path}.unit`
+                    `${token.$path}.unit`,
                 );
             });
 

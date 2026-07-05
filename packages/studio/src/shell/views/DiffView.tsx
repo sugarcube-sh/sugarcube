@@ -115,7 +115,7 @@ function diffLines(a: string[], b: string[]): DiffLine[] {
     const n = a.length;
     const m = b.length;
     const dp: number[][] = Array.from({ length: n + 1 }, () =>
-        Array.from({ length: m + 1 }, () => 0)
+        Array.from({ length: m + 1 }, () => 0),
     );
     for (let i = 1; i <= n; i++) {
         const row = dp[i];
@@ -188,7 +188,7 @@ function highlightJson(line: string): ReactNode[] {
                     </span>,
                     <span key={i++} className="diff-json-punct">
                         {colon}
-                    </span>
+                    </span>,
                 );
             } else {
                 const inner = str.slice(1, -1);
@@ -198,13 +198,13 @@ function highlightJson(line: string): ReactNode[] {
                             <span className="diff-json-quote">"</span>
                             <span className="diff-json-ref">{inner}</span>
                             <span className="diff-json-quote">"</span>
-                        </span>
+                        </span>,
                     );
                 } else {
                     out.push(
                         <span key={i++} className="diff-json-string">
                             {str}
-                        </span>
+                        </span>,
                     );
                 }
             }
@@ -212,19 +212,19 @@ function highlightJson(line: string): ReactNode[] {
             out.push(
                 <span key={i++} className="diff-json-num">
                     {num}
-                </span>
+                </span>,
             );
         } else if (bool !== undefined) {
             out.push(
                 <span key={i++} className="diff-json-bool">
                     {bool}
-                </span>
+                </span>,
             );
         } else if (punct !== undefined) {
             out.push(
                 <span key={i++} className="diff-json-punct">
                     {punct}
-                </span>
+                </span>,
             );
         }
 

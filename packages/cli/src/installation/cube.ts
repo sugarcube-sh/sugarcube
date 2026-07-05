@@ -33,7 +33,7 @@ export async function installCUBE(cssOutputDirectory: string) {
 
             if (!isWithinDirectory(filePath, stylesDir)) {
                 throw new CLIError(
-                    `Invalid file path detected in CUBE module "${module}": path escapes target directory`
+                    `Invalid file path detected in CUBE module "${module}": path escapes target directory`,
                 );
             }
 

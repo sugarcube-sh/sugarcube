@@ -1,28 +1,30 @@
 .alert[data-tinted-shadows] {
     --tinted-shadows: 1;
     --alert-shadow-mix: 30%;
-    --alert-shadow: 0px 4px 6px -1px
-        color-mix(
-            in oklab,
+    --alert-shadow:
+        0px 4px 6px -1px
             color-mix(
-                    in oklab,
-                    black,
-                    var(--color-fill-loud, var(--color-neutral-fill-loud))
-                        calc(var(--tinted-shadows) * 100%)
-                )
-                var(--alert-shadow-mix),
-            transparent
-        ), 0px 2px 4px -2px
-        color-mix(
-            in oklab,
+                in oklab,
+                color-mix(
+                        in oklab,
+                        black,
+                        var(--color-fill-loud, var(--color-neutral-fill-loud))
+                            calc(var(--tinted-shadows) * 100%)
+                    )
+                    var(--alert-shadow-mix),
+                transparent
+            ),
+        0px 2px 4px -2px
             color-mix(
-                    in oklab,
-                    black,
-                    var(--color-fill-loud, var(--color-neutral-fill-loud))
-                        calc(var(--tinted-shadows) * 100%)
-                )
-                var(--alert-shadow-mix),
-            transparent
-        );
+                in oklab,
+                color-mix(
+                        in oklab,
+                        black,
+                        var(--color-fill-loud, var(--color-neutral-fill-loud))
+                            calc(var(--tinted-shadows) * 100%)
+                    )
+                    var(--alert-shadow-mix),
+                transparent
+            );
     box-shadow: var(--alert-shadow);
 }

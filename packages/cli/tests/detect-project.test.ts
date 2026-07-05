@@ -59,7 +59,7 @@ describe("Project Detection", () => {
     describe("getProjectInfo", () => {
         it("returns src-prefixed paths when src/ exists", () => {
             createTestProject({
-                src: { "main.ts": "" },
+                "src": { "main.ts": "" },
                 "package.json": JSON.stringify({ dependencies: {} }),
             });
 

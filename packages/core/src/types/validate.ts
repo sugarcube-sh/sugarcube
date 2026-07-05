@@ -11,5 +11,5 @@ export type Validator<T extends TokenType> = (
     value: RawTokenValue<T>,
     path: string,
     source: TokenSource,
-    extensions?: { [key: string]: unknown }
+    extensions?: { [key: string]: unknown },
 ) => ValidationError[];

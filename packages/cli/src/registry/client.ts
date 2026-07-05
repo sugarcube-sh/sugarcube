@@ -70,7 +70,7 @@ export async function getRegistryFiles({
     if (type === "component" && framework) {
         selectedFiles = item.files.filter(
             (file): file is typeof file & { framework: Framework } =>
-                "framework" in file && file.framework === framework
+                "framework" in file && file.framework === framework,
         );
     }
 
@@ -89,7 +89,7 @@ export async function getRegistryFiles({
             } catch {
                 throw new CLIError(ERROR_MESSAGES.REGISTRY_FILE_INVALID(file.path));
             }
-        })
+        }),
     );
 
     return {

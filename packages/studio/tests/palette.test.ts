@@ -15,11 +15,11 @@ describe("currentPaletteFromReference", () => {
     it("returns the palette name when a family token references it", () => {
         const { pathIndex, readToken } = setup(
             { path: "color.base.500", value: "{color.blue.500}", type: "color" },
-            { path: "color.blue.500", value: "#0000ff", type: "color" }
+            { path: "color.blue.500", value: "#0000ff", type: "color" },
         );
 
         expect(
-            currentPaletteFromReference(readToken, "color.base", ["blue", "red"], pathIndex)
+            currentPaletteFromReference(readToken, "color.base", ["blue", "red"], pathIndex),
         ).toBe("blue");
     });
 
@@ -31,7 +31,7 @@ describe("currentPaletteFromReference", () => {
         });
 
         expect(
-            currentPaletteFromReference(readToken, "color.base", ["blue", "red"], pathIndex)
+            currentPaletteFromReference(readToken, "color.base", ["blue", "red"], pathIndex),
         ).toBeUndefined();
     });
 
@@ -39,18 +39,18 @@ describe("currentPaletteFromReference", () => {
         const { pathIndex, readToken } = setup();
 
         expect(
-            currentPaletteFromReference(readToken, "color.base", ["blue"], pathIndex)
+            currentPaletteFromReference(readToken, "color.base", ["blue"], pathIndex),
         ).toBeUndefined();
     });
 
     it("skips tokens whose value is a literal and reports the palette from the first ref token", () => {
         const { pathIndex, readToken } = setup(
             { path: "color.base.100", value: "#ffffff", type: "color" },
-            { path: "color.base.500", value: "{color.blue.500}", type: "color" }
+            { path: "color.base.500", value: "{color.blue.500}", type: "color" },
         );
 
         expect(currentPaletteFromReference(readToken, "color.base", ["blue"], pathIndex)).toBe(
-            "blue"
+            "blue",
         );
     });
 });
@@ -60,7 +60,7 @@ describe("familyPaletteSwapUpdates", () => {
         const { pathIndex, readToken } = setup(
             { path: "color.base.500", value: "{color.blue.500}", type: "color" },
             { path: "color.base.900", value: "{color.blue.900}", type: "color" },
-            { path: "color.blue.500", value: "#0000ff", type: "color" }
+            { path: "color.blue.500", value: "#0000ff", type: "color" },
         );
 
         const updates = familyPaletteSwapUpdates(
@@ -68,7 +68,7 @@ describe("familyPaletteSwapUpdates", () => {
             "red",
             ["blue", "red"],
             readToken,
-            pathIndex
+            pathIndex,
         );
 
         expect(updates.sort((a, b) => a.path.localeCompare(b.path))).toEqual([
@@ -89,7 +89,7 @@ describe("familyPaletteSwapUpdates", () => {
             "red",
             ["blue", "red"],
             readToken,
-            pathIndex
+            pathIndex,
         );
 
         expect(updates).toEqual([]);
@@ -107,7 +107,7 @@ describe("familyPaletteSwapUpdates", () => {
             "red",
             ["blue", "red"],
             readToken,
-            pathIndex
+            pathIndex,
         );
 
         expect(updates).toEqual([]);
@@ -126,7 +126,7 @@ describe("familyPaletteSwapUpdates", () => {
                 value: "{color.blue.500}",
                 type: "color",
                 context: "dark",
-            }
+            },
         );
 
         const updates = familyPaletteSwapUpdates(
@@ -134,7 +134,7 @@ describe("familyPaletteSwapUpdates", () => {
             "red",
             ["blue", "red"],
             readToken,
-            pathIndex
+            pathIndex,
         );
 
         const flat = updates.map((u) => `${u.path}|${u.context}|${u.value}`).sort();

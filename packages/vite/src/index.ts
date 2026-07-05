@@ -75,7 +75,7 @@ export interface SugarcubePluginContext {
     getCSS: () => string;
     writeTokenEdits: (
         sourcePath: string,
-        edits: Array<{ jsonPath: string[]; value: unknown }>
+        edits: Array<{ jsonPath: string[]; value: unknown }>,
     ) => Promise<void>;
     rerunPipeline: (modifiedResolved: ResolvedTokens) => Promise<void>;
     reloadConfig: () => Promise<void>;
@@ -219,7 +219,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
         tokens = assignCSSNames(
             groupByContext(trees, resolved),
             config,
-            resolveResult.errors.validation
+            resolveResult.errors.validation,
         );
         I.end("Process Tokens");
     };
@@ -344,7 +344,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
         async writeTokenEdits(
             sourcePath: string,
-            edits: Array<{ jsonPath: string[]; value: unknown }>
+            edits: Array<{ jsonPath: string[]; value: unknown }>,
         ) {
             const fmt = { formattingOptions: { tabSize: 2, insertSpaces: true } };
             let raw = await readFile(sourcePath, "utf-8");
@@ -479,7 +479,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                         // Force UnoCSS to reload its config
                         // Without this, UnoCSS will not get the new rules
                         const unocssPlugin = server.config.plugins.find(
-                            (p) => p.name === "unocss:api"
+                            (p) => p.name === "unocss:api",
                         );
                         if (unocssPlugin?.api) {
                             const unoContext = unocssPlugin.api.getContext();
@@ -504,14 +504,14 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 perf.logModuleGraphStats(
                     server.moduleGraph.idToModuleMap.size,
                     server.moduleGraph.urlToModuleMap.size,
-                    "server start"
+                    "server start",
                 );
 
                 const tokenDirs = ctx.getTokenDirs();
 
                 if (tokenDirs.length === 0) {
                     server.config.logger.warn(
-                        "[sugarcube] Could not determine token directories from config"
+                        "[sugarcube] Could not determine token directories from config",
                     );
                     return;
                 }
@@ -529,7 +529,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                     // Check if it's a JSON file in one of our token directories
                     if (file.endsWith(".json") && tokenDirs.some((dir) => file.includes(dir))) {
                         server.config.logger.info(
-                            "[sugarcube] Design tokens changed, reloading..."
+                            "[sugarcube] Design tokens changed, reloading...",
                         );
 
                         using I = new Instrumentation();
@@ -538,7 +538,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                         perf.logModuleGraphStats(
                             server.moduleGraph.idToModuleMap.size,
                             server.moduleGraph.urlToModuleMap.size,
-                            "before reload"
+                            "before reload",
                         );
 
                         await ctx.reloadTokens();
@@ -551,7 +551,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                         perf.logModuleGraphStats(
                             server.moduleGraph.idToModuleMap.size,
                             server.moduleGraph.urlToModuleMap.size,
-                            "after invalidate"
+                            "after invalidate",
                         );
 
                         I.end("Total File Change Handler");

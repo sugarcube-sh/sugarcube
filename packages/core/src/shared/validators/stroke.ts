@@ -35,8 +35,8 @@ const CustomStrokeSchema: ObjectSchema = {
                                 DimensionSchema.schema,
                                 item,
                                 `${path}.${index}`,
-                                source
-                            )
+                                source,
+                            ),
                         );
                     }
                 });
@@ -77,7 +77,7 @@ export const StrokeStyleSchema: TokenValidationSchema = {
                                     path,
                                     message: ErrorMessages.VALIDATE.INVALID_STROKE_STYLE(
                                         value,
-                                        path
+                                        path,
                                     ),
                                     source,
                                 },
@@ -95,7 +95,7 @@ export const StrokeStyleSchema: TokenValidationSchema = {
 export function validateStrokeStyle(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     return validateSchema(StrokeStyleSchema.schema, value, path, source);
 }

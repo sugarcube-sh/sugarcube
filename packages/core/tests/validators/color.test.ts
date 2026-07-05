@@ -6,10 +6,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("color validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/color/valid.json"
+        "tokens/validators/color/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/color/invalid.json"
+        "tokens/validators/color/invalid.json",
     );
 
     describe("valid cases", () => {
@@ -126,7 +126,7 @@ describe("color validator", () => {
             const errors = ValidationHelper.validateToken(validateColor, token);
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                "Expected string or object, received number at color.invalid.type"
+                "Expected string or object, received number at color.invalid.type",
             );
         });
 
@@ -143,7 +143,7 @@ describe("color validator", () => {
             const errors = ValidationHelper.validateToken(validateColor, token);
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                "Missing required property 'colorSpace' at color.invalid.w3c.missing-colorspace"
+                "Missing required property 'colorSpace' at color.invalid.w3c.missing-colorspace",
             );
         });
 
@@ -153,7 +153,7 @@ describe("color validator", () => {
             const errors = ValidationHelper.validateToken(validateColor, token);
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                "Missing required property 'components' at color.invalid.w3c.missing-components"
+                "Missing required property 'components' at color.invalid.w3c.missing-components",
             );
         });
 
@@ -177,7 +177,7 @@ describe("color validator", () => {
             const errors = ValidationHelper.validateToken(validateColor, token);
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                "Expected number, received string at color.invalid.w3c.invalid-alpha.alpha"
+                "Expected number, received string at color.invalid.w3c.invalid-alpha.alpha",
             );
         });
 
@@ -187,7 +187,7 @@ describe("color validator", () => {
             const errors = ValidationHelper.validateToken(validateColor, token);
             expect(errors).toHaveLength(3);
             expect(errors[0]?.message).toContain(
-                "Invalid color at color.invalid.w3c.oklch-out-of-range:"
+                "Invalid color at color.invalid.w3c.oklch-out-of-range:",
             );
         });
 
@@ -197,7 +197,7 @@ describe("color validator", () => {
             const errors = ValidationHelper.validateToken(validateColor, token);
             expect(errors).toHaveLength(3);
             expect(errors[0]?.message).toContain(
-                "Invalid color at color.invalid.w3c.display-p3-out-of-range:"
+                "Invalid color at color.invalid.w3c.display-p3-out-of-range:",
             );
         });
 
@@ -207,7 +207,7 @@ describe("color validator", () => {
             const errors = ValidationHelper.validateToken(validateColor, token);
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toContain(
-                "Invalid color at color.invalid.w3c.alpha-out-of-range:"
+                "Invalid color at color.invalid.w3c.alpha-out-of-range:",
             );
         });
     });

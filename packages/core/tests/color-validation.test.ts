@@ -108,7 +108,7 @@ describe("DTCG Color Support", () => {
                 components: [0.7, 0.3, 328] as [number, number, number],
             });
             expect(errors).toContain(
-                'Unsupported colorSpace: "rgb". Supported color spaces: oklch, display-p3, srgb, hsl.'
+                'Unsupported colorSpace: "rgb". Supported color spaces: oklch, display-p3, srgb, hsl.',
             );
         });
 
@@ -128,7 +128,7 @@ describe("DTCG Color Support", () => {
             expect(errors).toContain("OKLCH Lightness (L) must be between 0 and 1 or 'none'.");
             expect(errors).toContain("OKLCH Chroma (C) must be >= 0 or 'none'.");
             expect(errors).toContain(
-                "OKLCH Hue (H) must be between 0 and 360 (exclusive) or 'none'."
+                "OKLCH Hue (H) must be between 0 and 360 (exclusive) or 'none'.",
             );
         });
 
@@ -139,10 +139,10 @@ describe("DTCG Color Support", () => {
             });
             expect(errors).toContain("Display P3 Red component must be between 0 and 1 or 'none'.");
             expect(errors).toContain(
-                "Display P3 Green component must be between 0 and 1 or 'none'."
+                "Display P3 Green component must be between 0 and 1 or 'none'.",
             );
             expect(errors).toContain(
-                "Display P3 Blue component must be between 0 and 1 or 'none'."
+                "Display P3 Blue component must be between 0 and 1 or 'none'.",
             );
         });
 
@@ -334,7 +334,7 @@ describe("DTCG Color Support", () => {
             it.each(nativeCases)("converts $name without featureValues", ({ color, expected }) => {
                 const result = renderColor(
                     color as DTCGColorValue,
-                    createOptions({ colorFallbackStrategy: "native" })
+                    createOptions({ colorFallbackStrategy: "native" }),
                 );
                 expect(result.value).toBe(expected);
                 expect(result.featureValues).toBeUndefined();
@@ -343,7 +343,7 @@ describe("DTCG Color Support", () => {
             it("passes through hex strings", () => {
                 const result = renderColor(
                     "#ff0000",
-                    createOptions({ colorFallbackStrategy: "native" })
+                    createOptions({ colorFallbackStrategy: "native" }),
                 );
                 expect(result.value).toBe("#ff0000");
             });
@@ -351,7 +351,7 @@ describe("DTCG Color Support", () => {
             it("passes through references", () => {
                 const result = renderColor(
                     "{color.primary}",
-                    createOptions({ colorFallbackStrategy: "native" })
+                    createOptions({ colorFallbackStrategy: "native" }),
                 );
                 expect(result.value).toBe("{color.primary}");
             });
@@ -367,7 +367,7 @@ describe("DTCG Color Support", () => {
                 };
                 const result = renderColor(
                     color,
-                    createOptions({ colorFallbackStrategy: "polyfill" })
+                    createOptions({ colorFallbackStrategy: "polyfill" }),
                 );
                 expect(result.value).toBe("#ff00ff");
                 expect(result.featureValues?.[0]?.query).toBe("@supports (color: oklch(0 0 0))");
@@ -382,11 +382,11 @@ describe("DTCG Color Support", () => {
                 };
                 const result = renderColor(
                     color,
-                    createOptions({ colorFallbackStrategy: "polyfill" })
+                    createOptions({ colorFallbackStrategy: "polyfill" }),
                 );
                 expect(result.value).toBe("#e63946");
                 expect(result.featureValues?.[0]?.query).toBe(
-                    "@supports (color: color(display-p3 1 1 1))"
+                    "@supports (color: color(display-p3 1 1 1))",
                 );
                 expect(result.featureValues?.[0]?.value).toBe("color(display-p3 0.9 0.2 0.1)");
             });
@@ -398,7 +398,7 @@ describe("DTCG Color Support", () => {
                     alpha: 0.8,
                 };
                 expect(() =>
-                    renderColor(color, createOptions({ colorFallbackStrategy: "polyfill" }))
+                    renderColor(color, createOptions({ colorFallbackStrategy: "polyfill" })),
                 ).toThrow("oklch colors require a 'hex' fallback when using 'polyfill' strategy");
             });
 
@@ -410,7 +410,7 @@ describe("DTCG Color Support", () => {
                 };
                 const result = renderColor(
                     color,
-                    createOptions({ colorFallbackStrategy: "polyfill" })
+                    createOptions({ colorFallbackStrategy: "polyfill" }),
                 );
                 expect(result.value).toBe("rgb(204 102 51 / 0.9)");
                 expect(result.featureValues).toBeUndefined();
@@ -424,7 +424,7 @@ describe("DTCG Color Support", () => {
                 };
                 const result = renderColor(
                     color,
-                    createOptions({ colorFallbackStrategy: "polyfill" })
+                    createOptions({ colorFallbackStrategy: "polyfill" }),
                 );
                 expect(result.value).toBe("hsl(270 80% 60% / 0.7)");
                 expect(result.featureValues).toBeUndefined();
@@ -433,7 +433,7 @@ describe("DTCG Color Support", () => {
             it("passes through hex strings without polyfill", () => {
                 const result = renderColor(
                     "#ff0000",
-                    createOptions({ colorFallbackStrategy: "polyfill" })
+                    createOptions({ colorFallbackStrategy: "polyfill" }),
                 );
                 expect(result.value).toBe("#ff0000");
                 expect(result.featureValues).toBeUndefined();

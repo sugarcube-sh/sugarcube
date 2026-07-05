@@ -105,7 +105,7 @@ function embeddedSave(bundle: SaveBundle, parentOrigin: string): Promise<SaveRes
                     files: bundle.files,
                 },
             },
-            parentOrigin
+            parentOrigin,
         );
     });
 }

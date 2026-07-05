@@ -37,7 +37,7 @@ const buildDoc = {
     }),
 
     withSets: (
-        sets: Array<{ name: string; tokens: Record<string, unknown> }>
+        sets: Array<{ name: string; tokens: Record<string, unknown> }>,
     ): ResolverDocument => ({
         version: "2025.10",
         resolutionOrder: sets.map(({ name, tokens }) => ({
@@ -53,7 +53,7 @@ const buildDoc = {
             name: string;
             default?: string;
             contexts: Record<string, Record<string, unknown>[]>;
-        }
+        },
     ): ResolverDocument => ({
         version: "2025.10",
         resolutionOrder: [
@@ -66,7 +66,7 @@ const buildDoc = {
                     Object.entries(modifier.contexts).map(([key, values]) => [
                         key,
                         values.map((v) => v as TokenGroup),
-                    ])
+                    ]),
                 ),
             },
         ],
@@ -81,7 +81,7 @@ describe("processResolutionOrder", () => {
                     color: { primary: { $type: "color", $value: "#3b82f6" } },
                 }),
                 fixturesPath,
-                {}
+                {},
             );
 
             expect(result.errors).toHaveLength(0);
@@ -117,7 +117,7 @@ describe("processResolutionOrder", () => {
 
         it("processes file references", async () => {
             const parseResult = await parseResolverDocument(
-                resolve(fixturesPath, "with-file-refs.resolver.json")
+                resolve(fixturesPath, "with-file-refs.resolver.json"),
             );
 
             const result = await processResolutionOrder(parseResult.document, fixturesPath, {
@@ -144,7 +144,7 @@ describe("processResolutionOrder", () => {
                     },
                 ]),
                 fixturesPath,
-                {}
+                {},
             );
 
             expect(result.errors).toHaveLength(0);
@@ -166,7 +166,7 @@ describe("processResolutionOrder", () => {
                         light: [],
                         dark: [{ color: { background: { $type: "color", $value: "#1a1a1a" } } }],
                     },
-                }
+                },
             );
 
             const lightResult = await processResolutionOrder(doc, fixturesPath, { theme: "light" });
@@ -188,7 +188,7 @@ describe("processResolutionOrder", () => {
                         light: [],
                         dark: [{ color: { bg: { $type: "color", $value: "#dark" } } }],
                     },
-                }
+                },
             );
 
             const result = await processResolutionOrder(doc, fixturesPath, {});
@@ -280,7 +280,7 @@ describe("processResolutionOrder", () => {
                     },
                 ]),
                 fixturesPath,
-                {}
+                {},
             );
 
             expect(result.errors).toHaveLength(0);
@@ -337,7 +337,7 @@ describe("processResolutionOrder", () => {
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]?.message).toBe(
-                ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT("theme", ["light", "dark"])
+                ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT("theme", ["light", "dark"]),
             );
         });
 
@@ -354,7 +354,7 @@ describe("processResolutionOrder", () => {
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]?.message).toBe(
-                ErrorMessages.RESOLVER.EXTERNAL_FILE_NOT_FOUND(expectedPath)
+                ErrorMessages.RESOLVER.EXTERNAL_FILE_NOT_FOUND(expectedPath),
             );
         });
 
@@ -371,7 +371,7 @@ describe("processResolutionOrder", () => {
 
             expect(result.errors).toHaveLength(1);
             expect(result.errors[0]?.message).toBe(
-                ErrorMessages.RESOLVER.RESOLVER_AS_TOKEN_SOURCE(expectedPath)
+                ErrorMessages.RESOLVER.RESOLVER_AS_TOKEN_SOURCE(expectedPath),
             );
         });
     });

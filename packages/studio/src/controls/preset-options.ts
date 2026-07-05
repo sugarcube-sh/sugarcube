@@ -11,7 +11,7 @@ export type ResolvedOption = {
 export function resolveOptions(
     options: PresetBinding["options"],
     pathIndex: PathIndex,
-    baseline: ResolvedTokens
+    baseline: ResolvedTokens,
 ): ResolvedOption[] {
     if (typeof options === "string") {
         return resolveGlobOptions(options, pathIndex, baseline);
@@ -26,7 +26,7 @@ export function resolveOptions(
 function resolveGlobOptions(
     pattern: string,
     pathIndex: PathIndex,
-    baseline: ResolvedTokens
+    baseline: ResolvedTokens,
 ): ResolvedOption[] {
     const getToken = (path: string) => pathIndex.readValue(baseline, path);
     const matches = pathIndex.matching(pattern);

@@ -15,7 +15,7 @@ import { Tabs, TabsList, TabsPanel, TabsTrigger } from "@/registry/components/ta
 
 export function TabsDemo() {
     return (
-        <div className="flow" style={{ "maxWidth": "440px" }}>
+        <div className="flow" style={{ maxWidth: "440px" }}>
             <Tabs className="flow flow-space-xs" defaultValue="account">
                 <TabsList>
                     <TabsTrigger value="account">Account</TabsTrigger>

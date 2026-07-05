@@ -9,7 +9,7 @@ function scaleAuthoringGroup(scale: unknown): TokenGroup {
 
 const buildTree = (
     tokens: TokenTree["tokens"],
-    options: { sourcePath?: string; context?: string } = {}
+    options: { sourcePath?: string; context?: string } = {},
 ): TokenTree => ({
     sourcePath: options.sourcePath ?? "test.json",
     ...(options.context && { context: options.context }),
@@ -151,7 +151,7 @@ describe("scale extension - pipeline integration", () => {
                         step: scaleAuthoringGroup(exponentialScale),
                     },
                 },
-                { sourcePath: "size.json" }
+                { sourcePath: "size.json" },
             ),
             buildTree(
                 {
@@ -162,7 +162,7 @@ describe("scale extension - pipeline integration", () => {
                         },
                     },
                 },
-                { sourcePath: "typography.json" }
+                { sourcePath: "typography.json" },
             ),
         ];
 
@@ -177,7 +177,7 @@ describe("scale extension - pipeline integration", () => {
         const trees = [
             buildTree({
                 size: {
-                    step: scaleAuthoringGroup(exponentialScale),
+                    "step": scaleAuthoringGroup(exponentialScale),
                     "h1-custom": {
                         $type: "dimension",
                         $value: { value: 3, unit: "rem" },

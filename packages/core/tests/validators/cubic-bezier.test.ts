@@ -6,10 +6,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("cubic bezier validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/cubic-bezier/valid.json"
+        "tokens/validators/cubic-bezier/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/cubic-bezier/invalid.json"
+        "tokens/validators/cubic-bezier/invalid.json",
     );
 
     describe("valid cases", () => {

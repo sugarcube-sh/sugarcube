@@ -41,7 +41,7 @@ export function ColorGrid({
             el.focus();
             onSelect(option.path);
         },
-        [cells, onSelect]
+        [cells, onSelect],
     );
 
     const findActiveCell = useCallback((): [number, number] | null => {
@@ -68,7 +68,7 @@ export function ColorGrid({
             }
             return null;
         },
-        [cells, rows.length, colCount]
+        [cells, rows.length, colCount],
     );
 
     const handleKeyDown = useCallback(
@@ -136,7 +136,7 @@ export function ColorGrid({
             initialPath,
             cells,
             colCount,
-        ]
+        ],
     );
 
     const handlePick = useCallback(
@@ -144,7 +144,7 @@ export function ColorGrid({
             onSelect(path);
             onCommit();
         },
-        [onSelect, onCommit]
+        [onSelect, onCommit],
     );
 
     return (

@@ -49,7 +49,7 @@ export class PathIndex {
         resolved: ResolvedTokens,
         barePath: string,
         newValue: unknown,
-        context?: string
+        context?: string,
     ): ResolvedTokens {
         const entries = this.index.get(barePath);
         if (!entries || entries.length === 0) return resolved;

@@ -6,12 +6,12 @@ export default defineConfig({
     cube: "src/styles",
     utilities: {
         classes: {
-            padding: {
+            "padding": {
                 source: "space.*",
                 prefix: "p",
                 directions: ["all"],
             },
-            margin: {
+            "margin": {
                 source: "space.*",
                 prefix: "m",
                 directions: ["all"],
@@ -40,11 +40,11 @@ export default defineConfig({
                 source: "container.*",
                 prefix: "wrapper-max-width",
             },
-            gap: {
+            "gap": {
                 source: "space.*",
                 prefix: "gap",
             },
-            color: {
+            "color": {
                 source: "color.*",
                 prefix: "text",
                 stripDuplicates: true,

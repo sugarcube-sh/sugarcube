@@ -44,7 +44,7 @@ function buildNameLookup(tokens: RenderableTokens): Map<string, string> {
 // Preserves numbers as-is since they're valid CSS values (e.g. for font weights).
 function substituteReferencesAsCSSVars(
     value: unknown,
-    nameLookup: Map<string, string>
+    nameLookup: Map<string, string>,
 ): string | number {
     if (typeof value === "number") {
         return value;
@@ -63,7 +63,7 @@ function substituteReferencesAsCSSVars(
 function generateSingleVariable(
     token: RenderableToken<TokenType>,
     nameLookup: Map<string, string>,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ): CSSVariable | undefined {
     const props = renderCSS(token, options);
     if (!("value" in props)) {
@@ -79,7 +79,7 @@ function generateSingleVariable(
 function generateTypographyVariables(
     token: RenderableToken<"typography">,
     nameLookup: Map<string, string>,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ): CSSVariable[] {
     return Object.entries(renderCSS(token, options))
         .filter(([_, value]) => value !== undefined)
@@ -95,7 +95,7 @@ function generateTypographyVariables(
 function generateFeatureVariables(
     token: RenderableToken<TokenType>,
     nameLookup: Map<string, string>,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ): CSSFeatureBlock[] {
     if (token.$type !== "color") return [];
 
@@ -148,7 +148,7 @@ function generateCSSBlock(block: { selector: string | string[]; vars: CSSVariabl
 function generateVariablesForToken<T extends TokenType>(
     token: RenderableToken<T>,
     nameLookup: Map<string, string>,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ): CSSVarSet {
     if (isTypographyToken(token)) {
         return {
@@ -169,7 +169,7 @@ function generateVariablesForToken<T extends TokenType>(
  */
 function generateVariablesFromTokens(
     tokens: RenderableTokens,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ): {
     vars: CSSVariable[];
     features: CSSFeatureBlock[];
@@ -180,7 +180,7 @@ function generateVariablesFromTokens(
     const varSets = Object.entries(tokens)
         .filter(([key, token]) => key !== "$extensions" && "$type" in token)
         .map(([_, token]) =>
-            generateVariablesForToken(token as RenderableToken<TokenType>, nameLookup, options)
+            generateVariablesForToken(token as RenderableToken<TokenType>, nameLookup, options),
         );
 
     const vars = varSets.flatMap((set) => set.vars);
@@ -209,7 +209,7 @@ function generateVariablesFromTokens(
 function generateCSSForPermutation(
     perm: Permutation,
     vars: CSSVariable[],
-    features: CSSFeatureBlock[]
+    features: CSSFeatureBlock[],
 ): string {
     if (vars.length === 0 && features.length === 0) {
         return "";
@@ -266,7 +266,7 @@ function deltaVars(vars: CSSVariable[], baseVars: CSSVariable[]): CSSVariable[] 
 export async function formatCSSVariables(
     tokens: NormalizedRenderableTokens,
     config: InternalConfig,
-    permutations: Permutation[]
+    permutations: Permutation[],
 ): Promise<CSSGenerationResult> {
     if (!permutations || permutations.length === 0) {
         return { output: [] };

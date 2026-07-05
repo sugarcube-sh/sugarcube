@@ -9,14 +9,14 @@ import type { NormalizedRenderableTokens } from "../src/types/render.js";
 import { createRenderableToken } from "./__fixtures__/renderable-tokens.js";
 
 const buildTokens = (
-    tokens: Record<string, ReturnType<typeof createRenderableToken>>
+    tokens: Record<string, ReturnType<typeof createRenderableToken>>,
 ): NormalizedRenderableTokens => ({ default: tokens });
 
 const sorted = (classes: string[]) => [...classes].sort();
 
 const resolves = (
     rules: ReturnType<typeof convertConfigToUnoRules>,
-    className: string
+    className: string,
 ): boolean => {
     for (const [pattern, handler] of rules) {
         const match = className.match(pattern);
@@ -34,14 +34,14 @@ describe("enumerateSafelistClasses", () => {
         });
 
         expect(
-            enumerateSafelistClasses({ color: { source: "color.*", prefix: "text" } }, tokens)
+            enumerateSafelistClasses({ color: { source: "color.*", prefix: "text" } }, tokens),
         ).toEqual([]);
 
         expect(
             enumerateSafelistClasses(
                 { color: { source: "color.*", prefix: "text", safelist: false } },
-                tokens
-            )
+                tokens,
+            ),
         ).toEqual([]);
     });
 
@@ -62,7 +62,7 @@ describe("enumerateSafelistClasses", () => {
 
         const result = enumerateSafelistClasses(
             { "background-color": { source: "color.*", prefix: "bg", safelist: true } },
-            tokens
+            tokens,
         );
 
         expect(sorted(result)).toEqual(["bg-primary", "bg-secondary"]);
@@ -83,7 +83,7 @@ describe("enumerateSafelistClasses", () => {
                     safelist: ["primary", "danger"],
                 },
             },
-            tokens
+            tokens,
         );
 
         expect(sorted(result)).toEqual(["bg-danger", "bg-primary"]);
@@ -107,11 +107,11 @@ describe("enumerateSafelistClasses", () => {
                     safelist: true,
                 },
             },
-            tokens
+            tokens,
         );
 
         expect(sorted(result)).toEqual(
-            sorted(["p-sm", "pt-sm", "pr-sm", "pb-sm", "pl-sm", "px-sm", "py-sm"])
+            sorted(["p-sm", "pt-sm", "pr-sm", "pb-sm", "pl-sm", "px-sm", "py-sm"]),
         );
     });
 
@@ -132,7 +132,7 @@ describe("enumerateSafelistClasses", () => {
                     safelist: true,
                 },
             },
-            tokens
+            tokens,
         );
 
         expect(result).toEqual(["text-muted"]);

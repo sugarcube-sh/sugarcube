@@ -33,7 +33,7 @@ export function PaletteSwapControl({
 
     const options = useMemo(
         () => buildOptions(palettes, colorScale, variableName),
-        [palettes, colorScale, variableName]
+        [palettes, colorScale, variableName],
     );
 
     const handleChange = useCallback(
@@ -41,7 +41,7 @@ export function PaletteSwapControl({
             const readToken = tokenStore.getState().getToken;
             setTokens(familyPaletteSwapUpdates(family, newPalette, palettes, readToken, pathIndex));
         },
-        [tokenStore, family, palettes, setTokens, pathIndex]
+        [tokenStore, family, palettes, setTokens, pathIndex],
     );
 
     return (
@@ -54,7 +54,7 @@ export function PaletteSwapControl({
 function buildOptions(
     palettes: readonly string[],
     colorScale: ColorScaleConfig,
-    variableName: (path: string) => string
+    variableName: (path: string) => string,
 ): PaletteOption[] {
     return palettes.map((palette) => ({
         name: palette,

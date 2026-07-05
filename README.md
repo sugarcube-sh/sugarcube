@@ -29,7 +29,7 @@ This walks you through setup: starter tokens, CUBE CSS, components, and Vite plu
 import sugarcube from "@sugarcube-sh/vite";
 
 export default {
-  plugins: [sugarcube()],
+    plugins: [sugarcube()],
 };
 ```
 
@@ -47,11 +47,11 @@ Or add it to your npm scripts:
 
 ```json
 {
-  "scripts": {
-    "styles:generate": "sugarcube generate",
-    "styles:generate:watch": "sugarcube generate --watch",
-    "tokens:validate": "sugarcube validate"
-  }
+    "scripts": {
+        "styles:generate": "sugarcube generate",
+        "styles:generate:watch": "sugarcube generate --watch",
+        "tokens:validate": "sugarcube validate"
+    }
 }
 ```
 
@@ -61,11 +61,11 @@ Or add it to your npm scripts:
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
-| [`@sugarcube-sh/cli`](https://npmx.dev/package/@sugarcube-sh/cli) | CLI for initialization, generation, and components |
-| [`@sugarcube-sh/vite`](https://npmx.dev/package/@sugarcube-sh/vite) | Vite plugin with HMR |
-| [`@sugarcube-sh/core`](https://npmx.dev/package/@sugarcube-sh/core) | Core token processing |
+| Package                                                             | Description                                        |
+| ------------------------------------------------------------------- | -------------------------------------------------- |
+| [`@sugarcube-sh/cli`](https://npmx.dev/package/@sugarcube-sh/cli)   | CLI for initialization, generation, and components |
+| [`@sugarcube-sh/vite`](https://npmx.dev/package/@sugarcube-sh/vite) | Vite plugin with HMR                               |
+| [`@sugarcube-sh/core`](https://npmx.dev/package/@sugarcube-sh/core) | Core token processing                              |
 
 ## License
 

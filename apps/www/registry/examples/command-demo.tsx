@@ -13,7 +13,7 @@ import {
 
 export function CommandDemo() {
     return (
-        <Command style={{ "width": "450px" } as React.CSSProperties}>
+        <Command style={{ width: "450px" } as React.CSSProperties}>
             <CommandInput placeholder="Type a command or search..." />
             <CommandList>
                 <CommandEmpty>No results found.</CommandEmpty>

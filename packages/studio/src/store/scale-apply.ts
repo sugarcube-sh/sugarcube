@@ -26,7 +26,7 @@ export function applyScaleEdits(
     linkBindings: Record<string, LinkBindingMeta>,
     baseline: TokenSnapshot,
     pathIndex: PathIndex,
-    context: string
+    context: string,
 ): ResolvedTokens {
     let next = resolved;
 
@@ -49,7 +49,7 @@ export function applyScaleEdits(
                 spread,
                 pathIndex,
                 context,
-                edit.overrides
+                edit.overrides,
             );
         } else if (edit.kind === "scale") {
             next = materializeScale(next, edit.scale, meta.parentPath, pathIndex, context);
@@ -64,7 +64,7 @@ export function applyScaleEdits(
             linkMeta.bindingToken,
             baseline.resolved,
             pathIndex,
-            context
+            context,
         );
 
         // Containers track the source's ratio (proportional shape), not its
@@ -87,7 +87,7 @@ export function applyScaleEdits(
             factor,
             enabled,
             pathIndex,
-            context
+            context,
         );
     }
 
@@ -99,7 +99,7 @@ export function materializeScale(
     scale: ScaleExtension,
     parentPath: string,
     pathIndex: PathIndex,
-    context: string
+    context: string,
 ): ResolvedTokens {
     const steps = calculateScale(scale);
     const updates: ResolvedTokens = {};
@@ -119,7 +119,7 @@ export function materializeScale(
 function buildScaleStepToken(
     existing: ResolvedTokens[string] | undefined,
     min: Dim,
-    max: Dim
+    max: Dim,
 ): ResolvedTokens[string] | null {
     if (!isResolvedToken(existing)) return null;
 

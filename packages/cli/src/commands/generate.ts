@@ -207,7 +207,7 @@ function formatOutputPaths(output: CSSFileOutput): string[] {
 
 async function generateSugarcubeUtilities(
     tokens: NormalizedRenderableTokens,
-    config: InternalConfig
+    config: InternalConfig,
 ): Promise<CSSFileOutput> {
     if (!config.utilities.classes || Object.keys(config.utilities.classes).length === 0) {
         return [];
@@ -276,7 +276,7 @@ async function generateAllCSS(
     resolved: ResolvedTokens,
     config: InternalConfig,
     permutations: Permutation[],
-    options: GenerateAllCSSOptions = {}
+    options: GenerateAllCSSOptions = {},
 ): Promise<CSSFileOutput> {
     const output: CSSFileOutput = [];
 
@@ -312,7 +312,7 @@ type GenerationResult = {
 
 async function runGeneration(
     config: InternalConfig,
-    options: GenerateAllCSSOptions = {}
+    options: GenerateAllCSSOptions = {},
 ): Promise<GenerationResult> {
     clearMatchCache();
     const { trees, resolved, warnings, permutations } = await prepareTokens(config);
@@ -382,7 +382,7 @@ async function runWatchMode(config: InternalConfig, options: GenerateFlags): Pro
             const regenStart = performance.now();
             const { output: regenOutput, warnings: regenWarnings } = await runGeneration(
                 config,
-                generateOptions
+                generateOptions,
             );
             const regenDurationMs = Math.round(performance.now() - regenStart);
 
@@ -390,7 +390,7 @@ async function runWatchMode(config: InternalConfig, options: GenerateFlags): Pro
             const changedFile = changedPath.split("/").pop() ?? changedPath;
             const outputFiles = formatOutputPaths(regenOutput);
             console.log(
-                `${prefix} ${color.dim(changedFile)} → ${outputFiles.join(", ")} ${color.dim(`(${regenDurationMs}ms)`)}`
+                `${prefix} ${color.dim(changedFile)} → ${outputFiles.join(", ")} ${color.dim(`(${regenDurationMs}ms)`)}`,
             );
         },
         onError: (error: Error) => {
@@ -398,7 +398,7 @@ async function runWatchMode(config: InternalConfig, options: GenerateFlags): Pro
         },
         onReady: (tokenFileCount: number) => {
             console.log(
-                `${prefix} Watching ${tokenFileCount} token file${tokenFileCount === 1 ? "" : "s"} + markup files...`
+                `${prefix} Watching ${tokenFileCount} token file${tokenFileCount === 1 ? "" : "s"} + markup files...`,
             );
         },
     });
@@ -421,24 +421,24 @@ export const generate = new Command()
     .option("--resolver <path>", "Path to token resolver file (.resolver.json)")
     .option(
         "--variables <path>",
-        "Output path for CSS variables (default: 'src/styles/tokens.css')"
+        "Output path for CSS variables (default: 'src/styles/tokens.css')",
     )
     .option(
         "--utilities <path>",
-        "Output path for utility classes (default: 'src/styles/utilities.css')"
+        "Output path for utility classes (default: 'src/styles/utilities.css')",
     )
     .option("--fluid-min <number>", "Minimum viewport width for fluid scaling (default: 320)")
     .option("--fluid-max <number>", "Maximum viewport width for fluid scaling (default: 1200)")
     .option(
         "--color-fallback <strategy>",
-        "Color fallback strategy: 'native' or 'polyfill' (default: native)"
+        "Color fallback strategy: 'native' or 'polyfill' (default: native)",
     )
     .option("--prefix <string>", "Prefix prepended to every generated CSS variable name")
     .option(
         "--input <modifier=value>",
         "Select a modifier context for this build (repeatable)",
         (value: string, previous: string[]) => previous.concat([value]),
-        [] as string[]
+        [] as string[],
     )
     .option("--selector <selector>", "CSS selector for --input output (default: ':root')")
     .option("--variables-only", "Generate only CSS variables, skip utilities")

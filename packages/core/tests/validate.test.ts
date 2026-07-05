@@ -38,7 +38,7 @@ describe("validate", () => {
             const errors = validate(tokens);
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY("$value", "color.invalid")
+                ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY("$value", "color.invalid"),
             );
         });
 
@@ -59,7 +59,7 @@ describe("validate", () => {
             const errors = validate(tokens);
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                ErrorMessages.VALIDATE.UNKNOWN_TOKEN_TYPE("not-a-real-type", "unknown.invalid")
+                ErrorMessages.VALIDATE.UNKNOWN_TOKEN_TYPE("not-a-real-type", "unknown.invalid"),
             );
         });
     });
