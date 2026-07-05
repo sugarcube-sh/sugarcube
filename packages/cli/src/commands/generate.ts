@@ -372,10 +372,7 @@ async function runWatchMode(config: InternalConfig, options: GenerateFlags): Pro
     };
 
     const startTime = performance.now();
-    const { output: initialOutput, warnings: initialWarnings } = await runGeneration(
-        config,
-        generateOptions
-    );
+    const { warnings: initialWarnings } = await runGeneration(config, generateOptions);
     const durationMs = Math.round(performance.now() - startTime);
     logWarnings(initialWarnings);
     console.log(`${prefix} Generated in ${durationMs}ms`);

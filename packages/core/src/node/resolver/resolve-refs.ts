@@ -298,7 +298,7 @@ export async function resolveSources(
  * Per DTCG spec section 4.2.2: shallow merge (objects/arrays are NOT deep-merged).
  */
 function applyExtending(content: TokenGroup, refObject: ReferenceObject): TokenGroup {
-    const { $ref, ...extensions } = refObject;
+    const { $ref: _$ref, ...extensions } = refObject;
     if (Object.keys(extensions).length === 0) return content;
     return { ...content, ...extensions } as TokenGroup;
 }

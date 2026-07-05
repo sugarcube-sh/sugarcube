@@ -43,8 +43,7 @@ export async function runCube(options: RunCubeOptions = {}): Promise<void> {
     const warningMessage = formatOverwriteWarnings(warnings);
     if (warningMessage && !options.force && !options.silent) {
         log.space(1);
-        const warningBox = warningBoxWithBadge(warningMessage, {});
-        warningBox;
+        warningBoxWithBadge(warningMessage, {});
         const confirmed = await confirmOverwrite("Continue?", false, {
             exitOnDecline: !options.continueOnDecline,
         });

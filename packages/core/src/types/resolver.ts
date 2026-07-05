@@ -111,32 +111,6 @@ export type ResolverError = BaseError & {
     path: string;
 };
 
-/**
- * Resolved content from a reference.
- */
-type ResolvedReference = {
-    /** The resolved content */
-    content: TokenGroup | SetDefinition | ModifierDefinition | ResolverDocument;
-    /** Path to the source (file path or "#" for same-document) */
-    sourcePath: string;
-    /** Type of source */
-    sourceType: "document" | "file" | "remote";
-};
-
-/**
- * Result of processing the resolution order.
- */
-type ResolutionResult = {
-    /** The merged token structure */
-    tokens: TokenGroup;
-    /** Source information for debugging */
-    sources: Array<{
-        path: string;
-        type: "set" | "modifier";
-        name: string;
-        context?: string;
-    }>;
-};
 
 /**
  * Input values for modifier contexts.

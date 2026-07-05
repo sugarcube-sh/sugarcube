@@ -44,7 +44,7 @@ export async function getRegistryIndex() {
     const result = await fetchRegistry(url);
     try {
         return registryIndexSchema.parse(result);
-    } catch (error) {
+    } catch {
         throw new CLIError(ERROR_MESSAGES.REGISTRY_INVALID_DATA(url));
     }
 }
@@ -86,7 +86,7 @@ export async function getRegistryFiles({
                     framework: "framework" in file ? file.framework : undefined,
                     content: parsed.content,
                 };
-            } catch (error) {
+            } catch {
                 throw new CLIError(ERROR_MESSAGES.REGISTRY_FILE_INVALID(file.path));
             }
         })

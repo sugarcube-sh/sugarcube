@@ -159,7 +159,7 @@ function expandGroupRef(
     rootDocument: TokenGroup,
     context: ExpandContext
 ): GroupResult {
-    const { $ref, ...overrides } = value;
+    const { $ref: _$ref, ...overrides } = value;
     const { result: expandedGroup, errors } = expandRefsInGroup(resolved, rootDocument, context);
     return { result: { ...expandedGroup, ...overrides } as TokenGroup, errors };
 }

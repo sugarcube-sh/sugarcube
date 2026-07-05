@@ -9,7 +9,7 @@ export function extractSourceCode(filePath: string) {
     try {
         const content = fs.readFileSync(fullPath, "utf-8");
         return content;
-    } catch (error) {
+    } catch {
         console.warn(`Could not read file: ${fullPath}`);
         return "";
     }

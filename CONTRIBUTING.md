@@ -35,16 +35,15 @@ pnpm test
 | `pnpm test` | Run all tests |
 | `pnpm dev` | Run dev mode (core + vite) |
 | `pnpm dev:www` | Run the docs site locally |
-| `pnpm lint` | Lint with Biome |
-| `pnpm format` | Format with Biome |
+| `pnpm lint` | Lint with Oxlint |
+| `pnpm lint:fix` | Fix linting errors with Oxlint |
 | `pnpm type-check` | Run TypeScript checks |
 
 ### Code Style
 
-We use [Biome](https://biomejs.dev/) for formatting and linting. Run before submitting:
+We use [Oxlint](https://oxlint.dev/) for linting. Run before submitting:
 
 ```bash
-pnpm format
 pnpm lint
 ```
 

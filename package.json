@@ -22,10 +22,9 @@
         "deploy:www": "pnpm --filter=www run deploy",
         "dev": "pnpm --filter=!@sugarcube-sh/cli --filter=!studio -r --parallel dev",
         "dev:www": "pnpm --filter=www dev",
-        "format": "biome check --write",
         "knip": "knip",
-        "lint": "biome lint --write --unsafe",
-        "lint:check": "biome check",
+        "lint": "oxlint",
+        "lint:fix": "oxlint --fix",
         "test": "pnpm -r --if-present test",
         "type-check": "pnpm -r --if-present type-check"
     },
@@ -34,16 +33,16 @@
     },
     "lint-staged": {
         "*.{js,ts,mjs,cjs,tsx,jsx,json,jsonc,css,astro}": [
-            "biome check --write"
+            "pnpm run lint"
         ]
     },
     "devDependencies": {
-        "@biomejs/biome": "1.9.4",
         "@changesets/cli": "^2.27.9",
         "@types/node": "^24.9.2",
         "@vitest/coverage-istanbul": "^4.0.18",
         "knip": "^5.59.1",
         "lint-staged": "^16.2.7",
+        "oxlint": "^1.72.0",
         "simple-git-hooks": "^2.13.1",
         "typescript": "^5.8.3",
         "vitest": "^4.0.18"

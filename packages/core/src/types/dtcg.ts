@@ -35,8 +35,6 @@ type TokenGroup = NodeMetadata & {
     [key: string]: Token | TokenGroup | TokenRef | GroupRef | TokenType | string | undefined;
 };
 
-type DesignTokens = TokenGroup;
-
 /** Token reference using JSON Pointer syntax (DTCG 2025.10 spec) */
 type TokenRef = {
     $ref: string;

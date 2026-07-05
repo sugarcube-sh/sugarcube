@@ -23,17 +23,6 @@ export function warningBoxWithBadge(message: string, options = {}) {
     });
 }
 
-function successBoxWithBadge(message: string, options = {}) {
-    const paddedMessage = `\n${message}`;
-
-    box(paddedMessage, color.black(color.bgGreen(" SUCCESS ")), {
-        width: "auto",
-        titlePadding: 2,
-        formatBorder: color.green,
-        ...options,
-    });
-}
-
 export function infoBoxWithBadge(message: string, options = {}) {
     const paddedMessage = `\n${message}`;
 

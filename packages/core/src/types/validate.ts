@@ -1,12 +1,5 @@
 import type { BaseError } from "./errors.js";
-import type { FlattenedToken } from "./flatten.js";
-import type { NodeMetadata, RawTokenValue, TokenSource, TokenType } from "./tokens.js";
-
-type ValidatedToken<T extends TokenType = TokenType> = FlattenedToken<T>;
-
-type ValidatedTokens = {
-    [lookupKey: string]: ValidatedToken | NodeMetadata;
-};
+import type { RawTokenValue, TokenSource, TokenType } from "./tokens.js";
 
 export type ValidationError = BaseError & {
     path: string;

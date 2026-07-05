@@ -67,8 +67,6 @@ function flattenTree(
     }
 
     function processNode(node: TokenGroup | Token, path: string[] = [], inheritedType?: string) {
-        const currentPath = path.join(".");
-
         if (path.length > 0) {
             const key = createLookupKey(path);
             result.tokens[key] = {

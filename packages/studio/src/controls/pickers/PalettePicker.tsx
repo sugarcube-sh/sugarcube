@@ -58,7 +58,7 @@ function PaletteStrip({ shades }: { shades: string[] }) {
         <span className="palette-strip" aria-hidden="true">
             {sampled.map((color, i) => (
                 <span
-                    // biome-ignore lint/suspicious/noArrayIndexKey: shades are a fixed-order ramp
+                    // oxlint-disable-line lint/suspicious/noArrayIndexKey: shades are a fixed-order ramp
                     key={i}
                     className="palette-strip-shade"
                     style={{ backgroundColor: color }}

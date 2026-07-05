@@ -16,7 +16,6 @@ import type {
     NormalizedRenderableTokens,
     Permutation,
     ResolvedTokens,
-    SugarcubeConfig,
     TokenTree,
 } from "@sugarcube-sh/core";
 

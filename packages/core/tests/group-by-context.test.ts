@@ -112,17 +112,17 @@ describe("groupByContext", () => {
 
         const result = groupByContext(trees, resolved);
 
-        expect((result.default?.["color.primary"] as ResolvedToken<TokenType>).$value).toBe(
+        expect((result.default?.["color.primary"] as ResolvedToken<TokenType>)?.$value).toBe(
             "#FF0000"
         );
-        expect((result.dark?.["color.primary.dark"] as ResolvedToken<TokenType>).$value).toBe(
+        expect((result.dark?.["color.primary.dark"] as ResolvedToken<TokenType>)?.$value).toBe(
             "#880000"
         );
-        expect((result.ocean?.["color.primary.ocean"] as ResolvedToken<TokenType>).$value).toBe(
+        expect((result.ocean?.["color.primary.ocean"] as ResolvedToken<TokenType>)?.$value).toBe(
             "#0000FF"
         );
         expect(
-            (result["ocean-dark"]?.["color.primary.ocean.dark"] as ResolvedToken<TokenType>).$value
+            (result["ocean-dark"]?.["color.primary.ocean.dark"] as ResolvedToken<TokenType>)?.$value
         ).toBe("#000088");
     });
 });

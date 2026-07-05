@@ -88,7 +88,7 @@ const FormLabel = React.forwardRef<
 >(({ className, ...props }, ref) => {
     const { formItemId } = useFormField();
 
-    return <Label ref={ref} htmlFor={formItemId} {...props} />;
+    return <Label ref={ref} htmlFor={formItemId} className={cn("form-label", className)} {...props} />;
 });
 FormLabel.displayName = "FormLabel";
 

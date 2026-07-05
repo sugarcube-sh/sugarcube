@@ -1,7 +1,7 @@
 import { hasRef, isInlineModifier } from "../../shared/guards.js";
 import { isToken } from "../../shared/guards.js";
 import type { TokenGroup } from "../../types/dtcg.js";
-import type { InlineModifier, ModifierDefinition, ResolverDocument } from "../../types/resolver.js";
+import type { InlineModifier, ResolverDocument } from "../../types/resolver.js";
 
 /**
  * Deep merge two token groups.

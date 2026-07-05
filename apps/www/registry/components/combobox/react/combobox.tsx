@@ -49,7 +49,7 @@ export function ComboboxDemo() {
             <PopoverTrigger asChild>
                 <Button
                     data-appearance="outlined"
-                    // biome-ignore lint/a11y/useSemanticElements: Custom combobox implementation
+                    // oxlint-disable-line lint/a11y/useSemanticElements: Custom combobox implementation
                     role="combobox"
                     aria-expanded={open}
                 >
