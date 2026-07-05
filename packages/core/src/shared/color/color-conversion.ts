@@ -12,12 +12,12 @@ import {
  * Converts any color input (hex string or DTCG token color object) to a CSS color string.
  *
  * @param input - Either a hex string (e.g., "#ff0000") or DTCG token color object
- * @param fallbackStrategy - How to handle modern color spaces ("native" or "polyfill")
+ * @param _fallbackStrategy - How to handle modern color spaces ("native" or "polyfill"); reserved, not yet applied
  * @returns Result containing CSS-compatible color string or error message
  */
 export function convertColorToString(
     input: string | DTCGColorValue,
-    fallbackStrategy: ColorFallbackStrategy = "native"
+    _fallbackStrategy: ColorFallbackStrategy = "native"
 ): Result<string> {
     if (isDTCGColorValue(input)) {
         return formatDTCGColorNative(input);

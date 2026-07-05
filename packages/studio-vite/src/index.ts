@@ -1,5 +1,3 @@
-/// <reference types="@vitejs/devtools-kit" />
-
 import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core";
 import { STUDIO_RPC } from "@sugarcube-sh/studio-protocol";
 import { clientPath } from "@sugarcube-sh/studio/client";

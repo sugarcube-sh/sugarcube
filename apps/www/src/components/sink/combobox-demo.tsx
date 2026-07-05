@@ -125,7 +125,7 @@ function FrameworkCombobox({ frameworks }: { frameworks: Framework[] }) {
             <PopoverTrigger asChild>
                 <Button
                     data-appearance="outlined"
-                    // biome-ignore lint/a11y/useSemanticElements: Custom combobox implementation
+                    // oxlint-disable-line lint/a11y/useSemanticElements: Custom combobox implementation
                     role="combobox"
                     aria-expanded={open}
                     className=""
@@ -187,7 +187,7 @@ function UserCombobox({
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
-                    // biome-ignore lint/a11y/useSemanticElements: Custom combobox implementation
+                    // oxlint-disable-line lint/a11y/useSemanticElements: Custom combobox implementation
                     role="combobox"
                     data-appearance="outlined"
                     aria-expanded={open}
@@ -353,7 +353,7 @@ function ComboboxWithCheckbox({ frameworks }: { frameworks: Framework[] }) {
             >
                 <Button
                     data-appearance="outlined"
-                    // biome-ignore lint/a11y/useSemanticElements: Custom combobox implementation
+                    // oxlint-disable-line lint/a11y/useSemanticElements: Custom combobox implementation
                     role="combobox"
                     aria-expanded={open}
                     className=""
@@ -378,8 +378,8 @@ function ComboboxWithCheckbox({ frameworks }: { frameworks: Framework[] }) {
                                         setSelectedFrameworks(
                                             selectedFrameworks.some((f) => f.value === currentValue)
                                                 ? selectedFrameworks.filter(
-                                                      (f) => f.value !== currentValue
-                                                  )
+                                                    (f) => f.value !== currentValue
+                                                )
                                                 : [...selectedFrameworks, framework]
                                         );
                                     }}
@@ -393,8 +393,8 @@ function ComboboxWithCheckbox({ frameworks }: { frameworks: Framework[] }) {
                                                 checked
                                                     ? [...selectedFrameworks, framework]
                                                     : selectedFrameworks.filter(
-                                                          (f) => f.value !== framework.value
-                                                      )
+                                                        (f) => f.value !== framework.value
+                                                    )
                                             );
                                         }}
                                     />

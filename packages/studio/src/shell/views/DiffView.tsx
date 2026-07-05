@@ -71,7 +71,7 @@ function DiffEntry({ entry }: { entry: TokenDiffEntry }) {
             </header>
             <pre className="diff-block" aria-label="Change">
                 {lines.map((line, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional
+                    // oxlint-disable-line lint/suspicious/noArrayIndexKey: lines are positional
                     <span key={i} className={`diff-line diff-line-${line.kind}`}>
                         <span className="diff-gutter" aria-hidden>
                             {line.kind === "added" ? "+" : line.kind === "removed" ? "−" : " "}
@@ -114,7 +114,9 @@ function diffTokens(from: SlimToken, to: SlimToken): DiffLine[] {
 function diffLines(a: string[], b: string[]): DiffLine[] {
     const n = a.length;
     const m = b.length;
-    const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+    const dp: number[][] = Array.from({ length: n + 1 }, () =>
+        Array.from({ length: m + 1 }, () => 0)
+    );
     for (let i = 1; i <= n; i++) {
         const row = dp[i];
         const prev = dp[i - 1];

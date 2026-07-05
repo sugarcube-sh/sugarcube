@@ -62,7 +62,7 @@ async function loadTSConfig(configPath: string): Promise<unknown> {
         return result;
     } catch (error) {
         if (error instanceof Error) {
-            throw new Error(ErrorMessages.CONFIG.INVALID_CONFIG("root", error.message));
+            throw new Error(ErrorMessages.CONFIG.INVALID_CONFIG("root", error.message), { cause: error });
         }
         throw error;
     }
@@ -116,11 +116,11 @@ export async function loadSugarcubeConfig(configPath?: string): Promise<{
         };
     } catch (error) {
         if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-            throw new Error(ErrorMessages.CONFIG.FILE_NOT_FOUND(actualPath));
+            throw new Error(ErrorMessages.CONFIG.FILE_NOT_FOUND(actualPath), { cause: error });
         }
 
         if (error instanceof SyntaxError) {
-            throw new Error(ErrorMessages.CONFIG.INVALID_JSON(error.message));
+            throw new Error(ErrorMessages.CONFIG.INVALID_JSON(error.message), { cause: error });
         }
 
         throw error;
@@ -168,11 +168,11 @@ export async function loadInternalConfig(configPath?: string): Promise<LoadedCon
             };
         } catch (error) {
             if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-                throw new Error(ErrorMessages.CONFIG.FILE_NOT_FOUND(foundConfigPath));
+                throw new Error(ErrorMessages.CONFIG.FILE_NOT_FOUND(foundConfigPath), { cause: error });
             }
 
             if (error instanceof SyntaxError) {
-                throw new Error(ErrorMessages.CONFIG.INVALID_JSON(error.message));
+                throw new Error(ErrorMessages.CONFIG.INVALID_JSON(error.message), { cause: error });
             }
 
             throw error;

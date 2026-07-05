@@ -5,7 +5,6 @@ import { getScaleExtension } from "../tokens/scale-extension";
 import { DirectScaleControl } from "./DirectScaleControl";
 import { ExponentialScaleControl } from "./ExponentialScaleControl";
 import { MultipliersScaleControl } from "./MultipliersScaleControl";
-import { PerStepScaleControl } from "./PerStepScaleControl";
 
 type ScaleControlProps = {
     binding: ScaleBinding;

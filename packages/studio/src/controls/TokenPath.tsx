@@ -41,7 +41,7 @@ export function TokenPath({ path, className }: Props) {
         <span className={wrapperClass}>
             <span className="token-path-ns">{ns}</span>
             {middle.map((segment, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: segments are positional and fixed
+                // oxlint-disable-line lint/suspicious/noArrayIndexKey: segments are positional and fixed
                 <span key={i}>
                     <span className="token-path-dot">.</span>
                     <span className="token-path-leaf">{segment}</span>

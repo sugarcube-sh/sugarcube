@@ -87,9 +87,8 @@ export async function runComponents(
 
     const warningMessage = formatOverwriteWarnings(warnings);
     if (warningMessage && !options.overwrite && !options.silent) {
-        const warningBox = warningBoxWithBadge(warningMessage, {});
         log.space(1);
-        warningBox;
+        warningBoxWithBadge(warningMessage, {});
         const confirmed = await confirmOverwrite("Continue?", false, {
             exitOnDecline: !options.continueOnDecline,
         });
@@ -160,9 +159,9 @@ export const components = new Command()
     .option("--output <dir>", "Components output directory (e.g., 'src/components')")
     .option("-s, --silent", "Suppress logs and prompts")
     .option("-o, --overwrite", "Overwrite existing files")
-    .action(async (components, options) => {
+    .action(async (componentNames, options) => {
         try {
-            await runComponents(components, options);
+            await runComponents(componentNames, options);
         } catch (error) {
             handleError(error);
         }

@@ -69,7 +69,7 @@ const validators = {
 export function validate(tokens: FlattenedTokens, context?: PipelineContext): ValidationError[] {
     const errors: ValidationError[] = [];
 
-    for (const [path, node] of Object.entries(tokens.tokens)) {
+    for (const node of Object.values(tokens.tokens)) {
         if (typeof node !== "object" || node === null) continue;
         if (!("$type" in node) || !("$path" in node)) {
             continue;

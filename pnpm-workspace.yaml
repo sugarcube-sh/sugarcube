@@ -29,8 +29,6 @@ overrides:
 # needs an explicit opt-in. Keep this list minimal — only allow what you trust
 # AND that genuinely needs its install script (typically: native binary fetch).
 allowBuilds:
-  # Native binary; biome won't run without it.
-  '@biomejs/biome': true
   # Native binary; esbuild won't run without it.
   esbuild: true
   # libvips native bindings; sharp won't run without it.

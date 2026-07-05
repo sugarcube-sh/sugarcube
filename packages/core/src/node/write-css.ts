@@ -18,7 +18,7 @@ export async function writeCSSVariablesToDisk(output: CSSFileOutput): Promise<CS
             throw new Error(
                 `Failed to write CSS file ${file.path}: ${
                     error instanceof Error ? error.message : "Unknown error"
-                }`
+                }`, { cause: error }
             );
         }
     }
@@ -42,7 +42,7 @@ export async function writeCSSUtilitiesToDisk(output: CSSFileOutput): Promise<CS
             throw new Error(
                 `Failed to write utility CSS file ${file.path}: ${
                     error instanceof Error ? error.message : "Unknown error"
-                }`
+                }`, { cause: error }
             );
         }
     }
