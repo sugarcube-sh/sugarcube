@@ -6,10 +6,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("fluid dimension validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/fluid-dimension/valid.json"
+        "tokens/validators/fluid-dimension/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/fluid-dimension/invalid.json"
+        "tokens/validators/fluid-dimension/invalid.json",
     );
 
     describe("valid cases", () => {
@@ -37,7 +37,7 @@ describe("fluid dimension validator", () => {
                 ValidationHelper.expectInvalidFluidDimensionError(
                     errors,
                     token.$value,
-                    token.$path
+                    token.$path,
                 );
             });
 
@@ -48,7 +48,7 @@ describe("fluid dimension validator", () => {
                 ValidationHelper.expectInvalidFluidDimensionError(
                     errors,
                     token.$value,
-                    token.$path
+                    token.$path,
                 );
             });
         });
@@ -76,7 +76,7 @@ describe("fluid dimension validator", () => {
                     ValidationHelper.expectInvalidNumberError(
                         errors,
                         "16",
-                        `${token.$path}.min.value`
+                        `${token.$path}.min.value`,
                     );
                 });
 
@@ -87,7 +87,7 @@ describe("fluid dimension validator", () => {
                     ValidationHelper.expectInvalidUnitError(
                         errors,
                         "invalid",
-                        `${token.$path}.max.unit`
+                        `${token.$path}.max.unit`,
                     );
                 });
             });

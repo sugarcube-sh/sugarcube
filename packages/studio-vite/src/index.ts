@@ -35,7 +35,7 @@ export default function sugarcubeStudio(): Plugin {
                 });
 
                 const sugarcubePlugin = ctx.viteConfig.plugins.find(
-                    (p) => p.name === SUGARCUBE_VITE_PLUGIN_NAME
+                    (p) => p.name === SUGARCUBE_VITE_PLUGIN_NAME,
                 );
                 const scCtx = sugarcubePlugin?.api?.getContext() as
                     | SugarcubePluginContext
@@ -43,7 +43,7 @@ export default function sugarcubeStudio(): Plugin {
 
                 if (!scCtx) {
                     console.warn(
-                        "[studio] Could not find sugarcube plugin context. Is @sugarcube-sh/vite installed?"
+                        "[studio] Could not find sugarcube plugin context. Is @sugarcube-sh/vite installed?",
                     );
                     return;
                 }
@@ -52,7 +52,7 @@ export default function sugarcubeStudio(): Plugin {
 
                 if (!scCtx.config || !scCtx.trees || !scCtx.resolved) {
                     console.warn(
-                        "[studio] Sugarcube context resolved as ready but config/trees/resolved are missing. Skipping Studio setup."
+                        "[studio] Sugarcube context resolved as ready but config/trees/resolved are missing. Skipping Studio setup.",
                     );
                     return;
                 }
@@ -115,7 +115,7 @@ export default function sugarcubeStudio(): Plugin {
                                 }
                             },
                         }),
-                    })
+                    }),
                 );
 
                 ctx.rpc.register(
@@ -128,7 +128,7 @@ export default function sugarcubeStudio(): Plugin {
                                 await scCtx.reloadTokens();
                             },
                         }),
-                    })
+                    }),
                 );
             },
         },

@@ -22,7 +22,7 @@ export function createDiffStore(
     host: Host,
     tokenStore: TokenStoreAPI,
     scaleState: ScaleStateAPI,
-    getPathIndex: PathIndexAccessor
+    getPathIndex: PathIndexAccessor,
 ): DiffStoreHandle {
     const recompute = (): DiffState => {
         const baseline = host.baseline.getState();

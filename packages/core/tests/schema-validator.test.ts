@@ -9,7 +9,7 @@ const testSource = { sourcePath: "test.json" };
 const validate = (
     schema: SimpleSchema | ObjectSchema | UnionSchema | ArraySchema,
     value: unknown,
-    path = "test"
+    path = "test",
 ): ValidationError[] => validateSchema(schema, value, path, testSource);
 
 const customError = (path: string, message: string): ValidationError[] => [
@@ -32,7 +32,7 @@ describe("schema validator", () => {
             const errors = validate(stringSchema, 123);
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                ErrorMessages.VALIDATE.INVALID_TYPE("string", 123, "test")
+                ErrorMessages.VALIDATE.INVALID_TYPE("string", 123, "test"),
             );
         });
 
@@ -61,7 +61,7 @@ describe("schema validator", () => {
             const errors = validate(objectSchema, { optional: 123 });
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY("required", "test")
+                ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY("required", "test"),
             );
         });
 

@@ -6,10 +6,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("font weight validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/font-weight/valid.json"
+        "tokens/validators/font-weight/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/font-weight/invalid.json"
+        "tokens/validators/font-weight/invalid.json",
     );
 
     describe("valid cases", () => {

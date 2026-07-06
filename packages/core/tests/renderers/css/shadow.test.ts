@@ -24,7 +24,7 @@ describe("convertShadow", () => {
                 spread: { value: 0, unit: "px" },
                 color: "#000000",
             },
-            defaultOptions
+            defaultOptions,
         );
 
         expect(result).toEqual({
@@ -42,7 +42,7 @@ describe("convertShadow", () => {
                 color: "#000000",
                 inset: true,
             },
-            defaultOptions
+            defaultOptions,
         );
 
         expect(result).toEqual({
@@ -69,7 +69,7 @@ describe("convertShadow", () => {
                     color: "rgba(0,0,0,0.2)",
                 },
             ],
-            defaultOptions
+            defaultOptions,
         );
 
         expect(result).toEqual({
@@ -86,7 +86,7 @@ describe("convertShadow", () => {
                 spread: "{spacing.none}",
                 color: "{color.shadow}",
             },
-            defaultOptions
+            defaultOptions,
         );
 
         expect(result).toEqual({
@@ -108,7 +108,7 @@ describe("convertShadow", () => {
                         alpha: 0.5,
                     },
                 },
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -129,7 +129,7 @@ describe("convertShadow", () => {
                         alpha: 0.17,
                     },
                 },
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -150,7 +150,7 @@ describe("convertShadow", () => {
                         alpha: 0.8,
                     },
                 },
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -170,7 +170,7 @@ describe("convertShadow", () => {
                         components: [0.5, 0.5, 0.5],
                     },
                 },
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -204,7 +204,7 @@ describe("convertShadow", () => {
                         },
                     },
                 ],
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({

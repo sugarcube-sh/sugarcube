@@ -15,7 +15,7 @@ import { isReference } from "../guards.js";
 export function validateScaleExtension(
     ext: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     const errors: ValidationError[] = [];
 
@@ -43,7 +43,7 @@ export function validateScaleExtension(
             message: ErrorMessages.VALIDATE.INVALID_ENUM_VALUE(
                 ["exponential", "multipliers"],
                 mode,
-                `${path}.mode`
+                `${path}.mode`,
             ),
             source,
         });
@@ -64,7 +64,7 @@ function validateBase(
     value: unknown,
     path: string,
     source: TokenSource,
-    errors: ValidationError[]
+    errors: ValidationError[],
 ): void {
     if (value === undefined) {
         errors.push({
@@ -92,7 +92,7 @@ function validateDimension(
     value: unknown,
     path: string,
     source: TokenSource,
-    errors: ValidationError[]
+    errors: ValidationError[],
 ): void {
     if (!isObject(value)) {
         errors.push({
@@ -127,7 +127,7 @@ function validateExponentialFields(
     ext: Record<string, unknown>,
     path: string,
     source: TokenSource,
-    errors: ValidationError[]
+    errors: ValidationError[],
 ): void {
     const ratio = ext.ratio;
     if (ratio === undefined) {
@@ -183,7 +183,7 @@ function validateExponentialFields(
                     message: ErrorMessages.VALIDATE.INVALID_TYPE(
                         "non-negative integer",
                         v,
-                        `${path}.steps.${key}`
+                        `${path}.steps.${key}`,
                     ),
                     source,
                 });
@@ -196,7 +196,7 @@ function validateMultiplierFields(
     ext: Record<string, unknown>,
     path: string,
     source: TokenSource,
-    errors: ValidationError[]
+    errors: ValidationError[],
 ): void {
     const multipliers = ext.multipliers;
     if (multipliers === undefined) {
@@ -228,7 +228,7 @@ function validateMultiplierFields(
         isObject(multipliers) ? Object.keys(multipliers) : [],
         `${path}.pairs`,
         source,
-        errors
+        errors,
     );
 }
 
@@ -237,7 +237,7 @@ function validatePairs(
     multiplierNames: string[],
     path: string,
     source: TokenSource,
-    errors: ValidationError[]
+    errors: ValidationError[],
 ): void {
     if (value === undefined) return;
     if (value === "adjacent") return;
@@ -269,7 +269,7 @@ function validatePairs(
                     path: `${path}[${i}]`,
                     message: ErrorMessages.VALIDATE.SCALE_PAIR_UNKNOWN_MULTIPLIER(
                         name,
-                        `${path}[${i}]`
+                        `${path}[${i}]`,
                     ),
                     source,
                 });
@@ -282,7 +282,7 @@ function collectReferenceErrors(
     value: unknown,
     path: string,
     source: TokenSource,
-    errors: ValidationError[]
+    errors: ValidationError[],
 ): void {
     if (isReference(value)) {
         errors.push({

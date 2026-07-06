@@ -55,7 +55,7 @@ function SelectContent({
                 <SelectPrimitive.Viewport
                     className={cn(
                         "select-viewport",
-                        position === "popper" && "select-viewport-popper"
+                        position === "popper" && "select-viewport-popper",
                     )}
                 >
                     {children}

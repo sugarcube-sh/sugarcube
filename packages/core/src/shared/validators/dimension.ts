@@ -48,7 +48,7 @@ export function validateDimension(
     value: unknown,
     path: string,
     source: TokenSource,
-    extensions?: { [key: string]: unknown }
+    extensions?: { [key: string]: unknown },
 ): ValidationError[] {
     const errors = validateSchema(DimensionSchema.schema, value, path, source);
 
@@ -59,8 +59,8 @@ export function validateDimension(
                 FluidExtensionSchema,
                 fluid,
                 `${path}.$extensions.${SUGARCUBE_NAMESPACE}.fluid`,
-                source
-            )
+                source,
+            ),
         );
     }
 

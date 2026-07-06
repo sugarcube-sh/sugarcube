@@ -24,7 +24,7 @@ function convertBorderColor(color: TokenValue<"color">, options: CSSRenderOption
 
 export function renderBorder(
     value: TokenValue<"border">,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ): CSSBorderProperties {
     if (isReference(value)) {
         return { value };

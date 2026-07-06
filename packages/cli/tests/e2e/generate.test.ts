@@ -28,7 +28,7 @@ describe("generate command", () => {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
-            }
+            },
         );
 
         expect(result.exitCode).toBe(0);
@@ -46,7 +46,7 @@ describe("generate command", () => {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
-            }
+            },
         );
 
         expect(result.exitCode).toBe(0);
@@ -62,7 +62,7 @@ describe("generate command", () => {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
-            }
+            },
         );
 
         expect(result.exitCode).toBe(0);
@@ -78,7 +78,7 @@ describe("generate command", () => {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
-            }
+            },
         );
 
         expect(result.exitCode).toBe(0);

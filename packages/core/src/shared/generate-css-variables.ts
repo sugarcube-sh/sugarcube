@@ -14,7 +14,7 @@ import { formatCSSVariables } from "./pipeline/format-css-variables.js";
 export async function generateCSSVariables(
     convertedTokens: NormalizedRenderableTokens,
     config: InternalConfig,
-    permutations: Permutation[]
+    permutations: Permutation[],
 ): Promise<CSSFileOutput> {
     const { output } = await formatCSSVariables(convertedTokens, config, permutations);
     return output;

@@ -25,7 +25,7 @@ describe("parseResolverDocument", () => {
     describe("valid documents", () => {
         it("parses simple resolver document", async () => {
             const result = await parseResolverDocument(
-                resolve(fixturesPath, "simple.resolver.json")
+                resolve(fixturesPath, "simple.resolver.json"),
             );
 
             expect(result.document.version).toBe("2025.10");
@@ -33,14 +33,14 @@ describe("parseResolverDocument", () => {
             expect(result.document.resolutionOrder).toHaveLength(2);
 
             const realErrors = result.errors.filter(
-                (e) => e.message !== ErrorMessages.RESOLVER.MODIFIER_SINGLE_CONTEXT
+                (e) => e.message !== ErrorMessages.RESOLVER.MODIFIER_SINGLE_CONTEXT,
             );
             expect(realErrors).toHaveLength(0);
         });
 
         it("parses resolver with root-level sets and modifiers", async () => {
             const result = await parseResolverDocument(
-                resolve(fixturesPath, "with-refs.resolver.json")
+                resolve(fixturesPath, "with-refs.resolver.json"),
             );
 
             expect(result.document.version).toBe("2025.10");
@@ -51,7 +51,7 @@ describe("parseResolverDocument", () => {
 
         it("parses complex resolver with multiple sets and contexts", async () => {
             const result = await parseResolverDocument(
-                resolve(fixturesPath, "complex.resolver.json")
+                resolve(fixturesPath, "complex.resolver.json"),
             );
 
             expect(result.document.version).toBe("2025.10");
@@ -78,7 +78,7 @@ describe("parseResolverDocument", () => {
 
         it("preserves optional metadata fields", async () => {
             const result = await parseResolverDocument(
-                resolve(fixturesPath, "simple.resolver.json")
+                resolve(fixturesPath, "simple.resolver.json"),
             );
 
             expect(result.document.name).toBe("Simple Test");
@@ -89,7 +89,7 @@ describe("parseResolverDocument", () => {
     describe("invalid documents", () => {
         it("errors on invalid version", async () => {
             const result = await parseResolverDocument(
-                resolve(fixturesPath, "invalid-version.resolver.json")
+                resolve(fixturesPath, "invalid-version.resolver.json"),
             );
 
             expect(result.errors).toHaveLength(1);
@@ -113,11 +113,11 @@ describe("parseResolverDocument", () => {
 
         it("errors on reference to undefined set", async () => {
             const result = await parseResolverDocument(
-                resolve(fixturesPath, "invalid-reference.resolver.json")
+                resolve(fixturesPath, "invalid-reference.resolver.json"),
             );
 
             expect(
-                hasError(result.errors, ErrorMessages.RESOLVER.UNDEFINED_SET("nonexistent"))
+                hasError(result.errors, ErrorMessages.RESOLVER.UNDEFINED_SET("nonexistent")),
             ).toBe(true);
         });
 
@@ -135,8 +135,8 @@ describe("parseResolverDocument", () => {
             expect(
                 hasError(
                     result.errors,
-                    ErrorMessages.RESOLVER.INVALID_SOURCE_REFERENCE("#/modifiers/theme")
-                )
+                    ErrorMessages.RESOLVER.INVALID_SOURCE_REFERENCE("#/modifiers/theme"),
+                ),
             ).toBe(true);
         });
 
@@ -170,8 +170,8 @@ describe("parseResolverDocument", () => {
             expect(
                 hasError(
                     result.errors,
-                    ErrorMessages.RESOLVER.EXTENDING_ON_SET_REF("#/sets/base", ["color"])
-                )
+                    ErrorMessages.RESOLVER.EXTENDING_ON_SET_REF("#/sets/base", ["color"]),
+                ),
             ).toBe(true);
         });
 
@@ -193,8 +193,8 @@ describe("parseResolverDocument", () => {
             expect(
                 hasError(
                     result.errors,
-                    ErrorMessages.RESOLVER.INVALID_SOURCE_REFERENCE("#/modifiers/theme")
-                )
+                    ErrorMessages.RESOLVER.INVALID_SOURCE_REFERENCE("#/modifiers/theme"),
+                ),
             ).toBe(true);
         });
     });
@@ -202,11 +202,11 @@ describe("parseResolverDocument", () => {
     describe("modifier validation", () => {
         it("warns when modifier has only 1 context", async () => {
             const result = await parseResolverDocument(
-                resolve(fixturesPath, "single-context-modifier.resolver.json")
+                resolve(fixturesPath, "single-context-modifier.resolver.json"),
             );
 
             expect(hasError(result.errors, ErrorMessages.RESOLVER.MODIFIER_SINGLE_CONTEXT)).toBe(
-                true
+                true,
             );
         });
 
@@ -226,8 +226,8 @@ describe("parseResolverDocument", () => {
             expect(
                 hasError(
                     result.errors,
-                    ErrorMessages.RESOLVER.INVALID_DEFAULT("nonexistent", ["light", "dark"])
-                )
+                    ErrorMessages.RESOLVER.INVALID_DEFAULT("nonexistent", ["light", "dark"]),
+                ),
             ).toBe(true);
         });
     });
@@ -252,8 +252,8 @@ describe("parseResolverDocument", () => {
             expect(
                 hasWarning(
                     result.warnings,
-                    WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_DEPRECATED("theme")
-                )
+                    WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_DEPRECATED("theme"),
+                ),
             ).toBe(true);
         });
 
@@ -284,7 +284,7 @@ describe("parseResolverDocument", () => {
                         type: "modifier",
                         name: "theme",
                         default: "light",
-                        contexts: { light: [], dark: [], "high-contrast": [] },
+                        contexts: { "light": [], "dark": [], "high-contrast": [] },
                         $extensions: {
                             "sh.sugarcube": { prefersColorScheme: true },
                         },
@@ -297,8 +297,8 @@ describe("parseResolverDocument", () => {
                     result.warnings,
                     WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS("theme", [
                         "high-contrast",
-                    ])
-                )
+                    ]),
+                ),
             ).toBe(true);
         });
 
@@ -324,8 +324,8 @@ describe("parseResolverDocument", () => {
                     WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_INVALID_CONTEXTS("theme", [
                         "day",
                         "night",
-                    ])
-                )
+                    ]),
+                ),
             ).toBe(true);
         });
 
@@ -343,7 +343,7 @@ describe("parseResolverDocument", () => {
             });
 
             const prefersWarnings = result.warnings.filter(
-                (w) => w.message.includes("prefersColorScheme") || w.message.includes("deprecated")
+                (w) => w.message.includes("prefersColorScheme") || w.message.includes("deprecated"),
             );
             expect(prefersWarnings).toHaveLength(0);
         });
@@ -369,9 +369,9 @@ describe("parseResolverDocument", () => {
                     result.warnings,
                     WarningMessages.RESOLVER.PREFERS_COLOR_SCHEME_EMPTY_NON_DEFAULT(
                         "theme",
-                        "light"
-                    )
-                )
+                        "light",
+                    ),
+                ),
             ).toBe(true);
         });
 
@@ -395,7 +395,7 @@ describe("parseResolverDocument", () => {
             });
 
             const emptySourceWarnings = result.warnings.filter((w) =>
-                w.message.includes("has no sources")
+                w.message.includes("has no sources"),
             );
             expect(emptySourceWarnings).toHaveLength(0);
         });
@@ -418,7 +418,7 @@ describe("parseResolverDocument", () => {
 
                 expect(result.errors).toHaveLength(expectedErrors);
                 expect(result.errors[0]?.message).toContain("Names must not");
-            }
+            },
         );
 
         it("errors on duplicate names in resolutionOrder", () => {
@@ -431,7 +431,7 @@ describe("parseResolverDocument", () => {
             });
 
             expect(
-                hasError(result.errors, ErrorMessages.RESOLVER.DUPLICATE_NAME("duplicate"))
+                hasError(result.errors, ErrorMessages.RESOLVER.DUPLICATE_NAME("duplicate")),
             ).toBe(true);
         });
     });
@@ -443,7 +443,7 @@ describe("parseResolverDocumentFromString", () => {
             JSON.stringify({
                 version: "2025.10",
                 resolutionOrder: [{ type: "set", name: "test", sources: [] }],
-            })
+            }),
         );
 
         expect(result.document.version).toBe("2025.10");

@@ -30,7 +30,7 @@ export type LoadResult = {
  */
 export async function loadTokens(
     source: TokenPipelineSource,
-    context?: PipelineContext
+    context?: PipelineContext,
 ): Promise<LoadResult> {
     const ctx = context ?? createPipelineContext();
 
@@ -60,7 +60,7 @@ export async function loadTokens(
             const result = await loadFromResolver(
                 parseResult.document,
                 source.resolverPath,
-                source.config.variables.permutations
+                source.config.variables.permutations,
             );
 
             return {

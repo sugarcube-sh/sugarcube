@@ -6,10 +6,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("transition validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/transition/valid.json"
+        "tokens/validators/transition/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/transition/invalid.json"
+        "tokens/validators/transition/invalid.json",
     );
 
     describe("valid cases", () => {
@@ -30,7 +30,7 @@ describe("transition validator", () => {
                 ValidationHelper.expectInvalidDurationError(
                     errors,
                     (token.$value as any).duration,
-                    `${token.$path}.duration`
+                    `${token.$path}.duration`,
                 );
             });
 
@@ -41,7 +41,7 @@ describe("transition validator", () => {
                 ValidationHelper.expectInvalidNumberError(
                     errors,
                     (token.$value as any).duration.value,
-                    `${token.$path}.duration.value`
+                    `${token.$path}.duration.value`,
                 );
             });
 
@@ -52,7 +52,7 @@ describe("transition validator", () => {
                 ValidationHelper.expectInvalidDurationUnitError(
                     errors,
                     (token.$value as any).duration.unit,
-                    `${token.$path}.duration.unit`
+                    `${token.$path}.duration.unit`,
                 );
             });
         });

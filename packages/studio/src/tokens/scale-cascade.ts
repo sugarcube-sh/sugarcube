@@ -30,7 +30,7 @@ export type CapturedLinkedScale = {
 };
 
 function readFluidValues(
-    token: ResolvedTokens[string] | undefined
+    token: ResolvedTokens[string] | undefined,
 ): { min: number; max: number; unit: string; hasFluid: boolean } | null {
     if (!isResolvedToken(token)) return null;
 
@@ -64,7 +64,7 @@ export function captureScale(
     basePath: string,
     snapshotResolved: ResolvedTokens,
     pathIndex: PathIndex,
-    context: string
+    context: string,
 ): CapturedScale | null {
     const baseEntry = pathIndex.entriesFor(basePath).find((e) => e.context === context);
     const baseToken = baseEntry ? snapshotResolved[baseEntry.key] : undefined;
@@ -103,7 +103,7 @@ export function captureLinkedScale(
     pathPattern: string,
     snapshotResolved: ResolvedTokens,
     pathIndex: PathIndex,
-    context: string
+    context: string,
 ): CapturedLinkedScale {
     const defaults = new Map<string, Dim>();
     const paths = pathIndex.matching(pathPattern);
@@ -126,7 +126,7 @@ function buildFluidDimensionToken(
     existing: ResolvedTokens[string] | undefined,
     min: Dim,
     max: Dim,
-    emitFluid: boolean
+    emitFluid: boolean,
 ): ResolvedTokens[string] | null {
     if (!isResolvedToken(existing)) return null;
 
@@ -157,7 +157,7 @@ function buildFluidDimensionToken(
 
 function buildStaticDimensionToken(
     existing: ResolvedTokens[string] | undefined,
-    value: Dim
+    value: Dim,
 ): ResolvedTokens[string] | null {
     if (!isResolvedToken(existing)) return null;
     return {
@@ -176,7 +176,7 @@ export function applyScaleToResolved(
     spread: number,
     pathIndex: PathIndex,
     context: string,
-    overrides?: StepOverrideMap
+    overrides?: StepOverrideMap,
 ): ResolvedTokens {
     if (!scale) return resolved;
 
@@ -216,7 +216,7 @@ export function applyLinkedScaleToResolved(
     scaleFactor: number,
     enabled: boolean,
     pathIndex: PathIndex,
-    context: string
+    context: string,
 ): ResolvedTokens {
     // When disabled, apply with factor 1.0 to restore snapshot defaults
     // rather than freezing at the last-scaled values.

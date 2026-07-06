@@ -25,11 +25,11 @@ describe("groupByContext", () => {
         const result = groupByContext(trees, resolved);
 
         expect((result.default?.["color.background"] as ResolvedToken<TokenType>)?.$value).toBe(
-            "#FFFFFF"
+            "#FFFFFF",
         );
         expect(result.default?.["color.background.dark"]).toBeUndefined();
         expect((result.dark?.["color.background.dark"] as ResolvedToken<TokenType>)?.$value).toBe(
-            "#000000"
+            "#000000",
         );
         expect(result.dark?.["color.background"]).toBeUndefined();
     });
@@ -113,16 +113,17 @@ describe("groupByContext", () => {
         const result = groupByContext(trees, resolved);
 
         expect((result.default?.["color.primary"] as ResolvedToken<TokenType>)?.$value).toBe(
-            "#FF0000"
+            "#FF0000",
         );
         expect((result.dark?.["color.primary.dark"] as ResolvedToken<TokenType>)?.$value).toBe(
-            "#880000"
+            "#880000",
         );
         expect((result.ocean?.["color.primary.ocean"] as ResolvedToken<TokenType>)?.$value).toBe(
-            "#0000FF"
+            "#0000FF",
         );
         expect(
-            (result["ocean-dark"]?.["color.primary.ocean.dark"] as ResolvedToken<TokenType>)?.$value
+            (result["ocean-dark"]?.["color.primary.ocean.dark"] as ResolvedToken<TokenType>)
+                ?.$value,
         ).toBe("#000088");
     });
 });

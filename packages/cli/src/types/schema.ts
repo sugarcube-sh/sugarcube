@@ -33,7 +33,7 @@ const registryItemSchema = z.object({
             z.object({
                 type: z.string(),
                 mapping: z.string(),
-            })
+            }),
         )
         .optional(),
     dependencies: z.record(frameworkEnum, z.array(z.string())).optional(),

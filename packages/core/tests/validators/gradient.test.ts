@@ -6,10 +6,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("gradient validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/gradient/valid.json"
+        "tokens/validators/gradient/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/gradient/invalid.json"
+        "tokens/validators/gradient/invalid.json",
     );
 
     describe("valid cases", () => {
@@ -44,7 +44,7 @@ describe("gradient validator", () => {
                 ValidationHelper.expectInvalidGradientError(
                     errors,
                     (token.$value as any[])[0],
-                    `${token.$path}[0]`
+                    `${token.$path}[0]`,
                 );
             });
         });
@@ -57,7 +57,7 @@ describe("gradient validator", () => {
                 ValidationHelper.expectInvalidColorError(
                     errors,
                     (token.$value as any[])[0].color,
-                    `${token.$path}[0].color`
+                    `${token.$path}[0].color`,
                 );
             });
 
@@ -77,7 +77,7 @@ describe("gradient validator", () => {
                 ValidationHelper.expectInvalidGradientStopPositionError(
                     errors,
                     (token.$value as any[])[0].position,
-                    `${token.$path}[0].position`
+                    `${token.$path}[0].position`,
                 );
             });
 
@@ -88,7 +88,7 @@ describe("gradient validator", () => {
                 ValidationHelper.expectMissingPropertyError(
                     errors,
                     "position",
-                    `${token.$path}[0]`
+                    `${token.$path}[0]`,
                 );
             });
         });

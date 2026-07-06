@@ -4,7 +4,7 @@ import type { ResolvedToken, ResolvedTokens } from "../src/types/resolve.js";
 import type { TokenType } from "../src/types/tokens.js";
 
 function token(
-    overrides: Partial<ResolvedToken<TokenType>> & { $path: string }
+    overrides: Partial<ResolvedToken<TokenType>> & { $path: string },
 ): ResolvedToken<TokenType> {
     const path = overrides.$path;
     return {

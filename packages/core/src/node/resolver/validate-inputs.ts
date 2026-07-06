@@ -23,7 +23,7 @@ export type ValidationError = BaseError & {
  */
 export function validateInputs(
     document: ResolverDocument,
-    inputs: Record<string, unknown> = {}
+    inputs: Record<string, unknown> = {},
 ): ValidationResult {
     const errors: ValidationError[] = [];
     const resolvedInputs: ResolverInputs = {};
@@ -55,7 +55,7 @@ function validateProvidedInputs(
     inputs: Record<string, unknown>,
     modifierMap: Map<string, ExtractedModifier>,
     errors: ValidationError[],
-    resolvedInputs: ResolverInputs
+    resolvedInputs: ResolverInputs,
 ): void {
     for (const [name, value] of Object.entries(inputs)) {
         const modifier = modifierMap.get(name);
@@ -91,7 +91,7 @@ function validateProvidedInputs(
 function applyDefaults(
     modifiers: ExtractedModifier[],
     resolvedInputs: ResolverInputs,
-    errors: ValidationError[]
+    errors: ValidationError[],
 ): void {
     for (const modifier of modifiers) {
         if (resolvedInputs[modifier.name] !== undefined) continue;
@@ -103,7 +103,7 @@ function applyDefaults(
                 modifier: modifier.name,
                 message: ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT(
                     modifier.name,
-                    modifier.contexts
+                    modifier.contexts,
                 ),
             });
         }
@@ -111,7 +111,7 @@ function applyDefaults(
 }
 
 export function getAvailableContexts(
-    document: ResolverDocument
+    document: ResolverDocument,
 ): Map<string, { contexts: string[]; default?: string }> {
     const modifiers = extractModifiers(document);
     const result = new Map<string, { contexts: string[]; default?: string }>();
@@ -133,7 +133,7 @@ export function getDefaultInputs(document: ResolverDocument): ResolverInputs {
     for (const modifier of modifiers) {
         if (modifier.default === undefined) {
             throw new Error(
-                ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT(modifier.name, modifier.contexts)
+                ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT(modifier.name, modifier.contexts),
             );
         }
         inputs[modifier.name] = modifier.default;

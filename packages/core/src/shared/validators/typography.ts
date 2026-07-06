@@ -27,7 +27,7 @@ const TypographySchema: TokenValidationSchema = {
 export function validateTypography(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     return validateSchema(TypographySchema.schema, value, path, source);
 }

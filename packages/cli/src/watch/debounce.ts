@@ -4,7 +4,7 @@ export type DebouncedFn<Args extends unknown[]> = ((...args: Args) => void) & {
 
 export function debounce<Args extends unknown[]>(
     fn: (...args: Args) => void,
-    wait: number
+    wait: number,
 ): DebouncedFn<Args> {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 

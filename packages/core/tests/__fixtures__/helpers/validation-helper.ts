@@ -6,7 +6,7 @@ import type { ValidationError } from "../../../src/types/validate";
 export const ValidationHelper = {
     validateToken(
         validator: (value: unknown, path: string, source: TokenSource) => ValidationError[],
-        token: { $value: unknown; $path: string; $source: TokenSource }
+        token: { $value: unknown; $path: string; $source: TokenSource },
     ) {
         return validator(token.$value, token.$path, token.$source);
     },
@@ -18,7 +18,7 @@ export const ValidationHelper = {
     expectMissingPropertyError(errors: ValidationError[], property: string, path: string) {
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
-            ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY(property, path)
+            ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY(property, path),
         );
     },
 
@@ -46,7 +46,7 @@ export const ValidationHelper = {
         errors: ValidationError[],
         expected: string,
         value: unknown,
-        path: string
+        path: string,
     ) {
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(ErrorMessages.VALIDATE.INVALID_TYPE(expected, value, path));
@@ -66,7 +66,7 @@ export const ValidationHelper = {
     expectInvalidStrokeLineCapError(errors: ValidationError[], value: unknown, path: string) {
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
-            ErrorMessages.VALIDATE.INVALID_STROKE_LINE_CAP(value, path)
+            ErrorMessages.VALIDATE.INVALID_STROKE_LINE_CAP(value, path),
         );
     },
 
@@ -92,7 +92,7 @@ export const ValidationHelper = {
     expectInvalidFluidDimensionError(errors: ValidationError[], value: unknown, path: string) {
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
-            ErrorMessages.VALIDATE.INVALID_FLUID_DIMENSION(value, path)
+            ErrorMessages.VALIDATE.INVALID_FLUID_DIMENSION(value, path),
         );
     },
 
@@ -114,11 +114,11 @@ export const ValidationHelper = {
     expectInvalidGradientStopPositionError(
         errors: ValidationError[],
         value: unknown,
-        path: string
+        path: string,
     ) {
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
-            ErrorMessages.VALIDATE.INVALID_GRADIENT_STOP_POSITION(value, path)
+            ErrorMessages.VALIDATE.INVALID_GRADIENT_STOP_POSITION(value, path),
         );
     },
 

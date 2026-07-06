@@ -7,7 +7,7 @@ import { isReference } from "../../guards.js";
 
 export function renderColor(
     value: string | DTCGColorValue,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ): SimpleCSSProperties {
     if (typeof value === "string" && isReference(value)) {
         return { value };
@@ -29,7 +29,7 @@ export function renderColor(
 
 function convertDTCGColorToken(
     dtcgColor: DTCGColorValue,
-    fallbackStrategy: "native" | "polyfill"
+    fallbackStrategy: "native" | "polyfill",
 ): SimpleCSSProperties {
     const result = convertColorToString(dtcgColor, fallbackStrategy);
     if (!result.success) {
@@ -51,7 +51,7 @@ function convertDTCGColorToken(
     // Polyfill mode for modern color spaces: provide fallback + progressive enhancement
     if (!dtcgColor.hex) {
         throw new Error(
-            `${dtcgColor.colorSpace} colors require a 'hex' fallback when using 'polyfill' strategy. Tip: Switch to 'native' strategy if targeting modern browsers only.`
+            `${dtcgColor.colorSpace} colors require a 'hex' fallback when using 'polyfill' strategy. Tip: Switch to 'native' strategy if targeting modern browsers only.`,
         );
     }
 

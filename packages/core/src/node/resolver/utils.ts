@@ -93,7 +93,7 @@ export function extractModifiers(document: ResolverDocument): ExtractedModifier[
 function extractModifierFromItem(
     item: unknown,
     document: ResolverDocument,
-    seenNames: Set<string>
+    seenNames: Set<string>,
 ): ExtractedModifier | null {
     if (hasRef(item) && item.$ref.startsWith("#/modifiers/")) {
         return extractReferencedModifier(item.$ref, document, seenNames);
@@ -109,7 +109,7 @@ function extractModifierFromItem(
 function extractReferencedModifier(
     ref: string,
     document: ResolverDocument,
-    seenNames: Set<string>
+    seenNames: Set<string>,
 ): ExtractedModifier | null {
     const name = ref.split("/")[2];
     if (!name || seenNames.has(name)) return null;
@@ -127,7 +127,7 @@ function extractReferencedModifier(
 
 function extractInlineModifier(
     item: InlineModifier,
-    seenNames: Set<string>
+    seenNames: Set<string>,
 ): ExtractedModifier | null {
     if (seenNames.has(item.name)) return null;
 

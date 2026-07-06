@@ -13,11 +13,11 @@ export interface RegistryItem {
         mightConflictWithStarterKit?: boolean;
     }>;
     registryDependencies?: {
-        react?: string[];
+        "react"?: string[];
         "css-only"?: string[];
     };
     dependencies?: {
-        react?: string[];
+        "react"?: string[];
         "css-only"?: string[];
     };
 }

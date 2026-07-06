@@ -42,7 +42,7 @@ export const validate = new Command()
                 paths.map((p) => (p.endsWith(".json") ? p : join(p, "**/*.json"))),
                 {
                     absolute: true,
-                }
+                },
             );
 
             // Filter out resolver files - they're not token files!

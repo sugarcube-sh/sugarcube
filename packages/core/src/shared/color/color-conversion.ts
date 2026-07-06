@@ -17,7 +17,7 @@ import {
  */
 export function convertColorToString(
     input: string | DTCGColorValue,
-    _fallbackStrategy: ColorFallbackStrategy = "native"
+    _fallbackStrategy: ColorFallbackStrategy = "native",
 ): Result<string> {
     if (isDTCGColorValue(input)) {
         return formatDTCGColorNative(input);
@@ -49,7 +49,7 @@ function formatDTCGColorNative(dtcgColor: DTCGColorValue): Result<string> {
 
         default:
             return error(
-                `Unsupported color space: ${dtcgColor.colorSpace}. Supported color spaces: oklch, display-p3, srgb, hsl.`
+                `Unsupported color space: ${dtcgColor.colorSpace}. Supported color spaces: oklch, display-p3, srgb, hsl.`,
             );
     }
 }
@@ -94,7 +94,7 @@ function formatDTCGColorToP3(dtcgColor: DTCGColorValue): Result<string> {
     if (alpha !== undefined && alpha !== 1) {
         const roundedAlpha = Number(alpha.toFixed(4));
         return success(
-            `color(display-p3 ${formattedR} ${formattedG} ${formattedB} / ${roundedAlpha})`
+            `color(display-p3 ${formattedR} ${formattedG} ${formattedB} / ${roundedAlpha})`,
         );
     }
 

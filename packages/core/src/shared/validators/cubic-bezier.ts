@@ -41,7 +41,7 @@ export const CubicBezierSchema: TokenValidationSchema = {
 export function validateCubicBezier(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     return validateSchema(CubicBezierSchema.schema, value, path, source);
 }

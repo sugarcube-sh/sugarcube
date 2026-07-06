@@ -51,7 +51,7 @@ export const intro = (title = "", opts?: CommonOptions) => {
 export const outro = (message = "", opts?: CommonOptions) => {
     const output: Writable = opts?.output ?? process.stdout;
     output.write(
-        `${color.gray(S_BAR)}\n${color.gray(S_BAR_END)}${color.gray(S_BAR_H)}  ${message}\n\n`
+        `${color.gray(S_BAR)}\n${color.gray(S_BAR_END)}${color.gray(S_BAR_H)}  ${message}\n\n`,
     );
 };
 

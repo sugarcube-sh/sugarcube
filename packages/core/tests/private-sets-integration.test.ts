@@ -12,7 +12,7 @@ const FIXTURE = "tests/__fixtures__/resolver/private-sets.resolver.json";
 
 function byPath(resolved: ResolvedTokens, path: string): ResolvedToken | undefined {
     return Object.values(resolved).find(
-        (node): node is ResolvedToken => "$path" in node && (node as ResolvedToken).$path === path
+        (node): node is ResolvedToken => "$path" in node && (node as ResolvedToken).$path === path,
     );
 }
 
@@ -44,7 +44,7 @@ describe("private sets — resolver → flatten → inline", () => {
 
         const renderable = assignCSSNames(groupByContext(loaded.trees, resolved), config);
         const css = JSON.stringify(
-            await generateCSSVariables(renderable, config, loaded.permutations)
+            await generateCSSVariables(renderable, config, loaded.permutations),
         );
 
         expect(css).toContain("#e11d48");
@@ -69,7 +69,7 @@ describe("private sets — resolver → flatten → inline", () => {
 
         const renderable = assignCSSNames(groupByContext(loaded.trees, resolved), config);
         const css = JSON.stringify(
-            await generateCSSVariables(renderable, config, loaded.permutations)
+            await generateCSSVariables(renderable, config, loaded.permutations),
         );
 
         expect(css).toContain("#e11d48");

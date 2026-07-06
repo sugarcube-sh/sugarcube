@@ -72,7 +72,7 @@ export const FontWeightSchema: TokenValidationSchema = {
 export function validateFontWeight(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     return validateSchema(FontWeightSchema.schema, value, path, source);
 }

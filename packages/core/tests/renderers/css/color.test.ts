@@ -57,7 +57,7 @@ describe("renderColor", () => {
 
         const result = renderColor(
             oklchColorWithHex,
-            createOptions({ colorFallbackStrategy: "polyfill" })
+            createOptions({ colorFallbackStrategy: "polyfill" }),
         );
         expect(result.value).toBe("#ff00ff"); // Hex fallback
         expect(result.featureValues).toBeDefined();

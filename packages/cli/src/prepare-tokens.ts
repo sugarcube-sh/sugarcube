@@ -7,7 +7,7 @@ import { ERROR_MESSAGES } from "./constants/error-messages.js";
 // I considered separating the two but this felt like the right abstraction
 export async function prepareTokens(
     validatedConfig: InternalConfig,
-    memoryData?: Record<string, { set?: string; content: string }>
+    memoryData?: Record<string, { set?: string; content: string }>,
 ) {
     let source: TokenPipelineSource;
 

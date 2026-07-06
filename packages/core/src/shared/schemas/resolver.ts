@@ -60,7 +60,7 @@ const modifierDefinitionSchema = z
     })
     .refine(
         (mod) => Object.keys(mod.contexts).length >= 1,
-        "Modifier must have at least 1 context"
+        "Modifier must have at least 1 context",
     );
 
 /**
@@ -88,7 +88,7 @@ const inlineModifierSchema = z
     })
     .refine(
         (mod) => Object.keys(mod.contexts).length >= 1,
-        "Modifier must have at least 1 context"
+        "Modifier must have at least 1 context",
     );
 
 /**

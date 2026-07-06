@@ -68,14 +68,14 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
 
     RESOLVER_NOT_CONFIGURED: () =>
         `No resolver path configured.\n\nAdd a resolver path to your sugarcube config:\n\n${color.cyan(
-            `export default {\n  resolver: "./tokens.resolver.json",\n  // ...\n}`
+            `export default {\n  resolver: "./tokens.resolver.json",\n  // ...\n}`,
         )}\n\nSee ${color.cyan(LINKS.RESOLVER)} for more information.`,
 
     RESOLVER_NOT_FOUND: (tokensDir: string) =>
         `No resolver document found in ${color.cyan(
-            tokensDir
+            tokensDir,
         )}.\n\nA resolver document (*.resolver.json) is required to define how your tokens are loaded.\n\nSee ${color.cyan(
-            LINKS.RESOLVER
+            LINKS.RESOLVER,
         )} to learn how to create one.`,
 
     RESOLVER_MULTIPLE_FOUND: (paths: string[]) =>
@@ -123,7 +123,7 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
 
     COMPONENTS_FRAMEWORK_REQUIRED: () =>
         `Framework is required when specifying components. Use --framework to specify a framework (react, css-only) or run without arguments for interactive mode.\n\nSee ${color.cyan(
-            LINKS.COMPONENTS_CLI
+            LINKS.COMPONENTS_CLI,
         )} for more information.`,
 
     COMPONENTS_INVALID_FRAMEWORK: () => "Invalid framework. Must be one of: react, css-only.",
@@ -136,7 +136,7 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
 
     GENERATE_NO_CONFIG_OR_RESOLVER: () =>
         `No design tokens found.\n\nRun ${color.cyan(COMMANDS.INIT)} to set up your design tokens.\n\nStuck? ${color.cyan(
-            LINKS.DOCS
+            LINKS.DOCS,
         )}`,
 
     GENERATE_MULTIPLE_RESOLVERS_NO_CONFIG: (paths: string[]) =>

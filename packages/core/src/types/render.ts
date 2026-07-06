@@ -25,7 +25,7 @@ export interface CSSRenderOptions {
 /** Renders a token value to CSS properties. One implementation per TokenType. */
 export type CSSRenderer<T extends TokenType> = (
     value: TokenValue<T>,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ) => CSSProperties<T>;
 
 /**

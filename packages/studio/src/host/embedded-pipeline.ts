@@ -11,7 +11,7 @@ import type { TokenSnapshot } from "../tokens/types";
 export function attachEmbeddedPipeline(
     store: TokenStoreAPI,
     snapshot: TokenSnapshot,
-    parentOrigin: string
+    parentOrigin: string,
 ): () => void {
     let activeRun: AbortController | null = null;
 
@@ -32,14 +32,14 @@ export function attachEmbeddedPipeline(
             const startedAt = performance.now();
             const converted = assignCSSNames(
                 groupByContext(snapshot.trees, resolved),
-                snapshot.config
+                snapshot.config,
             );
             // Snapshots are an in-browser memory source: permutations live on the
             // config (the same convention loadTokens uses for memory sources).
             const result = await generateCSSVariables(
                 converted,
                 snapshot.config,
-                snapshot.config.variables.permutations ?? []
+                snapshot.config.variables.permutations ?? [],
             );
             if (signal.aborted) return;
             store.setState({
@@ -68,7 +68,7 @@ export function attachEmbeddedPipeline(
         if (state.css === prev.css || state.css === null) return;
         window.parent.postMessage(
             { type: STUDIO_MESSAGE.CSS_UPDATE, css: state.css },
-            parentOrigin
+            parentOrigin,
         );
     });
 

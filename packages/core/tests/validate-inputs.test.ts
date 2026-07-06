@@ -22,7 +22,7 @@ const buildDoc = {
     }),
 
     withModifiers: (
-        modifiers: Array<{ name: string; contexts: string[]; default?: string }>
+        modifiers: Array<{ name: string; contexts: string[]; default?: string }>,
     ): ResolverDocument => ({
         version: "2025.10",
         resolutionOrder: modifiers.map((m) => ({
@@ -41,7 +41,7 @@ const buildDoc = {
     withRefModifier: (
         name: string,
         contexts: string[],
-        defaultValue?: string
+        defaultValue?: string,
     ): ResolverDocument => ({
         version: "2025.10",
         modifiers: {
@@ -59,7 +59,7 @@ describe("validateInputs", () => {
         it("accepts matching modifier input", () => {
             const result = validateInputs(
                 buildDoc.withModifier("theme", ["light", "dark"], "light"),
-                { theme: "dark" }
+                { theme: "dark" },
             );
             expect(result.valid).toBe(true);
             expect(result.errors).toHaveLength(0);
@@ -69,7 +69,7 @@ describe("validateInputs", () => {
         it("uses default when no input provided", () => {
             const result = validateInputs(
                 buildDoc.withModifier("theme", ["light", "dark"], "light"),
-                {}
+                {},
             );
             expect(result.valid).toBe(true);
             expect(result.resolvedInputs).toEqual({ theme: "light" });
@@ -85,7 +85,7 @@ describe("validateInputs", () => {
                         default: "comfortable",
                     },
                 ]),
-                { theme: "dark", density: "compact" }
+                { theme: "dark", density: "compact" },
             );
             expect(result.valid).toBe(true);
             expect(result.resolvedInputs).toEqual({ theme: "dark", density: "compact" });
@@ -156,7 +156,7 @@ describe("validateInputs", () => {
                 if (expectedModifier) {
                     expect(result.errors[0]?.modifier).toBe(expectedModifier);
                 }
-            }
+            },
         );
 
         it("collects multiple errors", () => {
@@ -169,7 +169,7 @@ describe("validateInputs", () => {
                         default: "comfortable",
                     },
                 ]),
-                { density: "invalid", unknown: "value" }
+                { density: "invalid", unknown: "value" },
             );
             expect(result.valid).toBe(false);
             expect(result.errors.length).toBeGreaterThanOrEqual(2);
@@ -180,7 +180,7 @@ describe("validateInputs", () => {
         it("handles modifiers referenced via $ref", () => {
             const result = validateInputs(
                 buildDoc.withRefModifier("theme", ["light", "dark"], "light"),
-                { theme: "dark" }
+                { theme: "dark" },
             );
             expect(result.valid).toBe(true);
             expect(result.resolvedInputs).toEqual({ theme: "dark" });
@@ -189,7 +189,7 @@ describe("validateInputs", () => {
         it("uses default from referenced modifier", () => {
             const result = validateInputs(
                 buildDoc.withRefModifier("theme", ["light", "dark"], "light"),
-                {}
+                {},
             );
             expect(result.valid).toBe(true);
             expect(result.resolvedInputs).toEqual({ theme: "light" });
@@ -203,7 +203,7 @@ describe("getAvailableContexts", () => {
             buildDoc.withModifiers([
                 { name: "theme", contexts: ["light", "dark", "ocean"], default: "light" },
                 { name: "density", contexts: ["comfortable", "compact"] },
-            ])
+            ]),
         );
         expect(contexts.size).toBe(2);
         expect(contexts.get("theme")).toEqual({
@@ -227,14 +227,14 @@ describe("getDefaultInputs", () => {
             buildDoc.withModifiers([
                 { name: "theme", contexts: ["light", "dark"], default: "light" },
                 { name: "density", contexts: ["comfortable", "compact"], default: "comfortable" },
-            ])
+            ]),
         );
         expect(defaults).toEqual({ theme: "light", density: "comfortable" });
     });
 
     it("throws if any modifier has no default", () => {
         expect(() => getDefaultInputs(buildDoc.withModifier("theme", ["light", "dark"]))).toThrow(
-            ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT("theme", ["light", "dark"])
+            ErrorMessages.RESOLVER.MISSING_REQUIRED_INPUT("theme", ["light", "dark"]),
         );
     });
 

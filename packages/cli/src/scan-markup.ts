@@ -20,7 +20,7 @@ export async function getMarkupFiles(): Promise<string[]> {
 
     if (files.length > MAX_FILES) {
         throw new CLIError(
-            `Found ${files.length} files to scan (limit: ${MAX_FILES}). Are you running this from a monorepo root or a directory containing multiple projects? Run the command from within a single project directory instead.`
+            `Found ${files.length} files to scan (limit: ${MAX_FILES}). Are you running this from a monorepo root or a directory containing multiple projects? Run the command from within a single project directory instead.`,
         );
     }
 
@@ -37,7 +37,7 @@ export async function readMarkupSources(files: string[]): Promise<string[]> {
 
         if (totalSize > MAX_SIZE_BYTES) {
             throw new CLIError(
-                `Total source size exceeds ${MAX_SIZE_MB}MB. Are you running this from a monorepo root or a directory containing multiple projects? Run the command from within a single project directory instead.`
+                `Total source size exceeds ${MAX_SIZE_MB}MB. Are you running this from a monorepo root or a directory containing multiple projects? Run the command from within a single project directory instead.`,
             );
         }
 

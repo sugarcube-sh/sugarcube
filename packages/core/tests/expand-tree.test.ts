@@ -5,7 +5,7 @@ import type { TokenTree } from "../src/types/tokens.js";
 
 const buildTree = (
     tokens: TokenTree["tokens"],
-    options: { sourcePath?: string; context?: string } = {}
+    options: { sourcePath?: string; context?: string } = {},
 ): TokenTree => ({
     sourcePath: options.sourcePath ?? "test.json",
     ...(options.context && { context: options.context }),
@@ -154,7 +154,7 @@ describe("expandTree", () => {
         it("inlines group content at reference location", () => {
             const trees = [
                 buildTree({
-                    button: {
+                    "button": {
                         $type: "color",
                         background: { $value: "#0066cc" },
                         text: { $value: "#ffffff" },
@@ -179,7 +179,7 @@ describe("expandTree", () => {
         it("applies overrides to referenced group", () => {
             const trees = [
                 buildTree({
-                    button: {
+                    "button": {
                         $type: "color",
                         background: { $value: "#0066cc" },
                         text: { $value: "#ffffff" },
@@ -242,7 +242,7 @@ describe("expandTree", () => {
                         $type: "color",
                         token: { $value: "#0066cc" },
                     },
-                    alias: { $ref: "#/my~1group/token" },
+                    "alias": { $ref: "#/my~1group/token" },
                 }),
             ];
 
@@ -260,7 +260,7 @@ describe("expandTree", () => {
                         $type: "color",
                         token: { $value: "#0066cc" },
                     },
-                    alias: { $ref: "#/my~0group/token" },
+                    "alias": { $ref: "#/my~0group/token" },
                 }),
             ];
 
@@ -280,7 +280,7 @@ describe("expandTree", () => {
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                ErrorMessages.EXPAND_TREE.CIRCULAR_REFERENCE("a", "#/a")
+                ErrorMessages.EXPAND_TREE.CIRCULAR_REFERENCE("a", "#/a"),
             );
         });
 
@@ -298,8 +298,8 @@ describe("expandTree", () => {
             expect(errors.length).toBeGreaterThan(0);
             expect(
                 errors.some(
-                    (e) => e.message === ErrorMessages.EXPAND_TREE.CIRCULAR_REFERENCE("c", "#/a")
-                )
+                    (e) => e.message === ErrorMessages.EXPAND_TREE.CIRCULAR_REFERENCE("c", "#/a"),
+                ),
             ).toBe(true);
         });
     });
@@ -314,8 +314,8 @@ describe("expandTree", () => {
             expect(errors[0]?.message).toBe(
                 ErrorMessages.EXPAND_TREE.INVALID_JSON_POINTER(
                     "#/nonexistent/path",
-                    'property "nonexistent" not found'
-                )
+                    'property "nonexistent" not found',
+                ),
             );
         });
 
@@ -334,7 +334,7 @@ describe("expandTree", () => {
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                ErrorMessages.EXPAND_TREE.INVALID_REF_TARGET("#/colors/blue/$value", "alias")
+                ErrorMessages.EXPAND_TREE.INVALID_REF_TARGET("#/colors/blue/$value", "alias"),
             );
         });
 
@@ -418,8 +418,8 @@ describe("expandTree", () => {
             expect(errors[0]?.message).toBe(
                 ErrorMessages.EXPAND_TREE.INVALID_JSON_POINTER(
                     "#/colors/blue",
-                    'property "colors" not found'
-                )
+                    'property "colors" not found',
+                ),
             );
         });
     });
@@ -432,7 +432,7 @@ describe("expandTree", () => {
                         colors: { $type: "color", blue: { $value: "#000066" } },
                         button: { background: { $ref: "#/colors/blue" } },
                     },
-                    { context: "dark" }
+                    { context: "dark" },
                 ),
             ];
 
@@ -458,8 +458,8 @@ describe("expandTree - unsupported references", () => {
         expect(errors[0]?.message).toBe(
             ErrorMessages.EXPAND_TREE.INVALID_JSON_POINTER(
                 "colors.json#/brand/primary",
-                "only same-document references (#/...) are supported in token files"
-            )
+                "only same-document references (#/...) are supported in token files",
+            ),
         );
     });
 
@@ -476,8 +476,8 @@ describe("expandTree - unsupported references", () => {
         expect(errors[0]?.message).toBe(
             ErrorMessages.EXPAND_TREE.INVALID_JSON_POINTER(
                 "components.json",
-                "only same-document references (#/...) are supported in token files"
-            )
+                "only same-document references (#/...) are supported in token files",
+            ),
         );
     });
 });
@@ -486,7 +486,7 @@ describe("expandTree - $extends", () => {
     it("inherits tokens from base group", () => {
         const trees = [
             buildTree({
-                button: {
+                "button": {
                     $type: "color",
                     background: { $value: "#0066cc" },
                     text: { $value: "#ffffff" },
@@ -509,7 +509,7 @@ describe("expandTree - $extends", () => {
     it("local tokens override inherited tokens", () => {
         const trees = [
             buildTree({
-                button: {
+                "button": {
                     $type: "color",
                     background: { $value: "#0066cc" },
                     text: { $value: "#ffffff" },
@@ -532,7 +532,7 @@ describe("expandTree - $extends", () => {
     it("adds new tokens alongside inherited", () => {
         const trees = [
             buildTree({
-                button: {
+                "button": {
                     background: { $value: "#0066cc" },
                 },
                 "button-primary": {
@@ -553,7 +553,7 @@ describe("expandTree - $extends", () => {
     it("deep merges nested groups (spec example 14)", () => {
         const trees = [
             buildTree({
-                input: {
+                "input": {
                     field: {
                         width: { $value: "12rem" },
                         background: { $value: "#ffffff" },
@@ -605,7 +605,7 @@ describe("expandTree - $extends", () => {
     it("multiple siblings can extend the same base", () => {
         const trees = [
             buildTree({
-                button: {
+                "button": {
                     background: { $value: "#0066cc" },
                 },
                 "button-secondary": {
@@ -633,7 +633,7 @@ describe("expandTree - $extends", () => {
     it("removes $extends from the result", () => {
         const trees = [
             buildTree({
-                button: { background: { $value: "#0066cc" } },
+                "button": { background: { $value: "#0066cc" } },
                 "button-primary": { $extends: "{button}" },
             }),
         ];
@@ -656,7 +656,7 @@ describe("expandTree - $extends", () => {
 
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
-            ErrorMessages.EXPAND_TREE.CIRCULAR_EXTENDS("groupA", ["groupA", "groupB", "groupA"])
+            ErrorMessages.EXPAND_TREE.CIRCULAR_EXTENDS("groupA", ["groupA", "groupB", "groupA"]),
         );
     });
 
@@ -673,7 +673,7 @@ describe("expandTree - $extends", () => {
 
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
-            ErrorMessages.EXPAND_TREE.CIRCULAR_EXTENDS("a", ["a", "b", "c", "a"])
+            ErrorMessages.EXPAND_TREE.CIRCULAR_EXTENDS("a", ["a", "b", "c", "a"]),
         );
     });
 
@@ -688,7 +688,7 @@ describe("expandTree - $extends", () => {
 
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
-            ErrorMessages.EXPAND_TREE.EXTENDS_TARGET_NOT_FOUND("button-primary", "nonexistent")
+            ErrorMessages.EXPAND_TREE.EXTENDS_TARGET_NOT_FOUND("button-primary", "nonexistent"),
         );
     });
 
@@ -704,7 +704,7 @@ describe("expandTree - $extends", () => {
 
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(
-            ErrorMessages.EXPAND_TREE.INVALID_EXTENDS_TARGET("alias", "color")
+            ErrorMessages.EXPAND_TREE.INVALID_EXTENDS_TARGET("alias", "color"),
         );
     });
 });

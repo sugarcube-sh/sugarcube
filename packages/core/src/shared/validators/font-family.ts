@@ -40,7 +40,7 @@ export const FontFamilySchema: TokenValidationSchema = {
 export function validateFontFamily(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     return validateSchema(FontFamilySchema.schema, value, path, source);
 }

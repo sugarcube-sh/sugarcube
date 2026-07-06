@@ -11,7 +11,7 @@ export function handleError(error: unknown) {
         const errorMessage = `An unexpected error occurred: ${
             error instanceof Error ? error.message : String(error)
         }\n\nIf this issue persists, please report it: ${colors.cyan(
-            "https://github.com/sugarcube-sh/sugarcube/issues"
+            "https://github.com/sugarcube-sh/sugarcube/issues",
         )}`;
 
         log.space(1);

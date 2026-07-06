@@ -33,7 +33,7 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
         binary,
         { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
         false,
-        ["sign"]
+        ["sign"],
     );
 }
 
@@ -51,7 +51,7 @@ async function createJWT(clientID: string, privateKeyPem: string): Promise<strin
     const signature = await crypto.subtle.sign(
         "RSASSA-PKCS1-v1_5",
         key,
-        new TextEncoder().encode(signingInput)
+        new TextEncoder().encode(signingInput),
     );
 
     return `${signingInput}.${base64url(new Uint8Array(signature))}`;
@@ -65,12 +65,12 @@ async function getInstallationToken(env: Env): Promise<string> {
         {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${jwt}`,
-                Accept: "application/vnd.github+json",
+                "Authorization": `Bearer ${jwt}`,
+                "Accept": "application/vnd.github+json",
                 "User-Agent": "sugarcube-studio",
                 "X-GitHub-Api-Version": "2026-03-10",
             },
-        }
+        },
     );
 
     if (!res.ok) {
@@ -84,8 +84,8 @@ async function getInstallationToken(env: Env): Promise<string> {
 
 function githubHeaders(token: string): Record<string, string> {
     return {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github+json",
+        "Authorization": `Bearer ${token}`,
+        "Accept": "application/vnd.github+json",
         "User-Agent": "sugarcube-studio",
         "X-GitHub-Api-Version": "2026-03-10",
     };
@@ -186,7 +186,7 @@ export async function createPR(env: Env, request: PRRequest): Promise<PRResult> 
     for (const file of request.files) {
         const existing = (await githubGet(
             token,
-            `/repos/${repo}/contents/${file.path}?ref=${baseBranch}`
+            `/repos/${repo}/contents/${file.path}?ref=${baseBranch}`,
         )) as { content: string };
 
         const rawContent = atob(existing.content.replace(/\n/g, ""));

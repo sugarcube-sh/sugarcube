@@ -7,10 +7,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("border validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/border/valid.json"
+        "tokens/validators/border/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/border/invalid.json"
+        "tokens/validators/border/invalid.json",
     );
 
     describe("valid cases", () => {
@@ -88,7 +88,7 @@ describe("border validator", () => {
             ValidationHelper.expectInvalidStrokeStyleError(
                 errors,
                 "invalid",
-                `${token.$path}.style`
+                `${token.$path}.style`,
             );
         });
 
@@ -100,12 +100,12 @@ describe("border validator", () => {
             ValidationHelper.expectInvalidUnitError(
                 [errors[0] as ValidationError],
                 "em",
-                `${token.$path}.style.dashArray.0.unit`
+                `${token.$path}.style.dashArray.0.unit`,
             );
             ValidationHelper.expectInvalidStrokeLineCapError(
                 [errors[1] as ValidationError],
                 "invalid",
-                `${token.$path}.style.lineCap`
+                `${token.$path}.style.lineCap`,
             );
         });
     });

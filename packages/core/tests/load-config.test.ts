@@ -37,10 +37,10 @@ describe("loadInternalConfig", () => {
         expect(result.config.variables.path).toBe("styles/tokens.css");
         expect(result.config.utilities.path).toContain(DEFAULT_CONFIG.utilities.filename);
         expect(result.config.variables.transforms.fluid.min).toBe(
-            DEFAULT_CONFIG.variables.transforms.fluid.min
+            DEFAULT_CONFIG.variables.transforms.fluid.min,
         );
         expect(result.config.variables.transforms.fluid.max).toBe(
-            DEFAULT_CONFIG.variables.transforms.fluid.max
+            DEFAULT_CONFIG.variables.transforms.fluid.max,
         );
         expect(result.configPath).toContain("sugarcube.config.js");
     });
@@ -48,7 +48,7 @@ describe("loadInternalConfig", () => {
     it("auto-discovers resolver when no config file exists", async () => {
         await writeFile(
             join(tempDir, "tokens.resolver.json"),
-            JSON.stringify({ version: "2025.10", resolutionOrder: [] })
+            JSON.stringify({ version: "2025.10", resolutionOrder: [] }),
         );
 
         const result = await loadInternalConfig();

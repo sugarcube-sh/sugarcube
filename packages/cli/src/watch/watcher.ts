@@ -16,7 +16,7 @@ export type WatcherHandle = {
 
 export async function startWatcher(
     config: InternalConfig,
-    callbacks: WatchCallbacks
+    callbacks: WatchCallbacks,
 ): Promise<WatcherHandle> {
     if (!config.resolver) {
         throw new Error("Resolver path is required for watch mode");

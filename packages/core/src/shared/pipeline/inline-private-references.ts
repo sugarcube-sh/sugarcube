@@ -10,7 +10,7 @@ function isPrivateToken(node: ResolvedTokens[string]): boolean {
 function findTarget(
     refKey: string,
     context: string,
-    tokens: ResolvedTokens
+    tokens: ResolvedTokens,
 ): ResolvedToken | undefined {
     const scoped = context ? `${context}.${refKey}` : refKey;
     const node = tokens[scoped] ?? tokens[refKey];

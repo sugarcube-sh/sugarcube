@@ -2,7 +2,7 @@ import type { FlattenedToken } from "../../src/types/flatten.js";
 import type { TokenType } from "../../src/types/tokens.js";
 
 export const createFlattenedToken = (
-    overrides: Partial<FlattenedToken<TokenType>> = {}
+    overrides: Partial<FlattenedToken<TokenType>> = {},
 ): FlattenedToken<TokenType> => ({
     $type: "color" as const,
     $value: "#FF0000",

@@ -27,7 +27,7 @@ export async function getCubeDir(flagValue: string | undefined): Promise<{ direc
 }
 
 export async function getComponentsDir(
-    flagValue: string | undefined
+    flagValue: string | undefined,
 ): Promise<{ directory: string }> {
     if (flagValue) {
         return { directory: absolutePath(flagValue) };

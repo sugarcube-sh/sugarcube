@@ -48,7 +48,7 @@ export type PipelineContext = {
  * Pass an `emit` handler to subscribe to real-time pipeline events.
  */
 export function createPipelineContext(
-    options: { emit?: (event: PipelineEvent) => void } = {}
+    options: { emit?: (event: PipelineEvent) => void } = {},
 ): PipelineContext {
     const warnings: PipelineWarning[] = [];
     const seen = new Set<string>();

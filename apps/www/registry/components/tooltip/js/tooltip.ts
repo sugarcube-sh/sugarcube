@@ -14,7 +14,7 @@ export function initTooltipClickHide() {
             () => {
                 target.removeAttribute("data-tooltip-hidden");
             },
-            { once: true }
+            { once: true },
         );
     });
 }

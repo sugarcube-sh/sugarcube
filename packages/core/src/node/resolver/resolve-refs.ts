@@ -42,7 +42,7 @@ export function createResolveContext(document: ResolverDocument, basePath: strin
  */
 export async function resolveReference(
     ref: string,
-    context: ResolveContext
+    context: ResolveContext,
 ): Promise<ResolveResult<TokenGroup | SetDefinition | ModifierDefinition>> {
     if (context.visitedRefs.has(ref)) {
         return errorResult({}, ErrorMessages.RESOLVER.CIRCULAR_REFERENCE(ref), ref);
@@ -61,7 +61,7 @@ export async function resolveReference(
 
 function resolveSameDocumentRef(
     ref: string,
-    context: ResolveContext
+    context: ResolveContext,
 ): ResolveResult<SetDefinition | ModifierDefinition> {
     const pointer = ref.slice(2);
     const [collection, name] = pointer.split("/");
@@ -91,7 +91,7 @@ function resolveSameDocumentRef(
 
 async function resolveFileRef(
     ref: string,
-    context: ResolveContext
+    context: ResolveContext,
 ): Promise<ResolveResult<TokenGroup>> {
     const filePath = isAbsolute(ref) ? ref : resolvePath(context.basePath, ref);
 
@@ -102,7 +102,7 @@ async function resolveFileRef(
             return errorResult(
                 {},
                 ErrorMessages.RESOLVER.RESOLVER_AS_TOKEN_SOURCE(filePath),
-                filePath
+                filePath,
             );
         }
         return { content: cached as TokenGroup, sourcePath: filePath, errors: [] };
@@ -124,7 +124,7 @@ async function resolveFileRef(
 
 async function resolveFileFragmentRef(
     ref: string,
-    context: ResolveContext
+    context: ResolveContext,
 ): Promise<ResolveResult<TokenGroup>> {
     const [filePart = "", fragmentPart = ""] = ref.split("#");
     const filePath = isAbsolute(filePart) ? filePart : resolvePath(context.basePath, filePart);
@@ -146,7 +146,7 @@ async function resolveFileFragmentRef(
         return errorResult(
             {},
             ErrorMessages.RESOLVER.INVALID_JSON_POINTER(pointer, result.error),
-            filePath
+            filePath,
         );
     }
 
@@ -224,7 +224,7 @@ function stampSourcePath(group: TokenGroup, sourcePath: string): TokenGroup {
         } else if (isGroup(value)) {
             result[key] = stampSourcePath(
                 value as TokenGroup,
-                sourcePath
+                sourcePath,
             ) as TokenGroup[typeof key];
         } else {
             result[key] = value as TokenGroup[typeof key];
@@ -240,7 +240,7 @@ function stampSourcePath(group: TokenGroup, sourcePath: string): TokenGroup {
  */
 export async function resolveSources(
     sources: Source[],
-    context: ResolveContext
+    context: ResolveContext,
 ): Promise<{ resolved: TokenGroup[]; errors: ResolverError[] }> {
     const resolved: TokenGroup[] = [];
     const errors: ResolverError[] = [];
@@ -305,7 +305,7 @@ function applyExtending(content: TokenGroup, refObject: ReferenceObject): TokenG
 
 export async function resolveDocumentReferences(
     document: ResolverDocument,
-    basePath: string
+    basePath: string,
 ): Promise<{
     sets: Array<{ name: string; definition: SetDefinition; sources: TokenGroup[] }>;
     modifiers: Array<{
@@ -344,7 +344,7 @@ async function processReferenceItem(
         definition: ModifierDefinition;
         resolvedContexts: Record<string, TokenGroup[]>;
     }>,
-    errors: ResolverError[]
+    errors: ResolverError[],
 ): Promise<void> {
     const refResult = await resolveReference(item.$ref, context);
     errors.push(...refResult.errors);
@@ -367,7 +367,7 @@ async function processReferenceItem(
         const resolvedContexts = await resolveModifierContexts(
             definition.contexts,
             context,
-            errors
+            errors,
         );
         modifiers.push({ name, definition, resolvedContexts });
     }
@@ -390,7 +390,7 @@ async function processInlineItem(
         definition: ModifierDefinition;
         resolvedContexts: Record<string, TokenGroup[]>;
     }>,
-    errors: ResolverError[]
+    errors: ResolverError[],
 ): Promise<void> {
     if (item.type === "set" && item.sources) {
         const sourcesResult = await resolveSources(item.sources, context);
@@ -425,7 +425,7 @@ async function processInlineItem(
 async function resolveModifierContexts(
     contexts: Record<string, Source[]>,
     context: ResolveContext,
-    errors: ResolverError[]
+    errors: ResolverError[],
 ): Promise<Record<string, TokenGroup[]>> {
     const resolvedContexts: Record<string, TokenGroup[]> = {};
 

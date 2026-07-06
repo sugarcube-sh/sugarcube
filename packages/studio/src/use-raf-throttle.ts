@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 // Throttle a callback to at most one execution per animation frame.
 export function useRafThrottle<Args extends unknown[]>(
-    callback: (...args: Args) => void
+    callback: (...args: Args) => void,
 ): (...args: Args) => void {
     const callbackRef = useRef(callback);
     callbackRef.current = callback;
@@ -14,7 +14,7 @@ export function useRafThrottle<Args extends unknown[]>(
         () => () => {
             if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
         },
-        []
+        [],
     );
 
     return useCallback((...args: Args) => {

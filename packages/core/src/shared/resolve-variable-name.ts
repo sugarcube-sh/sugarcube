@@ -26,7 +26,7 @@ type VariablesNameConfig = {
  *   varName("color.primary"); // → "ds-color-primary"
  */
 export function createVariableNameResolver(
-    variables: VariablesNameConfig | undefined
+    variables: VariablesNameConfig | undefined,
 ): (path: string) => string {
     const variableName = variables?.variableName;
     if (variableName) return (path: string) => variableName(stripRootSuffix(path));

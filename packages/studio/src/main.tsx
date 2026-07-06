@@ -22,5 +22,5 @@ createRoot(rootEl).render(
         <StudioProvider source={source}>
             <Shell />
         </StudioProvider>
-    </StrictMode>
+    </StrictMode>,
 );

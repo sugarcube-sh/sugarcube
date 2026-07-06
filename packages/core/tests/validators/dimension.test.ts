@@ -6,10 +6,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("dimension validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/dimension/valid.json"
+        "tokens/validators/dimension/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/dimension/invalid.json"
+        "tokens/validators/dimension/invalid.json",
     );
 
     describe("valid cases", () => {

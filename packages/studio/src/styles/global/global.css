@@ -279,20 +279,20 @@ label:not(:has(input[type="checkbox"])):not(:has(input[type="radio"])) {
 
 /* Full width for labels containing text inputs/textareas/selects */
 label:has(
-        input:not(
-                [type="button"],
-                [type="checkbox"],
-                [type="color"],
-                [type="file"],
-                [type="hidden"],
-                [type="image"],
-                [type="radio"],
-                [type="reset"],
-                [type="submit"]
-            ),
-        textarea,
-        select
-    ) {
+    input:not(
+        [type="button"],
+        [type="checkbox"],
+        [type="color"],
+        [type="file"],
+        [type="hidden"],
+        [type="image"],
+        [type="radio"],
+        [type="reset"],
+        [type="submit"]
+    ),
+    textarea,
+    select
+) {
     width: 100%;
 }
 
@@ -359,17 +359,17 @@ input[type="radio"] {
 
 /* Text inputs, textareas, selects */
 input:not(
-        [type="button"],
-        [type="checkbox"],
-        [type="color"],
-        [type="file"],
-        [type="hidden"],
-        [type="image"],
-        [type="radio"],
-        [type="range"],
-        [type="reset"],
-        [type="submit"]
-    ),
+    [type="button"],
+    [type="checkbox"],
+    [type="color"],
+    [type="file"],
+    [type="hidden"],
+    [type="image"],
+    [type="radio"],
+    [type="range"],
+    [type="reset"],
+    [type="submit"]
+),
 textarea,
 select {
     width: 100%;
@@ -434,18 +434,14 @@ input[type="color"] {
     &::-webkit-color-swatch {
         border: none;
         border-radius: calc(
-            var(--form-control-border-radius, 0.25rem) -
-            var(--form-control-border-width, 1px) *
-            3
+            var(--form-control-border-radius, 0.25rem) - var(--form-control-border-width, 1px) * 3
         );
     }
 
     &::-moz-color-swatch {
         border: none;
         border-radius: calc(
-            var(--form-control-border-radius, 0.25rem) -
-            var(--form-control-border-width, 1px) *
-            3
+            var(--form-control-border-radius, 0.25rem) - var(--form-control-border-width, 1px) * 3
         );
     }
 }
@@ -471,9 +467,12 @@ select {
     cursor: pointer;
 
     /* CSS caret instead of SVG */
-    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    background-image:
+        linear-gradient(45deg, transparent 50%, currentColor 50%),
         linear-gradient(135deg, currentColor 50%, transparent 50%);
-    background-position: calc(100% - 1em) center, calc(100% - 0.75em) center;
+    background-position:
+        calc(100% - 1em) center,
+        calc(100% - 0.75em) center;
     background-size: 0.25em 0.25em;
     background-repeat: no-repeat;
     padding-inline-end: 2.5em;

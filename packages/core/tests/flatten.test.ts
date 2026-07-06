@@ -11,7 +11,7 @@ const isToken = (entry: unknown): entry is FlattenedToken =>
 
 const buildTree = (
     tokens: TokenTree["tokens"],
-    options: { sourcePath?: string; context?: string } = {}
+    options: { sourcePath?: string; context?: string } = {},
 ): TokenTree => ({
     sourcePath: options.sourcePath ?? "test.json",
     ...(options.context && { context: options.context }),
@@ -72,11 +72,11 @@ describe("flatten", () => {
             const { tokens } = flatten([
                 buildTree(
                     { color: { $type: "color", primary: { $value: "#0066cc" } } },
-                    { sourcePath: "colors.json" }
+                    { sourcePath: "colors.json" },
                 ),
                 buildTree(
                     { button: { $type: "color", background: { $value: "{color.primary}" } } },
-                    { sourcePath: "components.json" }
+                    { sourcePath: "components.json" },
                 ),
             ]);
 
@@ -88,11 +88,11 @@ describe("flatten", () => {
             const { tokens } = flatten([
                 buildTree(
                     { color: { $type: "color", primary: { $value: "#old" } } },
-                    { sourcePath: "base.json" }
+                    { sourcePath: "base.json" },
                 ),
                 buildTree(
                     { color: { $type: "color", primary: { $value: "#new" } } },
-                    { sourcePath: "override.json" }
+                    { sourcePath: "override.json" },
                 ),
             ]);
 
@@ -106,7 +106,7 @@ describe("flatten", () => {
             const { tokens } = flatten([
                 buildTree(
                     { color: { $type: "color", primary: { $value: "#000" } } },
-                    { context: "dark" }
+                    { context: "dark" },
                 ),
             ]);
 
@@ -126,15 +126,15 @@ describe("flatten", () => {
             const { tokens } = flatten([
                 buildTree(
                     { color: { $type: "color", primary: { $value: "#fff" } } },
-                    { sourcePath: "base.json" }
+                    { sourcePath: "base.json" },
                 ),
                 buildTree(
                     { color: { $type: "color", primary: { $value: "#000" } } },
-                    { context: "dark", sourcePath: "dark.json" }
+                    { context: "dark", sourcePath: "dark.json" },
                 ),
                 buildTree(
                     { color: { $type: "color", primary: { $value: "#00f" } } },
-                    { context: "ocean", sourcePath: "ocean.json" }
+                    { context: "ocean", sourcePath: "ocean.json" },
                 ),
             ]);
 
@@ -153,7 +153,7 @@ describe("flatten", () => {
             const { tokens } = flatten([
                 buildTree(
                     { color: { $type: "color", primary: { $value: "#000" } } },
-                    { context: "dark" }
+                    { context: "dark" },
                 ),
             ]);
 
@@ -164,7 +164,7 @@ describe("flatten", () => {
             const { tokens } = flatten([
                 buildTree(
                     { color: { $type: "color", primary: { $value: "#000" } } },
-                    { context: "dark" }
+                    { context: "dark" },
                 ),
             ]);
 
@@ -261,7 +261,7 @@ describe("flatten", () => {
                             $root: { $value: "#dd0000" },
                         },
                     },
-                    { context: "dark" }
+                    { context: "dark" },
                 ),
             ]);
 
@@ -275,7 +275,7 @@ describe("flatten", () => {
             const { errors } = flatten([
                 buildTree({
                     color: {
-                        $type: "color",
+                        "$type": "color",
                         "invalid.name": { $value: "#ff0000" },
                     },
                 }),
@@ -283,7 +283,7 @@ describe("flatten", () => {
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                ErrorMessages.FLATTEN.INVALID_TOKEN_NAME("invalid.name")
+                ErrorMessages.FLATTEN.INVALID_TOKEN_NAME("invalid.name"),
             );
         });
 
@@ -293,7 +293,7 @@ describe("flatten", () => {
             const { errors } = flatten([
                 buildTree({
                     color: {
-                        $type: "color",
+                        "$type": "color",
                         "invalid{name": { $value: "#ff0000" },
                         "invalid}name": { $value: "#00ff00" },
                         "invalid{name}": { $value: "#0000ff" },
@@ -324,7 +324,7 @@ describe("flatten", () => {
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                ErrorMessages.FLATTEN.MISSING_DOLLAR_PREFIX("color.broken")
+                ErrorMessages.FLATTEN.MISSING_DOLLAR_PREFIX("color.broken"),
             );
         });
 
@@ -372,8 +372,8 @@ describe("flatten", () => {
         it("includes source path in error details", () => {
             const { errors } = flatten([
                 buildTree(
-                    { color: { $type: "color", "bad.name": { $value: "#f00" } } },
-                    { sourcePath: "problematic-file.json" }
+                    { color: { "$type": "color", "bad.name": { $value: "#f00" } } },
+                    { sourcePath: "problematic-file.json" },
                 ),
             ]);
 
@@ -391,7 +391,7 @@ describe("flatten", () => {
 
             expect(errors).toHaveLength(1);
             expect(errors[0]?.message).toBe(
-                ErrorMessages.FLATTEN.TOKEN_MISSING_TYPE("color.primary")
+                ErrorMessages.FLATTEN.TOKEN_MISSING_TYPE("color.primary"),
             );
         });
 
@@ -436,13 +436,13 @@ describe("flatten", () => {
                         },
                     } as TokenTree["tokens"]),
                 ],
-                ctx
+                ctx,
             );
 
             expect(errors).toHaveLength(0);
             expect(ctx.warnings).toHaveLength(1);
             expect(ctx.warnings[0]?.message).toBe(
-                WarningMessages.FLATTEN.WHITESPACE_IN_NAME("color ")
+                WarningMessages.FLATTEN.WHITESPACE_IN_NAME("color "),
             );
         });
 
@@ -452,12 +452,12 @@ describe("flatten", () => {
                 [
                     buildTree({
                         brand: {
-                            $type: "color",
+                            "$type": "color",
                             "acid green": { $value: "#00ff66" },
                         },
                     }),
                 ],
-                ctx
+                ctx,
             );
 
             expect(errors).toHaveLength(0);
@@ -470,7 +470,7 @@ describe("flatten", () => {
             const { tokens } = flatten([
                 buildTree({
                     step: {
-                        $type: "dimension",
+                        "$type": "dimension",
                         "-2": { $value: "2px" },
                         "-1": { $value: "4px" },
                         "0": { $value: "8px" },
@@ -479,11 +479,11 @@ describe("flatten", () => {
                     },
                     tshirt: {
                         $type: "dimension",
-                        "xs": { $value: "2px" },
-                        "sm": { $value: "4px" },
-                        "md": { $value: "8px" },
-                        "lg": { $value: "16px" },
-                        "xl": { $value: "32px" },
+                        xs: { $value: "2px" },
+                        sm: { $value: "4px" },
+                        md: { $value: "8px" },
+                        lg: { $value: "16px" },
+                        xl: { $value: "32px" },
                     },
                 }),
             ]);

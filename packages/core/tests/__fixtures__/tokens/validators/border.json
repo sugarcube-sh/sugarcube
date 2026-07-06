@@ -27,7 +27,10 @@
       "color": "#FF0000",
       "width": { "value": 2, "unit": "px" },
       "style": {
-        "dashArray": [{ "value": 4, "unit": "px" }, { "value": 2, "unit": "px" }],
+        "dashArray": [
+          { "value": 4, "unit": "px" },
+          { "value": 2, "unit": "px" }
+        ],
         "lineCap": "round"
       }
     },

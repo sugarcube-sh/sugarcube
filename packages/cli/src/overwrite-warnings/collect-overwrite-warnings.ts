@@ -38,14 +38,14 @@ export async function collectComponentOverwriteWarnings({
                 (file): file is ComponentFile =>
                     (file.type === "tsx" || file.type === "astro" || file.type === "njk") &&
                     "framework" in file &&
-                    file.framework === componentType
+                    file.framework === componentType,
             )
             .map((file) => {
                 return relative(
                     process.cwd(),
-                    join(componentsOutputDirectory, item.name, `${item.name}.${file.type}`)
+                    join(componentsOutputDirectory, item.name, `${item.name}.${file.type}`),
                 );
-            })
+            }),
     );
 
     warnings.componentFiles = componentFiles.filter((file) => {
@@ -58,7 +58,7 @@ export async function collectComponentOverwriteWarnings({
         const componentName = item.name;
         return relative(
             process.cwd(),
-            join(componentsOutputDirectory, item.name, `${componentName}.css`)
+            join(componentsOutputDirectory, item.name, `${componentName}.css`),
         );
     });
 

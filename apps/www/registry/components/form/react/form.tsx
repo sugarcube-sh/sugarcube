@@ -78,7 +78,7 @@ const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
                 <div ref={ref} className={cn("form-item", className)} {...props} />
             </FormItemContext.Provider>
         );
-    }
+    },
 );
 FormItem.displayName = "FormItem";
 
@@ -88,7 +88,9 @@ const FormLabel = React.forwardRef<
 >(({ className, ...props }, ref) => {
     const { formItemId } = useFormField();
 
-    return <Label ref={ref} htmlFor={formItemId} className={cn("form-label", className)} {...props} />;
+    return (
+        <Label ref={ref} htmlFor={formItemId} className={cn("form-label", className)} {...props} />
+    );
 });
 FormLabel.displayName = "FormLabel";
 

@@ -80,7 +80,7 @@ function calculateMultiplierScale(config: MultiplierScaleConfig): GeneratedStep[
 
 function resolvePairList(
     pairs: MultiplierScaleConfig["pairs"],
-    names: string[]
+    names: string[],
 ): [string, string][] {
     if (pairs === undefined) return [];
 

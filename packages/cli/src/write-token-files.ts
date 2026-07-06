@@ -7,7 +7,7 @@ export interface TokenFile {
 
 export async function writeTokenFiles(
     tokenFiles: TokenFile[],
-    tokensDir: string
+    tokensDir: string,
 ): Promise<string[]> {
     await fs.mkdir(tokensDir, { recursive: true });
 

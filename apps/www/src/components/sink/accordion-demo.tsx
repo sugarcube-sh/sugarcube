@@ -7,7 +7,7 @@ import {
 
 export function AccordionDemo() {
     return (
-        <div className="flow" style={{ "maxWidth": "36rem" } as React.CSSProperties}>
+        <div className="flow" style={{ maxWidth: "36rem" } as React.CSSProperties}>
             <Accordion type="single" collapsible>
                 <AccordionItem value="item-1">
                     <AccordionTrigger>Is it accessible?</AccordionTrigger>

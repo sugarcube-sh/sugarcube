@@ -8,7 +8,7 @@ function normalizeToPixels(value: Dimension, rootSize = 16): number {
 
 function convertFluidDimension(
     value: FluidDimension,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ): SimpleCSSProperties {
     const { min, max } = value;
     const fluidConfig = options.fluidConfig;
@@ -35,7 +35,7 @@ function convertFluidDimension(
 
     return {
         value: `clamp(${minSizeRem}rem, ${intersection.toFixed(2)}rem + ${(slope * 100).toFixed(
-            2
+            2,
         )}vw, ${maxSizeRem}rem)`,
     };
 }
@@ -45,7 +45,7 @@ function convertFluidDimension(
  */
 export function renderFluidDimension(
     value: TokenValue<"fluidDimension">,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ): SimpleCSSProperties {
     if (isReference(value)) {
         return { value };

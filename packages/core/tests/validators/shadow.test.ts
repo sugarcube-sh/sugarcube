@@ -7,10 +7,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("shadow validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/shadow/valid.json"
+        "tokens/validators/shadow/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/shadow/invalid.json"
+        "tokens/validators/shadow/invalid.json",
     );
 
     describe("valid cases", () => {
@@ -54,7 +54,7 @@ describe("shadow validator", () => {
                 ValidationHelper.expectInvalidColorError(
                     errors,
                     (token.$value as { color: string }).color,
-                    `${token.$path}.color`
+                    `${token.$path}.color`,
                 );
             });
         });
@@ -67,7 +67,7 @@ describe("shadow validator", () => {
                 ValidationHelper.expectInvalidUnitError(
                     errors,
                     "em",
-                    `${token.$path}.offsetX.unit`
+                    `${token.$path}.offsetX.unit`,
                 );
             });
 
@@ -78,7 +78,7 @@ describe("shadow validator", () => {
                 ValidationHelper.expectInvalidNumberError(
                     errors,
                     "zero",
-                    `${token.$path}.offsetX.value`
+                    `${token.$path}.offsetX.value`,
                 );
             });
         });
@@ -90,13 +90,13 @@ describe("shadow validator", () => {
                 const errors = ValidationHelper.validateToken(validateShadow, token);
                 ValidationHelper.expectMultipleErrors(errors, 3); // Missing offsetY, blur, and spread
                 expect(errors[0]?.message).toBe(
-                    ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY("offsetY", token.$path)
+                    ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY("offsetY", token.$path),
                 );
                 expect(errors[1]?.message).toBe(
-                    ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY("blur", token.$path)
+                    ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY("blur", token.$path),
                 );
                 expect(errors[2]?.message).toBe(
-                    ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY("spread", token.$path)
+                    ErrorMessages.VALIDATE.MISSING_REQUIRED_PROPERTY("spread", token.$path),
                 );
             });
         });
@@ -109,7 +109,7 @@ describe("shadow validator", () => {
                 ValidationHelper.expectInvalidShadowInsetError(
                     errors,
                     (token.$value as { inset: unknown }).inset,
-                    `${token.$path}.inset`
+                    `${token.$path}.inset`,
                 );
             });
         });

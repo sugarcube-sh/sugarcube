@@ -21,7 +21,7 @@ export function computeDiff(
     baseline: TokenSnapshot,
     pathIndex: PathIndex,
     edits?: Record<string, ScaleEdit>,
-    bindings?: Record<string, ScaleBindingMeta>
+    bindings?: Record<string, ScaleBindingMeta>,
 ): TokenDiffEntry[] {
     const scaleOwnedPrefixes = collectScaleOwnedPrefixes(bindings);
 
@@ -80,7 +80,7 @@ export function computeDiff(
 }
 
 function collectScaleOwnedPrefixes(
-    bindings: Record<string, ScaleBindingMeta> | undefined
+    bindings: Record<string, ScaleBindingMeta> | undefined,
 ): string[] {
     if (!bindings) return [];
     return Object.values(bindings)
@@ -98,7 +98,7 @@ function isOwnedByScale(path: string, prefixes: string[]): boolean {
 function computeScaleDiffs(
     baseline: TokenSnapshot,
     edits: Record<string, ScaleEdit> | undefined,
-    bindings: Record<string, ScaleBindingMeta> | undefined
+    bindings: Record<string, ScaleBindingMeta> | undefined,
 ): TokenDiffEntry[] {
     if (!edits || !bindings) return [];
     const entries: TokenDiffEntry[] = [];

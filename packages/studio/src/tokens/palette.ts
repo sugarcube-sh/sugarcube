@@ -7,7 +7,7 @@ export function currentPaletteFromReference(
     family: string,
     palettes: readonly string[],
     pathIndex: PathIndex,
-    context?: string
+    context?: string,
 ): string | undefined {
     const paletteSet = new Set(palettes);
     const paths = pathIndex.under(family);
@@ -28,7 +28,7 @@ export function familyPaletteSwapUpdates(
     newPalette: string,
     palettes: readonly string[],
     readToken: TokenReader,
-    pathIndex: PathIndex
+    pathIndex: PathIndex,
 ): TokenUpdate[] {
     const paletteSet = new Set(palettes);
     const familyPaths = pathIndex.under(family);

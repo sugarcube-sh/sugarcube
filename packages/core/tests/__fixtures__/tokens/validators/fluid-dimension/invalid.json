@@ -10,7 +10,10 @@
   },
   "spacing.fluid.invalid.structure.array": {
     "$type": "fluidDimension",
-    "$value": [{ "value": 16, "unit": "px" }, { "value": 24, "unit": "px" }],
+    "$value": [
+      { "value": 16, "unit": "px" },
+      { "value": 24, "unit": "px" }
+    ],
     "$path": "spacing.fluid.invalid.structure.array",
     "$source": {
       "collection": "tokens",

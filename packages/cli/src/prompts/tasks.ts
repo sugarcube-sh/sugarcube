@@ -39,11 +39,11 @@ export async function executeTasksInSidebar(
         successPauseMs?: number;
         successMessage?: string;
         successAsOutro?: boolean;
-    } = {}
+    } = {},
 ): Promise<void> {
     const formatWithSidebar = (
         task: Task,
-        state: "start" | "end" | "pending" | "success"
+        state: "start" | "end" | "pending" | "success",
     ): string => {
         let taskText = "";
         switch (state) {

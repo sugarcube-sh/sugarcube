@@ -31,14 +31,14 @@ export function ColorTokenControl({ binding, colorScale }: ColorTokenControlProp
 
     const { columns, rows, cells, byPath } = useMemo(
         () => buildColorGrid(colorScale, variableName),
-        [colorScale, variableName]
+        [colorScale, variableName],
     );
 
     const refPath = unwrapRef(value);
     const terminalPath = useTokenStore((state) => {
         if (!refPath) return "";
         return resolveTerminalPath(refPath, (p) =>
-            pathIndex.readValue(state.resolved, p, currentContext)
+            pathIndex.readValue(state.resolved, p, currentContext),
         );
     });
     const currentOption = byPath.get(terminalPath);
@@ -48,12 +48,12 @@ export function ColorTokenControl({ binding, colorScale }: ColorTokenControlProp
             e.preventDefault();
             requestAnimationFrame(() => {
                 const el = popoverRef.current?.querySelector<HTMLElement>(
-                    `[data-path="${terminalPath}"]`
+                    `[data-path="${terminalPath}"]`,
                 );
                 el?.focus();
             });
         },
-        [terminalPath]
+        [terminalPath],
     );
 
     return (

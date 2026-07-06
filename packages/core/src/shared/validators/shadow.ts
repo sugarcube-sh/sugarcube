@@ -33,7 +33,7 @@ const ShadowSchema: TokenValidationSchema = {
 export function validateShadow(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     const errors: ValidationError[] = [];
 

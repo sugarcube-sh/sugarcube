@@ -39,7 +39,7 @@ export function isCompositeToken(value: unknown): boolean {
 }
 
 export function isTypographyToken(
-    token: RenderableToken<TokenType>
+    token: RenderableToken<TokenType>,
 ): token is RenderableToken<"typography"> {
     return token.$type === "typography";
 }
@@ -90,7 +90,7 @@ export function isScaleExtension(value: unknown): value is ScaleExtension {
 
 /** Type guard for inline set in resolutionOrder. */
 export function isInlineSet(
-    item: unknown
+    item: unknown,
 ): item is { type: "set"; name: string; sources: unknown[] } {
     return (
         typeof item === "object" &&

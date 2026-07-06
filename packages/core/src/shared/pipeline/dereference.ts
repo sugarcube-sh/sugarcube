@@ -8,7 +8,7 @@ import { deriveContext } from "./permutation-context.js";
 class ResolutionThrow extends Error {
     constructor(
         readonly kind: "circular" | "missing",
-        message: string
+        message: string,
     ) {
         super(message);
         this.name = "ResolutionThrow";
@@ -18,7 +18,7 @@ class ResolutionThrow extends Error {
 function lookupNamespacedKey(
     refKey: string,
     context: string,
-    tokens: FlattenedTokens
+    tokens: FlattenedTokens,
 ): string | undefined {
     if (context) {
         const scoped = `${context}.${refKey}`;
@@ -33,7 +33,7 @@ function resolveValue<T extends TokenType>(
     value: TokenValue<T>,
     tokens: FlattenedTokens,
     resolving: Set<string>,
-    context: string
+    context: string,
 ): TokenValue<T> {
     if (typeof value === "string" && isReference(value)) {
         return resolveReferenceChain(key, value, tokens, resolving, context) as TokenValue<T>;
@@ -42,7 +42,7 @@ function resolveValue<T extends TokenType>(
     // Handle arrays (for gradients, shadow arrays)
     if (Array.isArray(value)) {
         return value.map((v) =>
-            resolveValue(key, v as TokenValue<T>, tokens, resolving, context)
+            resolveValue(key, v as TokenValue<T>, tokens, resolving, context),
         ) as TokenValue<T>;
     }
 
@@ -56,10 +56,10 @@ function resolveValue<T extends TokenType>(
                         v as TokenValue<T>,
                         tokens,
                         resolving,
-                        context
+                        context,
                     ),
                 }),
-            {}
+            {},
         );
         return resolved as TokenValue<T>;
     }
@@ -71,7 +71,7 @@ function resolveValue<T extends TokenType>(
 function inferTypeFromReference(
     value: string,
     tokens: FlattenedTokens,
-    context: string
+    context: string,
 ): TokenType | undefined {
     const refKey = value.slice(1, -1); // Remove { and }
     const namespacedKey = lookupNamespacedKey(refKey, context, tokens);
@@ -147,7 +147,7 @@ export function dereference(tokens: FlattenedTokens): {
                     flattenedToken.$value,
                     tokens,
                     resolving,
-                    context
+                    context,
                 ),
             } as ResolvedToken<TokenType>;
         } catch (error: unknown) {
@@ -177,7 +177,7 @@ function resolveReferenceChain(
     value: string,
     tokens: FlattenedTokens,
     resolving: Set<string>,
-    context: string
+    context: string,
 ): TokenValue<TokenType> {
     const refKey = value.slice(1, -1); // Remove { and }
 
@@ -187,7 +187,7 @@ function resolveReferenceChain(
     if (!namespacedKey) {
         throw new ResolutionThrow(
             "missing",
-            ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key)
+            ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key),
         );
     }
 
@@ -196,12 +196,12 @@ function resolveReferenceChain(
         if (!referencedToken || !("$path" in referencedToken)) {
             throw new ResolutionThrow(
                 "missing",
-                ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key)
+                ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key),
             );
         }
         throw new ResolutionThrow(
             "circular",
-            ErrorMessages.RESOLVE.CIRCULAR_REFERENCE(key, referencedToken.$path)
+            ErrorMessages.RESOLVE.CIRCULAR_REFERENCE(key, referencedToken.$path),
         );
     }
 
@@ -209,7 +209,7 @@ function resolveReferenceChain(
     if (!referencedToken || !("$value" in referencedToken)) {
         throw new ResolutionThrow(
             "missing",
-            ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key)
+            ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key),
         );
     }
 
@@ -221,7 +221,7 @@ function resolveReferenceChain(
         referencedToken.$value,
         tokens,
         resolving,
-        context
+        context,
     );
 
     resolving.delete(namespacedKey);

@@ -23,7 +23,7 @@ const TransitionSchema: TokenValidationSchema = {
 export function validateTransition(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     return validateSchema(TransitionSchema.schema, value, path, source);
 }

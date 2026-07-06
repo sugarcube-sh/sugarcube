@@ -96,7 +96,7 @@ function generateTokensWithModifiers(baseSize: number, contextCount: number) {
 
 function createMemoryData(
     baseTokens: Record<string, unknown>,
-    contextTokens?: Record<string, Record<string, unknown>>
+    contextTokens?: Record<string, Record<string, unknown>>,
 ): TokenMemoryData {
     const data: TokenMemoryData = {
         "base.json": {
@@ -325,7 +325,7 @@ describe("pipeline", () => {
         function buildScaleRecipeTree(
             recipeCount: number,
             stepsPositive: number,
-            stepsNegative: number
+            stepsNegative: number,
         ): TokenTree {
             const tokens: Record<string, unknown> = {};
             for (let g = 0; g < recipeCount; g++) {

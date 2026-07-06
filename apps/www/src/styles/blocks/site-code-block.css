@@ -25,7 +25,9 @@
     border: none;
     min-height: auto;
     color: var(--color-text-quiet);
-    transition: color var(--transition-normal) ease, scale var(--transition-normal) ease;
+    transition:
+        color var(--transition-normal) ease,
+        scale var(--transition-normal) ease;
 }
 
 .site-code-block [data-copy-button]:hover {

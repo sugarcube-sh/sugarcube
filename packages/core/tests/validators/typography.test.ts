@@ -7,10 +7,10 @@ import { ValidationHelper } from "../__fixtures__/helpers/validation-helper";
 
 describe("typography validator", () => {
     const validTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/typography/valid.json"
+        "tokens/validators/typography/valid.json",
     );
     const invalidTokens = loadFixture<Record<string, FlattenedToken>>(
-        "tokens/validators/typography/invalid.json"
+        "tokens/validators/typography/invalid.json",
     );
 
     describe("valid cases", () => {
@@ -51,7 +51,7 @@ describe("typography validator", () => {
             ValidationHelper.expectInvalidFontFamilyError(
                 errors,
                 (token.$value as any).fontFamily,
-                `${token.$path}.fontFamily`
+                `${token.$path}.fontFamily`,
             );
         });
 
@@ -63,14 +63,14 @@ describe("typography validator", () => {
             expect(errors[0]?.message).toBe(
                 ErrorMessages.VALIDATE.INVALID_NUMBER(
                     (token.$value as any).fontSize.value,
-                    `${token.$path}.fontSize.value`
-                )
+                    `${token.$path}.fontSize.value`,
+                ),
             );
             expect(errors[1]?.message).toBe(
                 ErrorMessages.VALIDATE.INVALID_DIMENSION_UNIT(
                     (token.$value as any).fontSize.unit,
-                    `${token.$path}.fontSize.unit`
-                )
+                    `${token.$path}.fontSize.unit`,
+                ),
             );
         });
 
@@ -81,7 +81,7 @@ describe("typography validator", () => {
             ValidationHelper.expectInvalidDimensionError(
                 errors,
                 (token.$value as any).letterSpacing,
-                `${token.$path}.letterSpacing`
+                `${token.$path}.letterSpacing`,
             );
         });
 
@@ -92,7 +92,7 @@ describe("typography validator", () => {
             ValidationHelper.expectInvalidNumberError(
                 errors,
                 (token.$value as any).lineHeight,
-                `${token.$path}.lineHeight`
+                `${token.$path}.lineHeight`,
             );
         });
     });

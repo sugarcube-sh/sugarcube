@@ -43,11 +43,11 @@ export function getLogicalProperty(property: string, direction: DirectionalVaria
 const ALL_DIRECTIONS: DirectionalVariant[] = ["top", "right", "bottom", "left", "x", "y", "full"];
 
 function expandDirections(
-    directions: DirectionalVariant[] | DirectionalVariant
+    directions: DirectionalVariant[] | DirectionalVariant,
 ): DirectionalVariant[] {
     const directionsArray = Array.isArray(directions) ? directions : [directions];
     return directionsArray.flatMap((direction) =>
-        direction === "all" ? ALL_DIRECTIONS : [direction]
+        direction === "all" ? ALL_DIRECTIONS : [direction],
     );
 }
 
@@ -120,7 +120,7 @@ export function clearMatchCache(): void {
  * We build a path-to-token index for O(1) lookups instead of O(n) iteration.
  */
 function buildPathIndex(
-    contextTokens: Record<string, RenderableToken | NodeMetadata>
+    contextTokens: Record<string, RenderableToken | NodeMetadata>,
 ): Map<string, RenderableToken> {
     const cached = pathIndexCache.get(contextTokens);
     if (cached) return cached;
@@ -144,7 +144,7 @@ function buildPathIndex(
  * For utilities, we use the default context to find matching tokens.
  */
 function getDefaultContextTokens(
-    tokens: NormalizedRenderableTokens
+    tokens: NormalizedRenderableTokens,
 ): Record<string, RenderableToken | NodeMetadata> | null {
     if (tokens.default) {
         return tokens.default as Record<string, RenderableToken | NodeMetadata>;
@@ -162,7 +162,7 @@ function getDefaultContextTokens(
 export function findMatchingToken(
     tokenName: string,
     config: PropertyUtilityConfig & { property?: string },
-    tokens: NormalizedRenderableTokens
+    tokens: NormalizedRenderableTokens,
 ): RenderableToken | null {
     const cacheKey = `${config.source}:${config.prefix ?? ""}:${config.property ?? ""}:${tokenName}`;
     if (matchCache.has(cacheKey)) {
@@ -187,7 +187,7 @@ export function findMatchingToken(
         if (sourceBase && sourceBase !== config.source) {
             searchPaths.push(
                 `${sourceBase}.${config.prefix}.${tokenName}`,
-                `${sourceBase}.${config.prefix}.${tokenName.split("-").join(".")}`
+                `${sourceBase}.${config.prefix}.${tokenName.split("-").join(".")}`,
             );
         }
     }
@@ -238,7 +238,7 @@ function createUtilityPattern(prefix?: string, directionAbbr = ""): RegExp {
 function createSimpleRule(
     property: string,
     config: PropertyUtilityConfig,
-    tokens: NormalizedRenderableTokens
+    tokens: NormalizedRenderableTokens,
 ): [RegExp, (m: RegExpMatchArray) => CSSObject] {
     const pattern = createUtilityPattern(config.prefix);
 
@@ -261,7 +261,7 @@ function createDirectionalRule(
     property: string,
     config: PropertyUtilityConfig,
     direction: DirectionalVariant,
-    tokens: NormalizedRenderableTokens
+    tokens: NormalizedRenderableTokens,
 ): [RegExp, (m: RegExpMatchArray) => CSSObject] {
     if (direction === "all") {
         return createSimpleRule(property, config, tokens);
@@ -297,7 +297,7 @@ interface RuleForPrefix {
 
 function createSmartRule(
     prefix: string,
-    rulesForPrefix: RuleForPrefix[]
+    rulesForPrefix: RuleForPrefix[],
 ): [RegExp, (m: RegExpMatchArray) => CSSObject] {
     const pattern = createUtilityPattern(prefix);
 
@@ -331,7 +331,7 @@ function createSmartRule(
 function createDirectTokenPathRule(
     property: string,
     config: PropertyUtilityConfig,
-    tokens: NormalizedRenderableTokens
+    tokens: NormalizedRenderableTokens,
 ): [RegExp, (m: RegExpMatchArray) => CSSObject] {
     // For utilities without prefix, use the first part of the source path as the pattern base
     // (e.g., "text" from "text.*").
@@ -367,7 +367,7 @@ function validateUtilityConfig(config: PropertyUtilityConfig, property: string):
 
 function validateInputs(
     utilitiesConfig: UtilityClassesConfig,
-    tokens: NormalizedRenderableTokens
+    tokens: NormalizedRenderableTokens,
 ): void {
     if (!utilitiesConfig || typeof utilitiesConfig !== "object") {
         throw new Error(ErrorMessages.UTILITIES.INVALID_CONFIG_OBJECT);
@@ -380,7 +380,7 @@ function validateInputs(
 function segmentsFromTokens(
     config: PropertyUtilityConfig,
     property: string,
-    tokens: NormalizedRenderableTokens
+    tokens: NormalizedRenderableTokens,
 ): string[] {
     const defaultTokens = getDefaultContextTokens(tokens);
     if (!defaultTokens) return [];
@@ -440,7 +440,7 @@ function classNamesForSegment(segment: string, config: PropertyUtilityConfig): s
  */
 export function enumerateSafelistClasses(
     utilitiesConfig: UtilityClassesConfig,
-    tokens: NormalizedRenderableTokens
+    tokens: NormalizedRenderableTokens,
 ): string[] {
     const classes = new Set<string>();
 
@@ -474,7 +474,7 @@ export function enumerateSafelistClasses(
  */
 export function convertConfigToUnoRules(
     utilitiesConfig: UtilityClassesConfig,
-    tokens: NormalizedRenderableTokens
+    tokens: NormalizedRenderableTokens,
 ): Array<[RegExp, (m: RegExpMatchArray) => CSSObject]> {
     validateInputs(utilitiesConfig, tokens);
 

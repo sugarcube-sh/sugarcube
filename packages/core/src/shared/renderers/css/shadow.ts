@@ -43,7 +43,7 @@ function convertSingleShadow(shadow: ShadowObject, options: CSSRenderOptions): s
 
 export function renderShadow(
     value: TokenValue<"shadow">,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ): CSSShadowProperties {
     if (isReference(value)) {
         return { value };

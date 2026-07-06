@@ -64,12 +64,12 @@ export function useToken<T = unknown>(path: string): [T | undefined, (value: T) 
     const getPathIndex = useStudio().getPathIndex;
     const context = useTokenStore((state) => state.currentContext);
     const value = useTokenStore((state) =>
-        getPathIndex().readValue(state.resolved, path, context)
+        getPathIndex().readValue(state.resolved, path, context),
     ) as T | undefined;
     const setToken = useTokenStore((state) => state.setToken);
     const setValue = useCallback(
         (next: T) => setToken(path, next, context),
-        [setToken, path, context]
+        [setToken, path, context],
     );
     return [value, setValue];
 }
@@ -123,7 +123,7 @@ export function useFamilyPalette(family: string, palettes: readonly string[]): s
             family,
             palettes,
             pathIndex,
-            state.currentContext
+            state.currentContext,
         );
     });
 }

@@ -21,7 +21,7 @@ const FluidDimensionSchema: TokenValidationSchema = {
 export function validateFluidDimension(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     return validateSchema(FluidDimensionSchema.schema, value, path, source);
 }

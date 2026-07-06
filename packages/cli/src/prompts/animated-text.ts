@@ -10,7 +10,7 @@ export const sayAnimatedInSidebar = async (
         clear?: boolean;
         stdin?: NodeJS.ReadStream;
         stdout?: NodeJS.WriteStream;
-    } = {}
+    } = {},
 ) => {
     const {
         sidebarSymbol = color.gray("│"),
@@ -68,7 +68,7 @@ export const sayAnimatedInSidebar = async (
 
             if (!cancelled)
                 await new Promise((r) =>
-                    setTimeout(r, Math.floor(Math.random() * (200 - 75 + 1)) + 75)
+                    setTimeout(r, Math.floor(Math.random() * (200 - 75 + 1)) + 75),
                 );
         }
 
@@ -80,7 +80,7 @@ export const sayAnimatedInSidebar = async (
         logUpdate(`${sidebarSymbol}  ${styledFinalMessage}`);
         if (!cancelled)
             await new Promise((r) =>
-                setTimeout(r, Math.floor(Math.random() * (1400 - 1200 + 1)) + 1200)
+                setTimeout(r, Math.floor(Math.random() * (1400 - 1200 + 1)) + 1200),
             );
         i++;
     }

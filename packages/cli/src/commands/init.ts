@@ -56,7 +56,7 @@ export const init = new Command()
         try {
             if (!process.stdin.isTTY) {
                 console.error(
-                    "init requires an interactive terminal. Use individual commands (cube, components, generate) for CI."
+                    "init requires an interactive terminal. Use individual commands (cube, components, generate) for CI.",
                 );
                 process.exit(1);
             }
@@ -111,7 +111,7 @@ export const init = new Command()
 
             const addCube = await promptOptional(
                 "CUBE CSS?",
-                `you can add it later with ${color.cyan("sugarcube cube")}`
+                `you can add it later with ${color.cyan("sugarcube cube")}`,
             );
             if (addCube) {
                 await runCube({
@@ -124,7 +124,7 @@ export const init = new Command()
 
             const addComponents = await promptOptional(
                 "Components?",
-                `you can add them later with ${color.cyan("sugarcube components")}`
+                `you can add them later with ${color.cyan("sugarcube components")}`,
             );
             if (addComponents) {
                 await runComponents([], {
@@ -137,7 +137,7 @@ export const init = new Command()
 
             const installVite = await promptOptional(
                 `Vite plugin? ${color.dim("(recommended for Vite-based frameworks: Astro, SvelteKit...)")}`,
-                `you can install it later: ${color.cyan("@sugarcube-sh/vite")}`
+                `you can install it later: ${color.cyan("@sugarcube-sh/vite")}`,
             );
 
             const packageManager = await getPackageManager(process.cwd(), {
@@ -164,7 +164,7 @@ export const init = new Command()
                                 depsToInstall,
                                 process.cwd(),
                                 packageManager,
-                                { devDependency: true }
+                                { devDependency: true },
                             );
                         },
                     },

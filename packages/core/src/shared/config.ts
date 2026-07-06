@@ -152,7 +152,7 @@ export function validateInternalConfig(config: InternalConfig): InternalConfig {
  */
 export function validateConfig(
     config: Partial<SugarcubeConfig>,
-    dirs: DefaultDirs
+    dirs: DefaultDirs,
 ): InternalConfig {
     const userConfig = validateSugarcubeConfig(config);
     const internalConfig = fillDefaultsCore(userConfig, dirs);

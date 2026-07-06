@@ -42,7 +42,7 @@ function renderExpanded<B extends { token: string }>(
     binding: B,
     ctx: ControlContext,
     key: number,
-    render: (binding: B, key: string | number) => ReactNode
+    render: (binding: B, key: string | number) => ReactNode,
 ): ReactNode {
     if (!binding.token.includes("*")) return render(binding, key);
     const matches = ctx.pathIndex.matching(binding.token);
@@ -60,18 +60,18 @@ function renderColor(binding: ColorBinding, ctx: ControlContext, key: string | n
 function renderPaletteSwap(
     binding: Extract<PanelBinding, { type: "palette-swap" }>,
     ctx: ControlContext,
-    key: number
+    key: number,
 ): ReactNode {
     if (!ctx.colorScale) {
         console.warn(
-            `[studio] palette-swap binding for "${binding.family}" needs studio.colorScale in config`
+            `[studio] palette-swap binding for "${binding.family}" needs studio.colorScale in config`,
         );
         return null;
     }
     const palettes = binding.palettes ?? ctx.colorScale.palettes;
     if (palettes.length === 0) {
         console.warn(
-            `[studio] palette-swap binding for "${binding.family}" has no palettes configured`
+            `[studio] palette-swap binding for "${binding.family}" has no palettes configured`,
         );
         return null;
     }

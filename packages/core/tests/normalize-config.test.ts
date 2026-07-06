@@ -16,13 +16,13 @@ describe("fillDefaults", () => {
 
             expect(result.variables.path).toContain(DEFAULT_CONFIG.variables.filename);
             expect(result.variables.transforms.fluid.min).toBe(
-                DEFAULT_CONFIG.variables.transforms.fluid.min
+                DEFAULT_CONFIG.variables.transforms.fluid.min,
             );
             expect(result.variables.transforms.fluid.max).toBe(
-                DEFAULT_CONFIG.variables.transforms.fluid.max
+                DEFAULT_CONFIG.variables.transforms.fluid.max,
             );
             expect(result.variables.transforms.colorFallbackStrategy).toBe(
-                DEFAULT_CONFIG.variables.transforms.colorFallbackStrategy
+                DEFAULT_CONFIG.variables.transforms.colorFallbackStrategy,
             );
         });
 
@@ -30,7 +30,7 @@ describe("fillDefaults", () => {
             const result = fillDefaults(
                 minimalConfig({
                     variables: { path: "custom/tokens.css" },
-                })
+                }),
             );
 
             expect(result.variables.path).toBe("custom/tokens.css");
@@ -40,7 +40,7 @@ describe("fillDefaults", () => {
             const result = fillDefaults(
                 minimalConfig({
                     variables: { path: "tokens.css", layer: "tokens" },
-                })
+                }),
             );
 
             expect(result.variables.layer).toBe("tokens");
@@ -52,7 +52,7 @@ describe("fillDefaults", () => {
                     variables: {
                         transforms: { fluid: { min: 400, max: 1400 } },
                     },
-                })
+                }),
             );
 
             expect(result.variables.transforms.fluid).toEqual({ min: 400, max: 1400 });
@@ -65,7 +65,7 @@ describe("fillDefaults", () => {
                     variables: {
                         transforms: { colorFallbackStrategy: "polyfill" },
                     },
-                })
+                }),
             );
 
             expect(result.variables.transforms.colorFallbackStrategy).toBe("polyfill");
@@ -83,7 +83,7 @@ describe("fillDefaults", () => {
             const result = fillDefaults(
                 minimalConfig({
                     variables: { permutations },
-                })
+                }),
             );
 
             expect(result.variables.permutations).toEqual(permutations);
@@ -101,7 +101,7 @@ describe("fillDefaults", () => {
             const result = fillDefaults(
                 minimalConfig({
                     utilities: { path: "custom/utilities.css" },
-                })
+                }),
             );
 
             expect(result.utilities.path).toBe("custom/utilities.css");
@@ -111,7 +111,7 @@ describe("fillDefaults", () => {
             const result = fillDefaults(
                 minimalConfig({
                     utilities: { path: "utilities.css", layer: "utilities" },
-                })
+                }),
             );
 
             expect(result.utilities.layer).toBe("utilities");
@@ -134,7 +134,7 @@ describe("fillDefaults", () => {
             const result = fillDefaults(
                 minimalConfig({
                     resolver: "./custom/path.resolver.json",
-                })
+                }),
             );
 
             expect(result.resolver).toBe("./custom/path.resolver.json");
@@ -144,7 +144,7 @@ describe("fillDefaults", () => {
             const result = fillDefaults(
                 minimalConfig({
                     cube: "src/styles/cube",
-                })
+                }),
             );
 
             expect(result.cube).toBe("src/styles/cube");
@@ -154,7 +154,7 @@ describe("fillDefaults", () => {
             const result = fillDefaults(
                 minimalConfig({
                     components: "lib/ui",
-                })
+                }),
             );
 
             expect(result.components).toBe("lib/ui");
@@ -195,7 +195,7 @@ describe("validateConfig — variables.variableName", () => {
                 resolver: "./tokens.resolver.json",
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 variables: { variableName: value as any },
-            })
+            }),
         ).toThrow(/variableName must be a function/);
     });
 });

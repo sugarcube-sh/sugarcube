@@ -15,7 +15,7 @@ interface RegistryFileWithContent {
 async function writeComponentFile(
     file: RegistryFileWithContent,
     component: RegistryItem,
-    componentsOutputDirectory: string
+    componentsOutputDirectory: string,
 ): Promise<string | null> {
     const componentDir = join(componentsOutputDirectory, component.name);
     await mkdir(componentDir, { recursive: true });
@@ -59,7 +59,7 @@ export async function installComponents({
                 const filePath = await writeComponentFile(
                     file,
                     component,
-                    componentsOutputDirectory
+                    componentsOutputDirectory,
                 );
                 if (filePath) {
                     createdFiles.push(filePath);
@@ -67,7 +67,7 @@ export async function installComponents({
             } catch (error) {
                 const errorMessage = error instanceof Error ? `: ${error.message}` : "";
                 throw new CLIError(
-                    `Failed to write component file for "${component.name}"${errorMessage}`
+                    `Failed to write component file for "${component.name}"${errorMessage}`,
                 );
             }
         }

@@ -37,7 +37,7 @@ export const DurationSchema: TokenValidationSchema = {
 export function validateDuration(
     value: unknown,
     path: string,
-    source: TokenSource
+    source: TokenSource,
 ): ValidationError[] {
     return validateSchema(DurationSchema.schema, value, path, source);
 }

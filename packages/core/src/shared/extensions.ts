@@ -7,7 +7,7 @@ type SugarcubeModifierExtensions = {
 };
 
 export function getSugarcubeExtensions(
-    extensions: Record<string, unknown> | undefined
+    extensions: Record<string, unknown> | undefined,
 ): SugarcubeModifierExtensions | undefined {
     if (!extensions?.[SUGARCUBE_NAMESPACE]) return undefined;
     return extensions[SUGARCUBE_NAMESPACE] as SugarcubeModifierExtensions;

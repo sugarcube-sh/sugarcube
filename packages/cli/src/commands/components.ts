@@ -37,7 +37,7 @@ export interface RunComponentsOptions {
 
 export async function runComponents(
     componentArgs: string[] = [],
-    options: RunComponentsOptions = {}
+    options: RunComponentsOptions = {},
 ): Promise<void> {
     if (!options.silent && !options.skipIntro) {
         intro(label(color.bgGreen(color.black("Components"))));
@@ -107,7 +107,7 @@ export async function runComponents(
     }
 
     const depsToInstall = Array.from(npmDeps).filter(
-        (dep) => !isPackageInstalled(dep, process.cwd())
+        (dep) => !isPackageInstalled(dep, process.cwd()),
     );
 
     if (depsToInstall.length > 0) {

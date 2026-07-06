@@ -157,7 +157,7 @@ function FrameworkCombobox({ frameworks }: { frameworks: Framework[] }) {
                                     <CheckIcon
                                         className={cn(
                                             "ml-auto",
-                                            value === framework.value ? "opacity-100" : "opacity-0"
+                                            value === framework.value ? "opacity-100" : "opacity-0",
                                         )}
                                     />
                                 </CommandItem>
@@ -170,20 +170,14 @@ function FrameworkCombobox({ frameworks }: { frameworks: Framework[] }) {
     );
 }
 
-function UserCombobox({
-    users,
-    selectedUserId,
-}: {
-    users: User[];
-    selectedUserId: string;
-}) {
+function UserCombobox({ users, selectedUserId }: { users: User[]; selectedUserId: string }) {
     const [open, setOpen] = React.useState(false);
     const [value, setValue] = React.useState(selectedUserId);
     const listId = React.useId();
 
     const selectedUser = React.useMemo(
         () => users.find((user) => user.id === value),
-        [value, users]
+        [value, users],
     );
 
     return (
@@ -238,7 +232,7 @@ function UserCombobox({
                                     <CheckIcon
                                         className={cn(
                                             "ml-auto",
-                                            value === user.id ? "opacity-100" : "opacity-0"
+                                            value === user.id ? "opacity-100" : "opacity-0",
                                         )}
                                     />
                                 </CommandItem>
@@ -270,12 +264,12 @@ function TimezoneCombobox({
 
     const selectedGroup = React.useMemo(
         () => timezones.find((group) => group.timezones.find((tz) => tz.value === value)),
-        [value, timezones]
+        [value, timezones],
     );
 
     const selectedTimezoneLabel = React.useMemo(
         () => selectedGroup?.timezones.find((tz) => tz.value === value)?.label,
-        [value, selectedGroup]
+        [value, selectedGroup],
     );
 
     return (
@@ -311,7 +305,7 @@ function TimezoneCombobox({
                                         value={timezone.value}
                                         onSelect={(currentValue) => {
                                             setValue(
-                                                currentValue as Timezone["timezones"][number]["value"]
+                                                currentValue as Timezone["timezones"][number]["value"],
                                             );
                                             setOpen(false);
                                         }}
@@ -322,7 +316,7 @@ function TimezoneCombobox({
                                                 "ml-auto",
                                                 value === timezone.value
                                                     ? "opacity-100"
-                                                    : "opacity-0"
+                                                    : "opacity-0",
                                             )}
                                             data-selected={value === timezone.value}
                                         />
@@ -384,23 +378,23 @@ function ComboboxWithCheckbox({ frameworks }: { frameworks: Framework[] }) {
                                         setSelectedFrameworks(
                                             selectedFrameworks.some((f) => f.value === currentValue)
                                                 ? selectedFrameworks.filter(
-                                                    (f) => f.value !== currentValue
-                                                )
-                                                : [...selectedFrameworks, framework]
+                                                      (f) => f.value !== currentValue,
+                                                  )
+                                                : [...selectedFrameworks, framework],
                                         );
                                     }}
                                 >
                                     <Checkbox
                                         checked={selectedFrameworks.some(
-                                            (f) => f.value === framework.value
+                                            (f) => f.value === framework.value,
                                         )}
                                         onCheckedChange={(checked) => {
                                             setSelectedFrameworks(
                                                 checked
                                                     ? [...selectedFrameworks, framework]
                                                     : selectedFrameworks.filter(
-                                                        (f) => f.value !== framework.value
-                                                    )
+                                                          (f) => f.value !== framework.value,
+                                                      ),
                                             );
                                         }}
                                     />

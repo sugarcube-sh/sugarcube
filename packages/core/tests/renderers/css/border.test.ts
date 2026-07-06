@@ -22,7 +22,7 @@ describe("convertBorder", () => {
                 width: { value: 1, unit: "px" },
                 style: "solid",
             },
-            defaultOptions
+            defaultOptions,
         );
 
         expect(result).toEqual({
@@ -37,7 +37,7 @@ describe("convertBorder", () => {
                 width: "{spacing.hairline}",
                 style: "{borderStyles.default}",
             },
-            defaultOptions
+            defaultOptions,
         );
 
         expect(result).toEqual({
@@ -58,7 +58,7 @@ describe("convertBorder", () => {
                     lineCap: "round",
                 },
             },
-            defaultOptions
+            defaultOptions,
         );
 
         expect(result).toEqual({
@@ -77,7 +77,7 @@ describe("convertBorder", () => {
                     width: { value: 2, unit: "px" },
                     style: "solid",
                 },
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -96,7 +96,7 @@ describe("convertBorder", () => {
                     width: { value: 1, unit: "px" },
                     style: "dashed",
                 },
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({
@@ -114,7 +114,7 @@ describe("convertBorder", () => {
                     width: { value: 3, unit: "px" },
                     style: "dotted",
                 },
-                defaultOptions
+                defaultOptions,
             );
 
             expect(result).toEqual({

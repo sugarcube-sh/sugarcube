@@ -8,7 +8,7 @@ import { convertedTokens, createRenderableToken } from "./__fixtures__/renderabl
 
 function configWith(
     base: keyof typeof configs,
-    permutations: InternalConfig["variables"]["permutations"]
+    permutations: InternalConfig["variables"]["permutations"],
 ): InternalConfig {
     const baseConfig = fillDefaults(configs[base]);
     return {
@@ -398,7 +398,7 @@ describe("generate", () => {
                             $originalPath: `radius.${size}`,
                             $names: { css: `radius-${size}` },
                         }),
-                    ])
+                    ]),
                 ),
             };
 

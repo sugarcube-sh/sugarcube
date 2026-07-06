@@ -2,7 +2,7 @@ import type { ResolvedToken } from "../../src/types/resolve.js";
 import type { TokenType } from "../../src/types/tokens.js";
 
 export const createResolvedToken = (
-    overrides: Partial<ResolvedToken<TokenType>> = {}
+    overrides: Partial<ResolvedToken<TokenType>> = {},
 ): ResolvedToken<TokenType> => ({
     $type: "color" as const,
     $value: "#FF0000",

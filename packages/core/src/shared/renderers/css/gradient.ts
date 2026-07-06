@@ -63,7 +63,7 @@ function flattenStops(value: ResolvedGradientArray): GradientStop[] {
 
 export function renderGradient(
     value: TokenValue<"gradient">,
-    options: CSSRenderOptions
+    options: CSSRenderOptions,
 ): CSSGradientProperties {
     if (isReference(value)) {
         return { value };

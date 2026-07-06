@@ -8,8 +8,8 @@ describe("PathIndex", () => {
             resolved(
                 { path: "color.bg", value: "#fff", context: "light" },
                 { path: "color.bg", value: "#000", context: "dark" },
-                { path: "color.fg", value: "#000", context: "light" }
-            )
+                { path: "color.fg", value: "#000", context: "light" },
+            ),
         );
 
         const bg = index.entriesFor("color.bg");
@@ -31,12 +31,12 @@ describe("PathIndex", () => {
         const index = new PathIndex(
             resolved(
                 { path: "color.bg", value: "#fff", context: "light" },
-                { path: "color.bg", value: "#000", context: "dark" }
-            )
+                { path: "color.bg", value: "#000", context: "dark" },
+            ),
         );
         const map = resolved(
             { path: "color.bg", value: "#fff", context: "light" },
-            { path: "color.bg", value: "#000", context: "dark" }
+            { path: "color.bg", value: "#000", context: "dark" },
         );
 
         it("returns the value for the requested context", () => {
@@ -53,12 +53,12 @@ describe("PathIndex", () => {
             const index = new PathIndex(
                 resolved(
                     { path: "color.bg", value: "#fff", context: "light" },
-                    { path: "color.bg", value: "#000", context: "dark" }
-                )
+                    { path: "color.bg", value: "#000", context: "dark" },
+                ),
             );
             const before = resolved(
                 { path: "color.bg", value: "#fff", context: "light" },
-                { path: "color.bg", value: "#000", context: "dark" }
+                { path: "color.bg", value: "#000", context: "dark" },
             );
 
             const after = index.setValue(before, "color.bg", "#eee", "light");
@@ -72,12 +72,12 @@ describe("PathIndex", () => {
             const index = new PathIndex(
                 resolved(
                     { path: "color.bg", value: "#fff", context: "light" },
-                    { path: "color.bg", value: "#000", context: "dark" }
-                )
+                    { path: "color.bg", value: "#000", context: "dark" },
+                ),
             );
             const before = resolved(
                 { path: "color.bg", value: "#fff", context: "light" },
-                { path: "color.bg", value: "#000", context: "dark" }
+                { path: "color.bg", value: "#000", context: "dark" },
             );
 
             const after = index.setValue(before, "color.bg", "#eee");
@@ -99,8 +99,8 @@ describe("PathIndex", () => {
                 { path: "size.step.0", value: 16 },
                 { path: "size.step.1", value: 18 },
                 { path: "size.step.2", value: 20 },
-                { path: "color.bg", value: "#fff" }
-            )
+                { path: "color.bg", value: "#fff" },
+            ),
         );
 
         it("matches a single segment with *", () => {
@@ -122,8 +122,8 @@ describe("PathIndex", () => {
             const index = new PathIndex(
                 resolved(
                     { path: "color.bg", value: "#fff", context: "light" },
-                    { path: "color.bg", value: "#000", context: "dark" }
-                )
+                    { path: "color.bg", value: "#000", context: "dark" },
+                ),
             );
             const keys = [...index.resolvedKeys()].sort();
             expect(keys).toEqual(["dark::color.bg", "light::color.bg"]);
@@ -165,7 +165,7 @@ describe("createPathIndexAccessor", () => {
     it("rebuilds when the key set changes (removed path)", () => {
         let current = resolved(
             { path: "size.step.0", value: 16 },
-            { path: "size.step.1", value: 18 }
+            { path: "size.step.1", value: 18 },
         );
         const getPathIndex = createPathIndexAccessor(() => current);
         expect(getPathIndex().entriesFor("size.step.1")).toHaveLength(1);

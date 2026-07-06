@@ -36,7 +36,7 @@ export class Instrumentation implements Disposable {
     #timerStack: { id: string; label: string; namespace: string; value: bigint }[] = [];
 
     constructor(
-        private defaultFlush = (message: string) => void process.stderr.write(`${message}\n`)
+        private defaultFlush = (message: string) => void process.stderr.write(`${message}\n`),
     ) {}
 
     hit(label: string) {
@@ -98,7 +98,7 @@ export class Instrumentation implements Disposable {
                 output.push(
                     `${"  ".repeat(depth - 1)}${label.split("//").pop()} [${time}] ${
                         this.#hits.get(label).value === 1 ? "" : `× ${this.#hits.get(label).value}`
-                    }`.trimEnd()
+                    }`.trimEnd(),
                 );
             }
         }
@@ -129,7 +129,7 @@ export class PerfMonitor implements Disposable {
     #lastReportedMem = 0;
 
     constructor(
-        private defaultFlush = (message: string) => void process.stderr.write(`${message}\n`)
+        private defaultFlush = (message: string) => void process.stderr.write(`${message}\n`),
     ) {}
 
     #getMemMB(): number {
@@ -147,7 +147,7 @@ export class PerfMonitor implements Disposable {
         const memDelta = mem - this.#lastMemSnapshot;
         this.#lastMemSnapshot = mem;
         this.defaultFlush(
-            `[perf ${timestamp}] ${message} ${data ? JSON.stringify(data) : ""} | heap: ${mem}MB (${memDelta >= 0 ? "+" : ""}${memDelta}MB)`
+            `[perf ${timestamp}] ${message} ${data ? JSON.stringify(data) : ""} | heap: ${mem}MB (${memDelta >= 0 ? "+" : ""}${memDelta}MB)`,
         );
     }
 

@@ -43,7 +43,7 @@ type ResolveContext = ReturnType<typeof createResolveContext>;
 export async function processResolutionOrder(
     document: ResolverDocument,
     basePath: string,
-    inputs: ResolverInputs = {}
+    inputs: ResolverInputs = {},
 ): Promise<ResolutionOrderResult> {
     const validation = validateInputs(document, inputs);
     if (!validation.valid) {
@@ -86,7 +86,7 @@ async function processItem(
     document: ResolverDocument,
     context: ResolveContext,
     inputs: ResolverInputs,
-    state: ProcessingState
+    state: ProcessingState,
 ): Promise<void> {
     if (hasRef(item)) {
         await processReference(item, document, context, inputs, state);
@@ -108,7 +108,7 @@ async function processReference(
     document: ResolverDocument,
     context: ResolveContext,
     inputs: ResolverInputs,
-    state: ProcessingState
+    state: ProcessingState,
 ): Promise<void> {
     const refResult = await resolveReference(item.$ref, context);
     if (refResult.errors.length > 0) {
@@ -150,7 +150,7 @@ async function processReference(
 async function processInlineSet(
     set: InlineSet,
     context: ResolveContext,
-    state: ProcessingState
+    state: ProcessingState,
 ): Promise<void> {
     const result = await mergeSources(set.sources, context, {
         type: "set",
@@ -164,7 +164,7 @@ async function processInlineModifier(
     modifier: InlineModifier,
     context: ResolveContext,
     inputs: ResolverInputs,
-    state: ProcessingState
+    state: ProcessingState,
 ): Promise<void> {
     const selectedContext = inputs[modifier.name];
     if (!selectedContext) return;
@@ -196,7 +196,7 @@ type MergeResult = {
 async function mergeSources(
     sources: Source[],
     context: ResolveContext,
-    meta: SourceMeta
+    meta: SourceMeta,
 ): Promise<MergeResult> {
     const sourcesResult = await resolveSources(sources, context);
 
