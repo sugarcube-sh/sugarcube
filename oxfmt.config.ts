@@ -1,0 +1,20 @@
+import { defineConfig } from "oxfmt";
+
+export default defineConfig({
+    tabWidth: 4,
+    quoteProps: "consistent",
+    ignorePatterns: [
+        "**/*.md",
+        "**/*.mdx",
+        "apps/www/public/r/**",
+        // Intentionally malformed fixture; must not be "fixed".
+        "packages/core/tests/__fixtures__/tokens/invalid-json.json",
+    ],
+    overrides: [
+        {
+            files: ["**/*.json", "**/*.jsonc", "**/*.toml", "**/*.yml", "**/*.yaml"],
+
+            options: { tabWidth: 2 },
+        },
+    ],
+});

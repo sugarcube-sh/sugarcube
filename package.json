@@ -8,6 +8,7 @@
     "email": "mark@marktomlinson.dev",
     "url": "https://marktomlinson.dev"
   },
+  "type": "module",
   "scripts": {
     "build": "pnpm --filter='@sugarcube-sh/core' build && pnpm -r --filter='@sugarcube-sh/*' --filter='!@sugarcube-sh/core' build",
     "build:clean": "pnpm clean && pnpm build",
