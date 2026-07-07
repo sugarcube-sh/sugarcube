@@ -203,8 +203,6 @@ sugarcube generate --input brand=ocean --variables dist/ocean.css --variables-on
   When `--input` is used alongside a config that defines `permutations`, the config permutations are ignored. The `--input` flag always takes priority.
 </SiteAside>
 
----
-
 ## Advanced: multiple modifiers and brands
 
 ### Multiple modifiers
@@ -368,6 +366,42 @@ Modifiers in `resolutionOrder` are applied in sequence. Later entries override e
 ```
 
 If two modifiers override the same token, the one later in the array wins. Structure your resolver accordingly.
+
+### Theming nested elements
+
+Usually you set a theme on `<html>` and everything inside inherits it. But sometimes you want to theme just part of a page — a card, a sidebar, an embedded preview — by putting `data-theme` on a nested element instead of the root.
+
+This can quietly break if your tokens reference each other in a chain. A modifier only re-emits the variables whose value actually changed, and a variable like `--background-accent: var(--binding-accent)` keeps the same value even when `--binding-accent` is repointed underneath it. CSS inherits a variable's resolved value, not its `var()` chain — so on a nested element `--background-accent` stays whatever it resolved to at `:root`:
+
+```css
+:root {
+  --binding-accent: var(--blue-600);
+  --background-accent: var(--binding-accent);
+}
+
+[data-theme="brand"] {
+  --binding-accent: var(--teal-600);
+  /* --background-accent isn't re-emitted, so nested elements keep the :root value */
+}
+```
+
+Turn on `propagateDependents` to fix it:
+
+```ts title="sugarcube.config.ts"
+export default defineConfig({
+  resolver: "./tokens.resolver.json",
+  variables: {
+    propagateDependents: true,
+    permutations: [ /* ... */ ],
+  }
+});
+```
+
+Now every modifier also re-emits the variables that point at anything it changed, all the way down the chain — so `--background-accent` re-resolves in scope and nested themes work. This includes composite values like a shadow whose color references a changed variable.
+
+<SiteAside type="note">
+  Off by default, since it makes each modifier block bigger. Enable it when your tokens have multi-step chains **and** you theme nested elements. If your components read the variables a modifier changes directly, you don't need it.
+</SiteAside>
 
 ---
 

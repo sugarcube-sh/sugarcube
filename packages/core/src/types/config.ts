@@ -132,6 +132,13 @@ export interface VariablesConfig {
      * ]
      */
     permutations?: Permutation[];
+
+    /**
+     * Re-emit dependent variables on modifier selectors.
+     *
+     * @default false
+     */
+    propagateDependents?: boolean;
 }
 
 /**
@@ -483,6 +490,7 @@ export interface InternalConfig {
             colorFallbackStrategy: ColorFallbackStrategy;
         };
         permutations?: Permutation[];
+        propagateDependents?: boolean;
     };
 
     /** Utility classes output configuration */
