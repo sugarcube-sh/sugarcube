@@ -53,6 +53,7 @@ const variablesConfigSchema = z.object({
     layer: z.string().optional(),
     transforms: transformsSchema.optional(),
     permutations: z.array(permutationSchema).optional(),
+    propagateDependents: z.boolean().optional(),
 });
 
 const utilitiesOutputConfigSchema = z.object({
@@ -160,6 +161,7 @@ export const internalConfigSchema = z.object({
             colorFallbackStrategy: z.enum(["native", "polyfill"]),
         }),
         permutations: z.array(permutationSchema).optional(),
+        propagateDependents: z.boolean().optional(),
     }),
 
     utilities: z.object({

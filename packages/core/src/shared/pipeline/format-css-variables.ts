@@ -250,6 +250,38 @@ function deltaVars(vars: CSSVariable[], baseVars: CSSVariable[]): CSSVariable[] 
     });
 }
 
+const VAR_REFERENCE = /var\(\s*(--[\w-]+)/g;
+
+function extractVarReferences(value: string | number): string[] {
+    if (typeof value === "number") return [];
+    const refs: string[] = [];
+    for (const match of value.matchAll(VAR_REFERENCE)) {
+        if (match[1]) refs.push(match[1]);
+    }
+    return refs;
+}
+
+function propagateDependents(delta: CSSVariable[], baseVars: CSSVariable[]): CSSVariable[] {
+    const deltaNames = new Set(delta.map((v) => v.name));
+    const changed = new Set(deltaNames);
+    const selected = new Set<string>();
+
+    let added = true;
+    while (added) {
+        added = false;
+        for (const v of baseVars) {
+            if (deltaNames.has(v.name) || selected.has(v.name)) continue;
+            if (extractVarReferences(v.value).some((ref) => changed.has(ref))) {
+                selected.add(v.name);
+                changed.add(v.name);
+                added = true;
+            }
+        }
+    }
+
+    return baseVars.filter((v) => selected.has(v.name));
+}
+
 /**
  * Generates CSS variable files from normalized and converted design tokens.
  *
@@ -299,7 +331,12 @@ export async function formatCSSVariables(
         // Delta optimization: for non-first permutations in the same output file,
         // only include variables that differ from the first permutation in that file
         if (baseVarsByPath.has(outputPath)) {
-            vars = deltaVars(vars, baseVarsByPath.get(outputPath) ?? []);
+            const base = baseVarsByPath.get(outputPath) ?? [];
+            const delta = deltaVars(vars, base);
+
+            vars = config.variables.propagateDependents
+                ? [...delta, ...propagateDependents(delta, base)]
+                : delta;
         } else {
             baseVarsByPath.set(outputPath, vars);
         }

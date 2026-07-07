@@ -72,6 +72,7 @@ export function fillDefaultsCore(userConfig: SugarcubeConfig, dirs: DefaultDirs)
                     DEFAULT_CONFIG.variables.transforms.colorFallbackStrategy,
             },
             permutations: userConfig.variables?.permutations,
+            propagateDependents: userConfig.variables?.propagateDependents,
         },
 
         utilities: {

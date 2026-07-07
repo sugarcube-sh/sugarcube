@@ -1,0 +1,66 @@
+{
+  "version": "2025.10",
+  "name": "Propagate Dependents Chain",
+  "description": "Multi-hop token chain (palette -> bindings -> semantics) plus a themed shadow, for testing propagateDependents",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "palette": {
+            "blue": { "600": { "$type": "color", "$value": "#2563eb" } },
+            "teal": { "600": { "$type": "color", "$value": "#0d9488" } },
+            "gray": { "500": { "$type": "color", "$value": "#6b7280" } },
+            "shadow": {
+              "soft": { "$type": "color", "$value": "#333333" },
+              "strong": { "$type": "color", "$value": "#000000" }
+            }
+          },
+          "bindings": {
+            "accent": { "$type": "color", "$value": "{palette.blue.600}" },
+            "neutral": { "$type": "color", "$value": "{palette.gray.500}" },
+            "shadow": { "$type": "color", "$value": "{palette.shadow.soft}" }
+          },
+          "background": {
+            "accent": {
+              "primary": { "$type": "color", "$value": "{bindings.accent}" }
+            },
+            "brand": {
+              "primary": { "$type": "color", "$value": "{background.accent.primary}" }
+            },
+            "neutral": { "$type": "color", "$value": "{bindings.neutral}" }
+          },
+          "shadow": {
+            "card": {
+              "$type": "shadow",
+              "$value": {
+                "offsetX": { "value": 0, "unit": "px" },
+                "offsetY": { "value": 2, "unit": "px" },
+                "blur": { "value": 4, "unit": "px" },
+                "spread": { "value": 0, "unit": "px" },
+                "color": "{bindings.shadow}"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "base",
+      "contexts": {
+        "base": [],
+        "brand": [
+          {
+            "bindings": {
+              "accent": { "$type": "color", "$value": "{palette.teal.600}" },
+              "shadow": { "$type": "color", "$value": "{palette.shadow.strong}" }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

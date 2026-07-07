@@ -307,4 +307,107 @@ describe("permutations", () => {
             expect(css).toContain('[data-density="compact"]');
         });
     });
+
+    describe("propagateDependents", () => {
+        const propagatePermutations = [
+            { input: { theme: "base" }, selector: ":root" },
+            { input: { theme: "brand" }, selector: "[data-theme='brand']" },
+        ];
+
+        const blockFor = (css: string, selector: string) =>
+            css.split(selector)[1]?.split("}")[0] ?? "";
+
+        const countDeclarations = (block: string) => block.split(";").length - 1;
+
+        it("re-emits dependent and transitive vars on modifier blocks when enabled", async () => {
+            const config = validateConfig({
+                resolver: resolve(FIXTURES_DIR, "propagate-chain.resolver.json"),
+                variables: {
+                    propagateDependents: true,
+                    permutations: propagatePermutations,
+                },
+            });
+
+            const css = await generateCSS(config);
+            const brand = blockFor(css, "[data-theme='brand']");
+
+            expect(brand).toContain("--bindings-accent: var(--palette-teal-600);");
+            expect(brand).toContain("--bindings-shadow: var(--palette-shadow-strong);");
+
+            expect(brand).toContain("--background-accent-primary: var(--bindings-accent);");
+
+            expect(brand).toContain(
+                "--background-brand-primary: var(--background-accent-primary);",
+            );
+
+            expect(brand).toMatch(/--shadow-card:.*var\(--bindings-shadow\);/);
+        });
+
+        it("does not propagate vars whose references did not change", async () => {
+            const config = validateConfig({
+                resolver: resolve(FIXTURES_DIR, "propagate-chain.resolver.json"),
+                variables: {
+                    propagateDependents: true,
+                    permutations: propagatePermutations,
+                },
+            });
+
+            const css = await generateCSS(config);
+            const brand = blockFor(css, "[data-theme='brand']");
+
+            expect(brand).not.toContain("--background-neutral");
+        });
+
+        it("emits delta only (no bridges) when disabled — default behaviour", async () => {
+            const config = validateConfig({
+                resolver: resolve(FIXTURES_DIR, "propagate-chain.resolver.json"),
+                variables: {
+                    permutations: propagatePermutations,
+                },
+            });
+
+            const css = await generateCSS(config);
+            const brand = blockFor(css, "[data-theme='brand']");
+            const root = blockFor(css, ":root");
+
+            expect(brand).toContain("--bindings-accent: var(--palette-teal-600);");
+
+            expect(brand).not.toContain("--background-accent-primary");
+            expect(brand).not.toContain("--background-brand-primary");
+            expect(brand).not.toContain("--shadow-card");
+
+            expect(root).toContain("--background-accent-primary: var(--bindings-accent);");
+        });
+
+        it("leaves propagateDependents undefined when omitted, true when set", () => {
+            const omitted = validateConfig({
+                resolver: resolve(FIXTURES_DIR, "propagate-chain.resolver.json"),
+                variables: { permutations: propagatePermutations },
+            });
+            expect(omitted.variables.propagateDependents).toBeUndefined();
+
+            const enabled = validateConfig({
+                resolver: resolve(FIXTURES_DIR, "propagate-chain.resolver.json"),
+                variables: { propagateDependents: true, permutations: propagatePermutations },
+            });
+            expect(enabled.variables.propagateDependents).toBe(true);
+        });
+
+        it("keeps propagated modifier output smaller than the full base block", async () => {
+            const config = validateConfig({
+                resolver: resolve(FIXTURES_DIR, "propagate-chain.resolver.json"),
+                variables: {
+                    propagateDependents: true,
+                    permutations: propagatePermutations,
+                },
+            });
+
+            const css = await generateCSS(config);
+            const brand = blockFor(css, "[data-theme='brand']");
+            const root = blockFor(css, ":root");
+
+            expect(countDeclarations(brand)).toBeGreaterThan(2);
+            expect(countDeclarations(brand)).toBeLessThan(countDeclarations(root));
+        });
+    });
 });
