@@ -256,22 +256,19 @@ npx sugarcube lint [paths...] [options]
 
 ### Description
 
-When you write something like `var(--color-primary)` in your CSS, `lint` checks that the variable actually exists. It's a quick way to catch typos and references to tokens you've since renamed or deleted.
+When you write `var(--color-primary)` in your CSS, `lint` checks that the variable actually exists. It catches typos and references to tokens you've renamed or deleted.
 
-A variable counts as existing if sugarcube generates it from your tokens, or if you define it yourself in one of the scanned files. Anything else is reported as **undefined**, and there are two kinds.
+A variable exists if sugarcube generates it from your tokens, or if you declare it yourself in one of the scanned files. Everything else is undeclared, and there are two kinds:
 
-A reference with no fallback, like `var(--missing)`, is an error. With nothing to fall back on, the declaration is thrown out and the property reverts to its inherited or initial value — almost never what you intended — so it fails the command (exit code `1`).
-
-A reference with a fallback, like `var(--missing, 1rem)`, is only a warning. The browser uses the fallback value you provided, so you still get a sensible result. Pass `--strict` to treat these as errors too.
-
-To know which token variables exist, `lint` runs the same name-generation logic as `generate`. That means it's always accurate — you don't need to run `generate` first, and it works no matter how you've customized names with `prefix` or `variableName`.
+- Without fallback, like `var(--missing)`. This is an error: the browser has nothing to use, so it drops the whole declaration.
+- With fallback, like `var(--missing, 1rem)`. This is a warning: the browser uses your fallback, so the page still renders. Pass `--fallback error` to treat these as errors too, or `--fallback off` to hide them.
 
 ### Arguments
 
 <Table>
 | Argument | Description |
 |----------|-------------|
-| `[paths...]` | Optional globs of files to scan. Defaults to your project's CSS and component files. |
+| `[paths...]` | Globs of files to scan. Defaults to your project's CSS and component files. |
 </Table>
 
 ### Options
@@ -280,22 +277,13 @@ To know which token variables exist, `lint` runs the same name-generation logic 
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--ignore <prefixes>` | Comma-separated variable-name prefixes to skip (e.g. third-party vars) | - |
-| `--strict` | Treat references that have a fallback as errors too | - |
-| `--json` | Output machine-readable JSON instead of formatted text | - |
+| `--fallback <level>` | How to treat references that have a fallback: `error`, `warn`, or `off` | `warn` |
+| `--json` | Output JSON instead of formatted text | - |
 </Table>
 
-### Supported file types
+### Supported files
 
-By default `lint` scans `.css` files plus component files with embedded `<style>` blocks: `.html`, `.vue`, `.svelte`, `.astro`, and `.php`. Build and dependency folders are ignored automatically, as is your generated variables file. Files with other extensions are skipped.
-
-### Not supported yet
-
-A few things are out of scope for now:
-
-- Styles written in JavaScript or TypeScript (styled-components, Emotion, vanilla-extract, and other CSS-in-JS) aren't scanned.
-- Preprocessor files like `.scss`, `.sass`, `.less`, and `.styl` are skipped.
-
-These are additive improvements that may land later. They don't affect ordinary CSS or `<style>` blocks, which are checked fully.
+`lint` scans `.css` files and `<style>` blocks in `.html`, `.vue`, `.svelte`, `.astro`, and `.php` files. It skips build folders, dependencies, and your generated variables file. CSS-in-JS and preprocessor files (`.scss`, `.sass`, `.less`, `.styl`) aren't supported yet.
 
 ### Examples
 
@@ -307,7 +295,10 @@ npx sugarcube lint
 npx sugarcube lint "src/**/*.css" "src/**/*.vue"
 
 # Also fail on references that only have a fallback
-npx sugarcube lint --strict
+npx sugarcube lint --fallback error
+
+# Hide references that have a fallback
+npx sugarcube lint --fallback off
 
 # Ignore third-party variable prefixes
 npx sugarcube lint --ignore "--sl-,--radix-,--tw-"
@@ -316,33 +307,9 @@ npx sugarcube lint --ignore "--sl-,--radix-,--tw-"
 npx sugarcube lint --json
 ```
 
-### Output
-
-By default, findings are grouped by file with line numbers, followed by a summary like `124 refs · 18 files`. With `--json`, you get structured output instead:
-
-```json
-{
-  "broken": [
-    { "name": "--color-primay", "line": 12, "file": "src/styles/hero.css", "hasFallback": false }
-  ],
-  "fallback": [
-    { "name": "--space-old", "line": 4, "file": "src/components/Card.vue", "hasFallback": true }
-  ]
-}
-```
-
-Here `broken` is the "no fallback" group and `fallback` is the "has a fallback" group.
-
 ### Exit codes
 
-<Table>
-| Code | Meaning |
-|------|---------|
-| `0` | No undefined references (fallback-only references present without `--strict` still pass) |
-| `1` | At least one undefined reference — or, with `--strict`, any fallback-only reference |
-</Table>
-
-Because it exits with `1` on failure, `lint` works well as a CI check. Add `npx sugarcube lint` (optionally `--strict`) to catch references to missing tokens before they ship.
+`lint` exits `0` when there are no undeclared references, and `1` when there's at least one. Fallback-only references pass unless you run with `--fallback error`, which makes them fail too. That makes `lint` a good CI check: run `npx sugarcube lint` to catch missing token references before they ship.
 
 ---
 
@@ -519,7 +486,7 @@ A typical sugarcube workflow:
    npx sugarcube validate
    ```
 
-6. **Lint your styles** for undefined token references (great in CI):
+6. **Lint your styles** for undeclared token references (great in CI):
    ```bash frame="none"
    npx sugarcube lint
    ```

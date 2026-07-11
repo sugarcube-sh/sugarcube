@@ -3,7 +3,7 @@ import type { VarRef } from "../lint/scan-css.js";
 
 export interface LintOptions {
     ignore?: string;
-    strict?: boolean;
+    fallback?: "error" | "warn" | "off";
     json?: boolean;
 }
 

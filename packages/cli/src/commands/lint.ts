@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { type InternalConfig, loadInternalConfig } from "@sugarcube-sh/core";
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { relative, resolve } from "pathe";
 import color from "picocolors";
 import { glob } from "tinyglobby";
@@ -79,7 +79,11 @@ export const lint = new Command()
         "--ignore <prefixes>",
         'Comma-separated var-name prefixes to ignore (e.g. "--sl-,--radix-,--ec-")'
     )
-    .option("--strict", "Treat references that have a fallback as errors too")
+    .addOption(
+        new Option("--fallback <level>", "How to treat references that have a fallback")
+            .choices(["error", "warn", "off"])
+            .default("warn")
+    )
     .option("--json", "Output machine-readable JSON")
     .action(async (paths: string[], options: LintOptions) => {
         try {
@@ -107,11 +111,13 @@ export const lint = new Command()
                 }
             );
             const ignorePrefixes = parseIgnore(options.ignore);
+            const fallbackLevel = options.fallback ?? "warn";
+            const fallbackIsError = fallbackLevel === "error";
 
             if (options.json) {
                 const { broken, fallback } = await runScan(config, files, ignorePrefixes, resolver);
-                console.log(JSON.stringify({ broken, fallback }, null, 2));
-                if (broken.length > 0 || (options.strict === true && fallback.length > 0)) {
+                console.log(JSON.stringify({ noFallback: broken, fallback }, null, 2));
+                if (broken.length > 0 || (fallbackIsError && fallback.length > 0)) {
                     process.exitCode = 1;
                 }
                 return;
@@ -123,40 +129,43 @@ export const lint = new Command()
                 ignorePrefixes,
                 resolver
             );
-            const undefinedTotal = broken.length + fallback.length;
-
-            const fallbackIsError = options.strict === true;
+            const showFallback = fallbackLevel !== "off";
             const reportFallback = fallbackIsError ? log.error : log.warn;
 
             if (broken.length > 0) {
                 log.error(
                     [
-                        color.bold(`Undefined references (${broken.length})`),
+                        color.bold(`References without fallback (${broken.length})`),
                         "",
                         ...formatGroupedRefs(broken),
                     ].join("\n")
                 );
             }
 
-            if (fallback.length > 0) {
+            if (showFallback && fallback.length > 0) {
                 reportFallback(
                     [
-                        color.bold(`Undefined, but with a fallback (${fallback.length})`),
+                        color.bold(`References with fallback (${fallback.length})`),
                         "",
                         ...formatGroupedRefs(fallback),
                     ].join("\n")
                 );
             }
 
-            const scanned = color.dim(`${refCount} refs · ${scannedFiles} files`);
+            const scanned = color.dim(`${refCount} refs across ${scannedFiles} files`);
 
-            if (undefinedTotal === 0) {
-                outro(color.greenBright(`No undefined references ✨  ${scanned}`));
+            const visibleTotal = broken.length + (showFallback ? fallback.length : 0);
+
+            if (visibleTotal === 0) {
+                const headline = showFallback
+                    ? "No undeclared references"
+                    : "No references without fallback";
+                outro(color.greenBright(`${headline} ✨  ${scanned}`));
             } else {
                 const parts: string[] = [];
-                if (broken.length > 0) parts.push(color.red(`${broken.length} undefined`));
-                if (fallback.length > 0)
-                    parts.push(color.dim(`${fallback.length} with a fallback`));
+                if (broken.length > 0) parts.push(color.red(`${broken.length} without fallback`));
+                if (showFallback && fallback.length > 0)
+                    parts.push(color.dim(`${fallback.length} with fallback`));
                 outro(`${parts.join(color.dim(", "))}  ${scanned}`);
             }
 
