@@ -1,7 +1,3 @@
-/**
- * Build a recursive glob that matches files with any of the given extensions.
- *
- */
 export function buildExtensionGlob(extensions: string[]): string {
     const exts = [
         ...new Set(extensions.map((ext) => ext.replace(/^\.+/, "").toLowerCase()).filter(Boolean)),
