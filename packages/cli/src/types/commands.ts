@@ -1,4 +1,18 @@
 import type { SugarcubeConfig } from "@sugarcube-sh/core";
+import type { VarRef } from "../lint/scan-css.js";
+
+export interface LintOptions {
+    ignore?: string;
+    fallback?: "error" | "warn" | "off";
+    json?: boolean;
+}
+
+export interface ScanOutput {
+    broken: VarRef[];
+    fallback: VarRef[];
+    refCount: number;
+    scannedFiles: number;
+}
 
 export interface InitOptions {
     tokens?: string;

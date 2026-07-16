@@ -244,6 +244,75 @@ npx sugarcube validate src/tokens/colors src/tokens/spacing
 
 ---
 
+## `lint`
+
+Check your CSS for `var()` references to variables that don't exist.
+
+### Usage
+
+```bash frame="none"
+npx sugarcube lint [paths...] [options]
+```
+
+### Description
+
+When you write `var(--color-primary)` in your CSS, `lint` checks that the variable actually exists. It catches typos and references to tokens you've renamed or deleted.
+
+A variable exists if sugarcube generates it from your tokens, or if you declare it yourself in one of the scanned files. Everything else is undeclared, and there are two kinds:
+
+- Without fallback, like `var(--missing)`. This is an error: the browser has nothing to use, so it drops the whole declaration.
+- With fallback, like `var(--missing, 1rem)`. This is a warning: the browser uses your fallback, so the page still renders. Pass `--fallback error` to treat these as errors too, or `--fallback off` to hide them.
+
+### Arguments
+
+<Table>
+| Argument | Description |
+|----------|-------------|
+| `[paths...]` | Globs of files to scan. Defaults to your project's CSS and component files. |
+</Table>
+
+### Options
+
+<Table>
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--ignore <prefixes>` | Comma-separated variable-name prefixes to skip (e.g. third-party vars) | - |
+| `--fallback <level>` | How to treat references that have a fallback: `error`, `warn`, or `off` | `warn` |
+| `--json` | Output JSON instead of formatted text | - |
+</Table>
+
+### Supported files
+
+`lint` scans `.css` files and `<style>` blocks in `.html`, `.vue`, `.svelte`, `.astro`, and `.php` files. It skips build folders, dependencies, and your generated variables file. CSS-in-JS and preprocessor files (`.scss`, `.sass`, `.less`, `.styl`) aren't supported yet.
+
+### Examples
+
+```bash frame="none"
+# Lint the whole project (CSS + components)
+npx sugarcube lint
+
+# Lint specific files or globs
+npx sugarcube lint "src/**/*.css" "src/**/*.vue"
+
+# Also fail on references that only have a fallback
+npx sugarcube lint --fallback error
+
+# Hide references that have a fallback
+npx sugarcube lint --fallback off
+
+# Ignore third-party variable prefixes
+npx sugarcube lint --ignore "--sl-,--radix-,--tw-"
+
+# Machine-readable output for CI
+npx sugarcube lint --json
+```
+
+### Exit codes
+
+`lint` exits `0` when there are no undeclared references, and `1` when there's at least one. Fallback-only references pass unless you run with `--fallback error`, which makes them fail too. That makes `lint` a good CI check: run `npx sugarcube lint` to catch missing token references before they ship.
+
+---
+
 ## `components`
 
 Install copy-to-use components for your framework.
@@ -415,6 +484,11 @@ A typical sugarcube workflow:
 5. **Validate tokens** during development:
    ```bash frame="none"
    npx sugarcube validate
+   ```
+
+6. **Lint your styles** for undeclared token references (great in CI):
+   ```bash frame="none"
+   npx sugarcube lint
    ```
 
 ## Getting Help
