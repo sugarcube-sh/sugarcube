@@ -228,7 +228,7 @@ async function generateSugarcubeUtilities(
 
     const generator = await createGenerator(generatorOptions);
 
-    const files = await getMarkupFiles();
+    const files = await getMarkupFiles(config.content);
     if (files.length === 0 && safelist.length === 0) return [];
 
     const sources = await readMarkupSources(files);

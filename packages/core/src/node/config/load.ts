@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import { createJiti } from "jiti";
-import { resolve } from "pathe";
+import { dirname, resolve } from "pathe";
 import { validateInternalConfig, validateSugarcubeConfig } from "../../shared/config.js";
 import { ErrorMessages } from "../../shared/constants/error-messages.js";
 import type { InternalConfig, SugarcubeConfig } from "../../types/config.js";
@@ -10,6 +10,13 @@ import { fillDefaults } from "./normalize.js";
 
 export function isNoConfigError(error: unknown): boolean {
     return error instanceof Error && error.message === ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER();
+}
+
+function resolveContentGlobs(content: string[] | undefined, baseDir: string): string[] | undefined {
+    if (!content) return content;
+    return content.map((glob) =>
+        glob.startsWith("!") ? `!${resolve(baseDir, glob.slice(1))}` : resolve(baseDir, glob),
+    );
 }
 
 /**
@@ -162,6 +169,10 @@ export async function loadInternalConfig(configPath?: string): Promise<LoadedCon
             }
 
             const internalConfig = fillDefaults(userConfig);
+            internalConfig.content = resolveContentGlobs(
+                internalConfig.content,
+                dirname(foundConfigPath),
+            );
             const validatedConfig = validateInternalConfig(internalConfig);
 
             return {

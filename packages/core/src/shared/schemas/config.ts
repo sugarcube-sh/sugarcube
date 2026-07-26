@@ -141,6 +141,8 @@ export const userConfigSchema = z.object({
 
     utilities: utilitiesOutputConfigSchema.optional(),
 
+    content: z.array(z.string()).optional(),
+
     components: z.string().optional(),
 
     cube: z.string().optional(),
@@ -169,6 +171,8 @@ export const internalConfigSchema = z.object({
         layer: z.string().optional(),
         classes: utilityClassesSchema.optional(),
     }),
+
+    content: z.array(z.string()).optional(),
 
     components: z.string().optional(),
 

@@ -25,6 +25,29 @@ export default defineConfig({});
 
 Sugarcube can generate utility classes from your design tokens. Utilities are configured in the `utilities.classes` key of your config file. See [CSS Utilities](/docs/utilities) for full details.
 
+## Telling sugarcube where your markup lives
+
+When the CLI generates utility classes, it scans your source files to see which classes you actually use and generates only those. By default it looks in the directory you run the command from and everything beneath it. The `lint` command works the same way, reading your CSS and markup to find `var()` references.
+
+Not every project keeps sugarcube installed next to the files it needs to scan. Sometimes your build tooling sits in one folder while your templates or components live in another, above or outside it, and the default scan never sees them. The `content` option points sugarcube at wherever your markup actually lives.
+
+```ts title="sugarcube.config.ts" ins={4-7}
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  content: [
+    "./**/*.{js,ts}",
+    "../../templates/**/*.html"
+  ]
+});
+```
+
+The globs in `content` are resolved relative to your config file rather than your working directory, so a config that lives in a subfolder can still reach files above it with `../`, and you keep running sugarcube from the same place as before. Generation reads your markup for class names and `lint` reads your CSS for variable references, so it's fine to list a folder broadly and let each command pick up only the file types it understands. To leave something out, prefix its glob with `!`, for example `"!../../templates/**/vendor/**"`.
+
+<SiteAside type="note">
+    The `content` option applies to the CLI only. The Vite plugin discovers class and variable usage through the bundler's module graph, so it doesn't read this option.
+</SiteAside>
+
 ## Changing where CSS files are written
 
 <SiteAside type="note">

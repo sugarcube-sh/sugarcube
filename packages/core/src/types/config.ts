@@ -453,6 +453,15 @@ export interface SugarcubeConfig {
     utilities?: UtilitiesOutputConfig;
 
     /**
+     * Globs of source files scanned for token/utility usage.
+     *
+     * When omitted, scanning falls back to the working directory downward.
+     *
+     * @example content: ["./**\/*.{js,ts}", "../../lib/**\/*.heex"]
+     */
+    content?: string[];
+
+    /**
      * Directory path where component files will be copied.
      * @example "src/components/ui"
      */
@@ -499,6 +508,9 @@ export interface InternalConfig {
         layer?: string;
         classes?: UtilityClassesConfig;
     };
+
+    /** Globs scanned for token/utility usage (resolved to absolute at load) */
+    content?: string[];
 
     /** Directory path where component files will be copied */
     components?: string;

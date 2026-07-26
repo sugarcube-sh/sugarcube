@@ -1,7 +1,12 @@
 import { readFile } from "node:fs/promises";
+import { extname } from "pathe";
 import { glob } from "tinyglobby";
 import { CLIError } from "./cli-error.js";
-import { MARKUP_GLOB_PATTERN, MARKUP_IGNORE_PATTERNS } from "./constants/markup.js";
+import {
+    MARKUP_EXTENSIONS,
+    MARKUP_GLOB_PATTERN,
+    MARKUP_IGNORE_PATTERNS,
+} from "./constants/markup.js";
 
 // Safety limits to prevent OOM crashes
 // Can't just search up etc because CLI has to work with the simplest possible setup
@@ -10,14 +15,22 @@ const MAX_FILES = 10_000;
 const MAX_SIZE_MB = 100;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
-export async function getMarkupFiles(): Promise<string[]> {
-    const files = await glob([MARKUP_GLOB_PATTERN], {
+function isMarkupFile(file: string): boolean {
+    return MARKUP_EXTENSIONS.has(extname(file).slice(1).toLowerCase());
+}
+
+export async function getMarkupFiles(content?: string[]): Promise<string[]> {
+    const usingContent = content !== undefined && content.length > 0;
+
+    const matched = await glob(usingContent ? content : [MARKUP_GLOB_PATTERN], {
         ignore: MARKUP_IGNORE_PATTERNS,
         dot: false,
         onlyFiles: true,
-        absolute: false,
+        absolute: usingContent,
         caseSensitiveMatch: false,
     });
+
+    const files = usingContent ? matched.filter(isMarkupFile) : matched;
 
     if (files.length > MAX_FILES) {
         throw new CLIError(

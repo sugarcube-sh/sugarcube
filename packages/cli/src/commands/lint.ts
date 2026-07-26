@@ -27,7 +27,7 @@ async function runScan(
     config: InternalConfig,
     files: string[],
     ignorePrefixes: string[],
-    resolver: SyntaxResolver
+    resolver: SyntaxResolver,
 ): Promise<ScanOutput> {
     const declared = await getGeneratedVarNames(config);
 
@@ -77,12 +77,12 @@ export const lint = new Command()
     .argument("[paths...]", "Globs of files to scan (default: project CSS and components)")
     .option(
         "--ignore <prefixes>",
-        'Comma-separated var-name prefixes to ignore (e.g. "--sl-,--radix-,--ec-")'
+        'Comma-separated var-name prefixes to ignore (e.g. "--sl-,--radix-,--ec-")',
     )
     .addOption(
         new Option("--fallback <level>", "How to treat references that have a fallback")
             .choices(["error", "warn", "off"])
-            .default("warn")
+            .default("warn"),
     )
     .option("--json", "Output machine-readable JSON")
     .action(async (paths: string[], options: LintOptions) => {
@@ -94,22 +94,20 @@ export const lint = new Command()
                 ({ config } = await loadInternalConfig());
             } catch {
                 throw new CLIError(
-                    "No sugarcube config found. Run `sugarcube lint` from a project with a sugarcube config."
+                    "No sugarcube config found. Run `sugarcube lint` from a project with a sugarcube config.",
                 );
             }
 
             const resolver = createSyntaxResolver();
 
             const generatedOutput = resolve(process.cwd(), config.variables.path);
-            const files = await glob(
-                paths.length > 0 ? paths : [buildExtensionGlob(resolver.extensions())],
-                {
-                    cwd: process.cwd(),
-                    absolute: true,
-                    caseSensitiveMatch: false,
-                    ignore: [...IGNORED_DIR_GLOBS, generatedOutput],
-                }
-            );
+            const defaultPatterns = config.content ?? [buildExtensionGlob(resolver.extensions())];
+            const files = await glob(paths.length > 0 ? paths : defaultPatterns, {
+                cwd: process.cwd(),
+                absolute: true,
+                caseSensitiveMatch: false,
+                ignore: [...IGNORED_DIR_GLOBS, generatedOutput],
+            });
             const ignorePrefixes = parseIgnore(options.ignore);
             const fallbackLevel = options.fallback ?? "warn";
             const fallbackIsError = fallbackLevel === "error";
@@ -127,7 +125,7 @@ export const lint = new Command()
                 config,
                 files,
                 ignorePrefixes,
-                resolver
+                resolver,
             );
             const showFallback = fallbackLevel !== "off";
             const reportFallback = fallbackIsError ? log.error : log.warn;
@@ -138,7 +136,7 @@ export const lint = new Command()
                         color.bold(`References without fallback (${broken.length})`),
                         "",
                         ...formatGroupedRefs(broken),
-                    ].join("\n")
+                    ].join("\n"),
                 );
             }
 
@@ -148,7 +146,7 @@ export const lint = new Command()
                         color.bold(`References with fallback (${fallback.length})`),
                         "",
                         ...formatGroupedRefs(fallback),
-                    ].join("\n")
+                    ].join("\n"),
                 );
             }
 

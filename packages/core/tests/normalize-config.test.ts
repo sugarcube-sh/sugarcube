@@ -199,3 +199,19 @@ describe("validateConfig — variables.variableName", () => {
         ).toThrow(/variableName must be a function/);
     });
 });
+
+describe("validateConfig — content", () => {
+    it("carries user-specified content globs onto the internal config", () => {
+        const content = ["./**/*.heex", "../../lib/**/*.ex"];
+
+        const result = validateConfig(minimalConfig({ content }));
+
+        expect(result.content).toEqual(content);
+    });
+
+    it("leaves content undefined when omitted", () => {
+        const result = validateConfig(minimalConfig());
+
+        expect(result.content).toBeUndefined();
+    });
+});

@@ -14,6 +14,24 @@ export type WatcherHandle = {
     close: () => Promise<void>;
 };
 
+const GLOB_MAGIC = /[*?{}[\]!]/;
+
+function globBaseDir(glob: string): string {
+    const staticSegments: string[] = [];
+    for (const segment of glob.split("/")) {
+        if (GLOB_MAGIC.test(segment)) break;
+        staticSegments.push(segment);
+    }
+    return staticSegments.join("/") || "/";
+}
+
+// Derive the directories to watch for markup changes from `content` globs. (Chokidar v5 no longer expands globs)
+export function resolveMarkupWatchTargets(content: string[] | undefined): string[] {
+    if (!content || content.length === 0) return ["."];
+    const dirs = content.filter((glob) => !glob.startsWith("!")).map(globBaseDir);
+    return [...new Set(dirs)];
+}
+
 export async function startWatcher(
     config: InternalConfig,
     callbacks: WatchCallbacks,
@@ -42,7 +60,7 @@ export async function startWatcher(
         },
     });
 
-    const markupWatcher = chokidarWatch(".", {
+    const markupWatcher = chokidarWatch(resolveMarkupWatchTargets(config.content), {
         ignoreInitial: true,
         ignored: (path, stats) => {
             const segments = path.split("/");
