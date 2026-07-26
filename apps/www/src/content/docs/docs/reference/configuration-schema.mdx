@@ -362,6 +362,33 @@ utilities: {
 }
 ```
 
+## content
+
+**Type:** `string[]`
+**Optional**
+
+Globs pointing at the source files sugarcube scans to learn how your tokens and utilities are used. Utility generation reads them to find which utility classes appear in your markup and generates only those, while `lint` reads them to find `var()` references to check. Each command looks only at the file types it understands, so you can list a directory broadly and let sugarcube sort out what's relevant.
+
+The globs are resolved relative to your config file, not the directory you run the command from. This lets a config that sits in a subfolder reach files elsewhere in the project, which matters when sugarcube isn't installed next to the markup it needs to scan.
+
+```ts
+import { defineConfig } from "@sugarcube-sh/cli";
+
+export default defineConfig({
+  content: [
+    "./**/*.{js,ts}",
+    "../../templates/**/*.html",
+    "!../../templates/**/vendor/**"
+  ]
+});
+```
+
+When omitted, sugarcube scans the working directory and everything beneath it. Prefix a glob with `!` to exclude matching paths.
+
+<SiteAside type="note">
+    This option applies to the CLI only. The Vite plugin finds usage through the bundler's module graph and ignores it.
+</SiteAside>
+
 ## components
 
 **Type:** `string`

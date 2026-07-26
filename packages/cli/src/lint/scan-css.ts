@@ -63,7 +63,7 @@ export interface UndeclaredReport {
 export function findUndeclared(
     used: VarRef[],
     declared: Set<string>,
-    ignorePrefixes: string[]
+    ignorePrefixes: string[],
 ): UndeclaredReport {
     const seen = new Set<string>();
     const broken: VarRef[] = [];

@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -43,6 +43,44 @@ describe("loadInternalConfig", () => {
             DEFAULT_CONFIG.variables.transforms.fluid.max,
         );
         expect(result.configPath).toContain("sugarcube.config.js");
+    });
+
+    it("resolves content globs against the config file's directory, not cwd", async () => {
+        const configDir = join(tempDir, "assets", "js");
+        await mkdir(configDir, { recursive: true });
+        const configContent = `
+            export default {
+                resolver: "./tokens.resolver.json",
+                content: ["../../lib/**/*.heex", "./**/*.js"],
+            };
+        `;
+        await writeFile(join(configDir, "sugarcube.config.js"), configContent);
+
+        const result = await loadInternalConfig(join("assets", "js", "sugarcube.config.js"));
+
+        expect(result.config.content).toEqual([
+            join(tempDir, "lib", "**", "*.heex"),
+            join(configDir, "**", "*.js"),
+        ]);
+    });
+
+    it("preserves a leading ! (negation) when resolving content globs", async () => {
+        const configDir = join(tempDir, "assets", "js");
+        await mkdir(configDir, { recursive: true });
+        const configContent = `
+            export default {
+                resolver: "./tokens.resolver.json",
+                content: ["../../lib/**/*.heex", "!../../lib/**/vendor/**"],
+            };
+        `;
+        await writeFile(join(configDir, "sugarcube.config.js"), configContent);
+
+        const result = await loadInternalConfig(join("assets", "js", "sugarcube.config.js"));
+
+        expect(result.config.content).toEqual([
+            join(tempDir, "lib", "**", "*.heex"),
+            `!${join(tempDir, "lib", "**", "vendor", "**")}`,
+        ]);
     });
 
     it("auto-discovers resolver when no config file exists", async () => {
