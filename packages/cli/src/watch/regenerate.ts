@@ -9,13 +9,7 @@ import {
     writeCSSUtilitiesToDisk,
     writeCSSVariablesToDisk,
 } from "@sugarcube-sh/core";
-import type {
-    InternalConfig,
-    NormalizedRenderableTokens,
-    Permutation,
-    ResolvedTokens,
-    TokenTree,
-} from "@sugarcube-sh/core";
+import type { InternalConfig, NormalizedRenderableTokens, Permutation } from "@sugarcube-sh/core";
 import { type UserConfig, createGenerator } from "@unocss/core";
 import packageJson from "../../package.json" with { type: "json" };
 import { prepareTokens } from "../prepare-tokens.js";
@@ -37,9 +31,9 @@ export type GenerationResult = {
 export type ChangeKind = "token" | "markup";
 
 export interface WatchSession {
-    /** Initial cold build. Also the place later phases will warm caches. */
+    /** Cold build: full token pipeline + variables + utilities. Warms the cache. */
     primeAndBuild(): Promise<GenerationResult>;
-    /** Regenerate in response to a watched change. */
+    /** Regenerate in response to a watched change, routed by `kind`. */
     onChange(kind: ChangeKind, changedPath: string): Promise<GenerationResult>;
 }
 
@@ -104,73 +98,117 @@ function wrapInLayer(output: CSSFileOutput, layerName: string): CSSFileOutput {
     });
 }
 
-async function generateAllCSS(
-    trees: TokenTree[],
-    resolved: ResolvedTokens,
+async function writeVariables(
+    convertedTokens: NormalizedRenderableTokens,
     config: InternalConfig,
     permutations: Permutation[],
-    options: GenerateAllCSSOptions = {},
 ): Promise<CSSFileOutput> {
-    const output: CSSFileOutput = [];
-
-    const convertedTokens = assignCSSNames(groupByContext(trees, resolved), config);
-
-    if (!options.utilitiesOnly) {
-        let cssVariables = await generateCSSVariables(convertedTokens, config, permutations);
-        if (config.variables.layer) {
-            cssVariables = wrapInLayer(cssVariables, config.variables.layer);
-        }
-        const cssVariablesWithBanner = addBanner(cssVariables);
-        await writeCSSVariablesToDisk(cssVariablesWithBanner);
-        output.push(...cssVariablesWithBanner);
+    let cssVariables = await generateCSSVariables(convertedTokens, config, permutations);
+    if (config.variables.layer) {
+        cssVariables = wrapInLayer(cssVariables, config.variables.layer);
     }
-
-    if (!options.variablesOnly) {
-        let utilities = await generateSugarcubeUtilities(convertedTokens, config);
-        if (config.utilities.layer) {
-            utilities = wrapInLayer(utilities, config.utilities.layer);
-        }
-        const utilitiesWithBanner = addBanner(utilities);
-        await writeCSSUtilitiesToDisk(utilitiesWithBanner);
-        output.push(...utilitiesWithBanner);
-    }
-
-    return output;
+    const cssVariablesWithBanner = addBanner(cssVariables);
+    await writeCSSVariablesToDisk(cssVariablesWithBanner);
+    return cssVariablesWithBanner;
 }
 
-async function runGeneration(
+async function writeUtilities(
+    convertedTokens: NormalizedRenderableTokens,
     config: InternalConfig,
-    options: GenerateAllCSSOptions = {},
-): Promise<GenerationResult> {
-    clearMatchCache();
-    const { trees, resolved, warnings, permutations } = await prepareTokens(config);
-    const output = await generateAllCSS(trees, resolved, config, permutations, options);
-    return { output, warnings };
+): Promise<CSSFileOutput> {
+    let utilities = await generateSugarcubeUtilities(convertedTokens, config);
+    if (config.utilities.layer) {
+        utilities = wrapInLayer(utilities, config.utilities.layer);
+    }
+    const utilitiesWithBanner = addBanner(utilities);
+    await writeCSSUtilitiesToDisk(utilitiesWithBanner);
+    return utilitiesWithBanner;
 }
+
+/** Cached results of the token pipeline — everything a markup change can reuse. */
+type TokenState = {
+    convertedTokens: NormalizedRenderableTokens;
+    permutations: Permutation[];
+    warnings: GenerationResult["warnings"];
+};
 
 /**
- * One-shot generation used by the non-watch path. Shares the same mechanics as
- * a watch session's cold build so the two can't drift.
- */
-export function runFullGeneration(
-    config: InternalConfig,
-    options: GenerateAllCSSOptions = {},
-): Promise<GenerationResult> {
-    return runGeneration(config, options);
-}
-
-/**
- * A watch session holds the state that will let later phases regenerate
- * incrementally. In Phase 0 it holds nothing: every event is a full rebuild,
- * matching the pre-extraction behaviour exactly. The `kind` argument is the
- * seam that Fix A (routing by token-vs-markup change) will build on.
+ * A watch session holds the token-pipeline results between events so it can
+ * route regeneration by what changed (Tier 1, "split-recompute"):
+ *
+ * - token change → fully reload + resolve + convert from disk, then regenerate
+ *   variables and utilities. Nothing stale is reused.
+ * - markup change → reuse the cached token state verbatim and regenerate only
+ *   utilities (variables don't depend on markup), skipping the entire token
+ *   pipeline. Each concern is always fully recomputed, never patched, so the
+ *   output matches a cold build.
+ *
+ * The utility generator is rebuilt on every utilities pass rather than persisted
+ * (Fix D): UnoCSS orders rules by first-seen token, so a persisted generator
+ * could emit utilities in a different order than a cold build once a markup edit
+ * introduces a new class. Rebuilding is cheap next to the token pipeline we skip.
  */
 export function createWatchSession(
     config: InternalConfig,
     options: GenerateAllCSSOptions = {},
 ): WatchSession {
+    let state: TokenState | null = null;
+
+    async function reloadTokens(): Promise<TokenState> {
+        clearMatchCache();
+        const { trees, resolved, warnings, permutations } = await prepareTokens(config);
+        const next: TokenState = {
+            convertedTokens: assignCSSNames(groupByContext(trees, resolved), config),
+            permutations,
+            warnings,
+        };
+        state = next;
+        return next;
+    }
+
+    async function buildAll(current: TokenState): Promise<CSSFileOutput> {
+        const output: CSSFileOutput = [];
+        if (!options.utilitiesOnly) {
+            output.push(
+                ...(await writeVariables(current.convertedTokens, config, current.permutations)),
+            );
+        }
+        if (!options.variablesOnly) {
+            output.push(...(await writeUtilities(current.convertedTokens, config)));
+        }
+        return output;
+    }
+
     return {
-        primeAndBuild: () => runGeneration(config, options),
-        onChange: (_kind, _changedPath) => runGeneration(config, options),
+        async primeAndBuild() {
+            const current = await reloadTokens();
+            return { output: await buildAll(current), warnings: current.warnings };
+        },
+        async onChange(kind, _changedPath) {
+            if (kind === "token" || state === null) {
+                const current = await reloadTokens();
+                return { output: await buildAll(current), warnings: current.warnings };
+            }
+
+            // Markup change: tokens are unchanged. Reuse the cached token state and
+            // regenerate only utilities. `variablesOnly` means there are no
+            // utilities to rebuild, so nothing is written.
+            const output = options.variablesOnly
+                ? []
+                : await writeUtilities(state.convertedTokens, config);
+            return { output, warnings: state.warnings };
+        },
     };
+}
+
+/**
+ * One-shot generation used by the non-watch path. A session's cold build is the
+ * full pipeline, so routing this through it keeps one-time and watch generation
+ * from drifting.
+ */
+export function runFullGeneration(
+    config: InternalConfig,
+    options: GenerateAllCSSOptions = {},
+): Promise<GenerationResult> {
+    return createWatchSession(config, options).primeAndBuild();
 }

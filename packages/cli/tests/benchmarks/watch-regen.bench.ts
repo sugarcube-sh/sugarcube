@@ -22,10 +22,15 @@ const COLORS_PER_FILE = 50;
 
 // Writes a real temp project: 1 resolver + N token files + M markup files.
 // Shapes are verified against the real schemas (resolver.ts, utilities.ts, DTCG).
+// `permutations` > 1 adds a `theme` modifier with that many contexts, so the
+// resolver auto-derives that many permutations (a `:root` block + one
+// `[data-theme="…"]` variables block per non-default context). A markup change
+// skips regenerating all of them; a cold build / token change pays for all.
 function makeFixture(opts: {
     tokenFiles: number;
     markupFiles: number;
     classesPerFile: number;
+    permutations?: number;
 }): Fixture {
     const dir = mkdtempSync(join(tmpdir(), "sugarcube-watch-bench-"));
     const tokensDir = join(dir, "tokens");
@@ -37,14 +42,17 @@ function makeFixture(opts: {
     // `color` so cross-file refs don't collide. DTCG shape; refs are dotted paths.
     const refs: Array<{ $ref: string }> = [];
     const classNames: string[] = []; // the class names the utility config will emit
+    const baseLeaves: string[] = []; // base (non-ref) leaves, for context overrides
     for (let f = 0; f < opts.tokenFiles; f++) {
         const group: Record<string, unknown> = { $type: "color" };
         for (let i = 0; i < COLORS_PER_FILE; i++) {
             const leaf = `f${f}-${i}`;
-            group[leaf] =
-                i % 3 === 0
-                    ? { $value: "#ff0000" } // base color
-                    : { $value: `{color.f${f}-${i - (i % 3)}}` }; // ref to nearest base
+            if (i % 3 === 0) {
+                group[leaf] = { $value: "#ff0000" }; // base color
+                baseLeaves.push(leaf);
+            } else {
+                group[leaf] = { $value: `{color.f${f}-${i - (i % 3)}}` }; // ref to nearest base
+            }
             classNames.push(`text-${leaf}`); // prefix "text" + token leaf → class
         }
         const fileName = `set-${f}.json`;
@@ -52,14 +60,32 @@ function makeFixture(opts: {
         refs.push({ $ref: `tokens/${fileName}` }); // $ref relative to the resolver file
     }
 
+    const resolutionOrder: unknown[] = [{ type: "set", name: "base", sources: refs }];
+
+    const permutations = opts.permutations ?? 1;
+    if (permutations > 1) {
+        // One modifier with `permutations` contexts: context "c0" is the default
+        // (empty), each other context overrides a slice of base colors so every
+        // permutation resolves to distinct values.
+        const overrideLeaves = baseLeaves.slice(0, 20);
+        const contexts: Record<string, unknown[]> = { c0: [] };
+        for (let c = 1; c < permutations; c++) {
+            const overrides: Record<string, unknown> = {};
+            for (const leaf of overrideLeaves) {
+                overrides[leaf] = {
+                    $type: "color",
+                    $value: `#${(c * 17).toString(16).padStart(2, "0").repeat(3)}`,
+                };
+            }
+            contexts[`c${c}`] = [{ color: overrides }];
+        }
+        resolutionOrder.push({ type: "modifier", name: "theme", default: "c0", contexts });
+    }
+
     const resolverPath = join(dir, "tokens.resolver.json");
     writeFileSync(
         resolverPath,
-        JSON.stringify({
-            version: "2025.10",
-            name: "watch-bench",
-            resolutionOrder: [{ type: "set", name: "base", sources: refs }],
-        }),
+        JSON.stringify({ version: "2025.10", name: "watch-bench", resolutionOrder }),
     );
 
     // Markup files using a rotating slice of the real class names.
@@ -97,6 +123,33 @@ function makeFixture(opts: {
 const SIZES = [
     { label: "500 markup files", markupFiles: 500, tokenFiles: 4, classesPerFile: 20 },
     { label: "5,000 markup files", markupFiles: 5000, tokenFiles: 8, classesPerFile: 20 },
+    // Token-heavy, markup-light: a mature design system (~500 authored tokens
+    // across 10 files) with modest markup, no permutations. Reference for the
+    // themed rows below. "single markup change" skips the token pipeline +
+    // variables that "cold build" pays — the gap between those two rows is the
+    // routing win. Markup-dominated sizes above barely move (trivial tokens).
+    {
+        label: "~500 tokens, no permutations, 200 markup",
+        markupFiles: 200,
+        tokenFiles: 10,
+        classesPerFile: 10,
+    },
+    // Themed: the common case. Each permutation is a full variable render that a
+    // markup change skips, so the routing win should grow with permutation count.
+    {
+        label: "~500 tokens, light/dark (2 perms), 200 markup",
+        markupFiles: 200,
+        tokenFiles: 10,
+        classesPerFile: 10,
+        permutations: 2,
+    },
+    {
+        label: "~500 tokens, 4 themes (4 perms), 200 markup",
+        markupFiles: 200,
+        tokenFiles: 10,
+        classesPerFile: 10,
+        permutations: 4,
+    },
 ];
 
 // One fixture per size, built once at collection time and reused across every
