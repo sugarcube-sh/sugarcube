@@ -2,6 +2,7 @@ import type { InternalConfig } from "@sugarcube-sh/core";
 import { extractFileRefs } from "@sugarcube-sh/core";
 import { watch as chokidarWatch } from "chokidar";
 import { IGNORED_DIR_NAMES, MARKUP_EXTENSIONS } from "../constants/markup.js";
+import { createCoalescedRunner } from "./coalesce.js";
 import { debounce } from "./debounce.js";
 import type { ChangeKind } from "./regenerate.js";
 
@@ -9,11 +10,17 @@ export type WatchCallbacks = {
     onRegenerate: (kind: ChangeKind, changedPath: string) => Promise<void>;
     onError: (error: Error) => void;
     onReady: (tokenFileCount: number) => void;
+    onWarning?: (message: string) => void;
 };
 
 export type WatcherHandle = {
     close: () => Promise<void>;
 };
+
+// Mirrors scan-markup's MAX_FILES: past this many watched entries the markup
+// watcher is almost certainly rooted too broadly (e.g. a monorepo root with no
+// `content` set), so we warn rather than silently holding a huge watch tree.
+const WATCH_TARGET_LIMIT = 10_000;
 
 const GLOB_MAGIC = /[*?{}[\]!]/;
 
@@ -45,12 +52,19 @@ export async function startWatcher(
 
     const tokenPaths = [resolverPath, ...filePaths];
 
-    const debouncedRegenerate = debounce(async (kind: ChangeKind, changedPath: string) => {
-        try {
-            await callbacks.onRegenerate(kind, changedPath);
-        } catch (error) {
-            callbacks.onError(error instanceof Error ? error : new Error(String(error)));
-        }
+    // In-flight coalescing: a regeneration can take longer than the gap between
+    // events, so overlapping runs (concurrent globs/reads/writes to the same
+    // output) are collapsed into a single trailing run.
+    // NOTE: Phase 2's routing must revisit this — a single queued slot can drop a
+    // token event behind a later markup event. Fine while every kind triggers a
+    // full rebuild.
+    const coalescedRegenerate = createCoalescedRunner(
+        (kind: ChangeKind, changedPath: string) => callbacks.onRegenerate(kind, changedPath),
+        (error) => callbacks.onError(error instanceof Error ? error : new Error(String(error))),
+    );
+
+    const debouncedRegenerate = debounce((kind: ChangeKind, changedPath: string) => {
+        coalescedRegenerate(kind, changedPath);
     }, 100);
 
     const tokenWatcher = chokidarWatch(tokenPaths, {
@@ -104,6 +118,13 @@ export async function startWatcher(
         new Promise<void>((resolve) => markupWatcher.once("ready", resolve)),
     ]);
 
+    const watchedCount = countWatchedFiles(markupWatcher.getWatched());
+    if (watchedCount > WATCH_TARGET_LIMIT) {
+        callbacks.onWarning?.(
+            `Watching ${watchedCount} files for markup changes (limit: ${WATCH_TARGET_LIMIT}). This can make watch mode slow — set \`content\` in your config to narrow the directories that are scanned.`,
+        );
+    }
+
     callbacks.onReady(tokenPaths.length);
 
     return {
@@ -118,4 +139,14 @@ function getExtension(path: string): string {
     const lastDot = path.lastIndexOf(".");
     if (lastDot === -1) return "";
     return path.slice(lastDot + 1).toLowerCase();
+}
+
+// chokidar's getWatched() returns dir -> basenames; sum the basenames for a
+// count of watched files.
+function countWatchedFiles(watched: Record<string, string[]>): number {
+    let total = 0;
+    for (const entries of Object.values(watched)) {
+        total += entries.length;
+    }
+    return total;
 }

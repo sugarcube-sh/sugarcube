@@ -41,21 +41,32 @@ export async function getMarkupFiles(content?: string[]): Promise<string[]> {
     return files;
 }
 
+// Read this many files at once. Bounds open file descriptors and memory while
+// still overlapping I/O, which dominates markup scanning on large projects.
+const READ_CONCURRENCY = 64;
+
 export async function readMarkupSources(files: string[]): Promise<string[]> {
     const sources: string[] = [];
     let totalSize = 0;
 
-    for (const file of files) {
-        const content = await readFile(file, "utf8");
-        totalSize += content.length;
+    // Read in bounded batches. Batches are awaited in order and Promise.all keeps
+    // within-batch order, so pushing preserves the original file order. Size is
+    // checked as each batch lands so an oversized project still aborts early-ish.
+    for (let start = 0; start < files.length; start += READ_CONCURRENCY) {
+        const batch = files.slice(start, start + READ_CONCURRENCY);
+        const contents = await Promise.all(batch.map((file) => readFile(file, "utf8")));
 
-        if (totalSize > MAX_SIZE_BYTES) {
-            throw new CLIError(
-                `Total source size exceeds ${MAX_SIZE_MB}MB. Are you running this from a monorepo root or a directory containing multiple projects? Run the command from within a single project directory instead.`,
-            );
+        for (const content of contents) {
+            totalSize += content.length;
+
+            if (totalSize > MAX_SIZE_BYTES) {
+                throw new CLIError(
+                    `Total source size exceeds ${MAX_SIZE_MB}MB. Are you running this from a monorepo root or a directory containing multiple projects? Run the command from within a single project directory instead.`,
+                );
+            }
+
+            sources.push(content);
         }
-
-        sources.push(content);
     }
 
     return sources;

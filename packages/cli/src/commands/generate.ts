@@ -273,6 +273,9 @@ async function runWatchMode(config: InternalConfig, options: GenerateFlags): Pro
                 `${prefix} Watching ${tokenFileCount} token file${tokenFileCount === 1 ? "" : "s"} + markup files...`,
             );
         },
+        onWarning: (message: string) => {
+            console.log(`${warnPrefix} ${message}`);
+        },
     });
 
     process.on("SIGINT", async () => {
