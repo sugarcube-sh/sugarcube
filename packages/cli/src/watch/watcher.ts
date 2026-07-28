@@ -3,9 +3,10 @@ import { extractFileRefs } from "@sugarcube-sh/core";
 import { watch as chokidarWatch } from "chokidar";
 import { IGNORED_DIR_NAMES, MARKUP_EXTENSIONS } from "../constants/markup.js";
 import { debounce } from "./debounce.js";
+import type { ChangeKind } from "./regenerate.js";
 
 export type WatchCallbacks = {
-    onRegenerate: (changedPath: string) => Promise<void>;
+    onRegenerate: (kind: ChangeKind, changedPath: string) => Promise<void>;
     onError: (error: Error) => void;
     onReady: (tokenFileCount: number) => void;
 };
@@ -44,9 +45,9 @@ export async function startWatcher(
 
     const tokenPaths = [resolverPath, ...filePaths];
 
-    const debouncedRegenerate = debounce(async (changedPath: string) => {
+    const debouncedRegenerate = debounce(async (kind: ChangeKind, changedPath: string) => {
         try {
-            await callbacks.onRegenerate(changedPath);
+            await callbacks.onRegenerate(kind, changedPath);
         } catch (error) {
             callbacks.onError(error instanceof Error ? error : new Error(String(error)));
         }
@@ -83,17 +84,20 @@ export async function startWatcher(
         },
     });
 
-    const handleChange = (path: string) => {
-        debouncedRegenerate(path);
+    const handleTokenChange = (path: string) => {
+        debouncedRegenerate("token", path);
+    };
+    const handleMarkupChange = (path: string) => {
+        debouncedRegenerate("markup", path);
     };
 
-    tokenWatcher.on("change", handleChange);
-    tokenWatcher.on("add", handleChange);
-    tokenWatcher.on("unlink", handleChange);
+    tokenWatcher.on("change", handleTokenChange);
+    tokenWatcher.on("add", handleTokenChange);
+    tokenWatcher.on("unlink", handleTokenChange);
 
-    markupWatcher.on("change", handleChange);
-    markupWatcher.on("add", handleChange);
-    markupWatcher.on("unlink", handleChange);
+    markupWatcher.on("change", handleMarkupChange);
+    markupWatcher.on("add", handleMarkupChange);
+    markupWatcher.on("unlink", handleMarkupChange);
 
     await Promise.all([
         new Promise<void>((resolve) => tokenWatcher.once("ready", resolve)),
