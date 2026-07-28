@@ -170,12 +170,17 @@ async function resolvePermutations(
     const trees: TokenTree[] = [];
     const errors: LoadError[] = [];
 
+    // Permutations resolve independently but reference the same token files, so
+    // share one read/parse cache across them instead of re-reading every file
+    // once per permutation.
+    const fileCache = new Map<string, unknown>();
+
     for (let i = 0; i < permutations.length; i++) {
         const perm = permutations[i];
         if (!perm) continue;
 
         const fullInput = buildFullInput(perm.input, modifiers);
-        const result = await processResolutionOrder(document, basePath, fullInput);
+        const result = await processResolutionOrder(document, basePath, fullInput, fileCache);
 
         for (const error of result.errors) {
             errors.push({ file: error.path, message: error.message });

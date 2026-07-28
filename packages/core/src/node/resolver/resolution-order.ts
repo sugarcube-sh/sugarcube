@@ -44,6 +44,7 @@ export async function processResolutionOrder(
     document: ResolverDocument,
     basePath: string,
     inputs: ResolverInputs = {},
+    fileCache?: Map<string, unknown>,
 ): Promise<ResolutionOrderResult> {
     const validation = validateInputs(document, inputs);
     if (!validation.valid) {
@@ -57,7 +58,7 @@ export async function processResolutionOrder(
         };
     }
 
-    const context = createResolveContext(document, basePath);
+    const context = createResolveContext(document, basePath, fileCache);
     const state = createProcessingState();
 
     for (const item of document.resolutionOrder) {
