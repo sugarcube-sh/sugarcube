@@ -24,6 +24,7 @@ import { resolve } from "node:path";
 import UnoCSS from "@unocss/vite";
 import { applyEdits, modify } from "jsonc-parser";
 import type { Logger, Plugin, ViteDevServer } from "vite";
+import { createSingleFlight, debounce } from "./watch-scheduling.js";
 
 /** CSS object for UnoCSS rules - matches @unocss/core CSSObject */
 type CSSObject = Record<string, string | number | undefined>;
@@ -324,15 +325,12 @@ function createSugarcubeContext(): SugarcubePluginContext {
             using I = new Instrumentation();
             I.start("Invalidate");
 
-            const mapSize = server.moduleGraph.idToModuleMap.size;
-            perf.log("SCANNING MODULE GRAPH for /__uno.css", { mapSize });
-
-            for (const [id, module] of server.moduleGraph.idToModuleMap) {
-                if (id === "/__uno.css") {
-                    server.moduleGraph.invalidateModule(module);
-                    server.reloadModule(module);
-                    break;
-                }
+            // Keyed O(1) lookup instead of scanning the whole module graph, which
+            // grows with project size on every change.
+            const module = server.moduleGraph.getModuleById("/__uno.css");
+            if (module) {
+                server.moduleGraph.invalidateModule(module);
+                server.reloadModule(module);
             }
 
             I.end("Invalidate");
@@ -525,38 +523,45 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                     perf.trackWatcherEvent(file, server.moduleGraph.idToModuleMap.size);
                 });
 
-                server.watcher.on("change", async (file) => {
+                // A single reload cycle: reload tokens, then invalidate the UnoCSS
+                // module (which holds both variables via preflight and utilities).
+                // Wrapped in single-flight so overlapping saves can't run this
+                // concurrently and race on the plugin's shared token/CSS state.
+                const runReload = createSingleFlight(
+                    async () => {
+                        using I = new Instrumentation();
+                        I.start("Total File Change Handler");
+                        await ctx.reloadTokens();
+                        I.start("Vite Invalidate");
+                        ctx.invalidate(server);
+                        I.end("Vite Invalidate");
+                        I.end("Total File Change Handler");
+                    },
+                    (error) => {
+                        server.config.logger.error(
+                            `[sugarcube] Token reload failed: ${
+                                error instanceof Error ? error.message : String(error)
+                            }`,
+                        );
+                    },
+                );
+
+                // Debounce so a burst of token saves collapses into one reload.
+                const scheduleReload = debounce(runReload, 100);
+
+                server.watcher.on("change", (file) => {
                     // Check if it's a JSON file in one of our token directories
                     if (file.endsWith(".json") && tokenDirs.some((dir) => file.includes(dir))) {
                         server.config.logger.info(
                             "[sugarcube] Design tokens changed, reloading...",
                         );
-
-                        using I = new Instrumentation();
-                        I.start("Total File Change Handler");
-
-                        perf.logModuleGraphStats(
-                            server.moduleGraph.idToModuleMap.size,
-                            server.moduleGraph.urlToModuleMap.size,
-                            "before reload",
-                        );
-
-                        await ctx.reloadTokens();
-
-                        // Invalidate UnoCSS module (contains both variables via preflight and utilities)
-                        I.start("Vite Invalidate");
-                        ctx.invalidate(server);
-                        I.end("Vite Invalidate");
-
-                        perf.logModuleGraphStats(
-                            server.moduleGraph.idToModuleMap.size,
-                            server.moduleGraph.urlToModuleMap.size,
-                            "after invalidate",
-                        );
-
-                        I.end("Total File Change Handler");
+                        scheduleReload();
                     }
                 });
+
+                // Drop any pending reload when the dev server shuts down so a
+                // stray timer can't fire against a torn-down server.
+                server.httpServer?.once("close", () => scheduleReload.cancel());
             },
         } satisfies Plugin,
 
