@@ -1,3 +1,6 @@
+/** How many referring tokens a grouped "missing reference" message names before summarising the rest. */
+export const MISSING_REFERRER_CAP = 3;
+
 export const ErrorMessages = {
     LOAD: {
         NO_FILES_FOUND: (pattern: string) => `No files found matching pattern: ${pattern}.`,
@@ -111,6 +114,14 @@ export const ErrorMessages = {
         REFERENCE_NOT_FOUND: (ref: string, path: string) =>
             `Reference not found: ${ref} in ${path}. Does ${ref} exist?`,
         TYPE_MISMATCH: (path: string) => `Type mismatch in ${path}`,
+        MISSING_REFERENCE: (ref: string, referrers: string[]) => {
+            const shown = referrers.slice(0, MISSING_REFERRER_CAP);
+            const remaining = referrers.length - shown.length;
+            const more = remaining > 0 ? ` (+${remaining} more)` : "";
+            const referencedBy =
+                shown.length > 0 ? ` Referenced by ${shown.join(", ")}${more}.` : "";
+            return `Token reference not found. ${ref} is referenced but not defined.${referencedBy} Check for a typo, or define ${ref}.`;
+        },
     },
     GENERATE: {
         INVALID_CSS_VALUE: (key: string, value: unknown) =>
