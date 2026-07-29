@@ -74,10 +74,23 @@ export default function sugarcubeStudio(): Plugin {
                     },
                 });
 
+                // The exact `resolved` object last synced into `working` by a disk
+                // reload (see onReload). Used to tell a disk sync apart from a real
+                // client edit in the "updated" handler below.
+                let lastSyncedResolved: ResolvedTokens | null = null;
+
                 // Client edit → re-run pipeline + push CSS via HMR.
                 working.on("updated", async () => {
                     const current = working.value();
                     if (!current?.resolved) return;
+
+                    // A disk reload syncs `working.resolved` to the exact object
+                    // sugarcube's own reloadTokens just produced. That update is not
+                    // a client edit — the pipeline already ran and /__uno.css was
+                    // already invalidated by the sugarcube plugin — so skip it.
+                    // Without this, every disk token-save regenerates CSS and reloads
+                    // /__uno.css twice (studio's rerun on top of sugarcube's reload).
+                    if (current.resolved === lastSyncedResolved) return;
 
                     await scCtx.rerunPipeline(current.resolved);
 
@@ -99,6 +112,9 @@ export default function sugarcubeStudio(): Plugin {
                         draft.trees = scCtx.trees as TokenTree[];
                         draft.resolved = scCtx.resolved as ResolvedTokens;
                     });
+                    // Remember the object we're syncing so the "updated" listener
+                    // can recognise this as a disk sync, not a client edit.
+                    lastSyncedResolved = scCtx.resolved as ResolvedTokens;
                     working.mutate((draft) => {
                         draft.resolved = scCtx.resolved as ResolvedTokens;
                     });
@@ -126,6 +142,13 @@ export default function sugarcubeStudio(): Plugin {
                             handler: async () => {
                                 // `onReload` writes fresh disk state into both shared states.
                                 await scCtx.reloadTokens();
+                                // Discard doesn't touch disk, so no token-watcher
+                                // fires — invalidate here to push the reverted CSS to
+                                // the page. (The "updated" listener deliberately no
+                                // longer does this for disk syncs.)
+                                if (ctx.viteServer) {
+                                    scCtx.invalidate(ctx.viteServer);
+                                }
                             },
                         }),
                     }),
