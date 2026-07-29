@@ -221,4 +221,25 @@ describe("watch session incremental == cold build", () => {
         expect(incrementalUtilities).toContain("text-c");
         expect(incrementalUtilities).toBe(coldUtilities);
     });
+
+    it("a markup change that removes a class drops it (reused generator has no stale state)", async () => {
+        const fx = (fixture = makeFixture());
+
+        const warm = createWatchSession(fx.config, {});
+        await warm.primeAndBuild();
+
+        writeFileSync(fx.markupPath, `<div class="text-a text-b">hello</div>\n`);
+        await warm.onChange("markup", fx.markupPath);
+        expect(read(fx.utilitiesPath)).toContain("text-b");
+
+        writeFileSync(fx.markupPath, `<div class="text-a">hello</div>\n`);
+        await warm.onChange("markup", fx.markupPath);
+        const incrementalUtilities = read(fx.utilitiesPath);
+
+        await createWatchSession(fx.config, {}).primeAndBuild();
+        const coldUtilities = read(fx.utilitiesPath);
+
+        expect(incrementalUtilities).not.toContain("text-b");
+        expect(incrementalUtilities).toBe(coldUtilities);
+    });
 });

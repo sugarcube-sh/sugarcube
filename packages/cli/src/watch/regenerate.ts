@@ -41,36 +41,46 @@ export interface WatchSession {
     onChange(kind: ChangeKind, changedPath: string): Promise<GenerationResult>;
 }
 
-async function generateSugarcubeUtilities(
+type BuiltUtilityGenerator = {
+    generator: Awaited<ReturnType<typeof createGenerator>>;
+    safelist: string[];
+} | null;
+
+async function buildUtilityGenerator(
     tokens: NormalizedRenderableTokens,
     config: InternalConfig,
-): Promise<CSSFileOutput> {
+): Promise<BuiltUtilityGenerator> {
     if (!config.utilities.classes || Object.keys(config.utilities.classes).length === 0) {
-        return [];
+        return null;
     }
 
     const safelist = enumerateSafelistClasses(config.utilities.classes, tokens);
-
-    const sugarcubePreset = {
-        name: "sugarcube",
-        rules: convertConfigToUnoRules(config.utilities.classes, tokens),
-        preflights: [],
-    };
-
     const generatorOptions: UserConfig = {
-        presets: [sugarcubePreset],
+        presets: [
+            {
+                name: "sugarcube",
+                rules: convertConfigToUnoRules(config.utilities.classes, tokens),
+                preflights: [],
+            },
+        ],
         safelist,
     };
 
-    const generator = await createGenerator(generatorOptions);
+    return { generator: await createGenerator(generatorOptions), safelist };
+}
+
+async function runUtilityGenerator(
+    built: BuiltUtilityGenerator,
+    config: InternalConfig,
+): Promise<CSSFileOutput> {
+    if (!built) return [];
+    const { generator, safelist } = built;
 
     const files = await getMarkupFiles(config.content);
     if (files.length === 0 && safelist.length === 0) return [];
 
     const sources = await readMarkupSources(files);
-    const combinedSource = sources.join("\n");
-
-    const { css } = await generator.generate(combinedSource, { preflights: false });
+    const { css } = await generator.generate(sources.join("\n"), { preflights: false });
     if (!css?.trim()) return [];
 
     return [
@@ -117,10 +127,10 @@ async function writeVariables(
 }
 
 async function writeUtilities(
-    convertedTokens: NormalizedRenderableTokens,
+    built: BuiltUtilityGenerator,
     config: InternalConfig,
 ): Promise<CSSFileOutput> {
-    let utilities = await generateSugarcubeUtilities(convertedTokens, config);
+    let utilities = await runUtilityGenerator(built, config);
     if (config.utilities.layer) {
         utilities = wrapInLayer(utilities, config.utilities.layer);
     }
@@ -161,10 +171,12 @@ type TokenState = {
  *   pipeline. Each concern is always fully recomputed, never patched, so the
  *   output matches a cold build.
  *
- * The utility generator is rebuilt on every utilities pass rather than persisted
- * because UnoCSS orders rules by first-seen token, so a persisted generator
- * could emit utilities in a different order than a cold build once a markup edit
- * introduces a new class.
+ * The UnoCSS generator is persisted and reused across markup changes. Its first
+ * `generate()` does ~30ms of lazy setup that dominates a markup regen; because
+ * rules + safelist depend only on the token shape, the generator is rebuilt only
+ * when that shape changes, keyed by the same signature used above. `generate`
+ * emits CSS for exactly the current source, so reuse is byte-identical to a cold
+ * build — verified for classes added and removed.
  */
 export function createWatchSession(
     config: InternalConfig,
@@ -173,6 +185,8 @@ export function createWatchSession(
     let state: TokenState | null = null;
     let lastUtilities: CSSFileOutput = [];
     let lastUtilitySignature: string | null = null;
+    let builtGenerator: BuiltUtilityGenerator = null;
+    let builtGeneratorSignature: string | null = null;
 
     async function reloadTokens(): Promise<TokenState> {
         clearMatchCache();
@@ -187,8 +201,13 @@ export function createWatchSession(
     }
 
     async function regenerateUtilities(current: TokenState): Promise<CSSFileOutput> {
-        lastUtilities = await writeUtilities(current.convertedTokens, config);
-        lastUtilitySignature = utilityShapeSignature(current.convertedTokens);
+        const signature = utilityShapeSignature(current.convertedTokens);
+        if (builtGeneratorSignature !== signature) {
+            builtGenerator = await buildUtilityGenerator(current.convertedTokens, config);
+            builtGeneratorSignature = signature;
+        }
+        lastUtilities = await writeUtilities(builtGenerator, config);
+        lastUtilitySignature = signature;
         return lastUtilities;
     }
 
