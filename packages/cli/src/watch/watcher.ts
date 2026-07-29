@@ -17,9 +17,7 @@ export type WatcherHandle = {
     close: () => Promise<void>;
 };
 
-// Mirrors scan-markup's MAX_FILES: past this many watched entries the markup
-// watcher is almost certainly rooted too broadly (e.g. a monorepo root with no
-// `content` set), so we warn rather than silently holding a huge watch tree.
+// Mirrors scan-markup's MAX_FILES
 const WATCH_TARGET_LIMIT = 10_000;
 
 const GLOB_MAGIC = /[*?{}[\]!]/;
@@ -54,10 +52,7 @@ export async function startWatcher(
 
     // In-flight coalescing: a regeneration can take longer than the gap between
     // events, so overlapping runs (concurrent globs/reads/writes to the same
-    // output) are collapsed into a single trailing run.
-    // NOTE: Phase 2's routing must revisit this — a single queued slot can drop a
-    // token event behind a later markup event. Fine while every kind triggers a
-    // full rebuild.
+    // output) are collapsed into a single run.
     const coalescedRegenerate = createCoalescedRunner(
         (kind: ChangeKind, changedPath: string) => callbacks.onRegenerate(kind, changedPath),
         (error) => callbacks.onError(error instanceof Error ? error : new Error(String(error))),

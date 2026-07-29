@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createCoalescedRunner } from "../src/watch/coalesce.js";
 
-// A deferred promise so tests control exactly when a run resolves.
 function deferred<T = void>() {
     let resolve!: (value: T) => void;
     let reject!: (reason?: unknown) => void;
@@ -40,18 +39,18 @@ describe("createCoalescedRunner", () => {
             concurrent--;
         }, vi.fn());
 
-        run(1); // starts, blocks on `first`
-        run(2); // queued, must not start yet
+        run(1);
+        run(2);
         await Promise.resolve();
 
-        expect(Math.max(...active)).toBe(1); // never two at once
+        expect(Math.max(...active)).toBe(1);
 
         first.resolve();
         await first.promise;
         await Promise.resolve();
         await Promise.resolve();
 
-        expect(active).toEqual([1, 1]); // the queued run fired after the first
+        expect(active).toEqual([1, 1]);
     });
 
     it("coalesces multiple queued calls into one trailing run with the latest args", async () => {
@@ -63,9 +62,9 @@ describe("createCoalescedRunner", () => {
             if (arg === "start") await first.promise;
         }, vi.fn());
 
-        run("start"); // in flight
-        run("dropped"); // queued
-        run("latest"); // overwrites queue slot
+        run("start");
+        run("dropped");
+        run("latest");
         await Promise.resolve();
 
         first.resolve();
@@ -73,7 +72,7 @@ describe("createCoalescedRunner", () => {
         await Promise.resolve();
         await Promise.resolve();
 
-        expect(seen).toEqual(["start", "latest"]); // "dropped" collapsed away
+        expect(seen).toEqual(["start", "latest"]);
     });
 
     it("routes errors to onError and still drains the queue", async () => {
@@ -89,8 +88,8 @@ describe("createCoalescedRunner", () => {
             }
         }, onError);
 
-        run("boom"); // in flight, will reject
-        run("next"); // queued
+        run("boom");
+        run("next");
         await Promise.resolve();
 
         first.resolve();
@@ -100,6 +99,6 @@ describe("createCoalescedRunner", () => {
 
         expect(onError).toHaveBeenCalledTimes(1);
         expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: "boom" }));
-        expect(seen).toEqual(["boom", "next"]); // lock released despite the error
+        expect(seen).toEqual(["boom", "next"]);
     });
 });

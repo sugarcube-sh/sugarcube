@@ -41,8 +41,6 @@ export async function getMarkupFiles(content?: string[]): Promise<string[]> {
     return files;
 }
 
-// Read this many files at once. Bounds open file descriptors and memory while
-// still overlapping I/O, which dominates markup scanning on large projects.
 const READ_CONCURRENCY = 64;
 
 export async function readMarkupSources(files: string[]): Promise<string[]> {

@@ -165,7 +165,7 @@ for (const size of SIZES) {
     fixtures.push(fx);
 
     describe(size.label, () => {
-        // Cold build — full generation from scratch (baseline reference). A fresh
+        // Cold build. Full generation from scratch (baseline reference). A fresh
         // session each sample; session creation is cheap, the fixture is reused.
         bench("cold build", async () => {
             const session = createWatchSession(fx.config, {});

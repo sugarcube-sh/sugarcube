@@ -27,7 +27,6 @@ export type GenerationResult = {
     warnings: Array<{ path: string; message: string }>;
 };
 
-/** Which watcher emitted the event. Phase 0 ignores it; later phases route on it. */
 export type ChangeKind = "token" | "markup";
 
 export interface WatchSession {
@@ -134,7 +133,7 @@ type TokenState = {
 
 /**
  * A watch session holds the token-pipeline results between events so it can
- * route regeneration by what changed (Tier 1, "split-recompute"):
+ * route regeneration by what changed:
  *
  * - token change → fully reload + resolve + convert from disk, then regenerate
  *   variables and utilities. Nothing stale is reused.
@@ -144,9 +143,9 @@ type TokenState = {
  *   output matches a cold build.
  *
  * The utility generator is rebuilt on every utilities pass rather than persisted
- * (Fix D): UnoCSS orders rules by first-seen token, so a persisted generator
+ * because UnoCSS orders rules by first-seen token, so a persisted generator
  * could emit utilities in a different order than a cold build once a markup edit
- * introduces a new class. Rebuilding is cheap next to the token pipeline we skip.
+ * introduces a new class.
  */
 export function createWatchSession(
     config: InternalConfig,
@@ -190,9 +189,6 @@ export function createWatchSession(
                 return { output: await buildAll(current), warnings: current.warnings };
             }
 
-            // Markup change: tokens are unchanged. Reuse the cached token state and
-            // regenerate only utilities. `variablesOnly` means there are no
-            // utilities to rebuild, so nothing is written.
             const output = options.variablesOnly
                 ? []
                 : await writeUtilities(state.convertedTokens, config);
@@ -201,11 +197,6 @@ export function createWatchSession(
     };
 }
 
-/**
- * One-shot generation used by the non-watch path. A session's cold build is the
- * full pipeline, so routing this through it keeps one-time and watch generation
- * from drifting.
- */
 export function runFullGeneration(
     config: InternalConfig,
     options: GenerateAllCSSOptions = {},
