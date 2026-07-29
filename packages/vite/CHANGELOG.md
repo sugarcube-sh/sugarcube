@@ -1,5 +1,14 @@
 # @sugarcube-sh/vite
 
+## 0.1.23
+
+### Patch Changes
+
+- bae19e4: Fix overlapping dev-server rebuilds (token reloads are now debounced and single-flighted) and speed up CSS invalidation with a keyed module lookup.
+- Updated dependencies [0c49362]
+- Updated dependencies [e8db9e1]
+  - @sugarcube-sh/core@0.2.16
+
 ## 0.1.22
 
 ### Patch Changes

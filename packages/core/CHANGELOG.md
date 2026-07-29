@@ -1,5 +1,12 @@
 # @sugarcube-sh/core
 
+## 0.2.16
+
+### Patch Changes
+
+- 0c49362: Report one error per undefined token reference instead of one per referrer, fix false "circular reference" errors caused by missing refs, and improve resolution error messages.
+- e8db9e1: Speed up token loading by reading each resolver file once per generation instead of once per permutation.
+
 ## 0.2.15
 
 ### Patch Changes
