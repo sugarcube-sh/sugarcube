@@ -35,4 +35,6 @@ export type ResolutionError = BaseError & {
     type: ResolutionErrorType;
     path: string;
     source: TokenSource;
+    ref?: string;
+    referencedBy?: string[];
 };

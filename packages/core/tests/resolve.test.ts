@@ -126,6 +126,7 @@ describe("resolve", () => {
                 type: "missing",
                 path: "color.text",
                 source: { sourcePath: "tokens.json" },
+                ref: "color.primary",
                 message: ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND("color.primary", "color.text"),
             });
         });
@@ -198,6 +199,7 @@ describe("resolve", () => {
                 type: "missing",
                 path: "shadow.medium",
                 source: { sourcePath: "tokens.json" },
+                ref: "shadow.small.color",
                 message: ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(
                     "shadow.small.color",
                     "shadow.medium.color",
@@ -234,6 +236,7 @@ describe("resolve", () => {
                 type: "missing",
                 path: "color.text",
                 source: { sourcePath: "tokens.json" },
+                ref: "color",
                 message: ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND("color", "color.text"),
             });
         });

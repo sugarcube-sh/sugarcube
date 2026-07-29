@@ -9,10 +9,20 @@ class ResolutionThrow extends Error {
     constructor(
         readonly kind: "circular" | "missing",
         message: string,
+        readonly refKey?: string,
     ) {
         super(message);
         this.name = "ResolutionThrow";
     }
+}
+
+function valueReferencesKey(value: unknown, refKey: string): boolean {
+    if (typeof value === "string") return value === `{${refKey}}`;
+    if (Array.isArray(value)) return value.some((v) => valueReferencesKey(v, refKey));
+    if (value && typeof value === "object") {
+        return Object.values(value).some((v) => valueReferencesKey(v, refKey));
+    }
+    return false;
 }
 
 function lookupNamespacedKey(
@@ -156,15 +166,30 @@ export function dereference(tokens: FlattenedTokens): {
             const tokenPath = flattenedToken.$path;
             const source = flattenedToken.$source;
 
-            const { type, message } =
-                error instanceof ResolutionThrow
-                    ? { type: error.kind, message: error.message }
-                    : {
-                          type: "type-mismatch" as const,
-                          message: ErrorMessages.RESOLVE.TYPE_MISMATCH(tokenPath),
-                      };
-
-            errors.push({ type, path: tokenPath, source, message });
+            if (error instanceof ResolutionThrow && error.kind === "missing" && error.refKey) {
+                // Only report tokens that DIRECTLY reference the missing token. A
+                // token that fails because something it references is itself broken
+                // is a symptom. The direct referrer reports it, so drop it here.
+                if (!valueReferencesKey(flattenedToken.$value, error.refKey)) {
+                    continue;
+                }
+                errors.push({
+                    type: "missing",
+                    path: tokenPath,
+                    source,
+                    message: error.message,
+                    ref: error.refKey,
+                });
+            } else if (error instanceof ResolutionThrow) {
+                errors.push({ type: error.kind, path: tokenPath, source, message: error.message });
+            } else {
+                errors.push({
+                    type: "type-mismatch",
+                    path: tokenPath,
+                    source,
+                    message: ErrorMessages.RESOLVE.TYPE_MISMATCH(tokenPath),
+                });
+            }
         }
     }
 
@@ -188,6 +213,7 @@ function resolveReferenceChain(
         throw new ResolutionThrow(
             "missing",
             ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key),
+            refKey,
         );
     }
 
@@ -197,6 +223,7 @@ function resolveReferenceChain(
             throw new ResolutionThrow(
                 "missing",
                 ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key),
+                refKey,
             );
         }
         throw new ResolutionThrow(
@@ -210,21 +237,20 @@ function resolveReferenceChain(
         throw new ResolutionThrow(
             "missing",
             ErrorMessages.RESOLVE.REFERENCE_NOT_FOUND(refKey, key),
+            refKey,
         );
     }
 
     resolving.add(namespacedKey);
 
-    // Stay in the same context as the chain continues.
-    const resolvedValue = resolveValue(
-        namespacedKey,
-        referencedToken.$value,
-        tokens,
-        resolving,
-        context,
-    );
-
-    resolving.delete(namespacedKey);
-
-    return resolvedValue;
+    // Always remove the key from the in-progress set, even if resolution throws
+    // (e.g. a deeper missing reference). `resolving` is shared across the whole
+    // dereference pass, so leaving a key behind makes later tokens that reference
+    // it look circular when they aren't.
+    try {
+        // Stay in the same context as the chain continues.
+        return resolveValue(namespacedKey, referencedToken.$value, tokens, resolving, context);
+    } finally {
+        resolving.delete(namespacedKey);
+    }
 }
