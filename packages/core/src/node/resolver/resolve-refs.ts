@@ -33,8 +33,12 @@ type ResolveContext = {
 /**
  * Create a resolution context for resolving references.
  */
-export function createResolveContext(document: ResolverDocument, basePath: string): ResolveContext {
-    return { document, basePath, visitedRefs: new Set(), fileCache: new Map() };
+export function createResolveContext(
+    document: ResolverDocument,
+    basePath: string,
+    fileCache: Map<string, unknown> = new Map(),
+): ResolveContext {
+    return { document, basePath, visitedRefs: new Set(), fileCache };
 }
 
 /**
