@@ -169,6 +169,39 @@ describe("watch session incremental == cold build", () => {
         expect(variablesAfterMarkup).toBe(coldVariables);
     });
 
+    it("adding a token used in markup regenerates utilities (structural change is not skipped)", async () => {
+        const fx = (fixture = makeFixture());
+
+        writeFileSync(fx.markupPath, `<div class="text-a text-d">hello</div>\n`);
+
+        const warm = createWatchSession(fx.config, {});
+        await warm.primeAndBuild();
+        const utilitiesAtPrime = read(fx.utilitiesPath);
+        expect(utilitiesAtPrime).not.toContain("text-d");
+
+        writeFileSync(
+            fx.tokenPath,
+            JSON.stringify({
+                color: {
+                    $type: "color",
+                    a: { $value: "#111111" },
+                    b: { $value: "#222222" },
+                    c: { $value: "#333333" },
+                    d: { $value: "#444444" },
+                },
+            }),
+        );
+
+        await warm.onChange("token", fx.tokenPath);
+        const incrementalUtilities = read(fx.utilitiesPath);
+
+        await createWatchSession(fx.config, {}).primeAndBuild();
+        const coldUtilities = read(fx.utilitiesPath);
+
+        expect(incrementalUtilities).toContain("text-d");
+        expect(incrementalUtilities).toBe(coldUtilities);
+    });
+
     it("consecutive markup changes stay identical to a cold rebuild", async () => {
         const fx = (fixture = makeFixture());
 

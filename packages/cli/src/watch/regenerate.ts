@@ -9,7 +9,12 @@ import {
     writeCSSUtilitiesToDisk,
     writeCSSVariablesToDisk,
 } from "@sugarcube-sh/core";
-import type { InternalConfig, NormalizedRenderableTokens, Permutation } from "@sugarcube-sh/core";
+import type {
+    InternalConfig,
+    NormalizedRenderableTokens,
+    Permutation,
+    RenderableToken,
+} from "@sugarcube-sh/core";
 import { type UserConfig, createGenerator } from "@unocss/core";
 import packageJson from "../../package.json" with { type: "json" };
 import { prepareTokens } from "../prepare-tokens.js";
@@ -124,6 +129,20 @@ async function writeUtilities(
     return utilitiesWithBanner;
 }
 
+function utilityShapeSignature(tokens: NormalizedRenderableTokens): string {
+    const contextKey = tokens.default ? "default" : Object.keys(tokens)[0];
+    const context = contextKey ? tokens[contextKey] : undefined;
+    if (!context) return "";
+
+    const parts: string[] = [];
+    for (const entry of Object.values(context)) {
+        if (!("$path" in entry)) continue;
+        const token = entry as RenderableToken;
+        parts.push(`${token.$path}|${token.$type ?? ""}|${token.$names.css}`);
+    }
+    return parts.join("\n");
+}
+
 /** Cached results of the token pipeline — everything a markup change can reuse. */
 type TokenState = {
     convertedTokens: NormalizedRenderableTokens;
@@ -152,6 +171,8 @@ export function createWatchSession(
     options: GenerateAllCSSOptions = {},
 ): WatchSession {
     let state: TokenState | null = null;
+    let lastUtilities: CSSFileOutput = [];
+    let lastUtilitySignature: string | null = null;
 
     async function reloadTokens(): Promise<TokenState> {
         clearMatchCache();
@@ -165,6 +186,12 @@ export function createWatchSession(
         return next;
     }
 
+    async function regenerateUtilities(current: TokenState): Promise<CSSFileOutput> {
+        lastUtilities = await writeUtilities(current.convertedTokens, config);
+        lastUtilitySignature = utilityShapeSignature(current.convertedTokens);
+        return lastUtilities;
+    }
+
     async function buildAll(current: TokenState): Promise<CSSFileOutput> {
         const output: CSSFileOutput = [];
         if (!options.utilitiesOnly) {
@@ -173,7 +200,7 @@ export function createWatchSession(
             );
         }
         if (!options.variablesOnly) {
-            output.push(...(await writeUtilities(current.convertedTokens, config)));
+            output.push(...(await regenerateUtilities(current)));
         }
         return output;
     }
@@ -186,12 +213,30 @@ export function createWatchSession(
         async onChange(kind, _changedPath) {
             if (kind === "token" || state === null) {
                 const current = await reloadTokens();
-                return { output: await buildAll(current), warnings: current.warnings };
+                const output: CSSFileOutput = [];
+                if (!options.utilitiesOnly) {
+                    output.push(
+                        ...(await writeVariables(
+                            current.convertedTokens,
+                            config,
+                            current.permutations,
+                        )),
+                    );
+                }
+                if (!options.variablesOnly) {
+                    const signature = utilityShapeSignature(current.convertedTokens);
+                    output.push(
+                        ...(signature === lastUtilitySignature
+                            ? lastUtilities
+                            : await regenerateUtilities(current)),
+                    );
+                }
+                return { output, warnings: current.warnings };
             }
 
             const output = options.variablesOnly
                 ? []
-                : await writeUtilities(state.convertedTokens, config);
+                : await regenerateUtilities(state);
             return { output, warnings: state.warnings };
         },
     };
