@@ -1,5 +1,15 @@
 # @sugarcube-sh/cli
 
+## 0.1.23
+
+### Patch Changes
+
+- 1cc7a8f: Speed up `generate --watch`: markup is read in parallel, regenerations no longer overlap, and token vs. markup edits only rebuild what changed.
+- 845c52c: perf(watch): make `generate --watch` incremental — value-only token edits reuse cached utilities and markup edits reuse a persisted UnoCSS generator (~3–12× faster per change)
+- Updated dependencies [0c49362]
+- Updated dependencies [e8db9e1]
+  - @sugarcube-sh/core@0.2.16
+
 ## 0.1.22
 
 ### Patch Changes
