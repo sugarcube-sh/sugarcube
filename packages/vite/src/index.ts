@@ -229,7 +229,9 @@ function createSugarcubeContext(): SugarcubePluginContext {
         using I = new Instrumentation();
         I.start("Initial total process");
 
+        I.start("Load Config");
         const { config: loadedConfig } = await loadInternalConfig();
+        I.end("Load Config");
         config = loadedConfig;
         await runPipeline();
         await updateAll();
