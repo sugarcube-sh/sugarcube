@@ -35,7 +35,7 @@ describe("debounce", () => {
 
         d();
         vi.advanceTimersByTime(80);
-        d(); // resets — should not fire at the original 100ms mark
+        d();
         vi.advanceTimersByTime(80);
         expect(fn).not.toHaveBeenCalled();
 
@@ -86,19 +86,19 @@ describe("createSingleFlight", () => {
             active--;
         });
 
-        run(); // starts, blocks on `first`
-        run(); // in-flight → sets pending
-        run(); // in-flight → pending already set, still just one trailing run
+        run();
+        run();
+        run();
         await Promise.resolve();
 
-        expect(maxActive).toBe(1); // never concurrent
+        expect(maxActive).toBe(1);
 
         first.resolve();
         await first.promise;
         await Promise.resolve();
         await Promise.resolve();
 
-        expect(runs).toBe(2); // one trailing run, not three
+        expect(runs).toBe(2);
     });
 
     it("routes errors to onError and still drains a pending trigger", async () => {
@@ -115,8 +115,8 @@ describe("createSingleFlight", () => {
             runs.push("next");
         }, onError);
 
-        run(); // in flight, will throw
-        run(); // queued
+        run();
+        run();
         await Promise.resolve();
 
         first.resolve();
@@ -124,7 +124,7 @@ describe("createSingleFlight", () => {
         await Promise.resolve();
         await Promise.resolve();
 
-        expect(runs).toEqual(["boom", "next"]); // lock released despite the throw
+        expect(runs).toEqual(["boom", "next"]);
         expect(onError).toHaveBeenCalledTimes(1);
         expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: "boom" }));
     });

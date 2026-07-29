@@ -1,13 +1,5 @@
-/**
- * Scheduling helpers for the dev-server token watcher: a trailing debounce to
- * collapse bursts of saves, and a single-flight guard so a slow reload can't be
- * run concurrently with itself (which would race on the plugin's shared token/CSS
- * state). Kept local and small; unit-tested in tests/watch-scheduling.test.ts.
- */
-
 export type Debounced = (() => void) & { cancel: () => void };
 
-/** Trailing debounce: collapses a burst of calls into one after `wait` ms of quiet. */
 export function debounce(fn: () => void, wait: number): Debounced {
     let timer: ReturnType<typeof setTimeout> | undefined;
 

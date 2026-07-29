@@ -546,11 +546,9 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                     },
                 );
 
-                // Debounce so a burst of token saves collapses into one reload.
                 const scheduleReload = debounce(runReload, 100);
 
                 server.watcher.on("change", (file) => {
-                    // Check if it's a JSON file in one of our token directories
                     if (file.endsWith(".json") && tokenDirs.some((dir) => file.includes(dir))) {
                         server.config.logger.info(
                             "[sugarcube] Design tokens changed, reloading...",
