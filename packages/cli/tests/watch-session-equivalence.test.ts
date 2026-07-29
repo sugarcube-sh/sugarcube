@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fillDefaults } from "@sugarcube-sh/core";
-import type { InternalConfig } from "@sugarcube-sh/core";
+import type { InternalConfig, UtilityClassesConfig } from "@sugarcube-sh/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { createWatchSession } from "../src/watch/regenerate.js";
 
@@ -15,23 +15,35 @@ type Fixture = {
     cleanup: () => void;
 };
 
-function makeFixture(opts: { themed?: boolean } = {}): Fixture {
+type FixtureOpts = { themed?: boolean; spacing?: boolean; safelist?: boolean };
+
+function buildTokens(opts: FixtureOpts, spaceMd = 1): Record<string, unknown> {
+    const tokens: Record<string, unknown> = {
+        color: {
+            $type: "color",
+            a: { $value: "#111111" },
+            b: { $value: "#222222" },
+            c: { $value: "#333333" },
+        },
+    };
+    if (opts.spacing || opts.safelist) {
+        tokens.space = {
+            $type: "dimension",
+            sm: { $value: { value: 0.5, unit: "rem" } },
+            md: { $value: { value: spaceMd, unit: "rem" } },
+            lg: { $value: { value: 1.5, unit: "rem" } },
+        };
+    }
+    return tokens;
+}
+
+function makeFixture(opts: FixtureOpts = {}): Fixture {
     const dir = mkdtempSync(join(tmpdir(), "sugarcube-equiv-"));
     const srcDir = join(dir, "src");
     mkdirSync(srcDir, { recursive: true });
 
     const tokenPath = join(dir, "tokens.json");
-    writeFileSync(
-        tokenPath,
-        JSON.stringify({
-            color: {
-                $type: "color",
-                a: { $value: "#111111" },
-                b: { $value: "#222222" },
-                c: { $value: "#333333" },
-            },
-        }),
-    );
+    writeFileSync(tokenPath, JSON.stringify(buildTokens(opts)));
 
     const resolutionOrder: unknown[] = [
         { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
@@ -60,13 +72,24 @@ function makeFixture(opts: { themed?: boolean } = {}): Fixture {
     const variablesPath = join(dir, "out/tokens.css");
     const utilitiesPath = join(dir, "out/utilities.css");
 
+    const classes: UtilityClassesConfig = {
+        color: { source: "color.*", prefix: "text" },
+    };
+    if (opts.spacing || opts.safelist) {
+        classes.padding = {
+            source: "space.*",
+            prefix: "p",
+            ...(opts.safelist ? { safelist: true } : {}),
+        };
+    }
+
     const config = fillDefaults({
         resolver: resolverPath,
         content: [join(srcDir, "**/*.html")],
         variables: { path: variablesPath },
         utilities: {
             path: utilitiesPath,
-            classes: { color: { source: "color.*", prefix: "text" } },
+            classes,
         },
     });
 
@@ -240,6 +263,51 @@ describe("watch session incremental == cold build", () => {
         const coldUtilities = read(fx.utilitiesPath);
 
         expect(incrementalUtilities).not.toContain("text-b");
+        expect(incrementalUtilities).toBe(coldUtilities);
+    });
+
+    it("value-only edit to a dimension token leaves spacing utilities identical to cold", async () => {
+        const fx = (fixture = makeFixture({ spacing: true }));
+        writeFileSync(fx.markupPath, `<div class="text-a p-md">hello</div>\n`);
+
+        const warm = createWatchSession(fx.config, {});
+        await warm.primeAndBuild();
+        const variablesAtPrime = read(fx.variablesPath);
+        expect(read(fx.utilitiesPath)).toContain("p-md");
+
+        writeFileSync(fx.tokenPath, JSON.stringify(buildTokens({ spacing: true }, 2)));
+
+        await warm.onChange("token", fx.tokenPath);
+        const incrementalVariables = read(fx.variablesPath);
+        const incrementalUtilities = read(fx.utilitiesPath);
+
+        await createWatchSession(fx.config, {}).primeAndBuild();
+        const coldVariables = read(fx.variablesPath);
+        const coldUtilities = read(fx.utilitiesPath);
+
+        expect(incrementalVariables).not.toBe(variablesAtPrime);
+        expect(incrementalVariables).toBe(coldVariables);
+        expect(incrementalUtilities).toContain("p-md");
+        expect(incrementalUtilities).toBe(coldUtilities);
+    });
+
+    it("safelist-forced utilities stay identical to cold after a value edit", async () => {
+        const fx = (fixture = makeFixture({ safelist: true }));
+        writeFileSync(fx.markupPath, `<div class="text-a">hello</div>\n`);
+
+        const warm = createWatchSession(fx.config, {});
+        await warm.primeAndBuild();
+        expect(read(fx.utilitiesPath)).toContain("p-md");
+
+        writeFileSync(fx.tokenPath, JSON.stringify(buildTokens({ safelist: true }, 2)));
+
+        await warm.onChange("token", fx.tokenPath);
+        const incrementalUtilities = read(fx.utilitiesPath);
+
+        await createWatchSession(fx.config, {}).primeAndBuild();
+        const coldUtilities = read(fx.utilitiesPath);
+
+        expect(incrementalUtilities).toContain("p-md");
         expect(incrementalUtilities).toBe(coldUtilities);
     });
 });
