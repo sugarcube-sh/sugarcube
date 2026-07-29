@@ -48,6 +48,9 @@
     "dev": "cross-env REGISTRY_URL=http://localhost:4321/r tsx src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest --exclude 'tests/e2e/**'",
+    "test:bench": "vitest bench --no-watch",
+    "test:bench:save": "vitest bench --no-watch --outputJson benchmarks/$(date +%Y-%m-%d)-watch-results.json",
+    "test:bench:compare": "./scripts/bench-compare.sh",
     "type-check": "tsc --noEmit",
     "start": "cross-env REGISTRY_URL=https://sugarcube.sh/r tsx src/index.ts"
   },
