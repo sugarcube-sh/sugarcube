@@ -117,12 +117,12 @@
           "$value": "{color.pink.900}"
         },
         "loud": {
-          "$value": "{color.pink.500}"
+          "$value": "{color.pink.700}"
         }
       },
       "on": {
         "quiet": {
-          "$value": "{color.pink.400}"
+          "$value": "{color.pink.300}"
         },
         "normal": {
           "$value": "{color.pink.200}"
@@ -139,7 +139,7 @@
           "$value": "{color.pink.700}"
         },
         "loud": {
-          "$value": "{color.pink.500}"
+          "$value": "{color.pink.700}"
         }
       }
     },
