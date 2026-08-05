@@ -1,0 +1,105 @@
+.studio-playground {
+    --_dot-color: color-mix(
+        in oklab,
+        var(--color-text-normal) 12%,
+        transparent
+    );
+
+    background-color: var(--color-surface-lowered);
+    background-image: radial-gradient(
+        circle,
+        var(--_dot-color) 1px,
+        transparent 1px
+    );
+    background-size: 1.25rem 1.25rem;
+}
+
+.studio-playground__layout {
+    display: grid;
+    gap: var(--space-lg);
+    align-items: start;
+}
+
+@media (width >= 64rem) {
+    .studio-playground__layout {
+        grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+        gap: var(--space-xl);
+    }
+}
+
+.studio-playground__title {
+    font-family: var(--font-display, var(--font-gilda-display));
+    font-weight: var(--font-weight-normal);
+    font-size: var(--text-4xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+}
+
+.studio-playground__lede {
+    max-width: 42rem;
+    font-size: var(--body-large);
+    line-height: var(--leading-body);
+    color: var(--color-text-quiet);
+}
+
+@media (width >= 48rem) {
+    .studio-playground__title {
+        font-size: var(--text-5xl);
+    }
+}
+
+.studio-playground__browser {
+    overflow: hidden;
+    border: var(--border-width-thin) var(--border-style)
+        var(--color-border-normal);
+    border-radius: var(--panel-radius);
+    background-color: var(--color-surface-raised);
+    box-shadow: var(--shadow-sm);
+}
+
+.studio-playground__browser-chrome {
+    display: flex;
+    align-items: center;
+    padding-block: var(--space-xs);
+    padding-inline: var(--space-sm);
+    border-block-end: var(--border-width-thin) var(--border-style)
+        var(--color-border-normal);
+    background-color: var(--color-surface-default);
+}
+
+.studio-playground__browser-controls {
+    display: flex;
+    gap: var(--space-3xs);
+}
+
+.studio-playground__browser-controls span {
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+    border-radius: var(--radius-full);
+    background-color: var(--color-border-normal);
+}
+
+.studio-playground__browser-controls span:nth-child(1) {
+    background-color: #ff5f57;
+}
+
+.studio-playground__browser-controls span:nth-child(2) {
+    background-color: #febc2e;
+}
+
+.studio-playground__browser-controls span:nth-child(3) {
+    background-color: #28c840;
+}
+
+.studio-playground__browser-content {
+    min-block-size: 24rem;
+    background-color: var(--color-surface-raised);
+}
+
+.studio-playground__panel-placeholder {
+    border: var(--border-width-thin) dashed var(--color-border-normal);
+    border-radius: var(--panel-radius);
+    padding: var(--space-md);
+    min-block-size: 28rem;
+    background-color: var(--color-surface-raised);
+}
