@@ -50,6 +50,21 @@
     border-color: var(--color-neutral-400);
 }
 
+.site-button[data-variant="accent"] {
+    --color-fill-loud: var(--color-accent-fill-loud);
+    --color-on-loud: var(--color-accent-on-loud);
+    --color-border-normal: var(--color-accent-border-normal);
+    --color-fill-normal: var(--color-accent-fill-normal);
+    --color-on-normal: var(--color-accent-on-normal);
+    --color-border-quiet: var(--color-accent-border-quiet);
+}
+
+.site-button[data-variant="accent"]:focus-visible {
+    box-shadow: 0 0 0 3px
+        color-mix(in oklab, var(--color-accent-fill-loud) 25%, transparent);
+    border-color: var(--color-accent-fill-loud);
+}
+
 .site-button[data-appearance="soft"] {
     background-color: var(--color-fill-normal, var(--color-neutral-fill-normal));
     color: var(--color-on-normal, var(--color-neutral-on-normal));
