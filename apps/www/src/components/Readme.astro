@@ -1,34 +1,43 @@
 ---
 import Acknowledgments from "@/src/components/Acknowledgments.astro";
-// import WhatIsSC from "@/src/components/WhatIsSC.astro";
+import CTA from "@/src/components/CTA.astro";
 import Features from "@/src/components/Features.astro";
-import Help from "@/src/components/Help.astro";
 import Hero from "@/src/components/Hero.astro";
-import { File } from "@lucide/astro";
-// import Playground from "@/src/components/Playground.astro";
+import Playground from "@/src/components/Playground.astro";
 ---
 
-<div
-    class="wrapper readme pt-6xl"
-    style="--wrapper-max-width: var(--container-3xl)"
->
-    <div class="inline-flex items-center gap-2xs text-sm">
-        <File class="text-quiet" style="--icon-size: 1.75em" />
-        <span class="font-mono leading-none"> README.md </span>
-    </div>
-    <div class="site-alert mt-sm py-2xs" data-variant="warning" data-size="sm">
-        Sugarcube is working towards a 1.0 release. The config and CLI APIs are
-        stabilizing but may still change.
-    </div>
-    <Hero />
-    <!-- <hr />
-    <WhatIsSC /> -->
-    <hr />
-    <Features />
-    <hr />
-    <Help />
-    <!-- <hr /> -->
-    <!-- <Playground /> -->
-    <hr />
-    <Acknowledgments />
+<div class="homepage">
+    <section class="homepage-section homepage-section--hero" id="hero">
+        <div
+            class="wrapper homepage-content readme pt-6xl"
+            style="--wrapper-max-width: var(--container-3xl)"
+        >
+            <Hero />
+        </div>
+    </section>
+
+    <Playground />
+
+    <section class="homepage-section homepage-section--features" id="features">
+        <div
+            class="wrapper homepage-content readme"
+            style="--wrapper-max-width: var(--container-3xl)"
+        >
+            <Features />
+        </div>
+    </section>
+
+    <CTA />
+
+    <section
+        class="homepage-section homepage-section--acknowledgements"
+        id="acknowledgements"
+    >
+        <div
+            class="wrapper homepage-content readme"
+            style="--wrapper-max-width: var(--container-3xl)"
+        >
+            <Acknowledgments />
+        </div>
+    </section>
 </div>

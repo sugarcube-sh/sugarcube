@@ -1,0 +1,12 @@
+.site-cta {
+    background-color: var(--color-neutral-fill-loud);
+    color: var(--color-neutral-on-loud);
+}
+
+.site-cta :is(a):not(.site-button) {
+    color: inherit;
+}
+
+.site-cta__inner {
+    max-width: 45rem;
+}

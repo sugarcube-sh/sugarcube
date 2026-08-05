@@ -8,6 +8,8 @@
 @import "@/registry/styles/blocks/prose.css" layer(blocks);
 @import "@/registry/styles/blocks/doc.css" layer(blocks);
 @import "@/src/styles/blocks/readme.css" layer(blocks);
+@import "@/src/styles/blocks/homepage.css" layer(blocks);
+@import "@/src/styles/blocks/site-cta.css" layer(blocks);
 @import "@/src/styles/blocks/site-header.css" layer(blocks);
 @import "@/src/styles/blocks/services.css" layer(blocks);
 @import "@/src/styles/blocks/site-alert.css" layer(blocks);

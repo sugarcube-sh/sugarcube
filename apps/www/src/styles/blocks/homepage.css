@@ -1,0 +1,31 @@
+.homepage-section {
+    position: relative;
+}
+
+.homepage-playground {
+    background-color: var(--color-surface-lowered);
+}
+
+.homepage-playground__layout {
+    display: grid;
+    gap: var(--space-lg);
+    align-items: start;
+}
+
+@media (width >= 64rem) {
+    .homepage-playground__layout {
+        grid-template-columns: 1fr 22rem;
+    }
+}
+
+.homepage-playground__demo-placeholder,
+.homepage-playground__panel-placeholder {
+    border: var(--border-width-thin) dashed var(--color-border-normal);
+    border-radius: var(--panel-radius);
+    padding: var(--space-md);
+    min-block-size: 16rem;
+}
+
+.homepage-playground__panel-placeholder {
+    background-color: var(--color-surface-raised);
+}

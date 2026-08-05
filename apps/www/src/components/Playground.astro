@@ -1,10 +1,44 @@
-<section class="region flow region-space-md">
-    <h2>
-        <span>##</span>Playground
-    </h2>
-    <p>
-        When the foundations are solid, updating your styles becomes a lot
-        easier. Try it out!
-    </p>
-    <button class="site-button">Launch Playground</button>
+<section
+    class="homepage-playground region region-space-xl"
+    id="playground"
+    aria-labelledby="playground-heading"
+>
+    <div
+        class="wrapper"
+        style="--wrapper-max-width: var(--container-3xl)"
+    >
+        <div class="homepage-playground__layout">
+            <div class="homepage-playground__demo flow">
+                <h2 id="playground-heading">
+                    <span class="text-quiet mr-2xs">##</span>Playground
+                </h2>
+                <p>
+                    When the foundations are solid, updating your styles
+                    becomes a lot easier. Try it out!
+                </p>
+
+                <div
+                    class="homepage-playground__demo-placeholder flow"
+                    aria-label="Playground demo placeholder"
+                >
+                    <p class="text-quiet">
+                        Demo components — stat card, design system view, etc.
+                        to go here.
+                    </p>
+                </div>
+
+                <button class="site-button" type="button" disabled
+                    >Launch Playground</button
+                >
+            </div>
+
+            <aside
+                class="homepage-playground__panel-placeholder flow"
+                aria-label="Studio panel placeholder"
+            >
+                <p class="text-quiet">Studio panel</p>
+                <p>Mark to wire in.</p>
+            </aside>
+        </div>
+    </div>
 </section>
