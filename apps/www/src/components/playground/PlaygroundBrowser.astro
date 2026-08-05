@@ -1,0 +1,137 @@
+---
+import PlaygroundArticle from "@/src/components/playground/PlaygroundArticle.astro";
+import PlaygroundDashboard from "@/src/components/playground/PlaygroundDashboard.astro";
+import PlaygroundDesignSystem from "@/src/components/playground/PlaygroundDesignSystem.astro";
+
+const views = [
+    { id: "design-system", label: "Design System" },
+    { id: "article", label: "Article" },
+    { id: "dashboard", label: "Dashboard" },
+] as const;
+---
+
+<div class="studio-playground__browser-wrap flow">
+    <div class="tabs studio-playground__tabs" data-playground-tabs>
+        <div class="tabs-list" role="tablist" aria-label="Playground views">
+            {
+                views.map((view, index) => (
+                    <button
+                        type="button"
+                        class="tabs-trigger"
+                        role="tab"
+                        data-playground-tab={view.id}
+                        data-state={index === 0 ? "active" : "inactive"}
+                        aria-selected={index === 0 ? "true" : "false"}
+                        aria-controls={`playground-panel-${view.id}`}
+                        id={`playground-tab-${view.id}`}
+                    >
+                        {view.label}
+                    </button>
+                ))
+            }
+        </div>
+    </div>
+
+    <div class="studio-playground__toolbar">
+        <button
+            type="button"
+            class="site-button studio-playground__open-studio"
+            data-studio-open-trigger
+            data-variant="accent"
+        >
+            Open Studio
+        </button>
+    </div>
+
+    <div
+        class="studio-playground__browser"
+        aria-label="Component preview"
+    >
+        <div class="studio-playground__browser-chrome">
+            <div
+                class="studio-playground__browser-controls"
+                aria-hidden="true"
+            >
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+
+        <div class="studio-playground__browser-content">
+            <div
+                class="tabs-panel playground-view-panel"
+                role="tabpanel"
+                id="playground-panel-design-system"
+                aria-labelledby="playground-tab-design-system"
+                data-playground-panel="design-system"
+                data-state="active"
+            >
+                <PlaygroundDesignSystem />
+            </div>
+
+            <div
+                class="tabs-panel playground-view-panel"
+                role="tabpanel"
+                id="playground-panel-article"
+                aria-labelledby="playground-tab-article"
+                data-playground-panel="article"
+                data-state="inactive"
+                hidden
+            >
+                <PlaygroundArticle />
+            </div>
+
+            <div
+                class="tabs-panel playground-view-panel"
+                role="tabpanel"
+                id="playground-panel-dashboard"
+                aria-labelledby="playground-tab-dashboard"
+                data-playground-panel="dashboard"
+                data-state="inactive"
+                hidden
+            >
+                <PlaygroundDashboard />
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const tabRoot = document.querySelector("[data-playground-tabs]");
+
+    if (tabRoot) {
+        const triggers = tabRoot.querySelectorAll("[data-playground-tab]");
+        const panels = document.querySelectorAll("[data-playground-panel]");
+
+        triggers.forEach((trigger) => {
+            trigger.addEventListener("click", () => {
+                const view = trigger.getAttribute("data-playground-tab");
+
+                triggers.forEach((item) => {
+                    const isActive = item === trigger;
+
+                    item.setAttribute(
+                        "data-state",
+                        isActive ? "active" : "inactive",
+                    );
+                    item.setAttribute(
+                        "aria-selected",
+                        isActive ? "true" : "false",
+                    );
+                });
+
+                panels.forEach((panel) => {
+                    const isActive =
+                        panel.getAttribute("data-playground-panel") === view;
+
+                    panel.setAttribute(
+                        "data-state",
+                        isActive ? "active" : "inactive",
+                    );
+                    panel.toggleAttribute("hidden", !isActive);
+                });
+            });
+        });
+    }
+</script>

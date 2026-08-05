@@ -1,0 +1,190 @@
+---
+const neutralSteps = [
+    "50",
+    "100",
+    "200",
+    "300",
+    "400",
+    "500",
+    "600",
+    "700",
+    "800",
+    "900",
+    "950",
+] as const;
+
+const accentFills = [
+    { token: "quiet", css: "var(--color-accent-fill-quiet)" },
+    { token: "normal", css: "var(--color-accent-fill-normal)" },
+    { token: "loud", css: "var(--color-accent-fill-loud)" },
+] as const;
+
+const surfaces = [
+    { token: "default", css: "var(--color-surface-default)" },
+    { token: "raised", css: "var(--color-surface-raised)" },
+    { token: "lowered", css: "var(--color-surface-lowered)" },
+] as const;
+
+const typeSteps = [
+    { token: "5xl", size: "var(--text-5xl)" },
+    { token: "3xl", size: "var(--text-3xl)" },
+    { token: "xl", size: "var(--text-xl)" },
+    { token: "base", size: "var(--text-base)" },
+    { token: "sm", size: "var(--text-sm)" },
+    { token: "xs", size: "var(--text-xs)" },
+] as const;
+
+const fontSamples = [
+    { token: "body", class: "playground-ds__font-body", label: "Body" },
+    { token: "heading", class: "playground-ds__font-heading", label: "Heading" },
+    { token: "display", class: "playground-ds__font-display", label: "Display" },
+    { token: "serif", class: "playground-ds__font-serif", label: "Serif" },
+    { token: "mono", class: "playground-ds__font-mono", label: "Mono" },
+] as const;
+---
+
+<div class="playground-ds flow">
+    <div class="playground-ds__top">
+        <div class="playground-ds__palettes flow">
+            <section class="playground-ds__section">
+                <h3 class="playground-ds__label">Base palette</h3>
+                <div class="playground-ds__swatches">
+                    {
+                        neutralSteps.map((step) => (
+                            <span
+                                class="playground-ds__swatch"
+                                style={`--_swatch: var(--color-neutral-${step})`}
+                                title={`neutral.${step}`}
+                            />
+                        ))
+                    }
+                </div>
+            </section>
+
+            <section class="playground-ds__section">
+                <h3 class="playground-ds__label">Accent palette</h3>
+                <div class="playground-ds__swatches">
+                    {
+                        accentFills.map(({ token, css }) => (
+                            <span
+                                class="playground-ds__swatch playground-ds__swatch--wide"
+                                style={`--_swatch: ${css}`}
+                                title={`accent.fill.${token}`}
+                            />
+                        ))
+                    }
+                </div>
+            </section>
+
+            <section class="playground-ds__section">
+                <h3 class="playground-ds__label">Surfaces</h3>
+                <div class="playground-ds__swatches">
+                    {
+                        surfaces.map(({ token, css }) => (
+                            <span
+                                class="playground-ds__swatch playground-ds__swatch--wide"
+                                style={`--_swatch: ${css}`}
+                                title={`surface.${token}`}
+                            />
+                        ))
+                    }
+                </div>
+            </section>
+        </div>
+
+        <div class="playground-ds__components flow">
+            <section class="playground-ds__section">
+                <h3 class="playground-ds__label">Buttons</h3>
+                <div class="cluster gap-2xs">
+                    <button class="button" type="button">Default</button>
+                    <button class="button" type="button" data-variant="accent">
+                        Accent
+                    </button>
+                    <button class="button" type="button" data-variant="neutral">
+                        Neutral
+                    </button>
+                </div>
+            </section>
+
+            <section class="playground-ds__section">
+                <h3 class="playground-ds__label">Form controls</h3>
+                <div class="flow">
+                    <label class="label">
+                        <span>Email</span>
+                        <input
+                            class="input"
+                            type="email"
+                            placeholder="Enter your email"
+                        />
+                    </label>
+                    <label class="label">
+                        <span>Notifications</span>
+                        <input
+                            type="checkbox"
+                            class="switch"
+                            id="playground-switch"
+                            checked
+                        />
+                    </label>
+                </div>
+            </section>
+
+            <section class="playground-ds__section">
+                <h3 class="playground-ds__label">Badges</h3>
+                <div class="cluster gap-2xs">
+                    <span class="badge">Default</span>
+                    <span class="badge" data-variant="accent">Accent</span>
+                    <span class="badge" data-variant="neutral">Neutral</span>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <hr class="playground-ds__divider" />
+
+    <div class="playground-ds__bottom">
+        <section class="playground-ds__section">
+            <h3 class="playground-ds__label">Type scale</h3>
+            <div class="playground-ds__type-ramp">
+                {
+                    typeSteps.map(({ token, size }) => (
+                        <p
+                            class="playground-ds__type-step"
+                            style={`font-size: ${size}`}
+                        >
+                            <span class="playground-ds__type-meta text-quiet">
+                                {token}
+                            </span>
+                            Aa
+                        </p>
+                    ))
+                }
+            </div>
+        </section>
+
+        <section class="playground-ds__section">
+            <h3 class="playground-ds__label">Fonts</h3>
+            <div class="playground-ds__fonts flow">
+                {
+                    fontSamples.map(({ token, class: className, label }) => (
+                        <p class={className}>
+                            <span class="playground-ds__font-meta text-quiet">
+                                {token}
+                            </span>
+                            {label}
+                        </p>
+                    ))
+                }
+            </div>
+        </section>
+
+        <section class="playground-ds__section">
+            <h3 class="playground-ds__label">Text</h3>
+            <div class="playground-ds__text-samples flow">
+                <p>Normal text</p>
+                <p class="text-quiet">Quiet text</p>
+                <p class="text-quieter">Quieter text</p>
+            </div>
+        </section>
+    </div>
+</div>

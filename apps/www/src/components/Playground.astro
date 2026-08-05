@@ -1,7 +1,13 @@
+---
+import PlaygroundBrowser from "@/src/components/playground/PlaygroundBrowser.astro";
+import PlaygroundStudioPanel from "@/src/components/playground/PlaygroundStudioPanel.astro";
+---
+
 <section
     class="studio-playground region region-space-xl"
     id="playground"
     aria-labelledby="playground-heading"
+    data-studio-playground
 >
     <div
         class="wrapper"
@@ -23,31 +29,55 @@
                     </p>
                 </div>
 
-                <div
-                    class="studio-playground__browser"
-                    aria-label="Component preview"
-                >
-                    <div class="studio-playground__browser-chrome">
-                        <div
-                            class="studio-playground__browser-controls"
-                            aria-hidden="true"
-                        >
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </div>
-                    </div>
-                    <div class="studio-playground__browser-content"></div>
-                </div>
+                <PlaygroundBrowser />
             </div>
 
             <aside
-                class="studio-playground__panel-placeholder flow"
-                aria-label="Studio panel placeholder"
+                class="studio-playground__panel flow"
+                data-studio-panel
+                aria-label="Studio panel"
             >
-                <p class="text-quiet">Studio panel</p>
-                <p>Client to wire in.</p>
+                <PlaygroundStudioPanel />
             </aside>
         </div>
     </div>
+
+    <div
+        class="studio-playground__panel-backdrop"
+        data-studio-backdrop
+        hidden
+    >
+    </div>
 </section>
+
+<script>
+    const playground = document.querySelector("[data-studio-playground]");
+    const openTrigger = document.querySelector("[data-studio-open-trigger]");
+    const closeTrigger = document.querySelector("[data-studio-close-trigger]");
+    const backdrop = document.querySelector("[data-studio-backdrop]");
+
+    const openStudio = () => {
+        playground?.setAttribute("data-studio-open", "");
+        backdrop?.removeAttribute("hidden");
+        document.body.style.overflow = "hidden";
+    };
+
+    const closeStudio = () => {
+        playground?.removeAttribute("data-studio-open");
+        backdrop?.setAttribute("hidden", "");
+        document.body.style.overflow = "";
+    };
+
+    openTrigger?.addEventListener("click", openStudio);
+    closeTrigger?.addEventListener("click", closeStudio);
+    backdrop?.addEventListener("click", closeStudio);
+
+    document.addEventListener("keydown", (event) => {
+        if (
+            event.key === "Escape" &&
+            playground?.hasAttribute("data-studio-open")
+        ) {
+            closeStudio();
+        }
+    });
+</script>
