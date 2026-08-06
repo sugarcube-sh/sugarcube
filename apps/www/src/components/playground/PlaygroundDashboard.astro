@@ -1,3 +1,323 @@
-<div class="playground-view flow">
-    <p class="text-quiet">Dashboard view — coming soon.</p>
+---
+const stats = [
+    {
+        label: "Total revenue",
+        value: "$48.2k",
+        delta: "+12.4%",
+        trend: "up",
+    },
+    {
+        label: "Active users",
+        value: "2,847",
+        delta: "+8.1%",
+        trend: "up",
+    },
+    {
+        label: "Conversion rate",
+        value: "3.24%",
+        delta: "-0.3%",
+        trend: "down",
+    },
+    {
+        label: "Avg. session",
+        value: "4m 32s",
+        delta: "+18s",
+        trend: "up",
+    },
+] as const;
+
+const ranges = ["7d", "30d", "90d"] as const;
+
+const chartBars = [
+    { label: "Mon", height: 52 },
+    { label: "Tue", height: 72 },
+    { label: "Wed", height: 64 },
+    { label: "Thu", height: 88 },
+    { label: "Fri", height: 96 },
+    { label: "Sat", height: 48 },
+    { label: "Sun", height: 60 },
+] as const;
+
+const chartPlot = {
+    width: 100,
+    height: 32,
+    top: 6,
+    bottom: 26,
+    barWidth: 5,
+    topRadius: 1.5,
+    peakHeight: 96,
+} as const;
+
+const chartGridLines = [10, 18, 26] as const;
+
+function getBarGeometry(index: number, height: number) {
+    const slotWidth = chartPlot.width / chartBars.length;
+    const centerX = slotWidth * (index + 0.5);
+    const maxHeight = chartPlot.bottom - chartPlot.top;
+    const barHeight = (height / chartPlot.peakHeight) * maxHeight;
+    const y = chartPlot.bottom - barHeight;
+
+    return {
+        x: centerX - chartPlot.barWidth / 2,
+        y,
+        width: chartPlot.barWidth,
+        height: barHeight,
+    };
+}
+
+function barPath(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number,
+) {
+    if (height <= 0) {
+        return "";
+    }
+
+    const cornerRadius = Math.min(radius, width / 2, height);
+
+    return [
+        `M ${x} ${y + height}`,
+        `L ${x} ${y + cornerRadius}`,
+        `Q ${x} ${y} ${x + cornerRadius} ${y}`,
+        `L ${x + width - cornerRadius} ${y}`,
+        `Q ${x + width} ${y} ${x + width} ${y + cornerRadius}`,
+        `L ${x + width} ${y + height}`,
+        "Z",
+    ].join(" ");
+}
+
+const tableRows = [
+  {
+    name: "Alpha launch",
+    status: "Active",
+    variant: "success",
+    updated: "2h ago",
+  },
+  {
+    name: "Beta rollout",
+    status: "Pending",
+    variant: "warning",
+    updated: "1d ago",
+  },
+  {
+    name: "API v2",
+    status: "Active",
+    variant: "success",
+    updated: "3d ago",
+  },
+  {
+    name: "Docs refresh",
+    status: "Failed",
+    variant: "error",
+    updated: "5d ago",
+  },
+  {
+    name: "Onboarding flow",
+    status: "Draft",
+    variant: "neutral",
+    updated: "1w ago",
+  },
+] as const;
+---
+
+<div class="playground-dashboard flow">
+    <header class="playground-dashboard__header repel">
+        <div class="flow flow-space-3xs">
+            <h2 class="playground-dashboard__title">Overview</h2>
+            <p class="playground-dashboard__subtitle text-quiet">
+                Product metrics at a glance
+            </p>
+        </div>
+
+        <div
+            class="tabs playground-dashboard__range"
+            data-dashboard-range
+            role="group"
+            aria-label="Date range"
+        >
+            <div class="tabs-list">
+                {
+                    ranges.map((range, index) => (
+                        <button
+                            type="button"
+                            class="tabs-trigger"
+                            data-dashboard-range-trigger={range}
+                            data-state={index === 1 ? "active" : "inactive"}
+                            aria-pressed={index === 1 ? "true" : "false"}
+                        >
+                            {range}
+                        </button>
+                    ))
+                }
+            </div>
+        </div>
+    </header>
+
+    <div class="playground-dashboard__grid">
+        <div class="playground-dashboard__stats">
+            {
+                stats.map((stat) => (
+                    <div class="card playground-dashboard__stat">
+                        <div class="card-content playground-dashboard__stat-content">
+                            <p class="playground-dashboard__stat-label text-quiet">
+                                {stat.label}
+                            </p>
+                            <div class="playground-dashboard__stat-row repel">
+                                <span class="playground-dashboard__stat-value">
+                                    {stat.value}
+                                </span>
+                                <span
+                                    class="badge"
+                                    data-appearance="soft"
+                                    data-variant={
+                                        stat.trend === "up"
+                                            ? "success"
+                                            : "error"
+                                    }
+                                >
+                                    {stat.delta}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                ))
+            }
+        </div>
+
+        <div class="card playground-dashboard__chart-card">
+            <div class="card-header playground-dashboard__chart-header">
+                <h3 class="playground-dashboard__chart-title">Weekly signups</h3>
+                <p class="playground-dashboard__chart-subtitle text-quiet">
+                    New accounts per day
+                </p>
+            </div>
+            <div class="card-content playground-dashboard__chart-content">
+                <div class="pg-chart">
+                    <svg
+                        class="pg-chart__plot"
+                        viewBox={`0 0 ${chartPlot.width} ${chartPlot.height}`}
+                        preserveAspectRatio="none"
+                        role="img"
+                        aria-label="Bar chart showing daily signups for the past week"
+                    >
+                        {
+                            chartGridLines.map((y) => (
+                                <line
+                                    class="pg-chart-grid"
+                                    x1="0"
+                                    y1={y}
+                                    x2={chartPlot.width}
+                                    y2={y}
+                                />
+                            ))
+                        }
+
+                        {
+                            chartBars.map((bar, index) => {
+                                const geometry = getBarGeometry(
+                                    index,
+                                    bar.height,
+                                );
+                                const isPeak = bar.height === chartPlot.peakHeight;
+
+                                return (
+                                    <path
+                                        class:list={[
+                                            "pg-chart-bar",
+                                            isPeak && "pg-chart-bar--peak",
+                                        ]}
+                                        d={barPath(
+                                            geometry.x,
+                                            geometry.y,
+                                            geometry.width,
+                                            geometry.height,
+                                            chartPlot.topRadius,
+                                        )}
+                                    />
+                                );
+                            })
+                        }
+                    </svg>
+
+                    <div class="pg-chart__labels" aria-hidden="true">
+                        {
+                            chartBars.map((bar) => (
+                                <span class="pg-chart__label">{bar.label}</span>
+                            ))
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card playground-dashboard__table-card">
+        <div class="card-header playground-dashboard__table-header">
+            <h3 class="playground-dashboard__table-title">
+                Recent deployments
+            </h3>
+        </div>
+        <div class="card-content playground-dashboard__table-content">
+            <div class="table-wrapper playground-dashboard__table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Project</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {
+                            tableRows.map((row) => (
+                                <tr>
+                                    <td>{row.name}</td>
+                                    <td>
+                                        <span
+                                            class="badge"
+                                            data-appearance="soft"
+                                            data-variant={row.variant}
+                                        >
+                                            {row.status}
+                                        </span>
+                                    </td>
+                                    <td class="text-quiet">{row.updated}</td>
+                                </tr>
+                            ))
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    const rangeRoot = document.querySelector("[data-dashboard-range]");
+
+    if (rangeRoot) {
+        const triggers = rangeRoot.querySelectorAll(
+            "[data-dashboard-range-trigger]",
+        );
+
+        triggers.forEach((trigger) => {
+            trigger.addEventListener("click", () => {
+                triggers.forEach((item) => {
+                    const isActive = item === trigger;
+
+                    item.setAttribute(
+                        "data-state",
+                        isActive ? "active" : "inactive",
+                    );
+                    item.setAttribute(
+                        "aria-pressed",
+                        isActive ? "true" : "false",
+                    );
+                });
+            });
+        });
+    }
+</script>
