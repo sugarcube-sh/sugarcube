@@ -38,17 +38,26 @@ const fontSamples = [
     { token: "body", class: "playground-ds__font-body", label: "Body" },
     { token: "heading", class: "playground-ds__font-heading", label: "Heading" },
     { token: "display", class: "playground-ds__font-display", label: "Display" },
-    { token: "serif", class: "playground-ds__font-serif", label: "Serif" },
     { token: "mono", class: "playground-ds__font-mono", label: "Mono" },
+] as const;
+
+const statusBadges = [
+    { label: "Active", variant: "success" },
+    { label: "Pending", variant: "warning" },
+    { label: "Failed", variant: "error" },
+    { label: "Draft", variant: "neutral" },
 ] as const;
 ---
 
-<div class="playground-ds flow">
-    <div class="playground-ds__top">
-        <div class="playground-ds__palettes flow">
-            <section class="playground-ds__section">
-                <h3 class="playground-ds__label">Base palette</h3>
-                <div class="playground-ds__swatches">
+<div class="playground-ds">
+    <div class="playground-ds__grid">
+        <div class="card playground-ds__tokens">
+            <div class="card-content playground-ds__tokens-content">
+                <div
+                    class="playground-ds__swatch-row"
+                    role="img"
+                    aria-label="Neutral color scale"
+                >
                     {
                         neutralSteps.map((step) => (
                             <span
@@ -59,132 +68,244 @@ const fontSamples = [
                         ))
                     }
                 </div>
-            </section>
 
-            <section class="playground-ds__section">
-                <h3 class="playground-ds__label">Accent palette</h3>
-                <div class="playground-ds__swatches">
+                <div
+                    class="playground-ds__swatch-row playground-ds__swatch-row--accent"
+                    role="img"
+                    aria-label="Accent fills"
+                >
                     {
                         accentFills.map(({ token, css }) => (
                             <span
-                                class="playground-ds__swatch playground-ds__swatch--wide"
+                                class="playground-ds__swatch"
                                 style={`--_swatch: ${css}`}
                                 title={`accent.fill.${token}`}
                             />
                         ))
                     }
                 </div>
-            </section>
 
-            <section class="playground-ds__section">
-                <h3 class="playground-ds__label">Surfaces</h3>
-                <div class="playground-ds__swatches">
+                <div
+                    class="playground-ds__swatch-row playground-ds__swatch-row--surface"
+                    role="img"
+                    aria-label="Surface colors"
+                >
                     {
                         surfaces.map(({ token, css }) => (
                             <span
-                                class="playground-ds__swatch playground-ds__swatch--wide"
+                                class="playground-ds__swatch"
                                 style={`--_swatch: ${css}`}
                                 title={`surface.${token}`}
                             />
                         ))
                     }
                 </div>
-            </section>
+            </div>
         </div>
 
-        <div class="playground-ds__components flow">
-            <section class="playground-ds__section">
-                <h3 class="playground-ds__label">Buttons</h3>
-                <div class="cluster gap-2xs">
-                    <button class="button" type="button">Default</button>
-                    <button class="button" type="button" data-variant="accent">
-                        Accent
-                    </button>
-                    <button class="button" type="button" data-variant="neutral">
-                        Neutral
-                    </button>
-                </div>
-            </section>
+        <div class="card playground-ds__form-card">
+            <div class="card-content playground-ds__form-content flow">
+                <label class="label">
+                    <span>Email</span>
+                    <input
+                        class="input"
+                        type="email"
+                        placeholder="you@example.com"
+                    />
+                </label>
 
-            <section class="playground-ds__section">
-                <h3 class="playground-ds__label">Form controls</h3>
-                <div class="flow">
-                    <label class="label">
-                        <span>Email</span>
-                        <input
-                            class="input"
-                            type="email"
-                            placeholder="Enter your email"
-                        />
-                    </label>
-                    <label class="label">
-                        <span>Notifications</span>
-                        <input
-                            type="checkbox"
-                            class="switch"
-                            id="playground-switch"
-                            checked
-                        />
-                    </label>
-                </div>
-            </section>
-
-            <section class="playground-ds__section">
-                <h3 class="playground-ds__label">Badges</h3>
-                <div class="cluster gap-2xs">
-                    <span class="badge">Default</span>
-                    <span class="badge" data-variant="accent">Accent</span>
-                    <span class="badge" data-variant="neutral">Neutral</span>
-                </div>
-            </section>
+                <label class="switch-card repel playground-ds__switch-card">
+                    <span class="playground-ds__switch-label">Notifications</span>
+                    <input
+                        type="checkbox"
+                        class="switch"
+                        checked
+                    />
+                </label>
+            </div>
         </div>
     </div>
 
-    <hr class="playground-ds__divider" />
+    <div class="card playground-ds__actions-card">
+        <div class="card-content playground-ds__actions-content">
+            <div class="cluster gap-2xs playground-ds__actions-group">
+                <button class="button" type="button" data-variant="accent">
+                    Accent
+                </button>
+                <button class="button" type="button" data-variant="neutral">
+                    Neutral
+                </button>
+                <button
+                    class="button"
+                    type="button"
+                    data-appearance="outlined"
+                >
+                    Secondary
+                </button>
+            </div>
 
-    <div class="playground-ds__bottom">
-        <section class="playground-ds__section">
-            <h3 class="playground-ds__label">Type scale</h3>
-            <div class="playground-ds__type-ramp">
+            <div class="cluster gap-2xs playground-ds__actions-group">
+                <button
+                    class="button is-icon-only"
+                    type="button"
+                    data-appearance="outlined"
+                    aria-label="Star"
+                >
+                    <svg
+                        class="icon"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"
+                        ></path>
+                    </svg>
+                </button>
+                <button
+                    class="button is-icon-only"
+                    type="button"
+                    data-appearance="outlined"
+                    aria-label="Bookmark"
+                >
+                    <svg
+                        class="icon"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
+                        ></path>
+                    </svg>
+                </button>
+                <button
+                    class="button is-icon-only"
+                    type="button"
+                    data-appearance="soft"
+                    aria-label="Heart"
+                >
+                    <svg
+                        class="icon"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+                        ></path>
+                    </svg>
+                </button>
+                <button
+                    class="button is-icon-only"
+                    type="button"
+                    data-appearance="ghost"
+                    aria-label="Share"
+                >
+                    <svg
+                        class="icon"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"
+                        ></path>
+                        <path d="M16 6l-4-4-4 4"></path>
+                        <path d="M12 2v13"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="cluster gap-2xs playground-ds__actions-group">
                 {
-                    typeSteps.map(({ token, size }) => (
-                        <p
-                            class="playground-ds__type-step"
-                            style={`font-size: ${size}`}
+                    statusBadges.map(({ label, variant }) => (
+                        <span
+                            class="badge"
+                            data-appearance="soft"
+                            data-variant={variant}
                         >
-                            <span class="playground-ds__type-meta text-quiet">
-                                {token}
-                            </span>
-                            Aa
-                        </p>
-                    ))
-                }
-            </div>
-        </section>
-
-        <section class="playground-ds__section">
-            <h3 class="playground-ds__label">Fonts</h3>
-            <div class="playground-ds__fonts flow">
-                {
-                    fontSamples.map(({ token, class: className, label }) => (
-                        <p class={className}>
-                            <span class="playground-ds__font-meta text-quiet">
-                                {token}
-                            </span>
                             {label}
-                        </p>
+                        </span>
                     ))
                 }
             </div>
-        </section>
+        </div>
+    </div>
 
-        <section class="playground-ds__section">
-            <h3 class="playground-ds__label">Text</h3>
-            <div class="playground-ds__text-samples flow">
-                <p>Normal text</p>
-                <p class="text-quiet">Quiet text</p>
-                <p class="text-quieter">Quieter text</p>
+    <div class="playground-ds__typography">
+        <div class="card playground-ds__type-card">
+            <div class="card-content">
+                <div class="playground-ds__type-ramp">
+                    {
+                        typeSteps.map(({ token, size }) => (
+                            <p
+                                class="playground-ds__type-step"
+                                style={`font-size: ${size}`}
+                            >
+                                <span class="playground-ds__type-meta text-quiet">
+                                    {token}
+                                </span>
+                                Aa
+                            </p>
+                        ))
+                    }
+                </div>
             </div>
-        </section>
+        </div>
+
+        <div class="card playground-ds__fonts-card">
+            <div class="card-content">
+                <div class="playground-ds__fonts flow">
+                    {
+                        fontSamples.map(({ token, class: className, label }) => (
+                            <p class={className}>
+                                <span class="playground-ds__font-meta text-quiet">
+                                    {token}
+                                </span>
+                                {label}
+                            </p>
+                        ))
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="card playground-ds__text-card">
+            <div class="card-content">
+                <div class="playground-ds__text-samples flow">
+                    <p>The quick brown fox jumps over the lazy dog.</p>
+                    <p class="text-quiet">
+                        The quick brown fox jumps over the lazy dog.
+                    </p>
+                    <p class="text-quieter">
+                        The quick brown fox jumps over the lazy dog.
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
