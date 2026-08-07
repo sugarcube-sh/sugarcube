@@ -1,12 +1,13 @@
-.site-cta.region {
-    --region-space: var(--space-3xl);
+.homepage .site-cta.region {
+    --region-space: 7rem;
+    padding-block: var(--region-space);
     background-color: var(--color-surface-default);
     color: var(--color-text-normal);
 }
 
 @media (width >= 48rem) {
-    .site-cta.region {
-        --region-space: var(--space-4xl, 5rem);
+    .homepage .site-cta.region {
+        --region-space: 8rem;
     }
 }
 
@@ -50,6 +51,19 @@
     --color-accent-fill-loud: var(--color-pink-700);
     --color-accent-on-loud: var(--color-white);
     --color-accent-border-normal: var(--color-pink-700);
+}
+
+:root:is([data-mode="light"], :not([data-mode])) .site-cta[data-mode="dark"] .site-code-block {
+    background-color: color-mix(
+        in oklab,
+        var(--color-surface-default),
+        var(--color-alpha-white-10)
+    );
+    border-color: color-mix(
+        in oklab,
+        var(--color-surface-default),
+        var(--color-alpha-white-15)
+    );
 }
 
 /* Dark page: re-apply light semantic tokens for the inverted section. */

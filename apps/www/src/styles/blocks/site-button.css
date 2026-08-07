@@ -28,6 +28,11 @@
     transition-duration: var(--transition-normal);
 }
 
+button.site-button {
+    appearance: none;
+    color-scheme: normal;
+}
+
 .site-button:hover {
     background-color: color-mix(
         in oklab,
@@ -88,6 +93,25 @@
 
 .site-button[data-appearance="soft"]:focus-visible {
     border-color: transparent;
+}
+
+.site-button[data-variant="accent"][data-appearance="soft"] {
+    background-color: var(--color-accent-fill-normal);
+    color: var(--color-accent-on-normal);
+}
+
+.site-button[data-variant="accent"][data-appearance="soft"]:hover {
+    background-color: color-mix(in oklab, var(--color-accent-fill-normal), black 5%);
+}
+
+.site-button[data-variant="accent"][data-appearance="soft"]:active {
+    background-color: color-mix(in oklab, var(--color-accent-fill-normal), black 10%);
+}
+
+.site-button[data-variant="accent"][data-appearance="soft"]:focus-visible {
+    box-shadow: 0 0 0 3px
+        color-mix(in oklab, var(--color-accent-fill-loud) 25%, transparent);
+    border-color: var(--color-accent-fill-loud);
 }
 
 .site-button[data-appearance="outlined"] {

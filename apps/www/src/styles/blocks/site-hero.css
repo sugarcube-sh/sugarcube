@@ -6,16 +6,20 @@
 
 @media (width >= 64rem) {
     .site-hero__grid {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) auto;
         gap: var(--space-2xl);
     }
+}
+
+.site-hero__aside {
+    width: fit-content;
 }
 
 .site-hero__title {
     font-family: var(--font-display, var(--font-gilda-display));
     font-weight: var(--font-weight-normal);
     font-size: var(--text-5xl);
-    line-height: var(--leading-none);
+    line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
 }
 
@@ -23,14 +27,11 @@
     max-width: none;
     font-size: var(--body-large);
     line-height: var(--leading-body);
+    max-width:60ch;
 }
 
 .site-hero__aside-label {
     font-size: var(--text-sm);
-}
-
-.site-hero__aside .site-code-block {
-    width: 100%;
 }
 
 @media (width >= 48rem) {

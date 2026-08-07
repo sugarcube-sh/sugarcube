@@ -25,13 +25,17 @@
     border: none;
     min-height: auto;
     color: var(--color-text-quiet);
-    transition:
-        color var(--transition-normal) ease,
-        scale var(--transition-normal) ease;
+    transition: color var(--transition-normal) ease;
 }
 
 .site-code-block [data-copy-button]:hover {
-    scale: 1.1;
+    background-color: transparent;
+    color: var(--color-text-normal);
+}
+
+.site-code-block [data-copy-button]:active {
+    background-color: transparent;
+    color: color-mix(in oklab, var(--color-text-normal), black 15%);
 }
 
 .site-code-block [data-copy-button]:focus-visible {

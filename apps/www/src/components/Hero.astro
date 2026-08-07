@@ -1,6 +1,5 @@
 ---
-import CodeBlock from "@/src/components/CodeBlock.astro";
-import { ArrowUpRight } from "@lucide/astro";
+import GetStartedAside from "@/src/components/GetStartedAside.astro";
 ---
 
 <section class="site-hero region region-space-xl">
@@ -12,40 +11,21 @@ import { ArrowUpRight } from "@lucide/astro";
             <div class="site-hero__body flow">
                 <p>
                     Sugarcube turns design tokens into CSS variables, utilities,
-                    and component styles.
-                </p>
-                <p>Change a token, everything updates.</p>
-                <p>
-                    Built on the <a
-                        href="https://www.designtokens.org/"
-                        target="_blank"
-                        rel="noopener noreferrer">W3C DTCG token standard</a
-                    >.
-                </p>
+                    and component styles. Change a token, everything updates. Built on the <a
+                    href="https://www.designtokens.org/"
+                    target="_blank"
+                    rel="noopener noreferrer">W3C DTCG token standard</a
+                >.</p>
             </div>
         </div>
 
-        <div class="site-hero__aside flow">
-            <p class="site-hero__aside-label text-quiet">
-                Works with Vite or as a standalone CLI
-            </p>
-            <CodeBlock>
-                <span class="text-quieter mr-3xs">$</span> pnpm dlx @sugarcube-sh/cli
-                init</CodeBlock
-            >
-            <div class="cluster cluster-gap-2xs">
-                <a
-                    class="site-button"
-                    data-variant="accent"
-                    href="/docs/getting-started"
-                    >Read the Docs <ArrowUpRight aria-hidden="true" /></a
-                >
-                <a
-                    class="site-button"
-                    href="/consulting"
-                    data-appearance="outlined">Consulting</a
-                >
-            </div>
-        </div>
+        <GetStartedAside
+            label="Works with Vite or as a standalone CLI"
+            primaryHref="/docs/getting-started"
+            primaryLabel="Read the Docs"
+            primaryArrow
+            secondaryHref="/consulting"
+            secondaryLabel="Consulting"
+        />
     </div>
 </section>
