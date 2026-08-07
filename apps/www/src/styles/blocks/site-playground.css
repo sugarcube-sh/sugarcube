@@ -14,6 +14,19 @@
     background-size: 1.25rem 1.25rem;
 }
 
+:root[data-mode="dark"] .studio-playground {
+    background-color: var(--color-neutral-950);
+    --_dot-color: color-mix(
+        in oklab,
+        var(--color-text-normal) 8%,
+        transparent
+    );
+}
+
+:root[data-mode="dark"] .studio-playground__browser-chrome {
+    background-color: var(--color-surface-raised);
+}
+
 .studio-playground__layout {
     display: grid;
     gap: var(--space-lg);
@@ -180,6 +193,12 @@
     gap: var(--space-sm);
     padding: var(--space-sm);
     cursor: pointer;
+}
+
+:root[data-mode="dark"]
+    .playground-ds__switch-card.switch-card:has(.switch:checked) {
+    background-color: var(--color-accent-fill-quiet);
+    border-color: transparent;
 }
 
 .playground-ds__switch-label {
@@ -382,6 +401,10 @@
     padding: var(--space-md);
     min-block-size: 100%;
     background-color: var(--color-surface-lowered);
+}
+
+:root[data-mode="dark"] .playground-dashboard {
+    background-color: var(--color-neutral-950);
 }
 
 .playground-dashboard__header {
