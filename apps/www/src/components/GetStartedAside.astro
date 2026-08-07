@@ -1,0 +1,52 @@
+---
+import CodeBlock from "@/src/components/CodeBlock.astro";
+import { ArrowUpRight } from "@lucide/astro";
+
+interface Props {
+    label?: string;
+    primaryHref: string;
+    primaryLabel: string;
+    primaryArrow?: boolean;
+    secondaryHref: string;
+    secondaryLabel: string;
+    secondaryArrow?: boolean;
+    secondaryAppearance?: "outlined" | "soft-outlined";
+    secondaryExternal?: boolean;
+}
+
+const {
+    label,
+    primaryHref,
+    primaryLabel,
+    primaryArrow = false,
+    secondaryHref,
+    secondaryLabel,
+    secondaryArrow = false,
+    secondaryAppearance = "outlined",
+    secondaryExternal = false,
+} = Astro.props;
+---
+
+<div class="site-hero__aside flow">
+    {label && <p class="site-hero__aside-label text-quiet">{label}</p>}
+    <CodeBlock>
+        <span class="text-quieter mr-3xs">$</span> pnpm dlx @sugarcube-sh/cli init</CodeBlock
+    >
+    <div class="cluster cluster-gap-2xs">
+        <a class="site-button" data-variant="accent" href={primaryHref}>
+            {primaryLabel}
+            {primaryArrow && <ArrowUpRight aria-hidden="true" />}
+        </a>
+        <a
+            class="site-button"
+            href={secondaryHref}
+            data-appearance={secondaryAppearance}
+            {...(secondaryExternal
+                ? { target: "_blank", rel: "noopener noreferrer" }
+                : {})}
+        >
+            {secondaryLabel}
+            {secondaryArrow && <ArrowUpRight aria-hidden="true" />}
+        </a>
+    </div>
+</div>

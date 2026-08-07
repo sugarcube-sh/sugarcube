@@ -1,43 +1,31 @@
 ---
-import CodeBlock from "@/src/components/CodeBlock.astro";
+import GetStartedAside from "@/src/components/GetStartedAside.astro";
 ---
 
 <section class="site-hero region region-space-xl">
-    <div class="flow">
-        <h1 class="tracking-tight text-pretty">
-            Design system rigor, out of the box
-        </h1>
-        <p>
-            Sugarcube turns design tokens into CSS variables, utilities, and
-            component styles.
-        </p>
-        <p>Change a token, everything updates.</p>
-        <p>
-            Built on the <a
-                href="https://www.designtokens.org/"
-                target="_blank"
-                rel="noopener noreferrer">W3C DTCG token standard</a
-            >. Works with Vite or as a standalone CLI.
-        </p>
-        <div class="flow flow-space-2xl">
-            <CodeBlock>
-                <span class="text-quieter mr-3xs">$</span> pnpm dlx @sugarcube-sh/cli
-                init</CodeBlock
-            >
-            <div class="flow-space-sm">
-                <div class="cluster cluster-gap-2xs">
-                    <a
-                        class="site-button"
-                        href="/docs/getting-started"
-                        class="site-button">Get Started</a
-                    >
-                    <a
-                        class="site-button"
-                        href="/consulting"
-                        data-appearance="soft-outlined">Consulting</a
-                    >
-                </div>
+    <div class="site-hero__grid">
+        <div class="site-hero__content flow">
+            <h1 class="site-hero__title text-pretty">
+                Design system rigor, out of the box
+            </h1>
+            <div class="site-hero__body flow">
+                <p>
+                    Sugarcube turns design tokens into CSS variables, utilities,
+                    and component styles. Change a token, everything updates. Built on the <a
+                    href="https://www.designtokens.org/"
+                    target="_blank"
+                    rel="noopener noreferrer">W3C DTCG token standard</a
+                >.</p>
             </div>
         </div>
+
+        <GetStartedAside
+            label="Works with Vite or as a standalone CLI"
+            primaryHref="/docs/getting-started"
+            primaryLabel="Read the Docs"
+            primaryArrow
+            secondaryHref="/consulting"
+            secondaryLabel="Consulting"
+        />
     </div>
 </section>

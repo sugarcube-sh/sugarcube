@@ -33,6 +33,16 @@
     "serif": {
       "$value": ["Georgia", "Cambria", "Times New Roman", "Times", "serif"]
     },
+    "display": {
+      "$value": [
+        "Gilda Display",
+        "Georgia",
+        "Cambria",
+        "Times New Roman",
+        "Times",
+        "serif"
+      ]
+    },
     "weight": {
       "$type": "fontWeight",
       "normal": { "$value": 400 },

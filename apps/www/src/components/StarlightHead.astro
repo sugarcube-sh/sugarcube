@@ -4,6 +4,7 @@
  * and the ThemeProvider for mode/theme management.
  */
 import CSSLayers from "@/src/components/CSSLayers.astro";
+import SiteFonts from "@/src/components/SiteFonts.astro";
 import ThemeProvider from "@/src/components/ThemeProvider.astro";
 import { siteConfig } from "@/src/site.config";
 import DefaultHead from "@astrojs/starlight/components/Head.astro";
@@ -27,6 +28,8 @@ const socialImageURL = new URL(siteConfig.ogImage ?? "/social-card.png", Astro.s
 <CSSLayers />
 
 {import.meta.env.DEV && <script is:inline type="module" src="/@id/@vitejs/devtools/client/inject" />}
+
+<SiteFonts />
 
 <DefaultHead {...Astro.props} />
 

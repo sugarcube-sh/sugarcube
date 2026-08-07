@@ -1,0 +1,94 @@
+.homepage .site-cta.region {
+    --region-space: 7rem;
+    padding-block: var(--region-space);
+    background-color: var(--color-surface-default);
+    color: var(--color-text-normal);
+}
+
+@media (width >= 48rem) {
+    .homepage .site-cta.region {
+        --region-space: 8rem;
+    }
+}
+
+.site-cta :is(a):not(.site-button) {
+    color: inherit;
+}
+
+.site-cta__grid {
+    align-items: center;
+}
+
+.site-cta__description {
+    font-size: var(--body-large);
+    line-height: var(--leading-body);
+    max-width: none;
+}
+
+/* Light page: apply dark semantic tokens (explicit — nested data-mode does not
+   re-resolve dependent aliases without propagateDependents). */
+:root:is([data-mode="light"], :not([data-mode])) .site-cta[data-mode="dark"] {
+    color-scheme: dark;
+
+    --color-neutral-surface-default: var(--color-neutral-950);
+    --color-surface-default: var(--color-neutral-950);
+    --color-surface-lowest: var(--color-neutral-800);
+
+    --color-neutral-text-normal: var(--color-neutral-300);
+    --color-text-normal: var(--color-neutral-300);
+    --color-neutral-text-quiet: var(--color-neutral-400);
+    --color-text-quiet: var(--color-neutral-400);
+    --color-neutral-text-quieter: var(--color-neutral-500);
+    --color-text-quieter: var(--color-neutral-500);
+
+    --color-neutral-fill-normal: var(--color-neutral-800);
+    --color-fill-normal: var(--color-neutral-800);
+    --color-neutral-on-normal: var(--color-neutral-300);
+    --color-on-normal: var(--color-neutral-300);
+    --color-neutral-border-normal: var(--color-neutral-700);
+    --color-border-normal: var(--color-neutral-700);
+
+    --color-accent-fill-loud: var(--color-pink-700);
+    --color-accent-on-loud: var(--color-white);
+    --color-accent-border-normal: var(--color-pink-700);
+}
+
+:root:is([data-mode="light"], :not([data-mode])) .site-cta[data-mode="dark"] .site-code-block {
+    background-color: color-mix(
+        in oklab,
+        var(--color-surface-default),
+        var(--color-alpha-white-10)
+    );
+    border-color: color-mix(
+        in oklab,
+        var(--color-surface-default),
+        var(--color-alpha-white-15)
+    );
+}
+
+/* Dark page: re-apply light semantic tokens for the inverted section. */
+:root[data-mode="dark"] .site-cta:not([data-mode]) {
+    color-scheme: light;
+
+    --color-neutral-surface-default: var(--color-white);
+    --color-surface-default: var(--color-white);
+    --color-surface-lowest: var(--color-neutral-200);
+
+    --color-neutral-text-normal: var(--color-neutral-950);
+    --color-text-normal: var(--color-neutral-950);
+    --color-neutral-text-quiet: var(--color-neutral-900);
+    --color-text-quiet: var(--color-neutral-900);
+    --color-neutral-text-quieter: var(--color-neutral-500);
+    --color-text-quieter: var(--color-neutral-500);
+
+    --color-neutral-fill-normal: var(--color-neutral-100);
+    --color-fill-normal: var(--color-neutral-100);
+    --color-neutral-on-normal: var(--color-neutral-950);
+    --color-on-normal: var(--color-neutral-950);
+    --color-neutral-border-normal: var(--color-neutral-200);
+    --color-border-normal: var(--color-neutral-200);
+
+    --color-accent-fill-loud: var(--color-pink-700);
+    --color-accent-on-loud: var(--color-pink-50);
+    --color-accent-border-normal: var(--color-pink-200);
+}

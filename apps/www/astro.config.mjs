@@ -37,6 +37,12 @@ export default defineConfig({
             cssVariable: "--font-geist-mono",
             weights: ["100 900"],
         },
+        {
+            provider: fontProviders.google(),
+            name: "Gilda Display",
+            cssVariable: "--font-gilda-display",
+            weights: ["400"],
+        },
     ],
     integrations: [
         sitemap(),

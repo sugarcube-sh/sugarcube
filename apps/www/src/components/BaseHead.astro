@@ -3,7 +3,7 @@ import CSSLayers from "@/src/components/CSSLayers.astro";
 import ThemeProvider from "@/src/components/ThemeProvider.astro";
 import { siteConfig } from "@/src/site.config";
 import type { SiteMeta } from "@/src/types";
-import Font from "astro/components/Font.astro";
+import SiteFonts from "@/src/components/SiteFonts.astro";
 
 type Props = SiteMeta;
 
@@ -22,9 +22,7 @@ const socialImageURL = new URL(ogImage ?? siteConfig.ogImage ?? "/social-card.pn
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>{siteTitle}</title>
 
-    {/* Fonts */}
-    <Font cssVariable="--font-geist" preload />
-    <Font cssVariable="--font-geist-mono" preload />
+    <SiteFonts includeDisplay />
     {/* Favicons */}
     <link href="/favicon.ico" rel="icon" sizes="32x32" />
     <link href="/favicon.svg" rel="icon" type="image/svg+xml" />

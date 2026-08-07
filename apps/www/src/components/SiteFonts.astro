@@ -1,0 +1,13 @@
+---
+import Font from "astro/components/Font.astro";
+
+interface Props {
+    includeDisplay?: boolean;
+}
+
+const { includeDisplay = false } = Astro.props;
+---
+
+<Font cssVariable="--font-geist" preload />
+<Font cssVariable="--font-geist-mono" preload />
+{includeDisplay && <Font cssVariable="--font-gilda-display" preload />}

@@ -1,0 +1,100 @@
+.site-acknowledgments.region {
+    --region-space: var(--space-3xl);
+    --flow-space: var(--space-md);
+}
+
+@media (width >= 48rem) {
+    .site-acknowledgments.region {
+        --region-space: var(--space-4xl, 5rem);
+    }
+}
+
+.site-acknowledgments__grid {
+    display: grid;
+    gap: var(--space-sm);
+}
+
+@media (width >= 48rem) {
+    .site-acknowledgments__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.site-acknowledgments__card {
+    --flow-space: var(--space-xs);
+    padding: var(--space-lg);
+}
+
+.site-acknowledgments__title {
+    font-family: var(--font-display, var(--font-gilda-display));
+    font-weight: var(--font-weight-normal);
+    font-size: var(--text-2xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    max-width: none;
+}
+
+@media (width >= 48rem) {
+    .site-acknowledgments__title {
+        font-size: var(--text-3xl);
+    }
+}
+
+.site-acknowledgments__body {
+    max-width: none;
+    color: var(--color-text-quiet);
+    font-size: var(--text-md);
+    line-height: var(--leading-body);
+}
+
+.site-acknowledgments__body :is(a) {
+    color: inherit;
+    text-decoration-style: dotted;
+    text-underline-offset: 0.15em;
+}
+
+.site-acknowledgments__body :is(a):hover {
+    color: var(--color-text-link);
+}
+
+.site-acknowledgments__form {
+    margin-block-start: var(--space-2xs);
+}
+
+.site-acknowledgments__form-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+}
+
+@media (width >= 30rem) {
+    .site-acknowledgments__form-row {
+        flex-direction: row;
+        align-items: stretch;
+    }
+}
+
+.site-acknowledgments__input {
+    flex: 1;
+    min-width: 0;
+}
+
+.site-acknowledgments__submit {
+    flex-shrink: 0;
+}
+
+:root[data-mode="dark"]
+    .site-acknowledgments__submit.site-button[data-variant="accent"][data-appearance="soft"] {
+    background-color: var(--color-accent-fill-quiet);
+    color: var(--color-accent-on-quiet);
+}
+
+:root[data-mode="dark"]
+    .site-acknowledgments__submit.site-button[data-variant="accent"][data-appearance="soft"]:hover {
+    background-color: color-mix(in oklab, var(--color-accent-fill-quiet), white 5%);
+}
+
+:root[data-mode="dark"]
+    .site-acknowledgments__submit.site-button[data-variant="accent"][data-appearance="soft"]:active {
+    background-color: color-mix(in oklab, var(--color-accent-fill-quiet), white 10%);
+}

@@ -1,10 +1,80 @@
-<section class="region flow region-space-md">
-    <h2>
-        <span>##</span>Playground
-    </h2>
-    <p>
-        When the foundations are solid, updating your styles becomes a lot
-        easier. Try it out!
-    </p>
-    <button class="site-button">Launch Playground</button>
+---
+import PlaygroundBrowser from "@/src/components/playground/PlaygroundBrowser.astro";
+import PlaygroundStudioPanel from "@/src/components/playground/PlaygroundStudioPanel.astro";
+---
+
+<section
+    class="studio-playground region region-space-xl"
+    id="playground"
+    aria-labelledby="playground-heading"
+    data-studio-playground
+>
+    <div class="wrapper">
+        <div class="studio-playground__layout">
+            <div class="studio-playground__main flow">
+                <div class="studio-playground__intro flow">
+                    <h2
+                        id="playground-heading"
+                        class="homepage-section-heading text-pretty"
+                    >
+                        Change one token, everything updates
+                    </h2>
+                    <p class="studio-playground__lede">
+                        Tokens compile to CSS variables, utility classes and
+                        component styles. Change a value and every surface built
+                        on it updates. The diff is your token files.
+                    </p>
+                </div>
+
+                <PlaygroundBrowser />
+            </div>
+
+            <aside
+                class="studio-playground__panel flow"
+                data-studio-panel
+                aria-label="Studio panel"
+            >
+                <PlaygroundStudioPanel />
+            </aside>
+        </div>
+    </div>
+
+    <div
+        class="studio-playground__panel-backdrop"
+        data-studio-backdrop
+        hidden
+    >
+    </div>
 </section>
+
+<script>
+    const playground = document.querySelector("[data-studio-playground]");
+    const openTrigger = document.querySelector("[data-studio-open-trigger]");
+    const closeTrigger = document.querySelector("[data-studio-close-trigger]");
+    const backdrop = document.querySelector("[data-studio-backdrop]");
+
+    const openStudio = () => {
+        playground?.setAttribute("data-studio-open", "");
+        backdrop?.removeAttribute("hidden");
+        document.body.style.overflow = "hidden";
+    };
+
+    const closeStudio = () => {
+        playground?.removeAttribute("data-studio-open");
+        backdrop?.setAttribute("hidden", "");
+        document.body.style.overflow = "";
+    };
+
+    openTrigger?.addEventListener("click", openStudio);
+    closeTrigger?.addEventListener("click", closeStudio);
+    backdrop?.addEventListener("click", closeStudio);
+
+    document.addEventListener("keydown", (event) => {
+        if (
+            event.key === "Escape" &&
+            playground?.hasAttribute("data-studio-open")
+        ) {
+            closeStudio();
+        }
+    });
+</script>

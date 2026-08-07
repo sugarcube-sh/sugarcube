@@ -1,109 +1,98 @@
 ---
 import {
-    BriefcaseBusiness,
-    Landmark,
+    Code,
     Layers,
     LayoutGrid,
     Package,
-    Palette,
-    Puzzle,
+    Scaling,
     SunMoon,
-    Toolbox,
-    Variable,
-    Watch,
-    Wrench,
 } from "@lucide/astro";
-
-const icons = {
-    Variable,
-    Wrench,
-    Package,
-    Layers,
-    LayoutGrid,
-    Puzzle,
-    Palette,
-    Toolbox,
-    BriefcaseBusiness,
-    Landmark,
-    SunMoon,
-    Watch,
-};
 
 const features = [
     {
-        icon: "Variable",
-        title: "Single source of truth for your styles",
+        icon: Package,
+        title: "Tokens as the source of truth",
         description:
-            "Define your design decisions as tokens. Sugarcube generates CSS variables and utility classes from them — change a token and everything updates.",
+            "Your design decisions live in portable, DTCG-standard JSON, not scattered across CSS. Analyse them, transform them, document them, take them anywhere.",
     },
     {
-        icon: "Palette",
-        title: "Starter kits",
+        icon: Code,
+        title: "Real CSS, generated",
         description:
-            "Don't have tokens? We'll add a complete starter kit on initialization. Yours to learn from, use as-is, or customize.",
+            "Variables and utility classes compiled straight from your tokens, just-in-time. You only ship the utilities you actually use.",
     },
     {
-        icon: "BriefcaseBusiness",
-        title: "Portable token format",
+        icon: LayoutGrid,
+        title: "Components you own",
         description:
-            "Tokens use the newly stable DTCG format — ready for any tool that does the same, so you're not locked in.",
+            "Copy-in components, that land in your codebase as source files you're free to shape. React and CSS-only today, web components in progress.",
     },
     {
-        icon: "Watch",
-        title: "Just-in-time utilities",
+        icon: SunMoon,
+        title: "Theming that scales",
         description:
-            "Utility classes are generated on demand. Only the classes you use end up in your CSS.",
+            "Light, dark, high-contrast, multi-brand. Driven by modifiers, resolved to the exact selectors or media queries you want.",
     },
     {
-        icon: "Puzzle",
-        title: "Components",
+        icon: Scaling,
+        title: "Fluid by default",
         description:
-            "Copy from the registry as source files. Yours to fully customize. Built for token-driven front ends.",
+            "Type and space that scale with the viewport via clamp(), generated from a scale you describe once.",
     },
-    {
-        icon: "Landmark",
-        title: "CSS architecture",
-        description:
-            "Structure your styles with CUBE CSS — a methodology that keeps your HTML clean and your CSS organized.",
-    },
-    {
-        icon: "SunMoon",
-        title: "Maximum themeability",
-        description:
-            "Manage and generate multiple modes, themes, or brands all by overriding a handful of tokens.",
-    },
-    {
-        icon: "Toolbox",
-        title: "Flexible tooling",
-        description:
-            "Generate CSS with the CLI, or use the Vite plugin for hot reloading during dev.",
-    },
-];
+] as const;
+
+const stackLinks = [
+    { label: "Vite", href: "/docs/vite" },
+    { label: "Astro", href: "/docs/astro" },
+    { label: "SvelteKit", href: "/docs/sveltekit" },
+    { label: "Nuxt", href: "/docs/nuxt" },
+    { label: "11ty", href: "/docs/11ty" },
+    { label: "TanStack Start", href: "/docs/tanstack-start" },
+] as const;
 ---
 
-<section class="region flow region-space-md">
-    <h2>
-        <span>##</span>Features
+<section class="site-features region flow" aria-labelledby="features-heading">
+    <h2 id="features-heading" class="homepage-section-heading site-features__heading">
+        Features
     </h2>
-    <div class="grid-auto" style="--grid-item-min: 20rem;">
+
+    <div class="site-features__grid">
         {
             features.map((feature) => {
-                const Icon = icons[feature.icon as keyof typeof icons];
+                const Icon = feature.icon;
                 return (
-                    <section
-                        class="site-card p-sm flow"
-                        data-appearance="soft-outlined"
-                    >
-                        <div class="cluster cluster-gap-xs" data-cluster-wrap="nowrap">
-                            <div>
-                                <Icon class="text-quiet" style="--icon-size: 1.25em" />
-                            </div>
-                            <h3 class="text-base">{feature.title}</h3>
-                        </div>
-                        <p>{feature.description}</p>
-                    </section>
+                    <article class="site-features__card homepage-panel homepage-panel--interactive flow">
+                        <Icon
+                            class="site-features__icon"
+                            aria-hidden="true"
+                        />
+                        <h3 class="site-features__title">{feature.title}</h3>
+                        <p class="site-features__description">
+                            {feature.description}
+                        </p>
+                    </article>
                 );
             })
         }
+
+        <article class="site-features__card homepage-panel homepage-panel--interactive flow">
+            <Layers class="site-features__icon" aria-hidden="true" />
+            <h3 class="site-features__title">Fits your stack</h3>
+            <p class="site-features__description">
+                First-class setup for{" "}
+                {
+                    stackLinks.map((link, index) => (
+                        <span>
+                            {index > 0 &&
+                                (index === stackLinks.length - 1
+                                    ? ", and "
+                                    : ", ")}
+                            <a href={link.href}>{link.label}</a>
+                        </span>
+                    ))
+                }
+                .
+            </p>
+        </article>
     </div>
 </section>

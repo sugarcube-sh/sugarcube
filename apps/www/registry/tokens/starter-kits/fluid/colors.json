@@ -92,10 +92,10 @@
       },
       "text": {
         "normal": {
-          "$value": "{color.neutral.900}"
+          "$value": "{color.neutral.950}"
         },
         "quiet": {
-          "$value": "{color.neutral.600}"
+          "$value": "{color.neutral.900}"
         },
         "quieter": {
           "$value": "{color.neutral.500}"
@@ -154,15 +154,15 @@
           "$value": "{color.pink.100}"
         },
         "loud": {
-          "$value": "{color.pink.600}"
+          "$value": "{color.pink.700}"
         }
       },
       "on": {
         "quiet": {
-          "$value": "{color.pink.700}"
+          "$value": "{color.pink.900}"
         },
         "normal": {
-          "$value": "{color.pink.700}"
+          "$value": "{color.pink.900}"
         },
         "loud": {
           "$value": "{color.pink.50}"

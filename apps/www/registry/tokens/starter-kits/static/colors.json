@@ -22,10 +22,10 @@
 
     "text": {
       "normal": {
-        "$value": "{color.neutral.900}"
+        "$value": "{color.neutral.950}"
       },
       "quiet": {
-        "$value": "{color.neutral.600}"
+        "$value": "{color.neutral.900}"
       },
       "quieter": {
         "$value": "{color.neutral.500}"
