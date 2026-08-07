@@ -1,28 +1,52 @@
+---
+import GetStartedAside from "@/src/components/GetStartedAside.astro";
+---
+
 <section
-    class="site-cta region region-space-xl"
+    class="site-cta region"
+    data-mode="dark"
     id="cta"
     aria-labelledby="cta-heading"
 >
-    <div
-        class="wrapper"
-        style="--wrapper-max-width: var(--container-5xl)"
-    >
-        <div class="site-cta__inner flow">
-            <h2 id="cta-heading">Ready to build with tokens?</h2>
-            <p>
-                Placeholder — full-width inverted CTA section. Copy and actions
-                from Figma to go here.
-            </p>
-            <div class="cluster cluster-gap-xs">
-                <a class="site-button" href="/docs/getting-started"
-                    >Get Started</a
-                >
-                <a
-                    class="site-button"
-                    href="/consulting"
-                    data-appearance="soft-outlined">Consulting</a
-                >
+    <div class="wrapper">
+        <div class="site-hero__grid site-cta__grid">
+            <div class="site-cta__content flow">
+                <h2 class="homepage-section-heading text-pretty" id="cta-heading">
+                    Start building on sweeter foundations
+                </h2>
+                <p class="site-cta__description text-quiet">
+                    One command to set up. Zero config to start.
+                </p>
             </div>
+
+            <GetStartedAside
+                primaryHref="/docs/getting-started"
+                primaryLabel="Read the Docs"
+                secondaryHref="https://github.com/sugarcube-sh/sugarcube"
+                secondaryLabel="Star on Github"
+                secondaryArrow
+                secondaryExternal
+            />
         </div>
     </div>
 </section>
+
+<script>
+    function syncCtaInvertMode() {
+        const cta = document.getElementById("cta");
+        if (!cta) return;
+
+        const isDark =
+            document.documentElement.getAttribute("data-mode") === "dark";
+
+        if (isDark) {
+            cta.removeAttribute("data-mode");
+        } else {
+            cta.setAttribute("data-mode", "dark");
+        }
+    }
+
+    syncCtaInvertMode();
+    document.addEventListener("mode-change", syncCtaInvertMode);
+    document.addEventListener("astro:after-swap", syncCtaInvertMode);
+</script>

@@ -1,12 +1,54 @@
-<section class="region flow region-space-md">
-    <h2>
-        <span class="text-quiet mr-2xs">##</span>Acknowledgments
-    </h2>
-    <p>
-        Built on the work of Andy Bell (<a href="https://cube.fyi/">CUBE CSS</a> &
-        <a href="https://every-layout.dev/">Every Layout</a>), Heydon Pickering
-        (<a href="https://every-layout.dev/">Every Layout</a>), and the <a
-            href="https://designtokens.org/">Design Tokens Community Group</a
-        >.
-    </p>
+<section
+    class="site-acknowledgments region flow"
+    aria-labelledby="acknowledgments-heading"
+>
+    <div class="site-acknowledgments__grid">
+        <article class="site-acknowledgments__card homepage-panel flow">
+            <h2 class="site-acknowledgments__title" id="acknowledgments-heading">
+                Acknowledgments
+            </h2>
+            <p class="site-acknowledgments__body">
+                Built on the work of Andy Bell (<a href="https://cube.fyi/">CUBE CSS</a> & <a href="https://every-layout.dev/">Every Layout</a>), Heydon Pickering
+                (<a href="https://every-layout.dev/">Every Layout</a>), and the <a
+                    href="https://designtokens.org/">Design Tokens Community Group</a
+                >.
+            </p>
+     
+        </article>
+
+        <article class="site-acknowledgments__card homepage-panel flow">
+            <h2 class="site-acknowledgments__title" id="subscribe-heading">
+                Subscribe for updates
+            </h2>
+            <p class="site-acknowledgments__body" id="subscribe-description">
+                Drop your email for the occasional update about Sugarcube. No spam, and
+                less often than you'd fear.
+            </p>
+            <form class="site-acknowledgments__form" action="#" method="post">
+                <div class="site-acknowledgments__form-row">
+                    <label class="visually-hidden" for="subscribe-email"
+                        >Email address</label
+                    >
+                    <input
+                        class="input site-acknowledgments__input"
+                        type="email"
+                        id="subscribe-email"
+                        name="email"
+                        placeholder="you@example.com"
+                        autocomplete="email"
+                        aria-describedby="subscribe-description"
+                        required
+                    />
+                    <button
+                        class="site-button site-acknowledgments__submit"
+                        type="submit"
+                        data-variant="accent"
+                        data-appearance="soft"
+                    >
+                        Subscribe
+                    </button>
+                </div>
+            </form>
+        </article>
+    </div>
 </section>

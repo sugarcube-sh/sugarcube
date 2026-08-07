@@ -35,25 +35,11 @@
     }
 }
 
-.studio-playground__title {
-    font-family: var(--font-display, var(--font-gilda-display));
-    font-weight: var(--font-weight-normal);
-    font-size: var(--text-4xl);
-    line-height: var(--leading-tight);
-    letter-spacing: var(--tracking-tight);
-}
-
 .studio-playground__lede {
     max-width: 42rem;
     font-size: var(--body-large);
     line-height: var(--leading-body);
     color: var(--color-text-quiet);
-}
-
-@media (width >= 48rem) {
-    .studio-playground__title {
-        font-size: var(--text-5xl);
-    }
 }
 
 .studio-playground__browser {
