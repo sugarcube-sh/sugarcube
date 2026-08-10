@@ -152,8 +152,7 @@ describe("formatImpactTree", () => {
         expect(body[0]).toContain("target");
         expect(body[1]).toContain("├─ mid");
         expect(body[3]).toContain("└─ other");
-        expect(body[2]).toContain("leaf");
-        expect(body[2]?.indexOf("leaf")).toBeGreaterThan(body[1]?.indexOf("mid") ?? 0);
+        expect(body[2]).toContain("│  └─ leaf");
     });
 });
 
