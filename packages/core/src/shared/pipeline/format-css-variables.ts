@@ -14,6 +14,7 @@ import type {
 } from "../../types/render.js";
 import type { TokenType } from "../../types/tokens.js";
 import { ErrorMessages } from "../constants/error-messages.js";
+import { TOKEN_REFERENCE } from "../constants/tokens.js";
 import { formatCSSVarName } from "../format-css-var-name.js";
 import { isTypographyToken } from "../guards.js";
 import { renderCSS } from "../render-css.js";
@@ -54,7 +55,7 @@ function substituteReferencesAsCSSVars(
         throw new Error(ErrorMessages.GENERATE.INVALID_CSS_VALUE_TYPE(typeof value));
     }
 
-    return value.replace(/\{([^{}]+)\}/g, (_, ref) => {
+    return value.replace(TOKEN_REFERENCE, (_, ref) => {
         const varName = nameLookup.get(ref) ?? formatCSSVarName(ref);
         return `var(--${varName})`;
     });

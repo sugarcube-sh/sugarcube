@@ -101,6 +101,14 @@ export type CSSTypographyProperties = {
     "line-height"?: number | string;
 };
 
+export const TYPOGRAPHY_CSS_PROPERTIES = [
+    "font-family",
+    "font-size",
+    "font-weight",
+    "letter-spacing",
+    "line-height",
+] as const satisfies readonly (keyof CSSTypographyProperties)[];
+
 export type CSSBorderProperties = { value: string };
 export type CSSShadowProperties = { value: string };
 export type CSSGradientProperties = { value: string };

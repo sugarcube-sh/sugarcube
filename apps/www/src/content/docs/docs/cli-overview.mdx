@@ -15,6 +15,7 @@ import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 - **`generate`** - Generate CSS variables and utility classes from your design tokens. Supports `--watch` for continuous regeneration during development. Use this if you are *not* using the Vite plugin.
 - **`validate`** - Validate design token files for W3C compliance
 - **`lint`** - Find `var()` references to CSS variables your tokens and CSS don't declare. Handy in CI.
+- **`analyze`** - Report what's true about your token system: which tokens nothing reaches, and what a change to one would affect. Insight rather than pass/fail.
 - **`components`** - Install copy-to-use components for your framework
 - **`cube`** - Add CUBE CSS architecture to your project
 
@@ -25,6 +26,7 @@ import SiteAside from "@/src/components/site-alert/SiteAside.astro";
 3. **Add components** as needed: `sugarcube components`
 4. **Validate** tokens: `sugarcube validate`
 5. **Lint** styles for undeclared token references: `sugarcube lint`
+6. **Analyze** the system when you need to understand it: `sugarcube analyze unused`
 
 ## Next steps
 

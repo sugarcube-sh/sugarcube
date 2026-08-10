@@ -71,6 +71,15 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
             `export default {\n  resolver: "./tokens.resolver.json",\n  // ...\n}`,
         )}\n\nSee ${color.cyan(LINKS.RESOLVER)} for more information.`,
 
+    NO_TOKENS_FOR_COMMAND: (command: string) =>
+        `No design tokens found.\n\n${color.cyan(
+            `sugarcube ${command}`,
+        )} needs your tokens to know which variables exist. Run it from a project with a sugarcube config or a discoverable ${color.cyan(
+            "*.resolver.json",
+        )}, or run ${color.cyan("@sugarcube-sh/cli init")} to set one up.\n\nSee ${color.cyan(
+            LINKS.RESOLVER,
+        )} for more information.`,
+
     RESOLVER_NOT_FOUND: (tokensDir: string) =>
         `No resolver document found in ${color.cyan(
             tokensDir,

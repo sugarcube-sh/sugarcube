@@ -1,16 +1,14 @@
-import { readFile } from "node:fs/promises";
-import { type InternalConfig, loadInternalConfig } from "@sugarcube-sh/core";
+import type { InternalConfig } from "@sugarcube-sh/core";
 import { Command, Option } from "commander";
-import { relative, resolve } from "pathe";
+import { relative } from "pathe";
 import color from "picocolors";
-import { glob } from "tinyglobby";
-import { CLIError } from "../cli-error.js";
-import { IGNORED_DIR_GLOBS } from "../constants/markup.js";
-import { buildExtensionGlob } from "../glob.js";
 import { handleError } from "../handle-error.js";
-import { type VarRef, findUndeclared, scanCSS } from "../lint/scan-css.js";
+import { type VarRef, findUndeclared } from "../lint/scan-css.js";
 import { type SyntaxResolver, createSyntaxResolver } from "../lint/syntaxes.js";
 import { getGeneratedVarNames } from "../lint/token-var-names.js";
+import { loadTokenConfigOrThrow } from "../load-config.js";
+import { plural } from "../plural.js";
+import { scanProjectCSS } from "../scan-project.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 import type { LintOptions, ScanOutput } from "../types/commands.js";
@@ -25,28 +23,22 @@ function parseIgnore(value: string | undefined): string[] {
 
 async function runScan(
     config: InternalConfig,
-    files: string[],
+    paths: string[],
     ignorePrefixes: string[],
     resolver: SyntaxResolver,
 ): Promise<ScanOutput> {
     const declared = await getGeneratedVarNames(config);
 
-    const allUsed: VarRef[] = [];
-    let scannedFiles = 0;
+    const scan = await scanProjectCSS(config, paths, resolver);
+    for (const name of scan.declared) declared.add(name);
 
-    for (const file of files) {
-        const resolution = resolver.resolve(file);
-        if (resolution.kind === "unsupported") continue;
-
-        const css = await readFile(file, "utf-8");
-        const { declared: fileDeclared, used } = scanCSS(css, file, resolution.parse);
-        for (const name of fileDeclared) declared.add(name);
-        allUsed.push(...used);
-        scannedFiles++;
-    }
-
-    const { broken, fallback } = findUndeclared(allUsed, declared, ignorePrefixes);
-    return { broken, fallback, refCount: allUsed.length, scannedFiles };
+    const { broken, fallback } = findUndeclared(scan.used, declared, ignorePrefixes);
+    return {
+        broken,
+        fallback,
+        refCount: scan.used.length,
+        scannedFiles: scan.files.length,
+    };
 }
 
 function formatGroupedRefs(refs: VarRef[]): string[] {
@@ -89,32 +81,24 @@ export const lint = new Command()
         try {
             if (!options.json) intro(label("Lint"));
 
-            let config: InternalConfig;
-            try {
-                ({ config } = await loadInternalConfig());
-            } catch {
-                throw new CLIError(
-                    "No sugarcube config found. Run `sugarcube lint` from a project with a sugarcube config.",
-                );
-            }
-
+            const config = await loadTokenConfigOrThrow("lint");
             const resolver = createSyntaxResolver();
-
-            const generatedOutput = resolve(process.cwd(), config.variables.path);
-            const defaultPatterns = config.content ?? [buildExtensionGlob(resolver.extensions())];
-            const files = await glob(paths.length > 0 ? paths : defaultPatterns, {
-                cwd: process.cwd(),
-                absolute: true,
-                caseSensitiveMatch: false,
-                ignore: [...IGNORED_DIR_GLOBS, generatedOutput],
-            });
             const ignorePrefixes = parseIgnore(options.ignore);
             const fallbackLevel = options.fallback ?? "warn";
             const fallbackIsError = fallbackLevel === "error";
 
             if (options.json) {
-                const { broken, fallback } = await runScan(config, files, ignorePrefixes, resolver);
-                console.log(JSON.stringify({ noFallback: broken, fallback }, null, 2));
+                const { broken, fallback } = await runScan(config, paths, ignorePrefixes, resolver);
+
+                const portable = (refs: VarRef[]) =>
+                    refs.map((ref) => ({ ...ref, file: relative(process.cwd(), ref.file) }));
+                console.log(
+                    JSON.stringify(
+                        { noFallback: portable(broken), fallback: portable(fallback) },
+                        null,
+                        2,
+                    ),
+                );
                 if (broken.length > 0 || (fallbackIsError && fallback.length > 0)) {
                     process.exitCode = 1;
                 }
@@ -123,7 +107,7 @@ export const lint = new Command()
 
             const { broken, fallback, refCount, scannedFiles } = await runScan(
                 config,
-                files,
+                paths,
                 ignorePrefixes,
                 resolver,
             );
@@ -150,7 +134,9 @@ export const lint = new Command()
                 );
             }
 
-            const scanned = color.dim(`${refCount} refs across ${scannedFiles} files`);
+            const scanned = color.dim(
+                `${plural(refCount, "variable reference")} in ${plural(scannedFiles, "file")}`,
+            );
 
             const visibleTotal = broken.length + (showFallback ? fallback.length : 0);
 
