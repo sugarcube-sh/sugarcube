@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import packageJson from "../package.json" with { type: "json" };
+import { analyze } from "./commands/analyze.js";
 import { components } from "./commands/components.js";
 import { cube } from "./commands/cube.js";
 import { generate } from "./commands/generate.js";
@@ -22,6 +23,7 @@ async function main() {
         .addCommand(generate)
         .addCommand(validate)
         .addCommand(lint)
+        .addCommand(analyze)
         .addCommand(components)
         .addCommand(cube);
 

@@ -26,6 +26,24 @@ export { groupByContext } from "./shared/pipeline/group-by-context.js";
 export { assignCSSNames } from "./shared/pipeline/assign-css-names.js";
 export { generateCSSVariables } from "./shared/generate-css-variables.js";
 
+export { buildTokenGraph } from "./shared/graph/build-token-graph.js";
+export type { BuildTokenGraphOptions } from "./shared/graph/build-token-graph.js";
+export {
+    reachableFrom,
+    findUnusedTokens,
+    directDependents,
+    dependentsOf,
+    dependentsVia,
+} from "./shared/graph/reachability.js";
+export type {
+    TokenGraph,
+    TokenNode,
+    TokenEdge,
+    GraphContext,
+    GraphContextInfo,
+    NodeKind,
+} from "./types/graph.js";
+
 export {
     convertConfigToUnoRules,
     enumerateSafelistClasses,
@@ -85,6 +103,7 @@ export type {
     RenderableTokens,
     NormalizedRenderableTokens,
 } from "./types/render.js";
+export { TYPOGRAPHY_CSS_PROPERTIES } from "./types/render.js";
 export type { CSSFileOutput } from "./types/generate.js";
 export type { userConfigSchema } from "./shared/schemas/config.js";
 

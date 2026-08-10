@@ -285,6 +285,15 @@ A variable exists if sugarcube generates it from your tokens, or if you declare 
 
 `lint` scans `.css` files and `<style>` blocks in `.html`, `.vue`, `.svelte`, `.astro`, and `.php` files. It skips build folders, dependencies, and your generated variables file. CSS-in-JS and preprocessor files (`.scss`, `.sass`, `.less`, `.styl`) aren't supported yet.
 
+### Requirements
+
+Like [`generate`](#generate), this works **zero-config** (a `sugarcube.config.ts` is optional). It needs to find your tokens, from either:
+
+- A sugarcube configuration file, OR
+- A `*.resolver.json` file in your project (auto-discovered)
+
+If neither is found, the command reports that no design tokens were found. It needs them to know which CSS variables your tokens actually generate — without that it can't tell an undeclared reference from a valid one.
+
 ### Examples
 
 ```bash frame="none"
@@ -310,6 +319,185 @@ npx sugarcube lint --json
 ### Exit codes
 
 `lint` exits `0` when there are no undeclared references, and `1` when there's at least one. Fallback-only references pass unless you run with `--fallback error`, which makes them fail too. That makes `lint` a good CI check: run `npx sugarcube lint` to catch missing token references before they ship.
+
+---
+
+## `analyze`
+
+Report what's true about your token system.
+
+### Usage
+
+```bash frame="none"
+npx sugarcube analyze <subcommand> [options]
+```
+
+### Description
+
+Where `lint` and `validate` answer pass or fail, `analyze` answers questions. It builds a dependency graph of your tokens — every token that references another — and reports on it. Nothing it finds is an error, so `analyze` always exits `0`.
+
+It has two subcommands: `unused` and `impact`.
+
+### `analyze unused`
+
+List tokens that nothing in your CSS reaches.
+
+```bash frame="none"
+npx sugarcube analyze unused [options]
+```
+
+`analyze` follows alias chains, not just variable names in your files. If your CSS uses `color.danger.fill`, that also keeps `color.pink.600` alive when the latter aliases the former — even though `--color-pink-600` never appears in anything you wrote. A simple text search of your source would miss that and suggest removing a token your app still depends on.
+
+<Table>
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--all` | Print every unused token path, one per line, with no formatting | - |
+| `--json` | Output JSON instead of formatted text | - |
+</Table>
+
+Results are grouped so a family with many unused steps reads as one row:
+
+```bash frame="none"
+npx sugarcube analyze unused
+```
+
+```
+Group                  Unused   Tokens
+────────────────────────────────────────────────────
+color.accent.border         1   loud
+color.teal                  8   50 100 200 300 400 600 700 900
+radius                      5   2xl 3xl 4xl none xl
+
+264 of 490 tokens unused    220 files for var(), 225 for utility classes
+```
+
+Use `--all` when you want to pipe the result somewhere:
+
+```bash frame="none"
+# Every unused token path, one per line
+npx sugarcube analyze unused --all
+
+# Count them
+npx sugarcube analyze unused --all | wc -l
+```
+
+The two counts are two *searches*, not two sets of files, so don't add them — a component with a `<style>` block is read once for its `var()` and again for its class names. They're reported separately because a zero on either side is the tell that part of your project fell outside the scan.
+
+<SiteAside type="caution">
+    Unused doesn't necessarily mean deletable. A token may be referenced by markup sugarcube can't see, consumed by another package, or part of an API you publish deliberately. Treat the list as a starting point for a decision, not a to-do list.
+</SiteAside>
+
+### `analyze impact`
+
+Show everything a change to one token would touch.
+
+```bash frame="none"
+npx sugarcube analyze impact <token> [options]
+```
+
+Before renaming or changing a token, this answers "what breaks?": both the tokens that alias it, directly or through a chain, and the CSS and markup that reference any of them.
+
+<Table>
+| Argument | Description |
+|----------|-------------|
+| `<token>` | Token path, e.g. `color.pink.600` |
+</Table>
+
+<Table>
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--tree` | Draw the chains as a tree, indentation instead of a `References` column | - |
+| `--brief` | Flat list ranked by how often each is used, hiding pass-through tokens | - |
+| `--json` | Output JSON instead of formatted text | - |
+</Table>
+
+```bash frame="none"
+npx sugarcube analyze impact color.neutral.900
+```
+
+```
+Token                           References                      Uses   Where
+────────────────────────────────────────────────────────────────────────────────────
+color.neutral.on.loud           color.neutral.900                  7   alert-variants.css  +4 more
+color.on.loud                   color.neutral.on.loud              7   site-alert.css  +3 more
+color.neutral.surface.raised    color.neutral.900                  0
+color.surface.raised            color.neutral.surface.raised      12   site-card.css  +8 more
+color.neutral.text.normal       color.neutral.900                  0
+color.text.normal               color.neutral.text.normal         23   global.css  +7 more
+form-control.label.color        color.text.normal                  3   global.css  label.css
+form-control.value-color        color.text.normal                  1   global.css
+
+color.neutral.900 and the 12 tokens that reference it are used in 59 places.
+```
+
+#### `--tree`
+
+The same chains, with indentation carrying the relationship instead of a column. A child references its parent, so depth is the number of hops.
+
+```bash frame="none"
+npx sugarcube analyze impact color.neutral.900 --tree
+```
+
+```
+Token                               Uses   Where
+─────────────────────────────────────────────────────────────────────────
+color.neutral.900                      0
+├─ color.neutral.on.loud               7   alert-variants.css  +4 more
+│  └─ color.on.loud                    7   site-alert.css  +3 more
+├─ color.neutral.surface.raised        0
+│  └─ color.surface.raised            12   site-card.css  +8 more
+└─ color.neutral.text.normal           0
+   └─ color.text.normal               23   global.css  +7 more
+      ├─ form-control.label.color      3   global.css  label.css
+      └─ form-control.value-color      1   global.css
+```
+
+#### `--brief`
+
+Only tokens something uses, ranked.
+
+```bash frame="none"
+npx sugarcube analyze impact color.neutral.900 --brief
+```
+
+```
+Token                      Uses   Where
+────────────────────────────────────────────────────────────────
+color.text.normal            23   global.css  accordion.css  +7 more
+color.surface.raised         12   site-card.css  site-dropdown-menu.css  +8 more
+color.neutral.on.loud         7   alert-variants.css  badge-variants.css  +4 more
+form-control.label.color      3   global.css  label.css
+
+5 more tokens reference it but aren't used directly — run without --brief
+```
+
+### Requirements
+
+Same as [`lint`](#lint): **zero-config**, but it needs to find your tokens from a sugarcube configuration file or an auto-discovered `*.resolver.json`. Without them there is no token graph to report on.
+
+### Examples
+
+```bash frame="none"
+# What's unused?
+npx sugarcube analyze unused
+
+# What would this rename break?
+npx sugarcube analyze impact color.brand.fill
+
+# The same chains drawn as a tree
+npx sugarcube analyze impact color.brand.fill --tree
+
+# Which files would I touch?
+npx sugarcube analyze impact color.brand.fill --brief
+
+# Machine-readable
+npx sugarcube analyze unused --json
+npx sugarcube analyze impact space.md --json
+```
+
+### Exit codes
+
+`analyze` always exits `0`. It reports, it doesn't judge, so it won't fail a build. If you want a failing check, use [`lint`](#lint) or [`validate`](#validate).
 
 ---
 
@@ -489,6 +677,12 @@ A typical sugarcube workflow:
 6. **Lint your styles** for undeclared token references (great in CI):
    ```bash frame="none"
    npx sugarcube lint
+   ```
+
+7. **Analyze your token system** when you want to understand it rather than check it:
+   ```bash frame="none"
+   npx sugarcube analyze unused
+   npx sugarcube analyze impact color.brand.fill
    ```
 
 ## Getting Help

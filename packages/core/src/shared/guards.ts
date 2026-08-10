@@ -44,6 +44,16 @@ export function isTypographyToken(
     return token.$type === "typography";
 }
 
+export function isRenderableToken(entry: unknown): entry is RenderableToken {
+    return (
+        typeof entry === "object" &&
+        entry !== null &&
+        "$path" in entry &&
+        "$names" in entry &&
+        "$type" in entry
+    );
+}
+
 /** Checks if a key is the reserved $root token name (DTCG 2025.10 spec) */
 export function isRootToken(key: string): boolean {
     return key === "$root";
