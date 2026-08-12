@@ -4,12 +4,12 @@ import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import type { InternalConfig } from "@sugarcube-sh/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { scanProjectCSS } from "../src/scan-project.js";
+import { findUnreadStylesheets, scanProjectCSS } from "../src/scan-project.js";
 
-function configWith(content?: string[]): InternalConfig {
+function configWith(content?: string[], outputDir = "../css"): InternalConfig {
     return {
-        variables: { path: "../css/tokens.css" },
-        utilities: { path: "../css/utilities.css" },
+        variables: { path: `${outputDir}/tokens.css` },
+        utilities: { path: `${outputDir}/utilities.css` },
         ...(content ? { content } : {}),
     } as unknown as InternalConfig;
 }
@@ -127,5 +127,84 @@ describe("scanProjectCSS", () => {
         const scan = await scanProjectCSS(configWith(), paths);
         expect(scan.files).toEqual([]);
         expect([...scan.declared]).toEqual([]);
+    });
+});
+
+describe("findUnreadStylesheets", () => {
+    let base: string;
+    let cwdDir: string;
+    let originalCwd: string;
+
+    beforeEach(async () => {
+        originalCwd = process.cwd();
+        base = join(realpathSync(tmpdir()), `sugarcube-unread-${Date.now()}`);
+        cwdDir = join(base, "assets", "js");
+        const outputDir = join(base, "assets", "css");
+        await mkdir(cwdDir, { recursive: true });
+        await mkdir(outputDir, { recursive: true });
+
+        await writeFile(join(cwdDir, "local.css"), `.local { color: var(--nope-local); }`);
+        await writeFile(join(outputDir, "app.css"), `.card { color: var(--color-primary); }`);
+        await writeFile(join(outputDir, "layout.css"), `.layout { gap: var(--space-md); }`);
+        await writeFile(join(outputDir, "tokens.css"), `:root { --color-primary: red; }`);
+        await writeFile(join(outputDir, "utilities.css"), `.text-primary { color: red; }`);
+
+        process.chdir(cwdDir);
+    });
+
+    afterEach(async () => {
+        process.chdir(originalCwd);
+        await rm(base, { recursive: true, force: true });
+    });
+
+    const scanThenCheck = async (content?: string[], outputDir?: string) => {
+        const config = configWith(content, outputDir);
+        const scan = await scanProjectCSS(config);
+        return findUnreadStylesheets(config, scan.files);
+    };
+
+    it("reports stylesheets in the output directory that the scan never read", async () => {
+        expect(await scanThenCheck()).toEqual([{ dir: "../css", count: 2 }]);
+    });
+
+    it("does not count sugarcube's own generated files", async () => {
+        const [entry] = await scanThenCheck();
+        expect(entry?.count).toBe(2);
+    });
+
+    it("stays quiet once content reaches that directory", async () => {
+        const content = [join(base, "assets", "css", "**", "*.css")];
+        expect(await scanThenCheck(content)).toEqual([]);
+    });
+
+    it("stays quiet when the output directory is inside the working directory", async () => {
+        await mkdir(join(cwdDir, "styles"), { recursive: true });
+        await writeFile(join(cwdDir, "styles", "extra.css"), `.e { color: red; }`);
+
+        expect(await scanThenCheck(undefined, "./styles")).toEqual([]);
+    });
+
+    it("stays quiet when the output directory holds nothing but generated CSS", async () => {
+        await rm(join(base, "assets", "css", "app.css"));
+        await rm(join(base, "assets", "css", "layout.css"));
+
+        expect(await scanThenCheck()).toEqual([]);
+    });
+
+    it("reports each output directory separately when they differ", async () => {
+        const config = {
+            variables: { path: "../css/tokens.css" },
+            utilities: { path: "../generated/utilities.css" },
+        } as unknown as InternalConfig;
+        await mkdir(join(base, "assets", "generated"), { recursive: true });
+        await writeFile(join(base, "assets", "generated", "vendor.css"), `.v { color: red; }`);
+
+        const scan = await scanProjectCSS(config);
+        const entries = await findUnreadStylesheets(config, scan.files);
+
+        expect(entries).toEqual([
+            { dir: "../css", count: 3 },
+            { dir: "../generated", count: 1 },
+        ]);
     });
 });

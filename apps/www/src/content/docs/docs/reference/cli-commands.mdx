@@ -271,7 +271,7 @@ A variable exists if sugarcube generates it from your tokens, or if you declare 
 | `[paths...]` | Directories or globs to scan, e.g. `../css`. Defaults to your project's CSS and component files, plus anything in `content`. |
 </Table>
 
-Pass a path when your stylesheets live outside the directory you run from and you'd rather not change your config. To make it the default for every run, add the same location to [`content`](/docs/configuration#telling-sugarcube-where-your-markup-lives) instead.
+Pass a path when your stylesheets live outside the directory you run from and you'd rather not change your config. To make it the default for every run, add the same location to [`content`](/docs/configuration#telling-sugarcube-which-files-to-scan) instead.
 
 ### Options
 
@@ -347,11 +347,21 @@ It has two subcommands: `unused` and `impact`.
 
 ### Where analyze looks
 
-Neither subcommand takes a path argument. `analyze` scans the CSS below your working directory plus everything in [`content`](/docs/configuration#telling-sugarcube-where-your-markup-lives), and there's no flag to narrow it.
+Neither subcommand takes a path argument. `analyze` scans the CSS below your working directory plus everything in [`content`](/docs/configuration#telling-sugarcube-which-files-to-scan), and there's no flag to narrow it.
 
 That's deliberate. `unused` is a claim about your whole project, so a smaller scan doesn't produce a smaller report, it produces a wrong one: a token used only in CSS the scan never read is reported unused, and acting on that breaks your site. So if `analyze` isn't seeing your stylesheets, `content` is the thing to change.
 
 When the scan reaches no stylesheets at all, `analyze` says so before its report, because that's the state where the report is least trustworthy.
+
+It warns about a partial scan too. Since sugarcube writes generated CSS to `variables.path`, that directory is somewhere your project keeps stylesheets — so when it sits outside everything the scan reached, `analyze` counts the files there and reports the shortfall:
+
+```
+Some of your CSS wasn't read, so tokens used only there are listed as unused below.
+
+  255 stylesheets in ../css
+```
+
+Treat that as a reason not to trust the list until `content` covers those files. `lint` prints the same warning, since a partial scan lets it report a pass it hasn't really checked.
 
 ### `analyze unused`
 

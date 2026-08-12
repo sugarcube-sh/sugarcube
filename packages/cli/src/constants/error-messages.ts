@@ -1,6 +1,14 @@
 import color from "picocolors";
+import { plural } from "../plural.js";
 import { COMMANDS } from "./commands.js";
 import { LINKS } from "./links.js";
+
+const unreadList = (entries: { dir: string; count: number }[]) =>
+    entries
+        .map(({ dir, count }) => `  ${plural(count, "stylesheet")} in ${color.cyan(dir)}`)
+        .join("\n");
+
+const unreadHelp = `Sugarcube writes your generated CSS there, so that's very likely CSS of yours that uses your tokens. Add it to ${color.cyan("content")}:\n\n  e.g. content: ["../css/**/*.css"]`;
 
 const noStylesheetsHelp = (cwd: string) =>
     `Looked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}:\n\n  content: ["../css/**/*.css"]\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`;
@@ -158,11 +166,17 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
         `Invalid ${flagName} value: "${value}". Must be a filename, not a path.\n\nUse --variables-dir or --utilities-dir to specify the directory.`,
 
     LINT_NO_FILES_SCANNED: (cwd: string) =>
-        `No stylesheets found.\n\nLooked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}, or pass a directory or glob directly:\n\n  sugarcube lint ../css\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`,
+        `No stylesheets found.\n\nLooked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}, or pass a directory or glob directly.\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`,
 
     ANALYZE_UNUSED_NO_FILES_SCANNED: (cwd: string) =>
         `No stylesheets found. Tokens reached only through your CSS are listed as unused below.\n\n${noStylesheetsHelp(cwd)}`,
 
     ANALYZE_IMPACT_NO_FILES_SCANNED: (cwd: string) =>
         `No stylesheets found, so no CSS consumers of this token can be listed.\n\n${noStylesheetsHelp(cwd)}`,
+
+    LINT_UNREAD_STYLESHEETS: (entries: { dir: string; count: number }[]) =>
+        `Some of your CSS wasn't read.\n\n${unreadList(entries)}\n\n${unreadHelp}\n\nOr check it just this once:\n\n  sugarcube lint ${entries[0]?.dir ?? "../css"}\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`,
+
+    ANALYZE_UNREAD_STYLESHEETS: (entries: { dir: string; count: number }[]) =>
+        `Some of your CSS wasn't read, so tokens used only there are listed as unused below.\n\n${unreadList(entries)}\n\n${unreadHelp}\n\nDo that before you delete anything from this list.\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`,
 } as const;

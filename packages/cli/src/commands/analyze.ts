@@ -31,9 +31,10 @@ import type { VarRef } from "../lint/scan-css.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
 import { plural } from "../plural.js";
 import { prepareTokens } from "../prepare-tokens.js";
+import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log, rawLog } from "../prompts/log.js";
-import { scanProjectCSS } from "../scan-project.js";
+import { type UnreadStylesheets, findUnreadStylesheets, scanProjectCSS } from "../scan-project.js";
 
 interface UnusedFlags {
     json?: boolean;
@@ -56,7 +57,12 @@ async function buildGraph(
 async function scanUsage(
     config: InternalConfig,
     tokens: NormalizedRenderableTokens,
-): Promise<{ refs: VarRef[]; varScanned: number; classScanned: number }> {
+): Promise<{
+    refs: VarRef[];
+    varScanned: number;
+    classScanned: number;
+    unread: UnreadStylesheets[];
+}> {
     const { used, files } = await scanProjectCSS(config);
     const utility = await scanUtilityUsage(config, tokens);
     // NB. A component with a `<style>` block is read once for its `var()` and again for its class
@@ -65,6 +71,7 @@ async function scanUsage(
         refs: [...used, ...utility.refs],
         varScanned: files.length,
         classScanned: utility.fileCount,
+        unread: await findUnreadStylesheets(config, files),
     };
 }
 
@@ -84,11 +91,20 @@ const unused = new Command()
 
             const usage = await scanUsage(config, tokens);
 
-            if (usage.varScanned === 0) {
-                const warning = ERROR_MESSAGES.ANALYZE_UNUSED_NO_FILES_SCANNED(process.cwd());
-                
-                if (plain) console.error(warning);
-                else log.warn(warning);
+            const shortfall =
+                usage.varScanned === 0
+                    ? ERROR_MESSAGES.ANALYZE_UNUSED_NO_FILES_SCANNED(process.cwd())
+                    : usage.unread.length > 0
+                      ? ERROR_MESSAGES.ANALYZE_UNREAD_STYLESHEETS(usage.unread)
+                      : undefined;
+
+            if (shortfall) {
+                if (plain) {
+                    console.error(shortfall);
+                } else {
+                    log.space(1);
+                    warningBoxWithBadge(shortfall);
+                }
             }
 
             const roots = usageRoots(graph, usage.refs);
@@ -170,10 +186,20 @@ const impact = new Command()
             const index = buildVarNameIndex(graph);
             const usage = await scanUsage(config, tokens);
 
-            if (usage.varScanned === 0) {
-                const warning = ERROR_MESSAGES.ANALYZE_IMPACT_NO_FILES_SCANNED(process.cwd());
-                if (options.json) console.error(warning);
-                else log.warn(warning);
+            const shortfall =
+                usage.varScanned === 0
+                    ? ERROR_MESSAGES.ANALYZE_IMPACT_NO_FILES_SCANNED(process.cwd())
+                    : usage.unread.length > 0
+                      ? ERROR_MESSAGES.ANALYZE_UNREAD_STYLESHEETS(usage.unread)
+                      : undefined;
+
+            if (shortfall) {
+                if (options.json) {
+                    console.error(shortfall);
+                } else {
+                    log.space(1);
+                    warningBoxWithBadge(shortfall);
+                }
             }
 
             const refsByToken = new Map<string, VarRef[]>();

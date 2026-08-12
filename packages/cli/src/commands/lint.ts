@@ -9,7 +9,8 @@ import { type SyntaxResolver, createSyntaxResolver } from "../lint/syntaxes.js";
 import { getGeneratedVarNames } from "../lint/token-var-names.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
 import { plural } from "../plural.js";
-import { scanProjectCSS } from "../scan-project.js";
+import { findUnreadStylesheets, scanProjectCSS } from "../scan-project.js";
+import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 import type { LintOptions, ScanOutput } from "../types/commands.js";
@@ -39,6 +40,7 @@ async function runScan(
         fallback,
         refCount: scan.used.length,
         scannedFiles: scan.files.length,
+        unread: paths.length > 0 ? [] : await findUnreadStylesheets(config, scan.files, resolver),
     };
 }
 
@@ -92,7 +94,7 @@ export const lint = new Command()
             const fallbackIsError = fallbackLevel === "error";
 
             if (options.json) {
-                const { broken, fallback, scannedFiles } = await runScan(
+                const { broken, fallback, scannedFiles, unread } = await runScan(
                     config,
                     paths,
                     ignorePrefixes,
@@ -101,6 +103,8 @@ export const lint = new Command()
 
                 if (scannedFiles === 0) {
                     console.error(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
+                } else if (unread.length > 0) {
+                    console.error(ERROR_MESSAGES.LINT_UNREAD_STYLESHEETS(unread));
                 }
 
                 const portable = (refs: VarRef[]) =>
@@ -118,7 +122,7 @@ export const lint = new Command()
                 return;
             }
 
-            const { broken, fallback, refCount, scannedFiles } = await runScan(
+            const { broken, fallback, refCount, scannedFiles, unread } = await runScan(
                 config,
                 paths,
                 ignorePrefixes,
@@ -152,11 +156,16 @@ export const lint = new Command()
             );
 
             const visibleTotal = broken.length + (showFallback ? fallback.length : 0);
-            
+
             if (scannedFiles === 0) {
-                log.warn(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
-                outro(color.yellow("Nothing scanned"));
+                log.space(1);
+                warningBoxWithBadge(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
                 return;
+            }
+
+            if (unread.length > 0) {
+                log.space(1);
+                warningBoxWithBadge(ERROR_MESSAGES.LINT_UNREAD_STYLESHEETS(unread));
             }
 
             if (visibleTotal === 0) {

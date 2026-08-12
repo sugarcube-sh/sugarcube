@@ -25,50 +25,34 @@ export default defineConfig({});
 
 Sugarcube can generate utility classes from your design tokens. Utilities are configured in the `utilities.classes` key of your config file. See [CSS Utilities](/docs/utilities) for full details.
 
-## Telling sugarcube where your markup lives
+## Telling sugarcube which files to scan
 
-When the CLI generates utility classes, it scans your source files to see which classes you actually use and generates only those. By default it looks in the directory you run the command from and everything beneath it. The `lint` and `analyze` commands work the same way, reading your CSS and markup to find `var()` references.
+**Most projects never need this.** Run sugarcube from your project root and the default scan already finds your markup and your CSS. Nothing to configure.
 
-Not every project keeps sugarcube installed next to the files it needs to scan. Sometimes your build tooling sits in one folder while your templates or components live in another, above or outside it, and the default scan never sees them. The `content` option points sugarcube at wherever your markup actually lives.
+You need `content` only when sugarcube runs from somewhere that isn't above the files it has to read: a config inside a build folder, say, with your templates or stylesheets further up the tree. The default scan can't see them, so `content` says where they are.
 
-```ts title="sugarcube.config.ts" ins={4-7}
+```ts title="sugarcube.config.ts" ins={4-9}
 import { defineConfig } from "@sugarcube-sh/cli";
 
 export default defineConfig({
   content: [
     "./**/*.{js,ts}",
-    "../../templates/**/*.html"
-  ]
-});
-```
-
-The globs in `content` are resolved relative to your config file rather than your working directory, so a config that lives in a subfolder can still reach files above it with `../`, and you keep running sugarcube from the same place as before. Generation reads your markup for class names while `lint` and `analyze` read your CSS for variable references, so it's fine to list a folder broadly and let each command pick up only the file types it understands. To leave something out, prefix its glob with `!`, for example `"!../../templates/**/vendor/**"`.
-
-### Cover your stylesheets too, not just your markup
-
-Because those commands want different file types, `content` needs to reach both. A `content` that lists only templates gives `lint` and `analyze` nothing they can parse, and they fall back to whatever CSS they find below your working directory. If your stylesheets sit outside it — a common shape when your config lives in, say, a build folder — list them alongside your markup:
-
-```ts title="sugarcube.config.ts" ins={5}
-export default defineConfig({
-  content: [
-    "./**/*.{js,ts}",
     "../../templates/**/*.html",
-    "../css/**/*.css"
+    "../css/**/*.css",
+    "!../../templates/**/vendor/**"
   ]
 });
 ```
 
-For `lint` and `analyze`, adding `content` never takes coverage away: they always scan below your working directory as well, so the globs you list are extra places to look rather than a replacement. Utility generation is the exception — it scans exactly what you list, so `content` replaces its default there rather than adding to it.
+Include every folder holding files sugarcube needs to read: your markup **and** your stylesheets.
 
-For a one-off run, `lint` also takes a directory or a glob directly, without touching your config:
+Paths are relative to your config file, not the folder you run from, so `../` reaches files above a config that lives in a subfolder. Prefix a glob with `!` to exclude what it matches.
 
-```bash frame="none"
-npx sugarcube lint ../css
-```
+<SiteAside type="caution">
+    **Leave your stylesheets out of `content` and `analyze unused` will list tokens your CSS is really using.** Delete those and you break your site.
 
-`analyze` has no such argument, by design. Narrowing what it scans wouldn't shrink its report, it would change the answer — a token used only in CSS the scan never read comes back as unused, and deleting it would break your site. `content` is the only lever, so if `analyze` can't reach your CSS, point `content` at it.
-
-Either command will tell you when it found no stylesheets at all, rather than reporting a potentially misleading result.
+    `lint` and `analyze` both warn you when they found no CSS at all, and when they can see stylesheets they never read. Fix `content` before you act on either report.
+</SiteAside>
 
 <SiteAside type="note">
     The `content` option applies to the CLI only. The Vite plugin discovers class and variable usage through the bundler's module graph, so it doesn't read this option.

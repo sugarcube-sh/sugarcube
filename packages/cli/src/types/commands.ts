@@ -1,5 +1,6 @@
 import type { SugarcubeConfig } from "@sugarcube-sh/core";
 import type { VarRef } from "../lint/scan-css.js";
+import type { UnreadStylesheets } from "../scan-project.js";
 
 export interface LintOptions {
     ignore?: string;
@@ -12,6 +13,7 @@ export interface ScanOutput {
     fallback: VarRef[];
     refCount: number;
     scannedFiles: number;
+    unread: UnreadStylesheets[];
 }
 
 export interface InitOptions {
