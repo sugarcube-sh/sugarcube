@@ -130,7 +130,7 @@ describe("analyze command: content globs", () => {
 
     describe("when the scan finds some files but misses the CSS directory", () => {
         beforeEach(async () => {
-            await writeFile(join(assetsJs, "local.css"), `.l { color: var(--nope); }`);
+            await writeFile(join(assetsJs, "local.css"), `.l { color: red; }`);
         });
 
         it("warns that CSS went unread", { timeout: TEST_TIMEOUT }, async () => {
@@ -186,5 +186,59 @@ describe("analyze command: content globs", () => {
                 expect(hasMessage(result.stdout, lintUnread())).toBe(false);
             },
         );
+
+        it("does not dress the outro up as a clean pass", { timeout: TEST_TIMEOUT }, async () => {
+            await writeConfig(`"../../lib/**/*.heex"`);
+
+            const result = await run("lint");
+
+            expect(result.stdout).toContain("No undeclared references");
+            expect(result.stdout).not.toContain("✨");
+        });
+
+        it("still exits 0, since a partial scan is not a failure", { timeout: TEST_TIMEOUT }, async () => {
+            await writeConfig(`"../../lib/**/*.heex"`);
+
+            const result = await run("lint");
+
+            expect(result.exitCode).toBe(0);
+        });
+
+        it("keeps the tick when nothing was missed", { timeout: TEST_TIMEOUT }, async () => {
+            await writeConfig(`"../../lib/**/*.heex", "../css/**/*.css"`);
+
+            const result = await run("lint");
+
+            expect(result.stdout).toContain("✨");
+        });
+    });
+
+    describe("when the scan reads nothing at all", () => {
+        it("exits 1", { timeout: TEST_TIMEOUT }, async () => {
+            await writeConfig(`"../../lib/**/*.heex"`);
+
+            const result = await run("lint");
+
+            expect(result.exitCode).toBe(1);
+        });
+
+        it("exits 1 under --json too, with parseable output", { timeout: TEST_TIMEOUT }, async () => {
+            await writeConfig(`"../../lib/**/*.heex"`);
+
+            const result = await run("lint --json");
+
+            expect(result.exitCode).toBe(1);
+            expect(() => JSON.parse(result.stdout)).not.toThrow();
+        });
+
+        it("leaves analyze exiting 0, which reports rather than judges", {
+            timeout: TEST_TIMEOUT,
+        }, async () => {
+            await writeConfig(`"../../lib/**/*.heex"`);
+
+            const result = await run("analyze unused");
+
+            expect(result.exitCode).toBe(0);
+        });
     });
 });

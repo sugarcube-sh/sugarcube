@@ -103,6 +103,7 @@ export const lint = new Command()
 
                 if (scannedFiles === 0) {
                     console.error(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
+                    process.exitCode = 1;
                 } else if (unread.length > 0) {
                     console.error(ERROR_MESSAGES.LINT_UNREAD_STYLESHEETS(unread));
                 }
@@ -160,6 +161,7 @@ export const lint = new Command()
             if (scannedFiles === 0) {
                 log.space(1);
                 warningBoxWithBadge(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
+                process.exitCode = 1;
                 return;
             }
 
@@ -172,7 +174,11 @@ export const lint = new Command()
                 const headline = showFallback
                     ? "No undeclared references"
                     : "No references without fallback";
-                outro(color.greenBright(`${headline} ✨  ${scanned}`));
+                outro(
+                    unread.length > 0
+                        ? color.yellow(`${headline}  ${scanned}`)
+                        : color.greenBright(`${headline} ✨  ${scanned}`),
+                );
             } else {
                 const parts: string[] = [];
                 if (broken.length > 0) parts.push(color.red(`${broken.length} without fallback`));
