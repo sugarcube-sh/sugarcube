@@ -196,13 +196,17 @@ describe("analyze command: content globs", () => {
             expect(result.stdout).not.toContain("✨");
         });
 
-        it("still exits 0, since a partial scan is not a failure", { timeout: TEST_TIMEOUT }, async () => {
-            await writeConfig(`"../../lib/**/*.heex"`);
+        it(
+            "still exits 0, since a partial scan is not a failure",
+            { timeout: TEST_TIMEOUT },
+            async () => {
+                await writeConfig(`"../../lib/**/*.heex"`);
 
-            const result = await run("lint");
+                const result = await run("lint");
 
-            expect(result.exitCode).toBe(0);
-        });
+                expect(result.exitCode).toBe(0);
+            },
+        );
 
         it("keeps the tick when nothing was missed", { timeout: TEST_TIMEOUT }, async () => {
             await writeConfig(`"../../lib/**/*.heex", "../css/**/*.css"`);
@@ -222,23 +226,31 @@ describe("analyze command: content globs", () => {
             expect(result.exitCode).toBe(1);
         });
 
-        it("exits 1 under --json too, with parseable output", { timeout: TEST_TIMEOUT }, async () => {
-            await writeConfig(`"../../lib/**/*.heex"`);
+        it(
+            "exits 1 under --json too, with parseable output",
+            { timeout: TEST_TIMEOUT },
+            async () => {
+                await writeConfig(`"../../lib/**/*.heex"`);
 
-            const result = await run("lint --json");
+                const result = await run("lint --json");
 
-            expect(result.exitCode).toBe(1);
-            expect(() => JSON.parse(result.stdout)).not.toThrow();
-        });
+                expect(result.exitCode).toBe(1);
+                expect(() => JSON.parse(result.stdout)).not.toThrow();
+            },
+        );
 
-        it("leaves analyze exiting 0, which reports rather than judges", {
-            timeout: TEST_TIMEOUT,
-        }, async () => {
-            await writeConfig(`"../../lib/**/*.heex"`);
+        it(
+            "leaves analyze exiting 0, which reports rather than judges",
+            {
+                timeout: TEST_TIMEOUT,
+            },
+            async () => {
+                await writeConfig(`"../../lib/**/*.heex"`);
 
-            const result = await run("analyze unused");
+                const result = await run("analyze unused");
 
-            expect(result.exitCode).toBe(0);
-        });
+                expect(result.exitCode).toBe(0);
+            },
+        );
     });
 });
