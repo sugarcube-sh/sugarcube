@@ -1,0 +1,43 @@
+---
+import { getCollection, render } from "astro:content";
+import BlogLayout from "@/src/layouts/BlogLayout.astro";
+import { formatDate } from "@/src/lib/date";
+import { siteConfig } from "@/src/site.config";
+
+export async function getStaticPaths() {
+    const posts = await getCollection("blog", ({ data }) => import.meta.env.DEV || !data.draft);
+
+    return posts.map((post) => ({
+        params: { slug: post.id },
+        props: { post },
+    }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<BlogLayout {...post.data}>
+    <article class="wrapper region flow blog">
+        <p class="blog-meta">
+            <time datetime={post.data.publishDate.toISOString()}>
+                {formatDate(post.data.publishDate)}
+            </time>
+            {
+                post.data.updatedDate && (
+                    <>
+                        {" — updated "}
+                        <time datetime={post.data.updatedDate.toISOString()}>
+                            {formatDate(post.data.updatedDate)}
+                        </time>
+                    </>
+                )
+            }
+        </p>
+        <h1>{post.data.title}</h1>
+        <p class="blog-byline">
+            By <a href="https://marktomlinson.dev" rel="author">{siteConfig.author}</a>
+        </p>
+        <Content />
+    </article>
+</BlogLayout>

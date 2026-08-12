@@ -7,6 +7,7 @@ import CSSLayers from "@/src/components/CSSLayers.astro";
 import ThemeProvider from "@/src/components/ThemeProvider.astro";
 import { siteConfig } from "@/src/site.config";
 import DefaultHead from "@astrojs/starlight/components/Head.astro";
+import SiteFonts from "@/src/components/SiteFonts.astro";
 
 import cssOnlyComponentsCssUrl from "@/src/styles/css-only-components.css?url";
 // Import CSS as URLs (not bundled) - Vite emits separate files
@@ -17,7 +18,7 @@ const isReactComponentRoute = pathname.includes("/docs/components/react/");
 const isCssOnlyComponentRoute = pathname.includes("/docs/components/css-only/");
 
 const pageTitle = Astro.props.entry?.data?.title
-    ? `${Astro.props.entry.data.title} • ${siteConfig.title}`
+    ? `${Astro.props.entry.data.title} - ${siteConfig.title}`
     : siteConfig.title;
 const pageDescription = Astro.props.entry?.data?.description ?? siteConfig.description;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -29,6 +30,9 @@ const socialImageURL = new URL(siteConfig.ogImage ?? "/social-card.png", Astro.s
 {import.meta.env.DEV && <script is:inline type="module" src="/@id/@vitejs/devtools/client/inject" />}
 
 <DefaultHead {...Astro.props} />
+
+{/* Fonts */}
+<SiteFonts />
 
 {/* Favicons */}
 <link href="/favicon.ico" rel="icon" sizes="32x32" />

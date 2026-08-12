@@ -1,3 +1,4 @@
+@import "@/src/styles/fonts.css" layer(theme);
 @import "@/registry/styles/global/global.css" layer(global);
 @import "@/registry/styles/compositions/wrapper.css" layer(compositions);
 @import "@/registry/styles/compositions/flow.css" layer(compositions);
@@ -8,6 +9,8 @@
 @import "@/registry/styles/blocks/prose.css" layer(blocks);
 @import "@/registry/styles/blocks/doc.css" layer(blocks);
 @import "@/src/styles/blocks/readme.css" layer(blocks);
+@import "@/src/styles/blocks/blog.css" layer(blocks);
+@import "@/src/styles/blocks/post-list.css" layer(blocks);
 @import "@/src/styles/blocks/site-header.css" layer(blocks);
 @import "@/src/styles/blocks/services.css" layer(blocks);
 @import "@/src/styles/blocks/site-alert.css" layer(blocks);

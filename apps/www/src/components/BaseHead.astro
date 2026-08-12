@@ -1,16 +1,17 @@
 ---
 import CSSLayers from "@/src/components/CSSLayers.astro";
+import SiteFonts from "@/src/components/SiteFonts.astro";
 import ThemeProvider from "@/src/components/ThemeProvider.astro";
 import { siteConfig } from "@/src/site.config";
 import type { SiteMeta } from "@/src/types";
-import Font from "astro/components/Font.astro";
 
 type Props = SiteMeta;
 
 const { articleDate, description, ogImage, title } = Astro.props;
 
-const titleSeparator = "•";
-const siteTitle = `${title} ${titleSeparator} ${siteConfig.title}`;
+const titleSeparator = "-";
+const siteTitle =
+    title === siteConfig.title ? title : `${title} ${titleSeparator} ${siteConfig.title}`;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const socialImageURL = new URL(ogImage ?? siteConfig.ogImage ?? "/social-card.png", Astro.url).href;
 ---
@@ -23,8 +24,7 @@ const socialImageURL = new URL(ogImage ?? siteConfig.ogImage ?? "/social-card.pn
     <title>{siteTitle}</title>
 
     {/* Fonts */}
-    <Font cssVariable="--font-geist" preload />
-    <Font cssVariable="--font-geist-mono" preload />
+    <SiteFonts />
     {/* Favicons */}
     <link href="/favicon.ico" rel="icon" sizes="32x32" />
     <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
@@ -65,6 +65,14 @@ const socialImageURL = new URL(ogImage ?? siteConfig.ogImage ?? "/social-card.pn
 
     {/* Sitemap */}
     <link href="/sitemap-index.xml" rel="sitemap" />
+
+    {/* Feed */}
+    <link
+        href="/rss.xml"
+        rel="alternate"
+        title={`${siteConfig.title} blog`}
+        type="application/rss+xml"
+    />
 
     <meta content={Astro.generator} name="generator" />
 

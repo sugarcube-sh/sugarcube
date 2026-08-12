@@ -1,0 +1,64 @@
+---
+title: "Two Years of Sugarcube"
+description: "A toolkit for building and working with design systems in code. Where it’s got to after two years, the people who shaped it, and what’s next."
+draft: false
+publishDate: "2026-08-10"
+---
+
+It’s been two years since I started working on sugarcube and six months since its first public release.
+
+If you haven’t come across it before, sugarcube is a toolkit for building and working with design systems in code.[^toolkit]
+
+In those six months, adoption has grown steadily (100K+ downloads) and the feedback has been positive.
+
+## Using it in client work
+
+I’ve also been able to make use of it in my freelance work.
+
+It is a lot of fun using something I built to solve client problems.
+
+It is also a huge advantage. Sugarcube doesn’t do what you need it to do here? No problem. Build the feature it needs (if warranted, of course).
+
+It has been a great way to see that sugarcube works at scale, too. It’s been particularly powerful in multi-theme, multi-brand projects, thanks to the [permutations API](/docs/theming#custom-selectors-the-permutations-api).
+
+I’m continuing to take on design-system consulting work alongside sugarcube, so if your team is working through similar problems, feel free to get in touch.
+
+## Not a solo project
+
+Speaking of the permutations API, a number of people have significantly enhanced the tool by either adding code, raising issues, or starting discussions.
+
+The permutations API grew out of discussions between myself and [Aaron George](https://bsky.app/profile/0x414447.bsky.social). It would not be as useful as it is today without his CLI wishlist. He is also generous enough to be a sponsor of the project.
+
+[Leanne Renard](https://bsky.app/profile/leannerenard.co.uk) was an early tester with her work over at [Set Studio](https://set.studio) and helped me sort out a number of critical bugs before the initial release.
+
+[Taurean Bryant](https://bsky.app/profile/taurean.bryant.land) was also an early tester and generously got on a call to help me see what needed improvement.
+
+[Andy Bell](https://bsky.app/profile/bell.bz) was the first person other than me to know about sugarcube, has provided advice and support along the way, and is probably the reason why you’re even reading this.
+
+[Alex Guyot](https://bsky.app/profile/alex.unapologetic.io) has suggested a number of improvements that I had not thought of. [Private sets](/docs/resolver#private-sets), which landed in [core 0.2.10](https://github.com/sugarcube-sh/sugarcube/releases/tag/%40sugarcube-sh/core%400.2.10), is a perfect example.
+
+[Markus Finell](https://bsky.app/profile/finell.dev) helped me to think about a story for [non-JIT utility classes](/docs/utilities/#forcing-generation-with-safelist). Again, a use-case I had not considered but for which there is an obvious need.
+
+[Arpit Agrawal](https://bsky.app/profile/arpit.codes) and I had a brainwave for one of the more powerful and exciting features sugarcube has to offer: [scale recipes](/docs/fluid-space-and-type/#scale-recipes).
+
+[Ishan Loya](https://bsky.app/profile/ishanloya.bsky.social) contributed a number of fixes to component styles. Check out their boutique agency, [earthwhile](https://www.earthwhile.xyz/).
+
+And lastly, there is [Josh Pindjak](https://bsky.app/profile/joshpindjak.biz), who has been helping me lately with some design challenges related to the future of sugarcube.[^josh] Which leads me nicely to...
+
+## What’s next
+
+The tool today is only part of what I have had in mind for sugarcube from the beginning.
+
+The vision has always been to make design systems something designers and developers can build, understand and work with together, while the system itself remains in code.
+
+I have been patiently building that out and it’s starting to get very exciting.
+
+But that’s a post for another day.
+
+For now, if you’ve been meaning to [try sugarcube](/docs/getting-started), give it a go. If you get stuck or want some help figuring out how it might fit your project, get in touch. I’m always happy to help.
+
+And if you already use it and it doesn’t do something you need, [open an issue](https://github.com/sugarcube-sh/sugarcube/issues) or [start a discussion](https://github.com/sugarcube-sh/sugarcube/discussions). Nearly everything above happened exactly like that.
+
+[^toolkit]: Most tooling in this space is primarily about transforming design tokens into outputs. Sugarcube keeps going: token-based utility classes generated from what your markup actually uses, optional components you add to your project and own, deep integration with your dev setup, and tools for linting and analysing your project. A proper non-docs introduction is in the works.
+
+[^josh]: A number of other people have been involved through the raising of issues and discussions and I thank them for it. I do apologise if I have left someone off who I shouldn’t have.
