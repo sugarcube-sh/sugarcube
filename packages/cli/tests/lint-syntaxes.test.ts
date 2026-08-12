@@ -15,7 +15,7 @@ describe("createSyntaxResolver", () => {
     });
 
     it("resolves a parser for every default component type", () => {
-        for (const file of ["a.vue", "a.svelte", "a.astro", "a.html"]) {
+        for (const file of ["a.vue", "a.svelte", "a.astro", "a.html", "a.htm", "a.php"]) {
             const res = createSyntaxResolver().resolve(file);
             expect(res.kind, file).toBe("parser");
         }

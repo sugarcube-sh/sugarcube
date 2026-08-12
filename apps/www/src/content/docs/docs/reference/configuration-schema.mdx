@@ -383,7 +383,11 @@ export default defineConfig({
 });
 ```
 
-When omitted, sugarcube scans the working directory and everything beneath it. Prefix a glob with `!` to exclude matching paths.
+Prefix a glob with `!` to exclude matching paths.
+
+The two sides treat this list differently. Utility generation scans exactly what you list here, or the working directory and everything beneath it when you leave it out. `lint` and `analyze` always scan below the working directory and treat these globs as extra places to look, so setting `content` can only widen what they see.
+
+That distinction matters when your stylesheets live outside the directory you run from. Utility generation only needs your markup, but `lint` and `analyze` need your CSS, and templates they can't parse give them nothing — so list your stylesheets here as well as your markup, or those commands will only ever see the CSS beneath your working directory.
 
 <SiteAside type="note">
     This option applies to the CLI only. The Vite plugin finds usage through the bundler's module graph and ignores it.

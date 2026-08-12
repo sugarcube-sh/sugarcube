@@ -13,6 +13,10 @@ export interface ProjectScan {
     used: VarRef[];
 }
 
+function discoveryPatterns(config: InternalConfig, resolver: SyntaxResolver): string[] {
+    return [buildExtensionGlob(resolver.extensions()), ...(config.content ?? [])];
+}
+
 export async function scanProjectCSS(
     config: InternalConfig,
     paths: string[] = [],
@@ -22,9 +26,8 @@ export async function scanProjectCSS(
         resolve(process.cwd(), config.variables.path),
         resolve(process.cwd(), config.utilities.path),
     ];
-    const defaultPatterns = config.content ?? [buildExtensionGlob(resolver.extensions())];
 
-    const candidates = await glob(paths.length > 0 ? paths : defaultPatterns, {
+    const candidates = await glob(paths.length > 0 ? paths : discoveryPatterns(config, resolver), {
         cwd: process.cwd(),
         absolute: true,
         caseSensitiveMatch: false,

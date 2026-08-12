@@ -268,8 +268,10 @@ A variable exists if sugarcube generates it from your tokens, or if you declare 
 <Table>
 | Argument | Description |
 |----------|-------------|
-| `[paths...]` | Globs of files to scan. Defaults to your project's CSS and component files. |
+| `[paths...]` | Directories or globs to scan, e.g. `../css`. Defaults to your project's CSS and component files, plus anything in `content`. |
 </Table>
+
+Pass a path when your stylesheets live outside the directory you run from and you'd rather not change your config. To make it the default for every run, add the same location to [`content`](/docs/configuration#telling-sugarcube-where-your-markup-lives) instead.
 
 ### Options
 
@@ -283,7 +285,9 @@ A variable exists if sugarcube generates it from your tokens, or if you declare 
 
 ### Supported files
 
-`lint` scans `.css` files and `<style>` blocks in `.html`, `.vue`, `.svelte`, `.astro`, and `.php` files. It skips build folders, dependencies, and your generated variables file. CSS-in-JS and preprocessor files (`.scss`, `.sass`, `.less`, `.styl`) aren't supported yet.
+`lint` scans `.css` files and `<style>` blocks in `.html`, `.htm`, `.vue`, `.svelte`, `.astro`, and `.php` files. It skips build folders, dependencies, and your generated variables file. CSS-in-JS and preprocessor files (`.scss`, `.sass`, `.less`, `.styl`) aren't supported yet.
+
+Template formats it can't parse — `.heex`, `.njk`, `.erb`, `.jsx` and the rest — are skipped, including any `<style>` block inside them. That matters if `content` points only at those: `lint` then has nothing to read from your `content` globs and falls back to the CSS below your working directory. When it finds no stylesheets anywhere it says so rather than reporting a pass.
 
 ### Requirements
 
@@ -302,6 +306,9 @@ npx sugarcube lint
 
 # Lint specific files or globs
 npx sugarcube lint "src/**/*.css" "src/**/*.vue"
+
+# Lint a directory, including one above where you're running from
+npx sugarcube lint ../css
 
 # Also fail on references that only have a fallback
 npx sugarcube lint --fallback error
@@ -337,6 +344,14 @@ npx sugarcube analyze <subcommand> [options]
 Where `lint` and `validate` answer pass or fail, `analyze` answers questions. It builds a dependency graph of your tokens — every token that references another — and reports on it. Nothing it finds is an error, so `analyze` always exits `0`.
 
 It has two subcommands: `unused` and `impact`.
+
+### Where analyze looks
+
+Neither subcommand takes a path argument. `analyze` scans the CSS below your working directory plus everything in [`content`](/docs/configuration#telling-sugarcube-where-your-markup-lives), and there's no flag to narrow it.
+
+That's deliberate. `unused` is a claim about your whole project, so a smaller scan doesn't produce a smaller report, it produces a wrong one: a token used only in CSS the scan never read is reported unused, and acting on that breaks your site. So if `analyze` isn't seeing your stylesheets, `content` is the thing to change.
+
+When the scan reaches no stylesheets at all, `analyze` says so before its report, because that's the state where the report is least trustworthy.
 
 ### `analyze unused`
 

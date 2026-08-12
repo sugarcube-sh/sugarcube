@@ -44,6 +44,32 @@ export default defineConfig({
 
 The globs in `content` are resolved relative to your config file rather than your working directory, so a config that lives in a subfolder can still reach files above it with `../`, and you keep running sugarcube from the same place as before. Generation reads your markup for class names while `lint` and `analyze` read your CSS for variable references, so it's fine to list a folder broadly and let each command pick up only the file types it understands. To leave something out, prefix its glob with `!`, for example `"!../../templates/**/vendor/**"`.
 
+### Cover your stylesheets too, not just your markup
+
+Because those commands want different file types, `content` needs to reach both. A `content` that lists only templates gives `lint` and `analyze` nothing they can parse, and they fall back to whatever CSS they find below your working directory. If your stylesheets sit outside it — a common shape when your config lives in, say, a build folder — list them alongside your markup:
+
+```ts title="sugarcube.config.ts" ins={5}
+export default defineConfig({
+  content: [
+    "./**/*.{js,ts}",
+    "../../templates/**/*.html",
+    "../css/**/*.css"
+  ]
+});
+```
+
+For `lint` and `analyze`, adding `content` never takes coverage away: they always scan below your working directory as well, so the globs you list are extra places to look rather than a replacement. Utility generation is the exception — it scans exactly what you list, so `content` replaces its default there rather than adding to it.
+
+For a one-off run, `lint` also takes a directory or a glob directly, without touching your config:
+
+```bash frame="none"
+npx sugarcube lint ../css
+```
+
+`analyze` has no such argument, by design. Narrowing what it scans wouldn't shrink its report, it would change the answer — a token used only in CSS the scan never read comes back as unused, and deleting it would break your site. `content` is the only lever, so if `analyze` can't reach your CSS, point `content` at it.
+
+Either command will tell you when it found no stylesheets at all, rather than reporting a potentially misleading result.
+
 <SiteAside type="note">
     The `content` option applies to the CLI only. The Vite plugin discovers class and variable usage through the bundler's module graph, so it doesn't read this option.
 </SiteAside>

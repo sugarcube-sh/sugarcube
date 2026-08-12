@@ -2,6 +2,7 @@ import type { InternalConfig } from "@sugarcube-sh/core";
 import { Command, Option } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
+import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import { type VarRef, findUndeclared } from "../lint/scan-css.js";
 import { type SyntaxResolver, createSyntaxResolver } from "../lint/syntaxes.js";
@@ -66,7 +67,10 @@ function formatGroupedRefs(refs: VarRef[]): string[] {
 export const lint = new Command()
     .name("lint")
     .description("Find var() references to variables your tokens and CSS don't declare")
-    .argument("[paths...]", "Globs of files to scan (default: project CSS and components)")
+    .argument(
+        "[paths...]",
+        "Directories or globs to scan, e.g. ../css (default: project CSS and components)",
+    )
     .option(
         "--ignore <prefixes>",
         'Comma-separated var-name prefixes to ignore (e.g. "--sl-,--radix-,--ec-")',
@@ -88,7 +92,16 @@ export const lint = new Command()
             const fallbackIsError = fallbackLevel === "error";
 
             if (options.json) {
-                const { broken, fallback } = await runScan(config, paths, ignorePrefixes, resolver);
+                const { broken, fallback, scannedFiles } = await runScan(
+                    config,
+                    paths,
+                    ignorePrefixes,
+                    resolver,
+                );
+
+                if (scannedFiles === 0) {
+                    console.error(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
+                }
 
                 const portable = (refs: VarRef[]) =>
                     refs.map((ref) => ({ ...ref, file: relative(process.cwd(), ref.file) }));
@@ -139,6 +152,12 @@ export const lint = new Command()
             );
 
             const visibleTotal = broken.length + (showFallback ? fallback.length : 0);
+            
+            if (scannedFiles === 0) {
+                log.warn(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
+                outro(color.yellow("Nothing scanned"));
+                return;
+            }
 
             if (visibleTotal === 0) {
                 const headline = showFallback

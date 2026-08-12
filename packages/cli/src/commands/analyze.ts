@@ -25,6 +25,7 @@ import {
 import { UTILITY_SOURCE, scanUtilityUsage } from "../analyze/scan-utilities.js";
 import { buildVarNameIndex, lookupToken, usageRoots } from "../analyze/usage-roots.js";
 import { CLIError } from "../cli-error.js";
+import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import type { VarRef } from "../lint/scan-css.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
@@ -82,6 +83,14 @@ const unused = new Command()
             const { graph, tokens } = await buildGraph(config);
 
             const usage = await scanUsage(config, tokens);
+
+            if (usage.varScanned === 0) {
+                const warning = ERROR_MESSAGES.ANALYZE_UNUSED_NO_FILES_SCANNED(process.cwd());
+                
+                if (plain) console.error(warning);
+                else log.warn(warning);
+            }
+
             const roots = usageRoots(graph, usage.refs);
             const unusedPaths = findUnusedTokens(graph, roots);
 
@@ -160,6 +169,13 @@ const impact = new Command()
             const affected = new Set([token, ...dependents]);
             const index = buildVarNameIndex(graph);
             const usage = await scanUsage(config, tokens);
+
+            if (usage.varScanned === 0) {
+                const warning = ERROR_MESSAGES.ANALYZE_IMPACT_NO_FILES_SCANNED(process.cwd());
+                if (options.json) console.error(warning);
+                else log.warn(warning);
+            }
+
             const refsByToken = new Map<string, VarRef[]>();
             for (const ref of usage.refs) {
                 const id = lookupToken(index, ref.name);
