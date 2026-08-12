@@ -3,12 +3,21 @@ import { plural } from "../plural.js";
 import { COMMANDS } from "./commands.js";
 import { LINKS } from "./links.js";
 
-const unreadList = (entries: { dir: string; count: number }[]) =>
-    entries
-        .map(({ dir, count }) => `  ${plural(count, "stylesheet")} in ${color.cyan(dir)}`)
-        .join("\n");
+type Unread = { dir: string; count: number };
 
-const unreadHelp = `Sugarcube writes your generated CSS there, so that's very likely CSS of yours that uses your tokens. Add it to ${color.cyan("content")}:\n\n  e.g. content: ["../css/**/*.css"]`;
+const unreadHeadline = (entries: Unread[]) => {
+    const [first] = entries;
+    if (entries.length === 1 && first) {
+        return `Didn't read ${plural(first.count, "stylesheet")} in ${color.cyan(first.dir)}`;
+    }
+
+    const total = entries.reduce((sum, entry) => sum + entry.count, 0);
+    const list = entries.map(({ dir, count }) => `  ${count} in ${color.cyan(dir)}`).join("\n");
+    return `Didn't read ${plural(total, "stylesheet")}:\n\n${list}`;
+};
+
+const unreadFix = (entries: Unread[]) =>
+    `Add the ${entries.length === 1 ? "folder" : "folders"} to ${color.cyan("content")}.`;
 
 const noStylesheetsHelp = (cwd: string) =>
     `Looked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}:\n\n  content: ["../css/**/*.css"]\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`;
@@ -174,9 +183,9 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
     ANALYZE_IMPACT_NO_FILES_SCANNED: (cwd: string) =>
         `No stylesheets found, so no CSS consumers of this token can be listed.\n\n${noStylesheetsHelp(cwd)}`,
 
-    LINT_UNREAD_STYLESHEETS: (entries: { dir: string; count: number }[]) =>
-        `Some of your CSS wasn't read.\n\n${unreadList(entries)}\n\n${unreadHelp}\n\nOr check it just this once:\n\n  sugarcube lint ${entries[0]?.dir ?? "../css"}\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`,
+    LINT_UNREAD_STYLESHEETS: (entries: Unread[]) =>
+        `${unreadHeadline(entries)}\n\nThose files weren't checked. ${unreadFix(entries)}\n\n${color.cyan(LINKS.CONFIGURATION)}`,
 
-    ANALYZE_UNREAD_STYLESHEETS: (entries: { dir: string; count: number }[]) =>
-        `Some of your CSS wasn't read, so tokens used only there are listed as unused below.\n\n${unreadList(entries)}\n\n${unreadHelp}\n\nDo that before you delete anything from this list.\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`,
+    ANALYZE_UNREAD_STYLESHEETS: (entries: Unread[]) =>
+        `${unreadHeadline(entries)}\n\nTokens used only there appear unused. ${unreadFix(entries)}\n\n${color.cyan(LINKS.CONFIGURATION)}`,
 } as const;

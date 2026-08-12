@@ -23,10 +23,15 @@ function discoveryPatterns(config: InternalConfig, resolver: SyntaxResolver): st
 }
 
 function generatedPaths(config: InternalConfig): string[] {
-    return [
-        resolve(process.cwd(), config.variables.path),
-        resolve(process.cwd(), config.utilities.path),
-    ];
+    const permutations = config.variables.permutations ?? [];
+    const variables =
+        permutations.length > 0
+            ? permutations.map((permutation) => permutation.path ?? config.variables.path)
+            : [config.variables.path];
+
+    return [...new Set([...variables, config.utilities.path])].map((path) =>
+        resolve(process.cwd(), path),
+    );
 }
 
 function isInside(dir: string, parent: string): boolean {
@@ -41,9 +46,13 @@ export async function findUnreadStylesheets(
     const cwd = resolve(process.cwd());
     const read = new Set(scanned);
     const stylesheets = buildExtensionGlob(resolver.extensions());
-    const outputDirs = [...new Set(generatedPaths(config).map(dirname))]
+    const candidateDirs = [...new Set(generatedPaths(config).map(dirname))]
         .filter((dir) => !isInside(dir, cwd))
         .sort();
+
+    const outputDirs = candidateDirs.filter(
+        (dir) => !candidateDirs.some((other) => other !== dir && isInside(dir, other)),
+    );
 
     const entries: UnreadStylesheets[] = [];
 

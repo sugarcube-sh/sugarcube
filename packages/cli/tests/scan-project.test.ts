@@ -207,4 +207,72 @@ describe("findUnreadStylesheets", () => {
             { dir: "../generated", count: 1 },
         ]);
     });
+
+    describe("when permutations name the output files", () => {
+        const permutationConfig = () =>
+            ({
+                variables: {
+                    path: "styles/variables.gen.css",
+                    permutations: [
+                        { input: {}, selector: ":root", path: "../css/tokens.css" },
+                        {
+                            input: { theme: "alt" },
+                            selector: '[data-theme="alt"]',
+                            path: "../css/tokens.css",
+                        },
+                    ],
+                },
+                utilities: { path: "../css/utilities.css" },
+            }) as unknown as InternalConfig;
+
+        it("looks in the directory the permutations write to", async () => {
+            const config = permutationConfig();
+            const scan = await scanProjectCSS(config);
+
+            expect(await findUnreadStylesheets(config, scan.files)).toEqual([
+                { dir: "../css", count: 2 },
+            ]);
+        });
+
+        it("does not treat the unused default variables directory as output", async () => {
+            await mkdir(join(cwdDir, "styles"), { recursive: true });
+            await writeFile(join(cwdDir, "styles", "extra.css"), `.e { color: red; }`);
+            const config = permutationConfig();
+
+            const scan = await scanProjectCSS(config);
+            const dirs = (await findUnreadStylesheets(config, scan.files)).map((e) => e.dir);
+
+            expect(dirs).not.toContain("styles");
+        });
+
+        it("counts a file once when one output directory nests inside another", async () => {
+            const nested = join(base, "assets", "css", "utilities");
+            await mkdir(nested, { recursive: true });
+            await writeFile(join(nested, "extra.css"), `.e { color: red; }`);
+            const config = {
+                variables: {
+                    path: "styles/variables.gen.css",
+                    permutations: [{ input: {}, selector: ":root", path: "../css/tokens.css" }],
+                },
+                utilities: { path: "../css/utilities/utilities.gen.css" },
+            } as unknown as InternalConfig;
+
+            const scan = await scanProjectCSS(config);
+
+            expect(await findUnreadStylesheets(config, scan.files)).toEqual([
+                { dir: "../css", count: 4 },
+            ]);
+        });
+
+        it("keeps generated output out of the scan", async () => {
+            const config = permutationConfig();
+            config.content = [join(base, "assets", "css", "**", "*.css")];
+
+            const files = (await scanProjectCSS(config)).files.map((file) => basename(file));
+
+            expect(files).toContain("app.css");
+            expect(files).not.toContain("tokens.css");
+            expect(files).not.toContain("utilities.css");
+        });
+    });
 });

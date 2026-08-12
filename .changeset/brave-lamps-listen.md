@@ -10,14 +10,16 @@ Setting `content` so `generate` could find your templates used to stop `lint` an
 
 If they still find no stylesheets, they now tell you and explain where they looked, rather than reporting a clean result. That matters most for `analyze unused`, where an empty scan makes every token look safe to delete.
 
-They also warn when they only read *part* of your CSS, which is the harder case to spot, because a scan that finds a handful of files looks like one that worked. Sugarcube writes your generated CSS to `variables.path`, so it knows that folder holds stylesheets; when the folder sits outside everything the scan reached, both commands count what's there and say what they skipped:
+They also warn when they only read *part* of your CSS, which is the harder case to spot, because a scan that finds a handful of files looks like one that worked. Sugarcube knows where it writes your generated CSS, so when that folder sits outside everything the scan reached, both commands count the stylesheets there and tell you:
 
 ```
-Some of your CSS wasn't read, so tokens used only there are listed as unused below.
+Didn't read 255 stylesheets in ../css
 
-  255 stylesheets in ../css
+Tokens used only there appear unused. Add the folder to content.
 ```
 
 Nothing extra gets read on your behalf — sugarcube doesn't assume CSS sitting near its output belongs in the scan, it just points out that it's there. Add the folder to `content` and the warning goes away. `lint` stays quiet when you give it an explicit path, since that's a deliberate choice about what to check.
+
+That check now understands per-permutation output paths. If your permutations each set their own `path` and you never set `variables.path`, sugarcube was looking in the default location nothing gets written to, so it missed the folder your tokens actually go in, and worse, didn't exclude your generated variables file from the scan. Both commands could end up reading sugarcube's own output and counting it as usage.
 
 Two smaller things: `lint` now reads `<style>` blocks in `.htm` files as well as `.html`, and its help text mentions that you can point it at a directory, as in `sugarcube lint ../css`.
