@@ -49,7 +49,7 @@ const isDocsRoute = Astro.url.pathname.startsWith("/docs") && Astro.routePattern
         </>
     ) : (
         <header class="site-header">
-            <div class="repel w-full">
+            <div class="repel w-full flex-nowrap">
                 <!-- Left: Logo -->
                 <a
                     class="logo cluster cluster-gap-xs"
@@ -61,7 +61,7 @@ const isDocsRoute = Astro.url.pathname.startsWith("/docs") && Astro.routePattern
                 </a>
 
                 <!-- Center: Nav links -->
-                <div class="cluster cluster-gap-sm">
+                <div class="cluster cluster-gap-2xs md:cluster-gap-sm">
                     <nav>
                         <ul class="cluster gap-3xs flex-nowrap" role="list">
                             <li>
