@@ -1,0 +1,4 @@
+:root {
+    --font-sans: var(--font-geist);
+    --font-mono: var(--font-geist-mono);
+}

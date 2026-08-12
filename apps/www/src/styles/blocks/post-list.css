@@ -1,0 +1,35 @@
+.post-list > li {
+    margin-inline-start: 0;
+    --flow-space: var(--space-xl);
+}
+
+.post-list > li > * {
+    --flow-space: var(--space-3xs);
+}
+
+.post-list :is(h2) {
+    font-size: var(--text-xl);
+}
+
+.post-list :is(h2) a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.post-list-link {
+    --flow-space: var(--space-xs);
+    display: block;
+    width: fit-content;
+    font-weight: var(--font-weight-medium);
+}
+
+.post-list :is(time) {
+    display: block;
+    color: var(--color-text-quiet);
+    font-size: var(--text-sm);
+}
+
+.post-list :is(p) {
+    --flow-space: var(--space-xs);
+    color: var(--color-text-quiet);
+}

@@ -24,8 +24,7 @@ p.page-description {
     border-radius: var(--radius-md);
 }
 
-.sl-markdown-content ul:not([role="tablist"]),
-ol {
+.sl-markdown-content :is(ul:not([role="tablist"]), ol) {
     padding-inline-start: var(--space-md, 1.5rem);
 }
 

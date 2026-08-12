@@ -1,0 +1,192 @@
+.blog {
+    --flow-space: var(--space-md);
+}
+
+.blog :is(p, li, dl, figcaption, blockquote) {
+    max-width: 70ch;
+    text-wrap: pretty;
+}
+
+.blog :is(h1, h2, h3, h4) {
+    max-width: 35ch;
+}
+
+.blog :is(h2) {
+    font-size: var(--text-2xl);
+}
+
+.blog :is(h3) {
+    font-size: var(--text-xl);
+}
+
+.blog :is(h4) {
+    font-size: var(--text-lg);
+}
+
+.blog :is(h2, h3, h4, h5, h6, dt, strong) {
+    font-weight: var(--font-weight-semibold);
+}
+
+.blog :is(h1) {
+    max-width: var(--blog-title-measure, 24ch);
+    font-size: var(--text-3xl);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--leading-title);
+    letter-spacing: var(--blog-title-tracking, var(--tracking-tight));
+}
+
+.blog :is(p) {
+    line-height: var(--leading-relaxed);
+}
+
+.blog *:not(.not-blog) + :is(h2, h3, h4):not(.not-blog) {
+    --flow-space: var(--space-xl);
+}
+
+.blog :is(figure, table):not(.not-blog),
+.blog :is(figure, table):not(.not-blog) + *:not(.not-blog) {
+    --flow-space: var(--space-2xl);
+}
+
+.blog :is(hr) {
+    --flow-space: var(--space-2xl);
+}
+
+.blog :is(h1) + .blog-lede {
+    --flow-space: var(--space-2xs);
+}
+
+.blog-lede {
+    color: var(--color-text-quiet);
+    font-size: var(--text-lg);
+}
+
+.blog-lede + * {
+    --flow-space: var(--space-xl);
+}
+
+.blog-meta {
+    color: var(--color-text-quiet);
+    font-size: var(--text-sm);
+}
+
+.blog-meta + :is(h1) {
+    --flow-space: var(--space-2xs);
+}
+
+.blog :is(h1) + * {
+    --flow-space: var(--space-xl);
+}
+
+.blog :is(h1) + .blog-byline {
+    --flow-space: var(--space-2xs);
+}
+
+.blog-byline {
+    color: var(--color-text-quiet);
+    font-size: var(--text-sm);
+}
+
+.blog-byline + * {
+    --flow-space: var(--space-xl);
+}
+
+.blog :is(a) {
+    text-decoration-style: dotted;
+}
+
+.blog :is(ol, ul):not(.not-blog):not([role="list"]) {
+    padding-inline-start: var(--space-md);
+}
+
+.blog :is(ol, ul):not(.not-blog):not([role="list"]) li {
+    padding-inline-start: var(--space-2xs);
+}
+
+.blog :is(ul, ol):not(.not-blog):not([role="list"]) li + li,
+.blog :is(ul, ol):not(.not-blog):not([role="list"]) li > :is(ol, ul):not(.not-blog) {
+    margin-block-start: var(--space-xs);
+}
+
+.blog :is(ul, ol):not([role="list"]) li:has(> p) > p {
+    margin-block-start: var(--space-xs);
+}
+
+.blog :is(ul, ol):not(.not-blog):not([role="list"]) li + li:has(p) {
+    margin-block-start: var(--flow-space);
+}
+
+.blog :is(ul > li):not(.not-blog)::marker {
+    color: var(--blog-list-marker-color, var(--color-text-quiet));
+}
+
+.blog :is(ol > li):not(.not-blog)::marker {
+    font-weight: var(--font-weight-normal);
+    color: var(--blog-list-marker-color, var(--color-text-quiet));
+}
+
+.blog :is(dl):not(.not-blog) dd + dt {
+    margin-block-start: var(--flow-space);
+}
+
+.blog :is(dl):not(.not-blog) dt + dd {
+    margin-block-start: var(--space-xs);
+}
+
+.blog :is(blockquote) {
+    padding-inline-start: var(--space-sm);
+    border-inline-start-width: 0.25rem;
+    border-inline-start-style: solid;
+    border-inline-start-color: var(--blog-blockquote-border-color, var(--color-surface-border));
+}
+
+.blog :is(blockquote) p {
+    font-style: italic;
+    font-weight: var(--font-weight-medium);
+}
+
+.blog :is(code):not(.not-blog):not(pre code) {
+    border-radius: var(--radius-md);
+    font-size: 0.95em;
+}
+
+.blog pre {
+    border-radius: var(--panel-radius);
+}
+
+.blog :is(kbd) {
+    border-radius: var(--form-control-radius);
+}
+
+.blog [data-footnote-ref] {
+    text-decoration: none;
+}
+
+.blog [data-footnotes] {
+    --flow-space: var(--space-2xl);
+    padding-block-start: var(--space-md);
+    border-block-start: var(--border-width-thin) var(--border-style) var(--color-surface-border);
+    color: var(--color-text-quiet);
+    font-size: var(--text-sm);
+}
+
+.blog [data-footnotes] > h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.blog [data-footnotes] :is(p) {
+    line-height: var(--leading-normal);
+}
+
+.blog [data-footnotes] li {
+    --flow-space: var(--space-sm);
+}
+
+.blog [data-footnotes] :is(ol):not(.not-blog) {
+    padding-inline-start: 0;
+}

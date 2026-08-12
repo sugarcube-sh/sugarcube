@@ -1,0 +1,43 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/src/layouts/BaseLayout.astro";
+import { formatDate } from "@/src/lib/date";
+
+const posts = (await getCollection("blog", ({ data }) => import.meta.env.DEV || !data.draft)).sort(
+    (a, b) => b.data.publishDate.valueOf() - a.data.publishDate.valueOf(),
+);
+
+const meta = {
+    title: "What’s new",
+    description: "New features, releases, and other announcements from sugarcube.",
+};
+---
+
+<BaseLayout meta={meta}>
+    <article class="wrapper region flow blog">
+        <h1>What’s new</h1>
+        <p class="blog-lede">Features, releases, and other announcements</p>
+        <ul class="flow post-list" role="list">
+            {
+                posts.map((post) => (
+                    <li class="flow">
+                        <h2>
+                            <a href={`/blog/${post.id}`}>{post.data.title}</a>
+                        </h2>
+                        <time datetime={post.data.publishDate.toISOString()}>
+                            {formatDate(post.data.publishDate)}
+                        </time>
+                        <p>{post.data.description}</p>
+                        <a
+                            class="post-list-link"
+                            href={`/blog/${post.id}`}
+                            aria-label={`Read more about ${post.data.title}`}
+                        >
+                            Read more
+                        </a>
+                    </li>
+                ))
+            }
+        </ul>
+    </article>
+</BaseLayout>

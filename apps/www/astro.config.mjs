@@ -30,12 +30,23 @@ export default defineConfig({
             name: "Geist",
             cssVariable: "--font-geist",
             weights: ["100 900"],
+            fallbacks: [
+                "Inter",
+                "-apple-system",
+                "BlinkMacSystemFont",
+                "Segoe UI",
+                "Roboto",
+                "Helvetica Neue",
+                "Arial",
+                "sans-serif",
+            ],
         },
         {
             provider: fontProviders.google(),
             name: "Geist Mono",
             cssVariable: "--font-geist-mono",
             weights: ["100 900"],
+            fallbacks: ["SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", "monospace"],
         },
     ],
     integrations: [
@@ -44,6 +55,7 @@ export default defineConfig({
         react(),
         starlight({
             title: "sugarcube",
+            titleDelimiter: "-",
             disable404Route: true,
             favicon: "/favicon.svg",
             customCss: ["virtual:sugarcube.css", "src/styles/index.css"],
