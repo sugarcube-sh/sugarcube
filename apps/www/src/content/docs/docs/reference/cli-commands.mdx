@@ -327,6 +327,8 @@ npx sugarcube lint --json
 
 `lint` exits `0` when there are no undeclared references, and `1` when there's at least one. Fallback-only references pass unless you run with `--fallback error`, which makes them fail too. That makes `lint` a good CI check: run `npx sugarcube lint` to catch missing token references before they ship.
 
+It also exits `1` when it found no stylesheets to read, since that's a command that couldn't run rather than a project with nothing wrong. Reading *some* of your CSS still exits `0`: you get the warning, not a failure.
+
 ---
 
 ## `analyze`

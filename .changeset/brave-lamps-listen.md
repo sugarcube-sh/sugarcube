@@ -22,4 +22,6 @@ Nothing extra gets read on your behalf — sugarcube doesn't assume CSS sitting 
 
 That check now understands per-permutation output paths. If your permutations each set their own `path` and you never set `variables.path`, sugarcube was looking in the default location nothing gets written to, so it missed the folder your tokens actually go in, and worse, didn't exclude your generated variables file from the scan. Both commands could end up reading sugarcube's own output and counting it as usage.
 
+`lint` now exits `1` when it found no stylesheets at all. Previously it printed a warning and exited `0`, so a misconfigured `content` gave you a green CI build off a run that read nothing. Reading only *part* of your CSS still exits `0` - you get the warning, not a failure - and `analyze` still always exits `0`, because it reports rather than judges.
+
 Two smaller things: `lint` now reads `<style>` blocks in `.htm` files as well as `.html`, and its help text mentions that you can point it at a directory, as in `sugarcube lint ../css`.
