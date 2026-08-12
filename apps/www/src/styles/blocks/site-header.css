@@ -16,6 +16,8 @@
 
 @media (max-width: 50rem) {
     .site-header {
+        --repel-gap: var(--space-2xs);
+
         padding-inline: var(--wrapper-padding-inline);
         height: 3.5rem;
     }
