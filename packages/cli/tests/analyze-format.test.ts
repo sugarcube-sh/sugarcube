@@ -12,6 +12,7 @@ import {
 } from "../src/analyze/format.js";
 import { UTILITY_SOURCE } from "../src/analyze/scan-utilities.js";
 import type { VarRef } from "../src/lint/scan-css.js";
+import { strip } from "../src/prompts/common.js";
 
 // The formatters size their columns against the terminal. Pin it so assertions
 // don't depend on whoever's window the suite happens to run in.
@@ -119,6 +120,28 @@ describe("formatImpactTable", () => {
         expect(lines[2]).toContain("mid");
         expect(lines[3]).toContain("leaf");
     });
+
+    it("names the axis when a token references something different per context", () => {
+        const lines = formatImpactTable([
+            {
+                token: "v.on-strong",
+                references: "color.info.on-strong",
+                axis: "per variant",
+                refs: 1,
+                where: "app.css",
+            },
+        ]);
+
+        expect(lines[2]).toContain("color.info.on-strong (per variant)");
+    });
+
+    it("leaves a single-parent row unmarked", () => {
+        const lines = formatImpactTable([
+            { token: "leaf", references: "mid", refs: 1, where: "a.css" },
+        ]);
+
+        expect(lines[2]).not.toContain("(");
+    });
 });
 
 describe("formatImpactBrief", () => {
@@ -137,15 +160,19 @@ describe("formatImpactBrief", () => {
 
 describe("formatImpactTree", () => {
     it("indents each token under the one it references", () => {
-
-        const via = new Map([
+        const parents = new Map([
+            ["mid", ["target"]],
+            ["leaf", ["mid"]],
+            ["other", ["target"]],
+        ]);
+        const chosen = new Map([
             ["mid", "target"],
             ["leaf", "mid"],
             ["other", "target"],
         ]);
         const refs = new Map([["leaf", [ref("/a/a.css")]]]);
 
-        const lines = formatImpactTree("target", via, refs);
+        const lines = formatImpactTree({ target: "target", parents, chosen, refsByToken: refs });
         const body = lines.slice(2);
 
         expect(lines[0]).toContain("Token");
@@ -153,6 +180,106 @@ describe("formatImpactTree", () => {
         expect(body[1]).toContain("├─ mid");
         expect(body[3]).toContain("└─ other");
         expect(body[2]).toContain("│  └─ leaf");
+    });
+
+    describe("a token with a parent per context", () => {
+        const parents = new Map([
+            ["accent", ["target"]],
+            ["danger", ["target"]],
+            ["shared", ["accent", "danger"]],
+            ["deep", ["shared"]],
+        ]);
+        const chosen = new Map([
+            ["accent", "target"],
+            ["danger", "target"],
+            ["shared", "accent"],
+            ["deep", "shared"],
+        ]);
+        const elided = new Map([["shared", "per variant"]]);
+
+        it("lists it under every parent", () => {
+            const lines = formatImpactTree({
+                target: "target",
+                parents,
+                chosen,
+                refsByToken: new Map(),
+                elided,
+            });
+
+            expect(lines.filter((line) => line.includes("shared"))).toHaveLength(2);
+        });
+
+        it("carries the subtree under the chosen parent only", () => {
+            const lines = formatImpactTree({
+                target: "target",
+                parents,
+                chosen,
+                refsByToken: new Map(),
+                elided,
+            });
+
+            expect(lines.filter((line) => line.includes("deep"))).toHaveLength(1);
+        });
+
+        it("names the axis on the full row and points the echo at it", () => {
+            const lines = formatImpactTree({
+                target: "target",
+                parents,
+                chosen,
+                refsByToken: new Map(),
+                elided,
+            });
+            const [full, echo] = lines.filter((line) => line.includes("shared"));
+
+            expect(full).toContain("(per variant)");
+            expect(echo).toContain("(per variant, above)");
+        });
+    });
+
+    it("gives every token one row per parent, however deep the nesting", () => {
+        const parents = new Map([
+            ["accent", ["target"]],
+            ["danger", ["target"]],
+            ["v.strong", ["accent", "danger"]],
+            ["v.alt", ["accent", "danger"]],
+            ["r.fg", ["v.strong", "v.alt"]],
+            ["r.icon", ["v.alt"]],
+        ]);
+        const chosen = new Map([
+            ["accent", "target"],
+            ["danger", "target"],
+            ["v.strong", "accent"],
+            ["v.alt", "accent"],
+            ["r.fg", "v.strong"],
+            ["r.icon", "v.alt"],
+        ]);
+
+        const lines = formatImpactTree({
+            target: "target",
+            parents,
+            chosen,
+            refsByToken: new Map(),
+        });
+        const rowsFor = (id: string) =>
+            lines.filter((line) => strip(line).split(/\s+/).includes(id)).length;
+
+        for (const [token, hops] of parents) {
+            expect(rowsFor(token), token).toBe(hops.length);
+        }
+    });
+
+    it("leaves single-parent tokens unmarked", () => {
+        const parents = new Map([["only", ["target"]]]);
+        const chosen = new Map([["only", "target"]]);
+
+        const lines = formatImpactTree({
+            target: "target",
+            parents,
+            chosen,
+            refsByToken: new Map(),
+        });
+
+        expect(lines.find((line) => line.includes("only"))).not.toContain("(per");
     });
 });
 

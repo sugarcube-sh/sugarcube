@@ -367,9 +367,11 @@ utilities: {
 **Type:** `string[]`
 **Optional**
 
-Globs pointing at the source files sugarcube scans to learn how your tokens and utilities are used. Utility generation reads them to find which utility classes appear in your markup and generates only those, while `lint` and `analyze` read them to find `var()` references — `lint` to check each one resolves, `analyze` to work out which tokens your CSS actually reaches. Each command looks only at the file types it understands, so you can list a directory broadly and let sugarcube sort out what's relevant.
+Globs pointing at the source files sugarcube scans to learn how your tokens are used: markup for the utility classes it should generate, CSS for the `var()` references `lint` and `analyze` check.
 
-The globs are resolved relative to your config file, not the directory you run the command from. This lets a config that sits in a subfolder reach files elsewhere in the project, which matters when sugarcube isn't installed next to the markup it needs to scan.
+Only needed when sugarcube runs from a folder that isn't above the files it has to read. Omit it and each command scans the working directory and everything beneath it, which is all most projects require. When you do set it, list your stylesheets as well as your markup — templates `lint` and `analyze` can't parse give them nothing to read. Each command looks only at the file types it understands.
+
+Globs resolve relative to your config file, not the directory you run the command from, so a config in a subfolder can reach files elsewhere in the project. Prefix a glob with `!` to exclude matching paths.
 
 ```ts
 import { defineConfig } from "@sugarcube-sh/cli";
@@ -378,12 +380,13 @@ export default defineConfig({
   content: [
     "./**/*.{js,ts}",
     "../../templates/**/*.html",
+    "../css/**/*.css",
     "!../../templates/**/vendor/**"
   ]
 });
 ```
 
-When omitted, sugarcube scans the working directory and everything beneath it. Prefix a glob with `!` to exclude matching paths.
+The two sides treat this list differently. Utility generation scans exactly what you list, or the working directory and everything beneath it when omitted. `lint` and `analyze` always scan below the working directory too, treating these globs as extra places to look — so setting `content` can only widen what they see.
 
 <SiteAside type="note">
     This option applies to the CLI only. The Vite plugin finds usage through the bundler's module graph and ignores it.

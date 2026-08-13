@@ -1,6 +1,26 @@
 import color from "picocolors";
+import { plural } from "../plural.js";
 import { COMMANDS } from "./commands.js";
 import { LINKS } from "./links.js";
+
+type Unread = { dir: string; count: number };
+
+const unreadHeadline = (entries: Unread[]) => {
+    const [first] = entries;
+    if (entries.length === 1 && first) {
+        return `Didn't read ${plural(first.count, "stylesheet")} in ${color.cyan(first.dir)}`;
+    }
+
+    const total = entries.reduce((sum, entry) => sum + entry.count, 0);
+    const list = entries.map(({ dir, count }) => `  ${count} in ${color.cyan(dir)}`).join("\n");
+    return `Didn't read ${plural(total, "stylesheet")}:\n\n${list}`;
+};
+
+const unreadFix = (entries: Unread[]) =>
+    `Add the ${entries.length === 1 ? "folder" : "folders"} to ${color.cyan("content")}.`;
+
+const noStylesheetsHelp = (cwd: string) =>
+    `Looked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}:\n\n  content: ["../css/**/*.css"]\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`;
 
 export const ERROR_MESSAGES = {
     PROJECT_REQUIRED:
@@ -153,4 +173,19 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
 
     FILENAME_CONTAINS_PATH: (flagName: string, value: string) =>
         `Invalid ${flagName} value: "${value}". Must be a filename, not a path.\n\nUse --variables-dir or --utilities-dir to specify the directory.`,
+
+    LINT_NO_FILES_SCANNED: (cwd: string) =>
+        `No stylesheets found.\n\nLooked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}, or pass a directory or glob directly.\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`,
+
+    ANALYZE_UNUSED_NO_FILES_SCANNED: (cwd: string) =>
+        `No stylesheets found. Tokens reached only through your CSS are listed as unused below.\n\n${noStylesheetsHelp(cwd)}`,
+
+    ANALYZE_IMPACT_NO_FILES_SCANNED: (cwd: string) =>
+        `No stylesheets found, so no CSS consumers of this token can be listed.\n\n${noStylesheetsHelp(cwd)}`,
+
+    LINT_UNREAD_STYLESHEETS: (entries: Unread[]) =>
+        `${unreadHeadline(entries)}\n\nThose files weren't checked. ${unreadFix(entries)}\n\n${color.cyan(LINKS.CONFIGURATION)}`,
+
+    ANALYZE_UNREAD_STYLESHEETS: (entries: Unread[]) =>
+        `${unreadHeadline(entries)}\n\nTokens used only there appear unused. ${unreadFix(entries)}\n\n${color.cyan(LINKS.CONFIGURATION)}`,
 } as const;

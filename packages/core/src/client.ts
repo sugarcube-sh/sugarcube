@@ -34,6 +34,7 @@ export {
     directDependents,
     dependentsOf,
     dependentsVia,
+    dependentsParents,
 } from "./shared/graph/reachability.js";
 export type {
     TokenGraph,

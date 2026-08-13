@@ -4,7 +4,7 @@ import {
     type TokenGraph,
     assignCSSNames,
     buildTokenGraph,
-    dependentsVia,
+    dependentsParents,
     findUnusedTokens,
     groupByContext,
 } from "@sugarcube-sh/core";
@@ -22,17 +22,24 @@ import {
     tokenValue,
     whereSummary,
 } from "../analyze/format.js";
+import {
+    chooseParents,
+    defaultContextParents,
+    describeElidedParents,
+} from "../analyze/multi-parent.js";
 import { UTILITY_SOURCE, scanUtilityUsage } from "../analyze/scan-utilities.js";
 import { buildVarNameIndex, lookupToken, usageRoots } from "../analyze/usage-roots.js";
 import { CLIError } from "../cli-error.js";
+import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import type { VarRef } from "../lint/scan-css.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
 import { plural } from "../plural.js";
 import { prepareTokens } from "../prepare-tokens.js";
+import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log, rawLog } from "../prompts/log.js";
-import { scanProjectCSS } from "../scan-project.js";
+import { type UnreadStylesheets, findUnreadStylesheets, scanProjectCSS } from "../scan-project.js";
 
 interface UnusedFlags {
     json?: boolean;
@@ -46,16 +53,21 @@ async function buildGraph(
     config: InternalConfig,
 ): Promise<{ graph: TokenGraph; tokens: NormalizedRenderableTokens }> {
     // NB. Permutations come from `prepareTokens`, not `config.variables.permutations`
-    const { trees, resolved, permutations } = await prepareTokens(config);
+    const { trees, resolved, permutations, modifierDefaults } = await prepareTokens(config);
     const tokens = assignCSSNames(groupByContext(trees, resolved), config);
-    const graph = buildTokenGraph(tokens, { permutations });
+    const graph = buildTokenGraph(tokens, { permutations, modifierDefaults });
     return { graph, tokens };
 }
 
 async function scanUsage(
     config: InternalConfig,
     tokens: NormalizedRenderableTokens,
-): Promise<{ refs: VarRef[]; varScanned: number; classScanned: number }> {
+): Promise<{
+    refs: VarRef[];
+    varScanned: number;
+    classScanned: number;
+    unread: UnreadStylesheets[];
+}> {
     const { used, files } = await scanProjectCSS(config);
     const utility = await scanUtilityUsage(config, tokens);
     // NB. A component with a `<style>` block is read once for its `var()` and again for its class
@@ -64,6 +76,7 @@ async function scanUsage(
         refs: [...used, ...utility.refs],
         varScanned: files.length,
         classScanned: utility.fileCount,
+        unread: await findUnreadStylesheets(config, files),
     };
 }
 
@@ -82,6 +95,23 @@ const unused = new Command()
             const { graph, tokens } = await buildGraph(config);
 
             const usage = await scanUsage(config, tokens);
+
+            const shortfall =
+                usage.varScanned === 0
+                    ? ERROR_MESSAGES.ANALYZE_UNUSED_NO_FILES_SCANNED(process.cwd())
+                    : usage.unread.length > 0
+                      ? ERROR_MESSAGES.ANALYZE_UNREAD_STYLESHEETS(usage.unread)
+                      : undefined;
+
+            if (shortfall) {
+                if (plain) {
+                    console.error(shortfall);
+                } else {
+                    log.space(1);
+                    warningBoxWithBadge(shortfall);
+                }
+            }
+
             const roots = usageRoots(graph, usage.refs);
             const unusedPaths = findUnusedTokens(graph, roots);
 
@@ -154,12 +184,29 @@ const impact = new Command()
                 throw new CLIError(`No token "${token}" in this system.${hint}`);
             }
 
-            const via = dependentsVia(graph, token);
-            const dependents = new Set(via.keys());
+            const parents = dependentsParents(graph, token);
+            const dependents = new Set(parents.keys());
 
             const affected = new Set([token, ...dependents]);
             const index = buildVarNameIndex(graph);
             const usage = await scanUsage(config, tokens);
+
+            const shortfall =
+                usage.varScanned === 0
+                    ? ERROR_MESSAGES.ANALYZE_IMPACT_NO_FILES_SCANNED(process.cwd())
+                    : usage.unread.length > 0
+                      ? ERROR_MESSAGES.ANALYZE_UNREAD_STYLESHEETS(usage.unread)
+                      : undefined;
+
+            if (shortfall) {
+                if (options.json) {
+                    console.error(shortfall);
+                } else {
+                    log.space(1);
+                    warningBoxWithBadge(shortfall);
+                }
+            }
+
             const refsByToken = new Map<string, VarRef[]>();
             for (const ref of usage.refs) {
                 const id = lookupToken(index, ref.name);
@@ -169,6 +216,10 @@ const impact = new Command()
             }
             const refCount = [...refsByToken.values()].reduce((n, refs) => n + refs.length, 0);
 
+            const usesOf = (id: string) => refsByToken.get(id)?.length ?? 0;
+            const chosen = chooseParents(parents, usesOf, defaultContextParents(graph, parents));
+            const elided = describeElidedParents(graph, parents);
+
             if (options.json) {
                 console.log(
                     JSON.stringify(
@@ -177,7 +228,7 @@ const impact = new Command()
                             type: node.type,
                             dependents: [...dependents].sort().map((id) => ({
                                 token: id,
-                                references: via.get(id) ?? null,
+                                references: [...(parents.get(id) ?? [])].sort(),
                             })),
                             consumers: usage.refs
                                 .filter((ref) => {
@@ -212,13 +263,20 @@ const impact = new Command()
             if ((refsByToken.get(token)?.length ?? 0) > 0) rowTokens.add(token);
 
             if (options.tree) {
-                log.message(formatImpactTree(token, via, refsByToken));
+                log.message(
+                    formatImpactTree({
+                        target: token,
+                        parents,
+                        chosen,
+                        refsByToken,
+                        elided,
+                    }),
+                );
             } else if (!options.brief) {
                 const children = new Map<string, string[]>();
-                for (const [child, parent] of via) {
+                for (const [child, parent] of chosen) {
                     children.set(parent, [...(children.get(parent) ?? []), child]);
                 }
-                const usesOf = (id: string) => refsByToken.get(id)?.length ?? 0;
 
                 const ordered: string[] = [];
                 const walk = (id: string) => {
@@ -235,7 +293,8 @@ const impact = new Command()
                     .filter((id) => id !== token || usesOf(token) > 0)
                     .map((id) => ({
                         token: id,
-                        references: id === token ? "(this token)" : (via.get(id) ?? ""),
+                        references: id === token ? "(this token)" : (chosen.get(id) ?? ""),
+                        ...(elided.has(id) ? { axis: elided.get(id) } : {}),
                         refs: usesOf(id),
                         where: whereSummary(refsByToken.get(id) ?? []),
                     }));

@@ -268,8 +268,10 @@ A variable exists if sugarcube generates it from your tokens, or if you declare 
 <Table>
 | Argument | Description |
 |----------|-------------|
-| `[paths...]` | Globs of files to scan. Defaults to your project's CSS and component files. |
+| `[paths...]` | Directories or globs to scan, e.g. `../css`. Defaults to your project's CSS and component files, plus anything in `content`. |
 </Table>
+
+Pass a path when your stylesheets live outside the directory you run from and you'd rather not change your config. To make it the default for every run, add the same location to [`content`](/docs/configuration#telling-sugarcube-which-files-to-scan) instead.
 
 ### Options
 
@@ -283,7 +285,9 @@ A variable exists if sugarcube generates it from your tokens, or if you declare 
 
 ### Supported files
 
-`lint` scans `.css` files and `<style>` blocks in `.html`, `.vue`, `.svelte`, `.astro`, and `.php` files. It skips build folders, dependencies, and your generated variables file. CSS-in-JS and preprocessor files (`.scss`, `.sass`, `.less`, `.styl`) aren't supported yet.
+`lint` scans `.css` files and `<style>` blocks in `.html`, `.htm`, `.vue`, `.svelte`, `.astro`, and `.php` files. It skips build folders, dependencies, and your generated variables file. CSS-in-JS and preprocessor files (`.scss`, `.sass`, `.less`, `.styl`) aren't supported yet.
+
+Template formats it can't parse - (`.heex`, `.njk`, `.erb`, `.jsx` and the rest) - are skipped, including any `<style>` block inside them. That matters if `content` points only at those: `lint` then has nothing to read from your `content` globs and falls back to the CSS below your working directory. When it finds no stylesheets anywhere it says so rather than reporting a pass.
 
 ### Requirements
 
@@ -303,6 +307,9 @@ npx sugarcube lint
 # Lint specific files or globs
 npx sugarcube lint "src/**/*.css" "src/**/*.vue"
 
+# Lint a directory, including one above where you're running from
+npx sugarcube lint ../css
+
 # Also fail on references that only have a fallback
 npx sugarcube lint --fallback error
 
@@ -320,6 +327,8 @@ npx sugarcube lint --json
 
 `lint` exits `0` when there are no undeclared references, and `1` when there's at least one. Fallback-only references pass unless you run with `--fallback error`, which makes them fail too. That makes `lint` a good CI check: run `npx sugarcube lint` to catch missing token references before they ship.
 
+It also exits `1` when it found no stylesheets to read, since that's a command that couldn't run rather than a project with nothing wrong. Reading *some* of your CSS still exits `0`: you get the warning, not a failure.
+
 ---
 
 ## `analyze`
@@ -334,7 +343,7 @@ npx sugarcube analyze <subcommand> [options]
 
 ### Description
 
-Where `lint` and `validate` answer pass or fail, `analyze` answers questions. It builds a dependency graph of your tokens — every token that references another — and reports on it. Nothing it finds is an error, so `analyze` always exits `0`.
+Where `lint` and `validate` answer pass or fail, `analyze` answers questions. It builds a dependency graph of your tokens and reports on it. Nothing it finds is an error, so `analyze` always exits `0`.
 
 It has two subcommands: `unused` and `impact`.
 
@@ -345,8 +354,6 @@ List tokens that nothing in your CSS reaches.
 ```bash frame="none"
 npx sugarcube analyze unused [options]
 ```
-
-`analyze` follows alias chains, not just variable names in your files. If your CSS uses `color.danger.fill`, that also keeps `color.pink.600` alive when the latter aliases the former — even though `--color-pink-600` never appears in anything you wrote. A simple text search of your source would miss that and suggest removing a token your app still depends on.
 
 <Table>
 | Option | Description | Default |
@@ -381,10 +388,8 @@ npx sugarcube analyze unused --all
 npx sugarcube analyze unused --all | wc -l
 ```
 
-The two counts are two *searches*, not two sets of files, so don't add them — a component with a `<style>` block is read once for its `var()` and again for its class names. They're reported separately because a zero on either side is the tell that part of your project fell outside the scan.
-
 <SiteAside type="caution">
-    Unused doesn't necessarily mean deletable. A token may be referenced by markup sugarcube can't see, consumed by another package, or part of an API you publish deliberately. Treat the list as a starting point for a decision, not a to-do list.
+    Unused doesn't necessarily mean deletable. A token may be referenced by markup sugarcube can't see, consumed by another package, or part of an API you publish deliberately. Treat the list as a starting point for a decision, not a blind to-do list.
 </SiteAside>
 
 ### `analyze impact`
@@ -452,6 +457,19 @@ color.neutral.900                      0
       └─ form-control.value-color      1   global.css
 ```
 
+If a token points at a different parent in each context it shows up under every one of those parents:
+
+```
+├─ color.accent.on-strong                   2   checkbox.css  input_group.css
+│  └─ v.on-strong (per variant)            11   badge.css  button.css  +3 more
+│     ├─ r.primary.foreground               1   button.css
+│     └─ r.primary.icon                     1   button.css
+├─ color.danger.on-strong                   0
+│  └─ v.on-strong (per variant, above)     11   badge.css  button.css  +3 more
+└─ color.info.on-strong                     0
+   └─ v.on-strong (per variant, above)     11   badge.css  button.css  +3 more
+```
+
 #### `--brief`
 
 Only tokens something uses, ranked.
@@ -470,10 +488,6 @@ form-control.label.color      3   global.css  label.css
 
 5 more tokens reference it but aren't used directly — run without --brief
 ```
-
-### Requirements
-
-Same as [`lint`](#lint): **zero-config**, but it needs to find your tokens from a sugarcube configuration file or an auto-discovered `*.resolver.json`. Without them there is no token graph to report on.
 
 ### Examples
 
@@ -497,7 +511,23 @@ npx sugarcube analyze impact space.md --json
 
 ### Exit codes
 
-`analyze` always exits `0`. It reports, it doesn't judge, so it won't fail a build. If you want a failing check, use [`lint`](#lint) or [`validate`](#validate).
+`analyze` always exits `0`. It only reports, so it won't fail a build. If you want a failing check, use [`lint`](#lint) or [`validate`](#validate).
+
+### Where analyze looks
+
+`analyze` scans the CSS below your working directory plus everything in [`content`](/docs/configuration#telling-sugarcube-which-files-to-scan).
+
+When the scan reaches no stylesheets at all, `analyze` says so before its report, because it is inferring that the report is untrustworthy.
+
+It warns about a partial scan too (i.e. when it knows, based on your configuration, that you have stylesheets somewhere but they are not being read):
+
+```
+Some of your CSS wasn't read, so tokens used only there are listed as unused below.
+
+  255 stylesheets in ../css
+```
+
+The cause is almost always a missing `content` entry. Add the folder to `content` (i.e. tell sugarcube where to find your stylesheets) and the warning goes away.
 
 ---
 

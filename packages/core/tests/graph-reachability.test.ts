@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import { buildTokenGraph } from "../src/shared/graph/build-token-graph.js";
 import {
     dependentsOf,
+    dependentsParents,
     dependentsVia,
     directDependents,
     findUnusedTokens,
     reachableFrom,
 } from "../src/shared/graph/reachability.js";
+import type { Permutation } from "../src/types/config.js";
 import type { NormalizedRenderableTokens, RenderableToken } from "../src/types/render.js";
 
 function tok(path: string, value: unknown, css: string, type = "color"): RenderableToken {
@@ -18,6 +20,10 @@ function tok(path: string, value: unknown, css: string, type = "color"): Rendera
         $source: { sourcePath: "test" },
         $originalPath: path,
     } as RenderableToken;
+}
+
+function perms(...inputs: Record<string, string>[]): Permutation[] {
+    return inputs.map((input, index) => ({ input, selector: `[data-perm="${index}"]` }));
 }
 
 describe("reachability", () => {
@@ -126,6 +132,107 @@ describe("dependents", () => {
         expect(via.get("button.bg")).toBe("color.accent");
         expect([...via.keys()].sort()).toEqual([...dependentsOf(graph, ["color.pink.600"])].sort());
         expect(via.has("color.pink.600")).toBe(false);
+    });
+
+    describe("a dependent with one parent per context", () => {
+        const variants = ["accent", "danger", "info"];
+        const perVariant: NormalizedRenderableTokens = Object.fromEntries(
+            variants.map((variant) => [
+                `perm:${variants.indexOf(variant)}`,
+                {
+                    "v.on-strong": tok(
+                        "v.on-strong",
+                        `{color.${variant}.on-strong}`,
+                        "v-on-strong",
+                    ),
+                    [`color.${variant}.on-strong`]: tok(
+                        `color.${variant}.on-strong`,
+                        "{color.base.white}",
+                        `color-${variant}-on-strong`,
+                    ),
+                    "color.base.white": tok("color.base.white", "#ffffff", "color-base-white"),
+                },
+            ]),
+        );
+
+        it("reports every parent", () => {
+            const graph = buildTokenGraph(perVariant);
+            const parents = dependentsParents(graph, "color.base.white");
+
+            expect(parents.get("v.on-strong")?.sort()).toEqual([
+                "color.accent.on-strong",
+                "color.danger.on-strong",
+                "color.info.on-strong",
+            ]);
+        });
+
+        it("still finds every dependent", () => {
+            const graph = buildTokenGraph(perVariant);
+            const parents = dependentsParents(graph, "color.base.white");
+
+            expect([...parents.keys()].sort()).toEqual([
+                "color.accent.on-strong",
+                "color.danger.on-strong",
+                "color.info.on-strong",
+                "v.on-strong",
+            ]);
+        });
+
+        it("marks the default permutation from the declared modifier defaults", () => {
+            const graph = buildTokenGraph(perVariant, {
+                permutations: perms(
+                    { variant: "accent" },
+                    { variant: "danger" },
+                    { variant: "info" },
+                ),
+                modifierDefaults: { variant: "accent" },
+            });
+
+            const defaulted = graph.contexts.find((c) => c.id === graph.defaultContext);
+            expect(defaulted?.input).toEqual({ variant: "accent" });
+        });
+
+        it("treats an empty input as the default when no defaults are known", () => {
+            const graph = buildTokenGraph(perVariant, {
+                permutations: perms({}, { variant: "danger" }, { variant: "info" }),
+            });
+
+            expect(graph.defaultContext).toBe("perm:0");
+        });
+
+        it("marks nothing when a modifier declares no default", () => {
+            const graph = buildTokenGraph(perVariant, {
+                permutations: perms(
+                    { variant: "accent" },
+                    { variant: "danger" },
+                    { variant: "info" },
+                ),
+                modifierDefaults: {},
+            });
+
+            expect(graph.defaultContext).toBeUndefined();
+        });
+
+        it("fills each context's input with the modifiers it selects by default", () => {
+            const graph = buildTokenGraph(perVariant, {
+                permutations: perms({}, { variant: "danger" }, { brand: "cbus" }),
+                modifierDefaults: { variant: "accent", brand: "base" },
+            });
+
+            expect(graph.contexts.map((context) => context.input)).toEqual([
+                { variant: "accent", brand: "base" },
+                { variant: "danger", brand: "base" },
+                { variant: "accent", brand: "cbus" },
+            ]);
+        });
+
+        it("keeps dependentsVia reporting a single parent, as before", () => {
+            const graph = buildTokenGraph(perVariant);
+            const via = dependentsVia(graph, "color.base.white");
+
+            expect(via.size).toBe(4);
+            expect(typeof via.get("v.on-strong")).toBe("string");
+        });
     });
 
     it("unions dependents across mode-conditional edges", () => {

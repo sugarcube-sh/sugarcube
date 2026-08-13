@@ -55,4 +55,13 @@ export interface TokenGraph {
     nodes: Map<string, TokenNode>;
     /** Alias edges (token → referenced token), each tagged with where it exists. */
     edges: TokenEdge[];
+    /**
+     * The context where every modifier sits at the context the resolver declares as its
+     * default (resolver spec §4.1.5.3) — the `:root` output every page gets.
+     *
+     * Absent when it can't be known: no declared defaults to compare an explicit input
+     * against, or more than one context qualifying, in which case there is no single answer
+     * to give rather than an arbitrary one.
+     */
+    defaultContext?: GraphContext;
 }

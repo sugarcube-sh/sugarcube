@@ -5,6 +5,7 @@ import htmlSyntax from "postcss-html";
 const SYNTAX_PARSERS: Record<string, Parser> = {
     ".css": postcss.parse,
     ".html": htmlSyntax.parse as Parser,
+    ".htm": htmlSyntax.parse as Parser,
     ".vue": htmlSyntax.parse as Parser,
     ".svelte": htmlSyntax.parse as Parser,
     ".astro": htmlSyntax.parse as Parser,

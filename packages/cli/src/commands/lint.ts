@@ -2,13 +2,15 @@ import type { InternalConfig } from "@sugarcube-sh/core";
 import { Command, Option } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
+import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import { type VarRef, findUndeclared } from "../lint/scan-css.js";
 import { type SyntaxResolver, createSyntaxResolver } from "../lint/syntaxes.js";
 import { getGeneratedVarNames } from "../lint/token-var-names.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
 import { plural } from "../plural.js";
-import { scanProjectCSS } from "../scan-project.js";
+import { findUnreadStylesheets, scanProjectCSS } from "../scan-project.js";
+import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 import type { LintOptions, ScanOutput } from "../types/commands.js";
@@ -38,6 +40,7 @@ async function runScan(
         fallback,
         refCount: scan.used.length,
         scannedFiles: scan.files.length,
+        unread: paths.length > 0 ? [] : await findUnreadStylesheets(config, scan.files, resolver),
     };
 }
 
@@ -66,7 +69,10 @@ function formatGroupedRefs(refs: VarRef[]): string[] {
 export const lint = new Command()
     .name("lint")
     .description("Find var() references to variables your tokens and CSS don't declare")
-    .argument("[paths...]", "Globs of files to scan (default: project CSS and components)")
+    .argument(
+        "[paths...]",
+        "Directories or globs to scan, e.g. ../css (default: project CSS and components)",
+    )
     .option(
         "--ignore <prefixes>",
         'Comma-separated var-name prefixes to ignore (e.g. "--sl-,--radix-,--ec-")',
@@ -88,7 +94,19 @@ export const lint = new Command()
             const fallbackIsError = fallbackLevel === "error";
 
             if (options.json) {
-                const { broken, fallback } = await runScan(config, paths, ignorePrefixes, resolver);
+                const { broken, fallback, scannedFiles, unread } = await runScan(
+                    config,
+                    paths,
+                    ignorePrefixes,
+                    resolver,
+                );
+
+                if (scannedFiles === 0) {
+                    console.error(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
+                    process.exitCode = 1;
+                } else if (unread.length > 0) {
+                    console.error(ERROR_MESSAGES.LINT_UNREAD_STYLESHEETS(unread));
+                }
 
                 const portable = (refs: VarRef[]) =>
                     refs.map((ref) => ({ ...ref, file: relative(process.cwd(), ref.file) }));
@@ -105,7 +123,7 @@ export const lint = new Command()
                 return;
             }
 
-            const { broken, fallback, refCount, scannedFiles } = await runScan(
+            const { broken, fallback, refCount, scannedFiles, unread } = await runScan(
                 config,
                 paths,
                 ignorePrefixes,
@@ -140,11 +158,27 @@ export const lint = new Command()
 
             const visibleTotal = broken.length + (showFallback ? fallback.length : 0);
 
+            if (scannedFiles === 0) {
+                log.space(1);
+                warningBoxWithBadge(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
+                process.exitCode = 1;
+                return;
+            }
+
+            if (unread.length > 0) {
+                log.space(1);
+                warningBoxWithBadge(ERROR_MESSAGES.LINT_UNREAD_STYLESHEETS(unread));
+            }
+
             if (visibleTotal === 0) {
                 const headline = showFallback
                     ? "No undeclared references"
                     : "No references without fallback";
-                outro(color.greenBright(`${headline} ✨  ${scanned}`));
+                outro(
+                    unread.length > 0
+                        ? color.yellow(`${headline}  ${scanned}`)
+                        : color.greenBright(`${headline} ✨  ${scanned}`),
+                );
             } else {
                 const parts: string[] = [];
                 if (broken.length > 0) parts.push(color.red(`${broken.length} without fallback`));

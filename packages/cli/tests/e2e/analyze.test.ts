@@ -92,7 +92,7 @@ describe("analyze command", () => {
         expect(result.token).toBe("palette.blue.500");
         expect(result.dependents).toContainEqual({
             token: "color.brand",
-            references: "palette.blue.500",
+            references: ["palette.blue.500"],
         });
     });
 

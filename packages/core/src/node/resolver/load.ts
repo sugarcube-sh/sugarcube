@@ -11,6 +11,7 @@ export type ResolverLoadResult = {
     trees: TokenTree[];
     permutations: Permutation[];
     errors: LoadError[];
+    modifierDefaults: Record<string, string>;
 };
 
 type PermutationResult = {
@@ -60,6 +61,11 @@ export async function loadFromResolver(
     const relativePath = relative(process.cwd(), absolutePath);
 
     const modifiers = extractModifiers(document);
+    const modifierDefaults = Object.fromEntries(
+        modifiers.flatMap((modifier) =>
+            modifier.default === undefined ? [] : [[modifier.name, modifier.default] as const],
+        ),
+    );
 
     const resolvedPermutations =
         permutations && permutations.length > 0
@@ -68,7 +74,7 @@ export async function loadFromResolver(
 
     const validationErrors = validatePermutationInputs(resolvedPermutations, modifiers);
     if (validationErrors.length > 0) {
-        return { trees: [], permutations: [], errors: validationErrors };
+        return { trees: [], permutations: [], errors: validationErrors, modifierDefaults };
     }
 
     const { trees, errors } = await resolvePermutations(
@@ -79,7 +85,7 @@ export async function loadFromResolver(
         modifiers,
     );
 
-    return { trees, permutations: resolvedPermutations, errors };
+    return { trees, permutations: resolvedPermutations, errors, modifierDefaults };
 }
 
 // ============================================
