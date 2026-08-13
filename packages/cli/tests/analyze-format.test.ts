@@ -12,6 +12,7 @@ import {
 } from "../src/analyze/format.js";
 import { UTILITY_SOURCE } from "../src/analyze/scan-utilities.js";
 import type { VarRef } from "../src/lint/scan-css.js";
+import { strip } from "../src/prompts/common.js";
 
 // The formatters size their columns against the terminal. Pin it so assertions
 // don't depend on whoever's window the suite happens to run in.
@@ -260,7 +261,7 @@ describe("formatImpactTree", () => {
             refsByToken: new Map(),
         });
         const rowsFor = (id: string) =>
-            lines.filter((line) => line.includes(`${id} `) || line.trimEnd().endsWith(id)).length;
+            lines.filter((line) => strip(line).split(/\s+/).includes(id)).length;
 
         for (const [token, hops] of parents) {
             expect(rowsFor(token), token).toBe(hops.length);
