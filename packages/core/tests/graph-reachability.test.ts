@@ -212,6 +212,23 @@ describe("dependents", () => {
             expect(graph.defaultContext).toBeUndefined();
         });
 
+        it("fills each context's input with the modifiers it selects by default", () => {
+            const graph = buildTokenGraph(perVariant, {
+                permutations: [
+                    { input: {}, selector: ":root" },
+                    { input: { variant: "danger" }, selector: '[data-variant="danger"]' },
+                    { input: { brand: "cbus" }, selector: '[data-brand="cbus"]' },
+                ] as never,
+                modifierDefaults: { variant: "accent", brand: "base" },
+            });
+
+            expect(graph.contexts.map((context) => context.input)).toEqual([
+                { variant: "accent", brand: "base" },
+                { variant: "danger", brand: "base" },
+                { variant: "accent", brand: "cbus" },
+            ]);
+        });
+
         it("keeps dependentsVia reporting a single parent, as before", () => {
             const graph = buildTokenGraph(perVariant);
             const via = dependentsVia(graph, "color.base.white");

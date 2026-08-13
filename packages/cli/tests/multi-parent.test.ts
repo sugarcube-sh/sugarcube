@@ -160,6 +160,40 @@ describe("describeElidedParents", () => {
         expect(describeElidedParents(graph, parents).get("color.button")).toBe("per brand");
     });
 
+    it("ignores a modifier whose values all lead to the same parent", () => {
+        const oneAxisEach = [
+            { input: {} },
+            { input: { theme: "alt" } },
+            { input: { theme: "pronto" } },
+            { input: { brand: "cbus" } },
+            { input: { variant: "danger" } },
+            { input: { variant: "info" } },
+        ] as unknown as Permutation[];
+        
+        const targets = ["accent", "accent", "accent", "accent", "danger", "info"];
+        const tokens: NormalizedRenderableTokens = Object.fromEntries(
+            targets.map((variant, index) => [
+                `perm:${index}`,
+                {
+                    "v.on-strong": tok(
+                        "v.on-strong",
+                        `{color.${variant}.on-strong}`,
+                        "v-on-strong",
+                    ),
+                },
+            ]),
+        );
+        const graph = buildTokenGraph(tokens, { permutations: oneAxisEach });
+        const parents = new Map([
+            [
+                "v.on-strong",
+                ["color.accent.on-strong", "color.danger.on-strong", "color.info.on-strong"],
+            ],
+        ]);
+
+        expect(describeElidedParents(graph, parents).get("v.on-strong")).toBe("per variant");
+    });
+
     // Spec Example 7: a modifier whose contexts contribute no tokens at all (a debug flag).
     it("ignores a modifier whose contexts contribute nothing", () => {
         const matrix = [

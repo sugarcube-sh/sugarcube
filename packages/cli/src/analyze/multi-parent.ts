@@ -90,10 +90,12 @@ function partitioningModifiers(graph: TokenGraph, dependent: string, hops: strin
     }
 
     return [...parentsByValue]
-        .filter(
-            ([, values]) =>
-                values.size > 1 && [...values.values()].every((parents) => parents.size === 1),
-        )
+        .filter(([, values]) => {
+            if (values.size < 2) return false;
+            if ([...values.values()].some((parents) => parents.size !== 1)) return false;
+            const landings = new Set([...values.values()].map((parents) => [...parents][0]));
+            return landings.size > 1;
+        })
         .map(([modifier]) => modifier);
 }
 

@@ -47,13 +47,33 @@ function isDefaultPermutation(perm: Permutation, defaults?: Record<string, strin
     return input.every(([modifier, context]) => defaults[modifier] === context);
 }
 
-function describeContext(id: string, permutations?: Permutation[]): GraphContextInfo {
+/**
+ * Config-supplied permutations arrive exactly as written — `load.ts` only fills inputs for the
+ * ones it generates itself — so a hand-written `input: {}` selects every modifier implicitly
+ * (spec §6.1) and has to be completed here. `applyDefaults` in the resolver does the same job
+ * for resolution; the duplication is deliberate, because `permutationLabel` reads the *literal*
+ * input so the default context still reads "default" rather than listing every modifier.
+ */
+function effectiveInput(
+    perm: Permutation,
+    defaults?: Record<string, string>,
+): Record<string, string> | undefined {
+    if (!defaults) return perm.input;
+    return { ...defaults, ...perm.input };
+}
+
+function describeContext(
+    id: string,
+    permutations?: Permutation[],
+    modifierDefaults?: Record<string, string>,
+): GraphContextInfo {
     const match = PERM_KEY.exec(id);
     const perm = match ? permutations?.[Number(match[1])] : undefined;
     if (!perm) return { id, label: id };
 
     const selector = Array.isArray(perm.selector) ? perm.selector.join(", ") : perm.selector;
-    return { id, label: permutationLabel(perm), selector, input: perm.input };
+    const input = effectiveInput(perm, modifierDefaults);
+    return { id, label: permutationLabel(perm), selector, ...(input ? { input } : {}) };
 }
 
 function findDefaultContext(
@@ -132,7 +152,9 @@ export function buildTokenGraph(
         });
     }
 
-    const contexts = contextKeys.map((id) => describeContext(id, options.permutations));
+    const contexts = contextKeys.map((id) =>
+        describeContext(id, options.permutations, options.modifierDefaults),
+    );
     const defaultContext = findDefaultContext(
         contextKeys,
         options.permutations,
