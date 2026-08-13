@@ -8,6 +8,7 @@ import {
     findUnusedTokens,
     reachableFrom,
 } from "../src/shared/graph/reachability.js";
+import type { Permutation } from "../src/types/config.js";
 import type { NormalizedRenderableTokens, RenderableToken } from "../src/types/render.js";
 
 function tok(path: string, value: unknown, css: string, type = "color"): RenderableToken {
@@ -19,6 +20,10 @@ function tok(path: string, value: unknown, css: string, type = "color"): Rendera
         $source: { sourcePath: "test" },
         $originalPath: path,
     } as RenderableToken;
+}
+
+function perms(...inputs: Record<string, string>[]): Permutation[] {
+    return inputs.map((input, index) => ({ input, selector: `[data-perm="${index}"]` }));
 }
 
 describe("reachability", () => {
@@ -175,11 +180,11 @@ describe("dependents", () => {
 
         it("marks the default permutation from the declared modifier defaults", () => {
             const graph = buildTokenGraph(perVariant, {
-                permutations: [
-                    { input: { variant: "accent" }, selector: ":root" },
-                    { input: { variant: "danger" }, selector: '[data-variant="danger"]' },
-                    { input: { variant: "info" }, selector: '[data-variant="info"]' },
-                ] as never,
+                permutations: perms(
+                    { variant: "accent" },
+                    { variant: "danger" },
+                    { variant: "info" },
+                ),
                 modifierDefaults: { variant: "accent" },
             });
 
@@ -189,11 +194,7 @@ describe("dependents", () => {
 
         it("treats an empty input as the default when no defaults are known", () => {
             const graph = buildTokenGraph(perVariant, {
-                permutations: [
-                    { input: {}, selector: ":root" },
-                    { input: { variant: "danger" }, selector: '[data-variant="danger"]' },
-                    { input: { variant: "info" }, selector: '[data-variant="info"]' },
-                ] as never,
+                permutations: perms({}, { variant: "danger" }, { variant: "info" }),
             });
 
             expect(graph.defaultContext).toBe("perm:0");
@@ -201,11 +202,11 @@ describe("dependents", () => {
 
         it("marks nothing when a modifier declares no default", () => {
             const graph = buildTokenGraph(perVariant, {
-                permutations: [
-                    { input: { variant: "accent" }, selector: ":root" },
-                    { input: { variant: "danger" }, selector: '[data-variant="danger"]' },
-                    { input: { variant: "info" }, selector: '[data-variant="info"]' },
-                ] as never,
+                permutations: perms(
+                    { variant: "accent" },
+                    { variant: "danger" },
+                    { variant: "info" },
+                ),
                 modifierDefaults: {},
             });
 
@@ -214,11 +215,7 @@ describe("dependents", () => {
 
         it("fills each context's input with the modifiers it selects by default", () => {
             const graph = buildTokenGraph(perVariant, {
-                permutations: [
-                    { input: {}, selector: ":root" },
-                    { input: { variant: "danger" }, selector: '[data-variant="danger"]' },
-                    { input: { brand: "cbus" }, selector: '[data-brand="cbus"]' },
-                ] as never,
+                permutations: perms({}, { variant: "danger" }, { brand: "cbus" }),
                 modifierDefaults: { variant: "accent", brand: "base" },
             });
 

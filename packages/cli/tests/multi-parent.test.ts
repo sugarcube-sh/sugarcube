@@ -18,12 +18,12 @@ function tok(path: string, value: unknown, css: string): RenderableToken {
     } as RenderableToken;
 }
 
+const perms = (...inputs: Record<string, string>[]): Permutation[] =>
+    inputs.map((input, index) => ({ input, selector: `[data-perm="${index}"]` }));
+
 const VARIANTS = ["accent", "danger", "info"];
 
-const permutations = VARIANTS.map(
-    (variant) =>
-        ({ input: { variant }, selector: `[data-variant="${variant}"]` }) as unknown as Permutation,
-);
+const permutations = perms(...VARIANTS.map((variant) => ({ variant })));
 
 const perVariantTokens: NormalizedRenderableTokens = Object.fromEntries(
     VARIANTS.map((variant, index) => [
@@ -69,10 +69,7 @@ describe("chooseParents", () => {
 
 describe("defaultContextParents", () => {
     it("names the parent reached in the context that selects no modifiers", () => {
-        const withDefault = [
-            { input: {}, selector: ":root" },
-            { input: { variant: "danger" }, selector: '[data-variant="danger"]' },
-        ] as unknown as Permutation[];
+        const withDefault = perms({}, { variant: "danger" });
         const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "v.on-strong": tok("v.on-strong", "{color.accent.on-strong}", "v-on-strong"),
@@ -125,10 +122,7 @@ describe("describeElidedParents", () => {
     });
 
     it("names whichever modifier the project declared, not a built-in one", () => {
-        const byDensity = [
-            { input: { density: "comfortable" } },
-            { input: { density: "compact" } },
-        ] as unknown as Permutation[];
+        const byDensity = perms({ density: "comfortable" }, { density: "compact" });
         const tokens: NormalizedRenderableTokens = {
             "perm:0": { "space.gap": tok("space.gap", "{space.md}", "space-gap") },
             "perm:1": { "space.gap": tok("space.gap", "{space.sm}", "space-gap") },
@@ -141,12 +135,12 @@ describe("describeElidedParents", () => {
 
     // Resolver spec §2.1: modifiers may be non-orthogonal
     it("finds the deciding modifier when two modifiers claim the same token", () => {
-        const matrix = [
-            { input: { theme: "light", brand: "a" } },
-            { input: { theme: "light", brand: "b" } },
-            { input: { theme: "dark", brand: "a" } },
-            { input: { theme: "dark", brand: "b" } },
-        ] as unknown as Permutation[];
+        const matrix = perms(
+            { theme: "light", brand: "a" },
+            { theme: "light", brand: "b" },
+            { theme: "dark", brand: "a" },
+            { theme: "dark", brand: "b" },
+        );
         const wins = ["blue", "red", "blue", "red"];
         const tokens: NormalizedRenderableTokens = Object.fromEntries(
             wins.map((colour, index) => [
@@ -161,15 +155,15 @@ describe("describeElidedParents", () => {
     });
 
     it("ignores a modifier whose values all lead to the same parent", () => {
-        const oneAxisEach = [
-            { input: {} },
-            { input: { theme: "alt" } },
-            { input: { theme: "pronto" } },
-            { input: { brand: "cbus" } },
-            { input: { variant: "danger" } },
-            { input: { variant: "info" } },
-        ] as unknown as Permutation[];
-        
+        const oneAxisEach = perms(
+            {},
+            { theme: "alt" },
+            { theme: "pronto" },
+            { brand: "cbus" },
+            { variant: "danger" },
+            { variant: "info" },
+        );
+
         const targets = ["accent", "accent", "accent", "accent", "danger", "info"];
         const tokens: NormalizedRenderableTokens = Object.fromEntries(
             targets.map((variant, index) => [
@@ -196,12 +190,12 @@ describe("describeElidedParents", () => {
 
     // Spec Example 7: a modifier whose contexts contribute no tokens at all (a debug flag).
     it("ignores a modifier whose contexts contribute nothing", () => {
-        const matrix = [
-            { input: { variant: "accent", debug: "false" } },
-            { input: { variant: "accent", debug: "true" } },
-            { input: { variant: "danger", debug: "false" } },
-            { input: { variant: "danger", debug: "true" } },
-        ] as unknown as Permutation[];
+        const matrix = perms(
+            { variant: "accent", debug: "false" },
+            { variant: "accent", debug: "true" },
+            { variant: "danger", debug: "false" },
+            { variant: "danger", debug: "true" },
+        );
         const tokens: NormalizedRenderableTokens = Object.fromEntries(
             ["accent", "accent", "danger", "danger"].map((variant, index) => [
                 `perm:${index}`,
@@ -230,12 +224,12 @@ describe("describeElidedParents", () => {
     });
 
     it("names the modifier that partitions the parents, not one that merely varies", () => {
-        const matrix = [
-            { input: { variant: "accent", theme: "light" } },
-            { input: { variant: "accent", theme: "dark" } },
-            { input: { variant: "danger", theme: "light" } },
-            { input: { variant: "danger", theme: "dark" } },
-        ] as unknown as Permutation[];
+        const matrix = perms(
+            { variant: "accent", theme: "light" },
+            { variant: "accent", theme: "dark" },
+            { variant: "danger", theme: "light" },
+            { variant: "danger", theme: "dark" },
+        );
         const tokens: NormalizedRenderableTokens = Object.fromEntries(
             ["accent", "accent", "danger", "danger"].map((variant, index) => [
                 `perm:${index}`,
@@ -257,10 +251,10 @@ describe("describeElidedParents", () => {
     });
 
     it("falls back to 'per context' when more than one modifier differs", () => {
-        const mixed = [
-            { input: { variant: "accent", theme: "light" } },
-            { input: { variant: "danger", theme: "dark" } },
-        ] as unknown as Permutation[];
+        const mixed = perms(
+            { variant: "accent", theme: "light" },
+            { variant: "danger", theme: "dark" },
+        );
         const tokens: NormalizedRenderableTokens = {
             "perm:0": {
                 "v.on-strong": tok("v.on-strong", "{color.accent.on-strong}", "v-on-strong"),
