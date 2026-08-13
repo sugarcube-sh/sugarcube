@@ -4,7 +4,7 @@ import {
     type TokenGraph,
     assignCSSNames,
     buildTokenGraph,
-    dependentsVia,
+    dependentsParents,
     findUnusedTokens,
     groupByContext,
 } from "@sugarcube-sh/core";
@@ -22,6 +22,11 @@ import {
     tokenValue,
     whereSummary,
 } from "../analyze/format.js";
+import {
+    chooseParents,
+    defaultContextParents,
+    describeElidedParents,
+} from "../analyze/multi-parent.js";
 import { UTILITY_SOURCE, scanUtilityUsage } from "../analyze/scan-utilities.js";
 import { buildVarNameIndex, lookupToken, usageRoots } from "../analyze/usage-roots.js";
 import { CLIError } from "../cli-error.js";
@@ -48,9 +53,9 @@ async function buildGraph(
     config: InternalConfig,
 ): Promise<{ graph: TokenGraph; tokens: NormalizedRenderableTokens }> {
     // NB. Permutations come from `prepareTokens`, not `config.variables.permutations`
-    const { trees, resolved, permutations } = await prepareTokens(config);
+    const { trees, resolved, permutations, modifierDefaults } = await prepareTokens(config);
     const tokens = assignCSSNames(groupByContext(trees, resolved), config);
-    const graph = buildTokenGraph(tokens, { permutations });
+    const graph = buildTokenGraph(tokens, { permutations, modifierDefaults });
     return { graph, tokens };
 }
 
@@ -179,8 +184,8 @@ const impact = new Command()
                 throw new CLIError(`No token "${token}" in this system.${hint}`);
             }
 
-            const via = dependentsVia(graph, token);
-            const dependents = new Set(via.keys());
+            const parents = dependentsParents(graph, token);
+            const dependents = new Set(parents.keys());
 
             const affected = new Set([token, ...dependents]);
             const index = buildVarNameIndex(graph);
@@ -211,6 +216,10 @@ const impact = new Command()
             }
             const refCount = [...refsByToken.values()].reduce((n, refs) => n + refs.length, 0);
 
+            const usesOf = (id: string) => refsByToken.get(id)?.length ?? 0;
+            const chosen = chooseParents(parents, usesOf, defaultContextParents(graph, parents));
+            const elided = describeElidedParents(graph, parents);
+
             if (options.json) {
                 console.log(
                     JSON.stringify(
@@ -219,7 +228,7 @@ const impact = new Command()
                             type: node.type,
                             dependents: [...dependents].sort().map((id) => ({
                                 token: id,
-                                references: via.get(id) ?? null,
+                                references: [...(parents.get(id) ?? [])].sort(),
                             })),
                             consumers: usage.refs
                                 .filter((ref) => {
@@ -254,13 +263,20 @@ const impact = new Command()
             if ((refsByToken.get(token)?.length ?? 0) > 0) rowTokens.add(token);
 
             if (options.tree) {
-                log.message(formatImpactTree(token, via, refsByToken));
+                log.message(
+                    formatImpactTree({
+                        target: token,
+                        parents,
+                        chosen,
+                        refsByToken,
+                        elided,
+                    }),
+                );
             } else if (!options.brief) {
                 const children = new Map<string, string[]>();
-                for (const [child, parent] of via) {
+                for (const [child, parent] of chosen) {
                     children.set(parent, [...(children.get(parent) ?? []), child]);
                 }
-                const usesOf = (id: string) => refsByToken.get(id)?.length ?? 0;
 
                 const ordered: string[] = [];
                 const walk = (id: string) => {
@@ -277,7 +293,8 @@ const impact = new Command()
                     .filter((id) => id !== token || usesOf(token) > 0)
                     .map((id) => ({
                         token: id,
-                        references: id === token ? "(this token)" : (via.get(id) ?? ""),
+                        references: id === token ? "(this token)" : (chosen.get(id) ?? ""),
+                        ...(elided.has(id) ? { axis: elided.get(id) } : {}),
                         refs: usesOf(id),
                         where: whereSummary(refsByToken.get(id) ?? []),
                     }));

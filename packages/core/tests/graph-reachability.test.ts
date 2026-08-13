@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildTokenGraph } from "../src/shared/graph/build-token-graph.js";
 import {
     dependentsOf,
+    dependentsParents,
     dependentsVia,
     directDependents,
     findUnusedTokens,
@@ -126,6 +127,98 @@ describe("dependents", () => {
         expect(via.get("button.bg")).toBe("color.accent");
         expect([...via.keys()].sort()).toEqual([...dependentsOf(graph, ["color.pink.600"])].sort());
         expect(via.has("color.pink.600")).toBe(false);
+    });
+
+    describe("a dependent with one parent per context", () => {
+        const variants = ["accent", "danger", "info"];
+        const perVariant: NormalizedRenderableTokens = Object.fromEntries(
+            variants.map((variant) => [
+                `perm:${variants.indexOf(variant)}`,
+                {
+                    "v.on-strong": tok(
+                        "v.on-strong",
+                        `{color.${variant}.on-strong}`,
+                        "v-on-strong",
+                    ),
+                    [`color.${variant}.on-strong`]: tok(
+                        `color.${variant}.on-strong`,
+                        "{color.base.white}",
+                        `color-${variant}-on-strong`,
+                    ),
+                    "color.base.white": tok("color.base.white", "#ffffff", "color-base-white"),
+                },
+            ]),
+        );
+
+        it("reports every parent", () => {
+            const graph = buildTokenGraph(perVariant);
+            const parents = dependentsParents(graph, "color.base.white");
+
+            expect(parents.get("v.on-strong")?.sort()).toEqual([
+                "color.accent.on-strong",
+                "color.danger.on-strong",
+                "color.info.on-strong",
+            ]);
+        });
+
+        it("still finds every dependent", () => {
+            const graph = buildTokenGraph(perVariant);
+            const parents = dependentsParents(graph, "color.base.white");
+
+            expect([...parents.keys()].sort()).toEqual([
+                "color.accent.on-strong",
+                "color.danger.on-strong",
+                "color.info.on-strong",
+                "v.on-strong",
+            ]);
+        });
+
+        it("marks the default permutation from the declared modifier defaults", () => {
+            const graph = buildTokenGraph(perVariant, {
+                permutations: [
+                    { input: { variant: "accent" }, selector: ":root" },
+                    { input: { variant: "danger" }, selector: '[data-variant="danger"]' },
+                    { input: { variant: "info" }, selector: '[data-variant="info"]' },
+                ] as never,
+                modifierDefaults: { variant: "accent" },
+            });
+
+            const defaulted = graph.contexts.find((c) => c.id === graph.defaultContext);
+            expect(defaulted?.input).toEqual({ variant: "accent" });
+        });
+
+        it("treats an empty input as the default when no defaults are known", () => {
+            const graph = buildTokenGraph(perVariant, {
+                permutations: [
+                    { input: {}, selector: ":root" },
+                    { input: { variant: "danger" }, selector: '[data-variant="danger"]' },
+                    { input: { variant: "info" }, selector: '[data-variant="info"]' },
+                ] as never,
+            });
+
+            expect(graph.defaultContext).toBe("perm:0");
+        });
+
+        it("marks nothing when a modifier declares no default", () => {
+            const graph = buildTokenGraph(perVariant, {
+                permutations: [
+                    { input: { variant: "accent" }, selector: ":root" },
+                    { input: { variant: "danger" }, selector: '[data-variant="danger"]' },
+                    { input: { variant: "info" }, selector: '[data-variant="info"]' },
+                ] as never,
+                modifierDefaults: {},
+            });
+
+            expect(graph.defaultContext).toBeUndefined();
+        });
+
+        it("keeps dependentsVia reporting a single parent, as before", () => {
+            const graph = buildTokenGraph(perVariant);
+            const via = dependentsVia(graph, "color.base.white");
+
+            expect(via.size).toBe(4);
+            expect(typeof via.get("v.on-strong")).toBe("string");
+        });
     });
 
     it("unions dependents across mode-conditional edges", () => {

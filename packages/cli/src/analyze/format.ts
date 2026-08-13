@@ -98,11 +98,17 @@ export interface UsageRow {
 
 export interface ImpactRow extends UsageRow {
     references: string;
+    axis?: string;
+}
+
+function axisSuffix(axis?: string): string {
+    return axis ? ` (${axis})` : "";
 }
 
 export function formatImpactTable(rows: ImpactRow[]): string[] {
     const tokenW = Math.max("Token".length, ...rows.map((r) => r.token.length));
-    const refByW = Math.max("References".length, ...rows.map((r) => r.references.length));
+    const referencesOf = (row: ImpactRow) => `${row.references}${axisSuffix(row.axis)}`;
+    const refByW = Math.max("References".length, ...rows.map((r) => referencesOf(r).length));
     const refsW = Math.max("Uses".length, ...rows.map((r) => String(r.refs).length));
 
     const termWidth = process.stdout.columns ?? 100;
@@ -121,7 +127,7 @@ export function formatImpactTable(rows: ImpactRow[]): string[] {
     for (const row of rows) {
         const muted = row.refs === 0;
         const token = (muted ? color.dim : (s: string) => s)(row.token.padEnd(tokenW));
-        const references = color.dim(row.references.padEnd(refByW));
+        const references = color.dim(referencesOf(row).padEnd(refByW));
         const refs = (muted ? color.dim : color.yellow)(String(row.refs).padStart(refsW));
         const where = color.dim(truncate(row.where, whereBudget));
         lines.push(`${token}   ${references}   ${refs}   ${where}`);
@@ -155,28 +161,60 @@ export function formatImpactBrief(rows: UsageRow[]): string[] {
     return lines;
 }
 
-export function formatImpactTree(
-    target: string,
-    via: Map<string, string>,
-    refsByToken: Map<string, VarRef[]>,
-): string[] {
-    const children = new Map<string, string[]>();
-    for (const [child, parent] of via) {
-        children.set(parent, [...(children.get(parent) ?? []), child]);
+export interface ImpactTreeInput {
+    /** The token the tree is rooted at. */
+    target: string;
+    /** Each dependent mapped to every hop one step closer to the target. */
+    parents: Map<string, string[]>;
+    /** The one hop each dependent's subtree hangs off. */
+    chosen: Map<string, string>;
+    refsByToken: Map<string, VarRef[]>;
+    /** For dependents with several parents, name the reason they vary or the axis along which they do, e.g. `"per variant"`. */
+    elided?: Map<string, string>;
+}
+
+export function formatImpactTree({
+    target,
+    parents,
+    chosen,
+    refsByToken,
+    elided = new Map(),
+}: ImpactTreeInput): string[] {
+    const children = new Map<string, { id: string; echo: boolean }[]>();
+    for (const [child, hops] of parents) {
+        for (const parent of hops) {
+            const kids = children.get(parent) ?? [];
+            kids.push({ id: child, echo: parent !== chosen.get(child) });
+            children.set(parent, kids);
+        }
     }
     const refsOf = (id: string) => refsByToken.get(id)?.length ?? 0;
 
-    const nodes: { label: string; id: string }[] = [];
-    const walk = (id: string, prefix: string, isRoot: boolean, isLast: boolean) => {
-        const branch = isRoot ? "" : `${prefix}${isLast ? "└─ " : "├─ "}`;
-        nodes.push({ label: `${branch}${id}`, id });
+    const walked: { id: string; branch: string; echo: boolean }[] = [];
+    const walk = (id: string, prefix: string, isRoot: boolean, isLast: boolean, echo = false) => {
+        walked.push({ id, branch: isRoot ? "" : `${prefix}${isLast ? "└─ " : "├─ "}`, echo });
+        if (echo) return;
+
         const kids = (children.get(id) ?? []).sort(
-            (a, b) => refsOf(b) - refsOf(a) || a.localeCompare(b),
+            (a, b) => refsOf(b.id) - refsOf(a.id) || a.id.localeCompare(b.id),
         );
         const childPrefix = isRoot ? "" : `${prefix}${isLast ? "   " : "│  "}`;
-        kids.forEach((kid, i) => walk(kid, childPrefix, false, i === kids.length - 1));
+        kids.forEach((kid, i) => walk(kid.id, childPrefix, false, i === kids.length - 1, kid.echo));
     };
     walk(target, "", true, true);
+
+    const fullRowOf = (id: string) => walked.findIndex((row) => row.id === id && !row.echo);
+    const marker = (row: (typeof walked)[number], index: number) => {
+        const axis = elided.get(row.id);
+        if (!axis) return "";
+        if (!row.echo) return axisSuffix(axis);
+        return ` (${axis}, ${fullRowOf(row.id) < index ? "above" : "below"})`;
+    };
+
+    const nodes = walked.map((row, index) => ({
+        id: row.id,
+        label: `${row.branch}${row.id}${marker(row, index)}`,
+    }));
 
     const labelW = Math.max("Token".length, ...nodes.map((n) => n.label.length));
     const refsW = Math.max("Uses".length, ...nodes.map((n) => String(refsOf(n.id)).length));

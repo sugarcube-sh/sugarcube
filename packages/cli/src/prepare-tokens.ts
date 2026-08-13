@@ -46,7 +46,7 @@ export async function prepareTokens(
     }
 
     const { trees, resolved, errors, warnings } = resolveTokens(loaded.trees);
-    const { permutations } = loaded;
+    const { permutations, modifierDefaults } = loaded;
 
     if (
         errors.expandTree.length > 0 ||
@@ -77,5 +77,5 @@ export async function prepareTokens(
         throw new CLIError(ERROR_MESSAGES.TOKEN_VALIDATION_FAILED(errorsByFile));
     }
 
-    return { trees, resolved, warnings, permutations };
+    return { trees, resolved, warnings, permutations, modifierDefaults };
 }

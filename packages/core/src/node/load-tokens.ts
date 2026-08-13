@@ -15,6 +15,8 @@ export type LoadResult = {
     errors: LoadError[];
     /** The effective permutations: user-defined, or auto-derived from the resolver's modifiers. */
     permutations: Permutation[];
+    /** Each modifier's declared default context, per resolver spec §4.1.5.3. */
+    modifierDefaults?: Record<string, string>;
 };
 
 /**
@@ -67,6 +69,7 @@ export async function loadTokens(
                 trees: result.trees,
                 errors: result.errors,
                 permutations: result.permutations,
+                modifierDefaults: result.modifierDefaults,
             };
         }
     }

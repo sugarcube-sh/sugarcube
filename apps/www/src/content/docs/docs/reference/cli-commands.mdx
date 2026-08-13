@@ -479,6 +479,21 @@ color.neutral.900                      0
       └─ form-control.value-color      1   global.css
 ```
 
+If a token points at a different parent in each context it shows up under every one of those parents:
+
+```
+├─ color.accent.on-strong                   2   checkbox.css  input_group.css
+│  └─ v.on-strong (per variant)            11   badge.css  button.css  +3 more
+│     ├─ r.primary.foreground               1   button.css
+│     └─ r.primary.icon                     1   button.css
+├─ color.danger.on-strong                   0
+│  └─ v.on-strong (per variant, above)     11   badge.css  button.css  +3 more
+└─ color.info.on-strong                     0
+   └─ v.on-strong (per variant, above)     11   badge.css  button.css  +3 more
+```
+
+Every row stands on its own: `color.danger.on-strong` has no direct uses, but the row beneath it shows the 11 places it drives under e.g. `[data-variant="danger"]`. The row carrying the subtree is the one the default context points at — what the token resolves to at `:root`.
+
 #### `--brief`
 
 Only tokens something uses, ranked.

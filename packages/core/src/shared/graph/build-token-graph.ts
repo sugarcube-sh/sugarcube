@@ -39,6 +39,14 @@ function permutationLabel(perm: Permutation): string {
     return entries.map(([name, value]) => `${name}: ${value}`).join(" · ");
 }
 
+function isDefaultPermutation(perm: Permutation, defaults?: Record<string, string>): boolean {
+    const input = Object.entries(perm.input ?? {});
+    if (input.length === 0) return true;
+    if (!defaults) return false;
+
+    return input.every(([modifier, context]) => defaults[modifier] === context);
+}
+
 function describeContext(id: string, permutations?: Permutation[]): GraphContextInfo {
     const match = PERM_KEY.exec(id);
     const perm = match ? permutations?.[Number(match[1])] : undefined;
@@ -46,6 +54,21 @@ function describeContext(id: string, permutations?: Permutation[]): GraphContext
 
     const selector = Array.isArray(perm.selector) ? perm.selector.join(", ") : perm.selector;
     return { id, label: permutationLabel(perm), selector, input: perm.input };
+}
+
+function findDefaultContext(
+    contextKeys: string[],
+    permutations?: Permutation[],
+    modifierDefaults?: Record<string, string>,
+): GraphContext | undefined {
+    const candidates = contextKeys.filter((id) => {
+        const match = PERM_KEY.exec(id);
+        const perm = match ? permutations?.[Number(match[1])] : undefined;
+        // A lone context with no permutation behind it is the whole output, so it is default.
+        return perm ? isDefaultPermutation(perm, modifierDefaults) : contextKeys.length === 1;
+    });
+
+    return candidates.length === 1 ? candidates[0] : undefined;
 }
 
 /**
@@ -58,6 +81,7 @@ function describeContext(id: string, permutations?: Permutation[]): GraphContext
  */
 export interface BuildTokenGraphOptions {
     permutations?: Permutation[];
+    modifierDefaults?: Record<string, string>;
 }
 
 export function buildTokenGraph(
@@ -109,5 +133,11 @@ export function buildTokenGraph(
     }
 
     const contexts = contextKeys.map((id) => describeContext(id, options.permutations));
-    return { contexts, nodes, edges };
+    const defaultContext = findDefaultContext(
+        contextKeys,
+        options.permutations,
+        options.modifierDefaults,
+    );
+
+    return { contexts, nodes, edges, ...(defaultContext ? { defaultContext } : {}) };
 }

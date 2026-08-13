@@ -87,20 +87,33 @@ export function dependentsOf(graph: TokenGraph, targets: Iterable<string>): Set<
     return dependents;
 }
 
-export function dependentsVia(graph: TokenGraph, target: string): Map<string, string> {
+export function dependentsParents(graph: TokenGraph, target: string): Map<string, string[]> {
     const reverse = buildReverseAdjacency(graph.edges);
-    const via = new Map<string, string>();
+    const parents = new Map<string, string[]>();
+    const seen = new Set<string>([target]);
     const stack: string[] = [target];
 
     while (stack.length > 0) {
         const id = stack.pop() as string;
         for (const dependent of reverse.get(id) ?? []) {
-            if (!via.has(dependent)) {
-                via.set(dependent, id);
+            const known = parents.get(dependent);
+            if (known) {
+                if (!known.includes(id)) known.push(id);
+            } else {
+                parents.set(dependent, [id]);
+            }
+
+            if (!seen.has(dependent)) {
+                seen.add(dependent);
                 stack.push(dependent);
             }
         }
     }
 
-    return via;
+    return parents;
+}
+
+export function dependentsVia(graph: TokenGraph, target: string): Map<string, string> {
+    const parents = dependentsParents(graph, target);
+    return new Map([...parents].map(([id, hops]) => [id, hops[0] as string]));
 }
