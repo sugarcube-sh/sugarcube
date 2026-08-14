@@ -31,7 +31,7 @@ jobs:
       - run: pnpm run ci:install
       - name: Create or update release pull request
         id: changesets
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        uses: changesets/action@22ccf9aa43179fe9e27dc62e575971d28cce197c # v2.0.0
         with:
           commitMode: github-api
           version: pnpm run ci:version
@@ -63,7 +63,7 @@ jobs:
       - run: pnpm run ci:install
       - run: pnpm run ci:prepublish
       - name: Publish to npm
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        uses: changesets/action@22ccf9aa43179fe9e27dc62e575971d28cce197c # v2.0.0
         with:
           commitMode: github-api
           publish: pnpm run ci:publish
