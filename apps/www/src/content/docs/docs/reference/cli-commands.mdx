@@ -509,10 +509,6 @@ npx sugarcube analyze unused --json
 npx sugarcube analyze impact space.md --json
 ```
 
-### Exit codes
-
-`analyze` always exits `0`. It only reports, so it won't fail a build. If you want a failing check, use [`lint`](#lint) or [`validate`](#validate).
-
 ### Where analyze looks
 
 `analyze` scans the CSS below your working directory plus everything in [`content`](/docs/configuration#telling-sugarcube-which-files-to-scan).
