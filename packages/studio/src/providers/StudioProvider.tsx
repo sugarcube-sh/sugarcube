@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { createDevToolsHost } from "../host/devtools-host";
 import { createEmbeddedHost } from "../host/embedded-host";
+import { createSandboxHost } from "../host/sandbox-host";
 import { HostProvider } from "../host/host-provider";
 import type { Host } from "../host/types";
 import { TokenStoreProvider } from "./TokenStoreProvider";
@@ -28,7 +29,9 @@ export function StudioProvider({ source, children }: Props) {
                 const host =
                     source.mode === "devtools"
                         ? await createDevToolsHost(controller.signal)
-                        : await createEmbeddedHost(controller.signal);
+                        : source.mode === "embedded"
+                          ? await createEmbeddedHost(controller.signal)
+                          : await createSandboxHost(controller.signal);
 
                 if (!controller.signal.aborted) setState({ kind: "ready", host });
             } catch (err) {
@@ -52,6 +55,11 @@ export function StudioProvider({ source, children }: Props) {
                         <p>Failed to connect to the dev server.</p>
                         <p>Make sure your Vite dev server is running and try reloading.</p>
                     </>
+                ) : source.mode === "sandbox" ? (
+                    <>
+                        <p>Couldn't load Studio's tokens.</p>
+                        <p>Check the terminal for sugarcube plugin errors, then reload.</p>
+                    </>
                 ) : (
                     <>
                         <p>Couldn't load the studio.</p>
@@ -68,7 +76,7 @@ export function StudioProvider({ source, children }: Props) {
 
     if (state.kind === "loading") {
         return (
-            <div>{source.mode === "devtools" ? "Loading Studio..." : "Waiting for host..."}</div>
+            <div>{source.mode === "embedded" ? "Waiting for host..." : "Loading Studio..."}</div>
         );
     }
 

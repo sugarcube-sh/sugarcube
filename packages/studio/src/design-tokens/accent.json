@@ -1,0 +1,10 @@
+{
+  "v": {
+    "$type": "color",
+    "strong": { "$value": "{color.accent.strong}" },
+    "strong-hover": { "$value": "{color.accent.strong-hover}" },
+    "on-strong": { "$value": "{color.accent.on-strong}" },
+    "weak": { "$value": "{color.accent.weak}" },
+    "on-weak": { "$value": "{color.accent.on-weak}" }
+  }
+}

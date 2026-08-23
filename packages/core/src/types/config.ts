@@ -172,45 +172,46 @@ export interface UtilitiesOutputConfig {
 }
 
 /**
- * A color binding — renders a 2D palette grid picker using the top-level
- * `studio.colorScale` config as the source of swatches. Options aren't
- * declared inline; they come from the global palette scale.
- *
- * Glob tokens expand to one row per matching token path.
- *
- * @example
- * { type: "color", token: "color.surface.*" }
+ * A named source of choices declared elsewhere in `studio` config. Today the only one is
+ * the palette scale; the control a row renders follows from the source rather than being
+ * chosen separately.
  */
-export type ColorBinding = {
-    type: "color";
-    /** Token path or glob pattern (e.g. `"color.surface.default"` or `"color.surface.*"`). */
-    token: string;
-    /** Optional label override — default is derived from the token path. */
-    label?: string;
-};
+export type PanelSource = "colorScale";
 
 /**
- * A preset binding — picks a value from a constrained set of options,
- * each of which is a reference to another token.
+ * An alias binding — points a token at one of a set of other tokens. This covers every
+ * "pick a value from a constrained set" row: colours, radii, border widths, fonts.
  *
- * Options can be:
- * - `string` — glob pattern. Discovered at runtime from the token graph.
- * - `Record<string, string>` — explicit label → reference map.
- *
- * Control style (segmented vs. dropdown) is chosen automatically based on
- * the token's `$type` and the option count.
+ * Exactly one of `from` and `options` must resolve, on the binding or inherited from its
+ * section. Nothing is inferred — a binding supplying neither, or both, fails at config load.
  *
  * @example
- * { type: "preset", token: "panel.radius", options: "radius.*" }
+ * { type: "alias", token: "panel.radius", label: "Panels" }          // inherits from section
+ * { type: "alias", token: "color.surface.*", from: "colorScale" }    // the palette scale
  */
-export type PresetBinding = {
-    type: "preset";
-    /** Token path (typically concrete; glob is supported and expands to multiple rows). */
+export type AliasBinding = {
+    type: "alias";
+    /** Token path or glob pattern (e.g. `"panel.radius"` or `"color.surface.*"`). */
     token: string;
-    /** Source of options — glob pattern or explicit label-to-reference map. */
-    options: string | Record<string, string>;
-    /** Optional label override — default is derived from the token path. */
+    /**
+     * Where the choices come from, when they aren't an explicit set. Names a key in
+     * `studio` config rather than a token path. Mutually exclusive with `options`.
+     */
+    from?: PanelSource;
+    /**
+     * An explicit set of choices — glob pattern, or a label-to-reference map.
+     * Mutually exclusive with `from`. Either may be inherited from the section.
+     */
+    options?: string | Record<string, string>;
+    /** Label for a single-token binding — default is the token's last segment. */
     label?: string;
+    /** Labels for a glob binding, keyed by each match's last segment. */
+    labels?: Record<string, string>;
+    /**
+     * For a glob binding, the last segments to render, in this order. Both filters and
+     * orders; without it, matches render in token order.
+     */
+    only?: string[];
 };
 
 /**
@@ -247,15 +248,18 @@ export type ScaleBinding = {
 };
 
 /**
- * A scale-linked binding — a family of tokens that follows another scale's
- * transform. Toggle links the follower on/off; when on, the follower's
- * values are derived from the source scale's base/spread multipliers.
+ * A link binding — a family of tokens that follows another scale's transform. Toggling it
+ * links the follower on/off; when on, the follower's values are derived from the source
+ * scale's base/spread multipliers.
+ *
+ * Its value is a boolean and its editor is a switch, so it is named for what it is rather
+ * than for the scale it happens to follow.
  *
  * @example
- * { type: "scale-linked", token: "container.*", scalesWith: "size.step.*" }
+ * { type: "link", token: "container.*", scalesWith: "size.step.*" }
  */
-export type ScaleLinkedBinding = {
-    type: "scale-linked";
+export type LinkBinding = {
+    type: "link";
     /** Glob pattern matching the follower tokens. */
     token: string;
     /** Glob pattern of the scale whose transform is being mirrored. */
@@ -295,18 +299,12 @@ export type PaletteSwapBinding = {
 
 /**
  * A single binding inside a panel section. Discriminated by `type`:
- *  - `"color"`        → {@link ColorBinding}        (2D palette grid picker)
- *  - `"preset"`       → {@link PresetBinding}       (pick one of N options)
+ *  - `"alias"`        → {@link AliasBinding}        (point a token at another token)
  *  - `"scale"`        → {@link ScaleBinding}        (base/spread sliders)
- *  - `"scale-linked"` → {@link ScaleLinkedBinding}  (follow another scale)
+ *  - `"link"`         → {@link LinkBinding}         (follow another scale)
  *  - `"palette-swap"` → {@link PaletteSwapBinding}  (swap a whole palette family)
  */
-export type PanelBinding =
-    | ColorBinding
-    | PresetBinding
-    | ScaleBinding
-    | ScaleLinkedBinding
-    | PaletteSwapBinding;
+export type PanelBinding = AliasBinding | ScaleBinding | LinkBinding | PaletteSwapBinding;
 
 /**
  * Declares the project's color palette scale structure. All color-related
@@ -318,55 +316,24 @@ export type PanelBinding =
  */
 export type ColorScaleConfig = {
     /**
-     * The token path prefix where palette scales live. Combined with
-     * palette name + step, forms a full token path.
-     *
-     * Pass `""` for projects whose palettes live at the token tree
-     * root (e.g. `blue.50` with no `color.` parent).
+     * The palette groups available to the editing surface, as full token paths. They need
+     * not share a parent, and they need not hold the same steps as each other — each
+     * palette's steps are read from the tokens.
      *
      * @example
-     * prefix: "color"        // → color.blue.500, color.neutral.50
-     * prefix: ""             // → blue.500, red.100
-     * prefix: "brand.colors" // → brand.colors.primary.500
-     */
-    prefix: string;
-    /**
-     * Explicit list of palette names available in the editing surface.
-     * These are the swappable options in palette-swap sections and the
-     * columns in the color picker grid.
-     *
-     * @example
-     * palettes: ["neutral", "slate", "blue", "red", "pink"]
+     * palettes: ["color.neutral", "color.pink", "brand.primary"]
      */
     palettes: string[];
     /**
-     * Explicit list of scale step names. These are the rows in the
-     * color picker grid. Combined with `prefix` and a palette name,
-     * they form full token paths like `color.blue.500`.
+     * Optional restriction on which steps the colour picker offers, and the order it shows
+     * them in. Steps a palette doesn't have are simply absent from its ramp.
      *
      * @example
-     * steps: ["50", "100", "200", "300", "400", "500",
-     *         "600", "700", "800", "900", "950"]
+     * steps: ["100", "300", "500", "700", "900"]
      */
-    steps: string[];
-    /**
-     * Optional token path for a "pure white" escape hatch in the
-     * color picker. When set, the color picker renders an extra
-     * white swatch; picking it writes a reference to this token.
-     *
-     * @example
-     * white: "color.white"
-     */
-    white?: string;
-    /**
-     * Optional token path for a "pure black" escape hatch in the
-     * color picker. Same behavior as `white` but for black.
-     *
-     * @example
-     * black: "color.black"
-     */
-    black?: string;
+    steps?: string[];
 };
+
 
 /**
  * A section in the Studio editing panel. Groups bindings under a titled folder.
@@ -375,6 +342,10 @@ export type ColorScaleConfig = {
  */
 export type BindingSection = {
     title: string;
+    /** Default source for this section's alias bindings; each may override it. */
+    from?: PanelSource;
+    /** Default options for this section's alias bindings; each may override it. */
+    options?: string | Record<string, string>;
     bindings: PanelBinding[];
 };
 

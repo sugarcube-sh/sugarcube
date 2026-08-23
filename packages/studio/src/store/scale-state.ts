@@ -9,6 +9,7 @@ import type { PathIndexAccessor } from "../tokens/path-index";
 import { getScaleExtension } from "../tokens/scale-extension";
 import type { TokenSnapshot } from "../tokens/types";
 import type { TokenStoreAPI } from "./create-token-store";
+import { type PanelOwnership, conflictMessage, indexPanelOwnership } from "./panel-ownership";
 import { applyScaleEdits } from "./scale-apply";
 import { DEFAULT_SPREAD, selectCapture } from "./scale-selectors";
 import type {
@@ -16,6 +17,7 @@ import type {
     LinkEdit,
     ScaleBindingMeta,
     ScaleEdit,
+    ScaleEditField,
     StepOverrides,
 } from "./scale-types";
 
@@ -35,6 +37,7 @@ export type ScaleStateStore = {
     clearStepOverride: (token: string, step: string) => void;
     updateScale: (token: string, updater: (scale: ScaleExtension) => ScaleExtension) => void;
     setLinkEnabled: (token: string, enabled: boolean) => void;
+    clearEditField: (token: string, field: ScaleEditField) => void;
     resetAll: () => void;
 };
 
@@ -63,6 +66,32 @@ export function selectEffectiveScale(
     return selectOriginalScale(baseline, parentPath);
 }
 
+export function restoreScaleField(
+    current: ScaleExtension,
+    original: ScaleExtension,
+    field: ScaleEditField,
+): ScaleExtension {
+    if (field === "base") return { ...current, base: original.base };
+    if (field === "ratio" && current.mode === "exponential" && original.mode === "exponential") {
+        return { ...current, ratio: original.ratio };
+    }
+    return current;
+}
+
+export function selectScaleFieldEdited(
+    effective: ScaleExtension | null,
+    original: ScaleExtension | null,
+    field: ScaleEditField,
+): boolean {
+    if (!effective || !original) return false;
+    if (field === "base") return effective.base.max.value !== original.base.max.value;
+    if (field === "ratio") {
+        if (effective.mode !== "exponential" || original.mode !== "exponential") return false;
+        return effective.ratio.max !== original.ratio.max;
+    }
+    return false;
+}
+
 export function createScaleState(
     panelSections: PanelSection[],
     snapshot: TokenSnapshot,
@@ -74,7 +103,10 @@ export function createScaleState(
     const writeResolved: ScaleWriteCallback =
         onWrite ?? ((resolved) => tokenStore.setState({ resolved }));
 
-    const { bindings, linkBindings } = collectBindings(panelSections, snapshot);
+    const ownership = indexPanelOwnership(panelSections, getPathIndex());
+    for (const conflict of ownership.conflicts) console.warn(conflictMessage(conflict));
+
+    const { bindings, linkBindings } = collectBindings(panelSections, snapshot, ownership);
 
     const effectiveBase = (token: string, edit: ScaleEdit | undefined, context: string): number => {
         if (edit?.kind === "tokens" && edit.base !== undefined) return edit.base;
@@ -177,6 +209,37 @@ export function createScaleState(
             applyAll();
         },
 
+        clearEditField: (token, field) => {
+            const meta = bindings[token];
+            const existing = scaleStore.getState().edits[token];
+            if (!meta || !existing) return;
+
+            if (existing.kind === "tokens") {
+                const next = { ...existing };
+                if (field === "base") delete next.base;
+                if (field === "spread") delete next.spread;
+    
+                const spent =
+                    next.base === undefined &&
+                    (next.spread === undefined || next.spread === DEFAULT_SPREAD) &&
+                    next.overrides === undefined;
+
+                set((state) => {
+                    const edits = { ...state.edits };
+                    if (spent) delete edits[token];
+                    else edits[token] = next;
+                    return { edits };
+                });
+            } else {
+                const original = selectOriginalScale(baseline.getState(), meta.parentPath);
+                if (!original) return;
+                const scale = restoreScaleField(existing.scale, original, field);
+                set((state) => ({ edits: { ...state.edits, [token]: { kind: "scale", scale } } }));
+            }
+
+            applyAll();
+        },
+
         resetAll: () => {
             set(() => ({ edits: {}, links: {} }));
             applyAll();
@@ -242,6 +305,7 @@ function nextTokensEdit(
 function collectBindings(
     panelSections: PanelSection[],
     snapshot: TokenSnapshot,
+    ownership: PanelOwnership,
 ): {
     bindings: Record<string, ScaleBindingMeta>;
     linkBindings: Record<string, LinkBindingMeta>;
@@ -252,7 +316,7 @@ function collectBindings(
     for (const section of panelSections) {
         for (const binding of section.bindings) {
             if (binding.type === "scale") {
-                const meta = buildScaleBindingMeta(binding, snapshot);
+                const meta = buildScaleBindingMeta(binding, snapshot, ownership);
                 if (meta.kind === "scale" || binding.base) {
                     bindings[binding.token] = meta;
                 } else {
@@ -260,7 +324,7 @@ function collectBindings(
                         `[studio] scale binding "${binding.token}" has no \`base\` and no sh.sugarcube.scale recipe; direct-mode controls need an anchor step. Add \`base\` to the binding or author a scale recipe on the bound group.`,
                     );
                 }
-            } else if (binding.type === "scale-linked") {
+            } else if (binding.type === "link") {
                 linkBindings[binding.token] = {
                     bindingToken: binding.token,
                     sourceBinding: binding.scalesWith,
@@ -279,13 +343,18 @@ function collectBindings(
     return { bindings, linkBindings };
 }
 
-function buildScaleBindingMeta(binding: ScaleBinding, snapshot: TokenSnapshot): ScaleBindingMeta {
+function buildScaleBindingMeta(
+    binding: ScaleBinding,
+    snapshot: TokenSnapshot,
+    ownership: PanelOwnership,
+): ScaleBindingMeta {
     const parentPath = stripTrailingGlob(binding.token);
     const onDiskScale = getScaleExtension(snapshot.trees, parentPath);
     return {
         binding,
         kind: onDiskScale ? "scale" : "tokens",
         parentPath,
+        ownedPaths: ownership.ownedPaths.get(binding.token) ?? [],
         sourcePath: findSourcePath(snapshot, parentPath),
     };
 }

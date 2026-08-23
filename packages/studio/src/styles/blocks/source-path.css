@@ -1,0 +1,26 @@
+.source-path {
+    display: flex;
+    min-inline-size: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+}
+
+.source-path-dir {
+    direction: rtl;
+    text-align: start;
+    min-inline-size: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--color-text-tertiary);
+}
+
+.source-path-name {
+    flex: none;
+    color: var(--color-text-primary);
+}
+
+.source-path-sep {
+    color: var(--color-text-tertiary);
+    font-weight: var(--font-weight-normal);
+}

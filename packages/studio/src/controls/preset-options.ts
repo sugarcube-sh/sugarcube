@@ -1,4 +1,4 @@
-import type { PresetBinding, ResolvedTokens } from "@sugarcube-sh/core/client";
+import type { AliasOptions, ResolvedTokens } from "@sugarcube-sh/core/client";
 import type { PathIndex } from "../tokens/path-index";
 import { lastSegment, resolveTerminalPath } from "../tokens/paths";
 
@@ -9,7 +9,7 @@ export type ResolvedOption = {
 };
 
 export function resolveOptions(
-    options: PresetBinding["options"],
+    options: AliasOptions,
     pathIndex: PathIndex,
     baseline: ResolvedTokens,
 ): ResolvedOption[] {

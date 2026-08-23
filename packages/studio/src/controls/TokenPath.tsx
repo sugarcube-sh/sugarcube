@@ -3,11 +3,6 @@ type Props = {
     className?: string;
 };
 
-// Highlight rules:
-//   - 1 segment (e.g. `solid`): leaf only
-//   - 2 segments (e.g. `color.white`): namespace dim, leaf normal — no accent
-//   - 3+ segments: namespace dim, middle leaves normal, final segment accented
-//     (the trailing segment is the distinguishing axis — step number or variant word)
 export function TokenPath({ path, className }: Props) {
     const wrapperClass = className ? `token-path ${className}` : "token-path";
     if (!path) return <span className={wrapperClass} />;
@@ -17,7 +12,7 @@ export function TokenPath({ path, className }: Props) {
     if (parts.length === 1) {
         return (
             <span className={wrapperClass}>
-                <span className="token-path-leaf">{parts[0]}</span>
+                <span className="token-path-tail">{parts[0]}</span>
             </span>
         );
     }
@@ -27,7 +22,7 @@ export function TokenPath({ path, className }: Props) {
             <span className={wrapperClass}>
                 <span className="token-path-ns">{parts[0]}</span>
                 <span className="token-path-dot">.</span>
-                <span className="token-path-leaf">{parts[1]}</span>
+                <span className="token-path-tail">{parts[1]}</span>
             </span>
         );
     }
@@ -41,8 +36,7 @@ export function TokenPath({ path, className }: Props) {
         <span className={wrapperClass}>
             <span className="token-path-ns">{ns}</span>
             {middle.map((segment, i) => (
-                // oxlint-disable-line lint/suspicious/noArrayIndexKey: segments are positional and fixed
-                <span key={i}>
+                <span key={parts.slice(0, i + 2).join(".")}>
                     <span className="token-path-dot">.</span>
                     <span className="token-path-leaf">{segment}</span>
                 </span>

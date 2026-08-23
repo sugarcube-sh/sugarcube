@@ -1,9 +1,16 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core";
 import { STUDIO_RPC } from "@sugarcube-sh/studio-protocol";
 import { clientPath } from "@sugarcube-sh/studio/client";
 import type { SugarcubePluginContext } from "@sugarcube-sh/vite";
 import { defineRpcFunction } from "@vitejs/devtools-kit";
 import type { Plugin } from "vite";
+
+const studioDockIcon = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+    readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../assets/sugarcube-logo.svg"), "utf8"),
+)}`;
 
 declare module "@vitejs/devtools-kit" {
     interface DevToolsRpcSharedStates {
@@ -18,18 +25,31 @@ declare module "@vitejs/devtools-kit" {
 
 const SUGARCUBE_VITE_PLUGIN_NAME = "sugarcube:api";
 
-export default function sugarcubeStudio(): Plugin {
+export interface SugarcubeStudioOptions {
+    /**
+     * Host the built Studio SPA at `/__studio/`. Default `true`. Set `false`
+     * when the host app serves that path itself — e.g. proxying `/__studio/`
+     * to Studio's own Vite dev server for live HMR. The dock still points at
+     * `/__studio/`; the host just owns what answers there.
+     */
+    serveStatic?: boolean;
+}
+
+export default function sugarcubeStudio(options: SugarcubeStudioOptions = {}): Plugin {
+    const { serveStatic = true } = options;
     return {
         name: "sugarcube:studio",
 
         devtools: {
             async setup(ctx) {
-                ctx.views.hostStatic("/__studio/", clientPath);
+                if (serveStatic) {
+                    ctx.views.hostStatic("/__studio/", clientPath);
+                }
 
                 ctx.docks.register({
                     id: "sugarcube-studio",
                     title: "Studio",
-                    icon: "ph:diamond-duotone",
+                    icon: studioDockIcon,
                     type: "iframe",
                     url: "/__studio/",
                 });

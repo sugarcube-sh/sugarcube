@@ -1,0 +1,117 @@
+{
+  "color": {
+    "$type": "color",
+    "accent": {
+      "strong": { "$value": "{color.pink.9}" },
+      "strong-hover": { "$value": "{color.pink.10}" },
+      "on-strong": { "$value": "{color.base.white}" },
+      "weak": { "$value": "{color.pink.3}" },
+      "on-weak": { "$value": "{color.pink.10}" },
+      "weakest": { "$value": "{color.pink.1}" },
+      "on-weakest": { "$value": "{color.pink.10}" },
+      "on-surface": { "$value": "{color.pink.10}" }
+    },
+    "neutral": {
+      "strong": { "$value": "{color.gray.9}" },
+      "strong-hover": { "$value": "{color.gray.10}" },
+      "on-strong": { "$value": "{color.base.white}" },
+      "medium": { "$value": "{color.gray.3}" },
+      "weak": { "$value": "{color.gray.1}" },
+      "on-weak": { "$value": "{color.gray.10}" },
+      "on-surface": { "$value": "{color.gray.10}" },
+      "weakest": { "$value": "{color.gray.1}" },
+      "on-weakest": { "$value": "{color.gray.10}" }
+    },
+    "on": {
+      "solid": {
+        "$value": "{color.base.white}"
+      }
+    },
+    "bg": {
+      "app": {
+        "$value": "{color.gray.1}"
+      },
+      "subtle": {
+        "$value": "{color.gray.2}"
+      }
+    },
+    "component": {
+      "default": {
+        "$value": "{color.gray.3}"
+      },
+      "hover": {
+        "$value": "{color.gray.4}"
+      },
+      "accent": {
+        "$value": "{color.pink.9}"
+      },
+      "accent-light": {
+        "$value": "{color.pink.3}"
+      },
+      "modified": {
+        "$value": "{color.blue.9}"
+      },
+      "modified-light": {
+        "$value": "{color.blue.3}"
+      }
+    },
+    "border": {
+      "subtle": {
+        "$value": "{color.gray.6}"
+      },
+      "default": {
+        "$value": "{color.gray.7}"
+      },
+      "hover": {
+        "$value": "{color.gray.8}"
+      },
+      "accent": {
+        "$value": "{color.pink.9}"
+      }
+    },
+    "solid": {
+      "default": {
+        "$value": "{color.gray.11}"
+      },
+      "hover": {
+        "$value": "{color.gray.12}"
+      }
+    },
+    "diff": {
+      "removed": {
+        "surface": {
+          "$value": "{color.red.3}"
+        },
+        "marker": {
+          "$value": "{color.red.9}"
+        }
+      },
+      "added": {
+        "surface": {
+          "$value": "{color.green.3}"
+        },
+        "marker": {
+          "$value": "{color.green.9}"
+        }
+      }
+    },
+
+    "text": {
+      "primary": {
+        "$value": "{color.gray.12}"
+      },
+      "secondary": {
+        "$value": "{color.gray.11}"
+      },
+      "tertiary": {
+        "$value": "{color.gray.9}"
+      },
+      "accent": {
+        "$value": "{color.pink.10}"
+      },
+      "modified": {
+        "$value": "{color.blue.11}"
+      }
+    }
+  }
+}

@@ -43,9 +43,9 @@ body {
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    color: var(--color-text-normal);
-    background: var(--color-surface-default);
-    font-size: var(--text-base, 1rem);
+    color: var(--color-text-primary);
+    background: var(--color-surface-z0);
+    font-size: var(--text-sm, 1rem);
     font-family: var(--font-body, system-ui, sans-serif);
     line-height: var(--leading-normal, 1.5);
 }
@@ -274,7 +274,7 @@ label {
 
 /* Font weight for labels that aren't checkbox/radio */
 label:not(:has(input[type="checkbox"])):not(:has(input[type="radio"])) {
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-normal);
 }
 
 /* Full width for labels containing text inputs/textareas/selects */

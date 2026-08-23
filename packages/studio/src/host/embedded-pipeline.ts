@@ -34,8 +34,6 @@ export function attachEmbeddedPipeline(
                 groupByContext(snapshot.trees, resolved),
                 snapshot.config,
             );
-            // Snapshots are an in-browser memory source: permutations live on the
-            // config (the same convention loadTokens uses for memory sources).
             const result = await generateCSSVariables(
                 converted,
                 snapshot.config,

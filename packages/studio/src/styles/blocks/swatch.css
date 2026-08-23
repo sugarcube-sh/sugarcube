@@ -1,0 +1,46 @@
+.swatch {
+    display: inline-block;
+    flex-shrink: 0;
+    inline-size: var(--studio-swatch-size);
+    block-size: var(--studio-swatch-size);
+    border: solid 1px var(--color-border-subtle);
+    border-radius: var(--radius-full);
+
+    /* Grey base with the colour painted over it, rather than the colour as the
+       background: a translucent or unresolved swatch then reads against a neutral
+       instead of whatever sits behind the row. */
+    background-color: var(--color-gray-2);
+    background-image: linear-gradient(
+        var(--swatch-color, transparent),
+        var(--swatch-color, transparent)
+    );
+}
+
+.swatch-group {
+    --swatch-group-overlap: 5px;
+
+    display: inline-flex;
+    align-items: center;
+}
+
+.swatch-group .swatch {
+    position: relative;
+    border-color: transparent;
+}
+
+.swatch-group .swatch:not(:first-of-type) {
+    margin-inline-start: calc(-1 * var(--swatch-group-overlap));
+    box-shadow: 0 0 0 2px var(--color-on-solid);
+}
+
+.swatch-group .swatch:nth-child(1) {
+    z-index: 1;
+}
+
+.swatch-group .swatch:nth-child(2) {
+    z-index: 2;
+}
+
+.swatch-group .swatch:nth-child(3) {
+    z-index: 3;
+}

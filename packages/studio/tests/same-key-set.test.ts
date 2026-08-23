@@ -1,10 +1,3 @@
-/**
- * Guards the PathIndex refresh: a wrong implementation here means
- * either no rebuild ever fires (the bug we just fixed comes back) or
- * one fires on every value-only edit (perf regression). Both directions
- * are covered.
- */
-
 import { describe, expect, it } from "vitest";
 import { sameKeySet } from "../src/tokens/same-key-set";
 
@@ -28,7 +21,6 @@ describe("sameKeySet", () => {
     });
 
     it("is false when one side has duplicates that the other doesn't", () => {
-        // Set vs. array semantics: ["a","a"] becomes {"a"}, length 1; b is length 2.
         expect(sameKeySet(iter(["a", "a"]), ["a", "b"])).toBe(false);
     });
 

@@ -11,6 +11,20 @@ export type DiffState = {
     pendingPaths: ReadonlySet<string>;
 };
 
+export function pendingKey(path: string, context?: string): string {
+    return context === undefined ? path : `${context}::${path}`;
+}
+
+export function pendingKeys(entries: readonly TokenDiffEntry[]): Set<string> {
+    return new Set(
+        entries.flatMap((entry) =>
+            entry.contexts.length === 0
+                ? [pendingKey(entry.path)]
+                : entry.contexts.map((context) => pendingKey(entry.path, context)),
+        ),
+    );
+}
+
 export type DiffStoreAPI = StoreApi<DiffState>;
 
 export type DiffStoreHandle = {
@@ -29,8 +43,7 @@ export function createDiffStore(
         const { resolved } = tokenStore.getState();
         const { edits, bindings } = scaleState.getState();
         const entries = computeDiff(resolved, baseline, getPathIndex(), edits, bindings);
-        const pendingPaths = new Set(entries.map((entry) => entry.path));
-        return { entries, pendingPaths };
+        return { entries, pendingPaths: pendingKeys(entries) };
     };
 
     const store = createStore<DiffState>(() => recompute());

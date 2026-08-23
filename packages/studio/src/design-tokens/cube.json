@@ -1,30 +1,30 @@
 {
   "cluster-gap": {
-    "$value": "{space.sm}",
+    "$value": "{space.200}",
     "$description": "Base gap spacing for cluster composition"
   },
   "grid-gap": {
-    "$value": "{space.md}",
+    "$value": "{space.400}",
     "$description": "Default gap for grid composition"
   },
   "repel-gap": {
-    "$value": "{space.md}",
+    "$value": "{space.400}",
     "$description": "Default gap for repel composition"
   },
   "sidebar-gap": {
-    "$value": "{space.md}",
+    "$value": "{space.400}",
     "$description": "Default gap for sidebar composition"
   },
   "switcher-gap": {
-    "$value": "{space.md}",
+    "$value": "{space.400}",
     "$description": "Default gap for switcher composition"
   },
   "flow-space": {
-    "$value": "{space.md}",
+    "$value": "{space.400}",
     "$description": "Base vertical spacing in flow composition"
   },
   "region-space": {
-    "$value": "{space.xl}",
+    "$value": "{space.500}",
     "$description": "Base vertical padding for page sections"
   },
   "wrapper-max-width": {
@@ -32,12 +32,7 @@
     "$description": "Max width for wrapper composition"
   },
   "wrapper-padding-inline": {
-    "$value": "{space.sm}",
+    "$value": "{space.300}",
     "$description": "Inline padding for wrapper composition"
-  },
-  "sidebar-content-min-width": {
-    "$type": "dimension",
-    "$value": { "value": 37.5, "unit": "rem" },
-    "$description": "Min width for sidebar content"
   }
 }

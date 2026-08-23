@@ -1,13 +1,10 @@
 {
   "panel": {
     "radius": {
-      "$value": "{radius.lg}"
+      "$value": "{radius.400}"
     },
     "border-style": {
       "$value": "{border.style}"
-    },
-    "border-color": {
-      "$value": "{color.border.normal}"
     },
     "border-width": {
       "$value": "{border.width.thin}"

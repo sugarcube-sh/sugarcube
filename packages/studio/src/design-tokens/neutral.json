@@ -1,0 +1,11 @@
+{
+  "v": {
+    "$type": "color",
+    "strong": { "$value": "{color.neutral.strong}" },
+    "strong-hover": { "$value": "{color.neutral.strong-hover}" },
+    "on-strong": { "$value": "{color.neutral.on-strong}" },
+    "medium": { "$value": "{color.neutral.medium}" },
+    "weak": { "$value": "{color.neutral.weak}" },
+    "on-weak": { "$value": "{color.neutral.on-weak}" }
+  }
+}

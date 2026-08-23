@@ -2,6 +2,12 @@ import type { PathIndex } from "./path-index";
 import { unwrapRef } from "./paths";
 import type { TokenReader, TokenUpdate } from "./types";
 
+function paletteSegmentIndex(refPath: string, palettes: ReadonlySet<string>): number {
+    const segments = refPath.split(".");
+    const index = segments.findIndex((s) => palettes.has(s));
+    return index === segments.length - 1 ? -1 : index;
+}
+
 export function currentPaletteFromReference(
     readToken: TokenReader,
     family: string,
@@ -10,17 +16,45 @@ export function currentPaletteFromReference(
     context?: string,
 ): string | undefined {
     const paletteSet = new Set(palettes);
-    const paths = pathIndex.under(family);
+    let found: string | undefined;
 
-    for (const path of paths) {
+    for (const path of pathIndex.under(family)) {
         const refPath = unwrapRef(readToken(path, context));
         if (!refPath) continue;
-        for (const segment of refPath.split(".")) {
-            if (paletteSet.has(segment)) return segment;
-        }
+
+        const index = paletteSegmentIndex(refPath, paletteSet);
+        if (index === -1) continue;
+
+        const palette = refPath.split(".")[index];
+        if (found === undefined) found = palette;
+        else if (found !== palette) return undefined;
     }
 
-    return undefined;
+    return found;
+}
+
+export type PaletteResetPlan = {
+    overridden: boolean;
+    updates: TokenUpdate[];
+};
+
+export function familyPaletteResetUpdates(
+    family: string,
+    palettes: readonly string[],
+    readCurrent: TokenReader,
+    readBaseline: TokenReader,
+    pathIndex: PathIndex,
+    context?: string,
+): PaletteResetPlan {
+    const authored = currentPaletteFromReference(readBaseline, family, palettes, pathIndex, context);
+    const current = currentPaletteFromReference(readCurrent, family, palettes, pathIndex, context);
+
+    if (authored === undefined || current === authored) return { overridden: false, updates: [] };
+
+    return {
+        overridden: true,
+        updates: familyPaletteSwapUpdates(family, authored, palettes, readCurrent, pathIndex),
+    };
 }
 
 export function familyPaletteSwapUpdates(
@@ -40,9 +74,10 @@ export function familyPaletteSwapUpdates(
             const refPath = unwrapRef(readToken(path, context));
             if (!refPath) continue;
 
-            const segments = refPath.split(".");
-            const segmentIndex = segments.findIndex((s) => paletteSet.has(s));
+            const segmentIndex = paletteSegmentIndex(refPath, paletteSet);
             if (segmentIndex === -1) continue;
+
+            const segments = refPath.split(".");
             segments[segmentIndex] = newPalette;
 
             updates.push({

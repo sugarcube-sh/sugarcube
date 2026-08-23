@@ -2,10 +2,19 @@
 
 import cn from "clsx";
 import { Command as CommandPrimitive } from "cmdk";
-import { SearchIcon } from "lucide-react";
+import { Icon } from "../icon/Icons";
 
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
     return <CommandPrimitive data-slot="command" className={cn("command", className)} {...props} />;
+}
+
+function CommandSearchWrapper({ children }: { children: React.ReactNode }) {
+    return (
+        <div data-slot="command-input-wrapper" className="command-input-wrapper">
+            <Icon name="magnifying-glass" />
+            {children}
+        </div>
+    );
 }
 
 function CommandInput({
@@ -13,14 +22,13 @@ function CommandInput({
     ...props
 }: React.ComponentProps<typeof CommandPrimitive.Input>) {
     return (
-        <div data-slot="command-input-wrapper" className="command-input-wrapper">
-            <SearchIcon />
+        <CommandSearchWrapper>
             <CommandPrimitive.Input
                 data-slot="command-input"
                 className={cn("command-input", className)}
                 {...props}
             />
-        </div>
+        </CommandSearchWrapper>
     );
 }
 
@@ -70,7 +78,7 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
     return (
         <CommandPrimitive.Item
             data-slot="command-item"
-            className={cn("command-item", className)}
+            className={cn("command-item", "command-row", className)}
             {...props}
         />
     );
@@ -78,6 +86,7 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
 
 export {
     Command,
+    CommandSearchWrapper,
     CommandInput,
     CommandList,
     CommandEmpty,

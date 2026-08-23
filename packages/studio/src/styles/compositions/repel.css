@@ -21,3 +21,7 @@ Can be any acceptable flexbox alignment value.
     align-items: var(--repel-vertical-alignment, center);
     gap: var(--repel-gap, 1rem);
 }
+
+.repel[data-nowrap] {
+    flex-wrap: nowrap;
+}

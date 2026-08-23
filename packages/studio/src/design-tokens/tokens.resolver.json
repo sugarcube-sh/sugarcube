@@ -31,22 +31,10 @@
           "$ref": "./focus.json"
         },
         {
-          "$ref": "./form-controls.json"
-        },
-        {
-          "$ref": "./gradients.json"
-        },
-        {
           "$ref": "./motion.json"
         },
         {
           "$ref": "./panels.json"
-        },
-        {
-          "$ref": "./shadows.json"
-        },
-        {
-          "$ref": "./size.json"
         },
         {
           "$ref": "./space.json"
@@ -56,20 +44,28 @@
         },
         {
           "$ref": "./typography.json"
+        },
+        {
+          "$ref": "./roles.json"
+        },
+        {
+          "$ref": "./accent.json"
+        },
+        {
+          "$ref": "./neutral.json"
+        },
+        {
+          "$ref": "./semantic.json"
         }
       ]
     },
     {
       "type": "modifier",
-      "name": "mode",
-      "default": "light",
+      "name": "variant",
+      "default": "accent",
       "contexts": {
-        "light": [],
-        "dark": [
-          {
-            "$ref": "./dark.json"
-          }
-        ]
+        "accent": [{ "$ref": "./accent.json" }],
+        "neutral": [{ "$ref": "./neutral.json" }]
       }
     }
   ]

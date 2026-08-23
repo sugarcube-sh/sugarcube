@@ -23,16 +23,17 @@
   "scripts": {
     "build": "pkgroll --minify && pnpm run build:client",
     "build:client": "vite build",
-    "dev": "pnpm run \"/^dev:.*/\"",
+    "dev": "vite",
+    "dev:dist": "pnpm run \"/^dev:(lib|client)$/\"",
     "dev:lib": "pkgroll --watch",
     "dev:client": "vite build --watch --mode development",
-    "serve": "vite",
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@radix-ui/react-collapsible": "^1.1.12",
+    "@radix-ui/react-slider": "^1.4.7",
     "@sugarcube-sh/core": "workspace:*",
     "@sugarcube-sh/studio-protocol": "workspace:*"
   },
@@ -40,6 +41,7 @@
     "@radix-ui/react-popover": "^1.1.14",
     "@radix-ui/react-tabs": "^1.1.13",
     "@sugarcube-sh/vite": "workspace:*",
+    "@sugarcube-sh/cli": "workspace:*",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@unocss/preset-wind3": "^66.6.0",

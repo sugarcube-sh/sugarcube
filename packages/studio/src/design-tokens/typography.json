@@ -35,44 +35,24 @@
     }
   },
   "text": {
+    "$type": "dimension",
     "xs": {
-      "$value": "{size.step.-2}"
+      "$value": {
+        "value": 10,
+        "unit": "px"
+      }
     },
     "sm": {
-      "$value": "{size.step.-1}"
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      }
     },
     "base": {
-      "$value": "{size.step.0}"
-    },
-    "lg": {
-      "$value": "{size.step.2}"
-    },
-    "xl": {
-      "$value": "{size.step.3}"
-    },
-    "2xl": {
-      "$value": "{size.step.4}"
-    },
-    "3xl": {
-      "$value": "{size.step.5}"
-    },
-    "4xl": {
-      "$value": "{size.step.6}"
-    },
-    "5xl": {
-      "$value": "{size.step.7}"
-    },
-    "6xl": {
-      "$value": "{size.step.8}"
-    },
-    "7xl": {
-      "$value": "{size.step.9}"
-    },
-    "8xl": {
-      "$value": "{size.step.10}"
-    },
-    "9xl": {
-      "$value": "{size.step.10}"
+      "$value": {
+        "value": 15,
+        "unit": "px"
+      }
     }
   },
   "leading": {

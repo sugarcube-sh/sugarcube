@@ -5,20 +5,20 @@ import { DesignArea } from "./areas/DesignArea";
 export function Shell() {
     return (
         <div className="shell">
-            <Header />
-
             <Tabs defaultValue="design">
-                <TabsList aria-label="Studio sections" className="studio-tabs-list">
-                    <TabsTrigger value="design" className="studio-tabs-trigger">
-                        Design
-                    </TabsTrigger>
-                    <TabsTrigger value="tokens" className="studio-tabs-trigger">
-                        Tokens
-                    </TabsTrigger>
-                    <TabsTrigger value="components" className="studio-tabs-trigger">
-                        Components
-                    </TabsTrigger>
-                </TabsList>
+                <Header>
+                    <TabsList aria-label="Studio sections" className="studio-tabs-list">
+                        <TabsTrigger value="design" className="studio-tabs-trigger">
+                            Design
+                        </TabsTrigger>
+                        <TabsTrigger value="tokens" className="studio-tabs-trigger">
+                            Tokens
+                        </TabsTrigger>
+                        <TabsTrigger value="components" className="studio-tabs-trigger">
+                            Components
+                        </TabsTrigger>
+                    </TabsList>
+                </Header>
 
                 <TabsPanel value="design">
                     <DesignArea />

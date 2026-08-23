@@ -1,0 +1,39 @@
+.color-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-200);
+    padding-block: var(--space-100);
+    padding-inline: var(--space-150);
+}
+
+.color-grid:focus-visible {
+    outline: none;
+}
+
+.color-grid-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-100);
+}
+
+.color-grid-heading {
+    display: block;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+}
+
+.color-grid-row {
+    display: grid;
+    grid-template-columns: repeat(var(--color-grid-columns, 11), var(--studio-swatch-size));
+    gap: var(--space-100);
+}
+
+.color-grid-swatch {
+    padding: 0;
+    cursor: pointer;
+}
+
+.color-grid-swatch[aria-selected="true"] {
+    outline: 2px solid var(--color-text-primary);
+    outline-offset: 1px;
+}

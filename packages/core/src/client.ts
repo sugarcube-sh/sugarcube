@@ -52,6 +52,10 @@ export {
 } from "./shared/uno-rules.js";
 
 export { formatCSSVarName } from "./shared/format-css-var-name.js";
+// The same conversion the CSS renderer uses, so anything painting a token value in a browser
+// — Studio's swatches — agrees with the stylesheet by construction rather than by luck.
+export { convertColorToString } from "./shared/color/color-conversion.js";
+export type { Result } from "./types/result.js";
 export { createVariableNameResolver } from "./shared/resolve-variable-name.js";
 export { kebabCase } from "./shared/case.js";
 export { roundTo } from "./shared/round.js";
@@ -83,13 +87,15 @@ export type {
     PanelSection,
     BindingSection,
     PanelBinding,
-    ColorBinding,
-    PresetBinding,
+    AliasBinding,
+    PanelSource,
     ScaleBinding,
-    ScaleLinkedBinding,
+    LinkBinding,
     PaletteSwapBinding,
     VariableNameFn,
 } from "./types/config.js";
+export { panelSourceIssue, resolvePanelDefaults } from "./shared/panel.js";
+export type { AliasOptions, PanelDefaults } from "./shared/panel.js";
 export type {
     PipelineContext,
     PipelineEvent,

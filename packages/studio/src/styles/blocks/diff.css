@@ -1,98 +1,130 @@
 .diff-view {
-    --diff-removed: var(--color-red-600);
-    --diff-added: var(--color-green-600);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-200);
+    padding: var(--space-200);
+}
+
+.diff-empty {
+    padding: var(--space-400);
+    color: var(--color-text-tertiary);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-align: center;
+}
+
+.diff-file {
+    background: var(--color-surface-z1);
+    border: var(--border-width-thin) var(--border-style) var(--color-surface-border);
+    border-radius: var(--radius-200);
+    overflow: clip;
 }
 
 .diff-file-header {
-    block-size: var(--studio-control-height);
-    padding-inline: var(--space-2xs);
-    background: var(--color-surface-lowered);
-    border-block: var(--border-width-thin) solid var(--color-surface-border);
+    --repel-gap: var(--space-200);
+
+    display: flex;
+    align-items: center;
+    min-block-size: var(--studio-control-height);
+    padding-block: var(--space-100);
+    padding-inline: var(--space-200);
+    background: var(--color-bg-subtle);
+    border-block-end: var(--border-width-thin) var(--border-style) var(--color-surface-border);
 }
 
-.diff-file:first-child .diff-file-header {
-    border-block-start: 0;
+.diff-file-count {
+    flex: none;
+    color: var(--color-text-tertiary);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
 }
+
 
 .diff-entry:not(:first-child) {
-    border-block-start: var(--border-width-thin) solid var(--color-surface-border);
+    border-block-start: var(--border-width-thin) var(--border-style) var(--color-surface-border);
 }
 
 .diff-entry-header {
-    block-size: var(--studio-control-height);
-    padding-inline: var(--space-2xs);
+    display: flex;
+    align-items: center;
+    min-block-size: var(--studio-control-height);
+    padding-block: var(--space-100);
+    padding-inline: var(--space-200);
 }
 
 .diff-block {
     margin: 0;
-    padding-block: var(--space-3xs);
+    padding: 0;
+    padding-block-end: var(--space-100);
     background: transparent;
-    color: var(--color-text-normal);
+    color: var(--color-text-primary);
 
-    font-family: var(--font-mono, monospace);
-    font-size: var(--text-sm);
-    line-height: 1.5;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--leading-normal);
     white-space: pre;
     overflow-x: auto;
 }
 
 .diff-line {
     display: grid;
-    grid-template-columns: 1.5em 1fr;
-    align-items: baseline;
+    grid-template-columns: 2ch 1fr;
+    gap: var(--space-100);
+    padding-inline: var(--space-200);
 }
 
 .diff-gutter {
-    color: var(--color-text-quietest);
+    color: var(--color-text-tertiary);
     text-align: center;
     user-select: none;
     -webkit-user-select: none;
 }
 
-.diff-code {
-    padding-inline-end: var(--space-2xs);
+.diff-line-removed,
+.diff-line-added {
+    box-shadow: inset var(--border-width-thick) 0 0 0 var(--_diff-marker);
 }
 
 .diff-line-removed {
-    background: color-mix(in oklab, var(--diff-removed) 12%, transparent);
-}
+    --_diff-marker: var(--color-diff-removed-marker);
 
-.diff-line-removed .diff-gutter {
-    color: var(--diff-removed);
-    font-weight: var(--font-weight-medium);
+    background: var(--color-diff-removed-surface);
 }
 
 .diff-line-added {
-    background: color-mix(in oklab, var(--diff-added) 14%, transparent);
+    --_diff-marker: var(--color-diff-added-marker);
+
+    background: var(--color-diff-added-surface);
 }
 
+.diff-line-removed .diff-gutter,
 .diff-line-added .diff-gutter {
-    color: var(--diff-added);
-    font-weight: var(--font-weight-medium);
+    color: var(--_diff-marker);
+    font-weight: var(--font-weight-semibold);
 }
 
-.diff-json-key {
-    color: var(--color-text-quiet);
+.diff-json-key,
+.diff-json-quote,
+.diff-json-punct {
+    color: var(--color-text-tertiary);
 }
 
-.diff-json-string {
-    color: var(--color-text-normal);
-}
-
-.diff-json-quote {
-    color: var(--color-text-quietest);
+.diff-json-string,
+.diff-json-num,
+.diff-json-bool {
+    color: var(--color-text-primary);
 }
 
 .diff-json-ref {
-    color: var(--color-accent-fill-loud);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
 }
 
-.diff-json-num,
-.diff-json-bool {
-    color: var(--color-text-normal);
+.diff-json-ref-tail {
+    color: var(--color-text-accent);
 }
 
-.diff-json-punct {
-    color: var(--color-text-quietest);
+.diff-json-ref-name {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
 }

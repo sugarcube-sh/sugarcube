@@ -70,10 +70,15 @@ export function createTokenStore(host: Host): TokenStoreHandle {
             writeResolved(next);
         },
 
+        // Reads the live baseline, not the snapshot captured at store creation. The store
+        // outlives baseline updates (TokenStoreProvider builds it once in useState), so a
+        // watcher push or external edit would otherwise make reset restore a value that is
+        // no longer the baseline - leaving the row still marked overridden after a reset.
+        // createDiffStore and createScaleState already track the live baseline; this matches.
         resetToken: (path) => {
             const index = getPathIndex();
             const ctx = get().currentContext;
-            const original = index.readValue(baselineSnap.resolved, path, ctx);
+            const original = index.readValue(host.baseline.getState().resolved, path, ctx);
             if (original === undefined) return;
             const next = index.setValue(get().resolved, path, original, ctx);
             writeResolved(next);
@@ -82,7 +87,7 @@ export function createTokenStore(host: Host): TokenStoreHandle {
         discard: async () => {
             await host.discard();
             if (!host.working) {
-                set({ resolved: baselineSnap.resolved });
+                set({ resolved: host.baseline.getState().resolved });
             }
         },
     }));

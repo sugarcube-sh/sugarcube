@@ -1,11 +1,9 @@
 .header {
     flex-shrink: 0;
-
     block-size: var(--studio-bar-height);
-    padding-inline: var(--space-2xs);
-    border-block-end: var(--border-width-thin) solid var(--color-surface-border);
-    color: var(--color-text-normal);
-    background: var(--gradient-surface);
+    padding-inline-start: var(--space-250);
+    color: var(--color-text-primary);
+    background: var(--color-surface-default);
 }
 
 .header a {

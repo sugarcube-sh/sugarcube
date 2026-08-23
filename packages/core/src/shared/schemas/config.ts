@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { ErrorMessages } from "../constants/error-messages.js";
+import { panelSourceIssue, resolvePanelDefaults } from "../panel.js";
 
 const fluidSchema = z.object({
     min: z.number(),
@@ -62,17 +64,19 @@ const utilitiesOutputConfigSchema = z.object({
     classes: utilityClassesSchema.optional(),
 });
 
-const colorBindingSchema = z.object({
-    type: z.literal("color"),
-    token: z.string().min(1, "Token path cannot be empty"),
-    label: z.string().optional(),
-});
+const panelSourceSchema = z.enum(["colorScale"]);
 
-const presetBindingSchema = z.object({
-    type: z.literal("preset"),
+const aliasOptionsSchema = z.union([z.string().min(1), z.record(z.string(), z.string())]);
+
+const aliasBindingSchema = z.object({
+    type: z.literal("alias"),
     token: z.string().min(1, "Token path cannot be empty"),
-    options: z.union([z.string().min(1), z.record(z.string(), z.string())]),
+    // Optional here; exactly one must resolve after section defaults — see panelSectionSchema.
+    from: panelSourceSchema.optional(),
+    options: aliasOptionsSchema.optional(),
     label: z.string().optional(),
+    labels: z.record(z.string(), z.string()).optional(),
+    only: z.array(z.string().min(1, "Segment name cannot be empty")).min(1).optional(),
 });
 
 const scaleBindingSchema = z.object({
@@ -85,8 +89,8 @@ const scaleBindingSchema = z.object({
     step: z.number().optional(),
 });
 
-const scaleLinkedBindingSchema = z.object({
-    type: z.literal("scale-linked"),
+const linkBindingSchema = z.object({
+    type: z.literal("link"),
     token: z.string().min(1, "Token path cannot be empty"),
     scalesWith: z.string().min(1, "scalesWith path cannot be empty"),
     label: z.string().optional(),
@@ -103,31 +107,49 @@ const paletteSwapBindingSchema = z.object({
 });
 
 const panelBindingSchema = z.discriminatedUnion("type", [
-    colorBindingSchema,
-    presetBindingSchema,
+    aliasBindingSchema,
     scaleBindingSchema,
-    scaleLinkedBindingSchema,
+    linkBindingSchema,
     paletteSwapBindingSchema,
 ]);
 
 const colorScaleConfigSchema = z.object({
-    // Empty string is valid — describes a project whose palettes live at
-    // the token tree root (e.g. `blue.50` with no `color.` parent).
-    prefix: z.string(),
     palettes: z
-        .array(z.string().min(1, "Palette name cannot be empty"))
+        .array(z.string().min(1, "Palette path cannot be empty"))
         .min(1, "Palettes array cannot be empty"),
     steps: z
         .array(z.string().min(1, "Step name cannot be empty"))
-        .min(1, "Steps array cannot be empty"),
-    white: z.string().min(1).optional(),
-    black: z.string().min(1).optional(),
+        .min(1, "Steps array cannot be empty")
+        .optional(),
 });
 
-const panelSectionSchema = z.object({
-    title: z.string().min(1, "Section title cannot be empty"),
-    bindings: z.array(panelBindingSchema).min(1, "Bindings array cannot be empty"),
-});
+const panelSectionSchema = z
+    .object({
+        title: z.string().min(1, "Section title cannot be empty"),
+        from: panelSourceSchema.optional(),
+        options: aliasOptionsSchema.optional(),
+        bindings: z.array(panelBindingSchema).min(1, "Bindings array cannot be empty"),
+    })
+    // Where an alias gets its choices resolves strictly: declared on the binding, or
+    // inherited from the section, or the config is rejected here rather than guessed at
+    // render time.
+    .superRefine((section, ctx) => {
+        for (const [index, binding] of section.bindings.entries()) {
+            if (binding.type !== "alias") continue;
+
+            const issue = panelSourceIssue(resolvePanelDefaults(section, binding));
+            if (!issue) continue;
+
+            ctx.addIssue({
+                code: "custom",
+                path: ["bindings", index, issue === "ambiguous" ? "from" : "options"],
+                message:
+                    issue === "ambiguous"
+                        ? ErrorMessages.CONFIG.PANEL_AMBIGUOUS_SOURCE(section.title, binding.token)
+                        : ErrorMessages.CONFIG.PANEL_MISSING_SOURCE(section.title, binding.token),
+            });
+        }
+    });
 
 const studioConfigSchema = z.object({
     colorScale: colorScaleConfigSchema.optional(),
