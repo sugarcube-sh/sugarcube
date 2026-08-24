@@ -6,8 +6,6 @@
       "project": ["src/**/*.ts", "src/**/*.astro"],
       "ignore": ["registry/**"],
       "ignoreDependencies": [
-        "@ariakit/react",
-        "@base-ui-components/react",
         "@radix-ui/*",
         "@sugarcube-sh/cli",
         "@unocss/preset-mini",
