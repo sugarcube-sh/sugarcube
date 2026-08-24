@@ -2,7 +2,7 @@
   "name": "@sugarcube-sh/studio-vite",
   "version": "0.0.1",
   "private": true,
-  "description": "Vite plugin for Sugarcube Studio (DevTools dock + dev server)",
+  "description": "Vite plugin for studio",
   "license": "MIT",
   "author": {
     "name": "Mark Tomlinson",

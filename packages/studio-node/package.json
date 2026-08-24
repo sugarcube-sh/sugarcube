@@ -2,7 +2,7 @@
   "name": "@sugarcube-sh/studio-node",
   "version": "0.0.0",
   "private": true,
-  "description": "Standalone Node host for Sugarcube Studio (framework-agnostic — no dev server required)",
+  "description": "Node host for studio",
   "license": "MIT",
   "author": {
     "name": "Mark Tomlinson",
