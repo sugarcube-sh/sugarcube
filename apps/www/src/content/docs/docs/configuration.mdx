@@ -243,5 +243,43 @@ variables: {
 }
 ```
 
+### Breakpoint media queries
+
+A common use for this is responsive typography modelled as a mobile-first cascade: a base font size that grows at wider screen sizes. Write one permutation per breakpoint, all pointing at the same selector, listed narrowest first:
+
+```ts title="sugarcube.config.ts"
+variables: {
+  permutations: [
+    { input: {}, selector: ":root" },
+    {
+      input: { breakpoint: "md" },
+      selector: ":root",
+      atRule: "@media (min-width: 640px)"
+    },
+    {
+      input: { breakpoint: "lg" },
+      selector: ":root",
+      atRule: "@media (min-width: 1024px)"
+    },
+  ]
+}
+```
+
+When breakpoints stack up on the same selector, sugarcube only writes out what actually changes at each step.
+
+Say body text is `16px` by default, grows to `24px` from `md` up, and `lg` doesn't change it again. Because the `md` rule already applies at `lg` widths, the `lg` block is left out entirely:
+
+```css title="tokens.css"
+:root {
+  --font-size-body: 16px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --font-size-body: 24px;
+  }
+}
+```
+
 For full theming documentation, see [theming](/docs/theming).
 

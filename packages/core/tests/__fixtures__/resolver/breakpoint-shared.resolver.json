@@ -1,0 +1,36 @@
+{
+  "version": "2025.10",
+  "name": "Breakpoint Shared Token Test",
+  "description": "One token varies by breakpoint, one does not, so the non-varying token must stay outside any @media block.",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "font": {
+            "size": {
+              "body": { "$type": "dimension", "$value": { "value": 16, "unit": "px" } },
+              "heading": { "$type": "dimension", "$value": { "value": 40, "unit": "px" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "breakpoint",
+      "default": "sm",
+      "contexts": {
+        "sm": [],
+        "md": [
+          {
+            "font": {
+              "size": { "body": { "$type": "dimension", "$value": { "value": 24, "unit": "px" } } }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
