@@ -26,22 +26,9 @@ function classify(atRule: string | undefined): WidthQuery {
     return { kind: "other", width: 0, unit: "" };
 }
 
-// We need to determine whether the current at-rule's block sits *inside* the previous one,
-// so its declarations are layered on top rather than replacing them.
-//
-// A `min-width: 640px` rule is still in effect at 1024px, so a `min-width: 1024px`
-// block that follows it only needs to state what actually changes. Mutually
-// exclusive at-rules (e.g. `prefers-color-scheme: light` and `dark`) do not stack:
-// neither is in effect when the other is, so each must state its values in full.
-//
-// Only single-condition, open-ended `px`/`em`/`rem` width queries are recognised.
-// Anything else is opaque and never stacks. Failing to recognise a query costs a
-// redundant (but valid) block; wrongly recognising one would drop a needed
-// declaration, so the patterns are deliberately strict.
-//
-// Widths are compared only within a single unit: in a media query `em`/`rem`
-// resolve against the browser's initial font size, unknown at build time, so
-// `40em` cannot be ordered against `640px`.
+// When emitting CSS for successive media queries, ask: does `current` only match
+// viewports that already match `previous`? (e.g. min-1024 after min-640.)
+// If so, the previous values still apply and we only need to write what changed.
 export function stacksOn(previous: string | undefined, current: string | undefined): boolean {
     const prev = classify(previous);
     const cur = classify(current);
