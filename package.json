@@ -33,7 +33,7 @@
     "@types/node": "^24.9.2",
     "@vitest/coverage-istanbul": "^4.0.18",
     "eslint-plugin-regexp": "^3.1.1",
-    "knip": "^5.59.1",
+    "knip": "^6.32.2",
     "lint-staged": "^16.2.7",
     "oxfmt": "^0.57.0",
     "oxlint": "^1.72.0",
