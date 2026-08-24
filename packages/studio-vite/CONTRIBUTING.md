@@ -14,5 +14,4 @@ When off, the plugin still registers the dock (still pointing at `/__studio/`),
 it just stops hosting the files there. See `apps/www/CONTRIBUTING.md` for the
 full live-dev setup that uses this.
 
-Remember to rebuild (`pnpm build`) after changing the source — consumers import
-the built `dist`, so source edits won't show up until then.
+Remember to rebuild (`pnpm build`) after changing the source.
