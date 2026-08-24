@@ -1,4 +1,4 @@
-    import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createStore as createVanillaStore } from "zustand/vanilla";
 import type { Host } from "../src/host/types";
 import { createTokenStore } from "../src/store/create-token-store";

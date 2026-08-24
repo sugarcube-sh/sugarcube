@@ -40,7 +40,6 @@
     font-variant-numeric: tabular-nums;
 }
 
-
 .diff-entry:not(:first-child) {
     border-block-start: var(--border-width-thin) var(--border-style) var(--color-surface-border);
 }

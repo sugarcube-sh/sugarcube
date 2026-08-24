@@ -52,8 +52,6 @@ export {
 } from "./shared/uno-rules.js";
 
 export { formatCSSVarName } from "./shared/format-css-var-name.js";
-// The same conversion the CSS renderer uses, so anything painting a token value in a browser
-// — Studio's swatches — agrees with the stylesheet by construction rather than by luck.
 export { convertColorToString } from "./shared/color/color-conversion.js";
 export type { Result } from "./types/result.js";
 export { createVariableNameResolver } from "./shared/resolve-variable-name.js";

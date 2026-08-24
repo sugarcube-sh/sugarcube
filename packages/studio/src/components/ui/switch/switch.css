@@ -27,7 +27,7 @@ input[type="checkbox"].switch::before {
     border: 1px solid transparent;
     border-radius: var(--radius-full);
     background-color: var(--color-surface-z1);
-    box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.20);
+    box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.2);
     transition: transform var(--transition-normal) var(--ease-in-out);
 }
 

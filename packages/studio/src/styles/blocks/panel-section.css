@@ -1,36 +1,36 @@
 .design-area-edit section {
-  border-block-start: var(--border-width-thin) solid var(--color-border-normal);
-  padding-block-end: var(--space-3xs);
+    border-block-start: var(--border-width-thin) solid var(--color-border-normal);
+    padding-block-end: var(--space-3xs);
 }
 
 .section-content {
-  padding-inline-start: var(--space-2xs);
-  padding-inline-end: var(--space-2xs);
-  padding-block: var(--space-3xs);
-  color: var(--color-text-quiet);
+    padding-inline-start: var(--space-2xs);
+    padding-inline-end: var(--space-2xs);
+    padding-block: var(--space-3xs);
+    color: var(--color-text-quiet);
 }
 
 .design-area-diff {
-  flex-shrink: 0;
-  max-block-size: 50%;
-  overflow-y: auto;
+    flex-shrink: 0;
+    max-block-size: 50%;
+    overflow-y: auto;
 
-  background: var(--color-bg-subtle);
-  border-block-start: var(--border-width-thin) solid var(--color-surface-border);
+    background: var(--color-bg-subtle);
+    border-block-start: var(--border-width-thin) solid var(--color-surface-border);
 
-  animation: design-diff-reveal var(--transition-normal) var(--ease-out, ease-out);
+    animation: design-diff-reveal var(--transition-normal) var(--ease-out, ease-out);
 }
 
 .section-content > * + * {
-  margin-block-start: var(--space-3xs);
+    margin-block-start: var(--space-3xs);
 }
 
 @keyframes design-diff-reveal {
-  from {
-    opacity: 0;
-  }
+    from {
+        opacity: 0;
+    }
 
-  to {
-    opacity: 1;
-  }
+    to {
+        opacity: 1;
+    }
 }

@@ -40,8 +40,8 @@
   "devDependencies": {
     "@radix-ui/react-popover": "^1.1.14",
     "@radix-ui/react-tabs": "^1.1.13",
-    "@sugarcube-sh/vite": "workspace:*",
     "@sugarcube-sh/cli": "workspace:*",
+    "@sugarcube-sh/vite": "workspace:*",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@unocss/preset-wind3": "^66.6.0",

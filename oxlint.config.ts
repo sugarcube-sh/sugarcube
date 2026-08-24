@@ -24,8 +24,7 @@ export default defineConfig({
     },
     overrides: [
         {
-            // Controls are presentational: props in, callback out. Keeping store access out
-            // is what lets them be re-hosted (embedded mode, docs, tests) without a provider.
+            // Some rules to help keep the studio architecture clean.
             files: ["packages/studio/src/components/controls/**"],
             rules: {
                 "no-restricted-imports": [
@@ -35,12 +34,12 @@ export default defineConfig({
                             {
                                 group: ["**/store", "**/store/**"],
                                 message:
-                                    "components/controls must stay presentational — take props and emit callbacks instead of reading the store.",
+                                    "components/controls must stay presentational - take props and emit callbacks instead of reading the store.",
                             },
                             {
                                 group: ["**/rows", "**/rows/**"],
                                 message:
-                                    "components/controls must not depend on the row layer — a control renders props, it doesn't know about bindings or rows. Shared data shapes belong in tokens/.",
+                                    "components/controls must not depend on the row layer - a control renders props, it doesn't know about bindings or rows. Shared data shapes belong in tokens/.",
                             },
                         ],
                     },

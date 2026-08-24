@@ -5,14 +5,14 @@ import { useFieldRow } from "../../shell/Field";
 import { useRafThrottle } from "../../use-raf-throttle";
 
 type SliderFieldProps = {
-    value: number | undefined;
-    onChange: (value: number) => void;
-    onCommit?: (value: number) => void;
-    min: number;
-    max: number;
-    step?: number;
-    disabled?: boolean;
-    formatValue?: (value: number) => string;
+    "value": number | undefined;
+    "onChange": (value: number) => void;
+    "onCommit"?: (value: number) => void;
+    "min": number;
+    "max": number;
+    "step"?: number;
+    "disabled"?: boolean;
+    "formatValue"?: (value: number) => string;
     "aria-label"?: string;
     "aria-labelledby"?: string;
 };

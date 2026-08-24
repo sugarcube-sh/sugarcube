@@ -2,22 +2,17 @@ import type { PanelSource } from "../types/config.js";
 
 type AliasOptions = string | Record<string, string>;
 
-/** The two fields a section can supply on behalf of its alias bindings. */
 type PanelDefaults = {
     from?: PanelSource;
     options?: AliasOptions;
 };
 
 /**
- * Resolves an alias binding's source against its section's defaults.
+ * Where do this row's choices come from - the binding, or its section?
  *
- * Deliberately returns whatever it finds, including `undefined`: the schema uses that to
- * report exactly what's missing, and the studio calls the same function so the two can't
- * drift apart on what "inherited" means.
- *
- * Nothing here infers a source from a token's `$type` or its value shape. A binding that
- * declares neither, in a section that declares neither, is a config error — as is one that
- * declares both.
+ * Alias bindings can declare their own `from`/`options`, or inherit them from the
+ * section so a shared set isn't repeated. Config validation and the studio both call
+ * this so they never disagree about which one won.
  */
 export function resolvePanelDefaults(
     section: PanelDefaults,
@@ -30,12 +25,10 @@ export function resolvePanelDefaults(
 }
 
 /**
- * `from` and `options` are alternatives, not a pair: one names a source declared elsewhere
- * in config, the other is the set itself. Exactly one has to resolve.
+ * An alias row needs exactly one way to get its choices: either `from` or `options`.
+ * Returns what went wrong when that isn't true.
  */
-export function panelSourceIssue(
-    resolved: PanelDefaults,
-): "missing" | "ambiguous" | undefined {
+export function panelSourceIssue(resolved: PanelDefaults): "missing" | "ambiguous" | undefined {
     const hasFrom = resolved.from !== undefined;
     const hasOptions = resolved.options !== undefined;
 

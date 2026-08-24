@@ -16,14 +16,10 @@ import { siteConfig } from "./src/site.config";
 // SUGARCUBE_STUDIO=true (via `pnpm dev:studio`) swaps the static bundle for a
 // proxy to Studio's own Vite dev server (run `pnpm --filter @sugarcube-sh/studio
 // dev` on :5173), so editing Studio source hot-reloads live in the DevTools
-// dock. The iframe stays on this origin, so the devtools RPC is unaffected.
-// See vite.server below for the proxy (with `ws` for the HMR socket). Set here
-// from process.env (shell/cross-env), not the .env file — the proxy is decided
-// at config-load time.
+// dock.
 const SUGARCUBE_STUDIO = process.env.SUGARCUBE_STUDIO === "true";
 
-// Serve the built Studio SPA statically. Skipped under SUGARCUBE_STUDIO — the
-// proxy takes over. Both live under `/__studio/`, so nothing else changes.
+// Serve the built Studio SPA statically. (This is the part we skip under SUGARCUBE_STUDIO.)
 const serveStudioSPA = {
     name: "sugarcube-studio-serve",
     /** @param {{ middlewares: { use: (path: string, handler: unknown) => void } }} server */
@@ -174,11 +170,6 @@ export default defineConfig({
         mdx(),
     ],
     vite: {
-        // Under SUGARCUBE_STUDIO, proxy the Studio SPA (and its HMR websocket)
-        // to Studio's own dev server on :5173. changeOrigin so its host checks
-        // pass; ws:true forwards the HMR socket upgrade. Spread rather than
-        // `server: undefined` so the key is simply absent otherwise
-        // (exactOptionalPropertyTypes rejects an explicit undefined).
         ...(SUGARCUBE_STUDIO
             ? {
                   server: {
@@ -195,7 +186,7 @@ export default defineConfig({
         plugins: [
             DevTools(),
             // Under SUGARCUBE_STUDIO, tell studio-vite NOT to host the built
-            // SPA at /__studio/ — the proxy above serves it from Studio's dev
+            // SPA at /__studio/. The proxy above serves it from Studio's dev
             // server instead. Otherwise hostStatic wins and you get the static
             // bundle with no HMR.
             studio(SUGARCUBE_STUDIO ? { serveStatic: false } : {}),

@@ -46,7 +46,13 @@ export function familyPaletteResetUpdates(
     pathIndex: PathIndex,
     context?: string,
 ): PaletteResetPlan {
-    const authored = currentPaletteFromReference(readBaseline, family, palettes, pathIndex, context);
+    const authored = currentPaletteFromReference(
+        readBaseline,
+        family,
+        palettes,
+        pathIndex,
+        context,
+    );
     const current = currentPaletteFromReference(readCurrent, family, palettes, pathIndex, context);
 
     if (authored === undefined || current === authored) return { overridden: false, updates: [] };

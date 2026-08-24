@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import { useFieldRow } from "../../shell/Field";
 
 type NumberInputProps = {
-    value: number | undefined;
-    onChange: (value: number) => void;
-    min?: number;
-    max?: number;
-    step?: number;
-    unit?: string;
-    id?: string;
-    disabled?: boolean;
+    "value": number | undefined;
+    "onChange": (value: number) => void;
+    "min"?: number;
+    "max"?: number;
+    "step"?: number;
+    "unit"?: string;
+    "id"?: string;
+    "disabled"?: boolean;
     "aria-label"?: string;
 };
 

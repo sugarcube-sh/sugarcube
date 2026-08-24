@@ -218,7 +218,7 @@ export function createScaleState(
                 const next = { ...existing };
                 if (field === "base") delete next.base;
                 if (field === "spread") delete next.spread;
-    
+
                 const spent =
                     next.base === undefined &&
                     (next.spread === undefined || next.spread === DEFAULT_SPREAD) &&

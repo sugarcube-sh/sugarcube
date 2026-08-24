@@ -1,10 +1,3 @@
-/**
- * Panel resolution is strict: exactly one of `from` and `options` must resolve, on the
- * binding or inherited from its section. Nothing is ever inferred from a token's $type or
- * value shape, so a config supplying neither — or both — fails at load, naming the section
- * and the token.
- */
-
 import { describe, expect, it } from "vitest";
 import { userConfigSchema } from "../src/shared/schemas/config.js";
 

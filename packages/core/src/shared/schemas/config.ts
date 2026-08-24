@@ -71,7 +71,6 @@ const aliasOptionsSchema = z.union([z.string().min(1), z.record(z.string(), z.st
 const aliasBindingSchema = z.object({
     type: z.literal("alias"),
     token: z.string().min(1, "Token path cannot be empty"),
-    // Optional here; exactly one must resolve after section defaults — see panelSectionSchema.
     from: panelSourceSchema.optional(),
     options: aliasOptionsSchema.optional(),
     label: z.string().optional(),
@@ -130,9 +129,6 @@ const panelSectionSchema = z
         options: aliasOptionsSchema.optional(),
         bindings: z.array(panelBindingSchema).min(1, "Bindings array cannot be empty"),
     })
-    // Where an alias gets its choices resolves strictly: declared on the binding, or
-    // inherited from the section, or the config is rejected here rather than guessed at
-    // render time.
     .superRefine((section, ctx) => {
         for (const [index, binding] of section.bindings.entries()) {
             if (binding.type !== "alias") continue;

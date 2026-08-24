@@ -9,7 +9,6 @@ import type { ColorValue } from "../tokens/color-value";
 import type { PathIndex } from "../tokens/path-index";
 import type { TokenSnapshot } from "../tokens/types";
 
-
 export type ControlState<T> = {
     value: T | undefined;
     set: (next: T) => void;
