@@ -1,8 +1,4 @@
 .button {
-    --_padding-block: 0.65em;
-    --_padding-inline: 0.75em;
-    --_form-control-height: round(calc(2 * var(--_padding-block) + 1em * 1.25), 1px);
-
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -10,42 +6,55 @@
     cursor: pointer;
     white-space: nowrap;
     font: inherit;
-    font-size: var(--form-control-font-size, var(--text-base));
+    font-size: var(--text-sm);
     border-color: transparent;
     padding-block: 0;
-    background-color: var(--color-fill-loud, var(--color-neutral-fill-loud));
-    border-radius: var(--form-control-border-radius);
+    border-radius: var(--radius-button);
     border-style: var(--border-style);
     border-width: var(--border-width-thin);
     box-shadow: var(--shadow-xs);
-    color: var(--color-on-loud, var(--color-neutral-on-normal));
     font-weight: var(--font-weight-medium);
-    gap: var(--space-2xs);
-    min-height: var(--_form-control-height);
-    padding-inline: var(--_padding-inline);
+    gap: var(--space-100);
     transition-property: color, background-color, border-color;
     transition-timing-function: var(--ease-out);
     transition-duration: var(--transition-normal);
+
+    height: 1.625rem;
+    padding-block: var(--space-150);
+    padding-inline: var(--space-300);
 }
 
-.button:hover {
-    background-color: color-mix(
-        in oklab,
-        var(--color-fill-loud, var(--color-neutral-fill-loud)),
-        var(--color-mix-hover, black 5%)
-    );
+.button:not([data-role]),
+.button[data-role="primary"] {
+    background: var(--r-primary-background);
+    color: var(--r-primary-foreground);
+    --v-icon: var(--r-primary-icon);
+
+    &:hover {
+        background: var(--r-primary-background-hover);
+        --v-icon: var(--r-primary-icon-hover);
+    }
 }
 
-.button:active {
-    background-color: color-mix(
-        in oklab,
-        var(--color-fill-loud, var(--color-neutral-fill-loud)),
-        var(--color-mix-active, black 10%)
-    );
+.button[data-role="secondary"] {
+    background: var(--r-secondary-background);
+    color: var(--r-secondary-foreground);
+    --v-icon: var(--r-secondary-icon);
+
+    &:hover {
+        background: var(--r-secondary-background-hover);
+        color: var(--r-secondary-foreground-hover);
+        --v-icon: var(--r-secondary-icon-hover);
+    }
 }
 
-.button:focus-visible {
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-fill-loud) 25%, transparent);
-    outline: none;
-    border-color: var(--color-fill-loud);
+.button[data-role="tertiary"] {
+    background: var(--r-tertiary-background);
+    color: var(--r-tertiary-foreground);
+    border-color: var(--color-gray-7);
+
+    &:hover {
+        color: var(--r-tertiary-foreground-hover);
+        --v-icon: var(--r-tertiary-icon-hover);
+    }
 }

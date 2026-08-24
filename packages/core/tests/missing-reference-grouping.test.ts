@@ -37,7 +37,7 @@ describe("missing reference grouping", () => {
             tree({
                 color: {
                     $type: "color",
-                    a: { $value: "{color.b}" }, 
+                    a: { $value: "{color.b}" },
                     b: { $value: "{color.c}" },
                 },
             }),

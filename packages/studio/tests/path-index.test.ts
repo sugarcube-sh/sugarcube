@@ -104,7 +104,7 @@ describe("PathIndex", () => {
         );
 
         it("matches a single segment with *", () => {
-            expect(index.matching("size.step.*").sort()).toEqual([
+            expect([...index.matching("size.step.*")].sort()).toEqual([
                 "size.step.0",
                 "size.step.1",
                 "size.step.2",
@@ -112,7 +112,7 @@ describe("PathIndex", () => {
         });
 
         it("requires exact segment count", () => {
-            // `size.*` would NOT match `size.step.0` — that's a deeper path.
+            // `size.*` would NOT match `size.step.0` - that's a deeper path.
             expect(index.matching("size.*")).toEqual([]);
         });
     });

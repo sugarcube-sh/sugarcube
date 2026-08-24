@@ -1,4 +1,5 @@
 import { type ReactNode, useMemo } from "react";
+import { SourcePath } from "../../controls/SourcePath";
 import { TokenPath } from "../../controls/TokenPath";
 import { usePendingChanges } from "../../store/hooks";
 import type { SlimToken, TokenDiffEntry } from "../../tokens/types";
@@ -12,11 +13,7 @@ export function DiffView() {
     const diff = usePendingChanges();
 
     if (diff.length === 0) {
-        return (
-            <p className="text-quiet text-sm font-mono text-center p-sm">
-                No changes yet — tweak something.
-            </p>
-        );
+        return <p className="diff-empty">No changes yet - tweak something.</p>;
     }
 
     const grouped = groupBySourceFile(diff);
@@ -27,14 +24,9 @@ export function DiffView() {
                 const headingId = `diff-file-${sourcePath.replace(/[^a-z0-9]/gi, "-")}-${i}`;
                 return (
                     <section key={sourcePath} className="diff-file" aria-labelledby={headingId}>
-                        <header className="diff-file-header repel font-mono text-sm">
-                            <code
-                                id={headingId}
-                                className="bg-transparent p-0 text-quiet truncate min-w-0"
-                            >
-                                {sourcePath}
-                            </code>
-                            <span className="shrink-0 text-quietest tabular-nums">
+                        <header className="diff-file-header repel" data-nowrap>
+                            <SourcePath id={headingId} path={sourcePath} />
+                            <span className="diff-file-count">
                                 {entries.length} {entries.length === 1 ? "change" : "changes"}
                             </span>
                         </header>
@@ -58,16 +50,8 @@ function DiffEntry({ entry }: { entry: TokenDiffEntry }) {
 
     return (
         <article className="diff-entry" aria-label={`Change to ${entry.path}`}>
-            <header className="diff-entry-header cluster cluster-gap-2xs">
+            <header className="diff-entry-header">
                 <TokenPath path={entry.path} />
-                {entry.contexts.length > 0 && (
-                    <span
-                        className="ms-auto text-quietest font-mono text-xs"
-                        title={entry.contexts.join(", ")}
-                    >
-                        {entry.contexts.join(", ")}
-                    </span>
-                )}
             </header>
             <pre className="diff-block" aria-label="Change">
                 {lines.map((line, i) => (
@@ -97,13 +81,6 @@ function groupBySourceFile(entries: readonly TokenDiffEntry[]): [string, TokenDi
     }
     return [...groups.entries()];
 }
-
-// ---------------------------------------------------------------------------
-// Unified line diff. JSON.stringify output is structurally stable, so an LCS
-// pass produces a clean "context / removed / added" stream where unchanged
-// braces and keys collapse into context lines and only the changed values get
-// the +/- treatment.
-// ---------------------------------------------------------------------------
 
 function diffTokens(from: SlimToken, to: SlimToken): DiffLine[] {
     const fromLines = JSON.stringify(from, null, 2).split("\n");
@@ -141,8 +118,6 @@ function diffLines(a: string[], b: string[]): DiffLine[] {
             out.unshift({ kind: "removed", text: a[i - 1] as string });
             i--;
         } else {
-            // Tie or strictly-better add path: prefer add during backtrack so
-            // the final output reads "removed then added", which is conventional.
             out.unshift({ kind: "added", text: b[j - 1] as string });
             j--;
         }
@@ -158,15 +133,34 @@ function diffLines(a: string[], b: string[]): DiffLine[] {
     return out;
 }
 
-// ---------------------------------------------------------------------------
-// Minimal JSON highlighter. Returns ReactNode[] so we don't have to set
-// dangerouslySetInnerHTML. Token-ref-aware: `{some.token.path}` strings get
-// the accent treatment because they're the substance of most diffs.
-// ---------------------------------------------------------------------------
-
 const JSON_TOKEN_RE =
     /("(?:[^"\\]|\\.)*")(\s*:)?|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|\b(true|false|null)\b|([{}[\],])/g;
 const REF_INNER_RE = /^\{[\w.-]+\}$/;
+
+function refNodes(inner: string): ReactNode[] {
+    const cut = inner.lastIndexOf(".");
+    if (cut === -1) {
+        return [
+            <span key="whole" className="diff-json-ref">
+                {inner}
+            </span>,
+        ];
+    }
+
+    const tail = inner.slice(cut + 1, -1);
+    const tailClass = /^\d+$/.test(tail) ? "diff-json-ref-tail" : "diff-json-ref-name";
+    return [
+        <span key="head" className="diff-json-ref">
+            {inner.slice(0, cut + 1)}
+        </span>,
+        <span key="tail" className={tailClass}>
+            {tail}
+        </span>,
+        <span key="close" className="diff-json-ref">
+            {"}"}
+        </span>,
+    ];
+}
 
 function highlightJson(line: string): ReactNode[] {
     const out: ReactNode[] = [];
@@ -196,7 +190,7 @@ function highlightJson(line: string): ReactNode[] {
                     out.push(
                         <span key={i++} className="diff-json-string">
                             <span className="diff-json-quote">"</span>
-                            <span className="diff-json-ref">{inner}</span>
+                            {refNodes(inner)}
                             <span className="diff-json-quote">"</span>
                         </span>,
                     );

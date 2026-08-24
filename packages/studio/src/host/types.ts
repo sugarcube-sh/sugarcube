@@ -14,9 +14,9 @@ export interface Host {
     baseline: StoreApi<TokenSnapshot>;
 
     /**
-     * Optional collaborative working channel. Present in DevTools — edits
+     * Optional collaborative working channel. Present in DevTools - edits
      * flow through devtools shared state so the server can re-run the
-     * pipeline and HMR the page. Absent in Embedded — edits are local
+     * pipeline and HMR the page. Absent in Embedded - edits are local
      * until save and the SPA runs the pipeline in-browser.
      */
     working?: WorkingChannel;
@@ -26,7 +26,7 @@ export interface Host {
      * machinery to the token store. Embedded uses this to run the
      * pipeline in-browser and post the generated CSS to the parent
      * window. Returns a cleanup function for teardown. DevTools doesn't
-     * implement it — the server runs the pipeline and HMR delivers CSS.
+     * implement it - the server runs the pipeline and HMR delivers CSS.
      */
     attach?(store: TokenStoreAPI): () => void;
 

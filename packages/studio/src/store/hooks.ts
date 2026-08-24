@@ -1,11 +1,11 @@
-import { type StudioConfig, createVariableNameResolver } from "@sugarcube-sh/core/client";
-import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
+import type { StudioConfig } from "@sugarcube-sh/core/client";
+import { createContext, useCallback, useContext, useSyncExternalStore } from "react";
 import { useStore } from "zustand";
 import { useHost } from "../host/host-provider";
 import { currentPaletteFromReference } from "../tokens/palette";
 import type { PathIndex, PathIndexAccessor } from "../tokens/path-index";
 import type { TokenDiffEntry, TokenSnapshot } from "../tokens/types";
-import type { DiffState, DiffStoreAPI } from "./create-diff-store";
+import { type DiffState, type DiffStoreAPI, pendingKey } from "./create-diff-store";
 import type { TokenStoreAPI, TokenStoreState } from "./create-token-store";
 import type { ScaleStateAPI, ScaleStateStore } from "./scale-state";
 
@@ -26,11 +26,6 @@ function useStudio(): StudioContextValue {
 
 export function useStudioConfig(): StudioConfig | undefined {
     return useBaseline().config.studio;
-}
-
-export function useVariableName(): (path: string) => string {
-    const baseline = useBaseline();
-    return useMemo(() => createVariableNameResolver(baseline.config.variables), [baseline]);
 }
 
 export function usePathIndex(): PathIndex {
@@ -90,17 +85,17 @@ export function usePendingChangesCount(): number {
     return useDiffStore((state) => state.entries.length);
 }
 
-// Boolean form of the count check. Returning the boolean *inside* the
-// selector means Zustand's Object.is bail kicks in when the count
-// fluctuates between non-zero values (e.g. linked containers crossing
-// rounding thresholds during a slider drag) — the boolean stays `true`
-// and consumers don't re-render.
 export function useHasPendingChanges(): boolean {
     return useDiffStore((state) => state.entries.length > 0);
 }
 
 export function useHasPendingChange(path: string): boolean {
-    return useDiffStore((state) => state.pendingPaths.has(path));
+    const context = useCurrentContext();
+    return useDiffStore(
+        (state) =>
+            state.pendingPaths.has(pendingKey(path)) ||
+            state.pendingPaths.has(pendingKey(path, context)),
+    );
 }
 
 export function useDiscard(): () => Promise<void> {

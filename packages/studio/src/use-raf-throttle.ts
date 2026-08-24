@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
 
-// Throttle a callback to at most one execution per animation frame.
 export function useRafThrottle<Args extends unknown[]>(
     callback: (...args: Args) => void,
 ): (...args: Args) => void {

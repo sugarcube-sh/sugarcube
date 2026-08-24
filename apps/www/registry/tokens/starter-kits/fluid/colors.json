@@ -139,9 +139,6 @@
         "loud": {
           "$value": "{color.neutral.300}"
         }
-      },
-      "link": {
-        "$value": "{color.neutral.950}"
       }
     },
 

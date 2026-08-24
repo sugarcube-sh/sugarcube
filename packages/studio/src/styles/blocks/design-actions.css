@@ -1,16 +1,16 @@
 .design-actions {
-    block-size: var(--studio-bar-height);
-    padding-inline: var(--space-2xs);
-    background: var(--gradient-surface);
+    padding-inline: var(--space-250);
+    padding-block: var(--space-250);
     border-block-start: var(--border-width-thin) solid var(--color-surface-border);
 }
 
-.design-actions-toggle-icon {
-    transition: transform var(--transition-normal);
+.design-actions-trigger {
+    background-color: var(--color-component-modified-light);
+    color: var(--color-component-modified);
 }
 
-.design-actions-toggle[data-state="closed"] .design-actions-toggle-icon {
-    transform: rotate(-90deg);
+.design-actions-trigger-icon {
+    color: var(--color-component-modified);
 }
 
 .save-pr-link {

@@ -1,0 +1,22 @@
+{
+  "r": {
+    "$type": "color",
+    "primary": {
+      "background": { "$value": "{v.strong}" },
+      "background-hover": { "$value": "{v.strong-hover}" },
+      "foreground": { "$value": "{v.on-strong}" }
+    },
+    "secondary": {
+      "background": { "$value": "{v.weak}" },
+      "background-hover": { "$value": "{v.medium}" },
+      "foreground": { "$value": "{v.on-weak}" },
+      "foreground-hover": { "$value": "{v.on-strong}" }
+    },
+    "tertiary": {
+      "background": { "$value": "{color.neutral.weakest}" },
+      "background-hover": { "$value": "{color.neutral.weak}" },
+      "foreground": { "$value": "{color.neutral.on-weakest}" },
+      "foreground-hover": { "$value": "{color.neutral.on-weak}" }
+    }
+  }
+}

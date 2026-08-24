@@ -1,10 +1,3 @@
-/**
- * The load-bearing invariant for the post-save phantom-diff bug fix:
- * `selectOriginalScale` always reads from the live baseline, so after a
- * save lands and baseline updates, the "original" scale extension
- * naturally tracks the new on-disk value — no stale capture to diverge.
- */
-
 import type { ScaleExtension } from "@sugarcube-sh/core/client";
 import { describe, expect, it } from "vitest";
 import { selectEffectiveScale, selectOriginalScale } from "../src/store/scale-state";
@@ -14,7 +7,6 @@ import { snapshot, tree } from "./fixtures";
 const makeScale = (override: Partial<ScaleExtension> = {}): ScaleExtension =>
     ({
         mode: "exponential",
-        viewport: { min: 320, max: 1440 },
         base: {
             min: { value: 1, unit: "rem" },
             max: { value: 1.125, unit: "rem" },

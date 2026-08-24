@@ -22,4 +22,29 @@ export default defineConfig({
     env: {
         builtin: true,
     },
+    overrides: [
+        {
+            // Some rules to help keep the studio architecture clean.
+            files: ["packages/studio/src/components/controls/**"],
+            rules: {
+                "no-restricted-imports": [
+                    "error",
+                    {
+                        patterns: [
+                            {
+                                group: ["**/store", "**/store/**"],
+                                message:
+                                    "components/controls must stay presentational - take props and emit callbacks instead of reading the store.",
+                            },
+                            {
+                                group: ["**/rows", "**/rows/**"],
+                                message:
+                                    "components/controls must not depend on the row layer - a control renders props, it doesn't know about bindings or rows. Shared data shapes belong in tokens/.",
+                            },
+                        ],
+                    },
+                ],
+            },
+        },
+    ],
 });

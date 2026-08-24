@@ -149,6 +149,10 @@ export const ErrorMessages = {
             `Multiple resolver files found:\n${paths.map((f) => `  - ${f}`).join("\n")}\n\nPlease specify which one to use:\n  1. Create sugarcube.config.ts with resolver field\n  2. Use --resolver flag (generate command only)`,
         NO_CONFIG_OR_RESOLVER: () =>
             "No configuration found. Either:\n  1. Run: npx @sugarcube-sh/cli init\n  2. Create a .resolver.json file\n  3. Create a sugarcube.config.ts file",
+        PANEL_MISSING_SOURCE: (section: string, token: string) =>
+            `Panel section "${section}" has an alias binding for "${token}" with no choices. Set "options" to a glob like "radius.*", or "from" to a named source like "colorScale". Either can go on the section instead, to apply to every binding inside`,
+        PANEL_AMBIGUOUS_SOURCE: (section: string, token: string) =>
+            `Panel section "${section}" has an alias binding for "${token}" with both "from" and "options". They are alternatives: "options" is the set itself, "from" names a source declared elsewhere in studio config. Remove one — note that either may have been inherited from the section`,
     },
 
     UTILITIES: {

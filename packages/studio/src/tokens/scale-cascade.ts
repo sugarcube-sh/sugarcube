@@ -190,7 +190,7 @@ export function applyScaleToResolved(
         let newMax: Dim;
         let newMin: Dim;
         if (override) {
-            // User has pinned this step — preserve their values verbatim.
+            // User has pinned this step - preserve their values verbatim.
             newMax = override.max;
             newMin = override.min;
         } else {

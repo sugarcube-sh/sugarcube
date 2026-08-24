@@ -8,7 +8,7 @@ import {
     getWorkingSharedState,
 } from "../providers/rpc-client";
 
-// Max wait for both shared states to populate — the kit has no connection-health signal.
+// Max wait for both shared states to populate - the kit has no connection-health signal.
 const INIT_TIMEOUT_MS = 10_000;
 
 export type InitData = {

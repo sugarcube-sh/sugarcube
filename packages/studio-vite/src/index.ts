@@ -1,9 +1,19 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core";
 import { STUDIO_RPC } from "@sugarcube-sh/studio-protocol";
 import { clientPath } from "@sugarcube-sh/studio/client";
 import type { SugarcubePluginContext } from "@sugarcube-sh/vite";
 import { defineRpcFunction } from "@vitejs/devtools-kit";
 import type { Plugin } from "vite";
+
+const studioDockIcon = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+    readFileSync(
+        join(dirname(fileURLToPath(import.meta.url)), "../assets/sugarcube-logo.svg"),
+        "utf8",
+    ),
+)}`;
 
 declare module "@vitejs/devtools-kit" {
     interface DevToolsRpcSharedStates {
@@ -18,18 +28,30 @@ declare module "@vitejs/devtools-kit" {
 
 const SUGARCUBE_VITE_PLUGIN_NAME = "sugarcube:api";
 
-export default function sugarcubeStudio(): Plugin {
+export interface SugarcubeStudioOptions {
+    /**
+     * Host the built Studio SPA at `/__studio/`. Default `true`. Set `false`
+     * when the host app serves that path itself (e.g. proxying `/__studio/`
+     * to Studio's own Vite dev server for live HMR).
+     */
+    serveStatic?: boolean;
+}
+
+export default function sugarcubeStudio(options: SugarcubeStudioOptions = {}): Plugin {
+    const { serveStatic = true } = options;
     return {
         name: "sugarcube:studio",
 
         devtools: {
             async setup(ctx) {
-                ctx.views.hostStatic("/__studio/", clientPath);
+                if (serveStatic) {
+                    ctx.views.hostStatic("/__studio/", clientPath);
+                }
 
                 ctx.docks.register({
                     id: "sugarcube-studio",
                     title: "Studio",
-                    icon: "ph:diamond-duotone",
+                    icon: studioDockIcon,
                     type: "iframe",
                     url: "/__studio/",
                 });
@@ -79,17 +101,16 @@ export default function sugarcubeStudio(): Plugin {
                 // client edit in the "updated" handler below.
                 let lastSyncedResolved: ResolvedTokens | null = null;
 
-                // Client edit → re-run pipeline + push CSS via HMR.
                 working.on("updated", async () => {
                     const current = working.value();
                     if (!current?.resolved) return;
 
                     // A disk reload syncs `working.resolved` to the exact object
                     // sugarcube's own reloadTokens just produced. That update is not
-                    // a client edit — the pipeline already ran and /__uno.css was
-                    // already invalidated by the sugarcube plugin — so skip it.
+                    // a client edit - the pipeline already ran and /__uno.css was
+                    // already invalidated by the sugarcube plugin - so skip it.
                     // Without this, every disk token-save regenerates CSS and reloads
-                    // /__uno.css twice (studio's rerun on top of sugarcube's reload).
+                    // /__uno.css twice.
                     if (current.resolved === lastSyncedResolved) return;
 
                     await scCtx.rerunPipeline(current.resolved);
@@ -101,11 +122,9 @@ export default function sugarcubeStudio(): Plugin {
 
                 // Disk reload (file watcher, post-save, post-discard) →
                 // push the new disk state to the client AND reset the
-                // working copy to match (preserves today's "external file
-                // edit blows away pending edits" semantics).
+                // working copy to match).
                 scCtx.onReload(() => {
                     if (!scCtx.config || !scCtx.resolved || !scCtx.trees) return;
-                    // structuredClone — see initialValue above.
                     const configClone = structuredClone(scCtx.config) as InternalConfig;
                     disk.mutate((draft) => {
                         draft.config = configClone;
@@ -143,9 +162,8 @@ export default function sugarcubeStudio(): Plugin {
                                 // `onReload` writes fresh disk state into both shared states.
                                 await scCtx.reloadTokens();
                                 // Discard doesn't touch disk, so no token-watcher
-                                // fires — invalidate here to push the reverted CSS to
-                                // the page. (The "updated" listener deliberately no
-                                // longer does this for disk syncs.)
+                                // fires - invalidate here to push the reverted CSS to
+                                // the page.
                                 if (ctx.viteServer) {
                                     scCtx.invalidate(ctx.viteServer);
                                 }

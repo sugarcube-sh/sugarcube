@@ -1,5 +1,5 @@
 /**
- * Test fixtures — minimal builders for resolved tokens, snapshots, and
+ * Test fixtures - minimal builders for resolved tokens, snapshots, and
  * the path-index/snapshot shapes the studio's pure functions expect.
  *
  * These mimic what the core pipeline produces but skip the cost of
@@ -14,7 +14,7 @@ import type { TokenSnapshot } from "../src/tokens/types";
 type ResolvedFixture<T = unknown> = {
     /** The token's bare `$path` (e.g. "size.step.0"). */
     path: string;
-    /** Default value — also used for `$resolvedValue` unless overridden. */
+    /** Default value - also used for `$resolvedValue` unless overridden. */
     value: T;
     /** Permutation context. Defaults to "default". */
     context?: string;
@@ -57,7 +57,7 @@ type SnapshotFixture = {
     resolved?: ResolvedTokens;
 };
 
-/** Build a minimal TokenSnapshot — config is stubbed; selectors that touch it should pass an explicit one. */
+/** Build a minimal TokenSnapshot - config is stubbed; selectors that touch it should pass an explicit one. */
 export function snapshot(s: SnapshotFixture = {}): TokenSnapshot {
     return {
         config: {} as TokenSnapshot["config"],

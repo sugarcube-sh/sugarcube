@@ -9,13 +9,13 @@ const sizeBindingMeta: ScaleBindingMeta = {
     binding: { type: "scale", token: "size.step.*", base: "size.step.0" },
     kind: "scale",
     parentPath: "size.step",
+    ownedPaths: ["size.step.0", "size.step.1"],
     sourcePath: "size.json",
 };
 
 const makeScale = (override: Partial<ScaleExtension> = {}): ScaleExtension =>
     ({
         mode: "exponential",
-        viewport: { min: 320, max: 1440 },
         base: { min: { value: 1, unit: "rem" }, max: { value: 1, unit: "rem" } },
         ratio: { min: 1.2, max: 1.2 },
         steps: { negative: 0, positive: 2 },
@@ -38,8 +38,7 @@ describe("computeDiff", () => {
         const pathIndex = new PathIndex(baselineMap);
 
         const diff = computeDiff(current, baseline, pathIndex);
-        // toEqual (not toMatchObject) — guards against stray fields slipping
-        // into the diff entry and ending up in the file write.
+
         expect(diff).toEqual([
             {
                 path: "color.bg",
@@ -69,11 +68,7 @@ describe("computeDiff", () => {
     });
 
     it("skips paths the index knows about but the baseline doesn't", () => {
-        // Stale-pathIndex scenario: the index was built before a token was
-        // removed externally. computeDiff must not crash or emit noise for
-        // a path whose baseline entry is gone — it just skips it.
         const baselineMap = resolved({ path: "color.bg", value: "#fff" });
-        // PathIndex was built from a richer map that included color.fg.
         const indexedFromOlderMap = resolved(
             { path: "color.bg", value: "#fff" },
             { path: "color.fg", value: "#000" },
@@ -81,7 +76,6 @@ describe("computeDiff", () => {
         const baseline = snapshot({ resolved: baselineMap });
         const pathIndex = new PathIndex(indexedFromOlderMap);
 
-        // Current also lacks color.fg.
         expect(computeDiff(baselineMap, baseline, pathIndex)).toEqual([]);
     });
 
@@ -138,9 +132,6 @@ describe("computeDiff", () => {
         });
 
         it("suppresses leaf diffs that descend from a scale-extension binding", () => {
-            // The leaves changed too (because the scale was materialized),
-            // but the user committed via the extension — the diff should
-            // write the extension back, not the 13 generated leaves.
             const onDisk = makeScale();
             const baselineMap = resolved(
                 { path: "size.step.0", value: { value: 1, unit: "rem" } },
@@ -161,7 +152,6 @@ describe("computeDiff", () => {
             const pathIndex = new PathIndex(baselineMap);
 
             const diff = computeDiff(overlaidLeaves, baseline, pathIndex, edits, bindings);
-            // Exactly one entry — the scale diff. No leaf entry for size.step.1.
             expect(diff).toHaveLength(1);
             expect(diff[0]?.path).toBe("size.step");
         });
@@ -179,12 +169,10 @@ describe("computeDiff", () => {
             });
             const pathIndex = new PathIndex(baselineMap);
 
-            // No edit entry for the binding. Bindings still registered.
             expect(computeDiff(baselineMap, baseline, pathIndex, {}, bindings)).toEqual([]);
         });
 
         it("emits no entry when the edit deeply equals the on-disk scale", () => {
-            // After-save scenario: edits were not yet cleared but match disk.
             const r = makeScale();
             const baselineMap = resolved({ path: "size.step.0", value: { value: 1, unit: "rem" } });
             const baseline = snapshot({

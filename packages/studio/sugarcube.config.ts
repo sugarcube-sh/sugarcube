@@ -2,6 +2,18 @@ import { defineConfig } from "@sugarcube-sh/vite";
 
 export default defineConfig({
     resolver: "src/design-tokens/tokens.resolver.json",
+    variables: {
+        permutations: [
+            {
+                input: {},
+                selector: ":root",
+            },
+            ...["accent", "neutral"].map((variant) => ({
+                input: { variant },
+                selector: `[data-variant="${variant}"]`,
+            })),
+        ],
+    },
     components: "src/components/ui",
     cube: "src/styles",
     utilities: {

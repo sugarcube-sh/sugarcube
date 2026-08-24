@@ -1,9 +1,3 @@
-/**
- * Verifies that materializing a scale extension produces the dimension
- * tokens for each calculated step and merges them into the resolved map
- * without touching unrelated entries.
- */
-
 import type { ScaleExtension } from "@sugarcube-sh/core/client";
 import { describe, expect, it } from "vitest";
 import { materializeScale } from "../src/store/scale-apply";
@@ -41,7 +35,6 @@ describe("materializeScale", () => {
             max: { value: 1, unit: "rem" },
         });
 
-        // step.1 = base * 1.2^1 = 1.2
         const step1 = after["default::size.step.1"] as { $value: { value: number } };
         expect(step1.$value.value).toBeCloseTo(1.2, 4);
     });
@@ -56,7 +49,6 @@ describe("materializeScale", () => {
         const after = materializeScale(before, scale, "size.step", pathIndex, "light");
 
         expect((after["light::size.step.0"] as { $value: { value: number } }).$value.value).toBe(1);
-        // dark untouched
         expect((after["dark::size.step.0"] as { $value: { value: number } }).$value.value).toBe(0);
     });
 
@@ -82,7 +74,6 @@ describe("materializeScale", () => {
     });
 
     it("skips step paths that don't exist in the resolved map", () => {
-        // Scale wants steps 0..2 but only 0 exists in resolved.
         const before = resolved({ path: "size.step.0", value: { value: 0, unit: "rem" } });
         const pathIndex = new PathIndex(before);
 

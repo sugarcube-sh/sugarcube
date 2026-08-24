@@ -4,7 +4,9 @@
 }
 
 .section-content {
-    padding-inline: var(--space-2xs);
+    padding-inline-start: var(--space-2xs);
+    padding-inline-end: var(--space-2xs);
+    padding-block: var(--space-3xs);
     color: var(--color-text-quiet);
 }
 
@@ -13,10 +15,14 @@
     max-block-size: 50%;
     overflow-y: auto;
 
-    background: var(--color-surface-default);
+    background: var(--color-bg-subtle);
     border-block-start: var(--border-width-thin) solid var(--color-surface-border);
 
     animation: design-diff-reveal var(--transition-normal) var(--ease-out, ease-out);
+}
+
+.section-content > * + * {
+    margin-block-start: var(--space-3xs);
 }
 
 @keyframes design-diff-reveal {

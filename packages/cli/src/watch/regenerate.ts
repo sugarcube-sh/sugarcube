@@ -253,9 +253,7 @@ export function createWatchSession(
                 return { output, warnings: current.warnings };
             }
 
-            const output = options.variablesOnly
-                ? []
-                : await regenerateUtilities(state);
+            const output = options.variablesOnly ? [] : await regenerateUtilities(state);
             return { output, warnings: state.warnings };
         },
     };

@@ -30,9 +30,12 @@ export function applyScaleEdits(
 ): ResolvedTokens {
     let next = resolved;
 
-    for (const [token, edit] of Object.entries(edits)) {
-        const meta = bindings[token];
-        if (!meta) continue;
+    for (const [token, meta] of Object.entries(bindings)) {
+        const edit = edits[token];
+        if (!edit) {
+            next = restoreBinding(next, meta, baseline, pathIndex, context);
+            continue;
+        }
 
         if (edit.kind === "tokens") {
             const hasTokensEdit =
@@ -67,18 +70,8 @@ export function applyScaleEdits(
             context,
         );
 
-        // Containers track the source's ratio (proportional shape), not its
-        // base (body font size — a side effect we don't want bundled into
-        // layout). Only exponential-mode scale edits carry a ratio; other
-        // edit kinds leave the factor at 1 and the link is a no-op.
         const sourceEdit = edits[linkMeta.sourceBinding];
-        let factor = 1;
-        if (sourceEdit?.kind === "scale" && sourceEdit.scale.mode === "exponential") {
-            const original = getScaleExtension(baseline.trees, sourceMeta.parentPath);
-            if (original?.mode === "exponential" && original.ratio.max > 0) {
-                factor = sourceEdit.scale.ratio.max / original.ratio.max;
-            }
-        }
+        const factor = linkedScaleFactor(sourceEdit, sourceMeta, baseline, pathIndex, context);
         const enabled = links[token]?.enabled ?? true;
 
         next = applyLinkedScaleToResolved(
@@ -92,6 +85,48 @@ export function applyScaleEdits(
     }
 
     return next;
+}
+
+function linkedScaleFactor(
+    sourceEdit: ScaleEdit | undefined,
+    sourceMeta: ScaleBindingMeta,
+    baseline: TokenSnapshot,
+    pathIndex: PathIndex,
+    context: string,
+): number {
+    if (sourceEdit?.kind === "scale") {
+        const original = getScaleExtension(baseline.trees, sourceMeta.parentPath);
+        const authored = original?.base.max.value;
+        if (!authored) return 1;
+        return sourceEdit.scale.base.max.value / authored;
+    }
+
+    if (sourceEdit?.kind === "tokens" && sourceEdit.base !== undefined) {
+        const captured = selectCapture(baseline, pathIndex, sourceMeta.binding, context);
+        if (!captured?.baseMax) return 1;
+        return sourceEdit.base / captured.baseMax;
+    }
+
+    return 1;
+}
+
+function restoreBinding(
+    resolved: ResolvedTokens,
+    meta: ScaleBindingMeta,
+    baseline: TokenSnapshot,
+    pathIndex: PathIndex,
+    context: string,
+): ResolvedTokens {
+    const updates: ResolvedTokens = {};
+
+    for (const path of meta.ownedPaths) {
+        for (const { key } of pathIndex.entriesFor(path).filter((e) => e.context === context)) {
+            const original = baseline.resolved[key];
+            if (original && resolved[key] !== original) updates[key] = original;
+        }
+    }
+
+    return Object.keys(updates).length > 0 ? { ...resolved, ...updates } : resolved;
 }
 
 export function materializeScale(

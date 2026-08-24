@@ -13,11 +13,18 @@ import { defineConfig, fontProviders } from "astro/config";
 import sirv from "sirv";
 import { siteConfig } from "./src/site.config";
 
-// This is just here for me so I can develop <sugarcube-studio> in dev
+// SUGARCUBE_STUDIO=true (via `pnpm dev:studio`) swaps the static bundle for a
+// proxy to Studio's own Vite dev server (run `pnpm --filter @sugarcube-sh/studio
+// dev` on :5173), so editing Studio source hot-reloads live in the DevTools
+// dock.
+const SUGARCUBE_STUDIO = process.env.SUGARCUBE_STUDIO === "true";
+
+// Serve the built Studio SPA statically. (This is the part we skip under SUGARCUBE_STUDIO.)
 const serveStudioSPA = {
     name: "sugarcube-studio-serve",
     /** @param {{ middlewares: { use: (path: string, handler: unknown) => void } }} server */
     configureServer(server) {
+        if (SUGARCUBE_STUDIO) return;
         server.middlewares.use("/__studio/", sirv(clientPath, { dev: true, single: true }));
     },
 };
@@ -163,9 +170,26 @@ export default defineConfig({
         mdx(),
     ],
     vite: {
+        ...(SUGARCUBE_STUDIO
+            ? {
+                  server: {
+                      proxy: {
+                          "/__studio": {
+                              target: "http://localhost:5173",
+                              changeOrigin: true,
+                              ws: true,
+                          },
+                      },
+                  },
+              }
+            : {}),
         plugins: [
             DevTools(),
-            studio(),
+            // Under SUGARCUBE_STUDIO, tell studio-vite NOT to host the built
+            // SPA at /__studio/. The proxy above serves it from Studio's dev
+            // server instead. Otherwise hostStatic wins and you get the static
+            // bundle with no HMR.
+            studio(SUGARCUBE_STUDIO ? { serveStatic: false } : {}),
             serveStudioSPA,
             sugarcube({
                 unoOptions: {

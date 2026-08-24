@@ -3,7 +3,7 @@
     "$type": "dimension",
     "bar": {
       "height": {
-        "$value": { "value": 1.875, "unit": "rem" }
+        "$value": { "value": 2.875, "unit": "rem" }
       }
     },
     "control": {
@@ -14,11 +14,6 @@
     "trigger": {
       "height": {
         "$value": { "value": 1.125, "unit": "rem" }
-      }
-    },
-    "row": {
-      "label-width": {
-        "$value": { "value": 6.25, "unit": "rem" }
       }
     },
     "swatch": {

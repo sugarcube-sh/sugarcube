@@ -1,54 +1,84 @@
 {
   "radius": {
     "$type": "dimension",
-    "button": { "$value": "{radius.md}" },
+    "button": { "$value": "{radius.250}" },
     "none": { "$value": { "value": 0, "unit": "rem" } },
-    "sm": {
-      "$value": {
-        "value": 0.125,
-        "unit": "rem"
-      }
-    },
-    "md": {
+    "100": {
       "$value": {
         "value": 0.25,
         "unit": "rem"
       }
     },
-    "lg": {
+    "150": {
+      "$value": {
+        "value": 0.375,
+        "unit": "rem"
+      }
+    },
+    "200": {
       "$value": {
         "value": 0.5,
         "unit": "rem"
       }
     },
-    "xl": {
+    "250": {
+      "$value": {
+        "value": 0.625,
+        "unit": "rem"
+      }
+    },
+    "300": {
       "$value": {
         "value": 0.75,
         "unit": "rem"
       }
     },
-    "2xl": {
+    "400": {
       "$value": {
         "value": 1,
         "unit": "rem"
       }
     },
-    "3xl": {
+    "500": {
+      "$value": {
+        "value": 1.25,
+        "unit": "rem"
+      }
+    },
+    "600": {
       "$value": {
         "value": 1.5,
         "unit": "rem"
       }
     },
-    "4xl": {
+    "700": {
       "$value": {
         "value": 2,
         "unit": "rem"
       }
     },
+    "800": {
+      "$value": {
+        "value": 2.5,
+        "unit": "rem"
+      }
+    },
+    "000": {
+      "$value": {
+        "value": 0,
+        "unit": "rem"
+      }
+    },
+    "050": {
+      "$value": {
+        "value": 0.125,
+        "unit": "rem"
+      }
+    },
     "full": {
       "$value": {
-        "value": 9999,
-        "unit": "px"
+        "value": 62.4375,
+        "unit": "rem"
       }
     }
   }

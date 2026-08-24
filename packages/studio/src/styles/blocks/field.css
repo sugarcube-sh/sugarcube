@@ -1,0 +1,119 @@
+.field-header {
+    background-color: var(--color-component-default);
+    inline-size: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-inline: var(--space-200);
+    height: 34px;
+}
+
+.field-index {
+    color: var(--color-solid-default);
+    letter-spacing: -2%;
+    font-size: var(--text-base);
+    font-variant-numeric: tabular-nums;
+}
+
+.field-title {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: -2%;
+    font-size: var(--text-base);
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-100);
+    padding: var(--space-150) var(--space-150);
+}
+
+.field-row {
+    padding-inline: var(--space-150);
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    align-items: center;
+    gap: var(--space-200);
+}
+
+.field-label-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-100);
+    min-width: 0;
+}
+
+.field-value {
+    min-width: 0;
+}
+
+.field-label {
+    color: var(--color-text-secondary);
+    padding-block: var(--space-100);
+    padding-inline: var(--space-100);
+    line-height: 1rem;
+    min-width: 0;
+    text-wrap: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.field-label-cell[data-overridden] .field-label {
+    background-color: var(--color-component-modified-light);
+    color: var(--color-component-modified);
+    border-radius: 6px;
+    padding-inline-start: var(--space-150);
+}
+
+.field-trigger {
+    inline-size: 100%;
+    padding-inline: 4px;
+    padding-block: 4.5px;
+    border-radius: 8px;
+    border: solid 1px transparent;
+}
+
+.field-trigger-content {
+    inline-size: 100%;
+}
+
+.field-trigger-placeholder {
+    color: var(--color-text-quiet);
+}
+
+.field-trigger:hover {
+    background-color: var(--color-component-hover);
+}
+
+.field-trigger[data-state="open"],
+.field-trigger:focus-visible {
+    outline: none;
+    border: solid 1px var(--color-component-modified);
+    background-color: transparent;
+    box-shadow: 0 0 0 2px var(--color-component-modified-light);
+}
+
+.field-trigger-caret {
+    opacity: 0;
+    transition: opacity 100ms;
+}
+
+.field-trigger:hover .field-trigger-caret,
+.field-trigger:focus-visible .field-trigger-caret,
+.field-trigger[data-state="open"] .field-trigger-caret {
+    opacity: 1;
+}
+
+.field-reset {
+    flex-shrink: 0;
+    appearance: none;
+    background: transparent;
+    border: solid 1px transparent;
+    cursor: pointer;
+    padding-inline: 0;
+}
+
+.field-reset-icon {
+    color: var(--color-text-modified);
+}
