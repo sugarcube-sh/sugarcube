@@ -1,5 +1,12 @@
 # @sugarcube-sh/cli
 
+## 0.1.25
+
+### Patch Changes
+
+- Updated dependencies [8b7b78e]
+  - @sugarcube-sh/core@0.2.18
+
 ## 0.1.24
 
 ### Patch Changes
