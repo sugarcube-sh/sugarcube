@@ -18,6 +18,7 @@ import { TOKEN_REFERENCE } from "../constants/tokens.js";
 import { formatCSSVarName } from "../format-css-var-name.js";
 import { isTypographyToken } from "../guards.js";
 import { renderCSS } from "../render-css.js";
+import { stacksOn } from "./stacks-on.js";
 
 function indentCSS(css: string, spaces = 4): string {
     const indent = " ".repeat(spaces);
@@ -243,12 +244,17 @@ function generateCSSForPermutation(
  * Compute the delta between two sets of CSS variables.
  * Returns only variables whose values differ from the base set.
  */
-function deltaVars(vars: CSSVariable[], baseVars: CSSVariable[]): CSSVariable[] {
-    const baseMap = new Map(baseVars.map((v) => [v.name, v.value]));
+type Effective = Map<string, CSSVariable["value"]>;
+
+function deltaVars(vars: CSSVariable[], effective: Effective): CSSVariable[] {
     return vars.filter((v) => {
-        const baseValue = baseMap.get(v.name);
-        return baseValue === undefined || baseValue !== v.value;
+        const inEffect = effective.get(v.name);
+        return inEffect === undefined || inEffect !== v.value;
     });
+}
+
+function selectorKey(selector: string | string[]): string {
+    return Array.isArray(selector) ? selector.join(",") : selector;
 }
 
 const VAR_REFERENCE = /var\(\s*(--[\w-]+)/g;
@@ -262,7 +268,7 @@ function extractVarReferences(value: string | number): string[] {
     return refs;
 }
 
-function propagateDependents(delta: CSSVariable[], baseVars: CSSVariable[]): CSSVariable[] {
+function propagateDependents(delta: CSSVariable[], effective: Effective): CSSVariable[] {
     const deltaNames = new Set(delta.map((v) => v.name));
     const changed = new Set(deltaNames);
     const selected = new Set<string>();
@@ -270,17 +276,19 @@ function propagateDependents(delta: CSSVariable[], baseVars: CSSVariable[]): CSS
     let added = true;
     while (added) {
         added = false;
-        for (const v of baseVars) {
-            if (deltaNames.has(v.name) || selected.has(v.name)) continue;
-            if (extractVarReferences(v.value).some((ref) => changed.has(ref))) {
-                selected.add(v.name);
-                changed.add(v.name);
+        for (const [name, value] of effective) {
+            if (deltaNames.has(name) || selected.has(name)) continue;
+            if (extractVarReferences(value).some((ref) => changed.has(ref))) {
+                selected.add(name);
+                changed.add(name);
                 added = true;
             }
         }
     }
 
-    return baseVars.filter((v) => selected.has(v.name));
+    return [...effective]
+        .filter(([name]) => selected.has(name))
+        .map(([name, value]) => ({ name, value }));
 }
 
 /**
@@ -314,8 +322,8 @@ export async function formatCSSVariables(
 
     const byPath = new Map<string, { perm: Permutation; css: string }[]>();
 
-    // Track base vars per output path for delta optimisation
-    const baseVarsByPath = new Map<string, CSSVariable[]>();
+    const baselineByPath = new Map<string, Effective>();
+    const stackByPath = new Map<string, { atRule?: string; effective: Effective }>();
 
     for (let i = 0; i < permutations.length; i++) {
         const perm = permutations[i];
@@ -327,20 +335,29 @@ export async function formatCSSVariables(
         }
 
         const outputPath = perm.path ?? config.variables.path;
-        let { vars, features } = generateVariablesFromTokens(contextTokens, options);
+        const { vars: resolved, features } = generateVariablesFromTokens(contextTokens, options);
 
-        // Delta optimization: for non-first permutations in the same output file,
-        // only include variables that differ from the first permutation in that file
-        if (baseVarsByPath.has(outputPath)) {
-            const base = baseVarsByPath.get(outputPath) ?? [];
-            const delta = deltaVars(vars, base);
+        const baseline = baselineByPath.get(outputPath);
+        const key = `${outputPath}\u0000${selectorKey(perm.selector)}`;
+        const previous = stackByPath.get(key);
 
-            vars = config.variables.propagateDependents
-                ? [...delta, ...propagateDependents(delta, base)]
-                : delta;
-        } else {
-            baseVarsByPath.set(outputPath, vars);
+        const effective: Effective =
+            previous && stacksOn(previous.atRule, perm.atRule)
+                ? previous.effective
+                : new Map(baseline ?? []);
+
+        const delta = deltaVars(resolved, effective);
+        const vars = config.variables.propagateDependents
+            ? [...delta, ...propagateDependents(delta, effective)]
+            : delta;
+
+        if (baseline === undefined && !perm.atRule) {
+            baselineByPath.set(outputPath, new Map(resolved.map((v) => [v.name, v.value])));
         }
+
+        const carried = new Map(effective);
+        for (const v of resolved) carried.set(v.name, v.value);
+        stackByPath.set(key, { atRule: perm.atRule, effective: carried });
 
         const css = generateCSSForPermutation(perm, vars, features);
 

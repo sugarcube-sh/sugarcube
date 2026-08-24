@@ -1,0 +1,47 @@
+{
+  "version": "2025.10",
+  "name": "Breakpoint Cascade Test",
+  "description": "A breakpoint modifier whose contexts cascade mobile-first: lg cumulatively re-includes md but adds nothing of its own, so lg resolves identically to md.",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "font": {
+            "size": {
+              "body": { "$type": "dimension", "$value": { "value": 16, "unit": "px" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "breakpoint",
+      "default": "sm",
+      "contexts": {
+        "sm": [],
+        "md": [
+          {
+            "font": {
+              "size": {
+                "body": { "$type": "dimension", "$value": { "value": 24, "unit": "px" } }
+              }
+            }
+          }
+        ],
+        "lg": [
+          {
+            "font": {
+              "size": {
+                "body": { "$type": "dimension", "$value": { "value": 24, "unit": "px" } }
+              }
+            }
+          },
+          {}
+        ]
+      }
+    }
+  ]
+}

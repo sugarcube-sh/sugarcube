@@ -1,0 +1,40 @@
+{
+  "version": "2025.10",
+  "name": "Breakpoint Distinct Values Test",
+  "description": "Mobile-first breakpoints where md and lg resolve to DIFFERENT values, used to prove cascade emit order is correct regardless of config order.",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "font": {
+            "size": { "body": { "$type": "dimension", "$value": { "value": 16, "unit": "px" } } }
+          }
+        }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "breakpoint",
+      "default": "sm",
+      "contexts": {
+        "sm": [],
+        "md": [
+          {
+            "font": {
+              "size": { "body": { "$type": "dimension", "$value": { "value": 24, "unit": "px" } } }
+            }
+          }
+        ],
+        "lg": [
+          {
+            "font": {
+              "size": { "body": { "$type": "dimension", "$value": { "value": 32, "unit": "px" } } }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

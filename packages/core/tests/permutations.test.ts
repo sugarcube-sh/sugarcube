@@ -142,6 +142,245 @@ describe("permutations", () => {
         });
     });
 
+    describe("additive breakpoint blocks", () => {
+        const at = (input: Record<string, string>, atRule?: string, selector = ":root") => ({
+            input,
+            selector,
+            ...(atRule ? { atRule } : {}),
+        });
+
+        const cascadeConfig = (
+            permutations: ReturnType<typeof at>[],
+            fixture = "breakpoint-cascade.resolver.json",
+        ) =>
+            validateConfig({
+                resolver: resolve(FIXTURES_DIR, fixture),
+                variables: {
+                    variableName: (path: string) => path.replaceAll(".", "_"),
+                    permutations,
+                },
+            });
+
+        it("omits a wider breakpoint block that resolves identically to a narrower one", async () => {
+            const css = await generateCSS(
+                cascadeConfig([
+                    at({}),
+                    at({ breakpoint: "md" }, "@media (min-width: 640px)"),
+                    at({ breakpoint: "lg" }, "@media (min-width: 1024px)"),
+                ]),
+            );
+
+            expect(css).toContain("--font_size_body: 16px;");
+            expect(css).toContain("@media (min-width: 640px)");
+            expect(css).not.toContain("@media (min-width: 1024px)");
+        });
+
+        it("emits both blocks when the breakpoints resolve to different values", async () => {
+            const css = await generateCSS(
+                cascadeConfig(
+                    [
+                        at({}),
+                        at({ breakpoint: "md" }, "@media (min-width: 640px)"),
+                        at({ breakpoint: "lg" }, "@media (min-width: 1024px)"),
+                    ],
+                    "breakpoint-distinct.resolver.json",
+                ),
+            );
+
+            expect(css).toContain("--font_size_body: 24px;");
+            expect(css).toContain("--font_size_body: 32px;");
+        });
+
+        it("does not deduplicate when breakpoints are listed widest-first", async () => {
+            const css = await generateCSS(
+                cascadeConfig([
+                    at({}),
+                    at({ breakpoint: "lg" }, "@media (min-width: 1024px)"),
+                    at({ breakpoint: "md" }, "@media (min-width: 640px)"),
+                ]),
+            );
+
+            expect(css).toContain("@media (min-width: 1024px)");
+            expect(css).toContain("@media (min-width: 640px)");
+        });
+
+        it("deduplicates em-unit breakpoints, compared within their own unit", async () => {
+            const css = await generateCSS(
+                cascadeConfig([
+                    at({}),
+                    at({ breakpoint: "md" }, "@media (min-width: 40em)"),
+                    at({ breakpoint: "lg" }, "@media (min-width: 64em)"),
+                ]),
+            );
+
+            expect(css).toContain("@media (min-width: 40em)");
+            expect(css).not.toContain("@media (min-width: 64em)");
+        });
+
+        it("deduplicates range syntax mixed with the keyword form", async () => {
+            const css = await generateCSS(
+                cascadeConfig([
+                    at({}),
+                    at({ breakpoint: "md" }, "@media (min-width: 640px)"),
+                    at({ breakpoint: "lg" }, "@media (width >= 1024px)"),
+                ]),
+            );
+
+            expect(css).toContain("@media (min-width: 640px)");
+            expect(css).not.toContain("@media (width >= 1024px)");
+        });
+
+        it("deduplicates max-width breakpoints, which nest in the opposite direction", async () => {
+            const css = await generateCSS(
+                cascadeConfig([
+                    at({}),
+                    at({ breakpoint: "md" }, "@media (max-width: 1024px)"),
+                    at({ breakpoint: "lg" }, "@media (max-width: 640px)"),
+                ]),
+            );
+
+            expect(css).toContain("@media (max-width: 1024px)");
+            expect(css).not.toContain("@media (max-width: 640px)");
+        });
+
+        it("does not deduplicate across mixed units", async () => {
+            const css = await generateCSS(
+                cascadeConfig([
+                    at({}),
+                    at({ breakpoint: "md" }, "@media (min-width: 640px)"),
+                    at({ breakpoint: "lg" }, "@media (min-width: 40em)"),
+                ]),
+            );
+
+            expect(css).toContain("@media (min-width: 640px)");
+            expect(css).toContain("@media (min-width: 40em)");
+        });
+
+        it("does not deduplicate bands, which need not cover one another", async () => {
+            const css = await generateCSS(
+                cascadeConfig([
+                    at({}),
+                    at({ breakpoint: "md" }, "@media (min-width: 640px) and (max-width: 1023px)"),
+                    at({ breakpoint: "lg" }, "@media (min-width: 1024px) and (max-width: 1439px)"),
+                ]),
+            );
+
+            expect(css).toContain("@media (min-width: 640px) and (max-width: 1023px)");
+            expect(css).toContain("@media (min-width: 1024px) and (max-width: 1439px)");
+        });
+
+        it("does not deduplicate mutually exclusive prefers-color-scheme blocks", async () => {
+            const css = await generateCSS(
+                cascadeConfig(
+                    [
+                        at({}),
+                        at({ scheme: "light" }, "@media (prefers-color-scheme: light)"),
+                        at({ scheme: "dark" }, "@media (prefers-color-scheme: dark)"),
+                    ],
+                    "scheme.resolver.json",
+                ),
+            );
+
+            const lightBlock = css.split("@media (prefers-color-scheme: light)")[1] ?? "";
+            const darkBlock = css.split("@media (prefers-color-scheme: dark)")[1] ?? "";
+            expect(lightBlock).toContain("--font_size_body: 24px;");
+            expect(darkBlock).toContain("--font_size_body: 24px;");
+        });
+
+        it("deduplicates within a second selector's own breakpoint blocks", async () => {
+            const css = await generateCSS(
+                cascadeConfig([
+                    at({}),
+                    at({ breakpoint: "md" }, "@media (min-width: 640px)"),
+                    at({}, undefined, "[data-theme='dark']"),
+                    at({ breakpoint: "md" }, "@media (min-width: 640px)", "[data-theme='dark']"),
+                    at({ breakpoint: "lg" }, "@media (min-width: 1024px)", "[data-theme='dark']"),
+                ]),
+            );
+
+            expect(css).toContain("[data-theme='dark']");
+            expect(css).not.toContain("@media (min-width: 1024px)");
+        });
+    });
+
+    describe("baseline for delta optimisation", () => {
+        it("keeps a non-varying token outside the media query when the first permutation is wrapped", async () => {
+            const config = validateConfig({
+                resolver: resolve(FIXTURES_DIR, "breakpoint-shared.resolver.json"),
+                variables: {
+                    variableName: (path: string) => path.replaceAll(".", "_"),
+                    permutations: [
+                        {
+                            input: { breakpoint: "md" },
+                            selector: ":root",
+                            atRule: "@media (min-width: 640px)",
+                        },
+                        { input: {}, selector: ":root" },
+                    ],
+                },
+            });
+
+            const css = await generateCSS(config);
+
+            const declarations = css.match(/--font_size_heading: 40px;/g) ?? [];
+            expect(declarations).toHaveLength(2);
+        });
+
+        it("does not diff another selector against a media-wrapped first permutation", async () => {
+            const config = validateConfig({
+                resolver: resolve(FIXTURES_DIR, "breakpoint-shared.resolver.json"),
+                variables: {
+                    variableName: (path: string) => path.replaceAll(".", "_"),
+                    permutations: [
+                        {
+                            input: {},
+                            selector: ":root",
+                            atRule: "@media (min-width: 640px)",
+                        },
+                        { input: {}, selector: "[data-theme='dark']" },
+                    ],
+                },
+            });
+
+            const css = await generateCSS(config);
+
+            expect(css).toMatch(/\[data-theme='dark'\] \{[^}]*--font_size_body: 16px;/);
+            expect(css).toMatch(/\[data-theme='dark'\] \{[^}]*--font_size_heading: 40px;/);
+        });
+        it("still nests when a file has no unconditional permutation at all", async () => {
+            // Nesting inside the previous block is enough on its own to carry its
+            // values forward: the 640px rule is still in effect at 1024px whether or
+            // not the file also has an unwrapped block.
+            const config = validateConfig({
+                resolver: resolve(FIXTURES_DIR, "breakpoint-shared.resolver.json"),
+                variables: {
+                    variableName: (path: string) => path.replaceAll(".", "_"),
+                    permutations: [
+                        {
+                            input: { breakpoint: "md" },
+                            selector: ":root",
+                            atRule: "@media (min-width: 640px)",
+                        },
+                        {
+                            input: {},
+                            selector: ":root",
+                            atRule: "@media (min-width: 1024px)",
+                        },
+                    ],
+                },
+            });
+
+            const css = await generateCSS(config);
+
+            // font.size.heading does not vary, so it is stated once at 640px and
+            // must not be restated at 1024px.
+            const declarations = css.match(/--font_size_heading: 40px;/g) ?? [];
+            expect(declarations).toHaveLength(1);
+            // font.size.body does vary, so the 1024px block still carries it.
+            expect(css).toMatch(/min-width: 1024px[\s\S]*--font_size_body: 16px;/);
+        });
+    });
+
     describe("validation", () => {
         it("errors on unknown modifier name in permutation input", async () => {
             const config = validateConfig({

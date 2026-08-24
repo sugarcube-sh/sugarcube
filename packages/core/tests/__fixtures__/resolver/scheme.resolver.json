@@ -1,0 +1,40 @@
+{
+  "version": "2025.10",
+  "name": "Color Scheme Test",
+  "description": "A scheme modifier with a neutral default and explicit light/dark contexts that BOTH override the value to the same 24px (different from the 16px base). Used to verify that mutually-exclusive prefers-color-scheme blocks are never deduped against each other: neither query covers the other, so dropping the second would leave it undefined on that scheme.",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "font": {
+            "size": { "body": { "$type": "dimension", "$value": { "value": 16, "unit": "px" } } }
+          }
+        }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "scheme",
+      "default": "system",
+      "contexts": {
+        "system": [],
+        "light": [
+          {
+            "font": {
+              "size": { "body": { "$type": "dimension", "$value": { "value": 24, "unit": "px" } } }
+            }
+          }
+        ],
+        "dark": [
+          {
+            "font": {
+              "size": { "body": { "$type": "dimension", "$value": { "value": 24, "unit": "px" } } }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
