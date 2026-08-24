@@ -1,31 +1,5 @@
 # @sugarcube-sh/studio-embed
 
-Framework-agnostic `<sugarcube-studio>` web component for embedding Studio
-in a deployed page.
+Under construction. Not supported for external use yet.
 
-Renders Studio in an iframe and bridges postMessage between the iframe
-and host for CSS updates and PR submissions.
-
-## Usage
-
-Add a build step that generates a snapshot and copies the Studio assets
-into your framework's static-assets directory. Example:
-
-```bash
-sugarcube studio build --out public/studio
-```
-
-This writes `snapshot.json` (resolved tokens + panel config), `index.html`,
-`assets/`, and `embed.js`. Your framework copies everything under
-`public/` to the deploy root as part of its normal build,
-so the files end up served at `/studio/*` on your deployed site.
-
-Include the embed in whichever template should show Studio. Placing it
-in a root layout obviously scopes it to the whole site; placing it in a single page template scopes
-it to just that page. Typically gated to staging only via an env var so
-it doesn't ship to production. But I guess that's up to you.
-
-```html
-<script type="module" src="/studio/embed.js"></script>
-<sugarcube-studio src="/studio/" snapshot="/studio/snapshot.json"></sugarcube-studio>
-```
+Framework-agnostic `<sugarcube-studio>` web component for embedding sugarcube studio in a deployed page.
