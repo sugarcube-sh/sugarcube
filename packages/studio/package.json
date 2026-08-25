@@ -32,29 +32,29 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@radix-ui/react-collapsible": "^1.1.12",
+    "@radix-ui/react-collapsible": "^1.1.20",
     "@radix-ui/react-slider": "^1.4.7",
     "@sugarcube-sh/core": "workspace:*",
     "@sugarcube-sh/studio-protocol": "workspace:*"
   },
   "devDependencies": {
-    "@radix-ui/react-popover": "^1.1.14",
-    "@radix-ui/react-tabs": "^1.1.13",
+    "@radix-ui/react-popover": "^1.1.23",
+    "@radix-ui/react-tabs": "^1.1.21",
     "@sugarcube-sh/cli": "workspace:*",
     "@sugarcube-sh/vite": "workspace:*",
-    "@types/react": "^19.2.15",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "@unocss/preset-wind3": "^66.6.0",
-    "@vitejs/devtools-kit": "^0.1.13",
+    "@vitejs/devtools-kit": "^0.4.12",
     "@vitejs/plugin-react": "^6.0.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "lucide-react": "^0.468.0",
     "pkgroll": "^2.26.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "typescript": "^5.8.3",
     "vite": "^8.0.3",
-    "zustand": "^5.0.13"
+    "zustand": "^5.0.15"
   }
 }
