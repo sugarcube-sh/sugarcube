@@ -47,7 +47,7 @@
     "astro-webmanifest": "^1.0.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "cross-env": "^7.0.3",
+    "cross-env": "^10.1.0",
     "lucide-react": "^0.468.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
