@@ -29,7 +29,7 @@
     "@vitejs/devtools-kit": "^0.1.13"
   },
   "devDependencies": {
-    "pkgroll": "^2.26.0",
+    "pkgroll": "^2.27.1",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {

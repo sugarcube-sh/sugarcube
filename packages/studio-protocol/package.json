@@ -22,7 +22,7 @@
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "pkgroll": "^2.26.0",
+    "pkgroll": "^2.27.1",
     "typescript": "^5.8.3"
   }
 }
