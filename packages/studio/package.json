@@ -53,7 +53,7 @@
     "pkgroll": "^2.26.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.3",
     "vite": "^8.0.3",
     "zustand": "^5.0.13"
   }
