@@ -13,12 +13,13 @@ updates:
         update-types:
           - minor
           - patch
+        exclude-patterns:
+          - "@vitejs/devtools*"
       development-dependencies:
         dependency-type: "development"
         update-types:
           - minor
           - patch
-        # I want to keep these updates reviewable on their own for now.
         exclude-patterns:
           - "@vitejs/devtools*"
 
