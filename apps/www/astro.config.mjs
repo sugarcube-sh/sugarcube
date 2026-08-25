@@ -13,16 +13,11 @@ import { defineConfig, fontProviders } from "astro/config";
 import sirv from "sirv";
 import { siteConfig } from "./src/site.config";
 
-// SUGARCUBE_STUDIO=true (via `pnpm dev:studio`) swaps the static bundle for a
-// proxy to Studio's own Vite dev server (run `pnpm --filter @sugarcube-sh/studio
-// dev` on :5173), so editing Studio source hot-reloads live in the DevTools
-// dock.
 const SUGARCUBE_STUDIO = process.env.SUGARCUBE_STUDIO === "true";
 
-// Serve the built Studio SPA statically. (This is the part we skip under SUGARCUBE_STUDIO.)
+/** @type {NonNullable<import("astro").ViteUserConfig["plugins"]>[number]} */
 const serveStudioSPA = {
     name: "sugarcube-studio-serve",
-    /** @param {{ middlewares: { use: (path: string, handler: unknown) => void } }} server */
     configureServer(server) {
         if (SUGARCUBE_STUDIO) return;
         server.middlewares.use("/__studio/", sirv(clientPath, { dev: true, single: true }));
