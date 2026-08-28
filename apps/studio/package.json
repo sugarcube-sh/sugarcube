@@ -11,8 +11,8 @@
     "jsonc-parser": "^3.3.1"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260818.1",
+    "@cloudflare/workers-types": "^5.20260821.1",
     "typescript": "^5.8.3",
-    "wrangler": "^4.81.1"
+    "wrangler": "^4.125.0"
   }
 }

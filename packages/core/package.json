@@ -63,8 +63,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "pkgroll": "^2.26.0",
-    "vitest": "^4.0.18"
+    "pkgroll": "^2.27.1",
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=20.19.0"
