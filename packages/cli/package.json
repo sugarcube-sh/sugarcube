@@ -61,7 +61,7 @@
     "@sugarcube-sh/core": "workspace:*",
     "@unocss/core": "^66.5.2",
     "chokidar": "^5.0.0",
-    "commander": "12.1.0",
+    "commander": "15.0.0",
     "execa": "9.5.2",
     "fast-wrap-ansi": "0.2.2",
     "get-tsconfig": "4.7.2",
