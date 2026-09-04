@@ -13,19 +13,19 @@ importers:
     devDependencies:
       '@changesets/cli':
         specifier: ^2.27.9
-        version: 2.29.8(@types/node@24.12.2)
+        version: 2.29.8(@types/node@26.4.0)
       '@types/node':
-        specifier: ^24.9.2
-        version: 24.12.2
+        specifier: ^26.4.0
+        version: 26.4.0
       '@vitest/coverage-istanbul':
         specifier: ^4.0.18
-        version: 4.0.18(vitest@4.0.18(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2))
+        version: 4.0.18(vitest@4.0.18(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2))
       eslint-plugin-regexp:
         specifier: ^3.1.1
         version: 3.1.1(eslint@10.6.0(jiti@2.6.1))
       knip:
         specifier: ^5.59.1
-        version: 5.83.1(@types/node@24.12.2)(typescript@5.9.3)
+        version: 5.83.1(@types/node@26.4.0)(typescript@5.9.3)
       lint-staged:
         specifier: ^16.2.7
         version: 16.2.7
@@ -43,7 +43,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+        version: 4.0.18(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
 
   apps/studio:
     dependencies:
@@ -65,10 +65,10 @@ importers:
     dependencies:
       '@astrojs/mdx':
         specifier: ^7.0.2
-        version: 7.0.2(@astrojs/markdown-satteri@0.3.3)(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))
+        version: 7.0.2(@astrojs/markdown-satteri@0.3.3)(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))
       '@astrojs/react':
         specifier: ^6.0.1
-        version: 6.0.1(@types/node@24.12.2)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tsx@4.22.3)(yaml@2.8.2)
+        version: 6.0.1(@types/node@26.4.0)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tsx@4.22.3)(yaml@2.8.2)
       '@astrojs/rss':
         specifier: ^4.0.19
         version: 4.0.19
@@ -77,10 +77,10 @@ importers:
         version: 3.7.3
       '@astrojs/starlight':
         specifier: ^0.41.2
-        version: 0.41.2(@astrojs/markdown-remark@7.2.1)(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))(typescript@5.9.3)
+        version: 0.41.2(@astrojs/markdown-remark@7.2.1)(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))(typescript@5.9.3)
       '@lucide/astro':
         specifier: ^0.562.0
-        version: 0.562.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))
+        version: 0.562.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))
       '@radix-ui/react-accordion':
         specifier: ^1.2.4
         version: 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -146,7 +146,7 @@ importers:
         version: 19.2.3(@types/react@19.2.15)
       astro:
         specifier: ^7.0.6
-        version: 7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)
+        version: 7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)
       astro-robots-txt:
         specifier: ^1.0.0
         version: 1.0.0
@@ -290,7 +290,7 @@ importers:
         version: 2.26.0(typescript@5.9.3)(vite@8.0.8)
       vitest:
         specifier: ^4.0.18
-        version: 4.0.18(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+        version: 4.0.18(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
 
   packages/studio:
     dependencies:
@@ -357,7 +357,7 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^8.0.3
-        version: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+        version: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
       zustand:
         specifier: ^5.0.13
         version: 5.0.13(@types/react@19.2.15)(immer@11.1.4)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
@@ -405,7 +405,7 @@ importers:
         version: 0.1.13(typescript@5.9.3)(vite@8.0.8)(ws@8.20.0)
       vite:
         specifier: ^8.0.3
-        version: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+        version: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
     devDependencies:
       pkgroll:
         specifier: ^2.26.0
@@ -431,7 +431,7 @@ importers:
         version: 2.26.0(typescript@5.9.3)(vite@8.0.8)
       vite:
         specifier: ^8.0.3
-        version: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+        version: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
 
 packages:
 
@@ -3166,8 +3166,11 @@ packages:
   '@types/node@12.20.55':
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
 
-  '@types/node@24.12.2':
-    resolution: {integrity: sha512-A1sre26ke7HDIuY/M23nd9gfB+nrmhtYyMINbjI1zHJxYteKR6qSMX56FsmjMcDb3SMcjJg5BiRRgOCC/yBD0g==}
+  '@types/node@24.13.3':
+    resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
+
+  '@types/node@26.4.0':
+    resolution: {integrity: sha512-faiGnoIrLH/V8cibOMEAZ8pMw6oXqSukl29ra4mN8GdaB2ZewzeaLj+INpV5N+Z1eKWzY+IzaIZH2EIR6YZRNQ==}
 
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
@@ -5736,8 +5739,11 @@ packages:
   uncrypto@0.1.3:
     resolution: {integrity: sha512-Ql87qFHB3s/De2ClA9e0gsnS6zXG27SkTiSJwjCc9MebbfapQfuPzumMIUMi38ezPZVNFcHI9sUIepeQfw8J8Q==}
 
-  undici-types@7.16.0:
-    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
+  undici-types@7.18.2:
+    resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
+
+  undici-types@8.3.0:
+    resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
 
   undici@7.18.2:
     resolution: {integrity: sha512-y+8YjDFzWdQlSE9N5nzKMT3g4a5UBX1HKowfdXh0uvAnTaqqwqB92Jt4UXBAeKekDs5IaDKyJFR4X1gYVCgXcw==}
@@ -6283,13 +6289,13 @@ snapshots:
       github-slugger: 2.0.0
       satteri: 0.9.4
 
-  '@astrojs/mdx@7.0.2(@astrojs/markdown-satteri@0.3.3)(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))':
+  '@astrojs/mdx@7.0.2(@astrojs/markdown-satteri@0.3.3)(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))':
     dependencies:
       '@astrojs/internal-helpers': 0.10.1
       '@astrojs/markdown-remark': 7.2.1
       '@mdx-js/mdx': 3.1.1
       acorn: 8.16.0
-      astro: 7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)
+      astro: 7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)
       es-module-lexer: 2.1.0
       estree-util-visit: 2.0.0
       hast-util-to-html: 9.0.5
@@ -6309,7 +6315,7 @@ snapshots:
     dependencies:
       prismjs: 1.30.0
 
-  '@astrojs/react@6.0.1(@types/node@24.12.2)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tsx@4.22.3)(yaml@2.8.2)':
+  '@astrojs/react@6.0.1(@types/node@26.4.0)(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tsx@4.22.3)(yaml@2.8.2)':
     dependencies:
       '@astrojs/internal-helpers': 0.10.1
       '@types/react': 19.2.15
@@ -6319,7 +6325,7 @@ snapshots:
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
       ultrahtml: 1.6.0
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
     transitivePeerDependencies:
       - '@types/node'
       - '@vitejs/devtools'
@@ -6353,17 +6359,17 @@ snapshots:
       stream-replace-string: 2.0.0
       zod: 4.3.6
 
-  '@astrojs/starlight@0.41.2(@astrojs/markdown-remark@7.2.1)(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))(typescript@5.9.3)':
+  '@astrojs/starlight@0.41.2(@astrojs/markdown-remark@7.2.1)(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))(typescript@5.9.3)':
     dependencies:
       '@astrojs/markdown-satteri': 0.3.3
-      '@astrojs/mdx': 7.0.2(@astrojs/markdown-satteri@0.3.3)(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))
+      '@astrojs/mdx': 7.0.2(@astrojs/markdown-satteri@0.3.3)(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))
       '@astrojs/sitemap': 3.7.2
       '@pagefind/default-ui': 1.5.2
       '@types/hast': 3.0.4
       '@types/js-yaml': 4.0.9
       '@types/mdast': 4.0.4
-      astro: 7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)
-      astro-expressive-code: 0.44.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))
+      astro: 7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)
+      astro-expressive-code: 0.44.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))
       bcp-47: 2.1.0
       hast-util-from-html: 2.0.3
       hast-util-select: 6.0.4
@@ -6581,7 +6587,7 @@ snapshots:
     dependencies:
       '@changesets/types': 6.1.0
 
-  '@changesets/cli@2.29.8(@types/node@24.12.2)':
+  '@changesets/cli@2.29.8(@types/node@26.4.0)':
     dependencies:
       '@changesets/apply-release-plan': 7.0.14
       '@changesets/assemble-release-plan': 6.0.9
@@ -6597,7 +6603,7 @@ snapshots:
       '@changesets/should-skip-package': 0.1.2
       '@changesets/types': 6.1.0
       '@changesets/write': 0.4.0
-      '@inquirer/external-editor': 1.0.3(@types/node@24.12.2)
+      '@inquirer/external-editor': 1.0.3(@types/node@26.4.0)
       '@manypkg/get-packages': 1.1.3
       ansi-colors: 4.1.3
       ci-info: 3.9.0
@@ -7264,12 +7270,12 @@ snapshots:
   '@img/sharp-win32-x64@0.34.5':
     optional: true
 
-  '@inquirer/external-editor@1.0.3(@types/node@24.12.2)':
+  '@inquirer/external-editor@1.0.3(@types/node@26.4.0)':
     dependencies:
       chardet: 2.1.1
       iconv-lite: 0.7.2
     optionalDependencies:
-      '@types/node': 24.12.2
+      '@types/node': 26.4.0
 
   '@istanbuljs/schema@0.1.3': {}
 
@@ -7297,9 +7303,9 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@lucide/astro@0.562.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))':
+  '@lucide/astro@0.562.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))':
     dependencies:
-      astro: 7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)
+      astro: 7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)
 
   '@manypkg/find-root@1.1.0':
     dependencies:
@@ -8559,9 +8565,13 @@ snapshots:
 
   '@types/node@12.20.55': {}
 
-  '@types/node@24.12.2':
+  '@types/node@24.13.3':
     dependencies:
-      undici-types: 7.16.0
+      undici-types: 7.18.2
+
+  '@types/node@26.4.0':
+    dependencies:
+      undici-types: 8.3.0
 
   '@types/react-dom@19.2.3(@types/react@19.2.15)':
     dependencies:
@@ -8575,7 +8585,7 @@ snapshots:
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 24.12.2
+      '@types/node': 26.4.0
 
   '@types/unist@2.0.11': {}
 
@@ -8644,14 +8654,14 @@ snapshots:
       pathe: 2.0.3
       tinyglobby: 0.2.15
       unplugin-utils: 0.3.1
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
 
   '@vitejs/devtools-kit@0.1.13(typescript@5.9.3)(vite@8.0.8)(ws@8.20.0)':
     dependencies:
       '@vitejs/devtools-rpc': 0.1.13(typescript@5.9.3)(ws@8.20.0)
       birpc: 4.0.0
       ohash: 2.0.11
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
     transitivePeerDependencies:
       - typescript
       - ws
@@ -8740,7 +8750,7 @@ snapshots:
       perfect-debounce: 2.1.0
       sirv: 3.0.2
       tinyexec: 1.1.1
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
       vue: 3.5.32(typescript@5.9.3)
       ws: 8.20.0
     transitivePeerDependencies:
@@ -8776,16 +8786,16 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-rc.3
       '@types/babel__core': 7.20.5
       react-refresh: 0.18.0
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
     transitivePeerDependencies:
       - supports-color
 
   '@vitejs/plugin-react@6.0.1(vite@8.0.8)':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-rc.7
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
 
-  '@vitest/coverage-istanbul@4.0.18(vitest@4.0.18(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2))':
+  '@vitest/coverage-istanbul@4.0.18(vitest@4.0.18(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2))':
     dependencies:
       '@istanbuljs/schema': 0.1.3
       '@jridgewell/gen-mapping': 0.3.13
@@ -8797,7 +8807,7 @@ snapshots:
       magicast: 0.5.2
       obug: 2.1.1
       tinyrainbow: 3.0.3
-      vitest: 4.0.18(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+      vitest: 4.0.18(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -8816,7 +8826,7 @@ snapshots:
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
 
   '@vitest/pretty-format@4.0.18':
     dependencies:
@@ -8960,9 +8970,9 @@ snapshots:
 
   astring@1.9.0: {}
 
-  astro-expressive-code@0.44.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)):
+  astro-expressive-code@0.44.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)):
     dependencies:
-      astro: 7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)
+      astro: 7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)
       rehype-expressive-code: 0.44.0
       url-extras: 0.1.0
 
@@ -8981,7 +8991,7 @@ snapshots:
       - bare-buffer
       - react-native-b4a
 
-  astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2):
+  astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2):
     dependencies:
       '@astrojs/compiler-rs': 0.3.0(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)
       '@astrojs/internal-helpers': 0.10.1
@@ -9031,7 +9041,7 @@ snapshots:
       ultrahtml: 1.6.0
       unifont: 0.7.4
       unstorage: 1.17.5
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
       vitefu: 1.1.3(vite@8.0.8)
       xxhash-wasm: 1.1.0
       yargs-parser: 22.0.0
@@ -10274,10 +10284,10 @@ snapshots:
 
   klona@2.0.6: {}
 
-  knip@5.83.1(@types/node@24.12.2)(typescript@5.9.3):
+  knip@5.83.1(@types/node@26.4.0)(typescript@5.9.3):
     dependencies:
       '@nodelib/fs.walk': 1.2.8
-      '@types/node': 24.12.2
+      '@types/node': 26.4.0
       fast-glob: 3.3.3
       formatly: 0.3.0
       jiti: 2.6.1
@@ -11598,7 +11608,7 @@ snapshots:
   rollup-plugin-import-trace@1.0.0(rollup@4.57.1)(vite@8.0.8):
     optionalDependencies:
       rollup: 4.57.1
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
 
   rollup-pluginutils@2.8.2:
     dependencies:
@@ -11773,7 +11783,7 @@ snapshots:
 
   sitemap@9.0.1:
     dependencies:
-      '@types/node': 24.12.2
+      '@types/node': 24.13.3
       '@types/sax': 1.2.7
       arg: 5.0.2
       sax: 1.6.0
@@ -12003,7 +12013,9 @@ snapshots:
 
   uncrypto@0.1.3: {}
 
-  undici-types@7.16.0: {}
+  undici-types@7.18.2: {}
+
+  undici-types@8.3.0: {}
 
   undici@7.18.2: {}
 
@@ -12151,7 +12163,7 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite@8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2):
+  vite@8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2):
     dependencies:
       lightningcss: 1.32.0
       picomatch: 4.0.4
@@ -12159,7 +12171,7 @@ snapshots:
       rolldown: 1.0.0-rc.15
       tinyglobby: 0.2.15
     optionalDependencies:
-      '@types/node': 24.12.2
+      '@types/node': 26.4.0
       '@vitejs/devtools': 0.1.13(@pnpm/logger@1001.0.1)(typescript@5.9.3)(vite@8.0.8)
       esbuild: 0.28.0
       fsevents: 2.3.3
@@ -12169,9 +12181,9 @@ snapshots:
 
   vitefu@1.1.3(vite@8.0.8):
     optionalDependencies:
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
 
-  vitest@4.0.18(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2):
+  vitest@4.0.18(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2):
     dependencies:
       '@vitest/expect': 4.0.18
       '@vitest/mocker': 4.0.18(vite@8.0.8)
@@ -12191,10 +12203,10 @@ snapshots:
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vite: 8.0.8(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
+      vite: 8.0.8(@types/node@26.4.0)(@vitejs/devtools@0.1.13)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.3)(yaml@2.8.2)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 24.12.2
+      '@types/node': 26.4.0
     transitivePeerDependencies:
       - '@vitejs/devtools'
       - esbuild
