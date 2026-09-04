@@ -57,10 +57,10 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "@unocss/preset-wind3": "^66.6.0",
-    "@unocss/preset-wind4": "^66.6.0",
+    "@unocss/preset-wind3": "^66.8.1",
+    "@unocss/preset-wind4": "^66.8.1",
     "@vitejs/devtools": "^0.1.13",
-    "tsx": "^4.22.3",
-    "wrangler": "^4.20.5"
+    "tsx": "^4.23.12",
+    "wrangler": "^4.127.0"
   }
 }
