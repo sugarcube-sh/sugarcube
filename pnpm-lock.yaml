@@ -79,8 +79,8 @@ importers:
         specifier: ^0.41.2
         version: 0.41.2(@astrojs/markdown-remark@7.2.1)(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))(typescript@5.9.3)
       '@lucide/astro':
-        specifier: ^0.562.0
-        version: 0.562.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))
+        specifier: ^1.34.0
+        version: 1.34.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))
       '@radix-ui/react-accordion':
         specifier: ^1.2.4
         version: 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1647,10 +1647,10 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
-  '@lucide/astro@0.562.0':
-    resolution: {integrity: sha512-Rdtykh/VmH3M7n4ckBWY2X7wTMyJX/At5MuJDZ+5M+QZNebxAa75TU7xmM0OVmQj60UsHvdmqRIRNTqEYIieKg==}
+  '@lucide/astro@1.34.0':
+    resolution: {integrity: sha512-wkKR1MsSm3pLAvV8Hsmmh0HrNn5opeeyNpTFfSnC+gQLnACHPik7u2p/achJXJfo8DV/TJ1ZV/8QRdBMJCgBnA==}
     peerDependencies:
-      astro: ^4 || ^5
+      astro: ^4 || ^5 || ^6 || ^7
 
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
@@ -7297,7 +7297,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@lucide/astro@0.562.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))':
+  '@lucide/astro@1.34.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2))':
     dependencies:
       astro: 7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(@vitejs/devtools@0.1.13)(jiti@2.6.1)(rollup@4.57.1)(tsx@4.22.3)(yaml@2.8.2)
 
