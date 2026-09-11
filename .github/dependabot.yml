@@ -77,8 +77,6 @@ updates:
           - "pkgroll"
           - "jiti"
           - "knip"
-          - "lint-staged"
-          - "simple-git-hooks"
           - "cross-env"
           - "@changesets/cli"
           - "@antfu/ni"

@@ -35,6 +35,3 @@ allowBuilds:
   sharp: true
   # Cloudflare workerd native binary.
   workerd: true
-  # Install script only writes to .git/hooks — convenience, not necessity.
-  # Fresh clones run `pnpx simple-git-hooks` once to install the pre-commit hook.
-  simple-git-hooks: false
