@@ -6,21 +6,101 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
-    open-pull-requests-limit: 10
+      semver-major-days: 30
+    open-pull-requests-limit: 15
     ignore:
       - dependency-name: "@vitejs/devtools*"
       - dependency-name: "vite"
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
     groups:
-      production-dependencies:
-        dependency-type: "production"
-        update-types:
-          - minor
-          - patch
-      development-dependencies:
-        dependency-type: "development"
-        update-types:
-          - minor
-          - patch
+      radix:
+        patterns:
+          - "@radix-ui/*"
+        update-types: ["minor", "patch"]
+
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "react-hook-form"
+          - "@types/react"
+          - "@types/react-dom"
+          - "@vitejs/plugin-react"
+          - "zustand"
+        update-types: ["minor", "patch"]
+
+      astro:
+        patterns:
+          - "astro"
+          - "@astrojs/*"
+          - "astro-*"
+          - "ultrahtml"
+        update-types: ["minor", "patch"]
+
+      icons:
+        patterns:
+          - "lucide-react"
+          - "@lucide/astro"
+        update-types: ["minor", "patch"]
+
+      unocss:
+        patterns:
+          - "unocss"
+          - "@unocss/*"
+        update-types: ["minor", "patch"]
+
+      oxc:
+        patterns:
+          - "oxlint"
+          - "oxfmt"
+          - "eslint-plugin-regexp"
+        update-types: ["minor", "patch"]
+
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+        update-types: ["minor", "patch"]
+
+      cloudflare:
+        patterns:
+          - "wrangler"
+          - "@cloudflare/*"
+        update-types: ["minor", "patch"]
+
+      build-tooling:
+        patterns:
+          - "typescript"
+          - "tsx"
+          - "pkgroll"
+          - "jiti"
+          - "knip"
+          - "lint-staged"
+          - "simple-git-hooks"
+          - "cross-env"
+          - "@changesets/cli"
+          - "@antfu/ni"
+          - "@types/node"
+        update-types: ["minor", "patch"]
+
+      cli-runtime:
+        patterns:
+          - "@clack/*"
+          - "commander"
+          - "execa"
+          - "chokidar"
+          - "picocolors"
+          - "tinyglobby"
+          - "get-tsconfig"
+          - "is-unicode-supported"
+          - "fast-wrap-ansi"
+          - "sirv"
+          - "postcss"
+          - "postcss-*"
+          - "zod"
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
