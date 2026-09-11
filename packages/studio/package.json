@@ -32,14 +32,14 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@radix-ui/react-collapsible": "^1.1.12",
+    "@radix-ui/react-collapsible": "^1.1.20",
     "@radix-ui/react-slider": "^1.4.7",
     "@sugarcube-sh/core": "workspace:*",
     "@sugarcube-sh/studio-protocol": "workspace:*"
   },
   "devDependencies": {
-    "@radix-ui/react-popover": "^1.1.14",
-    "@radix-ui/react-tabs": "^1.1.13",
+    "@radix-ui/react-popover": "^1.1.23",
+    "@radix-ui/react-tabs": "^1.1.21",
     "@sugarcube-sh/cli": "workspace:*",
     "@sugarcube-sh/vite": "workspace:*",
     "@types/react": "^19.2.15",
