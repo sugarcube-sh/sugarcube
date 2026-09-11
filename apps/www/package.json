@@ -61,6 +61,6 @@
     "@unocss/preset-wind4": "^66.6.0",
     "@vitejs/devtools": "^0.1.13",
     "tsx": "^4.22.3",
-    "wrangler": "^4.20.5"
+    "wrangler": "^4.129.0"
   }
 }
