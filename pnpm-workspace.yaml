@@ -23,7 +23,7 @@ trustPolicyExclude:
   - "semver@6.3.1"
 
 overrides:
-  vite: ^8.0.3
+  vite: 8.3.0
 
 # pnpm 11 replaces onlyBuiltDependencies. Each detected lifecycle-script package
 # needs an explicit opt-in. Keep this list minimal — only allow what you trust
