@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useFieldRow } from "../../shell/Field";
 
 type NumberInputProps = {
@@ -41,9 +41,11 @@ function NumberInput({
     const [text, setText] = useState(() => asText(value));
     const [editing, setEditing] = useState(false);
 
-    useEffect(() => {
+    const [synced, setSynced] = useState({ value, editing });
+    if (synced.value !== value || synced.editing !== editing) {
+        setSynced({ value, editing });
         if (!editing) setText(asText(value));
-    }, [value, editing]);
+    }
 
     function commit() {
         const parsed = Number.parseFloat(text);

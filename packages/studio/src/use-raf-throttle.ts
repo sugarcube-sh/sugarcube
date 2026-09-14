@@ -4,7 +4,9 @@ export function useRafThrottle<Args extends unknown[]>(
     callback: (...args: Args) => void,
 ): (...args: Args) => void {
     const callbackRef = useRef(callback);
-    callbackRef.current = callback;
+    useEffect(() => {
+        callbackRef.current = callback;
+    });
 
     const argsRef = useRef<Args | null>(null);
     const frameRef = useRef<number | null>(null);

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useRef } from "react";
+import { useState } from "react";
 import { ColorPicker } from "../components/controls/ColorPicker";
 import { NumberInput } from "../components/controls/NumberInput";
 import { Picker } from "../components/controls/Picker";
@@ -102,10 +102,10 @@ function renderControl(control: Control, key: string): Cell {
 }
 
 export function FieldRenderer({ row }: { row: Row }) {
-    const initialCount = useRef(row.controls.length);
-    if (import.meta.env.DEV && initialCount.current !== row.controls.length) {
+    const [initialCount] = useState(row.controls.length);
+    if (import.meta.env.DEV && initialCount !== row.controls.length) {
         throw new Error(
-            `[studio] Bug in row "${row.key}": it had ${initialCount.current} input(s), then ${row.controls.length}. ` +
+            `[studio] Bug in row "${row.key}": it had ${initialCount} input(s), then ${row.controls.length}. ` +
                 "Each row must keep the same number of inputs forever. Something in expand() (or a scale/alias row builder) " +
                 "is adding or removing controls after the first render.",
         );

@@ -84,7 +84,7 @@ function generateTypographyVariables(
     options: CSSRenderOptions,
 ): CSSVariable[] {
     return Object.entries(renderCSS(token, options))
-        .filter(([_, value]) => value !== undefined)
+        .filter(([, value]) => value !== undefined)
         .map(([prop, value]) => ({
             name: `--${token.$names.css}-${prop}`,
             value: substituteReferencesAsCSSVars(value, nameLookup),
@@ -181,7 +181,7 @@ function generateVariablesFromTokens(
     // in source DTCG files (and the order modifier expansions emit them).
     const varSets = Object.entries(tokens)
         .filter(([key, token]) => key !== "$extensions" && "$type" in token)
-        .map(([_, token]) =>
+        .map(([, token]) =>
             generateVariablesForToken(token as RenderableToken<TokenType>, nameLookup, options),
         );
 

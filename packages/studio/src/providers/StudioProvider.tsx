@@ -21,7 +21,6 @@ export function StudioProvider({ source, children }: Props) {
     const [state, setState] = useState<HostState>({ kind: "loading" });
 
     useEffect(() => {
-        setState({ kind: "loading" });
         const controller = new AbortController();
 
         async function init() {
