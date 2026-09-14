@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { useHasPendingChanges } from "../../store/hooks";
 import { DesignActions } from "../DesignActions";
 import { DesignView } from "../views/DesignView";
@@ -7,11 +7,13 @@ import { DiffView } from "../views/DiffView";
 export function DesignArea() {
     const hasChanges = useHasPendingChanges();
     const [diffOpen, setDiffOpen] = useState(false);
+    const [hadChanges, setHadChanges] = useState(hasChanges);
     const diffPanelId = useId();
 
-    useEffect(() => {
+    if (hadChanges !== hasChanges) {
+        setHadChanges(hasChanges);
         if (!hasChanges) setDiffOpen(false);
-    }, [hasChanges]);
+    }
 
     const showDiff = hasChanges && diffOpen;
 
