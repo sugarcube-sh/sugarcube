@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useRef, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import { useHost } from "../host/host-provider";
 import type { SaveBundle } from "../host/types";
 import { diffToFileEdits } from "../tokens/diff-to-edits";
@@ -21,8 +21,6 @@ type UseSaveResult = {
 
 export function useSave(diff: readonly TokenDiffEntry[]): UseSaveResult {
     const host = useHost();
-    const diffRef = useRef(diff);
-    diffRef.current = diff;
 
     const [status, setStatus] = useState<SaveStatus>({ kind: "idle" });
 
@@ -30,9 +28,9 @@ export function useSave(diff: readonly TokenDiffEntry[]): UseSaveResult {
 
     const onSave = useCallback(async () => {
         setStatus({ kind: "saving" });
-        const result = await host.save(buildSaveBundle(diffRef.current));
+        const result = await host.save(buildSaveBundle(diff));
         setStatus(result);
-    }, [host]);
+    }, [host, diff]);
 
     return {
         saving: status.kind === "saving",

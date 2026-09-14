@@ -10,7 +10,7 @@ import {
 import { Paintbrush } from "lucide-react";
 // Runtime import needed for proper React bundling in Astro/Starlight context
 import * as _React from "react";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 const THEMES = [
     { value: "default", label: "Default" },
@@ -26,28 +26,23 @@ interface ThemeToggleProps {
     className?: string;
 }
 
+function subscribeToTheme(onStoreChange: () => void) {
+    document.addEventListener("theme-change", onStoreChange);
+    return () => document.removeEventListener("theme-change", onStoreChange);
+}
+
+function getThemeSnapshot(): Theme {
+    return (document.documentElement.getAttribute("data-theme") as Theme) ?? "default";
+}
+
+function getServerThemeSnapshot(): Theme {
+    return "default";
+}
+
 export function ThemeToggle({ compact = false, className }: ThemeToggleProps) {
-    const [theme, setTheme] = useState<Theme>("default");
-
-    // Sync with document on mount
-    useEffect(() => {
-        const currentTheme = document.documentElement.getAttribute("data-theme");
-        if (currentTheme) {
-            setTheme(currentTheme as Theme);
-        }
-
-        const handleThemeChange = (e: CustomEvent<{ theme: string }>) => {
-            setTheme(e.detail.theme as Theme);
-        };
-
-        document.addEventListener("theme-change", handleThemeChange as EventListener);
-        return () => {
-            document.removeEventListener("theme-change", handleThemeChange as EventListener);
-        };
-    }, []);
+    const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerThemeSnapshot);
 
     const handleThemeSelect = (selectedTheme: Theme) => {
-        setTheme(selectedTheme);
         document.dispatchEvent(
             new CustomEvent("theme-change", {
                 detail: { theme: selectedTheme },
