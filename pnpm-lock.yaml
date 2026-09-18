@@ -73,8 +73,8 @@ importers:
         specifier: ^0.41.2
         version: 0.41.2(@astrojs/markdown-remark@7.2.1)(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.5.1)(@vitejs/devtools@0.1.13)(jiti@2.7.0)(rollup@4.63.1)(tsx@4.23.13)(yaml@2.9.0))(typescript@5.9.3)
       '@lucide/astro':
-        specifier: ^1.41.0
-        version: 1.41.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.5.1)(@vitejs/devtools@0.1.13)(jiti@2.7.0)(rollup@4.63.1)(tsx@4.23.13)(yaml@2.9.0))
+        specifier: ^1.44.0
+        version: 1.44.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.5.1)(@vitejs/devtools@0.1.13)(jiti@2.7.0)(rollup@4.63.1)(tsx@4.23.13)(yaml@2.9.0))
       '@radix-ui/react-accordion':
         specifier: ^1.2.20
         version: 1.2.20(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -157,8 +157,8 @@ importers:
         specifier: ^7.0.3
         version: 7.0.3
       lucide-react:
-        specifier: ^1.41.0
-        version: 1.41.0(react@19.2.8)
+        specifier: ^1.44.0
+        version: 1.44.0(react@19.2.8)
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -335,8 +335,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       lucide-react:
-        specifier: ^1.41.0
-        version: 1.41.0(react@19.2.8)
+        specifier: ^1.44.0
+        version: 1.44.0(react@19.2.8)
       pkgroll:
         specifier: ^2.28.1
         version: 2.28.1(typescript@5.9.3)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
@@ -1761,8 +1761,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
-  '@lucide/astro@1.41.0':
-    resolution: {integrity: sha512-B6i+gssCkaI9o2mTGLslHOSNyFUv5i6bqxATozpFepdT5XH/n3gjcH4jQ6efqMRGIrqaKsFr5TRwgfKEMqlHiQ==}
+  '@lucide/astro@1.44.0':
+    resolution: {integrity: sha512-WA7/f3slXUhrffeEGeYtBhKItnG6FitVawY6M40EU26prnJDUcGNQcGb+8Mpyu9ZKu2EnLI3JYGr6AMIVImGFw==}
     peerDependencies:
       astro: ^4 || ^5 || ^6 || ^7
 
@@ -3549,8 +3549,8 @@ packages:
   boolbase@1.0.0:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
 
-  brace-expansion@5.0.9:
-    resolution: {integrity: sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==}
+  brace-expansion@5.0.12:
+    resolution: {integrity: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==}
     engines: {node: 20 || >=22}
 
   braces@3.0.3:
@@ -4627,8 +4627,8 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
-  lucide-react@1.41.0:
-    resolution: {integrity: sha512-6lksP35l6KszDKUeRTi4LV7i6DEe0Yzl2ALJm9j4c5xEYN91GdW1xGsawGMOg2mgjF5GHBVX8pKX9kP+cWsP3Q==}
+  lucide-react@1.44.0:
+    resolution: {integrity: sha512-2egNApH4hX4j/qdCgRublh88+9u3mEhz9iSlW5ckm4kaQEqZbXbMr0l5u5JZLy8nmWRx2dbHGQkEDYz6C9aCgw==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -7359,7 +7359,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@lucide/astro@1.41.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.5.1)(@vitejs/devtools@0.1.13)(jiti@2.7.0)(rollup@4.63.1)(tsx@4.23.13)(yaml@2.9.0))':
+  '@lucide/astro@1.44.0(astro@7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.5.1)(@vitejs/devtools@0.1.13)(jiti@2.7.0)(rollup@4.63.1)(tsx@4.23.13)(yaml@2.9.0))':
     dependencies:
       astro: 7.0.6(@astrojs/markdown-remark@7.2.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.5.1)(@vitejs/devtools@0.1.13)(jiti@2.7.0)(rollup@4.63.1)(tsx@4.23.13)(yaml@2.9.0)
 
@@ -9175,7 +9175,7 @@ snapshots:
 
   boolbase@1.0.0: {}
 
-  brace-expansion@5.0.9:
+  brace-expansion@5.0.12:
     dependencies:
       balanced-match: 4.0.4
 
@@ -10379,7 +10379,7 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  lucide-react@1.41.0(react@19.2.8):
+  lucide-react@1.44.0(react@19.2.8):
     dependencies:
       react: 19.2.8
 
@@ -10901,7 +10901,7 @@ snapshots:
 
   minimatch@10.2.6:
     dependencies:
-      brace-expansion: 5.0.9
+      brace-expansion: 5.0.12
 
   minimist@1.2.8: {}
 
