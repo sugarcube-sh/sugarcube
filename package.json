@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.9",
-    "@types/node": "^24.13.3",
+    "@types/node": "^24.13.4",
     "@vitest/coverage-istanbul": "^4.1.11",
     "eslint-plugin-regexp": "^3.3.0",
     "knip": "^5.59.1",
