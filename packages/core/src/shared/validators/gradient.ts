@@ -10,24 +10,7 @@ const GradientStopSchema: ObjectSchema = {
     errorMessage: (value, path) => ErrorMessages.VALIDATE.INVALID_GRADIENT(value, path),
     properties: {
         color: ColorSchema.schema,
-        position: {
-            type: "number",
-            validate: (value, path, source) => {
-                if ((value as number) < 0 || (value as number) > 1) {
-                    return [
-                        {
-                            path,
-                            message: ErrorMessages.VALIDATE.INVALID_GRADIENT_STOP_POSITION(
-                                value,
-                                path,
-                            ),
-                            source,
-                        },
-                    ];
-                }
-                return [];
-            },
-        },
+        position: { type: "number" },
     },
     required: ["color", "position"],
 };

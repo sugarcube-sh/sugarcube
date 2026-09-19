@@ -64,9 +64,7 @@ export const ErrorMessages = {
         INVALID_TRANSITION: (value: unknown, path: string) =>
             `Invalid transition at ${path}: "${value}". Should have duration, delay, and timingFunction properties`,
         INVALID_GRADIENT: (value: unknown, path: string) =>
-            `Invalid gradient at ${path}: "${value}". Should be an array of color stops with position values between 0 and 1`,
-        INVALID_GRADIENT_STOP_POSITION: (value: unknown, path: string) =>
-            `Invalid gradient stop position at ${path}: "${value}". Position must be between 0 and 1`,
+            `Invalid gradient at ${path}: "${value}". Should be an array of color stops, each with a color and a numeric position`,
         INVALID_TYPOGRAPHY: (value: unknown, path: string) =>
             `Invalid typography at ${path}: "${value}". Should have fontFamily and fontSize (fontWeight, letterSpacing, and lineHeight are optional)`,
         MISSING_REQUIRED_PROPERTY: (prop: string, path: string) =>

@@ -26,6 +26,15 @@
       "sourcePath": "tokens/typography.json"
     }
   },
+  "font.weight.invalid.case": {
+    "$type": "fontWeight",
+    "$value": "Bold",
+    "$path": "font.weight.invalid.case",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
   "font.weight.invalid.type.boolean": {
     "$type": "fontWeight",
     "$value": true,

@@ -63,5 +63,12 @@ describe("transition validator", () => {
             const errors = ValidationHelper.validateToken(validateTransition, token);
             ValidationHelper.expectMissingPropertyError(errors, "timingFunction", token.$path);
         });
+
+        it("should reject a transition with no delay", () => {
+            const token = invalidTokens["transition.missing.delay"];
+            if (!token) throw new Error("Token not found");
+            const errors = ValidationHelper.validateToken(validateTransition, token);
+            ValidationHelper.expectMissingPropertyError(errors, "delay", token.$path);
+        });
     });
 });

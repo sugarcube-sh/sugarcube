@@ -38,5 +38,27 @@
       "collection": "tokens",
       "sourcePath": "tokens/gradients.json"
     }
+  },
+  "gradient.position.out.of.range": {
+    "$type": "gradient",
+    "$value": [
+      {
+        "color": "#000000",
+        "position": -99
+      },
+      {
+        "color": "#888888",
+        "position": 1.5
+      },
+      {
+        "color": "#ffffff",
+        "position": 42
+      }
+    ],
+    "$path": "gradient.position.out.of.range",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/gradients.json"
+    }
   }
 }

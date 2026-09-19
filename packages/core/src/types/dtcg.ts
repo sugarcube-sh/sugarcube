@@ -176,7 +176,7 @@ type Typography = {
 
 type Transition = {
     duration: TokenValue<"duration">;
-    delay?: TokenValue<"duration">;
+    delay: TokenValue<"duration">;
     timingFunction: TokenValue<"cubicBezier">;
 };
 
