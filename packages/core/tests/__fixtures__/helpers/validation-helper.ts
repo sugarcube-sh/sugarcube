@@ -111,17 +111,6 @@ export const ValidationHelper = {
         expect(errors[0]?.message).toBe(ErrorMessages.VALIDATE.INVALID_GRADIENT(value, path));
     },
 
-    expectInvalidGradientStopPositionError(
-        errors: ValidationError[],
-        value: unknown,
-        path: string,
-    ) {
-        expect(errors).toHaveLength(1);
-        expect(errors[0]?.message).toBe(
-            ErrorMessages.VALIDATE.INVALID_GRADIENT_STOP_POSITION(value, path),
-        );
-    },
-
     expectInvalidShadowError(errors: ValidationError[], value: unknown, path: string) {
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(ErrorMessages.VALIDATE.INVALID_SHADOW(value, path));

@@ -29,6 +29,23 @@ describe("convertGradient", () => {
         });
     });
 
+    // DTCG 2025.10 9.7: out-of-range positions are clamped at use, not rejected.
+    // The validator lets them through so this is the code path that applies the rule.
+    it("should clamp positions outside [0, 1]", () => {
+        const result = renderGradient(
+            [
+                { color: "#000000", position: -99 },
+                { color: "#888888", position: 1.5 },
+                { color: "#FFFFFF", position: 42 },
+            ],
+            defaultOptions,
+        );
+
+        expect(result).toEqual({
+            value: "linear-gradient(#000000 0%, #888888 100%, #FFFFFF 100%)",
+        });
+    });
+
     it("should handle references in color values", () => {
         const result = renderGradient(
             [

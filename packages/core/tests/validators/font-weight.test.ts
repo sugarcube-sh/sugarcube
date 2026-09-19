@@ -84,6 +84,15 @@ describe("font weight validator", () => {
                 const errors = ValidationHelper.validateToken(validateFontWeight, token);
                 ValidationHelper.expectInvalidFontWeightError(errors, token.$value, token.$path);
             });
+
+            // DTCG 2025.10 8.4: "any other string values, including ones that
+            // differ only in case, are invalid and MUST be rejected by tools".
+            it("should reject a keyword that differs only in case", () => {
+                const token = invalidTokens["font.weight.invalid.case"];
+                if (!token) throw new Error("Token not found");
+                const errors = ValidationHelper.validateToken(validateFontWeight, token);
+                ValidationHelper.expectInvalidFontWeightError(errors, token.$value, token.$path);
+            });
         });
 
         describe("type validation", () => {

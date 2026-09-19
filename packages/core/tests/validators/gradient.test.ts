@@ -26,6 +26,15 @@ describe("gradient validator", () => {
             const errors = ValidationHelper.validateToken(validateGradient, token);
             ValidationHelper.expectNoErrors(errors);
         });
+
+        // DTCG 2025.10 9.7: a position outside [0, 1] "MUST be considered as if
+        // it were clamped", so it is a valid token. renderGradient does the clamping.
+        it("should accept positions outside [0, 1] rather than rejecting them", () => {
+            const token = validTokens["gradient.position.out.of.range"];
+            if (!token) throw new Error("Token not found");
+            const errors = ValidationHelper.validateToken(validateGradient, token);
+            ValidationHelper.expectNoErrors(errors);
+        });
     });
 
     describe("invalid cases", () => {
@@ -70,17 +79,6 @@ describe("gradient validator", () => {
         });
 
         describe("position validation", () => {
-            it("should reject invalid position values", () => {
-                const token = invalidTokens["gradient.invalid.position"];
-                if (!token) throw new Error("Token not found");
-                const errors = ValidationHelper.validateToken(validateGradient, token);
-                ValidationHelper.expectInvalidGradientStopPositionError(
-                    errors,
-                    (token.$value as any[])[0].position,
-                    `${token.$path}[0].position`,
-                );
-            });
-
             it("should reject missing position property", () => {
                 const token = invalidTokens["gradient.missing.position"];
                 if (!token) throw new Error("Token not found");

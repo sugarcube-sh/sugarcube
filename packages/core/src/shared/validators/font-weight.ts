@@ -53,7 +53,7 @@ export const FontWeightSchema: TokenValidationSchema = {
                 errorMessage: (value, path) =>
                     ErrorMessages.VALIDATE.INVALID_FONT_WEIGHT(value, path),
                 validate: (value, path, source) => {
-                    if (!validStringValues.includes((value as string).toLowerCase())) {
+                    if (!validStringValues.includes(value as string)) {
                         return [
                             {
                                 path,

@@ -41,5 +41,15 @@
     "$path": "transition.missing.required",
     "$source": { "file": "tokens/transition.json" },
     "$originalPath": "transition.missing.required"
+  },
+  "transition.missing.delay": {
+    "$type": "transition",
+    "$value": {
+      "duration": { "value": 200, "unit": "ms" },
+      "timingFunction": [0.42, 0, 0.58, 1]
+    },
+    "$path": "transition.missing.delay",
+    "$source": { "file": "tokens/transition.json" },
+    "$originalPath": "transition.missing.delay"
   }
 }
