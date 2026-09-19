@@ -1,6 +1,6 @@
 {
   "name": "@sugarcube-sh/vite",
-  "version": "0.1.25",
+  "version": "0.1.26",
   "description": "Vite plugin for sugarcube",
   "keywords": [
     "css",
