@@ -36,10 +36,10 @@ describe("convertFontWeight", () => {
         }
     });
 
-    it("should handle case-insensitive string aliases", () => {
+    it("should pass a wrong-case alias through rather than correcting it", () => {
         const result = renderFontWeight("BOLD");
         expect(result).toEqual({
-            value: 700,
+            value: "BOLD",
         });
     });
 });

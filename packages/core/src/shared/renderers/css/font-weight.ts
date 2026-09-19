@@ -32,5 +32,5 @@ export function renderFontWeight(value: TokenValue<"fontWeight">): SimpleCSSProp
         return { value };
     }
 
-    return { value: fontWeightAliases[value.toLowerCase()] ?? value };
+    return { value: fontWeightAliases[value] ?? value };
 }
