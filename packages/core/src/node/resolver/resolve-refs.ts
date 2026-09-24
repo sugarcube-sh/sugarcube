@@ -200,96 +200,102 @@ async function loadJsonFile(filePath: string): Promise<LoadResult> {
 /**
  * Resolve all sources in an array, handling $ref and inline sources.
  * Applies extending (shallow merge) for references with additional properties.
+ * `at` is the JSON pointer to the array in the resolver document, so an inline
+ * source can say where it was authored.
  */
 export async function resolveSources(
     sources: Source[],
     context: ResolveContext,
     at: string,
-): Promise<{ resolved: TokenGroup[]; errors: ResolverError[] }> {
+): Promise<ResolvedSources> {
     const resolved: TokenGroup[] = [];
     const errors: ResolverError[] = [];
 
     for (const [index, source] of sources.entries()) {
-        if (!hasRef(source)) {
-            // Tokens declared inline (spec 4.1.4, 4.1.5.1) are authored in the
-            // resolver document, so that is the file they came from.
-            const inline = context.resolverPath;
-            if (inline) recordSource(context, { file: inline, pointer: `${at}/${index}` });
-            resolved.push(
-                inline ? stampSourcePath(source as TokenGroup, inline) : (source as TokenGroup),
-            );
-            continue;
-        }
-
-        if (source.$ref.startsWith("#/sets/")) {
-            // Per DTCG §4.1.5.1 Example 4: a set ref inside a sources array
-            // is equivalent to that set's sources being inlined here.
-            const refResult = await resolveReference(source.$ref, context);
-            errors.push(...refResult.errors);
-            if (refResult.errors.length > 0) continue;
-
-            if (context.visitedRefs.has(source.$ref)) {
-                errors.push({
-                    path: source.$ref,
-                    message: ErrorMessages.RESOLVER.CIRCULAR_REFERENCE(source.$ref),
-                });
-                continue;
-            }
-
-            const setDef = refResult.content as SetDefinition;
-            context.visitedRefs.add(source.$ref);
-            try {
-                const inner = await resolveSources(
-                    setDef.sources,
-                    context,
-                    `/sets/${source.$ref.slice("#/sets/".length)}/sources`,
-                );
-                errors.push(...inner.errors);
-                resolved.push(...inner.resolved);
-            } finally {
-                context.visitedRefs.delete(source.$ref);
-            }
-            continue;
-        }
-
-        const refResult = await resolveReference(source.$ref, context);
-        errors.push(...refResult.errors);
-
-        if (refResult.errors.length === 0) {
-            const content = applyExtending(refResult.content as TokenGroup, source);
-            const relPath = relative(process.cwd(), refResult.sourcePath);
-            const fragment = source.$ref.split("#")[1];
-            recordSource(
-                context,
-                fragment === undefined
-                    ? { file: relPath }
-                    : {
-                          file: relPath,
-                          pointer: fragment.startsWith("/") ? fragment : `/${fragment}`,
-                      },
-            );
-            const cached = context.fileCache.get(refResult.sourcePath);
-            if (cached) context.texts.set(relPath, cached.text);
-            const stamped = stampSourcePath(content, relPath);
-
-            resolved.push(isPrivate(source) ? markPrivate(stamped) : stamped);
-        }
+        const result = await resolveSource(source, context, `${at}/${index}`);
+        resolved.push(...result.resolved);
+        errors.push(...result.errors);
     }
 
     return { resolved, errors };
 }
 
-function recordSource(context: ResolveContext, ref: SourceRef): void {
+type ResolvedSources = { resolved: TokenGroup[]; errors: ResolverError[] };
+
+async function resolveSource(
+    source: Source,
+    context: ResolveContext,
+    at: string,
+): Promise<ResolvedSources> {
+    if (!hasRef(source)) return inlineSource(source as TokenGroup, context, at);
+    if (source.$ref.startsWith("#/sets/")) return setSource(source.$ref, context);
+    return fileSource(source, context);
+}
+
+// Tokens declared inline (spec 4.1.4, 4.1.5.1) are authored in the resolver
+// document, so that is the file they came from.
+function inlineSource(source: TokenGroup, context: ResolveContext, at: string): ResolvedSources {
+    const file = context.resolverPath;
+    if (!file) return { resolved: [source], errors: [] };
+
+    recordSource(context, { file, pointer: at });
+    return { resolved: [stampSourcePath(source, file)], errors: [] };
+}
+
+// Per DTCG §4.1.5.1 Example 4: a set ref inside a sources array is equivalent
+// to that set's sources being inlined here.
+async function setSource(ref: string, context: ResolveContext): Promise<ResolvedSources> {
+    const refResult = await resolveReference(ref, context);
+    if (refResult.errors.length > 0) return { resolved: [], errors: refResult.errors };
+    if (context.visitedRefs.has(ref)) {
+        return {
+            resolved: [],
+            errors: [{ path: ref, message: ErrorMessages.RESOLVER.CIRCULAR_REFERENCE(ref) }],
+        };
+    }
+
+    const setDef = refResult.content as SetDefinition;
+    context.visitedRefs.add(ref);
+    try {
+        return await resolveSources(
+            setDef.sources,
+            context,
+            `/sets/${ref.slice("#/sets/".length)}/sources`,
+        );
+    } finally {
+        context.visitedRefs.delete(ref);
+    }
+}
+
+async function fileSource(
+    source: ReferenceObject,
+    context: ResolveContext,
+): Promise<ResolvedSources> {
+    const refResult = await resolveReference(source.$ref, context);
+    if (refResult.errors.length > 0) return { resolved: [], errors: refResult.errors };
+
+    const file = relative(process.cwd(), refResult.sourcePath);
+    const text = context.fileCache.get(refResult.sourcePath)?.text;
+    recordSource(context, sourceRefOf(source.$ref, file), text);
+
+    const content = stampSourcePath(applyExtending(refResult.content as TokenGroup, source), file);
+    return { resolved: [isPrivate(source) ? markPrivate(content) : content], errors: [] };
+}
+
+function sourceRefOf(ref: string, file: string): SourceRef {
+    const fragment = ref.split("#")[1];
+    if (fragment === undefined) return { file };
+    return { file, pointer: fragment.startsWith("/") ? fragment : `/${fragment}` };
+}
+
+function recordSource(context: ResolveContext, ref: SourceRef, text?: string): void {
     const seen = context.sourceRefs.some(
         (each) => each.file === ref.file && each.pointer === ref.pointer,
     );
     if (!seen) context.sourceRefs.push(ref);
+    if (text !== undefined) context.texts.set(ref.file, text);
 }
 
-/**
- * Apply extending properties from a reference object to resolved content.
- * Per DTCG spec section 4.2.2: shallow merge (objects/arrays are NOT deep-merged).
- */
 function applyExtending(content: TokenGroup, refObject: ReferenceObject): TokenGroup {
     const { $ref: _$ref, ...extensions } = refObject;
     if (Object.keys(extensions).length === 0) return content;
