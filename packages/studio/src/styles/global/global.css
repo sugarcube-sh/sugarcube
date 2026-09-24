@@ -6,6 +6,9 @@
 *::before,
 *::after {
     box-sizing: border-box;
+    border: 0 solid;
+    margin: 0;
+    padding: 0;
 }
 
 html {
@@ -198,7 +201,7 @@ mark {
 
 a {
     color: var(--color-text-link, revert);
-    text-decoration: var(--link-decoration-default, underline);
+    text-decoration: var(--link-decoration-default, inherit);
     -webkit-text-decoration: var(--link-decoration-default, underline);
     text-decoration-skip-ink: auto;
     text-underline-offset: 0.25em;
@@ -224,11 +227,10 @@ li > ol {
 }
 
 ul {
-    list-style: disc;
+    list-style: none;
 }
 
 li {
-    margin-inline-start: 1.25em;
     padding: 0;
 }
 

@@ -6,9 +6,9 @@ import type {
 } from "@sugarcube-sh/core/client";
 import { type StoreApi, createStore } from "zustand";
 import type { PathIndexAccessor } from "../tokens/path-index";
-import { getScaleExtension } from "../tokens/scale-extension";
+import { getScaleBase, getScaleExtension } from "../tokens/scale-extension";
 import type { TokenSnapshot } from "../tokens/types";
-import type { TokenStoreAPI } from "./create-token-store";
+import type { TokenStoreAPI } from "./create-source-store";
 import { type PanelOwnership, conflictMessage, indexPanelOwnership } from "./panel-ownership";
 import { applyScaleEdits } from "./scale-apply";
 import { DEFAULT_SPREAD, selectCapture } from "./scale-selectors";
@@ -26,7 +26,10 @@ export type ScaleStateStore = {
     links: Record<string, LinkEdit>;
     bindings: Record<string, ScaleBindingMeta>;
     linkBindings: Record<string, LinkBindingMeta>;
+    bases: Record<string, string>;
+    authoredBases: Record<string, string>;
 
+    setScaleBase: (token: string, basePath: string) => void;
     setBase: (token: string, value: number) => void;
     setSpread: (token: string, value: number) => void;
     setStepOverride: (
@@ -71,9 +74,28 @@ export function restoreScaleField(
     original: ScaleExtension,
     field: ScaleEditField,
 ): ScaleExtension {
+    if (typeof field === "object") {
+        if (current.mode !== "multipliers" || original.mode !== "multipliers") return current;
+        const restored = original.multipliers[field.multiplier];
+        if (restored === undefined) return current;
+        return {
+            ...current,
+            multipliers: { ...current.multipliers, [field.multiplier]: restored },
+        };
+    }
+
     if (field === "base") return { ...current, base: original.base };
-    if (field === "ratio" && current.mode === "exponential" && original.mode === "exponential") {
-        return { ...current, ratio: original.ratio };
+    if (field === "baseMin")
+        return { ...current, base: { ...current.base, min: original.base.min } };
+    if (field === "baseMax")
+        return { ...current, base: { ...current.base, max: original.base.max } };
+
+    if (current.mode !== "exponential" || original.mode !== "exponential") return current;
+    if (field === "ratioMin") {
+        return { ...current, ratio: { ...current.ratio, min: original.ratio.min } };
+    }
+    if (field === "ratioMax") {
+        return { ...current, ratio: { ...current.ratio, max: original.ratio.max } };
     }
     return current;
 }
@@ -84,11 +106,19 @@ export function selectScaleFieldEdited(
     field: ScaleEditField,
 ): boolean {
     if (!effective || !original) return false;
-    if (field === "base") return effective.base.max.value !== original.base.max.value;
-    if (field === "ratio") {
-        if (effective.mode !== "exponential" || original.mode !== "exponential") return false;
-        return effective.ratio.max !== original.ratio.max;
+
+    if (typeof field === "object") {
+        if (effective.mode !== "multipliers" || original.mode !== "multipliers") return false;
+        return effective.multipliers[field.multiplier] !== original.multipliers[field.multiplier];
     }
+
+    if (field === "base") return effective.base.max.value !== original.base.max.value;
+    if (field === "baseMin") return effective.base.min.value !== original.base.min.value;
+    if (field === "baseMax") return effective.base.max.value !== original.base.max.value;
+
+    if (effective.mode !== "exponential" || original.mode !== "exponential") return false;
+    if (field === "ratioMin") return effective.ratio.min !== original.ratio.min;
+    if (field === "ratioMax") return effective.ratio.max !== original.ratio.max;
     return false;
 }
 
@@ -98,22 +128,31 @@ export function createScaleState(
     getPathIndex: PathIndexAccessor,
     tokenStore: TokenStoreAPI,
     baseline: StoreApi<TokenSnapshot>,
-    onWrite?: ScaleWriteCallback,
+    writeResolved: ScaleWriteCallback,
 ): ScaleStateHandle {
-    const writeResolved: ScaleWriteCallback =
-        onWrite ?? ((resolved) => tokenStore.setState({ resolved }));
-
     const ownership = indexPanelOwnership(panelSections, getPathIndex());
     for (const conflict of ownership.conflicts) console.warn(conflictMessage(conflict));
 
     const { bindings, linkBindings } = collectBindings(panelSections, snapshot, ownership);
+
+    const authoredBases: Record<string, string> = {};
+    for (const [token, meta] of Object.entries(bindings)) {
+        const authored = getScaleBase(snapshot.trees, meta.parentPath);
+        if (authored) authoredBases[token] = authored;
+    }
 
     const effectiveBase = (token: string, edit: ScaleEdit | undefined, context: string): number => {
         if (edit?.kind === "tokens" && edit.base !== undefined) return edit.base;
         const meta = bindings[token];
         if (!meta) return 0;
         return (
-            selectCapture(baseline.getState(), getPathIndex(), meta.binding, context)?.baseMax ?? 0
+            selectCapture(
+                baseline.getState(),
+                getPathIndex(),
+                meta.binding,
+                context,
+                scaleStore.getState().bases[token],
+            )?.baseMax ?? 0
         );
     };
 
@@ -122,6 +161,13 @@ export function createScaleState(
         links: {},
         bindings,
         linkBindings,
+        bases: { ...authoredBases },
+        authoredBases,
+
+        setScaleBase: (token, basePath) => {
+            set((state) => ({ bases: { ...state.bases, [token]: basePath } }));
+            applyAll();
+        },
 
         setBase: (token, value) => {
             set((state) => ({
@@ -241,13 +287,13 @@ export function createScaleState(
         },
 
         resetAll: () => {
-            set(() => ({ edits: {}, links: {} }));
+            set(() => ({ edits: {}, links: {}, bases: { ...authoredBases } }));
             applyAll();
         },
     }));
 
     function applyAll() {
-        const { edits, links } = scaleStore.getState();
+        const { edits, links, bases } = scaleStore.getState();
         const { resolved, currentContext } = tokenStore.getState();
         const next = applyScaleEdits(
             resolved,
@@ -258,6 +304,7 @@ export function createScaleState(
             baseline.getState(),
             getPathIndex(),
             currentContext,
+            bases,
         );
         writeResolved(next);
     }
@@ -316,14 +363,7 @@ function collectBindings(
     for (const section of panelSections) {
         for (const binding of section.bindings) {
             if (binding.type === "scale") {
-                const meta = buildScaleBindingMeta(binding, snapshot, ownership);
-                if (meta.kind === "scale" || binding.base) {
-                    bindings[binding.token] = meta;
-                } else {
-                    console.warn(
-                        `[studio] scale binding "${binding.token}" has no \`base\` and no sh.sugarcube.scale recipe; direct-mode controls need an anchor step. Add \`base\` to the binding or author a scale recipe on the bound group.`,
-                    );
-                }
+                bindings[binding.token] = buildScaleBindingMeta(binding, snapshot, ownership);
             } else if (binding.type === "link") {
                 linkBindings[binding.token] = {
                     bindingToken: binding.token,

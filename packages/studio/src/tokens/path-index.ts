@@ -1,76 +1,150 @@
-import { type ResolvedTokens, isResolvedToken } from "@sugarcube-sh/core/client";
-import { sameKeySet } from "./same-key-set";
+import {
+    type ResolvedToken,
+    type ResolvedTokens,
+    isResolvedToken,
+} from "@sugarcube-sh/core/client";
 import type { PathIndexEntry } from "./types";
 
-export class PathIndex {
-    private readonly index: Map<string, PathIndexEntry[]>;
+type GroupNode = {
+    $path: string;
+    $description?: string;
+    $source?: { context?: string; sourcePath?: string };
+};
 
-    constructor(resolved: ResolvedTokens) {
-        this.index = PathIndex.build(resolved);
+function isGroupNode(value: unknown): value is GroupNode {
+    return (
+        typeof value === "object" &&
+        value !== null &&
+        !("$value" in value) &&
+        "$path" in value &&
+        typeof (value as { $path: unknown }).$path === "string"
+    );
+}
+
+export type Handle = string;
+
+export type PathIndexAccessor = () => PathIndex;
+
+type IndexState = {
+    tokens: Map<Handle, PathIndexEntry[]>;
+    groups: Map<Handle, PathIndexEntry[]>;
+    paths: Map<Handle, string>;
+    handles: Map<string, Handle>;
+};
+
+/**
+ * Handle ↔ path ↔ resolved key, per context, over one `resolved` map. Rebuilt
+ * from the text after every edit; the handles are what survive the rebuild.
+ */
+export class PathIndex {
+    private state: IndexState;
+
+    /**
+     * `identify` gives a path the handle it already had, so identity survives a
+     * rebuild. Without it a handle is the path, which is right at baseline.
+     */
+    constructor(resolved: ResolvedTokens, identify?: (path: string) => Handle) {
+        this.state = PathIndex.build(resolved, identify);
     }
 
-    private static build(resolved: ResolvedTokens): Map<string, PathIndexEntry[]> {
-        const index = new Map<string, PathIndexEntry[]>();
-        for (const [key, token] of Object.entries(resolved)) {
-            if (!isResolvedToken(token)) continue;
-            const context = token.$source.context ?? "default";
+    private static build(
+        resolved: ResolvedTokens,
+        identify?: (path: string) => Handle,
+    ): IndexState {
+        const tokens = new Map<Handle, PathIndexEntry[]>();
+        const groups = new Map<Handle, PathIndexEntry[]>();
+        const paths = new Map<Handle, string>();
+        const handles = new Map<string, Handle>();
+
+        const record = (
+            map: Map<Handle, PathIndexEntry[]>,
+            path: string,
+            context: string,
+            key: string,
+        ) => {
             const entry: PathIndexEntry = { context, key };
-            const existing = index.get(token.$path);
-            if (existing) {
-                existing.push(entry);
-            } else {
-                index.set(token.$path, [entry]);
+            const handle = identify?.(path) ?? path;
+            const existing = map.get(handle);
+            if (existing) existing.push(entry);
+            else map.set(handle, [entry]);
+
+            paths.set(handle, path);
+            handles.set(path, handle);
+        };
+
+        for (const [key, node] of Object.entries(resolved)) {
+            if (isResolvedToken(node)) {
+                record(tokens, node.$path, node.$source.context ?? "default", key);
+            } else if (isGroupNode(node)) {
+                record(groups, node.$path, node.$source?.context ?? "default", key);
             }
         }
-        return index;
+
+        return { tokens, groups, paths, handles };
     }
 
-    resolvedKeys(): IterableIterator<string> {
-        const keys: string[] = [];
-        for (const entries of this.index.values()) {
-            for (const { key } of entries) keys.push(key);
-        }
-        return keys[Symbol.iterator]();
+    pathOf(handle: Handle): string | undefined {
+        return this.state.paths.get(handle);
     }
 
-    readValue(resolved: ResolvedTokens, barePath: string, context?: string): unknown {
-        const entries = this.index.get(barePath);
+    handleAt(path: string): Handle | undefined {
+        return this.state.handles.get(path);
+    }
+
+    /** Every current path with the handle that owns it. */
+    allHandles(): IterableIterator<[string, Handle]> {
+        return this.state.handles.entries();
+    }
+
+    isGroup(handle: Handle): boolean {
+        return this.state.groups.has(handle);
+    }
+
+    groupEntries(): IterableIterator<[Handle, PathIndexEntry[]]> {
+        return this.state.groups.entries();
+    }
+
+    readGroup(resolved: ResolvedTokens, handle: Handle, context?: string) {
+        const entries = this.state.groups.get(handle);
+        if (!entries || entries.length === 0) return undefined;
+
+        const entry = context ? entries.find((e) => e.context === context) : entries[0];
+        if (!entry) return undefined;
+
+        const node = resolved[entry.key];
+        return node && isGroupNode(node) ? node : undefined;
+    }
+
+    /** The resolved token itself, in the given context. */
+    readToken(resolved: ResolvedTokens, handle: Handle, context?: string) {
+        const entries = this.state.tokens.get(handle);
         if (!entries || entries.length === 0) return undefined;
 
         const entry = context ? entries.find((e) => e.context === context) : entries[0];
         if (!entry) return undefined;
 
         const token = resolved[entry.key];
-        if (!token || !("$value" in token)) return undefined;
-        return token.$value;
+        return token && "$value" in token ? (token as ResolvedToken) : undefined;
     }
 
-    setValue(
+    readValue(resolved: ResolvedTokens, handle: Handle, context?: string): unknown {
+        return this.readToken(resolved, handle, context)?.$value;
+    }
+
+    readDescription(
         resolved: ResolvedTokens,
-        barePath: string,
-        newValue: unknown,
+        handle: Handle,
         context?: string,
-    ): ResolvedTokens {
-        const entries = this.index.get(barePath);
-        if (!entries || entries.length === 0) return resolved;
-
-        const targetEntries = context ? entries.filter((e) => e.context === context) : entries;
-
-        const updates: ResolvedTokens = {};
-        for (const { key } of targetEntries) {
-            const existing = resolved[key];
-            if (!existing || !("$value" in existing)) continue;
-            updates[key] = {
-                ...existing,
-                $value: newValue,
-            } as ResolvedTokens[string];
-        }
-        return { ...resolved, ...updates };
+    ): string | undefined {
+        return (
+            this.readToken(resolved, handle, context)?.$description ??
+            this.readGroup(resolved, handle, context)?.$description
+        );
     }
 
     get contexts(): readonly string[] {
         const seen = new Set<string>();
-        for (const entries of this.index.values()) {
+        for (const entries of this.state.tokens.values()) {
             for (const { context } of entries) {
                 seen.add(context);
             }
@@ -78,24 +152,24 @@ export class PathIndex {
         return Array.from(seen);
     }
 
-    keysFor(barePath: string): readonly string[] {
-        const entries = this.index.get(barePath);
-        if (!entries) return [];
-        return entries.map((e) => e.key);
+    entriesFor(handle: Handle): readonly PathIndexEntry[] {
+        return this.state.tokens.get(handle) ?? [];
     }
 
-    entriesFor(barePath: string): readonly PathIndexEntry[] {
-        return this.index.get(barePath) ?? [];
+    groupEntriesFor(handle: Handle): readonly PathIndexEntry[] {
+        return this.state.groups.get(handle) ?? [];
     }
 
-    entries(): IterableIterator<[string, PathIndexEntry[]]> {
-        return this.index.entries();
+    entries(): IterableIterator<[Handle, PathIndexEntry[]]> {
+        return this.state.tokens.entries();
     }
 
-    matching(pattern: string): readonly string[] {
+    /** Token handles whose current path matches, `*` standing for one segment. */
+    matching(pattern: string): readonly Handle[] {
         const patternSegs = pattern.split(".");
-        const matches: string[] = [];
-        for (const path of this.index.keys()) {
+        const matches: Handle[] = [];
+        for (const [handle, path] of this.state.paths) {
+            if (!this.state.tokens.has(handle)) continue;
             const pathSegs = path.split(".");
             if (pathSegs.length !== patternSegs.length) continue;
             let ok = true;
@@ -106,33 +180,37 @@ export class PathIndex {
                     break;
                 }
             }
-            if (ok) matches.push(path);
+            if (ok) matches.push(handle);
         }
         return matches;
     }
 
-    under(prefix: string): readonly string[] {
+    under(prefix: string): readonly Handle[] {
         const needle = `${prefix}.`;
-        const matches: string[] = [];
-        for (const path of this.index.keys()) {
-            if (path.startsWith(needle)) matches.push(path);
+        const matches: Handle[] = [];
+        for (const [handle, path] of this.state.paths) {
+            if (!this.state.tokens.has(handle)) continue;
+            if (path.startsWith(needle)) matches.push(handle);
         }
         return matches;
     }
-}
 
-export type PathIndexAccessor = () => PathIndex;
+    childTokens(prefix: string): readonly Handle[] {
+        return this.directChildren(this.state.tokens, prefix);
+    }
 
-export function createPathIndexAccessor(getSource: () => ResolvedTokens): PathIndexAccessor {
-    let cached = new PathIndex(getSource());
-    let builtFrom: ResolvedTokens = getSource();
-    return () => {
-        const current = getSource();
-        if (current === builtFrom) return cached;
-        builtFrom = current;
-        if (!sameKeySet(cached.resolvedKeys(), Object.keys(current))) {
-            cached = new PathIndex(current);
+    childGroups(prefix: string): readonly Handle[] {
+        return this.directChildren(this.state.groups, prefix);
+    }
+
+    private directChildren(map: Map<Handle, PathIndexEntry[]>, prefix: string): readonly Handle[] {
+        const needle = prefix === "" ? "" : `${prefix}.`;
+        const matches: Handle[] = [];
+        for (const [handle, path] of this.state.paths) {
+            if (!map.has(handle) || !path.startsWith(needle)) continue;
+            const rest = path.slice(needle.length);
+            if (rest.length > 0 && !rest.includes(".")) matches.push(handle);
         }
-        return cached;
-    };
+        return matches;
+    }
 }

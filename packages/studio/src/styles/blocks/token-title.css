@@ -1,0 +1,47 @@
+.token-title {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: var(--font-weight-normal);
+}
+
+.token-title-ns,
+.token-title-leaf,
+.token-title-dot {
+    color: var(--color-text-tertiary);
+}
+
+.token-title-tail {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.token-title-num {
+    color: var(--color-text-accent);
+    font-weight: var(--font-weight-semibold);
+}
+
+.token-title-trigger,
+.token-title-field {
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: var(--border-width-thin) solid transparent;
+    border-radius: var(--radius-100);
+    padding-inline: var(--space-050);
+    margin-inline: calc(var(--space-050) * -1);
+}
+
+.token-title-trigger {
+    cursor: text;
+}
+
+.token-title-trigger:hover {
+    background: var(--color-component-hover);
+}
+
+.token-title-field {
+    field-sizing: content;
+    min-inline-size: 2ch;
+    color: var(--color-text-primary);
+    border-color: var(--color-surface-border);
+}

@@ -27,6 +27,7 @@ export function applyScaleEdits(
     baseline: TokenSnapshot,
     pathIndex: PathIndex,
     context: string,
+    bases: Record<string, string> = {},
 ): ResolvedTokens {
     let next = resolved;
 
@@ -41,7 +42,13 @@ export function applyScaleEdits(
             const hasTokensEdit =
                 edit.base !== undefined || edit.spread !== undefined || edit.overrides;
             if (!hasTokensEdit) continue;
-            const captured = selectCapture(baseline, pathIndex, meta.binding, context);
+            const captured = selectCapture(
+                baseline,
+                pathIndex,
+                meta.binding,
+                context,
+                bases[token],
+            );
             if (!captured) continue;
             const base = edit.base ?? captured.baseMax;
             const spread = edit.spread ?? 1;

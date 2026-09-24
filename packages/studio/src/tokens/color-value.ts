@@ -1,3 +1,4 @@
+import { convertColorToString } from "@sugarcube-sh/core/client";
 import { resolveTerminalPath, unwrapRef, wrapRef } from "./paths";
 
 export type ColorValue = {
@@ -20,4 +21,12 @@ export function readColorValue(
 
 export function colorValueToToken(value: ColorValue): string {
     return wrapRef(value.authored);
+}
+
+export function cssColorFor(path: string, read: (path: string) => unknown): string | undefined {
+    const value = read(resolveTerminalPath(path, read));
+    if (value === undefined || value === null) return undefined;
+
+    const result = convertColorToString(value as Parameters<typeof convertColorToString>[0]);
+    return result.success ? result.value : undefined;
 }

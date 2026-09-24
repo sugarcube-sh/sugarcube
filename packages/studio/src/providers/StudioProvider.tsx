@@ -1,14 +1,10 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { createDevToolsHost } from "../host/devtools-host";
-import { createEmbeddedHost } from "../host/embedded-host";
-import { createSandboxHost } from "../host/sandbox-host";
+import { createConnectedHost } from "../host/connected-host";
 import { HostProvider } from "../host/host-provider";
 import type { Host } from "../host/types";
 import { TokenStoreProvider } from "./TokenStoreProvider";
-import type { TokenSource } from "./token-source";
 
 type Props = {
-    source: TokenSource;
     children: ReactNode;
 };
 
@@ -17,7 +13,11 @@ type HostState =
     | { kind: "error"; message: string }
     | { kind: "ready"; host: Host };
 
-export function StudioProvider({ source, children }: Props) {
+/**
+ * Studio is always a devframe client. Whether the other end is a live server
+ * or a static dump is the transport's business, not a mode of the app.
+ */
+export function StudioProvider({ children }: Props) {
     const [state, setState] = useState<HostState>({ kind: "loading" });
 
     useEffect(() => {
@@ -25,16 +25,10 @@ export function StudioProvider({ source, children }: Props) {
 
         async function init() {
             try {
-                const host =
-                    source.mode === "devtools"
-                        ? await createDevToolsHost(controller.signal)
-                        : source.mode === "embedded"
-                          ? await createEmbeddedHost(controller.signal)
-                          : await createSandboxHost(controller.signal);
-
+                const host = await createConnectedHost(controller.signal);
                 if (!controller.signal.aborted) setState({ kind: "ready", host });
             } catch (err) {
-                if (err instanceof DOMException && err.name === "AbortError") return;
+                if (controller.signal.aborted) return;
                 setState({
                     kind: "error",
                     message: err instanceof Error ? err.message : "Failed to connect",
@@ -44,38 +38,23 @@ export function StudioProvider({ source, children }: Props) {
 
         init();
         return () => controller.abort();
-    }, [source.mode]);
+    }, []);
 
     if (state.kind === "error") {
         return (
             <div className="studio-error">
-                {source.mode === "devtools" ? (
-                    <>
-                        <p>Failed to connect to the dev server.</p>
-                        <p>Make sure your Vite dev server is running and try reloading.</p>
-                    </>
-                ) : source.mode === "sandbox" ? (
-                    <>
-                        <p>Couldn't load Studio's tokens.</p>
-                        <p>Check the terminal for sugarcube plugin errors, then reload.</p>
-                    </>
-                ) : (
-                    <>
-                        <p>Couldn't load the studio.</p>
-                        <p>Check the host page's console for postMessage / snapshot errors.</p>
-                    </>
-                )}
-                <details>
-                    <summary>Details</summary>
-                    <pre>{state.message}</pre>
-                </details>
+                <p>Studio could not reach its host.</p>
+                <p>Make sure the server that mounts Studio is running, then reload.</p>
+                <pre>{state.message}</pre>
             </div>
         );
     }
 
     if (state.kind === "loading") {
         return (
-            <div>{source.mode === "embedded" ? "Waiting for host..." : "Loading Studio..."}</div>
+            <div className="studio-loading">
+                <div>Loading Studio...</div>
+            </div>
         );
     }
 

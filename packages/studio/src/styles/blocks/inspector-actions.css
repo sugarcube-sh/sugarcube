@@ -1,0 +1,26 @@
+.inspector-actions {
+    padding-inline: var(--space-250);
+    padding-block: var(--space-250);
+    /* border-block-start: var(--border-width-thin) solid var(--color-surface-border); */
+}
+
+.inspector-actions-trigger {
+    background-color: var(--color-component-modified-light);
+    color: var(--color-component-modified);
+}
+
+.inspector-actions-trigger-icon {
+    color: var(--color-component-modified);
+}
+
+.save-pr-link {
+    padding-inline: var(--space-2xs);
+}
+
+.save-pr-link:hover {
+    text-decoration: underline;
+}
+
+.save-error {
+    padding-inline: var(--space-2xs);
+}

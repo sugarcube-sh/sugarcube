@@ -1,0 +1,97 @@
+{
+  "color": {
+    "$type": "color",
+    "$description": "Two ramps, and the semantic roles bound to them. Roles are what the product uses; ramps are the material they are chosen from.",
+    "brand": {
+      "$description": "The house colour. Fixed across contexts — only the roles that point at it move.",
+      "50": {
+        "$value": { "colorSpace": "oklch", "components": [0.971, 0.013, 258], "hex": "#f0f6fe" }
+      },
+      "100": {
+        "$value": { "colorSpace": "oklch", "components": [0.932, 0.033, 258], "hex": "#dbeaff" }
+      },
+      "200": {
+        "$value": { "colorSpace": "oklch", "components": [0.873, 0.062, 258], "hex": "#bcd7ff" }
+      },
+      "300": {
+        "$value": { "colorSpace": "oklch", "components": [0.795, 0.101, 258], "hex": "#94befd" }
+      },
+      "400": {
+        "$value": { "colorSpace": "oklch", "components": [0.706, 0.145, 258], "hex": "#65a1f9" }
+      },
+      "500": {
+        "$description": "The anchor stop. Every other step in this ramp is derived from it, so this is the one a rebrand changes.",
+        "$value": { "colorSpace": "oklch", "components": [0.624, 0.181, 258], "hex": "#3884f2" }
+      },
+      "600": {
+        "$value": { "colorSpace": "oklch", "components": [0.545, 0.195, 258], "hex": "#0c6ade" }
+      },
+      "700": {
+        "$value": { "colorSpace": "oklch", "components": [0.468, 0.176, 258], "hex": "#0054ba" }
+      },
+      "800": {
+        "$value": { "colorSpace": "oklch", "components": [0.396, 0.144, 258], "hex": "#024292" }
+      },
+      "900": {
+        "$value": { "colorSpace": "oklch", "components": [0.336, 0.112, 258], "hex": "#09346f" }
+      }
+    },
+    "neutral": {
+      "$description": "Greys carrying a trace of the brand hue, so they sit with it rather than against it.",
+      "50": {
+        "$value": { "colorSpace": "oklch", "components": [0.986, 0.002, 258], "hex": "#fafafc" }
+      },
+      "100": {
+        "$value": { "colorSpace": "oklch", "components": [0.962, 0.004, 258], "hex": "#f1f2f5" }
+      },
+      "200": {
+        "$value": { "colorSpace": "oklch", "components": [0.92, 0.006, 258], "hex": "#e2e5e9" }
+      },
+      "300": {
+        "$value": { "colorSpace": "oklch", "components": [0.857, 0.009, 258], "hex": "#ccd0d6" }
+      },
+      "400": {
+        "$value": { "colorSpace": "oklch", "components": [0.712, 0.013, 258], "hex": "#9da2aa" }
+      },
+      "500": {
+        "$value": { "colorSpace": "oklch", "components": [0.592, 0.015, 258], "hex": "#787e87" }
+      },
+      "600": {
+        "$value": { "colorSpace": "oklch", "components": [0.49, 0.016, 258], "hex": "#5b616a" }
+      },
+      "700": {
+        "$value": { "colorSpace": "oklch", "components": [0.409, 0.016, 258], "hex": "#454b53" }
+      },
+      "800": {
+        "$value": { "colorSpace": "oklch", "components": [0.327, 0.015, 258], "hex": "#30353c" }
+      },
+      "900": {
+        "$value": { "colorSpace": "oklch", "components": [0.245, 0.013, 258], "hex": "#1d2127" }
+      }
+    },
+    "text": {
+      "$description": "Foreground roles. Each points at a stop that clears its contrast threshold against the surface it is used on.",
+      "default": { "$value": "{color.neutral.900}" },
+      "muted": {
+        "$description": "Secondary copy — captions, timestamps, helper text. Clears 4.5:1 on surface.default; do not use it on surface.sunken.",
+        "$value": "{color.neutral.600}"
+      },
+      "subtle": { "$value": "{color.neutral.500}" },
+      "brand": { "$value": "{color.brand.700}" },
+      "onBrand": { "$value": "{color.brand.50}" }
+    },
+    "surface": {
+      "$description": "Background roles, from the page itself up to raised panels.",
+      "default": { "$value": "{color.neutral.50}" },
+      "raised": { "$value": "{color.neutral.100}" },
+      "sunken": { "$value": "{color.neutral.200}" },
+      "brand": { "$value": "{color.brand.600}" }
+    },
+    "border": {
+      "$description": "Separators. Strong is for anything that has to survive a busy background.",
+      "default": { "$value": "{color.neutral.300}" },
+      "strong": { "$value": "{color.neutral.400}" },
+      "brand": { "$value": "{color.brand.500}" }
+    }
+  }
+}

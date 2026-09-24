@@ -1,14 +1,19 @@
-import type { ScaleBinding } from "@sugarcube-sh/core/client";
+import { type ScaleBinding, roundTo } from "@sugarcube-sh/core/client";
 import { selectCapture } from "../store/scale-selectors";
-import { stripTrailingGlob } from "../tokens/paths";
+import { cssLengthFor } from "../tokens/dimension";
+import { stepLabel, stripTrailingGlob } from "../tokens/paths";
 import { getScaleExtension } from "../tokens/scale-extension";
 import {
     directBaseAdapter,
     directSpreadAdapter,
-    scaleBaseAdapter,
-    scaleRatioAdapter,
+    scaleBaseMaxAdapter,
+    scaleBaseMinAdapter,
+    scaleFromAdapter,
+    scaleMultiplierAdapter,
+    scaleRatioMaxAdapter,
+    scaleRatioMinAdapter,
 } from "./adapters/scale";
-import { numberControl, rangeControl } from "./control";
+import { pickerControl, rangeControl } from "./control";
 import type { ResolveContext, Row } from "./types";
 
 const RATIO_MIN = 1;
@@ -16,12 +21,40 @@ const RATIO_MAX = 2;
 const BASE_MIN = 0.5;
 const BASE_MAX = 2;
 
-export function scaleRows(binding: ScaleBinding, ctx: ResolveContext): Row[] {
+export function scaleRows(binding: ScaleBinding, ctx: ResolveContext, basePath?: string): Row[] {
     const scale = getScaleExtension(ctx.baseline.trees, stripTrailingGlob(binding.token));
 
-    if (scale?.mode === "exponential") {
-        return [
+    if (scale) {
+        const unit = scale.base.max.unit;
+        const rows: Row[] = [
             {
+                key: `${binding.token}:base`,
+                label: "Base",
+                controls: [
+                    rangeControl(
+                        {
+                            min: BASE_MIN,
+                            max: BASE_MAX,
+                            step: 0.025,
+                            formatValue: (n: number) => `${n}${unit}`,
+                        },
+                        scaleBaseMinAdapter(binding.token),
+                    ),
+                    rangeControl(
+                        {
+                            min: BASE_MIN,
+                            max: BASE_MAX,
+                            step: 0.025,
+                            formatValue: (n: number) => `${n}${unit}`,
+                        },
+                        scaleBaseMaxAdapter(binding.token),
+                    ),
+                ],
+            },
+        ];
+
+        if (scale.mode === "exponential") {
+            rows.unshift({
                 key: `${binding.token}:ratio`,
                 label: "Ratio",
                 controls: [
@@ -32,58 +65,92 @@ export function scaleRows(binding: ScaleBinding, ctx: ResolveContext): Row[] {
                             step: 0.01,
                             formatValue: (n: number) => n.toFixed(2),
                         },
-                        scaleRatioAdapter(binding.token),
+                        scaleRatioMinAdapter(binding.token),
                     ),
-                ],
-            },
-            {
-                key: `${binding.token}:base`,
-                label: "Base",
-                controls: [
-                    numberControl(
-                        { min: BASE_MIN, max: BASE_MAX, step: 0.025, unit: scale.base.max.unit },
-                        scaleBaseAdapter(binding.token),
-                    ),
-                ],
-            },
-        ];
-    }
-
-    if (scale?.mode === "multipliers") {
-        const unit = scale.base.max.unit;
-        return [
-            {
-                key: `${binding.token}:base`,
-                label: "Base",
-                controls: [
                     rangeControl(
                         {
-                            min: BASE_MIN,
-                            max: BASE_MAX,
-                            step: 0.05,
-                            formatValue: (n: number) => `${n}${unit}`,
+                            min: RATIO_MIN,
+                            max: RATIO_MAX,
+                            step: 0.01,
+                            formatValue: (n: number) => n.toFixed(2),
                         },
-                        scaleBaseAdapter(binding.token),
+                        scaleRatioMaxAdapter(binding.token),
                     ),
                 ],
-            },
-        ];
+            });
+        }
+
+        if (scale.mode === "multipliers") {
+            const largest = Math.max(...Object.values(scale.multipliers), 1);
+            for (const name of Object.keys(scale.multipliers)) {
+                rows.push({
+                    key: `${binding.token}:multiplier:${name}`,
+                    label: name,
+                    controls: [
+                        rangeControl(
+                            {
+                                min: 0,
+                                max: roundTo(largest * 1.5, 2),
+                                step: 0.05,
+                                formatValue: (n: number) => `×${n}`,
+                            },
+                            scaleMultiplierAdapter(binding.token, name),
+                        ),
+                    ],
+                });
+            }
+        }
+
+        return rows;
     }
 
-    const captured = selectCapture(ctx.baseline, ctx.pathIndex, binding, ctx.context);
-    if (!captured) return [];
+    const group = stripTrailingGlob(binding.token);
+    const steps = ctx.pathIndex
+        .matching(binding.token)
+        .filter(
+            (path) =>
+                ctx.pathIndex.readToken(ctx.resolved, path, ctx.context)?.$type === "dimension",
+        );
+
+    if (steps.length < 2) return [];
+
+    const scaleFrom: Row = {
+        key: `${binding.token}:scale-from`,
+        label: "Scale from",
+        controls: [
+            pickerControl(
+                {
+                    options: steps.map((path) => ({
+                        value: path,
+                        label: stepLabel(path),
+                        group,
+                        detail: cssLengthFor(path, (p) =>
+                            ctx.pathIndex.readValue(ctx.resolved, p, ctx.context),
+                        ),
+                    })),
+                    searchable: steps.length > 8,
+                    placeholder: "Choose a step",
+                },
+                scaleFromAdapter(binding.token),
+            ),
+        ],
+    };
+
+    const captured = selectCapture(ctx.baseline, ctx.pathIndex, binding, ctx.context, basePath);
+    if (!captured) return [scaleFrom];
 
     return [
+        scaleFrom,
         {
             key: `${binding.token}:base`,
             label: "Base",
             controls: [
                 rangeControl(
                     {
-                        min: captured.baseMax * 0.75,
-                        max: captured.baseMax * 1.5,
+                        min: captured.baseMax * 0.5,
+                        max: captured.baseMax * 2,
                         step: 0.025,
-                        formatValue: (n: number) => `${n}rem`,
+                        formatValue: (n: number) => `${n}${captured.steps[0]?.unit ?? "rem"}`,
                     },
                     directBaseAdapter(binding.token),
                 ),

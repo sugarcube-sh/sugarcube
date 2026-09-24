@@ -1,12 +1,11 @@
 import type { PanelSection, ResolvedTokens, ScaleExtension } from "@sugarcube-sh/core/client";
 import { describe, expect, it } from "vitest";
-import { createStore } from "zustand";
 import { createStore as createVanillaStore } from "zustand/vanilla";
-import type { TokenStoreState } from "../src/store/create-token-store";
 import { createScaleState } from "../src/store/scale-state";
 import { PathIndex } from "../src/tokens/path-index";
 import type { TokenSnapshot } from "../src/tokens/types";
 import { snapshot, tree } from "./fixtures";
+import { stubTokenStore } from "./text-sources";
 
 const makeScale = (override: Partial<ScaleExtension> = {}): ScaleExtension =>
     ({
@@ -26,20 +25,7 @@ function setup(initialBaseline: TokenSnapshot) {
     ];
     const pathIndex = new PathIndex(initialBaseline.resolved);
 
-    const tokenStore = createStore<TokenStoreState>(() => ({
-        resolved: initialBaseline.resolved,
-        css: null,
-        isComputing: false,
-        error: null,
-        lastRunMs: null,
-        currentContext: "default",
-        setCurrentContext: () => {},
-        getToken: () => undefined,
-        setToken: () => {},
-        setTokens: () => {},
-        resetToken: () => {},
-        discard: async () => {},
-    }));
+    const tokenStore = stubTokenStore(initialBaseline.resolved);
 
     const baseline = createVanillaStore<TokenSnapshot>(() => initialBaseline);
 

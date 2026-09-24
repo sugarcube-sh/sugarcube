@@ -1,42 +1,52 @@
-import type { InternalConfig, ResolvedTokens, TokenTree } from "@sugarcube-sh/core/client";
-import { STUDIO_RPC } from "@sugarcube-sh/studio-protocol";
-import { getDevToolsRpcClient } from "@vitejs/devtools-kit/client";
-import type { SharedState } from "@vitejs/devtools-kit/utils/shared-state";
+import { connectDevframe } from "devframe/client";
+import type { SharedState } from "devframe/utils/shared-state";
 import type { SaveBundle } from "../host/types";
+import { STUDIO_RPC, type StudioConnectionConfig } from "../protocol";
+import type { StudioDiskState } from "../tokens/types";
 
-export type WorkingSharedState = { resolved: ResolvedTokens };
-export type DiskSharedState = {
-    config: InternalConfig;
-    trees: TokenTree[];
-    resolved: ResolvedTokens;
+export type DiskSharedStateHandle = SharedState<Partial<StudioDiskState>>;
+
+export type StudioConnection = {
+    transport: Awaited<ReturnType<typeof connectDevframe>>["transport"];
+    /** What the host baked into the handshake for Studio. */
+    config: StudioConnectionConfig;
+    diskState: DiskSharedStateHandle;
+    save: (bundle: SaveBundle) => Promise<void>;
 };
 
-export type WorkingSharedStateHandle = SharedState<WorkingSharedState>;
-export type DiskSharedStateHandle = SharedState<DiskSharedState>;
-
-let rpc: Awaited<ReturnType<typeof getDevToolsRpcClient>> | null = null;
-
-async function getRpc() {
-    rpc ??= await getDevToolsRpcClient();
-    return rpc;
+/**
+ * Where the descriptor can be: under Studio itself, under whatever mounted it
+ * (a hub, a dock), and, in this package's own dev server, where the bridge is.
+ */
+function connectionBases(): string[] {
+    const here = new URL(".", window.location.href).href;
+    const parent = new URL("..", here).href;
+    const configured = import.meta.env.VITE_STUDIO_RPC_BASE;
+    const bases = here === parent ? [here] : [here, parent];
+    return configured ? [...bases, configured] : bases;
 }
 
-export async function getWorkingSharedState(): Promise<WorkingSharedStateHandle> {
-    const client = await getRpc();
-    return client.sharedState.get(STUDIO_RPC.SHARED_STATE_WORKING);
-}
+/**
+ * One connection, owned by whoever holds the signal: closed when it aborts,
+ * and never shared with a second mount, so React's double effect opens one
+ * socket and closes the one it abandoned.
+ */
+export async function connectStudio(signal: AbortSignal): Promise<StudioConnection> {
+    const client = await connectDevframe({ baseURL: connectionBases() });
+    if (signal.aborted) {
+        client.close?.();
+        throw new DOMException("Aborted", "AbortError");
+    }
+    signal.addEventListener("abort", () => client.close?.(), { once: true });
 
-export async function getDiskSharedState(): Promise<DiskSharedStateHandle> {
-    const client = await getRpc();
-    return client.sharedState.get(STUDIO_RPC.SHARED_STATE_DISK);
-}
-
-export async function rpcSave(bundle: SaveBundle): Promise<void> {
-    const client = await getRpc();
-    await client.call(STUDIO_RPC.SAVE, bundle);
-}
-
-export async function rpcDiscard(): Promise<void> {
-    const client = await getRpc();
-    await client.call(STUDIO_RPC.DISCARD);
+    return {
+        transport: client.transport,
+        config: client.connectionMeta.configs?.[STUDIO_RPC.CONFIG] ?? {},
+        diskState: await client.sharedState.get<Partial<StudioDiskState>>(
+            STUDIO_RPC.SHARED_STATE_DISK,
+        ),
+        save: async (bundle) => {
+            await client.call(STUDIO_RPC.SAVE, bundle);
+        },
+    };
 }

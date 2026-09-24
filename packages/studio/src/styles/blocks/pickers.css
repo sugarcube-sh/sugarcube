@@ -10,3 +10,14 @@
 .picker-command .picker-item-check-slot + [data-slot="swatch-group"] {
     flex-shrink: 0;
 }
+
+.picker-command .picker-item-step {
+    flex-shrink: 0;
+}
+
+.picker-command .picker-item-length {
+    margin-inline-start: auto;
+    flex-shrink: 0;
+    color: var(--color-text-quiet);
+    font-variant-numeric: tabular-nums;
+}

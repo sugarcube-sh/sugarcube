@@ -27,75 +27,105 @@ function useScaleComparison(token: string) {
     };
 }
 
-export const scaleRatioAdapter =
-    (token: string): Adapter<number> =>
+const ratioAdapter =
+    (token: string, edge: "min" | "max"): Adapter<number> =>
     () => {
         const updateScale = useScaleState((state) => state.updateScale);
         const { effective, original } = useScaleComparison(token);
+        const field: ScaleEditField = edge === "min" ? "ratioMin" : "ratioMax";
         const resettable = useFieldReset(
             token,
-            "ratio",
-            selectScaleFieldEdited(effective, original, "ratio"),
+            field,
+            selectScaleFieldEdited(effective, original, field),
         );
 
-        function applyRatio(next: number) {
+        function apply(next: number) {
             if (!Number.isFinite(next)) return;
-            // The UI has one ratio slider, but the data stores min and max separately.
-            // Keep them in sync here.
-            updateScale(token, (s) => ({
-                ...s,
-                ratio: { min: next, max: next },
-            }));
+            updateScale(token, (scale) =>
+                scale.mode === "exponential"
+                    ? { ...scale, ratio: { ...scale.ratio, [edge]: next } }
+                    : scale,
+            );
         }
 
-        const setRatioThrottled = useRafThrottle(applyRatio);
-
-        // Only an exponential scale carries a ratio.
-        const value = effective?.mode === "exponential" ? effective.ratio.max : undefined;
+        const applyThrottled = useRafThrottle(apply);
+        const value = effective?.mode === "exponential" ? effective.ratio[edge] : undefined;
 
         return {
             value,
-            set: setRatioThrottled,
-            commit: applyRatio,
+            set: applyThrottled,
+            commit: apply,
             disabled: value === undefined,
             ...resettable,
         };
     };
 
-export const scaleBaseAdapter =
-    (token: string): Adapter<number> =>
+export const scaleRatioMinAdapter = (token: string) => ratioAdapter(token, "min");
+export const scaleRatioMaxAdapter = (token: string) => ratioAdapter(token, "max");
+
+const recipeBaseAdapter =
+    (token: string, edge: "min" | "max"): Adapter<number> =>
     () => {
         const updateScale = useScaleState((state) => state.updateScale);
         const { effective, original } = useScaleComparison(token);
+        const field: ScaleEditField = edge === "min" ? "baseMin" : "baseMax";
         const resettable = useFieldReset(
             token,
-            "base",
-            selectScaleFieldEdited(effective, original, "base"),
+            field,
+            selectScaleFieldEdited(effective, original, field),
         );
 
-        function applyBase(next: number) {
+        function apply(next: number) {
             if (!Number.isFinite(next)) return;
-            updateScale(token, (s) => {
-                // Preserve the min/max ratio while moving max to the new value.
-                const ratio = s.base.max.value > 0 ? s.base.min.value / s.base.max.value : 1;
-                return {
-                    ...s,
-                    base: {
-                        min: { ...s.base.min, value: roundTo(next * ratio) },
-                        max: { ...s.base.max, value: next },
-                    },
-                };
-            });
+            updateScale(token, (scale) => ({
+                ...scale,
+                base: { ...scale.base, [edge]: { ...scale.base[edge], value: roundTo(next) } },
+            }));
         }
 
-        const setBaseThrottled = useRafThrottle(applyBase);
-
-        const value = effective ? effective.base.max.value : undefined;
+        const applyThrottled = useRafThrottle(apply);
+        const value = effective?.base[edge].value;
 
         return {
             value,
-            set: setBaseThrottled,
-            commit: applyBase,
+            set: applyThrottled,
+            commit: apply,
+            disabled: value === undefined,
+            ...resettable,
+        };
+    };
+
+export const scaleBaseMinAdapter = (token: string) => recipeBaseAdapter(token, "min");
+export const scaleBaseMaxAdapter = (token: string) => recipeBaseAdapter(token, "max");
+
+export const scaleMultiplierAdapter =
+    (token: string, name: string): Adapter<number> =>
+    () => {
+        const updateScale = useScaleState((state) => state.updateScale);
+        const { effective, original } = useScaleComparison(token);
+        const field: ScaleEditField = { multiplier: name };
+        const resettable = useFieldReset(
+            token,
+            field,
+            selectScaleFieldEdited(effective, original, field),
+        );
+
+        function apply(next: number) {
+            if (!Number.isFinite(next)) return;
+            updateScale(token, (scale) =>
+                scale.mode === "multipliers"
+                    ? { ...scale, multipliers: { ...scale.multipliers, [name]: roundTo(next) } }
+                    : scale,
+            );
+        }
+
+        const applyThrottled = useRafThrottle(apply);
+        const value = effective?.mode === "multipliers" ? effective.multipliers[name] : undefined;
+
+        return {
+            value,
+            set: applyThrottled,
+            commit: apply,
             disabled: value === undefined,
             ...resettable,
         };
@@ -104,13 +134,14 @@ export const scaleBaseAdapter =
 function useDirectScale(token: string) {
     const meta = useScaleState((state) => state.bindings[token]);
     const edit = useScaleState((state) => state.edits[token]);
+    const basePath = useScaleState((state) => state.bases[token]);
     const baseline = useBaseline();
     const pathIndex = usePathIndex();
     const context = useCurrentContext();
 
     const captured =
         meta && meta.kind === "tokens"
-            ? selectCapture(baseline, pathIndex, meta.binding, context)
+            ? selectCapture(baseline, pathIndex, meta.binding, context, basePath)
             : null;
 
     return { captured, edit: edit?.kind === "tokens" ? edit : null };
@@ -171,5 +202,26 @@ export const directSpreadAdapter =
             commit: applySpread,
             disabled: value === undefined,
             ...resettable,
+        };
+    };
+
+export const scaleFromAdapter =
+    (token: string): Adapter<string> =>
+    () => {
+        const setScaleBase = useScaleState((state) => state.setScaleBase);
+        const chosen = useScaleState((state) => state.bases[token]);
+        const authored = useScaleState((state) => state.authoredBases[token]);
+        const overridden = chosen !== undefined && chosen !== authored;
+
+        function set(next: string) {
+            setScaleBase(token, next);
+        }
+
+        return {
+            value: chosen,
+            set,
+            commit: set,
+            overridden,
+            reset: overridden && authored ? () => setScaleBase(token, authored) : undefined,
         };
     };

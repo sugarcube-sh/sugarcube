@@ -1,0 +1,38 @@
+{
+  "size": {
+    "$type": "dimension",
+    "$description": "Sizing steps on a modular scale, fluid between a small and large viewport.",
+    "step": {
+      "$extensions": {
+        "sh.sugarcube": {
+          "measures": "font-size",
+          "scale": {
+            "mode": "exponential",
+            "base": {
+              "min": { "value": 1, "unit": "rem" },
+              "max": { "value": 1.125, "unit": "rem" }
+            },
+            "ratio": { "min": 1.2, "max": 1.25 },
+            "steps": { "negative": 2, "positive": 5 }
+          }
+        }
+      }
+    },
+    "fluid": {
+      "$type": "fluidDimension",
+      "$description": "Authored fluid pairs, rather than pairs a recipe generated. Two dimensions in one value, which is the shape D-017 makes every generated step.",
+      "gutter": {
+        "$value": {
+          "min": { "value": 1, "unit": "rem" },
+          "max": { "value": 2, "unit": "rem" }
+        }
+      },
+      "measure": {
+        "$value": {
+          "min": { "value": 20, "unit": "rem" },
+          "max": { "value": 36, "unit": "rem" }
+        }
+      }
+    }
+  }
+}

@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { type ColorValue, directColor } from "../../tokens/color-value";
 import type { PaletteRamp } from "../../tokens/palettes";
-import { useFieldRow } from "../../shell/Field";
+import { useFieldRow } from "../../inspector/Field";
 import { CommandSearchWrapper } from "../ui/command/command";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover/popover";
 import { ColorGrid } from "./ColorGrid";

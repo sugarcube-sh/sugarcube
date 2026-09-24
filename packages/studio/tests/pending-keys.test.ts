@@ -3,7 +3,10 @@ import { pendingKey, pendingKeys } from "../src/store/create-diff-store";
 import type { TokenDiffEntry } from "../src/tokens/types";
 
 const entry = (path: string, contexts: string[]): TokenDiffEntry => ({
+    kind: "changed",
+    handle: path,
     path,
+    basePath: path,
     sourcePath: "colors.json",
     contexts,
     from: { $value: "{color.neutral.950}" },

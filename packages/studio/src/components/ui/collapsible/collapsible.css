@@ -10,3 +10,23 @@
     text-decoration: none;
     cursor: pointer;
 }
+
+.collapsible-content[data-state="open"] {
+    animation: collapsible-reveal var(--transition-fast, 120ms) var(--ease-out, ease-out);
+}
+
+@keyframes collapsible-reveal {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .collapsible-content[data-state="open"] {
+        animation: none;
+    }
+}

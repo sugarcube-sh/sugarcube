@@ -1,0 +1,16 @@
+{
+  "space": {
+    "$type": "dimension",
+    "$description": "The spacing rhythm. A recipe: every step is the base multiplied, so changing the base moves the whole scale together.",
+    "$extensions": {
+      "sh.sugarcube": {
+        "measures": "gap",
+        "scale": {
+          "mode": "multipliers",
+          "base": { "min": { "value": 1, "unit": "rem" }, "max": { "value": 1.25, "unit": "rem" } },
+          "multipliers": { "xs": 0.25, "sm": 0.5, "md": 1, "lg": 1.5, "xl": 2.5, "2xl": 4 }
+        }
+      }
+    }
+  }
+}

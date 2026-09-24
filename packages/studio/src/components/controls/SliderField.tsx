@@ -1,7 +1,7 @@
 "use client";
 
-import * as SliderPrimitive from "@radix-ui/react-slider";
-import { useFieldRow } from "../../shell/Field";
+import { Slider as SliderPrimitive } from "radix-ui";
+import { useFieldRow } from "../../inspector/Field";
 import { useRafThrottle } from "../../use-raf-throttle";
 
 type SliderFieldProps = {

@@ -1,0 +1,15 @@
+{
+  "radius": {
+    "$type": "dimension",
+    "$description": "Corner softness. Pinned by hand — recipes cannot express a static scale until D-017 lands, and a clamp()ed corner radius would be wrong.",
+    "$extensions": { "sh.sugarcube": { "measures": "border-radius" } },
+    "none": { "$value": { "value": 0, "unit": "rem" } },
+    "sm": { "$value": { "value": 0.125, "unit": "rem" } },
+    "md": { "$value": { "value": 0.25, "unit": "rem" } },
+    "lg": { "$value": { "value": 0.5, "unit": "rem" } },
+    "full": {
+      "$description": "Pills and avatars. A large fixed value rather than 50%, which would distort on anything that is not square.",
+      "$value": { "value": 100, "unit": "rem" }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "shadow": {
+    "$type": "shadow",
+    "$description": "Elevation. The only type whose value can be either one object or a list of them, so it is the test case for editing a variable-length value.",
+    "sm": {
+      "$value": {
+        "color": "#26262f1a",
+        "offsetX": { "value": 0, "unit": "px" },
+        "offsetY": { "value": 1, "unit": "px" },
+        "blur": { "value": 2, "unit": "px" },
+        "spread": { "value": 0, "unit": "px" }
+      }
+    },
+    "raised": {
+      "$description": "Two layers: a tight contact shadow under a broader ambient one.",
+      "$value": [
+        {
+          "color": "#26262f1f",
+          "offsetX": { "value": 0, "unit": "px" },
+          "offsetY": { "value": 1, "unit": "px" },
+          "blur": { "value": 2, "unit": "px" },
+          "spread": { "value": 0, "unit": "px" }
+        },
+        {
+          "color": "#26262f14",
+          "offsetX": { "value": 0, "unit": "px" },
+          "offsetY": { "value": 8, "unit": "px" },
+          "blur": { "value": 16, "unit": "px" },
+          "spread": { "value": -4, "unit": "px" }
+        }
+      ]
+    },
+    "inner": {
+      "$description": "Inset, and with a referenced colour rather than a literal one.",
+      "$value": {
+        "color": "{color.neutral.900}",
+        "offsetX": { "value": 0, "unit": "px" },
+        "offsetY": { "value": 2, "unit": "px" },
+        "blur": { "value": 4, "unit": "px" },
+        "spread": { "value": 0, "unit": "px" },
+        "inset": true
+      }
+    }
+  }
+}

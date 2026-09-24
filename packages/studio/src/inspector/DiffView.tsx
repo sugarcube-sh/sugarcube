@@ -1,0 +1,254 @@
+import { type ReactNode, useMemo } from "react";
+import { SourcePath } from "../controls/SourcePath";
+import { TokenPath } from "../controls/TokenPath";
+import { usePendingChanges } from "../store/hooks";
+import type { SlimToken, TokenDiffEntry } from "../tokens/types";
+
+type DiffLine =
+    | { kind: "context"; text: string }
+    | { kind: "removed"; text: string }
+    | { kind: "added"; text: string };
+
+export function DiffView() {
+    const diff = usePendingChanges();
+
+    if (diff.length === 0) {
+        return <p className="diff-empty">No changes yet - tweak something.</p>;
+    }
+
+    const grouped = groupBySourceFile(diff);
+
+    return (
+        <div className="diff-view">
+            {grouped.map(([sourcePath, entries], i) => {
+                const headingId = `diff-file-${sourcePath.replace(/[^a-z0-9]/gi, "-")}-${i}`;
+                return (
+                    <section key={sourcePath} className="diff-file" aria-labelledby={headingId}>
+                        <header className="diff-file-header repel" data-nowrap>
+                            <SourcePath id={headingId} path={sourcePath} />
+                            <span className="diff-file-count">
+                                {entries.length} {entries.length === 1 ? "change" : "changes"}
+                            </span>
+                        </header>
+                        <div className="diff-file-body">
+                            {entries.map((entry) => (
+                                <DiffEntry
+                                    key={`${entry.handle}\u0000${entry.kind}\u0000${entry.contexts.join(",")}`}
+                                    entry={entry}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                );
+            })}
+        </div>
+    );
+}
+
+function DiffEntry({ entry }: { entry: TokenDiffEntry }) {
+    const lines = useMemo(() => entryLines(entry), [entry]);
+    const moved = entry.kind === "renamed" && entry.basePath && entry.basePath !== entry.path;
+
+    return (
+        <article className="diff-entry" aria-label={`Change to ${entry.path}`}>
+            <header className="diff-entry-header">
+                {moved && entry.basePath ? (
+                    <>
+                        <TokenPath path={entry.basePath} />
+                        <span aria-label="renamed to"> → </span>
+                        <TokenPath path={entry.path} />
+                    </>
+                ) : (
+                    <TokenPath path={entry.path} />
+                )}
+            </header>
+            <pre className="diff-block" aria-label="Change">
+                {lines.map((line, i) => (
+                    // oxlint-disable-next-line react/no-array-index-key -- lines are positional
+                    <span key={i} className={`diff-line diff-line-${line.kind}`}>
+                        <span className="diff-gutter" aria-hidden>
+                            {line.kind === "added" ? "+" : line.kind === "removed" ? "−" : " "}
+                        </span>
+                        <span className="diff-code">{highlightJson(line.text)}</span>
+                    </span>
+                ))}
+            </pre>
+        </article>
+    );
+}
+
+function groupBySourceFile(entries: readonly TokenDiffEntry[]): [string, TokenDiffEntry[]][] {
+    const groups = new Map<string, TokenDiffEntry[]>();
+    for (const entry of entries) {
+        const key = entry.sourcePath || "unknown";
+        const list = groups.get(key);
+        if (list) {
+            list.push(entry);
+        } else {
+            groups.set(key, [entry]);
+        }
+    }
+    return [...groups.entries()];
+}
+
+export function entryLines(entry: TokenDiffEntry): DiffLine[] {
+    if (entry.kind === "removed") return wholeToken(entry.from, "removed");
+    if (entry.kind === "added") return wholeToken(entry.to, "added");
+    return diffTokens(entry.from, entry.to);
+}
+
+function wholeToken(token: SlimToken, kind: "added" | "removed"): DiffLine[] {
+    return JSON.stringify(token, null, 2)
+        .split("\n")
+        .map((text) => ({ kind, text }));
+}
+
+function diffTokens(from: SlimToken, to: SlimToken): DiffLine[] {
+    const fromLines = JSON.stringify(from, null, 2).split("\n");
+    const toLines = JSON.stringify(to, null, 2).split("\n");
+    return diffLines(fromLines, toLines);
+}
+
+function diffLines(a: string[], b: string[]): DiffLine[] {
+    const n = a.length;
+    const m = b.length;
+    const dp: number[][] = Array.from({ length: n + 1 }, () =>
+        Array.from({ length: m + 1 }, () => 0),
+    );
+    for (let i = 1; i <= n; i++) {
+        const row = dp[i];
+        const prev = dp[i - 1];
+        if (!row || !prev) continue;
+        for (let j = 1; j <= m; j++) {
+            row[j] =
+                a[i - 1] === b[j - 1]
+                    ? (prev[j - 1] ?? 0) + 1
+                    : Math.max(prev[j] ?? 0, row[j - 1] ?? 0);
+        }
+    }
+
+    const out: DiffLine[] = [];
+    let i = n;
+    let j = m;
+    while (i > 0 && j > 0) {
+        if (a[i - 1] === b[j - 1]) {
+            out.unshift({ kind: "context", text: a[i - 1] as string });
+            i--;
+            j--;
+        } else if ((dp[i - 1]?.[j] ?? 0) > (dp[i]?.[j - 1] ?? 0)) {
+            out.unshift({ kind: "removed", text: a[i - 1] as string });
+            i--;
+        } else {
+            out.unshift({ kind: "added", text: b[j - 1] as string });
+            j--;
+        }
+    }
+    while (i > 0) {
+        out.unshift({ kind: "removed", text: a[i - 1] as string });
+        i--;
+    }
+    while (j > 0) {
+        out.unshift({ kind: "added", text: b[j - 1] as string });
+        j--;
+    }
+    return out;
+}
+
+const JSON_TOKEN_RE =
+    /("(?:[^"\\]|\\.)*")(\s*:)?|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|\b(true|false|null)\b|([{}[\],])/g;
+const REF_INNER_RE = /^\{[\w.-]+\}$/;
+
+function refNodes(inner: string): ReactNode[] {
+    const cut = inner.lastIndexOf(".");
+    if (cut === -1) {
+        return [
+            <span key="whole" className="diff-json-ref">
+                {inner}
+            </span>,
+        ];
+    }
+
+    const tail = inner.slice(cut + 1, -1);
+    const tailClass = /^\d+$/.test(tail) ? "diff-json-ref-tail" : "diff-json-ref-name";
+    return [
+        <span key="head" className="diff-json-ref">
+            {inner.slice(0, cut + 1)}
+        </span>,
+        <span key="tail" className={tailClass}>
+            {tail}
+        </span>,
+        <span key="close" className="diff-json-ref">
+            {"}"}
+        </span>,
+    ];
+}
+
+function highlightJson(line: string): ReactNode[] {
+    const out: ReactNode[] = [];
+    let last = 0;
+    let i = 0;
+
+    for (const m of line.matchAll(JSON_TOKEN_RE)) {
+        const start = m.index ?? 0;
+        if (start > last) {
+            out.push(line.slice(last, start));
+        }
+        const [, str, colon, num, bool, punct] = m;
+
+        if (str !== undefined) {
+            if (colon) {
+                out.push(
+                    <span key={i++} className="diff-json-key">
+                        {str}
+                    </span>,
+                    <span key={i++} className="diff-json-punct">
+                        {colon}
+                    </span>,
+                );
+            } else {
+                const inner = str.slice(1, -1);
+                if (REF_INNER_RE.test(inner)) {
+                    out.push(
+                        <span key={i++} className="diff-json-string">
+                            <span className="diff-json-quote">"</span>
+                            {refNodes(inner)}
+                            <span className="diff-json-quote">"</span>
+                        </span>,
+                    );
+                } else {
+                    out.push(
+                        <span key={i++} className="diff-json-string">
+                            {str}
+                        </span>,
+                    );
+                }
+            }
+        } else if (num !== undefined) {
+            out.push(
+                <span key={i++} className="diff-json-num">
+                    {num}
+                </span>,
+            );
+        } else if (bool !== undefined) {
+            out.push(
+                <span key={i++} className="diff-json-bool">
+                    {bool}
+                </span>,
+            );
+        } else if (punct !== undefined) {
+            out.push(
+                <span key={i++} className="diff-json-punct">
+                    {punct}
+                </span>,
+            );
+        }
+
+        last = start + m[0].length;
+    }
+
+    if (last < line.length) {
+        out.push(line.slice(last));
+    }
+
+    return out;
+}

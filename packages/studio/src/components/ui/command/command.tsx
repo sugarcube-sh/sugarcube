@@ -86,6 +86,7 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
 
 export {
     Command,
+    CommandPrimitive,
     CommandSearchWrapper,
     CommandInput,
     CommandList,

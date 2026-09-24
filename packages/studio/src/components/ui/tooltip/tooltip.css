@@ -1,0 +1,15 @@
+.tooltip-content {
+    z-index: 50;
+    width: fit-content;
+    max-width: 20rem;
+    transform-origin: var(--radix-tooltip-content-transform-origin);
+    background-color: var(--foreground);
+    color: var(--background);
+}
+
+.tooltip-arrow {
+    z-index: 50;
+    transform: translateY(calc(-50% - 2px));
+    background-color: var(--foreground);
+    fill: var(--foreground);
+}

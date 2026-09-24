@@ -1,0 +1,23 @@
+.token-badges {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.token-badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    padding-block: var(--space-100);
+    padding-inline: var(--space-250);
+    border: var(--border-width-thin) var(--border-style) var(--color-surface-border);
+    border-radius: var(--radius-full);
+    background: var(--color-surface-lowered);
+}
+
+.token-badge:hover {
+    color: var(--color-text-primary);
+    background: var(--color-component-hover);
+}

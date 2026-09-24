@@ -1,0 +1,11 @@
+.token-summary {
+    font-size: var(--text-sm);
+}
+
+.token-summary-ref {
+    color: var(--color-text-accent);
+}
+
+.token-summary-value {
+    color: var(--color-text-secondary);
+}

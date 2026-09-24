@@ -52,9 +52,11 @@ import type { ReactNode, SVGProps } from "react";
 
 const iconNames = [
     "caret-down",
+    "caret-right",
     "caret-sort",
     "caret-up",
     "check",
+    "dots-horizontal",
     "link-break-2",
     "lock-closed",
     "magnifying-glass",
@@ -90,6 +92,15 @@ export function Icon({ name, size = "md", className, ...rest }: IconProps) {
                     />
                 </RadixSvg>
             );
+        case "caret-right":
+            return (
+                <RadixSvg name="caret-right" size={size} className={className} {...rest}>
+                    <path
+                        d="M6.1584 3.13508C6.35985 2.94621 6.67627 2.95642 6.86514 3.15788L10.6151 7.15788C10.7954 7.35022 10.7954 7.64949 10.6151 7.84183L6.86514 11.8418C6.67627 12.0433 6.35985 12.0535 6.1584 11.8646C5.95694 11.6757 5.94673 11.3593 6.1356 11.1579L9.565 7.49985L6.1356 3.84183C5.94673 3.64037 5.95694 3.32394 6.1584 3.13508Z"
+                        fill="currentColor"
+                    />
+                </RadixSvg>
+            );
         case "caret-sort":
             return (
                 <RadixSvg name="caret-sort" size={size} className={className} {...rest}>
@@ -105,6 +116,17 @@ export function Icon({ name, size = "md", className, ...rest }: IconProps) {
                     <path
                         d="M10.6015 3.90815C10.7903 3.61941 11.1779 3.53792 11.4667 3.72651C11.7555 3.91533 11.837 4.30288 11.6484 4.59175L7.39837 11.0917C7.29822 11.2449 7.13558 11.3469 6.95404 11.3701C6.77251 11.3932 6.58945 11.3359 6.45404 11.2128L3.70404 8.71284L3.62005 8.61811C3.44857 8.38342 3.4589 8.05252 3.66205 7.82905C3.86511 7.60576 4.19344 7.56371 4.4433 7.71186L4.54584 7.78706L6.75287 9.79292L10.6015 3.90815Z"
                         fill="currentColor"
+                    />
+                </RadixSvg>
+            );
+        case "dots-horizontal":
+            return (
+                <RadixSvg name="dots-horizontal" size={size} className={className} {...rest}>
+                    <path
+                        d="M3.625 7.5C3.625 8.12132 3.12132 8.625 2.5 8.625C1.87868 8.625 1.375 8.12132 1.375 7.5C1.375 6.87868 1.87868 6.375 2.5 6.375C3.12132 6.375 3.625 6.87868 3.625 7.5ZM8.625 7.5C8.625 8.12132 8.12132 8.625 7.5 8.625C6.87868 8.625 6.375 8.12132 6.375 7.5C6.375 6.87868 6.87868 6.375 7.5 6.375C8.12132 6.375 8.625 6.87868 8.625 7.5ZM12.5 8.625C13.1213 8.625 13.625 8.12132 13.625 7.5C13.625 6.87868 13.1213 6.375 12.5 6.375C11.8787 6.375 11.375 6.87868 11.375 7.5C11.375 8.12132 11.8787 8.625 12.5 8.625Z"
+                        fill="currentColor"
+                        fillRule="evenodd"
+                        clipRule="evenodd"
                     />
                 </RadixSvg>
             );

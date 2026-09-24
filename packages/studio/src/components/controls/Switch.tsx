@@ -1,6 +1,6 @@
 "use client";
 
-import { useFieldRow } from "../../shell/Field";
+import { useFieldRow } from "../../inspector/Field";
 
 type SwitchProps = {
     checked: boolean | undefined;

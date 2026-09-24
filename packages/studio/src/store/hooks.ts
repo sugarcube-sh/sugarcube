@@ -3,15 +3,14 @@ import { createContext, useCallback, useContext, useSyncExternalStore } from "re
 import { useStore } from "zustand";
 import { useHost } from "../host/host-provider";
 import { currentPaletteFromReference } from "../tokens/palette";
-import type { PathIndex, PathIndexAccessor } from "../tokens/path-index";
+import type { PathIndex } from "../tokens/path-index";
 import type { TokenDiffEntry, TokenSnapshot } from "../tokens/types";
 import { type DiffState, type DiffStoreAPI, pendingKey } from "./create-diff-store";
-import type { TokenStoreAPI, TokenStoreState } from "./create-token-store";
+import type { TokenStoreAPI, TokenStoreState } from "./create-source-store";
 import type { ScaleStateAPI, ScaleStateStore } from "./scale-state";
 
 export type StudioContextValue = {
     store: TokenStoreAPI;
-    getPathIndex: PathIndexAccessor;
     scaleState: ScaleStateAPI;
     diffStore: DiffStoreAPI;
 };
@@ -29,9 +28,7 @@ export function useStudioConfig(): StudioConfig | undefined {
 }
 
 export function usePathIndex(): PathIndex {
-    const host = useHost();
-    const getPathIndex = useStudio().getPathIndex;
-    return useSyncExternalStore(host.baseline.subscribe, getPathIndex);
+    return useTokenStore((state) => state.index);
 }
 
 export function useBaseline(): TokenSnapshot {
@@ -56,11 +53,10 @@ function useDiffStore<T>(selector: (state: DiffState) => T): T {
 }
 
 export function useToken<T = unknown>(path: string): [T | undefined, (value: T) => void] {
-    const getPathIndex = useStudio().getPathIndex;
     const context = useTokenStore((state) => state.currentContext);
-    const value = useTokenStore((state) =>
-        getPathIndex().readValue(state.resolved, path, context),
-    ) as T | undefined;
+    const value = useTokenStore((state) => state.index.readValue(state.resolved, path, context)) as
+        | T
+        | undefined;
     const setToken = useTokenStore((state) => state.setToken);
     const setValue = useCallback(
         (next: T) => setToken(path, next, context),
@@ -69,12 +65,32 @@ export function useToken<T = unknown>(path: string): [T | undefined, (value: T) 
     return [value, setValue];
 }
 
+export function useDescription(path: string): [string | undefined, (next: string) => void] {
+    const context = useTokenStore((state) => state.currentContext);
+    const description = useTokenStore((state) =>
+        state.index.readDescription(state.resolved, path, context),
+    );
+    const setDescription = useTokenStore((state) => state.setDescription);
+    const set = useCallback(
+        (next: string) => {
+            const trimmed = next.trim();
+            setDescription(path, trimmed.length > 0 ? trimmed : undefined, context);
+        },
+        [setDescription, path, context],
+    );
+    return [description, set];
+}
+
 export function useCurrentContext(): string {
     return useTokenStore((state) => state.currentContext);
 }
 
 export function useSetCurrentContext(): (ctx: string) => void {
     return useTokenStore((state) => state.setCurrentContext);
+}
+
+export function useConflicts(): readonly string[] {
+    return useTokenStore((state) => state.conflicts);
 }
 
 export function usePendingChanges(): readonly TokenDiffEntry[] {
@@ -98,19 +114,18 @@ export function useHasPendingChange(path: string): boolean {
     );
 }
 
-export function useDiscard(): () => Promise<void> {
+export function useDiscard(): () => void {
     const discardTokens = useTokenStore((s) => s.discard);
     const resetScales = useScaleState((s) => s.resetAll);
-    return useCallback(async () => {
+    return useCallback(() => {
         resetScales();
-        await discardTokens();
+        discardTokens();
     }, [discardTokens, resetScales]);
 }
 
 export function useFamilyPalette(family: string, palettes: readonly string[]): string | undefined {
-    const getPathIndex = useStudio().getPathIndex;
     return useTokenStore((state) => {
-        const pathIndex = getPathIndex();
+        const pathIndex = state.index;
         const reader = (path: string, ctx?: string) =>
             pathIndex.readValue(state.resolved, path, ctx);
         return currentPaletteFromReference(
