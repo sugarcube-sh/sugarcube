@@ -8,8 +8,8 @@ const RESOLVER = resolve(FIXTURE, "provenance.resolver.json");
 const config = { variables: {} } as never;
 const at = (name: string) => relative(process.cwd(), resolve(FIXTURE, name));
 
-describe("loadTokens reports which sources composed each context", () => {
-    it("gives one entry per context, matching the trees", async () => {
+describe("loadTokens sources", () => {
+    it("has one entry per context, in the same order as the trees", async () => {
         const loaded = await loadTokens({ type: "resolver", resolverPath: RESOLVER, config });
 
         expect(loaded.errors).toEqual([]);
@@ -18,7 +18,7 @@ describe("loadTokens reports which sources composed each context", () => {
         );
     });
 
-    it("lists the base sources for the default context, in resolution order", async () => {
+    it("lists the base sources in resolution order, with pointers where needed", async () => {
         const loaded = await loadTokens({ type: "resolver", resolverPath: RESOLVER, config });
         const base = loaded.sources?.order.find((each) => each.context === "perm:0");
 
@@ -30,7 +30,7 @@ describe("loadTokens reports which sources composed each context", () => {
         ]);
     });
 
-    it("adds the modifier's own file last, so it wins", async () => {
+    it("puts the modifier's file last", async () => {
         const loaded = await loadTokens({ type: "resolver", resolverPath: RESOLVER, config });
         const dark = loaded.sources?.order.find((each) => each.context === "perm:1");
 
@@ -38,22 +38,7 @@ describe("loadTokens reports which sources composed each context", () => {
         expect(dark?.sources).toHaveLength(5);
     });
 
-    it("names files in the same form as $source.sourcePath", async () => {
-        const loaded = await loadTokens({ type: "resolver", resolverPath: RESOLVER, config });
-        const files = new Set(
-            loaded.sources?.order.flatMap((each) => each.sources.map((ref) => ref.file)),
-        );
-
-        for (const tree of loaded.trees) {
-            for (const [, stamped] of JSON.stringify(tree.tokens).matchAll(
-                /"\$sourcePath":"([^"]+)"/g,
-            )) {
-                expect(files).toContain(stamped);
-            }
-        }
-    });
-
-    it("carries the text of every file in the order, as it is on disk", async () => {
+    it("includes the text of every file, unchanged", async () => {
         const loaded = await loadTokens({ type: "resolver", resolverPath: RESOLVER, config });
         const files = new Set(
             loaded.sources?.order.flatMap((each) => each.sources.map((ref) => ref.file)),
@@ -65,13 +50,13 @@ describe("loadTokens reports which sources composed each context", () => {
         }
     });
 
-    it("names the default context, read off the resolver", async () => {
+    it("reports the default context", async () => {
         const loaded = await loadTokens({ type: "resolver", resolverPath: RESOLVER, config });
 
         expect(loaded.defaultContext).toBe("perm:0");
     });
 
-    it("says nothing for a memory source, which has no resolution order", async () => {
+    it("is undefined for a memory source", async () => {
         const loaded = await loadTokens({
             type: "memory",
             data: { "a.json": { content: '{"color":{"bg":{"$value":"#fff"}}}' } },

@@ -34,9 +34,7 @@ export type ResolutionOrderResult = {
     tokens: TokenGroup;
     sources: SourceInfo[];
     errors: ResolverError[];
-    /** Every source this input read, in resolution order, as a file and a place in it. */
     sourceRefs: SourceRef[];
-    /** The text of each file read, keyed by file. */
     texts: Map<string, string>;
 };
 

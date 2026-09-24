@@ -22,7 +22,6 @@ export type ParseResult = {
     document: ResolverDocument;
     errors: ResolverError[];
     warnings: ResolverWarning[];
-    /** The document's own text, when it was read from a file. */
     text?: string;
 };
 

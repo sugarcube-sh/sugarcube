@@ -14,9 +14,7 @@ export type ResolverLoadResult = {
     permutations: Permutation[];
     errors: LoadError[];
     modifierDefaults: Record<string, string>;
-    /** The files each context composed from, with their text. Absent when nothing loaded. */
     sources?: TokenSources;
-    /** The context that stands for the whole system, when the resolver names one. */
     defaultContext?: string;
 };
 

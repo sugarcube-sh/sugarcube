@@ -1,7 +1,7 @@
 {
   "version": "2025.10",
   "name": "Provenance",
-  "description": "File sources, one inline source, one fragment ref and a modifier: every way a source can name where it came from.",
+  "description": "Sources of every kind: files, one inline, one fragment ref, one modifier.",
   "resolutionOrder": [
     {
       "type": "set",

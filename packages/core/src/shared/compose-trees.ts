@@ -86,9 +86,9 @@ export type Composed = {
 };
 
 /**
- * The trees the resolver path would produce, from file text alone. This is the
- * plain merge in resolution order; `extending`, `emit: false` and inline
- * modifiers are the resolver's and are not applied here.
+ * Rebuilds the trees from file text alone, merging each context's sources in
+ * order. Doesn't apply `extending`, `emit: false` or inline modifiers; that's
+ * the resolver's job.
  */
 export function composeTrees(sources: TokenSources): Composed {
     const trees: TokenTree[] = [];
@@ -112,11 +112,8 @@ export function composeTrees(sources: TokenSources): Composed {
     return { trees, errors };
 }
 
-/**
- * Reads one source out of the files: the whole file, or the section its
- * pointer names. Every source is read once and every failure reported once,
- * however many contexts list it.
- */
+// Each file is parsed once and each failure reported once, however many
+// contexts use it.
 function sourceReader(
     sources: TokenSources,
     errors: ComposeError[],

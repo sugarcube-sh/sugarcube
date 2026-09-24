@@ -17,13 +17,9 @@ export type LoadResult = {
     permutations: Permutation[];
     /** Each modifier's declared default context, per resolver spec §4.1.5.3. */
     modifierDefaults?: Record<string, string>;
-    /**
-     * The token files each context composes from, in resolution order, with
-     * their text. Only the resolver source knows this; a memory source has no
-     * resolution order to report.
-     */
+    /** Which files each context was built from, and their text. Resolver sources only. */
     sources?: TokenSources;
-    /** The context that stands for the whole system, when the resolver names one. */
+    /** The context the modifier defaults pick out, if the resolver declares them. */
     defaultContext?: string;
 };
 

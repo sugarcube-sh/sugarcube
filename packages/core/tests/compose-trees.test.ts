@@ -10,12 +10,19 @@ import type { ResolvedTokens } from "../src/types/resolve.js";
 const RESOLVERS = resolve(__dirname, "__fixtures__/resolver");
 const config = { variables: {} } as never;
 
-// The resolver applies these and composeTrees does not, by design.
 const NOT_COMPOSABLE = new Set(["with-extending", "private-sets", "private-source"]);
+const NOT_LOADABLE = new Set([
+    "circular-b",
+    "invalid-reference",
+    "invalid-source",
+    "invalid-version",
+    "single-context-modifier",
+]);
 
 async function both(resolverPath: string) {
     const loaded = await loadTokens({ type: "resolver", resolverPath, config });
-    if (loaded.errors.length > 0 || !loaded.sources) return undefined;
+    expect(loaded.errors).toEqual([]);
+    if (!loaded.sources) throw new Error(`${resolverPath} reported no sources`);
     const composed = composeTrees(loaded.sources);
     return {
         composed,
@@ -28,20 +35,22 @@ function sourcePathOf(map: ResolvedTokens, key: string): string | undefined {
     return (map[key] as { $source?: { sourcePath?: string } } | undefined)?.$source?.sourcePath;
 }
 
-describe("composeTrees reaches the document the resolver path does", () => {
+describe("composeTrees", () => {
     const fixtures = [
         ...readdirSync(RESOLVERS)
             .filter((name) => name.endsWith(".resolver.json"))
             .map((name) => resolve(RESOLVERS, name)),
         resolve(RESOLVERS, "provenance/provenance.resolver.json"),
-    ].filter((path) => !NOT_COMPOSABLE.has(basename(path, ".resolver.json")));
+    ].filter((path) => {
+        const name = basename(path, ".resolver.json");
+        return !NOT_COMPOSABLE.has(name) && !NOT_LOADABLE.has(name);
+    });
 
     for (const path of fixtures) {
         const name = basename(path, ".resolver.json");
 
-        it(`${name}: same keys and fields`, async () => {
+        it(`${name}: matches the resolver`, async () => {
             const result = await both(path);
-            if (!result) return;
 
             expect(result.composed.errors).toEqual([]);
             expect(Object.keys(result.derived).sort()).toEqual(Object.keys(result.truth).sort());
@@ -60,9 +69,8 @@ describe("composeTrees reaches the document the resolver path does", () => {
             expect(differences).toEqual([]);
         });
 
-        it(`${name}: provenance is never worse than the resolver's`, async () => {
+        it(`${name}: keeps every $sourcePath the resolver gave`, async () => {
             const result = await both(path);
-            if (!result) return;
 
             const regressions = Object.keys(result.truth).filter((key) => {
                 const before = sourcePathOf(result.truth, key);
@@ -73,18 +81,16 @@ describe("composeTrees reaches the document the resolver path does", () => {
         });
     }
 
-    it("takes one section of a file when the source pointed at one", async () => {
+    it("only takes the part of a file a pointer names", async () => {
         const result = await both(resolve(RESOLVERS, "provenance/provenance.resolver.json"));
-        if (!result) throw new Error("fixture did not load");
 
         const keys = Object.keys(result.derived);
         expect(keys.some((key) => key.includes("unused"))).toBe(false);
         expect(keys.some((key) => key.endsWith("perm:0.duration.fast"))).toBe(true);
     });
 
-    it("gives an inline token the resolver as its file, and a group the file that declared it", async () => {
+    it("stamps inline tokens with the resolver and groups with their file", async () => {
         const result = await both(resolve(RESOLVERS, "provenance/provenance.resolver.json"));
-        if (!result) throw new Error("fixture did not load");
 
         const pill = Object.keys(result.derived).find((key) => key.endsWith("radius.pill"));
         expect(sourcePathOf(result.derived, pill ?? "")).toContain("provenance.resolver.json");
@@ -95,7 +101,7 @@ describe("composeTrees reaches the document the resolver path does", () => {
         expect(sourcePathOf(result.derived, group?.[0] ?? "")).toContain("color.json");
     });
 
-    it("reports a missing text and a bad pointer, and composes the rest", () => {
+    it("reports missing files and bad pointers and carries on", () => {
         const { trees, errors } = composeTrees({
             files: { "a.json": '{"color":{"bg":{"$type":"color","$value":"#fff"}}}' },
             order: [
@@ -114,7 +120,7 @@ describe("composeTrees reaches the document the resolver path does", () => {
         expect(errors.map((each) => each.path)).toEqual(["missing.json", "a.json"]);
     });
 
-    it("reports a file that does not parse once, however many contexts list it", () => {
+    it("reports a broken file once, not once per context", () => {
         const { trees, errors } = composeTrees({
             files: { "broken.json": "{ not json" },
             order: [
@@ -128,7 +134,7 @@ describe("composeTrees reaches the document the resolver path does", () => {
         expect(errors[0]?.path).toBe("broken.json");
     });
 
-    it("composes no tree for a context whose files hold no tokens", () => {
+    it("skips a context with no tokens", () => {
         const { trees } = composeTrees({
             files: { "empty.json": "{}" },
             order: [{ context: "default", sources: [{ file: "empty.json" }] }],

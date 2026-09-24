@@ -24,13 +24,11 @@ export type ResolveResult<T> = {
     errors: ResolverError[];
 };
 
-/** A token file as read once and shared across permutations. */
 export type CachedFile = {
     content: unknown;
     text: string;
 };
 
-/** The resolver document itself: its path relative to cwd, and its text when it came from a file. */
 export type ResolverSource = {
     path: string;
     text?: string;
@@ -42,12 +40,9 @@ type ResolveContext = {
     basePath: string;
     visitedRefs: Set<string>;
     fileCache: Map<string, CachedFile>;
-    /** The resolver document itself, relative to cwd, and its text. */
     resolverPath: string;
     resolverText?: string;
-    /** Every source read, in resolution order, as a file and a place in it. */
     sourceRefs: SourceRef[];
-    /** The text of each file in `sourceRefs`, keyed by file. */
     texts: Map<string, string>;
 };
 
@@ -208,8 +203,8 @@ async function loadJsonFile(filePath: string): Promise<LoadResult> {
 /**
  * Resolve all sources in an array, handling $ref and inline sources.
  * Applies extending (shallow merge) for references with additional properties.
- * `at` is the JSON pointer to the array in the resolver document, so an inline
- * source can say where it was authored.
+ * `at` is a JSON pointer to this array in the resolver document, so inline
+ * sources can be found again later.
  */
 export async function resolveSources(
     sources: Source[],
@@ -240,8 +235,6 @@ async function resolveSource(
     return fileSource(source, context);
 }
 
-// Tokens declared inline (spec 4.1.4, 4.1.5.1) are authored in the resolver
-// document, so that is the file they came from.
 function inlineSource(source: TokenGroup, context: ResolveContext, at: string): ResolvedSources {
     const file = context.resolverPath;
     if (!file) return { resolved: [source], errors: [] };
