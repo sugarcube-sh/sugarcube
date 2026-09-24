@@ -30,14 +30,21 @@ export type CachedFile = {
     text: string;
 };
 
+/** The resolver document itself: its path relative to cwd, and its text when it came from a file. */
+export type ResolverSource = {
+    path: string;
+    text?: string;
+};
+
 /** Context for reference resolution, tracking visited paths to detect cycles. */
 type ResolveContext = {
     document: ResolverDocument;
     basePath: string;
     visitedRefs: Set<string>;
     fileCache: Map<string, CachedFile>;
-    /** The resolver document itself, relative to cwd. */
+    /** The resolver document itself, relative to cwd, and its text. */
     resolverPath: string;
+    resolverText?: string;
     /** Every source read, in resolution order, as a file and a place in it. */
     sourceRefs: SourceRef[];
     /** The text of each file in `sourceRefs`, keyed by file. */
@@ -51,14 +58,15 @@ export function createResolveContext(
     document: ResolverDocument,
     basePath: string,
     fileCache: Map<string, CachedFile> = new Map(),
-    resolverPath = "",
+    resolver?: ResolverSource,
 ): ResolveContext {
     return {
         document,
         basePath,
         visitedRefs: new Set(),
         fileCache,
-        resolverPath,
+        resolverPath: resolver?.path ?? "",
+        resolverText: resolver?.text,
         sourceRefs: [],
         texts: new Map(),
     };
@@ -238,7 +246,7 @@ function inlineSource(source: TokenGroup, context: ResolveContext, at: string): 
     const file = context.resolverPath;
     if (!file) return { resolved: [source], errors: [] };
 
-    recordSource(context, { file, pointer: at });
+    recordSource(context, { file, pointer: at }, context.resolverText);
     return { resolved: [stampSourcePath(source, file)], errors: [] };
 }
 

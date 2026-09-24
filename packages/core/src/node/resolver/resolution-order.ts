@@ -14,6 +14,7 @@ import type {
 import { deepMerge } from "../../shared/compose-trees.js";
 import {
     type CachedFile,
+    type ResolverSource,
     createResolveContext,
     resolveReference,
     resolveSources,
@@ -56,7 +57,7 @@ export async function processResolutionOrder(
     basePath: string,
     inputs: ResolverInputs = {},
     fileCache?: Map<string, CachedFile>,
-    resolverPath?: string,
+    resolver?: ResolverSource,
 ): Promise<ResolutionOrderResult> {
     const validation = validateInputs(document, inputs);
     if (!validation.valid) {
@@ -72,7 +73,7 @@ export async function processResolutionOrder(
         };
     }
 
-    const context = createResolveContext(document, basePath, fileCache, resolverPath);
+    const context = createResolveContext(document, basePath, fileCache, resolver);
     const state = createProcessingState();
 
     for (const [index, item] of document.resolutionOrder.entries()) {

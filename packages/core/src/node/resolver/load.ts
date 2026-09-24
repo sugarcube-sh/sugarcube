@@ -5,7 +5,7 @@ import type { Permutation } from "../../types/config.js";
 import type { LoadError, SourceOrder, TokenSources } from "../../types/load.js";
 import type { ResolverDocument } from "../../types/resolver.js";
 import type { TokenTree } from "../../types/tokens.js";
-import type { CachedFile } from "./resolve-refs.js";
+import type { CachedFile, ResolverSource } from "./resolve-refs.js";
 import { processResolutionOrder } from "./resolution-order.js";
 import { type ExtractedModifier, extractModifiers } from "./utils.js";
 
@@ -89,19 +89,10 @@ export async function loadFromResolver(
     const { trees, errors, sourceOrder, files } = await resolvePermutations(
         document,
         basePath,
-        relativePath,
+        { path: relativePath, text: resolverText },
         resolvedPermutations,
         modifiers,
     );
-
-    // Tokens declared inline are authored in the resolver document, so its
-    // text is one of the files a writer needs.
-    if (
-        resolverText !== undefined &&
-        sourceOrder.some((each) => each.sources.some((ref) => ref.file === relativePath))
-    ) {
-        files[relativePath] = resolverText;
-    }
 
     const defaultContext = findDefaultContext(
         trees.map((tree) => tree.context ?? "default"),
@@ -200,7 +191,7 @@ function validatePermutationInputs(
 async function resolvePermutations(
     document: Parameters<typeof processResolutionOrder>[0],
     basePath: string,
-    relativePath: string,
+    resolver: ResolverSource,
     permutations: Permutation[],
     modifiers: ExtractedModifier[],
 ): Promise<PermutationResult> {
@@ -224,7 +215,7 @@ async function resolvePermutations(
             basePath,
             fullInput,
             fileCache,
-            relativePath,
+            resolver,
         );
 
         for (const error of result.errors) {
@@ -235,7 +226,7 @@ async function resolvePermutations(
             trees.push({
                 context: `perm:${i}`,
                 tokens: result.tokens,
-                sourcePath: relativePath,
+                sourcePath: resolver.path,
             });
             sourceOrder.push({ context: `perm:${i}`, sources: result.sourceRefs });
             for (const [path, text] of result.texts) files[path] ??= text;
