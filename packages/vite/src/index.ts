@@ -125,10 +125,11 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
     const addTask = (task: Promise<void>) => {
         tasks.push(task);
-        task.finally(() => {
+        const remove = () => {
             const index = tasks.indexOf(task);
             if (index > -1) tasks.splice(index, 1);
-        });
+        };
+        task.then(remove, remove);
         return task;
     };
 
@@ -488,20 +489,28 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                             file: file.split("/").slice(-2).join("/"),
                         });
 
-                        await ctx.reloadConfig();
+                        try {
+                            await ctx.reloadConfig();
 
-                        // Force UnoCSS to reload its config
-                        // Without this, UnoCSS will not get the new rules
-                        const unocssPlugin = server.config.plugins.find(
-                            (p) => p.name === "unocss:api",
-                        );
-                        if (unocssPlugin?.api) {
-                            const unoContext = unocssPlugin.api.getContext();
-                            await unoContext.reloadConfig();
+                            // Force UnoCSS to reload its config
+                            // Without this, UnoCSS will not get the new rules
+                            const unocssPlugin = server.config.plugins.find(
+                                (p) => p.name === "unocss:api",
+                            );
+                            if (unocssPlugin?.api) {
+                                const unoContext = unocssPlugin.api.getContext();
+                                await unoContext.reloadConfig();
+                            }
+
+                            // We use the same invalidation path as the token watcher as we know that approach works
+                            ctx.invalidate(server);
+                        } catch (error) {
+                            server.config.logger.error(
+                                `[sugarcube] Config reload failed: ${
+                                    error instanceof Error ? error.message : String(error)
+                                }`,
+                            );
                         }
-
-                        // We use the same invalidation path as the token watcher as we know that approach works
-                        ctx.invalidate(server);
                     }
                 });
             },

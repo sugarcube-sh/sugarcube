@@ -1,35 +1,42 @@
+import { EventEmitter } from "node:events";
 import { describe, expect, it, vi } from "vitest";
 
-const { loadTokens } = vi.hoisted(() => ({ loadTokens: vi.fn() }));
+const { loadTokens, resolveTokens, loadInternalConfig } = vi.hoisted(() => ({
+    loadTokens: vi.fn(),
+    resolveTokens: vi.fn(),
+    loadInternalConfig: vi.fn(),
+}));
+
+const config = {
+    resolver: "tokens/tokens.resolver.json",
+    variables: {
+        path: "src/styles/tokens.css",
+        transforms: {
+            fluid: { min: 320, max: 1200 },
+            colorFallbackStrategy: "native",
+        },
+    },
+    utilities: {
+        path: "src/styles/utilities.css",
+        classes: {},
+    },
+    cube: "src/styles",
+};
+
+const resolved = {
+    trees: [],
+    resolved: {} as any,
+    errors: { expandTree: [], flatten: [], validation: [], resolution: [] },
+    warnings: [],
+};
 
 vi.mock("@sugarcube-sh/core", async () => {
     const actual = await vi.importActual<any>("@sugarcube-sh/core");
     return {
         ...actual,
-        loadInternalConfig: async () => ({
-            config: {
-                resolver: "tokens/tokens.resolver.json",
-                variables: {
-                    path: "src/styles/tokens.css",
-                    transforms: {
-                        fluid: { min: 320, max: 1200 },
-                        colorFallbackStrategy: "native",
-                    },
-                },
-                utilities: {
-                    path: "src/styles/utilities.css",
-                    classes: {},
-                },
-                cube: "src/styles",
-            },
-        }),
+        loadInternalConfig,
         loadTokens,
-        resolveTokens: () => ({
-            trees: [],
-            resolved: {} as any,
-            errors: { expandTree: [], flatten: [], validation: [], resolution: [] },
-            warnings: [],
-        }),
+        resolveTokens,
         groupByContext: () => ({ default: {} }),
         assignCSSNames: () => ({ default: { default: {} } }),
         generateCSSVariables: async () => [{ css: "" }],
@@ -50,15 +57,44 @@ const loaded = {
     defaultContext: "default",
 };
 
-async function context() {
+function healthy() {
+    loadInternalConfig.mockResolvedValue({ config });
+    loadTokens.mockResolvedValue(loaded);
+    resolveTokens.mockReturnValue(resolved);
+}
+
+async function plugin(name: string) {
     const plugins = await sugarcube();
-    const api = plugins.flat().find((p: any) => p.name === "sugarcube:api");
-    return api.api.getContext();
+    return plugins.flat().find((p: any) => p.name === name);
+}
+
+async function context() {
+    return (await plugin("sugarcube:api")).api.getContext();
+}
+
+function fakeServer() {
+    return {
+        watcher: new EventEmitter(),
+        config: { logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }, plugins: [] },
+        moduleGraph: { getModuleById: () => undefined },
+    };
+}
+
+async function settle() {
+    await new Promise((r) => setImmediate(r));
+    await new Promise((r) => setImmediate(r));
+}
+
+function unhandledRejections() {
+    const seen: unknown[] = [];
+    const listener = (reason: unknown) => seen.push(reason);
+    process.on("unhandledRejection", listener);
+    return { seen, stop: () => process.off("unhandledRejection", listener) };
 }
 
 describe("vite-plugin-sugarcube", () => {
     it("should return array of plugins with correct structure", async () => {
-        loadTokens.mockResolvedValue(loaded);
+        healthy();
         const plugins = await sugarcube();
         expect(Array.isArray(plugins)).toBe(true);
         const flat = plugins.flat();
@@ -66,7 +102,7 @@ describe("vite-plugin-sugarcube", () => {
     });
 
     it("reports sources, permutations and defaultContext from loadTokens", async () => {
-        loadTokens.mockResolvedValue(loaded);
+        healthy();
         const ctx = await context();
         expect(ctx.sources).toBe(loaded.sources);
         expect(ctx.permutations).toBe(loaded.permutations);
@@ -74,11 +110,47 @@ describe("vite-plugin-sugarcube", () => {
     });
 
     it("reports null sources and defaultContext when loadTokens has none", async () => {
+        healthy();
         loadTokens.mockResolvedValue({ trees: [], errors: [], permutations: [] });
         const ctx = await context();
         expect(ctx.sources).toBeNull();
         expect(ctx.defaultContext).toBeNull();
         expect(ctx.permutations).toEqual([]);
+    });
+});
+
+describe("a reload that fails", () => {
+    it("rejects for the caller and raises no unhandled rejection", async () => {
+        healthy();
+        const ctx = await context();
+        const watch = unhandledRejections();
+        resolveTokens.mockImplementationOnce(() => {
+            throw new Error("boom");
+        });
+
+        await expect(ctx.reloadTokens()).rejects.toThrow("boom");
+        await settle();
+        watch.stop();
+
+        expect(watch.seen).toEqual([]);
+    });
+
+    it("from a broken config file is logged, not thrown out of the watcher", async () => {
+        healthy();
+        const watcherPlugin = await plugin("sugarcube:config-watcher");
+        const server = fakeServer();
+        watcherPlugin.configureServer(server);
+        const watch = unhandledRejections();
+        loadInternalConfig.mockRejectedValueOnce(new Error("Unexpected token"));
+
+        server.watcher.emit("change", "/app/sugarcube.config.ts");
+        await settle();
+        watch.stop();
+
+        expect(watch.seen).toEqual([]);
+        expect(server.config.logger.error).toHaveBeenCalledWith(
+            expect.stringContaining("Unexpected token"),
+        );
     });
 });
 
