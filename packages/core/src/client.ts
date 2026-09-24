@@ -52,7 +52,13 @@ export {
 } from "./shared/uno-rules.js";
 
 export { formatCSSVarName } from "./shared/format-css-var-name.js";
+export { composeTrees } from "./shared/compose-trees.js";
+export type { ComposeError, Composed } from "./shared/compose-trees.js";
+export type { SourceOrder, SourceRef, TokenSources } from "./types/load.js";
+export { FONT_WEIGHT_ALIASES, STROKE_STYLE_KEYWORDS } from "./shared/constants/tokens.js";
 export { convertColorToString } from "./shared/color/color-conversion.js";
+export { isDTCGColorValue } from "./shared/color/color-validation.js";
+export type { DTCGColorSpace, DTCGColorValue } from "./types/dtcg-color.js";
 export type { Result } from "./types/result.js";
 export { createVariableNameResolver } from "./shared/resolve-variable-name.js";
 export { kebabCase } from "./shared/case.js";

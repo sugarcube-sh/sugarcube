@@ -7,6 +7,9 @@ export const ErrorMessages = {
         INVALID_JSON: (path: string, message: string) => `Invalid JSON in file ${path}: ${message}`,
         GLOB_ERROR: (pattern: string, error: string) =>
             `Error resolving glob pattern ${pattern}: ${error}`,
+        NO_SOURCE_TEXT: (file: string) => `No text for ${file}.`,
+        POINTER_NOT_FOUND: (file: string, pointer: string, error: string) =>
+            `${file}#${pointer}: ${error}.`,
     },
     FLATTEN: {
         INVALID_TOKEN_NAME: (name: string) =>

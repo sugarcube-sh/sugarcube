@@ -1,8 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../../shared/constants/error-messages.js";
+import { stampSourcePath } from "../../shared/compose-trees.js";
 import { hasRef } from "../../shared/guards.js";
-import { isGroup, isToken } from "../../shared/guards.js";
+import { resolveJsonPointer } from "../../shared/json-pointer.js";
+import type { SourceRef } from "../../types/load.js";
 import type { TokenGroup } from "../../types/dtcg.js";
 import type {
     ModifierDefinition,
@@ -22,12 +24,26 @@ export type ResolveResult<T> = {
     errors: ResolverError[];
 };
 
+export type CachedFile = {
+    content: unknown;
+    text: string;
+};
+
+export type ResolverSource = {
+    path: string;
+    text?: string;
+};
+
 /** Context for reference resolution, tracking visited paths to detect cycles. */
 type ResolveContext = {
     document: ResolverDocument;
     basePath: string;
     visitedRefs: Set<string>;
-    fileCache: Map<string, unknown>;
+    fileCache: Map<string, CachedFile>;
+    resolverPath: string;
+    resolverText?: string;
+    sourceRefs: SourceRef[];
+    texts: Map<string, string>;
 };
 
 /**
@@ -36,9 +52,19 @@ type ResolveContext = {
 export function createResolveContext(
     document: ResolverDocument,
     basePath: string,
-    fileCache: Map<string, unknown> = new Map(),
+    fileCache: Map<string, CachedFile> = new Map(),
+    resolver?: ResolverSource,
 ): ResolveContext {
-    return { document, basePath, visitedRefs: new Set(), fileCache };
+    return {
+        document,
+        basePath,
+        visitedRefs: new Set(),
+        fileCache,
+        resolverPath: resolver?.path ?? "",
+        resolverText: resolver?.text,
+        sourceRefs: [],
+        texts: new Map(),
+    };
 }
 
 /**
@@ -102,18 +128,18 @@ async function resolveFileRef(
     const cached = context.fileCache.get(filePath);
     if (cached) {
         // Check if cached content is a resolver document (shouldn't be used as token source)
-        if (isResolverFormat(cached)) {
+        if (isResolverFormat(cached.content)) {
             return errorResult(
                 {},
                 ErrorMessages.RESOLVER.RESOLVER_AS_TOKEN_SOURCE(filePath),
                 filePath,
             );
         }
-        return { content: cached as TokenGroup, sourcePath: filePath, errors: [] };
+        return { content: cached.content as TokenGroup, sourcePath: filePath, errors: [] };
     }
 
     const loadResult = await loadJsonFile(filePath);
-    if (loadResult.error) {
+    if (loadResult.error !== undefined) {
         return errorResult({}, loadResult.error, filePath);
     }
 
@@ -122,7 +148,7 @@ async function resolveFileRef(
         return errorResult({}, ErrorMessages.RESOLVER.RESOLVER_AS_TOKEN_SOURCE(filePath), filePath);
     }
 
-    context.fileCache.set(filePath, loadResult.content);
+    context.fileCache.set(filePath, { content: loadResult.content, text: loadResult.text });
     return { content: loadResult.content as TokenGroup, sourcePath: filePath, errors: [] };
 }
 
@@ -133,14 +159,14 @@ async function resolveFileFragmentRef(
     const [filePart = "", fragmentPart = ""] = ref.split("#");
     const filePath = isAbsolute(filePart) ? filePart : resolvePath(context.basePath, filePart);
 
-    let fileContent = context.fileCache.get(filePath);
+    let fileContent = context.fileCache.get(filePath)?.content;
     if (!fileContent) {
         const loadResult = await loadJsonFile(filePath);
-        if (loadResult.error) {
+        if (loadResult.error !== undefined) {
             return errorResult({}, loadResult.error, filePath);
         }
         fileContent = loadResult.content;
-        context.fileCache.set(filePath, fileContent);
+        context.fileCache.set(filePath, { content: fileContent, text: loadResult.text });
     }
 
     const pointer = fragmentPart.startsWith("/") ? fragmentPart : `/${fragmentPart}`;
@@ -157,12 +183,14 @@ async function resolveFileFragmentRef(
     return { content: result.value as TokenGroup, sourcePath: filePath, errors: [] };
 }
 
-type LoadResult = { content: unknown; error?: undefined } | { content?: undefined; error: string };
+type LoadResult =
+    | { content: unknown; text: string; error?: undefined }
+    | { content?: undefined; text?: undefined; error: string };
 
 async function loadJsonFile(filePath: string): Promise<LoadResult> {
     try {
-        const content = await readFile(filePath, "utf-8");
-        return { content: JSON.parse(content) };
+        const text = await readFile(filePath, "utf-8");
+        return { content: JSON.parse(text), text };
     } catch (err) {
         if ((err as NodeJS.ErrnoException).code === "ENOENT") {
             return { error: ErrorMessages.RESOLVER.EXTERNAL_FILE_NOT_FOUND(filePath) };
@@ -172,135 +200,103 @@ async function loadJsonFile(filePath: string): Promise<LoadResult> {
     }
 }
 
-type PointerResult = { value: unknown; error?: undefined } | { value?: undefined; error: string };
-
-function resolveJsonPointer(obj: unknown, pointer: string): PointerResult {
-    if (pointer === "" || pointer === "/") return { value: obj };
-
-    const segments = pointer
-        .slice(1)
-        .split("/")
-        .map((s) => s.replace(/~1/g, "/").replace(/~0/g, "~"));
-
-    let current: unknown = obj;
-
-    for (const segment of segments) {
-        if (current === null || typeof current !== "object") {
-            return { error: "cannot navigate into non-object" };
-        }
-
-        if (Array.isArray(current)) {
-            const index = Number.parseInt(segment, 10);
-            if (Number.isNaN(index) || index < 0 || index >= current.length) {
-                return { error: `invalid array index "${segment}"` };
-            }
-            current = current[index];
-            continue;
-        }
-
-        const record = current as Record<string, unknown>;
-        if (!(segment in record)) {
-            return { error: `property "${segment}" not found` };
-        }
-        current = record[segment];
-    }
-
-    return { value: current };
-}
-
-/**
- * Recursively stamp `$sourcePath` on every token (node with `$value`) in a token group.
- * This preserves per-file attribution through deep merges.
- */
-function stampSourcePath(group: TokenGroup, sourcePath: string): TokenGroup {
-    const result: TokenGroup = {};
-
-    for (const [key, value] of Object.entries(group)) {
-        if (value === undefined) continue;
-
-        if (key.startsWith("$")) {
-            result[key] = value as TokenGroup[typeof key];
-            continue;
-        }
-
-        if (isToken(value)) {
-            result[key] = { ...value, $sourcePath: sourcePath } as TokenGroup[typeof key];
-        } else if (isGroup(value)) {
-            result[key] = stampSourcePath(
-                value as TokenGroup,
-                sourcePath,
-            ) as TokenGroup[typeof key];
-        } else {
-            result[key] = value as TokenGroup[typeof key];
-        }
-    }
-
-    return result;
-}
-
 /**
  * Resolve all sources in an array, handling $ref and inline sources.
  * Applies extending (shallow merge) for references with additional properties.
+ * `at` is a JSON pointer to this array in the resolver document, so inline
+ * sources can be found again later.
  */
 export async function resolveSources(
     sources: Source[],
     context: ResolveContext,
-): Promise<{ resolved: TokenGroup[]; errors: ResolverError[] }> {
+    at: string,
+): Promise<ResolvedSources> {
     const resolved: TokenGroup[] = [];
     const errors: ResolverError[] = [];
 
-    for (const source of sources) {
-        if (!hasRef(source)) {
-            resolved.push(source as TokenGroup);
-            continue;
-        }
-
-        if (source.$ref.startsWith("#/sets/")) {
-            // Per DTCG §4.1.5.1 Example 4: a set ref inside a sources array
-            // is equivalent to that set's sources being inlined here.
-            const refResult = await resolveReference(source.$ref, context);
-            errors.push(...refResult.errors);
-            if (refResult.errors.length > 0) continue;
-
-            if (context.visitedRefs.has(source.$ref)) {
-                errors.push({
-                    path: source.$ref,
-                    message: ErrorMessages.RESOLVER.CIRCULAR_REFERENCE(source.$ref),
-                });
-                continue;
-            }
-
-            const setDef = refResult.content as SetDefinition;
-            context.visitedRefs.add(source.$ref);
-            try {
-                const inner = await resolveSources(setDef.sources, context);
-                errors.push(...inner.errors);
-                resolved.push(...inner.resolved);
-            } finally {
-                context.visitedRefs.delete(source.$ref);
-            }
-            continue;
-        }
-
-        const refResult = await resolveReference(source.$ref, context);
-        errors.push(...refResult.errors);
-
-        if (refResult.errors.length === 0) {
-            const content = applyExtending(refResult.content as TokenGroup, source);
-            const relPath = relative(process.cwd(), refResult.sourcePath);
-            const stamped = stampSourcePath(content, relPath);
-
-            resolved.push(isPrivate(source) ? markPrivate(stamped) : stamped);
-        }
+    for (const [index, source] of sources.entries()) {
+        const result = await resolveSource(source, context, `${at}/${index}`);
+        resolved.push(...result.resolved);
+        errors.push(...result.errors);
     }
 
     return { resolved, errors };
 }
 
-/**
- * Apply extending properties from a reference object to resolved content.
- * Per DTCG spec section 4.2.2: shallow merge (objects/arrays are NOT deep-merged).
- */
+type ResolvedSources = { resolved: TokenGroup[]; errors: ResolverError[] };
+
+async function resolveSource(
+    source: Source,
+    context: ResolveContext,
+    at: string,
+): Promise<ResolvedSources> {
+    if (!hasRef(source)) return inlineSource(source as TokenGroup, context, at);
+    if (source.$ref.startsWith("#/sets/")) return setSource(source.$ref, context);
+    return fileSource(source, context);
+}
+
+function inlineSource(source: TokenGroup, context: ResolveContext, at: string): ResolvedSources {
+    const file = context.resolverPath;
+    if (!file) return { resolved: [source], errors: [] };
+
+    recordSource(context, { file, pointer: at }, context.resolverText);
+    return { resolved: [stampSourcePath(source, file)], errors: [] };
+}
+
+// Per DTCG §4.1.5.1 Example 4: a set ref inside a sources array is equivalent
+// to that set's sources being inlined here.
+async function setSource(ref: string, context: ResolveContext): Promise<ResolvedSources> {
+    const refResult = await resolveReference(ref, context);
+    if (refResult.errors.length > 0) return { resolved: [], errors: refResult.errors };
+    if (context.visitedRefs.has(ref)) {
+        return {
+            resolved: [],
+            errors: [{ path: ref, message: ErrorMessages.RESOLVER.CIRCULAR_REFERENCE(ref) }],
+        };
+    }
+
+    const setDef = refResult.content as SetDefinition;
+    context.visitedRefs.add(ref);
+    try {
+        return await resolveSources(
+            setDef.sources,
+            context,
+            `/sets/${ref.slice("#/sets/".length)}/sources`,
+        );
+    } finally {
+        context.visitedRefs.delete(ref);
+    }
+}
+
+async function fileSource(
+    source: ReferenceObject,
+    context: ResolveContext,
+): Promise<ResolvedSources> {
+    const refResult = await resolveReference(source.$ref, context);
+    if (refResult.errors.length > 0) return { resolved: [], errors: refResult.errors };
+
+    const file = relative(process.cwd(), refResult.sourcePath);
+    const text = context.fileCache.get(refResult.sourcePath)?.text;
+    recordSource(context, sourceRefOf(source.$ref, file), text);
+
+    const content = stampSourcePath(applyExtending(refResult.content as TokenGroup, source), file);
+    return { resolved: [isPrivate(source) ? markPrivate(content) : content], errors: [] };
+}
+
+function sourceRefOf(ref: string, file: string): SourceRef {
+    const fragment = ref.split("#")[1];
+    if (fragment === undefined) return { file };
+    return { file, pointer: fragment.startsWith("/") ? fragment : `/${fragment}` };
+}
+
+function recordSource(context: ResolveContext, ref: SourceRef, text?: string): void {
+    const seen = context.sourceRefs.some(
+        (each) => each.file === ref.file && each.pointer === ref.pointer,
+    );
+    if (!seen) context.sourceRefs.push(ref);
+    if (text !== undefined) context.texts.set(ref.file, text);
+}
+
 function applyExtending(content: TokenGroup, refObject: ReferenceObject): TokenGroup {
     const { $ref: _$ref, ...extensions } = refObject;
     if (Object.keys(extensions).length === 0) return content;
@@ -328,11 +324,11 @@ export async function resolveDocumentReferences(
     }> = [];
     const errors: ResolverError[] = [];
 
-    for (const item of document.resolutionOrder) {
+    for (const [index, item] of document.resolutionOrder.entries()) {
         if (hasRef(item)) {
             await processReferenceItem(item, context, sets, modifiers, errors);
         } else if ("type" in item) {
-            await processInlineItem(item, context, sets, modifiers, errors);
+            await processInlineItem(item, index, context, sets, modifiers, errors);
         }
     }
 
@@ -360,7 +356,11 @@ async function processReferenceItem(
 
     if (item.$ref.startsWith("#/sets/")) {
         const definition = refResult.content as SetDefinition;
-        const sourcesResult = await resolveSources(definition.sources, context);
+        const sourcesResult = await resolveSources(
+            definition.sources,
+            context,
+            `/sets/${name}/sources`,
+        );
         errors.push(...sourcesResult.errors);
         sets.push({ name, definition, sources: sourcesResult.resolved });
         return;
@@ -371,6 +371,7 @@ async function processReferenceItem(
         const resolvedContexts = await resolveModifierContexts(
             definition.contexts,
             context,
+            `/modifiers/${name}/contexts`,
             errors,
         );
         modifiers.push({ name, definition, resolvedContexts });
@@ -387,6 +388,7 @@ async function processInlineItem(
         default?: string;
         $extensions?: Record<string, unknown>;
     },
+    index: number,
     context: ResolveContext,
     sets: Array<{ name: string; definition: SetDefinition; sources: TokenGroup[] }>,
     modifiers: Array<{
@@ -397,7 +399,11 @@ async function processInlineItem(
     errors: ResolverError[],
 ): Promise<void> {
     if (item.type === "set" && item.sources) {
-        const sourcesResult = await resolveSources(item.sources, context);
+        const sourcesResult = await resolveSources(
+            item.sources,
+            context,
+            `/resolutionOrder/${index}/sources`,
+        );
         errors.push(...sourcesResult.errors);
         sets.push({
             name: item.name,
@@ -412,7 +418,12 @@ async function processInlineItem(
     }
 
     if (item.type === "modifier" && item.contexts) {
-        const resolvedContexts = await resolveModifierContexts(item.contexts, context, errors);
+        const resolvedContexts = await resolveModifierContexts(
+            item.contexts,
+            context,
+            `/resolutionOrder/${index}/contexts`,
+            errors,
+        );
         modifiers.push({
             name: item.name,
             definition: {
@@ -429,12 +440,13 @@ async function processInlineItem(
 async function resolveModifierContexts(
     contexts: Record<string, Source[]>,
     context: ResolveContext,
+    at: string,
     errors: ResolverError[],
 ): Promise<Record<string, TokenGroup[]>> {
     const resolvedContexts: Record<string, TokenGroup[]> = {};
 
     for (const [contextName, contextSources] of Object.entries(contexts)) {
-        const sourcesResult = await resolveSources(contextSources, context);
+        const sourcesResult = await resolveSources(contextSources, context, `${at}/${contextName}`);
         errors.push(...sourcesResult.errors);
         resolvedContexts[contextName] = sourcesResult.resolved;
     }

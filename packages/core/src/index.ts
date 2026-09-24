@@ -27,6 +27,8 @@ export type { ExtractFileRefsResult } from "./node/resolver/extract-refs.js";
 
 export { loadTokens } from "./node/load-tokens.js";
 export type { LoadResult } from "./node/load-tokens.js";
+export { createCoalescedRunner, debounce } from "./shared/scheduling.js";
+export type { DebouncedFn } from "./shared/scheduling.js";
 
 export { PerfMonitor, Instrumentation } from "./node/perf.js";
 

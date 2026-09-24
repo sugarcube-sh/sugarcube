@@ -1,27 +1,7 @@
 import type { SimpleCSSProperties } from "../../../types/render.js";
 import type { TokenValue } from "../../../types/tokens.js";
+import { FONT_WEIGHT_ALIASES } from "../../constants/tokens.js";
 import { isReference } from "../../guards.js";
-
-const fontWeightAliases: Record<string, number> = {
-    "thin": 100,
-    "hairline": 100,
-    "extra-light": 200,
-    "ultra-light": 200,
-    "light": 300,
-    "normal": 400,
-    "regular": 400,
-    "book": 400,
-    "medium": 500,
-    "semi-bold": 600,
-    "demi-bold": 600,
-    "bold": 700,
-    "extra-bold": 800,
-    "ultra-bold": 800,
-    "black": 900,
-    "heavy": 900,
-    "extra-black": 950,
-    "ultra-black": 950,
-};
 
 export function renderFontWeight(value: TokenValue<"fontWeight">): SimpleCSSProperties {
     if (isReference(value)) {
@@ -32,5 +12,9 @@ export function renderFontWeight(value: TokenValue<"fontWeight">): SimpleCSSProp
         return { value };
     }
 
-    return { value: fontWeightAliases[value] ?? value };
+    return {
+        value: Object.hasOwn(FONT_WEIGHT_ALIASES, value)
+            ? (FONT_WEIGHT_ALIASES[value] as number)
+            : value,
+    };
 }

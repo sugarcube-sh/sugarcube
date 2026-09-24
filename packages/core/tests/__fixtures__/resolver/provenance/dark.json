@@ -1,0 +1,16 @@
+{
+  "color": {
+    "$type": "color",
+    "$description": "Dark: only the roles move.",
+    "text": {
+      "default": {
+        "$value": "{color.neutral.100}"
+      }
+    },
+    "surface": {
+      "default": {
+        "$value": "{color.neutral.900}"
+      }
+    }
+  }
+}

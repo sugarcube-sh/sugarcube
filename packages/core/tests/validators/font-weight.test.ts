@@ -85,6 +85,13 @@ describe("font weight validator", () => {
                 ValidationHelper.expectInvalidFontWeightError(errors, token.$value, token.$path);
             });
 
+            it("should reject an Object.prototype member name", () => {
+                const token = invalidTokens["font.weight.invalid.prototype"];
+                if (!token) throw new Error("Token not found");
+                const errors = ValidationHelper.validateToken(validateFontWeight, token);
+                ValidationHelper.expectInvalidFontWeightError(errors, token.$value, token.$path);
+            });
+
             // DTCG 2025.10 8.4: "any other string values, including ones that
             // differ only in case, are invalid and MUST be rejected by tools".
             it("should reject a keyword that differs only in case", () => {

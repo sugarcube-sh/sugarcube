@@ -2,21 +2,9 @@ import type { ObjectSchema, TokenValidationSchema } from "../../types/schema.js"
 import type { LineCap, StrokeStyleKeyword, TokenSource } from "../../types/tokens.js";
 import type { ValidationError } from "../../types/validate.js";
 import { ErrorMessages } from "../constants/error-messages.js";
+import { LINE_CAPS, STROKE_STYLE_KEYWORDS } from "../constants/tokens.js";
 import { DimensionSchema } from "./dimension.js";
 import { validateSchema } from "./schema-validator.js";
-
-const validKeywords: StrokeStyleKeyword[] = [
-    "solid",
-    "dashed",
-    "dotted",
-    "double",
-    "groove",
-    "ridge",
-    "outset",
-    "inset",
-];
-
-const validLineCaps: LineCap[] = ["round", "butt", "square"];
 
 const CustomStrokeSchema: ObjectSchema = {
     type: "object",
@@ -46,7 +34,7 @@ const CustomStrokeSchema: ObjectSchema = {
         lineCap: {
             type: "string",
             validate: (value, path, source) => {
-                if (!validLineCaps.includes(value as (typeof validLineCaps)[number])) {
+                if (!LINE_CAPS.includes(value as LineCap)) {
                     return [
                         {
                             path,
@@ -70,7 +58,7 @@ export const StrokeStyleSchema: TokenValidationSchema = {
             {
                 type: "string",
                 validate: (value, path, source) => {
-                    if (!validKeywords.includes(value as (typeof validKeywords)[number])) {
+                    if (!STROKE_STYLE_KEYWORDS.includes(value as StrokeStyleKeyword)) {
                         if (typeof value === "string") {
                             return [
                                 {

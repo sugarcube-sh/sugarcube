@@ -3,46 +3,6 @@ import { isToken } from "../../shared/guards.js";
 import type { TokenGroup } from "../../types/dtcg.js";
 import type { InlineModifier, ResolverDocument } from "../../types/resolver.js";
 
-/**
- * Deep merge two token groups.
- * Later values override earlier ones at the same path.
- * Objects are recursively merged, but tokens ($value) are replaced entirely.
- */
-export function deepMerge(target: TokenGroup, source: TokenGroup): TokenGroup {
-    const result: TokenGroup = { ...target };
-
-    for (const [key, value] of Object.entries(source)) {
-        if (value === undefined) continue;
-
-        // $ properties are metadata so we just copy them
-        if (key.startsWith("$")) {
-            result[key] = value as TokenGroup[typeof key];
-            continue;
-        }
-
-        // Replace tokens entirely
-        if (isToken(value)) {
-            result[key] = value as TokenGroup[typeof key];
-            continue;
-        }
-
-        const existing = result[key];
-        const shouldMerge =
-            existing !== undefined &&
-            typeof existing === "object" &&
-            existing !== null &&
-            typeof value === "object" &&
-            value !== null &&
-            !isToken(existing);
-
-        result[key] = shouldMerge
-            ? deepMerge(existing as TokenGroup, value as TokenGroup)
-            : (value as TokenGroup[typeof key]);
-    }
-
-    return result;
-}
-
 export function isPrivate(node: unknown): boolean {
     if (!node || typeof node !== "object") return false;
     const ext = (node as { $extensions?: unknown }).$extensions;
