@@ -1,5 +1,5 @@
 import type { TokenGroup } from "../types/dtcg.js";
-import type { TokenSources } from "../types/load.js";
+import type { SourceRef, TokenSources } from "../types/load.js";
 import type { TokenTree } from "../types/tokens.js";
 import { ErrorMessages } from "./constants/error-messages.js";
 import { isGroup, isToken } from "./guards.js";
@@ -93,52 +93,75 @@ export type Composed = {
 export function composeTrees(sources: TokenSources): Composed {
     const trees: TokenTree[] = [];
     const errors: ComposeError[] = [];
-    const parsed = new Map<string, unknown>();
+    const read = sourceReader(sources, errors);
 
     for (const { context, sources: refs } of sources.order) {
         let tokens: TokenGroup = {};
 
-        for (const { file, pointer } of refs) {
-            const text = sources.files[file];
-            if (text === undefined) {
-                errors.push({ path: file, message: ErrorMessages.LOAD.NO_SOURCE_TEXT(file) });
-                continue;
-            }
-
-            let content = parsed.get(file);
-            if (content === undefined) {
-                try {
-                    content = JSON.parse(text);
-                    parsed.set(file, content);
-                } catch (error) {
-                    errors.push({
-                        path: file,
-                        message: error instanceof Error ? error.message : String(error),
-                    });
-                    continue;
-                }
-            }
-
-            let group = content;
-            if (pointer !== undefined) {
-                const found = resolveJsonPointer(content, pointer);
-                if (found.error !== undefined) {
-                    errors.push({
-                        path: file,
-                        message: ErrorMessages.LOAD.POINTER_NOT_FOUND(file, pointer, found.error),
-                    });
-                    continue;
-                }
-                group = found.value;
-            }
-
-            tokens = deepMerge(tokens, stampSourcePath(group as TokenGroup, file));
+        for (const ref of refs) {
+            const group = read(ref);
+            if (group === undefined) continue;
+            tokens = deepMerge(tokens, stampSourcePath(group, ref.file));
         }
 
-        if (Object.keys(tokens).length === 0) continue;
-
-        trees.push({ context, tokens, sourcePath: refs[0]?.file ?? "" });
+        if (Object.keys(tokens).length > 0) {
+            trees.push({ context, tokens, sourcePath: refs[0]?.file ?? "" });
+        }
     }
 
     return { trees, errors };
+}
+
+/**
+ * Reads one source out of the files: the whole file, or the section its
+ * pointer names. Every source is read once and every failure reported once,
+ * however many contexts list it.
+ */
+function sourceReader(
+    sources: TokenSources,
+    errors: ComposeError[],
+): (ref: SourceRef) => TokenGroup | undefined {
+    const contents = new Map<string, unknown>();
+    const groups = new Map<string, TokenGroup | undefined>();
+
+    const contentOf = (file: string): unknown => {
+        if (!contents.has(file)) contents.set(file, parse(file, sources.files[file], errors));
+        return contents.get(file);
+    };
+
+    const groupOf = ({ file, pointer }: SourceRef): TokenGroup | undefined => {
+        const content = contentOf(file);
+        if (content === undefined) return undefined;
+        if (pointer === undefined) return content as TokenGroup;
+
+        const found = resolveJsonPointer(content, pointer);
+        if (found.error === undefined) return found.value as TokenGroup;
+        errors.push({
+            path: file,
+            message: ErrorMessages.LOAD.POINTER_NOT_FOUND(file, pointer, found.error),
+        });
+        return undefined;
+    };
+
+    return (ref) => {
+        const key = ref.pointer === undefined ? ref.file : `${ref.file}#${ref.pointer}`;
+        if (!groups.has(key)) groups.set(key, groupOf(ref));
+        return groups.get(key);
+    };
+}
+
+function parse(file: string, text: string | undefined, errors: ComposeError[]): unknown {
+    if (text === undefined) {
+        errors.push({ path: file, message: ErrorMessages.LOAD.NO_SOURCE_TEXT(file) });
+        return undefined;
+    }
+    try {
+        return JSON.parse(text);
+    } catch (cause) {
+        errors.push({
+            path: file,
+            message: cause instanceof Error ? cause.message : String(cause),
+        });
+        return undefined;
+    }
 }

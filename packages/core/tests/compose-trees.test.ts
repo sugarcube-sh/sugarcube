@@ -114,6 +114,20 @@ describe("composeTrees reaches the document the resolver path does", () => {
         expect(errors.map((each) => each.path)).toEqual(["missing.json", "a.json"]);
     });
 
+    it("reports a file that does not parse once, however many contexts list it", () => {
+        const { trees, errors } = composeTrees({
+            files: { "broken.json": "{ not json" },
+            order: [
+                { context: "perm:0", sources: [{ file: "broken.json" }] },
+                { context: "perm:1", sources: [{ file: "broken.json" }] },
+            ],
+        });
+
+        expect(trees).toEqual([]);
+        expect(errors).toHaveLength(1);
+        expect(errors[0]?.path).toBe("broken.json");
+    });
+
     it("composes no tree for a context whose files hold no tokens", () => {
         const { trees } = composeTrees({
             files: { "empty.json": "{}" },
