@@ -52,7 +52,8 @@ describe("scaleRows", () => {
 
         expect(rows.map((r) => r.label)).toEqual(["Ratio", "Base"]);
         expect(rows.map((r) => r.key)).toEqual(["size.step.*:ratio", "size.step.*:base"]);
-        expect(rows.map((r) => r.controls[0]?.editor)).toEqual(["range", "number"]);
+        expect(rows.map((r) => r.controls[0]?.editor)).toEqual(["range", "range"]);
+        expect(rows.map((r) => r.controls.length)).toEqual([2, 2]);
     });
 
     it("keeps the ratio slider's bounds and its toFixed(2) announcement", () => {
@@ -62,13 +63,24 @@ describe("scaleRows", () => {
         expect(formatOf(ratio!, 1.2345)).toBe("1.23");
     });
 
-    it("produces only base for a multipliers scale, announcing the unit", () => {
-        const rows = scaleRows(BINDING, ctxWith(makeScale({ mode: "multipliers" })));
+    it("gives base and ratio a slider each for min and max", () => {
+        const rows = scaleRows(BINDING, ctxWith(makeScale()));
 
-        expect(rows.map((r) => r.label)).toEqual(["Base"]);
-        expect(rows[0]?.controls[0]?.editor).toBe("range");
-        expect(rows[0]?.controls[0]?.props).toMatchObject({ min: 0.5, max: 2, step: 0.05 });
+        for (const row of rows) {
+            expect(row.controls).toHaveLength(2);
+            expect(row.controls.map((c) => c.editor)).toEqual(["range", "range"]);
+        }
+    });
+
+    it("gives a multipliers scale its base and every multiplier", () => {
+        const rows = scaleRows(
+            BINDING,
+            ctxWith(makeScale({ mode: "multipliers", multipliers: { sm: 0.5, md: 1, lg: 2 } })),
+        );
+
+        expect(rows.map((r) => r.label)).toEqual(["Base", "sm", "md", "lg"]);
         expect(formatOf(rows[0]!, 1.5)).toBe("1.5rem");
+        expect(formatOf(rows[1]!, 0.5)).toBe("\u00d70.5");
     });
 
     it("produces no rows when a direct scale has nothing captured", () => {
@@ -76,10 +88,14 @@ describe("scaleRows", () => {
         expect(scaleRows(withoutBase, ctxWith(null))).toEqual([]);
     });
 
-    it("gives every row a fixed, single-control shape", () => {
-        for (const scale of [makeScale(), makeScale({ mode: "multipliers" })]) {
+    it("gives every row a control count that cannot change under it", () => {
+        for (const scale of [
+            makeScale(),
+            makeScale({ mode: "multipliers", multipliers: { sm: 0.5, md: 1 } }),
+        ]) {
             for (const row of scaleRows(BINDING, ctxWith(scale))) {
-                expect(row.controls).toHaveLength(1);
+                expect(row.controls.length).toBeGreaterThan(0);
+                expect(row.controls.length).toBeLessThanOrEqual(2);
             }
         }
     });

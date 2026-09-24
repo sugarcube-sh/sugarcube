@@ -1,0 +1,46 @@
+{
+  "color": {
+    "$type": "color",
+    "$description": "Dark context. Only roles move — the ramps are the same material, read from the other end.",
+    "text": {
+      "default": { "$value": "{color.neutral.50}" },
+      "muted": { "$value": "{color.neutral.400}" },
+      "subtle": { "$value": "{color.neutral.500}" },
+      "brand": { "$value": "{color.brand.300}" },
+      "onBrand": { "$value": "{color.brand.900}" }
+    },
+    "surface": {
+      "default": { "$value": "{color.neutral.900}" },
+      "raised": { "$value": "{color.neutral.800}" },
+      "sunken": { "$value": "{color.neutral.900}" },
+      "brand": { "$value": "{color.brand.400}" }
+    },
+    "border": {
+      "default": { "$value": "{color.neutral.700}" },
+      "strong": { "$value": "{color.neutral.600}" },
+      "brand": { "$value": "{color.brand.400}" }
+    }
+  },
+  "shadow": {
+    "$type": "shadow",
+    "$description": "Dark needs deeper, more opaque elevation. Overriding a composite replaces the whole object, which is what makes it worth having one here.",
+    "raised": {
+      "$value": [
+        {
+          "color": "#00000066",
+          "offsetX": { "value": 0, "unit": "px" },
+          "offsetY": { "value": 2, "unit": "px" },
+          "blur": { "value": 4, "unit": "px" },
+          "spread": { "value": 0, "unit": "px" }
+        },
+        {
+          "color": "#0000004d",
+          "offsetX": { "value": 0, "unit": "px" },
+          "offsetY": { "value": 12, "unit": "px" },
+          "blur": { "value": 24, "unit": "px" },
+          "spread": { "value": -6, "unit": "px" }
+        }
+      ]
+    }
+  }
+}

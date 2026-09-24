@@ -8,7 +8,14 @@ export type ScaleEdit =
     | { kind: "tokens"; base?: number; spread?: number; overrides?: StepOverrides }
     | { kind: "scale"; scale: ScaleExtension };
 
-export type ScaleEditField = "ratio" | "base" | "spread";
+export type ScaleEditField =
+    | "base"
+    | "baseMin"
+    | "baseMax"
+    | "ratioMin"
+    | "ratioMax"
+    | "spread"
+    | { multiplier: string };
 
 export type LinkEdit = { enabled: boolean };
 

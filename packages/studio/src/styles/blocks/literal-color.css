@@ -1,0 +1,45 @@
+.literal-color-input {
+    display: flex;
+    align-items: center;
+    gap: var(--space-050, 4px);
+    inline-size: 100%;
+}
+
+.literal-color-input::part(trigger) {
+    flex-shrink: 0;
+    padding: 2px;
+    border: solid 1px transparent;
+    border-radius: 6px;
+    background: transparent;
+}
+
+.literal-color-input::part(trigger):hover {
+    background-color: var(--color-component-hover);
+}
+
+.literal-color-input::part(chip) {
+    border-radius: 4px;
+}
+
+.literal-color-input::part(input) {
+    inline-size: 100%;
+    padding-inline: 4px;
+    padding-block: 4.5px;
+    border-radius: 8px;
+    border: solid 1px transparent;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+.literal-color-input::part(input):hover {
+    background-color: var(--color-component-hover);
+}
+
+.literal-color-input::part(trigger):focus-visible,
+.literal-color-input::part(input):focus-visible {
+    outline: none;
+    border: solid 1px var(--color-component-modified);
+    background-color: transparent;
+    box-shadow: 0 0 0 2px var(--color-component-modified-light);
+}

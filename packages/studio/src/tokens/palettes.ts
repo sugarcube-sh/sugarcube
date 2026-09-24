@@ -1,7 +1,8 @@
 import type { ColorScaleConfig, ResolvedTokens } from "@sugarcube-sh/core/client";
-import { convertColorToString } from "@sugarcube-sh/core/client";
 import type { PathIndex } from "./path-index";
-import { lastSegment, resolveTerminalPath } from "./paths";
+import { cssColorFor } from "./color-value";
+import { lastSegment, parentPath, stepLabel } from "./paths";
+import { isAlias } from "./sections";
 
 export type DiscoveredStep = {
     step: string;
@@ -35,12 +36,33 @@ export type PaletteRamp = {
 };
 
 function paintedColor(path: string, ctx: PaletteRampContext): string | undefined {
-    const read = (p: string) => ctx.pathIndex.readValue(ctx.resolved, p, ctx.context);
-    const value = read(resolveTerminalPath(path, read));
-    if (value === undefined || value === null) return undefined;
+    return cssColorFor(path, (p) => ctx.pathIndex.readValue(ctx.resolved, p, ctx.context));
+}
 
-    const result = convertColorToString(value as Parameters<typeof convertColorToString>[0]);
-    return result.success ? result.value : undefined;
+export function documentRamps(ctx: PaletteRampContext): PaletteRamp[] {
+    const byParent = new Map<string, string[]>();
+
+    for (const [path] of ctx.pathIndex.entries()) {
+        const parent = parentPath(path);
+        if (!parent) continue;
+
+        const token = ctx.pathIndex.readToken(ctx.resolved, path, ctx.context);
+        if (!token || token.$type !== "color" || isAlias(token)) continue;
+
+        const siblings = byParent.get(parent);
+        if (siblings) siblings.push(path);
+        else byParent.set(parent, [path]);
+    }
+
+    return Array.from(byParent, ([parent, paths]) => ({
+        path: parent,
+        name: parent,
+        steps: paths.map((path) => ({
+            step: stepLabel(path),
+            value: path,
+            css: paintedColor(path, ctx),
+        })),
+    }));
 }
 
 export function paletteRamps(

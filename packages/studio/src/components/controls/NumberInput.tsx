@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useFieldRow } from "../../shell/Field";
+import { useFieldRow } from "../../inspector/Field";
 
 type NumberInputProps = {
     "value": number | undefined;
@@ -58,6 +58,15 @@ function NumberInput({
         if (next !== value) onChange(next);
     }
 
+    function change(raw: string) {
+        setText(raw);
+        const parsed = Number.parseFloat(raw);
+        if (Number.isNaN(parsed)) return;
+        const next = clamp(parsed, min, max);
+        if (String(next) !== raw.trim()) return;
+        if (next !== value) onChange(next);
+    }
+
     return (
         <div data-slot="number-input" className="number-input">
             <input
@@ -70,7 +79,7 @@ function NumberInput({
                 max={max}
                 step={step}
                 disabled={disabled}
-                onChange={(event) => setText(event.target.value)}
+                onChange={(event) => change(event.target.value)}
                 onFocus={() => setEditing(true)}
                 onBlur={() => {
                     setEditing(false);

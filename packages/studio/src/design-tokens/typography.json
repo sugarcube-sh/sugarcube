@@ -38,19 +38,19 @@
     "$type": "dimension",
     "xs": {
       "$value": {
-        "value": 10,
+        "value": 12,
         "unit": "px"
       }
     },
     "sm": {
       "$value": {
-        "value": 12,
+        "value": 14,
         "unit": "px"
       }
     },
     "base": {
       "$value": {
-        "value": 15,
+        "value": 16,
         "unit": "px"
       }
     }

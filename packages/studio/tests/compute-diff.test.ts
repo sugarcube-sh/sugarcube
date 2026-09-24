@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ScaleBindingMeta, ScaleEdit } from "../src/store/scale-types";
 import { computeDiff } from "../src/tokens/compute-diff";
 import { PathIndex } from "../src/tokens/path-index";
-import { resolved, snapshot, tree } from "./fixtures";
+import { groups, resolved, snapshot, tree } from "./fixtures";
 
 const sizeBindingMeta: ScaleBindingMeta = {
     binding: { type: "scale", token: "size.step.*", base: "size.step.0" },
@@ -28,7 +28,9 @@ describe("computeDiff", () => {
         const baseline = snapshot({ resolved: baselineMap });
         const pathIndex = new PathIndex(baselineMap);
 
-        expect(computeDiff(baselineMap, baseline, pathIndex)).toEqual([]);
+        expect(
+            computeDiff({ resolved: baselineMap, baseline: baseline, index: pathIndex }),
+        ).toEqual([]);
     });
 
     it("emits a single leaf entry for a per-token change with the exact expected shape", () => {
@@ -37,11 +39,14 @@ describe("computeDiff", () => {
         const baseline = snapshot({ resolved: baselineMap });
         const pathIndex = new PathIndex(baselineMap);
 
-        const diff = computeDiff(current, baseline, pathIndex);
+        const diff = computeDiff({ resolved: current, baseline: baseline, index: pathIndex });
 
         expect(diff).toEqual([
             {
+                kind: "changed",
+                handle: "color.bg",
                 path: "color.bg",
+                basePath: "color.bg",
                 sourcePath: "tokens.json",
                 contexts: [],
                 from: { $value: "#fff" },
@@ -62,7 +67,7 @@ describe("computeDiff", () => {
         const baseline = snapshot({ resolved: baselineMap });
         const pathIndex = new PathIndex(baselineMap);
 
-        const diff = computeDiff(current, baseline, pathIndex);
+        const diff = computeDiff({ resolved: current, baseline: baseline, index: pathIndex });
         expect(diff).toHaveLength(1);
         expect(diff[0]?.contexts).toEqual([]);
     });
@@ -76,7 +81,9 @@ describe("computeDiff", () => {
         const baseline = snapshot({ resolved: baselineMap });
         const pathIndex = new PathIndex(indexedFromOlderMap);
 
-        expect(computeDiff(baselineMap, baseline, pathIndex)).toEqual([]);
+        expect(
+            computeDiff({ resolved: baselineMap, baseline: baseline, index: pathIndex }),
+        ).toEqual([]);
     });
 
     it("keeps contexts populated when only some permutations changed", () => {
@@ -91,7 +98,7 @@ describe("computeDiff", () => {
         const baseline = snapshot({ resolved: baselineMap });
         const pathIndex = new PathIndex(baselineMap);
 
-        const diff = computeDiff(current, baseline, pathIndex);
+        const diff = computeDiff({ resolved: current, baseline: baseline, index: pathIndex });
         expect(diff).toHaveLength(1);
         expect(diff[0]?.contexts).toEqual(["light"]);
     });
@@ -121,7 +128,12 @@ describe("computeDiff", () => {
             });
             const pathIndex = new PathIndex(baselineMap);
 
-            const diff = computeDiff(baselineMap, baseline, pathIndex, edits, bindings);
+            const diff = computeDiff({
+                resolved: baselineMap,
+                baseline: baseline,
+                index: pathIndex,
+                scale: { edits: edits, bindings: bindings },
+            });
             expect(diff).toHaveLength(1);
             expect(diff[0]).toMatchObject({
                 path: "size.step",
@@ -151,7 +163,12 @@ describe("computeDiff", () => {
             });
             const pathIndex = new PathIndex(baselineMap);
 
-            const diff = computeDiff(overlaidLeaves, baseline, pathIndex, edits, bindings);
+            const diff = computeDiff({
+                resolved: overlaidLeaves,
+                baseline: baseline,
+                index: pathIndex,
+                scale: { edits: edits, bindings: bindings },
+            });
             expect(diff).toHaveLength(1);
             expect(diff[0]?.path).toBe("size.step");
         });
@@ -169,7 +186,14 @@ describe("computeDiff", () => {
             });
             const pathIndex = new PathIndex(baselineMap);
 
-            expect(computeDiff(baselineMap, baseline, pathIndex, {}, bindings)).toEqual([]);
+            expect(
+                computeDiff({
+                    resolved: baselineMap,
+                    baseline: baseline,
+                    index: pathIndex,
+                    scale: { edits: {}, bindings: bindings },
+                }),
+            ).toEqual([]);
         });
 
         it("emits no entry when the edit deeply equals the on-disk scale", () => {
@@ -189,9 +213,119 @@ describe("computeDiff", () => {
                 "size.step.*": { kind: "scale", scale: r },
             };
 
-            expect(computeDiff(baselineMap, baseline, pathIndex, editsEqualDisk, bindings)).toEqual(
-                [],
-            );
+            expect(
+                computeDiff({
+                    resolved: baselineMap,
+                    baseline: baseline,
+                    index: pathIndex,
+                    scale: { edits: editsEqualDisk, bindings: bindings },
+                }),
+            ).toEqual([]);
         });
+    });
+
+    describe("group descriptions", () => {
+        const baselineMap = {
+            ...resolved({ path: "color.text.muted", value: "#666" }),
+            ...groups({ path: "color.text", description: "Foreground roles" }),
+        };
+
+        it("emits an entry when a group's description changes", () => {
+            const current = {
+                ...resolved({ path: "color.text.muted", value: "#666" }),
+                ...groups({ path: "color.text", description: "Text colours" }),
+            };
+            const baseline = snapshot({ resolved: baselineMap });
+
+            expect(
+                computeDiff({
+                    resolved: current,
+                    baseline: baseline,
+                    index: new PathIndex(baselineMap),
+                }),
+            ).toEqual([
+                {
+                    kind: "changed",
+                    handle: "color.text",
+                    path: "color.text",
+                    basePath: "color.text",
+                    sourcePath: "tokens.json",
+                    contexts: [],
+                    from: { $description: "Foreground roles" },
+                    to: { $description: "Text colours" },
+                },
+            ]);
+        });
+
+        it("emits an entry when a group gains a description it never had", () => {
+            const bare = {
+                ...resolved({ path: "color.text.muted", value: "#666" }),
+                ...groups({ path: "color.text" }),
+            };
+            const current = {
+                ...resolved({ path: "color.text.muted", value: "#666" }),
+                ...groups({ path: "color.text", description: "Added" }),
+            };
+
+            const diff = computeDiff({
+                resolved: current,
+                baseline: snapshot({ resolved: bare }),
+                index: new PathIndex(bare),
+            });
+
+            expect(diff).toEqual([
+                {
+                    kind: "changed",
+                    handle: "color.text",
+                    path: "color.text",
+                    basePath: "color.text",
+                    sourcePath: "tokens.json",
+                    contexts: [],
+                    from: { $description: undefined },
+                    to: { $description: "Added" },
+                },
+            ]);
+        });
+
+        it("emits nothing when the group description is untouched", () => {
+            const baseline = snapshot({ resolved: baselineMap });
+            expect(
+                computeDiff({
+                    resolved: baselineMap,
+                    baseline: baseline,
+                    index: new PathIndex(baselineMap),
+                }),
+            ).toEqual([]);
+        });
+    });
+
+    it("reports a description edit on a renamed group at its current path", () => {
+        const before = {
+            ...groups({ path: "color", description: "Old" }),
+            ...resolved({ path: "color.bg", value: "#fff" }),
+        };
+        const after = {
+            ...groups({ path: "palette", description: "New" }),
+            ...resolved({ path: "palette.bg", value: "#fff" }),
+        };
+        const moved: Record<string, string> = { "palette": "color", "palette.bg": "color.bg" };
+
+        const diff = computeDiff({
+            resolved: after,
+            baseline: snapshot({ resolved: before }),
+            index: new PathIndex(after, (path) => moved[path] ?? path),
+            baselineIndex: new PathIndex(before),
+        });
+
+        expect(diff).toContainEqual(
+            expect.objectContaining({
+                kind: "changed",
+                handle: "color",
+                path: "palette",
+                basePath: "color",
+                from: { $description: "Old" },
+                to: { $description: "New" },
+            }),
+        );
     });
 });

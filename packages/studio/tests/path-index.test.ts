@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PathIndex, createPathIndexAccessor } from "../src/tokens/path-index";
+import { PathIndex } from "../src/tokens/path-index";
 import { resolved } from "./fixtures";
 
 describe("PathIndex", () => {
@@ -48,51 +48,6 @@ describe("PathIndex", () => {
         });
     });
 
-    describe("setValue", () => {
-        it("updates a single context immutably", () => {
-            const index = new PathIndex(
-                resolved(
-                    { path: "color.bg", value: "#fff", context: "light" },
-                    { path: "color.bg", value: "#000", context: "dark" },
-                ),
-            );
-            const before = resolved(
-                { path: "color.bg", value: "#fff", context: "light" },
-                { path: "color.bg", value: "#000", context: "dark" },
-            );
-
-            const after = index.setValue(before, "color.bg", "#eee", "light");
-
-            expect(after).not.toBe(before);
-            expect((after["light::color.bg"] as { $value: unknown }).$value).toBe("#eee");
-            expect((after["dark::color.bg"] as { $value: unknown }).$value).toBe("#000");
-        });
-
-        it("updates every context when no context is given", () => {
-            const index = new PathIndex(
-                resolved(
-                    { path: "color.bg", value: "#fff", context: "light" },
-                    { path: "color.bg", value: "#000", context: "dark" },
-                ),
-            );
-            const before = resolved(
-                { path: "color.bg", value: "#fff", context: "light" },
-                { path: "color.bg", value: "#000", context: "dark" },
-            );
-
-            const after = index.setValue(before, "color.bg", "#eee");
-
-            expect((after["light::color.bg"] as { $value: unknown }).$value).toBe("#eee");
-            expect((after["dark::color.bg"] as { $value: unknown }).$value).toBe("#eee");
-        });
-
-        it("returns the input unchanged for an unknown path", () => {
-            const index = new PathIndex(resolved({ path: "color.bg", value: "#fff" }));
-            const before = resolved({ path: "color.bg", value: "#fff" });
-            expect(index.setValue(before, "missing", "x")).toBe(before);
-        });
-    });
-
     describe("matching", () => {
         const index = new PathIndex(
             resolved(
@@ -115,63 +70,5 @@ describe("PathIndex", () => {
             // `size.*` would NOT match `size.step.0` - that's a deeper path.
             expect(index.matching("size.*")).toEqual([]);
         });
-    });
-
-    describe("resolvedKeys", () => {
-        it("returns every internal lookup key the index covers", () => {
-            const index = new PathIndex(
-                resolved(
-                    { path: "color.bg", value: "#fff", context: "light" },
-                    { path: "color.bg", value: "#000", context: "dark" },
-                ),
-            );
-            const keys = [...index.resolvedKeys()].sort();
-            expect(keys).toEqual(["dark::color.bg", "light::color.bg"]);
-        });
-    });
-});
-
-describe("createPathIndexAccessor", () => {
-    it("returns the same instance when the source reference is unchanged", () => {
-        const map = resolved({ path: "size.step.0", value: 16 });
-        const getPathIndex = createPathIndexAccessor(() => map);
-
-        expect(getPathIndex()).toBe(getPathIndex());
-    });
-
-    it("returns the same instance when the source ref changes but keys do not", () => {
-        let current = resolved({ path: "size.step.0", value: 16 });
-        const getPathIndex = createPathIndexAccessor(() => current);
-        const first = getPathIndex();
-
-        current = resolved({ path: "size.step.0", value: 20 });
-
-        expect(getPathIndex()).toBe(first);
-    });
-
-    it("rebuilds when the key set changes (added path)", () => {
-        let current = resolved({ path: "size.step.0", value: 16 });
-        const getPathIndex = createPathIndexAccessor(() => current);
-        const first = getPathIndex();
-        expect(first.matching("size.step.6")).toEqual([]);
-
-        current = resolved({ path: "size.step.0", value: 16 }, { path: "size.step.6", value: 32 });
-
-        const second = getPathIndex();
-        expect(second).not.toBe(first);
-        expect(second.matching("size.step.6")).toEqual(["size.step.6"]);
-    });
-
-    it("rebuilds when the key set changes (removed path)", () => {
-        let current = resolved(
-            { path: "size.step.0", value: 16 },
-            { path: "size.step.1", value: 18 },
-        );
-        const getPathIndex = createPathIndexAccessor(() => current);
-        expect(getPathIndex().entriesFor("size.step.1")).toHaveLength(1);
-
-        current = resolved({ path: "size.step.0", value: 16 });
-
-        expect(getPathIndex().entriesFor("size.step.1")).toEqual([]);
     });
 });

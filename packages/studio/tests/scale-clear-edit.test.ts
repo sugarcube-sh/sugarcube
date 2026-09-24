@@ -5,14 +5,13 @@ import {
     isResolvedToken,
 } from "@sugarcube-sh/core/client";
 import { describe, expect, it } from "vitest";
-import { createStore } from "zustand";
 import { createStore as createVanillaStore } from "zustand/vanilla";
-import type { TokenStoreState } from "../src/store/create-token-store";
 import { createScaleState, selectScaleFieldEdited } from "../src/store/scale-state";
 import { computeDiff } from "../src/tokens/compute-diff";
 import { PathIndex } from "../src/tokens/path-index";
 import type { TokenSnapshot } from "../src/tokens/types";
 import { resolved, snapshot, tree } from "./fixtures";
+import { stubTokenStore } from "./text-sources";
 
 const TOKEN = "size.step.*";
 
@@ -43,20 +42,7 @@ function setup() {
     ];
     const pathIndex = new PathIndex(initial.resolved);
 
-    const tokenStore = createStore<TokenStoreState>(() => ({
-        resolved: initial.resolved,
-        css: null,
-        isComputing: false,
-        error: null,
-        lastRunMs: null,
-        currentContext: "default",
-        setCurrentContext: () => {},
-        getToken: () => undefined,
-        setToken: () => {},
-        setTokens: () => {},
-        resetToken: () => {},
-        discard: async () => {},
-    }));
+    const tokenStore = stubTokenStore(initial.resolved);
 
     const baseline = createVanillaStore<TokenSnapshot>(() => initial);
 
@@ -74,7 +60,7 @@ function setup() {
 }
 
 describe("createScaleState - clearEditField", () => {
-    const edited = (store: ReturnType<typeof setup>["store"], field: "ratio" | "base") => {
+    const edited = (store: ReturnType<typeof setup>["store"], field: "ratioMax" | "base") => {
         const edit = store.getState().edits[TOKEN];
         const effective = edit?.kind === "scale" ? edit.scale : makeScale();
         return selectScaleFieldEdited(effective, makeScale(), field);
@@ -88,12 +74,12 @@ describe("createScaleState - clearEditField", () => {
             ...s,
             base: { min: { value: 2, unit: "rem" }, max: { value: 2, unit: "rem" } },
         }));
-        expect(edited(store, "ratio")).toBe(true);
+        expect(edited(store, "ratioMax")).toBe(true);
         expect(edited(store, "base")).toBe(true);
 
-        store.getState().clearEditField(TOKEN, "ratio");
+        store.getState().clearEditField(TOKEN, "ratioMax");
 
-        expect(edited(store, "ratio")).toBe(false);
+        expect(edited(store, "ratioMax")).toBe(false);
         expect(edited(store, "base")).toBe(true);
     });
 
@@ -103,7 +89,7 @@ describe("createScaleState - clearEditField", () => {
         store.getState().updateScale(TOKEN, (s) => ({ ...s, ratio: { min: 1.5, max: 1.5 } }));
         const afterEdit = writes.length;
 
-        store.getState().clearEditField(TOKEN, "ratio");
+        store.getState().clearEditField(TOKEN, "ratioMax");
 
         expect(writes.length).toBe(afterEdit + 1);
     });
@@ -114,7 +100,7 @@ describe("createScaleState - clearEditField", () => {
         store.getState().updateScale(TOKEN, (s) => ({ ...s, ratio: { min: 1.5, max: 1.5 } }));
 
         expect(store.getState().edits[TOKEN]).toBeDefined();
-        expect(edited(store, "ratio")).toBe(true);
+        expect(edited(store, "ratioMax")).toBe(true);
         expect(edited(store, "base")).toBe(false);
     });
 
@@ -133,15 +119,26 @@ describe("createScaleState - clearEditField", () => {
         store.getState().updateScale(TOKEN, (s) => ({ ...s, ratio: { min: 1.5, max: 1.5 } }));
         const { edits: dirty, bindings } = store.getState();
         expect(
-            computeDiff(baselineSnapshot.resolved, baselineSnapshot, pathIndex, dirty, bindings),
+            computeDiff({
+                resolved: baselineSnapshot.resolved,
+                baseline: baselineSnapshot,
+                index: pathIndex,
+                scale: { edits: dirty, bindings },
+            }),
         ).not.toHaveLength(0);
 
-        store.getState().clearEditField(TOKEN, "ratio");
+        store.getState().clearEditField(TOKEN, "ratioMin");
+        store.getState().clearEditField(TOKEN, "ratioMax");
 
         const { edits: restored } = store.getState();
         expect(restored[TOKEN]).toBeDefined(); // the entry lingers …
         expect(
-            computeDiff(baselineSnapshot.resolved, baselineSnapshot, pathIndex, restored, bindings),
+            computeDiff({
+                resolved: baselineSnapshot.resolved,
+                baseline: baselineSnapshot,
+                index: pathIndex,
+                scale: { edits: restored, bindings },
+            }),
         ).toHaveLength(0); // … but nothing reports it as a change
     });
 
@@ -169,20 +166,7 @@ function setupDirect() {
     ];
     const pathIndex = new PathIndex(initial.resolved);
 
-    const tokenStore = createStore<TokenStoreState>(() => ({
-        resolved: initial.resolved,
-        css: null,
-        isComputing: false,
-        error: null,
-        lastRunMs: null,
-        currentContext: "default",
-        setCurrentContext: () => {},
-        getToken: () => undefined,
-        setToken: () => {},
-        setTokens: () => {},
-        resetToken: () => {},
-        discard: async () => {},
-    }));
+    const tokenStore = stubTokenStore(initial.resolved);
 
     const baseline = createVanillaStore<TokenSnapshot>(() => initial);
 

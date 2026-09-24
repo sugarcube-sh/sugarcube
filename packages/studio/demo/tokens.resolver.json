@@ -1,0 +1,30 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/resolver.json",
+  "version": "2025.10",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        { "$ref": "./color.json" },
+        { "$ref": "./typography.json" },
+        { "$ref": "./space.json" },
+        { "$ref": "./size.json" },
+        { "$ref": "./radius.json" },
+        { "$ref": "./motion.json" },
+        { "$ref": "./border.json" },
+        { "$ref": "./shadow.json" },
+        { "$ref": "./gradient.json" }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "mode",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [{ "$ref": "./dark.json" }]
+      }
+    }
+  ]
+}

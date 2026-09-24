@@ -1,0 +1,62 @@
+.breadcrumb-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-100);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--color-text-quiet);
+    overflow-wrap: break-word;
+}
+
+.breadcrumb-item {
+    display: inline-flex;
+    align-items: center;
+}
+
+.breadcrumb-link {
+    color: inherit;
+    text-decoration: none;
+    border-radius: var(--radius-050);
+    transition: color var(--transition-fast, 120ms) var(--ease-out, ease-out);
+}
+
+.breadcrumb-link:hover {
+    color: var(--color-text-primary);
+}
+
+.breadcrumb-page {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-normal);
+}
+
+.breadcrumb-separator {
+    display: inline-flex;
+    align-items: center;
+    user-select: none;
+}
+
+.breadcrumb-separator .icon {
+    --icon-size: 0.75rem;
+    color: currentColor;
+}
+
+.breadcrumb-separator:dir(rtl) .icon {
+    scale: -1 1;
+}
+
+.breadcrumb-ellipsis {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .breadcrumb-link {
+        transition: none;
+    }
+}

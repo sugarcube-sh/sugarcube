@@ -1,0 +1,71 @@
+{
+  "typography": {
+    "$description": "Everything to do with setting text. Nested deliberately, so the sidebar has one group with real depth in it.",
+    "font": {
+      "$type": "fontFamily",
+      "$description": "Two families: one for reading, one for code.",
+      "body": { "$value": ["Inter", "system-ui", "sans-serif"] },
+      "mono": { "$value": ["JetBrains Mono", "ui-monospace", "monospace"] },
+      "system": {
+        "$description": "The single-string form the spec also allows, which holds one name. Which form was authored has to survive an edit, so both are here.",
+        "$value": "system-ui"
+      }
+    },
+    "text": {
+      "$type": "dimension",
+      "$description": "Type sizes, bound to the sizing scale so they move with it rather than drifting from it.",
+      "$extensions": { "sh.sugarcube": { "measures": "font-size" } },
+      "sm": { "$value": "{size.step.-1}" },
+      "base": { "$value": "{size.step.0}" },
+      "lg": { "$value": "{size.step.1}" },
+      "xl": { "$value": "{size.step.2}" },
+      "2xl": { "$value": "{size.step.3}" },
+      "3xl": { "$value": "{size.step.4}" }
+    },
+    "leading": {
+      "$type": "number",
+      "$description": "Line height. Tighter as type gets larger.",
+      "tight": { "$value": 1.15 },
+      "normal": { "$value": 1.5 },
+      "relaxed": { "$value": 1.7 }
+    },
+    "weight": {
+      "$type": "fontWeight",
+      "$description": "Weights in both forms the spec allows — a number and a keyword — because which one was authored has to survive an edit.",
+      "regular": { "$value": 400 },
+      "medium": { "$value": 500 },
+      "semibold": { "$value": "semi-bold" },
+      "bold": { "$value": "bold" }
+    },
+    "style": {
+      "$type": "typography",
+      "$description": "The composite. Every sub-field is itself a typed value, and most of them are optional — so this is the shape a single text box cannot hold.",
+      "body": {
+        "$description": "All five sub-fields, each one a reference.",
+        "$value": {
+          "fontFamily": "{typography.font.body}",
+          "fontSize": "{typography.text.base}",
+          "fontWeight": "{typography.weight.regular}",
+          "lineHeight": "{typography.leading.normal}",
+          "letterSpacing": { "value": 0, "unit": "rem" }
+        }
+      },
+      "heading": {
+        "$description": "The minimum the spec requires: family and size, nothing else. Adding a weight here is a create, not an edit.",
+        "$value": {
+          "fontFamily": "{typography.font.body}",
+          "fontSize": "{typography.text.3xl}"
+        }
+      },
+      "code": {
+        "$description": "Literal sub-values rather than references, so both authoring styles are present.",
+        "$value": {
+          "fontFamily": ["JetBrains Mono", "ui-monospace", "monospace"],
+          "fontSize": { "value": 0.875, "unit": "rem" },
+          "fontWeight": 400,
+          "lineHeight": 1.6
+        }
+      }
+    }
+  }
+}

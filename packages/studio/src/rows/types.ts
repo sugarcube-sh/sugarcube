@@ -1,10 +1,13 @@
 import type { ColorScaleConfig, ResolvedTokens } from "@sugarcube-sh/core/client";
 import type { ComponentProps } from "react";
 import type { ColorPicker } from "../components/controls/ColorPicker";
+import type { LiteralColorInput } from "../components/controls/LiteralColorInput";
 import type { NumberInput } from "../components/controls/NumberInput";
 import type { Picker } from "../components/controls/Picker";
 import type { SliderField } from "../components/controls/SliderField";
 import type { Switch } from "../components/controls/Switch";
+import type { TextInput } from "../components/controls/TextInput";
+import type { LiteralColor } from "../tokens/color-shape";
 import type { ColorValue } from "../tokens/color-value";
 import type { PathIndex } from "../tokens/path-index";
 import type { TokenSnapshot } from "../tokens/types";
@@ -34,7 +37,14 @@ export type Adapter<T> = () => ControlState<T>;
 /**
  * The controls FieldRenderer can render.
  */
-export type EditorName = "color" | "picker" | "number" | "range" | "switch";
+export type EditorName =
+    | "color"
+    | "literal-color"
+    | "picker"
+    | "number"
+    | "range"
+    | "switch"
+    | "text";
 
 /**
  * The props FieldRenderer derives from the adapter.
@@ -68,9 +78,19 @@ export type Control =
           use: Adapter<ColorValue>;
       }
     | {
+          editor: "literal-color";
+          props: RowProps<ComponentProps<typeof LiteralColorInput>>;
+          use: Adapter<LiteralColor>;
+      }
+    | {
           editor: "switch";
           props: RowProps<ComponentProps<typeof Switch>>;
           use: Adapter<boolean>;
+      }
+    | {
+          editor: "text";
+          props: RowProps<ComponentProps<typeof TextInput>>;
+          use: Adapter<string>;
       };
 
 export type Row = {

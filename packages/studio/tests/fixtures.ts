@@ -52,6 +52,33 @@ export function tree(sourcePath: string, tokens: Record<string, unknown>): Token
     return { sourcePath, tokens } as TokenTree;
 }
 
+type GroupFixture = {
+    /** The group's bare `$path` (e.g. "color.text"). */
+    path: string;
+    description?: string;
+    /** Permutation context. Defaults to "default". */
+    context?: string;
+    /** Source file path. Defaults to "tokens.json". */
+    sourcePath?: string;
+};
+
+/**
+ * Group metadata nodes, as flatten emits them: no `$value`, but a `$path` and
+ * a `$source`. These are what makes a group addressable in `resolved`.
+ */
+export function groups(...fixtures: GroupFixture[]): ResolvedTokens {
+    const out: ResolvedTokens = {};
+    for (const f of fixtures) {
+        const context = f.context ?? "default";
+        out[`${context}::${f.path}`] = {
+            $path: f.path,
+            ...(f.description ? { $description: f.description } : {}),
+            $source: { context: f.context, sourcePath: f.sourcePath ?? "tokens.json" },
+        } as ResolvedTokens[string];
+    }
+    return out;
+}
+
 type SnapshotFixture = {
     trees?: TokenTree[];
     resolved?: ResolvedTokens;
@@ -63,5 +90,8 @@ export function snapshot(s: SnapshotFixture = {}): TokenSnapshot {
         config: {} as TokenSnapshot["config"],
         trees: s.trees ?? [],
         resolved: s.resolved ?? {},
+        defaultContext: null,
+        permutations: [],
+        sources: { files: {}, order: [] },
     };
 }

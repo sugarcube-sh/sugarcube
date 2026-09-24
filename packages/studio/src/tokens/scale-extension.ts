@@ -1,32 +1,77 @@
 import {
-    SUGARCUBE_NAMESPACE,
+    type ResolvedTokens,
     type ScaleExtension,
     type TokenTree,
     isScaleExtension,
 } from "@sugarcube-sh/core/client";
+import type { PathIndex } from "./path-index";
+import { parentPath } from "./paths";
+import { nodesAt, sugarcubeExtensions } from "./tree-node";
 
-export function getScaleExtension(trees: TokenTree[], path: string): ScaleExtension | undefined {
-    const segments = path.split(".");
-    for (const tree of trees) {
-        const node = walkTree(tree.tokens, segments);
+export function getScaleExtension(
+    trees: readonly TokenTree[],
+    path: string,
+): ScaleExtension | undefined {
+    for (const node of nodesAt(trees, path)) {
         const scale = extractScaleExtension(node);
         if (scale) return scale;
     }
     return undefined;
 }
 
-function walkTree(tree: unknown, segments: string[]): unknown {
-    let node: unknown = tree;
-    for (const segment of segments) {
-        if (!node || typeof node !== "object") return undefined;
-        node = (node as Record<string, unknown>)[segment];
+/**
+ * Every group in the document that carries a recipe, by path: a group holding a
+ * `sh.sugarcube.scale` extension has one, and that is the whole test (D-037).
+ *
+ * Resolution flattens groups away, so this walks the authored trees. A path can
+ * appear in several of them, once per context; it is listed once.
+ */
+export function scaleGroupPaths(trees: readonly TokenTree[]): string[] {
+    const paths = new Set<string>();
+
+    const visit = (node: unknown, path: string): void => {
+        if (!node || typeof node !== "object") return;
+        if (extractScaleExtension(node)) paths.add(path);
+
+        for (const [key, child] of Object.entries(node)) {
+            if (key.startsWith("$")) continue;
+            visit(child, path ? `${path}.${key}` : key);
+        }
+    };
+
+    for (const tree of trees) visit(tree.tokens, "");
+    return Array.from(paths);
+}
+
+export function getScaleBase(trees: readonly TokenTree[], path: string): string | undefined {
+    for (const node of nodesAt(trees, path)) {
+        const scaleBase = sugarcubeExtensions(node)?.scaleBase;
+        if (typeof scaleBase === "string") return scaleBase;
     }
-    return node;
+    return undefined;
+}
+
+/**
+ * Groups whose own children are dimensions and which carry no recipe — the
+ * hand-authored scales, which are most of them.
+ */
+export function directScaleGroups(pathIndex: PathIndex, resolved: ResolvedTokens): string[] {
+    const counts = new Map<string, number>();
+    for (const [handle] of pathIndex.entries()) {
+        const path = pathIndex.pathOf(handle);
+        const parent = path === undefined ? "" : parentPath(path);
+        if (!parent) continue;
+        const token = pathIndex.readToken(resolved, handle);
+        if (token?.$type !== "dimension") continue;
+        counts.set(parent, (counts.get(parent) ?? 0) + 1);
+    }
+
+    return Array.from(counts)
+        .filter(([, count]) => count > 1)
+        .map(([group]) => group);
 }
 
 function extractScaleExtension(node: unknown): ScaleExtension | undefined {
-    if (!node || typeof node !== "object") return undefined;
-    const extensions = (node as { $extensions?: Record<string, unknown> }).$extensions;
-    const sugarcube = extensions?.[SUGARCUBE_NAMESPACE] as { scale?: unknown } | undefined;
-    return isScaleExtension(sugarcube?.scale) ? sugarcube.scale : undefined;
+    const scale = sugarcubeExtensions(node)?.scale;
+    return isScaleExtension(scale) ? scale : undefined;
 }

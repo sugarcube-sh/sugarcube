@@ -1,9 +1,12 @@
 import type { ComponentProps } from "react";
 import type { ColorPicker } from "../components/controls/ColorPicker";
+import type { LiteralColorInput } from "../components/controls/LiteralColorInput";
 import type { NumberInput } from "../components/controls/NumberInput";
 import type { Picker } from "../components/controls/Picker";
 import type { SliderField } from "../components/controls/SliderField";
 import type { Switch } from "../components/controls/Switch";
+import type { TextInput } from "../components/controls/TextInput";
+import type { LiteralColor } from "../tokens/color-shape";
 import type { ColorValue } from "../tokens/color-value";
 import type { Adapter, Control, RowProps } from "./types";
 
@@ -43,9 +46,23 @@ export function colorControl(
     return { editor: "color", props, use };
 }
 
+export function literalColorControl(
+    props: RowProps<ComponentProps<typeof LiteralColorInput>>,
+    use: Adapter<LiteralColor>,
+): Control {
+    return { editor: "literal-color", props, use };
+}
+
 export function switchControl(
     props: RowProps<ComponentProps<typeof Switch>>,
     use: Adapter<boolean>,
 ): Control {
     return { editor: "switch", props, use };
+}
+
+export function textControl(
+    props: RowProps<ComponentProps<typeof TextInput>>,
+    use: Adapter<string>,
+): Control {
+    return { editor: "text", props, use };
 }

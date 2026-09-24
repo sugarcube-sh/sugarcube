@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveTerminalPath, unwrapRef } from "../src/tokens/paths";
+import { isSegment, parentPath, resolveTerminalPath, unwrapRef } from "../src/tokens/paths";
 
 describe("unwrapRef", () => {
     it("returns undefined when the value is not a string", () => {
@@ -68,5 +68,34 @@ describe("resolveTerminalPath", () => {
     it("stops at the cycle entry when references cycle between multiple paths", () => {
         const getToken = (path: string) => ({ "font.a": "{font.b}", "font.b": "{font.a}" })[path];
         expect(resolveTerminalPath("font.a", getToken)).toBe("font.a");
+    });
+});
+
+describe("parentPath", () => {
+    it("returns the group a token sits in", () => {
+        expect(parentPath("color.brand.500")).toBe("color.brand");
+    });
+
+    it("is empty for a top-level path, which has no parent", () => {
+        expect(parentPath("color")).toBe("");
+    });
+
+    it("ignores a trailing glob", () => {
+        expect(parentPath("color.brand.*")).toBe("color");
+    });
+});
+
+describe("isSegment, the spec's rule for one name", () => {
+    it("allows what the spec allows, a slash included", () => {
+        expect(isSegment("brand")).toBe(true);
+        expect(isSegment("1/2")).toBe(true);
+        expect(isSegment("$root")).toBe(true);
+    });
+
+    it("refuses what the spec forbids", () => {
+        expect(isSegment("")).toBe(false);
+        expect(isSegment("a.b")).toBe(false);
+        expect(isSegment("{ref}")).toBe(false);
+        expect(isSegment("$value")).toBe(false);
     });
 });

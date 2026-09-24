@@ -117,3 +117,63 @@
 .field-reset-icon {
     color: var(--color-text-modified);
 }
+
+.number-input,
+.text-input {
+    display: flex;
+    align-items: center;
+    gap: var(--space-050, 4px);
+    inline-size: 100%;
+    padding-inline: 4px;
+    padding-block: 4.5px;
+    border-radius: 8px;
+    border: solid 1px transparent;
+}
+
+.number-input:hover,
+.text-input:hover {
+    background-color: var(--color-component-hover);
+}
+
+.number-input:focus-within,
+.text-input:focus-within {
+    border: solid 1px var(--color-component-modified);
+    box-shadow: 0 0 0 2px var(--color-component-modified-light);
+}
+
+.text-input-field {
+    inline-size: 100%;
+    min-inline-size: 0;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font: inherit;
+}
+
+.text-input-field:focus {
+    outline: none;
+}
+
+.text-input-field::placeholder {
+    color: var(--color-text-quiet);
+}
+
+.number-input-field {
+    inline-size: 100%;
+    min-inline-size: 0;
+    appearance: textfield;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+}
+
+.number-input-field:focus {
+    outline: none;
+}
+
+.number-input-unit {
+    flex-shrink: 0;
+    color: var(--color-text-quiet);
+}
