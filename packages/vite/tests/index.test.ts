@@ -1,11 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
+const { loadTokens } = vi.hoisted(() => ({ loadTokens: vi.fn() }));
+
 vi.mock("@sugarcube-sh/core", async () => {
     const actual = await vi.importActual<any>("@sugarcube-sh/core");
     return {
         ...actual,
         loadInternalConfig: async () => ({
             config: {
+                resolver: "tokens/tokens.resolver.json",
                 variables: {
                     path: "src/styles/tokens.css",
                     transforms: {
@@ -20,10 +23,7 @@ vi.mock("@sugarcube-sh/core", async () => {
                 cube: "src/styles",
             },
         }),
-        loadTokens: async () => ({
-            trees: [],
-            errors: [],
-        }),
+        loadTokens,
         resolveTokens: () => ({
             trees: [],
             resolved: {} as any,
@@ -39,12 +39,46 @@ vi.mock("@sugarcube-sh/core", async () => {
 
 import sugarcube, { extractTokenDirs } from "../src/index.js";
 
+const loaded = {
+    trees: [],
+    errors: [],
+    permutations: [{ name: "default", modifiers: {} }],
+    sources: {
+        files: { "/tokens/color.json": "{}" },
+        order: [{ context: "default", sources: [{ file: "/tokens/color.json" }] }],
+    },
+    defaultContext: "default",
+};
+
+async function context() {
+    const plugins = await sugarcube();
+    const api = plugins.flat().find((p: any) => p.name === "sugarcube:api");
+    return api.api.getContext();
+}
+
 describe("vite-plugin-sugarcube", () => {
     it("should return array of plugins with correct structure", async () => {
+        loadTokens.mockResolvedValue(loaded);
         const plugins = await sugarcube();
         expect(Array.isArray(plugins)).toBe(true);
         const flat = plugins.flat();
         expect(flat.every((p: any) => p.name)).toBe(true);
+    });
+
+    it("reports sources, permutations and defaultContext from loadTokens", async () => {
+        loadTokens.mockResolvedValue(loaded);
+        const ctx = await context();
+        expect(ctx.sources).toBe(loaded.sources);
+        expect(ctx.permutations).toBe(loaded.permutations);
+        expect(ctx.defaultContext).toBe("default");
+    });
+
+    it("reports null sources and defaultContext when loadTokens has none", async () => {
+        loadTokens.mockResolvedValue({ trees: [], errors: [], permutations: [] });
+        const ctx = await context();
+        expect(ctx.sources).toBeNull();
+        expect(ctx.defaultContext).toBeNull();
+        expect(ctx.permutations).toEqual([]);
     });
 });
 

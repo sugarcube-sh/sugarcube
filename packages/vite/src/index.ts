@@ -4,6 +4,8 @@ import {
     assignCSSNames,
     clearMatchCache,
     convertConfigToUnoRules,
+    createCoalescedRunner,
+    debounce,
     enumerateSafelistClasses,
     generateCSSVariables,
     groupByContext,
@@ -16,15 +18,15 @@ import type {
     NormalizedRenderableTokens,
     Permutation,
     ResolvedTokens,
+    TokenSources,
     TokenTree,
 } from "@sugarcube-sh/core";
 
 import { readFile, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import UnoCSS from "@unocss/vite";
 import { applyEdits, modify } from "jsonc-parser";
 import type { Logger, Plugin, ViteDevServer } from "vite";
-import { createSingleFlight, debounce } from "./watch-scheduling.js";
 
 /** CSS object for UnoCSS rules - matches @unocss/core CSSObject */
 type CSSObject = Record<string, string | number | undefined>;
@@ -73,6 +75,9 @@ export interface SugarcubePluginContext {
     tokens: NormalizedRenderableTokens | null;
     trees: TokenTree[] | null;
     resolved: ResolvedTokens | null;
+    defaultContext: string | null;
+    permutations: Permutation[];
+    sources: TokenSources | null;
     getCSS: () => string;
     writeTokenEdits: (
         sourcePath: string,
@@ -96,7 +101,9 @@ function createSugarcubeContext(): SugarcubePluginContext {
     let tokens: NormalizedRenderableTokens | null = null;
     let trees: TokenTree[] | null = null;
     let resolved: ResolvedTokens | null = null;
+    let sources: TokenSources | null = null;
     let permutations: Permutation[] = [];
+    let defaultContext: string | null = null;
     let cachedCSS = "";
     let cachedRules: UnoRule[] = [];
     let cachedSafelist: string[] = [];
@@ -188,7 +195,6 @@ function createSugarcubeContext(): SugarcubePluginContext {
         });
 
         const resolveResult = resolveTokens(loaded.trees);
-        permutations = loaded.permutations;
 
         I.end("Load Tokens From Resolver");
 
@@ -215,6 +221,9 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
         trees = resolveResult.trees;
         resolved = resolveResult.resolved;
+        sources = loaded.sources ?? null;
+        permutations = loaded.permutations;
+        defaultContext = loaded.defaultContext ?? null;
 
         I.start("Process Tokens");
         tokens = assignCSSNames(
@@ -253,6 +262,15 @@ function createSugarcubeContext(): SugarcubePluginContext {
         },
         get resolved() {
             return resolved;
+        },
+        get defaultContext() {
+            return defaultContext;
+        },
+        get permutations() {
+            return permutations;
+        },
+        get sources() {
+            return sources;
         },
         get tasks() {
             return tasks;
@@ -385,11 +403,7 @@ export function extractTokenDirs(config: Pick<InternalConfig, "resolver">): stri
 
     // Resolve to absolute path so it matches Vite's absolute watcher paths
     // Without this working properly, the token watcher will not work correctly
-    const absolute = resolve(process.cwd(), config.resolver);
-    const lastSlash = absolute.lastIndexOf("/");
-    const resolverDir = absolute.slice(0, lastSlash);
-
-    return [resolverDir];
+    return [dirname(resolve(process.cwd(), config.resolver))];
 }
 
 // Returns Promise<any> rather than Promise<Plugin[]> to avoid exposing Vite's
@@ -527,9 +541,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
 
                 // A single reload cycle: reload tokens, then invalidate the UnoCSS
                 // module (which holds both variables via preflight and utilities).
-                // Wrapped in single-flight so overlapping saves can't run this
-                // concurrently and race on the plugin's shared token/CSS state.
-                const runReload = createSingleFlight(
+                const runReload = createCoalescedRunner(
                     async () => {
                         using I = new Instrumentation();
                         I.start("Total File Change Handler");
