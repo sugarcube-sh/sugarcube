@@ -2,28 +2,8 @@ import type { TokenValidationSchema } from "../../types/schema.js";
 import type { TokenSource } from "../../types/tokens.js";
 import type { ValidationError } from "../../types/validate.js";
 import { ErrorMessages } from "../constants/error-messages.js";
+import { FONT_WEIGHT_ALIASES } from "../constants/tokens.js";
 import { validateSchema } from "./schema-validator.js";
-
-const validStringValues = [
-    "thin",
-    "hairline",
-    "extra-light",
-    "ultra-light",
-    "light",
-    "normal",
-    "regular",
-    "book",
-    "medium",
-    "semi-bold",
-    "demi-bold",
-    "bold",
-    "extra-bold",
-    "ultra-bold",
-    "black",
-    "heavy",
-    "extra-black",
-    "ultra-black",
-];
 
 export const FontWeightSchema: TokenValidationSchema = {
     tokenType: "fontWeight",
@@ -53,7 +33,7 @@ export const FontWeightSchema: TokenValidationSchema = {
                 errorMessage: (value, path) =>
                     ErrorMessages.VALIDATE.INVALID_FONT_WEIGHT(value, path),
                 validate: (value, path, source) => {
-                    if (!validStringValues.includes(value as string)) {
+                    if (!Object.hasOwn(FONT_WEIGHT_ALIASES, value as string)) {
                         return [
                             {
                                 path,

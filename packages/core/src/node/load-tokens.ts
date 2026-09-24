@@ -1,7 +1,7 @@
 import { relative } from "pathe";
 import { ErrorMessages } from "../shared/constants/error-messages.js";
 import type { Permutation } from "../types/config.js";
-import type { LoadError, TokenMemoryData } from "../types/load.js";
+import type { LoadError, TokenMemoryData, TokenSources } from "../types/load.js";
 import type { PipelineContext, TokenPipelineSource } from "../types/pipelines.js";
 import { createPipelineContext } from "../types/pipelines.js";
 import type { TokenTree } from "../types/tokens.js";
@@ -17,6 +17,14 @@ export type LoadResult = {
     permutations: Permutation[];
     /** Each modifier's declared default context, per resolver spec §4.1.5.3. */
     modifierDefaults?: Record<string, string>;
+    /**
+     * The token files each context composes from, in resolution order, with
+     * their text. Only the resolver source knows this; a memory source has no
+     * resolution order to report.
+     */
+    sources?: TokenSources;
+    /** The context that stands for the whole system, when the resolver names one. */
+    defaultContext?: string;
 };
 
 /**
@@ -63,6 +71,7 @@ export async function loadTokens(
                 parseResult.document,
                 source.resolverPath,
                 source.config.variables.permutations,
+                parseResult.text,
             );
 
             return {
@@ -70,6 +79,8 @@ export async function loadTokens(
                 errors: result.errors,
                 permutations: result.permutations,
                 modifierDefaults: result.modifierDefaults,
+                sources: result.sources,
+                defaultContext: result.defaultContext,
             };
         }
     }

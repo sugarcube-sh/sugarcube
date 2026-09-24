@@ -76,7 +76,7 @@ function describeContext(
     return { id, label: permutationLabel(perm), selector, ...(input ? { input } : {}) };
 }
 
-function findDefaultContext(
+export function findDefaultContext(
     contextKeys: string[],
     permutations?: Permutation[],
     modifierDefaults?: Record<string, string>,

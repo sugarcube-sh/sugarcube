@@ -46,7 +46,9 @@
   },
   "font.weight.invalid.type.object": {
     "$type": "fontWeight",
-    "$value": { "weight": 400 },
+    "$value": {
+      "weight": 400
+    },
     "$path": "font.weight.invalid.type.object",
     "$source": {
       "collection": "tokens",
@@ -57,6 +59,15 @@
     "$type": "fontWeight",
     "$value": [400],
     "$path": "font.weight.invalid.type.array",
+    "$source": {
+      "collection": "tokens",
+      "sourcePath": "tokens/typography.json"
+    }
+  },
+  "font.weight.invalid.prototype": {
+    "$type": "fontWeight",
+    "$value": "constructor",
+    "$path": "font.weight.invalid.prototype",
     "$source": {
       "collection": "tokens",
       "sourcePath": "tokens/typography.json"

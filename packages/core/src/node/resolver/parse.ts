@@ -22,6 +22,8 @@ export type ParseResult = {
     document: ResolverDocument;
     errors: ResolverError[];
     warnings: ResolverWarning[];
+    /** The document's own text, when it was read from a file. */
+    text?: string;
 };
 
 export async function parseResolverDocument(resolverPath: string): Promise<ParseResult> {
@@ -48,7 +50,7 @@ export async function parseResolverDocument(resolverPath: string): Promise<Parse
     const warnings: ResolverWarning[] = [];
     validateDocument(validated.document, errors, warnings);
 
-    return { document: validated.document, errors, warnings };
+    return { document: validated.document, errors, warnings, text: rawContent.content };
 }
 
 export function parseResolverDocumentFromString(jsonContent: string): ParseResult {

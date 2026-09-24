@@ -1,0 +1,46 @@
+{
+  "version": "2025.10",
+  "name": "Provenance",
+  "description": "File sources, one inline source, one fragment ref and a modifier: every way a source can name where it came from.",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "$ref": "./color.json"
+        },
+        {
+          "$ref": "./space.json"
+        },
+        {
+          "radius": {
+            "$type": "dimension",
+            "pill": {
+              "$value": {
+                "value": 999,
+                "unit": "px"
+              }
+            }
+          }
+        },
+        {
+          "$ref": "./extras.json#/motion"
+        }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "mode",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [
+          {
+            "$ref": "./dark.json"
+          }
+        ]
+      }
+    }
+  ]
+}

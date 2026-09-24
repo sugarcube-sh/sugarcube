@@ -36,6 +36,11 @@ describe("convertFontWeight", () => {
         }
     });
 
+    it("does not read an Object.prototype member as an alias", () => {
+        expect(renderFontWeight("constructor" as never)).toEqual({ value: "constructor" });
+        expect(renderFontWeight("toString" as never)).toEqual({ value: "toString" });
+    });
+
     it("should pass a wrong-case alias through rather than correcting it", () => {
         const result = renderFontWeight("BOLD");
         expect(result).toEqual({

@@ -1,0 +1,19 @@
+{
+  "motion": {
+    "duration": {
+      "$type": "duration",
+      "fast": {
+        "$value": {
+          "value": 120,
+          "unit": "ms"
+        }
+      }
+    }
+  },
+  "unused": {
+    "junk": {
+      "$type": "number",
+      "$value": 1
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { hasRef, isInlineModifier, isInlineSet } from "../../shared/guards.js";
 import type { TokenGroup } from "../../types/dtcg.js";
+import type { SourceRef } from "../../types/load.js";
 import type {
     InlineModifier,
     InlineSet,
@@ -10,8 +11,14 @@ import type {
     SetDefinition,
     Source,
 } from "../../types/resolver.js";
-import { createResolveContext, resolveReference, resolveSources } from "./resolve-refs.js";
-import { deepMerge, isPrivate, markPrivate } from "./utils.js";
+import { deepMerge } from "../../shared/compose-trees.js";
+import {
+    type CachedFile,
+    createResolveContext,
+    resolveReference,
+    resolveSources,
+} from "./resolve-refs.js";
+import { isPrivate, markPrivate } from "./utils.js";
 import { validateInputs } from "./validate-inputs.js";
 
 type SourceInfo = {
@@ -26,6 +33,10 @@ export type ResolutionOrderResult = {
     tokens: TokenGroup;
     sources: SourceInfo[];
     errors: ResolverError[];
+    /** Every source this input read, in resolution order, as a file and a place in it. */
+    sourceRefs: SourceRef[];
+    /** The text of each file read, keyed by file. */
+    texts: Map<string, string>;
 };
 
 type ResolveContext = ReturnType<typeof createResolveContext>;
@@ -44,13 +55,16 @@ export async function processResolutionOrder(
     document: ResolverDocument,
     basePath: string,
     inputs: ResolverInputs = {},
-    fileCache?: Map<string, unknown>,
+    fileCache?: Map<string, CachedFile>,
+    resolverPath?: string,
 ): Promise<ResolutionOrderResult> {
     const validation = validateInputs(document, inputs);
     if (!validation.valid) {
         return {
             tokens: {},
             sources: [],
+            sourceRefs: [],
+            texts: new Map(),
             errors: validation.errors.map((e) => ({
                 path: e.modifier || "inputs",
                 message: e.message,
@@ -58,16 +72,18 @@ export async function processResolutionOrder(
         };
     }
 
-    const context = createResolveContext(document, basePath, fileCache);
+    const context = createResolveContext(document, basePath, fileCache, resolverPath);
     const state = createProcessingState();
 
-    for (const item of document.resolutionOrder) {
-        await processItem(item, document, context, validation.resolvedInputs, state);
+    for (const [index, item] of document.resolutionOrder.entries()) {
+        await processItem(item, index, document, context, validation.resolvedInputs, state);
     }
 
     return {
         tokens: state.tokens,
         sources: state.sources,
+        sourceRefs: context.sourceRefs,
+        texts: context.texts,
         errors: state.errors,
     };
 }
@@ -84,6 +100,7 @@ function createProcessingState(): ProcessingState {
 
 async function processItem(
     item: unknown,
+    index: number,
     document: ResolverDocument,
     context: ResolveContext,
     inputs: ResolverInputs,
@@ -95,12 +112,12 @@ async function processItem(
     }
 
     if (isInlineSet(item)) {
-        await processInlineSet(item as InlineSet, context, state);
+        await processInlineSet(item as InlineSet, index, context, state);
         return;
     }
 
     if (isInlineModifier(item)) {
-        await processInlineModifier(item as InlineModifier, context, inputs, state);
+        await processInlineModifier(item as InlineModifier, index, context, inputs, state);
     }
 }
 
@@ -122,7 +139,7 @@ async function processReference(
 
     if (item.$ref.startsWith("#/sets/")) {
         const def = refResult.content as SetDefinition;
-        const result = await mergeSources(def.sources, context, {
+        const result = await mergeSources(def.sources, context, `/sets/${name}/sources`, {
             type: "set",
             name,
             emit: !isPrivate(def),
@@ -139,21 +156,23 @@ async function processReference(
         const sources = definition.contexts[selectedContext];
         if (!sources) return;
 
-        const result = await mergeSources(sources, context, {
-            type: "modifier",
-            name,
-            context: selectedContext,
-        });
+        const result = await mergeSources(
+            sources,
+            context,
+            `/modifiers/${name}/contexts/${selectedContext}`,
+            { type: "modifier", name, context: selectedContext },
+        );
         applyResult(result, state);
     }
 }
 
 async function processInlineSet(
     set: InlineSet,
+    index: number,
     context: ResolveContext,
     state: ProcessingState,
 ): Promise<void> {
-    const result = await mergeSources(set.sources, context, {
+    const result = await mergeSources(set.sources, context, `/resolutionOrder/${index}/sources`, {
         type: "set",
         name: set.name,
         emit: !isPrivate(set),
@@ -163,6 +182,7 @@ async function processInlineSet(
 
 async function processInlineModifier(
     modifier: InlineModifier,
+    index: number,
     context: ResolveContext,
     inputs: ResolverInputs,
     state: ProcessingState,
@@ -173,11 +193,12 @@ async function processInlineModifier(
     const sources = modifier.contexts[selectedContext];
     if (!sources) return;
 
-    const result = await mergeSources(sources, context, {
-        type: "modifier",
-        name: modifier.name,
-        context: selectedContext,
-    });
+    const result = await mergeSources(
+        sources,
+        context,
+        `/resolutionOrder/${index}/contexts/${selectedContext}`,
+        { type: "modifier", name: modifier.name, context: selectedContext },
+    );
     applyResult(result, state);
 }
 
@@ -197,9 +218,10 @@ type MergeResult = {
 async function mergeSources(
     sources: Source[],
     context: ResolveContext,
+    at: string,
     meta: SourceMeta,
 ): Promise<MergeResult> {
-    const sourcesResult = await resolveSources(sources, context);
+    const sourcesResult = await resolveSources(sources, context, at);
 
     let tokens: TokenGroup = {};
     for (const source of sourcesResult.resolved) {

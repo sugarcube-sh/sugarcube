@@ -1,9 +1,11 @@
 import { dirname, isAbsolute, relative, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../../shared/constants/error-messages.js";
+import { findDefaultContext } from "../../shared/graph/build-token-graph.js";
 import type { Permutation } from "../../types/config.js";
-import type { LoadError } from "../../types/load.js";
+import type { LoadError, SourceOrder, TokenSources } from "../../types/load.js";
 import type { ResolverDocument } from "../../types/resolver.js";
 import type { TokenTree } from "../../types/tokens.js";
+import type { CachedFile } from "./resolve-refs.js";
 import { processResolutionOrder } from "./resolution-order.js";
 import { type ExtractedModifier, extractModifiers } from "./utils.js";
 
@@ -12,11 +14,17 @@ export type ResolverLoadResult = {
     permutations: Permutation[];
     errors: LoadError[];
     modifierDefaults: Record<string, string>;
+    /** The files each context composed from, with their text. Absent when nothing loaded. */
+    sources?: TokenSources;
+    /** The context that stands for the whole system, when the resolver names one. */
+    defaultContext?: string;
 };
 
 type PermutationResult = {
     trees: TokenTree[];
     errors: LoadError[];
+    sourceOrder: SourceOrder[];
+    files: Record<string, string>;
 };
 
 // ============================================
@@ -52,6 +60,7 @@ export async function loadFromResolver(
     document: ResolverDocument,
     resolverPath: string,
     permutations?: Permutation[],
+    resolverText?: string,
 ): Promise<ResolverLoadResult> {
     const absolutePath = isAbsolute(resolverPath)
         ? resolverPath
@@ -77,7 +86,7 @@ export async function loadFromResolver(
         return { trees: [], permutations: [], errors: validationErrors, modifierDefaults };
     }
 
-    const { trees, errors } = await resolvePermutations(
+    const { trees, errors, sourceOrder, files } = await resolvePermutations(
         document,
         basePath,
         relativePath,
@@ -85,7 +94,29 @@ export async function loadFromResolver(
         modifiers,
     );
 
-    return { trees, permutations: resolvedPermutations, errors, modifierDefaults };
+    // Tokens declared inline are authored in the resolver document, so its
+    // text is one of the files a writer needs.
+    if (
+        resolverText !== undefined &&
+        sourceOrder.some((each) => each.sources.some((ref) => ref.file === relativePath))
+    ) {
+        files[relativePath] = resolverText;
+    }
+
+    const defaultContext = findDefaultContext(
+        trees.map((tree) => tree.context ?? "default"),
+        resolvedPermutations,
+        modifierDefaults,
+    );
+
+    return {
+        trees,
+        permutations: resolvedPermutations,
+        errors,
+        modifierDefaults,
+        sources: sourceOrder.length > 0 ? { files, order: sourceOrder } : undefined,
+        defaultContext,
+    };
 }
 
 // ============================================
@@ -175,18 +206,26 @@ async function resolvePermutations(
 ): Promise<PermutationResult> {
     const trees: TokenTree[] = [];
     const errors: LoadError[] = [];
+    const sourceOrder: SourceOrder[] = [];
+    const files: Record<string, string> = {};
 
     // Permutations resolve independently but reference the same token files, so
     // share one read/parse cache across them instead of re-reading every file
     // once per permutation.
-    const fileCache = new Map<string, unknown>();
+    const fileCache = new Map<string, CachedFile>();
 
     for (let i = 0; i < permutations.length; i++) {
         const perm = permutations[i];
         if (!perm) continue;
 
         const fullInput = buildFullInput(perm.input, modifiers);
-        const result = await processResolutionOrder(document, basePath, fullInput, fileCache);
+        const result = await processResolutionOrder(
+            document,
+            basePath,
+            fullInput,
+            fileCache,
+            relativePath,
+        );
 
         for (const error of result.errors) {
             errors.push({ file: error.path, message: error.message });
@@ -198,8 +237,10 @@ async function resolvePermutations(
                 tokens: result.tokens,
                 sourcePath: relativePath,
             });
+            sourceOrder.push({ context: `perm:${i}`, sources: result.sourceRefs });
+            for (const [path, text] of result.texts) files[path] ??= text;
         }
     }
 
-    return { trees, errors };
+    return { trees, errors, sourceOrder, files };
 }
