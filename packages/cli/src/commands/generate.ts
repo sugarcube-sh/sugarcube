@@ -1,5 +1,4 @@
 import {
-    type CSSFileOutput,
     type ColorFallbackStrategy,
     type FluidConfig,
     type SugarcubeConfig,
@@ -10,7 +9,6 @@ import {
 } from "@sugarcube-sh/core";
 import type { InternalConfig } from "@sugarcube-sh/core";
 import { Command } from "commander";
-import { relative } from "pathe";
 import color from "picocolors";
 import { CLIError } from "../cli-error.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
@@ -23,6 +21,14 @@ import {
     createWatchSession,
     runFullGeneration,
 } from "../watch/regenerate.js";
+import {
+    errorPrefix,
+    logRegenerated,
+    logWarnings,
+    outputPaths,
+    prefix,
+    warnPrefix,
+} from "../watch/log.js";
 import { startWatcher } from "../watch/watcher.js";
 
 interface GenerateFlags {
@@ -184,12 +190,6 @@ async function resolveConfig(options: GenerateFlags): Promise<InternalConfig> {
     throw new CLIError(ERROR_MESSAGES.GENERATE_NO_CONFIG_OR_RESOLVER());
 }
 
-function formatOutputPaths(output: CSSFileOutput): string[] {
-    const paths = output.map((f) => f.path);
-    const unique = [...new Set(paths)];
-    return unique.map((file) => relative(process.cwd(), file));
-}
-
 function displayWarnings(warnings: Array<{ path: string; message: string }>): void {
     if (warnings.length === 0) return;
 
@@ -223,22 +223,14 @@ async function runOneTimeGeneration(config: InternalConfig, options: GenerateFla
 
     if (!options.silent) {
         displayWarnings(warnings);
-        await logOneTimeResult(formatOutputPaths(output));
+        await logOneTimeResult(outputPaths(output));
     }
 }
 
 async function runWatchMode(config: InternalConfig, options: GenerateFlags): Promise<void> {
-    const prefix = color.cyan("[sugarcube]");
-    const warnPrefix = color.yellow("[sugarcube]");
     const generateOptions: GenerateAllCSSOptions = {
         variablesOnly: options.variablesOnly,
         utilitiesOnly: options.utilitiesOnly,
-    };
-
-    const logWarnings = (warnings: Array<{ path: string; message: string }>) => {
-        for (const warning of warnings) {
-            console.log(`${warnPrefix} ${warning.message}`);
-        }
     };
 
     const session = createWatchSession(config, generateOptions);
@@ -259,14 +251,10 @@ async function runWatchMode(config: InternalConfig, options: GenerateFlags): Pro
             const regenDurationMs = Math.round(performance.now() - regenStart);
 
             logWarnings(regenWarnings);
-            const changedFile = changedPath.split("/").pop() ?? changedPath;
-            const outputFiles = formatOutputPaths(regenOutput);
-            console.log(
-                `${prefix} ${color.dim(changedFile)} → ${outputFiles.join(", ")} ${color.dim(`(${regenDurationMs}ms)`)}`,
-            );
+            logRegenerated(changedPath, regenOutput, regenDurationMs);
         },
         onError: (error: Error) => {
-            console.log(`${color.red("[sugarcube]")} ${error.message}`);
+            console.error(`${errorPrefix} ${error.message}`);
         },
         onReady: (tokenFileCount: number) => {
             console.log(
