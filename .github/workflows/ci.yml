@@ -24,6 +24,7 @@ jobs:
           cache: "pnpm"
       - run: pnpm install
       - run: pnpm run build
+      - run: pnpm --filter www build
       - run: pnpm run type-check
       - run: pnpm run lint
       - run: pnpm run test
