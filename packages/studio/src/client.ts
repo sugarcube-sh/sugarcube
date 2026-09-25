@@ -6,5 +6,7 @@ import { fileURLToPath } from "node:url";
  */
 export const clientPath = fileURLToPath(new URL("./client", import.meta.url));
 
-/** The script the hub imports into a page Studio is docked on. Built self-contained. */
-export const pageScriptPath = fileURLToPath(new URL("./page-script.mjs", import.meta.url));
+/** The script the hub imports into a page Studio is docked on. Built self-contained, alone in its folder. */
+export const pageScriptPath = fileURLToPath(
+    new URL("./page-script/page-script.mjs", import.meta.url),
+);
