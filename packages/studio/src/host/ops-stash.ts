@@ -12,11 +12,10 @@ function storage(): Storage | null {
 }
 
 /**
- * Unsaved operations, kept for as long as the tab lives. A dock reloads with
- * the page it sits on, and on any non-Vite dev server a markup edit reloads
- * the page, so without this every edit in the dock dies with the first save
- * in the editor. Keyed by the project, for the one case a tab can mix two up:
- * another project served on the same port, later, in the same tab.
+ * Unsaved edits are held in sessionStorage so they survive a page reload: the
+ * dock reloads along with the page it sits on, and outside Vite a markup edit
+ * in the editor reloads that page. Keyed by project, because one tab can serve
+ * two different projects on the same port over its life.
  */
 export async function readOpsStash(project: string): Promise<WriteOp[] | null> {
     const held = storage()?.getItem(PREFIX + project);
@@ -29,7 +28,6 @@ export async function readOpsStash(project: string): Promise<WriteOp[] | null> {
     }
 }
 
-/** The number of the latest write per project; a write that is no longer the latest lands nothing. */
 const latest = new Map<string, number>();
 
 export async function writeOpsStash(project: string, ops: readonly WriteOp[]): Promise<void> {

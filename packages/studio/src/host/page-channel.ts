@@ -5,11 +5,6 @@ import { STUDIO_PAGE_CHANNEL, type StudioPageProtocol } from "../page/protocol";
 import type { TokenStoreAPI } from "../store/create-source-store";
 import type { TokenSnapshot } from "../tokens/types";
 
-/**
- * The CSS for the page Studio is docked on, regenerated on every edit and on
- * every reconnect. Reads the baseline as it is now, never a copy of it: a disk
- * change that adds a context is in the next frame's CSS.
- */
 export function attachPageChannel(
     store: TokenStoreAPI,
     baseline: StoreApi<TokenSnapshot>,

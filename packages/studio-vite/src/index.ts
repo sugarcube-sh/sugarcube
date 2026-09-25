@@ -14,11 +14,6 @@ const SUGARCUBE_VITE_PLUGIN_NAME = "sugarcube:api";
 const MISSING_SUGARCUBE_PLUGIN =
     "Could not find the sugarcube plugin context. Is @sugarcube-sh/vite in this Vite config?";
 
-/**
- * The sugarcube Vite plugin's context as Studio's token source: the tokens it
- * already loaded, written back through its files, reloaded by its watcher.
- * `capture` is called once, from `configResolved`, with the context or null.
- */
 export function sourceFrom(): {
     source: StudioTokenSource;
     capture: (found: SugarcubePluginContext | null) => void;
@@ -83,11 +78,6 @@ export function capturePlugin(capture: (found: SugarcubePluginContext | null) =>
     };
 }
 
-/**
- * Studio beside the sugarcube Vite plugin: a devframes hub over the page,
- * with Studio as a dock and its route at `/__studio/`, reading the tokens the
- * plugin already loaded.
- */
 export default function sugarcubeStudio(): Plugin[] {
     const { source, capture } = sourceFrom();
     const definition = studioDevframe({ source, clientAssets: clientPath });

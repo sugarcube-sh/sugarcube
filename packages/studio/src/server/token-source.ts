@@ -42,11 +42,6 @@ const NOTHING: Loaded = {
     errors: [],
 };
 
-/**
- * The files on disk, loaded with core's Node entry. A load that fails, or
- * loads less than it should, is a sentence in `errors` and leaves the last
- * good load in place; the host publishes what it can and says the rest.
- */
 export function createNodeTokenSource(options: NodeTokenSourceOptions = {}): NodeTokenSource {
     const io = {
         read: options.readFileText ?? nodeFileText.read,
@@ -94,12 +89,12 @@ export function createNodeTokenSource(options: NodeTokenSourceOptions = {}): Nod
         try {
             state = await runPipeline();
         } catch (error) {
+            // Keep the last tokens that loaded, so a broken edit shows an error
+            // rather than emptying the editor.
             state = { ...state, errors: [error instanceof Error ? error.message : String(error)] };
         }
     };
 
-    // One load at a time; calls that arrive during one collapse into a single
-    // run after it, and every caller's promise settles when that run has too.
     let running: Promise<void> | null = null;
     let again = false;
     const reload = (): Promise<void> => {

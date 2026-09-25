@@ -1,12 +1,9 @@
 import { fileURLToPath } from "node:url";
 
-/**
- * Absolute filesystem path to the built Studio SPA assets.
- * Integrations (studio-vite, studio-node) hand this to a static file server.
- */
+/** The built studio web app, for integrations to serve statically. */
 export const clientPath = fileURLToPath(new URL("./client", import.meta.url));
 
-/** The script the hub imports into a page Studio is docked on. Built self-contained, alone in its folder. */
+/** The script the dock injects into the page studio is mounted on. */
 export const pageScriptPath = fileURLToPath(
     new URL("./page-script/page-script.mjs", import.meta.url),
 );

@@ -24,7 +24,7 @@ export type ValueChoice = {
 
 export type ValueField = {
     text: string;
-    /** False where a text box would lose information, so the cell reads only. */
+    /** False when a text box could not round-trip the value, so the cell is read-only. */
     editable: boolean;
     choices?: ValueChoice[];
 };
@@ -32,9 +32,9 @@ export type ValueField = {
 const EMPTY: ValueField = { text: "", editable: false };
 
 /**
- * Dispatch is on `$type` rather than the JS shape, so a token keeps the form it
- * was authored in: a hex colour stays hex, a one-string font stack does not
- * become an array. A reference falls through to the plain string branch.
+ * Branches on `$type` rather than the runtime shape, so a token keeps the form
+ * it was authored in: a hex colour stays hex, a one-string font stack does not
+ * become an array. References are strings, so they land in the string branch.
  */
 export function readField(type: string | undefined, value: unknown): ValueField {
     if (value === undefined || value === null) return EMPTY;
@@ -102,7 +102,7 @@ export function readField(type: string | undefined, value: unknown): ValueField 
 
 const DIMENSION = /^(-?\d+(?:\.\d+)?)\s*([a-z%]+)$/i;
 
-/** `undefined` rejects the text, leaving the stored value alone. */
+/** Returns `undefined` to reject the text and leave the stored value alone. */
 export function writeField(type: string | undefined, previous: unknown, text: string): unknown {
     if (type === "color") {
         const shape = readColorShape(previous);
@@ -162,10 +162,8 @@ const EMPTY_BY_TYPE: Record<string, unknown> = {
     strokeStyle: "solid",
 };
 
-/** The types a new token can be: every simple type with an empty here, then the composites. */
 export const DTCG_TYPES: readonly string[] = [...Object.keys(EMPTY_BY_TYPE), ...compositeTypes()];
 
-/** What a new token of this type holds before anyone edits it: a value `readField` can show and `writeField` can grow. */
 export function emptyValueFor(type: string | undefined): unknown {
     if (type === undefined) return "";
     if (type in EMPTY_BY_TYPE) return EMPTY_BY_TYPE[type];

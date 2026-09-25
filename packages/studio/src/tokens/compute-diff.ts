@@ -32,17 +32,18 @@ export type ScaleDiffInput = {
 export type ComputeDiffInput = {
     resolved: ResolvedTokens;
     baseline: Pick<TokenSnapshot, "resolved" | "trees">;
-    /** The working index: current paths, including anything created or renamed. */
+    /** Where the tokens live now, after any renaming and creating. */
     index: PathIndex;
-    /** Defaults to `index`, which is right only when nothing has moved. */
+    /** Where they lived before. Leave it out and a rename or a deletion reads
+     * as no change at all, since every path matches itself. */
     baselineIndex?: PathIndex;
     scale?: ScaleDiffInput;
 };
 
 /**
- * One entry per distinct change of a node, with the contexts it applies to.
- * When every context of a node changed the same way the contexts read as
- * empty, meaning all of them.
+ * Make the same edit in light and dark and you get one entry naming both, not
+ * two entries. Make it in every context a token has and the entry names none of
+ * them, because listing every context says no more than saying nothing.
  */
 function bySignature() {
     const entries = new Map<string, TokenDiffEntry>();

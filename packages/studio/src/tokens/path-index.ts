@@ -21,6 +21,12 @@ function isGroupNode(value: unknown): value is GroupNode {
     );
 }
 
+/**
+ * A token's id, which stays the same when the token is renamed or moved. It
+ * starts out as the token's path, and keeps that value even once the path has
+ * changed underneath it, so `colour.brand` can be the id of a token now called
+ * `colour.primary`.
+ */
 export type Handle = string;
 
 export type PathIndexAccessor = () => PathIndex;
@@ -32,16 +38,13 @@ type IndexState = {
     handles: Map<string, Handle>;
 };
 
-/**
- * Handle ↔ path ↔ resolved key, per context, over one `resolved` map. Rebuilt
- * from the text after every edit; the handles are what survive the rebuild.
- */
 export class PathIndex {
     private state: IndexState;
 
     /**
-     * `identify` gives a path the handle it already had, so identity survives a
-     * rebuild. Without it a handle is the path, which is right at baseline.
+     * `identify` looks up the id a path already had. Leave it out and each
+     * token's id is simply its path, which is correct before anything is
+     * renamed.
      */
     constructor(resolved: ResolvedTokens, identify?: (path: string) => Handle) {
         this.state = PathIndex.build(resolved, identify);

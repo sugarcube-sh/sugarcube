@@ -23,14 +23,6 @@ export type ChangeQueue = ((kind: ChangeKind, changedPath: string) => void) & {
     cancel: () => void;
 };
 
-/**
- * File events, settled for `wait` ms, then handed to `onRegenerate` one run
- * at a time: a regeneration can take longer than the gap between events, so
- * overlapping runs (concurrent globs, reads and writes to the same output)
- * are collapsed into one. What changed is kept by kind, not only the latest
- * event, so a token change is never swallowed by a markup change after it;
- * tokens run first, since markup is generated from them.
- */
 export function createChangeQueue(
     callbacks: Pick<WatchCallbacks, "onRegenerate" | "onError">,
     wait = 100,

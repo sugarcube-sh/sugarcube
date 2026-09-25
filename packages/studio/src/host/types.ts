@@ -4,19 +4,17 @@ import type { FileOps, WriteOp } from "../tokens/write-ops";
 import type { TokenSnapshot } from "../tokens/types";
 
 export interface Host {
-    /** Disk, as the host last saw it. Moves whenever disk does; nothing copies it, everything reads it. */
     baseline: StoreApi<TokenSnapshot>;
 
-    /** Unsaved operations that outlived a reload of the page the dock sits on. */
+    /** Unsaved edits that survived a reload of the page the dock sits on. */
     restore?: readonly WriteOp[];
 
-    /** Called whenever the unsaved operations change, so a host can keep them. */
+    /** Called on every edit, not just on save. */
     persist(ops: readonly WriteOp[]): void;
 
-    /** Opens the channel that carries the working CSS to the page Studio is docked on. Returns the teardown. */
+    /** Streams the edited CSS to the page so it previews live. Returns a detach. */
     attach(store: TokenStoreAPI): () => void;
 
-    /** The edits, to the server that holds the files or to the service that opens a pull request. */
     save(bundle: SaveBundle): Promise<SaveResult>;
 
     capabilities: HostCapabilities;
