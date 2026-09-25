@@ -1,4 +1,4 @@
-import type { SugarcubePluginContext } from "@sugarcube-sh/vite";
+import { SUGARCUBE_API_PLUGIN_NAME, type SugarcubePluginContext } from "@sugarcube-sh/vite";
 import type { ResolvedConfig } from "vite";
 import { describe, expect, it } from "vitest";
 import sugarcubeStudio, { capturePlugin, sourceFrom } from "../src/index";
@@ -13,6 +13,7 @@ function fakeContext(over: Partial<SugarcubePluginContext> = {}): SugarcubePlugi
         defaultContext: "light",
         permutations: [],
         sources: { files: {}, order: [] },
+        errors: [],
         reloadTokens: async () => {
             for (const fn of listeners) fn();
         },
@@ -67,6 +68,14 @@ describe("the Vite plugin's context as a token source", () => {
         expect(reloads).toBe(1);
     });
 
+    it("passes on the errors the plugin's last load reported", async () => {
+        const { source, capture } = sourceFrom();
+        capture(fakeContext({ errors: ["Missing file a.json"] }));
+        await source.ready;
+
+        expect(source.errors).toEqual(["Missing file a.json"]);
+    });
+
     it("says why when the sugarcube plugin is not there, and is ready anyway", async () => {
         const { source, capture } = sourceFrom();
         capture(null);
@@ -89,7 +98,7 @@ describe("finding the sugarcube plugin", () => {
         (plugin.configResolved as (config: ResolvedConfig) => void)(
             resolvedConfig([
                 { name: "vite:something" },
-                { name: "sugarcube:api", api: { getContext: () => ctx } },
+                { name: SUGARCUBE_API_PLUGIN_NAME, api: { getContext: () => ctx } },
             ]),
         );
 

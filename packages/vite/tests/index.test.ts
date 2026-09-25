@@ -45,7 +45,7 @@ vi.mock("@sugarcube-sh/core", async () => {
     };
 });
 
-import sugarcube, { extractTokenDirs } from "../src/index.js";
+import sugarcube, { SUGARCUBE_API_PLUGIN_NAME, extractTokenDirs } from "../src/index.js";
 
 const loaded = {
     trees: [],
@@ -65,12 +65,21 @@ function healthy() {
 }
 
 async function plugin(name: string) {
-    const plugins = await sugarcube();
-    return plugins.flat().find((p: any) => p.name === name);
+    return (await sugarcubeWithUno()).named(name);
 }
 
 async function context() {
-    return (await plugin("sugarcube:api")).api.getContext();
+    return (await sugarcubeWithUno()).ctx;
+}
+
+async function sugarcubeWithUno() {
+    const plugins = (await sugarcube()).flat();
+    const named = (name: string) => plugins.find((p: any) => p.name === name);
+    const uno = named("unocss:api").api.getContext();
+    vi.spyOn(uno, "invalidate").mockImplementation(() => {});
+    vi.spyOn(uno, "reloadConfig").mockResolvedValue(undefined);
+    const ctx = named(SUGARCUBE_API_PLUGIN_NAME).api.getContext();
+    return { named, uno, ctx };
 }
 
 function fakeServer() {
@@ -82,19 +91,10 @@ function fakeServer() {
 }
 
 function servedPage() {
-    const uno = { invalidate: vi.fn(), reloadConfig: vi.fn(async () => {}) };
     return {
-        uno,
         watcher: new EventEmitter(),
-        config: {
-            logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-            plugins: [{ name: "unocss:api", api: { getContext: () => uno } }],
-        },
-        moduleGraph: {
-            getModuleById: () => undefined,
-            idToModuleMap: new Map(),
-            urlToModuleMap: new Map(),
-        },
+        config: { logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }, plugins: [] },
+        moduleGraph: { idToModuleMap: new Map(), urlToModuleMap: new Map() },
     };
 }
 
@@ -172,39 +172,96 @@ describe("a reload that fails", () => {
     });
 });
 
-describe("an edit on disk reaches the page", () => {
+describe("the context", () => {
+    it("reports the load's errors, one message each", async () => {
+        healthy();
+        loadTokens.mockResolvedValue({ ...loaded, errors: [{ message: "Missing file a.json" }] });
+        const ctx = await context();
+        expect(ctx.errors).toEqual(["Missing file a.json"]);
+    });
+
+    it("stops calling a reload listener once it unsubscribes", async () => {
+        healthy();
+        const ctx = await context();
+        const listener = vi.fn();
+        const unsubscribe = ctx.onReload(listener);
+
+        await ctx.reloadTokens();
+        unsubscribe();
+        await ctx.reloadTokens();
+
+        expect(listener).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("a change reaches the page", () => {
     const tokenFile = join(process.cwd(), "tokens", "color.json");
+
+    it("refreshes UnoCSS's CSS after a token reload started through the context", async () => {
+        healthy();
+        const { ctx, uno } = await sugarcubeWithUno();
+
+        await ctx.reloadTokens();
+
+        expect(uno.invalidate).toHaveBeenCalled();
+    });
+
+    it("reloads UnoCSS's config, then refreshes its CSS, after a config reload started through the context", async () => {
+        healthy();
+        const { ctx, uno } = await sugarcubeWithUno();
+
+        await ctx.reloadConfig();
+
+        expect(uno.reloadConfig).toHaveBeenCalled();
+        expect(uno.invalidate).toHaveBeenCalled();
+    });
 
     it("refreshes UnoCSS's CSS after a token file changes", async () => {
         healthy();
-        const watcherPlugin = await plugin("sugarcube:token-watcher");
+        const { named, uno } = await sugarcubeWithUno();
         const server = servedPage();
-        await watcherPlugin.configureServer(server);
+        await named("sugarcube:token-watcher").configureServer(server);
 
         server.watcher.emit("change", tokenFile);
-        await vi.waitFor(() => expect(server.uno.invalidate).toHaveBeenCalled());
+
+        await vi.waitFor(() => expect(uno.invalidate).toHaveBeenCalled());
     });
 
-    it("refreshes UnoCSS's CSS after the config file changes", async () => {
+    it("still refreshes after a second, short-lived server starts, as Astro's content sync does", async () => {
         healthy();
-        const watcherPlugin = await plugin("sugarcube:config-watcher");
+        const { named, uno } = await sugarcubeWithUno();
+        const devServer = servedPage();
+        const syncServer = servedPage();
+        await named("sugarcube:token-watcher").configureServer(devServer);
+        await named("sugarcube:token-watcher").configureServer(syncServer);
+        named("sugarcube:config-watcher").configureServer(syncServer);
+
+        devServer.watcher.emit("change", tokenFile);
+
+        await vi.waitFor(() => expect(uno.invalidate).toHaveBeenCalled());
+    });
+
+    it("reloads UnoCSS's config and refreshes its CSS after the config file changes", async () => {
+        healthy();
+        const { named, uno } = await sugarcubeWithUno();
         const server = servedPage();
-        watcherPlugin.configureServer(server);
+        named("sugarcube:config-watcher").configureServer(server);
 
         server.watcher.emit("change", "/app/sugarcube.config.ts");
-        await vi.waitFor(() => expect(server.uno.invalidate).toHaveBeenCalled());
-        expect(server.uno.reloadConfig).toHaveBeenCalled();
+
+        await vi.waitFor(() => expect(uno.invalidate).toHaveBeenCalled());
+        expect(uno.reloadConfig).toHaveBeenCalled();
     });
 
     it("says it is reloading once for a save that fires two change events", async () => {
         healthy();
-        const watcherPlugin = await plugin("sugarcube:token-watcher");
+        const { named, uno } = await sugarcubeWithUno();
         const server = servedPage();
-        await watcherPlugin.configureServer(server);
+        await named("sugarcube:token-watcher").configureServer(server);
 
         server.watcher.emit("change", tokenFile);
         server.watcher.emit("change", tokenFile);
-        await vi.waitFor(() => expect(server.uno.invalidate).toHaveBeenCalled());
+        await vi.waitFor(() => expect(uno.invalidate).toHaveBeenCalled());
 
         const reloading = server.config.logger.info.mock.calls.filter(([message]) =>
             String(message).includes("Design tokens changed"),

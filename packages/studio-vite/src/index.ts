@@ -5,11 +5,9 @@ import {
     studioDevframe,
     writeOpsToDisk,
 } from "@sugarcube-sh/studio/server";
-import type { SugarcubePluginContext } from "@sugarcube-sh/vite";
+import { SUGARCUBE_API_PLUGIN_NAME, type SugarcubePluginContext } from "@sugarcube-sh/vite";
 import { viteDevframeHub } from "@devframes/vite/hub";
 import type { Plugin } from "vite";
-
-const SUGARCUBE_VITE_PLUGIN_NAME = "sugarcube:api";
 
 const MISSING_SUGARCUBE_PLUGIN =
     "Could not find the sugarcube plugin context. Is @sugarcube-sh/vite in this Vite config?";
@@ -54,7 +52,7 @@ export function sourceFrom(): {
             return ctx?.permutations ?? [];
         },
         get errors() {
-            return errors;
+            return ctx?.errors ?? errors;
         },
         writeOps: (files) => writeOpsToDisk(nodeFileText, files),
         reloadTokens: async () => {
@@ -72,7 +70,7 @@ export function capturePlugin(capture: (found: SugarcubePluginContext | null) =>
         apply: "serve",
 
         configResolved(config) {
-            const plugin = config.plugins.find((p) => p.name === SUGARCUBE_VITE_PLUGIN_NAME);
+            const plugin = config.plugins.find((p) => p.name === SUGARCUBE_API_PLUGIN_NAME);
             capture((plugin?.api?.getContext() as SugarcubePluginContext | undefined) ?? null);
         },
     };
