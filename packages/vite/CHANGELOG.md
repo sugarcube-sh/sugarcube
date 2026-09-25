@@ -1,5 +1,21 @@
 # @sugarcube-sh/vite
 
+## 0.1.27
+
+### Patch Changes
+
+- db42a8d: A token or config file that fails to load while the dev server is running is now logged and the server carries on. Before this, a save mid-edit that broke `sugarcube.config.ts` could take the whole dev server down.
+- 57eb47e: Adds `sources`, `permutations` and `defaultContext` to the plugin context, so a tool sharing the dev server can read the token files the plugin already loaded instead of loading them again. Also fixes the token directory being cut short on Windows.
+- 73b36b0: Fixed a bug in the vite plugin. When you edited a token file or sugarcube.config.ts, the page didn't update until you reloaded it. The cause was a bug in UnoCSS 66.9, which the plugin uses to build the CSS. UnoCSS fixed it in 66.10.4, and the plugin now uses that version.
+- 60a8488: Tidier plugin context for tools that share the dev server (like studio).
+
+  - When one of these tools asks the plugin to reload the tokens, the page now updates too. Before, it only updated when you saved a token file.
+  - The context now says why a token load failed, lets a tool stop listening for reloads, and exports the plugin's name so a tool can find the plugin without typing it out.
+  - Removed three methods that nothing called, and the jsonc-parser dependency.
+
+- Updated dependencies [6d6514a]
+  - @sugarcube-sh/core@0.2.20
+
 ## 0.1.26
 
 ### Patch Changes
