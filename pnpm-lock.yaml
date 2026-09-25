@@ -309,7 +309,7 @@ importers:
     devDependencies:
       '@devframes/vite':
         specifier: ^1.0.0
-        version: 1.0.0(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 1.0.0(@devframes/hub-ui@1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       '@sugarcube-sh/cli':
         specifier: workspace:*
         version: link:../cli
@@ -388,21 +388,24 @@ importers:
 
   packages/studio-vite:
     dependencies:
-      '@sugarcube-sh/core':
-        specifier: workspace:*
-        version: link:../core
+      '@devframes/hub':
+        specifier: ^1.0.0
+        version: 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
+      '@devframes/hub-ui':
+        specifier: ^1.0.0
+        version: 1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
+      '@devframes/vite':
+        specifier: ^1.0.0
+        version: 1.0.0(@devframes/hub-ui@1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       '@sugarcube-sh/studio':
         specifier: workspace:*
         version: link:../studio
-      '@sugarcube-sh/studio-protocol':
-        specifier: workspace:*
-        version: link:../studio-protocol
       '@sugarcube-sh/vite':
         specifier: workspace:*
         version: link:../vite
-      '@vitejs/devtools-kit':
-        specifier: ^0.1.13
-        version: 0.1.13(typescript@5.9.3)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))(ws@8.21.0)
+      devframe:
+        specifier: ^1.0.0
+        version: 1.0.0(cac@7.0.0)(srvx@1.0.5)
       vite:
         specifier: 8.3.0
         version: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
@@ -837,6 +840,25 @@ packages:
   '@ctrl/tinycolor@4.2.0':
     resolution: {integrity: sha512-kzyuwOAQnXJNLS9PSyrk0CWk35nWJW/zl/6KvnTBMFK65gm7U1/Z5BqjxeapjZCIhQcM/DsrEmcbRwDyXyXK4A==}
     engines: {node: '>=14'}
+
+  '@devframes/hub-ui@1.0.0':
+    resolution: {integrity: sha512-uSmkN4MBoudNgzOSgwGh8/NyBhdUN35Ye1M1eokqB+ETR+dMoj5SJDusvbIN/kbpZue2zCcy7920SOhrrt2yLw==}
+    peerDependencies:
+      '@devframes/hub': 1.0.0
+      '@devframes/json-render': 1.0.0
+      devframe: 1.0.0
+    peerDependenciesMeta:
+      '@devframes/json-render':
+        optional: true
+
+  '@devframes/hub@1.0.0':
+    resolution: {integrity: sha512-L3NyTN5YDQ8LbKg5LjuovXVmsafTOxaMqZ0AHBIIfjK0PGhNWrIIydVrIm6VpoI+ARB/iS6k7sF15J80oBpo2Q==}
+    peerDependencies:
+      '@devframes/agentic': 1.0.0
+      devframe: 1.0.0
+    peerDependenciesMeta:
+      '@devframes/agentic':
+        optional: true
 
   '@devframes/vite@1.0.0':
     resolution: {integrity: sha512-dyNd7z2xSS+7s3wU7HPkbkslsgaYLqEh0QQFY5bOYoiY/PkEGtuZybNQ+TjAxVPLDIsJX8S9uUTSVKPp8gEbew==}
@@ -6494,6 +6516,9 @@ packages:
   youch@4.1.0-beta.10:
     resolution: {integrity: sha512-rLfVLB4FgQneDr0dv1oddCVZmKjcJ6yX6mS4pU82Mq/Dt9a3cLZQ62pDBL4AUO+uVrCvtWz3ZFUL2HFAFJ/BXQ==}
 
+  zigpty@0.2.1:
+    resolution: {integrity: sha512-MR9JqJx2wf5f4wz8zpx050AlqrmWeIW+1h0SO5iEyhG3HFRjY5luC3szS2ux2EGuPjE5OU9ZAuiCBeMWBTrqZw==}
+
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
@@ -7096,11 +7121,30 @@ snapshots:
 
   '@ctrl/tinycolor@4.2.0': {}
 
-  '@devframes/vite@1.0.0(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))':
+  '@devframes/hub-ui@1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))':
+    dependencies:
+      '@devframes/hub': 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
+      devframe: 1.0.0(cac@7.0.0)(srvx@1.0.5)
+
+  '@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))':
+    dependencies:
+      destr: 2.0.5
+      devframe: 1.0.0(cac@7.0.0)(srvx@1.0.5)
+      h3: 2.0.1-rc.32(crossws@0.4.12(srvx@1.0.5))
+      pathe: 2.0.3
+      tinyexec: 1.3.1
+      zigpty: 0.2.1
+    transitivePeerDependencies:
+      - crossws
+      - ocache
+
+  '@devframes/vite@1.0.0(@devframes/hub-ui@1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))':
     dependencies:
       devframe: 1.0.0(cac@7.0.0)(srvx@1.0.5)
       pathe: 2.0.3
     optionalDependencies:
+      '@devframes/hub': 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
+      '@devframes/hub-ui': 1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
       vite: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
 
   '@emnapi/core@1.11.1':
@@ -9274,16 +9318,6 @@ snapshots:
       unplugin-utils: 0.3.2
       vite: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
 
-  '@vitejs/devtools-kit@0.1.13(typescript@5.9.3)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))(ws@8.21.0)':
-    dependencies:
-      '@vitejs/devtools-rpc': 0.1.13(typescript@5.9.3)(ws@8.21.0)
-      birpc: 4.0.0
-      ohash: 2.0.11
-      vite: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
-    transitivePeerDependencies:
-      - typescript
-      - ws
-
   '@vitejs/devtools-kit@0.1.13(typescript@5.9.3)(vite@8.3.0)(ws@8.20.0)':
     dependencies:
       '@vitejs/devtools-rpc': 0.1.13(typescript@5.9.3)(ws@8.20.0)
@@ -9358,18 +9392,6 @@ snapshots:
       valibot: 1.3.1(typescript@5.9.3)
     optionalDependencies:
       ws: 8.20.0
-    transitivePeerDependencies:
-      - typescript
-
-  '@vitejs/devtools-rpc@0.1.13(typescript@5.9.3)(ws@8.21.0)':
-    dependencies:
-      birpc: 4.0.0
-      ohash: 2.0.11
-      p-limit: 7.3.0
-      structured-clone-es: 2.0.0
-      valibot: 1.3.1(typescript@5.9.3)
-    optionalDependencies:
-      ws: 8.21.0
     transitivePeerDependencies:
       - typescript
 
@@ -13130,6 +13152,8 @@ snapshots:
       '@speed-highlight/core': 1.2.24
       cookie: 1.1.1
       youch-core: 0.3.3
+
+  zigpty@0.2.1: {}
 
   zod@3.25.76: {}
 

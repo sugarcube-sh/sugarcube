@@ -180,11 +180,7 @@ export default defineConfig({
             : {}),
         plugins: [
             DevTools(),
-            // Under SUGARCUBE_STUDIO, tell studio-vite NOT to host the built
-            // SPA at /__studio/. The proxy above serves it from Studio's dev
-            // server instead. Otherwise hostStatic wins and you get the static
-            // bundle with no HMR.
-            studio(SUGARCUBE_STUDIO ? { serveStatic: false } : {}),
+            studio(),
             serveStudioSPA,
             sugarcube({
                 unoOptions: {
