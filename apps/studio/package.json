@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "type-check": "tsc --noEmit"
+    "deploy": "pnpm --filter @sugarcube-sh/studio build && wrangler deploy",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
-    "jsonc-parser": "^3.3.1"
+    "@sugarcube-sh/studio": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260907.1",

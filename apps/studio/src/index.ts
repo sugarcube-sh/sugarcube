@@ -1,5 +1,7 @@
+import { WriteOpFailed } from "@sugarcube-sh/studio/write-ops";
 import type { Env } from "./env";
-import { type PRRequest, createPR } from "./github";
+import { SaveRefused, createPR } from "./github";
+import { checkRequest } from "./request";
 
 const CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
@@ -28,27 +30,27 @@ export default {
 } satisfies ExportedHandler<Env>;
 
 async function handleSubmitPR(request: Request, env: Env): Promise<Response> {
-    let body: PRRequest;
+    let body: unknown;
     try {
-        body = (await request.json()) as PRRequest;
+        body = await request.json();
     } catch {
         return json({ error: "Invalid JSON body" }, 400);
     }
 
-    if (!body.title || !Array.isArray(body.files) || body.files.length === 0) {
-        return json({ error: "Missing required fields: title, files" }, 400);
-    }
-
-    for (const file of body.files) {
-        if (!file.path || !Array.isArray(file.edits) || file.edits.length === 0) {
-            return json({ error: "Each file must have a path and at least one edit" }, 400);
-        }
-    }
+    const checked = checkRequest(body);
+    if ("error" in checked) return json({ error: checked.error }, 400);
 
     try {
-        const result = await createPR(env, body);
+        const result = await createPR(env, checked.request);
         return json(result, 201);
     } catch (err) {
+        if (err instanceof WriteOpFailed) {
+            return json(
+                { error: "The repository moved under this save", detail: err.message },
+                409,
+            );
+        }
+        if (err instanceof SaveRefused) return json({ error: err.message }, 422);
         console.error("PR creation failed:", err);
         const message = err instanceof Error ? err.message : "Unknown error";
         return json({ error: "Failed to create PR", detail: message }, 500);

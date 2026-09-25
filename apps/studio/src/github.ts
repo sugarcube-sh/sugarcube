@@ -1,5 +1,8 @@
-import { applyEdits, modify } from "jsonc-parser";
+import { applyWriteOps } from "@sugarcube-sh/studio/write-ops";
 import type { Env } from "./env";
+import type { PRRequest } from "./request";
+
+export type { PRRequest };
 
 const GITHUB_API = "https://api.github.com";
 
@@ -115,55 +118,19 @@ async function githubPost(token: string, path: string, body: unknown): Promise<u
     return res.json();
 }
 
-/** A single token value edit: the path segments to the property and the new value. */
-export type TokenEdit = {
-    /** JSON path segments, e.g. ["color", "neutral", "surface", "default", "$value"] */
-    jsonPath: string[];
-    /** The new value to set at that path */
-    value: unknown;
-};
-
-/** Edits to apply to a single file. */
-export type FileEdits = {
-    /** File path in the repo, e.g. "registry/tokens/starter-kits/fluid/colors.json" */
-    path: string;
-    /** The individual token edits to apply to this file */
-    edits: TokenEdit[];
-};
-
-export type PRRequest = {
-    title: string;
-    description: string;
-    files: FileEdits[];
-};
-
 export type PRResult = {
     number: number;
     url: string;
 };
 
-// We want the PR to match the target repo's formatting as much as possible
-// as a courtesy
-function detectIndent(rawJSON: string): string {
-    const match = rawJSON.match(/\n(\s+)/);
-    return match?.[1] ?? "  ";
+export class SaveRefused extends Error {
+    override name = "SaveRefused";
 }
 
-function applyTokenEdits(rawJSON: string, edits: TokenEdit[]): string {
-    const indent = detectIndent(rawJSON);
-    const eol = rawJSON.includes("\r\n") ? "\r\n" : "\n";
-    let result = rawJSON;
-    for (const edit of edits) {
-        const textEdits = modify(result, edit.jsonPath, edit.value, {
-            formattingOptions: {
-                tabSize: indent.length,
-                insertSpaces: !indent.startsWith("\t"),
-                eol,
-            },
-        });
-        result = applyEdits(result, textEdits);
-    }
-    return result;
+function decodeContent(content: string): string {
+    const binary = atob(content.replace(/\n/g, ""));
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
 }
 
 export async function createPR(env: Env, request: PRRequest): Promise<PRResult> {
@@ -181,39 +148,39 @@ export async function createPR(env: Env, request: PRRequest): Promise<PRResult> 
     };
     const baseTreeSHA = baseCommit.tree.sha;
 
-    const treeEntries: { path: string; mode: string; type: string; sha: string }[] = [];
+    const read = await Promise.all(
+        request.files.map(
+            (file) =>
+                githubGet(token, `/repos/${repo}/contents/${file.path}?ref=${baseSHA}`) as Promise<{
+                    content?: string;
+                    encoding?: string;
+                }>,
+        ),
+    );
 
-    for (const file of request.files) {
-        const existing = (await githubGet(
-            token,
-            `/repos/${repo}/contents/${file.path}?ref=${baseBranch}`,
-        )) as { content: string };
-
-        const rawContent = atob(existing.content.replace(/\n/g, ""));
-
-        const updatedContent = applyTokenEdits(rawContent, file.edits);
-
-        const blob = (await githubPost(token, `/repos/${repo}/git/blobs`, {
-            content: updatedContent,
-            encoding: "utf-8",
-        })) as { sha: string };
-
-        treeEntries.push({
+    const tree = request.files.map((file, index) => {
+        const existing = read[index];
+        if (existing?.encoding !== "base64" || !existing.content) {
+            throw new SaveRefused(
+                `${file.path} is too large for GitHub to hand over; Studio cannot save to it here.`,
+            );
+        }
+        return {
             path: file.path,
             mode: "100644",
             type: "blob",
-            sha: blob.sha,
-        });
-    }
+            content: applyWriteOps(decodeContent(existing.content), file.ops, file.path),
+        };
+    });
 
-    const tree = (await githubPost(token, `/repos/${repo}/git/trees`, {
+    const created = (await githubPost(token, `/repos/${repo}/git/trees`, {
         base_tree: baseTreeSHA,
-        tree: treeEntries,
+        tree,
     })) as { sha: string };
 
     const commit = (await githubPost(token, `/repos/${repo}/git/commits`, {
         message: request.title,
-        tree: tree.sha,
+        tree: created.sha,
         parents: [baseSHA],
     })) as { sha: string };
 

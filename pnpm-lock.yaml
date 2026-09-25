@@ -41,9 +41,9 @@ importers:
 
   apps/studio:
     dependencies:
-      jsonc-parser:
-        specifier: ^3.3.1
-        version: 3.3.1
+      '@sugarcube-sh/studio':
+        specifier: workspace:*
+        version: link:../../packages/studio
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^5.20260907.1
