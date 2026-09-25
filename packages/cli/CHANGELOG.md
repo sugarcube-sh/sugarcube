@@ -1,5 +1,15 @@
 # @sugarcube-sh/cli
 
+## 0.1.27
+
+### Patch Changes
+
+- 73b36b0: Fixed a bug in the vite plugin. When you edited a token file or sugarcube.config.ts, the page didn't update until you reloaded it. The cause was a bug in UnoCSS 66.9, which the plugin uses to build the CSS. UnoCSS fixed it in 66.10.4, and the plugin now uses that version.
+- 6a68085: `generate --watch` now reports watcher errors on stderr.
+- 6a68085: `generate --watch` no longer loses a token change when a markup file changes within a moment of it. Both regenerate, tokens first; before, the markup change replaced the token one and `tokens.css` kept the old values until the next token edit.
+- Updated dependencies [6d6514a]
+  - @sugarcube-sh/core@0.2.20
+
 ## 0.1.26
 
 ### Patch Changes
