@@ -8,6 +8,7 @@ import sugarcube from "@sugarcube-sh/vite";
 import presetWind3 from "@unocss/preset-wind3";
 import robotsTxt from "astro-robots-txt";
 import { defineConfig, fontProviders } from "astro/config";
+import { fileURLToPath } from "node:url";
 import { siteConfig } from "./src/site.config";
 
 export default defineConfig({
@@ -151,6 +152,9 @@ export default defineConfig({
         mdx(),
     ],
     vite: {
+        resolve: {
+            alias: { "@": fileURLToPath(new URL(".", import.meta.url)) },
+        },
         plugins: [
             studio(),
             sugarcube({
