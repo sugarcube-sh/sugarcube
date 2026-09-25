@@ -146,7 +146,7 @@ describe("after a save", () => {
     it("re-reports problems against the saved state", () => {
         const { store } = createSourceStore(sources());
 
-        store.getState().setToken("space.md", "sixteen pixels");
+        store.getState().setToken("radius.md", "sixteen pixels");
         store.getState().adopt();
 
         expect(store.getState().problems.size).toBeGreaterThan(0);

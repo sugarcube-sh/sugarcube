@@ -59,9 +59,9 @@ describe("creating a group", () => {
         });
 
         expect(store.getState().ops).toEqual([
-            { kind: "set", file, path: ["color", "raw"], value: {} },
+            { kind: "add", file, path: ["color", "raw"], value: {} },
             {
-                kind: "set",
+                kind: "add",
                 file,
                 path: ["color", "raw", "blue"],
                 value: { $type: "color", $value: "#00f" },

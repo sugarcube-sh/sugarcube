@@ -9,7 +9,7 @@ import { type Handle, PathIndex } from "./path-index";
 import { isSegment, parentPath } from "./paths";
 import { type PathMoves, movedTo, renameInSources } from "./rename-in-sources";
 import { type JsonPath, nodeAt } from "./text-edits";
-import { type WriteOp, applyWriteOps, opsByFile } from "./write-ops";
+import { type WriteOp, WriteOpFailed, applyWriteOps, opsByFile } from "./write-ops";
 
 export type Problem = {
     kind: "invalid" | "missing-reference" | "circular";
@@ -213,12 +213,28 @@ function touchedTwice(ops: readonly WriteOp[], was: string, arriving: string): b
     );
 }
 
+/**
+ * The ops replayed onto the text, or null when one of them no longer fits it.
+ * An edit made here is refused rather than written somewhere it does not
+ * belong; anything else thrown is a bug and goes up.
+ */
+function tryReplay(text: string, ops: readonly WriteOp[], file: string): string | null {
+    try {
+        return applyWriteOps(text, ops, file);
+    } catch (error) {
+        if (error instanceof WriteOpFailed) return null;
+        throw error;
+    }
+}
+
 /** One operation applied to its file, and the document rebuilt around it. */
 function edit(doc: SourceDocument, op: WriteOp): SourceDocument | null {
     const text = doc.sources.files[op.file];
     if (text === undefined) return null;
 
-    const files = { ...doc.sources.files, [op.file]: applyWriteOps(text, [op], op.file) };
+    const replayed = tryReplay(text, [op], op.file);
+    if (replayed === null) return null;
+    const files = { ...doc.sources.files, [op.file]: replayed };
     return derive({ ...doc.sources, files }, [...doc.ops, op], doc);
 }
 
@@ -284,7 +300,9 @@ export function setValues(
 
     const files = { ...doc.sources.files };
     for (const op of ops.values()) {
-        files[op.file] = applyWriteOps(files[op.file] as string, [op], op.file);
+        const replayed = tryReplay(files[op.file] as string, [op], op.file);
+        if (replayed === null) return null;
+        files[op.file] = replayed;
     }
     return derive({ ...doc.sources, files }, [...doc.ops, ...ops.values()], doc);
 }
@@ -344,7 +362,7 @@ export function create(doc: SourceDocument, node: NewNode): SourceDocument | nul
     if (!writableFiles(doc.sources).includes(node.sourcePath)) return null;
 
     const written = node.token ? { $type: node.token.$type, $value: node.token.$value } : {};
-    return edit(doc, { kind: "set", file: node.sourcePath, path: path.split("."), value: written });
+    return edit(doc, { kind: "add", file: node.sourcePath, path: path.split("."), value: written });
 }
 
 export function remove(doc: SourceDocument, handle: Handle): SourceDocument | null {
