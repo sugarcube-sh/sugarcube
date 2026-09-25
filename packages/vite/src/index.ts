@@ -346,13 +346,8 @@ function createSugarcubeContext(): SugarcubePluginContext {
             using I = new Instrumentation();
             I.start("Invalidate");
 
-            // Keyed O(1) lookup instead of scanning the whole module graph, which
-            // grows with project size on every change.
-            const module = server.moduleGraph.getModuleById("/__uno.css");
-            if (module) {
-                server.moduleGraph.invalidateModule(module);
-                server.reloadModule(module);
-            }
+            const unocssPlugin = server.config.plugins.find((p) => p.name === "unocss:api");
+            unocssPlugin?.api?.getContext().invalidate();
 
             I.end("Invalidate");
         },
@@ -552,6 +547,9 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 // module (which holds both variables via preflight and utilities).
                 const runReload = createCoalescedRunner(
                     async () => {
+                        server.config.logger.info(
+                            "[sugarcube] Design tokens changed, reloading...",
+                        );
                         using I = new Instrumentation();
                         I.start("Total File Change Handler");
                         await ctx.reloadTokens();
@@ -573,9 +571,6 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
 
                 server.watcher.on("change", (file) => {
                     if (file.endsWith(".json") && tokenDirs.some((dir) => file.includes(dir))) {
-                        server.config.logger.info(
-                            "[sugarcube] Design tokens changed, reloading...",
-                        );
                         scheduleReload();
                     }
                 });
