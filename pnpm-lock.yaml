@@ -375,7 +375,30 @@ importers:
         specifier: ^5.8.3
         version: 5.9.3
 
-  packages/studio-node: {}
+  packages/studio-node:
+    dependencies:
+      '@devframes/hub':
+        specifier: ^1.0.0
+        version: 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
+      '@devframes/hub-ui':
+        specifier: ^1.0.0
+        version: 1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
+      '@sugarcube-sh/studio':
+        specifier: workspace:*
+        version: link:../studio
+      devframe:
+        specifier: ^1.0.0
+        version: 1.0.0(cac@7.0.0)(srvx@1.0.5)
+    devDependencies:
+      '@sugarcube-sh/core':
+        specifier: workspace:*
+        version: link:../core
+      pkgroll:
+        specifier: ^2.28.1
+        version: 2.28.1(typescript@5.9.3)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
 
   packages/studio-protocol:
     devDependencies:
