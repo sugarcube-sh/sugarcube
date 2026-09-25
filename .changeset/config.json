@@ -9,6 +9,7 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "www",
+    "studio",
     "@sugarcube-sh/studio",
     "@sugarcube-sh/studio-vite",
     "@sugarcube-sh/studio-node"
