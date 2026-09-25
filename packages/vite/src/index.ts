@@ -22,10 +22,8 @@ import type {
     TokenTree,
 } from "@sugarcube-sh/core";
 
-import { readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import UnoCSS from "@unocss/vite";
-import { applyEdits, modify } from "jsonc-parser";
 import type { Logger, Plugin, ViteDevServer } from "vite";
 
 /** CSS object for UnoCSS rules - matches @unocss/core CSSObject */
@@ -58,6 +56,11 @@ interface UnoOptions {
     [key: string]: unknown;
 }
 
+interface UnoContext {
+    invalidate: () => void;
+    reloadConfig: () => Promise<unknown>;
+}
+
 interface SugarcubePluginOptions {
     /**
      * UnoCSS options passed directly to UnoCSS.
@@ -69,6 +72,8 @@ interface SugarcubePluginOptions {
 
 const perf = new PerfMonitor();
 
+export const SUGARCUBE_API_PLUGIN_NAME = "sugarcube:api";
+
 export interface SugarcubePluginContext {
     ready: Promise<void>;
     config: InternalConfig | null;
@@ -78,25 +83,20 @@ export interface SugarcubePluginContext {
     defaultContext: string | null;
     permutations: Permutation[];
     sources: TokenSources | null;
+    errors: readonly string[];
     getCSS: () => string;
-    writeTokenEdits: (
-        sourcePath: string,
-        edits: Array<{ jsonPath: string[]; value: unknown }>,
-    ) => Promise<void>;
-    rerunPipeline: (modifiedResolved: ResolvedTokens) => Promise<void>;
     reloadConfig: () => Promise<void>;
     reloadTokens: () => Promise<void>;
     getRules: () => UnoRule[];
     getSafelist: () => string[];
     getTokenDirs: () => string[];
-    invalidate: (server: ViteDevServer) => void;
-    onReload: (fn: () => void) => void;
+    onReload: (fn: () => void) => () => void;
     tasks: Promise<void>[];
     flushTasks: () => Promise<void>;
     setLogger: (logger: Logger) => void;
 }
 
-function createSugarcubeContext(): SugarcubePluginContext {
+function createSugarcubeContext(unocss: () => UnoContext | undefined): SugarcubePluginContext {
     let config: InternalConfig | null = null;
     let tokens: NormalizedRenderableTokens | null = null;
     let trees: TokenTree[] | null = null;
@@ -104,10 +104,11 @@ function createSugarcubeContext(): SugarcubePluginContext {
     let sources: TokenSources | null = null;
     let permutations: Permutation[] = [];
     let defaultContext: string | null = null;
+    let errors: readonly string[] = [];
     let cachedCSS = "";
     let cachedRules: UnoRule[] = [];
     let cachedSafelist: string[] = [];
-    const reloadCallbacks: (() => void)[] = [];
+    const reloadCallbacks = new Set<() => void>();
     const tasks: Promise<void>[] = [];
     let logger: Logger | null = null;
     const pendingLogs: Array<{ level: "info" | "warn"; msg: string }> = [];
@@ -225,6 +226,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
         sources = loaded.sources ?? null;
         permutations = loaded.permutations;
         defaultContext = loaded.defaultContext ?? null;
+        errors = allErrors.map((error) => error.message);
 
         I.start("Process Tokens");
         tokens = assignCSSNames(
@@ -273,6 +275,9 @@ function createSugarcubeContext(): SugarcubePluginContext {
         get sources() {
             return sources;
         },
+        get errors() {
+            return errors;
+        },
         get tasks() {
             return tasks;
         },
@@ -283,19 +288,6 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
         getSafelist() {
             return cachedSafelist;
-        },
-
-        async rerunPipeline(modifiedResolved: ResolvedTokens) {
-            const localConfig = config;
-            const localTrees = trees;
-            if (!localConfig || !localTrees) return;
-            const task = (async () => {
-                tokens = assignCSSNames(groupByContext(localTrees, modifiedResolved), localConfig);
-                await generateCSS();
-                cachedRules = buildRules();
-                cachedSafelist = buildSafelist();
-            })();
-            return addTask(task);
         },
 
         async reloadConfig() {
@@ -310,6 +302,9 @@ function createSugarcubeContext(): SugarcubePluginContext {
                 // the full token pipeline, not just CSS regeneration
                 await runPipeline();
                 await updateAll();
+                // Without this, UnoCSS will not get the new rules
+                await unocss()?.reloadConfig();
+                unocss()?.invalidate();
 
                 for (const fn of reloadCallbacks) fn();
                 I.end("Reload Config");
@@ -325,6 +320,7 @@ function createSugarcubeContext(): SugarcubePluginContext {
 
                 await runPipeline();
                 await updateAll();
+                unocss()?.invalidate();
 
                 for (const fn of reloadCallbacks) fn();
                 I.end("Reload total process");
@@ -342,33 +338,11 @@ function createSugarcubeContext(): SugarcubePluginContext {
             return extractTokenDirs(config);
         },
 
-        invalidate(server: ViteDevServer) {
-            using I = new Instrumentation();
-            I.start("Invalidate");
-
-            const unocssPlugin = server.config.plugins.find((p) => p.name === "unocss:api");
-            unocssPlugin?.api?.getContext().invalidate();
-
-            I.end("Invalidate");
-        },
-
         onReload(fn: () => void) {
-            reloadCallbacks.push(fn);
-        },
-
-        async writeTokenEdits(
-            sourcePath: string,
-            edits: Array<{ jsonPath: string[]; value: unknown }>,
-        ) {
-            const fmt = { formattingOptions: { tabSize: 2, insertSpaces: true } };
-            let raw = await readFile(sourcePath, "utf-8");
-
-            for (const edit of edits) {
-                const textEdits = modify(raw, edit.jsonPath, edit.value, fmt);
-                raw = applyEdits(raw, textEdits);
-            }
-
-            await writeFile(sourcePath, raw, "utf-8");
+            reloadCallbacks.add(fn);
+            return () => {
+                reloadCallbacks.delete(fn);
+            };
         },
 
         async flushTasks() {
@@ -408,7 +382,8 @@ export function extractTokenDirs(config: Pick<InternalConfig, "resolver">): stri
 // version, causing TypeScript to treat identical types as incompatible.
 export default async function sugarcubePlugin(options: SugarcubePluginOptions = {}): Promise<any> {
     const { unoOptions = {} } = options;
-    const ctx = createSugarcubeContext();
+    let unocss: UnoContext | undefined;
+    const ctx = createSugarcubeContext(() => unocss);
     // It's imperative to await the ready state otherwise
     // UnoCSS will not get the generated rules
     await ctx.ready;
@@ -435,6 +410,9 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
         presets: [...(unoOptions.presets || []), sugarcubePreset],
     };
 
+    const unoPlugins: Plugin[] = UnoCSS(unoConfig);
+    unocss = unoPlugins.find((p) => p.name === "unocss:api")?.api?.getContext();
+
     const plugins: Plugin[] = [
         {
             name: "sugarcube:config",
@@ -443,7 +421,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             },
         } satisfies Plugin,
 
-        ...UnoCSS(unoConfig),
+        ...unoPlugins,
         {
             name: "sugarcube:virtual-css",
             enforce: "pre",
@@ -486,19 +464,6 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
 
                         try {
                             await ctx.reloadConfig();
-
-                            // Force UnoCSS to reload its config
-                            // Without this, UnoCSS will not get the new rules
-                            const unocssPlugin = server.config.plugins.find(
-                                (p) => p.name === "unocss:api",
-                            );
-                            if (unocssPlugin?.api) {
-                                const unoContext = unocssPlugin.api.getContext();
-                                await unoContext.reloadConfig();
-                            }
-
-                            // We use the same invalidation path as the token watcher as we know that approach works
-                            ctx.invalidate(server);
                         } catch (error) {
                             server.config.logger.error(
                                 `[sugarcube] Config reload failed: ${
@@ -553,9 +518,6 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                         using I = new Instrumentation();
                         I.start("Total File Change Handler");
                         await ctx.reloadTokens();
-                        I.start("Vite Invalidate");
-                        ctx.invalidate(server);
-                        I.end("Vite Invalidate");
                         I.end("Total File Change Handler");
                     },
                     (error) => {
@@ -582,7 +544,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
         } satisfies Plugin,
 
         {
-            name: "sugarcube:api",
+            name: SUGARCUBE_API_PLUGIN_NAME,
             api: {
                 getContext: () => ctx,
             },

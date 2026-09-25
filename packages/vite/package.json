@@ -49,8 +49,7 @@
   },
   "dependencies": {
     "@sugarcube-sh/core": "workspace:*",
-    "@unocss/vite": "^66.10.5",
-    "jsonc-parser": "^3.3.1"
+    "@unocss/vite": "^66.10.5"
   },
   "devDependencies": {
     "pkgroll": "^2.28.1",
