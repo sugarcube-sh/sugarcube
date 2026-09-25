@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "description": "Vite plugin for studio",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "author": {
     "name": "Mark Tomlinson",
     "email": "mark@marktomlinson.dev",
@@ -19,14 +19,16 @@
   "scripts": {
     "build": "pkgroll --minify",
     "dev": "pkgroll --watch",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@sugarcube-sh/core": "workspace:*",
+    "@devframes/hub": "^1.0.0",
+    "@devframes/hub-ui": "^1.0.0",
+    "@devframes/vite": "^1.0.0",
     "@sugarcube-sh/studio": "workspace:*",
-    "@sugarcube-sh/studio-protocol": "workspace:*",
     "@sugarcube-sh/vite": "workspace:*",
-    "@vitejs/devtools-kit": "^0.1.13"
+    "devframe": "^1.0.0"
   },
   "devDependencies": {
     "pkgroll": "^2.28.1",
