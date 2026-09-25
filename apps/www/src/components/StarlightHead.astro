@@ -27,7 +27,7 @@ const socialImageURL = new URL(siteConfig.ogImage ?? "/social-card.png", Astro.s
 
 <CSSLayers />
 
-{import.meta.env.DEV && <script is:inline type="module" src="/@id/@vitejs/devtools/client/inject" />}
+{import.meta.env.DEV && <script is:inline type="module" src="/__devframes/embedded.js" />}
 
 <DefaultHead {...Astro.props} />
 

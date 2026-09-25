@@ -10,9 +10,7 @@
   "ignore": [
     "www",
     "@sugarcube-sh/studio",
-    "@sugarcube-sh/studio-embed",
     "@sugarcube-sh/studio-vite",
-    "@sugarcube-sh/studio-node",
-    "@sugarcube-sh/studio-protocol"
+    "@sugarcube-sh/studio-node"
   ]
 }
