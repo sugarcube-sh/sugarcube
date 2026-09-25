@@ -59,7 +59,7 @@
     "@clack/core": "1.4.3",
     "@clack/prompts": "1.7.0",
     "@sugarcube-sh/core": "workspace:*",
-    "@unocss/core": "^66.9.2",
+    "@unocss/core": "^66.10.5",
     "chokidar": "^5.0.0",
     "commander": "12.1.0",
     "execa": "9.5.2",
