@@ -59,7 +59,7 @@
   "devDependencies": {
     "@unocss/preset-wind3": "^66.9.2",
     "@unocss/preset-wind4": "^66.9.2",
-    "@vitejs/devtools": "^0.1.13",
+    "@vitejs/devtools": "^0.7.5",
     "tsx": "^4.23.13",
     "wrangler": "^4.129.0"
   }
