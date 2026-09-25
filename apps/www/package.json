@@ -10,7 +10,6 @@
     "deploy": "pnpm run build && wrangler deploy",
     "dev": "cross-env REGISTRY_URL=/r astro dev",
     "dev:debug": "cross-env DEBUG=true REGISTRY_URL=/r astro dev",
-    "dev:studio": "cross-env SUGARCUBE_STUDIO=true REGISTRY_URL=/r astro dev",
     "preview": "astro preview",
     "type-check": "astro sync && tsc --noEmit"
   },
@@ -36,8 +35,6 @@
     "@radix-ui/react-tabs": "^1.1.21",
     "@sugarcube-sh/cli": "workspace:*",
     "@sugarcube-sh/core": "workspace:*",
-    "@sugarcube-sh/studio": "workspace:*",
-    "@sugarcube-sh/studio-embed": "workspace:*",
     "@sugarcube-sh/studio-vite": "workspace:*",
     "@sugarcube-sh/vite": "workspace:*",
     "@types/react": "^19.2.18",
@@ -52,14 +49,12 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.87.0",
-    "sirv": "^3.0.1",
     "ultrahtml": "^1.6.0",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@unocss/preset-wind3": "^66.9.2",
     "@unocss/preset-wind4": "^66.9.2",
-    "@vitejs/devtools": "^0.1.13",
     "tsx": "^4.23.13",
     "wrangler": "^4.129.0"
   }

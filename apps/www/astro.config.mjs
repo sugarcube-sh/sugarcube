@@ -4,25 +4,11 @@ import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
 import studio from "@sugarcube-sh/studio-vite";
-import { clientPath } from "@sugarcube-sh/studio/client";
 import sugarcube from "@sugarcube-sh/vite";
 import presetWind3 from "@unocss/preset-wind3";
-import { DevTools } from "@vitejs/devtools";
 import robotsTxt from "astro-robots-txt";
 import { defineConfig, fontProviders } from "astro/config";
-import sirv from "sirv";
 import { siteConfig } from "./src/site.config";
-
-const SUGARCUBE_STUDIO = process.env.SUGARCUBE_STUDIO === "true";
-
-/** @type {NonNullable<import("astro").ViteUserConfig["plugins"]>[number]} */
-const serveStudioSPA = {
-    name: "sugarcube-studio-serve",
-    configureServer(server) {
-        if (SUGARCUBE_STUDIO) return;
-        server.middlewares.use("/__studio/", sirv(clientPath, { dev: true, single: true }));
-    },
-};
 
 export default defineConfig({
     site: siteConfig.url,
@@ -165,23 +151,8 @@ export default defineConfig({
         mdx(),
     ],
     vite: {
-        ...(SUGARCUBE_STUDIO
-            ? {
-                  server: {
-                      proxy: {
-                          "/__studio": {
-                              target: "http://localhost:5173",
-                              changeOrigin: true,
-                              ws: true,
-                          },
-                      },
-                  },
-              }
-            : {}),
         plugins: [
-            DevTools(),
             studio(),
-            serveStudioSPA,
             sugarcube({
                 unoOptions: {
                     presets: [presetWind3({ preflight: false })],

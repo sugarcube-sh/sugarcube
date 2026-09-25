@@ -10,3 +10,4 @@ drafts
 .wrangler
 *.log
 *.tsbuildinfo
+.pnpm-store/
