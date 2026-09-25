@@ -12,28 +12,28 @@ describe("what the pipeline says is wrong", () => {
     // edit — it reports what core made of it.
     it("reports a value core cannot make sense of", () => {
         const doc = openDocument(sources());
-        const next = setValue(doc, "space.md", "sixteen pixels", BASE);
+        const next = setValue(doc, "radius.md", "sixteen pixels", BASE);
         if (!next) throw new Error("setValue returned null");
 
-        expect(next.problems.get("space.md")?.[0]?.kind).toBe("invalid");
+        expect(next.problems.get("radius.md")?.[0]?.kind).toBe("invalid");
     });
 
     it("keeps the edit anyway, so the text is what you typed", () => {
         const doc = openDocument(sources());
-        const next = setValue(doc, "space.md", "sixteen pixels", BASE) as NonNullable<
+        const next = setValue(doc, "radius.md", "sixteen pixels", BASE) as NonNullable<
             ReturnType<typeof setValue>
         >;
 
-        expect(next.index.readValue(next.resolved, "space.md", BASE)).toBe("sixteen pixels");
+        expect(next.index.readValue(next.resolved, "radius.md", BASE)).toBe("sixteen pixels");
     });
 
     it("complains once, not once per permutation", () => {
         const doc = openDocument(sources());
-        const next = setValue(doc, "space.md", "sixteen pixels", BASE) as NonNullable<
+        const next = setValue(doc, "radius.md", "sixteen pixels", BASE) as NonNullable<
             ReturnType<typeof setValue>
         >;
 
-        expect(next.problems.get("space.md")).toHaveLength(1);
+        expect(next.problems.get("radius.md")).toHaveLength(1);
     });
 
     it("marks the referrers when a delete orphans them", () => {
@@ -59,23 +59,23 @@ describe("what the pipeline says is wrong", () => {
 
     it("clears once the problem is fixed", () => {
         const doc = openDocument(sources());
-        const broken = setValue(doc, "space.md", "sixteen pixels", BASE) as NonNullable<
+        const broken = setValue(doc, "radius.md", "sixteen pixels", BASE) as NonNullable<
             ReturnType<typeof setValue>
         >;
         expect(broken.problems.size).toBeGreaterThan(0);
 
-        const fixed = setValue(broken, "space.md", { value: 16, unit: "px" }, BASE);
+        const fixed = setValue(broken, "radius.md", { value: 16, unit: "px" }, BASE);
         expect(fixed?.problems.size).toBe(0);
     });
 
     it("finds the problem by the handle a node had before it moved", () => {
         const doc = openDocument(sources());
-        const renamed = rename(doc, "space", "spacing") as NonNullable<ReturnType<typeof rename>>;
-        const broken = setValue(renamed, "space.md", "sixteen pixels", BASE) as NonNullable<
+        const renamed = rename(doc, "radius", "corner") as NonNullable<ReturnType<typeof rename>>;
+        const broken = setValue(renamed, "radius.md", "sixteen pixels", BASE) as NonNullable<
             ReturnType<typeof setValue>
         >;
 
-        expect(broken.index.pathOf("space.md")).toBe("spacing.md");
-        expect(broken.problems.get("space.md")?.[0]?.kind).toBe("invalid");
+        expect(broken.index.pathOf("radius.md")).toBe("corner.md");
+        expect(broken.problems.get("radius.md")?.[0]?.kind).toBe("invalid");
     });
 });

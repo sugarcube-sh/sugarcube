@@ -114,7 +114,7 @@ describe("what Studio writes, core reads back", () => {
     it("touched more than one file, through every kind of edit", () => {
         expect(touched.size).toBeGreaterThan(1);
         expect(new Set(held.ops.map((op) => op.kind))).toEqual(
-            new Set(["set", "remove", "renameKey"]),
+            new Set(["set", "add", "remove", "renameKey"]),
         );
     });
 
