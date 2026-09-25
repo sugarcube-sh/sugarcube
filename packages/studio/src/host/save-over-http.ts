@@ -3,10 +3,9 @@ import type { SaveBundle, SaveResult } from "./types";
 const SAVE_TIMEOUT_MS = 30_000;
 
 /**
- * A save with no server behind Studio: the operations go to a service that
- * replays them against the repository and opens a pull request. The reply is
- * the pull request, so the change bar can link to it. A service that never
- * answers is given up on, and the edits stay pending for another try.
+ * The save path when there is no server: the edits go to a service that
+ * replays them against the repo and opens a pull request. It responds with that
+ * pull request, so the change bar can link to it.
  */
 export async function saveOverHttp(
     url: string,

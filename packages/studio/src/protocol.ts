@@ -1,12 +1,12 @@
 export const STUDIO_RPC = {
     SAVE: "sugarcube:studio:save",
     SHARED_STATE_DISK: "sugarcube:studio:disk",
-    /** Key of Studio's block in the connection handshake's `configs`. */
+    /** Not a method: studio's key in the handshake's `configs`. */
     CONFIG: "sugarcube:studio",
 } as const;
 
-/** Studio's block of the connection handshake, baked in by the host. */
+/** Settings the host publishes in the handshake for clients to read. */
 export type StudioConnectionConfig = {
-    /** Where a save goes when there is no server to write files: a service that opens a pull request. */
+    /** Where saves go when there's no server to write files, e.g. a service that opens a PR. */
     saveUrl?: string;
 };

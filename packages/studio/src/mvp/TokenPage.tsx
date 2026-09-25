@@ -124,7 +124,6 @@ export function TokenPage({ handle }: { handle: Handle }) {
     );
 }
 
-/** D-040: the preview context changes what is read, never what is written. */
 function Preview({ row, context }: { row: TokenRow; context: string }) {
     const value = usePreviewValue(row.handle, context);
     const field = readField(row.type, value);

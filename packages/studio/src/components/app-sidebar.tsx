@@ -134,7 +134,6 @@ export function AppSidebar() {
     const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
     const [seen, setSeen] = useState<string | null>(null);
 
-    // Arriving somewhere opens the branches above it, once per arrival.
     if (pathname !== seen) {
         setSeen(pathname);
         const ancestors = ancestorsOf(pathname);

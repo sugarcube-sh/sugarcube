@@ -1,10 +1,8 @@
 import type { DiskSharedStateHandle } from "../providers/rpc-client";
 import type { StudioDiskState, TokenSnapshot } from "../tokens/types";
 
-// devframe's shared state has no ready signal, so the wait is bounded.
 const INIT_TIMEOUT_MS = 10_000;
 
-/** The working snapshot off what the host published, or null while it has not sent everything. */
 export function snapshotFromDisk(disk: Partial<StudioDiskState>): TokenSnapshot | null {
     const { config, trees, resolved, sources } = disk;
     if (!config || !trees || !resolved || !sources) return null;

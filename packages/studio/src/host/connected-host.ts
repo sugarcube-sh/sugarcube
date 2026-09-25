@@ -7,12 +7,6 @@ import { attachPageChannel } from "./page-channel";
 import { saveOverHttp } from "./save-over-http";
 import type { Host, SaveBundle, SaveResult } from "./types";
 
-/**
- * Studio as a devframe client, whatever is on the other end. With a live
- * server, a save writes the files there. With a static dump there is no
- * server to write anything, so a save goes over HTTP to the service the
- * build named, which opens a pull request. The button says Save either way.
- */
 export async function createConnectedHost(signal: AbortSignal): Promise<Host> {
     const { transport, config, diskState, save: rpcSave } = await connectStudio(signal);
 
@@ -62,11 +56,6 @@ export async function createConnectedHost(signal: AbortSignal): Promise<Host> {
     };
 }
 
-/**
- * What identifies the project in the stash: the resolver path, which core
- * fills by discovery when the config names none. A host whose config carries
- * no resolver at all falls back to the first file the first context reads.
- */
 function stashKey(snapshot: TokenSnapshot): string {
     return snapshot.config.resolver ?? snapshot.sources.order[0]?.sources[0]?.file ?? "default";
 }

@@ -12,12 +12,12 @@ import type { FileOps } from "../tokens/write-ops";
 
 export type { StudioDiskState };
 
-/** What the client sends to save: the edits performed, replayed against each file as it is on disk (D-043). */
 export type StudioSaveBundle = SaveBundle;
 
 /**
- * What Studio needs from any host: the files as they are on disk, a way to
- * write operations back, and a way to re-read.
+ * Studio never reads token files itself. Under Vite the sugarcube plugin hands
+ * over tokens it has already parsed; the standalone Node server parses them on
+ * its own. This is what those two have to look like from studio's side.
  */
 export interface StudioTokenSource {
     ready: Promise<void>;
@@ -27,10 +27,7 @@ export interface StudioTokenSource {
     defaultContext: string | null;
     permutations: Permutation[];
     sources: TokenSources | null;
-    /** Why the last load produced less than it should have, one sentence each. */
     errors?: readonly string[];
-    /** All or nothing: a rename touches several files, and half a rename leaves
-     * dangling references. */
     writeOps(files: FileOps[]): Promise<void>;
     reloadTokens(): Promise<void>;
     onReload(fn: () => void): void;
@@ -53,11 +50,11 @@ export interface StudioHostBridge {
         handler: (...args: Args) => Promise<void>,
     ): void;
     warn(message: string): void;
-    /** Publish Studio's block of the connection handshake, read-only for every client. */
+    /** Writes values into the `__connection.json` a client fetches when it
+     * connects, so they reach the client once, at startup, and never come back. */
     publishConfig?(config: StudioConnectionConfig): void;
 }
 
 export interface DefineStudioOptions {
-    /** Where a save goes from a build with no server: a service that opens a pull request. */
     saveUrl?: string;
 }

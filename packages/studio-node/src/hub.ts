@@ -25,19 +25,19 @@ export type ServeStudioHubOptions = {
 export type StudioHubServer = {
     origin: string;
     port: number;
-    /** Where Studio opens full width. */
+    /** Where studio opens on its own, full width. */
     studioUrl: string;
-    /** The one tag a page adds to get the dock: `<script type="module" src=...>`. */
+    /** A page loads this with `<script type="module">` to get the dock. */
     embedScriptUrl: string;
     server: Server;
     close: () => Promise<void>;
 };
 
 /**
- * Studio as a devframes hub on its own port. A hub, not the single-devframe
- * dev server, because only a hub serves `embedded.js`: the bootstrap a page
- * on any other server loads to get the dock, and through it Studio, over
- * itself. This is the same shape the Vite adapter mounts.
+ * Serves studio from a port of its own, so a project not running Vite can still
+ * put the dock on its pages: the page loads `embedded.js` from here. Only a hub
+ * serves that file, which is why studio runs as one rather than as devframe's
+ * simpler single-devframe server. The Vite adapter mounts the same thing.
  */
 export async function serveStudioHub(
     options: ServeStudioHubOptions = {},
@@ -53,10 +53,10 @@ export async function serveStudioHub(
         auth: false,
     });
 
-    // A page on another local port loads embedded.js as a module and fetches
-    // the connection descriptor from here, both CORS requests. devframe's hub
-    // expects to share the page's origin (it does under Vite); on its own port
-    // it needs to say yes to the loopback origins a page can come from.
+    // The page sits on a different port, so everything it fetches from here —
+    // embedded.js, then __connection.json — is cross-origin. Under Vite this
+    // never comes up, because there studio shares the page's origin. Say yes to
+    // any localhost origin, since that is where a page can be coming from.
     const server = createServer((req, res) => {
         const origin = req.headers.origin;
         if (origin && isAllowedOrigin(origin, [])) {
@@ -89,11 +89,9 @@ export async function serveStudioHub(
     const boundPort = typeof address === "object" && address ? address.port : port;
     const origin = `http://${HOST}:${boundPort}`;
 
-    // The hub registers the dock's frame and its page script by path. A page
-    // on another origin would resolve those against itself, so the entry is
-    // re-registered with this server's origin once the port is known. The
-    // bootstrap locks its frame messaging to the entry's origin, so this is
-    // the one place the origin has to be spelled out.
+    // The dock's iframe URL and page script come out starting with a slash,
+    // which a page on another port would resolve against its own server. Put
+    // this origin in front of both so they point back here.
     const ctx = await hub.context;
     const dock = ctx.docks.values().find((entry) => entry.id === STUDIO_SURFACE.id);
     let studioPath = `${hub.base}${STUDIO_SURFACE.id}/`;

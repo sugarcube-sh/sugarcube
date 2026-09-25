@@ -6,7 +6,10 @@ import type {
     TokenTree,
 } from "@sugarcube-sh/core/client";
 
-/** What a host publishes about disk. A memory source has no files, so `sources` may be null. */
+/**
+ * What the server last read from the token files. It goes to the client over
+ * shared state, and again every time the files change on disk.
+ */
 export type StudioDiskState = {
     config: InternalConfig;
     trees: TokenTree[];
@@ -16,22 +19,22 @@ export type StudioDiskState = {
     sources: TokenSources | null;
 };
 
-/** What Studio works on: the disk state of a host that has files. */
+/** The same thing once the client has checked that nothing is missing. */
 export type TokenSnapshot = {
     config: InternalConfig;
     trees: TokenTree[];
     resolved: ResolvedTokens;
     defaultContext: string | null;
-    /** Derived from the resolver at load; the config alone does not know them. */
+    /** Comes from the resolver file when tokens load. The config does not list them. */
     permutations: Permutation[];
-    /** The files themselves. The working copy (D-044); everything above is derived. */
+    /** The token files as text. Everything above is parsed out of this. */
     sources: TokenSources;
 };
 
 export type PathIndexEntry = {
-    /** The token's $source.context (canonical permutation identifier). */
+    /** Which context this is for, `dark` say, named as core writes it in `$source.context`. */
     context: string;
-    /** The lookup key in ResolvedTokens for this (path, context) pair */
+    /** What to look the token up by in `ResolvedTokens`, for that path in that context. */
     key: string;
 };
 
@@ -45,14 +48,14 @@ export type TokenDiffKind = "added" | "removed" | "changed" | "renamed";
 
 export type TokenDiffEntry = {
     kind: TokenDiffKind;
-    /** Identity: the node's baseline path; a node created this session has its own path. */
     handle: string;
-    /** Where the node reads now. For a removal, where it was. */
+    /** The token's path now. For a removal, the path it had. */
     path: string;
-    /** Where its key sits on disk. Absent for an addition. */
+    /** The path it had before this edit, so a rename has two. Absent for something new. */
     basePath?: string;
+    /** The token file it is written in. */
     sourcePath: string;
-    /** Permutation contexts this change applies to. Empty if identical across all. */
+    /** The contexts this change applies to. Empty when it applies to all of them. */
     contexts: string[];
     from: SlimToken;
     to: SlimToken;

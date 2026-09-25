@@ -23,9 +23,9 @@ export type TokenStoreState = {
     sources: TokenSources;
     index: PathIndex;
     problems: ReadonlyMap<Handle, Problem[]>;
-    /** Files changed outside Studio while this copy held edits to them. */
+    /** Files that changed on disk while studio held unsaved edits to them. */
     conflicts: readonly string[];
-    /** What a save sends: the edits performed, addressed by path. */
+    /** Every edit made so far, addressed by path. This is what a save sends. */
     ops: readonly WriteOp[];
 
     currentContext: string;
@@ -38,7 +38,6 @@ export type TokenStoreState = {
     resetToken: (handle: Handle) => void;
 
     renameNode: (handle: Handle, name: string) => boolean;
-    /** A file belongs to whichever contexts include it, so a new node names no context. */
     createNode: (node: NewNode) => Handle | null;
     removeNode: (handle: Handle) => boolean;
 
@@ -51,15 +50,15 @@ export type TokenStoreAPI = StoreApi<TokenStoreState>;
 export type SourceStoreHandle = {
     store: TokenStoreAPI;
     getPathIndex: () => PathIndex;
-    /** The document as disk had it, or as the last save left it. */
     getBaseline: () => SourceDocument;
-    /** The scale store's write sink. A no-op: scale edits write `resolved`, which text cannot accept (D-024). */
+    /** Scale editing hands back a whole new `resolved`, which this store has no
+     * way to turn back into text. Currently does nothing. */
     writeResolved: (next: ResolvedTokens) => void;
     activate: () => () => void;
 };
 
 export type SourceStoreOptions = {
-    /** Operations to replay onto the baseline, from a stash that outlived a reload. */
+    /** Unsaved edits from before the last page reload, replayed onto the baseline. */
     restore?: readonly WriteOp[];
 };
 
@@ -73,7 +72,8 @@ function fromDoc(doc: SourceDocument) {
     };
 }
 
-/** `disk` is where the host says the files changed; text arriving there is adopted. */
+/** `disk` holds whatever the server last read from the token files. `activate`
+ * watches it, so edits made outside studio reach this store. */
 export function createSourceStore(
     baselineSources: TokenSources,
     disk?: StoreApi<TokenSnapshot>,
@@ -150,9 +150,10 @@ export function createSourceStore(
     });
 
     /**
-     * Adopt silently where nothing is pending, keep the edit and say so where
-     * something is. The page only needs telling when we kept our own text —
-     * otherwise the host is already showing what just arrived.
+     * Someone has edited the token files outside studio. Take their version of
+     * any file we have no unsaved edits in. Where we do have edits, put ours
+     * back on top of theirs. If that is not possible, because we both changed
+     * the same thing, keep ours and flag the file as a conflict.
      */
     const arrived = (next: TokenSources) => {
         if (next === baseline.sources) return;

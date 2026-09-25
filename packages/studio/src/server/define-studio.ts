@@ -71,11 +71,6 @@ export async function defineStudio(
     });
 }
 
-/**
- * The files a save may touch are the files that were loaded, and a file named
- * twice is one file with its operations in order. Anything else is refused
- * before a byte is read.
- */
 function admitted(files: FileOps[], sources: TokenSources | null): FileOps[] {
     const loaded = new Set(Object.keys(sources?.files ?? {}));
     const merged = new Map<string, FileWriteOp[]>();

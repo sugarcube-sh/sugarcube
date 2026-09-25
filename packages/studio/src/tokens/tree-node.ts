@@ -1,11 +1,10 @@
 import { SUGARCUBE_NAMESPACE, type TokenTree } from "@sugarcube-sh/core/client";
 
 /**
- * Every authored node at a path, in tree order — a path can appear in several
- * trees, once per context. Callers take the first that carries what they want,
- * because a base tree may declare the node while a context tree declares the
- * detail, or the other way round.
- *
+ * The same path can be written once per context, so this hands back every
+ * version of it, in the order the trees resolve. Callers take the first one
+ * carrying the field they came for: the base tree might name the token while
+ * the dark tree only changes its value, or the other way round.
  */
 export function nodesAt(trees: readonly TokenTree[], path: string): unknown[] {
     const segments = path.split(".");
@@ -26,7 +25,6 @@ function walk(tree: unknown, segments: readonly string[]): unknown {
     return node;
 }
 
-/** What an authored node keeps under `$extensions` for sugarcube, if anything. */
 export function sugarcubeExtensions(node: unknown): Record<string, unknown> | undefined {
     if (!node || typeof node !== "object") return undefined;
     const extensions = (node as { $extensions?: Record<string, unknown> }).$extensions;

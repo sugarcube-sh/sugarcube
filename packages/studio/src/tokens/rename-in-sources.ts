@@ -3,7 +3,6 @@ import { unwrapRef, wrapRef } from "./paths";
 import { type JsonPath, renameKeyAt, setAt } from "./text-edits";
 import type { WriteOp } from "./write-ops";
 
-/** Key moves in the order they were made, each `[from, to]` as full paths. */
 export type PathMoves = ReadonlyArray<readonly [string, string]>;
 
 export type RenameResult = {
@@ -15,10 +14,6 @@ export type RenameResult = {
     ops: WriteOp[];
 };
 
-/**
- * Where a path is after the moves, applied in order so a later move sees the
- * result of an earlier one. Undefined when none of them touched it.
- */
 export function movedTo(path: string, moves: PathMoves): string | undefined {
     let current = path;
     for (const [from, to] of moves) {

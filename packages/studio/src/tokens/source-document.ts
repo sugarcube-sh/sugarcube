@@ -18,6 +18,8 @@ export type Problem = {
 };
 
 export type SourceDocument = {
+    /** The token files as text, which is what studio edits. The rest of this is
+     * parsed out of it and thrown away on the next edit. */
     sources: TokenSources;
     trees: TokenTree[];
     resolved: ResolvedTokens;
@@ -67,11 +69,11 @@ function collectProblems(
 }
 
 /**
- * Rebuilds from the text. `previous` carries identity across the rebuild, and
- * `moves` says where a renamed path went, so a handle follows its node. A path
- * nothing held before gets itself as its handle, unless another node already
- * holds that name as its handle (a rename vacated it), in which case it gets a
- * fresh one.
+ * Parses the JSON text of the token files back into trees, values and an index.
+ * Renaming a token changes its path, so `previous` and `moves` are what give
+ * each token back the id it had before. Without them a rename looks like one
+ * token deleted and another created, and anything still pointing at the old id
+ * loses track of it.
  */
 function derive(
     sources: TokenSources,
@@ -110,13 +112,6 @@ export function openDocument(sources: TokenSources): SourceDocument {
     return derive(sources, []);
 }
 
-/**
- * The files Studio will write: those every context reads whole. A source read
- * through a pointer (an inline source, or `file.json#/section`) declares its
- * tokens somewhere below the file's root, and an edit addressed by token path
- * would land at the root instead. Until an edit can carry the pointer, such a
- * file is read-only.
- */
 export function writableFiles(sources: TokenSources): string[] {
     const pointered = new Set<string>();
     for (const { sources: refs } of sources.order) {
@@ -213,11 +208,6 @@ function touchedTwice(ops: readonly WriteOp[], was: string, arriving: string): b
     );
 }
 
-/**
- * The ops replayed onto the text, or null when one of them no longer fits it.
- * An edit made here is refused rather than written somewhere it does not
- * belong; anything else thrown is a bug and goes up.
- */
 function tryReplay(text: string, ops: readonly WriteOp[], file: string): string | null {
     try {
         return applyWriteOps(text, ops, file);
@@ -227,7 +217,6 @@ function tryReplay(text: string, ops: readonly WriteOp[], file: string): string 
     }
 }
 
-/** One operation applied to its file, and the document rebuilt around it. */
 function edit(doc: SourceDocument, op: WriteOp): SourceDocument | null {
     const text = doc.sources.files[op.file];
     if (text === undefined) return null;
@@ -240,7 +229,6 @@ function edit(doc: SourceDocument, op: WriteOp): SourceDocument | null {
 
 type Target = { path: string; file: string };
 
-/** Where an edit to this node in this context lands: its path, and a file Studio may write. */
 function targetFor(doc: SourceDocument, handle: Handle, context: string): Target | undefined {
     const path = doc.index.pathOf(handle);
     if (path === undefined) return undefined;
@@ -256,7 +244,6 @@ function targetFor(doc: SourceDocument, handle: Handle, context: string): Target
     return { path, file };
 }
 
-/** Whether the node at `path`, or anything under it, is declared in a file Studio may not write. */
 function reachesReadOnly(doc: SourceDocument, path: string): boolean {
     const writable = new Set(writableFiles(doc.sources));
     const own = doc.index.handleAt(path);
@@ -275,11 +262,6 @@ function reachesReadOnly(doc: SourceDocument, path: string): boolean {
 
 export type ValueUpdate = { handle: Handle; value: unknown; context: string };
 
-/**
- * Several values at once, derived once. Two contexts that read a token from
- * the same file are one write to one place, so one op; contexts that declare
- * it in different files are one op each. Null when any target is refused.
- */
 export function setValues(
     doc: SourceDocument,
     updates: readonly ValueUpdate[],
@@ -341,7 +323,6 @@ export type NewNode = {
     token?: { $type: string; $value: unknown };
 };
 
-/** The path a new node would have: under its parent group, or at the root. */
 export function childPath(
     doc: SourceDocument,
     parent: Handle | undefined,

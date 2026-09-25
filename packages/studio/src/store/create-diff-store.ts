@@ -30,11 +30,6 @@ export type DiffStoreHandle = {
     activate: () => () => void;
 };
 
-/**
- * The change list, against the source store's own baseline: the one the
- * files were opened from, or the one the last save left. A save moves it
- * (`adopt`) without touching `resolved`, so `ops` is watched as well.
- */
 export function createDiffStore(
     tokens: Pick<SourceStoreHandle, "store" | "getBaseline">,
     scaleState: ScaleStateAPI,

@@ -12,22 +12,20 @@ import { HUB_NAME, hubUi, studioDock } from "./studio-hub";
 
 export type BuildStudioOptions = {
     source?: StudioTokenSource;
-    /** The folder to serve at the site root. The hub lands at `<outDir>/__devframes/`. */
     outDir: string;
-    /** Where a save goes from the built Studio: a service that opens a pull request. */
+    /** A static build cannot write files, so saves are posted here instead, to
+     * a service that opens a pull request. */
     saveUrl?: string;
 };
 
 export type StudioBuild = {
-    /** The folder to serve at the site root: every URL below is relative to it. */
     rootDir: string;
-    /** The hub subtree inside it, `<rootDir>/__devframes`. Not the folder to serve. */
     hubDir: string;
-    /** The one tag a page adds to get the dock, relative to the site root. */
+    /** Paste this into a page and studio appears on it. The src is relative to
+     * the site root, so the build has to be served from there. */
     embedTag: string;
-    /** Where Studio opens full width, relative to the site root. */
+    /** The path where studio opens on a page of its own, rather than over someone's. */
     studioPath: string;
-    /** What the token source had to say about the load, one sentence each. */
     errors: readonly string[];
 };
 
@@ -35,11 +33,11 @@ const nothingToBuild = (errors: readonly string[]) =>
     ["[studio] Nothing to build: the token source loaded no tokens.", ...errors].join(" ");
 
 /**
- * Studio with no server: devframe's static hub build over this project. The
- * output boots from a dump with nothing behind it, so any file server, a
- * staging site's dist/, or an upload can host it. Run at the project root:
- * the token file paths inside are whatever core saw from the working
- * directory, and a save replays them against the repository by that path.
+ * Builds studio into plain files that any web server can host, with nothing
+ * running behind them. Run it from the project root: the paths to the token
+ * files are worked out from the directory you run in, and a save later replays
+ * the edits against those same paths in the repository. Run it from anywhere
+ * else and a save will aim at files that are not there.
  */
 export async function buildStudio(options: BuildStudioOptions): Promise<StudioBuild> {
     const { source = createNodeTokenSource(), outDir, saveUrl } = options;

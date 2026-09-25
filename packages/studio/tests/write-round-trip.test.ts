@@ -23,13 +23,6 @@ import {
 import { opsByFile } from "../src/tokens/write-ops";
 import { fileNamed } from "./text-sources";
 
-/**
- * The first half of the DTCG round trip (priorities item 16): what Studio
- * writes, core reads back unchanged. A copy of the demo on disk, one of each
- * edit, the operations replayed onto the files the way the server does, and
- * `loadTokens` again.
- */
-
 const DEMO = join(__dirname, "../demo");
 
 async function load(dir: string) {
@@ -42,7 +35,6 @@ async function load(dir: string) {
 
 const fileEnding = fileNamed;
 
-/** A token nothing refers to, so removing it dangles nothing. */
 function unreferenced(doc: SourceDocument): string {
     const referenced = new Set<string>();
     for (const node of Object.values(doc.resolved)) {

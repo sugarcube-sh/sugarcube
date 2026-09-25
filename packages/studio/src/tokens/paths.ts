@@ -65,7 +65,6 @@ export function tokenPathSegments(path: string): PathSegment[] {
     });
 }
 
-/** One name, as the spec allows it (DTCG 2025.10 §5.1): not empty, no `.`, `{` or `}`, and `$` reserved but for `$root`. */
 export function isSegment(name: string): boolean {
     if (name.length === 0 || /[.{}]/.test(name)) return false;
     return !name.startsWith("$") || name === ROOT_SEGMENT;

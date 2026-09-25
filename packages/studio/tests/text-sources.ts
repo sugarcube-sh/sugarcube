@@ -12,7 +12,6 @@ import type { TokenSnapshot } from "../src/tokens/types";
 const TOKENS = join(__dirname, "../demo");
 const RESOLVER = join(TOKENS, "tokens.resolver.json");
 
-/** The fixture token set as a host would send it: file text plus resolution order. */
 export function sources(): TokenSources {
     const doc = JSON.parse(readFileSync(RESOLVER, "utf8"));
     const refs = (list: Array<{ $ref: string }>) =>
@@ -65,10 +64,6 @@ export function changedFiles(baseline: TokenSources, working: TokenSources) {
         .map(([path, text]) => ({ path, text }));
 }
 
-/**
- * The three stores wired as the provider wires them, over a host baseline
- * that never moves after startup (the static build). `stop` tears down.
- */
 export function wired(base: TokenSources = sources()) {
     const doc = openDocument(base);
     const baseline = createStore<TokenSnapshot>(() => ({
@@ -103,7 +98,6 @@ export function wired(base: TokenSources = sources()) {
     };
 }
 
-/** A token store that holds `resolved` and does nothing else, for the scale store's tests. */
 export function stubTokenStore(resolved: ResolvedTokens) {
     return createStore<TokenStoreState>(() => ({
         resolved,

@@ -6,12 +6,13 @@ export type JsonPath = Array<string | number>;
 const LEADING = /^[\t ]*/;
 
 /**
- * The step between indent levels, taken as the most common increase between
- * consecutive lines — not the indent of the first indented line, which is only
- * the step if that line happens to sit one level deep.
+ * Works out how a file is indented, so an edit comes back looking like the rest
+ * of it. Whichever jump in indentation happens most often is taken to be one
+ * level; measuring the first indented line instead would be wrong every time
+ * that line sits more than one level deep.
  *
- * A project's `.editorconfig` should win over this. Reading one needs the file
- * system, so it belongs with whoever supplies the text.
+ * A project's `.editorconfig` should beat this guess, but reading one needs the
+ * file system, so that belongs with whoever hands us the text.
  */
 export function detectFormatting(text: string): FormattingOptions {
     const steps = new Map<number, number>();
@@ -46,7 +47,6 @@ export function detectFormatting(text: string): FormattingOptions {
     return { tabSize: best, insertSpaces: true };
 }
 
-/** The node at a path, or undefined when the text does not declare one. */
 export function nodeAt(text: string, path: JsonPath): Node | undefined {
     const root = parseTree(text);
     return root === undefined ? undefined : findNodeAtLocation(root, path);
@@ -68,9 +68,9 @@ export function removeAt(text: string, path: JsonPath): string {
 }
 
 /**
- * Renames the key in place, leaving the value untouched. `modify` cannot do
- * this — removing and re-adding moves the entry to the end and rebuilds
- * everything under it.
+ * Overwrites the key itself and leaves the value where it sits. jsonc-parser's
+ * `modify` cannot rename: deleting the old key and adding the new one sends the
+ * entry to the end of the object and reformats everything inside it.
  */
 export function renameKeyAt(text: string, path: JsonPath, name: string): string | undefined {
     const key = nodeAt(text, path)?.parent?.children?.[0];
@@ -79,6 +79,12 @@ export function renameKeyAt(text: string, path: JsonPath, name: string): string 
     return text.slice(0, key.offset) + JSON.stringify(name) + text.slice(key.offset + key.length);
 }
 
+/**
+ * Moves one key to a different position in its object. Everything sitting
+ * between the properties — commas, blank lines, comments — is left exactly
+ * where it is, and only the properties themselves are shuffled, so the file
+ * keeps the spacing it was written with.
+ */
 export function reorderKeyAt(
     text: string,
     parentPath: JsonPath,

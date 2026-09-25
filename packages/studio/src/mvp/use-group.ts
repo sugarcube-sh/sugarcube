@@ -61,7 +61,6 @@ export function useWriteBase(): (row: TokenRow, value: unknown) => void {
     );
 }
 
-/** Editing a named override, which is the one edit that is not a base write. */
 export function useWriteOverride(): (row: TokenRow, context: string, value: unknown) => void {
     const setToken = useTokenStore((state) => state.setToken);
 
@@ -73,7 +72,6 @@ function useWritableFiles(): ReadonlySet<string> {
     return useMemo(() => new Set(writableFiles(sources)), [sources]);
 }
 
-/** Whether an edit to this row's base value has somewhere to go (D-040: the file it came from). */
 export function useRowWritable(row: TokenRow): boolean {
     const writable = useWritableFiles();
     return row.sourcePath !== undefined && writable.has(row.sourcePath);

@@ -1,16 +1,8 @@
 import { type JsonPath, nodeAt, removeAt, renameKeyAt, setAt } from "./text-edits";
 
 /**
- * What an edit did, addressed by path and recorded as the operation it was
- * (D-043). A save replays these against the file as it is now, so an
- * unrelated change somewhere else in that file survives. Byte offsets could
- * not: against a shifted file they corrupt rather than clobber.
- *
- * - `set` changes a node that exists: its parent must still be there.
- * - `add` creates a node, and the groups above it if the file lacks them;
- *   the node must not exist yet.
- * - `remove` deletes a node; one already gone is nothing to do.
- * - `renameKey` moves a key in place; the key must still be there.
+ * What an edit did, addressed by path. A save replays these against the file as
+ * it is on disk, so an unrelated change somewhere else in that file survives.
  */
 export type FileWriteOp =
     | { kind: "renameKey"; path: JsonPath; name: string }
@@ -22,7 +14,6 @@ export type WriteOp = FileWriteOp & { file: string };
 
 export type FileOps = { path: string; ops: FileWriteOp[] };
 
-/** Grouped per file, keeping the order they were recorded in. */
 export function opsByFile(ops: readonly WriteOp[]): FileOps[] {
     const grouped = new Map<string, FileWriteOp[]>();
 

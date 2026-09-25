@@ -11,13 +11,11 @@ export type Hit = {
 
 export type SearchResult = {
     hits: Hit[];
-    /** True when more matched than were listed. */
     capped: boolean;
 };
 
 export const MAX_RESULTS = 40;
 
-/** Every token whose current path contains the query, with a swatch or a length where there is one. */
 export function searchHits(
     index: PathIndex,
     resolved: ResolvedTokens,

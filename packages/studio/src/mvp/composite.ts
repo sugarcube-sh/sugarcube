@@ -25,7 +25,6 @@ const COMPOSITES: Record<string, readonly CompositeField[]> = {
     ],
 };
 
-/** The types that have a table here, composite and layered. */
 export function compositeTypes(): readonly string[] {
     return [...Object.keys(COMPOSITES), ...Object.keys(LAYERED)];
 }
@@ -56,7 +55,6 @@ type Layered = {
 
 const PX = { value: 0, unit: "px" };
 
-/** An empty value for each part type a composite can hold. */
 const EMPTY_PART_BY_TYPE: Record<string, unknown> = {
     color: "",
     dimension: PX,
@@ -68,7 +66,6 @@ const EMPTY_PART_BY_TYPE: Record<string, unknown> = {
     strokeStyle: "solid",
 };
 
-/** A composite with its required parts empty, or undefined for a type with no table. */
 export function emptyComposite(type: string): unknown {
     const fields = COMPOSITES[type];
     if (!fields) return undefined;
@@ -140,7 +137,6 @@ export function writeLayers(type: string, previous: unknown, layers: unknown[]):
     return layers;
 }
 
-/** The layers a new token of a layered type starts with: one, or the two stops a gradient needs. */
 export function emptyLayers(type: string): unknown[] | undefined {
     const layered = LAYERED[type];
     if (!layered) return undefined;
