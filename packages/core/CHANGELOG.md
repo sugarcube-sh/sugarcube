@@ -1,5 +1,11 @@
 # @sugarcube-sh/core
 
+## 0.2.21
+
+### Patch Changes
+
+- 04b0b40: Removed the deprecated `fluidDimension` token type. A token typed `fluidDimension` is now an error. Use `$type: "dimension"` with the fluid range in `$extensions["sh.sugarcube"].fluid`; the error shows the replacement.
+
 ## 0.2.20
 
 ### Patch Changes
