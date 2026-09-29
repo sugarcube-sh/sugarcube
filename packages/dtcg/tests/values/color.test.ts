@@ -136,7 +136,7 @@ describe("parseColor", () => {
         it.for(["{}", "{color..brand}", "{color.brand", "color.brand}"])(
             "refuses %s, which is not a reference",
             (raw) => {
-                expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "not-a-color" }]);
+                expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
             },
         );
 
@@ -165,7 +165,7 @@ describe("parseColor", () => {
         );
 
         it.for(["#e11d4", "red", 42, null, [1, 0, 0], true])("%j, which is not a color", (raw) => {
-            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "not-a-color" }]);
+            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
         });
 
         it("a color with no colorSpace or components", () => {
@@ -237,7 +237,7 @@ describe("parseColor", () => {
         it.for([
             { alpha: 1.5, detail: "alpha-out-of-range" },
             { alpha: -0.1, detail: "alpha-out-of-range" },
-            { alpha: "0.5", detail: "alpha-not-a-number" },
+            { alpha: "0.5", detail: "not-a-number" },
         ])("alpha $alpha", ({ alpha, detail }) => {
             expect(details({ colorSpace: "srgb", components: [0, 0, 0], alpha })).toStrictEqual([
                 { path: ["$value", "alpha"], detail },

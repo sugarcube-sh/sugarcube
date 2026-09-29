@@ -37,12 +37,13 @@ export function readColor(raw: unknown, at: JsonPath): ParseResult<ColorAsWritte
         return { ok: false, errors: [valueError(at, "hex-string", raw)] };
     }
     if (!isPlainObject(raw)) {
-        return { ok: false, errors: [valueError(at, "not-a-color")] };
+        return { ok: false, errors: [valueError(at, "wrong-shape", "color")] };
     }
 
     const errors: ValueError[] = [];
     for (const name of Object.keys(raw)) {
-        if (!PROPERTIES.has(name)) errors.push(valueError([...at, name], "unknown-property", name));
+        if (!PROPERTIES.has(name))
+            errors.push(valueError([...at, name], "unknown-property", name, "color"));
     }
 
     const colorSpace = readColorSpace(raw, at, errors);
@@ -65,7 +66,7 @@ function readColorSpace(
     errors: ValueError[],
 ): ColorSpace | Pointer | undefined {
     if (!("colorSpace" in raw)) {
-        errors.push(valueError(at, "missing-property", "colorSpace"));
+        errors.push(valueError(at, "missing-property", "colorSpace", "color"));
         return undefined;
     }
     const pointer = readPointer(raw.colorSpace);
@@ -84,7 +85,7 @@ function readComponents(
     errors: ValueError[],
 ): [Component, Component, Component] | Pointer | undefined {
     if (!("components" in raw)) {
-        errors.push(valueError(at, "missing-property", "components"));
+        errors.push(valueError(at, "missing-property", "components", "color"));
         return undefined;
     }
     const pointer = readPointer(raw.components);
@@ -134,7 +135,7 @@ function readAlpha(
     const pointer = readPointer(raw.alpha);
     if (pointer) return pointer;
     if (typeof raw.alpha !== "number" || !Number.isFinite(raw.alpha)) {
-        errors.push(valueError([...at, "alpha"], "alpha-not-a-number", raw.alpha));
+        errors.push(valueError([...at, "alpha"], "not-a-number", raw.alpha));
         return 1;
     }
     if (!inRange(raw.alpha, 0, 1)) {

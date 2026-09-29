@@ -1,14 +1,10 @@
-import type {
-    DimensionValue,
-    DurationValue,
-    Parse,
-    StrokeStyleValue,
-    TokenType,
-    WithAliases,
-} from "./index.js";
+import type { Parse, StrokeStyleValue, TokenType, WithAliases } from "./index.js";
 import { readColor } from "./values/color.js";
+import { readDimension } from "./values/dimension.js";
+import { readDuration } from "./values/duration.js";
 
 export { colorSpaces, type ColorChannel } from "./values/color-spaces.js";
+export { dimensionUnits, durationUnits } from "./values/units.js";
 
 /** Every token type the specification defines, in its order. */
 export const tokenTypes: readonly TokenType[] = [
@@ -58,12 +54,6 @@ export const strokeStyleKeywords: readonly Extract<
 /** How the end of a dash can be drawn: `round`, `butt`, `square`. */
 export const lineCaps: readonly ("round" | "butt" | "square")[] = ["round", "butt", "square"];
 
-/** The units a dimension may use. */
-export const dimensionUnits: readonly DimensionValue["unit"][] = ["px", "rem"];
-
-/** The units a duration may use. */
-export const durationUnits: readonly DurationValue["unit"][] = ["ms", "s"];
-
 /**
  * The parts of each composite type, and the type of each part, in the spec's order. For shadow
  * and gradient, these are the parts of one layer or one stop. Every part is required except a
@@ -108,13 +98,9 @@ export const compositeParts = {
  */
 export const parseColor: Parse<WithAliases<"color">> = readColor;
 /** Reads one dimension value. */
-export const parseDimension: Parse<WithAliases<"dimension">> = () => {
-    throw new Error("not implemented yet");
-};
+export const parseDimension: Parse<WithAliases<"dimension">> = readDimension;
 /** Reads one duration value. */
-export const parseDuration: Parse<WithAliases<"duration">> = () => {
-    throw new Error("not implemented yet");
-};
+export const parseDuration: Parse<WithAliases<"duration">> = readDuration;
 /** Reads one cubic Bézier value. */
 export const parseCubicBezier: Parse<WithAliases<"cubicBezier">> = () => {
     throw new Error("not implemented yet");
