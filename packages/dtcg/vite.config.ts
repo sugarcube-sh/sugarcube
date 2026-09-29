@@ -5,6 +5,12 @@ export default defineConfig({
         projects: [
             {
                 test: {
+                    name: "unit",
+                    include: ["tests/**/*.test.ts"],
+                },
+            },
+            {
+                test: {
                     name: "examples",
                     typecheck: {
                         enabled: true,

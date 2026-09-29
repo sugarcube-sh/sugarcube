@@ -1,5 +1,4 @@
 import type {
-    ColorSpace,
     DimensionValue,
     DurationValue,
     Parse,
@@ -7,6 +6,9 @@ import type {
     TokenType,
     WithAliases,
 } from "./index.js";
+import { readColor } from "./values/color.js";
+
+export { colorSpaces, type ColorChannel } from "./values/color-spaces.js";
 
 /** Every token type the specification defines, in its order. */
 export const tokenTypes: readonly TokenType[] = [
@@ -63,89 +65,6 @@ export const dimensionUnits: readonly DimensionValue["unit"][] = ["px", "rem"];
 export const durationUnits: readonly DurationValue["unit"][] = ["ms", "s"];
 
 /**
- * Every color space the Color module defines, with the name and range of each channel, for
- * pickers and sliders. An unbounded channel has `max: Infinity` (and `min: -Infinity` where
- * it can go negative).
- *
- * @example
- * colorSpaces.oklch // [{ name: "L", min: 0, max: 1 }, { name: "C", min: 0, max: Infinity }, { name: "H", min: 0, max: 360 }]
- */
-export const colorSpaces: Readonly<
-    Record<ColorSpace, readonly [ColorChannel, ColorChannel, ColorChannel]>
-> = {
-    "srgb": [
-        { name: "R", min: 0, max: 1 },
-        { name: "G", min: 0, max: 1 },
-        { name: "B", min: 0, max: 1 },
-    ],
-    "srgb-linear": [
-        { name: "R", min: 0, max: 1 },
-        { name: "G", min: 0, max: 1 },
-        { name: "B", min: 0, max: 1 },
-    ],
-    "hsl": [
-        { name: "H", min: 0, max: 360 },
-        { name: "S", min: 0, max: 100 },
-        { name: "L", min: 0, max: 100 },
-    ],
-    "hwb": [
-        { name: "H", min: 0, max: 360 },
-        { name: "W", min: 0, max: 100 },
-        { name: "B", min: 0, max: 100 },
-    ],
-    "lab": [
-        { name: "L", min: 0, max: 100 },
-        { name: "a", min: -Infinity, max: Infinity },
-        { name: "b", min: -Infinity, max: Infinity },
-    ],
-    "lch": [
-        { name: "L", min: 0, max: 100 },
-        { name: "C", min: 0, max: Infinity },
-        { name: "H", min: 0, max: 360 },
-    ],
-    "oklab": [
-        { name: "L", min: 0, max: 1 },
-        { name: "a", min: -Infinity, max: Infinity },
-        { name: "b", min: -Infinity, max: Infinity },
-    ],
-    "oklch": [
-        { name: "L", min: 0, max: 1 },
-        { name: "C", min: 0, max: Infinity },
-        { name: "H", min: 0, max: 360 },
-    ],
-    "display-p3": [
-        { name: "R", min: 0, max: 1 },
-        { name: "G", min: 0, max: 1 },
-        { name: "B", min: 0, max: 1 },
-    ],
-    "a98-rgb": [
-        { name: "R", min: 0, max: 1 },
-        { name: "G", min: 0, max: 1 },
-        { name: "B", min: 0, max: 1 },
-    ],
-    "prophoto-rgb": [
-        { name: "R", min: 0, max: 1 },
-        { name: "G", min: 0, max: 1 },
-        { name: "B", min: 0, max: 1 },
-    ],
-    "rec2020": [
-        { name: "R", min: 0, max: 1 },
-        { name: "G", min: 0, max: 1 },
-        { name: "B", min: 0, max: 1 },
-    ],
-    "xyz-d65": [
-        { name: "X", min: 0, max: 1 },
-        { name: "Y", min: 0, max: 1 },
-        { name: "Z", min: 0, max: 1 },
-    ],
-    "xyz-d50": [
-        { name: "X", min: 0, max: 1 },
-        { name: "Y", min: 0, max: 1 },
-        { name: "Z", min: 0, max: 1 },
-    ],
-};
-
-/**
  * The parts of each composite type, and the type of each part, in the spec's order. For shadow
  * and gradient, these are the parts of one layer or one stop. Every part is required except a
  * shadow's `inset`, which defaults to `false`.
@@ -174,13 +93,6 @@ export const compositeParts = {
     },
 } as const satisfies Readonly<Record<string, Readonly<Record<string, TokenType | "boolean">>>>;
 
-/** One channel of a color space: its name and range. */
-export interface ColorChannel {
-    name: string;
-    min: number;
-    max: number;
-}
-
 /**
  * Reads one color value. A reference to a whole token, written `"{color.brand}"`, is read as an
  * `Alias`. A JSON Pointer is read as a `Pointer`, and may stand in place of the whole value or any
@@ -194,9 +106,7 @@ export interface ColorChannel {
  * parseColor("{color.brand}", [])
  * // { ok: true, value: { alias: "color.brand" } }
  */
-export const parseColor: Parse<WithAliases<"color">> = () => {
-    throw new Error("not implemented yet");
-};
+export const parseColor: Parse<WithAliases<"color">> = readColor;
 /** Reads one dimension value. */
 export const parseDimension: Parse<WithAliases<"dimension">> = () => {
     throw new Error("not implemented yet");
