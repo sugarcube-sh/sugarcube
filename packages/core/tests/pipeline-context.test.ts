@@ -1,6 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { validate } from "../src/shared/pipeline/validate";
-import type { FlattenedTokens } from "../src/types/flatten";
 import { createPipelineContext } from "../src/types/pipelines";
 
 describe("PipelineContext", () => {
@@ -55,75 +53,5 @@ describe("PipelineContext", () => {
         expect(emit).toHaveBeenCalledTimes(2);
         expect(emit).toHaveBeenCalledWith({ type: "stage:start", stage: "validate" });
         expect(emit).toHaveBeenCalledWith({ type: "stage:end", stage: "validate", durationMs: 5 });
-    });
-});
-
-describe("validate with PipelineContext", () => {
-    it("should emit a deprecation warning for fluidDimension tokens", () => {
-        const ctx = createPipelineContext();
-        const tokens: FlattenedTokens = {
-            tokens: {
-                "default.spacing.fluid": {
-                    $type: "fluidDimension",
-                    $value: {
-                        min: { value: 16, unit: "px" },
-                        max: { value: 32, unit: "px" },
-                    },
-                    $path: "spacing.fluid",
-                    $source: { sourcePath: "tokens.json" },
-                    $originalPath: "spacing.fluid",
-                },
-            },
-            pathIndex: new Map([["spacing.fluid", "default.spacing.fluid"]]),
-        };
-
-        const errors = validate(tokens, ctx);
-
-        expect(errors).toHaveLength(0);
-        expect(ctx.warnings).toHaveLength(1);
-        expect(ctx.warnings[0]?.message).toContain("fluidDimension");
-        expect(ctx.warnings[0]?.message).toContain("deprecated");
-        expect(ctx.warnings[0]?.path).toBe("spacing.fluid");
-    });
-
-    it("should not emit warnings for non-deprecated token types", () => {
-        const ctx = createPipelineContext();
-        const tokens: FlattenedTokens = {
-            tokens: {
-                "default.color.primary": {
-                    $type: "color",
-                    $value: "#0066cc",
-                    $path: "color.primary",
-                    $source: { sourcePath: "tokens.json" },
-                    $originalPath: "color.primary",
-                },
-            },
-            pathIndex: new Map([["color.primary", "default.color.primary"]]),
-        };
-
-        const errors = validate(tokens, ctx);
-
-        expect(errors).toHaveLength(0);
-        expect(ctx.warnings).toHaveLength(0);
-    });
-
-    it("should still return validation errors normally when context is provided", () => {
-        const ctx = createPipelineContext();
-        const tokens: FlattenedTokens = {
-            tokens: {
-                "default.color.bad": {
-                    $type: "color",
-                    $value: "not-a-color",
-                    $path: "color.bad",
-                    $source: { sourcePath: "tokens.json" },
-                    $originalPath: "color.bad",
-                },
-            },
-            pathIndex: new Map([["color.bad", "default.color.bad"]]),
-        };
-
-        const errors = validate(tokens, ctx);
-
-        expect(errors.length).toBeGreaterThan(0);
     });
 });

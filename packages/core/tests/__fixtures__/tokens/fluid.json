@@ -1,10 +1,15 @@
 {
   "space": {
-    "$type": "fluidDimension",
+    "$type": "dimension",
     "small": {
-      "$value": {
-        "min": { "value": 8, "unit": "px" },
-        "max": { "value": 16, "unit": "px" }
+      "$value": { "value": 16, "unit": "px" },
+      "$extensions": {
+        "sh.sugarcube": {
+          "fluid": {
+            "min": { "value": 8, "unit": "px" },
+            "max": { "value": 16, "unit": "px" }
+          }
+        }
       }
     }
   }

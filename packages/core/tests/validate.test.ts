@@ -193,4 +193,55 @@ describe("validate", () => {
             expect(errors).toHaveLength(0);
         });
     });
+
+    describe("removed fluidDimension type", () => {
+        it("should error on fluidDimension tokens with the extension form built from the token", () => {
+            const tokens: FlattenedTokens = {
+                tokens: {
+                    "default.spacing.fluid": {
+                        $type: "fluidDimension" as never,
+                        $value: {
+                            min: { value: 16, unit: "px" },
+                            max: { value: 32, unit: "px" },
+                        },
+                        $path: "spacing.fluid",
+                        $source: { sourcePath: "tokens.json" },
+                        $originalPath: "spacing.fluid",
+                    },
+                },
+                pathIndex: new Map([["spacing.fluid", "default.spacing.fluid"]]),
+            };
+
+            const errors = validate(tokens);
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0]?.path).toBe("spacing.fluid");
+            expect(errors[0]?.message).toContain('"fluidDimension"');
+            expect(errors[0]?.message).toContain(
+                '{"$type":"dimension","$value":{"value":32,"unit":"px"},"$extensions":{"sh.sugarcube":{"fluid":{"min":{"value":16,"unit":"px"},"max":{"value":32,"unit":"px"}}}}}',
+            );
+        });
+
+        it("should error on fluidDimension tokens with the docs example when the value is unreadable", () => {
+            const tokens: FlattenedTokens = {
+                tokens: {
+                    "default.spacing.fluid": {
+                        $type: "fluidDimension" as never,
+                        $value: "{spacing.base}",
+                        $path: "spacing.fluid",
+                        $source: { sourcePath: "tokens.json" },
+                        $originalPath: "spacing.fluid",
+                    },
+                },
+                pathIndex: new Map([["spacing.fluid", "default.spacing.fluid"]]),
+            };
+
+            const errors = validate(tokens);
+
+            expect(errors).toHaveLength(1);
+            expect(errors[0]?.message).toContain(
+                '{"$type":"dimension","$value":{"value":1,"unit":"rem"},"$extensions":{"sh.sugarcube":{"fluid":{"min":{"value":0.5,"unit":"rem"},"max":{"value":1,"unit":"rem"}}}}}',
+            );
+        });
+    });
 });

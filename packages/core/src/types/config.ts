@@ -73,7 +73,7 @@ export interface VariablesConfig {
     layer?: string;
 
     transforms?: {
-        /** Viewport range for `$type: "fluidDimension"` tokens. */
+        /** Viewport range for tokens with the `sh.sugarcube.fluid` extension. */
         fluid?: FluidConfig;
         /**
          * Colors outside sRGB:
