@@ -45,7 +45,7 @@ export function readMeasure<T extends MeasureType>(
         }
     }
 
-    const value = readNumber(raw, at, type, errors);
+    const value = readAmount(raw, at, type, errors);
     const unit = readUnit(raw, at, type, units, errors);
 
     if (errors.length > 0 || value === undefined || unit === undefined) {
@@ -54,7 +54,7 @@ export function readMeasure<T extends MeasureType>(
     return { ok: true, value: { value, unit } as WithAliases<T> };
 }
 
-function readNumber(
+function readAmount(
     raw: Record<string, unknown>,
     at: JsonPath,
     type: MeasureType,

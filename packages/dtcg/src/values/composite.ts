@@ -1,12 +1,25 @@
-import type { JsonPath, ParseResult, TokenType, ValueError, WithAliases } from "../index.js";
+import type {
+    Alias,
+    JsonPath,
+    Parse,
+    ParseResult,
+    Pointer,
+    TokenType,
+    ValueError,
+    WithAliases,
+} from "../index.js";
 import { isPlainObject, readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
-type PartReader = (raw: unknown, at: JsonPath) => ParseResult<unknown>;
+type ObjectForm<T extends TokenType> = Exclude<WithAliases<T>, Alias | Pointer>;
+
+export type PartReaders<T extends TokenType> = {
+    readonly [K in keyof ObjectForm<T>]-?: Parse<ObjectForm<T>[K]>;
+};
 
 export function readComposite<T extends TokenType>(
     type: T,
-    parts: Readonly<Record<string, PartReader>>,
+    parts: PartReaders<T>,
     raw: unknown,
     at: JsonPath,
 ): ParseResult<WithAliases<T>> {
@@ -25,7 +38,7 @@ export function readComposite<T extends TokenType>(
     }
 
     const value: Record<string, unknown> = {};
-    for (const [name, read] of Object.entries(parts)) {
+    for (const [name, read] of Object.entries(parts) as [string, Parse<unknown>][]) {
         if (!(name in raw)) {
             errors.push(valueError(at, "missing-property", name, type));
             continue;

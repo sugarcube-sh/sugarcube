@@ -57,9 +57,10 @@ export function readColor(raw: unknown, at: JsonPath): ParseResult<ColorAsWritte
         return { ok: false, errors };
     }
 
-    const value = { colorSpace, components, alpha } as ColorAsWritten;
-    if (hex !== undefined) (value as { hex?: unknown }).hex = hex;
-    return { ok: true, value };
+    return {
+        ok: true,
+        value: { colorSpace, components, alpha, ...(hex !== undefined && { hex }) },
+    };
 }
 
 function readColorSpace(
