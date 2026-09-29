@@ -102,6 +102,12 @@ function readComponents(
     const components = raw.components.map((component: unknown, index): Component => {
         const componentPointer = readPointer(component);
         if (componentPointer) return componentPointer;
+        if (readAlias(component)) {
+            errors.push(
+                valueError([...path, index], "alias-not-allowed-here", component as string),
+            );
+            return 0;
+        }
         if (component === "none") return component;
         if (typeof component !== "number" || !Number.isFinite(component)) {
             errors.push(valueError([...path, index], "component-not-a-number", component));

@@ -6,6 +6,13 @@ const shapes: Partial<Record<TokenType, string>> = {
         'A dimension must be an object with a number value and a unit of "px" or "rem", or a reference to a dimension token.',
     duration:
         'A duration must be an object with a number value and a unit of "ms" or "s", or a reference to a duration token.',
+    cubicBezier:
+        "A cubic Bézier must be a list of four numbers, [x1, y1, x2, y2], or a reference to a cubicBezier token.",
+    number: "A number must be a JSON number, or a reference to a number token.",
+    fontFamily:
+        "A font family must be a font name, a list of font names, or a reference to a fontFamily token.",
+    fontWeight:
+        'A font weight must be a number from 1 to 1000, a keyword such as "bold", or a reference to a fontWeight token.',
 };
 
 export const valueErrorMessages = {
@@ -14,6 +21,8 @@ export const valueErrorMessages = {
         `"${name}" is not a property of a ${type}.`,
     "missing-property": (name: string, type: TokenType) => `A ${type} needs "${name}".`,
     "not-a-number": (value: unknown) => `${JSON.stringify(value)} is not a number.`,
+    "alias-not-allowed-here": (value: string) =>
+        `${value} is a reference, which can only stand for a whole value. To use part of another token's value here, write a JSON Pointer instead, such as { "$ref": "#/font/brand/$value" }.`,
     "hex-string": (value: string) =>
         `"${value}" is a hex string. A color is an object, such as { "colorSpace": "srgb", "components": [1, 0, 0], "hex": "#ff0000" }.`,
     "unknown-color-space": (value: unknown) =>
@@ -28,6 +37,15 @@ export const valueErrorMessages = {
         `${JSON.stringify(value)} is not a six-digit hex color, such as "#e11d48".`,
     "string-with-unit": (value: string, example: string) =>
         `"${value}" is a string. Write it as an object: ${example}.`,
+    "not-four-numbers": () => "A cubic Bézier has exactly four numbers: [x1, y1, x2, y2].",
+    "x-out-of-range": (value: number) =>
+        `${value} is outside the range 0 to 1. The x values of a cubic Bézier, the first and third, must be from 0 to 1.`,
+    "empty-font-list": () => "A list of font names needs at least one name.",
+    "not-a-font-name": (value: unknown) =>
+        `${JSON.stringify(value)} is not a font name. A font name is a string that is not empty.`,
+    "font-weight-out-of-range": (value: number) => `${value} is outside the range 1 to 1000.`,
+    "unknown-font-weight-keyword": (value: string) =>
+        `"${value}" is not a font weight keyword the specification defines. Keywords are lower case, such as "bold" or "semi-bold".`,
     "unit-not-allowed": (unit: unknown, allowed: readonly string[]) =>
         `${JSON.stringify(unit)} is not a unit here. Use ${allowed.map((u) => `"${u}"`).join(" or ")}.`,
 } as const;

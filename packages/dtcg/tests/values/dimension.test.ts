@@ -90,9 +90,15 @@ describe("parseDimension", () => {
             ]);
         });
 
-        it.for(["16", null, "{space.small}"])("the value %j, which is not a number", (value) => {
+        it.for(["16", null])("the value %j, which is not a number", (value) => {
             expect(details({ value, unit: "px" })).toStrictEqual([
                 { path: ["$value", "value"], detail: "not-a-number" },
+            ]);
+        });
+
+        it.for(["value", "unit"])("a curly-brace reference in place of %s", (part) => {
+            expect(details({ value: 16, unit: "px", [part]: "{space.small}" })).toStrictEqual([
+                { path: ["$value", part], detail: "alias-not-allowed-here" },
             ]);
         });
 

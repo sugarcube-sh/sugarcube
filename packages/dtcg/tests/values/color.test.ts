@@ -151,7 +151,7 @@ describe("parseColor", () => {
             expect(
                 details({ colorSpace: "srgb", components: ["{color.red}", 0, 0] }),
             ).toStrictEqual([
-                { path: ["$value", "components", 0], detail: "component-not-a-number" },
+                { path: ["$value", "components", 0], detail: "alias-not-allowed-here" },
             ]);
         });
     });
