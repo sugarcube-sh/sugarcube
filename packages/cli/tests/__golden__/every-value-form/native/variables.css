@@ -1,0 +1,113 @@
+@layer tokens {
+    :root {
+        --ds-color-hex-rgb: #ff0000;
+        --ds-color-hex-rgba: #00000080;
+        --ds-color-hex-upper: #0000FF;
+        --ds-color-oklch-basic: oklch(0.7016 0.3225 328.363);
+        --ds-color-oklch-with-alpha: oklch(0.628 0.2577 29.2338 / 0.8);
+        --ds-color-oklch-with-none: oklch(0.7 none 90);
+        --ds-color-oklch-with-hex: oklch(0.628 0.2577 29.23);
+        --ds-color-display-p3-basic: color(display-p3 0.9 0.2 0.1);
+        --ds-color-display-p3-with-hex: color(display-p3 0.9 0.2 0.1);
+        --ds-color-display-p3-with-alpha: color(display-p3 0.1 0.6 0.9 / 0.5);
+        --ds-color-srgb-basic: rgb(204 102 51);
+        --ds-color-srgb-with-alpha: rgb(51 102 204 / 0.9);
+        --ds-color-srgb-with-hex: rgb(255 0 0);
+        --ds-color-srgb-with-hex-and-alpha: rgb(0 0 255 / 0.5);
+        --ds-color-hsl-basic: hsl(270 80% 60%);
+        --ds-color-hsl-with-none: hsl(none 50% 70%);
+        --ds-color-brand: var(--ds-color-oklch-basic);
+        --ds-color-surface: #ffffff;
+        --ds-color-text: #111111;
+        --ds-color-on-brand: var(--ds-color-surface);
+        --ds-space-zero: 0px;
+        --ds-space-small: 8px;
+        --ds-space-medium: 1rem;
+        --ds-space-fine: 0.125rem;
+        --ds-space-reference: var(--ds-space-small);
+        --ds-space-fluid: clamp(1rem, 0.67rem + 1.48vw, 2rem);
+        --ds-space-fluid-px: clamp(1.5rem, 1.00rem + 2.22vw, 3rem);
+        --ds-duration-fast: 300ms;
+        --ds-duration-slow: 1.5s;
+        --ds-duration-reference: var(--ds-duration-fast);
+        --ds-easing-linear: cubic-bezier(0, 0, 1, 1);
+        --ds-easing-ease-in: cubic-bezier(0.42, 0, 1, 1);
+        --ds-easing-ease-out: cubic-bezier(0, 0, 0.58, 1);
+        --ds-easing-reference: var(--ds-easing-ease-in);
+        --ds-font-family-single: Arial;
+        --ds-font-family-spaced: "Helvetica Neue";
+        --ds-font-family-stack: "Helvetica Neue", Arial, sans-serif;
+        --ds-font-family-reference: var(--ds-font-family-stack);
+        --ds-font-weight-thin: 100;
+        --ds-font-weight-normal: 400;
+        --ds-font-weight-bold: 700;
+        --ds-font-weight-keyword-thin: 100;
+        --ds-font-weight-keyword-normal: 400;
+        --ds-font-weight-keyword-bold: 700;
+        --ds-font-weight-reference: var(--ds-font-weight-bold);
+        --ds-number-zero: 0;
+        --ds-number-line-height: 1.5;
+        --ds-number-integer: 3;
+        --ds-number-reference: var(--ds-number-line-height);
+        --ds-stroke-solid: solid;
+        --ds-stroke-dashed: dashed;
+        --ds-stroke-dash-single: 4px round;
+        --ds-stroke-dash-multiple: 4px 2px butt;
+        --ds-border-thin: 1px solid #000000;
+        --ds-border-thick: 4px dashed #0000FF80;
+        --ds-border-custom: 2px 4px 2px round #FF0000;
+        --ds-border-referenced: var(--ds-space-small) var(--ds-stroke-dashed) var(--ds-color-brand);
+        --ds-shadow-basic: 0px 2px 4px 0px #000000;
+        --ds-shadow-inset: inset 0px 2px 4px 0px #000000;
+        --ds-shadow-multiple: 0px 2px 4px 0px #000000, inset 0px 4px 8px 2px #0000FF;
+        --ds-shadow-referenced: var(--ds-space-zero) var(--ds-space-small) var(--ds-space-small) 0px var(--ds-color-text);
+        --ds-shadow-reference: var(--ds-shadow-basic);
+        --ds-gradient-simple: linear-gradient(#000000 0%, #ffffff 100%);
+        --ds-gradient-multiple: linear-gradient(#000000 0%, #666666 50%, #ffffff 100%);
+        --ds-gradient-out-of-range: linear-gradient(#000000 0%, #888888 100%, #ffffff 100%);
+        --ds-gradient-referenced: linear-gradient(var(--ds-color-brand) 0%, var(--ds-color-srgb-basic) 100%);
+        --ds-transition-basic: 200ms cubic-bezier(0.42, 0, 0.58, 1) 0ms;
+        --ds-transition-referenced: var(--ds-duration-fast) var(--ds-easing-ease-out) var(--ds-duration-slow);
+        --ds-typography-partial-font-family: "Arial, sans-serif";
+        --ds-typography-partial-font-size: 16px;
+        --ds-typography-complete-font-family: Arial, sans-serif;
+        --ds-typography-complete-font-size: 16px;
+        --ds-typography-complete-font-weight: 400;
+        --ds-typography-complete-letter-spacing: 0.5px;
+        --ds-typography-complete-line-height: 1.5;
+        --ds-typography-referenced-font-family: var(--ds-font-family-stack);
+        --ds-typography-referenced-font-size: var(--ds-space-medium);
+        --ds-typography-referenced-font-weight: var(--ds-font-weight-keyword-bold);
+        --ds-typography-referenced-letter-spacing: var(--ds-space-zero);
+        --ds-typography-referenced-line-height: var(--ds-number-line-height);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --ds-color-oklch-basic: oklch(0.8 0.2 328.363);
+            --ds-color-surface: #111111;
+            --ds-color-text: rgb(242 242 242);
+            --ds-shadow-basic: 0px 1px 2px 0px #ffffff;
+            --ds-color-brand: var(--ds-color-oklch-basic);
+            --ds-color-on-brand: var(--ds-color-surface);
+            --ds-border-referenced: var(--ds-space-small) var(--ds-stroke-dashed) var(--ds-color-brand);
+            --ds-shadow-referenced: var(--ds-space-zero) var(--ds-space-small) var(--ds-space-small) 0px var(--ds-color-text);
+            --ds-shadow-reference: var(--ds-shadow-basic);
+            --ds-gradient-referenced: linear-gradient(var(--ds-color-brand) 0%, var(--ds-color-srgb-basic) 100%);
+        }
+    }
+
+    [data-theme="dark"],
+    .dark {
+        --ds-color-oklch-basic: oklch(0.8 0.2 328.363);
+        --ds-color-surface: #111111;
+        --ds-color-text: rgb(242 242 242);
+        --ds-shadow-basic: 0px 1px 2px 0px #ffffff;
+        --ds-color-brand: var(--ds-color-oklch-basic);
+        --ds-color-on-brand: var(--ds-color-surface);
+        --ds-border-referenced: var(--ds-space-small) var(--ds-stroke-dashed) var(--ds-color-brand);
+        --ds-shadow-referenced: var(--ds-space-zero) var(--ds-space-small) var(--ds-space-small) 0px var(--ds-color-text);
+        --ds-shadow-reference: var(--ds-shadow-basic);
+        --ds-gradient-referenced: linear-gradient(var(--ds-color-brand) 0%, var(--ds-color-srgb-basic) 100%);
+    }
+}

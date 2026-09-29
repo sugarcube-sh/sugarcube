@@ -1,0 +1,15 @@
+:root {
+    --size-step--2: clamp(0.6076rem, 0.61rem + -0.03vw, 0.5917rem);
+    --size-step--1: clamp(0.7292rem, 0.71rem + 0.07vw, 0.7692rem);
+    --size-step-0: clamp(0.875rem, 0.83rem + 0.23vw, 1rem);
+    --size-step-1: clamp(1.05rem, 0.96rem + 0.45vw, 1.3rem);
+    --size-step-2: clamp(1.26rem, 1.10rem + 0.78vw, 1.69rem);
+    --size-step-3: clamp(1.512rem, 1.26rem + 1.25vw, 2.197rem);
+    --size-step-4: clamp(1.8144rem, 1.44rem + 1.89vw, 2.8561rem);
+    --size-step-5: clamp(2.1773rem, 1.62rem + 2.79vw, 3.7129rem);
+    --size-step-6: clamp(2.6127rem, 1.81rem + 4.03vw, 4.8268rem);
+    --size-step-7: clamp(3.1353rem, 1.99rem + 5.71vw, 6.2749rem);
+    --size-step-8: clamp(3.7623rem, 2.16rem + 7.99vw, 8.1573rem);
+    --size-step-9: clamp(4.5148rem, 2.30rem + 11.07vw, 10.6045rem);
+    --size-step-10: clamp(5.4178rem, 2.37rem + 15.21vw, 13.7858rem);
+}

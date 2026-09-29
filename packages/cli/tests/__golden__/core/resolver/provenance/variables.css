@@ -1,0 +1,15 @@
+:root {
+    --color-neutral-100: #f5f5f5;
+    --color-neutral-900: #171717;
+    --color-text-default: var(--color-neutral-900);
+    --color-surface-default: var(--color-neutral-100);
+    --space-s: 8px;
+    --space-m: 16px;
+    --radius-pill: 999px;
+    --duration-fast: 120ms;
+}
+
+[data-mode="dark"] {
+    --color-text-default: var(--color-neutral-100);
+    --color-surface-default: var(--color-neutral-900);
+}

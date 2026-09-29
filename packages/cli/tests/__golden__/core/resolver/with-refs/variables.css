@@ -1,0 +1,11 @@
+:root {
+    --color-black: #000000;
+    --color-white: #ffffff;
+    --color-background: var(--color-white);
+    --color-text: var(--color-black);
+}
+
+[data-theme="dark"] {
+    --color-background: var(--color-black);
+    --color-text: var(--color-white);
+}

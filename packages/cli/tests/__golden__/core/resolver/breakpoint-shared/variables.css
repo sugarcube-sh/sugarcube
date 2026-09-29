@@ -1,0 +1,8 @@
+:root {
+    --font-size-body: 16px;
+    --font-size-heading: 40px;
+}
+
+[data-breakpoint="md"] {
+    --font-size-body: 24px;
+}

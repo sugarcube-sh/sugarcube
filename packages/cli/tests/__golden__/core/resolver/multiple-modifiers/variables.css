@@ -1,0 +1,18 @@
+:root {
+    --color-primary: #3b82f6;
+    --color-background: #ffffff;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+}
+
+[data-theme="dark"] {
+    --color-primary: #60a5fa;
+    --color-background: #1f2937;
+}
+
+[data-density="compact"] {
+    --spacing-sm: 4px;
+    --spacing-md: 8px;
+    --spacing-lg: 12px;
+}

@@ -1,0 +1,12 @@
+:root {
+    --color-primary: #3b82f6;
+    --color-secondary: #8b5cf6;
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+}
+
+[data-theme="dark"] {
+    --color-primary: #60a5fa;
+    --color-background: #1a1a1a;
+}

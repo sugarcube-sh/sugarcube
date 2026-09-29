@@ -1,0 +1,11 @@
+:root {
+    --font-size-body: 16px;
+}
+
+[data-breakpoint="md"] {
+    --font-size-body: 24px;
+}
+
+[data-breakpoint="lg"] {
+    --font-size-body: 32px;
+}
