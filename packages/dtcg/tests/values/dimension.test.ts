@@ -80,13 +80,13 @@ describe("parseDimension", () => {
 
         it("a unit left out, even when the value is 0, as spec 8.2.1 says", () => {
             expect(details({ value: 0 })).toStrictEqual([
-                { path: ["$value"], detail: "missing-property" },
+                { path: ["$value", "unit"], detail: "missing-property" },
             ]);
         });
 
         it("a value left out", () => {
             expect(details({ unit: "px" })).toStrictEqual([
-                { path: ["$value"], detail: "missing-property" },
+                { path: ["$value", "value"], detail: "missing-property" },
             ]);
         });
 

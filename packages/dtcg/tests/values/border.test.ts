@@ -83,7 +83,7 @@ describe("parseBorder", () => {
                 const raw: Record<string, unknown> = { color, width, style: "solid" };
                 delete raw[part];
                 expect(details(raw)).toStrictEqual([
-                    { path: ["$value"], detail: "missing-property" },
+                    { path: ["$value", part], detail: "missing-property" },
                 ]);
             },
         );

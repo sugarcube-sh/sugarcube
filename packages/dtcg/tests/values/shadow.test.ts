@@ -71,7 +71,9 @@ describe("parseShadow", () => {
         it.for(["color", "offsetX", "offsetY", "blur", "spread"])("a shadow with no %s", (part) => {
             const raw: Record<string, unknown> = { ...layer };
             delete raw[part];
-            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "missing-property" }]);
+            expect(details(raw)).toStrictEqual([
+                { path: ["$value", part], detail: "missing-property" },
+            ]);
         });
 
         it.for(["true", 1, null])("inset %j, which is not true or false", (inset) => {

@@ -170,8 +170,8 @@ describe("parseColor", () => {
 
         it("a color with no colorSpace or components", () => {
             expect(details({})).toStrictEqual([
-                { path: ["$value"], detail: "missing-property" },
-                { path: ["$value"], detail: "missing-property" },
+                { path: ["$value", "colorSpace"], detail: "missing-property" },
+                { path: ["$value", "components"], detail: "missing-property" },
             ]);
         });
 

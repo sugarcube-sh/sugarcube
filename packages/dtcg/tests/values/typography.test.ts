@@ -77,7 +77,7 @@ describe("parseTypography", () => {
                 const raw: Record<string, unknown> = { ...heading };
                 delete raw[part];
                 expect(details(raw)).toStrictEqual([
-                    { path: ["$value"], detail: "missing-property" },
+                    { path: ["$value", part], detail: "missing-property" },
                 ]);
             },
         );
@@ -90,7 +90,7 @@ describe("parseTypography", () => {
                     fontWeight: 400,
                     lineHeight: 1.5,
                 }),
-            ).toStrictEqual([{ path: ["$value"], detail: "missing-property" }]);
+            ).toStrictEqual([{ path: ["$value", "letterSpacing"], detail: "missing-property" }]);
         });
 
         it.for(["fontStyle", "textTransform", "textDecoration"])(

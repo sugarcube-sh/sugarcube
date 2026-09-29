@@ -42,7 +42,7 @@ export function readComposite<O extends object>(
     for (const [name, read] of Object.entries(parts) as [string, Parse<unknown>][]) {
         if (!(name in raw)) {
             if (Object.hasOwn(defaults, name)) value[name] = defaults[name as keyof O];
-            else errors.push(valueError(at, "missing-property", name, type));
+            else errors.push(valueError([...at, name], "missing-property", name, type));
             continue;
         }
 

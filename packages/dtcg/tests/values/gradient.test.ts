@@ -98,7 +98,7 @@ describe("parseGradient", () => {
             const stop: Record<string, unknown> = { color: red, position: 0 };
             delete stop[part];
             expect(details([stop])).toStrictEqual([
-                { path: ["$value", 0], detail: "missing-property" },
+                { path: ["$value", 0, part], detail: "missing-property" },
             ]);
         });
 

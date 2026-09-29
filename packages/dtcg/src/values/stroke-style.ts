@@ -49,7 +49,9 @@ function readDashArray(
     errors: ValueError[],
 ): DashArray | undefined {
     if (!("dashArray" in raw)) {
-        errors.push(valueError(at, "missing-property", "dashArray", "strokeStyle"));
+        errors.push(
+            valueError([...at, "dashArray"], "missing-property", "dashArray", "strokeStyle"),
+        );
         return undefined;
     }
 
@@ -86,7 +88,7 @@ function readLineCap(
     errors: ValueError[],
 ): LineCap | Pointer | undefined {
     if (!("lineCap" in raw)) {
-        errors.push(valueError(at, "missing-property", "lineCap", "strokeStyle"));
+        errors.push(valueError([...at, "lineCap"], "missing-property", "lineCap", "strokeStyle"));
         return undefined;
     }
 

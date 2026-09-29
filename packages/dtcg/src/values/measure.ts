@@ -26,10 +26,9 @@ export function readMeasure<T extends MeasureType>(
         const match = STRING_WITH_UNIT.exec(raw);
         if (match) {
             const [, number, unit] = match;
-            const example = JSON.stringify({
-                value: Number(number),
-                unit: units.includes(unit!) ? unit : units[0],
-            });
+            const example = units.includes(unit!)
+                ? JSON.stringify({ value: Number(number), unit })
+                : `{ "value": ${Number(number)}, "unit": … }, with a unit of ${units.map((u) => `"${u}"`).join(" or ")}`;
             return { ok: false, errors: [valueError(at, "string-with-unit", raw, example)] };
         }
     }
@@ -61,7 +60,7 @@ function readAmount(
     errors: ValueError[],
 ): number | Pointer | undefined {
     if (!("value" in raw)) {
-        errors.push(valueError(at, "missing-property", "value", type));
+        errors.push(valueError([...at, "value"], "missing-property", "value", type));
         return undefined;
     }
 
@@ -85,7 +84,7 @@ function readUnit(
     errors: ValueError[],
 ): string | Pointer | undefined {
     if (!("unit" in raw)) {
-        errors.push(valueError(at, "missing-property", "unit", type));
+        errors.push(valueError([...at, "unit"], "missing-property", "unit", type));
         return undefined;
     }
 

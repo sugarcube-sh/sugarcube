@@ -82,8 +82,8 @@ describe("parseStrokeStyle", () => {
 
         it("a dash pattern with neither part", () => {
             expect(details({})).toStrictEqual([
-                { path: ["$value"], detail: "missing-property" },
-                { path: ["$value"], detail: "missing-property" },
+                { path: ["$value", "dashArray"], detail: "missing-property" },
+                { path: ["$value", "lineCap"], detail: "missing-property" },
             ]);
         });
 

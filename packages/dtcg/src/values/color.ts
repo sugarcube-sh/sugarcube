@@ -69,7 +69,7 @@ function readColorSpace(
     errors: ValueError[],
 ): ColorSpace | Pointer | undefined {
     if (!("colorSpace" in raw)) {
-        errors.push(valueError(at, "missing-property", "colorSpace", "color"));
+        errors.push(valueError([...at, "colorSpace"], "missing-property", "colorSpace", "color"));
         return undefined;
     }
 
@@ -90,7 +90,7 @@ function readComponents(
     errors: ValueError[],
 ): [Component, Component, Component] | Pointer | undefined {
     if (!("components" in raw)) {
-        errors.push(valueError(at, "missing-property", "components", "color"));
+        errors.push(valueError([...at, "components"], "missing-property", "components", "color"));
         return undefined;
     }
 
