@@ -1,5 +1,6 @@
 import type {
     Alias,
+    AliasedValueByType,
     JsonPath,
     Parse,
     ParseResult,
@@ -18,7 +19,7 @@ export type PartReaders<O> = {
 };
 
 export function readComposite<O extends object>(
-    type: TokenType,
+    type: keyof AliasedValueByType,
     parts: PartReaders<O>,
     raw: unknown,
     at: JsonPath,

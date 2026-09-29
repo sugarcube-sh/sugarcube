@@ -1,6 +1,8 @@
-import type { JsonPath, TokenType, ValueError } from "../index.js";
+import type { AliasedValueByType, JsonPath, TokenType, ValueError } from "../index.js";
 
-const shapes: Record<TokenType, string> = {
+type SpecType = keyof AliasedValueByType;
+
+const shapes: Record<SpecType, string> = {
     color: "A color must be an object with a colorSpace and three components, or a reference to a color token.",
     dimension:
         'A dimension must be an object with a number value and a unit of "px" or "rem", or a reference to a dimension token.',
@@ -26,7 +28,7 @@ const shapes: Record<TokenType, string> = {
 };
 
 export const valueErrorMessages = {
-    "wrong-shape": (type: TokenType) => shapes[type],
+    "wrong-shape": (type: SpecType) => shapes[type],
     "unknown-property": (name: string, type: TokenType) =>
         `"${name}" is not a property of a ${type}.`,
     "missing-property": (name: string, type: TokenType) => `A ${type} needs "${name}".`,
