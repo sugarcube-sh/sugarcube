@@ -1,20 +1,11 @@
 import type {
-    BorderValue,
     ColorSpace,
-    ColorValue,
-    CubicBezierValue,
     DimensionValue,
     DurationValue,
-    FontFamilyValue,
-    FontWeightValue,
-    GradientValue,
-    NumberValue,
     Parse,
-    ShadowValue,
     StrokeStyleValue,
     TokenType,
-    TransitionValue,
-    TypographyValue,
+    WithAliases,
 } from "./index.js";
 
 /** Every token type the specification defines, in its order. */
@@ -191,60 +182,74 @@ export interface ColorChannel {
 }
 
 /**
- * Reads one color value.
+ * Reads one color value. A reference to a whole token, written `"{color.brand}"`, is read as an
+ * `Alias`. A JSON Pointer is read as a `Pointer`, and may stand in place of the whole value or any
+ * part of it.
  *
  * @example
  * parseColor({ colorSpace: "srgb", components: [1, 0, 1] }, [])
  * // { ok: true, value: { colorSpace: "srgb", components: [1, 0, 1], alpha: 1 } }
+ *
+ * @example
+ * parseColor("{color.brand}", [])
+ * // { ok: true, value: { alias: "color.brand" } }
  */
-export const parseColor: Parse<ColorValue> = () => {
+export const parseColor: Parse<WithAliases<"color">> = () => {
     throw new Error("not implemented yet");
 };
 /** Reads one dimension value. */
-export const parseDimension: Parse<DimensionValue> = () => {
+export const parseDimension: Parse<WithAliases<"dimension">> = () => {
     throw new Error("not implemented yet");
 };
 /** Reads one duration value. */
-export const parseDuration: Parse<DurationValue> = () => {
+export const parseDuration: Parse<WithAliases<"duration">> = () => {
     throw new Error("not implemented yet");
 };
 /** Reads one cubic Bézier value. */
-export const parseCubicBezier: Parse<CubicBezierValue> = () => {
+export const parseCubicBezier: Parse<WithAliases<"cubicBezier">> = () => {
     throw new Error("not implemented yet");
 };
 /** Reads one number value. */
-export const parseNumber: Parse<NumberValue> = () => {
+export const parseNumber: Parse<WithAliases<"number">> = () => {
     throw new Error("not implemented yet");
 };
 /** Reads one font family value. A single name becomes a list of one. */
-export const parseFontFamily: Parse<FontFamilyValue> = () => {
+export const parseFontFamily: Parse<WithAliases<"fontFamily">> = () => {
     throw new Error("not implemented yet");
 };
 /** Reads one font weight value. Keywords become their numbers. */
-export const parseFontWeight: Parse<FontWeightValue> = () => {
+export const parseFontWeight: Parse<WithAliases<"fontWeight">> = () => {
     throw new Error("not implemented yet");
 };
 /** Reads one stroke style value. */
-export const parseStrokeStyle: Parse<StrokeStyleValue> = () => {
+export const parseStrokeStyle: Parse<WithAliases<"strokeStyle">> = () => {
     throw new Error("not implemented yet");
 };
-/** Reads one border value. */
-export const parseBorder: Parse<BorderValue> = () => {
+/**
+ * Reads one border value. A part that is a reference is kept as an `Alias`, and checked
+ * against its target when references are followed.
+ *
+ * @example
+ * parseBorder({ color: "{color.brand}", width: { value: 1, unit: "px" }, style: "solid" }, [])
+ * // { ok: true, value: { color: { alias: "color.brand" }, width: { value: 1, unit: "px" },
+ * //   style: { kind: "keyword", keyword: "solid" } } }
+ */
+export const parseBorder: Parse<WithAliases<"border">> = () => {
     throw new Error("not implemented yet");
 };
 /** Reads one shadow value. A single shadow becomes a list of one. */
-export const parseShadow: Parse<ShadowValue> = () => {
+export const parseShadow: Parse<WithAliases<"shadow">> = () => {
     throw new Error("not implemented yet");
 };
 /** Reads one gradient value. */
-export const parseGradient: Parse<GradientValue> = () => {
+export const parseGradient: Parse<WithAliases<"gradient">> = () => {
     throw new Error("not implemented yet");
 };
 /** Reads one transition value. */
-export const parseTransition: Parse<TransitionValue> = () => {
+export const parseTransition: Parse<WithAliases<"transition">> = () => {
     throw new Error("not implemented yet");
 };
 /** Reads one typography value. */
-export const parseTypography: Parse<TypographyValue> = () => {
+export const parseTypography: Parse<WithAliases<"typography">> = () => {
     throw new Error("not implemented yet");
 };

@@ -241,7 +241,7 @@ export interface AliasedValueByType {
     gradient:
         | Alias
         | Pointer
-        | (Pointer | { color: Ref<ColorValue>; position: Ref<NumberValue> })[];
+        | (Alias | Pointer | { color: Ref<ColorValue>; position: Ref<NumberValue> })[];
     transition:
         | Alias
         | Pointer
