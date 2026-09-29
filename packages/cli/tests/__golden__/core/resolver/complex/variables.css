@@ -1,0 +1,25 @@
+:root {
+    --color-brand-primary: #3b82f6;
+    --color-brand-secondary: #8b5cf6;
+    --color-neutral-100: #f5f5f5;
+    --color-neutral-900: #171717;
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --button-padding: var(--space-sm);
+    --button-background: var(--color-brand-primary);
+}
+
+[data-theme="dark"] {
+    --color-surface: var(--color-neutral-900);
+    --color-text: var(--color-neutral-100);
+}
+
+[data-theme="ocean"] {
+    --color-brand-primary: #0ea5e9;
+}
+
+[data-theme="ocean-dark"] {
+    --color-brand-primary: #38bdf8;
+    --color-surface: #0c2d3f;
+}

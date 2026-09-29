@@ -1,0 +1,20 @@
+:root {
+    --space-0: 0rem;
+    --space-3xs: clamp(0.2188rem, 0.21rem + 0.06vw, 0.25rem);
+    --space-2xs: clamp(0.4375rem, 0.41rem + 0.11vw, 0.5rem);
+    --space-xs: clamp(0.6563rem, 0.62rem + 0.17vw, 0.75rem);
+    --space-sm: clamp(0.875rem, 0.83rem + 0.23vw, 1rem);
+    --space-md: clamp(1.3125rem, 1.24rem + 0.34vw, 1.5rem);
+    --space-lg: clamp(1.75rem, 1.66rem + 0.45vw, 2rem);
+    --space-xl: clamp(2.625rem, 2.49rem + 0.68vw, 3rem);
+    --space-2xl: clamp(3.5rem, 3.32rem + 0.91vw, 4rem);
+    --space-3xl: clamp(5.25rem, 4.98rem + 1.36vw, 6rem);
+    --space-3xs-2xs: clamp(0.2188rem, 0.12rem + 0.51vw, 0.5rem);
+    --space-2xs-xs: clamp(0.4375rem, 0.32rem + 0.57vw, 0.75rem);
+    --space-xs-sm: clamp(0.6563rem, 0.53rem + 0.62vw, 1rem);
+    --space-sm-md: clamp(0.875rem, 0.65rem + 1.14vw, 1.5rem);
+    --space-md-lg: clamp(1.3125rem, 1.06rem + 1.25vw, 2rem);
+    --space-lg-xl: clamp(1.75rem, 1.30rem + 2.27vw, 3rem);
+    --space-xl-2xl: clamp(2.625rem, 2.13rem + 2.50vw, 4rem);
+    --space-2xl-3xl: clamp(3.5rem, 2.59rem + 4.55vw, 6rem);
+}

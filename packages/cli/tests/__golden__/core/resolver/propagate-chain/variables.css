@@ -1,0 +1,19 @@
+:root {
+    --palette-blue-600: #2563eb;
+    --palette-teal-600: #0d9488;
+    --palette-gray-500: #6b7280;
+    --palette-shadow-soft: #333333;
+    --palette-shadow-strong: #000000;
+    --bindings-accent: var(--palette-blue-600);
+    --bindings-neutral: var(--palette-gray-500);
+    --bindings-shadow: var(--palette-shadow-soft);
+    --background-accent-primary: var(--bindings-accent);
+    --background-brand-primary: var(--background-accent-primary);
+    --background-neutral: var(--bindings-neutral);
+    --shadow-card: 0px 2px 4px 0px var(--bindings-shadow);
+}
+
+[data-theme="brand"] {
+    --bindings-accent: var(--palette-teal-600);
+    --bindings-shadow: var(--palette-shadow-strong);
+}

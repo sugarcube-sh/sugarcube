@@ -1,0 +1,28 @@
+:root {
+    --color-primary: #3b82f6;
+    --color-surface: #ffffff;
+    --color-text: #1a1a1a;
+}
+
+[data-brand="ocean"] {
+    --color-primary: #0ea5e9;
+}
+
+[data-brand="forest"] {
+    --color-primary: #16a34a;
+}
+
+[data-theme="dark"] {
+    --color-surface: #1a1a1a;
+    --color-text: #ffffff;
+}
+
+[data-theme="dark-ocean"] {
+    --color-surface: #0c2d3f;
+    --color-text: #ffffff;
+}
+
+[data-theme="dark-forest"] {
+    --color-surface: #1a2e1a;
+    --color-text: #ffffff;
+}

@@ -9,6 +9,7 @@ export default defineConfig({
         "apps/www/public/r/**",
         // Intentionally malformed fixture; must not be "fixed".
         "packages/core/tests/__fixtures__/tokens/invalid-json.json",
+        "packages/cli/tests/__golden__/**",
     ],
     overrides: [
         {
