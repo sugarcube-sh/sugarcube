@@ -11,20 +11,21 @@ import type {
 import { isPlainObject, readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
-type ObjectForm<T extends TokenType> = Exclude<WithAliases<T>, Alias | Pointer>;
+export type ObjectForm<T extends TokenType> = Exclude<WithAliases<T>, Alias | Pointer>;
 
-export type PartReaders<T extends TokenType> = {
-    readonly [K in keyof ObjectForm<T>]-?: Parse<ObjectForm<T>[K]>;
+export type PartReaders<O> = {
+    readonly [K in keyof O]-?: Parse<O[K]>;
 };
 
-export function readComposite<T extends TokenType>(
-    type: T,
-    parts: PartReaders<T>,
+export function readComposite<O extends object>(
+    type: TokenType,
+    parts: PartReaders<O>,
     raw: unknown,
     at: JsonPath,
-): ParseResult<WithAliases<T>> {
+    defaults: Partial<O> = {},
+): ParseResult<O | Alias | Pointer> {
     const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference as WithAliases<T> };
+    if (reference) return { ok: true, value: reference };
 
     if (!isPlainObject(raw)) {
         return { ok: false, errors: [valueError(at, "wrong-shape", type)] };
@@ -40,7 +41,8 @@ export function readComposite<T extends TokenType>(
     const value: Record<string, unknown> = {};
     for (const [name, read] of Object.entries(parts) as [string, Parse<unknown>][]) {
         if (!(name in raw)) {
-            errors.push(valueError(at, "missing-property", name, type));
+            if (Object.hasOwn(defaults, name)) value[name] = defaults[name as keyof O];
+            else errors.push(valueError(at, "missing-property", name, type));
             continue;
         }
 
@@ -50,5 +52,5 @@ export function readComposite<T extends TokenType>(
     }
 
     if (errors.length > 0) return { ok: false, errors };
-    return { ok: true, value: value as WithAliases<T> };
+    return { ok: true, value: value as O };
 }

@@ -5,10 +5,12 @@ import { readDimension } from "./values/dimension.js";
 import { readDuration } from "./values/duration.js";
 import { readCubicBezier } from "./values/cubic-bezier.js";
 import { readNumber } from "./values/number.js";
+import { readShadow } from "./values/shadow.js";
 import { readStrokeStyle } from "./values/stroke-style.js";
 import { readTransition } from "./values/transition.js";
 import { readFontFamily } from "./values/font-family.js";
 import { readFontWeight } from "./values/font-weight.js";
+import { readGradient } from "./values/gradient.js";
 
 export { colorSpaces, type ColorChannel } from "./values/color-spaces.js";
 export { dimensionUnits, durationUnits } from "./values/units.js";
@@ -105,13 +107,9 @@ export const parseStrokeStyle: Parse<WithAliases<"strokeStyle">> = readStrokeSty
  */
 export const parseBorder: Parse<WithAliases<"border">> = readBorder;
 /** Reads one shadow value. A single shadow becomes a list of one. */
-export const parseShadow: Parse<WithAliases<"shadow">> = () => {
-    throw new Error("not implemented yet");
-};
+export const parseShadow: Parse<WithAliases<"shadow">> = readShadow;
 /** Reads one gradient value. */
-export const parseGradient: Parse<WithAliases<"gradient">> = () => {
-    throw new Error("not implemented yet");
-};
+export const parseGradient: Parse<WithAliases<"gradient">> = readGradient;
 /** Reads one transition value. */
 export const parseTransition: Parse<WithAliases<"transition">> = readTransition;
 /** Reads one typography value. */

@@ -16,6 +16,9 @@ const shapes: Partial<Record<TokenType, string>> = {
     border: "A border must be an object with a color, a width and a style, or a reference to a border token.",
     transition:
         "A transition must be an object with a duration, a delay and a timingFunction, or a reference to a transition token.",
+    shadow: "A shadow must be an object with a color, offsetX, offsetY, blur and spread, a list of them, or a reference to a shadow token.",
+    gradient:
+        "A gradient must be a list of stops, each an object with a color and a position, or a reference to a gradient token.",
     strokeStyle:
         'A stroke style must be a keyword such as "solid", an object with a dashArray and a lineCap, or a reference to a strokeStyle token.',
 };
@@ -56,6 +59,9 @@ export const valueErrorMessages = {
         "A dashArray needs at least one length: the dashes and gaps to repeat along the line.",
     "unknown-line-cap": (value: unknown, lineCaps: readonly string[]) =>
         `${JSON.stringify(value)} is not a line cap. Use ${lineCaps.map((c) => `"${c}"`).join(", ")}.`,
+    "no-shadows": () => "A list of shadows needs at least one shadow.",
+    "no-gradient-stops": () => "A gradient needs at least one stop.",
+    "not-a-boolean": (value: unknown) => `${JSON.stringify(value)} is not true or false.`,
     "font-weight-out-of-range": (value: number) => `${value} is outside the range 1 to 1000.`,
     "unknown-font-weight-keyword": (value: string) =>
         `"${value}" is not a font weight keyword the specification defines. Keywords are lower case, such as "bold" or "semi-bold".`,
