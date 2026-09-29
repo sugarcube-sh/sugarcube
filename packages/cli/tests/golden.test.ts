@@ -12,12 +12,16 @@ const ROOT = resolve(__dirname, "../../..");
 const GOLDEN_DIR = join(__dirname, "__golden__");
 const CORE_FIXTURES = join(ROOT, "packages/core/tests/__fixtures__");
 const REGISTRY_TOKENS = join(ROOT, "apps/www/registry/tokens");
+const EVERY_VALUE_FORM_RESOLVER = join(
+    __dirname,
+    "__fixtures__/every-value-form/tokens.resolver.json",
+);
 
 type GoldenCase = {
     name: string;
     resolver?: string;
     files?: string[];
-    config?: SugarcubeConfig;
+    config?: SugarcubeConfig | ((outDir: string) => SugarcubeConfig);
 };
 
 const CORE_RESOLVERS = [
@@ -59,6 +63,25 @@ function fromProject(config: SugarcubeConfig, projectDir: string): SugarcubeConf
         utilities: { ...config.utilities, classes: withSafelist(config.utilities?.classes) },
     };
 }
+
+const EVERY_VALUE_FORM_CLASSES: UtilityClassesConfig = {
+    "color": { source: "color.*", prefix: "text", stripDuplicates: true, safelist: true },
+    "background-color": { source: "color.*", prefix: "bg", safelist: true },
+    "padding": {
+        source: "space.*",
+        prefix: "p",
+        directions: ["all", "x", "y", "top", "left"],
+        safelist: true,
+    },
+    "margin": [
+        { source: "space.*", prefix: "m", directions: ["all"], safelist: ["small", "fluid"] },
+        { source: "space.*", prefix: "m", directions: ["x", "bottom"], safelist: ["medium"] },
+    ],
+    "font-family": { source: "font.family.*", prefix: "font", safelist: true },
+    "font-weight": { source: "font.weight.*", prefix: "weight", safelist: true },
+    "box-shadow": { source: "shadow.*", safelist: true },
+    "--flow-space": { source: "space.*", prefix: "flow", safelist: true },
+};
 
 const CASES: GoldenCase[] = [
     ...CORE_RESOLVERS.map((name) => ({
@@ -108,6 +131,54 @@ const CASES: GoldenCase[] = [
         name: "registry/starter-kits/static",
         resolver: join(REGISTRY_TOKENS, "starter-kits/static/tokens.resolver.json"),
     },
+    {
+        name: "every-value-form/native",
+        resolver: EVERY_VALUE_FORM_RESOLVER,
+        config: {
+            variables: {
+                prefix: "ds",
+                layer: "tokens",
+                propagateDependents: true,
+                transforms: {
+                    fluid: { min: 360, max: 1440 },
+                    colorFallbackStrategy: "native",
+                },
+                permutations: [
+                    { input: { theme: "light" }, selector: ":root" },
+                    {
+                        input: { theme: "dark" },
+                        selector: ":root",
+                        atRule: "@media (prefers-color-scheme: dark)",
+                    },
+                    { input: { theme: "dark" }, selector: ['[data-theme="dark"]', ".dark"] },
+                ],
+            },
+            utilities: { layer: "utilities", classes: EVERY_VALUE_FORM_CLASSES },
+        },
+    },
+    {
+        name: "every-value-form/polyfill",
+        resolver: join(__dirname, "__fixtures__/every-value-form/polyfill/tokens.resolver.json"),
+        config: (outDir) => ({
+            variables: {
+                variableName: (path: string) => path.replaceAll(".", "_"),
+                transforms: { colorFallbackStrategy: "polyfill" },
+                permutations: [
+                    { input: {}, selector: ":root" },
+                    {
+                        input: { theme: "dark" },
+                        selector: '[data-theme="dark"]',
+                        path: join(outDir, "dark.css"),
+                    },
+                ],
+            },
+            utilities: {
+                classes: {
+                    color: { source: "color.*", prefix: "text", safelist: true },
+                },
+            },
+        }),
+    },
     ...["size-demo", "space-demo"].map((name) => ({
         name: `registry/recipes/${name}`,
         files: [join(REGISTRY_TOKENS, "recipes", `${name}.json`)],
@@ -135,11 +206,14 @@ function writeSingleSetResolver(dir: string, files: string[]): string {
 }
 
 async function generate(goldenCase: GoldenCase, dir: string) {
-    const base = goldenCase.config ?? {};
+    const outDir = join(dir, "out");
+    const base =
+        typeof goldenCase.config === "function"
+            ? goldenCase.config(outDir)
+            : (goldenCase.config ?? {});
     const resolver = goldenCase.files
         ? writeSingleSetResolver(dir, goldenCase.files)
         : (goldenCase.resolver ?? base.resolver);
-    const outDir = join(dir, "out");
     const config = fillDefaults({
         ...base,
         resolver,

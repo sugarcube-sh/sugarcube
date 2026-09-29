@@ -1,0 +1,49 @@
+{
+  "color": {
+    "surface": {
+      "$type": "color",
+      "$value": "#111111"
+    },
+    "text": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [0.95, 0.95, 0.95],
+        "hex": "#f2f2f2"
+      }
+    },
+    "oklch": {
+      "basic": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [0.8, 0.2, 328.363]
+        }
+      }
+    }
+  },
+  "shadow": {
+    "basic": {
+      "$type": "shadow",
+      "$value": {
+        "color": "#ffffff",
+        "offsetX": {
+          "value": 0,
+          "unit": "px"
+        },
+        "offsetY": {
+          "value": 1,
+          "unit": "px"
+        },
+        "blur": {
+          "value": 2,
+          "unit": "px"
+        },
+        "spread": {
+          "value": 0,
+          "unit": "px"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+/* layer: default */
+.text-brand{color:var(--color_brand);}
+.text-hex-rgb{color:var(--color_hex_rgb);}
+.text-hex-rgba{color:var(--color_hex_rgba);}
+.text-hsl-basic{color:var(--color_hsl_basic);}
+.text-srgb-basic{color:var(--color_srgb_basic);}
+.text-surface{color:var(--color_surface);}

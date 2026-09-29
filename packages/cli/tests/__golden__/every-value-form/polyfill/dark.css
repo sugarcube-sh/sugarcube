@@ -1,0 +1,26 @@
+[data-theme="dark"] {
+    --color_hex_rgb: #ff0000;
+    --color_hex_rgba: #00000080;
+    --color_oklch_with-hex: #ff8080;
+    --color_oklch_with-hex-and-alpha: #ff00ff;
+    --color_display-p3_with-hex: #e63946;
+    --color_srgb_basic: rgb(204 102 51);
+    --color_srgb_with-hex: rgb(255 0 0);
+    --color_hsl_basic: hsl(270 80% 60%);
+    --color_brand: var(--color_oklch_with-hex);
+    --color_surface: #1a1a1f;
+}
+
+@supports (color: oklch(0 0 0)) {
+    [data-theme="dark"] {
+        --color_oklch_with-hex: oklch(0.8 0.2 29.23);
+        --color_oklch_with-hex-and-alpha: oklch(0.7016 0.3225 328.363 / 0.8);
+    }
+}
+
+@supports (color: color(display-p3 1 1 1)) {
+    [data-theme="dark"] {
+        --color_display-p3_with-hex: color(display-p3 0.9 0.2 0.1);
+        --color_surface: color(display-p3 0.1 0.1 0.12);
+    }
+}

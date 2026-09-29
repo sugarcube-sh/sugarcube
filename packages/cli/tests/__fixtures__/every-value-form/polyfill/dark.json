@@ -1,0 +1,22 @@
+{
+  "color": {
+    "surface": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "display-p3",
+        "components": [0.1, 0.1, 0.12],
+        "hex": "#1a1a1f"
+      }
+    },
+    "oklch": {
+      "with-hex": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [0.8, 0.2, 29.23],
+          "hex": "#ff8080"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "version": "2025.10",
+  "name": "every-value-form-polyfill",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "$ref": "tokens.json"
+        }
+      ]
+    },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [],
+        "dark": [
+          {
+            "$ref": "dark.json"
+          }
+        ]
+      }
+    }
+  ]
+}
