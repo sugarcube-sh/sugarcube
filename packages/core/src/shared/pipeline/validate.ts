@@ -1,15 +1,13 @@
+import type { FluidExtension } from "../../types/extensions.js";
 import type { FlattenedToken, FlattenedTokens } from "../../types/flatten.js";
-import type { PipelineContext } from "../../types/pipelines.js";
 import type { TokenType } from "../../types/tokens.js";
 import type { ValidationError, Validator } from "../../types/validate.js";
 import { ErrorMessages } from "../constants/error-messages.js";
-import { WarningMessages } from "../constants/warning-messages.js";
 import { validateBorder } from "../validators/border.js";
 import { validateColor } from "../validators/color.js";
 import { validateCubicBezier } from "../validators/cubic-bezier.js";
 import { validateDimension } from "../validators/dimension.js";
 import { validateDuration } from "../validators/duration.js";
-import { validateFluidDimension } from "../validators/fluid-dimension.js";
 import { validateFontFamily } from "../validators/font-family.js";
 import { validateFontWeight } from "../validators/font-weight.js";
 import { validateGradient } from "../validators/gradient.js";
@@ -26,7 +24,6 @@ const validators = {
     // Simple types
     color: validateColor,
     dimension: validateDimension,
-    fluidDimension: validateFluidDimension,
     duration: validateDuration,
     cubicBezier: validateCubicBezier,
     fontFamily: validateFontFamily,
@@ -43,6 +40,26 @@ const validators = {
 } satisfies {
     [K in TokenType]: Validator<K>;
 };
+
+const FLUID_EXAMPLE: FluidExtension = {
+    min: { value: 0.5, unit: "rem" },
+    max: { value: 1, unit: "rem" },
+};
+
+function isDimensionValue(value: unknown): boolean {
+    return (
+        typeof value === "object" &&
+        value !== null &&
+        typeof (value as { value?: unknown }).value === "number" &&
+        typeof (value as { unit?: unknown }).unit === "string"
+    );
+}
+
+function isFluidRange(value: unknown): value is FluidExtension {
+    if (typeof value !== "object" || value === null) return false;
+    const { min, max } = value as { min?: unknown; max?: unknown };
+    return isDimensionValue(min) && isDimensionValue(max);
+}
 
 /**
  * Validates a set of flattened design tokens against their type definitions.
@@ -66,7 +83,7 @@ const validators = {
  *   }
  * });
  */
-export function validate(tokens: FlattenedTokens, context?: PipelineContext): ValidationError[] {
+export function validate(tokens: FlattenedTokens): ValidationError[] {
     const errors: ValidationError[] = [];
 
     for (const node of Object.values(tokens.tokens)) {
@@ -76,11 +93,16 @@ export function validate(tokens: FlattenedTokens, context?: PipelineContext): Va
         }
         if (node.$path.startsWith("$")) continue;
 
-        if (node.$type === "fluidDimension") {
-            context?.warn({
+        if ((node.$type as string) === "fluidDimension") {
+            errors.push({
                 path: node.$path,
-                message: WarningMessages.VALIDATE.DEPRECATED_FLUID_DIMENSION(node.$path),
+                message: ErrorMessages.VALIDATE.REMOVED_FLUID_DIMENSION(
+                    node.$path,
+                    "$value" in node && isFluidRange(node.$value) ? node.$value : FLUID_EXAMPLE,
+                ),
+                source: node.$source,
             });
+            continue;
         }
 
         // Check for required fields before validation.

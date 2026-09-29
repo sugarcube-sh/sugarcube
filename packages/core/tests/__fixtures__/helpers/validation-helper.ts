@@ -89,13 +89,6 @@ export const ValidationHelper = {
         expect(errors[0]?.message).toBe(ErrorMessages.VALIDATE.INVALID_DURATION_UNIT(unit, path));
     },
 
-    expectInvalidFluidDimensionError(errors: ValidationError[], value: unknown, path: string) {
-        expect(errors).toHaveLength(1);
-        expect(errors[0]?.message).toBe(
-            ErrorMessages.VALIDATE.INVALID_FLUID_DIMENSION(value, path),
-        );
-    },
-
     expectInvalidFontFamilyError(errors: ValidationError[], value: unknown, path: string) {
         expect(errors).toHaveLength(1);
         expect(errors[0]?.message).toBe(ErrorMessages.VALIDATE.INVALID_FONT_FAMILY(value, path));

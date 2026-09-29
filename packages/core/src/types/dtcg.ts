@@ -53,7 +53,6 @@ type TokenType = SimpleTokenType | CompositeTokenType;
 type SimpleTokenType =
     | "color"
     | "dimension"
-    | "fluidDimension"
     | "duration"
     | "cubicBezier"
     | "fontFamily"
@@ -64,19 +63,17 @@ type SimpleTokenValue<T extends SimpleTokenType = SimpleTokenType> = T extends "
     ? Color
     : T extends "dimension"
       ? Dimension
-      : T extends "fluidDimension"
-        ? FluidDimension
-        : T extends "duration"
-          ? Duration
-          : T extends "cubicBezier"
-            ? CubicBezier
-            : T extends "fontFamily"
-              ? FontFamily
-              : T extends "fontWeight"
-                ? FontWeight
-                : T extends "number"
-                  ? number
-                  : never;
+      : T extends "duration"
+        ? Duration
+        : T extends "cubicBezier"
+          ? CubicBezier
+          : T extends "fontFamily"
+            ? FontFamily
+            : T extends "fontWeight"
+              ? FontWeight
+              : T extends "number"
+                ? number
+                : never;
 
 // Composite Token Types
 
@@ -122,12 +119,6 @@ type Color =
 type Dimension = {
     value: number;
     unit: "px" | "rem";
-};
-
-/** Responsive dimension that scales between viewport sizes. */
-type FluidDimension = {
-    min: Dimension;
-    max: Dimension;
 };
 
 type Duration = {
@@ -232,7 +223,6 @@ export type {
     TokenValue,
     RawTokenValue,
     Dimension,
-    FluidDimension,
     Duration,
     FontFamily,
     LineCap,

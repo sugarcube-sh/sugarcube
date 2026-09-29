@@ -19,18 +19,28 @@
       }
     },
     "fluid": {
-      "$type": "fluidDimension",
-      "$description": "Authored fluid pairs, rather than pairs a recipe generated. Two dimensions in one value, which is the shape D-017 makes every generated step.",
+      "$type": "dimension",
+      "$description": "Authored fluid pairs, rather than pairs a recipe generated.",
       "gutter": {
-        "$value": {
-          "min": { "value": 1, "unit": "rem" },
-          "max": { "value": 2, "unit": "rem" }
+        "$value": { "value": 2, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 1, "unit": "rem" },
+              "max": { "value": 2, "unit": "rem" }
+            }
+          }
         }
       },
       "measure": {
-        "$value": {
-          "min": { "value": 20, "unit": "rem" },
-          "max": { "value": 36, "unit": "rem" }
+        "$value": { "value": 36, "unit": "rem" },
+        "$extensions": {
+          "sh.sugarcube": {
+            "fluid": {
+              "min": { "value": 20, "unit": "rem" },
+              "max": { "value": 36, "unit": "rem" }
+            }
+          }
         }
       }
     }

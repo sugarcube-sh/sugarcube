@@ -92,7 +92,7 @@ export function resolveTokens(trees: TokenTree[], context?: PipelineContext): Re
 
     const { trees: expandedTrees, errors: expandTreeErrors } = expand(trees);
     const { tokens: flattenedTokens, errors: flattenErrors } = flatten(expandedTrees, ctx);
-    const validationErrors = validate(flattenedTokens, ctx);
+    const validationErrors = validate(flattenedTokens);
     const { resolved, errors: resolutionErrors } = dereference(flattenedTokens);
 
     return {

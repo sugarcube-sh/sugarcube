@@ -211,12 +211,8 @@ describe("a new token of every type the select offers", () => {
             expect(readLayers(type, value)).toBeDefined();
         } else if (["typography", "border", "transition"].includes(type)) {
             expect(compositeFields(type, value).length).toBeGreaterThan(0);
-        } else if (type !== "fluidDimension") {
+        } else {
             expect(field.editable).toBe(true);
         }
-    });
-
-    it("has no editor for a fluid dimension yet, so it shows as text", () => {
-        expect(readField("fluidDimension", emptyValueFor("fluidDimension")).editable).toBe(false);
     });
 });

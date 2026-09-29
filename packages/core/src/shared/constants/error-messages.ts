@@ -1,3 +1,5 @@
+import type { FluidExtension } from "../../types/extensions.js";
+
 /** How many referring tokens a grouped "missing reference" message names before summarising the rest. */
 export const MISSING_REFERRER_CAP = 3;
 
@@ -80,6 +82,14 @@ export const ErrorMessages = {
             `Missing fluid configuration. Token at ${path} requires fluid viewport settings.`,
         INVALID_FLUID_DIMENSION: (value: unknown, path: string) =>
             `Invalid fluid dimension at ${path}: "${value}". Fluid dimensions should have min and max values, like { "min": { "value": 16, "unit": "px" }, "max": { "value": 24, "unit": "px" } }`,
+        REMOVED_FLUID_DIMENSION: (path: string, range: FluidExtension) =>
+            `$type "fluidDimension" at ${path} has been removed. Use $type "dimension" with the range in $extensions["sh.sugarcube"].fluid: ${JSON.stringify(
+                {
+                    $type: "dimension",
+                    $value: range.max,
+                    $extensions: { "sh.sugarcube": { fluid: range } },
+                },
+            )}`,
 
         INVALID_VIEWPORT_CONFIG: (value: unknown, path: string) =>
             `Invalid viewport configuration at ${path}: "${value}". Viewport config should have min and max dimension values`,

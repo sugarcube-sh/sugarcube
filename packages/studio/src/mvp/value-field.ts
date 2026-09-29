@@ -153,7 +153,6 @@ function summarise(parts: CompositeField[], value: unknown): string {
 const EMPTY_BY_TYPE: Record<string, unknown> = {
     color: "",
     dimension: { value: 0, unit: "px" },
-    fluidDimension: { min: { value: 0, unit: "px" }, max: { value: 0, unit: "px" } },
     duration: { value: 0, unit: "ms" },
     cubicBezier: [0, 0, 1, 1],
     fontFamily: "",

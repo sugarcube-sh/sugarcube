@@ -5,7 +5,6 @@ import { renderColor } from "./color.js";
 import { renderCubicBezier } from "./cubic-bezier.js";
 import { renderDimension } from "./dimension.js";
 import { renderDuration } from "./duration.js";
-import { renderFluidDimension } from "./fluid-dimension.js";
 import { renderFontFamily } from "./font-family.js";
 import { renderFontWeight } from "./font-weight.js";
 import { renderGradient } from "./gradient.js";
@@ -23,7 +22,6 @@ export const cssRenderers: {
     cubicBezier: renderCubicBezier,
     color: renderColor,
     dimension: renderDimension,
-    fluidDimension: renderFluidDimension,
     typography: renderTypography,
     border: renderBorder,
     shadow: renderShadow,

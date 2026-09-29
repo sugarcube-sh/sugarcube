@@ -129,7 +129,6 @@ export type {
     TokenValue,
     RawTokenValue,
     Dimension,
-    FluidDimension,
     Duration,
     FontFamily,
     LineCap,
