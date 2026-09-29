@@ -12,6 +12,8 @@
     "studio",
     "@sugarcube-sh/studio",
     "@sugarcube-sh/studio-vite",
-    "@sugarcube-sh/studio-node"
+    "@sugarcube-sh/studio-node",
+    "@sugarcube-sh/dtcg",
+    "@sugarcube-sh/dtcg-edit"
   ]
 }

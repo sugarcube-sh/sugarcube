@@ -1,0 +1,58 @@
+{
+  "name": "@sugarcube-sh/dtcg",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Read, check and export DTCG design tokens",
+  "keywords": [
+    "design-system",
+    "design-tokens",
+    "dtcg"
+  ],
+  "bugs": {
+    "url": "https://github.com/sugarcube-sh/sugarcube/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Mark Tomlinson",
+    "email": "mark@marktomlinson.dev",
+    "url": "https://marktomlinson.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sugarcube-sh/sugarcube"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "default": "./dist/node.js"
+    },
+    "./values": {
+      "types": "./dist/values.d.ts",
+      "default": "./dist/values.js"
+    }
+  },
+  "scripts": {
+    "build": "pkgroll --minify",
+    "dev": "pkgroll --watch",
+    "test": "vitest run",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "pkgroll": "^2.28.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

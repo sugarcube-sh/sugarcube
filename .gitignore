@@ -11,3 +11,7 @@ drafts
 *.log
 *.tsbuildinfo
 .pnpm-store/
+packages/dtcg/tests/examples/_figma.d.ts
+packages/dtcg/tests/examples/figma-export-variables.ts
+packages/dtcg-edit/tests/examples/_figma.d.ts
+packages/dtcg-edit/tests/examples/figma-import-variables.ts
