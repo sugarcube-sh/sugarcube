@@ -1,6 +1,6 @@
 import type { JsonPath, TokenType, ValueError } from "../index.js";
 
-const shapes: Partial<Record<TokenType, string>> = {
+const shapes: Record<TokenType, string> = {
     color: "A color must be an object with a colorSpace and three components, or a reference to a color token.",
     dimension:
         'A dimension must be an object with a number value and a unit of "px" or "rem", or a reference to a dimension token.',
@@ -19,12 +19,14 @@ const shapes: Partial<Record<TokenType, string>> = {
     shadow: "A shadow must be an object with a color, offsetX, offsetY, blur and spread, a list of them, or a reference to a shadow token.",
     gradient:
         "A gradient must be a list of stops, each an object with a color and a position, or a reference to a gradient token.",
+    typography:
+        "A typography value must be an object with a fontFamily, fontSize, fontWeight, letterSpacing and lineHeight, or a reference to a typography token.",
     strokeStyle:
         'A stroke style must be a keyword such as "solid", an object with a dashArray and a lineCap, or a reference to a strokeStyle token.',
 };
 
 export const valueErrorMessages = {
-    "wrong-shape": (type: TokenType) => shapes[type] ?? `This is not a ${type} value.`,
+    "wrong-shape": (type: TokenType) => shapes[type],
     "unknown-property": (name: string, type: TokenType) =>
         `"${name}" is not a property of a ${type}.`,
     "missing-property": (name: string, type: TokenType) => `A ${type} needs "${name}".`,

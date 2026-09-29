@@ -8,6 +8,7 @@ import { readNumber } from "./values/number.js";
 import { readShadow } from "./values/shadow.js";
 import { readStrokeStyle } from "./values/stroke-style.js";
 import { readTransition } from "./values/transition.js";
+import { readTypography } from "./values/typography.js";
 import { readFontFamily } from "./values/font-family.js";
 import { readFontWeight } from "./values/font-weight.js";
 import { readGradient } from "./values/gradient.js";
@@ -113,6 +114,4 @@ export const parseGradient: Parse<WithAliases<"gradient">> = readGradient;
 /** Reads one transition value. */
 export const parseTransition: Parse<WithAliases<"transition">> = readTransition;
 /** Reads one typography value. */
-export const parseTypography: Parse<WithAliases<"typography">> = () => {
-    throw new Error("not implemented yet");
-};
+export const parseTypography: Parse<WithAliases<"typography">> = readTypography;
