@@ -9,6 +9,7 @@ const ALIAS = /^\{([^{}]+)\}$/;
 
 export function readAlias(raw: unknown): Alias | undefined {
     if (typeof raw !== "string") return undefined;
+
     const path = ALIAS.exec(raw)?.[1];
     if (path === undefined || path.split(".").some((segment) => segment === "")) return undefined;
     return { alias: path };
@@ -16,6 +17,7 @@ export function readAlias(raw: unknown): Alias | undefined {
 
 export function readPointer(raw: unknown): Pointer | undefined {
     if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return undefined;
+
     const keys = Object.keys(raw);
     const ref = (raw as { $ref?: unknown }).$ref;
     if (keys.length !== 1 || typeof ref !== "string") return undefined;

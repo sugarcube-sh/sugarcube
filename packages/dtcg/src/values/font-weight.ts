@@ -13,10 +13,13 @@ export function readFontWeight(raw: unknown, at: JsonPath): ParseResult<WithAlia
         }
         return { ok: true, value: raw };
     }
+
     if (typeof raw === "string") {
-        if (Object.hasOwn(fontWeightKeywords, raw))
+        if (Object.hasOwn(fontWeightKeywords, raw)) {
             return { ok: true, value: fontWeightKeywords[raw]! };
+        }
         return { ok: false, errors: [valueError(at, "unknown-font-weight-keyword", raw)] };
     }
+
     return { ok: false, errors: [valueError(at, "wrong-shape", "fontWeight")] };
 }

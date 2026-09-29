@@ -7,13 +7,16 @@ export function readFontFamily(raw: unknown, at: JsonPath): ParseResult<WithAlia
     if (reference) return { ok: true, value: reference };
 
     if (typeof raw === "string") {
-        if (raw.trim() === "")
+        if (raw.trim() === "") {
             return { ok: false, errors: [valueError(at, "not-a-font-name", raw)] };
+        }
         return { ok: true, value: [raw] };
     }
+
     if (!Array.isArray(raw)) {
         return { ok: false, errors: [valueError(at, "wrong-shape", "fontFamily")] };
     }
+
     if (raw.length === 0) {
         return { ok: false, errors: [valueError(at, "empty-font-list")] };
     }
@@ -26,6 +29,7 @@ export function readFontFamily(raw: unknown, at: JsonPath): ParseResult<WithAlia
             errors.push(valueError([...at, index], "alias-not-allowed-here", name as string));
             return name as string;
         }
+
         if (typeof name !== "string" || name.trim() === "") {
             errors.push(valueError([...at, index], "not-a-font-name", name));
         }

@@ -36,14 +36,16 @@ export function readColor(raw: unknown, at: JsonPath): ParseResult<ColorAsWritte
     if (typeof raw === "string" && HEX_STRING.test(raw)) {
         return { ok: false, errors: [valueError(at, "hex-string", raw)] };
     }
+
     if (!isPlainObject(raw)) {
         return { ok: false, errors: [valueError(at, "wrong-shape", "color")] };
     }
 
     const errors: ValueError[] = [];
     for (const name of Object.keys(raw)) {
-        if (!PROPERTIES.has(name))
+        if (!PROPERTIES.has(name)) {
             errors.push(valueError([...at, name], "unknown-property", name, "color"));
+        }
     }
 
     const colorSpace = readColorSpace(raw, at, errors);
@@ -69,8 +71,10 @@ function readColorSpace(
         errors.push(valueError(at, "missing-property", "colorSpace", "color"));
         return undefined;
     }
+
     const pointer = readPointer(raw.colorSpace);
     if (pointer) return pointer;
+
     if (typeof raw.colorSpace === "string" && Object.hasOwn(colorSpaces, raw.colorSpace)) {
         return raw.colorSpace as ColorSpace;
     }
@@ -88,6 +92,7 @@ function readComponents(
         errors.push(valueError(at, "missing-property", "components", "color"));
         return undefined;
     }
+
     const pointer = readPointer(raw.components);
     if (pointer) return pointer;
 
@@ -108,11 +113,13 @@ function readComponents(
             );
             return 0;
         }
+
         if (component === "none") return component;
         if (typeof component !== "number" || !Number.isFinite(component)) {
             errors.push(valueError([...path, index], "component-not-a-number", component));
             return 0;
         }
+
         const channel = channels?.[index];
         if (channel && !inRange(component, channel.min, channel.max, channel.maxExclusive)) {
             errors.push(
@@ -128,6 +135,7 @@ function readComponents(
         }
         return component;
     });
+
     if (errors.length > before) return undefined;
     return components as [Component, Component, Component];
 }
@@ -138,12 +146,15 @@ function readAlpha(
     errors: ValueError[],
 ): number | Pointer {
     if (!("alpha" in raw)) return 1;
+
     const pointer = readPointer(raw.alpha);
     if (pointer) return pointer;
+
     if (typeof raw.alpha !== "number" || !Number.isFinite(raw.alpha)) {
         errors.push(valueError([...at, "alpha"], "not-a-number", raw.alpha));
         return 1;
     }
+
     if (!inRange(raw.alpha, 0, 1)) {
         errors.push(valueError([...at, "alpha"], "alpha-out-of-range", raw.alpha));
     }
@@ -156,8 +167,10 @@ function readHex(
     errors: ValueError[],
 ): string | Pointer | undefined {
     if (!("hex" in raw)) return undefined;
+
     const pointer = readPointer(raw.hex);
     if (pointer) return pointer;
+
     if (typeof raw.hex === "string" && SIX_DIGIT_HEX.test(raw.hex)) return raw.hex;
     errors.push(valueError([...at, "hex"], "hex-not-six-digits", raw.hex));
     return undefined;

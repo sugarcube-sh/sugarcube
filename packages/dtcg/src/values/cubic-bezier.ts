@@ -16,6 +16,7 @@ export function readCubicBezier(
     if (!Array.isArray(raw)) {
         return { ok: false, errors: [valueError(at, "wrong-shape", "cubicBezier")] };
     }
+
     if (raw.length !== 4) {
         return { ok: false, errors: [valueError(at, "not-four-numbers")] };
     }
@@ -28,10 +29,12 @@ export function readCubicBezier(
             errors.push(valueError([...at, index], "alias-not-allowed-here", coordinate as string));
             return 0;
         }
+
         if (typeof coordinate !== "number" || !Number.isFinite(coordinate)) {
             errors.push(valueError([...at, index], "not-a-number", coordinate));
             return 0;
         }
+
         if (X_POSITIONS.has(index) && (coordinate < 0 || coordinate > 1)) {
             errors.push(valueError([...at, index], "x-out-of-range", coordinate));
         }

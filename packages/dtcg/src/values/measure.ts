@@ -33,15 +33,18 @@ export function readMeasure<T extends MeasureType>(
             return { ok: false, errors: [valueError(at, "string-with-unit", raw, example)] };
         }
     }
+
     if (!isPlainObject(raw)) {
         return { ok: false, errors: [valueError(at, "wrong-shape", type)] };
     }
 
     const errors: ValueError[] = [];
     for (const name of Object.keys(raw)) {
-        if (!PROPERTIES.has(name))
+        if (!PROPERTIES.has(name)) {
             errors.push(valueError([...at, name], "unknown-property", name, type));
+        }
     }
+
     const value = readNumber(raw, at, type, errors);
     const unit = readUnit(raw, at, type, units, errors);
 
@@ -61,12 +64,14 @@ function readNumber(
         errors.push(valueError(at, "missing-property", "value", type));
         return undefined;
     }
+
     const pointer = readPointer(raw.value);
     if (pointer) return pointer;
     if (readAlias(raw.value)) {
         errors.push(valueError([...at, "value"], "alias-not-allowed-here", raw.value as string));
         return undefined;
     }
+
     if (typeof raw.value === "number" && Number.isFinite(raw.value)) return raw.value;
     errors.push(valueError([...at, "value"], "not-a-number", raw.value));
     return undefined;
@@ -83,12 +88,14 @@ function readUnit(
         errors.push(valueError(at, "missing-property", "unit", type));
         return undefined;
     }
+
     const pointer = readPointer(raw.unit);
     if (pointer) return pointer;
     if (readAlias(raw.unit)) {
         errors.push(valueError([...at, "unit"], "alias-not-allowed-here", raw.unit as string));
         return undefined;
     }
+
     if (typeof raw.unit === "string" && units.includes(raw.unit)) return raw.unit;
     errors.push(valueError([...at, "unit"], "unit-not-allowed", raw.unit, units));
     return undefined;
