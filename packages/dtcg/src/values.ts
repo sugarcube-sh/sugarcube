@@ -12,7 +12,13 @@ import { readFontWeight } from "./values/font-weight.js";
 
 export { colorSpaces, type ColorChannel } from "./values/color-spaces.js";
 export { dimensionUnits, durationUnits } from "./values/units.js";
-export { fontWeightKeywords, lineCaps, strokeStyleKeywords } from "./values/keywords.js";
+export {
+    type FontWeightKeyword,
+    type LineCap,
+    fontWeightKeywords,
+    lineCaps,
+    strokeStyleKeywords,
+} from "./values/keywords.js";
 
 /** Every token type the specification defines, in its order. */
 export const tokenTypes: readonly TokenType[] = [

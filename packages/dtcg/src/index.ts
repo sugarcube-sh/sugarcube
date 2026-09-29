@@ -1,3 +1,5 @@
+import type { ValueErrorCode } from "./values/value-errors.js";
+
 /** A color space defined by the DTCG Color module. */
 export type ColorSpace =
     | "srgb"
@@ -488,7 +490,12 @@ export interface DiagnosticDetailByKind {
     /** A `$type` is not one the specification defines, nor a registered one. */
     "unknown-type": { type: string };
     /** A value does not fit its type. */
-    "invalid-value": { type: TokenType; at: JsonPath };
+    "invalid-value": {
+        type: TokenType;
+        at: JsonPath;
+        /** Why, as the parser named it: see {@link ValueError.detail}. */
+        reason?: ValueErrorCode | (string & {});
+    };
     /** A color written as a hex string, which the 2025.10 Color module no longer allows. */
     "hex-string-color": { value: string };
     /** An `$extensions` entry fails a registered check. */
@@ -588,13 +595,20 @@ export interface Document {
     diagnostics: Diagnostic[];
 }
 
+/**
+ * Why a value could not be read, as a stable name to switch on, such as `"unit-not-allowed"`. A
+ * custom type's parser may use names of its own.
+ */
+export type { ValueErrorCode } from "./values/value-errors.js";
+
 /** Why a single value could not be read. */
 export interface ValueError {
     kind: "invalid-value";
     /** Where in the value the problem is, such as `["color"]` inside a shadow. */
     path: JsonPath;
     message: string;
-    detail?: string;
+    /** Why, as a stable name, so a tool can tell the cases apart without parsing `message`. */
+    detail?: ValueErrorCode | (string & {});
 }
 
 /** The outcome of reading one value. */
@@ -981,7 +995,8 @@ export function at(doc: Document, file: string, offset: number): AtResult {
     throw new Error("not implemented yet");
 }
 
-export type JsonObject = { [key: string]: unknown };
+/** A JSON object, such as a DTCG file's top level: every value in it is plain JSON. */
+export type JsonObject = { [key: string]: DtcgJson };
 
 /** Any value that can be written in a DTCG file. */
 export type DtcgJson = string | number | boolean | null | DtcgJson[] | { [key: string]: DtcgJson };

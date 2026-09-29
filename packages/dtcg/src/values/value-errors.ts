@@ -63,9 +63,9 @@ export const valueErrorMessages = {
         `${JSON.stringify(unit)} is not a unit here. Use ${allowed.map((u) => `"${u}"`).join(" or ")}.`,
 } as const;
 
-export type ValueErrorDetail = keyof typeof valueErrorMessages;
+export type ValueErrorCode = keyof typeof valueErrorMessages;
 
-export function valueError<D extends ValueErrorDetail>(
+export function valueError<D extends ValueErrorCode>(
     path: JsonPath,
     detail: D,
     ...args: Parameters<(typeof valueErrorMessages)[D]>

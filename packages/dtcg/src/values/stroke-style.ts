@@ -1,11 +1,10 @@
 import type { AliasedStrokeStyle, JsonPath, ParseResult, Pointer, ValueError } from "../index.js";
 import { readDimension } from "./dimension.js";
-import { lineCaps, strokeStyleKeywords } from "./keywords.js";
+import { type LineCap, lineCaps, strokeStyleKeywords } from "./keywords.js";
 import { isPlainObject, readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
 type Keyword = (typeof strokeStyleKeywords)[number];
-type LineCap = (typeof lineCaps)[number];
 type DashArray = Extract<AliasedStrokeStyle, { kind: "dash" }>["dashArray"];
 
 const PROPERTIES = new Set(["dashArray", "lineCap"]);
