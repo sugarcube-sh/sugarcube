@@ -13,6 +13,8 @@ const shapes: Partial<Record<TokenType, string>> = {
         "A font family must be a font name, a list of font names, or a reference to a fontFamily token.",
     fontWeight:
         'A font weight must be a number from 1 to 1000, a keyword such as "bold", or a reference to a fontWeight token.',
+    strokeStyle:
+        'A stroke style must be a keyword such as "solid", an object with a dashArray and a lineCap, or a reference to a strokeStyle token.',
 };
 
 export const valueErrorMessages = {
@@ -43,6 +45,14 @@ export const valueErrorMessages = {
     "empty-font-list": () => "A list of font names needs at least one name.",
     "not-a-font-name": (value: unknown) =>
         `${JSON.stringify(value)} is not a font name. A font name is a string that is not empty.`,
+    "unknown-stroke-style-keyword": (value: string, keywords: readonly string[]) =>
+        `"${value}" is not a stroke style keyword. Use one of ${keywords.map((k) => `"${k}"`).join(", ")}.`,
+    "dash-array-not-a-list": () =>
+        'A dashArray is a list of lengths, such as [{ "value": 4, "unit": "px" }, { "value": 2, "unit": "px" }].',
+    "empty-dash-array": () =>
+        "A dashArray needs at least one length: the dashes and gaps to repeat along the line.",
+    "unknown-line-cap": (value: unknown, lineCaps: readonly string[]) =>
+        `${JSON.stringify(value)} is not a line cap. Use ${lineCaps.map((c) => `"${c}"`).join(", ")}.`,
     "font-weight-out-of-range": (value: number) => `${value} is outside the range 1 to 1000.`,
     "unknown-font-weight-keyword": (value: string) =>
         `"${value}" is not a font weight keyword the specification defines. Keywords are lower case, such as "bold" or "semi-bold".`,

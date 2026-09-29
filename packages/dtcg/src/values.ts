@@ -4,6 +4,7 @@ import { readDimension } from "./values/dimension.js";
 import { readDuration } from "./values/duration.js";
 import { readCubicBezier } from "./values/cubic-bezier.js";
 import { readNumber } from "./values/number.js";
+import { readStrokeStyle } from "./values/stroke-style.js";
 import { readFontFamily } from "./values/font-family.js";
 import { readFontWeight } from "./values/font-weight.js";
 
@@ -84,9 +85,7 @@ export const parseFontFamily: Parse<WithAliases<"fontFamily">> = readFontFamily;
 /** Reads one font weight value. Keywords become their numbers. */
 export const parseFontWeight: Parse<WithAliases<"fontWeight">> = readFontWeight;
 /** Reads one stroke style value. */
-export const parseStrokeStyle: Parse<WithAliases<"strokeStyle">> = () => {
-    throw new Error("not implemented yet");
-};
+export const parseStrokeStyle: Parse<WithAliases<"strokeStyle">> = readStrokeStyle;
 /**
  * Reads one border value. A part that is a reference is kept as an `Alias`, and checked
  * against its target when references are followed.
