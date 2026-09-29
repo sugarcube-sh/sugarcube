@@ -46,5 +46,14 @@ export default defineConfig({
                 ],
             },
         },
+        {
+            files: [
+                "packages/dtcg/src/{index,node,values}.ts",
+                "packages/dtcg-edit/src/{index,node,text}.ts",
+            ],
+            rules: {
+                "no-unused-vars": ["error", { args: "none" }],
+            },
+        },
     ],
 });

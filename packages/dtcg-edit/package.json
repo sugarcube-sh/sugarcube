@@ -1,0 +1,61 @@
+{
+  "name": "@sugarcube-sh/dtcg-edit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Edit DTCG token files without reformatting them",
+  "keywords": [
+    "design-system",
+    "design-tokens",
+    "dtcg"
+  ],
+  "bugs": {
+    "url": "https://github.com/sugarcube-sh/sugarcube/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Mark Tomlinson",
+    "email": "mark@marktomlinson.dev",
+    "url": "https://marktomlinson.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sugarcube-sh/sugarcube"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "default": "./dist/node.js"
+    },
+    "./text": {
+      "types": "./dist/text.d.ts",
+      "default": "./dist/text.js"
+    }
+  },
+  "scripts": {
+    "build": "pkgroll --minify",
+    "dev": "pkgroll --watch",
+    "test": "vitest run",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sugarcube-sh/dtcg": "workspace:*"
+  },
+  "devDependencies": {
+    "pkgroll": "^2.28.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

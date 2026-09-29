@@ -274,6 +274,22 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(@types/node@26.5.1)(@vitest/coverage-istanbul@4.1.11)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
+  packages/dtcg:
+    devDependencies:
+      pkgroll:
+        specifier: ^2.28.1
+        version: 2.28.1(typescript@5.9.3)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+
+  packages/dtcg-edit:
+    dependencies:
+      '@sugarcube-sh/dtcg':
+        specifier: workspace:*
+        version: link:../dtcg
+    devDependencies:
+      pkgroll:
+        specifier: ^2.28.1
+        version: 2.28.1(typescript@5.9.3)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+
   packages/studio:
     dependencies:
       '@sugarcube-sh/core':

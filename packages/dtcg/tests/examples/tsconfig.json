@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {
+      "@sugarcube-sh/dtcg": ["../../src/index.ts"],
+      "@sugarcube-sh/dtcg/*": ["../../src/*.ts"]
+    }
+  },
+  "include": ["*.ts", "../../src/**/*"],
+  "exclude": []
+}
