@@ -13,6 +13,9 @@ const shapes: Partial<Record<TokenType, string>> = {
         "A font family must be a font name, a list of font names, or a reference to a fontFamily token.",
     fontWeight:
         'A font weight must be a number from 1 to 1000, a keyword such as "bold", or a reference to a fontWeight token.',
+    border: "A border must be an object with a color, a width and a style, or a reference to a border token.",
+    transition:
+        "A transition must be an object with a duration, a delay and a timingFunction, or a reference to a transition token.",
     strokeStyle:
         'A stroke style must be a keyword such as "solid", an object with a dashArray and a lineCap, or a reference to a strokeStyle token.',
 };

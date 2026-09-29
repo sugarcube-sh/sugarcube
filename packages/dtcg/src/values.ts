@@ -1,10 +1,12 @@
 import type { Parse, TokenType, WithAliases } from "./index.js";
+import { readBorder } from "./values/border.js";
 import { readColor } from "./values/color.js";
 import { readDimension } from "./values/dimension.js";
 import { readDuration } from "./values/duration.js";
 import { readCubicBezier } from "./values/cubic-bezier.js";
 import { readNumber } from "./values/number.js";
 import { readStrokeStyle } from "./values/stroke-style.js";
+import { readTransition } from "./values/transition.js";
 import { readFontFamily } from "./values/font-family.js";
 import { readFontWeight } from "./values/font-weight.js";
 
@@ -95,9 +97,7 @@ export const parseStrokeStyle: Parse<WithAliases<"strokeStyle">> = readStrokeSty
  * // { ok: true, value: { color: { alias: "color.brand" }, width: { value: 1, unit: "px" },
  * //   style: { kind: "keyword", keyword: "solid" } } }
  */
-export const parseBorder: Parse<WithAliases<"border">> = () => {
-    throw new Error("not implemented yet");
-};
+export const parseBorder: Parse<WithAliases<"border">> = readBorder;
 /** Reads one shadow value. A single shadow becomes a list of one. */
 export const parseShadow: Parse<WithAliases<"shadow">> = () => {
     throw new Error("not implemented yet");
@@ -107,9 +107,7 @@ export const parseGradient: Parse<WithAliases<"gradient">> = () => {
     throw new Error("not implemented yet");
 };
 /** Reads one transition value. */
-export const parseTransition: Parse<WithAliases<"transition">> = () => {
-    throw new Error("not implemented yet");
-};
+export const parseTransition: Parse<WithAliases<"transition">> = readTransition;
 /** Reads one typography value. */
 export const parseTypography: Parse<WithAliases<"typography">> = () => {
     throw new Error("not implemented yet");
