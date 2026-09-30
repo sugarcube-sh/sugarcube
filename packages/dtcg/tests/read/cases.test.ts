@@ -7,10 +7,10 @@ import { type Document, type ReadOptions, read, readFromMemory } from "../../src
 interface Expected {
     entry: string;
     spec?: string;
-    options?: Pick<ReadOptions, "inputs" | "combinations" | "permutationLimit">;
+    options?: Pick<ReadOptions, "inputs" | "permutations" | "permutationLimit">;
     files?: string[];
     modifiers?: Document["modifiers"];
-    readers?: Document["readers"];
+    usedBy?: Document["usedBy"];
     permutations?: Pick<Document["permutations"][number], "input" | "label" | "sources">[];
     diagnostics: Pick<Document["diagnostics"][number], "kind" | "detail" | "at" | "related">[];
 }
@@ -39,7 +39,7 @@ function observed(doc: Document, expected: Expected) {
         ...(expected.options && { options: expected.options }),
         ...(expected.files && { files: doc.files }),
         ...(expected.modifiers && { modifiers: doc.modifiers }),
-        ...(expected.readers && { readers: doc.readers }),
+        ...(expected.usedBy && { usedBy: doc.usedBy }),
         ...(expected.permutations && {
             permutations: doc.permutations.map(({ input, label, sources }) => ({
                 input,

@@ -3,7 +3,7 @@
   "spec": "Resolver 4.1.4 and 4.1.6: a resolver with one set and no modifiers is one permutation",
   "files": ["tokens.resolver.json", "tokens.json"],
   "modifiers": {},
-  "readers": {
+  "usedBy": {
     "tokens.json": "everyone"
   },
   "permutations": [

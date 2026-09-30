@@ -6,7 +6,7 @@
       "contexts": ["light", "dark"]
     }
   },
-  "readers": {
+  "usedBy": {
     "light.json": [
       {
         "theme": "light"

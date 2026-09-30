@@ -1,4 +1,4 @@
-import type { Diagnostic } from "../index.js";
+import type { Diagnostic, Input } from "../index.js";
 import {
     type Answer,
     type Request,
@@ -9,15 +9,18 @@ import {
 } from "./files.js";
 import {
     type PermutationOptions,
-    type Permutations,
+    type LoadedPermutation,
     fromResolver,
     fromTokenFiles,
 } from "./permutations.js";
 import { checkResolver, isResolver } from "./resolver.js";
 import { entriesOf, expandSources, filesNamedBy, openSources } from "./sources.js";
 
-export interface Loaded extends Permutations {
+export interface Loaded {
     files: string[];
+    modifiers: Record<string, { contexts: string[]; default?: string }>;
+    usedBy: Record<string, "everyone" | Input[]>;
+    permutations: LoadedPermutation[];
     diagnostics: Diagnostic[];
 }
 
@@ -28,10 +31,10 @@ export function* load(
     const used: string[] = [];
     const diagnostics: Diagnostic[] = [];
     const files = createFiles(used, diagnostics);
-    const loaded = (permutations: Permutations): Loaded => ({
+    const loaded = (built: Pick<Loaded, "modifiers" | "usedBy" | "permutations">): Loaded => ({
         files: used,
         diagnostics,
-        ...permutations,
+        ...built,
     });
 
     const paths = "entry" in start ? [start.entry] : start.files;
@@ -48,7 +51,7 @@ export function* load(
     }
 
     const file = openFile(files, resolverPath, "resolver");
-    if (!file) return loaded({ modifiers: {}, readers: {}, permutations: [] });
+    if (!file) return loaded({ modifiers: {}, usedBy: {}, permutations: [] });
 
     const resolver = checkResolver(file, diagnostics);
     const items = expandSources(resolver, diagnostics);

@@ -99,10 +99,10 @@ export function readFromMemory(
 
 function permutationOptions({
     inputs,
-    combinations = "all",
+    permutations = "all",
     permutationLimit = 64,
 }: ReadOptions): PermutationOptions {
-    return { ...(inputs && { inputs }), combinations, limit: permutationLimit };
+    return { ...(inputs && { inputs }), permutations, limit: permutationLimit };
 }
 
 function toDocument(loaded: Loaded): Document {
@@ -110,11 +110,11 @@ function toDocument(loaded: Loaded): Document {
         version: packageJson.version,
         files: loaded.files,
         modifiers: loaded.modifiers,
-        readers: loaded.readers,
+        usedBy: loaded.usedBy,
         permutations: loaded.permutations.map(({ input, label, sources }) => ({
             input,
             label,
-            sources: sources.map(({ ref }) => ref),
+            sources: sources.map(({ sourceRef }) => sourceRef),
             tokens: {},
             groups: {},
         })),

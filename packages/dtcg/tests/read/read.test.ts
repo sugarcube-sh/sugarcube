@@ -272,7 +272,7 @@ describe("each context on its own", () => {
     const labels = (text: string) => {
         const doc = readFromMemory(
             { files: { "tokens.resolver.json": text } },
-            { combinations: "each-context" },
+            { permutations: "each-context" },
         );
         return {
             labels: doc.permutations.map(({ label }) => label),
@@ -323,7 +323,7 @@ describe("readFromMemory", () => {
     it("reads several files with no resolver as one set, in the order given", () => {
         const doc = readFromMemory({ files: { "base.json": valid, "./themes/dark.json": valid } });
         expect(doc.files).toStrictEqual(["base.json", "themes/dark.json"]);
-        expect(doc.readers).toStrictEqual({
+        expect(doc.usedBy).toStrictEqual({
             "base.json": "everyone",
             "themes/dark.json": "everyone",
         });

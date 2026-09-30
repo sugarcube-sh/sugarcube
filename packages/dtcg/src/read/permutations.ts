@@ -2,23 +2,20 @@ import type { Diagnostic, DiagnosticDetailByKind, Input, SourceRef } from "../in
 import { diagnostic } from "./diagnostics.js";
 import { type JsonFile, plainValue } from "./json.js";
 import type { Resolver, SetDefinition } from "./resolver.js";
+import type { Loaded } from "./load.js";
 import type { ExpandedItem, LoadedSource, SourceEntry } from "./sources.js";
 
 export interface LoadedPermutation {
     input: Input;
     label: string;
-    sources: { ref: SourceRef; source: LoadedSource }[];
+    sources: { sourceRef: SourceRef; source: LoadedSource }[];
 }
 
-export interface Permutations {
-    modifiers: Record<string, { contexts: string[]; default?: string }>;
-    readers: Record<string, "everyone" | Input[]>;
-    permutations: LoadedPermutation[];
-}
+type Built = Pick<Loaded, "modifiers" | "usedBy" | "permutations">;
 
 export interface PermutationOptions {
     inputs?: Record<string, unknown>[];
-    combinations: "all" | "each-context";
+    permutations: "all" | "each-context";
     limit: number;
 }
 
@@ -28,16 +25,16 @@ interface Modifier {
     default?: string;
 }
 
-export function fromTokenFiles(files: { path: string; json?: JsonFile }[]): Permutations {
+export function fromTokenFiles(files: { path: string; json?: JsonFile }[]): Built {
     return {
         modifiers: {},
-        readers: Object.fromEntries(files.map(({ path }) => [path, "everyone"])),
+        usedBy: Object.fromEntries(files.map(({ path }) => [path, "everyone"])),
         permutations: [
             {
                 input: {},
                 label: "default",
                 sources: files.map(({ path, json }) => ({
-                    ref: { file: path },
+                    sourceRef: { file: path },
                     source: { file: path, ...(json && { json, tree: json.root }) },
                 })),
             },
@@ -51,7 +48,7 @@ export function fromResolver(
     sources: Map<SourceEntry, LoadedSource>,
     options: PermutationOptions,
     diagnostics: Diagnostic[],
-): Permutations {
+): Built {
     const modifiers = modifiersOf(items);
     const inputs = chooseInputs(modifiers, options, diagnostics);
     const labels = labelsFor(modifiers);
@@ -62,7 +59,7 @@ export function fromResolver(
                 { contexts, ...(fallback !== undefined && { default: fallback }) },
             ]),
         ),
-        readers: readersOf(items, sources),
+        usedBy: whoUsesEachFile(items, sources),
         permutations: inputs.map((input) => ({
             input,
             label: labels(input),
@@ -89,7 +86,7 @@ function modifiersOf(items: ExpandedItem[]): Modifier[] {
 
 function chooseInputs(
     modifiers: Modifier[],
-    { inputs, combinations, limit }: PermutationOptions,
+    { inputs, permutations, limit }: PermutationOptions,
     diagnostics: Diagnostic[],
 ): Input[] {
     if (modifiers.length === 0) return [{}];
@@ -98,7 +95,7 @@ function chooseInputs(
               const input = checkInput(modifiers, raw, diagnostics);
               return input ? [input] : [];
           })
-        : combinations === "each-context"
+        : permutations === "each-context"
           ? eachContext(modifiers, diagnostics)
           : allCombinations(modifiers, limit, diagnostics);
     const seen = new Set<string>();
@@ -126,7 +123,7 @@ function checkInput(
         problems.push(diagnostic("input-invalid", detail));
 
     for (const [key, value] of Object.entries(raw)) {
-        const modifier = match(modifiers, key, ({ name }) => name);
+        const modifier = findByName(modifiers, key, ({ name }) => name);
         if (!modifier) {
             invalid({ reason: "unknown-modifier", modifier: key });
             continue;
@@ -136,7 +133,7 @@ function checkInput(
             invalid({ reason: "not-a-string", modifier: modifier.name });
             continue;
         }
-        const context = match(modifier.contexts, value, (each) => each);
+        const context = findByName(modifier.contexts, value, (each) => each);
         if (context === undefined) {
             invalid({
                 reason: "unknown-context",
@@ -155,10 +152,10 @@ function checkInput(
     }
 
     diagnostics.push(...problems);
-    return problems.length === 0 ? atDefaults(modifiers, chosen) : undefined;
+    return problems.length === 0 ? withDefaults(modifiers, chosen) : undefined;
 }
 
-function match<T>(
+function findByName<T>(
     candidates: T[],
     wanted: string,
     nameOf: (candidate: T) => string,
@@ -181,7 +178,7 @@ function allCombinations(modifiers: Modifier[], limit: number, diagnostics: Diag
                 ),
             [{}],
         );
-        const defaults = hasDefaults(modifiers) ? [atDefaults(modifiers, {})] : [];
+        const defaults = hasDefaults(modifiers) ? [withDefaults(modifiers, {})] : [];
         return [...defaults, ...every];
     }
     const built = eachContext(modifiers, diagnostics);
@@ -196,12 +193,12 @@ function eachContext(modifiers: Modifier[], diagnostics: Diagnostic[]): Input[] 
             diagnostic("no-default", { modifiers: withoutDefault.map(({ name }) => name) }),
         );
     }
-    const defaults = withoutDefault.length === 0 ? [atDefaults(modifiers, {})] : [];
+    const defaults = withoutDefault.length === 0 ? [withDefaults(modifiers, {})] : [];
     const singles = modifiers.flatMap((modifier) =>
         hasDefaults(modifiers.filter((other) => other !== modifier))
             ? modifier.contexts
                   .filter((context) => context !== modifier.default)
-                  .map((context) => atDefaults(modifiers, { [modifier.name]: context }))
+                  .map((context) => withDefaults(modifiers, { [modifier.name]: context }))
             : [],
     );
     return [...defaults, ...singles];
@@ -211,7 +208,7 @@ function hasDefaults(modifiers: Modifier[]): boolean {
     return modifiers.every((modifier) => modifier.default !== undefined);
 }
 
-function atDefaults(modifiers: Modifier[], chosen: Input): Input {
+function withDefaults(modifiers: Modifier[], chosen: Input): Input {
     const input: Input = {};
     for (const { name, default: fallback } of modifiers) {
         const context = chosen[name] ?? fallback;
@@ -244,13 +241,13 @@ function sourcesFor(
     return items.flatMap((item) => {
         if (item.kind === "set") {
             return item.entries.flatMap((entry) =>
-                withRef(resolver, sources, entry, { set: item.set.name }),
+                described(resolver, sources, entry, { set: item.set.name }),
             );
         }
         const context = input[item.modifier.name];
         if (context === undefined) return [];
         return (item.contexts.get(context) ?? []).flatMap((entry) =>
-            withRef(resolver, sources, entry, {
+            described(resolver, sources, entry, {
                 modifier: item.modifier.name,
                 context,
                 ...(entry.holder && { set: entry.holder.name }),
@@ -259,14 +256,14 @@ function sourcesFor(
     });
 }
 
-function withRef(
+function described(
     resolver: Resolver,
     sources: Map<SourceEntry, LoadedSource>,
     entry: SourceEntry,
     from: SourceRef["from"],
 ): LoadedPermutation["sources"] {
     const source = sources.get(entry);
-    return source ? [{ ref: sourceRef(resolver, source, from, entry.holder), source }] : [];
+    return source ? [{ sourceRef: sourceRef(resolver, source, from, entry.holder), source }] : [];
 }
 
 function sourceRef(
@@ -286,18 +283,18 @@ function sourceRef(
     };
 }
 
-function readersOf(
+function whoUsesEachFile(
     items: ExpandedItem[],
     sources: Map<SourceEntry, LoadedSource>,
-): Permutations["readers"] {
-    const readers: Permutations["readers"] = {};
+): Built["usedBy"] {
+    const usedBy: Built["usedBy"] = {};
     const fileOf = (entry: SourceEntry) => sources.get(entry)?.file;
 
     for (const item of items) {
         if (item.kind !== "set") continue;
         for (const entry of item.entries) {
             const file = fileOf(entry);
-            if (file !== undefined) readers[file] = "everyone";
+            if (file !== undefined) usedBy[file] = "everyone";
         }
     }
     for (const item of items) {
@@ -306,14 +303,14 @@ function readersOf(
             for (const entry of entries) {
                 const file = fileOf(entry);
                 if (file === undefined) continue;
-                const existing = readers[file];
+                const existing = usedBy[file];
                 if (existing === "everyone") continue;
                 const input = { [item.modifier.name]: context };
                 const list = existing ?? [];
                 if (!list.some((each) => each[item.modifier.name] === context)) list.push(input);
-                readers[file] = list;
+                usedBy[file] = list;
             }
         }
     }
-    return readers;
+    return usedBy;
 }

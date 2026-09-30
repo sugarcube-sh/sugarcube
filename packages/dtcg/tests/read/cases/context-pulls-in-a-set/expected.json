@@ -1,7 +1,7 @@
 {
   "entry": "tokens.resolver.json",
   "spec": "Resolver 4.1.5.1, Example 4: a context may name a set, which stands for that set's sources; the route records the set",
-  "readers": {
+  "usedBy": {
     "size/base.json": [
       {
         "size": "small"

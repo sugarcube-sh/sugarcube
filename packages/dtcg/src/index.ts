@@ -664,8 +664,14 @@ export interface Document {
     files: string[];
     /** The modifiers the resolver declares, with their contexts and defaults. */
     modifiers: Record<string, { contexts: string[]; default?: string }>;
-    /** For each file, the contexts that read it, or `"everyone"` for a file in a set. */
-    readers: Record<string, "everyone" | Input[]>;
+    /**
+     * Which permutations use each file: `"everyone"` for a file in a set, otherwise the contexts
+     * whose permutations read it. For deciding which file an edit belongs in.
+     *
+     * @example
+     * doc.usedBy["dark.json"] // [{ theme: "dark" }]
+     */
+    usedBy: Record<string, "everyone" | Input[]>;
     permutations: Permutation[];
     /** Every reference between tokens, per permutation. */
     graph: Edge[];
@@ -783,7 +789,7 @@ export interface ReadOptions {
     /**
      * The permutations to build. Modifiers left out take their default; an input that does not
      * fit the resolver is reported and not built.
-     * @default the combinations `combinations` asks for
+     * @default the permutations `permutations` asks for
      */
     inputs?: Input[];
     /**
@@ -793,7 +799,7 @@ export interface ReadOptions {
      * combination can be put together from `"each-context"`.
      * @default "all"
      */
-    combinations?: "all" | "each-context";
+    permutations?: "all" | "each-context";
     /**
      * The most combinations `"all"` builds. Above it, `"each-context"` is built instead, and a
      * `permutation-limit` warning says so.

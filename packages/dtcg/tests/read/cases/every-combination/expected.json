@@ -12,7 +12,7 @@
       "default": "house"
     }
   },
-  "readers": {
+  "usedBy": {
     "base.json": "everyone",
     "dark.json": [
       {
