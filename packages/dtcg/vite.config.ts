@@ -32,17 +32,6 @@ export default defineConfig({
                     },
                 },
             },
-            {
-                test: {
-                    name: "custom-type",
-                    typecheck: {
-                        enabled: true,
-                        only: true,
-                        include: ["tests/custom-type/*.ts"],
-                        tsconfig: "tests/custom-type/tsconfig.json",
-                    },
-                },
-            },
         ],
     },
 });

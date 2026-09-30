@@ -1,6 +1,6 @@
-import type { AliasedValueByType, JsonPath, TokenType, ValueError } from "../index.js";
+import type { UnresolvedValueByType, JsonPath, TokenType, ValueError } from "../index.js";
 
-type SpecType = keyof AliasedValueByType;
+type SpecType = keyof UnresolvedValueByType;
 
 const shapes: Record<SpecType, string> = {
     color: "A color must be an object with a colorSpace and three components, or a reference to a color token.",

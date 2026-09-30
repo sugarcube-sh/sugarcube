@@ -1,7 +1,7 @@
 import type { ColorSpace } from "../index.js";
 
 /** One channel of a color space: its name and range. */
-export interface ColorChannel {
+export interface ColorComponentRange {
     name: string;
     min: number;
     max: number;
@@ -18,7 +18,7 @@ export interface ColorChannel {
  * colorSpaces.oklch // [{ name: "L", min: 0, max: 1 }, { name: "C", min: 0, max: Infinity }, { name: "H", min: 0, max: 360, maxExclusive: true }]
  */
 export const colorSpaces: Readonly<
-    Record<ColorSpace, readonly [ColorChannel, ColorChannel, ColorChannel]>
+    Record<ColorSpace, readonly [ColorComponentRange, ColorComponentRange, ColorComponentRange]>
 > = {
     "srgb": [
         { name: "R", min: 0, max: 1 },

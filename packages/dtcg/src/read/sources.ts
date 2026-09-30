@@ -9,7 +9,7 @@ import {
     type Reader,
     type Resolver,
     type SetDefinition,
-    type Source,
+    type SourceNode,
     createReader,
     isResolver,
     readSetParts,
@@ -53,7 +53,7 @@ export function expandSources(resolver: Resolver, diagnostics: Diagnostic[]): Ex
         sets: resolver.sets,
         expanded: new Map(),
     };
-    const expand = (sources: Source[], holder?: SetDefinition) =>
+    const expand = (sources: SourceNode[], holder?: SetDefinition) =>
         expandList(expander, sources, holder, []);
     return resolver.order.map((item): ExpandedItem =>
         item.kind === "set"
@@ -148,7 +148,7 @@ interface Expander {
 
 function expandList(
     expander: Expander,
-    sources: Source[],
+    sources: SourceNode[],
     holder: SetDefinition | undefined,
     seen: string[],
 ): SourceEntry[] {
@@ -157,7 +157,7 @@ function expandList(
 
 function expandSource(
     expander: Expander,
-    source: Source,
+    source: SourceNode,
     holder: SetDefinition | undefined,
     seen: string[],
 ): SourceEntry[] {
@@ -172,7 +172,7 @@ function expandSource(
 
 function followSource(
     expander: Expander,
-    source: Source,
+    source: SourceNode,
     holder: SetDefinition | undefined,
     seen: string[],
 ): SourceEntry[] {
@@ -249,7 +249,7 @@ function followSource(
 
 function withOverride(
     entries: SourceEntry[],
-    source: Source,
+    source: SourceNode,
     holder: SetDefinition | undefined,
     overridden: string[],
 ): SourceEntry[] {

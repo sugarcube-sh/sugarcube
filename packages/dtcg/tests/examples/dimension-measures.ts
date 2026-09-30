@@ -3,7 +3,7 @@
 // can being used as the font size of a typography token or the width of a border.
 import {
     defaultPermutation,
-    groupOf,
+    group,
     isAlias,
     isPointer,
     token,
@@ -17,7 +17,7 @@ function declared(path: string): string | undefined {
     for (let depth = parts.length; depth > 0; depth--) {
         const at = parts.slice(0, depth).join(".");
         const extensions =
-            depth === parts.length ? token(doc, at)?.extensions : groupOf(doc, at)?.extensions;
+            depth === parts.length ? token(doc, at)?.extensions : group(doc, at)?.extensions;
         const setting = extensions?.["com.example"] as { measures?: string } | undefined;
         if (setting?.measures) return setting.measures;
     }

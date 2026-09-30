@@ -189,17 +189,20 @@ export type WithPointers<V> =
     | Pointer
     | (V extends object ? { [K in keyof V]: WithPointers<V[K]> } : V);
 
-/** A value, a reference to a token holding one, or a value with pointers in it. */
-export type Ref<V> = Alias | WithPointers<V>;
+/**
+ * A value whose references have not been followed yet: an {@link Alias} to a token holding one,
+ * or the value with a {@link Pointer} in place of any part.
+ */
+export type Unresolved<V> = Alias | WithPointers<V>;
 
-/** A stroke style as written, with references where the specification allows them. */
-export type AliasedStrokeStyle =
+/** A stroke style whose references have not been followed yet, where the specification allows them. */
+export type UnresolvedStrokeStyle =
     | Alias
     | Pointer
     | Extract<StrokeStyleValue, { kind: "keyword" }>
     | {
           kind: "dash";
-          dashArray: Pointer | Ref<DimensionValue>[];
+          dashArray: Pointer | Unresolved<DimensionValue>[];
           lineCap: Pointer | "round" | "butt" | "square";
       };
 
@@ -208,22 +211,22 @@ export type AliasedStrokeStyle =
  * whole token, so it may take the place of the whole value, or of a part of a composite that is a
  * token type in its own right. A {@link Pointer} may take the place of any part.
  */
-export interface AliasedValueByType {
-    color: Ref<ColorValue>;
-    dimension: Ref<DimensionValue>;
-    duration: Ref<DurationValue>;
-    cubicBezier: Ref<CubicBezierValue>;
-    number: Ref<NumberValue>;
-    fontFamily: Ref<FontFamilyValue>;
-    fontWeight: Ref<FontWeightValue>;
-    strokeStyle: AliasedStrokeStyle;
+export interface UnresolvedValueByType {
+    color: Unresolved<ColorValue>;
+    dimension: Unresolved<DimensionValue>;
+    duration: Unresolved<DurationValue>;
+    cubicBezier: Unresolved<CubicBezierValue>;
+    number: Unresolved<NumberValue>;
+    fontFamily: Unresolved<FontFamilyValue>;
+    fontWeight: Unresolved<FontWeightValue>;
+    strokeStyle: UnresolvedStrokeStyle;
     border:
         | Alias
         | Pointer
         | {
-              color: Ref<ColorValue>;
-              width: Ref<DimensionValue>;
-              style: AliasedStrokeStyle;
+              color: Unresolved<ColorValue>;
+              width: Unresolved<DimensionValue>;
+              style: UnresolvedStrokeStyle;
           };
     shadow:
         | Alias
@@ -232,42 +235,48 @@ export interface AliasedValueByType {
               | Alias
               | Pointer
               | {
-                    color: Ref<ColorValue>;
-                    offsetX: Ref<DimensionValue>;
-                    offsetY: Ref<DimensionValue>;
-                    blur: Ref<DimensionValue>;
-                    spread: Ref<DimensionValue>;
+                    color: Unresolved<ColorValue>;
+                    offsetX: Unresolved<DimensionValue>;
+                    offsetY: Unresolved<DimensionValue>;
+                    blur: Unresolved<DimensionValue>;
+                    spread: Unresolved<DimensionValue>;
                     inset: Pointer | boolean;
                 }
           )[];
     gradient:
         | Alias
         | Pointer
-        | (Alias | Pointer | { color: Ref<ColorValue>; position: Ref<NumberValue> })[];
+        | (
+              | Alias
+              | Pointer
+              | { color: Unresolved<ColorValue>; position: Unresolved<NumberValue> }
+          )[];
     transition:
         | Alias
         | Pointer
         | {
-              duration: Ref<DurationValue>;
-              delay: Ref<DurationValue>;
-              timingFunction: Ref<CubicBezierValue>;
+              duration: Unresolved<DurationValue>;
+              delay: Unresolved<DurationValue>;
+              timingFunction: Unresolved<CubicBezierValue>;
           };
     typography:
         | Alias
         | Pointer
         | {
-              fontFamily: Ref<FontFamilyValue>;
-              fontSize: Ref<DimensionValue>;
-              fontWeight: Ref<FontWeightValue>;
-              letterSpacing: Ref<DimensionValue>;
-              lineHeight: Ref<NumberValue>;
+              fontFamily: Unresolved<FontFamilyValue>;
+              fontSize: Unresolved<DimensionValue>;
+              fontWeight: Unresolved<FontWeightValue>;
+              letterSpacing: Unresolved<DimensionValue>;
+              lineHeight: Unresolved<NumberValue>;
           };
 }
 
-/** A value of type `T` as written, with references where the specification allows them. Custom types may be a reference as a whole, or hold pointers anywhere. */
-export type WithAliases<T extends TokenType> = T extends keyof AliasedValueByType
-    ? AliasedValueByType[T]
-    : Ref<ValueByType[T]>;
+/**
+ * A value of type `T` in its one agreed shape, with its references not yet followed: the type of
+ * {@link TokenBase.value | Token.value}. {@link TokenBase.resolved | Token.resolved} is the same
+ * value with them followed, and {@link TokenBase.authored | Token.authored} is how the file wrote it.
+ */
+export type UnresolvedValue<T extends TokenType> = UnresolvedValueByType[T];
 
 /**
  * Replaces every reference in a value, {@link Alias} or {@link Pointer}, with what `replace`
@@ -280,7 +289,7 @@ export type WithAliases<T extends TokenType> = T extends keyof AliasedValueByTyp
  *   isAlias(ref) && !isInlined(ref.alias) ? `var(--${name(ref.alias)})` : resolveReference(doc, ref))
  */
 export function mapReferences<T extends TokenType>(
-    value: WithAliases<T>,
+    value: UnresolvedValue<T>,
     replace: (ref: Alias | Pointer) => unknown,
 ): unknown {
     throw new Error("not implemented yet");
@@ -351,7 +360,7 @@ export interface TokenBase<T extends TokenType> {
      * {@link Pointer} nodes.
      * Absent when the token is {@link TokenBase.invalid | invalid}.
      */
-    value?: WithAliases<T>;
+    value?: UnresolvedValue<T>;
     /** The value with every reference followed. Absent when invalid or when a reference cannot be followed. */
     resolved?: ValueByType[T];
     /** Set when the value could not be read. The reasons are in {@link Document.diagnostics}, under this token's path. */
@@ -364,10 +373,10 @@ export interface TokenBase<T extends TokenType> {
     /** Vendor data from `$extensions`, passed through untouched. */
     extensions?: Record<string, unknown>;
     /**
-     * Where the token was read from: the file, which of the permutation's
-     * {@link Permutation.sources | sources} it came from, and its place in the file.
+     * Where the token was read from: which of the permutation's {@link Permutation.sources | sources}
+     * it came from, and its place in the file.
      */
-    source: { file: string; index: number; node: Span };
+    source: { index: number; at: Span };
     /** The value exactly as the file wrote it, and whether the file declared `$type` on this token. Absent for generated tokens. */
     authored?: { value: unknown; typeDeclared: boolean };
     /** Set when a {@link Generator} made the token, from the setting on the group at `by`. */
@@ -400,7 +409,7 @@ export interface Group {
  * One source of a permutation's tokens: a file, part of one, or tokens written in the resolver.
  * A set in the resolver can have several sources, so the same set can appear on several.
  */
-export interface SourceRef {
+export interface Source {
     file: string;
     /** Set when the source is only part of the file, such as `"#/color"`. */
     pointer?: string;
@@ -422,7 +431,7 @@ export interface Permutation {
      */
     label: string;
     /** Where the tokens come from, in the order they apply: a later source overrides an earlier one. */
-    sources: SourceRef[];
+    sources: Source[];
     /** Every token, keyed by path, in the order the files list them. Invalid tokens are included. */
     tokens: Record<string, Token>;
     /** Every group, keyed by path, in the order the files list them. */
@@ -491,14 +500,14 @@ export interface DiagnosticDetailByKind {
     "token-and-group": Record<string, never>;
     /** No type can be worked out for a token. */
     "missing-type": Record<string, never>;
-    /** A `$type` is not one the specification defines, nor a registered one. */
+    /** A `$type` is not one of the thirteen the specification defines (Format 8). */
     "unknown-type": { type: string };
     /** A value does not fit its type. */
     "invalid-value": {
         type: TokenType;
         at: JsonPath;
         /** Why, as the parser named it: see {@link ValueError.detail}. */
-        reason?: ValueErrorCode | (string & {});
+        reason?: ValueErrorCode;
     };
     /** A color written as a hex string, which the 2025.10 Color module no longer allows. */
     "hex-string-color": { value: string };
@@ -643,9 +652,9 @@ export function errors(doc: Document): Diagnostic[] {
  * naming every token that uses it, so it appears here for each of them.
  *
  * @example
- * diagnosticsOf(doc, "color.brand") // includes "color.missing does not exist" if it refers to it
+ * diagnosticsFor(doc, "color.brand") // includes "color.missing does not exist" if it refers to it
  */
-export function diagnosticsOf(doc: Document, path: string): Diagnostic[] {
+export function diagnosticsFor(doc: Document, path: string): Diagnostic[] {
     throw new Error("not implemented yet");
 }
 
@@ -680,8 +689,8 @@ export interface Document {
 }
 
 /**
- * Why a value could not be read, as a stable name to switch on, such as `"unit-not-allowed"`. A
- * custom type's parser may use names of its own.
+ * Why a value could not be read, as a stable name to switch on, such as `"unit-not-allowed"`. An
+ * {@link ExtensionValidator} may use names of its own.
  */
 export type { ValueErrorCode } from "./values/value-errors.js";
 
@@ -700,40 +709,6 @@ export type ParseResult<V> = { ok: true; value: V } | { ok: false; errors: Value
 
 /** Reads one raw value into its shape, or explains why it cannot. */
 export type Parse<V> = (raw: unknown, at: JsonPath) => ParseResult<V>;
-
-/** A token type beyond the thirteen the specification defines. Create one with {@link defineType}. */
-export interface TypeDefinition<V = any> {
-    /** The `$type` it answers to. */
-    name: string;
-    parse: Parse<V>;
-    /** Turns a value back into the JSON written in a file. */
-    export: (value: V) => unknown;
-}
-
-/**
- * Defines a custom token type. Declare its value shape on {@link ValueByType} first, so tokens
- * of that type are typed everywhere, and exhaustive switches over {@link Token} are told to
- * handle it.
- *
- * @example
- * declare module "@sugarcube-sh/dtcg" {
- *   interface ValueByType { boolean: boolean }
- * }
- * const booleanType = defineType({
- *   name: "boolean",
- *   parse: (raw, at) => typeof raw === "boolean"
- *     ? { ok: true, value: raw }
- *     : { ok: false, errors: [{ kind: "invalid-value", path: at, message: "not a boolean" }] },
- *   export: (value) => value,
- * });
- */
-export function defineType<K extends TokenType>(definition: {
-    name: K;
-    parse: Parse<ValueByType[K]>;
-    export: (value: ValueByType[K]) => unknown;
-}): TypeDefinition<ValueByType[K]> {
-    throw new Error("not implemented yet");
-}
 
 /** A check for your own `$extensions` key. The data is kept either way; this only adds errors. */
 export interface ExtensionValidator {
@@ -806,10 +781,8 @@ export interface ReadOptions {
      * @default 64
      */
     permutationLimit?: number;
-    /** Token types beyond the specification's thirteen. */
-    types?: TypeDefinition[];
     /** Checks for your own `$extensions` keys. */
-    extensions?: ExtensionValidator[];
+    extensionValidators?: ExtensionValidator[];
     /** Tokens made from settings on groups, such as recipes. Run in order, before values are read. */
     generators?: Generator<any>[];
     /** Called as each stage of reading finishes, with how long it took. For progress and benchmarks. */
@@ -871,10 +844,10 @@ export function token(doc: Document, path: string, input?: Input): Token | undef
 }
 
 /**
- * A group by path.
+ * The group at a path.
  * @param input Which permutation. Defaults to the default permutation.
  */
-export function groupOf(doc: Document, path: string, input?: Input): Group | undefined {
+export function group(doc: Document, path: string, input?: Input): Group | undefined {
     throw new Error("not implemented yet");
 }
 
@@ -886,7 +859,7 @@ export function groupOf(doc: Document, path: string, input?: Input): Group | und
  * @example
  * tokensIn(doc, "space")   // space.xs, space.sm, … but not spacer.x
  */
-export function tokensIn(doc: Document, group: string, input?: Input): Token[] {
+export function tokensIn(doc: Document, path: string, input?: Input): Token[] {
     throw new Error("not implemented yet");
 }
 
@@ -901,7 +874,7 @@ export function acrossPermutations(
     /** Whether this permutation's value comes from a context's own file rather than the base. */
     overrides: boolean;
     /** How the value arrived: straight from a set, or through a modifier's context. */
-    from: SourceRef["from"];
+    from: Source["from"];
 }[] {
     throw new Error("not implemented yet");
 }
@@ -1042,7 +1015,7 @@ export function aliasChain(doc: Document, path: string, input?: Input): string[]
 }
 
 /** What is at a position in a file. */
-export type AtResult =
+export type AtOffset =
     | { kind: "token"; path: string; expects?: TokenType }
     | { kind: "group"; path: string }
     | { kind: "reference"; from: string; to: string; permutation: Input; expects?: TokenType }
@@ -1052,15 +1025,21 @@ export type AtResult =
  * What is at a position in a file: a token, a group, or a reference, with the type a value there
  * must have. For editors and language servers.
  */
-export function at(doc: Document, file: string, offset: number): AtResult {
+export function atOffset(doc: Document, file: string, offset: number): AtOffset {
     throw new Error("not implemented yet");
 }
 
 /** A JSON object, such as a DTCG file's top level: every value in it is plain JSON. */
-export type JsonObject = { [key: string]: DtcgJson };
+export type JsonObject = { [key: string]: JsonValue };
 
 /** Any value that can be written in a DTCG file. */
-export type DtcgJson = string | number | boolean | null | DtcgJson[] | { [key: string]: DtcgJson };
+export type JsonValue =
+    | string
+    | number
+    | boolean
+    | null
+    | JsonValue[]
+    | { [key: string]: JsonValue };
 
 /**
  * Turns a value from the model back into the JSON written in a DTCG file, with references as
@@ -1073,7 +1052,7 @@ export type DtcgJson = string | number | boolean | null | DtcgJson[] | { [key: s
  */
 export function toDTCGValue<T extends TokenType>(
     type: T,
-    value: WithAliases<T>,
+    value: UnresolvedValue<T>,
     options?: {
         /**
          * An earlier value as the file wrote it, such as `token.authored.value`. Where the spec
@@ -1084,7 +1063,7 @@ export function toDTCGValue<T extends TokenType>(
          */
         like?: unknown;
     },
-): DtcgJson {
+): JsonValue {
     throw new Error("not implemented yet");
 }
 

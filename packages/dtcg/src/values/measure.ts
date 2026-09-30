@@ -1,4 +1,4 @@
-import type { JsonPath, ParseResult, Pointer, ValueError, WithAliases } from "../index.js";
+import type { JsonPath, ParseResult, Pointer, ValueError, UnresolvedValue } from "../index.js";
 import { isPlainObject, readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
@@ -18,9 +18,9 @@ export function readMeasure<T extends MeasureType>(
     units: readonly string[],
     raw: unknown,
     at: JsonPath,
-): ParseResult<WithAliases<T>> {
+): ParseResult<UnresolvedValue<T>> {
     const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference as WithAliases<T> };
+    if (reference) return { ok: true, value: reference as UnresolvedValue<T> };
 
     if (typeof raw === "string") {
         const match = STRING_WITH_UNIT.exec(raw);
@@ -50,7 +50,7 @@ export function readMeasure<T extends MeasureType>(
     if (errors.length > 0 || value === undefined || unit === undefined) {
         return { ok: false, errors };
     }
-    return { ok: true, value: { value, unit } as WithAliases<T> };
+    return { ok: true, value: { value, unit } as UnresolvedValue<T> };
 }
 
 function readAmount(

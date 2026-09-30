@@ -1,4 +1,4 @@
-import type { JsonPath, ParseResult, Pointer, ValueError, WithAliases } from "../index.js";
+import type { JsonPath, ParseResult, Pointer, ValueError, UnresolvedValue } from "../index.js";
 import { readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
@@ -9,7 +9,7 @@ const X_POSITIONS = new Set([0, 2]);
 export function readCubicBezier(
     raw: unknown,
     at: JsonPath,
-): ParseResult<WithAliases<"cubicBezier">> {
+): ParseResult<UnresolvedValue<"cubicBezier">> {
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference };
 

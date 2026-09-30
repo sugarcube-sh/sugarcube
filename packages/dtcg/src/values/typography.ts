@@ -1,4 +1,4 @@
-import type { JsonPath, ParseResult, WithAliases } from "../index.js";
+import type { JsonPath, ParseResult, UnresolvedValue } from "../index.js";
 import { type ObjectForm, type PartReaders, readComposite } from "./composite.js";
 import { readDimension } from "./dimension.js";
 import { readFontFamily } from "./font-family.js";
@@ -13,6 +13,9 @@ const PARTS: PartReaders<ObjectForm<"typography">> = {
     lineHeight: readNumber,
 };
 
-export function readTypography(raw: unknown, at: JsonPath): ParseResult<WithAliases<"typography">> {
+export function readTypography(
+    raw: unknown,
+    at: JsonPath,
+): ParseResult<UnresolvedValue<"typography">> {
     return readComposite("typography", PARTS, raw, at);
 }

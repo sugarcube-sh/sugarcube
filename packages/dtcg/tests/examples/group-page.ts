@@ -21,6 +21,6 @@ for (const t of Object.values(base?.tokens ?? {})) {
     if (!isChild(t.path)) continue;
     const overrides = acrossPermutations(doc, t.path)
         .filter((p) => p.overrides)
-        .map((p) => `${p.label} in ${p.token.source.file}`);
-    row(t.path, t.authored?.value, t.source.file, overrides.join(", "));
+        .map((p) => `${p.label} in ${p.token.source.at.file}`);
+    row(t.path, t.authored?.value, t.source.at.file, overrides.join(", "));
 }

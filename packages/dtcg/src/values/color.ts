@@ -5,13 +5,13 @@ import type {
     ParseResult,
     Pointer,
     ValueError,
-    WithAliases,
+    UnresolvedValue,
 } from "../index.js";
 import { colorSpaces } from "./color-spaces.js";
 import { isPlainObject, readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
-type ColorAsWritten = WithAliases<"color">;
+type ColorAsWritten = UnresolvedValue<"color">;
 type Component = ColorComponent | Pointer;
 
 const PROPERTIES = new Set(["colorSpace", "components", "alpha", "hex"]);

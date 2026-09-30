@@ -1,15 +1,21 @@
-import type { AliasedStrokeStyle, JsonPath, ParseResult, Pointer, ValueError } from "../index.js";
+import type {
+    UnresolvedStrokeStyle,
+    JsonPath,
+    ParseResult,
+    Pointer,
+    ValueError,
+} from "../index.js";
 import { readDimension } from "./dimension.js";
 import { type LineCap, lineCaps, strokeStyleKeywords } from "./keywords.js";
 import { isPlainObject, readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
 type Keyword = (typeof strokeStyleKeywords)[number];
-type DashArray = Extract<AliasedStrokeStyle, { kind: "dash" }>["dashArray"];
+type DashArray = Extract<UnresolvedStrokeStyle, { kind: "dash" }>["dashArray"];
 
 const PROPERTIES = new Set(["dashArray", "lineCap"]);
 
-export function readStrokeStyle(raw: unknown, at: JsonPath): ParseResult<AliasedStrokeStyle> {
+export function readStrokeStyle(raw: unknown, at: JsonPath): ParseResult<UnresolvedStrokeStyle> {
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference };
 

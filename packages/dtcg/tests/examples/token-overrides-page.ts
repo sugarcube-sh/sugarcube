@@ -6,8 +6,8 @@ declare const doc: Document;
 const path = "color.danger";
 
 const base = defaultPermutation(doc)?.tokens[path];
-row("Base", base?.authored?.value, base?.source.file);
+row("Base", base?.authored?.value, base?.source.at.file);
 
 for (const { input, label, token, overrides } of acrossPermutations(doc, path)) {
-    if (overrides) row(label, token.authored?.value, token.source.file, JSON.stringify(input));
+    if (overrides) row(label, token.authored?.value, token.source.at.file, JSON.stringify(input));
 }

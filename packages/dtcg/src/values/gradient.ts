@@ -1,4 +1,4 @@
-import type { Alias, JsonPath, ParseResult, Pointer, WithAliases } from "../index.js";
+import type { Alias, JsonPath, ParseResult, Pointer, UnresolvedValue } from "../index.js";
 import { readColor } from "./color.js";
 import { type ObjectForm, type PartReaders, readComposite } from "./composite.js";
 import { readList } from "./list.js";
@@ -10,7 +10,7 @@ type GradientStop = Exclude<ObjectForm<"gradient">[number], Alias | Pointer>;
 
 const PARTS: PartReaders<GradientStop> = { color: readColor, position: readPosition };
 
-export function readGradient(raw: unknown, at: JsonPath): ParseResult<WithAliases<"gradient">> {
+export function readGradient(raw: unknown, at: JsonPath): ParseResult<UnresolvedValue<"gradient">> {
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference };
 
