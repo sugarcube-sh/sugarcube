@@ -60,6 +60,8 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
     "extension-invalid": [{ key: "sh.sugarcube.fluid" }],
     "missing-reference": [{ ref: "color.brnad", referencedBy: ["color.danger"] }],
     "not-a-group": [{ ref: "color.brand" }],
+    "not-a-token": [{ ref: "color.accent" }],
+    "reference-to-several": [{ ref: "shadow.layered", count: 3 }],
     "circular-reference": [{ chain: ["color.a", "color.b", "color.a"] }],
     "type-mismatch": [{ ref: "space.md", expected: "color", found: "dimension" }],
     "whitespace-in-name": [{ name: "brand " }],

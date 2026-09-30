@@ -1,0 +1,194 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 7.1.2, 7.3 (Examples 35 to 37) and 7.4.3: a JSON Pointer reads any part of the document as written, so it can stand for part of a value. A pointer to a token stands for its value (7.4.2), and a typeless one takes its type. As written means a single shadow has no [0], and a pointer cannot see through a reference to what it resolves to: both reach nothing. What a pointer reaches is checked against the place it stands in. Pointers that loop MUST be reported (6.7.4)",
+  "permutations": [
+    {
+      "tokens": {
+        "base.blue": {
+          "path": "base.blue"
+        },
+        "base.spacing": {
+          "path": "base.spacing"
+        },
+        "base.text": {
+          "path": "base.text"
+        },
+        "base.card": {
+          "path": "base.card"
+        },
+        "base.alias": {
+          "path": "base.alias"
+        },
+        "semantic.primary": {
+          "path": "semantic.primary",
+          "value": {
+            "colorSpace": "srgb",
+            "components": [
+              {
+                "pointer": "#/base/blue/$value/components/0"
+              },
+              {
+                "pointer": "#/base/blue/$value/components/1"
+              },
+              0.7
+            ],
+            "alpha": 1
+          },
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [
+              0.2,
+              0.4,
+              0.7
+            ],
+            "alpha": 1
+          }
+        },
+        "semantic.small": {
+          "path": "semantic.small",
+          "resolved": {
+            "value": 16,
+            "unit": "rem"
+          }
+        },
+        "semantic.h1": {
+          "path": "semantic.h1",
+          "resolved": {
+            "fontFamily": [
+              "Helvetica",
+              "Arial",
+              "sans-serif"
+            ],
+            "fontSize": {
+              "value": 32,
+              "unit": "px"
+            },
+            "fontWeight": 700,
+            "letterSpacing": {
+              "value": 0,
+              "unit": "px"
+            },
+            "lineHeight": 1.5
+          }
+        },
+        "semantic.whole": {
+          "path": "semantic.whole",
+          "type": "dimension",
+          "aliasOf": "base.spacing",
+          "resolved": {
+            "value": 16,
+            "unit": "px"
+          }
+        },
+        "semantic.shadow-color": {
+          "path": "semantic.shadow-color",
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [
+              0,
+              0,
+              0
+            ],
+            "alpha": 1
+          }
+        },
+        "semantic.shadow-listed": {
+          "path": "semantic.shadow-listed",
+          "type": "color",
+          "resolved": null
+        },
+        "semantic.through-alias": {
+          "path": "semantic.through-alias",
+          "type": "number",
+          "resolved": null
+        },
+        "semantic.wrong-kind": {
+          "path": "semantic.wrong-kind",
+          "type": "color",
+          "resolved": null
+        },
+        "loop.a": {
+          "path": "loop.a",
+          "type": "number",
+          "resolved": null
+        },
+        "loop.b": {
+          "path": "loop.b",
+          "type": "number",
+          "resolved": null
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "invalid-value",
+      "detail": {
+        "type": "color",
+        "at": [
+          "$value",
+          "components",
+          0
+        ],
+        "reason": "component-not-a-number"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#/base/spacing/$value/unit\" }"
+      },
+      "path": "semantic.wrong-kind"
+    },
+    {
+      "kind": "circular-reference",
+      "detail": {
+        "chain": [
+          "loop.a",
+          "loop.b",
+          "loop.a"
+        ]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#/loop/b/$value\" }"
+      },
+      "path": "loop.a",
+      "related": [
+        {
+          "message": "part of the same loop",
+          "at": {
+            "file": "tokens.json",
+            "text": "{ \"$ref\": \"#/loop/a/$value\" }"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "missing-reference",
+      "detail": {
+        "ref": "#/base/card/$value/0/color",
+        "referencedBy": [
+          "semantic.shadow-listed"
+        ]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#/base/card/$value/0/color\" }"
+      },
+      "path": "semantic.shadow-listed"
+    },
+    {
+      "kind": "missing-reference",
+      "detail": {
+        "ref": "#/base/alias/$value/components/0",
+        "referencedBy": [
+          "semantic.through-alias"
+        ]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#/base/alias/$value/components/0\" }"
+      },
+      "path": "semantic.through-alias"
+    }
+  ]
+}

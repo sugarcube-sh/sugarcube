@@ -75,11 +75,13 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
 export const relatedMessages = {
     declaredAs: (kind: "token" | "group") => `declared as a ${kind} here`,
     partOfTheLoop: "part of the same loop",
+    alsoUsedHere: "also used here",
 };
 
 export const fixTitles = {
     useType: (type: string) => `use \`${type}\`, which has a similar name`,
     hexToObject: "write the color as an object, keeping the hex",
+    useReference: (path: string) => `use \`${path}\`, which has a similar name`,
 };
 
 export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
@@ -155,6 +157,15 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "missing-reference": {
         severity: "error",
         message: ({ ref }) => `\`${ref}\` does not exist`,
+    },
+    "not-a-token": {
+        severity: "error",
+        message: ({ ref }) => `\`${ref}\` is a group, and a reference must name a token`,
+    },
+    "reference-to-several": {
+        severity: "error",
+        message: ({ ref, count }) =>
+            `\`${ref}\` holds ${count}, and a reference in a list stands for one`,
     },
     "not-a-group": {
         severity: "error",

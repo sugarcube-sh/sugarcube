@@ -4,6 +4,8 @@ import type { Answer, FileText, Request } from "./files.js";
 import { collapse } from "./diagnostics.js";
 import { type Loaded, load } from "./load.js";
 import { normalisePermutations } from "./normalise.js";
+import { createValueReader } from "./parse-value.js";
+import { resolvePermutations } from "./resolve.js";
 import type { PermutationOptions } from "./permutations.js";
 import { fileName, folderOf, join, normalise } from "./paths.js";
 
@@ -109,9 +111,13 @@ function permutationOptions({
 
 function toDocument(loaded: Loaded, { onStage }: ReadOptions): Document {
     const found: Document["diagnostics"] = [];
-    const started = performance.now();
-    const permutations = normalisePermutations(loaded.permutations, found);
-    onStage?.("normalise", performance.now() - started);
+    const readValue = createValueReader(found);
+    const normalising = performance.now();
+    const normalised = normalisePermutations(loaded.permutations, readValue, found);
+    const resolving = performance.now();
+    onStage?.("normalise", resolving - normalising);
+    const { permutations, graph } = resolvePermutations(normalised, readValue, found);
+    onStage?.("resolve", performance.now() - resolving);
 
     return {
         version: packageJson.version,
@@ -119,7 +125,7 @@ function toDocument(loaded: Loaded, { onStage }: ReadOptions): Document {
         modifiers: loaded.modifiers,
         usedBy: loaded.usedBy,
         permutations,
-        graph: [],
+        graph,
         diagnostics: [...loaded.diagnostics, ...collapse(found, permutations.length)],
     };
 }

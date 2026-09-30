@@ -1,0 +1,150 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 7.2.2 (Example 33) and Resolver 6.3: references are followed until a token with an explicit value; a typeless reference takes its target's type (5.2.2); aliasOf names the final token. Parts of a composite that are references are followed too (9.1 to 9.6). The graph has one edge per reference as written, at the reference",
+  "permutations": [
+    {
+      "tokens": {
+        "color.red": {
+          "path": "color.red",
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [1, 0, 0],
+            "alpha": 1
+          }
+        },
+        "color.brand": {
+          "path": "color.brand",
+          "type": "color",
+          "aliasOf": "color.red",
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [1, 0, 0],
+            "alpha": 1
+          }
+        },
+        "semantic.danger": {
+          "path": "semantic.danger",
+          "type": "color",
+          "aliasOf": "color.red",
+          "value": {
+            "alias": "color.brand"
+          },
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [1, 0, 0],
+            "alpha": 1
+          }
+        },
+        "space.sm": {
+          "path": "space.sm"
+        },
+        "edge": {
+          "path": "edge",
+          "resolved": {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [1, 0, 0],
+              "alpha": 1
+            },
+            "width": {
+              "value": 1,
+              "unit": "px"
+            },
+            "style": {
+              "kind": "keyword",
+              "keyword": "solid"
+            }
+          }
+        },
+        "glow": {
+          "path": "glow",
+          "resolved": [
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [1, 0, 0],
+                "alpha": 1
+              },
+              "offsetX": {
+                "value": 1,
+                "unit": "px"
+              },
+              "offsetY": {
+                "value": 2,
+                "unit": "px"
+              },
+              "blur": {
+                "value": 4,
+                "unit": "px"
+              },
+              "spread": {
+                "value": 0,
+                "unit": "px"
+              },
+              "inset": false
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "graph": [
+    {
+      "from": "color.brand",
+      "to": "color.red",
+      "permutation": 0,
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{color.red}\""
+      }
+    },
+    {
+      "from": "semantic.danger",
+      "to": "color.brand",
+      "permutation": 0,
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{color.brand}\""
+      }
+    },
+    {
+      "from": "edge",
+      "to": "semantic.danger",
+      "permutation": 0,
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{semantic.danger}\""
+      }
+    },
+    {
+      "from": "edge",
+      "to": "space.sm",
+      "permutation": 0,
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{space.sm}\""
+      }
+    },
+    {
+      "from": "glow",
+      "to": "color.brand",
+      "permutation": 0,
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{color.brand}\"",
+        "occurrence": 2
+      }
+    },
+    {
+      "from": "glow",
+      "to": "space.sm",
+      "permutation": 0,
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{space.sm}\"",
+        "occurrence": 2
+      }
+    }
+  ],
+  "diagnostics": []
+}

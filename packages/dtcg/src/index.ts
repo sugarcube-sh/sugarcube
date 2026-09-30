@@ -538,6 +538,17 @@ export interface DiagnosticDetailByKind {
     };
     /** `$extends`, or a `$ref` standing for a group, points at a token (Format 6.4.6). */
     "not-a-group": { ref: string };
+    /** A reference to a token points at a group (Format 6.2: `{color.accent}` names a group, not a token). */
+    "not-a-token": { ref: string };
+    /**
+     * A reference in a shadow or gradient list points at a token holding several layers or stops.
+     * A reference in such a list stands for one (Format 9.1, 9.6, 9.7).
+     */
+    "reference-to-several": {
+        ref: string;
+        /** How many layers or stops the token holds. */
+        count: number;
+    };
     /** References that lead back to where they started. */
     "circular-reference": { chain: string[] };
     /** A reference points at a token of the wrong type. */

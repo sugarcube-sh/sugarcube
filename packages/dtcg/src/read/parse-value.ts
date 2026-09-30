@@ -69,6 +69,23 @@ export function createValueReader(diagnostics: Diagnostic[]): ValueReader {
     };
 }
 
+export function readReplaced<T extends TokenType>(
+    token: MergedToken,
+    type: T,
+    raw: unknown,
+    permutation: number,
+    diagnostics: Diagnostic[],
+): ParseResult<UnresolvedValueByType[T]> {
+    const parse: Parse<UnresolvedValueByType[T]> = parsers[type];
+    const result = parse(raw, ["$value"]);
+    if (!result.ok) {
+        for (const error of result.errors) {
+            diagnostics.push({ ...toDiagnostic(token, type, error), permutation });
+        }
+    }
+    return result;
+}
+
 function toDiagnostic(token: MergedToken, type: TokenType, error: ValueError): Diagnostic {
     const { json, value, path } = token;
     const node = deepestNode(value, error.path.slice(1), json.hidden);

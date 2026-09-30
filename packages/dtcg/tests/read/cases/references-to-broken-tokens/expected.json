@@ -1,0 +1,69 @@
+{
+  "entry": "tokens.json",
+  "spec": "Contract 03, promise 3 (amended): a token whose target is broken, by an unknown or missing type here, is left unresolved with no diagnostic of its own; the cause is reported once, where it is, as old sugarcube's dereference does. Saying the target does not exist would also be untrue. A typeless reference to it has no type to show, so it is left out",
+  "permutations": [
+    {
+      "tokens": {
+        "a": {
+          "path": "a",
+          "type": "number",
+          "value": {
+            "alias": "odd"
+          },
+          "resolved": null
+        },
+        "b": {
+          "path": "b",
+          "type": "number",
+          "value": {
+            "alias": "loose"
+          },
+          "resolved": null
+        },
+        "d": {
+          "path": "d",
+          "type": "number",
+          "value": {
+            "pointer": "#/odd/$value"
+          },
+          "resolved": null
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "unknown-type",
+      "detail": {
+        "type": "colour"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"colour\""
+      },
+      "path": "odd",
+      "fixes": [
+        {
+          "title": "use `color`, which has a similar name",
+          "safe": false,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"colour\"",
+              "replaceWith": "\"color\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "missing-type",
+      "detail": {},
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"loose\":"
+      },
+      "path": "loose"
+    }
+  ]
+}

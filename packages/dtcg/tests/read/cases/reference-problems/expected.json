@@ -1,0 +1,236 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 7.4.5 and Resolver 6.3: a reference to nothing, to a group (6.2), or to a token of the wrong type MUST be reported; a missing token is reported once, naming every token that uses it, with a fix to confirm when a token has a similar name. A reference in a shadow list stands for one layer (9.1, 9.6): a target of one layer gives it, a target of several is reported. A typeless reference takes its target's type, so color.wrong is a dimension (5.2.2); one that cannot be followed is shown with its group's type, and one with no group type is left out. Each problem leaves its token without a resolved value",
+  "permutations": [
+    {
+      "tokens": {
+        "color.brand": {
+          "path": "color.brand"
+        },
+        "color.danger": {
+          "path": "color.danger",
+          "type": "color",
+          "value": {
+            "alias": "color.brnad"
+          },
+          "resolved": null
+        },
+        "color.warning": {
+          "path": "color.warning",
+          "type": "color",
+          "resolved": null
+        },
+        "color.group-ref": {
+          "path": "color.group-ref",
+          "type": "color",
+          "resolved": null
+        },
+        "color.wrong": {
+          "path": "color.wrong",
+          "type": "dimension",
+          "aliasOf": "space.sm",
+          "resolved": {
+            "value": 4,
+            "unit": "px"
+          }
+        },
+        "space.sm": {
+          "path": "space.sm"
+        },
+        "edge": {
+          "path": "edge",
+          "type": "border",
+          "resolved": null
+        },
+        "shadow.one": {
+          "path": "shadow.one"
+        },
+        "shadow.two": {
+          "path": "shadow.two"
+        },
+        "shadow.uses-one": {
+          "path": "shadow.uses-one",
+          "resolved": [
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [
+                  0,
+                  0,
+                  0
+                ],
+                "alpha": 1
+              },
+              "offsetX": {
+                "value": 0,
+                "unit": "px"
+              },
+              "offsetY": {
+                "value": 1,
+                "unit": "px"
+              },
+              "blur": {
+                "value": 1,
+                "unit": "px"
+              },
+              "spread": {
+                "value": 0,
+                "unit": "px"
+              },
+              "inset": false
+            },
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [
+                  0,
+                  0,
+                  0
+                ],
+                "alpha": 1
+              },
+              "offsetX": {
+                "value": 0,
+                "unit": "px"
+              },
+              "offsetY": {
+                "value": 9,
+                "unit": "px"
+              },
+              "blur": {
+                "value": 9,
+                "unit": "px"
+              },
+              "spread": {
+                "value": 0,
+                "unit": "px"
+              },
+              "inset": false
+            }
+          ]
+        },
+        "shadow.uses-two": {
+          "path": "shadow.uses-two",
+          "type": "shadow",
+          "resolved": null
+        },
+        "color.typed-wrong": {
+          "path": "color.typed-wrong",
+          "type": "color",
+          "resolved": null
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "not-a-token",
+      "detail": {
+        "ref": "color"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{color}\""
+      },
+      "path": "color.group-ref"
+    },
+    {
+      "kind": "type-mismatch",
+      "detail": {
+        "ref": "space.sm",
+        "expected": "color",
+        "found": "dimension"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{space.sm}\"",
+        "occurrence": 2
+      },
+      "path": "color.typed-wrong"
+    },
+    {
+      "kind": "type-mismatch",
+      "detail": {
+        "ref": "color.brand",
+        "expected": "dimension",
+        "found": "color"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{color.brand}\"",
+        "occurrence": 2
+      },
+      "path": "edge"
+    },
+    {
+      "kind": "reference-to-several",
+      "detail": {
+        "ref": "shadow.two",
+        "count": 2
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{shadow.two}\""
+      },
+      "path": "shadow.uses-two"
+    },
+    {
+      "kind": "missing-reference",
+      "detail": {
+        "ref": "color.brnad",
+        "referencedBy": [
+          "color.danger",
+          "color.warning"
+        ]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{color.brnad}\""
+      },
+      "path": "color.danger",
+      "related": [
+        {
+          "message": "also used here",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{color.brnad}\"",
+            "occurrence": 2
+          }
+        }
+      ],
+      "fixes": [
+        {
+          "title": "use `color.brand`, which has a similar name",
+          "safe": false,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"{color.brnad}\"",
+              "replaceWith": "\"{color.brand}\""
+            },
+            {
+              "file": "tokens.json",
+              "text": "\"{color.brnad}\"",
+              "occurrence": 2,
+              "replaceWith": "\"{color.brand}\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "missing-reference",
+      "detail": {
+        "ref": "nowhere",
+        "referencedBy": [
+          "loose"
+        ]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{nowhere}\""
+      },
+      "path": "loose"
+    }
+  ]
+}

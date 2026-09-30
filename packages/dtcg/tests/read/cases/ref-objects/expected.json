@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 6.4.1: a $ref to a group is $extends written as JSON Schema. 6.6.2 (Example 21): a $ref to a token stands for that token; 7.1.2 (Example 32): a $ref into a token's value stands for that part, typed by the $type beside it. A token with no $type is typed when references are followed. A $ref reaches only this document (RFC 6901 as the Format module uses it)",
+  "spec": "Format 6.4.1: a $ref to a group is $extends written as JSON Schema. 6.6.2 (Example 21): a $ref to a token stands for that token; 7.1.2 (Example 32): a $ref into a token's value stands for that part, typed by the $type beside it. A token with no $type is typed when references are followed. A $ref reaches only this document (RFC 6901 as the Format module uses it). Resolved, a $ref to a token stands for that token's value, and one into a value for that part",
   "permutations": [
     {
       "tokens": {
@@ -47,7 +47,9 @@
               "$ref": "#/base"
             },
             "typeDeclared": true
-          }
+          },
+          "resolved": 4,
+          "aliasOf": "base"
         },
         "blue-red": {
           "path": "blue-red",
@@ -64,7 +66,17 @@
               "$ref": "#/blue/$value/components/0"
             },
             "typeDeclared": true
-          }
+          },
+          "resolved": 0.2
+        },
+        "untyped": {
+          "path": "untyped",
+          "type": "number",
+          "aliasOf": "base",
+          "value": {
+            "pointer": "#/base"
+          },
+          "resolved": 4
         },
         "crowded": {
           "path": "crowded",

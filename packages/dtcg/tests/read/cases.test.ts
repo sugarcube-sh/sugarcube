@@ -13,6 +13,7 @@ interface Expected {
     modifiers?: Document["modifiers"];
     usedBy?: Document["usedBy"];
     permutations?: Partial<Document["permutations"][number]>[];
+    graph?: Document["graph"];
     diagnostics: Pick<
         Document["diagnostics"][number],
         "kind" | "detail" | "at" | "related" | "path" | "permutation" | "fixes"
@@ -44,6 +45,7 @@ function observed(doc: Document, expected: Expected) {
         ...(expected.files && { files: doc.files }),
         ...(expected.modifiers && { modifiers: doc.modifiers }),
         ...(expected.usedBy && { usedBy: doc.usedBy }),
+        ...(expected.graph && { graph: doc.graph }),
         ...(expected.permutations && {
             permutations: doc.permutations.map((permutation, index) =>
                 observedPermutation(permutation, expected.permutations?.[index]),
@@ -81,11 +83,12 @@ function observedPermutation(
 function picked<T extends object>(found: Record<string, T>, wanted: Record<string, Partial<T>>) {
     return Object.fromEntries(
         Object.entries(found).map(([path, each]) => {
-            const keys = Object.keys(wanted[path] ?? each);
-            return [
-                path,
-                Object.fromEntries(Object.entries(each).filter(([key]) => keys.includes(key))),
-            ];
+            const expected: Record<string, unknown> = wanted[path] ?? each;
+            const present = Object.entries(each).filter(([key]) => key in expected);
+            const absent = Object.keys(expected)
+                .filter((key) => expected[key] === null && !(key in each))
+                .map((key) => [key, null]);
+            return [path, Object.fromEntries([...present, ...absent])];
         }),
     );
 }

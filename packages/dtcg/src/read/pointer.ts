@@ -18,6 +18,10 @@ export function parsePointer(text: string): string[] | undefined {
     return steps;
 }
 
+export function refSteps(ref: string): string[] | undefined {
+    return ref.startsWith("#") ? parsePointer(ref) : undefined;
+}
+
 export function follow(root: Node, steps: string[]): Followed {
     let node = root;
     for (const [index, step] of steps.entries()) {

@@ -12,7 +12,7 @@ import { readAlias, readPointer } from "../values/references.js";
 import { isTokenType, tokenTypes } from "../values/token-types.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { type JsonFile, members, plainObject, plainValue, spanOf } from "./json.js";
-import { parsePointer } from "./pointer.js";
+import { refSteps } from "./pointer.js";
 import { similarName } from "./similar.js";
 import type { LoadedSource } from "./sources.js";
 
@@ -211,15 +211,13 @@ function readGroupReference(
     keyword: "$extends" | "$ref",
     raw: unknown,
 ): Pick<GroupReference, "written" | "steps"> | undefined {
-    const pointerSteps = (pointer: string) =>
-        pointer.startsWith("#") ? parsePointer(pointer) : undefined;
     if (keyword === "$ref") {
-        return typeof raw === "string" ? { written: raw, steps: pointerSteps(raw) } : undefined;
+        return typeof raw === "string" ? { written: raw, steps: refSteps(raw) } : undefined;
     }
     const alias = readAlias(raw);
     if (alias) return { written: alias.alias, steps: alias.alias.split(".") };
     const pointer = readPointer(raw);
-    return pointer && { written: pointer.pointer, steps: pointerSteps(pointer.pointer) };
+    return pointer && { written: pointer.pointer, steps: refSteps(pointer.pointer) };
 }
 
 function typeFix(file: string, node: Node, type: TokenType): Fix {

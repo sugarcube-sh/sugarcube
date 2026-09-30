@@ -1,0 +1,141 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 6.3 and contract 02, rule 4: references are followed within each permutation, so the same reference gives each permutation its own value, and the graph has one edge per reference per permutation. A reference broken in one permutation is reported for that permutation",
+  "permutations": [
+    {
+      "tokens": {
+        "color.brand": {
+          "path": "color.brand",
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [
+              1,
+              0,
+              0
+            ],
+            "alpha": 1
+          }
+        },
+        "color.danger": {
+          "path": "color.danger",
+          "aliasOf": "color.brand",
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [
+              1,
+              0,
+              0
+            ],
+            "alpha": 1
+          }
+        },
+        "color.accent": {
+          "path": "color.accent",
+          "aliasOf": "color.brand",
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [
+              1,
+              0,
+              0
+            ],
+            "alpha": 1
+          }
+        }
+      }
+    },
+    {
+      "tokens": {
+        "color.brand": {
+          "path": "color.brand",
+          "resolved": {
+            "colorSpace": "oklch",
+            "components": [
+              0.7,
+              0.2,
+              20
+            ],
+            "alpha": 1
+          }
+        },
+        "color.danger": {
+          "path": "color.danger",
+          "aliasOf": "color.brand",
+          "resolved": {
+            "colorSpace": "oklch",
+            "components": [
+              0.7,
+              0.2,
+              20
+            ],
+            "alpha": 1
+          }
+        },
+        "color.accent": {
+          "path": "color.accent",
+          "type": "color",
+          "value": {
+            "alias": "color.highlight"
+          },
+          "resolved": null
+        }
+      }
+    }
+  ],
+  "graph": [
+    {
+      "from": "color.danger",
+      "to": "color.brand",
+      "permutation": 0,
+      "at": {
+        "file": "base.json",
+        "text": "\"{color.brand}\""
+      }
+    },
+    {
+      "from": "color.accent",
+      "to": "color.brand",
+      "permutation": 0,
+      "at": {
+        "file": "base.json",
+        "text": "\"{color.brand}\"",
+        "occurrence": 2
+      }
+    },
+    {
+      "from": "color.danger",
+      "to": "color.brand",
+      "permutation": 1,
+      "at": {
+        "file": "base.json",
+        "text": "\"{color.brand}\""
+      }
+    },
+    {
+      "from": "color.accent",
+      "to": "color.highlight",
+      "permutation": 1,
+      "at": {
+        "file": "dark.json",
+        "text": "\"{color.highlight}\""
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "missing-reference",
+      "detail": {
+        "ref": "color.highlight",
+        "referencedBy": [
+          "color.accent"
+        ]
+      },
+      "at": {
+        "file": "dark.json",
+        "text": "\"{color.highlight}\""
+      },
+      "path": "color.accent",
+      "permutation": 1
+    }
+  ]
+}
