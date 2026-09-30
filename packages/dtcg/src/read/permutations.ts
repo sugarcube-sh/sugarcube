@@ -66,7 +66,7 @@ export function fromResolver(
         permutations: inputs.map((input) => ({
             input,
             label: labels(input),
-            sources: setsFor(resolver, items, sources, input),
+            sources: sourcesFor(resolver, items, sources, input),
         })),
     };
 }
@@ -235,7 +235,7 @@ function labelsFor(modifiers: Modifier[]): (input: Input) => string {
     };
 }
 
-function setsFor(
+function sourcesFor(
     resolver: Resolver,
     items: ExpandedItem[],
     sources: Map<SourceEntry, LoadedSource>,
@@ -248,11 +248,11 @@ function setsFor(
             );
         }
         const context = input[item.modifier.name];
-        const entries = context === undefined ? [] : (item.contexts.get(context) ?? []);
-        return entries.flatMap((entry) =>
+        if (context === undefined) return [];
+        return (item.contexts.get(context) ?? []).flatMap((entry) =>
             withRef(resolver, sources, entry, {
                 modifier: item.modifier.name,
-                context: context as string,
+                context,
                 ...(entry.holder && { set: entry.holder.name }),
             }),
         );
@@ -266,10 +266,10 @@ function withRef(
     from: SourceRef["from"],
 ): LoadedPermutation["sources"] {
     const source = sources.get(entry);
-    return source ? [{ ref: setRef(resolver, source, from, entry.holder), source }] : [];
+    return source ? [{ ref: sourceRef(resolver, source, from, entry.holder), source }] : [];
 }
 
-function setRef(
+function sourceRef(
     resolver: Resolver,
     source: LoadedSource,
     from: SourceRef["from"],
