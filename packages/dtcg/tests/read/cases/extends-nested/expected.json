@@ -1,0 +1,27 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 6.4.2 and 6.4.3 rank a local token over an inherited one, but say nothing about two inheritances at one path. g.sub writes no x of its own, and gets t's through g before y's through its own $extends, as old sugarcube and Terrazzo 2.7.1 do (parser-comparison.md, $extends)",
+  "permutations": [
+    {
+      "tokens": {
+        "t.sub.x": {
+          "path": "t.sub.x"
+        },
+        "y.x": {
+          "path": "y.x"
+        },
+        "g.sub.x": {
+          "path": "g.sub.x",
+          "authored": {
+            "value": 1,
+            "typeDeclared": false
+          },
+          "inherited": {
+            "from": "t"
+          }
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

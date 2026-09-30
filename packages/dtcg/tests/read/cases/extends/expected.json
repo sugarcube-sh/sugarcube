@@ -1,0 +1,141 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 6.4 (Examples 13 and 14): a group that extends another gets its tokens and properties, a local token with the same path replaces the inherited one whole, and groups merge deeply. What is inherited is marked with the group it came from; a chain follows the target's own $extends first",
+  "permutations": [
+    {
+      "tokens": {
+        "button.background": {
+          "path": "button.background"
+        },
+        "button.text": {
+          "path": "button.text"
+        },
+        "button.state.hover": {
+          "path": "button.state.hover"
+        },
+        "button.state.focus": {
+          "path": "button.state.focus"
+        },
+        "button-primary.background": {
+          "path": "button-primary.background",
+          "type": "number",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "tokens.json",
+              "valueAfter": "\"background\":",
+              "occurrence": 2
+            }
+          }
+        },
+        "button-primary.state.hover": {
+          "path": "button-primary.state.hover",
+          "type": "number",
+          "authored": {
+            "value": 30,
+            "typeDeclared": false
+          }
+        },
+        "button-large.padding": {
+          "path": "button-large.padding",
+          "type": "number"
+        },
+        "button-primary.text": {
+          "path": "button-primary.text",
+          "type": "number",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "tokens.json",
+              "valueAfter": "\"text\":"
+            }
+          },
+          "inherited": {
+            "from": "button"
+          }
+        },
+        "button-primary.state.focus": {
+          "path": "button-primary.state.focus",
+          "type": "number",
+          "inherited": {
+            "from": "button"
+          }
+        },
+        "button-large.background": {
+          "path": "button-large.background",
+          "authored": {
+            "value": 9,
+            "typeDeclared": false
+          },
+          "inherited": {
+            "from": "button-primary"
+          }
+        },
+        "button-large.state.hover": {
+          "path": "button-large.state.hover",
+          "authored": {
+            "value": 30,
+            "typeDeclared": false
+          },
+          "inherited": {
+            "from": "button-primary"
+          }
+        },
+        "button-large.text": {
+          "path": "button-large.text",
+          "inherited": {
+            "from": "button-primary"
+          }
+        },
+        "button-large.state.focus": {
+          "path": "button-large.state.focus",
+          "inherited": {
+            "from": "button-primary"
+          }
+        }
+      },
+      "groups": {
+        "button": {
+          "path": "button"
+        },
+        "button.state": {
+          "path": "button.state"
+        },
+        "button-primary": {
+          "path": "button-primary",
+          "type": "number",
+          "description": "Buttons",
+          "declaredIn": [
+            {
+              "file": "tokens.json",
+              "valueAfter": "\"button-primary\":"
+            }
+          ]
+        },
+        "button-primary.state": {
+          "path": "button-primary.state",
+          "declaredIn": [
+            {
+              "file": "tokens.json",
+              "valueAfter": "\"state\":",
+              "occurrence": 2
+            }
+          ]
+        },
+        "button-large": {
+          "path": "button-large",
+          "type": "number",
+          "description": "Buttons"
+        },
+        "button-large.state": {
+          "path": "button-large.state",
+          "declaredIn": [],
+          "inherited": {
+            "from": "button-primary"
+          }
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

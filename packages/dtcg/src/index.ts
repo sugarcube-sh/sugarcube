@@ -401,8 +401,13 @@ export interface Group {
     description?: string;
     deprecated?: boolean | string;
     extensions?: Record<string, unknown>;
-    /** Every place the group is declared. Groups can be spread across files, so there may be several. */
+    /**
+     * Every place the group is declared. Groups can be spread across files, so there may be
+     * several, and a group only {@link Group.inherited | inherited} has none.
+     */
     declaredIn: Span[];
+    /** Set when the group is here only because of `$extends`, or a `$ref` to another group, at `from`. */
+    inherited?: { from: string };
 }
 
 /**
@@ -505,8 +510,9 @@ export interface DiagnosticDetailByKind {
     "invalid-member": { name: string; found: "string" | "number" | "boolean" | "null" | "array" };
     /** A property the specification defines, such as `$description`, holds the wrong kind of JSON. */
     "invalid-property": {
-        property: "$type" | "$description" | "$deprecated" | "$extensions";
-        expected: "string" | "object" | "boolean-or-string";
+        property: "$type" | "$description" | "$deprecated" | "$extensions" | "$extends" | "$ref";
+        /** `"reference"`: a `"{group}"` reference, or a `{ "$ref": "#/…" }` pointer. */
+        expected: "string" | "object" | "boolean-or-string" | "reference";
     };
     /** No type can be worked out for a token. */
     "missing-type": Record<string, never>;
@@ -523,12 +529,15 @@ export interface DiagnosticDetailByKind {
     "hex-string-color": { value: string };
     /** An `$extensions` entry fails a registered check. */
     "extension-invalid": { key: string };
-    /** A reference points at a token that does not exist. */
+    /** A reference points at nothing: no token, or for `$extends`, no group. */
     "missing-reference": {
+        /** The reference as written, without braces: a path such as `color.brnad`, or a pointer. */
         ref: string;
-        /** Every token that refers to it. */
+        /** Every token or group that refers to it. */
         referencedBy: string[];
     };
+    /** `$extends`, or a `$ref` standing for a group, points at a token (Format 6.4.6). */
+    "not-a-group": { ref: string };
     /** References that lead back to where they started. */
     "circular-reference": { chain: string[] };
     /** A reference points at a token of the wrong type. */

@@ -1,5 +1,6 @@
 import type { Diagnostic, Group, Permutation, Token, TokenType } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
+import { applyExtends } from "./extends.js";
 import { inheritedDeprecation, inheritedType } from "./inherit.js";
 import { type Merged, type MergedGroup, type MergedToken, merge } from "./merge.js";
 import type { LoadedPermutation } from "./permutations.js";
@@ -25,6 +26,7 @@ export function normalisePermutations(
             index,
             diagnostics,
         );
+        applyExtends(merged, index, diagnostics);
         const tokens = Object.fromEntries(
             [...merged.tokens.values()].flatMap((token) => {
                 if (token.type === undefined && token.isReference) return [];
@@ -55,11 +57,12 @@ function toToken(token: MergedToken, type: TokenType, merged: Merged): Token {
         ...(token.extensions && { extensions: token.extensions }),
         source: { index: token.index, at: token.at },
         authored: { value: token.authored, typeDeclared: token.type !== undefined },
+        ...(token.inherited && { inherited: token.inherited }),
     };
 }
 
 function toGroup(group: MergedGroup): Group {
-    const { path, type, description, deprecated, extensions, declaredIn } = group;
+    const { path, type, description, deprecated, extensions, declaredIn, inherited } = group;
     return {
         path,
         ...(type !== undefined && type !== "unusable" && { type }),
@@ -67,5 +70,6 @@ function toGroup(group: MergedGroup): Group {
         ...(deprecated !== undefined && { deprecated }),
         ...(extensions && { extensions }),
         declaredIn,
+        ...(inherited && { inherited }),
     };
 }

@@ -1,0 +1,142 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 6.4.1: a $ref to a group is $extends written as JSON Schema. 6.6.2 (Example 21): a $ref to a token stands for that token; 7.1.2 (Example 32): a $ref into a token's value stands for that part, typed by the $type beside it. A token with no $type is typed when references are followed. A $ref reaches only this document (RFC 6901 as the Format module uses it)",
+  "permutations": [
+    {
+      "tokens": {
+        "button.background": {
+          "path": "button.background"
+        },
+        "button.text": {
+          "path": "button.text"
+        },
+        "button-primary.background": {
+          "path": "button-primary.background",
+          "type": "number",
+          "authored": {
+            "value": 9,
+            "typeDeclared": false
+          }
+        },
+        "base": {
+          "path": "base"
+        },
+        "blue": {
+          "path": "blue"
+        },
+        "button-primary.text": {
+          "path": "button-primary.text",
+          "type": "number",
+          "inherited": {
+            "from": "button"
+          }
+        },
+        "alias": {
+          "path": "alias",
+          "type": "number",
+          "description": "Same as base",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "tokens.json",
+              "valueAfter": "\"alias\":"
+            }
+          },
+          "authored": {
+            "value": {
+              "$ref": "#/base"
+            },
+            "typeDeclared": true
+          }
+        },
+        "blue-red": {
+          "path": "blue-red",
+          "type": "number",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "tokens.json",
+              "valueAfter": "\"blue-red\":"
+            }
+          },
+          "authored": {
+            "value": {
+              "$ref": "#/blue/$value/components/0"
+            },
+            "typeDeclared": true
+          }
+        },
+        "crowded": {
+          "path": "crowded",
+          "type": "number"
+        }
+      },
+      "groups": {
+        "button": {
+          "path": "button"
+        },
+        "button-primary": {
+          "path": "button-primary",
+          "type": "number"
+        },
+        "nowhere": {
+          "path": "nowhere"
+        },
+        "elsewhere": {
+          "path": "elsewhere"
+        },
+        "wrong-json": {
+          "path": "wrong-json"
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "invalid-property",
+      "detail": {
+        "property": "$ref",
+        "expected": "string"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"$ref\":",
+        "occurrence": 7
+      }
+    },
+    {
+      "kind": "missing-reference",
+      "detail": {
+        "ref": "#/no/such/thing",
+        "referencedBy": ["nowhere"]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#/no/such/thing\""
+      },
+      "path": "nowhere"
+    },
+    {
+      "kind": "missing-reference",
+      "detail": {
+        "ref": "other.json#/base",
+        "referencedBy": ["elsewhere"]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"other.json#/base\""
+      },
+      "path": "elsewhere"
+    },
+    {
+      "kind": "token-and-group",
+      "detail": {},
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#/base\"",
+        "occurrence": 3
+      },
+      "path": "crowded"
+    }
+  ]
+}

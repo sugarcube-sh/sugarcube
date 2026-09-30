@@ -12,6 +12,7 @@ import { readAlias, readPointer } from "../values/references.js";
 import { isTokenType, tokenTypes } from "../values/token-types.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { members, plainObject, plainValue, spanOf } from "./json.js";
+import { parsePointer } from "./pointer.js";
 import { similarName } from "./similar.js";
 import type { LoadedSource } from "./sources.js";
 
@@ -30,9 +31,19 @@ export interface SourceToken extends Properties {
     at: Span;
 }
 
+export interface GroupReference {
+    keyword: "$extends" | "$ref";
+    written: string;
+    steps: string[] | undefined;
+    node: Node;
+    at: Span;
+    declaredAt: Span;
+}
+
 export interface SourceGroup extends Properties {
     path: string;
     at: Span;
+    extends?: GroupReference;
 }
 
 export interface SourceContents {
@@ -43,7 +54,10 @@ export interface SourceContents {
 
 type Member = ReturnType<typeof members>[number];
 type NonObjectKind = DiagnosticDetailByKind["invalid-member"]["found"];
-type Property = DiagnosticDetailByKind["invalid-property"]["property"];
+type Property = Exclude<
+    DiagnosticDetailByKind["invalid-property"]["property"],
+    "$extends" | "$ref"
+>;
 
 const FORBIDDEN = [".", "{", "}"] as const;
 
@@ -104,6 +118,21 @@ export function walkSource(
         return properties;
     };
 
+    const readExtends = (node: Node, entries: Member[]): GroupReference | undefined => {
+        let found: GroupReference | undefined;
+        for (const { key, value } of entries) {
+            if (key !== "$extends" && key !== "$ref") continue;
+            const read = readGroupReference(key, plainValue(value, json.hidden));
+            if (read === undefined) {
+                const expected = key === "$ref" ? "string" : "reference";
+                report("invalid-property", { property: key, expected }, value);
+                continue;
+            }
+            found = { keyword: key, ...read, node: value, at: at(value), declaredAt: at(node) };
+        }
+        return found;
+    };
+
     const visitToken = (node: Node, path: string, entries: Member[], value: Node) => {
         const child = entries.find(({ key }) => !key.startsWith("$"));
         if (child) report("token-and-group", {}, child.keyNode);
@@ -120,7 +149,13 @@ export function walkSource(
 
     const visitGroup = (node: Node, segments: string[], entries: Member[]) => {
         const path = segments.join(".");
-        contents.groups.push({ path, at: at(node), ...readProperties(path, entries) });
+        const extending = readExtends(node, entries);
+        contents.groups.push({
+            path,
+            at: at(node),
+            ...readProperties(path, entries),
+            ...(extending && { extends: extending }),
+        });
         visitMembers(segments, entries);
     };
 
@@ -160,6 +195,21 @@ export function walkSource(
 function nonObjectKind(node: Node): NonObjectKind | undefined {
     if (node.type === "object" || node.type === "property") return undefined;
     return node.type;
+}
+
+function readGroupReference(
+    keyword: "$extends" | "$ref",
+    raw: unknown,
+): Pick<GroupReference, "written" | "steps"> | undefined {
+    const pointerSteps = (pointer: string) =>
+        pointer.startsWith("#") ? parsePointer(pointer) : undefined;
+    if (keyword === "$ref") {
+        return typeof raw === "string" ? { written: raw, steps: pointerSteps(raw) } : undefined;
+    }
+    const alias = readAlias(raw);
+    if (alias) return { written: alias.alias, steps: alias.alias.split(".") };
+    const pointer = readPointer(raw);
+    return pointer && { written: pointer.pointer, steps: pointerSteps(pointer.pointer) };
 }
 
 function typeFix(file: string, node: Node, type: TokenType): Fix {

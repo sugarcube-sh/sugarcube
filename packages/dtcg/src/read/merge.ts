@@ -1,15 +1,24 @@
 import { relatedMessages } from "../error-messages.js";
 import type { Diagnostic, Span } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
-import type { Properties, SourceContents, SourceGroup, SourceToken } from "./walk.js";
+import type {
+    GroupReference,
+    Properties,
+    SourceContents,
+    SourceGroup,
+    SourceToken,
+} from "./walk.js";
 
 export interface MergedToken extends SourceToken {
     index: number;
+    inherited?: { from: string };
 }
 
 export interface MergedGroup extends Properties {
     path: string;
     declaredIn: Span[];
+    extends?: GroupReference & { index: number };
+    inherited?: { from: string };
 }
 
 export interface Merged {
@@ -49,7 +58,7 @@ export function merge(
                 conflict(group.at, [token.at], "token");
                 merged.tokens.delete(group.path);
             }
-            mergeGroup(merged.groups, group);
+            mergeGroup(merged.groups, group, index);
         }
         for (const token of source.tokens) {
             const group = merged.groups.get(token.path);
@@ -63,20 +72,21 @@ export function merge(
     return merged;
 }
 
-function mergeGroup(groups: Map<string, MergedGroup>, group: SourceGroup): void {
-    const { path, at, ...properties } = group;
+function mergeGroup(groups: Map<string, MergedGroup>, group: SourceGroup, index: number): void {
+    const { path, at, extends: extending, ...properties } = group;
     const existing = groups.get(path) ?? { path, declaredIn: [] };
     mergeProperties(existing, properties);
     existing.declaredIn.push(at);
+    if (extending) existing.extends = { ...extending, index };
     groups.set(path, existing);
 }
 
-function mergeProperties(target: Properties, { extensions, ...rest }: Properties): void {
+export function mergeProperties(target: Properties, { extensions, ...rest }: Properties): void {
     Object.assign(target, rest);
     if (extensions) target.extensions = { ...target.extensions, ...extensions };
 }
 
-function removeGroup(merged: Merged, path: string): void {
+export function removeGroup(merged: Merged, path: string): void {
     const inside = (each: string) => each === path || each.startsWith(`${path}.`);
     for (const each of merged.groups.keys()) if (inside(each)) merged.groups.delete(each);
     for (const each of merged.tokens.keys()) if (inside(each)) merged.tokens.delete(each);

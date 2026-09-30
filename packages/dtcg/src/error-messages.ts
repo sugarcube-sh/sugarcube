@@ -50,6 +50,7 @@ const propertyWords: Record<DiagnosticDetailByKind["invalid-property"]["expected
     "string": "a string",
     "object": "an object",
     "boolean-or-string": "true, false or a string",
+    "reference": 'a reference, such as "{group}" or { "$ref": "#/group" }',
 };
 
 const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) => string> = {
@@ -73,6 +74,7 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
 
 export const relatedMessages = {
     declaredAs: (kind: "token" | "group") => `declared as a ${kind} here`,
+    partOfTheLoop: "part of the same loop",
 };
 
 export const fixTitles = {
@@ -151,7 +153,11 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "missing-reference": {
         severity: "error",
-        message: ({ ref }) => `the token \`${ref}\` does not exist`,
+        message: ({ ref }) => `\`${ref}\` does not exist`,
+    },
+    "not-a-group": {
+        severity: "error",
+        message: ({ ref }) => `\`${ref}\` is a token, and only a group can be extended`,
     },
     "circular-reference": {
         severity: "error",
