@@ -1,8 +1,4 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "types": []
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "files": [],
+  "references": [{ "path": "./tsconfig.anywhere.json" }, { "path": "./tsconfig.node.json" }]
 }

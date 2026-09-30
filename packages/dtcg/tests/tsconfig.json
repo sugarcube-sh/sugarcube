@@ -1,8 +1,8 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../tsconfig.anywhere.json",
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["read/**/*", "values/**/*", "../src/**/*"],
+  "include": ["read/**/*", "values/**/*", "node/**/*", "../src/**/*"],
   "exclude": []
 }

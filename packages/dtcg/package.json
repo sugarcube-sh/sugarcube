@@ -47,7 +47,7 @@
     "build": "pkgroll --minify",
     "dev": "pkgroll --watch",
     "test": "vitest run",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit -p tsconfig.anywhere.json && tsc --noEmit -p tsconfig.node.json"
   },
   "dependencies": {
     "jsonc-parser": "^3.3.1"
