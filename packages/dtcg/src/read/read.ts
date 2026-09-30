@@ -104,7 +104,7 @@ export function readFromMemory(
 function permutationOptions({
     inputs,
     permutations = "all",
-    permutationLimit = 64,
+    permutationLimit = 32,
 }: ReadOptions): PermutationOptions {
     return { ...(inputs && { inputs }), permutations, limit: permutationLimit };
 }

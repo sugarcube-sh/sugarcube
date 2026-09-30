@@ -210,13 +210,13 @@ describe("the combination limit", () => {
         readFromMemory({ files: { "tokens.resolver.json": resolver } }, options);
 
     it("builds every combination up to the limit, and no warning", () => {
-        const doc = readWith(withModifiers(6));
-        expect(doc.permutations).toHaveLength(64);
+        const doc = readWith(withModifiers(5));
+        expect(doc.permutations).toHaveLength(32);
         expect(doc.diagnostics).toStrictEqual([]);
     });
 
     it("builds the default and each context on its own above it, and says so", () => {
-        const doc = readWith(withModifiers(7));
+        const doc = readWith(withModifiers(6));
         expect(doc.permutations.map(({ label }) => label)).toStrictEqual([
             "default",
             "m0: on",
@@ -225,28 +225,27 @@ describe("the combination limit", () => {
             "m3: on",
             "m4: on",
             "m5: on",
-            "m6: on",
         ]);
         expect(doc.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toStrictEqual([
-            { kind: "permutation-limit", detail: { count: 128, limit: 64, built: 8 } },
+            { kind: "permutation-limit", detail: { count: 64, limit: 32, built: 7 } },
         ]);
     });
 
     it("takes a higher limit", () => {
-        const doc = readWith(withModifiers(7), { permutationLimit: 128 });
-        expect(doc.permutations).toHaveLength(128);
+        const doc = readWith(withModifiers(6), { permutationLimit: 64 });
+        expect(doc.permutations).toHaveLength(64);
         expect(doc.diagnostics).toStrictEqual([]);
     });
 
     it("builds only what can be built above it when modifiers have no default", () => {
-        const doc = readWith(withModifiers(7, false));
+        const doc = readWith(withModifiers(6, false));
         expect(doc.permutations).toStrictEqual([]);
         expect(doc.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toStrictEqual([
             {
                 kind: "no-default",
-                detail: { modifiers: ["m0", "m1", "m2", "m3", "m4", "m5", "m6"] },
+                detail: { modifiers: ["m0", "m1", "m2", "m3", "m4", "m5"] },
             },
-            { kind: "permutation-limit", detail: { count: 128, limit: 64, built: 0 } },
+            { kind: "permutation-limit", detail: { count: 64, limit: 32, built: 0 } },
         ]);
     });
 

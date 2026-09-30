@@ -807,8 +807,9 @@ export interface ReadOptions {
     permutations?: "all" | "each-context";
     /**
      * The most combinations `"all"` builds. Above it, `"each-context"` is built instead, and a
-     * `permutation-limit` warning says so.
-     * @default 64
+     * `permutation-limit` warning says so. Each combination is built in full, so a read grows with
+     * them: at the default, a few hundred tokens still read inside a 16 ms frame.
+     * @default 32
      */
     permutationLimit?: number;
     /** Checks for your own `$extensions` keys. */
