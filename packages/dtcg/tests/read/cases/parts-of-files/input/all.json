@@ -1,0 +1,7 @@
+{
+  "color": {
+    "$type": "color",
+    "brand": { "$value": { "colorSpace": "srgb", "components": [1, 0, 0] } }
+  },
+  "unused": { "$type": "number", "x": { "$value": 1 } }
+}

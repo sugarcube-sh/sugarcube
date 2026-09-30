@@ -43,6 +43,15 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { name: "a.b", character: "." },
     ],
     "token-and-group": [{}],
+    "invalid-member": [
+        { name: "brand", found: "string" },
+        { name: "sizes", found: "array" },
+    ],
+    "invalid-property": [
+        { property: "$description", expected: "string" },
+        { property: "$deprecated", expected: "boolean-or-string" },
+        { property: "$extensions", expected: "object" },
+    ],
     "missing-type": [{}],
     "unknown-type": [{ type: "colour" }],
     "invalid-value": [{ type: "color", at: ["$value"], reason: "wrong-shape" }],

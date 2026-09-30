@@ -22,23 +22,7 @@ export {
     lineCaps,
     strokeStyleKeywords,
 } from "./values/keywords.js";
-
-/** Every token type the specification defines, in its order. */
-export const tokenTypes: readonly TokenType[] = [
-    "color",
-    "dimension",
-    "fontFamily",
-    "fontWeight",
-    "duration",
-    "cubicBezier",
-    "number",
-    "strokeStyle",
-    "border",
-    "transition",
-    "shadow",
-    "gradient",
-    "typography",
-];
+export { tokenTypes } from "./values/token-types.js";
 
 /**
  * The parts of each composite type, and the type of each part, in the spec's order. For shadow

@@ -1,0 +1,70 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 5.2.1 to 5.2.4 and 6.3: $description and $type are strings, $deprecated is true, false or a string, $extensions is an object. The property is left out and the rest is read",
+  "permutations": [
+    {
+      "tokens": {
+        "size.a": {
+          "path": "size.a",
+          "type": "number"
+        },
+        "size.b": {
+          "path": "size.b",
+          "type": "number"
+        }
+      },
+      "groups": {
+        "size": {
+          "path": "size"
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "invalid-property",
+      "detail": {
+        "property": "$description",
+        "expected": "string"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"$description\":"
+      }
+    },
+    {
+      "kind": "invalid-property",
+      "detail": {
+        "property": "$deprecated",
+        "expected": "boolean-or-string"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"$deprecated\":"
+      }
+    },
+    {
+      "kind": "invalid-property",
+      "detail": {
+        "property": "$extensions",
+        "expected": "object"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"$extensions\":"
+      }
+    },
+    {
+      "kind": "invalid-property",
+      "detail": {
+        "property": "$type",
+        "expected": "string"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"$type\":",
+        "occurrence": 2
+      }
+    }
+  ]
+}

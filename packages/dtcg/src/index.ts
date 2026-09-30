@@ -496,8 +496,18 @@ export interface DiagnosticDetailByKind {
     };
     /** A token or group name uses a character the specification forbids. */
     "invalid-name": { name: string; character: "." | "{" | "}" | "$" };
-    /** An object has a `$value` and also contains tokens or groups. */
+    /**
+     * An object has a `$value` and also contains tokens or groups, or one file declares a token
+     * where another declares a group.
+     */
     "token-and-group": Record<string, never>;
+    /** Something inside a group is neither a token nor a group: it is not an object. */
+    "invalid-member": { name: string; found: "string" | "number" | "boolean" | "null" | "array" };
+    /** A property the specification defines, such as `$description`, holds the wrong kind of JSON. */
+    "invalid-property": {
+        property: "$type" | "$description" | "$deprecated" | "$extensions";
+        expected: "string" | "object" | "boolean-or-string";
+    };
     /** No type can be worked out for a token. */
     "missing-type": Record<string, never>;
     /** A `$type` is not one of the thirteen the specification defines (Format 8). */

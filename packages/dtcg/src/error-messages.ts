@@ -38,6 +38,20 @@ const expectedWords: Record<Extract<ResolverProblem, { rule: "wrong-type" }>["ex
         array: "a list",
     };
 
+const foundWords: Record<DiagnosticDetailByKind["invalid-member"]["found"], string> = {
+    string: "a string",
+    number: "a number",
+    boolean: "true or false",
+    null: "null",
+    array: "a list",
+};
+
+const propertyWords: Record<DiagnosticDetailByKind["invalid-property"]["expected"], string> = {
+    "string": "a string",
+    "object": "an object",
+    "boolean-or-string": "true, false or a string",
+};
+
 const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) => string> = {
     "version": () => 'the resolver\'s version must be "2025.10"',
     "missing-property": (name) => `\`${name}\` is missing`,
@@ -55,6 +69,10 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
         `the modifier \`${name}\` has only one context, which makes it a set`,
     "invalid-default": (name) =>
         `the default of the modifier \`${name}\` is not one of its contexts`,
+};
+
+export const relatedMessages = {
+    declaredAs: (kind: "token" | "group") => `declared as a ${kind} here`,
 };
 
 export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
@@ -97,6 +115,15 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         severity: "error",
         message: () =>
             "this has a `$value`, so it is a token, and a token cannot hold tokens or groups",
+    },
+    "invalid-member": {
+        severity: "error",
+        message: ({ name, found }) =>
+            `\`${name}\` is ${foundWords[found]}, and a group holds only tokens and groups, which are objects`,
+    },
+    "invalid-property": {
+        severity: "error",
+        message: ({ property, expected }) => `\`${property}\` must be ${propertyWords[expected]}`,
     },
     "missing-type": {
         severity: "error",

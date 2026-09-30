@@ -1,7 +1,9 @@
 import packageJson from "../../package.json" with { type: "json" };
 import type { Document, ReadOptions, ReadText } from "../index.js";
 import type { Answer, FileText, Request } from "./files.js";
+import { collapse } from "./diagnostics.js";
 import { type Loaded, load } from "./load.js";
+import { normalisePermutations } from "./normalise.js";
 import type { PermutationOptions } from "./permutations.js";
 import { fileName, folderOf, join, normalise } from "./paths.js";
 
@@ -35,7 +37,7 @@ export async function read(
         step = run.next(await fetchAll(step.value, folderOf(entry), options.readText));
     }
     options.onStage?.("load", performance.now() - started);
-    return toDocument(step.value);
+    return toDocument(step.value, options);
 }
 
 async function fetchAll(paths: Request, folder: string, readText: ReadText): Promise<Answer> {
@@ -94,7 +96,7 @@ export function readFromMemory(
         step = run.next(answer);
     }
     options.onStage?.("load", performance.now() - started);
-    return toDocument(step.value);
+    return toDocument(step.value, options);
 }
 
 function permutationOptions({
@@ -105,20 +107,19 @@ function permutationOptions({
     return { ...(inputs && { inputs }), permutations, limit: permutationLimit };
 }
 
-function toDocument(loaded: Loaded): Document {
+function toDocument(loaded: Loaded, { onStage }: ReadOptions): Document {
+    const found: Document["diagnostics"] = [];
+    const started = performance.now();
+    const permutations = normalisePermutations(loaded.permutations, found);
+    onStage?.("normalise", performance.now() - started);
+
     return {
         version: packageJson.version,
         files: loaded.files,
         modifiers: loaded.modifiers,
         usedBy: loaded.usedBy,
-        permutations: loaded.permutations.map(({ input, label, sources }) => ({
-            input,
-            label,
-            sources: sources.map(({ source }) => source),
-            tokens: {},
-            groups: {},
-        })),
+        permutations,
         graph: [],
-        diagnostics: loaded.diagnostics,
+        diagnostics: [...loaded.diagnostics, ...collapse(found, permutations.length)],
     };
 }

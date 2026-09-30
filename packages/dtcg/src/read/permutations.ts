@@ -1,6 +1,6 @@
 import type { Diagnostic, DiagnosticDetailByKind, Input, Source } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
-import { type JsonFile, plainValue } from "./json.js";
+import { type JsonFile, plainObject } from "./json.js";
 import type { Resolver, SetDefinition } from "./resolver.js";
 import type { Loaded } from "./load.js";
 import type { ExpandedItem, LoadedSource, SourceEntry } from "./sources.js";
@@ -273,7 +273,7 @@ function sourceOf(
     holder: SetDefinition | undefined,
 ): Source {
     const extensions = holder?.extensions
-        ? (plainValue(holder.extensions, resolver.file.hidden) as Record<string, unknown>)
+        ? plainObject(holder.extensions, resolver.file.hidden)
         : undefined;
     return {
         file: loaded.file,

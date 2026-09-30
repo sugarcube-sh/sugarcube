@@ -1,0 +1,8 @@
+{
+  "space": { "$type": "number", "sm": { "$value": 4 } },
+  "size": {
+    "$type": "number",
+    "sm": { "$value": 1 },
+    "sm": { "$value": 2 }
+  }
+}

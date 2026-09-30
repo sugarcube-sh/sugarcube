@@ -1,0 +1,11 @@
+{
+  "space": {
+    "$type": "number",
+    "scale": { "$value": 1 },
+    "bad.name": { "$value": 2 }
+  },
+  "radius": {
+    "$type": "number",
+    "sm": { "$value": 1 }
+  }
+}

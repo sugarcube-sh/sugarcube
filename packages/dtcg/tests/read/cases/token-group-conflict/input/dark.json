@@ -1,0 +1,6 @@
+{
+  "space": {
+    "scale": { "sm": { "$value": 2 } }
+  },
+  "radius": { "$type": "number", "$value": 4 }
+}

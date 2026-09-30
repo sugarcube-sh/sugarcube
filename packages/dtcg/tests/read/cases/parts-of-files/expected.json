@@ -1,0 +1,91 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.2 (Example 10): a source that is part of a file has paths from that part. Resolver 4.2.2: keys beside a file's $ref replace the file's top-level keys of the same name, and are tokens written in the resolver. RFC 8259 4: of a key written twice, the last is used",
+  "permutations": [
+    {
+      "tokens": {
+        "brand": {
+          "path": "brand",
+          "type": "color",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "all.json",
+              "valueAfter": "\"brand\":"
+            }
+          }
+        },
+        "size.sm": {
+          "path": "size.sm",
+          "type": "number",
+          "source": {
+            "index": 1,
+            "at": {
+              "file": "base.json",
+              "valueAfter": "\"sm\":",
+              "occurrence": 3
+            }
+          },
+          "authored": {
+            "value": 2,
+            "typeDeclared": false
+          }
+        },
+        "space.md": {
+          "path": "space.md",
+          "type": "number",
+          "source": {
+            "index": 2,
+            "at": {
+              "file": "tokens.resolver.json",
+              "valueAfter": "\"md\":"
+            }
+          }
+        }
+      },
+      "groups": {
+        "size": {
+          "path": "size",
+          "declaredIn": [
+            {
+              "file": "base.json",
+              "valueAfter": "\"size\":"
+            }
+          ]
+        },
+        "space": {
+          "path": "space",
+          "declaredIn": [
+            {
+              "file": "tokens.resolver.json",
+              "valueAfter": "\"space\":"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "duplicate-key",
+      "detail": {
+        "key": "sm"
+      },
+      "at": {
+        "file": "base.json",
+        "text": "\"sm\"",
+        "occurrence": 3
+      },
+      "related": [
+        {
+          "message": "also written here",
+          "at": {
+            "file": "base.json",
+            "text": "\"sm\"",
+            "occurrence": 2
+          }
+        }
+      ]
+    }
+  ]
+}

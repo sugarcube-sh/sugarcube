@@ -141,12 +141,14 @@ function position(lineStarts: number[], offset: number): { line: number; column:
     return { line: low + 1, column: offset - (lineStarts[low] ?? 0) + 1 };
 }
 
+export function plainObject(node: Node, hidden: Set<Node>): Record<string, unknown> {
+    return Object.fromEntries(
+        members(node, hidden).map(({ key, value }) => [key, plainValue(value, hidden)]),
+    );
+}
+
 export function plainValue(node: Node, hidden: Set<Node>): unknown {
-    if (node.type === "object") {
-        return Object.fromEntries(
-            members(node, hidden).map(({ key, value }) => [key, plainValue(value, hidden)]),
-        );
-    }
+    if (node.type === "object") return plainObject(node, hidden);
     if (node.type === "array")
         return (node.children ?? []).map((child) => plainValue(child, hidden));
     return node.value;
