@@ -53,6 +53,8 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
     "type-mismatch": [{ ref: "space.md", expected: "color", found: "dimension" }],
     "whitespace-in-name": [{ name: "brand " }],
     "generator-overridden": [{ generator: "scale", group: "space", name: "md" }],
+    "permutation-limit": [{ count: 16384, limit: 64, built: 15 }],
+    "no-default": [{ modifiers: ["size"] }, { modifiers: ["size", "theme"] }],
     "deprecated-reference": [{ ref: "color.old" }, { ref: "color.old", reason: "use color.brand" }],
 };
 

@@ -1,4 +1,5 @@
-import type { Input, SetRef } from "../index.js";
+import type { Diagnostic, DiagnosticDetailByKind, Input, SourceRef } from "../index.js";
+import { diagnostic } from "./diagnostics.js";
 import { type JsonFile, plainValue } from "./json.js";
 import type { Resolver, SetDefinition } from "./resolver.js";
 import type { ExpandedItem, LoadedSource, SourceEntry } from "./sources.js";
@@ -6,13 +7,25 @@ import type { ExpandedItem, LoadedSource, SourceEntry } from "./sources.js";
 export interface LoadedPermutation {
     input: Input;
     label: string;
-    sources: { ref: SetRef; source: LoadedSource }[];
+    sources: { ref: SourceRef; source: LoadedSource }[];
 }
 
 export interface Permutations {
     modifiers: Record<string, { contexts: string[]; default?: string }>;
     readers: Record<string, "everyone" | Input[]>;
     permutations: LoadedPermutation[];
+}
+
+export interface PermutationOptions {
+    inputs?: Record<string, unknown>[];
+    combinations: "all" | "each-context";
+    limit: number;
+}
+
+interface Modifier {
+    name: string;
+    contexts: string[];
+    default?: string;
 }
 
 export function fromTokenFiles(files: { path: string; json?: JsonFile }[]): Permutations {
@@ -24,7 +37,7 @@ export function fromTokenFiles(files: { path: string; json?: JsonFile }[]): Perm
                 input: {},
                 label: "default",
                 sources: files.map(({ path, json }) => ({
-                    ref: { file: path, from: { set: "default" } },
+                    ref: { file: path },
                     source: { file: path, ...(json && { json, tree: json.root }) },
                 })),
             },
@@ -36,41 +49,232 @@ export function fromResolver(
     resolver: Resolver,
     items: ExpandedItem[],
     sources: Map<SourceEntry, LoadedSource>,
+    options: PermutationOptions,
+    diagnostics: Diagnostic[],
 ): Permutations {
-    const modifiers: Permutations["modifiers"] = {};
-    for (const item of items) {
-        if (item.kind !== "modifier") continue;
-        const { name, contexts, default: fallback } = item.modifier;
-        modifiers[name] = {
-            contexts: [...contexts.keys()],
-            ...(fallback !== undefined && { default: fallback }),
-        };
-    }
-    if (Object.keys(modifiers).length > 0) return { modifiers, readers: {}, permutations: [] };
+    const modifiers = modifiersOf(items);
+    const inputs = chooseInputs(modifiers, options, diagnostics);
+    const labels = labelsFor(modifiers);
+    return {
+        modifiers: Object.fromEntries(
+            modifiers.map(({ name, contexts, default: fallback }) => [
+                name,
+                { contexts, ...(fallback !== undefined && { default: fallback }) },
+            ]),
+        ),
+        readers: readersOf(items, sources),
+        permutations: inputs.map((input) => ({
+            input,
+            label: labels(input),
+            sources: setsFor(resolver, items, sources, input),
+        })),
+    };
+}
 
-    const readers: Permutations["readers"] = {};
-    const permutation: LoadedPermutation = { input: {}, label: "default", sources: [] };
-    for (const item of items) {
-        if (item.kind !== "set") continue;
-        for (const entry of item.entries) {
-            const source = sources.get(entry);
-            if (!source) continue;
-            readers[source.file] = "everyone";
-            permutation.sources.push({
-                ref: setRef(resolver, source, { set: item.set.name }, entry.holder),
-                source,
-            });
+function modifiersOf(items: ExpandedItem[]): Modifier[] {
+    return items.flatMap((item) =>
+        item.kind === "modifier"
+            ? [
+                  {
+                      name: item.modifier.name,
+                      contexts: [...item.contexts.keys()],
+                      ...(item.modifier.default !== undefined && {
+                          default: item.modifier.default,
+                      }),
+                  },
+              ]
+            : [],
+    );
+}
+
+function chooseInputs(
+    modifiers: Modifier[],
+    { inputs, combinations, limit }: PermutationOptions,
+    diagnostics: Diagnostic[],
+): Input[] {
+    if (modifiers.length === 0) return [{}];
+    const chosen = inputs
+        ? inputs.flatMap((raw) => {
+              const input = checkInput(modifiers, raw, diagnostics);
+              return input ? [input] : [];
+          })
+        : combinations === "each-context"
+          ? eachContext(modifiers, diagnostics)
+          : allCombinations(modifiers, limit, diagnostics);
+    const seen = new Set<string>();
+    return chosen.filter((input) => {
+        const key = inputKey(modifiers, input);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
+function inputKey(modifiers: Modifier[], input: Input): string {
+    return JSON.stringify(modifiers.map(({ name }) => input[name]));
+}
+
+function checkInput(
+    modifiers: Modifier[],
+    raw: Record<string, unknown>,
+    diagnostics: Diagnostic[],
+): Input | undefined {
+    const problems: Diagnostic[] = [];
+    const chosen: Input = {};
+    const mentioned = new Set<Modifier>();
+    const invalid = (detail: DiagnosticDetailByKind["input-invalid"]) =>
+        problems.push(diagnostic("input-invalid", detail));
+
+    for (const [key, value] of Object.entries(raw)) {
+        const modifier = match(modifiers, key, ({ name }) => name);
+        if (!modifier) {
+            invalid({ reason: "unknown-modifier", modifier: key });
+            continue;
         }
+        mentioned.add(modifier);
+        if (typeof value !== "string") {
+            invalid({ reason: "not-a-string", modifier: modifier.name });
+            continue;
+        }
+        const context = match(modifier.contexts, value, (each) => each);
+        if (context === undefined) {
+            invalid({
+                reason: "unknown-context",
+                modifier: modifier.name,
+                context: value,
+                valid: modifier.contexts,
+            });
+            continue;
+        }
+        chosen[modifier.name] = context;
     }
-    return { modifiers, readers, permutations: [permutation] };
+
+    for (const modifier of modifiers) {
+        if (mentioned.has(modifier) || modifier.default !== undefined) continue;
+        invalid({ reason: "missing-modifier", modifier: modifier.name, valid: modifier.contexts });
+    }
+
+    diagnostics.push(...problems);
+    return problems.length === 0 ? atDefaults(modifiers, chosen) : undefined;
+}
+
+function match<T>(
+    candidates: T[],
+    wanted: string,
+    nameOf: (candidate: T) => string,
+): T | undefined {
+    const exact = candidates.find((candidate) => nameOf(candidate) === wanted);
+    if (exact !== undefined) return exact;
+    const folded = candidates.filter(
+        (candidate) => nameOf(candidate).toLowerCase() === wanted.toLowerCase(),
+    );
+    return folded.length === 1 ? folded[0] : undefined;
+}
+
+function allCombinations(modifiers: Modifier[], limit: number, diagnostics: Diagnostic[]): Input[] {
+    const count = modifiers.reduce((product, { contexts }) => product * contexts.length, 1);
+    if (count <= limit) {
+        const every = modifiers.reduce<Input[]>(
+            (inputs, { name, contexts }) =>
+                inputs.flatMap((input) =>
+                    contexts.map((context) => ({ ...input, [name]: context })),
+                ),
+            [{}],
+        );
+        const defaults = hasDefaults(modifiers) ? [atDefaults(modifiers, {})] : [];
+        return [...defaults, ...every];
+    }
+    const built = eachContext(modifiers, diagnostics);
+    diagnostics.push(diagnostic("permutation-limit", { count, limit, built: built.length }));
+    return built;
+}
+
+function eachContext(modifiers: Modifier[], diagnostics: Diagnostic[]): Input[] {
+    const withoutDefault = modifiers.filter(({ default: fallback }) => fallback === undefined);
+    if (withoutDefault.length > 0) {
+        diagnostics.push(
+            diagnostic("no-default", { modifiers: withoutDefault.map(({ name }) => name) }),
+        );
+    }
+    const defaults = withoutDefault.length === 0 ? [atDefaults(modifiers, {})] : [];
+    const singles = modifiers.flatMap((modifier) =>
+        hasDefaults(modifiers.filter((other) => other !== modifier))
+            ? modifier.contexts
+                  .filter((context) => context !== modifier.default)
+                  .map((context) => atDefaults(modifiers, { [modifier.name]: context }))
+            : [],
+    );
+    return [...defaults, ...singles];
+}
+
+function hasDefaults(modifiers: Modifier[]): boolean {
+    return modifiers.every((modifier) => modifier.default !== undefined);
+}
+
+function atDefaults(modifiers: Modifier[], chosen: Input): Input {
+    const input: Input = {};
+    for (const { name, default: fallback } of modifiers) {
+        const context = chosen[name] ?? fallback;
+        if (context !== undefined) input[name] = context;
+    }
+    return input;
+}
+
+function labelsFor(modifiers: Modifier[]): (input: Input) => string {
+    const counts = new Map<string, number>();
+    for (const { contexts } of modifiers) {
+        for (const context of contexts) counts.set(context, (counts.get(context) ?? 0) + 1);
+    }
+    return (input) => {
+        const parts = modifiers.flatMap(({ name, default: fallback }) => {
+            const context = input[name];
+            if (context === undefined || context === fallback) return [];
+            return [(counts.get(context) ?? 0) > 1 ? `${name}: ${context}` : context];
+        });
+        return parts.length > 0 ? parts.join(" + ") : "default";
+    };
+}
+
+function setsFor(
+    resolver: Resolver,
+    items: ExpandedItem[],
+    sources: Map<SourceEntry, LoadedSource>,
+    input: Input,
+): LoadedPermutation["sources"] {
+    return items.flatMap((item) => {
+        if (item.kind === "set") {
+            return item.entries.flatMap((entry) =>
+                withRef(resolver, sources, entry, { set: item.set.name }),
+            );
+        }
+        const context = input[item.modifier.name];
+        const entries = context === undefined ? [] : (item.contexts.get(context) ?? []);
+        return entries.flatMap((entry) =>
+            withRef(resolver, sources, entry, {
+                modifier: item.modifier.name,
+                context: context as string,
+                ...(entry.holder && { set: entry.holder.name }),
+            }),
+        );
+    });
+}
+
+function withRef(
+    resolver: Resolver,
+    sources: Map<SourceEntry, LoadedSource>,
+    entry: SourceEntry,
+    from: SourceRef["from"],
+): LoadedPermutation["sources"] {
+    const source = sources.get(entry);
+    return source ? [{ ref: setRef(resolver, source, from, entry.holder), source }] : [];
 }
 
 function setRef(
     resolver: Resolver,
     source: LoadedSource,
-    from: SetRef["from"],
+    from: SourceRef["from"],
     holder: SetDefinition | undefined,
-): SetRef {
+): SourceRef {
     const extensions = holder?.extensions
         ? (plainValue(holder.extensions, resolver.file.hidden) as Record<string, unknown>)
         : undefined;
@@ -80,4 +284,36 @@ function setRef(
         from,
         ...(extensions && { extensions }),
     };
+}
+
+function readersOf(
+    items: ExpandedItem[],
+    sources: Map<SourceEntry, LoadedSource>,
+): Permutations["readers"] {
+    const readers: Permutations["readers"] = {};
+    const fileOf = (entry: SourceEntry) => sources.get(entry)?.file;
+
+    for (const item of items) {
+        if (item.kind !== "set") continue;
+        for (const entry of item.entries) {
+            const file = fileOf(entry);
+            if (file !== undefined) readers[file] = "everyone";
+        }
+    }
+    for (const item of items) {
+        if (item.kind !== "modifier") continue;
+        for (const [context, entries] of item.contexts) {
+            for (const entry of entries) {
+                const file = fileOf(entry);
+                if (file === undefined) continue;
+                const existing = readers[file];
+                if (existing === "everyone") continue;
+                const input = { [item.modifier.name]: context };
+                const list = existing ?? [];
+                if (!list.some((each) => each[item.modifier.name] === context)) list.push(input);
+                readers[file] = list;
+            }
+        }
+    }
+    return readers;
 }

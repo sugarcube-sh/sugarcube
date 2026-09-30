@@ -1,0 +1,119 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.5.4, Example 5: two modifiers of two contexts make four combinations; with no inputs every one is built, the default first (contract 2, rule 2)",
+  "files": ["tokens.resolver.json", "base.json", "dark.json", "ocean.json"],
+  "modifiers": {
+    "theme": {
+      "contexts": ["light", "dark"],
+      "default": "light"
+    },
+    "brand": {
+      "contexts": ["house", "ocean"],
+      "default": "house"
+    }
+  },
+  "readers": {
+    "base.json": "everyone",
+    "dark.json": [
+      {
+        "theme": "dark"
+      }
+    ],
+    "ocean.json": [
+      {
+        "brand": "ocean"
+      }
+    ]
+  },
+  "permutations": [
+    {
+      "input": {
+        "theme": "light",
+        "brand": "house"
+      },
+      "label": "default",
+      "sources": [
+        {
+          "file": "base.json",
+          "from": {
+            "set": "base"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "theme": "light",
+        "brand": "ocean"
+      },
+      "label": "ocean",
+      "sources": [
+        {
+          "file": "base.json",
+          "from": {
+            "set": "base"
+          }
+        },
+        {
+          "file": "ocean.json",
+          "from": {
+            "modifier": "brand",
+            "context": "ocean"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "theme": "dark",
+        "brand": "house"
+      },
+      "label": "dark",
+      "sources": [
+        {
+          "file": "base.json",
+          "from": {
+            "set": "base"
+          }
+        },
+        {
+          "file": "dark.json",
+          "from": {
+            "modifier": "theme",
+            "context": "dark"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "theme": "dark",
+        "brand": "ocean"
+      },
+      "label": "dark + ocean",
+      "sources": [
+        {
+          "file": "base.json",
+          "from": {
+            "set": "base"
+          }
+        },
+        {
+          "file": "dark.json",
+          "from": {
+            "modifier": "theme",
+            "context": "dark"
+          }
+        },
+        {
+          "file": "ocean.json",
+          "from": {
+            "modifier": "brand",
+            "context": "ocean"
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

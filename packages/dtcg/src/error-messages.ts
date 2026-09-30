@@ -141,6 +141,16 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         message: ({ generator, group, name }) =>
             `\`${name}\` in \`${group}\` takes the place of the one the ${generator} generator would make`,
     },
+    "permutation-limit": {
+        severity: "warning",
+        message: ({ count, limit, built }) =>
+            `the modifiers make ${count} combinations, more than the limit of ${limit}, so ${built} were built: the default, and each context on its own`,
+    },
+    "no-default": {
+        severity: "warning",
+        message: ({ modifiers }) =>
+            `${modifiers.map((name) => `\`${name}\``).join(", ")} ${modifiers.length === 1 ? "has" : "have"} no default, so contexts of the other modifiers could not be built on their own`,
+    },
     "deprecated-reference": {
         severity: "warning",
         message: ({ ref, reason }) =>

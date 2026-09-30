@@ -6,7 +6,7 @@
     {
       "input": {},
       "label": "default",
-      "sets": [
+      "sources": [
         {
           "file": "tokens.resolver.json",
           "pointer": "#/$defs/brand",

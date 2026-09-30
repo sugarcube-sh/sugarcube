@@ -6,7 +6,7 @@
     {
       "input": {},
       "label": "default",
-      "sets": [
+      "sources": [
         {
           "file": "all.json",
           "pointer": "#/color",

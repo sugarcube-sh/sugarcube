@@ -10,7 +10,7 @@
     {
       "input": {},
       "label": "default",
-      "sets": [
+      "sources": [
         {
           "file": "base/foundation.json",
           "from": {

@@ -1,0 +1,56 @@
+{
+  "version": "2025.10",
+  "sets": {
+    "baseSize": {
+      "sources": [
+        {
+          "$ref": "size/base.json"
+        }
+      ]
+    }
+  },
+  "modifiers": {
+    "size": {
+      "contexts": {
+        "small": [
+          {
+            "$ref": "#/sets/baseSize"
+          },
+          {
+            "$ref": "device/mobile.json"
+          },
+          {
+            "$ref": "typography/mobile.json"
+          }
+        ],
+        "medium": [
+          {
+            "$ref": "#/sets/baseSize"
+          },
+          {
+            "$ref": "device/tablet.json"
+          },
+          {
+            "$ref": "typography/base.json"
+          }
+        ],
+        "large": [
+          {
+            "$ref": "#/sets/baseSize"
+          },
+          {
+            "$ref": "device/desktop.json"
+          },
+          {
+            "$ref": "typography/base.json"
+          }
+        ]
+      }
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/modifiers/size"
+    }
+  ]
+}

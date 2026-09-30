@@ -1,0 +1,70 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.6, Example 7: a debug modifier with true and false. When two modifiers share a context name, labels name the modifier, so each label is unique",
+  "permutations": [
+    {
+      "input": {
+        "debug": "false",
+        "beta": "false"
+      },
+      "label": "default",
+      "sources": []
+    },
+    {
+      "input": {
+        "debug": "false",
+        "beta": "true"
+      },
+      "label": "beta: true",
+      "sources": [
+        {
+          "file": "beta.json",
+          "from": {
+            "modifier": "beta",
+            "context": "true"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "debug": "true",
+        "beta": "false"
+      },
+      "label": "debug: true",
+      "sources": [
+        {
+          "file": "debug.json",
+          "from": {
+            "modifier": "debug",
+            "context": "true"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "debug": "true",
+        "beta": "true"
+      },
+      "label": "debug: true + beta: true",
+      "sources": [
+        {
+          "file": "debug.json",
+          "from": {
+            "modifier": "debug",
+            "context": "true"
+          }
+        },
+        {
+          "file": "beta.json",
+          "from": {
+            "modifier": "beta",
+            "context": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

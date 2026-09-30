@@ -2,6 +2,7 @@ import packageJson from "../../package.json" with { type: "json" };
 import type { Document, ReadOptions, ReadText } from "../index.js";
 import type { Answer, FileText, Request } from "./files.js";
 import { type Loaded, load } from "./load.js";
+import type { PermutationOptions } from "./permutations.js";
 import { fileName, folderOf, join, normalise } from "./paths.js";
 
 const { performance } = globalThis as unknown as { performance: { now(): number } };
@@ -28,7 +29,7 @@ export async function read(
     options: ReadOptions & { readText: ReadText },
 ): Promise<Document> {
     const started = performance.now();
-    const run = load({ entry: fileName(entry) });
+    const run = load({ entry: fileName(entry) }, permutationOptions(options));
     let step = run.next();
     while (!step.done) {
         step = run.next(await fetchAll(step.value, folderOf(entry), options.readText));
@@ -80,6 +81,7 @@ export function readFromMemory(
     const folder = entry === undefined ? "" : folderOf(normalise(entry));
     const run = load(
         entry === undefined ? { files: [...texts.keys()] } : { entry: fileName(entry) },
+        permutationOptions(options),
     );
 
     let step = run.next();
@@ -95,6 +97,14 @@ export function readFromMemory(
     return toDocument(step.value);
 }
 
+function permutationOptions({
+    inputs,
+    combinations = "all",
+    permutationLimit = 64,
+}: ReadOptions): PermutationOptions {
+    return { ...(inputs && { inputs }), combinations, limit: permutationLimit };
+}
+
 function toDocument(loaded: Loaded): Document {
     return {
         version: packageJson.version,
@@ -104,7 +114,7 @@ function toDocument(loaded: Loaded): Document {
         permutations: loaded.permutations.map(({ input, label, sources }) => ({
             input,
             label,
-            sets: sources.map(({ ref }) => ref),
+            sources: sources.map(({ ref }) => ref),
             tokens: {},
             groups: {},
         })),

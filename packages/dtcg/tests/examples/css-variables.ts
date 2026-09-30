@@ -17,7 +17,7 @@ declare function selectorFor(p: Permutation): string;
 declare function renderLiteral(token: Token): string;
 
 function isPrivate(p: Permutation, t: Token): boolean {
-    const ext = p.sets[t.source.set]?.extensions?.["sh.sugarcube"] as
+    const ext = p.sources[t.source.index]?.extensions?.["sh.sugarcube"] as
         | { emit?: boolean }
         | undefined;
     return ext?.emit === false;

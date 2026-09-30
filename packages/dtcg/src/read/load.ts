@@ -7,7 +7,12 @@ import {
     openFile,
     parseFile,
 } from "./files.js";
-import { type Permutations, fromResolver, fromTokenFiles } from "./permutations.js";
+import {
+    type PermutationOptions,
+    type Permutations,
+    fromResolver,
+    fromTokenFiles,
+} from "./permutations.js";
 import { checkResolver, isResolver } from "./resolver.js";
 import { entriesOf, expandSources, filesNamedBy, openSources } from "./sources.js";
 
@@ -18,6 +23,7 @@ export interface Loaded extends Permutations {
 
 export function* load(
     start: { entry: string } | { files: string[] },
+    options: PermutationOptions,
 ): Generator<Request, Loaded, Answer> {
     const used: string[] = [];
     const diagnostics: Diagnostic[] = [];
@@ -49,5 +55,5 @@ export function* load(
     const entries = entriesOf(items);
     yield* fetchFiles(files, filesNamedBy(resolver, entries));
     const sources = openSources(files, resolver, entries);
-    return loaded(fromResolver(resolver, items, sources));
+    return loaded(fromResolver(resolver, items, sources, options, diagnostics));
 }

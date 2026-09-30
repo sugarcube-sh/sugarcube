@@ -363,8 +363,11 @@ export interface TokenBase<T extends TokenType> {
     deprecated?: boolean | string;
     /** Vendor data from `$extensions`, passed through untouched. */
     extensions?: Record<string, unknown>;
-    /** The file the token was read from, which of the permutation's {@link Permutation.sets | sets} it came from, and where. */
-    source: { file: string; set: number; node: Span };
+    /**
+     * Where the token was read from: the file, which of the permutation's
+     * {@link Permutation.sources | sources} it came from, and its place in the file.
+     */
+    source: { file: string; index: number; node: Span };
     /** The value exactly as the file wrote it, and whether the file declared `$type` on this token. Absent for generated tokens. */
     authored?: { value: unknown; typeDeclared: boolean };
     /** Set when a {@link Generator} made the token, from the setting on the group at `by`. */
@@ -393,14 +396,20 @@ export interface Group {
     declaredIn: Span[];
 }
 
-/** One source of tokens in a permutation, in the order the resolver applies them. */
-export interface SetRef {
+/**
+ * One source of a permutation's tokens: a file, part of one, or tokens written in the resolver.
+ * A set in the resolver can have several sources, so the same set can appear on several.
+ */
+export interface SourceRef {
     file: string;
     /** Set when the source is only part of the file, such as `"#/color"`. */
     pointer?: string;
-    /** How the source was reached: straight from a set, or through a modifier's context. */
-    from: { set: string } | { modifier: string; context: string; set?: string };
-    /** Vendor data from the set's `$extensions`, passed through untouched. */
+    /**
+     * How the resolver reached it: straight from a set, or through a modifier's context, possibly
+     * by way of a set that context names. Absent when there is no resolver.
+     */
+    from?: { set: string } | { modifier: string; context: string; set?: string };
+    /** Vendor data from the `$extensions` of the set that lists it, passed through untouched. */
     extensions?: Record<string, unknown>;
 }
 
@@ -412,7 +421,8 @@ export interface Permutation {
      * Functions take an {@link Input}, never a label.
      */
     label: string;
-    sets: SetRef[];
+    /** Where the tokens come from, in the order they apply: a later source overrides an earlier one. */
+    sources: SourceRef[];
     /** Every token, keyed by path, in the order the files list them. Invalid tokens are included. */
     tokens: Record<string, Token>;
     /** Every group, keyed by path, in the order the files list them. */
@@ -510,6 +520,19 @@ export interface DiagnosticDetailByKind {
     "generator-overridden": { generator: string; group: string; name: string };
     /** A reference points at a token marked `$deprecated`. */
     "deprecated-reference": { ref: string; reason?: string };
+    /** A resolver has more combinations than `permutationLimit`, so `"each-context"` was built instead. */
+    "permutation-limit": {
+        /** How many combinations the resolver's modifiers make. */
+        count: number;
+        limit: number;
+        /** How many were built instead. */
+        built: number;
+    };
+    /**
+     * `"each-context"` sets every other modifier at its default, so with these modifiers having
+     * none, some contexts could not be built on their own.
+     */
+    "no-default": { modifiers: string[] };
 }
 
 /**
@@ -758,10 +781,25 @@ export function defineGenerator<S>(generator: Generator<S>): Generator<S> {
 
 export interface ReadOptions {
     /**
-     * The permutations to build.
-     * @default the default permutation, plus one for each other context of each modifier
+     * The permutations to build. Modifiers left out take their default; an input that does not
+     * fit the resolver is reported and not built.
+     * @default the combinations `combinations` asks for
      */
     inputs?: Input[];
+    /**
+     * Which permutations to build when `inputs` is left out: `"all"`, every combination of
+     * contexts, or `"each-context"`, the default and each context on its own, with every other
+     * modifier at its default. When modifiers change different tokens (Resolver 2.1), every
+     * combination can be put together from `"each-context"`.
+     * @default "all"
+     */
+    combinations?: "all" | "each-context";
+    /**
+     * The most combinations `"all"` builds. Above it, `"each-context"` is built instead, and a
+     * `permutation-limit` warning says so.
+     * @default 64
+     */
+    permutationLimit?: number;
     /** Token types beyond the specification's thirteen. */
     types?: TypeDefinition[];
     /** Checks for your own `$extensions` keys. */
@@ -857,7 +895,7 @@ export function acrossPermutations(
     /** Whether this permutation's value comes from a context's own file rather than the base. */
     overrides: boolean;
     /** How the value arrived: straight from a set, or through a modifier's context. */
-    from: SetRef["from"];
+    from: SourceRef["from"];
 }[] {
     throw new Error("not implemented yet");
 }

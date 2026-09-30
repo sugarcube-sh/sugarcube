@@ -1,0 +1,73 @@
+{
+  "version": "2025.10",
+  "sets": {
+    "size": {
+      "sources": [
+        {
+          "$ref": "foundation/size.json"
+        }
+      ]
+    },
+    "typography": {
+      "sources": [
+        {
+          "$ref": "foundation/typography.json"
+        }
+      ]
+    },
+    "animation": {
+      "sources": [
+        {
+          "$ref": "foundation/animation.json"
+        }
+      ]
+    }
+  },
+  "modifiers": {
+    "theme": {
+      "contexts": {
+        "light": [
+          {
+            "$ref": "theme/light.json"
+          }
+        ],
+        "lightHighContrast": [
+          {
+            "$ref": "theme/light.json"
+          },
+          {
+            "$ref": "theme/dark-high-contrast.json"
+          }
+        ],
+        "dark": [
+          {
+            "$ref": "theme/dark.json"
+          }
+        ],
+        "darkHighContrast": [
+          {
+            "$ref": "theme/dark.json"
+          },
+          {
+            "$ref": "theme/dark-high-contrast.json"
+          }
+        ]
+      },
+      "default": "light"
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/sets/size"
+    },
+    {
+      "$ref": "#/sets/typography"
+    },
+    {
+      "$ref": "#/sets/animation"
+    },
+    {
+      "$ref": "#/modifiers/theme"
+    }
+  ]
+}

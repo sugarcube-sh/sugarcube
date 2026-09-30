@@ -2,15 +2,16 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import { type Document, read, readFromMemory } from "../../src/index.js";
+import { type Document, type ReadOptions, read, readFromMemory } from "../../src/index.js";
 
 interface Expected {
     entry: string;
     spec?: string;
+    options?: Pick<ReadOptions, "inputs" | "combinations" | "permutationLimit">;
     files?: string[];
     modifiers?: Document["modifiers"];
     readers?: Document["readers"];
-    permutations?: Pick<Document["permutations"][number], "input" | "label" | "sets">[];
+    permutations?: Pick<Document["permutations"][number], "input" | "label" | "sources">[];
     diagnostics: Pick<Document["diagnostics"][number], "kind" | "detail" | "at" | "related">[];
 }
 
@@ -35,14 +36,15 @@ function observed(doc: Document, expected: Expected) {
     return {
         entry: expected.entry,
         spec: expected.spec,
+        ...(expected.options && { options: expected.options }),
         ...(expected.files && { files: doc.files }),
         ...(expected.modifiers && { modifiers: doc.modifiers }),
         ...(expected.readers && { readers: doc.readers }),
         ...(expected.permutations && {
-            permutations: doc.permutations.map(({ input, label, sets }) => ({
+            permutations: doc.permutations.map(({ input, label, sources }) => ({
                 input,
                 label,
-                sets,
+                sources,
             })),
         }),
         diagnostics: doc.diagnostics.map(({ kind, detail, at, related }) => ({
@@ -61,13 +63,17 @@ describe.each(cases)("%s", (name) => {
 
     it("reads through read", async () => {
         const doc = await read(expected.entry, {
+            ...expected.options,
             readText: (path) => readFile(join(input, path), "utf8"),
         });
         expect(observed(doc, expected)).toStrictEqual(expected);
     });
 
     it("reads through readFromMemory", () => {
-        const doc = readFromMemory({ files: inputFiles(input), entry: expected.entry });
+        const doc = readFromMemory(
+            { files: inputFiles(input), entry: expected.entry },
+            expected.options,
+        );
         expect(observed(doc, expected)).toStrictEqual(expected);
     });
 });

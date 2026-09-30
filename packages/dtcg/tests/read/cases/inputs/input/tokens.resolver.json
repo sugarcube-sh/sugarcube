@@ -1,0 +1,35 @@
+{
+  "version": "2025.10",
+  "modifiers": {
+    "theme": {
+      "contexts": {
+        "light": [],
+        "dark": [
+          {
+            "$ref": "dark.json"
+          }
+        ]
+      },
+      "default": "light"
+    },
+    "brand": {
+      "contexts": {
+        "house": [],
+        "ocean": [
+          {
+            "$ref": "ocean.json"
+          }
+        ]
+      },
+      "default": "house"
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/modifiers/theme"
+    },
+    {
+      "$ref": "#/modifiers/brand"
+    }
+  ]
+}

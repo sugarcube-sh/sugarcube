@@ -76,9 +76,7 @@ describe("read", () => {
         const doc = await read("tokens/base.json", { readText });
         expect(readText.mock.calls).toStrictEqual([["tokens/base.json"]]);
         expect(doc.files).toStrictEqual(["base.json"]);
-        expect(doc.permutations[0]?.sets).toStrictEqual([
-            { file: "base.json", from: { set: "default" } },
-        ]);
+        expect(doc.permutations[0]?.sources).toStrictEqual([{ file: "base.json" }]);
     });
 
     it("tidies the entry's folder", async () => {
@@ -194,6 +192,133 @@ describe("shared sets", () => {
     });
 });
 
+describe("the combination limit", () => {
+    const withModifiers = (count: number, defaults = true) =>
+        JSON.stringify({
+            version: "2025.10",
+            modifiers: Object.fromEntries(
+                Array.from({ length: count }, (_, i) => [
+                    `m${i}`,
+                    { contexts: { off: [], on: [] }, ...(defaults && { default: "off" }) },
+                ]),
+            ),
+            resolutionOrder: Array.from({ length: count }, (_, i) => ({
+                $ref: `#/modifiers/m${i}`,
+            })),
+        });
+    const readWith = (resolver: string, options: { permutationLimit?: number } = {}) =>
+        readFromMemory({ files: { "tokens.resolver.json": resolver } }, options);
+
+    it("builds every combination up to the limit, and no warning", () => {
+        const doc = readWith(withModifiers(6));
+        expect(doc.permutations).toHaveLength(64);
+        expect(doc.diagnostics).toStrictEqual([]);
+    });
+
+    it("builds the default and each context on its own above it, and says so", () => {
+        const doc = readWith(withModifiers(7));
+        expect(doc.permutations.map(({ label }) => label)).toStrictEqual([
+            "default",
+            "m0: on",
+            "m1: on",
+            "m2: on",
+            "m3: on",
+            "m4: on",
+            "m5: on",
+            "m6: on",
+        ]);
+        expect(doc.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toStrictEqual([
+            { kind: "permutation-limit", detail: { count: 128, limit: 64, built: 8 } },
+        ]);
+    });
+
+    it("takes a higher limit", () => {
+        const doc = readWith(withModifiers(7), { permutationLimit: 128 });
+        expect(doc.permutations).toHaveLength(128);
+        expect(doc.diagnostics).toStrictEqual([]);
+    });
+
+    it("builds only what can be built above it when modifiers have no default", () => {
+        const doc = readWith(withModifiers(7, false));
+        expect(doc.permutations).toStrictEqual([]);
+        expect(doc.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toStrictEqual([
+            {
+                kind: "no-default",
+                detail: { modifiers: ["m0", "m1", "m2", "m3", "m4", "m5", "m6"] },
+            },
+            { kind: "permutation-limit", detail: { count: 128, limit: 64, built: 0 } },
+        ]);
+    });
+
+    it("never needs the limit when inputs are given", () => {
+        const doc = readFromMemory(
+            { files: { "tokens.resolver.json": withModifiers(20) } },
+            { inputs: [{ m3: "on" }] },
+        );
+        expect(doc.permutations.map(({ label }) => label)).toStrictEqual(["m3: on"]);
+        expect(doc.diagnostics).toStrictEqual([]);
+    });
+});
+
+describe("each context on its own", () => {
+    const resolver = (modifiers: Record<string, unknown>) =>
+        JSON.stringify({
+            version: "2025.10",
+            modifiers,
+            resolutionOrder: Object.keys(modifiers).map((name) => ({
+                $ref: `#/modifiers/${name}`,
+            })),
+        });
+    const labels = (text: string) => {
+        const doc = readFromMemory(
+            { files: { "tokens.resolver.json": text } },
+            { combinations: "each-context" },
+        );
+        return {
+            labels: doc.permutations.map(({ label }) => label),
+            diagnostics: doc.diagnostics.map(({ kind, detail }) => ({ kind, detail })),
+        };
+    };
+
+    it("builds the default, then each context with the other modifiers at their defaults", () => {
+        expect(
+            labels(
+                resolver({
+                    theme: { contexts: { light: [], dark: [], dim: [] }, default: "light" },
+                    brand: { contexts: { house: [], ocean: [] }, default: "house" },
+                }),
+            ),
+        ).toStrictEqual({ labels: ["default", "dark", "dim", "ocean"], diagnostics: [] });
+    });
+
+    it("builds each context of the one modifier with no default, and says what it could not build", () => {
+        expect(
+            labels(
+                resolver({
+                    size: { contexts: { small: [], large: [] } },
+                    brand: { contexts: { house: [], ocean: [] }, default: "house" },
+                }),
+            ),
+        ).toStrictEqual({
+            labels: ["small", "large"],
+            diagnostics: [{ kind: "no-default", detail: { modifiers: ["size"] } }],
+        });
+    });
+});
+
+describe("inputs without modifiers", () => {
+    it("builds the one permutation there is, since there is nothing to check (Resolver 6.1)", () => {
+        const doc = readFromMemory(
+            { files: { "tokens.json": valid } },
+            { inputs: [{ theme: "dark" }] },
+        );
+        expect(doc.permutations.map(({ input, label }) => ({ input, label }))).toStrictEqual([
+            { input: {}, label: "default" },
+        ]);
+        expect(doc.diagnostics).toStrictEqual([]);
+    });
+});
+
 describe("readFromMemory", () => {
     it("reads several files with no resolver as one set, in the order given", () => {
         const doc = readFromMemory({ files: { "base.json": valid, "./themes/dark.json": valid } });
@@ -203,15 +328,12 @@ describe("readFromMemory", () => {
             "themes/dark.json": "everyone",
         });
         expect(
-            doc.permutations.map(({ input, label, sets }) => ({ input, label, sets })),
+            doc.permutations.map(({ input, label, sources }) => ({ input, label, sources })),
         ).toStrictEqual([
             {
                 input: {},
                 label: "default",
-                sets: [
-                    { file: "base.json", from: { set: "default" } },
-                    { file: "themes/dark.json", from: { set: "default" } },
-                ],
+                sources: [{ file: "base.json" }, { file: "themes/dark.json" }],
             },
         ]);
         expect(doc.diagnostics).toStrictEqual([]);

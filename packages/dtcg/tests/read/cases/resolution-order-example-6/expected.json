@@ -1,0 +1,153 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.6, Example 6: each input reads the sets, then its context's files, in order. Follows the resolver: the example's table names light-high-contrast.json where the resolver names dark-high-contrast.json",
+  "permutations": [
+    {
+      "input": {
+        "theme": "light"
+      },
+      "label": "default",
+      "sources": [
+        {
+          "file": "foundation/size.json",
+          "from": {
+            "set": "size"
+          }
+        },
+        {
+          "file": "foundation/typography.json",
+          "from": {
+            "set": "typography"
+          }
+        },
+        {
+          "file": "foundation/animation.json",
+          "from": {
+            "set": "animation"
+          }
+        },
+        {
+          "file": "theme/light.json",
+          "from": {
+            "modifier": "theme",
+            "context": "light"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "theme": "lightHighContrast"
+      },
+      "label": "lightHighContrast",
+      "sources": [
+        {
+          "file": "foundation/size.json",
+          "from": {
+            "set": "size"
+          }
+        },
+        {
+          "file": "foundation/typography.json",
+          "from": {
+            "set": "typography"
+          }
+        },
+        {
+          "file": "foundation/animation.json",
+          "from": {
+            "set": "animation"
+          }
+        },
+        {
+          "file": "theme/light.json",
+          "from": {
+            "modifier": "theme",
+            "context": "lightHighContrast"
+          }
+        },
+        {
+          "file": "theme/dark-high-contrast.json",
+          "from": {
+            "modifier": "theme",
+            "context": "lightHighContrast"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "theme": "dark"
+      },
+      "label": "dark",
+      "sources": [
+        {
+          "file": "foundation/size.json",
+          "from": {
+            "set": "size"
+          }
+        },
+        {
+          "file": "foundation/typography.json",
+          "from": {
+            "set": "typography"
+          }
+        },
+        {
+          "file": "foundation/animation.json",
+          "from": {
+            "set": "animation"
+          }
+        },
+        {
+          "file": "theme/dark.json",
+          "from": {
+            "modifier": "theme",
+            "context": "dark"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "theme": "darkHighContrast"
+      },
+      "label": "darkHighContrast",
+      "sources": [
+        {
+          "file": "foundation/size.json",
+          "from": {
+            "set": "size"
+          }
+        },
+        {
+          "file": "foundation/typography.json",
+          "from": {
+            "set": "typography"
+          }
+        },
+        {
+          "file": "foundation/animation.json",
+          "from": {
+            "set": "animation"
+          }
+        },
+        {
+          "file": "theme/dark.json",
+          "from": {
+            "modifier": "theme",
+            "context": "darkHighContrast"
+          }
+        },
+        {
+          "file": "theme/dark-high-contrast.json",
+          "from": {
+            "modifier": "theme",
+            "context": "darkHighContrast"
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

@@ -1,0 +1,35 @@
+{
+  "version": "2025.10",
+  "modifiers": {
+    "debug": {
+      "contexts": {
+        "false": [],
+        "true": [
+          {
+            "$ref": "debug.json"
+          }
+        ]
+      },
+      "default": "false"
+    },
+    "beta": {
+      "contexts": {
+        "false": [],
+        "true": [
+          {
+            "$ref": "beta.json"
+          }
+        ]
+      },
+      "default": "false"
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/modifiers/debug"
+    },
+    {
+      "$ref": "#/modifiers/beta"
+    }
+  ]
+}

@@ -6,12 +6,9 @@
     {
       "input": {},
       "label": "default",
-      "sets": [
+      "sources": [
         {
-          "file": "tokens.json",
-          "from": {
-            "set": "default"
-          }
+          "file": "tokens.json"
         }
       ]
     }
