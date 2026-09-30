@@ -79,6 +79,7 @@ export const relatedMessages = {
 
 export const fixTitles = {
     useType: (type: string) => `use \`${type}\`, which has a similar name`,
+    hexToObject: "write the color as an object, keeping the hex",
 };
 
 export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {

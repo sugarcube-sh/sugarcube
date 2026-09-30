@@ -1,0 +1,114 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 8 and 9, contract 01: every value is read by its type's parser into one shape. A single font name is a list of one, a font weight keyword its number, a stroke style keyword tagged, a single shadow a list of one with inset false, a gradient position clamped to 0 to 1 (9.7). A reference stays an alias node, whole or as a part. authored keeps what the file wrote",
+  "permutations": [
+    {
+      "tokens": {
+        "brand": {
+          "path": "brand",
+          "value": {
+            "colorSpace": "oklch",
+            "components": [0.7, 0.2, 20],
+            "alpha": 1
+          }
+        },
+        "space": {
+          "path": "space",
+          "value": {
+            "value": 16,
+            "unit": "px"
+          }
+        },
+        "body": {
+          "path": "body",
+          "value": ["Inter"],
+          "authored": {
+            "value": "Inter",
+            "typeDeclared": true
+          }
+        },
+        "heavy": {
+          "path": "heavy",
+          "value": 700,
+          "authored": {
+            "value": "bold",
+            "typeDeclared": true
+          }
+        },
+        "line": {
+          "path": "line",
+          "value": {
+            "kind": "keyword",
+            "keyword": "solid"
+          }
+        },
+        "card": {
+          "path": "card",
+          "value": [
+            {
+              "color": {
+                "alias": "brand"
+              },
+              "offsetX": {
+                "value": 0,
+                "unit": "px"
+              },
+              "offsetY": {
+                "value": 2,
+                "unit": "px"
+              },
+              "blur": {
+                "value": 4,
+                "unit": "px"
+              },
+              "spread": {
+                "value": 0,
+                "unit": "px"
+              },
+              "inset": false
+            }
+          ]
+        },
+        "fade": {
+          "path": "fade",
+          "value": [
+            {
+              "color": {
+                "alias": "brand"
+              },
+              "position": 0
+            },
+            {
+              "color": {
+                "alias": "brand"
+              },
+              "position": 1
+            }
+          ]
+        },
+        "text": {
+          "path": "text",
+          "value": {
+            "fontFamily": ["Inter", "sans-serif"],
+            "fontSize": {
+              "alias": "space"
+            },
+            "fontWeight": 400,
+            "letterSpacing": {
+              "value": 0,
+              "unit": "px"
+            },
+            "lineHeight": 1.5
+          }
+        },
+        "accent": {
+          "path": "accent",
+          "value": {
+            "alias": "brand"
+          }
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

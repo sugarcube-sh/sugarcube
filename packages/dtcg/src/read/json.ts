@@ -153,3 +153,16 @@ export function plainValue(node: Node, hidden: Set<Node>): unknown {
         return (node.children ?? []).map((child) => plainValue(child, hidden));
     return node.value;
 }
+
+export function deepestNode(node: Node, steps: (string | number)[], hidden: Set<Node>): Node {
+    let current = node;
+    for (const step of steps) {
+        const next =
+            current.type === "array"
+                ? current.children?.[Number(step)]
+                : member(current, String(step), hidden);
+        if (!next) break;
+        current = next;
+    }
+    return current;
+}

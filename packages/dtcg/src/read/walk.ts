@@ -11,7 +11,7 @@ import type {
 import { readAlias, readPointer } from "../values/references.js";
 import { isTokenType, tokenTypes } from "../values/token-types.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
-import { members, plainObject, plainValue, spanOf } from "./json.js";
+import { type JsonFile, members, plainObject, plainValue, spanOf } from "./json.js";
 import { parsePointer } from "./pointer.js";
 import { similarName } from "./similar.js";
 import type { LoadedSource } from "./sources.js";
@@ -25,6 +25,7 @@ export interface Properties {
 
 export interface SourceToken extends Properties {
     path: string;
+    json: JsonFile;
     value: Node;
     authored: unknown;
     isReference: boolean;
@@ -35,6 +36,7 @@ export interface GroupReference {
     keyword: "$extends" | "$ref";
     written: string;
     steps: string[] | undefined;
+    json: JsonFile;
     node: Node;
     at: Span;
     declaredAt: Span;
@@ -128,7 +130,14 @@ export function walkSource(
                 report("invalid-property", { property: key, expected }, value);
                 continue;
             }
-            found = { keyword: key, ...read, node: value, at: at(value), declaredAt: at(node) };
+            found = {
+                keyword: key,
+                ...read,
+                json,
+                node: value,
+                at: at(value),
+                declaredAt: at(node),
+            };
         }
         return found;
     };
@@ -139,6 +148,7 @@ export function walkSource(
         const authored = plainValue(value, json.hidden);
         contents.tokens.push({
             path,
+            json,
             value,
             authored,
             isReference: readAlias(authored) !== undefined || readPointer(authored) !== undefined,

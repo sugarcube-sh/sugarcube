@@ -1,8 +1,9 @@
-import type { Diagnostic, Group, Permutation, Token, TokenType } from "../index.js";
+import type { Diagnostic, Group, Permutation, Token, TokenBase, TokenType } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
 import { applyExtends } from "./extends.js";
 import { inheritedDeprecation, inheritedType } from "./inherit.js";
 import { type Merged, type MergedGroup, type MergedToken, merge } from "./merge.js";
+import { type ValueReader, createValueReader } from "./parse-value.js";
 import type { LoadedPermutation } from "./permutations.js";
 import type { LoadedSource } from "./sources.js";
 import { type SourceContents, walkSource } from "./walk.js";
@@ -13,6 +14,7 @@ export function normalisePermutations(
     permutations: LoadedPermutation[],
     diagnostics: Diagnostic[],
 ): Permutation[] {
+    const readValue = createValueReader(diagnostics);
     const walked = new Map<string, SourceContents | undefined>();
     const walk = (loaded: LoadedSource) => {
         const key = JSON.stringify([loaded.file, loaded.pointer, loaded.overriddenKeys]);
@@ -37,7 +39,7 @@ export function normalisePermutations(
                     diagnostics.push(diagnostic("missing-type", {}, where));
                     return [];
                 }
-                return [[token.path, toToken(token, type, merged)]];
+                return [[token.path, toToken(token, type, merged, readValue)]];
             }),
         );
         const groups = Object.fromEntries(
@@ -47,9 +49,14 @@ export function normalisePermutations(
     });
 }
 
-function toToken(token: MergedToken, type: TokenType, merged: Merged): Token {
+function toToken<T extends TokenType>(
+    token: MergedToken,
+    type: T,
+    merged: Merged,
+    readValue: ValueReader,
+): Token {
     const deprecated = inheritedDeprecation(token, merged);
-    return {
+    const built: TokenBase<T> = {
         path: token.path,
         type,
         ...(token.description !== undefined && { description: token.description }),
@@ -59,6 +66,10 @@ function toToken(token: MergedToken, type: TokenType, merged: Merged): Token {
         authored: { value: token.authored, typeDeclared: token.type !== undefined },
         ...(token.inherited && { inherited: token.inherited }),
     };
+    const read = readValue(token, type);
+    if (read.ok) built.value = read.value;
+    else built.invalid = true;
+    return built as Token;
 }
 
 function toGroup(group: MergedGroup): Group {

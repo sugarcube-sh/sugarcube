@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 6.7.3 (Example 22): an inherited token without a $type of its own takes the extending group's type, its local $type when it has one, since it is now in that group. Only the target's own content comes with it (6.4.2), so a type the target has from its parent does not, and palette.x has none",
+  "spec": "Format 6.7.3 (Example 22): an inherited token without a $type of its own takes the extending group's type, its local $type when it has one, since it is now in that group. Only the target's own content comes with it (6.4.2), so a type the target has from its parent does not, and palette.x has none. The inherited numbers are then not valid dimensions, which Example 22 calls satisfying both constraints",
   "permutations": [
     {
       "tokens": {
@@ -21,14 +21,16 @@
           "type": "dimension",
           "inherited": {
             "from": "base"
-          }
+          },
+          "invalid": true
         },
         "extended.colors.x": {
           "path": "extended.colors.x",
           "type": "dimension",
           "inherited": {
             "from": "base"
-          }
+          },
+          "invalid": true
         }
       },
       "groups": {
@@ -55,6 +57,32 @@
     }
   ],
   "diagnostics": [
+    {
+      "kind": "invalid-value",
+      "detail": {
+        "type": "dimension",
+        "at": ["$value"],
+        "reason": "wrong-shape"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"primary\": { \"$value\":"
+      },
+      "path": "extended.primary"
+    },
+    {
+      "kind": "invalid-value",
+      "detail": {
+        "type": "dimension",
+        "at": ["$value"],
+        "reason": "wrong-shape"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"x\": { \"$value\":"
+      },
+      "path": "extended.colors.x"
+    },
     {
       "kind": "missing-type",
       "detail": {},

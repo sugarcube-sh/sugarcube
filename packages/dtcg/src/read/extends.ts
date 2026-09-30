@@ -153,6 +153,7 @@ function becomeToken(
     removeGroup(merged, path);
     merged.tokens.set(path, {
         path,
+        json: extending.json,
         value: extending.node,
         authored: { $ref: extending.written },
         isReference: true,
