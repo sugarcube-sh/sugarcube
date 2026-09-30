@@ -1,4 +1,4 @@
-import type { Alias, JsonPath, ParseResult, Pointer, WithAliases } from "../index.js";
+import type { Alias, JsonPath, ParseResult, Pointer, UnresolvedValue } from "../index.js";
 import { readColor } from "./color.js";
 import { type ObjectForm, type PartReaders, readComposite } from "./composite.js";
 import { readDimension } from "./dimension.js";
@@ -19,7 +19,7 @@ const PARTS: PartReaders<ShadowLayer> = {
 
 const DEFAULTS: Partial<ShadowLayer> = { inset: false };
 
-export function readShadow(raw: unknown, at: JsonPath): ParseResult<WithAliases<"shadow">> {
+export function readShadow(raw: unknown, at: JsonPath): ParseResult<UnresolvedValue<"shadow">> {
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference };
 

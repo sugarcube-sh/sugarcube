@@ -1,9 +1,12 @@
-import type { JsonPath, ParseResult, WithAliases } from "../index.js";
+import type { JsonPath, ParseResult, UnresolvedValue } from "../index.js";
 import { type FontWeightKeyword, fontWeightKeywords } from "./keywords.js";
 import { readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
-export function readFontWeight(raw: unknown, at: JsonPath): ParseResult<WithAliases<"fontWeight">> {
+export function readFontWeight(
+    raw: unknown,
+    at: JsonPath,
+): ParseResult<UnresolvedValue<"fontWeight">> {
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference };
 

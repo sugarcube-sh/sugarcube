@@ -25,5 +25,5 @@ const sugarcubeExtensions: ExtensionValidator = {
 await read("tokens.resolver.json", {
     readText: (p) => fetch(p).then((r) => r.text()),
     generators: [scaleRecipes],
-    extensions: [sugarcubeExtensions],
+    extensionValidators: [sugarcubeExtensions],
 });

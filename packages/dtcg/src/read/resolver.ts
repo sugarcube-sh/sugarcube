@@ -4,20 +4,20 @@ import { diagnostic } from "./diagnostics.js";
 import { type JsonFile, member, members, spanOf } from "./json.js";
 import { parsePointer } from "./pointer.js";
 
-export interface Source {
+export interface SourceNode {
     node: Node;
     path: JsonPath;
 }
 
 export interface SetDefinition {
     name: string;
-    sources: Source[];
+    sources: SourceNode[];
     extensions?: Node;
 }
 
 export interface ModifierDefinition {
     name: string;
-    contexts: Map<string, Source[]>;
+    contexts: Map<string, SourceNode[]>;
     default?: string;
     extensions?: Node;
 }
@@ -125,7 +125,7 @@ function readAll<T>(
     return found;
 }
 
-function readSources(reader: Reader, list: Place, label: string): Source[] {
+function readSources(reader: Reader, list: Place, label: string): SourceNode[] {
     return (list.node.children ?? []).flatMap((node, index) => {
         const path = [...list.path, index];
         return reader.expect(node, "object", `${label}[${index}]`, path) ? [{ node, path }] : [];
@@ -163,7 +163,7 @@ function readModifierParts(
     const map = optional(reader, owner, "contexts", "object");
     const fallback = optional(reader, owner, "default", "string");
 
-    let contexts: Map<string, Source[]> | undefined;
+    let contexts: Map<string, SourceNode[]> | undefined;
     if (map) {
         const at = [...owner.path, "contexts"];
         const entries = reader.entries(map);

@@ -6,5 +6,5 @@ declare const doc: Document;
 for (const t of Object.values(byToken(doc))) {
     const base = t.default;
     if (base?.type === "color" && !base.description)
-        report(base.source.node, `${t.path} has no description`);
+        report(base.source.at, `${t.path} has no description`);
 }

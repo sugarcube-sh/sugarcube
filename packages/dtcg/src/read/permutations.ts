@@ -1,4 +1,4 @@
-import type { Diagnostic, DiagnosticDetailByKind, Input, SourceRef } from "../index.js";
+import type { Diagnostic, DiagnosticDetailByKind, Input, Source } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
 import { type JsonFile, plainValue } from "./json.js";
 import type { Resolver, SetDefinition } from "./resolver.js";
@@ -8,7 +8,7 @@ import type { ExpandedItem, LoadedSource, SourceEntry } from "./sources.js";
 export interface LoadedPermutation {
     input: Input;
     label: string;
-    sources: { sourceRef: SourceRef; source: LoadedSource }[];
+    sources: { source: Source; loaded: LoadedSource }[];
 }
 
 type Built = Pick<Loaded, "modifiers" | "usedBy" | "permutations">;
@@ -34,8 +34,8 @@ export function fromTokenFiles(files: { path: string; json?: JsonFile }[]): Buil
                 input: {},
                 label: "default",
                 sources: files.map(({ path, json }) => ({
-                    sourceRef: { file: path },
-                    source: { file: path, ...(json && { json, tree: json.root }) },
+                    source: { file: path },
+                    loaded: { file: path, ...(json && { json, tree: json.root }) },
                 })),
             },
         ],
@@ -260,24 +260,24 @@ function described(
     resolver: Resolver,
     sources: Map<SourceEntry, LoadedSource>,
     entry: SourceEntry,
-    from: SourceRef["from"],
+    from: Source["from"],
 ): LoadedPermutation["sources"] {
-    const source = sources.get(entry);
-    return source ? [{ sourceRef: sourceRef(resolver, source, from, entry.holder), source }] : [];
+    const loaded = sources.get(entry);
+    return loaded ? [{ source: sourceOf(resolver, loaded, from, entry.holder), loaded }] : [];
 }
 
-function sourceRef(
+function sourceOf(
     resolver: Resolver,
-    source: LoadedSource,
-    from: SourceRef["from"],
+    loaded: LoadedSource,
+    from: Source["from"],
     holder: SetDefinition | undefined,
-): SourceRef {
+): Source {
     const extensions = holder?.extensions
         ? (plainValue(holder.extensions, resolver.file.hidden) as Record<string, unknown>)
         : undefined;
     return {
-        file: source.file,
-        ...(source.pointer && { pointer: source.pointer }),
+        file: loaded.file,
+        ...(loaded.pointer && { pointer: loaded.pointer }),
         from,
         ...(extensions && { extensions }),
     };

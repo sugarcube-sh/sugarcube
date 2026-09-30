@@ -1,25 +1,25 @@
 import type {
     Alias,
-    AliasedValueByType,
+    UnresolvedValueByType,
     JsonPath,
     Parse,
     ParseResult,
     Pointer,
     TokenType,
     ValueError,
-    WithAliases,
+    UnresolvedValue,
 } from "../index.js";
 import { isPlainObject, readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
-export type ObjectForm<T extends TokenType> = Exclude<WithAliases<T>, Alias | Pointer>;
+export type ObjectForm<T extends TokenType> = Exclude<UnresolvedValue<T>, Alias | Pointer>;
 
 export type PartReaders<O> = {
     readonly [K in keyof O]-?: Parse<O[K]>;
 };
 
 export function readComposite<O extends object>(
-    type: keyof AliasedValueByType,
+    type: keyof UnresolvedValueByType,
     parts: PartReaders<O>,
     raw: unknown,
     at: JsonPath,

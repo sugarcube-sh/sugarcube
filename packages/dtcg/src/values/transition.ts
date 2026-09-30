@@ -1,4 +1,4 @@
-import type { JsonPath, ParseResult, WithAliases } from "../index.js";
+import type { JsonPath, ParseResult, UnresolvedValue } from "../index.js";
 import { type ObjectForm, type PartReaders, readComposite } from "./composite.js";
 import { readCubicBezier } from "./cubic-bezier.js";
 import { readDuration } from "./duration.js";
@@ -9,6 +9,9 @@ const PARTS: PartReaders<ObjectForm<"transition">> = {
     timingFunction: readCubicBezier,
 };
 
-export function readTransition(raw: unknown, at: JsonPath): ParseResult<WithAliases<"transition">> {
+export function readTransition(
+    raw: unknown,
+    at: JsonPath,
+): ParseResult<UnresolvedValue<"transition">> {
     return readComposite("transition", PARTS, raw, at);
 }

@@ -1,4 +1,4 @@
-import type { JsonPath, ParseResult, WithAliases } from "../index.js";
+import type { JsonPath, ParseResult, UnresolvedValue } from "../index.js";
 import { readColor } from "./color.js";
 import { type ObjectForm, type PartReaders, readComposite } from "./composite.js";
 import { readDimension } from "./dimension.js";
@@ -10,6 +10,6 @@ const PARTS: PartReaders<ObjectForm<"border">> = {
     style: readStrokeStyle,
 };
 
-export function readBorder(raw: unknown, at: JsonPath): ParseResult<WithAliases<"border">> {
+export function readBorder(raw: unknown, at: JsonPath): ParseResult<UnresolvedValue<"border">> {
     return readComposite("border", PARTS, raw, at);
 }

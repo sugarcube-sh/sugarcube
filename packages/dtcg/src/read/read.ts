@@ -114,7 +114,7 @@ function toDocument(loaded: Loaded): Document {
         permutations: loaded.permutations.map(({ input, label, sources }) => ({
             input,
             label,
-            sources: sources.map(({ sourceRef }) => sourceRef),
+            sources: sources.map(({ source }) => source),
             tokens: {},
             groups: {},
         })),

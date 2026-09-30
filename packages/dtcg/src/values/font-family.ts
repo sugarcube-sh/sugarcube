@@ -1,8 +1,11 @@
-import type { JsonPath, ParseResult, Pointer, ValueError, WithAliases } from "../index.js";
+import type { JsonPath, ParseResult, Pointer, ValueError, UnresolvedValue } from "../index.js";
 import { readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
-export function readFontFamily(raw: unknown, at: JsonPath): ParseResult<WithAliases<"fontFamily">> {
+export function readFontFamily(
+    raw: unknown,
+    at: JsonPath,
+): ParseResult<UnresolvedValue<"fontFamily">> {
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference };
 

@@ -1,8 +1,8 @@
-import type { JsonPath, ParseResult, WithAliases } from "../index.js";
+import type { JsonPath, ParseResult, UnresolvedValue } from "../index.js";
 import { readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
-export function readNumber(raw: unknown, at: JsonPath): ParseResult<WithAliases<"number">> {
+export function readNumber(raw: unknown, at: JsonPath): ParseResult<UnresolvedValue<"number">> {
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference };
 

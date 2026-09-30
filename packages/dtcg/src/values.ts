@@ -1,4 +1,4 @@
-import type { Parse, TokenType, WithAliases } from "./index.js";
+import type { Parse, TokenType, UnresolvedValue } from "./index.js";
 import { readBorder } from "./values/border.js";
 import { readColor } from "./values/color.js";
 import { readDimension } from "./values/dimension.js";
@@ -13,7 +13,7 @@ import { readFontFamily } from "./values/font-family.js";
 import { readFontWeight } from "./values/font-weight.js";
 import { readGradient } from "./values/gradient.js";
 
-export { colorSpaces, type ColorChannel } from "./values/color-spaces.js";
+export { colorSpaces, type ColorComponentRange } from "./values/color-spaces.js";
 export { dimensionUnits, durationUnits } from "./values/units.js";
 export {
     type FontWeightKeyword,
@@ -82,21 +82,21 @@ export const compositeParts = {
  * parseColor("{color.brand}", [])
  * // { ok: true, value: { alias: "color.brand" } }
  */
-export const parseColor: Parse<WithAliases<"color">> = readColor;
+export const parseColor: Parse<UnresolvedValue<"color">> = readColor;
 /** Reads one dimension value. */
-export const parseDimension: Parse<WithAliases<"dimension">> = readDimension;
+export const parseDimension: Parse<UnresolvedValue<"dimension">> = readDimension;
 /** Reads one duration value. */
-export const parseDuration: Parse<WithAliases<"duration">> = readDuration;
+export const parseDuration: Parse<UnresolvedValue<"duration">> = readDuration;
 /** Reads one cubic Bézier value. */
-export const parseCubicBezier: Parse<WithAliases<"cubicBezier">> = readCubicBezier;
+export const parseCubicBezier: Parse<UnresolvedValue<"cubicBezier">> = readCubicBezier;
 /** Reads one number value. */
-export const parseNumber: Parse<WithAliases<"number">> = readNumber;
+export const parseNumber: Parse<UnresolvedValue<"number">> = readNumber;
 /** Reads one font family value. A single name becomes a list of one. */
-export const parseFontFamily: Parse<WithAliases<"fontFamily">> = readFontFamily;
+export const parseFontFamily: Parse<UnresolvedValue<"fontFamily">> = readFontFamily;
 /** Reads one font weight value. Keywords become their numbers. */
-export const parseFontWeight: Parse<WithAliases<"fontWeight">> = readFontWeight;
+export const parseFontWeight: Parse<UnresolvedValue<"fontWeight">> = readFontWeight;
 /** Reads one stroke style value. */
-export const parseStrokeStyle: Parse<WithAliases<"strokeStyle">> = readStrokeStyle;
+export const parseStrokeStyle: Parse<UnresolvedValue<"strokeStyle">> = readStrokeStyle;
 /**
  * Reads one border value. A part that is a reference is kept as an `Alias`, and checked
  * against its target when references are followed.
@@ -106,12 +106,12 @@ export const parseStrokeStyle: Parse<WithAliases<"strokeStyle">> = readStrokeSty
  * // { ok: true, value: { color: { alias: "color.brand" }, width: { value: 1, unit: "px" },
  * //   style: { kind: "keyword", keyword: "solid" } } }
  */
-export const parseBorder: Parse<WithAliases<"border">> = readBorder;
+export const parseBorder: Parse<UnresolvedValue<"border">> = readBorder;
 /** Reads one shadow value. A single shadow becomes a list of one. */
-export const parseShadow: Parse<WithAliases<"shadow">> = readShadow;
+export const parseShadow: Parse<UnresolvedValue<"shadow">> = readShadow;
 /** Reads one gradient value. */
-export const parseGradient: Parse<WithAliases<"gradient">> = readGradient;
+export const parseGradient: Parse<UnresolvedValue<"gradient">> = readGradient;
 /** Reads one transition value. */
-export const parseTransition: Parse<WithAliases<"transition">> = readTransition;
+export const parseTransition: Parse<UnresolvedValue<"transition">> = readTransition;
 /** Reads one typography value. */
-export const parseTypography: Parse<WithAliases<"typography">> = readTypography;
+export const parseTypography: Parse<UnresolvedValue<"typography">> = readTypography;
