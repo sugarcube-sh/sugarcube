@@ -36,11 +36,7 @@
           },
           "resolved": {
             "colorSpace": "srgb",
-            "components": [
-              0.2,
-              0.4,
-              0.7
-            ],
+            "components": [0.2, 0.4, 0.7],
             "alpha": 1
           }
         },
@@ -54,11 +50,7 @@
         "semantic.h1": {
           "path": "semantic.h1",
           "resolved": {
-            "fontFamily": [
-              "Helvetica",
-              "Arial",
-              "sans-serif"
-            ],
+            "fontFamily": ["Helvetica", "Arial", "sans-serif"],
             "fontSize": {
               "value": 32,
               "unit": "px"
@@ -84,11 +76,7 @@
           "path": "semantic.shadow-color",
           "resolved": {
             "colorSpace": "srgb",
-            "components": [
-              0,
-              0,
-              0
-            ],
+            "components": [0, 0, 0],
             "alpha": 1
           }
         },
@@ -125,11 +113,7 @@
       "kind": "invalid-value",
       "detail": {
         "type": "color",
-        "at": [
-          "$value",
-          "components",
-          0
-        ],
+        "at": ["$value", "components", 0],
         "reason": "component-not-a-number"
       },
       "at": {
@@ -141,11 +125,7 @@
     {
       "kind": "circular-reference",
       "detail": {
-        "chain": [
-          "loop.a",
-          "loop.b",
-          "loop.a"
-        ]
+        "chain": ["loop.a", "loop.b", "loop.a"]
       },
       "at": {
         "file": "tokens.json",
@@ -166,9 +146,7 @@
       "kind": "missing-reference",
       "detail": {
         "ref": "#/base/card/$value/0/color",
-        "referencedBy": [
-          "semantic.shadow-listed"
-        ]
+        "referencedBy": ["semantic.shadow-listed"]
       },
       "at": {
         "file": "tokens.json",
@@ -180,9 +158,7 @@
       "kind": "missing-reference",
       "detail": {
         "ref": "#/base/alias/$value/components/0",
-        "referencedBy": [
-          "semantic.through-alias"
-        ]
+        "referencedBy": ["semantic.through-alias"]
       },
       "at": {
         "file": "tokens.json",

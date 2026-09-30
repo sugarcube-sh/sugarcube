@@ -36,9 +36,7 @@
           "path": "y",
           "type": "typography",
           "resolved": {
-            "fontFamily": [
-              "Inter"
-            ],
+            "fontFamily": ["Inter"],
             "fontSize": {
               "value": 16,
               "unit": "px"
@@ -58,12 +56,7 @@
     {
       "kind": "circular-reference",
       "detail": {
-        "chain": [
-          "a",
-          "b",
-          "c",
-          "a"
-        ]
+        "chain": ["a", "b", "c", "a"]
       },
       "at": {
         "file": "tokens.json",

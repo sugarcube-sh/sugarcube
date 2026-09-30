@@ -54,11 +54,7 @@
             {
               "color": {
                 "colorSpace": "srgb",
-                "components": [
-                  0,
-                  0,
-                  0
-                ],
+                "components": [0, 0, 0],
                 "alpha": 1
               },
               "offsetX": {
@@ -82,11 +78,7 @@
             {
               "color": {
                 "colorSpace": "srgb",
-                "components": [
-                  0,
-                  0,
-                  0
-                ],
+                "components": [0, 0, 0],
                 "alpha": 1
               },
               "offsetX": {
@@ -178,10 +170,7 @@
       "kind": "missing-reference",
       "detail": {
         "ref": "color.brnad",
-        "referencedBy": [
-          "color.danger",
-          "color.warning"
-        ]
+        "referencedBy": ["color.danger", "color.warning"]
       },
       "at": {
         "file": "tokens.json",
@@ -222,9 +211,7 @@
       "kind": "missing-reference",
       "detail": {
         "ref": "nowhere",
-        "referencedBy": [
-          "loose"
-        ]
+        "referencedBy": ["loose"]
       },
       "at": {
         "file": "tokens.json",
