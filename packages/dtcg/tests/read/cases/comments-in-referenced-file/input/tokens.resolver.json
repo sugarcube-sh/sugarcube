@@ -1,0 +1,6 @@
+{
+  // comments are fine here
+  "version": "2025.10",
+  "sets": { "base": { "sources": [{ "$ref": "tokens.json" }] } },
+  "resolutionOrder": [{ "$ref": "#/sets/base" }]
+}

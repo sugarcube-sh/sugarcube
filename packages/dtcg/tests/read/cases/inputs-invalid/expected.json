@@ -1,0 +1,65 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 5, Example 14 (written with contexts, where the example has context), 5.2 and 6.1: every problem with an input is reported, and an invalid input is not built",
+  "options": {
+    "inputs": [
+      {
+        "theme": "blue",
+        "foo": "bar"
+      },
+      {
+        "theme": "light",
+        "size": "large",
+        "beta": true
+      },
+      {
+        "theme": "dark",
+        "size": "large"
+      }
+    ]
+  },
+  "permutations": [
+    {
+      "input": {
+        "theme": "dark",
+        "size": "large",
+        "beta": "false"
+      },
+      "label": "dark + large",
+      "sources": []
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "input-invalid",
+      "detail": {
+        "reason": "unknown-context",
+        "modifier": "theme",
+        "context": "blue",
+        "valid": ["light", "dark"]
+      }
+    },
+    {
+      "kind": "input-invalid",
+      "detail": {
+        "reason": "unknown-modifier",
+        "modifier": "foo"
+      }
+    },
+    {
+      "kind": "input-invalid",
+      "detail": {
+        "reason": "missing-modifier",
+        "modifier": "size",
+        "valid": ["default", "large"]
+      }
+    },
+    {
+      "kind": "input-invalid",
+      "detail": {
+        "reason": "not-a-string",
+        "modifier": "beta"
+      }
+    }
+  ]
+}

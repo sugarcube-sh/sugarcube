@@ -11,6 +11,17 @@ export default defineConfig({
             },
             {
                 test: {
+                    name: "unit-types",
+                    typecheck: {
+                        enabled: true,
+                        only: true,
+                        include: ["tests/**/*.test.ts"],
+                        tsconfig: "tests/tsconfig.json",
+                    },
+                },
+            },
+            {
+                test: {
                     name: "examples",
                     typecheck: {
                         enabled: true,

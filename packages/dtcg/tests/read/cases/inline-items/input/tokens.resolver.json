@@ -1,0 +1,10 @@
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    { "type": "set", "sources": [] },
+    { "name": "size", "sources": [] },
+    { "type": "group", "name": "odd", "sources": [] },
+    { "type": "set", "name": "base", "sources": [] },
+    { "type": "set", "name": "base", "sources": [] }
+  ]
+}

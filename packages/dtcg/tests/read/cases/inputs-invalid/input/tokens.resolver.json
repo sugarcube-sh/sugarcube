@@ -1,0 +1,30 @@
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    {
+      "type": "modifier",
+      "name": "theme",
+      "contexts": {
+        "light": [],
+        "dark": []
+      }
+    },
+    {
+      "type": "modifier",
+      "name": "size",
+      "contexts": {
+        "default": [],
+        "large": []
+      }
+    },
+    {
+      "type": "modifier",
+      "name": "beta",
+      "contexts": {
+        "false": [],
+        "true": []
+      },
+      "default": "false"
+    }
+  ]
+}

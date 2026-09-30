@@ -1,0 +1,54 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.5.3: a modifier MAY declare a default. Without one, every context is built and none is the default (contract 2, rules 2 and 5)",
+  "modifiers": {
+    "theme": {
+      "contexts": ["light", "dark"]
+    }
+  },
+  "usedBy": {
+    "light.json": [
+      {
+        "theme": "light"
+      }
+    ],
+    "dark.json": [
+      {
+        "theme": "dark"
+      }
+    ]
+  },
+  "permutations": [
+    {
+      "input": {
+        "theme": "light"
+      },
+      "label": "light",
+      "sources": [
+        {
+          "file": "light.json",
+          "from": {
+            "modifier": "theme",
+            "context": "light"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "theme": "dark"
+      },
+      "label": "dark",
+      "sources": [
+        {
+          "file": "dark.json",
+          "from": {
+            "modifier": "theme",
+            "context": "dark"
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

@@ -1,0 +1,13 @@
+{
+  "version": "2025.10",
+  "sets": {
+    "base": {
+      "sources": [{ "$ref": "tokens.json", "color": { "brand": { "$type": "number", "$value": 2 } } }]
+    },
+    "other": { "sources": [{ "$ref": "unused.json" }] }
+  },
+  "resolutionOrder": [
+    { "$ref": "#/sets/base" },
+    { "$ref": "#/sets/other", "sources": [{ "$ref": "replacement.json" }] }
+  ]
+}

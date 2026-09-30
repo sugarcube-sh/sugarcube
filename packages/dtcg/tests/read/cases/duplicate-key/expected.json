@@ -1,0 +1,44 @@
+{
+  "entry": "tokens.json",
+  "spec": "RFC 8259 4: names within an object SHOULD be unique. The last one is used, as JSON.parse does",
+  "files": ["tokens.json"],
+  "diagnostics": [
+    {
+      "kind": "duplicate-key",
+      "detail": {
+        "key": "sm"
+      },
+      "at": {
+        "file": "tokens.json",
+        "offset": 65,
+        "length": 4,
+        "start": {
+          "line": 4,
+          "column": 5
+        },
+        "end": {
+          "line": 4,
+          "column": 9
+        }
+      },
+      "related": [
+        {
+          "message": "also written here",
+          "at": {
+            "file": "tokens.json",
+            "offset": 19,
+            "length": 4,
+            "start": {
+              "line": 3,
+              "column": 5
+            },
+            "end": {
+              "line": 3,
+              "column": 9
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

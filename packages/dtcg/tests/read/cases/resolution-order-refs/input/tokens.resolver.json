@@ -1,0 +1,12 @@
+{
+  "version": "2025.10",
+  "sets": { "base": { "sources": [] } },
+  "resolutionOrder": [
+    { "$ref": "#/sets/missing" },
+    { "$ref": "#/modifiers/missing" },
+    { "$ref": "#/resolutionOrder/0" },
+    { "$ref": "#/sets/base/sources" },
+    { "$ref": "base.json" },
+    { "$ref": "#/sets/base" }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.6.1 and 5: a modifier may appear once in resolutionOrder, since inputs are keyed by its name",
+  "modifiers": {
+    "theme": {
+      "contexts": ["light", "dark"]
+    }
+  },
+  "diagnostics": [
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "duplicate-name",
+        "name": "theme",
+        "at": ["resolutionOrder", 1]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 163,
+        "length": 73,
+        "start": {
+          "line": 6,
+          "column": 5
+        },
+        "end": {
+          "line": 6,
+          "column": 78
+        }
+      }
+    }
+  ]
+}

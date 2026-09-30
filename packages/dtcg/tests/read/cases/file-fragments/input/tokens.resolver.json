@@ -1,0 +1,15 @@
+{
+  "version": "2025.10",
+  "sets": {
+    "parts": {
+      "sources": [
+        { "$ref": "all.json#/color" },
+        { "$ref": "all.json#color" },
+        { "$ref": "all.json#/brand colors" },
+        { "$ref": "all.json#/my~1group" },
+        { "$ref": "all.json" }
+      ]
+    }
+  },
+  "resolutionOrder": [{ "$ref": "#/sets/parts" }]
+}

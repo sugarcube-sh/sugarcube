@@ -363,8 +363,11 @@ export interface TokenBase<T extends TokenType> {
     deprecated?: boolean | string;
     /** Vendor data from `$extensions`, passed through untouched. */
     extensions?: Record<string, unknown>;
-    /** The file the token was read from, which of the permutation's {@link Permutation.sets | sets} it came from, and where. */
-    source: { file: string; set: number; node: Span };
+    /**
+     * Where the token was read from: the file, which of the permutation's
+     * {@link Permutation.sources | sources} it came from, and its place in the file.
+     */
+    source: { file: string; index: number; node: Span };
     /** The value exactly as the file wrote it, and whether the file declared `$type` on this token. Absent for generated tokens. */
     authored?: { value: unknown; typeDeclared: boolean };
     /** Set when a {@link Generator} made the token, from the setting on the group at `by`. */
@@ -393,14 +396,20 @@ export interface Group {
     declaredIn: Span[];
 }
 
-/** One source of tokens in a permutation, in the order the resolver applies them. */
-export interface SetRef {
+/**
+ * One source of a permutation's tokens: a file, part of one, or tokens written in the resolver.
+ * A set in the resolver can have several sources, so the same set can appear on several.
+ */
+export interface SourceRef {
     file: string;
     /** Set when the source is only part of the file, such as `"#/color"`. */
     pointer?: string;
-    /** How the source was reached: straight from a set, or through a modifier's context. */
-    from: { set: string } | { modifier: string; context: string; set?: string };
-    /** Vendor data from the set's `$extensions`, passed through untouched. */
+    /**
+     * How the resolver reached it: straight from a set, or through a modifier's context, possibly
+     * by way of a set that context names. Absent when there is no resolver.
+     */
+    from?: { set: string } | { modifier: string; context: string; set?: string };
+    /** Vendor data from the `$extensions` of the set that lists it, passed through untouched. */
     extensions?: Record<string, unknown>;
 }
 
@@ -412,7 +421,8 @@ export interface Permutation {
      * Functions take an {@link Input}, never a label.
      */
     label: string;
-    sets: SetRef[];
+    /** Where the tokens come from, in the order they apply: a later source overrides an earlier one. */
+    sources: SourceRef[];
     /** Every token, keyed by path, in the order the files list them. Invalid tokens are included. */
     tokens: Record<string, Token>;
     /** Every group, keyed by path, in the order the files list them. */
@@ -456,23 +466,17 @@ export interface Fix {
  */
 export interface DiagnosticDetailByKind {
     /** A file could not be fetched. */
-    "file-not-found": { referencedFrom?: string };
-    /** A file is not valid JSON (or, for a resolver, JSONC). */
-    "invalid-json": { reason: string };
-    /** The resolver breaks a rule of the resolver specification. */
-    "resolver-invalid": {
-        rule:
-            | "version"
-            | "unknown-set"
-            | "unknown-modifier"
-            | "invalid-pointer"
-            | "circular-reference"
-            | "duplicate-name"
-            | "no-contexts"
-            | "single-context"
-            | "invalid-default";
-        name?: string;
+    "file-not-found": {
+        file: string;
+        /** The file that names it, when it is not the entry. */
+        referencedFrom?: string;
     };
+    /** A file is not valid JSON (or, for a resolver, JSON with comments), or its top level is not an object. */
+    "invalid-json": { reason: JsonErrorReason };
+    /** A key is written twice in one object. The last one is used. */
+    "duplicate-key": { key: string };
+    /** The resolver breaks a rule of the resolver specification. */
+    "resolver-invalid": ResolverProblem;
     /** An input does not fit the resolver's modifiers. */
     "input-invalid": {
         reason: "unknown-modifier" | "unknown-context" | "missing-modifier" | "not-a-string";
@@ -516,7 +520,81 @@ export interface DiagnosticDetailByKind {
     "generator-overridden": { generator: string; group: string; name: string };
     /** A reference points at a token marked `$deprecated`. */
     "deprecated-reference": { ref: string; reason?: string };
+    /** A resolver has more combinations than `permutationLimit`, so `"each-context"` was built instead. */
+    "permutation-limit": {
+        /** How many combinations the resolver's modifiers make. */
+        count: number;
+        limit: number;
+        /** How many were built instead. */
+        built: number;
+    };
+    /**
+     * `"each-context"` sets every other modifier at its default, so with these modifiers having
+     * none, some contexts could not be built on their own.
+     */
+    "no-default": { modifiers: string[] };
 }
+
+/**
+ * Why a file could not be read as JSON. `"comment"` is a comment in a token file, which is JSON
+ * and so has none; a resolver may contain comments.
+ */
+export type JsonErrorReason =
+    | "comment"
+    | "not-an-object"
+    | "invalid-symbol"
+    | "invalid-number-format"
+    | "property-name-expected"
+    | "value-expected"
+    | "colon-expected"
+    | "comma-expected"
+    | "close-brace-expected"
+    | "close-bracket-expected"
+    | "end-of-file-expected"
+    | "unexpected-end-of-comment"
+    | "unexpected-end-of-string"
+    | "unexpected-end-of-number"
+    | "invalid-unicode"
+    | "invalid-escape-character"
+    | "invalid-character";
+
+/** Which rule of the resolver specification a resolver breaks. */
+export type ResolverRule =
+    | "version"
+    | "missing-property"
+    | "wrong-type"
+    | "unknown-set"
+    | "unknown-modifier"
+    | "invalid-pointer"
+    | "circular-reference"
+    | "resolver-as-source"
+    | "duplicate-name"
+    | "unknown-item-type"
+    | "no-contexts"
+    | "single-context"
+    | "invalid-default";
+
+/**
+ * A rule a resolver breaks, what it concerns and where. Checking `rule` narrows the rest.
+ *
+ * @example
+ * if (d.kind === "resolver-invalid" && d.detail.rule === "wrong-type") d.detail.expected
+ */
+export type ResolverProblem =
+    | {
+          rule: Exclude<ResolverRule, "wrong-type">;
+          /** The property, set, modifier, pointer or file concerned. */
+          name: string;
+          /** Where in the resolver, such as `["sets", "base", "sources"]`. */
+          at: JsonPath;
+      }
+    | {
+          rule: "wrong-type";
+          name: string;
+          at: JsonPath;
+          /** The JSON type the property must be. */
+          expected: "string" | "object" | "array";
+      };
 
 /** What a diagnostic is about, as a stable name to switch on. Each has a page at {@link Diagnostic.docs}. */
 export type DiagnosticKind = keyof DiagnosticDetailByKind;
@@ -586,8 +664,14 @@ export interface Document {
     files: string[];
     /** The modifiers the resolver declares, with their contexts and defaults. */
     modifiers: Record<string, { contexts: string[]; default?: string }>;
-    /** For each file, the contexts that read it, or `"everyone"` for a file in a set. */
-    readers: Record<string, "everyone" | Input[]>;
+    /**
+     * Which permutations use each file: `"everyone"` for a file in a set, otherwise the contexts
+     * whose permutations read it. For deciding which file an edit belongs in.
+     *
+     * @example
+     * doc.usedBy["dark.json"] // [{ theme: "dark" }]
+     */
+    usedBy: Record<string, "everyone" | Input[]>;
     permutations: Permutation[];
     /** Every reference between tokens, per permutation. */
     graph: Edge[];
@@ -703,10 +787,25 @@ export function defineGenerator<S>(generator: Generator<S>): Generator<S> {
 
 export interface ReadOptions {
     /**
-     * The permutations to build.
-     * @default the default permutation, plus one for each other context of each modifier
+     * The permutations to build. Modifiers left out take their default; an input that does not
+     * fit the resolver is reported and not built.
+     * @default the permutations `permutations` asks for
      */
     inputs?: Input[];
+    /**
+     * Which permutations to build when `inputs` is left out: `"all"`, every combination of
+     * contexts, or `"each-context"`, the default and each context on its own, with every other
+     * modifier at its default. When modifiers change different tokens (Resolver 2.1), every
+     * combination can be put together from `"each-context"`.
+     * @default "all"
+     */
+    permutations?: "all" | "each-context";
+    /**
+     * The most combinations `"all"` builds. Above it, `"each-context"` is built instead, and a
+     * `permutation-limit` warning says so.
+     * @default 64
+     */
+    permutationLimit?: number;
     /** Token types beyond the specification's thirteen. */
     types?: TypeDefinition[];
     /** Checks for your own `$extensions` keys. */
@@ -720,56 +819,18 @@ export interface ReadOptions {
 /**
  * Returns the text of a file, given its path.
  *
- * Every file path in both packages, here and in `Document.files`, `Span`, a project's files
- * and every edit, is relative to the folder holding the entry, with forward slashes, such as
- * `"themes/dark.json"`. The entry itself is its file name.
+ * It is asked for each file by the entry's folder, as you gave it, joined with the file's path
+ * from there: reading `"tokens/tokens.resolver.json"` asks for `"tokens/dark.json"`. A path
+ * that is absolute or a URL is passed as written. Throwing, or rejecting, reports the file as not
+ * found.
+ *
+ * Every file path in the results, in `Document.files`, `Span`, a project's files and every edit,
+ * is relative to the entry's folder, with forward slashes, such as `"themes/dark.json"`. The
+ * entry itself is its file name.
  */
 export type ReadText = (path: string) => Promise<string>;
 
-/**
- * Reads a design system: the entry file, and every file it refers to.
- *
- * Files are fetched through `readText`, so this runs anywhere: a browser, a worker, Deno, Bun or
- * Node. `@sugarcube-sh/dtcg/node` provides a version that reads from disk.
- *
- * Never rejects because of what is, or is not, in the files. A file that cannot be fetched
- * (`readText` throws) or cannot be read is reported in {@link Document.diagnostics}, and the rest
- * is still read.
- *
- * @param entry A resolver document or a token file.
- *
- * @example
- * const doc = await read("tokens.resolver.json", {
- *   readText: (path) => fetch(path).then((r) => r.text()),
- * });
- */
-export function read(
-    entry: string,
-    options: ReadOptions & { readText: ReadText },
-): Promise<Document> {
-    throw new Error("not implemented yet");
-}
-
-/**
- * Reads a design system from text already in memory.
- *
- * With a resolver among the files, it is the entry. Without one, every file is read as a single
- * set, in the order given, a later file overriding an earlier one: the rule a set in a resolver
- * follows.
- *
- * @example
- * const doc = readFromMemory({ files: { "tokens.json": text } });
- */
-export function readFromMemory(
-    sources: {
-        files: Record<string, string>;
-        /** @default the only file, when there is one */
-        entry?: string;
-    },
-    options?: ReadOptions,
-): Document {
-    throw new Error("not implemented yet");
-}
+export { read, readFromMemory } from "./read/read.js";
 
 /** One token across every permutation. */
 export interface TokenView {
@@ -840,7 +901,7 @@ export function acrossPermutations(
     /** Whether this permutation's value comes from a context's own file rather than the base. */
     overrides: boolean;
     /** How the value arrived: straight from a set, or through a modifier's context. */
-    from: SetRef["from"];
+    from: SourceRef["from"];
 }[] {
     throw new Error("not implemented yet");
 }

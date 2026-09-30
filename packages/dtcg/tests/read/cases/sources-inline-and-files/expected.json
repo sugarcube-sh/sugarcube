@@ -1,0 +1,31 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.4, Example 2: a set may mix files and tokens written inline; inline tokens take the resolver as their file",
+  "files": ["tokens.resolver.json", "base/foundation.json"],
+  "usedBy": {
+    "base/foundation.json": "everyone",
+    "tokens.resolver.json": "everyone"
+  },
+  "permutations": [
+    {
+      "input": {},
+      "label": "default",
+      "sources": [
+        {
+          "file": "base/foundation.json",
+          "from": {
+            "set": "size"
+          }
+        },
+        {
+          "file": "tokens.resolver.json",
+          "pointer": "#/sets/size/sources/1",
+          "from": {
+            "set": "size"
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

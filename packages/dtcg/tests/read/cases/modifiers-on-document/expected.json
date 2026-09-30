@@ -1,0 +1,14 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.6: only modifiers in resolutionOrder take part; 4.2.2: a key beside $ref overrides the target's",
+  "modifiers": {
+    "theme": {
+      "contexts": ["light", "dark"],
+      "default": "dark"
+    },
+    "brand": {
+      "contexts": ["house", "ocean"]
+    }
+  },
+  "diagnostics": []
+}

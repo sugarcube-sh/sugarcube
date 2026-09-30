@@ -1,0 +1,9 @@
+{
+  "version": "2025.10",
+  "modifiers": {
+    "theme": { "contexts": { "light": [], "dark": [] }, "default": "light" }
+  },
+  "resolutionOrder": [
+    { "$ref": "#/modifiers/theme", "contexts": { "dim": [], "bright": [] } }
+  ]
+}

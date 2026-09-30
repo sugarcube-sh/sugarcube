@@ -1,0 +1,47 @@
+{
+  "version": "2025.10",
+  "sets": {
+    "base": {
+      "sources": [
+        {
+          "$ref": "base.json"
+        }
+      ]
+    }
+  },
+  "modifiers": {
+    "theme": {
+      "contexts": {
+        "light": [],
+        "dark": [
+          {
+            "$ref": "dark.json"
+          }
+        ]
+      },
+      "default": "light"
+    },
+    "brand": {
+      "contexts": {
+        "house": [],
+        "ocean": [
+          {
+            "$ref": "ocean.json"
+          }
+        ]
+      },
+      "default": "house"
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/sets/base"
+    },
+    {
+      "$ref": "#/modifiers/theme"
+    },
+    {
+      "$ref": "#/modifiers/brand"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1, 4.4 and 4.5: $schema, $defs, name and description are accepted, and keys the spec does not define are ignored, as old sugarcube does",
+  "modifiers": {},
+  "diagnostics": []
+}

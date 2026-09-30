@@ -1,0 +1,48 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.2, Example 10: a ref may name part of a file, written with or without the leading slash; Format 7.4.6: names with a space or a slash",
+  "files": ["tokens.resolver.json", "all.json"],
+  "permutations": [
+    {
+      "input": {},
+      "label": "default",
+      "sources": [
+        {
+          "file": "all.json",
+          "pointer": "#/color",
+          "from": {
+            "set": "parts"
+          }
+        },
+        {
+          "file": "all.json",
+          "pointer": "#/color",
+          "from": {
+            "set": "parts"
+          }
+        },
+        {
+          "file": "all.json",
+          "pointer": "#/brand colors",
+          "from": {
+            "set": "parts"
+          }
+        },
+        {
+          "file": "all.json",
+          "pointer": "#/my~1group",
+          "from": {
+            "set": "parts"
+          }
+        },
+        {
+          "file": "all.json",
+          "from": {
+            "set": "parts"
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

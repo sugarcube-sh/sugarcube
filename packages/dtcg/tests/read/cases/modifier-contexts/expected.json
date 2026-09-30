@@ -1,0 +1,74 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.5.1: MUST throw for 0 contexts, SHOULD for 1 (old sugarcube also refuses 1); 4.1.5.3: a default MUST be one of the contexts",
+  "modifiers": {
+    "theme": {
+      "contexts": ["light", "dark"]
+    }
+  },
+  "diagnostics": [
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "no-contexts",
+        "name": "empty",
+        "at": ["modifiers", "empty", "contexts"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 70,
+        "length": 2,
+        "start": {
+          "line": 4,
+          "column": 28
+        },
+        "end": {
+          "line": 4,
+          "column": 30
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "single-context",
+        "name": "only",
+        "at": ["modifiers", "only", "contexts"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 102,
+        "length": 13,
+        "start": {
+          "line": 5,
+          "column": 27
+        },
+        "end": {
+          "line": 5,
+          "column": 40
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "invalid-default",
+        "name": "theme",
+        "at": ["modifiers", "theme", "default"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 186,
+        "length": 6,
+        "start": {
+          "line": 6,
+          "column": 68
+        },
+        "end": {
+          "line": 6,
+          "column": 74
+        }
+      }
+    }
+  ]
+}

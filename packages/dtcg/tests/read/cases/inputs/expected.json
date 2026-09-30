@@ -1,0 +1,43 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 5: inputs choose the permutations; a modifier left out takes its default (6.1), matching ignores case (5.1), and an input that comes out the same as another is built once (contract 2, rule 1)",
+  "options": {
+    "inputs": [
+      {
+        "THEME": "Dark"
+      },
+      {},
+      {
+        "theme": "light",
+        "brand": "house"
+      }
+    ]
+  },
+  "permutations": [
+    {
+      "input": {
+        "theme": "dark",
+        "brand": "house"
+      },
+      "label": "dark",
+      "sources": [
+        {
+          "file": "dark.json",
+          "from": {
+            "modifier": "theme",
+            "context": "dark"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "theme": "light",
+        "brand": "house"
+      },
+      "label": "default",
+      "sources": []
+    }
+  ],
+  "diagnostics": []
+}

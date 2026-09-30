@@ -1,0 +1,9 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/resolver.json",
+  "$defs": { "anything": { "at": "all" } },
+  "name": "Example",
+  "description": "Resolver with metadata",
+  "version": "2025.10",
+  "futureKey": true,
+  "resolutionOrder": []
+}

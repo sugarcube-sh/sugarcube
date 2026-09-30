@@ -1,0 +1,5 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 3.1: a resolver may contain comments, unlike a token file",
+  "diagnostics": []
+}

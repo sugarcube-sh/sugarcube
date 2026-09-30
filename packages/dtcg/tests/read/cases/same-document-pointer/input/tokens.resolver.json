@@ -1,0 +1,6 @@
+{
+  "version": "2025.10",
+  "$defs": { "brand": { "color": {} } },
+  "sets": { "base": { "sources": [{ "$ref": "#/$defs/brand" }] } },
+  "resolutionOrder": [{ "$ref": "#/sets/base" }]
+}

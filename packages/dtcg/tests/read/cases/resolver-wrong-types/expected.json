@@ -1,0 +1,72 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.4 and 4.1.5.1: sources and each context are lists of reference objects or inline tokens",
+  "diagnostics": [
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "wrong-type",
+        "name": "sources",
+        "at": ["sets", "base", "sources"],
+        "expected": "array"
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 63,
+        "length": 25,
+        "start": {
+          "line": 4,
+          "column": 26
+        },
+        "end": {
+          "line": 4,
+          "column": 51
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "wrong-type",
+        "name": "sources[0]",
+        "at": ["sets", "brand", "sources", 0],
+        "expected": "object"
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 119,
+        "length": 13,
+        "start": {
+          "line": 5,
+          "column": 28
+        },
+        "end": {
+          "line": 5,
+          "column": 41
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "wrong-type",
+        "name": "dark",
+        "at": ["modifiers", "theme", "contexts", "dark"],
+        "expected": "array"
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 208,
+        "length": 23,
+        "start": {
+          "line": 8,
+          "column": 51
+        },
+        "end": {
+          "line": 8,
+          "column": 74
+        }
+      }
+    }
+  ]
+}

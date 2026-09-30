@@ -1,0 +1,31 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.5.1, Example 4: a set named in sources stands for its sources, in place; 4.3: its $extensions come with them",
+  "files": ["tokens.resolver.json", "palette.json", "semantic.json"],
+  "permutations": [
+    {
+      "input": {},
+      "label": "default",
+      "sources": [
+        {
+          "file": "palette.json",
+          "from": {
+            "set": "base"
+          },
+          "extensions": {
+            "sh.sugarcube": {
+              "emit": false
+            }
+          }
+        },
+        {
+          "file": "semantic.json",
+          "from": {
+            "set": "base"
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

@@ -1,0 +1,44 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 4: token files are JSON, so comments are refused (unlike a resolver, Resolver 3.1)",
+  "diagnostics": [
+    {
+      "kind": "invalid-json",
+      "detail": {
+        "reason": "comment"
+      },
+      "at": {
+        "file": "tokens.json",
+        "offset": 4,
+        "length": 16,
+        "start": {
+          "line": 2,
+          "column": 3
+        },
+        "end": {
+          "line": 2,
+          "column": 19
+        }
+      }
+    },
+    {
+      "kind": "invalid-json",
+      "detail": {
+        "reason": "comment"
+      },
+      "at": {
+        "file": "tokens.json",
+        "offset": 63,
+        "length": 9,
+        "start": {
+          "line": 3,
+          "column": 43
+        },
+        "end": {
+          "line": 3,
+          "column": 52
+        }
+      }
+    }
+  ]
+}

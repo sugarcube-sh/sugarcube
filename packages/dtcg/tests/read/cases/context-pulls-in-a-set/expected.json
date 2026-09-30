@@ -1,0 +1,138 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.5.1, Example 4: a context may name a set, which stands for that set's sources; the route records the set",
+  "usedBy": {
+    "size/base.json": [
+      {
+        "size": "small"
+      },
+      {
+        "size": "medium"
+      },
+      {
+        "size": "large"
+      }
+    ],
+    "device/mobile.json": [
+      {
+        "size": "small"
+      }
+    ],
+    "typography/mobile.json": [
+      {
+        "size": "small"
+      }
+    ],
+    "device/tablet.json": [
+      {
+        "size": "medium"
+      }
+    ],
+    "typography/base.json": [
+      {
+        "size": "medium"
+      },
+      {
+        "size": "large"
+      }
+    ],
+    "device/desktop.json": [
+      {
+        "size": "large"
+      }
+    ]
+  },
+  "permutations": [
+    {
+      "input": {
+        "size": "small"
+      },
+      "label": "small",
+      "sources": [
+        {
+          "file": "size/base.json",
+          "from": {
+            "modifier": "size",
+            "context": "small",
+            "set": "baseSize"
+          }
+        },
+        {
+          "file": "device/mobile.json",
+          "from": {
+            "modifier": "size",
+            "context": "small"
+          }
+        },
+        {
+          "file": "typography/mobile.json",
+          "from": {
+            "modifier": "size",
+            "context": "small"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "size": "medium"
+      },
+      "label": "medium",
+      "sources": [
+        {
+          "file": "size/base.json",
+          "from": {
+            "modifier": "size",
+            "context": "medium",
+            "set": "baseSize"
+          }
+        },
+        {
+          "file": "device/tablet.json",
+          "from": {
+            "modifier": "size",
+            "context": "medium"
+          }
+        },
+        {
+          "file": "typography/base.json",
+          "from": {
+            "modifier": "size",
+            "context": "medium"
+          }
+        }
+      ]
+    },
+    {
+      "input": {
+        "size": "large"
+      },
+      "label": "large",
+      "sources": [
+        {
+          "file": "size/base.json",
+          "from": {
+            "modifier": "size",
+            "context": "large",
+            "set": "baseSize"
+          }
+        },
+        {
+          "file": "device/desktop.json",
+          "from": {
+            "modifier": "size",
+            "context": "large"
+          }
+        },
+        {
+          "file": "typography/base.json",
+          "from": {
+            "modifier": "size",
+            "context": "large"
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

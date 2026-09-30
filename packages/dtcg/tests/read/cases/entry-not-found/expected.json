@@ -1,0 +1,24 @@
+{
+  "entry": "tokens.json",
+  "spec": "A file that cannot be fetched is reported, and reading still finishes",
+  "files": ["tokens.json"],
+  "permutations": [
+    {
+      "input": {},
+      "label": "default",
+      "sources": [
+        {
+          "file": "tokens.json"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "file-not-found",
+      "detail": {
+        "file": "tokens.json"
+      }
+    }
+  ]
+}

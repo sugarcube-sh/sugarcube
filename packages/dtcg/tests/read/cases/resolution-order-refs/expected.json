@@ -1,0 +1,111 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.6: resolutionOrder holds sets and modifiers; 4.2.1: nothing may point into resolutionOrder",
+  "diagnostics": [
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "unknown-set",
+        "name": "missing",
+        "at": ["resolutionOrder", 0, "$ref"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 104,
+        "length": 16,
+        "start": {
+          "line": 5,
+          "column": 15
+        },
+        "end": {
+          "line": 5,
+          "column": 31
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "unknown-modifier",
+        "name": "missing",
+        "at": ["resolutionOrder", 1, "$ref"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 138,
+        "length": 21,
+        "start": {
+          "line": 6,
+          "column": 15
+        },
+        "end": {
+          "line": 6,
+          "column": 36
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "invalid-pointer",
+        "name": "#/resolutionOrder/0",
+        "at": ["resolutionOrder", 2, "$ref"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 177,
+        "length": 21,
+        "start": {
+          "line": 7,
+          "column": 15
+        },
+        "end": {
+          "line": 7,
+          "column": 36
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "invalid-pointer",
+        "name": "#/sets/base/sources",
+        "at": ["resolutionOrder", 3, "$ref"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 216,
+        "length": 21,
+        "start": {
+          "line": 8,
+          "column": 15
+        },
+        "end": {
+          "line": 8,
+          "column": 36
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "invalid-pointer",
+        "name": "base.json",
+        "at": ["resolutionOrder", 4, "$ref"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 255,
+        "length": 11,
+        "start": {
+          "line": 9,
+          "column": 15
+        },
+        "end": {
+          "line": 9,
+          "column": 26
+        }
+      }
+    }
+  ]
+}

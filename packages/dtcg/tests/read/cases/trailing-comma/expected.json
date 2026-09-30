@@ -1,0 +1,26 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 4: token files are JSON, which has no trailing commas",
+  "files": ["tokens.json"],
+  "diagnostics": [
+    {
+      "kind": "invalid-json",
+      "detail": {
+        "reason": "property-name-expected"
+      },
+      "at": {
+        "file": "tokens.json",
+        "offset": 53,
+        "length": 1,
+        "start": {
+          "line": 5,
+          "column": 3
+        },
+        "end": {
+          "line": 5,
+          "column": 4
+        }
+      }
+    }
+  ]
+}
