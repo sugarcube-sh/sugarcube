@@ -466,19 +466,7 @@ export interface DiagnosticDetailByKind {
     /** A key is written twice in one object. The last one is used. */
     "duplicate-key": { key: string };
     /** The resolver breaks a rule of the resolver specification. */
-    "resolver-invalid": {
-        rule:
-            | "version"
-            | "unknown-set"
-            | "unknown-modifier"
-            | "invalid-pointer"
-            | "circular-reference"
-            | "duplicate-name"
-            | "no-contexts"
-            | "single-context"
-            | "invalid-default";
-        name?: string;
-    };
+    "resolver-invalid": ResolverProblem;
     /** An input does not fit the resolver's modifiers. */
     "input-invalid": {
         reason: "unknown-modifier" | "unknown-context" | "missing-modifier" | "not-a-string";
@@ -546,6 +534,44 @@ export type JsonErrorReason =
     | "invalid-unicode"
     | "invalid-escape-character"
     | "invalid-character";
+
+/** Which rule of the resolver specification a resolver breaks. */
+export type ResolverRule =
+    | "version"
+    | "missing-property"
+    | "wrong-type"
+    | "unknown-set"
+    | "unknown-modifier"
+    | "invalid-pointer"
+    | "circular-reference"
+    | "resolver-as-source"
+    | "duplicate-name"
+    | "unknown-item-type"
+    | "no-contexts"
+    | "single-context"
+    | "invalid-default";
+
+/**
+ * A rule a resolver breaks, what it concerns and where. Checking `rule` narrows the rest.
+ *
+ * @example
+ * if (d.kind === "resolver-invalid" && d.detail.rule === "wrong-type") d.detail.expected
+ */
+export type ResolverProblem =
+    | {
+          rule: Exclude<ResolverRule, "wrong-type">;
+          /** The property, set, modifier, pointer or file concerned. */
+          name: string;
+          /** Where in the resolver, such as `["sets", "base", "sources"]`. */
+          at: JsonPath;
+      }
+    | {
+          rule: "wrong-type";
+          name: string;
+          at: JsonPath;
+          /** The JSON type the property must be. */
+          expected: "string" | "object" | "array";
+      };
 
 /** What a diagnostic is about, as a stable name to switch on. Each has a page at {@link Diagnostic.docs}. */
 export type DiagnosticKind = keyof DiagnosticDetailByKind;

@@ -1,0 +1,7 @@
+{
+  // ordering decisions deserve comments
+  "version": "2025.10",
+  /* the base set */
+  "sets": { "base": { "sources": [] } },
+  "resolutionOrder": [{ "$ref": "#/sets/base" }]
+}

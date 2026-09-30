@@ -1,0 +1,11 @@
+{
+  "version": "2025.10",
+  "modifiers": {
+    "theme": { "contexts": { "light": [], "dark": [] }, "default": "light" },
+    "size": { "contexts": { "only": [] } }
+  },
+  "resolutionOrder": [
+    { "$ref": "#/modifiers/theme", "default": "blue" },
+    { "$ref": "#/modifiers/size", "description": "one context, reported once" }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1: resolutionOrder is required, and 4.1.4: a set must contain sources. A file with a string version is read as a resolver even without resolutionOrder",
+  "diagnostics": [
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "missing-property",
+        "name": "sources",
+        "at": ["sets", "base"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 46,
+        "length": 31,
+        "start": {
+          "line": 3,
+          "column": 21
+        },
+        "end": {
+          "line": 3,
+          "column": 52
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "missing-property",
+        "name": "resolutionOrder",
+        "at": []
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 0,
+        "length": 81,
+        "start": {
+          "line": 1,
+          "column": 1
+        },
+        "end": {
+          "line": 4,
+          "column": 2
+        }
+      }
+    }
+  ]
+}

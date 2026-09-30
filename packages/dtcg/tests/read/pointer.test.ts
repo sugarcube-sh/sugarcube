@@ -4,9 +4,9 @@ import { parseJson } from "../../src/read/json.js";
 import { follow, parsePointer } from "../../src/read/pointer.js";
 
 function tree(text: string) {
-    const parsed = parseJson("test.json", text);
-    if (!parsed.ok) throw new Error("test document is not valid JSON");
-    return parsed.file.root;
+    const { root, syntax } = parseJson(text);
+    if (!root || syntax) throw new Error("test document is not valid JSON");
+    return root;
 }
 
 function valueAt(text: string, pointer: string) {

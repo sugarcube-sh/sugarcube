@@ -1,0 +1,90 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.6.1: tools MUST throw when name or type is missing from an inline object, or when a name is duplicated",
+  "diagnostics": [
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "missing-property",
+        "name": "name",
+        "at": ["resolutionOrder", 0]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 53,
+        "length": 32,
+        "start": {
+          "line": 4,
+          "column": 5
+        },
+        "end": {
+          "line": 4,
+          "column": 37
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "missing-property",
+        "name": "type",
+        "at": ["resolutionOrder", 1]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 91,
+        "length": 33,
+        "start": {
+          "line": 5,
+          "column": 5
+        },
+        "end": {
+          "line": 5,
+          "column": 38
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "unknown-item-type",
+        "name": "group",
+        "at": ["resolutionOrder", 2, "type"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 140,
+        "length": 7,
+        "start": {
+          "line": 6,
+          "column": 15
+        },
+        "end": {
+          "line": 6,
+          "column": 22
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "duplicate-name",
+        "name": "base",
+        "at": ["resolutionOrder", 4, "name"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 264,
+        "length": 6,
+        "start": {
+          "line": 8,
+          "column": 30
+        },
+        "end": {
+          "line": 8,
+          "column": 36
+        }
+      }
+    }
+  ]
+}

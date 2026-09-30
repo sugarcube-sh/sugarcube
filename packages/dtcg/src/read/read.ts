@@ -1,6 +1,6 @@
 import packageJson from "../../package.json" with { type: "json" };
 import type { Document, ReadOptions, ReadText } from "../index.js";
-import { type Answer, type Loaded, type Request, load } from "./load.js";
+import { type Answer, type FileText, type Loaded, type Request, load } from "./load.js";
 import { fileName, folderOf, join, normalise } from "./paths.js";
 
 const { performance } = globalThis as unknown as { performance: { now(): number } };
@@ -37,17 +37,17 @@ export async function read(
 }
 
 async function fetchAll(paths: Request, folder: string, readText: ReadText): Promise<Answer> {
-    const texts = await Promise.all(
-        paths.map((path) =>
-            Promise.resolve()
-                .then(() => readText(join(folder, path)))
-                .then(
-                    (text) => (typeof text === "string" ? { text } : { missing: true as const }),
-                    () => ({ missing: true as const }),
-                ),
-        ),
+    const fetched = await Promise.all(
+        paths.map(async (path): Promise<[string, FileText]> => {
+            try {
+                const text = await readText(join(folder, path));
+                return [path, typeof text === "string" ? { text } : { missing: true }];
+            } catch {
+                return [path, { missing: true }];
+            }
+        }),
     );
-    return Object.fromEntries(paths.map((path, i) => [path, texts[i] ?? { missing: true }]));
+    return Object.fromEntries(fetched);
 }
 
 /**
@@ -63,7 +63,10 @@ async function fetchAll(paths: Request, folder: string, readText: ReadText): Pro
 export function readFromMemory(
     sources: {
         files: Record<string, string>;
-        /** @default the only file, when there is one */
+        /**
+         * The file to start from.
+         * @default the first resolver among the files, or else every file, in order
+         */
         entry?: string;
     },
     options: ReadOptions = {},
@@ -72,7 +75,7 @@ export function readFromMemory(
     const texts = new Map(
         Object.entries(sources.files).map(([path, text]) => [normalise(path), text]),
     );
-    const entry = sources.entry ?? (texts.size === 1 ? [...texts.keys()][0] : undefined);
+    const { entry } = sources;
     const folder = entry === undefined ? "" : folderOf(normalise(entry));
     const run = load(
         entry === undefined ? { files: [...texts.keys()] } : { entry: fileName(entry) },

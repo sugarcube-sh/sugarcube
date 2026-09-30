@@ -1,6 +1,7 @@
 import type { Diagnostic, Input, SetRef, Span } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
-import { type JsonFile, parseJson, spanOf } from "./json.js";
+import { type JsonFile, type JsonProblem, type ParsedJson, parseJson, spanOf } from "./json.js";
+import { isResolver, readResolver } from "./resolver.js";
 
 export type FileText = { text: string } | { missing: true };
 export type Request = string[];
@@ -21,8 +22,12 @@ export interface Loaded {
     diagnostics: Diagnostic[];
 }
 
+type FileKind = "tokens" | "resolver";
+
 interface State {
     texts: Map<string, FileText>;
+    parsed: Map<string, ParsedJson>;
+    outcomes: Map<string, JsonFile | undefined>;
     loaded: Loaded;
 }
 
@@ -31,6 +36,8 @@ export function* load(
 ): Generator<Request, Loaded, Answer> {
     const state: State = {
         texts: new Map(),
+        parsed: new Map(),
+        outcomes: new Map(),
         loaded: {
             files: [],
             trees: {},
@@ -40,12 +47,22 @@ export function* load(
             diagnostics: [],
         },
     };
+
     const files = "entry" in start ? [start.entry] : start.files;
-    yield* fetch(state, files);
+    yield* ask(state, files);
+
+    const resolver = files.find((file) => {
+        const root = parse(state, file)?.root;
+        return root !== undefined && isResolver(root);
+    });
+    if (resolver !== undefined) {
+        loadResolver(state, resolver);
+        return state.loaded;
+    }
 
     const sets: SetRef[] = [];
     for (const file of files) {
-        readTokenFile(state, file);
+        use(state, file, "tokens");
         sets.push({ file, from: { set: "default" } });
         state.loaded.readers[file] = "everyone";
     }
@@ -53,81 +70,95 @@ export function* load(
     return state.loaded;
 }
 
-function* fetch(state: State, paths: string[]): Generator<Request, void, Answer> {
+function* ask(state: State, paths: string[]): Generator<Request, void, Answer> {
     const wanted = [...new Set(paths)].filter((path) => !state.texts.has(path));
     if (wanted.length === 0) return;
     const answer = yield wanted;
-    for (const path of wanted) {
-        state.texts.set(path, answer[path] ?? { missing: true });
-        state.loaded.files.push(path);
-    }
+    for (const path of wanted) state.texts.set(path, answer[path] ?? { missing: true });
 }
 
-function readTokenFile(
+function parse(state: State, path: string): ParsedJson | undefined {
+    const cached = state.parsed.get(path);
+    if (cached) return cached;
+    const text = state.texts.get(path);
+    if (!text || "missing" in text) return undefined;
+    const parsed = parseJson(text.text);
+    state.parsed.set(path, parsed);
+    return parsed;
+}
+
+function use(
     state: State,
     path: string,
+    kind: FileKind,
     referencedFrom?: { file: string; at: Span },
-): void {
-    const { loaded } = state;
-    if (path in loaded.trees) return;
+): JsonFile | undefined {
+    if (state.outcomes.has(path)) return state.outcomes.get(path);
+    state.loaded.files.push(path);
+    const file = open(state, path, kind, referencedFrom);
+    state.outcomes.set(path, file);
+    if (file) state.loaded.trees[path] = file;
+    return file;
+}
 
-    const text = state.texts.get(path);
-    if (!text || "missing" in text) {
-        loaded.diagnostics.push(
+function open(
+    state: State,
+    path: string,
+    kind: FileKind,
+    referencedFrom?: { file: string; at: Span },
+): JsonFile | undefined {
+    const { diagnostics } = state.loaded;
+    const parsed = parse(state, path);
+    if (!parsed) {
+        diagnostics.push(
             diagnostic(
                 "file-not-found",
-                referencedFrom
-                    ? { file: path, referencedFrom: referencedFrom.file }
-                    : { file: path },
-                referencedFrom ? { at: referencedFrom.at } : {},
+                { file: path, ...(referencedFrom && { referencedFrom: referencedFrom.file }) },
+                { ...(referencedFrom && { at: referencedFrom.at }) },
             ),
         );
-        return;
+        return undefined;
     }
 
-    const parsed = parseJson(path, text.text);
-    if (!parsed.ok) {
-        for (const { reason, offset, length } of parsed.problems) {
-            loaded.diagnostics.push(
-                diagnostic(
-                    "invalid-json",
-                    { reason },
-                    { at: spanOf(path, parsed.lineStarts, offset, length) },
-                ),
-            );
-        }
-        return;
-    }
-
-    for (const { reason, offset, length } of parsed.comments) {
-        loaded.diagnostics.push(
-            diagnostic(
-                "invalid-json",
-                { reason },
-                { at: spanOf(path, parsed.file.lineStarts, offset, length) },
-            ),
+    const at = (node: { offset: number; length: number }) =>
+        spanOf(path, parsed.lineStarts, node.offset, node.length);
+    const { root, syntax } = parsed;
+    const problems: JsonProblem[] = [
+        ...(kind === "tokens" ? parsed.comments : []),
+        ...(syntax ? [syntax] : []),
+        ...(root && !syntax && root.type !== "object"
+            ? [{ reason: "not-an-object" as const, offset: root.offset, length: root.length }]
+            : []),
+    ];
+    for (const problem of problems.sort((a, b) => a.offset - b.offset)) {
+        diagnostics.push(
+            diagnostic("invalid-json", { reason: problem.reason }, { at: at(problem) }),
         );
     }
-    if (parsed.comments.length > 0) return;
+    if (problems.length > 0 || !root) return undefined;
 
-    const { lineStarts } = parsed.file;
     for (const { key, first, last } of parsed.duplicates) {
-        const keyOf = (property: typeof first) => property.children?.[0] ?? property;
-        loaded.diagnostics.push(
+        diagnostics.push(
             diagnostic(
                 "duplicate-key",
                 { key },
-                {
-                    at: spanOf(path, lineStarts, keyOf(last).offset, keyOf(last).length),
-                    related: [
-                        {
-                            message: "also written here",
-                            at: spanOf(path, lineStarts, keyOf(first).offset, keyOf(first).length),
-                        },
-                    ],
-                },
+                { at: at(last), related: [{ message: "also written here", at: at(first) }] },
             ),
         );
     }
-    loaded.trees[path] = parsed.file;
+    return { path, root, lineStarts: parsed.lineStarts, hidden: parsed.hidden };
+}
+
+function loadResolver(state: State, path: string): void {
+    const file = use(state, path, "resolver");
+    if (!file) return;
+    const resolver = readResolver(file, state.loaded.diagnostics);
+    for (const item of resolver.order) {
+        if (item.kind !== "modifier") continue;
+        const { name, contexts, default: fallback } = item.modifier;
+        state.loaded.modifiers[name] = {
+            contexts: [...contexts.keys()],
+            ...(fallback !== undefined && { default: fallback }),
+        };
+    }
 }

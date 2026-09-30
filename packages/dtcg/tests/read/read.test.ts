@@ -137,6 +137,29 @@ describe("readFromMemory", () => {
         expect(doc.diagnostics).toStrictEqual([]);
     });
 
+    it("uses a resolver among the files as the entry, and ignores files it does not read", () => {
+        const doc = readFromMemory({
+            files: {
+                "stray.json": "{ // not read\n }",
+                "design.resolver.json": '{ "version": "2025.10", "resolutionOrder": [] }',
+            },
+        });
+        expect(doc.files).toStrictEqual(["design.resolver.json"]);
+        expect(doc.diagnostics).toStrictEqual([]);
+    });
+
+    it("reports a syntax error in a resolver, but not its comments", () => {
+        const doc = readFromMemory({
+            files: {
+                "design.resolver.json":
+                    '{ // fine here\n "version": "2025.10", "resolutionOrder": [], }',
+            },
+        });
+        expect(doc.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toStrictEqual([
+            { kind: "invalid-json", detail: { reason: "property-name-expected" } },
+        ]);
+    });
+
     it("returns plain data", () => {
         const doc = readFromMemory({ files: { "tokens.json": '{ "a": 1, "a": 2 }' } });
         expect(JSON.parse(JSON.stringify(doc))).toStrictEqual(doc);

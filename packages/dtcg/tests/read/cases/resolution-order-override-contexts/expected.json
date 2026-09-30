@@ -1,0 +1,32 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.2.2 and 4.1.5.3: local contexts replace the target's, so the target's default must be one of the new contexts",
+  "modifiers": {
+    "theme": {
+      "contexts": ["dim", "bright"]
+    }
+  },
+  "diagnostics": [
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "invalid-default",
+        "name": "theme",
+        "at": ["resolutionOrder", 0]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 152,
+        "length": 72,
+        "start": {
+          "line": 7,
+          "column": 5
+        },
+        "end": {
+          "line": 7,
+          "column": 77
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.2.2: keys beside $ref override the target's, and the result is checked as a whole; a problem in the target is reported once, where it is written",
+  "modifiers": {
+    "theme": {
+      "contexts": ["light", "dark"]
+    },
+    "size": {
+      "contexts": ["only"]
+    }
+  },
+  "diagnostics": [
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "single-context",
+        "name": "size",
+        "at": ["modifiers", "size", "contexts"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 147,
+        "length": 14,
+        "start": {
+          "line": 5,
+          "column": 27
+        },
+        "end": {
+          "line": 5,
+          "column": 41
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "invalid-default",
+        "name": "theme",
+        "at": ["resolutionOrder", 0, "default"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 238,
+        "length": 6,
+        "start": {
+          "line": 8,
+          "column": 47
+        },
+        "end": {
+          "line": 8,
+          "column": 53
+        }
+      }
+    }
+  ]
+}

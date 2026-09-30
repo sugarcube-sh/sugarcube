@@ -20,11 +20,18 @@ export interface DuplicateKey {
     last: Node;
 }
 
-export type ParsedJson =
-    | { ok: true; file: JsonFile; comments: JsonProblem[]; duplicates: DuplicateKey[] }
-    | { ok: false; lineStarts: number[]; problems: JsonProblem[] };
+export interface ParsedJson {
+    root: Node | undefined;
+    lineStarts: number[];
+    hidden: Set<Node>;
+    comments: JsonProblem[];
+    syntax?: JsonProblem;
+    duplicates: DuplicateKey[];
+}
 
-const reasons: Record<string, JsonErrorReason> = {
+type ParseErrorName = Exclude<ReturnType<typeof printParseErrorCode>, "<unknown ParseErrorCode>">;
+
+const reasons: Record<ParseErrorName, JsonErrorReason> = {
     InvalidSymbol: "invalid-symbol",
     InvalidNumberFormat: "invalid-number-format",
     PropertyNameExpected: "property-name-expected",
@@ -43,7 +50,7 @@ const reasons: Record<string, JsonErrorReason> = {
     InvalidCharacter: "invalid-character",
 };
 
-export function parseJson(path: string, text: string): ParsedJson {
+export function parseJson(text: string): ParsedJson {
     const source = text.startsWith("\uFEFF") ? ` ${text.slice(1)}` : text;
     const lineStarts = findLineStarts(source);
     const errors: { error: number; offset: number; length: number }[] = [];
@@ -52,48 +59,55 @@ export function parseJson(path: string, text: string): ParsedJson {
     const comments: JsonProblem[] = [];
     let syntax: JsonProblem | undefined;
     for (const { error, offset, length } of errors) {
-        const reason = reasons[printParseErrorCode(error)] ?? "invalid-symbol";
+        const name = printParseErrorCode(error);
+        const reason = name === "<unknown ParseErrorCode>" ? "invalid-symbol" : reasons[name];
         if (reason === "comment") comments.push({ reason, offset, length });
         else syntax ??= { reason, offset, length };
     }
-
-    if (syntax || !root) {
-        const problems = [
-            ...comments,
-            syntax ?? { reason: "value-expected", offset: 0, length: 0 },
-        ];
-        return { ok: false, lineStarts, problems: problems.sort((a, b) => a.offset - b.offset) };
-    }
-    if (root.type !== "object") {
-        return {
-            ok: false,
-            lineStarts,
-            problems: [{ reason: "not-an-object", offset: root.offset, length: root.length }],
-        };
-    }
+    if (!root) syntax ??= { reason: "value-expected", offset: 0, length: 0 };
 
     const duplicates: DuplicateKey[] = [];
     const hidden = new Set<Node>();
-    findDuplicates(root, duplicates, hidden);
-    return { ok: true, file: { path, root, lineStarts, hidden }, comments, duplicates };
+    if (root) findDuplicates(root, duplicates, hidden);
+    return { root, lineStarts, hidden, comments, syntax, duplicates };
 }
 
 function findDuplicates(node: Node, duplicates: DuplicateKey[], hidden: Set<Node>): void {
     if (node.type === "object") {
-        const seen = new Map<string, Node>();
+        const seen = new Map<string, { property: Node; keyNode: Node }>();
         for (const property of node.children ?? []) {
-            const key = property.children?.[0]?.value as string;
+            const [keyNode] = property.children ?? [];
+            if (!keyNode) continue;
+            const key = keyNode.value as string;
             const earlier = seen.get(key);
             if (earlier) {
-                duplicates.push({ key, first: earlier, last: property });
-                hidden.add(earlier);
+                duplicates.push({ key, first: earlier.keyNode, last: keyNode });
+                hidden.add(earlier.property);
             }
-            seen.set(key, property);
+            seen.set(key, { property, keyNode });
         }
     }
     for (const child of node.children ?? []) {
         if (!hidden.has(child)) findDuplicates(child, duplicates, hidden);
     }
+}
+
+export function members(
+    node: Node,
+    hidden: Set<Node>,
+): { key: string; keyNode: Node; value: Node }[] {
+    if (node.type !== "object") return [];
+    const found: { key: string; keyNode: Node; value: Node }[] = [];
+    for (const property of node.children ?? []) {
+        const [keyNode, value] = property.children ?? [];
+        if (hidden.has(property) || !keyNode || !value) continue;
+        found.push({ key: keyNode.value as string, keyNode, value });
+    }
+    return found;
+}
+
+export function member(node: Node, key: string, hidden: Set<Node>): Node | undefined {
+    return members(node, hidden).find((each) => each.key === key)?.value;
 }
 
 function findLineStarts(text: string): number[] {

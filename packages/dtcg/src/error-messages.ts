@@ -1,4 +1,10 @@
-import type { DiagnosticDetailByKind, DiagnosticKind, JsonErrorReason } from "./index.js";
+import type {
+    DiagnosticDetailByKind,
+    DiagnosticKind,
+    JsonErrorReason,
+    ResolverProblem,
+    ResolverRule,
+} from "./index.js";
 
 type Entry<K extends DiagnosticKind> = {
     severity: "error" | "warning";
@@ -25,17 +31,25 @@ const jsonReasons: Record<JsonErrorReason, string> = {
     "invalid-character": "this is not valid JSON: a string holds a character that must be escaped",
 };
 
-const resolverRules: Record<
-    DiagnosticDetailByKind["resolver-invalid"]["rule"],
-    (name: string) => string
-> = {
+const expectedWords: Record<Extract<ResolverProblem, { rule: "wrong-type" }>["expected"], string> =
+    {
+        string: "a string",
+        object: "an object",
+        array: "a list",
+    };
+
+const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) => string> = {
     "version": () => 'the resolver\'s version must be "2025.10"',
+    "missing-property": (name) => `\`${name}\` is missing`,
     "unknown-set": (name) => `there is no set named \`${name}\``,
     "unknown-modifier": (name) => `there is no modifier named \`${name}\``,
     "invalid-pointer": (name) => `\`${name}\` cannot be referred to from here`,
     "circular-reference": (name) => `\`${name}\` leads back to itself`,
+    "resolver-as-source": (name) => `\`${name}\` is a resolver, and a source must hold tokens`,
     "duplicate-name": (name) =>
         `more than one set or modifier in the resolution order is named \`${name}\``,
+    "unknown-item-type": (name) =>
+        `\`${name}\` is not a kind of item: an item in the resolution order is a "set" or a "modifier"`,
     "no-contexts": (name) => `the modifier \`${name}\` has no contexts`,
     "single-context": (name) =>
         `the modifier \`${name}\` has only one context, which makes it a set`,
@@ -56,7 +70,10 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "resolver-invalid": {
         severity: "error",
-        message: ({ rule, name }) => resolverRules[rule](name ?? ""),
+        message: (detail) =>
+            detail.rule === "wrong-type"
+                ? `\`${detail.name}\` must be ${expectedWords[detail.expected]}`
+                : resolverRules[detail.rule](detail.name),
     },
     "input-invalid": {
         severity: "error",

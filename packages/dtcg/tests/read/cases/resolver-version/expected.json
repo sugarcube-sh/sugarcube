@@ -1,0 +1,27 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.2: the version must be 2025.10",
+  "diagnostics": [
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "version",
+        "name": "version",
+        "at": ["version"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 15,
+        "length": 9,
+        "start": {
+          "line": 2,
+          "column": 14
+        },
+        "end": {
+          "line": 2,
+          "column": 23
+        }
+      }
+    }
+  ]
+}
