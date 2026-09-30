@@ -1,0 +1,16 @@
+{
+  "color": {
+    "$type": "color",
+    "brand": { "$value": "#e11d48" },
+    "scrim": { "$value": "#00000080" },
+    "white": { "$value": "#fff" }
+  },
+  "edge": {
+    "$type": "border",
+    "$value": {
+      "color": "#E11D48",
+      "width": { "value": 1, "unit": "px" },
+      "style": "solid"
+    }
+  }
+}

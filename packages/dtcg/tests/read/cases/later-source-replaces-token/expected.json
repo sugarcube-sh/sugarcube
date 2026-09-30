@@ -1,0 +1,142 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.4 and 6.2, contract 02: a later source replaces a token whole, so dark's color.brand keeps nothing of light's: its value has no hex (Terrazzo keeps light's) and no description. The token keeps its place in the order. Groups merge: each property from the latest source that sets it, $extensions key by key, and every declaration listed",
+  "permutations": [
+    {
+      "tokens": {
+        "color.brand": {
+          "path": "color.brand",
+          "type": "color",
+          "description": "The brand color",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "base.json",
+              "valueAfter": "\"brand\":"
+            }
+          },
+          "authored": {
+            "value": {
+              "colorSpace": "srgb",
+              "components": [0.882, 0.114, 0.282],
+              "hex": "#e11d48"
+            },
+            "typeDeclared": false
+          },
+          "value": {
+            "colorSpace": "srgb",
+            "components": [0.882, 0.114, 0.282],
+            "alpha": 1,
+            "hex": "#e11d48"
+          }
+        },
+        "color.muted": {
+          "path": "color.muted",
+          "type": "color",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "base.json",
+              "valueAfter": "\"muted\":"
+            }
+          },
+          "authored": {
+            "value": {
+              "colorSpace": "srgb",
+              "components": [0.5, 0.5, 0.5]
+            },
+            "typeDeclared": false
+          }
+        }
+      },
+      "groups": {
+        "color": {
+          "path": "color",
+          "type": "color",
+          "description": "Brand colors",
+          "extensions": {
+            "com.example": {
+              "tier": 1
+            },
+            "org.other": true
+          },
+          "declaredIn": [
+            {
+              "file": "base.json",
+              "valueAfter": "\"color\":"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "tokens": {
+        "color.brand": {
+          "path": "color.brand",
+          "type": "color",
+          "source": {
+            "index": 1,
+            "at": {
+              "file": "dark.json",
+              "valueAfter": "\"brand\":"
+            }
+          },
+          "authored": {
+            "value": {
+              "colorSpace": "oklch",
+              "components": [0.7, 0.2, 20]
+            },
+            "typeDeclared": false
+          },
+          "value": {
+            "colorSpace": "oklch",
+            "components": [0.7, 0.2, 20],
+            "alpha": 1
+          }
+        },
+        "color.muted": {
+          "path": "color.muted",
+          "type": "color",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "base.json",
+              "valueAfter": "\"muted\":"
+            }
+          },
+          "authored": {
+            "value": {
+              "colorSpace": "srgb",
+              "components": [0.5, 0.5, 0.5]
+            },
+            "typeDeclared": false
+          }
+        }
+      },
+      "groups": {
+        "color": {
+          "path": "color",
+          "type": "color",
+          "description": "Brand colors",
+          "extensions": {
+            "com.example": {
+              "mode": "dark"
+            },
+            "org.other": true
+          },
+          "declaredIn": [
+            {
+              "file": "base.json",
+              "valueAfter": "\"color\":"
+            },
+            {
+              "file": "dark.json",
+              "valueAfter": "\"color\":"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

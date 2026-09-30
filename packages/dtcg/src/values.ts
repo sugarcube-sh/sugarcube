@@ -1,4 +1,4 @@
-import type { Parse, TokenType, UnresolvedValue } from "./index.js";
+import type { Parse, UnresolvedValue } from "./index.js";
 import { readBorder } from "./values/border.js";
 import { readColor } from "./values/color.js";
 import { readDimension } from "./values/dimension.js";
@@ -22,52 +22,8 @@ export {
     lineCaps,
     strokeStyleKeywords,
 } from "./values/keywords.js";
-
-/** Every token type the specification defines, in its order. */
-export const tokenTypes: readonly TokenType[] = [
-    "color",
-    "dimension",
-    "fontFamily",
-    "fontWeight",
-    "duration",
-    "cubicBezier",
-    "number",
-    "strokeStyle",
-    "border",
-    "transition",
-    "shadow",
-    "gradient",
-    "typography",
-];
-
-/**
- * The parts of each composite type, and the type of each part, in the spec's order. For shadow
- * and gradient, these are the parts of one layer or one stop. Every part is required except a
- * shadow's `inset`, which defaults to `false`.
- *
- * @example
- * compositeParts.border // { color: "color", width: "dimension", style: "strokeStyle" }
- */
-export const compositeParts = {
-    border: { color: "color", width: "dimension", style: "strokeStyle" },
-    transition: { duration: "duration", delay: "duration", timingFunction: "cubicBezier" },
-    shadow: {
-        color: "color",
-        offsetX: "dimension",
-        offsetY: "dimension",
-        blur: "dimension",
-        spread: "dimension",
-        inset: "boolean",
-    },
-    gradient: { color: "color", position: "number" },
-    typography: {
-        fontFamily: "fontFamily",
-        fontSize: "dimension",
-        fontWeight: "fontWeight",
-        letterSpacing: "dimension",
-        lineHeight: "number",
-    },
-} as const satisfies Readonly<Record<string, Readonly<Record<string, TokenType | "boolean">>>>;
+export { tokenTypes } from "./values/token-types.js";
+export { compositeParts } from "./values/composite-parts.js";
 
 /**
  * Reads one color value. A reference to a whole token, written `"{color.brand}"`, is read as an

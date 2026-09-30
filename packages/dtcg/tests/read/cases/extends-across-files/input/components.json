@@ -1,0 +1,6 @@
+{
+  "card": {
+    "$extends": "{surface}",
+    "padding": { "$type": "number", "$value": 16 }
+  }
+}

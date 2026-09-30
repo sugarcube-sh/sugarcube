@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { type Document, type ReadOptions, read, readFromMemory } from "../../src/index.js";
+import { withSpans } from "./positions.js";
 
 interface Expected {
     entry: string;
@@ -11,8 +12,12 @@ interface Expected {
     files?: string[];
     modifiers?: Document["modifiers"];
     usedBy?: Document["usedBy"];
-    permutations?: Pick<Document["permutations"][number], "input" | "label" | "sources">[];
-    diagnostics: Pick<Document["diagnostics"][number], "kind" | "detail" | "at" | "related">[];
+    permutations?: Partial<Document["permutations"][number]>[];
+    graph?: Document["graph"];
+    diagnostics: Pick<
+        Document["diagnostics"][number],
+        "kind" | "detail" | "at" | "related" | "path" | "permutation" | "fixes"
+    >[];
 }
 
 const casesFolder = join(import.meta.dirname, "cases");
@@ -40,26 +45,61 @@ function observed(doc: Document, expected: Expected) {
         ...(expected.files && { files: doc.files }),
         ...(expected.modifiers && { modifiers: doc.modifiers }),
         ...(expected.usedBy && { usedBy: doc.usedBy }),
+        ...(expected.graph && { graph: doc.graph }),
         ...(expected.permutations && {
-            permutations: doc.permutations.map(({ input, label, sources }) => ({
-                input,
-                label,
-                sources,
-            })),
+            permutations: doc.permutations.map((permutation, index) =>
+                observedPermutation(permutation, expected.permutations?.[index]),
+            ),
         }),
-        diagnostics: doc.diagnostics.map(({ kind, detail, at, related }) => ({
-            kind,
-            detail,
-            ...(at && { at }),
-            ...(related && { related }),
-        })),
+        diagnostics: doc.diagnostics.map(
+            ({ kind, detail, at, related, path, permutation, fixes }) => ({
+                kind,
+                detail,
+                ...(at && { at }),
+                ...(related && { related }),
+                ...(path !== undefined && { path }),
+                ...(permutation !== undefined && { permutation }),
+                ...(fixes && { fixes }),
+            }),
+        ),
     };
+}
+
+function observedPermutation(
+    permutation: Document["permutations"][number],
+    expected: Partial<Document["permutations"][number]> = {},
+) {
+    const { input, label, sources, tokens, groups } = permutation;
+    return {
+        ...(!expected.tokens && !expected.groups && { input, label, sources }),
+        ...("input" in expected && { input }),
+        ...("label" in expected && { label }),
+        ...("sources" in expected && { sources }),
+        ...(expected.tokens && { tokens: picked(tokens, expected.tokens) }),
+        ...(expected.groups && { groups: picked(groups, expected.groups) }),
+    };
+}
+
+function picked<T extends object>(found: Record<string, T>, wanted: Record<string, Partial<T>>) {
+    return Object.fromEntries(
+        Object.entries(found).map(([path, each]) => {
+            const expected: Record<string, unknown> = wanted[path] ?? each;
+            const present = Object.entries(each).filter(([key]) => key in expected);
+            const absent = Object.keys(expected)
+                .filter((key) => expected[key] === null && !(key in each))
+                .map((key) => [key, null]);
+            return [path, Object.fromEntries([...present, ...absent])];
+        }),
+    );
 }
 
 describe.each(cases)("%s", (name) => {
     const folder = join(casesFolder, name);
-    const expected = JSON.parse(readFileSync(join(folder, "expected.json"), "utf8")) as Expected;
     const input = join(folder, "input");
+    const expected = withSpans(
+        JSON.parse(readFileSync(join(folder, "expected.json"), "utf8")),
+        inputFiles(input),
+    ) as Expected;
 
     it("reads through read", async () => {
         const doc = await read(expected.entry, {

@@ -1,0 +1,101 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 8 and 9: a value that does not fit its type makes the token invalid (8: an appropriate error SHOULD be displayed). Each problem is its own diagnostic, at the part it concerns, or at the object where a missing part belongs, with the parser's code as reason. The token stays, without a value",
+  "permutations": [
+    {
+      "tokens": {
+        "red": {
+          "path": "red",
+          "type": "color",
+          "invalid": true,
+          "authored": {
+            "value": {
+              "colorSpace": "srgb",
+              "components": [2, 0, 0]
+            },
+            "typeDeclared": true
+          }
+        },
+        "space": {
+          "path": "space",
+          "invalid": true
+        },
+        "text": {
+          "path": "text",
+          "invalid": true
+        },
+        "layers": {
+          "path": "layers",
+          "invalid": true
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "invalid-value",
+      "detail": {
+        "type": "color",
+        "at": ["$value", "components", 0],
+        "reason": "component-out-of-range"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "2"
+      },
+      "path": "red"
+    },
+    {
+      "kind": "invalid-value",
+      "detail": {
+        "type": "dimension",
+        "at": ["$value", "unit"],
+        "reason": "unit-not-allowed"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"em\""
+      },
+      "path": "space"
+    },
+    {
+      "kind": "invalid-value",
+      "detail": {
+        "type": "typography",
+        "at": ["$value", "lineHeight"],
+        "reason": "missing-property"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"text\": {\n    \"$type\": \"typography\",\n    \"$value\":"
+      },
+      "path": "text"
+    },
+    {
+      "kind": "invalid-value",
+      "detail": {
+        "type": "shadow",
+        "at": ["$value", 1, "fuzz"],
+        "reason": "unknown-property"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "true"
+      },
+      "path": "layers"
+    },
+    {
+      "kind": "invalid-value",
+      "detail": {
+        "type": "shadow",
+        "at": ["$value", 1, "blur"],
+        "reason": "string-with-unit"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"8px\""
+      },
+      "path": "layers"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Format 6.1 and Resolver 6.2: when one source declares a token where another declares a group, the combined document holds an object that is both, which MUST be reported. The later one is used, as with any conflict. A problem in a file every permutation reads is reported once; one only some permutations have names the permutation",
+  "permutations": [
+    {
+      "tokens": {
+        "space.scale": {
+          "path": "space.scale"
+        },
+        "radius.sm": {
+          "path": "radius.sm"
+        }
+      },
+      "groups": {
+        "space": {
+          "path": "space"
+        },
+        "radius": {
+          "path": "radius"
+        }
+      }
+    },
+    {
+      "tokens": {
+        "space.scale.sm": {
+          "path": "space.scale.sm",
+          "type": "number"
+        },
+        "radius": {
+          "path": "radius",
+          "type": "number"
+        }
+      },
+      "groups": {
+        "space": {
+          "path": "space"
+        },
+        "space.scale": {
+          "path": "space.scale"
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "invalid-name",
+      "detail": {
+        "name": "bad.name",
+        "character": "."
+      },
+      "at": {
+        "file": "base.json",
+        "text": "\"bad.name\""
+      }
+    },
+    {
+      "kind": "token-and-group",
+      "detail": {},
+      "at": {
+        "file": "dark.json",
+        "valueAfter": "\"scale\":"
+      },
+      "related": [
+        {
+          "message": "declared as a token here",
+          "at": {
+            "file": "base.json",
+            "valueAfter": "\"scale\":"
+          }
+        }
+      ],
+      "permutation": 1
+    },
+    {
+      "kind": "token-and-group",
+      "detail": {},
+      "at": {
+        "file": "dark.json",
+        "valueAfter": "\"radius\":"
+      },
+      "related": [
+        {
+          "message": "declared as a group here",
+          "at": {
+            "file": "base.json",
+            "valueAfter": "\"radius\":"
+          }
+        }
+      ],
+      "permutation": 1
+    }
+  ]
+}

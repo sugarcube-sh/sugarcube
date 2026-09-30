@@ -78,7 +78,7 @@ function findDuplicates(node: Node, duplicates: DuplicateKey[], hidden: Set<Node
         for (const property of node.children ?? []) {
             const [keyNode] = property.children ?? [];
             if (!keyNode) continue;
-            const key = keyNode.value as string;
+            const key = String(keyNode.value);
             const earlier = seen.get(key);
             if (earlier) {
                 duplicates.push({ key, first: earlier.keyNode, last: keyNode });
@@ -101,7 +101,7 @@ export function members(
     for (const property of node.children ?? []) {
         const [keyNode, value] = property.children ?? [];
         if (hidden.has(property) || !keyNode || !value) continue;
-        found.push({ key: keyNode.value as string, keyNode, value });
+        found.push({ key: String(keyNode.value), keyNode, value });
     }
     return found;
 }
@@ -141,13 +141,28 @@ function position(lineStarts: number[], offset: number): { line: number; column:
     return { line: low + 1, column: offset - (lineStarts[low] ?? 0) + 1 };
 }
 
+export function plainObject(node: Node, hidden: Set<Node>): Record<string, unknown> {
+    return Object.fromEntries(
+        members(node, hidden).map(({ key, value }) => [key, plainValue(value, hidden)]),
+    );
+}
+
 export function plainValue(node: Node, hidden: Set<Node>): unknown {
-    if (node.type === "object") {
-        return Object.fromEntries(
-            members(node, hidden).map(({ key, value }) => [key, plainValue(value, hidden)]),
-        );
-    }
+    if (node.type === "object") return plainObject(node, hidden);
     if (node.type === "array")
         return (node.children ?? []).map((child) => plainValue(child, hidden));
     return node.value;
+}
+
+export function deepestNode(node: Node, steps: (string | number)[], hidden: Set<Node>): Node {
+    let current = node;
+    for (const step of steps) {
+        const next =
+            current.type === "array"
+                ? current.children?.[Number(step)]
+                : member(current, String(step), hidden);
+        if (!next) break;
+        current = next;
+    }
+    return current;
 }

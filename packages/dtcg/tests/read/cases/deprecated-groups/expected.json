@@ -1,0 +1,41 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 5.2.4 and 6.3.1: a group's $deprecated extends to every token inside unless a closer group or the token says otherwise; false undoes it. The top level counts as the outermost group. Groups report only their own",
+  "permutations": [
+    {
+      "tokens": {
+        "top": {
+          "path": "top",
+          "deprecated": true
+        },
+        "old.a": {
+          "path": "old.a",
+          "deprecated": "use new"
+        },
+        "old.b": {
+          "path": "old.b",
+          "deprecated": "use new.b"
+        },
+        "old.kept.c": {
+          "path": "old.kept.c",
+          "deprecated": false
+        },
+        "old.kept.d": {
+          "path": "old.kept.d",
+          "deprecated": true
+        }
+      },
+      "groups": {
+        "old": {
+          "path": "old",
+          "deprecated": "use new"
+        },
+        "old.kept": {
+          "path": "old.kept",
+          "deprecated": false
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

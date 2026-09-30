@@ -1,0 +1,41 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 5.1: a name is any JSON string, the empty string included. A group named \"\" is a group like any other, and its $type reaches only its own tokens, never the file's top level (6.7.3), so `loose` has no type (5.2.2)",
+  "permutations": [
+    {
+      "tokens": {
+        ".x": {
+          "path": ".x",
+          "type": "number"
+        },
+        "size": {
+          "path": "size",
+          "type": "number"
+        }
+      },
+      "groups": {
+        "": {
+          "path": "",
+          "type": "number",
+          "declaredIn": [
+            {
+              "file": "tokens.json",
+              "valueAfter": "\"\":"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "missing-type",
+      "detail": {},
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"loose\":"
+      },
+      "path": "loose"
+    }
+  ]
+}

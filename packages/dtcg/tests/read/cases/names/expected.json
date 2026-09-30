@@ -1,0 +1,77 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 5.1.1: a name cannot start with $ or contain {, } or .; $root is a token name (6.2), so a $root with no $value is a group with a forbidden name. Other $ keys are ignored, as properties this reader does not know. A space at either end is legal but warned about",
+  "permutations": [
+    {
+      "tokens": {
+        "size. e": {
+          "path": "size. e"
+        },
+        "size.g": {
+          "path": "size.g"
+        }
+      },
+      "groups": {
+        "size": {
+          "path": "size"
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "invalid-name",
+      "detail": {
+        "name": "a.b",
+        "character": "."
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"a.b\""
+      }
+    },
+    {
+      "kind": "invalid-name",
+      "detail": {
+        "name": "{c}",
+        "character": "{"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{c}\""
+      }
+    },
+    {
+      "kind": "invalid-name",
+      "detail": {
+        "name": "d}",
+        "character": "}"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"d}\""
+      }
+    },
+    {
+      "kind": "whitespace-in-name",
+      "detail": {
+        "name": " e"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\" e\""
+      }
+    },
+    {
+      "kind": "invalid-name",
+      "detail": {
+        "name": "$root",
+        "character": "$"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"$root\""
+      }
+    }
+  ]
+}

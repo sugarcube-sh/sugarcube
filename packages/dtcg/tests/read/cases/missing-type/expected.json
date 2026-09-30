@@ -1,0 +1,62 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 5.2.2 and 8: a token with no $type of its own and none from a group MUST be considered invalid. A token whose whole value is a reference takes its type from what it refers to, before any group's: space.scale is a number although its group says dimension",
+  "permutations": [
+    {
+      "tokens": {
+        "size.base": {
+          "path": "size.base",
+          "type": "number",
+          "resolved": 4
+        },
+        "size.alias": {
+          "path": "size.alias",
+          "type": "number",
+          "aliasOf": "size.base",
+          "value": {
+            "alias": "size.base"
+          },
+          "resolved": 4
+        },
+        "size.pointer": {
+          "path": "size.pointer",
+          "type": "number",
+          "aliasOf": "size.base",
+          "value": {
+            "pointer": "#/size/base/$value"
+          },
+          "resolved": 4
+        },
+        "space.md": {
+          "path": "space.md",
+          "type": "dimension"
+        },
+        "space.scale": {
+          "path": "space.scale",
+          "type": "number",
+          "aliasOf": "size.base",
+          "resolved": 4
+        }
+      },
+      "groups": {
+        "size": {
+          "path": "size"
+        },
+        "space": {
+          "path": "space"
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "missing-type",
+      "detail": {},
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"sm\":"
+      },
+      "path": "size.sm"
+    }
+  ]
+}

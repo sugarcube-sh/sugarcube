@@ -1,0 +1,63 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 6.2: a permutation's sources behave as one document, so $extends can reach a group in another file, and inherits it as it is in that permutation: dark's card.raised is dark's surface.raised",
+  "permutations": [
+    {
+      "tokens": {
+        "surface.raised": {
+          "path": "surface.raised"
+        },
+        "card.padding": {
+          "path": "card.padding"
+        },
+        "card.raised": {
+          "path": "card.raised",
+          "type": "number",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "base.json",
+              "valueAfter": "\"raised\":"
+            }
+          },
+          "authored": {
+            "value": 1,
+            "typeDeclared": false
+          },
+          "inherited": {
+            "from": "surface"
+          }
+        }
+      }
+    },
+    {
+      "tokens": {
+        "surface.raised": {
+          "path": "surface.raised"
+        },
+        "card.padding": {
+          "path": "card.padding"
+        },
+        "card.raised": {
+          "path": "card.raised",
+          "type": "number",
+          "source": {
+            "index": 2,
+            "at": {
+              "file": "dark.json",
+              "valueAfter": "\"raised\":"
+            }
+          },
+          "authored": {
+            "value": 2,
+            "typeDeclared": false
+          },
+          "inherited": {
+            "from": "surface"
+          }
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

@@ -1,0 +1,8 @@
+{
+  "color": {
+    "$type": "color",
+    "brand": { "$value": { "colorSpace": "srgb", "components": [1, 0, 0] } },
+    "danger": { "$value": "{color.brand}" },
+    "accent": { "$value": "{color.brand}" }
+  }
+}

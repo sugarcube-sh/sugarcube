@@ -1,0 +1,132 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 5.2, 6.1 to 6.3, 6.7.2 and 6.7.3: tokens and groups, group properties, a $root token and its path, a type from the closest group with one, the top level included. $schema and other unknown $ keys at the top level are file metadata",
+  "permutations": [
+    {
+      "tokens": {
+        "color.accent.$root": {
+          "path": "color.accent.$root",
+          "type": "color",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "tokens.json",
+              "valueAfter": "\"$root\":"
+            }
+          },
+          "authored": {
+            "value": {
+              "colorSpace": "srgb",
+              "components": [0.867, 0, 0]
+            },
+            "typeDeclared": false
+          }
+        },
+        "color.accent.light": {
+          "path": "color.accent.light",
+          "type": "color",
+          "description": "Hover",
+          "deprecated": "use the root accent",
+          "extensions": {
+            "com.example": {
+              "note": true
+            }
+          },
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "tokens.json",
+              "valueAfter": "\"light\":"
+            }
+          },
+          "authored": {
+            "value": {
+              "colorSpace": "srgb",
+              "components": [1, 0.133, 0.133]
+            },
+            "typeDeclared": false
+          }
+        },
+        "opacity.half": {
+          "path": "opacity.half",
+          "type": "number",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "tokens.json",
+              "valueAfter": "\"half\":"
+            }
+          },
+          "authored": {
+            "value": 0.5,
+            "typeDeclared": false
+          }
+        },
+        "space.sm": {
+          "path": "space.sm",
+          "type": "dimension",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "tokens.json",
+              "valueAfter": "\"sm\":"
+            }
+          },
+          "authored": {
+            "value": {
+              "value": 4,
+              "unit": "px"
+            },
+            "typeDeclared": true
+          }
+        }
+      },
+      "groups": {
+        "color": {
+          "path": "color",
+          "type": "color",
+          "description": "Brand colors",
+          "extensions": {
+            "com.example": {
+              "tier": 1
+            }
+          },
+          "declaredIn": [
+            {
+              "file": "tokens.json",
+              "valueAfter": "\"color\":"
+            }
+          ]
+        },
+        "color.accent": {
+          "path": "color.accent",
+          "declaredIn": [
+            {
+              "file": "tokens.json",
+              "valueAfter": "\"accent\":"
+            }
+          ]
+        },
+        "opacity": {
+          "path": "opacity",
+          "declaredIn": [
+            {
+              "file": "tokens.json",
+              "valueAfter": "\"opacity\":"
+            }
+          ]
+        },
+        "space": {
+          "path": "space",
+          "declaredIn": [
+            {
+              "file": "tokens.json",
+              "valueAfter": "\"space\":"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

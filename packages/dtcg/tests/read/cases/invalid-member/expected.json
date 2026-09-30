@@ -1,0 +1,75 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 6.1: a group holds tokens, groups and $ properties; anything else is neither a token nor a group",
+  "permutations": [
+    {
+      "tokens": {
+        "size.f": {
+          "path": "size.f"
+        }
+      },
+      "groups": {
+        "size": {
+          "path": "size"
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "invalid-member",
+      "detail": {
+        "name": "a",
+        "found": "number"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"a\":"
+      }
+    },
+    {
+      "kind": "invalid-member",
+      "detail": {
+        "name": "b",
+        "found": "string"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"b\":"
+      }
+    },
+    {
+      "kind": "invalid-member",
+      "detail": {
+        "name": "c",
+        "found": "array"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"c\":"
+      }
+    },
+    {
+      "kind": "invalid-member",
+      "detail": {
+        "name": "d",
+        "found": "null"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"d\":"
+      }
+    },
+    {
+      "kind": "invalid-member",
+      "detail": {
+        "name": "e",
+        "found": "boolean"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"e\":"
+      }
+    }
+  ]
+}

@@ -1,7 +1,11 @@
 import packageJson from "../../package.json" with { type: "json" };
 import type { Document, ReadOptions, ReadText } from "../index.js";
 import type { Answer, FileText, Request } from "./files.js";
+import { collapse } from "./diagnostics.js";
 import { type Loaded, load } from "./load.js";
+import { normalisePermutations } from "./normalise.js";
+import { createValueReader } from "./parse-value.js";
+import { resolvePermutations } from "./resolve.js";
 import type { PermutationOptions } from "./permutations.js";
 import { fileName, folderOf, join, normalise } from "./paths.js";
 
@@ -35,7 +39,7 @@ export async function read(
         step = run.next(await fetchAll(step.value, folderOf(entry), options.readText));
     }
     options.onStage?.("load", performance.now() - started);
-    return toDocument(step.value);
+    return toDocument(step.value, options);
 }
 
 async function fetchAll(paths: Request, folder: string, readText: ReadText): Promise<Answer> {
@@ -94,31 +98,34 @@ export function readFromMemory(
         step = run.next(answer);
     }
     options.onStage?.("load", performance.now() - started);
-    return toDocument(step.value);
+    return toDocument(step.value, options);
 }
 
 function permutationOptions({
     inputs,
     permutations = "all",
-    permutationLimit = 64,
+    permutationLimit = 32,
 }: ReadOptions): PermutationOptions {
     return { ...(inputs && { inputs }), permutations, limit: permutationLimit };
 }
 
-function toDocument(loaded: Loaded): Document {
+function toDocument(loaded: Loaded, { onStage }: ReadOptions): Document {
+    const found: Document["diagnostics"] = [];
+    const readValue = createValueReader(found);
+    const normalising = performance.now();
+    const normalised = normalisePermutations(loaded.permutations, readValue, found);
+    const resolving = performance.now();
+    onStage?.("normalise", resolving - normalising);
+    const { permutations, graph } = resolvePermutations(normalised, readValue, found);
+    onStage?.("resolve", performance.now() - resolving);
+
     return {
         version: packageJson.version,
         files: loaded.files,
         modifiers: loaded.modifiers,
         usedBy: loaded.usedBy,
-        permutations: loaded.permutations.map(({ input, label, sources }) => ({
-            input,
-            label,
-            sources: sources.map(({ source }) => source),
-            tokens: {},
-            groups: {},
-        })),
-        graph: [],
-        diagnostics: loaded.diagnostics,
+        permutations,
+        graph,
+        diagnostics: [...loaded.diagnostics, ...collapse(found, permutations.length)],
     };
 }

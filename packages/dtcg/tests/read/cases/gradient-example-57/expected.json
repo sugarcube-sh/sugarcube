@@ -1,0 +1,84 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 9.7 (Example 57): a gradient stop's color and position may be references, and a reference in the list to a gradient token holding one stop stands for that stop (9.1: references in a list resolve to single values and do not flatten)",
+  "permutations": [
+    {
+      "tokens": {
+        "brand-primary": {
+          "path": "brand-primary"
+        },
+        "brand.secondary": {
+          "path": "brand.secondary"
+        },
+        "position-end": {
+          "path": "position-end"
+        },
+        "brand-in-the-middle": {
+          "path": "brand-in-the-middle",
+          "resolved": [
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [0, 0, 0],
+                "alpha": 1
+              },
+              "position": 0
+            },
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [0, 1, 0.4],
+                "alpha": 1
+              },
+              "position": 0.5
+            },
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [0, 0, 0],
+                "alpha": 1
+              },
+              "position": 1
+            }
+          ]
+        },
+        "gradient-with-references": {
+          "path": "gradient-with-references",
+          "resolved": [
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [1, 1, 1],
+                "alpha": 1
+              },
+              "position": 0
+            },
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [0.4, 0, 1],
+                "alpha": 1
+              },
+              "position": 0.333
+            },
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [0, 0, 0],
+                "alpha": 1
+              },
+              "position": 1
+            }
+          ]
+        },
+        "gradient.start-stop": {
+          "path": "gradient.start-stop"
+        },
+        "gradient.end-stop": {
+          "path": "gradient.end-stop"
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

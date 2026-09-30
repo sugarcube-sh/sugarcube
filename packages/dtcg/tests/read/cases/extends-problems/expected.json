@@ -1,0 +1,135 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 6.4.4, 6.4.6 and 6.7.4 (Examples 16, 17 and 23): $extends to nothing, to a token, to the group's own parent, or in a loop, MUST be reported, a loop once for every group in it; 6.4.5: $extends is written as a reference, in braces or as a JSON Pointer. The groups in a loop inherit nothing; a group that extends one of them is not in the loop, and gets its local tokens",
+  "permutations": [
+    {
+      "tokens": {
+        "token": {
+          "path": "token"
+        },
+        "button.color": {
+          "path": "button.color"
+        },
+        "groupA.a": {
+          "path": "groupA.a"
+        },
+        "groupB.b": {
+          "path": "groupB.b"
+        },
+        "pointer-form.a": {
+          "path": "pointer-form.a",
+          "inherited": {
+            "from": "groupA"
+          }
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "invalid-property",
+      "detail": {
+        "property": "$extends",
+        "expected": "reference"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"$extends\":",
+        "occurrence": 9
+      }
+    },
+    {
+      "kind": "invalid-property",
+      "detail": {
+        "property": "$extends",
+        "expected": "reference"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"$extends\":",
+        "occurrence": 10
+      }
+    },
+    {
+      "kind": "missing-reference",
+      "detail": {
+        "ref": "nothing.here",
+        "referencedBy": ["missing"]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{nothing.here}\""
+      },
+      "path": "missing"
+    },
+    {
+      "kind": "not-a-group",
+      "detail": {
+        "ref": "token"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{token}\""
+      },
+      "path": "on-a-token"
+    },
+    {
+      "kind": "circular-reference",
+      "detail": {
+        "chain": ["button.secondary", "button"]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{button}\""
+      },
+      "path": "button.secondary"
+    },
+    {
+      "kind": "circular-reference",
+      "detail": {
+        "chain": ["groupA", "groupB", "groupA"]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{groupB}\""
+      },
+      "path": "groupA",
+      "related": [
+        {
+          "message": "part of the same loop",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{groupA}\""
+          }
+        }
+      ]
+    },
+    {
+      "kind": "circular-reference",
+      "detail": {
+        "chain": ["c1", "c2", "c3", "c1"]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{c2}\""
+      },
+      "path": "c1",
+      "related": [
+        {
+          "message": "part of the same loop",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{c3}\""
+          }
+        },
+        {
+          "message": "part of the same loop",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{c1}\""
+          }
+        }
+      ]
+    }
+  ]
+}

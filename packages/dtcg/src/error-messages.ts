@@ -38,6 +38,21 @@ const expectedWords: Record<Extract<ResolverProblem, { rule: "wrong-type" }>["ex
         array: "a list",
     };
 
+const foundWords: Record<DiagnosticDetailByKind["invalid-member"]["found"], string> = {
+    string: "a string",
+    number: "a number",
+    boolean: "true or false",
+    null: "null",
+    array: "a list",
+};
+
+const propertyWords: Record<DiagnosticDetailByKind["invalid-property"]["expected"], string> = {
+    "string": "a string",
+    "object": "an object",
+    "boolean-or-string": "true, false or a string",
+    "reference": 'a reference, such as "{group}" or { "$ref": "#/group" }',
+};
+
 const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) => string> = {
     "version": () => 'the resolver\'s version must be "2025.10"',
     "missing-property": (name) => `\`${name}\` is missing`,
@@ -55,6 +70,18 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
         `the modifier \`${name}\` has only one context, which makes it a set`,
     "invalid-default": (name) =>
         `the default of the modifier \`${name}\` is not one of its contexts`,
+};
+
+export const relatedMessages = {
+    declaredAs: (kind: "token" | "group") => `declared as a ${kind} here`,
+    partOfTheLoop: "part of the same loop",
+    alsoUsedHere: "also used here",
+};
+
+export const fixTitles = {
+    useType: (type: string) => `use \`${type}\`, which has a similar name`,
+    hexToObject: "write the color as an object, keeping the hex",
+    useReference: (path: string) => `use \`${path}\`, which has a similar name`,
 };
 
 export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
@@ -98,6 +125,15 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         message: () =>
             "this has a `$value`, so it is a token, and a token cannot hold tokens or groups",
     },
+    "invalid-member": {
+        severity: "error",
+        message: ({ name, found }) =>
+            `\`${name}\` is ${foundWords[found]}, and a group holds only tokens and groups, which are objects`,
+    },
+    "invalid-property": {
+        severity: "error",
+        message: ({ property, expected }) => `\`${property}\` must be ${propertyWords[expected]}`,
+    },
     "missing-type": {
         severity: "error",
         message: () => "no type can be worked out for this token",
@@ -120,7 +156,20 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "missing-reference": {
         severity: "error",
-        message: ({ ref }) => `the token \`${ref}\` does not exist`,
+        message: ({ ref }) => `\`${ref}\` does not exist`,
+    },
+    "not-a-token": {
+        severity: "error",
+        message: ({ ref }) => `\`${ref}\` is a group, and a reference must name a token`,
+    },
+    "reference-to-several": {
+        severity: "error",
+        message: ({ ref, count }) =>
+            `\`${ref}\` holds ${count}, and a reference in a list stands for one`,
+    },
+    "not-a-group": {
+        severity: "error",
+        message: ({ ref }) => `\`${ref}\` is a token, and only a group can be extended`,
     },
     "circular-reference": {
         severity: "error",

@@ -1,0 +1,6 @@
+{
+  "surface": {
+    "$type": "number",
+    "raised": { "$value": 1 }
+  }
+}

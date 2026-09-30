@@ -401,8 +401,13 @@ export interface Group {
     description?: string;
     deprecated?: boolean | string;
     extensions?: Record<string, unknown>;
-    /** Every place the group is declared. Groups can be spread across files, so there may be several. */
+    /**
+     * Every place the group is declared. Groups can be spread across files, so there may be
+     * several, and a group only {@link Group.inherited | inherited} has none.
+     */
     declaredIn: Span[];
+    /** Set when the group is here only because of `$extends`, or a `$ref` to another group, at `from`. */
+    inherited?: { from: string };
 }
 
 /**
@@ -496,8 +501,19 @@ export interface DiagnosticDetailByKind {
     };
     /** A token or group name uses a character the specification forbids. */
     "invalid-name": { name: string; character: "." | "{" | "}" | "$" };
-    /** An object has a `$value` and also contains tokens or groups. */
+    /**
+     * An object has a `$value` and also contains tokens or groups, or one file declares a token
+     * where another declares a group.
+     */
     "token-and-group": Record<string, never>;
+    /** Something inside a group is neither a token nor a group: it is not an object. */
+    "invalid-member": { name: string; found: "string" | "number" | "boolean" | "null" | "array" };
+    /** A property the specification defines, such as `$description`, holds the wrong kind of JSON. */
+    "invalid-property": {
+        property: "$type" | "$description" | "$deprecated" | "$extensions" | "$extends" | "$ref";
+        /** `"reference"`: a `"{group}"` reference, or a `{ "$ref": "#/…" }` pointer. */
+        expected: "string" | "object" | "boolean-or-string" | "reference";
+    };
     /** No type can be worked out for a token. */
     "missing-type": Record<string, never>;
     /** A `$type` is not one of the thirteen the specification defines (Format 8). */
@@ -513,11 +529,25 @@ export interface DiagnosticDetailByKind {
     "hex-string-color": { value: string };
     /** An `$extensions` entry fails a registered check. */
     "extension-invalid": { key: string };
-    /** A reference points at a token that does not exist. */
+    /** A reference points at nothing: no token, or for `$extends`, no group. */
     "missing-reference": {
+        /** The reference as written, without braces: a path such as `color.brnad`, or a pointer. */
         ref: string;
-        /** Every token that refers to it. */
+        /** Every token or group that refers to it. */
         referencedBy: string[];
+    };
+    /** `$extends`, or a `$ref` standing for a group, points at a token (Format 6.4.6). */
+    "not-a-group": { ref: string };
+    /** A reference to a token points at a group (Format 6.2: `{color.accent}` names a group, not a token). */
+    "not-a-token": { ref: string };
+    /**
+     * A reference in a shadow or gradient list points at a token holding several layers or stops.
+     * A reference in such a list stands for one (Format 9.1, 9.6, 9.7).
+     */
+    "reference-to-several": {
+        ref: string;
+        /** How many layers or stops the token holds. */
+        count: number;
     };
     /** References that lead back to where they started. */
     "circular-reference": { chain: string[] };
@@ -777,8 +807,9 @@ export interface ReadOptions {
     permutations?: "all" | "each-context";
     /**
      * The most combinations `"all"` builds. Above it, `"each-context"` is built instead, and a
-     * `permutation-limit` warning says so.
-     * @default 64
+     * `permutation-limit` warning says so. Each combination is built in full, so a read grows with
+     * them: at the default, a few hundred tokens still read inside a 16 ms frame.
+     * @default 32
      */
     permutationLimit?: number;
     /** Checks for your own `$extensions` keys. */

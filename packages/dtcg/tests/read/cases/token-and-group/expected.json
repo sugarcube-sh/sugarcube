@@ -1,0 +1,29 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 6.1: an object with $value is a token, and one that also holds tokens or groups MUST be reported. The token is still read, without them",
+  "permutations": [
+    {
+      "tokens": {
+        "color.brand": {
+          "path": "color.brand",
+          "type": "number"
+        }
+      },
+      "groups": {
+        "color": {
+          "path": "color"
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "token-and-group",
+      "detail": {},
+      "at": {
+        "file": "tokens.json",
+        "text": "\"light\""
+      }
+    }
+  ]
+}

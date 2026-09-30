@@ -1,0 +1,6 @@
+{
+  "color": {
+    "brand": { "$value": { "colorSpace": "oklch", "components": [0.7, 0.2, 20] } },
+    "accent": { "$value": "{color.highlight}" }
+  }
+}
