@@ -4,6 +4,12 @@ export type Locator =
     | { file: string; text: string; occurrence?: number }
     | { file: string; valueAfter: string; occurrence?: number };
 
+type EditLocator = { file: string; text: string; occurrence?: number; replaceWith: string };
+
+function isEditLocator(value: unknown): value is EditLocator {
+    return isLocator(value) && "replaceWith" in value;
+}
+
 export function isLocator(value: unknown): value is Locator {
     if (typeof value !== "object" || value === null) return false;
     return "file" in value && ("text" in value || "valueAfter" in value);
@@ -78,6 +84,10 @@ function lineAndColumn(text: string, offset: number): { line: number; column: nu
 }
 
 export function withSpans(value: unknown, files: Record<string, string>): unknown {
+    if (isEditLocator(value)) {
+        const { file, offset, length } = spanFor(files, value);
+        return { file, offset, length, text: value.replaceWith };
+    }
     if (isLocator(value)) return spanFor(files, value);
     if (Array.isArray(value)) return value.map((each) => withSpans(each, files));
     if (typeof value === "object" && value !== null) {

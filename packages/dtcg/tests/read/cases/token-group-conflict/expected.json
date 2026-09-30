@@ -68,7 +68,8 @@
             "valueAfter": "\"scale\":"
           }
         }
-      ]
+      ],
+      "permutation": 1
     },
     {
       "kind": "token-and-group",
@@ -85,7 +86,8 @@
             "valueAfter": "\"radius\":"
           }
         }
-      ]
+      ],
+      "permutation": 1
     }
   ]
 }

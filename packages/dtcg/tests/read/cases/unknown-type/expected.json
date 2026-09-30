@@ -1,0 +1,95 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 5.2.2 and 8: $type is case-sensitive and one of the thirteen types the specification defines; custom types are not DTCG. A near miss comes with a fix to confirm. A group's unknown type is reported once, and its tokens are left out without another diagnostic; a nested group with a type of its own is unaffected",
+  "permutations": [
+    {
+      "tokens": {
+        "odd.inner.b": {
+          "path": "odd.inner.b",
+          "type": "number"
+        }
+      },
+      "groups": {
+        "odd": {
+          "path": "odd"
+        },
+        "odd.inner": {
+          "path": "odd.inner",
+          "type": "number"
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "unknown-type",
+      "detail": {
+        "type": "colour"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"colour\""
+      },
+      "path": "brand",
+      "fixes": [
+        {
+          "title": "use `color`, which has a similar name",
+          "safe": false,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"colour\"",
+              "replaceWith": "\"color\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "unknown-type",
+      "detail": {
+        "type": "Color"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"Color\""
+      },
+      "path": "accent",
+      "fixes": [
+        {
+          "title": "use `color`, which has a similar name",
+          "safe": false,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"Color\"",
+              "replaceWith": "\"color\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "unknown-type",
+      "detail": {
+        "type": "boolean"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"boolean\""
+      },
+      "path": "flag"
+    },
+    {
+      "kind": "unknown-type",
+      "detail": {
+        "type": "banana"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"banana\""
+      },
+      "path": "odd"
+    }
+  ]
+}

@@ -1,15 +1,11 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 5.2.1 to 5.2.4 and 6.3: $description and $type are strings, $deprecated is true, false or a string, $extensions is an object. The property is left out and the rest is read",
+  "spec": "Format 5.2.1 to 5.2.4 and 6.3: $description and $type are strings, $deprecated is true, false or a string, $extensions is an object. The property is left out and the rest is read; a token whose own $type is broken has no usable type, so it is left out rather than taking its group's",
   "permutations": [
     {
       "tokens": {
         "size.a": {
           "path": "size.a",
-          "type": "number"
-        },
-        "size.b": {
-          "path": "size.b",
           "type": "number"
         }
       },

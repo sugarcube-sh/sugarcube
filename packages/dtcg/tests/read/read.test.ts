@@ -60,7 +60,7 @@ describe("positions", () => {
         const doc = readFromMemory({
             files: {
                 "tokens.json":
-                    '{ "a": { "b": { "$value": 1 }, "b": { "$value": 2 }, "b": { "$value": 3 } } }',
+                    '{ "a": { "$type": "number", "b": { "$value": 1 }, "b": { "$value": 2 }, "b": { "$value": 3 } } }',
             },
         });
         expect(doc.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toStrictEqual([

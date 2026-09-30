@@ -78,7 +78,7 @@ function findDuplicates(node: Node, duplicates: DuplicateKey[], hidden: Set<Node
         for (const property of node.children ?? []) {
             const [keyNode] = property.children ?? [];
             if (!keyNode) continue;
-            const key = keyNode.value as string;
+            const key = String(keyNode.value);
             const earlier = seen.get(key);
             if (earlier) {
                 duplicates.push({ key, first: earlier.keyNode, last: keyNode });
@@ -101,7 +101,7 @@ export function members(
     for (const property of node.children ?? []) {
         const [keyNode, value] = property.children ?? [];
         if (hidden.has(property) || !keyNode || !value) continue;
-        found.push({ key: keyNode.value as string, keyNode, value });
+        found.push({ key: String(keyNode.value), keyNode, value });
     }
     return found;
 }

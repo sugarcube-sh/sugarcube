@@ -13,7 +13,10 @@ interface Expected {
     modifiers?: Document["modifiers"];
     usedBy?: Document["usedBy"];
     permutations?: Partial<Document["permutations"][number]>[];
-    diagnostics: Pick<Document["diagnostics"][number], "kind" | "detail" | "at" | "related">[];
+    diagnostics: Pick<
+        Document["diagnostics"][number],
+        "kind" | "detail" | "at" | "related" | "path" | "permutation" | "fixes"
+    >[];
 }
 
 const casesFolder = join(import.meta.dirname, "cases");
@@ -46,12 +49,17 @@ function observed(doc: Document, expected: Expected) {
                 observedPermutation(permutation, expected.permutations?.[index]),
             ),
         }),
-        diagnostics: doc.diagnostics.map(({ kind, detail, at, related }) => ({
-            kind,
-            detail,
-            ...(at && { at }),
-            ...(related && { related }),
-        })),
+        diagnostics: doc.diagnostics.map(
+            ({ kind, detail, at, related, path, permutation, fixes }) => ({
+                kind,
+                detail,
+                ...(at && { at }),
+                ...(related && { related }),
+                ...(path !== undefined && { path }),
+                ...(permutation !== undefined && { permutation }),
+                ...(fixes && { fixes }),
+            }),
+        ),
     };
 }
 

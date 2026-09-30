@@ -75,6 +75,10 @@ export const relatedMessages = {
     declaredAs: (kind: "token" | "group") => `declared as a ${kind} here`,
 };
 
+export const fixTitles = {
+    useType: (type: string) => `use \`${type}\`, which has a similar name`,
+};
+
 export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "file-not-found": {
         severity: "error",

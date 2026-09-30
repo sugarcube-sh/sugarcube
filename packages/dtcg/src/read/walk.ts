@@ -1,11 +1,22 @@
 import type { Node } from "jsonc-parser";
-import type { Diagnostic, DiagnosticDetailByKind, DiagnosticKind, Span } from "../index.js";
-import { diagnostic } from "./diagnostics.js";
+import { fixTitles } from "../error-messages.js";
+import type {
+    Diagnostic,
+    DiagnosticDetailByKind,
+    DiagnosticKind,
+    Fix,
+    Span,
+    TokenType,
+} from "../index.js";
+import { readAlias, readPointer } from "../values/references.js";
+import { isTokenType, tokenTypes } from "../values/token-types.js";
+import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { members, plainObject, plainValue, spanOf } from "./json.js";
+import { similarName } from "./similar.js";
 import type { LoadedSource } from "./sources.js";
 
 export interface Properties {
-    type?: string;
+    type?: TokenType | "unusable";
     description?: string;
     deprecated?: boolean | string;
     extensions?: Record<string, unknown>;
@@ -15,6 +26,7 @@ export interface SourceToken extends Properties {
     path: string;
     value: Node;
     authored: unknown;
+    isReference: boolean;
     at: Span;
 }
 
@@ -56,14 +68,26 @@ export function walkSource(
         kind: K,
         detail: DiagnosticDetailByKind[K],
         node: Node,
-    ) => diagnostics.push(diagnostic(kind, detail, { at: at(node) }));
+        extra: Omit<DiagnosticExtra, "at"> = {},
+    ) => diagnostics.push(diagnostic(kind, detail, { at: at(node), ...extra }));
 
-    const readProperties = (entries: Member[]): Properties => {
+    const readType = (path: string, node: Node, name: string): TokenType | "unusable" => {
+        if (isTokenType(name)) return name;
+        const similar = similarName(name, tokenTypes);
+        report("unknown-type", { type: name }, node, {
+            path,
+            ...(similar && { fixes: [typeFix(json.path, node, similar)] }),
+        });
+        return "unusable";
+    };
+
+    const readProperties = (path: string, entries: Member[]): Properties => {
         const properties: Properties = {};
         for (const { key, value } of entries) {
             const raw: unknown = value.value;
-            if (key === "$type" && typeof raw === "string") properties.type = raw;
-            else if (key === "$description" && typeof raw === "string") {
+            if (key === "$type" && typeof raw === "string") {
+                properties.type = readType(path, value, raw);
+            } else if (key === "$description" && typeof raw === "string") {
                 properties.description = raw;
             } else if (
                 key === "$deprecated" &&
@@ -74,6 +98,7 @@ export function walkSource(
                 properties.extensions = plainObject(value, json.hidden);
             } else if (isProperty(key)) {
                 report("invalid-property", { property: key, expected: EXPECTED[key] }, value);
+                if (key === "$type") properties.type = "unusable";
             }
         }
         return properties;
@@ -82,21 +107,20 @@ export function walkSource(
     const visitToken = (node: Node, path: string, entries: Member[], value: Node) => {
         const child = entries.find(({ key }) => !key.startsWith("$"));
         if (child) report("token-and-group", {}, child.keyNode);
+        const authored = plainValue(value, json.hidden);
         contents.tokens.push({
             path,
             value,
-            authored: plainValue(value, json.hidden),
+            authored,
+            isReference: readAlias(authored) !== undefined || readPointer(authored) !== undefined,
             at: at(node),
-            ...readProperties(entries),
+            ...readProperties(path, entries),
         });
     };
 
     const visitGroup = (node: Node, segments: string[], entries: Member[]) => {
-        contents.groups.push({
-            path: segments.join("."),
-            at: at(node),
-            ...readProperties(entries),
-        });
+        const path = segments.join(".");
+        contents.groups.push({ path, at: at(node), ...readProperties(path, entries) });
         visitMembers(segments, entries);
     };
 
@@ -128,7 +152,7 @@ export function walkSource(
     };
 
     const rootEntries = members(tree, json.hidden).filter(({ key }) => !overridden.has(key));
-    contents.root = readProperties(rootEntries);
+    contents.root = readProperties("", rootEntries);
     visitMembers([], rootEntries);
     return contents;
 }
@@ -136,6 +160,14 @@ export function walkSource(
 function nonObjectKind(node: Node): NonObjectKind | undefined {
     if (node.type === "object" || node.type === "property") return undefined;
     return node.type;
+}
+
+function typeFix(file: string, node: Node, type: TokenType): Fix {
+    return {
+        title: fixTitles.useType(type),
+        safe: false,
+        edits: [{ file, offset: node.offset, length: node.length, text: JSON.stringify(type) }],
+    };
 }
 
 function isProperty(key: string): key is Property {

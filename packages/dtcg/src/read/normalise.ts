@@ -1,9 +1,9 @@
 import type { Diagnostic, Group, Permutation, Token, TokenType } from "../index.js";
-import { isTokenType } from "../values/token-types.js";
-import { type MergedGroup, type MergedToken, merge } from "./merge.js";
+import { diagnostic } from "./diagnostics.js";
+import { inheritedDeprecation, inheritedType } from "./inherit.js";
+import { type Merged, type MergedGroup, type MergedToken, merge } from "./merge.js";
 import type { LoadedPermutation } from "./permutations.js";
 import type { LoadedSource } from "./sources.js";
-import { typeOf } from "./types.js";
 import { type SourceContents, walkSource } from "./walk.js";
 
 // Walks each source once, then merges each permutation's sources in resolution order
@@ -27,8 +27,15 @@ export function normalisePermutations(
         );
         const tokens = Object.fromEntries(
             [...merged.tokens.values()].flatMap((token) => {
-                const type = typeOf(token, merged);
-                return type === undefined ? [] : [[token.path, toToken(token, type)]];
+                if (token.type === undefined && token.isReference) return [];
+                const type = inheritedType(token, merged);
+                if (type === "unusable") return [];
+                if (type === undefined) {
+                    const where = { at: token.at, path: token.path, permutation: index };
+                    diagnostics.push(diagnostic("missing-type", {}, where));
+                    return [];
+                }
+                return [[token.path, toToken(token, type, merged)]];
             }),
         );
         const groups = Object.fromEntries(
@@ -38,12 +45,13 @@ export function normalisePermutations(
     });
 }
 
-function toToken(token: MergedToken, type: TokenType): Token {
+function toToken(token: MergedToken, type: TokenType, merged: Merged): Token {
+    const deprecated = inheritedDeprecation(token, merged);
     return {
         path: token.path,
         type,
         ...(token.description !== undefined && { description: token.description }),
-        ...(token.deprecated !== undefined && { deprecated: token.deprecated }),
+        ...(deprecated !== undefined && { deprecated }),
         ...(token.extensions && { extensions: token.extensions }),
         source: { index: token.index, at: token.at },
         authored: { value: token.authored, typeDeclared: token.type !== undefined },
@@ -54,7 +62,7 @@ function toGroup(group: MergedGroup): Group {
     const { path, type, description, deprecated, extensions, declaredIn } = group;
     return {
         path,
-        ...(type !== undefined && isTokenType(type) && { type }),
+        ...(type !== undefined && type !== "unusable" && { type }),
         ...(description !== undefined && { description }),
         ...(deprecated !== undefined && { deprecated }),
         ...(extensions && { extensions }),
