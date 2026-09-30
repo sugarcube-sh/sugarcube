@@ -1,0 +1,25 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 6: the top level of a token file is a group, which is an object",
+  "diagnostics": [
+    {
+      "kind": "invalid-json",
+      "detail": {
+        "reason": "not-an-object"
+      },
+      "at": {
+        "file": "tokens.json",
+        "offset": 0,
+        "length": 2,
+        "start": {
+          "line": 1,
+          "column": 1
+        },
+        "end": {
+          "line": 1,
+          "column": 3
+        }
+      }
+    }
+  ]
+}

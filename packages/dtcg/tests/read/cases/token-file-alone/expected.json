@@ -1,0 +1,24 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 5.1, Example 1: a token file with no resolver is one set, read as the default permutation",
+  "files": ["tokens.json"],
+  "modifiers": {},
+  "readers": {
+    "tokens.json": "everyone"
+  },
+  "permutations": [
+    {
+      "input": {},
+      "label": "default",
+      "sets": [
+        {
+          "file": "tokens.json",
+          "from": {
+            "set": "default"
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

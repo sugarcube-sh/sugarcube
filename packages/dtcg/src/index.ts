@@ -456,9 +456,15 @@ export interface Fix {
  */
 export interface DiagnosticDetailByKind {
     /** A file could not be fetched. */
-    "file-not-found": { referencedFrom?: string };
-    /** A file is not valid JSON (or, for a resolver, JSONC). */
-    "invalid-json": { reason: string };
+    "file-not-found": {
+        file: string;
+        /** The file that names it, when it is not the entry. */
+        referencedFrom?: string;
+    };
+    /** A file is not valid JSON (or, for a resolver, JSON with comments), or its top level is not an object. */
+    "invalid-json": { reason: JsonErrorReason };
+    /** A key is written twice in one object. The last one is used. */
+    "duplicate-key": { key: string };
     /** The resolver breaks a rule of the resolver specification. */
     "resolver-invalid": {
         rule:
@@ -517,6 +523,29 @@ export interface DiagnosticDetailByKind {
     /** A reference points at a token marked `$deprecated`. */
     "deprecated-reference": { ref: string; reason?: string };
 }
+
+/**
+ * Why a file could not be read as JSON. `"comment"` is a comment in a token file, which is JSON
+ * and so has none; a resolver may contain comments.
+ */
+export type JsonErrorReason =
+    | "comment"
+    | "not-an-object"
+    | "invalid-symbol"
+    | "invalid-number-format"
+    | "property-name-expected"
+    | "value-expected"
+    | "colon-expected"
+    | "comma-expected"
+    | "close-brace-expected"
+    | "close-bracket-expected"
+    | "end-of-file-expected"
+    | "unexpected-end-of-comment"
+    | "unexpected-end-of-string"
+    | "unexpected-end-of-number"
+    | "invalid-unicode"
+    | "invalid-escape-character"
+    | "invalid-character";
 
 /** What a diagnostic is about, as a stable name to switch on. Each has a page at {@link Diagnostic.docs}. */
 export type DiagnosticKind = keyof DiagnosticDetailByKind;
@@ -720,56 +749,18 @@ export interface ReadOptions {
 /**
  * Returns the text of a file, given its path.
  *
- * Every file path in both packages, here and in `Document.files`, `Span`, a project's files
- * and every edit, is relative to the folder holding the entry, with forward slashes, such as
- * `"themes/dark.json"`. The entry itself is its file name.
+ * It is asked for each file by the entry's folder, as you gave it, joined with the file's path
+ * from there: reading `"tokens/tokens.resolver.json"` asks for `"tokens/dark.json"`. A path
+ * that is absolute or a URL is passed as written. Throwing, or rejecting, reports the file as not
+ * found.
+ *
+ * Every file path in the results, in `Document.files`, `Span`, a project's files and every edit,
+ * is relative to the entry's folder, with forward slashes, such as `"themes/dark.json"`. The
+ * entry itself is its file name.
  */
 export type ReadText = (path: string) => Promise<string>;
 
-/**
- * Reads a design system: the entry file, and every file it refers to.
- *
- * Files are fetched through `readText`, so this runs anywhere: a browser, a worker, Deno, Bun or
- * Node. `@sugarcube-sh/dtcg/node` provides a version that reads from disk.
- *
- * Never rejects because of what is, or is not, in the files. A file that cannot be fetched
- * (`readText` throws) or cannot be read is reported in {@link Document.diagnostics}, and the rest
- * is still read.
- *
- * @param entry A resolver document or a token file.
- *
- * @example
- * const doc = await read("tokens.resolver.json", {
- *   readText: (path) => fetch(path).then((r) => r.text()),
- * });
- */
-export function read(
-    entry: string,
-    options: ReadOptions & { readText: ReadText },
-): Promise<Document> {
-    throw new Error("not implemented yet");
-}
-
-/**
- * Reads a design system from text already in memory.
- *
- * With a resolver among the files, it is the entry. Without one, every file is read as a single
- * set, in the order given, a later file overriding an earlier one: the rule a set in a resolver
- * follows.
- *
- * @example
- * const doc = readFromMemory({ files: { "tokens.json": text } });
- */
-export function readFromMemory(
-    sources: {
-        files: Record<string, string>;
-        /** @default the only file, when there is one */
-        entry?: string;
-    },
-    options?: ReadOptions,
-): Document {
-    throw new Error("not implemented yet");
-}
+export { read, readFromMemory } from "./read/read.js";
 
 /** One token across every permutation. */
 export interface TokenView {
