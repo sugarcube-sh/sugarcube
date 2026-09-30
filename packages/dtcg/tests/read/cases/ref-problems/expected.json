@@ -1,0 +1,133 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.2: refs must reach something; 4.2.1: not a modifier from a set; 4.2: not circular. A resolver is not a token source",
+  "files": ["tokens.resolver.json", "missing.json", "all.json", "other.resolver.json"],
+  "diagnostics": [
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "invalid-pointer",
+        "name": "#/modifiers/theme",
+        "at": ["sets", "base", "sources", 4, "$ref"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 304,
+        "length": 19,
+        "start": {
+          "line": 11,
+          "column": 19
+        },
+        "end": {
+          "line": 11,
+          "column": 38
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "circular-reference",
+        "name": "#/sets/loop",
+        "at": ["sets", "loop", "sources", 0, "$ref"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 74,
+        "length": 13,
+        "start": {
+          "line": 4,
+          "column": 37
+        },
+        "end": {
+          "line": 4,
+          "column": 50
+        }
+      }
+    },
+    {
+      "kind": "file-not-found",
+      "detail": {
+        "file": "missing.json",
+        "referencedFrom": "tokens.resolver.json"
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 145,
+        "length": 14,
+        "start": {
+          "line": 7,
+          "column": 19
+        },
+        "end": {
+          "line": 7,
+          "column": 33
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "invalid-pointer",
+        "name": "all.json#/nowhere",
+        "at": ["sets", "base", "sources", 1, "$ref"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 181,
+        "length": 19,
+        "start": {
+          "line": 8,
+          "column": 19
+        },
+        "end": {
+          "line": 8,
+          "column": 38
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "wrong-type",
+        "name": "all.json#/count",
+        "at": ["sets", "base", "sources", 2, "$ref"],
+        "expected": "object"
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 222,
+        "length": 17,
+        "start": {
+          "line": 9,
+          "column": 19
+        },
+        "end": {
+          "line": 9,
+          "column": 36
+        }
+      }
+    },
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "resolver-as-source",
+        "name": "other.resolver.json",
+        "at": ["sets", "base", "sources", 3, "$ref"]
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "offset": 261,
+        "length": 21,
+        "start": {
+          "line": 10,
+          "column": 19
+        },
+        "end": {
+          "line": 10,
+          "column": 40
+        }
+      }
+    }
+  ]
+}

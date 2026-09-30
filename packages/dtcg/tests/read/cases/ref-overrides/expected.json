@@ -1,0 +1,33 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.2.2: local keys beside $ref are overrides, applied shallowly; the local tokens are a source written in the resolver, and a set's local sources replace its own",
+  "files": ["tokens.resolver.json", "tokens.json", "replacement.json"],
+  "permutations": [
+    {
+      "input": {},
+      "label": "default",
+      "sets": [
+        {
+          "file": "tokens.json",
+          "from": {
+            "set": "base"
+          }
+        },
+        {
+          "file": "tokens.resolver.json",
+          "pointer": "#/sets/base/sources/0",
+          "from": {
+            "set": "base"
+          }
+        },
+        {
+          "file": "replacement.json",
+          "from": {
+            "set": "other"
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

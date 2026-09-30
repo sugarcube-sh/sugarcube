@@ -40,3 +40,7 @@ function child(node: Node, step: string): Node | undefined {
     }
     return found;
 }
+
+export function encodePointer(steps: (string | number)[]): string {
+    return `#${steps.map((step) => `/${String(step).replaceAll("~", "~0").replaceAll("/", "~1")}`).join("")}`;
+}

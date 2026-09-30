@@ -1,0 +1,12 @@
+{
+  "version": "2025.10",
+  "sets": {
+    "size": {
+      "sources": [
+        { "$ref": "base/foundation.json" },
+        { "space": { "base": { "100": { "$type": "dimension", "$value": { "value": 2, "unit": "rem" } } } } }
+      ]
+    }
+  },
+  "resolutionOrder": [{ "$ref": "#/sets/size" }]
+}

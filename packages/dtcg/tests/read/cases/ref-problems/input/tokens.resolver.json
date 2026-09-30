@@ -1,0 +1,17 @@
+{
+  "version": "2025.10",
+  "sets": {
+    "loop": { "sources": [{ "$ref": "#/sets/loop" }] },
+    "base": {
+      "sources": [
+        { "$ref": "missing.json" },
+        { "$ref": "all.json#/nowhere" },
+        { "$ref": "all.json#/count" },
+        { "$ref": "other.resolver.json" },
+        { "$ref": "#/modifiers/theme" },
+        { "$ref": "#/sets/loop" }
+      ]
+    }
+  },
+  "resolutionOrder": [{ "$ref": "#/sets/base" }]
+}

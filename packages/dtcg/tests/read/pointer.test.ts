@@ -1,7 +1,7 @@
 import { getNodeValue } from "jsonc-parser";
 import { describe, expect, it } from "vitest";
 import { parseJson } from "../../src/read/json.js";
-import { follow, parsePointer } from "../../src/read/pointer.js";
+import { encodePointer, follow, parsePointer } from "../../src/read/pointer.js";
 
 function tree(text: string) {
     const { root, syntax } = parseJson(text);
@@ -129,5 +129,25 @@ describe("following", () => {
     it("does not reach inherited properties", () => {
         expect(valueAt("{}", "/__proto__")).toStrictEqual({ notFound: 0 });
         expect(valueAt("{}", "/constructor")).toStrictEqual({ notFound: 0 });
+    });
+});
+
+describe("encodePointer", () => {
+    it.for([
+        "#",
+        "#/foo/0",
+        "#/",
+        "#/a~1b",
+        "#/m~0n",
+        "#/brand colors/primary",
+        "#/c%25d",
+        "#/~01",
+    ])("writes back %j as it was read", (pointer) => {
+        const steps = parsePointer(pointer);
+        expect(steps && encodePointer(steps)).toBe(pointer);
+    });
+
+    it("writes array indexes as numbers", () => {
+        expect(encodePointer(["sets", "base", "sources", 1])).toBe("#/sets/base/sources/1");
     });
 });

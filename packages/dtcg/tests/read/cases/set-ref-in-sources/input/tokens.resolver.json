@@ -1,0 +1,11 @@
+{
+  "version": "2025.10",
+  "sets": {
+    "palette": {
+      "sources": [{ "$ref": "palette.json" }],
+      "$extensions": { "sh.sugarcube": { "emit": false } }
+    },
+    "base": { "sources": [{ "$ref": "#/sets/palette" }, { "$ref": "semantic.json" }] }
+  },
+  "resolutionOrder": [{ "$ref": "#/sets/base" }]
+}

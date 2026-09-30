@@ -1,0 +1,21 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.2: a pointer may point anywhere in the same document, except at modifiers or into resolutionOrder",
+  "files": ["tokens.resolver.json"],
+  "permutations": [
+    {
+      "input": {},
+      "label": "default",
+      "sets": [
+        {
+          "file": "tokens.resolver.json",
+          "pointer": "#/$defs/brand",
+          "from": {
+            "set": "base"
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

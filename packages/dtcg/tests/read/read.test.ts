@@ -105,6 +105,95 @@ describe("read", () => {
     });
 });
 
+describe("paths in a resolver", () => {
+    const resolver = JSON.stringify({
+        version: "2025.10",
+        sets: {
+            base: {
+                sources: [
+                    { $ref: "dark.json" },
+                    { $ref: "./dark.json" },
+                    { $ref: "../shared/base.json" },
+                    { $ref: "https://cdn.example.com/tokens.json" },
+                    { $ref: "C:/tokens/windows.json" },
+                ],
+            },
+        },
+        resolutionOrder: [{ $ref: "#/sets/base" }],
+    });
+
+    it("asks for every file a resolver names in one batch, each once, joined onto the entry's folder", async () => {
+        const batches: string[][] = [];
+        let batch: string[] = [];
+        const readText = async (path: string) => {
+            batch.push(path);
+            await Promise.resolve();
+            if (batch.length > 0) batches.push(batch);
+            batch = [];
+            return path.endsWith(".resolver.json") ? resolver : valid;
+        };
+        const doc = await read("tokens/design.resolver.json", { readText });
+
+        expect(batches).toStrictEqual([
+            ["tokens/design.resolver.json"],
+            [
+                "tokens/dark.json",
+                "shared/base.json",
+                "https://cdn.example.com/tokens.json",
+                "C:/tokens/windows.json",
+            ],
+        ]);
+        expect(doc.files).toStrictEqual([
+            "design.resolver.json",
+            "dark.json",
+            "../shared/base.json",
+            "https://cdn.example.com/tokens.json",
+            "C:/tokens/windows.json",
+        ]);
+        expect(doc.diagnostics).toStrictEqual([]);
+    });
+});
+
+describe("shared sets", () => {
+    it("reports a problem in a set once, however many places use it", () => {
+        const doc = readFromMemory({
+            files: {
+                "tokens.resolver.json": JSON.stringify({
+                    version: "2025.10",
+                    sets: {
+                        palette: { sources: [{ $ref: "#/nowhere" }] },
+                        light: { sources: [{ $ref: "#/sets/palette" }] },
+                        dark: { sources: [{ $ref: "#/sets/palette" }] },
+                    },
+                    modifiers: {
+                        theme: {
+                            contexts: {
+                                light: [{ $ref: "#/sets/palette" }],
+                                dark: [{ $ref: "#/sets/palette" }],
+                            },
+                        },
+                    },
+                    resolutionOrder: [
+                        { $ref: "#/sets/light" },
+                        { $ref: "#/sets/dark" },
+                        { $ref: "#/modifiers/theme" },
+                    ],
+                }),
+            },
+        });
+        expect(doc.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toStrictEqual([
+            {
+                kind: "resolver-invalid",
+                detail: {
+                    rule: "invalid-pointer",
+                    name: "#/nowhere",
+                    at: ["sets", "palette", "sources", 0, "$ref"],
+                },
+            },
+        ]);
+    });
+});
+
 describe("readFromMemory", () => {
     it("reads several files with no resolver as one set, in the order given", () => {
         const doc = readFromMemory({ files: { "base.json": valid, "./themes/dark.json": valid } });

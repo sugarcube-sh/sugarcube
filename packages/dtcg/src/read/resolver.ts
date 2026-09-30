@@ -22,7 +22,7 @@ export interface ModifierDefinition {
     extensions?: Node;
 }
 
-export type OrderItem =
+export type ResolverItem =
     | { kind: "set"; set: SetDefinition }
     | { kind: "modifier"; modifier: ModifierDefinition };
 
@@ -30,19 +30,19 @@ export interface Resolver {
     file: JsonFile;
     sets: Map<string, SetDefinition>;
     modifiers: Map<string, ModifierDefinition>;
-    order: OrderItem[];
+    order: ResolverItem[];
 }
 
 type JsonType = "string" | "object" | "array";
 
-interface Reader {
+export interface Reader {
     get(node: Node, key: string): Node | undefined;
     entries(node: Node): { key: string; value: Node }[];
     report(problem: ResolverProblem, node: Node): void;
     expect(node: Node | undefined, type: JsonType, name: string, at: JsonPath): node is Node;
 }
 
-interface Place {
+export interface Place {
     node: Node;
     path: JsonPath;
 }
@@ -54,7 +54,7 @@ export function isResolver(root: Node): boolean {
     );
 }
 
-export function readResolver(file: JsonFile, diagnostics: Diagnostic[]): Resolver {
+export function checkResolver(file: JsonFile, diagnostics: Diagnostic[]): Resolver {
     const reader = createReader(file, diagnostics);
     const root: Place = { node: file.root, path: [] };
 
@@ -71,16 +71,17 @@ export function readResolver(file: JsonFile, diagnostics: Diagnostic[]): Resolve
     return { file, sets, modifiers, order };
 }
 
-function createReader(file: JsonFile, diagnostics: Diagnostic[]): Reader {
+export function resolverProblem(file: JsonFile, problem: ResolverProblem, node: Node): Diagnostic {
+    return diagnostic("resolver-invalid", problem, {
+        at: spanOf(file.path, file.lineStarts, node.offset, node.length),
+    });
+}
+
+export function createReader(file: JsonFile, diagnostics: Diagnostic[]): Reader {
     const reader: Reader = {
         get: (node, key) => member(node, key, file.hidden),
         entries: (node) => members(node, file.hidden),
-        report: (problem, node) =>
-            diagnostics.push(
-                diagnostic("resolver-invalid", problem, {
-                    at: spanOf(file.path, file.lineStarts, node.offset, node.length),
-                }),
-            ),
+        report: (problem, node) => diagnostics.push(resolverProblem(file, problem, node)),
         expect: (node, type, name, at): node is Node => {
             if (!node) return false;
             if (node.type === type) return true;
@@ -131,7 +132,7 @@ function readSources(reader: Reader, list: Place, label: string): Source[] {
     });
 }
 
-function readSetParts(reader: Reader, owner: Place): Partial<SetDefinition> {
+export function readSetParts(reader: Reader, owner: Place): Partial<SetDefinition> {
     optional(reader, owner, "description", "string");
     const extensions = optional(reader, owner, "$extensions", "object");
     const list = optional(reader, owner, "sources", "array");
@@ -217,9 +218,9 @@ function readOrder(
     root: Place,
     sets: Map<string, SetDefinition>,
     modifiers: Map<string, ModifierDefinition>,
-): OrderItem[] {
+): ResolverItem[] {
     const list = required(reader, root, "resolutionOrder", "array");
-    const order: OrderItem[] = [];
+    const order: ResolverItem[] = [];
     const inlineNames = new Set<string>();
     const modifierNames = new Set<string>();
 
@@ -249,7 +250,7 @@ function readOrderRef(
     owner: Place,
     sets: Map<string, SetDefinition>,
     modifiers: Map<string, ModifierDefinition>,
-): OrderItem | undefined {
+): ResolverItem | undefined {
     const at = [...owner.path, "$ref"];
     const ref = reader.get(owner.node, "$ref");
     if (!reader.expect(ref, "string", "$ref", at)) return undefined;
@@ -284,7 +285,7 @@ function readOrderRef(
     return undefined;
 }
 
-function readInline(reader: Reader, owner: Place, names: Set<string>): OrderItem | undefined {
+function readInline(reader: Reader, owner: Place, names: Set<string>): ResolverItem | undefined {
     const type = required(reader, owner, "type", "string");
     const nameNode = required(reader, owner, "name", "string");
     const kind = type?.value as string | undefined;

@@ -1,6 +1,7 @@
 import packageJson from "../../package.json" with { type: "json" };
 import type { Document, ReadOptions, ReadText } from "../index.js";
-import { type Answer, type FileText, type Loaded, type Request, load } from "./load.js";
+import type { Answer, FileText, Request } from "./files.js";
+import { type Loaded, load } from "./load.js";
 import { fileName, folderOf, join, normalise } from "./paths.js";
 
 const { performance } = globalThis as unknown as { performance: { now(): number } };
@@ -100,8 +101,10 @@ function toDocument(loaded: Loaded): Document {
         files: loaded.files,
         modifiers: loaded.modifiers,
         readers: loaded.readers,
-        permutations: loaded.permutations.map((permutation) => ({
-            ...permutation,
+        permutations: loaded.permutations.map(({ input, label, sources }) => ({
+            input,
+            label,
+            sets: sources.map(({ ref }) => ref),
             tokens: {},
             groups: {},
         })),

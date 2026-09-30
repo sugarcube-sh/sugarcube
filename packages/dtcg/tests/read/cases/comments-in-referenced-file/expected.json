@@ -1,0 +1,25 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 3.1 allows comments in the resolver only; Format 4: a token file it names is JSON",
+  "diagnostics": [
+    {
+      "kind": "invalid-json",
+      "detail": {
+        "reason": "comment"
+      },
+      "at": {
+        "file": "tokens.json",
+        "offset": 4,
+        "length": 11,
+        "start": {
+          "line": 2,
+          "column": 3
+        },
+        "end": {
+          "line": 2,
+          "column": 14
+        }
+      }
+    }
+  ]
+}
