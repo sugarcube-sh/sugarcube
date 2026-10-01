@@ -6,8 +6,8 @@
   },
   "permutations": [
     {
-      "tokens": {
-        "space.2": {
+      "tokens": [
+        {
           "path": "space.2",
           "resolved": {
             "value": 20,
@@ -24,7 +24,7 @@
             "from": "space"
           }
         },
-        "space.3": {
+        {
           "path": "space.3",
           "resolved": {
             "value": 3,
@@ -35,7 +35,7 @@
           },
           "authored": null
         },
-        "space.1": {
+        {
           "path": "space.1",
           "type": "dimension",
           "value": {
@@ -58,7 +58,7 @@
           },
           "authored": null
         },
-        "gap": {
+        {
           "path": "gap",
           "resolved": {
             "value": 3,
@@ -66,7 +66,7 @@
           },
           "aliasOf": "space.3"
         }
-      }
+      ]
     }
   ],
   "diagnostics": []

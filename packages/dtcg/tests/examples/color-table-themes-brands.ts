@@ -8,9 +8,9 @@ const doc = await read("tokens.resolver.json", {
 });
 
 const columns = doc.permutations.map((p) => p.label);
-for (const view of Object.values(byToken(doc))) {
+for (const view of byToken(doc)) {
     if (view.type !== "color") continue;
     row(view.path, ...columns.map((label) => view.permutations[label]?.resolved));
 }
 const darkOcean = permutation(doc, { theme: "dark", brand: "ocean" });
-if (darkOcean) showMessage(`${Object.keys(darkOcean.tokens).length} tokens in ${darkOcean.label}`);
+if (darkOcean) showMessage(`${darkOcean.tokens.length} tokens in ${darkOcean.label}`);

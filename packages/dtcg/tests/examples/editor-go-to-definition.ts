@@ -12,4 +12,4 @@ if (hit.kind === "reference") {
 
 const here = atOffset(doc, "tokens.json", 380);
 const expects = here.kind === "reference" || here.kind === "token" ? here.expects : undefined;
-export const options = Object.values(byToken(doc)).filter((t) => !expects || t.type === expects);
+export const options = byToken(doc).filter((t) => !expects || t.type === expects);

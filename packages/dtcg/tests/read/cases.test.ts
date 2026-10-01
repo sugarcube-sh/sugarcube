@@ -145,17 +145,16 @@ function observedPermutation(
     };
 }
 
-function picked<T extends object>(found: Record<string, T>, wanted: Record<string, Partial<T>>) {
-    return Object.fromEntries(
-        Object.entries(found).map(([path, each]) => {
-            const expected: Record<string, unknown> = wanted[path] ?? each;
-            const present = Object.entries(each).filter(([key]) => key in expected);
-            const absent = Object.keys(expected)
-                .filter((key) => expected[key] === null && !(key in each))
-                .map((key) => [key, null]);
-            return [path, Object.fromEntries([...present, ...absent])];
-        }),
-    );
+function picked<T extends { path: string }>(found: T[], wanted: Partial<T>[]) {
+    return found.map((each) => {
+        const expected: Record<string, unknown> =
+            wanted.find((one) => one.path === each.path) ?? each;
+        const present = Object.entries(each).filter(([key]) => key in expected);
+        const absent = Object.keys(expected)
+            .filter((key) => expected[key] === null && !(key in each))
+            .map((key) => [key, null]);
+        return Object.fromEntries([...present, ...absent]);
+    });
 }
 
 describe.each(cases)("%s", (name) => {

@@ -3,31 +3,31 @@
   "spec": "Format 6.2 and 6.7.2: $root is a token in its group, with the path color.accent.$root, and takes the group's type and deprecation like any other. Its own $type is its own: it gives the group no type, so accent.light has none",
   "permutations": [
     {
-      "tokens": {
-        "size.$root": {
+      "tokens": [
+        {
           "path": "size.$root",
           "type": "number",
           "deprecated": "use space"
         },
-        "size.lg": {
+        {
           "path": "size.lg",
           "type": "number",
           "deprecated": "use space"
         },
-        "accent.$root": {
+        {
           "path": "accent.$root",
           "type": "color"
         }
-      },
-      "groups": {
-        "size": {
+      ],
+      "groups": [
+        {
           "path": "size",
           "deprecated": "use space"
         },
-        "accent": {
+        {
           "path": "accent"
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

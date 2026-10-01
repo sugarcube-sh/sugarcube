@@ -3,14 +3,14 @@
   "spec": "Resolver 6.2: a permutation's sources behave as one document, so $extends can reach a group in another file, and inherits it as it is in that permutation: dark's card.raised is dark's surface.raised",
   "permutations": [
     {
-      "tokens": {
-        "surface.raised": {
+      "tokens": [
+        {
           "path": "surface.raised"
         },
-        "card.padding": {
+        {
           "path": "card.padding"
         },
-        "card.raised": {
+        {
           "path": "card.raised",
           "type": "number",
           "source": {
@@ -28,17 +28,17 @@
             "from": "surface"
           }
         }
-      }
+      ]
     },
     {
-      "tokens": {
-        "surface.raised": {
+      "tokens": [
+        {
           "path": "surface.raised"
         },
-        "card.padding": {
+        {
           "path": "card.padding"
         },
-        "card.raised": {
+        {
           "path": "card.raised",
           "type": "number",
           "source": {
@@ -56,7 +56,7 @@
             "from": "surface"
           }
         }
-      }
+      ]
     }
   ],
   "diagnostics": []

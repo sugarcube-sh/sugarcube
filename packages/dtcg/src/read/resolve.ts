@@ -352,11 +352,11 @@ function resolvePermutation(
         return list[0];
     };
 
-    const built: [string, Token][] = [];
+    const built: Token[] = [];
     for (const [path, entry] of tokens) {
         const outcome = resolveToken(entry);
         if (outcome === "untyped") continue;
-        built.push([path, toToken(entry.token, outcome, merged)]);
+        built.push(toToken(entry.token, outcome, merged));
         if (!outcome.read.ok) continue;
         for (const use of referencesOf(entry.token)) {
             graph.push({ from: path, to: targetOf(use, merged), permutation: index, at: use.at });
@@ -391,7 +391,7 @@ function resolvePermutation(
     }
 
     const { input, label, sources, groups } = permutation;
-    return { input, label, sources, tokens: Object.fromEntries(built), groups };
+    return { input, label, sources, tokens: built, groups };
 }
 
 function targetOf(use: Occurrence, merged: Merged): string {

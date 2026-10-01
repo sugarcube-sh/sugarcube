@@ -3,8 +3,8 @@
   "spec": "Format 8 and 9, contract 01: every value is read by its type's parser into one shape. A single font name is a list of one, a font weight keyword its number, a stroke style keyword tagged, a single shadow a list of one with inset false, a gradient position clamped to 0 to 1 (9.7). A reference stays an alias node, whole or as a part. authored keeps what the file wrote",
   "permutations": [
     {
-      "tokens": {
-        "brand": {
+      "tokens": [
+        {
           "path": "brand",
           "value": {
             "colorSpace": "oklch",
@@ -12,14 +12,14 @@
             "alpha": 1
           }
         },
-        "space": {
+        {
           "path": "space",
           "value": {
             "value": 16,
             "unit": "px"
           }
         },
-        "body": {
+        {
           "path": "body",
           "value": ["Inter"],
           "authored": {
@@ -27,7 +27,7 @@
             "typeDeclared": true
           }
         },
-        "heavy": {
+        {
           "path": "heavy",
           "value": 700,
           "authored": {
@@ -35,14 +35,14 @@
             "typeDeclared": true
           }
         },
-        "line": {
+        {
           "path": "line",
           "value": {
             "kind": "keyword",
             "keyword": "solid"
           }
         },
-        "card": {
+        {
           "path": "card",
           "value": [
             {
@@ -69,7 +69,7 @@
             }
           ]
         },
-        "fade": {
+        {
           "path": "fade",
           "value": [
             {
@@ -86,7 +86,7 @@
             }
           ]
         },
-        "text": {
+        {
           "path": "text",
           "value": {
             "fontFamily": ["Inter", "sans-serif"],
@@ -101,13 +101,13 @@
             "lineHeight": 1.5
           }
         },
-        "accent": {
+        {
           "path": "accent",
           "value": {
             "alias": "brand"
           }
         }
-      }
+      ]
     }
   ],
   "diagnostics": []

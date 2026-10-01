@@ -16,7 +16,7 @@ type ColorToken = Extract<Token, { type: "color" }>;
 const ramps = new Map<string, ColorToken[]>();
 const roles: ColorToken[] = [];
 
-for (const t of Object.values(defaultPermutation(doc)?.tokens ?? {})) {
+for (const t of defaultPermutation(doc)?.tokens ?? []) {
     if (t.type !== "color") continue;
     if (isAlias(t.value)) {
         roles.push(t);

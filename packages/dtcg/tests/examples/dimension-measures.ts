@@ -25,7 +25,7 @@ function declared(path: string): string | undefined {
 }
 
 const usedAs = new Map<string, string>();
-for (const t of Object.values(defaultPermutation(doc)?.tokens ?? {})) {
+for (const t of defaultPermutation(doc)?.tokens ?? []) {
     if (t.type === "typography" && t.value && !isAlias(t.value) && !isPointer(t.value)) {
         if (isAlias(t.value.fontSize)) usedAs.set(t.value.fontSize.alias, "font-size");
         if (isAlias(t.value.letterSpacing))

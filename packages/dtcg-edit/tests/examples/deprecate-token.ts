@@ -8,7 +8,7 @@ declare let project: Project;
 const done = commit(project, deprecate(project, "color.old", "Use color.new instead"));
 if ("project" in done) project = done.project;
 
-for (const view of Object.values(byToken(project.doc))) {
+for (const view of byToken(project.doc)) {
     const reason = view.default?.deprecated;
     if (!reason) continue;
     const users = referrers(project.doc, view.path).map((r) => r.path);

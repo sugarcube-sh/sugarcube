@@ -3,15 +3,15 @@
   "spec": "Resolver 4.1.4 and contract 02: a later source replaces a token whole, $type included, so dark's space.md has no type (Format 5.2.2). The problem is only dark's, so it names that permutation",
   "permutations": [
     {
-      "tokens": {
-        "space.md": {
+      "tokens": [
+        {
           "path": "space.md",
           "type": "dimension"
         }
-      }
+      ]
     },
     {
-      "tokens": {}
+      "tokens": []
     }
   ],
   "diagnostics": [

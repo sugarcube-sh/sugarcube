@@ -3,16 +3,16 @@
   "spec": "Format 6.1: a group holds tokens, groups and $ properties; anything else is neither a token nor a group",
   "permutations": [
     {
-      "tokens": {
-        "size.f": {
+      "tokens": [
+        {
           "path": "size.f"
         }
-      },
-      "groups": {
-        "size": {
+      ],
+      "groups": [
+        {
           "path": "size"
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

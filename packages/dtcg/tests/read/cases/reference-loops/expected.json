@@ -3,8 +3,8 @@
   "spec": "Format 7.2.3 and 6.7.4 (Example 34): references that loop MUST be reported, once, naming every token in the chain; the tokens stay, typed, with no resolved value, and so does a token that refers into the loop. A JSON Pointer into part of a value reads that part as written (7.4.3), so x depends on y's written fontSize, not on y's references, and y's lineHeight referring to x is not a loop",
   "permutations": [
     {
-      "tokens": {
-        "a": {
+      "tokens": [
+        {
           "path": "a",
           "type": "number",
           "value": {
@@ -12,27 +12,27 @@
           },
           "resolved": null
         },
-        "b": {
+        {
           "path": "b",
           "type": "number",
           "resolved": null
         },
-        "c": {
+        {
           "path": "c",
           "type": "number",
           "resolved": null
         },
-        "d": {
+        {
           "path": "d",
           "type": "number",
           "resolved": null
         },
-        "x": {
+        {
           "path": "x",
           "type": "number",
           "resolved": 16
         },
-        "y": {
+        {
           "path": "y",
           "type": "typography",
           "resolved": {
@@ -49,7 +49,7 @@
             "lineHeight": 16
           }
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

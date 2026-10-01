@@ -3,8 +3,8 @@
   "spec": "Resolver 4.1.4 and 6.2, contract 02: a later source replaces a token whole, so dark's color.brand keeps nothing of light's: its value has no hex (Terrazzo keeps light's) and no description. The token keeps its place in the order. Groups merge: each property from the latest source that sets it, $extensions key by key, and every declaration listed",
   "permutations": [
     {
-      "tokens": {
-        "color.brand": {
+      "tokens": [
+        {
           "path": "color.brand",
           "type": "color",
           "description": "The brand color",
@@ -30,7 +30,7 @@
             "hex": "#e11d48"
           }
         },
-        "color.muted": {
+        {
           "path": "color.muted",
           "type": "color",
           "source": {
@@ -48,9 +48,9 @@
             "typeDeclared": false
           }
         }
-      },
-      "groups": {
-        "color": {
+      ],
+      "groups": [
+        {
           "path": "color",
           "type": "color",
           "description": "Brand colors",
@@ -67,11 +67,11 @@
             }
           ]
         }
-      }
+      ]
     },
     {
-      "tokens": {
-        "color.brand": {
+      "tokens": [
+        {
           "path": "color.brand",
           "type": "color",
           "source": {
@@ -94,7 +94,7 @@
             "alpha": 1
           }
         },
-        "color.muted": {
+        {
           "path": "color.muted",
           "type": "color",
           "source": {
@@ -112,9 +112,9 @@
             "typeDeclared": false
           }
         }
-      },
-      "groups": {
-        "color": {
+      ],
+      "groups": [
+        {
           "path": "color",
           "type": "color",
           "description": "Brand colors",
@@ -135,7 +135,7 @@
             }
           ]
         }
-      }
+      ]
     }
   ],
   "diagnostics": []

@@ -3,7 +3,7 @@ import { byToken, sameValue, type Document, type Token } from "@sugarcube-sh/dtc
 
 declare const doc: Document;
 
-const colors = Object.values(byToken(doc))
+const colors = byToken(doc)
     .map((view) => view.default)
     .filter((t): t is Extract<Token, { type: "color" }> => t?.type === "color" && !t.aliasOf);
 

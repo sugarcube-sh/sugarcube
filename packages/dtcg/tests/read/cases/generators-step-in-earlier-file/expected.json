@@ -6,8 +6,8 @@
   },
   "permutations": [
     {
-      "tokens": {
-        "space.1": {
+      "tokens": [
+        {
           "path": "space.1",
           "resolved": {
             "value": 4,
@@ -24,13 +24,13 @@
             "from": "space"
           }
         },
-        "space.2": {
+        {
           "path": "space.2",
           "generated": {
             "from": "space"
           }
         }
-      }
+      ]
     }
   ],
   "diagnostics": []

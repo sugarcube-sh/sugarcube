@@ -3,42 +3,42 @@
   "spec": "Format 6.1 and Resolver 6.2: when one source declares a token where another declares a group, the combined document holds an object that is both, which MUST be reported. The later one is used, as with any conflict. A problem in a file every permutation reads is reported once; one only some permutations have names the permutation",
   "permutations": [
     {
-      "tokens": {
-        "space.scale": {
+      "tokens": [
+        {
           "path": "space.scale"
         },
-        "radius.sm": {
+        {
           "path": "radius.sm"
         }
-      },
-      "groups": {
-        "space": {
+      ],
+      "groups": [
+        {
           "path": "space"
         },
-        "radius": {
+        {
           "path": "radius"
         }
-      }
+      ]
     },
     {
-      "tokens": {
-        "space.scale.sm": {
+      "tokens": [
+        {
           "path": "space.scale.sm",
           "type": "number"
         },
-        "radius": {
+        {
           "path": "radius",
           "type": "number"
         }
-      },
-      "groups": {
-        "space": {
+      ],
+      "groups": [
+        {
           "path": "space"
         },
-        "space.scale": {
+        {
           "path": "space.scale"
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

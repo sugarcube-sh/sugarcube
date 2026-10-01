@@ -13,11 +13,11 @@ const path = "color";
 const base = defaultPermutation(doc);
 const isChild = (p: string) => p.startsWith(`${path}.`) && !p.slice(path.length + 1).includes(".");
 
-for (const group of Object.values(base?.groups ?? {})) {
+for (const group of base?.groups ?? []) {
     if (isChild(group.path)) row(group.path, tokensIn(doc, group.path).length);
 }
 
-for (const t of Object.values(base?.tokens ?? {})) {
+for (const t of base?.tokens ?? []) {
     if (!isChild(t.path)) continue;
     const overrides = acrossPermutations(doc, t.path)
         .filter((p) => p.overrides)

@@ -3,8 +3,8 @@
   "spec": "Format 5.2, 6.1 to 6.3, 6.7.2 and 6.7.3: tokens and groups, group properties, a $root token and its path, a type from the closest group with one, the top level included. $schema and other unknown $ keys at the top level are file metadata",
   "permutations": [
     {
-      "tokens": {
-        "color.accent.$root": {
+      "tokens": [
+        {
           "path": "color.accent.$root",
           "type": "color",
           "source": {
@@ -22,7 +22,7 @@
             "typeDeclared": false
           }
         },
-        "color.accent.light": {
+        {
           "path": "color.accent.light",
           "type": "color",
           "description": "Hover",
@@ -47,7 +47,7 @@
             "typeDeclared": false
           }
         },
-        "opacity.half": {
+        {
           "path": "opacity.half",
           "type": "number",
           "source": {
@@ -62,7 +62,7 @@
             "typeDeclared": false
           }
         },
-        "space.sm": {
+        {
           "path": "space.sm",
           "type": "dimension",
           "source": {
@@ -80,9 +80,9 @@
             "typeDeclared": true
           }
         }
-      },
-      "groups": {
-        "color": {
+      ],
+      "groups": [
+        {
           "path": "color",
           "type": "color",
           "description": "Brand colors",
@@ -98,7 +98,7 @@
             }
           ]
         },
-        "color.accent": {
+        {
           "path": "color.accent",
           "declaredIn": [
             {
@@ -107,7 +107,7 @@
             }
           ]
         },
-        "opacity": {
+        {
           "path": "opacity",
           "declaredIn": [
             {
@@ -116,7 +116,7 @@
             }
           ]
         },
-        "space": {
+        {
           "path": "space",
           "declaredIn": [
             {
@@ -125,7 +125,7 @@
             }
           ]
         }
-      }
+      ]
     }
   ],
   "diagnostics": []

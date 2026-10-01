@@ -34,9 +34,9 @@ function declaration(p: Permutation, t: Token): string {
 const base = defaultPermutation(doc);
 for (const p of doc.permutations) {
     const lines: string[] = [];
-    for (const t of Object.values(p.tokens)) {
+    for (const t of p.tokens) {
         if (t.invalid || isPrivate(p, t)) continue;
-        const inBase = base?.tokens[t.path];
+        const inBase = base && token(doc, t.path, base.input);
         const same = p !== base && inBase !== undefined && sameValue(inBase, t);
         if (same) continue;
         lines.push(`  --${cssName(t.path)}: ${declaration(p, t)};`);

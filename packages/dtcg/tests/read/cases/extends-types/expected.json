@@ -3,20 +3,20 @@
   "spec": "Format 6.7.3 (Example 22): an inherited token without a $type of its own takes the extending group's type, its local $type when it has one, since it is now in that group. Only the target's own content comes with it (6.4.2), so a type the target has from its parent does not, and palette.x has none. The inherited numbers are then not valid dimensions, which Example 22 calls satisfying both constraints",
   "permutations": [
     {
-      "tokens": {
-        "base.primary": {
+      "tokens": [
+        {
           "path": "base.primary",
           "type": "number"
         },
-        "base.colors.x": {
+        {
           "path": "base.colors.x",
           "type": "number"
         },
-        "extended.spacing": {
+        {
           "path": "extended.spacing",
           "type": "dimension"
         },
-        "extended.primary": {
+        {
           "path": "extended.primary",
           "type": "dimension",
           "inherited": {
@@ -24,7 +24,7 @@
           },
           "invalid": true
         },
-        "extended.colors.x": {
+        {
           "path": "extended.colors.x",
           "type": "dimension",
           "inherited": {
@@ -32,28 +32,28 @@
           },
           "invalid": true
         }
-      },
-      "groups": {
-        "base": {
+      ],
+      "groups": [
+        {
           "path": "base"
         },
-        "base.colors": {
+        {
           "path": "base.colors"
         },
-        "extended": {
+        {
           "path": "extended",
           "type": "dimension"
         },
-        "palette": {
+        {
           "path": "palette"
         },
-        "extended.colors": {
+        {
           "path": "extended.colors",
           "inherited": {
             "from": "base"
           }
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

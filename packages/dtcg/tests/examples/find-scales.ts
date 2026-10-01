@@ -4,7 +4,7 @@ import { defaultPermutation, tokensIn, type Document } from "@sugarcube-sh/dtcg"
 
 declare const doc: Document;
 
-for (const group of Object.values(defaultPermutation(doc)?.groups ?? {})) {
+for (const group of defaultPermutation(doc)?.groups ?? []) {
     if (group.extensions?.["com.example.scale"]) {
         row(group.path, "made by a generator");
         continue;

@@ -3,19 +3,19 @@
   "spec": "Format 5.1.1: a name cannot start with $ or contain {, } or .; $root is a token name (6.2), so a $root with no $value is a group with a forbidden name. Other $ keys are ignored, as properties this reader does not know. A space at either end is legal but warned about",
   "permutations": [
     {
-      "tokens": {
-        "size. e": {
+      "tokens": [
+        {
           "path": "size. e"
         },
-        "size.g": {
+        {
           "path": "size.g"
         }
-      },
-      "groups": {
-        "size": {
+      ],
+      "groups": [
+        {
           "path": "size"
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

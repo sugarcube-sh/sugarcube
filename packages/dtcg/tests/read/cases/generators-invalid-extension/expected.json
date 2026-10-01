@@ -6,12 +6,12 @@
   },
   "permutations": [
     {
-      "tokens": {
-        "gap": {
+      "tokens": [
+        {
           "path": "gap",
           "resolved": null
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

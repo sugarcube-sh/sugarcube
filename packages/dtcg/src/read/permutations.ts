@@ -155,7 +155,7 @@ function checkInput(
     return problems.length === 0 ? withDefaults(modifiers, chosen) : undefined;
 }
 
-function findByName<T>(
+export function findByName<T>(
     candidates: T[],
     wanted: string,
     nameOf: (candidate: T) => string,
