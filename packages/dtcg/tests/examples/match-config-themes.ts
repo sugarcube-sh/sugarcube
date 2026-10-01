@@ -11,5 +11,5 @@ for (const entry of config.permutations) {
         showMessage(`No permutation matches ${JSON.stringify(entry.input)}`);
         continue;
     }
-    row(entry.selector, p.label, Object.keys(p.tokens).length);
+    row(entry.selector, p.label, p.tokens.length);
 }

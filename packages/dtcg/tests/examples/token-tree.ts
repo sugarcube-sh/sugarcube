@@ -20,5 +20,5 @@ function place(path: string, token: boolean): void {
         at = child;
     });
 }
-for (const path of Object.keys(p?.groups ?? {})) place(path, false);
-for (const path of Object.keys(p?.tokens ?? {})) place(path, true);
+for (const { path } of p?.groups ?? []) place(path, false);
+for (const { path } of p?.tokens ?? []) place(path, true);

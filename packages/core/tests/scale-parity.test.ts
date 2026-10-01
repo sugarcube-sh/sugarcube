@@ -86,7 +86,7 @@ function madeByOldExpand(trees: TokenTree[]): Made[] {
 
 function madeByDtcg(doc: Document): Made[] {
     return doc.permutations.flatMap((permutation) =>
-        Object.values(permutation.tokens)
+        permutation.tokens
             .filter((token) => token.generated && !token.authored)
             .map((token) => ({
                 path: token.path,

@@ -21,7 +21,7 @@ function withScale(scale: unknown, written: Record<string, unknown> = {}) {
 }
 
 function tokens(doc: Document) {
-    return Object.values(doc.permutations[0]?.tokens ?? {});
+    return doc.permutations[0]?.tokens ?? [];
 }
 
 const rem = (value: number) => ({ value, unit: "rem" });

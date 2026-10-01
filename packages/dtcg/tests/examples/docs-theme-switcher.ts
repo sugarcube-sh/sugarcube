@@ -9,6 +9,6 @@ const themes = doc.modifiers["theme"]?.contexts ?? [];
 const current = permutation(doc, {
     theme: themes.includes(picked) ? picked : (doc.modifiers["theme"]?.default ?? ""),
 });
-for (const t of Object.values(current?.tokens ?? {})) {
+for (const t of current?.tokens ?? []) {
     if (t.type === "color") row(t.path, t.resolved?.hex);
 }

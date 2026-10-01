@@ -37,7 +37,7 @@ List every token, its value in every permutation, and which tokens use it:
 ```ts
 import { byToken, referrers } from "@sugarcube-sh/dtcg";
 
-for (const t of Object.values(byToken(doc))) {
+for (const t of byToken(doc)) {
     console.log(
         t.path,
         t.permutations.default?.resolved,

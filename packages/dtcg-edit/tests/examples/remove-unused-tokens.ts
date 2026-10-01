@@ -4,10 +4,8 @@ import { remove, commit, type Project } from "@sugarcube-sh/dtcg-edit";
 
 declare let project: Project;
 
-const unused = Object.keys(byToken(project.doc)).filter(
-    (path) => referrers(project.doc, path).length === 0,
-);
-for (const path of unused) {
+const unused = byToken(project.doc).filter((t) => referrers(project.doc, t.path).length === 0);
+for (const { path } of unused) {
     const done = commit(project, remove(project, path));
     if ("project" in done) project = done.project;
 }

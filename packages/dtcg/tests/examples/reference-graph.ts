@@ -13,7 +13,7 @@ for (const e of doc.graph) {
     if (existing) existing.in.push(input);
     else edges.set(key, { from: e.from, to: e.to, in: [input] });
 }
-const unusedPrimitives = Object.keys(doc.permutations[0]?.tokens ?? {}).filter(
-    (path) => ![...edges.values()].some((e) => e.to === path),
+const unusedPrimitives = (doc.permutations[0]?.tokens ?? []).filter(
+    (t) => ![...edges.values()].some((e) => e.to === t.path),
 );
 row(edges.size, unusedPrimitives.length);

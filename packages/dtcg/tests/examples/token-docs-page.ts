@@ -5,7 +5,7 @@ import { byToken, referrers } from "@sugarcube-sh/dtcg";
 
 const doc = await read("tokens/tokens.resolver.json");
 
-for (const t of Object.values(byToken(doc))) {
+for (const t of byToken(doc)) {
     const light = t.permutations.default;
     const dark = t.permutations.dark;
     row(
