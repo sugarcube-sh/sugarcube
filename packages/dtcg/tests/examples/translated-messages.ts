@@ -17,6 +17,20 @@ for (const d of doc.diagnostics) {
         case "circular-reference":
             showMessage(`Référence circulaire : ${d.detail.chain.join(" → ")}`);
             break;
+        case "invalid-value":
+            if (d.detail.reason === "unit-not-allowed") {
+                showMessage(
+                    `Unité « ${d.detail.unit} » non permise : ${d.detail.allowed.join(", ")}`,
+                );
+            } else showMessage(d.message);
+            break;
+        case "extension-invalid":
+            showMessage(
+                d.detail.reason === "ratio-not-above-one"
+                    ? `Le ratio ${(d.detail.data as { ratio: number }).ratio} doit dépasser 1`
+                    : d.message,
+            );
+            break;
         default:
             showMessage(d.message);
     }
