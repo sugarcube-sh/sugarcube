@@ -10,6 +10,7 @@ import {
     read,
     readFromMemory,
 } from "../../src/index.js";
+import { parseValue } from "../../src/values.js";
 import { withSpans } from "./positions.js";
 
 interface Expected {
@@ -32,6 +33,10 @@ interface Expected {
 const generators = {
     steps: defineGenerator({
         extension: ["com.example", "steps"],
+        messages: {
+            "not-a-count": ({ steps }: { steps: unknown }) =>
+                `\`steps\` must be a whole number above 0, not ${JSON.stringify(steps)}`,
+        },
         generate: (_group, steps) =>
             typeof steps === "number" && Number.isInteger(steps) && steps > 0
                 ? {
@@ -41,22 +46,20 @@ const generators = {
                           $value: { value: steps - i, unit: "rem" },
                       })),
                   }
-                : {
-                      ok: false,
-                      errors: [
-                          {
-                              kind: "invalid-value",
-                              path: [],
-                              message: "steps must be a whole number above 0",
-                              detail: "not-a-positive-integer",
-                          },
-                      ],
-                  },
+                : { ok: false, errors: [{ path: [], reason: "not-a-count", data: { steps } }] },
     }),
     ramp: defineGenerator({
         extension: ["com.example", "ramp"],
+        messages: {
+            "count-not-a-number": ({ count }: { count: unknown }) =>
+                `\`count\` must be a number, not ${JSON.stringify(count)}`,
+        },
         generate: (_group, ramp) => {
-            const count = (ramp as { count?: unknown }).count;
+            const { count, size } = ramp as { count?: unknown; size?: unknown };
+            if (size !== undefined) {
+                const parsed = parseValue("dimension", size, ["size"], { references: false });
+                if (!parsed.ok) return parsed;
+            }
             return typeof count === "number"
                 ? {
                       ok: true,
@@ -67,14 +70,7 @@ const generators = {
                   }
                 : {
                       ok: false,
-                      errors: [
-                          {
-                              kind: "invalid-value",
-                              path: ["count"],
-                              message: "count must be a number",
-                              detail: "not-a-number",
-                          },
-                      ],
+                      errors: [{ path: ["count"], reason: "count-not-a-number", data: { count } }],
                   };
         },
     }),

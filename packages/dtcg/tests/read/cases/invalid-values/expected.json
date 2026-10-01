@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 8 and 9: a value that does not fit its type makes the token invalid (8: an appropriate error SHOULD be displayed). Each problem is its own diagnostic, at the part it concerns, or at the object where a missing part belongs, with the parser's code as reason. The token stays, without a value",
+  "spec": "Format 8 and 9: a value that does not fit its type makes the token invalid (8: an appropriate error SHOULD be displayed). Each problem is its own diagnostic, at the part it concerns, or at the object where a missing part belongs, with the parser's code as reason and the facts to word it, and the type of the value that failed, which for a part is the part's. The token stays, without a value",
   "permutations": [
     {
       "tokens": [
@@ -37,7 +37,13 @@
       "detail": {
         "type": "color",
         "at": ["$value", "components", 0],
-        "reason": "component-out-of-range"
+        "reason": "component-out-of-range",
+        "value": 2,
+        "colorSpace": "srgb",
+        "component": "R",
+        "min": 0,
+        "max": 1,
+        "maxExclusive": false
       },
       "at": {
         "file": "tokens.json",
@@ -50,7 +56,9 @@
       "detail": {
         "type": "dimension",
         "at": ["$value", "unit"],
-        "reason": "unit-not-allowed"
+        "reason": "unit-not-allowed",
+        "unit": "em",
+        "allowed": ["px", "rem"]
       },
       "at": {
         "file": "tokens.json",
@@ -63,7 +71,8 @@
       "detail": {
         "type": "typography",
         "at": ["$value", "lineHeight"],
-        "reason": "missing-property"
+        "reason": "missing-property",
+        "property": "lineHeight"
       },
       "at": {
         "file": "tokens.json",
@@ -76,7 +85,8 @@
       "detail": {
         "type": "shadow",
         "at": ["$value", 1, "fuzz"],
-        "reason": "unknown-property"
+        "reason": "unknown-property",
+        "property": "fuzz"
       },
       "at": {
         "file": "tokens.json",
@@ -87,9 +97,10 @@
     {
       "kind": "invalid-value",
       "detail": {
-        "type": "shadow",
+        "type": "dimension",
         "at": ["$value", 1, "blur"],
-        "reason": "string-with-unit"
+        "reason": "string-with-unit",
+        "value": "8px"
       },
       "at": {
         "file": "tokens.json",

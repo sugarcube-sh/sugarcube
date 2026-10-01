@@ -41,37 +41,64 @@ describe("parseCubicBezier", () => {
         it.for(["ease-in", "cubic-bezier(0.5, 0, 1, 1)", 1, null, { x1: 0 }])(
             "%j, which is not a list",
             (raw) => {
-                expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
-            },
-        );
-
-        it.for([[[0, 0, 1]], [[0, 0, 1, 1, 0]], [[]]])(
-            "%j, which is not four numbers",
-            ([curve]) => {
-                expect(details(curve)).toStrictEqual([
-                    { path: ["$value"], detail: "not-four-numbers" },
+                expect(details(raw)).toStrictEqual([
+                    {
+                        path: ["$value"],
+                        detail: { type: "cubicBezier", reason: "wrong-shape", value: raw },
+                    },
                 ]);
             },
         );
 
         it.for([
-            { name: "x1 below 0", curve: [-0.1, 0, 1, 1], index: 0 },
-            { name: "x2 above 1", curve: [0, 0, 1.1, 1], index: 2 },
-        ])("$name", ({ curve, index }) => {
+            { curve: [0, 0, 1], count: 3 },
+            { curve: [0, 0, 1, 1, 0], count: 5 },
+            { curve: [], count: 0 },
+        ])("$curve, which is not four numbers", ({ curve, count }) => {
             expect(details(curve)).toStrictEqual([
-                { path: ["$value", index], detail: "x-out-of-range" },
+                {
+                    path: ["$value"],
+                    detail: { type: "cubicBezier", reason: "not-four-numbers", count },
+                },
+            ]);
+        });
+
+        it.for([
+            { name: "x1 below 0", curve: [-0.1, 0, 1, 1], index: 0, coordinate: "x1" },
+            { name: "x2 above 1", curve: [0, 0, 1.1, 1], index: 2, coordinate: "x2" },
+        ])("$name", ({ curve, index, coordinate }) => {
+            expect(details(curve)).toStrictEqual([
+                {
+                    path: ["$value", index],
+                    detail: {
+                        type: "cubicBezier",
+                        reason: "x-out-of-range",
+                        value: curve[index],
+                        coordinate,
+                    },
+                },
             ]);
         });
 
         it("a number written as a string", () => {
             expect(details([0.5, "0", 1, 1])).toStrictEqual([
-                { path: ["$value", 1], detail: "not-a-number" },
+                {
+                    path: ["$value", 1],
+                    detail: { type: "cubicBezier", reason: "not-a-number", value: "0" },
+                },
             ]);
         });
 
         it("a curly-brace reference in place of one number", () => {
             expect(details(["{easing.x}", 0, 1, 1])).toStrictEqual([
-                { path: ["$value", 0], detail: "alias-not-allowed-here" },
+                {
+                    path: ["$value", 0],
+                    detail: {
+                        type: "cubicBezier",
+                        reason: "alias-not-allowed-here",
+                        reference: "{easing.x}",
+                    },
+                },
             ]);
         });
     });

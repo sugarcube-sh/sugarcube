@@ -10,19 +10,19 @@ declare function expandScale(
 
 const scaleRecipes = defineGenerator({
     extension: ["sh.sugarcube", "scale"],
+    messages: { "not-a-recipe": () => "this is not a scale recipe" },
     generate: (_group, recipe) =>
         isScaleRecipe(recipe)
             ? { ok: true, value: expandScale(recipe) }
-            : { ok: false, errors: [{ kind: "invalid-value", path: [], message: "not a recipe" }] },
+            : { ok: false, errors: [{ path: [], reason: "not-a-recipe" }] },
 });
 
 const sugarcubeExtensions: ExtensionValidator = {
     key: "sh.sugarcube",
     appliesTo: ["dimension", "group"],
-    validate: (raw, at) =>
-        raw && typeof raw === "object"
-            ? []
-            : [{ kind: "invalid-value", path: at, message: "sh.sugarcube must be an object" }],
+    messages: { "not-an-object": () => "`sh.sugarcube` must be an object" },
+    validate: (raw) =>
+        raw && typeof raw === "object" ? [] : [{ path: [], reason: "not-an-object" }],
 };
 
 await read("tokens.resolver.json", {

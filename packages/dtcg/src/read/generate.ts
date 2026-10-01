@@ -1,5 +1,12 @@
 import type { Node } from "jsonc-parser";
-import type { Diagnostic, GeneratedToken, Generator, ValueError } from "../index.js";
+import type {
+    Diagnostic,
+    ExtensionError,
+    ExtensionMessages,
+    GeneratedToken,
+    Generator,
+    ValueError,
+} from "../index.js";
 import { isPlainObject, readAlias, readPointer } from "../values/references.js";
 import { diagnostic } from "./diagnostics.js";
 import { type JsonFile, deepestNode, member, spanOf } from "./json.js";
@@ -15,12 +22,16 @@ interface Extension {
 }
 
 /**
- * Defines a {@link Generator}.
+ * Defines a {@link Generator}, checking each error `generate` returns against its `messages`.
  *
  * @example
  * // { "space": { "$type": "dimension", "$extensions": { "com.example": { "steps": 4 } } } }
  * const steps = defineGenerator({
  *   extension: ["com.example", "steps"],
+ *   messages: {
+ *     "not-a-count": ({ steps }: { steps: unknown }) =>
+ *       `\`steps\` must be a whole number above 0, not ${JSON.stringify(steps)}`,
+ *   },
  *   generate: (group, steps) =>
  *     typeof steps === "number"
  *       ? {
@@ -30,10 +41,19 @@ interface Extension {
  *             $value: { value: i + 1, unit: "rem" },
  *           })),
  *         }
- *       : { ok: false, errors: [{ kind: "invalid-value", path: [], message: "steps must be a number" }] },
+ *       : { ok: false, errors: [{ path: [], reason: "not-a-count", data: { steps } }] },
  * });
  */
-export function defineGenerator(generator: Generator): Generator {
+export function defineGenerator<const M extends ExtensionMessages = Record<never, never>>(
+    generator: Omit<Generator, "messages" | "generate"> & {
+        messages?: M;
+        generate: (
+            ...args: Parameters<Generator["generate"]>
+        ) =>
+            | { ok: true; value: GeneratedToken[] }
+            | { ok: false; errors: (ExtensionError<NoInfer<M>> | ValueError)[] };
+    },
+): Generator {
     return generator;
 }
 
@@ -58,13 +78,7 @@ export function fillGenerated(
             if (!result.ok) {
                 for (const error of result.errors) {
                     diagnostics.push(
-                        invalidExtension(
-                            group.path,
-                            generator.extension,
-                            extension,
-                            error,
-                            permutation,
-                        ),
+                        invalidExtension(group.path, generator, extension, error, permutation),
                     );
                 }
                 continue;
@@ -151,23 +165,26 @@ function addedToken(
 
 function invalidExtension(
     path: string,
-    extensionPath: Generator["extension"],
+    { extension: extensionPath, messages }: Generator,
     { json, node }: Extension,
-    error: ValueError,
+    error: ExtensionError | ValueError,
     permutation: number,
 ): Diagnostic {
     const found = deepestNode(node, error.path, json.hidden);
-    return diagnostic(
+    const at = ["$extensions", ...extensionPath, ...error.path];
+    const extra = {
+        at: spanOf(json.path, json.lineStarts, found.offset, found.length),
+        path,
+        permutation,
+    };
+    if ("kind" in error) return diagnostic("invalid-value", { at, ...error.detail }, extra);
+
+    const { reason, data } = error;
+    const invalid = diagnostic(
         "extension-invalid",
-        {
-            key: extensionPath[0],
-            at: ["$extensions", ...extensionPath, ...error.path],
-            ...(error.detail !== undefined && { reason: error.detail }),
-        },
-        {
-            at: spanOf(json.path, json.lineStarts, found.offset, found.length),
-            path,
-            permutation,
-        },
+        { key: extensionPath[0], at, reason, ...(data !== undefined && { data }) },
+        extra,
     );
+    const message = messages?.[reason];
+    return message ? { ...invalid, message: message(data) } : invalid;
 }

@@ -26,7 +26,12 @@ describe("parseNumber", () => {
             const result = parseNumber(raw, ["$value"]);
             expect(
                 result.ok ? [] : result.errors.map(({ path, detail }) => ({ path, detail })),
-            ).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+            ).toStrictEqual([
+                {
+                    path: ["$value"],
+                    detail: { type: "number", reason: "not-a-number", value: raw },
+                },
+            ]);
         },
     );
 });

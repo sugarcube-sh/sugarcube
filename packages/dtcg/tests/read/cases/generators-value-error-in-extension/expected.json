@@ -1,0 +1,18 @@
+{
+  "entry": "tokens.json",
+  "spec": "a value a generator reads in its extension with parseValue is reported as it would be in a token: invalid-value, with the type it was read as, at that part of the extension",
+  "options": { "generators": ["ramp"] },
+  "diagnostics": [
+    {
+      "kind": "invalid-value",
+      "detail": {
+        "at": ["$extensions", "com.example", "ramp", "size"],
+        "type": "dimension",
+        "reason": "string-with-unit",
+        "value": "16px"
+      },
+      "at": { "file": "tokens.json", "text": "\"16px\"" },
+      "path": "space"
+    }
+  ]
+}

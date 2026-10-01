@@ -8,7 +8,8 @@
       "detail": {
         "key": "com.example",
         "at": ["$extensions", "com.example", "ramp", "count"],
-        "reason": "not-a-number"
+        "reason": "count-not-a-number",
+        "data": { "count": "two" }
       },
       "at": { "file": "tokens.json", "valueAfter": "\"count\":" },
       "path": "space"

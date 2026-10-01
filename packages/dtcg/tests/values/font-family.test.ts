@@ -45,28 +45,53 @@ describe("parseFontFamily", () => {
 
     describe("refuses", () => {
         it.for(["", "   "])("the empty name %j", (raw) => {
-            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "not-a-font-name" }]);
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value"],
+                    detail: { type: "fontFamily", reason: "not-a-font-name", value: raw },
+                },
+            ]);
         });
 
         it("an empty list", () => {
-            expect(details([])).toStrictEqual([{ path: ["$value"], detail: "empty-font-list" }]);
+            expect(details([])).toStrictEqual([
+                { path: ["$value"], detail: { type: "fontFamily", reason: "empty-font-list" } },
+            ]);
         });
 
         it("a list with something other than a name in it", () => {
             expect(details(["Arial", 42, ""])).toStrictEqual([
-                { path: ["$value", 1], detail: "not-a-font-name" },
-                { path: ["$value", 2], detail: "not-a-font-name" },
+                {
+                    path: ["$value", 1],
+                    detail: { type: "fontFamily", reason: "not-a-font-name", value: 42 },
+                },
+                {
+                    path: ["$value", 2],
+                    detail: { type: "fontFamily", reason: "not-a-font-name", value: "" },
+                },
             ]);
         });
 
         it("a curly-brace reference in place of one name, rather than reading it as a font's name", () => {
             expect(details(["{font.brand}", "serif"])).toStrictEqual([
-                { path: ["$value", 0], detail: "alias-not-allowed-here" },
+                {
+                    path: ["$value", 0],
+                    detail: {
+                        type: "fontFamily",
+                        reason: "alias-not-allowed-here",
+                        reference: "{font.brand}",
+                    },
+                },
             ]);
         });
 
         it.for([42, null, true, { name: "Arial" }])("%j, which is not a name or a list", (raw) => {
-            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value"],
+                    detail: { type: "fontFamily", reason: "wrong-shape", value: raw },
+                },
+            ]);
         });
     });
 });

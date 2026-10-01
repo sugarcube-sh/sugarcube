@@ -15,11 +15,17 @@ export function readGradient(raw: unknown, at: JsonPath): ParseResult<Unresolved
     if (reference) return { ok: true, value: reference };
 
     if (!Array.isArray(raw)) {
-        return { ok: false, errors: [valueError(at, "wrong-shape", "gradient")] };
+        return {
+            ok: false,
+            errors: [valueError(at, { type: "gradient", reason: "wrong-shape", value: raw })],
+        };
     }
 
     if (raw.length === 0) {
-        return { ok: false, errors: [valueError(at, "no-gradient-stops")] };
+        return {
+            ok: false,
+            errors: [valueError(at, { type: "gradient", reason: "no-gradient-stops" })],
+        };
     }
     return readList(raw, at, readStop);
 }

@@ -2,6 +2,8 @@ import type { JsonPath, ParseResult, Pointer, ValueError, UnresolvedValue } from
 import { readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
+const type = "fontFamily";
+
 export function readFontFamily(
     raw: unknown,
     at: JsonPath,
@@ -11,17 +13,20 @@ export function readFontFamily(
 
     if (typeof raw === "string") {
         if (raw.trim() === "") {
-            return { ok: false, errors: [valueError(at, "not-a-font-name", raw)] };
+            return {
+                ok: false,
+                errors: [valueError(at, { type, reason: "not-a-font-name", value: raw })],
+            };
         }
         return { ok: true, value: [raw] };
     }
 
     if (!Array.isArray(raw)) {
-        return { ok: false, errors: [valueError(at, "wrong-shape", "fontFamily")] };
+        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
     }
 
     if (raw.length === 0) {
-        return { ok: false, errors: [valueError(at, "empty-font-list")] };
+        return { ok: false, errors: [valueError(at, { type, reason: "empty-font-list" })] };
     }
 
     const errors: ValueError[] = [];
@@ -29,12 +34,20 @@ export function readFontFamily(
         const pointer = readPointer(name);
         if (pointer) return pointer;
         if (readAlias(name)) {
-            errors.push(valueError([...at, index], "alias-not-allowed-here", name as string));
+            errors.push(
+                valueError([...at, index], {
+                    type,
+                    reason: "alias-not-allowed-here",
+                    reference: name as string,
+                }),
+            );
             return name as string;
         }
 
         if (typeof name !== "string" || name.trim() === "") {
-            errors.push(valueError([...at, index], "not-a-font-name", name));
+            errors.push(
+                valueError([...at, index], { type, reason: "not-a-font-name", value: name }),
+            );
         }
         return name as string;
     });

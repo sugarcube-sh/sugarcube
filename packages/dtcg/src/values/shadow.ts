@@ -30,7 +30,7 @@ export function readShadow(raw: unknown, at: JsonPath): ParseResult<UnresolvedVa
     }
 
     if (raw.length === 0) {
-        return { ok: false, errors: [valueError(at, "no-shadows")] };
+        return { ok: false, errors: [valueError(at, { type: "shadow", reason: "no-shadows" })] };
     }
     return readList(raw, at, readLayer);
 }
@@ -44,5 +44,8 @@ function readInset(raw: unknown, at: JsonPath): ParseResult<boolean | Pointer> {
     if (pointer) return { ok: true, value: pointer };
 
     if (typeof raw === "boolean") return { ok: true, value: raw };
-    return { ok: false, errors: [valueError(at, "not-a-boolean", raw)] };
+    return {
+        ok: false,
+        errors: [valueError(at, { type: "shadow", reason: "not-a-boolean", value: raw })],
+    };
 }

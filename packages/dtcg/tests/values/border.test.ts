@@ -73,7 +73,12 @@ describe("parseBorder", () => {
         it.for(["1px solid red", 1, null, [color, width, "solid"]])(
             "%j, which is not a border",
             (raw) => {
-                expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+                expect(details(raw)).toStrictEqual([
+                    {
+                        path: ["$value"],
+                        detail: { type: "border", reason: "wrong-shape", value: raw },
+                    },
+                ]);
             },
         );
 
@@ -83,14 +88,20 @@ describe("parseBorder", () => {
                 const raw: Record<string, unknown> = { color, width, style: "solid" };
                 delete raw[part];
                 expect(details(raw)).toStrictEqual([
-                    { path: ["$value", part], detail: "missing-property" },
+                    {
+                        path: ["$value", part],
+                        detail: { type: "border", reason: "missing-property", property: part },
+                    },
                 ]);
             },
         );
 
         it("a part that spec 9.2 does not define", () => {
             expect(details({ color, width, style: "solid", radius: width })).toStrictEqual([
-                { path: ["$value", "radius"], detail: "unknown-property" },
+                {
+                    path: ["$value", "radius"],
+                    detail: { type: "border", reason: "unknown-property", property: "radius" },
+                },
             ]);
         });
 
@@ -102,9 +113,23 @@ describe("parseBorder", () => {
                     style: { dashArray: [{ value: 1, unit: "em" }], lineCap: "round" },
                 }),
             ).toStrictEqual([
-                { path: ["$value", "color"], detail: "hex-string" },
-                { path: ["$value", "width"], detail: "string-with-unit" },
-                { path: ["$value", "style", "dashArray", 0, "unit"], detail: "unit-not-allowed" },
+                {
+                    path: ["$value", "color"],
+                    detail: { type: "color", reason: "hex-string", value: "#ff0000" },
+                },
+                {
+                    path: ["$value", "width"],
+                    detail: { type: "dimension", reason: "string-with-unit", value: "1px" },
+                },
+                {
+                    path: ["$value", "style", "dashArray", 0, "unit"],
+                    detail: {
+                        type: "dimension",
+                        reason: "unit-not-allowed",
+                        unit: "em",
+                        allowed: ["px", "rem"],
+                    },
+                },
             ]);
         });
     });

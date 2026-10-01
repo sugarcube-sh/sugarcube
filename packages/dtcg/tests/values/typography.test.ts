@@ -77,7 +77,10 @@ describe("parseTypography", () => {
                 const raw: Record<string, unknown> = { ...heading };
                 delete raw[part];
                 expect(details(raw)).toStrictEqual([
-                    { path: ["$value", part], detail: "missing-property" },
+                    {
+                        path: ["$value", part],
+                        detail: { type: "typography", reason: "missing-property", property: part },
+                    },
                 ]);
             },
         );
@@ -90,35 +93,68 @@ describe("parseTypography", () => {
                     fontWeight: 400,
                     lineHeight: 1.5,
                 }),
-            ).toStrictEqual([{ path: ["$value", "letterSpacing"], detail: "missing-property" }]);
+            ).toStrictEqual([
+                {
+                    path: ["$value", "letterSpacing"],
+                    detail: {
+                        type: "typography",
+                        reason: "missing-property",
+                        property: "letterSpacing",
+                    },
+                },
+            ]);
         });
 
         it.for(["fontStyle", "textTransform", "textDecoration"])(
             "the part %s, which spec 9.8 does not define",
             (part) => {
                 expect(details({ ...heading, [part]: "italic" })).toStrictEqual([
-                    { path: ["$value", part], detail: "unknown-property" },
+                    {
+                        path: ["$value", part],
+                        detail: { type: "typography", reason: "unknown-property", property: part },
+                    },
                 ]);
             },
         );
 
         it("a line height with a unit, since spec 9.8 makes it a number", () => {
             expect(details({ ...heading, lineHeight: px(24) })).toStrictEqual([
-                { path: ["$value", "lineHeight"], detail: "wrong-shape" },
+                {
+                    path: ["$value", "lineHeight"],
+                    detail: { type: "number", reason: "not-a-number", value: px(24) },
+                },
             ]);
         });
 
         it.for(["16px Roboto", null, [heading]])("%j, which is not a typography value", (raw) => {
-            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value"],
+                    detail: { type: "typography", reason: "wrong-shape", value: raw },
+                },
+            ]);
         });
 
         it("each bad part, with its own parser's reason, at its full path", () => {
             expect(
                 details({ ...heading, fontFamily: [], fontSize: "42px", fontWeight: "Bold" }),
             ).toStrictEqual([
-                { path: ["$value", "fontFamily"], detail: "empty-font-list" },
-                { path: ["$value", "fontSize"], detail: "string-with-unit" },
-                { path: ["$value", "fontWeight"], detail: "unknown-font-weight-keyword" },
+                {
+                    path: ["$value", "fontFamily"],
+                    detail: { type: "fontFamily", reason: "empty-font-list" },
+                },
+                {
+                    path: ["$value", "fontSize"],
+                    detail: { type: "dimension", reason: "string-with-unit", value: "42px" },
+                },
+                {
+                    path: ["$value", "fontWeight"],
+                    detail: {
+                        type: "fontWeight",
+                        reason: "unknown-font-weight-keyword",
+                        value: "Bold",
+                    },
+                },
             ]);
         });
     });

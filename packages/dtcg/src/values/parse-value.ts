@@ -42,11 +42,11 @@ export function parseValue<T extends TokenType>(
 
     const listed = Array.isArray(read.value) && !Array.isArray(raw);
     const errors = referencesIn(read.value, []).map(({ inside, written }) =>
-        valueError(
-            [...at, ...(listed ? inside.slice(1) : inside)],
-            "reference-not-allowed",
-            written,
-        ),
+        valueError([...at, ...(listed ? inside.slice(1) : inside)], {
+            type,
+            reason: "reference-not-allowed",
+            reference: written,
+        }),
     );
     return errors.length > 0 ? { ok: false, errors } : (read as ParseResult<ValueByType[T]>);
 }

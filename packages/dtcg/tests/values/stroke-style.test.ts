@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseStrokeStyle, strokeStyleKeywords } from "../../src/values.js";
+import { lineCaps, parseStrokeStyle, strokeStyleKeywords } from "../../src/values.js";
 
 function read(raw: unknown) {
     const result = parseStrokeStyle(raw, ["$value"]);
@@ -71,31 +71,64 @@ describe("parseStrokeStyle", () => {
             "the string %j, which is not a keyword",
             (raw) => {
                 expect(details(raw)).toStrictEqual([
-                    { path: ["$value"], detail: "unknown-stroke-style-keyword" },
+                    {
+                        path: ["$value"],
+                        detail: {
+                            type: "strokeStyle",
+                            reason: "unknown-stroke-style-keyword",
+                            value: raw,
+                            keywords: strokeStyleKeywords,
+                        },
+                    },
                 ]);
             },
         );
 
         it.for([42, null, true, ["solid"]])("%j, which is not a stroke style", (raw) => {
-            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value"],
+                    detail: { type: "strokeStyle", reason: "wrong-shape", value: raw },
+                },
+            ]);
         });
 
         it("a dash pattern with neither part", () => {
             expect(details({})).toStrictEqual([
-                { path: ["$value", "dashArray"], detail: "missing-property" },
-                { path: ["$value", "lineCap"], detail: "missing-property" },
+                {
+                    path: ["$value", "dashArray"],
+                    detail: {
+                        type: "strokeStyle",
+                        reason: "missing-property",
+                        property: "dashArray",
+                    },
+                },
+                {
+                    path: ["$value", "lineCap"],
+                    detail: {
+                        type: "strokeStyle",
+                        reason: "missing-property",
+                        property: "lineCap",
+                    },
+                },
             ]);
         });
 
         it("a dashArray that is not a list", () => {
             expect(details({ dashArray: px(4), lineCap: "round" })).toStrictEqual([
-                { path: ["$value", "dashArray"], detail: "dash-array-not-a-list" },
+                {
+                    path: ["$value", "dashArray"],
+                    detail: { type: "strokeStyle", reason: "dash-array-not-a-list", value: px(4) },
+                },
             ]);
         });
 
         it("an empty dashArray", () => {
             expect(details({ dashArray: [], lineCap: "round" })).toStrictEqual([
-                { path: ["$value", "dashArray"], detail: "empty-dash-array" },
+                {
+                    path: ["$value", "dashArray"],
+                    detail: { type: "strokeStyle", reason: "empty-dash-array" },
+                },
             ]);
         });
 
@@ -103,21 +136,49 @@ describe("parseStrokeStyle", () => {
             expect(
                 details({ dashArray: [px(4), "4px", { value: 2, unit: "em" }], lineCap: "round" }),
             ).toStrictEqual([
-                { path: ["$value", "dashArray", 1], detail: "string-with-unit" },
-                { path: ["$value", "dashArray", 2, "unit"], detail: "unit-not-allowed" },
+                {
+                    path: ["$value", "dashArray", 1],
+                    detail: { type: "dimension", reason: "string-with-unit", value: "4px" },
+                },
+                {
+                    path: ["$value", "dashArray", 2, "unit"],
+                    detail: {
+                        type: "dimension",
+                        reason: "unit-not-allowed",
+                        unit: "em",
+                        allowed: ["px", "rem"],
+                    },
+                },
             ]);
         });
 
         it.for(["Round", "flat", 1])("the line cap %j", (lineCap) => {
             expect(details({ dashArray: [px(4)], lineCap })).toStrictEqual([
-                { path: ["$value", "lineCap"], detail: "unknown-line-cap" },
+                {
+                    path: ["$value", "lineCap"],
+                    detail: {
+                        type: "strokeStyle",
+                        reason: "unknown-line-cap",
+                        value: lineCap,
+                        lineCaps: lineCaps,
+                    },
+                },
             ]);
         });
 
         it("a property the spec does not define", () => {
             expect(
                 details({ dashArray: [px(4)], lineCap: "round", dashOffset: px(1) }),
-            ).toStrictEqual([{ path: ["$value", "dashOffset"], detail: "unknown-property" }]);
+            ).toStrictEqual([
+                {
+                    path: ["$value", "dashOffset"],
+                    detail: {
+                        type: "strokeStyle",
+                        reason: "unknown-property",
+                        property: "dashOffset",
+                    },
+                },
+            ]);
         });
     });
 });

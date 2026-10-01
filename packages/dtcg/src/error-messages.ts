@@ -5,6 +5,7 @@ import type {
     ResolverProblem,
     ResolverRule,
 } from "./index.js";
+import { valueErrorMessage, valueErrorMessages } from "./values/value-errors.js";
 
 type Entry<K extends DiagnosticKind> = {
     severity: "error" | "warning";
@@ -144,11 +145,12 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "invalid-value": {
         severity: "error",
-        message: ({ type }) => `this is not a valid ${type} value`,
+        message: (detail) => valueErrorMessage(detail),
     },
     "hex-string-color": {
         severity: "error",
-        message: ({ value }) => `\`${value}\` is a hex string, and a color must be an object`,
+        message: ({ value }) =>
+            valueErrorMessages["hex-string"]({ type: "color", reason: "hex-string", value }),
     },
     "extension-invalid": {
         severity: "error",
