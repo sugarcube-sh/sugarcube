@@ -237,7 +237,7 @@ const expectedFailures: Expected[] = [
     },
     {
         project: "packages/studio/demo/tokens.resolver.json",
-        why: "refers to size.step.*, made by the scale recipe on size.step; missing until step 4 builds generators",
+        why: "refers to size.step.*, made by sugarcube's scale recipe on size.step, which dtcg alone does not know; core's scale-parity test reads it with the generator and finds none missing",
         matches: (d) => d.kind === "missing-reference" && d.detail.ref.startsWith("size.step."),
     },
 ];

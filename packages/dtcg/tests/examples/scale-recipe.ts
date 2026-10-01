@@ -3,14 +3,17 @@
 import { read, defineGenerator, type ExtensionValidator } from "@sugarcube-sh/dtcg";
 
 type ScaleRecipe = { mode: "exponential" | "multipliers" };
+declare function isScaleRecipe(raw: unknown): raw is ScaleRecipe;
 declare function expandScale(
     recipe: ScaleRecipe,
-): Record<string, { $value: unknown; $extensions?: Record<string, unknown> }>;
+): { name: string; $value: unknown; $extensions?: Record<string, unknown> }[];
 
 const scaleRecipes = defineGenerator({
-    select: (extensions) =>
-        (extensions["sh.sugarcube"] as { scale?: ScaleRecipe } | undefined)?.scale,
-    generate: (_group, recipe) => expandScale(recipe),
+    extension: ["sh.sugarcube", "scale"],
+    generate: (_group, recipe) =>
+        isScaleRecipe(recipe)
+            ? { ok: true, value: expandScale(recipe) }
+            : { ok: false, errors: [{ kind: "invalid-value", path: [], message: "not a recipe" }] },
 });
 
 const sugarcubeExtensions: ExtensionValidator = {

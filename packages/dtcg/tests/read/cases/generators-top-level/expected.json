@@ -1,0 +1,47 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 6.1, 6.3.2: a file's top level is an object without $value, so a group, and may hold $extensions; an extension there adds tokens at the top level, after the file's own tokens, generated from the empty path",
+  "options": {
+    "generators": ["steps"]
+  },
+  "permutations": [
+    {
+      "tokens": {
+        "gap": {
+          "path": "gap",
+          "resolved": {
+            "value": 1,
+            "unit": "rem"
+          },
+          "aliasOf": "1"
+        },
+        "2": {
+          "path": "2",
+          "type": "dimension",
+          "resolved": {
+            "value": 2,
+            "unit": "rem"
+          },
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "tokens.json",
+              "valueAfter": "\"steps\":"
+            }
+          },
+          "generated": {
+            "from": ""
+          },
+          "authored": null
+        },
+        "1": {
+          "path": "1",
+          "generated": {
+            "from": ""
+          }
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

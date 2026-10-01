@@ -42,14 +42,20 @@ export interface GroupReference {
     declaredAt: Span;
 }
 
+export interface ExtensionsAt {
+    json: JsonFile;
+    node: Node;
+}
+
 export interface SourceGroup extends Properties {
     path: string;
     at: Span;
     extends?: GroupReference;
+    extensionsAt?: ExtensionsAt;
 }
 
 export interface SourceContents {
-    root: Properties;
+    root: SourceGroup;
     tokens: SourceToken[];
     groups: SourceGroup[];
 }
@@ -77,9 +83,9 @@ export function walkSource(
     const { json, tree } = source;
     if (!json || !tree) return undefined;
 
-    const contents: SourceContents = { root: {}, tokens: [], groups: [] };
-    const overridden = new Set(source.overriddenKeys);
     const at = (node: Node) => spanOf(json.path, json.lineStarts, node.offset, node.length);
+    const contents: SourceContents = { root: { path: "", at: at(tree) }, tokens: [], groups: [] };
+    const overridden = new Set(source.overriddenKeys);
     const report = <K extends DiagnosticKind>(
         kind: K,
         detail: DiagnosticDetailByKind[K],
@@ -118,6 +124,16 @@ export function walkSource(
             }
         }
         return properties;
+    };
+
+    const readGroupProperties = (path: string, entries: Member[]) => {
+        const properties = readProperties(path, entries);
+        const extensions = entries.find(({ key }) => key === "$extensions")?.value;
+        return {
+            ...properties,
+            ...(properties.extensions &&
+                extensions && { extensionsAt: { json, node: extensions } }),
+        };
     };
 
     const readExtends = (node: Node, entries: Member[]): GroupReference | undefined => {
@@ -163,7 +179,7 @@ export function walkSource(
         contents.groups.push({
             path,
             at: at(node),
-            ...readProperties(path, entries),
+            ...readGroupProperties(path, entries),
             ...(extending && { extends: extending }),
         });
         visitMembers(segments, entries);
@@ -197,7 +213,7 @@ export function walkSource(
     };
 
     const rootEntries = members(tree, json.hidden).filter(({ key }) => !overridden.has(key));
-    contents.root = readProperties("", rootEntries);
+    contents.root = { path: "", at: at(tree), ...readGroupProperties("", rootEntries) };
     visitMembers([], rootEntries);
     return contents;
 }

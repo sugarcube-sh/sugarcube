@@ -69,6 +69,8 @@ export const valueErrorMessages = {
     "font-weight-out-of-range": (value: number) => `${value} is outside the range 1 to 1000.`,
     "unknown-font-weight-keyword": (value: string) =>
         `"${value}" is not a font weight keyword the specification defines. Keywords are lower case, such as "bold" or "semi-bold".`,
+    "reference-not-allowed": (reference: string) =>
+        `${reference} is a reference. Only a literal value can be used here.`,
     "unit-not-allowed": (unit: unknown, allowed: readonly string[]) =>
         `${JSON.stringify(unit)} is not a unit here. Use ${allowed.map((u) => `"${u}"`).join(" or ")}.`,
 } as const;

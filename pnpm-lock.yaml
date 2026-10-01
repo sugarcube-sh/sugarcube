@@ -254,6 +254,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@sugarcube-sh/dtcg':
+        specifier: workspace:*
+        version: link:../dtcg
       jiti:
         specifier: ^2.7.0
         version: 2.7.0

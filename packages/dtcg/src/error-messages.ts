@@ -185,11 +185,6 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         severity: "warning",
         message: ({ name }) => `the name \`${name}\` starts or ends with a space`,
     },
-    "generator-overridden": {
-        severity: "warning",
-        message: ({ generator, group, name }) =>
-            `\`${name}\` in \`${group}\` takes the place of the one the ${generator} generator would make`,
-    },
     "permutation-limit": {
         severity: "warning",
         message: ({ count, limit, built }) =>

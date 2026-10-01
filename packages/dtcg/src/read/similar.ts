@@ -2,24 +2,38 @@ export function similarName<T extends string>(
     wanted: string,
     candidates: readonly T[],
 ): T | undefined {
-    const scored = candidates.map((name) => ({
-        name,
-        distance: editDistance(wanted.toLowerCase(), name.toLowerCase()),
-    }));
-    const closest = Math.min(...scored.map(({ distance }) => distance));
+    const target = [...wanted.toLowerCase()];
     const limit = Math.max(1, Math.min(2, Math.floor(wanted.length / 3)));
-    const [only, ...others] = scored.filter(({ distance }) => distance === closest);
-    return closest <= limit && others.length === 0 ? only?.name : undefined;
+    let closest = limit + 1;
+    let best: T | undefined;
+    let tied = false;
+    for (const name of candidates) {
+        const candidate = [...name.toLowerCase()];
+        if (Math.abs(candidate.length - target.length) > limit) continue;
+        const distance = editDistance(target, candidate, limit);
+        if (distance < closest) {
+            closest = distance;
+            best = name;
+            tied = false;
+        } else if (distance === closest) {
+            tied = true;
+        }
+    }
+    return closest <= limit && !tied ? best : undefined;
 }
 
-function editDistance(a: string, b: string): number {
+function editDistance(a: string[], b: string[], limit: number): number {
     let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
-    for (const [i, fromA] of [...a].entries()) {
+    for (const [i, fromA] of a.entries()) {
         const current = [i + 1];
-        for (const [j, fromB] of [...b].entries()) {
+        let smallest = i + 1;
+        for (const [j, fromB] of b.entries()) {
             const replace = (previous[j] ?? 0) + (fromA === fromB ? 0 : 1);
-            current.push(Math.min((previous[j + 1] ?? 0) + 1, (current[j] ?? 0) + 1, replace));
+            const distance = Math.min((previous[j + 1] ?? 0) + 1, (current[j] ?? 0) + 1, replace);
+            current.push(distance);
+            smallest = Math.min(smallest, distance);
         }
+        if (smallest > limit) return limit + 1;
         previous = current;
     }
     return previous[b.length] ?? 0;

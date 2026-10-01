@@ -8,40 +8,12 @@ import type {
     UnresolvedValueByType,
     ValueError,
 } from "../index.js";
-import { readBorder } from "../values/border.js";
-import { readColor } from "../values/color.js";
-import { readCubicBezier } from "../values/cubic-bezier.js";
-import { readDimension } from "../values/dimension.js";
-import { readDuration } from "../values/duration.js";
-import { readFontFamily } from "../values/font-family.js";
-import { readFontWeight } from "../values/font-weight.js";
-import { readGradient } from "../values/gradient.js";
-import { readNumber } from "../values/number.js";
-import { readShadow } from "../values/shadow.js";
-import { readStrokeStyle } from "../values/stroke-style.js";
-import { readTransition } from "../values/transition.js";
-import { readTypography } from "../values/typography.js";
 import { type ValueErrorCode, valueErrorMessages } from "../values/value-errors.js";
 import { diagnostic } from "./diagnostics.js";
 import { hexAsObject } from "./hex-fix.js";
+import { parsers } from "../values/parsers.js";
 import { deepestNode, spanOf } from "./json.js";
 import type { MergedToken } from "./merge.js";
-
-const parsers: { [T in TokenType]: Parse<UnresolvedValueByType[T]> } = {
-    color: readColor,
-    dimension: readDimension,
-    duration: readDuration,
-    cubicBezier: readCubicBezier,
-    number: readNumber,
-    fontFamily: readFontFamily,
-    fontWeight: readFontWeight,
-    strokeStyle: readStrokeStyle,
-    border: readBorder,
-    shadow: readShadow,
-    gradient: readGradient,
-    transition: readTransition,
-    typography: readTypography,
-};
 
 export type ValueReader = <T extends TokenType>(
     token: MergedToken,
@@ -53,17 +25,22 @@ type Cache = { [T in TokenType]?: Map<Node, ParseResult<UnresolvedValueByType[T]
 export function createValueReader(diagnostics: Diagnostic[]): ValueReader {
     const caches: Cache = {};
 
-    return <T extends TokenType>(token: MergedToken, type: T) => {
-        const cache: NonNullable<Cache[T]> = caches[type] ?? new Map();
-        caches[type] = cache;
-        const cached = cache.get(token.value);
-        if (cached) return cached;
-
+    const read = <T extends TokenType>(token: MergedToken, type: T) => {
         const parse: Parse<UnresolvedValueByType[T]> = parsers[type];
         const result = parse(token.authored, ["$value"]);
         if (!result.ok) {
             for (const error of result.errors) diagnostics.push(toDiagnostic(token, type, error));
         }
+        return result;
+    };
+
+    return <T extends TokenType>(token: MergedToken, type: T) => {
+        if (token.added) return read(token, type);
+        const cache: NonNullable<Cache[T]> = caches[type] ?? new Map();
+        caches[type] = cache;
+        const cached = cache.get(token.value);
+        if (cached) return cached;
+        const result = read(token, type);
         cache.set(token.value, result);
         return result;
     };

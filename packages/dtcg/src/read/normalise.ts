@@ -29,6 +29,7 @@ export function normalisePermutations(
     permutations: LoadedPermutation[],
     readValue: ValueReader,
     diagnostics: Diagnostic[],
+    generate: (merged: Merged, permutation: number) => void,
 ): NormalisedPermutation[] {
     const walked = new Map<string, SourceContents | undefined>();
     const walk = (loaded: LoadedSource) => {
@@ -44,6 +45,7 @@ export function normalisePermutations(
             diagnostics,
         );
         applyExtends(merged, index, diagnostics);
+        generate(merged, index);
         const tokens = new Map<string, NormalisedToken>();
         for (const token of merged.tokens.values()) {
             if (token.type === undefined && token.isReference) {

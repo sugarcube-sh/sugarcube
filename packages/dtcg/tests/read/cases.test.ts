@@ -2,13 +2,22 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import { type Document, type ReadOptions, read, readFromMemory } from "../../src/index.js";
+import {
+    type Document,
+    type Generator,
+    type ReadOptions,
+    defineGenerator,
+    read,
+    readFromMemory,
+} from "../../src/index.js";
 import { withSpans } from "./positions.js";
 
 interface Expected {
     entry: string;
     spec?: string;
-    options?: Pick<ReadOptions, "inputs" | "permutations" | "permutationLimit">;
+    options?: Pick<ReadOptions, "inputs" | "permutations" | "permutationLimit"> & {
+        generators?: (keyof typeof generators)[];
+    };
     files?: string[];
     modifiers?: Document["modifiers"];
     usedBy?: Document["usedBy"];
@@ -18,6 +27,62 @@ interface Expected {
         Document["diagnostics"][number],
         "kind" | "detail" | "at" | "related" | "path" | "permutation" | "fixes"
     >[];
+}
+
+const generators = {
+    steps: defineGenerator({
+        extension: ["com.example", "steps"],
+        generate: (_group, steps) =>
+            typeof steps === "number" && Number.isInteger(steps) && steps > 0
+                ? {
+                      ok: true,
+                      value: Array.from({ length: steps }, (_, i) => ({
+                          name: String(steps - i),
+                          $value: { value: steps - i, unit: "rem" },
+                      })),
+                  }
+                : {
+                      ok: false,
+                      errors: [
+                          {
+                              kind: "invalid-value",
+                              path: [],
+                              message: "steps must be a whole number above 0",
+                              detail: "not-a-positive-integer",
+                          },
+                      ],
+                  },
+    }),
+    ramp: defineGenerator({
+        extension: ["com.example", "ramp"],
+        generate: (_group, ramp) => {
+            const count = (ramp as { count?: unknown }).count;
+            return typeof count === "number"
+                ? {
+                      ok: true,
+                      value: Array.from({ length: count }, (_, i) => ({
+                          name: String(i + 1),
+                          $value: { value: i + 1, unit: "px" },
+                      })),
+                  }
+                : {
+                      ok: false,
+                      errors: [
+                          {
+                              kind: "invalid-value",
+                              path: ["count"],
+                              message: "count must be a number",
+                              detail: "not-a-number",
+                          },
+                      ],
+                  };
+        },
+    }),
+} satisfies Record<string, Generator>;
+
+function readOptions(expected: Expected): ReadOptions {
+    const { generators: names, ...options } = expected.options ?? {};
+    return { ...options, ...(names && { generators: names.map((name) => generators[name]) }) };
 }
 
 const casesFolder = join(import.meta.dirname, "cases");
@@ -103,7 +168,7 @@ describe.each(cases)("%s", (name) => {
 
     it("reads through read", async () => {
         const doc = await read(expected.entry, {
-            ...expected.options,
+            ...readOptions(expected),
             readText: (path) => readFile(join(input, path), "utf8"),
         });
         expect(observed(doc, expected)).toStrictEqual(expected);
@@ -112,7 +177,7 @@ describe.each(cases)("%s", (name) => {
     it("reads through readFromMemory", () => {
         const doc = readFromMemory(
             { files: inputFiles(input), entry: expected.entry },
-            expected.options,
+            readOptions(expected),
         );
         expect(observed(doc, expected)).toStrictEqual(expected);
     });

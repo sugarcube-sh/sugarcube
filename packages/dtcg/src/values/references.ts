@@ -24,6 +24,41 @@ export function readPointer(raw: unknown): Pointer | undefined {
     return { pointer: ref };
 }
 
+/**
+ * Which reference a value is, as written in a file: `"{color.brand}"` is read as an
+ * {@link Alias}, and `{ "$ref": "#/color/brand" }` as a {@link Pointer}. Anything else is not a
+ * reference, and gives `undefined`.
+ *
+ * @example
+ * readReference("{color.brand}") // { alias: "color.brand" }
+ */
+export function readReference(raw: unknown): Alias | Pointer | undefined {
+    return readAlias(raw) ?? readPointer(raw);
+}
+
 export function isPlainObject(raw: unknown): raw is Record<string, unknown> {
     return typeof raw === "object" && raw !== null && !Array.isArray(raw);
+}
+
+/**
+ * Whether a value from the model is a reference to a whole token: an {@link Alias}, as a parser
+ * reads `"{color.brand}"`. Not for JSON as written in a file.
+ *
+ * @example
+ * if (isAlias(token.value)) token.value.alias
+ */
+export function isAlias(value: unknown): value is Alias {
+    return (
+        isPlainObject(value) && Object.keys(value).length === 1 && typeof value.alias === "string"
+    );
+}
+
+/**
+ * Whether a value from the model is a JSON Pointer reference: a {@link Pointer}, as a parser reads
+ * `{ "$ref": "#/…" }`. Not for JSON as written in a file.
+ */
+export function isPointer(value: unknown): value is Pointer {
+    return (
+        isPlainObject(value) && Object.keys(value).length === 1 && typeof value.pointer === "string"
+    );
 }

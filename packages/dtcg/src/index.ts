@@ -295,20 +295,7 @@ export function mapReferences<T extends TokenType>(
     throw new Error("not implemented yet");
 }
 
-/**
- * Whether a value is a reference to a whole token.
- *
- * @example
- * if (isAlias(token.value)) token.value.alias
- */
-export function isAlias(value: unknown): value is Alias {
-    throw new Error("not implemented yet");
-}
-
-/** Whether a value is a JSON Pointer reference. */
-export function isPointer(value: unknown): value is Pointer {
-    throw new Error("not implemented yet");
-}
+export { isAlias, isPointer } from "./values/references.js";
 
 /**
  * The value a reference reaches, with every reference inside it followed: the resolved value of
@@ -377,10 +364,18 @@ export interface TokenBase<T extends TokenType> {
      * it came from, and its place in the file.
      */
     source: { index: number; at: Span };
-    /** The value exactly as the file wrote it, and whether the file declared `$type` on this token. Absent for generated tokens. */
+    /**
+     * The value exactly as the file wrote it, and whether the file declared `$type` on this token.
+     * Absent when no file writes the token: one a {@link Generator} added.
+     */
     authored?: { value: unknown; typeDeclared: boolean };
-    /** Set when a {@link Generator} made the token, from the setting on the group at `by`. */
-    generated?: { by: string };
+    /**
+     * Set when a {@link Generator} makes the token from an extension on the group at `from`, whether
+     * a file writes the token or it was added. `from` is `""` for an extension on the top level of a
+     * file. An added token has no {@link TokenBase.authored | authored}, and its
+     * {@link TokenBase.source | source} is the extension.
+     */
+    generated?: { from: string };
     /** Set when the token is here only because of `$extends`, or a `$ref` to another group, at `from`. */
     inherited?: { from: string };
 }
@@ -527,8 +522,15 @@ export interface DiagnosticDetailByKind {
     };
     /** A color written as a hex string, which the 2025.10 Color module no longer allows. */
     "hex-string-color": { value: string };
-    /** An `$extensions` entry fails a registered check. */
-    "extension-invalid": { key: string };
+    /** An `$extensions` entry fails a registered check, such as a {@link Generator}'s. */
+    "extension-invalid": {
+        /** The `$extensions` key, such as `"com.example"`. */
+        key: string;
+        /** Where in the token or group, such as `["$extensions", "com.example", "steps"]`. */
+        at: JsonPath;
+        /** Why, as the check named it: see {@link ValueError.detail}. */
+        reason?: string;
+    };
     /** A reference points at nothing: no token, or for `$extends`, no group. */
     "missing-reference": {
         /** The reference as written, without braces: a path such as `color.brnad`, or a pointer. */
@@ -555,8 +557,6 @@ export interface DiagnosticDetailByKind {
     "type-mismatch": { ref: string; expected: TokenType; found: TokenType };
     /** A name starts or ends with a space: legal, but almost always a typo. */
     "whitespace-in-name": { name: string };
-    /** A token the file declares takes the place of one a generator would have made. */
-    "generator-overridden": { generator: string; group: string; name: string };
     /** A reference points at a token marked `$deprecated`. */
     "deprecated-reference": { ref: string; reason?: string };
     /** A resolver has more combinations than `permutationLimit`, so `"each-context"` was built instead. */
@@ -748,8 +748,10 @@ export interface ExtensionValidator {
     validate: (raw: unknown, at: JsonPath) => ValueError[];
 }
 
-/** A token a generator makes, written as it would be in a file. */
+/** A token a generator makes, written as it would be in a file, with its name in the group. */
 export interface GeneratedToken {
+    /** Its name in the group, such as `"md"`. */
+    name: string;
     /** @default the group's type */
     $type?: TokenType;
     $value: unknown;
@@ -758,37 +760,37 @@ export interface GeneratedToken {
 }
 
 /**
- * Makes tokens from a setting on a group, such as a scale recipe. The reader finds the groups,
- * marks what is made as {@link TokenBase.generated | generated}, reads it like any written token,
- * and lets a token the file already declares win, with a warning naming both.
+ * Makes tokens from an extension on a group, such as a scale recipe. The extension owns every token
+ * it makes: each is marked {@link TokenBase.generated | generated}, whether a file writes it or not.
+ * A token a file writes keeps its written value. A token no file writes is added, after the group's
+ * files are merged and its `$extends` followed, and read like any written token, so references to
+ * it resolve.
  */
-export interface Generator<S = unknown> {
-    /** Picks this generator's setting out of a group's `$extensions`. `undefined` means it does not apply. */
-    select: (extensions: Record<string, unknown>) => S | undefined;
-    /** The tokens to make in the group, keyed by name. */
+export interface Generator {
+    /**
+     * Where the extension sits in a group's `$extensions`. A group without it is left alone.
+     *
+     * @example
+     * ["sh.sugarcube", "scale"]
+     */
+    extension: [string, ...string[]];
+    /**
+     * The tokens an extension makes, in the order to list them, or why the extension is not valid.
+     * Tokens no file writes are listed at the end of the group. An error's `path` starts at the
+     * extension, and each is reported as `extension-invalid`. A group whose extension is not valid
+     * gets no tokens added.
+     */
     generate: (
-        group: { path: string; type?: TokenType },
-        setting: S,
-        api: { warn: (message: string) => void },
-    ) => Record<string, GeneratedToken>;
+        group: {
+            path: string;
+            /** The type declared on the group, if any. */
+            type?: TokenType;
+        },
+        extension: unknown,
+    ) => ParseResult<GeneratedToken[]>;
 }
 
-/**
- * Defines a {@link Generator}.
- *
- * @example
- * // { "space": { "$type": "dimension", "$extensions": { "com.example": { "steps": 4 } } } }
- * const scale = defineGenerator({
- *   select: (extensions) => (extensions["com.example"] as { steps?: number } | undefined)?.steps,
- *   generate: (group, steps) =>
- *     Object.fromEntries(
- *       Array.from({ length: steps }, (_, i) => [`${i + 1}`, { $value: { value: i + 1, unit: "rem" } }]),
- *     ),
- * });
- */
-export function defineGenerator<S>(generator: Generator<S>): Generator<S> {
-    throw new Error("not implemented yet");
-}
+export { defineGenerator } from "./read/generate.js";
 
 export interface ReadOptions {
     /**
@@ -814,8 +816,11 @@ export interface ReadOptions {
     permutationLimit?: number;
     /** Checks for your own `$extensions` keys. */
     extensionValidators?: ExtensionValidator[];
-    /** Tokens made from settings on groups, such as recipes. Run in order, before values are read. */
-    generators?: Generator<any>[];
+    /**
+     * Generators that add tokens from extensions on groups, such as recipes. Run in order, in
+     * each permutation, before values are read.
+     */
+    generators?: Generator[];
     /** Called as each stage of reading finishes, with how long it took. For progress and benchmarks. */
     onStage?: (stage: "load" | "generate" | "normalise" | "resolve", milliseconds: number) => void;
 }
@@ -961,7 +966,7 @@ export type Change =
  * properties exactly.
  *
  * Tokens a generator made are included, with `generated` set, so a tool can show the change to
- * the setting on its group and fold the steps under it.
+ * the extension on its group and fold its tokens under it.
  *
  * Two reads alone cannot tell a rename from a removal and an addition. Pass the moves the edits
  * made, and those tokens are listed as `renamed`.

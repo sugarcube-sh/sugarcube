@@ -107,13 +107,14 @@ function inherit(merged: Merged, group: MergedGroup, from: string): void {
         const existing = merged.groups.get(path);
         if (existing) fillIn(existing, each);
         else if (!merged.tokens.has(path) && !underLocalToken(path)) {
-            const { type, description, deprecated, extensions } = each;
+            const { type, description, deprecated, extensions, extensionsAt } = each;
             merged.groups.set(path, {
                 path,
                 ...(type !== undefined && { type }),
                 ...(description !== undefined && { description }),
                 ...(deprecated !== undefined && { deprecated }),
                 ...(extensions && { extensions }),
+                ...(extensionsAt && { extensionsAt }),
                 declaredIn: [],
                 inherited: { from },
             });
@@ -128,7 +129,8 @@ function inherit(merged: Merged, group: MergedGroup, from: string): void {
 }
 
 function fillIn(local: MergedGroup, inherited: MergedGroup): void {
-    const { type, description, deprecated, extensions } = inherited;
+    const { type, description, deprecated, extensions, extensionsAt } = inherited;
+    if (extensionsAt) local.extensionsAt = { ...extensionsAt, ...local.extensionsAt };
     mergeProperties(local, {
         ...(local.type === undefined && type !== undefined && { type }),
         ...(local.description === undefined && description !== undefined && { description }),

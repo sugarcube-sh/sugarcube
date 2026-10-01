@@ -1,0 +1,6 @@
+{
+  "space": {
+    "$type": "dimension",
+    "$extensions": { "com.example": { "steps": 1 } }
+  }
+}

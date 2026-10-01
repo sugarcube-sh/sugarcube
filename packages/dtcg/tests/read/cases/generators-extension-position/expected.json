@@ -1,0 +1,27 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "an added token's source is its extension, in the file that wrote it, even when a later file writes other $extensions on the same group",
+  "options": {
+    "generators": ["steps"]
+  },
+  "permutations": [
+    {
+      "tokens": {
+        "space.1": {
+          "path": "space.1",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "recipe.json",
+              "valueAfter": "\"steps\":"
+            }
+          },
+          "generated": {
+            "from": "space"
+          }
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

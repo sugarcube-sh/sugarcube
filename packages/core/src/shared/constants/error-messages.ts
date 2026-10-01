@@ -241,6 +241,22 @@ export const ErrorMessages = {
             `Permutation references unknown context "${contextName}" for modifier "${modifierName}". Valid contexts: ${validContexts.join(", ")}`,
         EMPTY_SELECTOR: () => "Permutation selector cannot be empty",
     },
+    SCALE_RECIPE: {
+        "not-an-object": ({ name }: { name: string }) => `\`${name}\` must be an object`,
+        "missing-property": ({ name }: { name: string }) => `the recipe needs \`${name}\``,
+        "unknown-mode": ({ mode }: { mode: unknown }) =>
+            `\`${typeof mode === "string" ? mode : JSON.stringify(mode)}\` is not a mode: use "exponential" or "multipliers"`,
+        "ratio-not-above-one": ({ ratio }: { ratio: number }) =>
+            `a ratio of ${ratio} makes a flat or shrinking scale: it must be more than 1`,
+        "not-a-count": ({ name }: { name: string }) =>
+            `\`${name}\` must be a whole number, 0 or more`,
+        "no-multipliers": () => '`multipliers` must name at least one step, such as { "sm": 0.5 }',
+        "invalid-pairs": () => '`pairs` must be "adjacent" or a list, such as ["sm-lg"]',
+        "invalid-pair": ({ entry }: { entry: unknown }) =>
+            `${JSON.stringify(entry)} is not a pair: write it as two multiplier names joined by "-", such as "sm-lg"`,
+        "unknown-multiplier": ({ name }: { name: string }) =>
+            `\`${name}\` is not one of the recipe's multipliers`,
+    },
     EXPAND_TREE: {
         CIRCULAR_REFERENCE: (path: string, ref: string) =>
             `Circular reference detected at "${path}": ${ref} references back to itself or a parent`,

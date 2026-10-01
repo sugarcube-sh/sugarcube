@@ -59,6 +59,7 @@ export function resolvePermutations(
 ): { permutations: Permutation[]; graph: Edge[] } {
     const found = new WeakMap<MergedToken["value"], Occurrence[]>();
     const referencesOf = (token: MergedToken) => {
+        if (token.added) return referencesIn(token.authored, token.value, token.json);
         const cached = found.get(token.value);
         if (cached) return cached;
         const references = referencesIn(token.authored, token.value, token.json);
@@ -430,7 +431,10 @@ function toToken<T extends TokenType>(
         ...(deprecated !== undefined && { deprecated }),
         ...(token.extensions && { extensions: token.extensions }),
         source: { index: token.index, at: token.at },
-        authored: { value: token.authored, typeDeclared: token.type !== undefined },
+        ...(!token.added && {
+            authored: { value: token.authored, typeDeclared: token.type !== undefined },
+        }),
+        ...(token.generated && { generated: token.generated }),
         ...(token.inherited && { inherited: token.inherited }),
         ...(outcome.aliasOf !== undefined && { aliasOf: outcome.aliasOf }),
     };

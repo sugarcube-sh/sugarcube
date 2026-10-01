@@ -1,0 +1,5 @@
+{
+  "version": "2025.10",
+  "sets": { "base": { "sources": [{ "$ref": "recipe.json" }, { "$ref": "notes.json" }] } },
+  "resolutionOrder": [{ "$ref": "#/sets/base" }]
+}

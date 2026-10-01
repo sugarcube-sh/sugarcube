@@ -1,0 +1,56 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 6.4: a group that extends another inherits its extensions, so the generator adds its tokens too, marked as generated from the extending group",
+  "options": {
+    "generators": ["steps"]
+  },
+  "permutations": [
+    {
+      "tokens": {
+        "space.2": {
+          "path": "space.2",
+          "generated": {
+            "from": "space"
+          }
+        },
+        "space.1": {
+          "path": "space.1",
+          "generated": {
+            "from": "space"
+          }
+        },
+        "inset.2": {
+          "path": "inset.2",
+          "resolved": {
+            "value": 5,
+            "unit": "px"
+          },
+          "generated": {
+            "from": "inset"
+          },
+          "inherited": null
+        },
+        "inset.1": {
+          "path": "inset.1",
+          "type": "dimension",
+          "resolved": {
+            "value": 1,
+            "unit": "rem"
+          },
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "tokens.json",
+              "valueAfter": "\"steps\":"
+            }
+          },
+          "generated": {
+            "from": "inset"
+          },
+          "inherited": null
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}
