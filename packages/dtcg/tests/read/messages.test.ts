@@ -302,6 +302,23 @@ describe("diagnostic messages from read", () => {
         ]);
     });
 
+    it("words a schema's issue with the library's message", () => {
+        const counted = defineGenerator({
+            extension: ["com.example", "steps"],
+            schema: {
+                "~standard": {
+                    version: 1,
+                    vendor: "test",
+                    validate: () => ({ issues: [{ message: "Expected number, received string" }] }),
+                },
+            },
+            generate: () => ({ ok: true, value: [] }),
+        });
+        expect(diagnostics(counted).map(({ message }) => message)).toStrictEqual([
+            "Expected number, received string",
+        ]);
+    });
+
     it("links invalid-value to the section for its reason", () => {
         const text = JSON.stringify({ space: { $type: "dimension", $value: "16px" } });
         const doc = readFromMemory({ files: { "tokens.json": text } });

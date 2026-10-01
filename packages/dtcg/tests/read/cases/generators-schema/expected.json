@@ -1,0 +1,17 @@
+{
+  "entry": "tokens.json",
+  "spec": "a generator with a schema gets the schema's output, here the count as a number, and an extension that fails the schema is reported with each issue as extension-invalid, with no reason, and adds no tokens",
+  "options": { "generators": ["counted"] },
+  "permutations": [{ "tokens": [{ "path": "a.1" }, { "path": "a.2" }] }],
+  "diagnostics": [
+    {
+      "kind": "extension-invalid",
+      "detail": {
+        "key": "com.example",
+        "at": ["$extensions", "com.example", "counted", "count"]
+      },
+      "at": { "file": "tokens.json", "text": "\"two\"" },
+      "path": "b"
+    }
+  ]
+}

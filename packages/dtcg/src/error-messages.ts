@@ -73,6 +73,11 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
         `the default of the modifier \`${name}\` is not one of its contexts`,
 };
 
+export const thrownMessages = {
+    asyncSchema: (key: string) =>
+        `the schema for \`${key}\` returned a Promise: extension schemas must validate synchronously`,
+};
+
 export const relatedMessages = {
     declaredAs: (kind: "token" | "group") => `declared as a ${kind} here`,
     partOfTheLoop: "part of the same loop",

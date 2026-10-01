@@ -4,7 +4,12 @@
   "diagnostics": [
     {
       "kind": "invalid-value",
-      "detail": { "at": ["$value"], "type": "dimension", "reason": "string-with-unit", "value": "16px" },
+      "detail": {
+        "at": ["$value"],
+        "type": "dimension",
+        "reason": "string-with-unit",
+        "value": "16px"
+      },
       "at": { "file": "tokens.json", "text": "\"16px\"" },
       "path": "space",
       "fixes": [
@@ -23,13 +28,23 @@
     },
     {
       "kind": "invalid-value",
-      "detail": { "at": ["$value"], "type": "dimension", "reason": "string-with-unit", "value": "16em" },
+      "detail": {
+        "at": ["$value"],
+        "type": "dimension",
+        "reason": "string-with-unit",
+        "value": "16em"
+      },
       "at": { "file": "tokens.json", "text": "\"16em\"" },
       "path": "wide"
     },
     {
       "kind": "invalid-value",
-      "detail": { "at": ["$value"], "type": "duration", "reason": "string-with-unit", "value": "200ms" },
+      "detail": {
+        "at": ["$value"],
+        "type": "duration",
+        "reason": "string-with-unit",
+        "value": "200ms"
+      },
       "at": { "file": "tokens.json", "text": "\"200ms\"" },
       "path": "fast",
       "fixes": [

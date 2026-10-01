@@ -1,29 +1,30 @@
 // A spacing scale made from a recipe on a group, plus a check that the tool's own `$extensions`
-// settings are well formed.
-import { read, defineGenerator, type ExtensionValidator } from "@sugarcube-sh/dtcg";
+// settings are well formed. Both take a schema from any Standard Schema library, such as Zod.
+import {
+    type StandardSchemaV1,
+    defineExtensionValidator,
+    defineGenerator,
+    read,
+} from "@sugarcube-sh/dtcg";
 
 type ScaleRecipe = { mode: "exponential" | "multipliers" };
-declare function isScaleRecipe(raw: unknown): raw is ScaleRecipe;
+declare const scaleRecipe: StandardSchemaV1<unknown, ScaleRecipe>;
+declare const sugarcubeSettings: StandardSchemaV1<unknown, { fluid?: boolean }>;
 declare function expandScale(
     recipe: ScaleRecipe,
 ): { name: string; $value: unknown; $extensions?: Record<string, unknown> }[];
 
 const scaleRecipes = defineGenerator({
     extension: ["sh.sugarcube", "scale"],
-    messages: { "not-a-recipe": () => "this is not a scale recipe" },
-    generate: (_group, recipe) =>
-        isScaleRecipe(recipe)
-            ? { ok: true, value: expandScale(recipe) }
-            : { ok: false, errors: [{ path: [], reason: "not-a-recipe" }] },
+    schema: scaleRecipe,
+    generate: (_group, recipe) => ({ ok: true, value: expandScale(recipe) }),
 });
 
-const sugarcubeExtensions: ExtensionValidator = {
+const sugarcubeExtensions = defineExtensionValidator({
     key: "sh.sugarcube",
     appliesTo: ["dimension", "group"],
-    messages: { "not-an-object": () => "`sh.sugarcube` must be an object" },
-    validate: (raw) =>
-        raw && typeof raw === "object" ? [] : [{ path: [], reason: "not-an-object" }],
-};
+    schema: sugarcubeSettings,
+});
 
 await read("tokens.resolver.json", {
     readText: (p) => fetch(p).then((r) => r.text()),

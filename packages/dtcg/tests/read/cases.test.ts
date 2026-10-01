@@ -4,8 +4,11 @@ import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
     type Document,
+    type ExtensionValidator,
     type Generator,
     type ReadOptions,
+    type StandardSchemaV1,
+    defineExtensionValidator,
     defineGenerator,
     read,
     readFromMemory,
@@ -18,6 +21,7 @@ interface Expected {
     spec?: string;
     options?: Pick<ReadOptions, "inputs" | "permutations" | "permutationLimit"> & {
         generators?: (keyof typeof generators)[];
+        extensionValidators?: (keyof typeof validators)[];
     };
     files?: string[];
     modifiers?: Document["modifiers"];
@@ -29,6 +33,26 @@ interface Expected {
         "kind" | "detail" | "at" | "related" | "path" | "permutation" | "fixes"
     >[];
 }
+
+function schema<Output>(
+    validate: (value: unknown) => StandardSchemaV1.Result<Output>,
+): StandardSchemaV1<unknown, Output> {
+    return { "~standard": { version: 1, vendor: "test", validate } };
+}
+
+const countSchema = schema<{ count: number }>((value) => {
+    const count = Number((value as { count?: unknown }).count);
+    return Number.isInteger(count)
+        ? { value: { count } }
+        : { issues: [{ message: "Expected a whole number", path: [{ key: "count" }] }] };
+});
+
+const fluidSchema = schema<{ fluid: boolean }>((value) => {
+    const { fluid } = value as { fluid?: unknown };
+    return typeof fluid === "boolean"
+        ? { value: { fluid } }
+        : { issues: [{ message: "Expected boolean", path: [{ key: "fluid" }] }] };
+});
 
 const generators = {
     steps: defineGenerator({
@@ -82,11 +106,52 @@ const generators = {
                   };
         },
     }),
+    counted: defineGenerator({
+        extension: ["com.example", "counted"],
+        schema: countSchema,
+        generate: (_group, { count }) => ({
+            ok: true,
+            value: Array.from({ length: count }, (_, i) => ({
+                name: String(i + 1),
+                $value: { value: i + 1, unit: "px" },
+            })),
+        }),
+    }),
 } satisfies Record<string, Generator>;
 
+const validators = {
+    fluid: defineExtensionValidator({
+        key: "com.example",
+        appliesTo: ["dimension", "group"],
+        schema: fluidSchema,
+    }),
+    outline: defineExtensionValidator({
+        key: "com.example",
+        appliesTo: ["color"],
+        messages: { "no-outline": () => "`outline` is missing" },
+        validate: (_token, extension) => {
+            const { outline } = extension as { outline?: unknown };
+            if (outline === undefined) return [{ path: [], reason: "no-outline" }];
+            const parsed = parseValue("dimension", outline, ["outline"], { references: false });
+            return parsed.ok ? [] : parsed.errors;
+        },
+    }),
+    symbolPath: defineExtensionValidator({
+        key: "com.example",
+        appliesTo: ["number"],
+        schema: schema(() => ({
+            issues: [{ message: "Not allowed", path: [{ key: "a" }, 0, Symbol("b"), "c"] }],
+        })),
+    }),
+} satisfies Record<string, ExtensionValidator>;
+
 function readOptions(expected: Expected): ReadOptions {
-    const { generators: names, ...options } = expected.options ?? {};
-    return { ...options, ...(names && { generators: names.map((name) => generators[name]) }) };
+    const { generators: names, extensionValidators: checks, ...options } = expected.options ?? {};
+    return {
+        ...options,
+        ...(names && { generators: names.map((name) => generators[name]) }),
+        ...(checks && { extensionValidators: checks.map((name) => validators[name]) }),
+    };
 }
 
 const casesFolder = join(import.meta.dirname, "cases");

@@ -1,0 +1,28 @@
+{
+  "entry": "tokens.json",
+  "spec": "an extension validator with a schema checks its key on each group and each token of the types it applies to, including a token that takes its type from a reference, and reports each issue as extension-invalid at the issue's path, with no reason. A token of another type is not checked",
+  "options": { "extensionValidators": ["fluid"] },
+  "diagnostics": [
+    {
+      "kind": "extension-invalid",
+      "detail": { "key": "com.example", "at": ["$extensions", "com.example", "fluid"] },
+      "at": { "file": "tokens.json", "text": "\"yes\"" },
+      "path": "space"
+    },
+    {
+      "kind": "extension-invalid",
+      "detail": { "key": "com.example", "at": ["$extensions", "com.example", "fluid"] },
+      "at": { "file": "tokens.json", "valueAfter": "\"fluid\":", "occurrence": 2 },
+      "path": "space.sm"
+    },
+    {
+      "kind": "extension-invalid",
+      "detail": { "key": "com.example", "at": ["$extensions", "com.example", "fluid"] },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"gap\": { \"$value\": \"{space.md}\", \"$extensions\": { \"com.example\":"
+      },
+      "path": "gap"
+    }
+  ]
+}
