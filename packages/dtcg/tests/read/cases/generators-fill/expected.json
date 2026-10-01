@@ -1,0 +1,73 @@
+{
+  "entry": "tokens.json",
+  "spec": "a generator adds the tokens its extension makes that the group does not write, at the end of the group, in the generator's order; the extension owns every token it makes, written or added, so both are marked generated; a written token keeps its value and its authored value; an added token has no authored value and its source is the extension",
+  "options": {
+    "generators": ["steps"]
+  },
+  "permutations": [
+    {
+      "tokens": {
+        "space.2": {
+          "path": "space.2",
+          "resolved": {
+            "value": 20,
+            "unit": "px"
+          },
+          "authored": {
+            "value": {
+              "value": 20,
+              "unit": "px"
+            },
+            "typeDeclared": false
+          },
+          "generated": {
+            "from": "space"
+          }
+        },
+        "space.3": {
+          "path": "space.3",
+          "resolved": {
+            "value": 3,
+            "unit": "rem"
+          },
+          "generated": {
+            "from": "space"
+          },
+          "authored": null
+        },
+        "space.1": {
+          "path": "space.1",
+          "type": "dimension",
+          "value": {
+            "value": 1,
+            "unit": "rem"
+          },
+          "resolved": {
+            "value": 1,
+            "unit": "rem"
+          },
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "tokens.json",
+              "valueAfter": "\"steps\":"
+            }
+          },
+          "generated": {
+            "from": "space"
+          },
+          "authored": null
+        },
+        "gap": {
+          "path": "gap",
+          "resolved": {
+            "value": 3,
+            "unit": "rem"
+          },
+          "aliasOf": "space.3"
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

@@ -53,17 +53,22 @@ type Cache = { [T in TokenType]?: Map<Node, ParseResult<UnresolvedValueByType[T]
 export function createValueReader(diagnostics: Diagnostic[]): ValueReader {
     const caches: Cache = {};
 
-    return <T extends TokenType>(token: MergedToken, type: T) => {
-        const cache: NonNullable<Cache[T]> = caches[type] ?? new Map();
-        caches[type] = cache;
-        const cached = cache.get(token.value);
-        if (cached) return cached;
-
+    const read = <T extends TokenType>(token: MergedToken, type: T) => {
         const parse: Parse<UnresolvedValueByType[T]> = parsers[type];
         const result = parse(token.authored, ["$value"]);
         if (!result.ok) {
             for (const error of result.errors) diagnostics.push(toDiagnostic(token, type, error));
         }
+        return result;
+    };
+
+    return <T extends TokenType>(token: MergedToken, type: T) => {
+        if (token.added) return read(token, type);
+        const cache: NonNullable<Cache[T]> = caches[type] ?? new Map();
+        caches[type] = cache;
+        const cached = cache.get(token.value);
+        if (cached) return cached;
+        const result = read(token, type);
         cache.set(token.value, result);
         return result;
     };

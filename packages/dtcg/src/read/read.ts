@@ -4,6 +4,8 @@ import type { Answer, FileText, Request } from "./files.js";
 import { collapse } from "./diagnostics.js";
 import { type Loaded, load } from "./load.js";
 import { normalisePermutations } from "./normalise.js";
+import { fillGenerated } from "./generate.js";
+import type { Merged } from "./merge.js";
 import { createValueReader } from "./parse-value.js";
 import { resolvePermutations } from "./resolve.js";
 import type { PermutationOptions } from "./permutations.js";
@@ -109,13 +111,21 @@ function permutationOptions({
     return { ...(inputs && { inputs }), permutations, limit: permutationLimit };
 }
 
-function toDocument(loaded: Loaded, { onStage }: ReadOptions): Document {
+function toDocument(loaded: Loaded, { onStage, generators = [] }: ReadOptions): Document {
     const found: Document["diagnostics"] = [];
     const readValue = createValueReader(found);
+    let generating = 0;
+    const generate = (merged: Merged, permutation: number) => {
+        if (generators.length === 0) return;
+        const started = performance.now();
+        fillGenerated(merged, generators, permutation, found);
+        generating += performance.now() - started;
+    };
     const normalising = performance.now();
-    const normalised = normalisePermutations(loaded.permutations, readValue, found);
+    const normalised = normalisePermutations(loaded.permutations, readValue, found, generate);
     const resolving = performance.now();
-    onStage?.("normalise", resolving - normalising);
+    onStage?.("generate", generating);
+    onStage?.("normalise", resolving - normalising - generating);
     const { permutations, graph } = resolvePermutations(normalised, readValue, found);
     onStage?.("resolve", performance.now() - resolving);
 

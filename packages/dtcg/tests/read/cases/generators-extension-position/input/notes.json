@@ -1,0 +1,5 @@
+{
+  "space": {
+    "$extensions": { "com.other": { "note": "written later, by another tool" } }
+  }
+}

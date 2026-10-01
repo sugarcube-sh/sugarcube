@@ -1,0 +1,37 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "tokens are added after the files merge, so a written token keeps its value whichever file writes it: here one written before the file with the extension. The extension still owns it",
+  "options": {
+    "generators": ["steps"]
+  },
+  "permutations": [
+    {
+      "tokens": {
+        "space.1": {
+          "path": "space.1",
+          "resolved": {
+            "value": 4,
+            "unit": "px"
+          },
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "steps.json",
+              "valueAfter": "\"1\":"
+            }
+          },
+          "generated": {
+            "from": "space"
+          }
+        },
+        "space.2": {
+          "path": "space.2",
+          "generated": {
+            "from": "space"
+          }
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

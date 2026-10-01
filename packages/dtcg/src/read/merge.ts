@@ -2,6 +2,7 @@ import { relatedMessages } from "../error-messages.js";
 import type { Diagnostic, Span } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
 import type {
+    ExtensionsAt,
     GroupReference,
     Properties,
     SourceContents,
@@ -12,17 +13,21 @@ import type {
 export interface MergedToken extends SourceToken {
     index: number;
     inherited?: { from: string };
+    generated?: { from: string };
+    added?: true;
 }
 
 export interface MergedGroup extends Properties {
     path: string;
     declaredIn: Span[];
     extends?: GroupReference & { index: number };
+    extensionsAt?: Record<string, ExtensionsAt & { index: number }>;
+    end?: { index: number; offset: number };
     inherited?: { from: string };
 }
 
 export interface Merged {
-    root: Properties;
+    root: MergedGroup;
     tokens: Map<string, MergedToken>;
     groups: Map<string, MergedGroup>;
 }
@@ -32,7 +37,11 @@ export function merge(
     permutation: number,
     diagnostics: Diagnostic[],
 ): Merged {
-    const merged: Merged = { root: {}, tokens: new Map(), groups: new Map() };
+    const merged: Merged = {
+        root: { path: "", declaredIn: [] },
+        tokens: new Map(),
+        groups: new Map(),
+    };
     const conflict = (later: Span, earlier: Span[], earlierIs: "token" | "group") =>
         diagnostics.push(
             diagnostic(
@@ -51,7 +60,7 @@ export function merge(
 
     for (const [index, source] of sources.entries()) {
         if (!source) continue;
-        mergeProperties(merged.root, source.root);
+        mergeGroupInto(merged.root, source.root, index);
         for (const group of source.groups) {
             const token = merged.tokens.get(group.path);
             if (token) {
@@ -73,12 +82,22 @@ export function merge(
 }
 
 function mergeGroup(groups: Map<string, MergedGroup>, group: SourceGroup, index: number): void {
-    const { path, at, extends: extending, ...properties } = group;
-    const existing = groups.get(path) ?? { path, declaredIn: [] };
+    const existing = groups.get(group.path) ?? { path: group.path, declaredIn: [] };
+    mergeGroupInto(existing, group, index);
+    groups.set(group.path, existing);
+}
+
+function mergeGroupInto(existing: MergedGroup, group: SourceGroup, index: number): void {
+    const { path: _path, at, extends: extending, extensionsAt, ...properties } = group;
     mergeProperties(existing, properties);
     existing.declaredIn.push(at);
+    existing.end ??= { index, offset: at.offset + at.length };
     if (extending) existing.extends = { ...extending, index };
-    groups.set(path, existing);
+    if (extensionsAt && properties.extensions) {
+        const declared = { ...extensionsAt, index };
+        const keys = Object.keys(properties.extensions).map((key) => [key, declared]);
+        existing.extensionsAt = { ...existing.extensionsAt, ...Object.fromEntries(keys) };
+    }
 }
 
 export function mergeProperties(target: Properties, { extensions, ...rest }: Properties): void {

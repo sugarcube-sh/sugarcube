@@ -1,0 +1,6 @@
+{
+  "space": {
+    "$type": "dimension",
+    "1": { "$value": { "value": 4, "unit": "px" } }
+  }
+}

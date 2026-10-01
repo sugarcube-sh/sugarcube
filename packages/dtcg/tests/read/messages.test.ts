@@ -57,7 +57,9 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
     "unknown-type": [{ type: "colour" }],
     "invalid-value": [{ type: "color", at: ["$value"], reason: "wrong-shape" }],
     "hex-string-color": [{ value: "#e11d48" }],
-    "extension-invalid": [{ key: "sh.sugarcube.fluid" }],
+    "extension-invalid": [
+        { key: "sh.sugarcube", at: ["$extensions", "sh.sugarcube", "scale", "mode"] },
+    ],
     "missing-reference": [{ ref: "color.brnad", referencedBy: ["color.danger"] }],
     "not-a-group": [{ ref: "color.brand" }],
     "not-a-token": [{ ref: "color.accent" }],
@@ -65,7 +67,6 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
     "circular-reference": [{ chain: ["color.a", "color.b", "color.a"] }],
     "type-mismatch": [{ ref: "space.md", expected: "color", found: "dimension" }],
     "whitespace-in-name": [{ name: "brand " }],
-    "generator-overridden": [{ generator: "scale", group: "space", name: "md" }],
     "permutation-limit": [{ count: 16384, limit: 64, built: 15 }],
     "no-default": [{ modifiers: ["size"] }, { modifiers: ["size", "theme"] }],
     "deprecated-reference": [{ ref: "color.old" }, { ref: "color.old", reason: "use color.brand" }],

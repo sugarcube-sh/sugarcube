@@ -1,16 +1,24 @@
-// A tool's own generator. A setting on a group, such as `{ steps: 10 }`, makes the group's
+// A tool's own generator. An extension on a group, such as `{ steps: 10 }`, makes the group's
 // opacity tokens, from 10% to 100%.
 import { read, defineGenerator } from "@sugarcube-sh/dtcg";
 
 const opacityRamp = defineGenerator({
-    select: (extensions) =>
-        (extensions["com.example.ramp"] as { steps?: number } | undefined)?.steps,
-    generate: (_group, steps, api) => {
-        if (steps > 20) api.warn("a very long opacity ramp");
-        const tokens: Record<string, { $type: "number"; $value: number }> = {};
-        for (let i = 1; i <= steps; i++)
-            tokens[String(i * 10)] = { $type: "number", $value: i / steps };
-        return tokens;
+    extension: ["com.example.ramp", "steps"],
+    generate: (_group, steps) => {
+        if (typeof steps !== "number" || steps < 1 || steps > 20) {
+            return {
+                ok: false,
+                errors: [
+                    { kind: "invalid-value", path: [], message: "steps must be from 1 to 20" },
+                ],
+            };
+        }
+        const tokens = Array.from({ length: steps }, (_, i) => ({
+            name: String((i + 1) * 10),
+            $type: "number" as const,
+            $value: (i + 1) / steps,
+        }));
+        return { ok: true, value: tokens };
     },
 });
 

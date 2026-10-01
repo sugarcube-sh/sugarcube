@@ -1,0 +1,17 @@
+{
+  "entry": "tokens.json",
+  "spec": "an error inside an extension is reported at that part of it: its path from the group, and its place in the file",
+  "options": { "generators": ["ramp"] },
+  "diagnostics": [
+    {
+      "kind": "extension-invalid",
+      "detail": {
+        "key": "com.example",
+        "at": ["$extensions", "com.example", "ramp", "count"],
+        "reason": "not-a-number"
+      },
+      "at": { "file": "tokens.json", "valueAfter": "\"count\":" },
+      "path": "space"
+    }
+  ]
+}

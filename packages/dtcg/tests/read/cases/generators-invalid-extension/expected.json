@@ -1,0 +1,44 @@
+{
+  "entry": "tokens.json",
+  "spec": "an extension the generator refuses is reported where it is written, and its group gets no added tokens",
+  "options": {
+    "generators": ["steps"]
+  },
+  "permutations": [
+    {
+      "tokens": {
+        "gap": {
+          "path": "gap",
+          "resolved": null
+        }
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "extension-invalid",
+      "detail": {
+        "key": "com.example",
+        "at": ["$extensions", "com.example", "steps"],
+        "reason": "not-a-positive-integer"
+      },
+      "at": {
+        "file": "tokens.json",
+        "valueAfter": "\"steps\":"
+      },
+      "path": "space"
+    },
+    {
+      "kind": "missing-reference",
+      "detail": {
+        "ref": "space.1",
+        "referencedBy": ["gap"]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{space.1}\""
+      },
+      "path": "gap"
+    }
+  ]
+}

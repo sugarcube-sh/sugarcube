@@ -1,0 +1,50 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 6.2: tokens are added per permutation, from the extension as that permutation's files merge it",
+  "options": {
+    "generators": ["steps"]
+  },
+  "permutations": [
+    {
+      "tokens": {
+        "space.1": {
+          "path": "space.1",
+          "source": {
+            "index": 0,
+            "at": {
+              "file": "base.json",
+              "valueAfter": "\"steps\":"
+            }
+          },
+          "generated": {
+            "from": "space"
+          }
+        }
+      }
+    },
+    {
+      "tokens": {
+        "space.2": {
+          "path": "space.2",
+          "generated": {
+            "from": "space"
+          }
+        },
+        "space.1": {
+          "path": "space.1",
+          "source": {
+            "index": 1,
+            "at": {
+              "file": "roomy.json",
+              "valueAfter": "\"steps\":"
+            }
+          },
+          "generated": {
+            "from": "space"
+          }
+        }
+      }
+    }
+  ],
+  "diagnostics": []
+}

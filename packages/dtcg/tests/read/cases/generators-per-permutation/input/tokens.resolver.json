@@ -1,0 +1,11 @@
+{
+  "version": "2025.10",
+  "sets": { "base": { "sources": [{ "$ref": "base.json" }] } },
+  "modifiers": {
+    "density": {
+      "contexts": { "compact": [], "roomy": [{ "$ref": "roomy.json" }] },
+      "default": "compact"
+    }
+  },
+  "resolutionOrder": [{ "$ref": "#/sets/base" }, { "$ref": "#/modifiers/density" }]
+}
