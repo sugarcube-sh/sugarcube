@@ -39,28 +39,52 @@ describe("parseDuration", () => {
 
     describe("refuses", () => {
         it.for(["200ms", "1.5s"])("the string %s, which earlier drafts allowed", (raw) => {
-            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "string-with-unit" }]);
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value"],
+                    detail: { type: "duration", reason: "string-with-unit", value: raw },
+                },
+            ]);
         });
 
         it.for([200, "fast", null])("%j, which is not a duration", (raw) => {
-            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value"],
+                    detail: { type: "duration", reason: "wrong-shape", value: raw },
+                },
+            ]);
         });
 
         it.for(["px", "min", "MS"])("the unit %j, which the spec does not allow", (unit) => {
             expect(details({ value: 1, unit })).toStrictEqual([
-                { path: ["$value", "unit"], detail: "unit-not-allowed" },
+                {
+                    path: ["$value", "unit"],
+                    detail: {
+                        type: "duration",
+                        reason: "unit-not-allowed",
+                        unit,
+                        allowed: ["ms", "s"],
+                    },
+                },
             ]);
         });
 
         it("a value that is not a number", () => {
             expect(details({ value: "200", unit: "ms" })).toStrictEqual([
-                { path: ["$value", "value"], detail: "not-a-number" },
+                {
+                    path: ["$value", "value"],
+                    detail: { type: "duration", reason: "not-a-number", value: "200" },
+                },
             ]);
         });
 
         it("a property the spec does not define", () => {
             expect(details({ value: 200, unit: "ms", easing: "ease" })).toStrictEqual([
-                { path: ["$value", "easing"], detail: "unknown-property" },
+                {
+                    path: ["$value", "easing"],
+                    detail: { type: "duration", reason: "unknown-property", property: "easing" },
+                },
             ]);
         });
     });

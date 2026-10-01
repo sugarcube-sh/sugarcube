@@ -4,13 +4,15 @@ import { read, defineGenerator } from "@sugarcube-sh/dtcg";
 
 const opacityRamp = defineGenerator({
     extension: ["com.example.ramp", "steps"],
+    messages: {
+        "steps-out-of-range": ({ steps }: { steps: unknown }) =>
+            `\`steps\` must be a number from 1 to 20, not ${JSON.stringify(steps)}`,
+    },
     generate: (_group, steps) => {
         if (typeof steps !== "number" || steps < 1 || steps > 20) {
             return {
                 ok: false,
-                errors: [
-                    { kind: "invalid-value", path: [], message: "steps must be from 1 to 20" },
-                ],
+                errors: [{ path: [], reason: "steps-out-of-range", data: { steps } }],
             };
         }
         const tokens = Array.from({ length: steps }, (_, i) => ({

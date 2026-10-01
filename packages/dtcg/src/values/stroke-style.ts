@@ -15,6 +15,8 @@ type DashArray = Extract<UnresolvedStrokeStyle, { kind: "dash" }>["dashArray"];
 
 const PROPERTIES = new Set(["dashArray", "lineCap"]);
 
+const type = "strokeStyle";
+
 export function readStrokeStyle(raw: unknown, at: JsonPath): ParseResult<UnresolvedStrokeStyle> {
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference };
@@ -25,18 +27,27 @@ export function readStrokeStyle(raw: unknown, at: JsonPath): ParseResult<Unresol
         }
         return {
             ok: false,
-            errors: [valueError(at, "unknown-stroke-style-keyword", raw, strokeStyleKeywords)],
+            errors: [
+                valueError(at, {
+                    type,
+                    reason: "unknown-stroke-style-keyword",
+                    value: raw,
+                    keywords: strokeStyleKeywords,
+                }),
+            ],
         };
     }
 
     if (!isPlainObject(raw)) {
-        return { ok: false, errors: [valueError(at, "wrong-shape", "strokeStyle")] };
+        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
     }
 
     const errors: ValueError[] = [];
     for (const name of Object.keys(raw)) {
         if (!PROPERTIES.has(name)) {
-            errors.push(valueError([...at, name], "unknown-property", name, "strokeStyle"));
+            errors.push(
+                valueError([...at, name], { type, reason: "unknown-property", property: name }),
+            );
         }
     }
 
@@ -56,7 +67,11 @@ function readDashArray(
 ): DashArray | undefined {
     if (!("dashArray" in raw)) {
         errors.push(
-            valueError([...at, "dashArray"], "missing-property", "dashArray", "strokeStyle"),
+            valueError([...at, "dashArray"], {
+                type,
+                reason: "missing-property",
+                property: "dashArray",
+            }),
         );
         return undefined;
     }
@@ -66,11 +81,13 @@ function readDashArray(
 
     const path = [...at, "dashArray"];
     if (!Array.isArray(raw.dashArray)) {
-        errors.push(valueError(path, "dash-array-not-a-list"));
+        errors.push(
+            valueError(path, { type, reason: "dash-array-not-a-list", value: raw.dashArray }),
+        );
         return undefined;
     }
     if (raw.dashArray.length === 0) {
-        errors.push(valueError(path, "empty-dash-array"));
+        errors.push(valueError(path, { type, reason: "empty-dash-array" }));
         return undefined;
     }
 
@@ -94,7 +111,13 @@ function readLineCap(
     errors: ValueError[],
 ): LineCap | Pointer | undefined {
     if (!("lineCap" in raw)) {
-        errors.push(valueError([...at, "lineCap"], "missing-property", "lineCap", "strokeStyle"));
+        errors.push(
+            valueError([...at, "lineCap"], {
+                type,
+                reason: "missing-property",
+                property: "lineCap",
+            }),
+        );
         return undefined;
     }
 
@@ -102,6 +125,13 @@ function readLineCap(
     if (pointer) return pointer;
 
     if (lineCaps.includes(raw.lineCap as LineCap)) return raw.lineCap as LineCap;
-    errors.push(valueError([...at, "lineCap"], "unknown-line-cap", raw.lineCap, lineCaps));
+    errors.push(
+        valueError([...at, "lineCap"], {
+            type,
+            reason: "unknown-line-cap",
+            value: raw.lineCap,
+            lineCaps,
+        }),
+    );
     return undefined;
 }

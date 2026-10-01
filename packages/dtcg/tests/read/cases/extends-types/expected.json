@@ -62,7 +62,8 @@
       "detail": {
         "type": "dimension",
         "at": ["$value"],
-        "reason": "wrong-shape"
+        "reason": "wrong-shape",
+        "value": 1
       },
       "at": {
         "file": "tokens.json",
@@ -75,7 +76,8 @@
       "detail": {
         "type": "dimension",
         "at": ["$value"],
-        "reason": "wrong-shape"
+        "reason": "wrong-shape",
+        "value": 2
       },
       "at": {
         "file": "tokens.json",

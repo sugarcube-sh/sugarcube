@@ -1,0 +1,18 @@
+{
+  "entry": "tokens.json",
+  "spec": "an extension that is not valid is reported once, where it is written, as a value that cannot be read is, though a group that extends its group carries it too",
+  "options": { "generators": ["steps"] },
+  "diagnostics": [
+    {
+      "kind": "extension-invalid",
+      "detail": {
+        "key": "com.example",
+        "at": ["$extensions", "com.example", "steps"],
+        "reason": "not-a-count",
+        "data": { "steps": "three" }
+      },
+      "at": { "file": "tokens.json", "text": "\"three\"" },
+      "path": "base"
+    }
+  ]
+}

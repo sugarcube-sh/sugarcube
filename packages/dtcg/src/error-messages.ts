@@ -5,6 +5,7 @@ import type {
     ResolverProblem,
     ResolverRule,
 } from "./index.js";
+import { valueErrorMessage, valueErrorMessages } from "./values/value-errors.js";
 
 type Entry<K extends DiagnosticKind> = {
     severity: "error" | "warning";
@@ -72,6 +73,11 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
         `the default of the modifier \`${name}\` is not one of its contexts`,
 };
 
+export const thrownMessages = {
+    asyncSchema: (key: string) =>
+        `the schema for \`${key}\` returned a Promise: extension schemas must validate synchronously`,
+};
+
 export const relatedMessages = {
     declaredAs: (kind: "token" | "group") => `declared as a ${kind} here`,
     partOfTheLoop: "part of the same loop",
@@ -82,6 +88,10 @@ export const fixTitles = {
     useType: (type: string) => `use \`${type}\`, which has a similar name`,
     hexToObject: "write the color as an object, keeping the hex",
     useReference: (path: string) => `use \`${path}\`, which has a similar name`,
+    measureAsObject: (type: string) => `write the ${type} as an object`,
+    sixDigitHex: (hex: string) => `write the hex with six digits, \`${hex}\``,
+    referenceAsPointer: (pointer: string) =>
+        `write it as the pointer \`${pointer}\`, which can stand for part of a value`,
 };
 
 export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
@@ -144,11 +154,12 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "invalid-value": {
         severity: "error",
-        message: ({ type }) => `this is not a valid ${type} value`,
+        message: valueErrorMessage,
     },
     "hex-string-color": {
         severity: "error",
-        message: ({ value }) => `\`${value}\` is a hex string, and a color must be an object`,
+        message: ({ value }) =>
+            valueErrorMessages["hex-string"]({ type: "color", reason: "hex-string", value }),
     },
     "extension-invalid": {
         severity: "error",

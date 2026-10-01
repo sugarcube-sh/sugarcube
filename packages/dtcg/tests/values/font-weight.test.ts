@@ -37,7 +37,14 @@ describe("parseFontWeight", () => {
     describe("refuses", () => {
         it.for([0, 1001, -100])("%s, outside 1 to 1000", (weight) => {
             expect(details(weight)).toStrictEqual([
-                { path: ["$value"], detail: "font-weight-out-of-range" },
+                {
+                    path: ["$value"],
+                    detail: {
+                        type: "fontWeight",
+                        reason: "font-weight-out-of-range",
+                        value: weight,
+                    },
+                },
             ]);
         });
 
@@ -45,13 +52,25 @@ describe("parseFontWeight", () => {
             "%j, which is not a keyword the spec defines, since keywords are case-sensitive",
             (raw) => {
                 expect(details(raw)).toStrictEqual([
-                    { path: ["$value"], detail: "unknown-font-weight-keyword" },
+                    {
+                        path: ["$value"],
+                        detail: {
+                            type: "fontWeight",
+                            reason: "unknown-font-weight-keyword",
+                            value: raw,
+                        },
+                    },
                 ]);
             },
         );
 
         it.for([null, true, [700], { weight: 700 }])("%j, which is not a weight", (raw) => {
-            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value"],
+                    detail: { type: "fontWeight", reason: "wrong-shape", value: raw },
+                },
+            ]);
         });
     });
 });

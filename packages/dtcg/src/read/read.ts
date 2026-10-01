@@ -5,6 +5,7 @@ import { collapse } from "./diagnostics.js";
 import { type Loaded, load } from "./load.js";
 import { normalisePermutations } from "./normalise.js";
 import { fillGenerated } from "./generate.js";
+import { validateExtensions } from "./validate-extensions.js";
 import type { Merged } from "./merge.js";
 import { createValueReader } from "./parse-value.js";
 import { resolvePermutations } from "./resolve.js";
@@ -111,7 +112,10 @@ function permutationOptions({
     return { ...(inputs && { inputs }), permutations, limit: permutationLimit };
 }
 
-function toDocument(loaded: Loaded, { onStage, generators = [] }: ReadOptions): Document {
+function toDocument(
+    loaded: Loaded,
+    { onStage, generators = [], extensionValidators = [] }: ReadOptions,
+): Document {
     const found: Document["diagnostics"] = [];
     const readValue = createValueReader(found);
     let generating = 0;
@@ -128,6 +132,7 @@ function toDocument(loaded: Loaded, { onStage, generators = [] }: ReadOptions): 
     onStage?.("normalise", resolving - normalising - generating);
     const { permutations, graph } = resolvePermutations(normalised, readValue, found);
     onStage?.("resolve", performance.now() - resolving);
+    validateExtensions(normalised, permutations, extensionValidators, found);
 
     return {
         version: packageJson.version,

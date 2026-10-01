@@ -1,8 +1,22 @@
 import type { Node } from "jsonc-parser";
-import type { Diagnostic, GeneratedToken, Generator, ValueError } from "../index.js";
+import type {
+    Diagnostic,
+    ExtensionError,
+    ExtensionMessages,
+    GeneratedToken,
+    Generator,
+    StandardSchemaV1,
+    ValueError,
+} from "../index.js";
 import { isPlainObject, readAlias, readPointer } from "../values/references.js";
-import { diagnostic } from "./diagnostics.js";
-import { type JsonFile, deepestNode, member, spanOf } from "./json.js";
+import {
+    type CheckedExtension,
+    type ExtensionProblem,
+    type SchemaOutput,
+    checkSchema,
+    extensionDiagnostic,
+} from "./extension-check.js";
+import { type JsonFile, member, spanOf } from "./json.js";
 import type { Merged, MergedGroup, MergedToken } from "./merge.js";
 
 type Place = { index: number; offset: number };
@@ -15,12 +29,17 @@ interface Extension {
 }
 
 /**
- * Defines a {@link Generator}.
+ * Defines a {@link Generator}, checking each error `generate` returns against its `messages`. With a
+ * `schema`, `generate` receives the schema's output.
  *
  * @example
  * // { "space": { "$type": "dimension", "$extensions": { "com.example": { "steps": 4 } } } }
  * const steps = defineGenerator({
  *   extension: ["com.example", "steps"],
+ *   messages: {
+ *     "not-a-count": ({ steps }: { steps: unknown }) =>
+ *       `\`steps\` must be a whole number above 0, not ${JSON.stringify(steps)}`,
+ *   },
  *   generate: (group, steps) =>
  *     typeof steps === "number"
  *       ? {
@@ -30,10 +49,24 @@ interface Extension {
  *             $value: { value: i + 1, unit: "rem" },
  *           })),
  *         }
- *       : { ok: false, errors: [{ kind: "invalid-value", path: [], message: "steps must be a number" }] },
+ *       : { ok: false, errors: [{ path: [], reason: "not-a-count", data: { steps } }] },
  * });
  */
-export function defineGenerator(generator: Generator): Generator {
+export function defineGenerator<
+    const M extends ExtensionMessages = Record<never, never>,
+    S extends StandardSchemaV1 | undefined = undefined,
+>(
+    generator: Omit<Generator, "schema" | "messages" | "generate"> & {
+        schema?: S;
+        messages?: M;
+        generate: (
+            group: Parameters<Generator["generate"]>[0],
+            extension: SchemaOutput<S>,
+        ) =>
+            | { ok: true; value: GeneratedToken[] }
+            | { ok: false; errors: (ExtensionError<NoInfer<M>> | ValueError)[] };
+    },
+): Generator {
     return generator;
 }
 
@@ -45,28 +78,41 @@ export function fillGenerated(
 ): void {
     const added: { after: Place; tokens: MergedToken[] }[] = [];
     const addedPaths = new Set<string>();
+    const reported = new Map<Generator, Set<Node>>();
 
     for (const group of [merged.root, ...merged.groups.values()]) {
         for (const generator of generators) {
             const extension = extensionOf(group, generator.extension);
             if (!extension) continue;
+            const checked: CheckedExtension = {
+                within: generator.extension,
+                messages: generator.messages,
+                json: extension.json,
+                node: extension.node,
+                path: group.path,
+                permutation,
+            };
+            const report = (problems: ExtensionProblem[]) => {
+                const done = reported.get(generator) ?? new Set<Node>();
+                reported.set(generator, done);
+                if (done.has(extension.node)) return;
+                done.add(extension.node);
+                for (const problem of problems) {
+                    diagnostics.push(extensionDiagnostic(problem, checked));
+                }
+            };
+            const passed = checkSchema(generator.schema, extension.value, generator.extension[0]);
+            if (!passed.ok) {
+                report(passed.problems);
+                continue;
+            }
             const type = group.type === "unusable" ? undefined : group.type;
             const result = generator.generate(
                 { path: group.path, ...(type && { type }) },
-                extension.value,
+                passed.value,
             );
             if (!result.ok) {
-                for (const error of result.errors) {
-                    diagnostics.push(
-                        invalidExtension(
-                            group.path,
-                            generator.extension,
-                            extension,
-                            error,
-                            permutation,
-                        ),
-                    );
-                }
+                report(result.errors);
                 continue;
             }
             const from = { from: group.path };
@@ -147,27 +193,4 @@ function addedToken(
         ...($description !== undefined && { description: $description }),
         ...($extensions && { extensions: $extensions }),
     };
-}
-
-function invalidExtension(
-    path: string,
-    extensionPath: Generator["extension"],
-    { json, node }: Extension,
-    error: ValueError,
-    permutation: number,
-): Diagnostic {
-    const found = deepestNode(node, error.path, json.hidden);
-    return diagnostic(
-        "extension-invalid",
-        {
-            key: extensionPath[0],
-            at: ["$extensions", ...extensionPath, ...error.path],
-            ...(error.detail !== undefined && { reason: error.detail }),
-        },
-        {
-            at: spanOf(json.path, json.lineStarts, found.offset, found.length),
-            path,
-            permutation,
-        },
-    );
 }

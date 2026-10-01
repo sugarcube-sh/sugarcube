@@ -8,10 +8,10 @@ const PROPERTIES = new Set(["value", "unit"]);
 
 /**
  * A number followed by a unit, such as `"16px"` or `"200ms"`: how earlier drafts of the spec wrote
- * dimensions and durations. It is always an error. Recognising one lets the error say so, and show
- * the object to write instead.
+ * dimensions and durations. It is always an error. Recognising one lets the error say so, and `read`
+ * offer the object as a fix.
  */
-const STRING_WITH_UNIT = /^(-?(?:\d+(?:\.\d*)?|\.\d+))([a-z%]+)$/i;
+export const STRING_WITH_UNIT = /^(-?(?:\d+(?:\.\d*)?|\.\d+))([a-z%]+)$/i;
 
 export function readMeasure<T extends MeasureType>(
     type: T,
@@ -23,24 +23,24 @@ export function readMeasure<T extends MeasureType>(
     if (reference) return { ok: true, value: reference as UnresolvedValue<T> };
 
     if (typeof raw === "string") {
-        const match = STRING_WITH_UNIT.exec(raw);
-        if (match) {
-            const [, number, unit] = match;
-            const example = units.includes(unit!)
-                ? JSON.stringify({ value: Number(number), unit })
-                : `{ "value": ${Number(number)}, "unit": … }, with a unit of ${units.map((u) => `"${u}"`).join(" or ")}`;
-            return { ok: false, errors: [valueError(at, "string-with-unit", raw, example)] };
+        if (STRING_WITH_UNIT.test(raw)) {
+            return {
+                ok: false,
+                errors: [valueError(at, { type, reason: "string-with-unit", value: raw })],
+            };
         }
     }
 
     if (!isPlainObject(raw)) {
-        return { ok: false, errors: [valueError(at, "wrong-shape", type)] };
+        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
     }
 
     const errors: ValueError[] = [];
     for (const name of Object.keys(raw)) {
         if (!PROPERTIES.has(name)) {
-            errors.push(valueError([...at, name], "unknown-property", name, type));
+            errors.push(
+                valueError([...at, name], { type, reason: "unknown-property", property: name }),
+            );
         }
     }
 
@@ -60,19 +60,27 @@ function readAmount(
     errors: ValueError[],
 ): number | Pointer | undefined {
     if (!("value" in raw)) {
-        errors.push(valueError([...at, "value"], "missing-property", "value", type));
+        errors.push(
+            valueError([...at, "value"], { type, reason: "missing-property", property: "value" }),
+        );
         return undefined;
     }
 
     const pointer = readPointer(raw.value);
     if (pointer) return pointer;
     if (readAlias(raw.value)) {
-        errors.push(valueError([...at, "value"], "alias-not-allowed-here", raw.value as string));
+        errors.push(
+            valueError([...at, "value"], {
+                type,
+                reason: "alias-not-allowed-here",
+                reference: raw.value as string,
+            }),
+        );
         return undefined;
     }
 
     if (typeof raw.value === "number" && Number.isFinite(raw.value)) return raw.value;
-    errors.push(valueError([...at, "value"], "not-a-number", raw.value));
+    errors.push(valueError([...at, "value"], { type, reason: "not-a-number", value: raw.value }));
     return undefined;
 }
 
@@ -84,18 +92,33 @@ function readUnit(
     errors: ValueError[],
 ): string | Pointer | undefined {
     if (!("unit" in raw)) {
-        errors.push(valueError([...at, "unit"], "missing-property", "unit", type));
+        errors.push(
+            valueError([...at, "unit"], { type, reason: "missing-property", property: "unit" }),
+        );
         return undefined;
     }
 
     const pointer = readPointer(raw.unit);
     if (pointer) return pointer;
     if (readAlias(raw.unit)) {
-        errors.push(valueError([...at, "unit"], "alias-not-allowed-here", raw.unit as string));
+        errors.push(
+            valueError([...at, "unit"], {
+                type,
+                reason: "alias-not-allowed-here",
+                reference: raw.unit as string,
+            }),
+        );
         return undefined;
     }
 
     if (typeof raw.unit === "string" && units.includes(raw.unit)) return raw.unit;
-    errors.push(valueError([...at, "unit"], "unit-not-allowed", raw.unit, units));
+    errors.push(
+        valueError([...at, "unit"], {
+            type,
+            reason: "unit-not-allowed",
+            unit: raw.unit,
+            allowed: units,
+        }),
+    );
     return undefined;
 }

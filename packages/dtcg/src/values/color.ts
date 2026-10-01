@@ -29,22 +29,26 @@ const HEX_STRING = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
  */
 const SIX_DIGIT_HEX = /^#[0-9a-f]{6}$/i;
 
+const type = "color";
+
 export function readColor(raw: unknown, at: JsonPath): ParseResult<ColorAsWritten> {
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference };
 
     if (typeof raw === "string" && HEX_STRING.test(raw)) {
-        return { ok: false, errors: [valueError(at, "hex-string", raw)] };
+        return { ok: false, errors: [valueError(at, { type, reason: "hex-string", value: raw })] };
     }
 
     if (!isPlainObject(raw)) {
-        return { ok: false, errors: [valueError(at, "wrong-shape", "color")] };
+        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
     }
 
     const errors: ValueError[] = [];
     for (const name of Object.keys(raw)) {
         if (!PROPERTIES.has(name)) {
-            errors.push(valueError([...at, name], "unknown-property", name, "color"));
+            errors.push(
+                valueError([...at, name], { type, reason: "unknown-property", property: name }),
+            );
         }
     }
 
@@ -69,7 +73,13 @@ function readColorSpace(
     errors: ValueError[],
 ): ColorSpace | Pointer | undefined {
     if (!("colorSpace" in raw)) {
-        errors.push(valueError([...at, "colorSpace"], "missing-property", "colorSpace", "color"));
+        errors.push(
+            valueError([...at, "colorSpace"], {
+                type,
+                reason: "missing-property",
+                property: "colorSpace",
+            }),
+        );
         return undefined;
     }
 
@@ -79,7 +89,13 @@ function readColorSpace(
     if (typeof raw.colorSpace === "string" && Object.hasOwn(colorSpaces, raw.colorSpace)) {
         return raw.colorSpace as ColorSpace;
     }
-    errors.push(valueError([...at, "colorSpace"], "unknown-color-space", raw.colorSpace));
+    errors.push(
+        valueError([...at, "colorSpace"], {
+            type,
+            reason: "unknown-color-space",
+            value: raw.colorSpace,
+        }),
+    );
     return undefined;
 }
 
@@ -90,7 +106,13 @@ function readComponents(
     errors: ValueError[],
 ): [Component, Component, Component] | Pointer | undefined {
     if (!("components" in raw)) {
-        errors.push(valueError([...at, "components"], "missing-property", "components", "color"));
+        errors.push(
+            valueError([...at, "components"], {
+                type,
+                reason: "missing-property",
+                property: "components",
+            }),
+        );
         return undefined;
     }
 
@@ -99,7 +121,9 @@ function readComponents(
 
     const path = [...at, "components"];
     if (!Array.isArray(raw.components) || raw.components.length !== 3) {
-        errors.push(valueError(path, "not-three-components"));
+        errors.push(
+            valueError(path, { type, reason: "not-three-components", value: raw.components }),
+        );
         return undefined;
     }
 
@@ -110,28 +134,40 @@ function readComponents(
         if (componentPointer) return componentPointer;
         if (readAlias(component)) {
             errors.push(
-                valueError([...path, index], "alias-not-allowed-here", component as string),
+                valueError([...path, index], {
+                    type,
+                    reason: "alias-not-allowed-here",
+                    reference: component as string,
+                }),
             );
             return 0;
         }
 
         if (component === "none") return component;
         if (typeof component !== "number" || !Number.isFinite(component)) {
-            errors.push(valueError([...path, index], "component-not-a-number", component));
+            errors.push(
+                valueError([...path, index], {
+                    type,
+                    reason: "component-not-a-number",
+                    value: component,
+                }),
+            );
             return 0;
         }
 
         const channel = channels?.[index];
         if (channel && !inRange(component, channel.min, channel.max, channel.maxExclusive)) {
             errors.push(
-                valueError(
-                    [...path, index],
-                    "component-out-of-range",
-                    component,
-                    channel.min,
-                    channel.max,
-                    channel.maxExclusive ?? false,
-                ),
+                valueError([...path, index], {
+                    type,
+                    reason: "component-out-of-range",
+                    value: component,
+                    colorSpace: colorSpace as ColorSpace,
+                    component: channel.name,
+                    min: channel.min,
+                    ...(channel.max !== Infinity && { max: channel.max }),
+                    maxExclusive: channel.maxExclusive ?? false,
+                }),
             );
         }
         return component;
@@ -152,12 +188,20 @@ function readAlpha(
     if (pointer) return pointer;
 
     if (typeof raw.alpha !== "number" || !Number.isFinite(raw.alpha)) {
-        errors.push(valueError([...at, "alpha"], "not-a-number", raw.alpha));
+        errors.push(
+            valueError([...at, "alpha"], { type, reason: "not-a-number", value: raw.alpha }),
+        );
         return 1;
     }
 
     if (!inRange(raw.alpha, 0, 1)) {
-        errors.push(valueError([...at, "alpha"], "alpha-out-of-range", raw.alpha));
+        errors.push(
+            valueError([...at, "alpha"], {
+                type,
+                reason: "alpha-out-of-range",
+                value: raw.alpha,
+            }),
+        );
     }
     return raw.alpha;
 }
@@ -173,7 +217,7 @@ function readHex(
     if (pointer) return pointer;
 
     if (typeof raw.hex === "string" && SIX_DIGIT_HEX.test(raw.hex)) return raw.hex;
-    errors.push(valueError([...at, "hex"], "hex-not-six-digits", raw.hex));
+    errors.push(valueError([...at, "hex"], { type, reason: "hex-not-six-digits", value: raw.hex }));
     return undefined;
 }
 

@@ -71,6 +71,7 @@ describe("scale generator", () => {
                     key: "sh.sugarcube",
                     at: ["$extensions", "sh.sugarcube", "scale", "ratio", "min"],
                     reason: "ratio-not-above-one",
+                    data: { ratio: 1 },
                 },
                 path: "size",
             },
@@ -79,11 +80,15 @@ describe("scale generator", () => {
 
     it("reports a missing unit as missing, where old sugarcube called it an invalid unit", () => {
         const doc = withScale({ ...exponential, base: { min: { value: 1 }, max: base.max } });
-        expect(doc.diagnostics.map(({ detail }) => detail)).toEqual([
+        expect(doc.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toEqual([
             {
-                key: "sh.sugarcube",
-                at: ["$extensions", "sh.sugarcube", "scale", "base", "min", "unit"],
-                reason: "missing-property",
+                kind: "invalid-value",
+                detail: {
+                    at: ["$extensions", "sh.sugarcube", "scale", "base", "min", "unit"],
+                    type: "dimension",
+                    reason: "missing-property",
+                    property: "unit",
+                },
             },
         ]);
     });
@@ -101,11 +106,15 @@ describe("scale generator", () => {
 
     it('reads its dimensions as dtcg does, so a string such as "16px" says what to write', () => {
         const doc = withScale({ ...exponential, base: { min: "16px", max: base.max } });
-        expect(doc.diagnostics.map(({ detail }) => detail)).toEqual([
+        expect(doc.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toEqual([
             {
-                key: "sh.sugarcube",
-                at: ["$extensions", "sh.sugarcube", "scale", "base", "min"],
-                reason: "string-with-unit",
+                kind: "invalid-value",
+                detail: {
+                    at: ["$extensions", "sh.sugarcube", "scale", "base", "min"],
+                    type: "dimension",
+                    reason: "string-with-unit",
+                    value: "16px",
+                },
             },
         ]);
     });
@@ -115,11 +124,15 @@ describe("scale generator", () => {
             ...exponential,
             base: { min: { $ref: "#/size/base/$value" }, max: base.max },
         });
-        expect(doc.diagnostics.map(({ detail }) => detail)).toEqual([
+        expect(doc.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toEqual([
             {
-                key: "sh.sugarcube",
-                at: ["$extensions", "sh.sugarcube", "scale", "base", "min"],
-                reason: "reference-not-allowed",
+                kind: "invalid-value",
+                detail: {
+                    at: ["$extensions", "sh.sugarcube", "scale", "base", "min"],
+                    type: "dimension",
+                    reason: "reference-not-allowed",
+                    reference: "#/size/base/$value",
+                },
             },
         ]);
     });
@@ -130,11 +143,15 @@ describe("scale generator", () => {
             multipliers: { sm: "{multiplier.small}", md: 1.5 },
         });
         expect(tokens(doc)).toEqual([]);
-        expect(doc.diagnostics.map(({ detail }) => detail)).toEqual([
+        expect(doc.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toEqual([
             {
-                key: "sh.sugarcube",
-                at: ["$extensions", "sh.sugarcube", "scale", "multipliers", "sm"],
-                reason: "reference-not-allowed",
+                kind: "invalid-value",
+                detail: {
+                    at: ["$extensions", "sh.sugarcube", "scale", "multipliers", "sm"],
+                    type: "number",
+                    reason: "reference-not-allowed",
+                    reference: "{multiplier.small}",
+                },
             },
         ]);
     });

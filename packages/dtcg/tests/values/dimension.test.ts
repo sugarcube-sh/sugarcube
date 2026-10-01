@@ -57,7 +57,10 @@ describe("parseDimension", () => {
             "the string %s, which earlier drafts allowed",
             (raw) => {
                 expect(details(raw)).toStrictEqual([
-                    { path: ["$value"], detail: "string-with-unit" },
+                    {
+                        path: ["$value"],
+                        detail: { type: "dimension", reason: "string-with-unit", value: raw },
+                    },
                 ]);
             },
         );
@@ -65,7 +68,12 @@ describe("parseDimension", () => {
         it.for([16, "16", "wide", null, [16, "px"], true])(
             "%j, which is not a dimension",
             (raw) => {
-                expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+                expect(details(raw)).toStrictEqual([
+                    {
+                        path: ["$value"],
+                        detail: { type: "dimension", reason: "wrong-shape", value: raw },
+                    },
+                ]);
             },
         );
 
@@ -73,38 +81,65 @@ describe("parseDimension", () => {
             "the unit %j, which the spec does not allow",
             (unit) => {
                 expect(details({ value: 1, unit })).toStrictEqual([
-                    { path: ["$value", "unit"], detail: "unit-not-allowed" },
+                    {
+                        path: ["$value", "unit"],
+                        detail: {
+                            type: "dimension",
+                            reason: "unit-not-allowed",
+                            unit,
+                            allowed: ["px", "rem"],
+                        },
+                    },
                 ]);
             },
         );
 
         it("a unit left out, even when the value is 0, as spec 8.2.1 says", () => {
             expect(details({ value: 0 })).toStrictEqual([
-                { path: ["$value", "unit"], detail: "missing-property" },
+                {
+                    path: ["$value", "unit"],
+                    detail: { type: "dimension", reason: "missing-property", property: "unit" },
+                },
             ]);
         });
 
         it("a value left out", () => {
             expect(details({ unit: "px" })).toStrictEqual([
-                { path: ["$value", "value"], detail: "missing-property" },
+                {
+                    path: ["$value", "value"],
+                    detail: { type: "dimension", reason: "missing-property", property: "value" },
+                },
             ]);
         });
 
         it.for(["16", null])("the value %j, which is not a number", (value) => {
             expect(details({ value, unit: "px" })).toStrictEqual([
-                { path: ["$value", "value"], detail: "not-a-number" },
+                {
+                    path: ["$value", "value"],
+                    detail: { type: "dimension", reason: "not-a-number", value },
+                },
             ]);
         });
 
         it.for(["value", "unit"])("a curly-brace reference in place of %s", (part) => {
             expect(details({ value: 16, unit: "px", [part]: "{space.small}" })).toStrictEqual([
-                { path: ["$value", part], detail: "alias-not-allowed-here" },
+                {
+                    path: ["$value", part],
+                    detail: {
+                        type: "dimension",
+                        reason: "alias-not-allowed-here",
+                        reference: "{space.small}",
+                    },
+                },
             ]);
         });
 
         it("a property the spec does not define", () => {
             expect(details({ value: 16, unit: "px", fluid: true })).toStrictEqual([
-                { path: ["$value", "fluid"], detail: "unknown-property" },
+                {
+                    path: ["$value", "fluid"],
+                    detail: { type: "dimension", reason: "unknown-property", property: "fluid" },
+                },
             ]);
         });
     });

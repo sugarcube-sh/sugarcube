@@ -13,7 +13,10 @@ describe("parseValue", () => {
     it("reports a value that does not fit the type, as that type's parser does", () => {
         const read = parseValue("dimension", "16px", ["base"], { references: false });
         expect(read.ok ? [] : read.errors.map(({ path, detail }) => ({ path, detail }))).toEqual([
-            { path: ["base"], detail: "string-with-unit" },
+            {
+                path: ["base"],
+                detail: { type: "dimension", reason: "string-with-unit", value: "16px" },
+            },
         ]);
     });
 
@@ -24,15 +27,24 @@ describe("parseValue", () => {
     });
 
     it.for([
-        { written: "{ratio.golden}", at: [] },
-        { written: { $ref: "#/ratio/golden/$value" }, at: [] },
+        { written: "{ratio.golden}", at: [], reference: "{ratio.golden}" },
+        { written: { $ref: "#/ratio/golden/$value" }, at: [], reference: "#/ratio/golden/$value" },
     ])(
         "refuses $written in place of a whole value, when only literals are wanted",
-        ({ written, at }) => {
+        ({ written, at, reference }) => {
             const read = parseValue("number", written, ["ratio"], { references: false });
             expect(
                 read.ok ? [] : read.errors.map(({ path, detail }) => ({ path, detail })),
-            ).toEqual([{ path: ["ratio", ...at], detail: "reference-not-allowed" }]);
+            ).toEqual([
+                {
+                    path: ["ratio", ...at],
+                    detail: {
+                        type: "number",
+                        reason: "reference-not-allowed",
+                        reference: reference,
+                    },
+                },
+            ]);
         },
     );
 
@@ -44,7 +56,14 @@ describe("parseValue", () => {
             { references: false },
         );
         expect(read.ok ? [] : read.errors.map(({ path, detail }) => ({ path, detail }))).toEqual([
-            { path: ["base", "min", "value"], detail: "reference-not-allowed" },
+            {
+                path: ["base", "min", "value"],
+                detail: {
+                    type: "dimension",
+                    reason: "reference-not-allowed",
+                    reference: "#/size/base/$value/value",
+                },
+            },
         ]);
     });
 
@@ -58,7 +77,14 @@ describe("parseValue", () => {
         };
         const read = parseValue("shadow", shadow, [], { references: false });
         expect(read.ok ? [] : read.errors.map(({ path, detail }) => ({ path, detail }))).toEqual([
-            { path: ["color"], detail: "reference-not-allowed" },
+            {
+                path: ["color"],
+                detail: {
+                    type: "shadow",
+                    reason: "reference-not-allowed",
+                    reference: "{color.shadow}",
+                },
+            },
         ]);
     });
 });

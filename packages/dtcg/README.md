@@ -88,7 +88,7 @@ input.setCustomValidity(result.ok ? "" : (result.errors[0]?.message ?? "Not a co
 
 `read` takes options for what the spec leaves to tools:
 
-- `extensions`: checks for your own `$extensions` keys
+- `extensionValidators`: checks for your own `$extensions` keys, made with `defineExtensionValidator`
 - `generators`: tokens made from a setting on a group, such as a scale, made with `defineGenerator`
 - `inputs`: which permutations to build
 

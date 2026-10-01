@@ -114,7 +114,8 @@
       "detail": {
         "type": "color",
         "at": ["$value", "components", 0],
-        "reason": "component-not-a-number"
+        "reason": "component-not-a-number",
+        "value": "px"
       },
       "at": {
         "file": "tokens.json",

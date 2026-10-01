@@ -61,42 +61,61 @@ describe("parseShadow", () => {
 
     describe("refuses", () => {
         it("an empty list", () => {
-            expect(details([])).toStrictEqual([{ path: ["$value"], detail: "no-shadows" }]);
+            expect(details([])).toStrictEqual([
+                { path: ["$value"], detail: { type: "shadow", reason: "no-shadows" } },
+            ]);
         });
 
         it.for(["0 1px 2px black", 1, null])("%j, which is not a shadow", (raw) => {
-            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+            expect(details(raw)).toStrictEqual([
+                { path: ["$value"], detail: { type: "shadow", reason: "wrong-shape", value: raw } },
+            ]);
         });
 
         it.for(["color", "offsetX", "offsetY", "blur", "spread"])("a shadow with no %s", (part) => {
             const raw: Record<string, unknown> = { ...layer };
             delete raw[part];
             expect(details(raw)).toStrictEqual([
-                { path: ["$value", part], detail: "missing-property" },
+                {
+                    path: ["$value", part],
+                    detail: { type: "shadow", reason: "missing-property", property: part },
+                },
             ]);
         });
 
         it.for(["true", 1, null])("inset %j, which is not true or false", (inset) => {
             expect(details({ ...layer, inset })).toStrictEqual([
-                { path: ["$value", "inset"], detail: "not-a-boolean" },
+                {
+                    path: ["$value", "inset"],
+                    detail: { type: "shadow", reason: "not-a-boolean", value: inset },
+                },
             ]);
         });
 
         it("a part the spec does not define", () => {
             expect(details({ ...layer, opacity: 0.5 })).toStrictEqual([
-                { path: ["$value", "opacity"], detail: "unknown-property" },
+                {
+                    path: ["$value", "opacity"],
+                    detail: { type: "shadow", reason: "unknown-property", property: "opacity" },
+                },
             ]);
         });
 
         it("a bad part in the second shadow of a list, at its full path", () => {
             expect(details([layer, { ...layer, blur: "4px" }])).toStrictEqual([
-                { path: ["$value", 1, "blur"], detail: "string-with-unit" },
+                {
+                    path: ["$value", 1, "blur"],
+                    detail: { type: "dimension", reason: "string-with-unit", value: "4px" },
+                },
             ]);
         });
 
         it("something in a list that is neither a shadow nor a reference", () => {
             expect(details([layer, 42])).toStrictEqual([
-                { path: ["$value", 1], detail: "wrong-shape" },
+                {
+                    path: ["$value", 1],
+                    detail: { type: "shadow", reason: "wrong-shape", value: 42 },
+                },
             ]);
         });
     });

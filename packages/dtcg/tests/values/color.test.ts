@@ -136,14 +136,19 @@ describe("parseColor", () => {
         it.for(["{}", "{color..brand}", "{color.brand", "color.brand}"])(
             "refuses %s, which is not a reference",
             (raw) => {
-                expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+                expect(details(raw)).toStrictEqual([
+                    {
+                        path: ["$value"],
+                        detail: { type: "color", reason: "wrong-shape", value: raw },
+                    },
+                ]);
             },
         );
 
         it("refuses a $ref with other keys beside it, and flags the $ref", () => {
             expect(details({ $ref: "#/color/brand/$value", alpha: 0.5 })).toContainEqual({
                 path: ["$value", "$ref"],
-                detail: "unknown-property",
+                detail: { type: "color", reason: "unknown-property", property: "$ref" },
             });
         });
 
@@ -151,7 +156,14 @@ describe("parseColor", () => {
             expect(
                 details({ colorSpace: "srgb", components: ["{color.red}", 0, 0] }),
             ).toStrictEqual([
-                { path: ["$value", "components", 0], detail: "alias-not-allowed-here" },
+                {
+                    path: ["$value", "components", 0],
+                    detail: {
+                        type: "color",
+                        reason: "alias-not-allowed-here",
+                        reference: "{color.red}",
+                    },
+                },
             ]);
         });
     });
@@ -160,18 +172,31 @@ describe("parseColor", () => {
         it.for(["#e11d48", "#E11D48", "#00000080", "#fff", "#ffff"])(
             "the hex string %s, which the Color module no longer allows",
             (raw) => {
-                expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "hex-string" }]);
+                expect(details(raw)).toStrictEqual([
+                    {
+                        path: ["$value"],
+                        detail: { type: "color", reason: "hex-string", value: raw },
+                    },
+                ]);
             },
         );
 
         it.for(["#e11d4", "red", 42, null, [1, 0, 0], true])("%j, which is not a color", (raw) => {
-            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+            expect(details(raw)).toStrictEqual([
+                { path: ["$value"], detail: { type: "color", reason: "wrong-shape", value: raw } },
+            ]);
         });
 
         it("a color with no colorSpace or components", () => {
             expect(details({})).toStrictEqual([
-                { path: ["$value", "colorSpace"], detail: "missing-property" },
-                { path: ["$value", "components"], detail: "missing-property" },
+                {
+                    path: ["$value", "colorSpace"],
+                    detail: { type: "color", reason: "missing-property", property: "colorSpace" },
+                },
+                {
+                    path: ["$value", "components"],
+                    detail: { type: "color", reason: "missing-property", property: "components" },
+                },
             ]);
         });
 
@@ -179,7 +204,10 @@ describe("parseColor", () => {
             "the color space %s, which the spec does not define",
             (colorSpace) => {
                 expect(details({ colorSpace, components: [1, 0, 0] })).toStrictEqual([
-                    { path: ["$value", "colorSpace"], detail: "unknown-color-space" },
+                    {
+                        path: ["$value", "colorSpace"],
+                        detail: { type: "color", reason: "unknown-color-space", value: colorSpace },
+                    },
                 ]);
             },
         );
@@ -188,59 +216,103 @@ describe("parseColor", () => {
             "components %j, which are not three",
             (components) => {
                 expect(details({ colorSpace: "srgb", components })).toStrictEqual([
-                    { path: ["$value", "components"], detail: "not-three-components" },
+                    {
+                        path: ["$value", "components"],
+                        detail: {
+                            type: "color",
+                            reason: "not-three-components",
+                            value: components,
+                        },
+                    },
                 ]);
             },
         );
 
         it("a component that is not a number or none", () => {
             expect(details({ colorSpace: "srgb", components: [1, "0", null] })).toStrictEqual([
-                { path: ["$value", "components", 1], detail: "component-not-a-number" },
-                { path: ["$value", "components", 2], detail: "component-not-a-number" },
+                {
+                    path: ["$value", "components", 1],
+                    detail: { type: "color", reason: "component-not-a-number", value: "0" },
+                },
+                {
+                    path: ["$value", "components", 2],
+                    detail: { type: "color", reason: "component-not-a-number", value: null },
+                },
             ]);
         });
 
         it.for([
-            { name: "sRGB red above 1", colorSpace: "srgb", components: [1.1, 0, 0], index: 0 },
-            { name: "sRGB green below 0", colorSpace: "srgb", components: [0, -0.1, 0], index: 1 },
-            { name: "HSL hue of 360", colorSpace: "hsl", components: [360, 50, 50], index: 0 },
+            {
+                name: "sRGB red above 1",
+                colorSpace: "srgb",
+                components: [1.1, 0, 0],
+                index: 0,
+                channel: { component: "R", min: 0, max: 1, maxExclusive: false },
+            },
+            {
+                name: "sRGB green below 0",
+                colorSpace: "srgb",
+                components: [0, -0.1, 0],
+                index: 1,
+                channel: { component: "G", min: 0, max: 1, maxExclusive: false },
+            },
+            {
+                name: "HSL hue of 360",
+                colorSpace: "hsl",
+                components: [360, 50, 50],
+                index: 0,
+                channel: { component: "H", min: 0, max: 360, maxExclusive: true },
+            },
             {
                 name: "HSL saturation above 100",
                 colorSpace: "hsl",
                 components: [0, 101, 50],
                 index: 1,
+                channel: { component: "S", min: 0, max: 100, maxExclusive: false },
             },
             {
-                name: "OKLCH chroma below 0",
+                name: "OKLCH chroma below 0, with no upper limit to report",
                 colorSpace: "oklch",
                 components: [0.5, -0.1, 0],
                 index: 1,
+                channel: { component: "C", min: 0, maxExclusive: false },
             },
             {
                 name: "OKLCH hue of 360",
                 colorSpace: "oklch",
                 components: [0.5, 0.1, 360],
                 index: 2,
+                channel: { component: "H", min: 0, max: 360, maxExclusive: true },
             },
             {
                 name: "CIELAB lightness above 100",
                 colorSpace: "lab",
                 components: [101, 0, 0],
                 index: 0,
+                channel: { component: "L", min: 0, max: 100, maxExclusive: false },
             },
-        ])("$name, which is out of range", ({ colorSpace, components, index }) => {
+        ])("$name, which is out of range", ({ colorSpace, components, index, channel }) => {
             expect(details({ colorSpace, components })).toStrictEqual([
-                { path: ["$value", "components", index], detail: "component-out-of-range" },
+                {
+                    path: ["$value", "components", index],
+                    detail: {
+                        type: "color",
+                        reason: "component-out-of-range",
+                        value: components[index],
+                        colorSpace,
+                        ...channel,
+                    },
+                },
             ]);
         });
 
         it.for([
-            { alpha: 1.5, detail: "alpha-out-of-range" },
-            { alpha: -0.1, detail: "alpha-out-of-range" },
-            { alpha: "0.5", detail: "not-a-number" },
-        ])("alpha $alpha", ({ alpha, detail }) => {
+            { alpha: 1.5, reason: "alpha-out-of-range" },
+            { alpha: -0.1, reason: "alpha-out-of-range" },
+            { alpha: "0.5", reason: "not-a-number" },
+        ])("alpha $alpha", ({ alpha, reason }) => {
             expect(details({ colorSpace: "srgb", components: [0, 0, 0], alpha })).toStrictEqual([
-                { path: ["$value", "alpha"], detail },
+                { path: ["$value", "alpha"], detail: { type: "color", reason, value: alpha } },
             ]);
         });
 
@@ -248,7 +320,10 @@ describe("parseColor", () => {
             "hex %j, which is not six-digit CSS hex",
             (hex) => {
                 expect(details({ colorSpace: "srgb", components: [1, 0, 0], hex })).toStrictEqual([
-                    { path: ["$value", "hex"], detail: "hex-not-six-digits" },
+                    {
+                        path: ["$value", "hex"],
+                        detail: { type: "color", reason: "hex-not-six-digits", value: hex },
+                    },
                 ]);
             },
         );
@@ -256,17 +331,34 @@ describe("parseColor", () => {
         it("a property the Color module does not define", () => {
             expect(
                 details({ colorSpace: "srgb", components: [1, 0, 0], opacity: 1 }),
-            ).toStrictEqual([{ path: ["$value", "opacity"], detail: "unknown-property" }]);
+            ).toStrictEqual([
+                {
+                    path: ["$value", "opacity"],
+                    detail: { type: "color", reason: "unknown-property", property: "opacity" },
+                },
+            ]);
         });
 
         it("every problem in one go", () => {
             expect(
                 details({ colorSpace: "cmyk", components: [1, 0], alpha: 2, hex: "#fff" }),
             ).toStrictEqual([
-                { path: ["$value", "colorSpace"], detail: "unknown-color-space" },
-                { path: ["$value", "components"], detail: "not-three-components" },
-                { path: ["$value", "alpha"], detail: "alpha-out-of-range" },
-                { path: ["$value", "hex"], detail: "hex-not-six-digits" },
+                {
+                    path: ["$value", "colorSpace"],
+                    detail: { type: "color", reason: "unknown-color-space", value: "cmyk" },
+                },
+                {
+                    path: ["$value", "components"],
+                    detail: { type: "color", reason: "not-three-components", value: [1, 0] },
+                },
+                {
+                    path: ["$value", "alpha"],
+                    detail: { type: "color", reason: "alpha-out-of-range", value: 2 },
+                },
+                {
+                    path: ["$value", "hex"],
+                    detail: { type: "color", reason: "hex-not-six-digits", value: "#fff" },
+                },
             ]);
         });
     });

@@ -1,14 +1,21 @@
-import type { JsonPath, ParseResult, TokenType, ValueByType, ValueError } from "@sugarcube-sh/dtcg";
+import type {
+    ExtensionError,
+    JsonPath,
+    TokenType,
+    ValueByType,
+    ValueError,
+} from "@sugarcube-sh/dtcg";
 import { parseValue } from "@sugarcube-sh/dtcg/values";
 import type { ScaleExtension } from "../../types/extensions.js";
-import { ErrorMessages } from "../constants/error-messages.js";
+import type { ErrorMessages } from "../constants/error-messages.js";
 
 type Messages = typeof ErrorMessages.SCALE_RECIPE;
 type Reason = keyof Messages;
 type Facts<R extends Reason> = Parameters<Messages[R]>[0];
+type Errors = (ExtensionError<Messages> | ValueError)[];
 
 interface Reader {
-    report: <R extends Reason>(path: JsonPath, reason: R, facts: Facts<R>) => void;
+    report: <R extends Reason>(path: JsonPath, reason: R, data: Facts<R>) => void;
     read: <T extends TokenType>(
         type: T,
         raw: unknown,
@@ -16,12 +23,13 @@ interface Reader {
     ) => ValueByType[T] | undefined;
 }
 
-export function readScaleRecipe(raw: unknown): ParseResult<ScaleExtension> {
-    const errors: ValueError[] = [];
+export function readScaleRecipe(
+    raw: unknown,
+): { ok: true; value: ScaleExtension } | { ok: false; errors: Errors } {
+    const errors: Errors = [];
     const reader: Reader = {
-        report: (path, reason, facts) => {
-            const message = ErrorMessages.SCALE_RECIPE[reason] as (facts: unknown) => string;
-            errors.push({ kind: "invalid-value", path, message: message(facts), detail: reason });
+        report: (path, reason, data) => {
+            errors.push({ path, reason, ...(data !== undefined && { data }) } as Errors[number]);
         },
         read: (type, value, path) => {
             const result = parseValue(type, value, path, { references: false });

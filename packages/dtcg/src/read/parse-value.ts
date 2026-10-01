@@ -1,5 +1,4 @@
 import type { Node } from "jsonc-parser";
-import { fixTitles } from "../error-messages.js";
 import type {
     Diagnostic,
     Parse,
@@ -8,9 +7,7 @@ import type {
     UnresolvedValueByType,
     ValueError,
 } from "../index.js";
-import { type ValueErrorCode, valueErrorMessages } from "../values/value-errors.js";
-import { diagnostic } from "./diagnostics.js";
-import { hexAsObject } from "./hex-fix.js";
+import { valueDiagnostic } from "./value-diagnostic.js";
 import { parsers } from "../values/parsers.js";
 import { deepestNode, spanOf } from "./json.js";
 import type { MergedToken } from "./merge.js";
@@ -29,7 +26,7 @@ export function createValueReader(diagnostics: Diagnostic[]): ValueReader {
         const parse: Parse<UnresolvedValueByType[T]> = parsers[type];
         const result = parse(token.authored, ["$value"]);
         if (!result.ok) {
-            for (const error of result.errors) diagnostics.push(toDiagnostic(token, type, error));
+            for (const error of result.errors) diagnostics.push(toDiagnostic(token, error));
         }
         return result;
     };
@@ -57,42 +54,15 @@ export function readReplaced<T extends TokenType>(
     const result = parse(raw, ["$value"]);
     if (!result.ok) {
         for (const error of result.errors) {
-            diagnostics.push({ ...toDiagnostic(token, type, error), permutation });
+            diagnostics.push({ ...toDiagnostic(token, error), permutation });
         }
     }
     return result;
 }
 
-function toDiagnostic(token: MergedToken, type: TokenType, error: ValueError): Diagnostic {
+function toDiagnostic(token: MergedToken, error: ValueError): Diagnostic {
     const { json, value, path } = token;
     const node = deepestNode(value, error.path.slice(1), json.hidden);
     const at = spanOf(json.path, json.lineStarts, node.offset, node.length);
-
-    if (error.detail === "hex-string" && typeof node.value === "string") {
-        const { offset, length } = node;
-        return diagnostic(
-            "hex-string-color",
-            { value: node.value },
-            {
-                at,
-                path,
-                fixes: [
-                    {
-                        title: fixTitles.hexToObject,
-                        safe: true,
-                        edits: [{ file: json.path, offset, length, text: hexAsObject(node.value) }],
-                    },
-                ],
-            },
-        );
-    }
-    return diagnostic(
-        "invalid-value",
-        { type, at: error.path, ...(isValueErrorCode(error.detail) && { reason: error.detail }) },
-        { at, path },
-    );
-}
-
-function isValueErrorCode(detail: string | undefined): detail is ValueErrorCode {
-    return detail !== undefined && Object.hasOwn(valueErrorMessages, detail);
+    return valueDiagnostic(error.detail, error.path, node, json.path, { at, path });
 }

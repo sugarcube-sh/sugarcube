@@ -84,13 +84,20 @@ describe("parseGradient", () => {
 
     describe("refuses", () => {
         it("an empty list", () => {
-            expect(details([])).toStrictEqual([{ path: ["$value"], detail: "no-gradient-stops" }]);
+            expect(details([])).toStrictEqual([
+                { path: ["$value"], detail: { type: "gradient", reason: "no-gradient-stops" } },
+            ]);
         });
 
         it.for([{ color: red, position: 0 }, "linear-gradient(blue, red)", null])(
             "%j, which is not a list of stops, since spec 9.7 requires a list even for one stop",
             (raw) => {
-                expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+                expect(details(raw)).toStrictEqual([
+                    {
+                        path: ["$value"],
+                        detail: { type: "gradient", reason: "wrong-shape", value: raw },
+                    },
+                ]);
             },
         );
 
@@ -98,19 +105,28 @@ describe("parseGradient", () => {
             const stop: Record<string, unknown> = { color: red, position: 0 };
             delete stop[part];
             expect(details([stop])).toStrictEqual([
-                { path: ["$value", 0, part], detail: "missing-property" },
+                {
+                    path: ["$value", 0, part],
+                    detail: { type: "gradient", reason: "missing-property", property: part },
+                },
             ]);
         });
 
         it("a position that is not a number", () => {
             expect(details([{ color: red, position: "50%" }])).toStrictEqual([
-                { path: ["$value", 0, "position"], detail: "wrong-shape" },
+                {
+                    path: ["$value", 0, "position"],
+                    detail: { type: "number", reason: "not-a-number", value: "50%" },
+                },
             ]);
         });
 
         it("a part the spec does not define", () => {
             expect(details([{ color: red, position: 0, midpoint: 0.5 }])).toStrictEqual([
-                { path: ["$value", 0, "midpoint"], detail: "unknown-property" },
+                {
+                    path: ["$value", 0, "midpoint"],
+                    detail: { type: "gradient", reason: "unknown-property", property: "midpoint" },
+                },
             ]);
         });
     });

@@ -1,4 +1,5 @@
-import type { ValueErrorCode } from "./values/value-errors.js";
+import type { StandardSchemaV1 } from "./standard-schema.js";
+import type { ValueErrorDetail } from "./values/value-errors.js";
 
 /** A color space defined by the DTCG Color module. */
 export type ColorSpace =
@@ -521,11 +522,9 @@ export interface DiagnosticDetailByKind {
     "unknown-type": { type: string };
     /** A value does not fit its type. */
     "invalid-value": {
-        type: TokenType;
+        /** Where in the token or group, such as `["$value", "unit"]`. */
         at: JsonPath;
-        /** Why, as the parser named it: see {@link ValueError.detail}. */
-        reason?: ValueErrorCode;
-    };
+    } & ValueErrorDetail;
     /** A color written as a hex string, which the 2025.10 Color module no longer allows. */
     "hex-string-color": { value: string };
     /** An `$extensions` entry fails a registered check, such as a {@link Generator}'s. */
@@ -534,8 +533,10 @@ export interface DiagnosticDetailByKind {
         key: string;
         /** Where in the token or group, such as `["$extensions", "com.example", "steps"]`. */
         at: JsonPath;
-        /** Why, as the check named it: see {@link ValueError.detail}. */
+        /** Why, as the check named it. A Standard Schema's issues have none. */
         reason?: string;
+        /** The facts the check's message is worded from. */
+        data?: unknown;
     };
     /** A reference points at nothing: no token, or for `$extends`, no group. */
     "missing-reference": {
@@ -724,11 +725,7 @@ export interface Document {
     diagnostics: Diagnostic[];
 }
 
-/**
- * Why a value could not be read, as a stable name to switch on, such as `"unit-not-allowed"`. An
- * {@link ExtensionValidator} may use names of its own.
- */
-export type { ValueErrorCode } from "./values/value-errors.js";
+export type { ValueErrorCode, ValueErrorDetail, ValueErrorFacts } from "./values/value-errors.js";
 
 /** Why a single value could not be read. */
 export interface ValueError {
@@ -736,8 +733,8 @@ export interface ValueError {
     /** Where in the value the problem is, such as `["color"]` inside a shadow. */
     path: JsonPath;
     message: string;
-    /** Why, as a stable name, so a tool can tell the cases apart without parsing `message`. */
-    detail?: ValueErrorCode | (string & {});
+    /** Why, and the facts the message is worded from, so a tool can word it itself. */
+    detail: ValueErrorDetail;
 }
 
 /** The outcome of reading one value. */
@@ -746,12 +743,46 @@ export type ParseResult<V> = { ok: true; value: V } | { ok: false; errors: Value
 /** Reads one raw value into its shape, or explains why it cannot. */
 export type Parse<V> = (raw: unknown, at: JsonPath) => ParseResult<V>;
 
-/** A check for your own `$extensions` key. The data is kept either way; this only adds errors. */
+export type { StandardSchemaV1, StandardTypedV1 } from "./standard-schema.js";
+
+/**
+ * A check for your own `$extensions` key, on the tokens and groups it applies to. The data is kept
+ * either way; this only adds errors, each reported as `extension-invalid`.
+ *
+ * Give it a `schema` from any library that implements Standard Schema, such as Zod, Valibot or
+ * ArkType: each issue is reported with the library's message. Or give it `validate` and
+ * `messages`, to report problems with reasons and facts that a tool can word itself. With both, the
+ * schema is checked first, and `validate` only sees an extension that passes it.
+ *
+ * @example
+ * const fluid = defineExtensionValidator({
+ *   key: "com.example",
+ *   appliesTo: ["dimension"],
+ *   schema: z.object({ fluid: z.boolean() }),
+ * });
+ */
 export interface ExtensionValidator {
     /** The vendor namespace, such as `"com.example"`. */
     key: string;
+    /** The token types it checks, and `"group"` for groups. */
     appliesTo: (TokenType | "group")[];
-    validate: (raw: unknown, at: JsonPath) => ValueError[];
+    /** A schema the extension must pass. It must validate synchronously. */
+    schema?: StandardSchemaV1;
+    /** The wording for each reason `validate` reports. */
+    messages?: ExtensionMessages;
+    /**
+     * Why the extension is not valid, if it is not. An error's `path` starts at the extension. An
+     * {@link ExtensionError} is worded from `messages`; a {@link ValueError}, from reading a value in
+     * the extension with `parseValue`, is reported as `invalid-value`.
+     */
+    validate?(
+        on: {
+            path: string;
+            /** The token's type, or `"group"`. */
+            type: TokenType | "group";
+        },
+        extension: unknown,
+    ): (ExtensionError | ValueError)[];
 }
 
 /** A token a generator makes, written as it would be in a file, with its name in the group. */
@@ -764,6 +795,43 @@ export interface GeneratedToken {
     $description?: string;
     $extensions?: Record<string, unknown>;
 }
+
+/**
+ * The messages for an extension's own reasons, one per reason, each worded from that reason's
+ * facts. `dtcg` words a {@link Diagnostic} of kind `extension-invalid` from it, as it words its own
+ * kinds from its own table, in the same style: plain words, a lowercase start, no full stop, no
+ * location.
+ *
+ * @example
+ * {
+ *   "ratio-not-above-one": ({ ratio }: { ratio: number }) =>
+ *     `a ratio of ${ratio} makes a flat or shrinking scale: it must be more than 1`,
+ *   "no-multipliers": () => "`multipliers` must name at least one step",
+ * }
+ */
+export type ExtensionMessages = Record<string, (data: any) => string>;
+
+/**
+ * Why an extension is not valid: where in it, a reason from its {@link ExtensionMessages}, and the
+ * facts that reason is worded from. It carries no sentence: `dtcg` words it from the messages.
+ *
+ * @example
+ * { path: ["ratio", "min"], reason: "ratio-not-above-one", data: { ratio: 1 } }
+ */
+export type ExtensionError<M extends ExtensionMessages = ExtensionMessages> = string extends keyof M
+    ? {
+          /** Where in the extension, such as `["ratio", "min"]`. */
+          path: JsonPath;
+          reason: string;
+          data?: unknown;
+      }
+    : {
+          [R in keyof M & string]: {
+              /** Where in the extension, such as `["ratio", "min"]`. */
+              path: JsonPath;
+              reason: R;
+          } & (Parameters<M[R]> extends [] ? { data?: undefined } : { data: Parameters<M[R]>[0] });
+      }[keyof M & string];
 
 /**
  * Makes tokens from an extension on a group, such as a scale recipe. The extension owns every token
@@ -781,23 +849,37 @@ export interface Generator {
      */
     extension: [string, ...string[]];
     /**
+     * A schema the extension must pass before `generate` sees it, from any library that implements
+     * Standard Schema. Each issue is reported as `extension-invalid` with the library's message, and
+     * `generate` is not called. It must validate synchronously.
+     */
+    schema?: StandardSchemaV1;
+    /** The wording for each reason `generate` reports. */
+    messages?: ExtensionMessages;
+    /**
      * The tokens an extension makes, in the order to list them, or why the extension is not valid.
      * Tokens no file writes are listed at the end of the group. An error's `path` starts at the
-     * extension, and each is reported as `extension-invalid`. A group whose extension is not valid
-     * gets no tokens added. The extension is plain JSON, so whole-number keys inside it come first,
-     * in numeric order, whatever order the file writes them in.
+     * extension. An {@link ExtensionError} is reported as `extension-invalid`, worded from
+     * `messages`; a {@link ValueError}, from reading a value in the extension with `parseValue`, is
+     * reported as `invalid-value`, as it would be in a token. With a `schema`, the extension is the
+     * schema's output. A group whose extension is not valid gets no tokens added. The extension is
+     * plain JSON, so whole-number keys inside it come first, in numeric order, whatever order the
+     * file writes them in.
      */
-    generate: (
+    generate(
         group: {
             path: string;
             /** The type declared on the group, if any. */
             type?: TokenType;
         },
         extension: unknown,
-    ) => ParseResult<GeneratedToken[]>;
+    ):
+        | { ok: true; value: GeneratedToken[] }
+        | { ok: false; errors: (ExtensionError | ValueError)[] };
 }
 
 export { defineGenerator } from "./read/generate.js";
+export { defineExtensionValidator } from "./read/validate-extensions.js";
 
 export interface ReadOptions {
     /**
@@ -821,7 +903,7 @@ export interface ReadOptions {
      * @default 32
      */
     permutationLimit?: number;
-    /** Checks for your own `$extensions` keys. */
+    /** Checks for your own `$extensions` keys, run in each permutation once types are known. */
     extensionValidators?: ExtensionValidator[];
     /**
      * Generators that add tokens from extensions on groups, such as recipes. Run in order, in

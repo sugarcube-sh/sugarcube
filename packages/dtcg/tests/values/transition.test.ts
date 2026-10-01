@@ -38,7 +38,12 @@ describe("parseTransition", () => {
 
     describe("refuses", () => {
         it.for(["200ms ease-in", null, [emphasis]])("%j, which is not a transition", (raw) => {
-            expect(details(raw)).toStrictEqual([{ path: ["$value"], detail: "wrong-shape" }]);
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value"],
+                    detail: { type: "transition", reason: "wrong-shape", value: raw },
+                },
+            ]);
         });
 
         it.for(["duration", "delay", "timingFunction"])(
@@ -47,14 +52,24 @@ describe("parseTransition", () => {
                 const raw: Record<string, unknown> = { ...emphasis };
                 delete raw[part];
                 expect(details(raw)).toStrictEqual([
-                    { path: ["$value", part], detail: "missing-property" },
+                    {
+                        path: ["$value", part],
+                        detail: { type: "transition", reason: "missing-property", property: part },
+                    },
                 ]);
             },
         );
 
         it("a part the spec does not define", () => {
             expect(details({ ...emphasis, property: "opacity" })).toStrictEqual([
-                { path: ["$value", "property"], detail: "unknown-property" },
+                {
+                    path: ["$value", "property"],
+                    detail: {
+                        type: "transition",
+                        reason: "unknown-property",
+                        property: "property",
+                    },
+                },
             ]);
         });
 
@@ -66,8 +81,19 @@ describe("parseTransition", () => {
                     timingFunction: [2, 0, 1, 1],
                 }),
             ).toStrictEqual([
-                { path: ["$value", "duration"], detail: "string-with-unit" },
-                { path: ["$value", "timingFunction", 0], detail: "x-out-of-range" },
+                {
+                    path: ["$value", "duration"],
+                    detail: { type: "duration", reason: "string-with-unit", value: "200ms" },
+                },
+                {
+                    path: ["$value", "timingFunction", 0],
+                    detail: {
+                        type: "cubicBezier",
+                        reason: "x-out-of-range",
+                        value: 2,
+                        coordinate: "x1",
+                    },
+                },
             ]);
         });
     });

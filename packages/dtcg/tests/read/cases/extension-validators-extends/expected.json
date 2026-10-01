@@ -1,0 +1,19 @@
+{
+  "entry": "tokens.json",
+  "spec": "an extension that is not valid is reported once, where it is written, as a value that cannot be read is, though the group and token that extend it carry it too",
+  "options": { "extensionValidators": ["fluid"] },
+  "diagnostics": [
+    {
+      "kind": "extension-invalid",
+      "detail": { "key": "com.example", "at": ["$extensions", "com.example", "fluid"] },
+      "at": { "file": "tokens.json", "text": "\"yes\"" },
+      "path": "base"
+    },
+    {
+      "kind": "extension-invalid",
+      "detail": { "key": "com.example", "at": ["$extensions", "com.example", "fluid"] },
+      "at": { "file": "tokens.json", "text": "\"no\"" },
+      "path": "base.sm"
+    }
+  ]
+}

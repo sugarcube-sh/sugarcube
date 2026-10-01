@@ -29,21 +29,28 @@ export function readComposite<O extends object>(
     if (reference) return { ok: true, value: reference };
 
     if (!isPlainObject(raw)) {
-        return { ok: false, errors: [valueError(at, "wrong-shape", type)] };
+        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
     }
 
     const errors: ValueError[] = [];
     for (const name of Object.keys(raw)) {
         if (!Object.hasOwn(parts, name)) {
-            errors.push(valueError([...at, name], "unknown-property", name, type));
+            errors.push(
+                valueError([...at, name], { type, reason: "unknown-property", property: name }),
+            );
         }
     }
 
     const value: Record<string, unknown> = {};
     for (const [name, read] of Object.entries(parts) as [string, Parse<unknown>][]) {
         if (!(name in raw)) {
-            if (Object.hasOwn(defaults, name)) value[name] = defaults[name as keyof O];
-            else errors.push(valueError([...at, name], "missing-property", name, type));
+            if (Object.hasOwn(defaults, name)) {
+                value[name] = defaults[name as keyof O];
+            } else {
+                errors.push(
+                    valueError([...at, name], { type, reason: "missing-property", property: name }),
+                );
+            }
             continue;
         }
 

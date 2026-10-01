@@ -16,9 +16,15 @@ export function diagnostic<K extends DiagnosticKind>(
         severity,
         message: message(detail),
         ...extra,
-        docs: `https://sugarcube.sh/errors/${kind}`,
+        docs: docsFor(kind, detail),
         detail,
     } as Diagnostic;
+}
+
+function docsFor<K extends DiagnosticKind>(kind: K, detail: DiagnosticDetailByKind[K]): string {
+    const page = `https://sugarcube.sh/errors/${kind}`;
+    if (kind !== "invalid-value") return page;
+    return `${page}#${(detail as DiagnosticDetailByKind["invalid-value"]).reason}`;
 }
 
 export function collapse(diagnostics: Diagnostic[], permutations: number): Diagnostic[] {

@@ -20,7 +20,8 @@
       "detail": {
         "key": "com.example",
         "at": ["$extensions", "com.example", "steps"],
-        "reason": "not-a-positive-integer"
+        "reason": "not-a-count",
+        "data": { "steps": "three" }
       },
       "at": {
         "file": "tokens.json",

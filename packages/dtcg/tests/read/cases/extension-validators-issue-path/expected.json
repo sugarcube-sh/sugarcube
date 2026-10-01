@@ -1,0 +1,13 @@
+{
+  "entry": "tokens.json",
+  "spec": "a schema issue's path keeps each segment, written as a key or as { key }, up to the first that JSON cannot hold, such as a symbol",
+  "options": { "extensionValidators": ["symbolPath"] },
+  "diagnostics": [
+    {
+      "kind": "extension-invalid",
+      "detail": { "key": "com.example", "at": ["$extensions", "com.example", "a", 0] },
+      "at": { "file": "tokens.json", "text": "{ \"c\": 1 }" },
+      "path": "ratio"
+    }
+  ]
+}
