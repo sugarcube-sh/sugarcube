@@ -254,9 +254,6 @@ importers:
 
   packages/core:
     dependencies:
-      '@sugarcube-sh/dtcg':
-        specifier: workspace:*
-        version: link:../dtcg
       jiti:
         specifier: ^2.7.0
         version: 2.7.0
@@ -270,6 +267,9 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
     devDependencies:
+      '@sugarcube-sh/dtcg':
+        specifier: workspace:*
+        version: link:../dtcg
       pkgroll:
         specifier: ^2.28.1
         version: 2.28.1(typescript@5.9.3)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
