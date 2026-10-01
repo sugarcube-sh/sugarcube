@@ -3,8 +3,8 @@
   "spec": "Resolver 6.3 and contract 02, rule 4: references are followed within each permutation, so the same reference gives each permutation its own value, and the graph has one edge per reference per permutation. A reference broken in one permutation is reported for that permutation",
   "permutations": [
     {
-      "tokens": {
-        "color.brand": {
+      "tokens": [
+        {
           "path": "color.brand",
           "resolved": {
             "colorSpace": "srgb",
@@ -12,7 +12,7 @@
             "alpha": 1
           }
         },
-        "color.danger": {
+        {
           "path": "color.danger",
           "aliasOf": "color.brand",
           "resolved": {
@@ -21,7 +21,7 @@
             "alpha": 1
           }
         },
-        "color.accent": {
+        {
           "path": "color.accent",
           "aliasOf": "color.brand",
           "resolved": {
@@ -30,11 +30,11 @@
             "alpha": 1
           }
         }
-      }
+      ]
     },
     {
-      "tokens": {
-        "color.brand": {
+      "tokens": [
+        {
           "path": "color.brand",
           "resolved": {
             "colorSpace": "oklch",
@@ -42,7 +42,7 @@
             "alpha": 1
           }
         },
-        "color.danger": {
+        {
           "path": "color.danger",
           "aliasOf": "color.brand",
           "resolved": {
@@ -51,7 +51,7 @@
             "alpha": 1
           }
         },
-        "color.accent": {
+        {
           "path": "color.accent",
           "type": "color",
           "value": {
@@ -59,7 +59,7 @@
           },
           "resolved": null
         }
-      }
+      ]
     }
   ],
   "graph": [

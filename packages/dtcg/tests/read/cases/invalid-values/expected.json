@@ -3,8 +3,8 @@
   "spec": "Format 8 and 9: a value that does not fit its type makes the token invalid (8: an appropriate error SHOULD be displayed). Each problem is its own diagnostic, at the part it concerns, or at the object where a missing part belongs, with the parser's code as reason. The token stays, without a value",
   "permutations": [
     {
-      "tokens": {
-        "red": {
+      "tokens": [
+        {
           "path": "red",
           "type": "color",
           "invalid": true,
@@ -16,19 +16,19 @@
             "typeDeclared": true
           }
         },
-        "space": {
+        {
           "path": "space",
           "invalid": true
         },
-        "text": {
+        {
           "path": "text",
           "invalid": true
         },
-        "layers": {
+        {
           "path": "layers",
           "invalid": true
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

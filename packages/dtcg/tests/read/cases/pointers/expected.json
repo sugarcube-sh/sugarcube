@@ -3,23 +3,23 @@
   "spec": "Format 7.1.2, 7.3 (Examples 35 to 37) and 7.4.3: a JSON Pointer reads any part of the document as written, so it can stand for part of a value. A pointer to a token stands for its value (7.4.2), and a typeless one takes its type. As written means a single shadow has no [0], and a pointer cannot see through a reference to what it resolves to: both reach nothing. What a pointer reaches is checked against the place it stands in. Pointers that loop MUST be reported (6.7.4)",
   "permutations": [
     {
-      "tokens": {
-        "base.blue": {
+      "tokens": [
+        {
           "path": "base.blue"
         },
-        "base.spacing": {
+        {
           "path": "base.spacing"
         },
-        "base.text": {
+        {
           "path": "base.text"
         },
-        "base.card": {
+        {
           "path": "base.card"
         },
-        "base.alias": {
+        {
           "path": "base.alias"
         },
-        "semantic.primary": {
+        {
           "path": "semantic.primary",
           "value": {
             "colorSpace": "srgb",
@@ -40,14 +40,14 @@
             "alpha": 1
           }
         },
-        "semantic.small": {
+        {
           "path": "semantic.small",
           "resolved": {
             "value": 16,
             "unit": "rem"
           }
         },
-        "semantic.h1": {
+        {
           "path": "semantic.h1",
           "resolved": {
             "fontFamily": ["Helvetica", "Arial", "sans-serif"],
@@ -63,7 +63,7 @@
             "lineHeight": 1.5
           }
         },
-        "semantic.whole": {
+        {
           "path": "semantic.whole",
           "type": "dimension",
           "aliasOf": "base.spacing",
@@ -72,7 +72,7 @@
             "unit": "px"
           }
         },
-        "semantic.shadow-color": {
+        {
           "path": "semantic.shadow-color",
           "resolved": {
             "colorSpace": "srgb",
@@ -80,32 +80,32 @@
             "alpha": 1
           }
         },
-        "semantic.shadow-listed": {
+        {
           "path": "semantic.shadow-listed",
           "type": "color",
           "resolved": null
         },
-        "semantic.through-alias": {
+        {
           "path": "semantic.through-alias",
           "type": "number",
           "resolved": null
         },
-        "semantic.wrong-kind": {
+        {
           "path": "semantic.wrong-kind",
           "type": "color",
           "resolved": null
         },
-        "loop.a": {
+        {
           "path": "loop.a",
           "type": "number",
           "resolved": null
         },
-        "loop.b": {
+        {
           "path": "loop.b",
           "type": "number",
           "resolved": null
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

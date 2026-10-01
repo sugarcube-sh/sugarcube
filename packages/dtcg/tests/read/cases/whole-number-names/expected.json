@@ -1,0 +1,21 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 5.1.1: a name may be a whole number. Tokens and groups keep the order the file writes them, whole-number names at the top level included",
+  "permutations": [
+    {
+      "tokens": [
+        { "path": "px" },
+        { "path": "2" },
+        { "path": "-1" },
+        { "path": "1" },
+        { "path": "space.lg" },
+        { "path": "space.10" },
+        { "path": "space.2" },
+        { "path": "900.ink" },
+        { "path": "50.ink" }
+      ],
+      "groups": [{ "path": "space" }, { "path": "900" }, { "path": "50" }]
+    }
+  ],
+  "diagnostics": []
+}

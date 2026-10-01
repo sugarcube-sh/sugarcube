@@ -20,7 +20,7 @@ export interface NormalisedPermutation {
     sources: Source[];
     merged: Merged;
     tokens: Map<string, NormalisedToken>;
-    groups: Record<string, Group>;
+    groups: Group[];
 }
 
 // Walks each source once, then merges each permutation's sources in resolution order
@@ -61,9 +61,7 @@ export function normalisePermutations(
             }
             tokens.set(token.path, { token, type, read: readValue(token, type) });
         }
-        const groups = Object.fromEntries(
-            [...merged.groups.values()].map((group) => [group.path, toGroup(group)]),
-        );
+        const groups = [...merged.groups.values()].map(toGroup);
         const publicSources = sources.map(({ source }) => source);
         return { input, label, sources: publicSources, merged, tokens, groups };
     });

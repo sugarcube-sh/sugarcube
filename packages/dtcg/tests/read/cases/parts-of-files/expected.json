@@ -3,8 +3,8 @@
   "spec": "Resolver 4.2 (Example 10): a source that is part of a file has paths from that part. Resolver 4.2.2: keys beside a file's $ref replace the file's top-level keys of the same name, and are tokens written in the resolver. RFC 8259 4: of a key written twice, the last is used",
   "permutations": [
     {
-      "tokens": {
-        "brand": {
+      "tokens": [
+        {
           "path": "brand",
           "type": "color",
           "source": {
@@ -15,7 +15,7 @@
             }
           }
         },
-        "size.sm": {
+        {
           "path": "size.sm",
           "type": "number",
           "source": {
@@ -31,7 +31,7 @@
             "typeDeclared": false
           }
         },
-        "space.md": {
+        {
           "path": "space.md",
           "type": "number",
           "source": {
@@ -42,9 +42,9 @@
             }
           }
         }
-      },
-      "groups": {
-        "size": {
+      ],
+      "groups": [
+        {
           "path": "size",
           "declaredIn": [
             {
@@ -53,7 +53,7 @@
             }
           ]
         },
-        "space": {
+        {
           "path": "space",
           "declaredIn": [
             {
@@ -62,7 +62,7 @@
             }
           ]
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

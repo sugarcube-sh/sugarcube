@@ -3,11 +3,11 @@
   "spec": "Format 7.4.5 and Resolver 6.3: a reference to nothing, to a group (6.2), or to a token of the wrong type MUST be reported; a missing token is reported once, naming every token that uses it, with a fix to confirm when a token has a similar name. A reference in a shadow list stands for one layer (9.1, 9.6): a target of one layer gives it, a target of several is reported. A typeless reference takes its target's type, so color.wrong is a dimension (5.2.2); one that cannot be followed is shown with its group's type, and one with no group type is left out. Each problem leaves its token without a resolved value",
   "permutations": [
     {
-      "tokens": {
-        "color.brand": {
+      "tokens": [
+        {
           "path": "color.brand"
         },
-        "color.danger": {
+        {
           "path": "color.danger",
           "type": "color",
           "value": {
@@ -15,17 +15,17 @@
           },
           "resolved": null
         },
-        "color.warning": {
+        {
           "path": "color.warning",
           "type": "color",
           "resolved": null
         },
-        "color.group-ref": {
+        {
           "path": "color.group-ref",
           "type": "color",
           "resolved": null
         },
-        "color.wrong": {
+        {
           "path": "color.wrong",
           "type": "dimension",
           "aliasOf": "space.sm",
@@ -34,21 +34,26 @@
             "unit": "px"
           }
         },
-        "space.sm": {
+        {
+          "path": "color.typed-wrong",
+          "type": "color",
+          "resolved": null
+        },
+        {
           "path": "space.sm"
         },
-        "edge": {
+        {
           "path": "edge",
           "type": "border",
           "resolved": null
         },
-        "shadow.one": {
+        {
           "path": "shadow.one"
         },
-        "shadow.two": {
+        {
           "path": "shadow.two"
         },
-        "shadow.uses-one": {
+        {
           "path": "shadow.uses-one",
           "resolved": [
             {
@@ -101,17 +106,12 @@
             }
           ]
         },
-        "shadow.uses-two": {
+        {
           "path": "shadow.uses-two",
           "type": "shadow",
           "resolved": null
-        },
-        "color.typed-wrong": {
-          "path": "color.typed-wrong",
-          "type": "color",
-          "resolved": null
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

@@ -432,10 +432,13 @@ export interface Permutation {
     label: string;
     /** Where the tokens come from, in the order they apply: a later source overrides an earlier one. */
     sources: Source[];
-    /** Every token, keyed by path, in the order the files list them. Invalid tokens are included. */
-    tokens: Record<string, Token>;
-    /** Every group, keyed by path, in the order the files list them. */
-    groups: Record<string, Group>;
+    /**
+     * Every token, in the order the files write them, invalid ones included. Tokens a
+     * {@link Generator} adds come at the end of their group. To find one by path, use {@link token}.
+     */
+    tokens: Token[];
+    /** Every group, in the order the files write them. To find one by path, use {@link group}. */
+    groups: Group[];
 }
 
 /** One reference from one token to another, in one permutation. */

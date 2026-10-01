@@ -3,28 +3,28 @@
   "spec": "Color 4 (2025.10) and P-010: a color is an object, so a hex string is an error, as a token's value or as a part. Each comes with a safe fix writing the sRGB object with the original kept as hex: eight digits give alpha, three are expanded. A problem in a file every permutation reads is reported once; dark replaces color.brand, so only light's is invalid",
   "permutations": [
     {
-      "tokens": {
-        "color.brand": {
+      "tokens": [
+        {
           "path": "color.brand",
           "invalid": true
         },
-        "color.scrim": {
+        {
           "path": "color.scrim",
           "invalid": true
         },
-        "color.white": {
+        {
           "path": "color.white",
           "invalid": true
         },
-        "edge": {
+        {
           "path": "edge",
           "invalid": true
         }
-      }
+      ]
     },
     {
-      "tokens": {
-        "color.brand": {
+      "tokens": [
+        {
           "path": "color.brand",
           "value": {
             "colorSpace": "srgb",
@@ -32,19 +32,19 @@
             "alpha": 1
           }
         },
-        "color.scrim": {
+        {
           "path": "color.scrim",
           "invalid": true
         },
-        "color.white": {
+        {
           "path": "color.white",
           "invalid": true
         },
-        "edge": {
+        {
           "path": "edge",
           "invalid": true
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

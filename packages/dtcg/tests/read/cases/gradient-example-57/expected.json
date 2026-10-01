@@ -3,17 +3,17 @@
   "spec": "Format 9.7 (Example 57): a gradient stop's color and position may be references, and a reference in the list to a gradient token holding one stop stands for that stop (9.1: references in a list resolve to single values and do not flatten)",
   "permutations": [
     {
-      "tokens": {
-        "brand-primary": {
+      "tokens": [
+        {
           "path": "brand-primary"
         },
-        "brand.secondary": {
+        {
           "path": "brand.secondary"
         },
-        "position-end": {
+        {
           "path": "position-end"
         },
-        "brand-in-the-middle": {
+        {
           "path": "brand-in-the-middle",
           "resolved": [
             {
@@ -42,7 +42,7 @@
             }
           ]
         },
-        "gradient-with-references": {
+        {
           "path": "gradient-with-references",
           "resolved": [
             {
@@ -71,13 +71,13 @@
             }
           ]
         },
-        "gradient.start-stop": {
+        {
           "path": "gradient.start-stop"
         },
-        "gradient.end-stop": {
+        {
           "path": "gradient.end-stop"
         }
-      }
+      ]
     }
   ],
   "diagnostics": []

@@ -6,8 +6,8 @@
   },
   "permutations": [
     {
-      "tokens": {
-        "gap": {
+      "tokens": [
+        {
           "path": "gap",
           "resolved": {
             "value": 1,
@@ -15,7 +15,7 @@
           },
           "aliasOf": "1"
         },
-        "2": {
+        {
           "path": "2",
           "type": "dimension",
           "resolved": {
@@ -34,13 +34,13 @@
           },
           "authored": null
         },
-        "1": {
+        {
           "path": "1",
           "generated": {
             "from": ""
           }
         }
-      }
+      ]
     }
   ],
   "diagnostics": []

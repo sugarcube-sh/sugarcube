@@ -3,21 +3,21 @@
   "spec": "Format 5.1: a name is any JSON string, including ones JavaScript objects treat specially, such as __proto__",
   "permutations": [
     {
-      "tokens": {
-        "__proto__": {
+      "tokens": [
+        {
           "path": "__proto__",
           "type": "number"
         },
-        "toString.__proto__": {
+        {
           "path": "toString.__proto__",
           "type": "number"
         }
-      },
-      "groups": {
-        "toString": {
+      ],
+      "groups": [
+        {
           "path": "toString"
         }
-      }
+      ]
     }
   ],
   "diagnostics": []

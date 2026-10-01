@@ -3,21 +3,21 @@
   "spec": "Format 5.2.2 and 8: $type is case-sensitive and one of the thirteen types the specification defines; custom types are not DTCG. A near miss comes with a fix to confirm. A group's unknown type is reported once, and its tokens are left out without another diagnostic; a nested group with a type of its own is unaffected",
   "permutations": [
     {
-      "tokens": {
-        "odd.inner.b": {
+      "tokens": [
+        {
           "path": "odd.inner.b",
           "type": "number"
         }
-      },
-      "groups": {
-        "odd": {
+      ],
+      "groups": [
+        {
           "path": "odd"
         },
-        "odd.inner": {
+        {
           "path": "odd.inner",
           "type": "number"
         }
-      }
+      ]
     }
   ],
   "diagnostics": [

@@ -3,14 +3,14 @@
   "spec": "Format 6.4.1: a $ref to a group is $extends written as JSON Schema. 6.6.2 (Example 21): a $ref to a token stands for that token; 7.1.2 (Example 32): a $ref into a token's value stands for that part, typed by the $type beside it. A token with no $type is typed when references are followed. A $ref reaches only this document (RFC 6901 as the Format module uses it). Resolved, a $ref to a token stands for that token's value, and one into a value for that part",
   "permutations": [
     {
-      "tokens": {
-        "button.background": {
+      "tokens": [
+        {
           "path": "button.background"
         },
-        "button.text": {
+        {
           "path": "button.text"
         },
-        "button-primary.background": {
+        {
           "path": "button-primary.background",
           "type": "number",
           "authored": {
@@ -18,20 +18,20 @@
             "typeDeclared": false
           }
         },
-        "base": {
+        {
           "path": "base"
         },
-        "blue": {
+        {
           "path": "blue"
         },
-        "button-primary.text": {
+        {
           "path": "button-primary.text",
           "type": "number",
           "inherited": {
             "from": "button"
           }
         },
-        "alias": {
+        {
           "path": "alias",
           "type": "number",
           "description": "Same as base",
@@ -51,7 +51,7 @@
           "resolved": 4,
           "aliasOf": "base"
         },
-        "blue-red": {
+        {
           "path": "blue-red",
           "type": "number",
           "source": {
@@ -69,7 +69,7 @@
           },
           "resolved": 0.2
         },
-        "untyped": {
+        {
           "path": "untyped",
           "type": "number",
           "aliasOf": "base",
@@ -78,29 +78,29 @@
           },
           "resolved": 4
         },
-        "crowded": {
+        {
           "path": "crowded",
           "type": "number"
         }
-      },
-      "groups": {
-        "button": {
+      ],
+      "groups": [
+        {
           "path": "button"
         },
-        "button-primary": {
+        {
           "path": "button-primary",
           "type": "number"
         },
-        "nowhere": {
+        {
           "path": "nowhere"
         },
-        "elsewhere": {
+        {
           "path": "elsewhere"
         },
-        "wrong-json": {
+        {
           "path": "wrong-json"
         }
-      }
+      ]
     }
   ],
   "diagnostics": [
