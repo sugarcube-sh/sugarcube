@@ -3,6 +3,6 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["read/**/*", "values/**/*", "node/**/*", "../src/**/*"],
+  "include": ["read/**/*", "values/**/*", "node/**/*", "lookup/**/*", "../src/**/*"],
   "exclude": []
 }

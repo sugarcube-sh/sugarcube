@@ -357,7 +357,10 @@ export interface TokenBase<T extends TokenType> {
     description?: string;
     /** `true`, or a message explaining what to use instead. */
     deprecated?: boolean | string;
-    /** Vendor data from `$extensions`, passed through untouched. */
+    /**
+     * Vendor data from `$extensions`, passed through untouched. Plain JSON, so whole-number keys
+     * inside it come first, in numeric order, as in any JavaScript object.
+     */
     extensions?: Record<string, unknown>;
     /**
      * Where the token was read from: which of the permutation's {@link Permutation.sources | sources}
@@ -781,7 +784,8 @@ export interface Generator {
      * The tokens an extension makes, in the order to list them, or why the extension is not valid.
      * Tokens no file writes are listed at the end of the group. An error's `path` starts at the
      * extension, and each is reported as `extension-invalid`. A group whose extension is not valid
-     * gets no tokens added.
+     * gets no tokens added. The extension is plain JSON, so whole-number keys inside it come first,
+     * in numeric order, whatever order the file writes them in.
      */
     generate: (
         group: {
@@ -847,6 +851,7 @@ export { read, readFromMemory } from "./read/read.js";
 /** One token across every permutation. */
 export interface TokenView {
     path: string;
+    /** The type in the default permutation, or in the first permutation that has the token. */
     type: TokenType;
     /** The token in each permutation that has it, keyed by {@link Permutation.label | label}. */
     permutations: Record<string, Token>;
@@ -854,53 +859,9 @@ export interface TokenView {
     default?: Token;
 }
 
-/**
- * Every token, each with its value in every permutation.
- *
- * @example
- * byToken(doc)["color.brand"].permutations.dark?.resolved
- */
-export function byToken(doc: Document): Record<string, TokenView> {
-    throw new Error("not implemented yet");
-}
-
-/** The permutation in which every modifier is at its default, if there is one. */
-export function defaultPermutation(doc: Document): Permutation | undefined {
-    throw new Error("not implemented yet");
-}
-
-/** The permutation for an input. */
-export function permutation(doc: Document, input?: Input): Permutation | undefined {
-    throw new Error("not implemented yet");
-}
-
-/**
- * A token by path.
- * @param input Which permutation. Defaults to the default permutation.
- */
-export function token(doc: Document, path: string, input?: Input): Token | undefined {
-    throw new Error("not implemented yet");
-}
-
-/**
- * The group at a path.
- * @param input Which permutation. Defaults to the default permutation.
- */
-export function group(doc: Document, path: string, input?: Input): Group | undefined {
-    throw new Error("not implemented yet");
-}
-
-/**
- * The tokens in a group, and in its subgroups, in file order. The group's own `$root` token is
- * included; a sibling whose name merely starts the same way is not.
- * @param input Which permutation. Defaults to the default permutation.
- *
- * @example
- * tokensIn(doc, "space")   // space.xs, space.sm, … but not spacer.x
- */
-export function tokensIn(doc: Document, path: string, input?: Input): Token[] {
-    throw new Error("not implemented yet");
-}
+export { byToken } from "./lookup/by-token.js";
+export { defaultPermutation, permutation } from "./lookup/permutation.js";
+export { group, token, tokensIn } from "./lookup/token.js";
 
 /** A token as it is in each permutation, in order. */
 export function acrossPermutations(
