@@ -57,6 +57,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@sugarcube-sh/dtcg": "workspace:*",
     "jiti": "^2.7.0",
     "pathe": "^2.0.3",
     "tinyglobby": "^0.2.17",
