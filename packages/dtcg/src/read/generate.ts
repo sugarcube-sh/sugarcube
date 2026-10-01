@@ -9,6 +9,7 @@ import type {
 } from "../index.js";
 import { isPlainObject, readAlias, readPointer } from "../values/references.js";
 import { diagnostic } from "./diagnostics.js";
+import { valueDiagnostic } from "./value-diagnostic.js";
 import { type JsonFile, deepestNode, member, spanOf } from "./json.js";
 import type { Merged, MergedGroup, MergedToken } from "./merge.js";
 
@@ -177,7 +178,7 @@ function invalidExtension(
         path,
         permutation,
     };
-    if ("kind" in error) return diagnostic("invalid-value", { at, ...error.detail }, extra);
+    if ("kind" in error) return valueDiagnostic(error.detail, at, found, json.path, extra);
 
     const { reason, data } = error;
     const invalid = diagnostic(
@@ -185,6 +186,6 @@ function invalidExtension(
         { key: extensionPath[0], at, reason, ...(data !== undefined && { data }) },
         extra,
     );
-    const message = messages?.[reason];
-    return message ? { ...invalid, message: message(data) } : invalid;
+    if (!messages || !Object.hasOwn(messages, reason)) return invalid;
+    return { ...invalid, message: messages[reason]!(data) };
 }

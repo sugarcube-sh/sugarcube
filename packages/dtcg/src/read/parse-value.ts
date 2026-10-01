@@ -1,5 +1,4 @@
 import type { Node } from "jsonc-parser";
-import { fixTitles } from "../error-messages.js";
 import type {
     Diagnostic,
     Parse,
@@ -8,8 +7,7 @@ import type {
     UnresolvedValueByType,
     ValueError,
 } from "../index.js";
-import { diagnostic } from "./diagnostics.js";
-import { hexAsObject } from "./hex-fix.js";
+import { valueDiagnostic } from "./value-diagnostic.js";
 import { parsers } from "../values/parsers.js";
 import { deepestNode, spanOf } from "./json.js";
 import type { MergedToken } from "./merge.js";
@@ -66,24 +64,5 @@ function toDiagnostic(token: MergedToken, error: ValueError): Diagnostic {
     const { json, value, path } = token;
     const node = deepestNode(value, error.path.slice(1), json.hidden);
     const at = spanOf(json.path, json.lineStarts, node.offset, node.length);
-
-    if (error.detail.reason === "hex-string" && typeof node.value === "string") {
-        const { offset, length } = node;
-        return diagnostic(
-            "hex-string-color",
-            { value: node.value },
-            {
-                at,
-                path,
-                fixes: [
-                    {
-                        title: fixTitles.hexToObject,
-                        safe: true,
-                        edits: [{ file: json.path, offset, length, text: hexAsObject(node.value) }],
-                    },
-                ],
-            },
-        );
-    }
-    return diagnostic("invalid-value", { at: error.path, ...error.detail }, { at, path });
+    return valueDiagnostic(error.detail, error.path, node, json.path, { at, path });
 }

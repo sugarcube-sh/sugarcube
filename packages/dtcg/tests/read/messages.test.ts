@@ -291,6 +291,17 @@ describe("diagnostic messages from read", () => {
         ]);
     });
 
+    it("falls back for a reason named like a property every object has", () => {
+        const inherited: Generator = {
+            extension: ["com.example", "steps"],
+            messages: {},
+            generate: () => ({ ok: false, errors: [{ path: [], reason: "toString" }] }),
+        };
+        expect(diagnostics(inherited).map(({ message }) => message)).toStrictEqual([
+            "the `com.example` extension is not valid",
+        ]);
+    });
+
     it("links invalid-value to the section for its reason", () => {
         const text = JSON.stringify({ space: { $type: "dimension", $value: "16px" } });
         const doc = readFromMemory({ files: { "tokens.json": text } });

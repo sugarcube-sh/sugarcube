@@ -55,9 +55,17 @@ const generators = {
                 `\`count\` must be a number, not ${JSON.stringify(count)}`,
         },
         generate: (_group, ramp) => {
-            const { count, size } = ramp as { count?: unknown; size?: unknown };
+            const { count, size, color } = ramp as {
+                count?: unknown;
+                size?: unknown;
+                color?: unknown;
+            };
             if (size !== undefined) {
                 const parsed = parseValue("dimension", size, ["size"], { references: false });
+                if (!parsed.ok) return parsed;
+            }
+            if (color !== undefined) {
+                const parsed = parseValue("color", color, ["color"], { references: false });
                 if (!parsed.ok) return parsed;
             }
             return typeof count === "number"

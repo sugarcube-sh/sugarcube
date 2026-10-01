@@ -44,11 +44,13 @@ export function readComposite<O extends object>(
     const value: Record<string, unknown> = {};
     for (const [name, read] of Object.entries(parts) as [string, Parse<unknown>][]) {
         if (!(name in raw)) {
-            if (Object.hasOwn(defaults, name)) value[name] = defaults[name as keyof O];
-            else
+            if (Object.hasOwn(defaults, name)) {
+                value[name] = defaults[name as keyof O];
+            } else {
                 errors.push(
                     valueError([...at, name], { type, reason: "missing-property", property: name }),
                 );
+            }
             continue;
         }
 

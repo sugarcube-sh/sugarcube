@@ -8,10 +8,10 @@ const PROPERTIES = new Set(["value", "unit"]);
 
 /**
  * A number followed by a unit, such as `"16px"` or `"200ms"`: how earlier drafts of the spec wrote
- * dimensions and durations. It is always an error. Recognising one lets the error say so, and show
- * the object to write instead.
+ * dimensions and durations. It is always an error. Recognising one lets the error say so, and `read`
+ * offer the object as a fix.
  */
-const STRING_WITH_UNIT = /^(-?(?:\d+(?:\.\d*)?|\.\d+))([a-z%]+)$/i;
+export const STRING_WITH_UNIT = /^(-?(?:\d+(?:\.\d*)?|\.\d+))([a-z%]+)$/i;
 
 export function readMeasure<T extends MeasureType>(
     type: T,

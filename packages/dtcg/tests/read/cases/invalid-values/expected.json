@@ -106,7 +106,20 @@
         "file": "tokens.json",
         "text": "\"8px\""
       },
-      "path": "layers"
+      "path": "layers",
+      "fixes": [
+        {
+          "title": "write the dimension as an object",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"8px\"",
+              "replaceWith": "{ \"value\": 8, \"unit\": \"px\" }"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
