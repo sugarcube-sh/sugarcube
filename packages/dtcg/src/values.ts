@@ -23,6 +23,8 @@ export {
     strokeStyleKeywords,
 } from "./values/keywords.js";
 export { tokenTypes } from "./values/token-types.js";
+export { parseValue } from "./values/parse-value.js";
+export { isAlias, isPointer, readReference } from "./values/references.js";
 export { compositeParts } from "./values/composite-parts.js";
 
 /**

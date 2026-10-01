@@ -295,20 +295,7 @@ export function mapReferences<T extends TokenType>(
     throw new Error("not implemented yet");
 }
 
-/**
- * Whether a value is a reference to a whole token.
- *
- * @example
- * if (isAlias(token.value)) token.value.alias
- */
-export function isAlias(value: unknown): value is Alias {
-    throw new Error("not implemented yet");
-}
-
-/** Whether a value is a JSON Pointer reference. */
-export function isPointer(value: unknown): value is Pointer {
-    throw new Error("not implemented yet");
-}
+export { isAlias, isPointer } from "./values/references.js";
 
 /**
  * The value a reference reaches, with every reference inside it followed: the resolved value of
