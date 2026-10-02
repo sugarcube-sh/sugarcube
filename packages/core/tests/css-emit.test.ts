@@ -12,7 +12,7 @@ function cssFor(files: Record<string, unknown>, variables: Variables = {}) {
         Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
     );
     const doc = readFromMemory({ files: texts }, readOptions(config));
-    return emitCSS(doc, config)[0]?.css;
+    return emitCSS(doc, config).files[0]?.css;
 }
 
 const color = (value: unknown) => ({ $type: "color", $value: value });
@@ -76,6 +76,14 @@ describe("emitCSS", () => {
                 "",
             ].join("\n"),
         );
+    });
+
+    it("hands back what reading found", () => {
+        const config = fillDefaults({ variables: { path: "variables.css" } });
+        const files = { "tokens.json": JSON.stringify({ broken: color("#e11d4") }) };
+        const doc = readFromMemory({ files }, readOptions(config));
+        expect(emitCSS(doc, config).diagnostics).toStrictEqual(doc.diagnostics);
+        expect(doc.diagnostics).not.toStrictEqual([]);
     });
 
     it("leaves out a token whose value cannot be read, and writes the rest", () => {
