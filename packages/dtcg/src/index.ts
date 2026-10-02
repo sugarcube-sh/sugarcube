@@ -572,6 +572,11 @@ export interface DiagnosticDetailByKind {
     "type-mismatch": { ref: string; expected: TokenType; found: TokenType };
     /** A name starts or ends with a space: legal, but almost always a typo. */
     "whitespace-in-name": { name: string };
+    /**
+     * An object in a resolver has a key the resolver specification does not define for it, so it is
+     * ignored. Your own data belongs in `$extensions`.
+     */
+    "unknown-property": { property: string; owner: "resolver" | "set" | "modifier" };
     /** A reference points at a token marked `$deprecated`. */
     "deprecated-reference": { ref: string; reason?: string };
     /** A resolver has more combinations than `permutationLimit`, so `"each-context"` was built instead. */

@@ -1,6 +1,18 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "Resolver 4.1, 4.4 and 4.5: $schema, $defs, name and description are accepted, and keys the spec does not define are ignored, as old sugarcube does",
+  "spec": "Resolver 4.1, 4.4 and 4.5: $schema, $defs, name and description are accepted. A key the spec does not define is ignored, as old sugarcube does, and reported as a warning at the key",
   "modifiers": {},
-  "diagnostics": []
+  "diagnostics": [
+    {
+      "kind": "unknown-property",
+      "detail": {
+        "property": "futureKey",
+        "owner": "resolver"
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "text": "\"futureKey\""
+      }
+    }
+  ]
 }

@@ -12,6 +12,7 @@ import {
     type SourceNode,
     createReader,
     isResolver,
+    SET_KEYS,
     readSetParts,
     resolverProblem,
 } from "./resolver.js";
@@ -233,6 +234,7 @@ function followSource(
             reader.report({ rule: "unknown-set", name, at }, refNode);
             return [];
         }
+        for (const each of overriding) reader.checkKeys(each, "set", ["$ref", ...SET_KEYS]);
         const set = overriding.some((each) => keysBeside(reader, each).length > 0)
             ? Object.assign({ ...target }, ...overriding.map((each) => readSetParts(reader, each)))
             : target;
