@@ -95,8 +95,8 @@ function chooseInputs(
 ): Input[] {
     if (modifiers.length === 0) return [{}];
     const chosen = inputs
-        ? inputs.flatMap((raw) => {
-              const input = checkInput(modifiers, raw, diagnostics);
+        ? inputs.flatMap((raw, index) => {
+              const input = checkInput(modifiers, raw, index, diagnostics);
               return input ? [input] : [];
           })
         : permutations === "each-context"
@@ -118,18 +118,23 @@ function inputKey(modifiers: Modifier[], input: Input): string {
 function checkInput(
     modifiers: Modifier[],
     raw: Record<string, unknown>,
+    index: number,
     diagnostics: Diagnostic[],
 ): Input | undefined {
     const problems: Diagnostic[] = [];
     const chosen: Input = {};
     const mentioned = new Set<Modifier>();
-    const invalid = (detail: DiagnosticDetailByKind["input-invalid"]) =>
-        problems.push(diagnostic("input-invalid", detail));
+    const invalid = (detail: Omit<DiagnosticDetailByKind["input-invalid"], "input">) =>
+        problems.push(diagnostic("input-invalid", { ...detail, input: index }));
 
     for (const [key, value] of Object.entries(raw)) {
         const modifier = findByName(modifiers, key, ({ name }) => name);
         if (!modifier) {
-            invalid({ reason: "unknown-modifier", modifier: key });
+            invalid({
+                reason: "unknown-modifier",
+                modifier: key,
+                valid: modifiers.map(({ name }) => name),
+            });
             continue;
         }
         mentioned.add(modifier);

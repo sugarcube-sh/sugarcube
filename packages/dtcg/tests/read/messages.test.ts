@@ -41,10 +41,16 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { rule: "invalid-default", name: "theme", at: ["modifiers", "theme", "default"] },
     ],
     "input-invalid": [
-        { reason: "unknown-modifier", modifier: "size" },
-        { reason: "unknown-context", modifier: "theme", context: "blue", valid: ["light", "dark"] },
-        { reason: "missing-modifier", modifier: "theme" },
-        { reason: "not-a-string", modifier: "beta" },
+        { reason: "unknown-modifier", input: 0, modifier: "size", valid: ["theme"] },
+        {
+            reason: "unknown-context",
+            input: 0,
+            modifier: "theme",
+            context: "blue",
+            valid: ["light", "dark"],
+        },
+        { reason: "missing-modifier", input: 0, modifier: "theme" },
+        { reason: "not-a-string", input: 0, modifier: "beta" },
     ],
     "invalid-name": [
         { name: "$brand", character: "$" },
