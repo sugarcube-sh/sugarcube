@@ -422,7 +422,11 @@ export interface Source {
      * by way of a set that context names. Absent when there is no resolver.
      */
     from?: { set: string } | { modifier: string; context: string; set?: string };
-    /** Vendor data from the `$extensions` of the set that lists it, passed through untouched. */
+    /**
+     * Vendor data for the source as a whole, passed through untouched: the `$extensions` of the
+     * set that lists it, then those at the top of the source, with the source's keys winning.
+     * `$extensions` written beside the source's `$ref` replace the ones at the top of the file.
+     */
     extensions?: Record<string, unknown>;
 }
 
@@ -678,10 +682,7 @@ export type Diagnostic = {
     };
 }[DiagnosticKind];
 
-/** The diagnostics that stop a design system from being used: those with severity `"error"`. */
-export function errors(doc: Document): Diagnostic[] {
-    throw new Error("not implemented yet");
-}
+export { errors } from "./lookup/errors.js";
 
 /**
  * The diagnostics about one token or group, for showing on its own page: those at its path, and
