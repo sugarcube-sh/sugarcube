@@ -87,4 +87,16 @@ describe("parseValue", () => {
             },
         ]);
     });
+
+    it("reads a hex string in place of a color inside a composite, with hexStringColors", () => {
+        const stop = (color: string, position: number) => ({ color, position });
+        const result = parseValue("gradient", [stop("#000000", 0), stop("#ffffff80", 1)], [], {
+            hexStringColors: true,
+            references: false,
+        });
+        expect(result.ok && result.value.map(({ color }) => color)).toStrictEqual([
+            { colorSpace: "srgb", components: [0, 0, 0], alpha: 1, hex: "#000000" },
+            { colorSpace: "srgb", components: [1, 1, 1], alpha: 0.502, hex: "#ffffff" },
+        ]);
+    });
 });

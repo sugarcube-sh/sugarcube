@@ -168,6 +168,28 @@ describe("parseColor", () => {
         });
     });
 
+    describe("with hexStringColors", () => {
+        const options = { hexStringColors: true };
+
+        it.for([
+            ["#e11d48", [0.8824, 0.1137, 0.2824], 1, "#e11d48"],
+            ["#E11D48", [0.8824, 0.1137, 0.2824], 1, "#E11D48"],
+            ["#00000080", [0, 0, 0], 0.502, "#000000"],
+        ] as const)("reads %s as the sRGB color it names", ([raw, components, alpha, hex]) => {
+            expect(parseColor(raw, ["$value"], options)).toStrictEqual({
+                ok: true,
+                value: { colorSpace: "srgb", components, alpha, hex },
+            });
+        });
+
+        it.for(["#fff", "#ffff"])("still refuses %s, which has too few digits", (raw) => {
+            const result = parseColor(raw, ["$value"], options);
+            expect(result.ok ? [] : result.errors.map(({ detail }) => detail)).toStrictEqual([
+                { type: "color", reason: "hex-string", value: raw },
+            ]);
+        });
+    });
+
     describe("refuses", () => {
         it.for(["#e11d48", "#E11D48", "#00000080", "#fff", "#ffff"])(
             "the hex string %s, which the Color module no longer allows",

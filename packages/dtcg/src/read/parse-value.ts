@@ -2,6 +2,7 @@ import type { Node } from "jsonc-parser";
 import type {
     Diagnostic,
     Parse,
+    ParseOptions,
     ParseResult,
     TokenType,
     UnresolvedValueByType,
@@ -12,57 +13,61 @@ import { parsers } from "../values/parsers.js";
 import { deepestNode, spanOf } from "./json.js";
 import type { MergedToken } from "./merge.js";
 
-export type ValueReader = <T extends TokenType>(
+type Read = <T extends TokenType>(
     token: MergedToken,
     type: T,
 ) => ParseResult<UnresolvedValueByType[T]>;
 
+export interface ValueReader {
+    read: Read;
+    readReplaced: <T extends TokenType>(
+        token: MergedToken,
+        type: T,
+        raw: unknown,
+        permutation: number,
+    ) => ParseResult<UnresolvedValueByType[T]>;
+}
+
 type Cache = { [T in TokenType]?: Map<Node, ParseResult<UnresolvedValueByType[T]>> };
 
-export function createValueReader(diagnostics: Diagnostic[]): ValueReader {
+export function createValueReader(diagnostics: Diagnostic[], options: ParseOptions): ValueReader {
     const caches: Cache = {};
 
-    const read = <T extends TokenType>(token: MergedToken, type: T) => {
-        const parse: Parse<UnresolvedValueByType[T]> = parsers[type];
-        const result = parse(token.authored, ["$value"]);
+    const parse = <T extends TokenType>(
+        token: MergedToken,
+        type: T,
+        raw: unknown,
+        permutation?: number,
+    ) => {
+        const parser: Parse<UnresolvedValueByType[T]> = parsers[type];
+        const result = parser(raw, ["$value"], options);
         if (!result.ok) {
-            for (const error of result.errors) diagnostics.push(toDiagnostic(token, error));
+            for (const error of result.errors) {
+                diagnostics.push(toDiagnostic(token, error, permutation));
+            }
         }
         return result;
     };
 
-    return <T extends TokenType>(token: MergedToken, type: T) => {
-        if (token.added) return read(token, type);
-        const cache: NonNullable<Cache[T]> = caches[type] ?? new Map();
-        caches[type] = cache;
-        const cached = cache.get(token.value);
-        if (cached) return cached;
-        const result = read(token, type);
-        cache.set(token.value, result);
-        return result;
+    return {
+        read: (token, type) => {
+            if (token.added) return parse(token, type, token.authored);
+            const cache: NonNullable<Cache[typeof type]> = caches[type] ?? new Map();
+            caches[type] = cache;
+            const cached = cache.get(token.value);
+            if (cached) return cached;
+            const result = parse(token, type, token.authored);
+            cache.set(token.value, result);
+            return result;
+        },
+        readReplaced: (token, type, raw, permutation) => parse(token, type, raw, permutation),
     };
 }
 
-export function readReplaced<T extends TokenType>(
-    token: MergedToken,
-    type: T,
-    raw: unknown,
-    permutation: number,
-    diagnostics: Diagnostic[],
-): ParseResult<UnresolvedValueByType[T]> {
-    const parse: Parse<UnresolvedValueByType[T]> = parsers[type];
-    const result = parse(raw, ["$value"]);
-    if (!result.ok) {
-        for (const error of result.errors) {
-            diagnostics.push({ ...toDiagnostic(token, error), permutation });
-        }
-    }
-    return result;
-}
-
-function toDiagnostic(token: MergedToken, error: ValueError): Diagnostic {
+function toDiagnostic(token: MergedToken, error: ValueError, permutation?: number): Diagnostic {
     const { json, value, path } = token;
     const node = deepestNode(value, error.path.slice(1), json.hidden);
     const at = spanOf(json.path, json.lineStarts, node.offset, node.length);
-    return valueDiagnostic(error.detail, error.path, node, json.path, { at, path });
+    const extra = { at, path, ...(permutation !== undefined && { permutation }) };
+    return valueDiagnostic(error.detail, error.path, node, json.path, extra);
 }

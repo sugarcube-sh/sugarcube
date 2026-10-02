@@ -58,7 +58,7 @@ export function normalisePermutations(
                 diagnostics.push(diagnostic("missing-type", {}, where));
                 continue;
             }
-            tokens.set(token.path, { token, type, read: readValue(token, type) });
+            tokens.set(token.path, { token, type, read: readValue.read(token, type) });
         }
         const groups = [...merged.groups.values()].map(toGroup);
         const publicSources = sources.map(({ source, pieces, extensionsOfSet }) => {

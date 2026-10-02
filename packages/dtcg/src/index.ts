@@ -746,7 +746,18 @@ export interface ValueError {
 export type ParseResult<V> = { ok: true; value: V } | { ok: false; errors: ValueError[] };
 
 /** Reads one raw value into its shape, or explains why it cannot. */
-export type Parse<V> = (raw: unknown, at: JsonPath) => ParseResult<V>;
+export type Parse<V> = (raw: unknown, at: JsonPath, options?: ParseOptions) => ParseResult<V>;
+
+/** How values are read, for {@link read} and the parsers alike. */
+export interface ParseOptions {
+    /**
+     * Reads a color written as a hex string, such as `"#e11d48"` or `"#e11d4880"`, as the sRGB
+     * color it names, with the string kept as `hex`. Not DTCG 2025.10, which writes every color as
+     * an object. Off, or with three or four digits, a hex string is a `hex-string-color` error.
+     * @default false
+     */
+    hexStringColors?: boolean;
+}
 
 export type { StandardSchemaV1, StandardTypedV1 } from "./standard-schema.js";
 
@@ -886,7 +897,7 @@ export interface Generator {
 export { defineGenerator } from "./read/generate.js";
 export { defineExtensionValidator } from "./read/validate-extensions.js";
 
-export interface ReadOptions {
+export interface ReadOptions extends ParseOptions {
     /**
      * The permutations to build. Modifiers left out take their default; an input that does not
      * fit the resolver is reported and not built.

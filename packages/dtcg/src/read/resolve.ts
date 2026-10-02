@@ -19,7 +19,7 @@ import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { inheritedDeprecation, inheritedType } from "./inherit.js";
 import type { Merged, MergedToken } from "./merge.js";
 import type { NormalisedPermutation, NormalisedToken } from "./normalise.js";
-import { type ValueReader, readReplaced } from "./parse-value.js";
+import type { ValueReader } from "./parse-value.js";
 import { refSteps } from "./pointer.js";
 import { reach } from "./ref-meaning.js";
 import { similarName } from "./similar.js";
@@ -197,7 +197,7 @@ function resolvePermutation(
         }
         if (type === undefined) return "untyped";
 
-        const read = entry.read ?? readValue(token, type);
+        const read = entry.read ?? readValue.read(token, type);
         const base = { type, read, ...(aliasOf !== undefined && { aliasOf }) };
         if (!read.ok) return base;
         if (references.length === 0) return { ...base, resolved: read.value };
@@ -206,7 +206,7 @@ function resolvePermutation(
         if (references.some((each) => each.kind === "pointer")) {
             const replaced = replacePointers(token.authored, token, []);
             if (replaced === UNRESOLVED) return base;
-            const again = readReplaced(token, type, replaced, index, diagnostics);
+            const again = readValue.readReplaced(token, type, replaced, index);
             if (!again.ok) return base;
             parsed = again.value;
         }
@@ -236,7 +236,7 @@ function resolvePermutation(
     };
 
     const unresolved = (entry: NormalisedToken, type: TokenType): Outcome => {
-        const read = entry.read ?? readValue(entry.token, type);
+        const read = entry.read ?? readValue.read(entry.token, type);
         return { type, read };
     };
 

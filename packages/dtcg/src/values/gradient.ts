@@ -1,4 +1,11 @@
-import type { Alias, JsonPath, ParseResult, Pointer, UnresolvedValue } from "../index.js";
+import type {
+    Alias,
+    JsonPath,
+    ParseOptions,
+    ParseResult,
+    Pointer,
+    UnresolvedValue,
+} from "../index.js";
 import { readColor } from "./color.js";
 import { type ObjectForm, type PartReaders, readComposite } from "./composite.js";
 import { readList } from "./list.js";
@@ -10,7 +17,11 @@ type GradientStop = Exclude<ObjectForm<"gradient">[number], Alias | Pointer>;
 
 const PARTS: PartReaders<GradientStop> = { color: readColor, position: readPosition };
 
-export function readGradient(raw: unknown, at: JsonPath): ParseResult<UnresolvedValue<"gradient">> {
+export function readGradient(
+    raw: unknown,
+    at: JsonPath,
+    options?: ParseOptions,
+): ParseResult<UnresolvedValue<"gradient">> {
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference };
 
@@ -27,11 +38,11 @@ export function readGradient(raw: unknown, at: JsonPath): ParseResult<Unresolved
             errors: [valueError(at, { type: "gradient", reason: "no-gradient-stops" })],
         };
     }
-    return readList(raw, at, readStop);
+    return readList(raw, at, readStop, options);
 }
 
-function readStop(raw: unknown, at: JsonPath) {
-    return readComposite("gradient", PARTS, raw, at);
+function readStop(raw: unknown, at: JsonPath, options?: ParseOptions) {
+    return readComposite("gradient", PARTS, raw, at, options);
 }
 
 function readPosition(raw: unknown, at: JsonPath): ParseResult<GradientStop["position"]> {
