@@ -37,8 +37,11 @@
           }
         },
         {
-          "path": "button-large.padding",
-          "type": "number"
+          "path": "button-primary.state.focus",
+          "type": "number",
+          "inherited": {
+            "from": "button"
+          }
         },
         {
           "path": "button-primary.text",
@@ -55,11 +58,8 @@
           }
         },
         {
-          "path": "button-primary.state.focus",
-          "type": "number",
-          "inherited": {
-            "from": "button"
-          }
+          "path": "button-large.padding",
+          "type": "number"
         },
         {
           "path": "button-large.background",

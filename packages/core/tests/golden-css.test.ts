@@ -169,28 +169,13 @@ describe("golden CSS: the new core reads every golden case", () => {
     });
 });
 
-const permutations = "permutations: PR 2";
 const everyValue = "every value type, fluid and recipes: PR 3";
 const configOptions = "atRule, selector lists, path, propagateDependents, polyfill, layers: PR 4";
 
 const pending: Record<string, string> = {
-    ...Object.fromEntries(
-        [
-            "breakpoint-cascade",
-            "breakpoint-distinct",
-            "breakpoint-shared",
-            "complex",
-            "multiple-modifiers",
-            "non-orthogonal-modifiers",
-            "propagate-chain",
-            "provenance",
-            "scheme",
-            "simple",
-            "with-file-refs",
-            "with-refs",
-        ].map((name) => [`core/resolver/${name}/variables.css`, permutations]),
-    ),
-    "studio/design-tokens/variables.css": permutations,
+    "core/resolver/propagate-chain/variables.css": everyValue,
+    "core/resolver/provenance/variables.css": everyValue,
+    "studio/design-tokens/variables.css": `${everyValue}; whole-number keys in written order (P-015)`,
     "core/tokens/fluid/variables.css": everyValue,
     "registry/recipes/size-demo/variables.css": everyValue,
     "registry/recipes/space-demo/variables.css": everyValue,
@@ -211,8 +196,8 @@ const goldenFiles = cases.flatMap((each) =>
 describe("golden CSS: the new core writes what old sugarcube writes", () => {
     it.for(goldenFiles)("$name", async ({ name, each, file }) => {
         const { config, doc } = await readCase(each);
-        const written = emitCSS(doc, config);
-        const css = written.find(({ path }) => path === file)?.css ?? "";
+        const { files } = emitCSS(doc, config);
+        const css = files.find(({ path }) => path === file)?.css ?? "";
         const expected = readFileSync(join(golden, name), "utf8");
         if (pending[name]) expect(css, `pending (${pending[name]}) but matches`).not.toBe(expected);
         else expect(css).toBe(expected);

@@ -19,17 +19,14 @@
           }
         },
         {
-          "path": "base"
-        },
-        {
-          "path": "blue"
-        },
-        {
           "path": "button-primary.text",
           "type": "number",
           "inherited": {
             "from": "button"
           }
+        },
+        {
+          "path": "base"
         },
         {
           "path": "alias",
@@ -50,6 +47,9 @@
           },
           "resolved": 4,
           "aliasOf": "base"
+        },
+        {
+          "path": "blue"
         },
         {
           "path": "blue-red",

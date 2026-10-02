@@ -241,6 +241,18 @@ export const ErrorMessages = {
             `Permutation references unknown context "${contextName}" for modifier "${modifierName}". Valid contexts: ${validContexts.join(", ")}`,
         EMPTY_SELECTOR: () => "Permutation selector cannot be empty",
     },
+    DIAGNOSTICS: {
+        "default-required": ({ modifiers }: { modifiers: string[] }) => {
+            const names = modifiers.map((name) => `\`${name}\``);
+            const listed =
+                names.length > 2
+                    ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`
+                    : names.join(" and ");
+            const [noun, verb, pronoun] =
+                names.length > 1 ? ["modifiers", "have", "them"] : ["modifier", "has", "it"];
+            return `the ${noun} ${listed} ${verb} no default, so there is nothing to write on \`:root\`: give ${pronoun} a \`default\` in the resolver, or list the permutations to write in \`variables.permutations\``;
+        },
+    },
     SCALE_RECIPE: {
         "not-an-object": ({ name }: { name: string }) => `\`${name}\` must be an object`,
         "missing-property": ({ name }: { name: string }) => `the recipe needs \`${name}\``,

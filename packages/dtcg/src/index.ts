@@ -445,11 +445,16 @@ export interface Permutation {
     /** Where the tokens come from, in the order they apply: a later source overrides an earlier one. */
     sources: Source[];
     /**
-     * Every token, in the order the files write them, invalid ones included. Tokens a
-     * {@link Generator} adds come at the end of their group. To find one by path, use {@link token}.
+     * Every token, in the order the files write them, invalid ones included. The files read as
+     * one: a group's tokens stay together where the group is first written, whichever file adds
+     * them, and a token a later file replaces keeps its place. Tokens a group inherits, or a
+     * {@link Generator} adds, come at the end of their group. To find one by path, use {@link token}.
      */
     tokens: Token[];
-    /** Every group, in the order the files write them. To find one by path, use {@link group}. */
+    /**
+     * Every group, in the same order as {@link Permutation.tokens | tokens}. To find one by path,
+     * use {@link group}.
+     */
     groups: Group[];
 }
 
@@ -504,9 +509,14 @@ export interface DiagnosticDetailByKind {
     /** An input does not fit the resolver's modifiers. */
     "input-invalid": {
         reason: "unknown-modifier" | "unknown-context" | "missing-modifier" | "not-a-string";
+        /** Which input, as its index in {@link ReadOptions.inputs}. */
+        input: number;
         modifier: string;
         context?: string;
-        /** The contexts the modifier does allow. */
+        /**
+         * For `unknown-modifier`, the modifiers the resolver declares; for `unknown-context` and
+         * `missing-modifier`, the contexts the modifier allows.
+         */
         valid?: string[];
     };
     /** A token or group name uses a character the specification forbids. */
@@ -668,8 +678,20 @@ export type DiagnosticKind = keyof DiagnosticDetailByKind;
  * @example
  * if (d.kind === "missing-reference") d.detail.referencedBy
  */
-export type Diagnostic = {
-    [K in DiagnosticKind]: {
+export type Diagnostic = DiagnosticOf<DiagnosticDetailByKind>;
+
+/**
+ * A diagnostic with kinds of your own, in the same shape as {@link Diagnostic}, so a tool's own
+ * checks can be reported in one list with the package's. Give it a map from each kind to the facts
+ * it carries; checking `kind` narrows `detail`, as it does for {@link Diagnostic}. Choose kinds
+ * that are not {@link DiagnosticKind | the package's}.
+ *
+ * @example
+ * type Ours = DiagnosticOf<{ "selector-empty": { entry: number } }>;
+ * const reported: (Diagnostic | Ours)[] = [...doc.diagnostics, ...checkConfig(doc)];
+ */
+export type DiagnosticOf<DetailByKind> = {
+    [K in keyof DetailByKind]: {
         kind: K;
         severity: "error" | "warning" | "info" | "hint";
         message: string;
@@ -687,9 +709,9 @@ export type Diagnostic = {
         tags?: ("deprecated" | "unnecessary")[];
         /** A page explaining this kind of diagnostic. */
         docs: string;
-        detail: DiagnosticDetailByKind[K];
+        detail: DetailByKind[K];
     };
-}[DiagnosticKind];
+}[keyof DetailByKind];
 
 export { errors } from "./lookup/errors.js";
 

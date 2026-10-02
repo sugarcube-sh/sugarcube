@@ -1,5 +1,7 @@
 import {
+    type Diagnostic,
     type Document,
+    type Input,
     type Permutation,
     type Source,
     type Token,
@@ -8,38 +10,110 @@ import {
     token,
 } from "@sugarcube-sh/dtcg";
 import type { InternalConfig } from "../../types/config.js";
+import type { Reported } from "../../types/diagnostics.js";
 import type { CSSFileOutput } from "../../types/generate.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { createVariableNameResolver } from "../resolve-variable-name.js";
 import { renderResolved } from "./values.js";
 
 /**
- * Writes the design system's CSS variables, one file per output path, named from the config's
- * `prefix` or `variableName`, with every reference to a token that has its own variable written
- * as `var()`.
+ * Writes the design system's CSS variables to the config's `path`, named from its `prefix` or
+ * `variableName`, with every reference to a token that has its own variable written as `var()`.
+ * The first permutation writes every variable. Each later one, under its own selector, writes only
+ * those whose value differs when the first block applies wherever it does (`:root` always does),
+ * and every variable otherwise. Hands back every problem found, without throwing.
  *
  * @example
  * const doc = await read(config.resolver, readOptions(config));
- * const files = emitCSS(doc, config);
+ * const { files, diagnostics } = emitCSS(doc, config);
  */
-export function emitCSS(doc: Document, config: InternalConfig): CSSFileOutput {
-    const [listed] = config.variables.permutations ?? [];
-    const baseline = listed ? permutationFor(doc, listed.input) : doc.permutations[0];
-    if (!baseline) return [];
+export function emitCSS(
+    doc: Document,
+    config: InternalConfig,
+): { files: CSSFileOutput; diagnostics: Reported[] } {
+    const diagnostics = doc.diagnostics.map(asReported);
+    if (diagnostics.some(({ kind }) => kind === "default-required"))
+        return { files: [], diagnostics };
 
     const nameOf = createVariableNameResolver(config.variables);
-    const lines = declarations(doc, baseline, nameOf);
-    if (lines.length === 0) return [];
-    const selector = listed?.selector ?? ":root";
-    const block = `${[selector].flat().join(",\n")} {\n${lines.join("\n")}\n}`;
-    return [{ path: listed?.path ?? config.variables.path, css: `${block}\n` }];
+    const [baseline, ...later] = toWrite(doc, config).map(({ permutation, selector }) => ({
+        selector,
+        declared: declarations(doc, permutation, nameOf),
+    }));
+    if (!baseline) return { files: [], diagnostics };
+
+    const inEffect = new Map(baseline.declared.map(({ name, value }) => [name, value]));
+    const blocks = [
+        baseline,
+        ...later.map(({ selector, declared }) => ({
+            selector,
+            declared: appliesWherever(baseline.selector, selector)
+                ? declared.filter(({ name, value }) => inEffect.get(name) !== value)
+                : declared,
+        })),
+    ].flatMap(({ selector, declared }) => (declared.length > 0 ? [block(selector, declared)] : []));
+    const files =
+        blocks.length > 0 ? [{ path: config.variables.path, css: `${blocks.join("\n\n")}\n` }] : [];
+    return { files, diagnostics };
+}
+
+function asReported(found: Diagnostic): Reported {
+    if (found.kind !== "no-default") return found;
+    const { modifiers } = found.detail;
+    return {
+        kind: "default-required",
+        severity: "error",
+        message: ErrorMessages.DIAGNOSTICS["default-required"]({ modifiers }),
+        docs: "https://sugarcube.sh/errors/default-required",
+        detail: { modifiers },
+    };
+}
+
+function toWrite(
+    doc: Document,
+    config: InternalConfig,
+): { permutation: Permutation; selector: string | string[] }[] {
+    const listed = config.variables.permutations ?? [];
+    if (listed.length === 0) {
+        return doc.permutations.map((permutation) => ({
+            permutation,
+            selector: derivedSelector(doc, permutation.input),
+        }));
+    }
+    return listed.flatMap(({ input, selector }) => {
+        const permutation = permutationFor(doc, input);
+        return permutation ? [{ permutation, selector }] : [];
+    });
+}
+
+function derivedSelector(doc: Document, input: Input): string {
+    const changed = Object.entries(input).find(
+        ([name, context]) => context !== doc.modifiers[name]?.default,
+    );
+    return changed ? `[data-${changed[0]}="${changed[1]}"]` : ":root";
+}
+
+function appliesWherever(earlier: string | string[], later: string | string[]): boolean {
+    const [reach, target] = [earlier, later].map((each) => [each].flat().join(","));
+    return reach === ":root" || reach === target;
+}
+
+function block(selector: string | string[], declared: Declaration[]): string {
+    const lines = declared.map(({ name, value }) => `    ${name}: ${value};`);
+    return `${[selector].flat().join(",\n")} {\n${lines.join("\n")}\n}`;
+}
+
+interface Declaration {
+    name: string;
+    value: string;
 }
 
 function declarations(
     doc: Document,
     permutation: Permutation,
     nameOf: (path: string) => string,
-): string[] {
+): Declaration[] {
     const emitted = (each: Token | undefined): each is Token =>
         each !== undefined && !each.invalid && !isPrivate(permutation.sources[each.source.index]);
     return permutation.tokens.flatMap((each) => {
@@ -48,7 +122,7 @@ function declarations(
             ? token(doc, each.value.alias, permutation.input)
             : undefined;
         const value = emitted(target) ? `var(--${nameOf(target.path)})` : renderResolved(each);
-        return value === undefined ? [] : [`    --${nameOf(each.path)}: ${value};`];
+        return value === undefined ? [] : [{ name: `--${nameOf(each.path)}`, value }];
     });
 }
 

@@ -45,13 +45,13 @@
           "type": "dimension"
         },
         {
-          "path": "palette"
-        },
-        {
           "path": "extended.colors",
           "inherited": {
             "from": "base"
           }
+        },
+        {
+          "path": "palette"
         }
       ]
     }

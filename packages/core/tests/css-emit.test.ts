@@ -12,7 +12,7 @@ function cssFor(files: Record<string, unknown>, variables: Variables = {}) {
         Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
     );
     const doc = readFromMemory({ files: texts }, readOptions(config));
-    return emitCSS(doc, config)[0]?.css;
+    return emitCSS(doc, config).files[0]?.css;
 }
 
 const color = (value: unknown) => ({ $type: "color", $value: value });
@@ -76,6 +76,132 @@ describe("emitCSS", () => {
                 "",
             ].join("\n"),
         );
+    });
+
+    it("hands back what reading found", () => {
+        const config = fillDefaults({ variables: { path: "variables.css" } });
+        const files = { "tokens.json": JSON.stringify({ broken: color("#e11d4") }) };
+        const doc = readFromMemory({ files }, readOptions(config));
+        expect(emitCSS(doc, config).diagnostics).toStrictEqual(doc.diagnostics);
+        expect(doc.diagnostics).not.toStrictEqual([]);
+    });
+
+    describe("with a modifier that has no default and no permutations in the config", () => {
+        const config = fillDefaults({ variables: { path: "variables.css" } });
+        const files = {
+            "tokens.resolver.json": JSON.stringify({
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                    {
+                        type: "modifier",
+                        name: "brand",
+                        contexts: { house: [], ocean: [{ $ref: "ocean.json" }] },
+                    },
+                    {
+                        type: "modifier",
+                        name: "theme",
+                        contexts: { light: [], dark: [] },
+                        default: "light",
+                    },
+                ],
+            }),
+            "tokens.json": JSON.stringify({ brand: color("#e11d48") }),
+            "ocean.json": JSON.stringify({ brand: color("#0ea5e9") }),
+        };
+        const doc = readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(config));
+        const { files: written, diagnostics } = emitCSS(doc, config);
+
+        it("writes nothing, since nothing can go on :root", () => {
+            expect(written).toStrictEqual([]);
+        });
+
+        it("says which modifier needs a default, in place of the read's warning", () => {
+            expect(diagnostics.map(({ kind }) => kind)).toStrictEqual(["default-required"]);
+            expect(diagnostics[0]).toMatchObject({
+                severity: "error",
+                detail: { modifiers: ["brand"] },
+                docs: "https://sugarcube.sh/errors/default-required",
+                message:
+                    "the modifier `brand` has no default, so there is nothing to write on `:root`: give it a `default` in the resolver, or list the permutations to write in `variables.permutations`",
+            });
+        });
+    });
+
+    it("names every modifier that has no default", () => {
+        const config = fillDefaults({ variables: { path: "variables.css" } });
+        const modifier = (name: string) => ({ type: "modifier", name, contexts: { a: [], b: [] } });
+        const files = {
+            "tokens.resolver.json": JSON.stringify({
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                    modifier("brand"),
+                    modifier("size"),
+                ],
+            }),
+            "tokens.json": JSON.stringify({ brand: color("#e11d48") }),
+        };
+        const doc = readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(config));
+        expect(emitCSS(doc, config).diagnostics.map(({ message }) => message)).toStrictEqual([
+            "the modifiers `brand` and `size` have no default, so there is nothing to write on `:root`: give them a `default` in the resolver, or list the permutations to write in `variables.permutations`",
+        ]);
+    });
+
+    describe("writes a later permutation's block", () => {
+        const files = {
+            "tokens.resolver.json": {
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                    {
+                        type: "modifier",
+                        name: "brand",
+                        contexts: { house: [], ocean: [{ $ref: "ocean.json" }] },
+                        default: "house",
+                    },
+                ],
+            },
+            "tokens.json": { brand: color("#e11d48"), text: color("#111111") },
+            "ocean.json": { brand: color("#0ea5e9") },
+        };
+        const brands = (first: string) => [
+            { input: { brand: "house" }, selector: first },
+            { input: { brand: "ocean" }, selector: '[data-brand="ocean"]' },
+        ];
+
+        it("with only what changed when the first block reaches every element", () => {
+            expect(cssFor(files, { permutations: brands(":root") })).toBe(
+                [
+                    ":root {",
+                    "    --brand: #e11d48;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                    '[data-brand="ocean"] {',
+                    "    --brand: #0ea5e9;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("in full when the first block may not apply where it does", () => {
+            expect(cssFor(files, { permutations: brands('[data-brand="house"]') })).toBe(
+                [
+                    '[data-brand="house"] {',
+                    "    --brand: #e11d48;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                    '[data-brand="ocean"] {',
+                    "    --brand: #0ea5e9;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
     });
 
     it("leaves out a token whose value cannot be read, and writes the rest", () => {

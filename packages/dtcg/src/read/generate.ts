@@ -19,8 +19,6 @@ import {
 import { type JsonFile, member, spanOf } from "./json.js";
 import type { Merged, MergedGroup, MergedToken, Piece } from "./merge.js";
 
-type Place = { order: number; offset: number };
-
 interface Extension {
     value: unknown;
     json: JsonFile;
@@ -76,7 +74,7 @@ export function fillGenerated(
     permutation: number,
     diagnostics: Diagnostic[],
 ): void {
-    const added: { after: Place; tokens: MergedToken[] }[] = [];
+    const added: MergedToken[] = [];
     const addedPaths = new Set<string>();
     const reported = new Map<Generator, Set<Node>>();
 
@@ -116,20 +114,17 @@ export function fillGenerated(
                 continue;
             }
             const from = { from: group.path };
-            const tokens: MergedToken[] = [];
             for (const made of result.value) {
                 const path = group.path === "" ? made.name : `${group.path}.${made.name}`;
                 const written = merged.tokens.get(path);
                 if (written) merged.tokens.set(path, { ...written, generated: from });
                 if (written || merged.groups.has(path) || addedPaths.has(path)) continue;
                 addedPaths.add(path);
-                tokens.push(addedToken(path, made, from, extension));
+                added.push(addedToken(path, made, from, extension));
             }
-            const after = group.end ?? { order: Number.MAX_SAFE_INTEGER, offset: 0 };
-            if (tokens.length > 0) added.push({ after, tokens });
         }
     }
-    if (added.length > 0) placeAtGroupEnds(merged, added);
+    for (const token of added) merged.tokens.set(token.path, token);
 }
 
 function extensionOf(
@@ -147,30 +142,6 @@ function extensionOf(
     }
     if (value === undefined || !node) return undefined;
     return { value, json: at.json, node, piece: at.piece };
-}
-
-function placeAtGroupEnds(merged: Merged, added: { after: Place; tokens: MergedToken[] }[]) {
-    const pending = [...added].sort((a, b) => compare(a.after, b.after));
-    const tokens = new Map<string, MergedToken>();
-    const add = (token: MergedToken) => tokens.set(token.path, token);
-    let next = 0;
-    const addPendingUpTo = (place: Place) => {
-        for (; next < pending.length; next++) {
-            const each = pending[next];
-            if (!each || compare(each.after, place) > 0) return;
-            each.tokens.forEach(add);
-        }
-    };
-    for (const token of merged.tokens.values()) {
-        addPendingUpTo({ order: token.piece.order, offset: token.at.offset });
-        add(token);
-    }
-    for (const { tokens: rest } of pending.slice(next)) rest.forEach(add);
-    merged.tokens = tokens;
-}
-
-function compare(a: Place, b: Place): number {
-    return a.order - b.order || a.offset - b.offset;
 }
 
 function addedToken(

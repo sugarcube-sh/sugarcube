@@ -34,6 +34,7 @@
       "kind": "input-invalid",
       "detail": {
         "reason": "unknown-context",
+        "input": 0,
         "modifier": "theme",
         "context": "blue",
         "valid": ["light", "dark"]
@@ -43,13 +44,16 @@
       "kind": "input-invalid",
       "detail": {
         "reason": "unknown-modifier",
-        "modifier": "foo"
+        "input": 0,
+        "modifier": "foo",
+        "valid": ["theme", "size", "beta"]
       }
     },
     {
       "kind": "input-invalid",
       "detail": {
         "reason": "missing-modifier",
+        "input": 0,
         "modifier": "size",
         "valid": ["default", "large"]
       }
@@ -58,6 +62,7 @@
       "kind": "input-invalid",
       "detail": {
         "reason": "not-a-string",
+        "input": 1,
         "modifier": "beta"
       }
     }
