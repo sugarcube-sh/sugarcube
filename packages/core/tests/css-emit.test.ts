@@ -86,6 +86,68 @@ describe("emitCSS", () => {
         expect(doc.diagnostics).not.toStrictEqual([]);
     });
 
+    describe("with a modifier that has no default and no permutations in the config", () => {
+        const config = fillDefaults({ variables: { path: "variables.css" } });
+        const files = {
+            "tokens.resolver.json": JSON.stringify({
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                    {
+                        type: "modifier",
+                        name: "brand",
+                        contexts: { house: [], ocean: [{ $ref: "ocean.json" }] },
+                    },
+                    {
+                        type: "modifier",
+                        name: "theme",
+                        contexts: { light: [], dark: [] },
+                        default: "light",
+                    },
+                ],
+            }),
+            "tokens.json": JSON.stringify({ brand: color("#e11d48") }),
+            "ocean.json": JSON.stringify({ brand: color("#0ea5e9") }),
+        };
+        const doc = readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(config));
+        const { files: written, diagnostics } = emitCSS(doc, config);
+
+        it("writes nothing, since nothing can go on :root", () => {
+            expect(written).toStrictEqual([]);
+        });
+
+        it("says which modifier needs a default, in place of the read's warning", () => {
+            expect(diagnostics.map(({ kind }) => kind)).toStrictEqual(["default-required"]);
+            expect(diagnostics[0]).toMatchObject({
+                severity: "error",
+                detail: { modifiers: ["brand"] },
+                docs: "https://sugarcube.sh/errors/default-required",
+                message:
+                    "the modifier `brand` has no default, so there is nothing to write on `:root`: give it a `default` in the resolver, or list the permutations to write in `variables.permutations`",
+            });
+        });
+    });
+
+    it("names every modifier that has no default", () => {
+        const config = fillDefaults({ variables: { path: "variables.css" } });
+        const modifier = (name: string) => ({ type: "modifier", name, contexts: { a: [], b: [] } });
+        const files = {
+            "tokens.resolver.json": JSON.stringify({
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                    modifier("brand"),
+                    modifier("size"),
+                ],
+            }),
+            "tokens.json": JSON.stringify({ brand: color("#e11d48") }),
+        };
+        const doc = readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(config));
+        expect(emitCSS(doc, config).diagnostics.map(({ message }) => message)).toStrictEqual([
+            "the modifiers `brand` and `size` have no default, so there is nothing to write on `:root`: give them a `default` in the resolver, or list the permutations to write in `variables.permutations`",
+        ]);
+    });
+
     it("leaves out a token whose value cannot be read, and writes the rest", () => {
         expect(cssFor({ "tokens.json": { broken: color("#e11d4"), fine: color("#e11d48") } })).toBe(
             ":root {\n    --fine: #e11d48;\n}\n",

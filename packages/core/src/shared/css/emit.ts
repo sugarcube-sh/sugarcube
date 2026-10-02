@@ -10,7 +10,9 @@ import {
     token,
 } from "@sugarcube-sh/dtcg";
 import type { InternalConfig } from "../../types/config.js";
+import type { Reported } from "../../types/diagnostics.js";
 import type { CSSFileOutput } from "../../types/generate.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { createVariableNameResolver } from "../resolve-variable-name.js";
 import { renderResolved } from "./values.js";
@@ -28,13 +30,17 @@ import { renderResolved } from "./values.js";
 export function emitCSS(
     doc: Document,
     config: InternalConfig,
-): { files: CSSFileOutput; diagnostics: Diagnostic[] } {
+): { files: CSSFileOutput; diagnostics: Reported[] } {
+    const diagnostics = doc.diagnostics.map(asReported);
+    if (diagnostics.some(({ kind }) => kind === "default-required"))
+        return { files: [], diagnostics };
+
     const nameOf = createVariableNameResolver(config.variables);
     const [baseline, ...later] = toWrite(doc, config).map(({ permutation, selector }) => ({
         selector,
         declared: declarations(doc, permutation, nameOf),
     }));
-    if (!baseline) return { files: [], diagnostics: doc.diagnostics };
+    if (!baseline) return { files: [], diagnostics };
 
     const inEffect = new Map(baseline.declared.map(({ name, value }) => [name, value]));
     const blocks = [
@@ -46,7 +52,19 @@ export function emitCSS(
     ].flatMap(({ selector, declared }) => (declared.length > 0 ? [block(selector, declared)] : []));
     const files =
         blocks.length > 0 ? [{ path: config.variables.path, css: `${blocks.join("\n\n")}\n` }] : [];
-    return { files, diagnostics: doc.diagnostics };
+    return { files, diagnostics };
+}
+
+function asReported(found: Diagnostic): Reported {
+    if (found.kind !== "no-default") return found;
+    const { modifiers } = found.detail;
+    return {
+        kind: "default-required",
+        severity: "error",
+        message: ErrorMessages.DIAGNOSTICS["default-required"]({ modifiers }),
+        docs: "https://sugarcube.sh/errors/default-required",
+        detail: { modifiers },
+    };
 }
 
 function toWrite(
