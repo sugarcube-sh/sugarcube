@@ -17,15 +17,15 @@ import {
     extensionDiagnostic,
 } from "./extension-check.js";
 import { type JsonFile, member, spanOf } from "./json.js";
-import type { Merged, MergedGroup, MergedToken } from "./merge.js";
+import type { Merged, MergedGroup, MergedToken, Piece } from "./merge.js";
 
-type Place = { index: number; offset: number };
+type Place = { order: number; offset: number };
 
 interface Extension {
     value: unknown;
     json: JsonFile;
     node: Node;
-    index: number;
+    piece: Piece;
 }
 
 /**
@@ -125,7 +125,7 @@ export function fillGenerated(
                 addedPaths.add(path);
                 tokens.push(addedToken(path, made, from, extension));
             }
-            const after = group.end ?? { index: Number.MAX_SAFE_INTEGER, offset: 0 };
+            const after = group.end ?? { order: Number.MAX_SAFE_INTEGER, offset: 0 };
             if (tokens.length > 0) added.push({ after, tokens });
         }
     }
@@ -146,7 +146,7 @@ function extensionOf(
         node = member(node, step, at.json.hidden);
     }
     if (value === undefined || !node) return undefined;
-    return { value, json: at.json, node, index: at.index };
+    return { value, json: at.json, node, piece: at.piece };
 }
 
 function placeAtGroupEnds(merged: Merged, added: { after: Place; tokens: MergedToken[] }[]) {
@@ -162,7 +162,7 @@ function placeAtGroupEnds(merged: Merged, added: { after: Place; tokens: MergedT
         }
     };
     for (const token of merged.tokens.values()) {
-        addPendingUpTo({ index: token.index, offset: token.at.offset });
+        addPendingUpTo({ order: token.piece.order, offset: token.at.offset });
         add(token);
     }
     for (const { tokens: rest } of pending.slice(next)) rest.forEach(add);
@@ -170,14 +170,14 @@ function placeAtGroupEnds(merged: Merged, added: { after: Place; tokens: MergedT
 }
 
 function compare(a: Place, b: Place): number {
-    return a.index - b.index || a.offset - b.offset;
+    return a.order - b.order || a.offset - b.offset;
 }
 
 function addedToken(
     path: string,
     { $type, $value, $description, $extensions }: GeneratedToken,
     generated: { from: string },
-    { json, node, index }: Extension,
+    { json, node, piece }: Extension,
 ): MergedToken {
     return {
         path,
@@ -186,7 +186,7 @@ function addedToken(
         authored: $value,
         isReference: readAlias($value) !== undefined || readPointer($value) !== undefined,
         at: spanOf(json.path, json.lineStarts, node.offset, node.length),
-        index,
+        piece,
         generated,
         added: true,
         ...($type !== undefined && { type: $type }),

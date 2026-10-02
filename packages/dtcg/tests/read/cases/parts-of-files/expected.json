@@ -1,6 +1,6 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "Resolver 4.2 (Example 10): a source that is part of a file has paths from that part. Resolver 4.2.2: keys beside a file's $ref replace the file's top-level keys of the same name, and are tokens written in the resolver. RFC 8259 4: of a key written twice, the last is used",
+  "spec": "Resolver 4.2 (Example 10): a source that is part of a file has paths from that part. Resolver 4.2.2: keys beside a file's $ref replace the file's top-level keys of the same name, and are tokens written in the resolver, belonging to that source. RFC 8259 4: of a key written twice, the last is used",
   "permutations": [
     {
       "tokens": [
@@ -35,7 +35,7 @@
           "path": "space.md",
           "type": "number",
           "source": {
-            "index": 2,
+            "index": 1,
             "at": {
               "file": "tokens.resolver.json",
               "valueAfter": "\"md\":"

@@ -160,7 +160,7 @@ function becomeToken(
         authored: { $ref: extending.written },
         isReference: true,
         at: extending.declaredAt,
-        index: extending.index,
+        piece: extending.piece,
         ...(type !== undefined && { type }),
         ...(description !== undefined && { description }),
         ...(deprecated !== undefined && { deprecated }),

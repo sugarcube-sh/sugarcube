@@ -430,7 +430,7 @@ function toToken<T extends TokenType>(
         ...(token.description !== undefined && { description: token.description }),
         ...(deprecated !== undefined && { deprecated }),
         ...(token.extensions && { extensions: token.extensions }),
-        source: { index: token.index, at: token.at },
+        source: { index: token.piece.source, at: token.at },
         ...(!token.added && {
             authored: { value: token.authored, typeDeclared: token.type !== undefined },
         }),

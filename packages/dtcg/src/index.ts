@@ -365,7 +365,8 @@ export interface TokenBase<T extends TokenType> {
     extensions?: Record<string, unknown>;
     /**
      * Where the token was read from: which of the permutation's {@link Permutation.sources | sources}
-     * it came from, and its place in the file.
+     * it belongs to, and exactly where it is written. That is usually in the source's file, and in
+     * the resolver for a token written beside the source's `$ref`.
      */
     source: { index: number; at: Span };
     /**
@@ -410,10 +411,13 @@ export interface Group {
 }
 
 /**
- * One source of a permutation's tokens: a file, part of one, or tokens written in the resolver.
- * A set in the resolver can have several sources, so the same set can appear on several.
+ * One source of a permutation's tokens, as the resolver lists it: a file, part of one, or tokens
+ * written in the resolver. Keys written beside a source's `$ref` are part of that source, so a
+ * token written there belongs to it, and its {@link TokenBase.source | source.at} is in the
+ * resolver. A set in the resolver can have several sources, so the same set can appear on several.
  */
 export interface Source {
+    /** The file its tokens are written in, or the resolver for tokens written there. */
     file: string;
     /** Set when the source is only part of the file, such as `"#/color"`. */
     pointer?: string;

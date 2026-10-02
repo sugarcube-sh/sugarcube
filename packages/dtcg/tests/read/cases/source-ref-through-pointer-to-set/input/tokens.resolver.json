@@ -1,0 +1,19 @@
+{
+  "version": "2025.10",
+  "sets": {
+    "palette": { "sources": [{ "$ref": "red.json" }, { "$ref": "blue.json" }] },
+    "library": { "sources": [{ "$ref": "#/sets/palette" }] }
+  },
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "$ref": "#/sets/library/sources/0",
+          "$extensions": { "sh.sugarcube": { "emit": false } }
+        }
+      ]
+    }
+  ]
+}

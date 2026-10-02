@@ -10,7 +10,7 @@ export interface LoadedPermutation {
     label: string;
     sources: {
         source: Omit<Source, "extensions">;
-        loaded: LoadedSource;
+        pieces: LoadedSource[];
         extensionsOfSet?: Record<string, unknown>;
     }[];
 }
@@ -39,7 +39,7 @@ export function fromTokenFiles(files: { path: string; json?: JsonFile }[]): Buil
                 label: "default",
                 sources: files.map(({ path, json }) => ({
                     source: { file: path },
-                    loaded: { file: path, ...(json && { json, tree: json.root }) },
+                    pieces: [{ file: path, ...(json && { json, tree: json.root }) }],
                 })),
             },
         ],
@@ -268,10 +268,12 @@ function described(
 ): LoadedPermutation["sources"] {
     const loaded = sources.get(entry);
     if (!loaded) return [];
+    const pieces = loaded.pieces ?? [loaded];
+    if (pieces[0] !== loaded) return [];
     const source = { file: loaded.file, ...(loaded.pointer && { pointer: loaded.pointer }), from };
     const holder = entry.holder?.extensions;
     const extensionsOfSet = holder && plainObject(holder, resolver.file.hidden);
-    return [{ source, loaded, ...(extensionsOfSet && { extensionsOfSet }) }];
+    return [{ source, pieces, ...(extensionsOfSet && { extensionsOfSet }) }];
 }
 
 function whoUsesEachFile(

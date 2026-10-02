@@ -19,55 +19,7 @@
           }
         },
         {
-          "file": "tokens.resolver.json",
-          "pointer": "#/sets/library/sources/0",
-          "from": {
-            "set": "base"
-          },
-          "extensions": {
-            "com.example": {
-              "layer": "outer"
-            }
-          }
-        },
-        {
-          "file": "tokens.resolver.json",
-          "pointer": "#/resolutionOrder/0/sources/0",
-          "from": {
-            "set": "base"
-          },
-          "extensions": {
-            "com.example": {
-              "layer": "outer"
-            }
-          }
-        },
-        {
           "file": "scale.json",
-          "from": {
-            "set": "base"
-          },
-          "extensions": {
-            "com.example": {
-              "layer": "inner"
-            }
-          }
-        },
-        {
-          "file": "tokens.resolver.json",
-          "pointer": "#/sets/library/sources/1",
-          "from": {
-            "set": "base"
-          },
-          "extensions": {
-            "com.example": {
-              "layer": "inner"
-            }
-          }
-        },
-        {
-          "file": "tokens.resolver.json",
-          "pointer": "#/resolutionOrder/0/sources/1",
           "from": {
             "set": "base"
           },

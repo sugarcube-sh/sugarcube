@@ -14,13 +14,6 @@
           }
         },
         {
-          "file": "tokens.resolver.json",
-          "pointer": "#/sets/base/sources/0",
-          "from": {
-            "set": "base"
-          }
-        },
-        {
           "file": "replacement.json",
           "from": {
             "set": "other"
