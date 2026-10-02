@@ -1,10 +1,11 @@
-import { copyFileSync, mkdtempSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { errors } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
+import { emitCSS } from "../src/shared/css/emit.js";
 import { readOptions } from "../src/shared/read-options.js";
 import type { SugarcubeConfig } from "../src/types/config.js";
 
@@ -12,6 +13,7 @@ const repo = join(import.meta.dirname, "../../..");
 const fixtures = join(repo, "packages/core/tests/__fixtures__");
 const registry = join(repo, "apps/www/registry/tokens");
 const everyValueForm = join(repo, "packages/cli/tests/__fixtures__/every-value-form");
+const golden = join(repo, "packages/cli/tests/__golden__");
 
 interface Case {
     name: string;
@@ -151,17 +153,73 @@ function resolverFor({ resolver, files = [] }: Case): string {
 
 async function readCase(each: Case) {
     const resolver = resolverFor(each);
-    const config = fillDefaults({ resolver, ...(each.variables && { variables: each.variables }) });
-    return read(resolver, readOptions(config));
+    const variables = { path: "variables.css", ...each.variables };
+    const config = fillDefaults({ resolver, variables });
+    return { config, doc: await read(resolver, readOptions(config)) };
 }
 
 describe("golden CSS: the new core reads every golden case", () => {
     it.for(cases)("$name", async (each) => {
-        const doc = await readCase(each);
+        const { doc } = await readCase(each);
         const found = errors(doc).map(({ kind, detail, path }) => {
             const reason = "reason" in detail ? ` ${String(detail.reason)}` : "";
             return `${kind}${reason} ${path ?? ""}`.trimEnd();
         });
         expect(found).toStrictEqual(each.problems ?? []);
+    });
+});
+
+const permutations = "permutations: PR 2";
+const everyValue = "every value type, fluid and recipes: PR 3";
+const configOptions = "atRule, selector lists, path, propagateDependents, polyfill, layers: PR 4";
+
+const pending: Record<string, string> = {
+    ...Object.fromEntries(
+        [
+            "breakpoint-cascade",
+            "breakpoint-distinct",
+            "breakpoint-shared",
+            "complex",
+            "multiple-modifiers",
+            "non-orthogonal-modifiers",
+            "propagate-chain",
+            "provenance",
+            "scheme",
+            "simple",
+            "with-file-refs",
+            "with-refs",
+        ].map((name) => [`core/resolver/${name}/variables.css`, permutations]),
+    ),
+    "studio/design-tokens/variables.css": permutations,
+    "core/tokens/fluid/variables.css": everyValue,
+    "registry/recipes/size-demo/variables.css": everyValue,
+    "registry/recipes/space-demo/variables.css": everyValue,
+    "registry/starter-kits/static/variables.css": everyValue,
+    "registry/starter-kits/fluid/variables.css": everyValue,
+    "studio/demo/variables.css": everyValue,
+    "every-value-form/native/variables.css": configOptions,
+    "every-value-form/polyfill/variables.css": configOptions,
+    "every-value-form/polyfill/dark.css": configOptions,
+};
+
+const goldenFiles = cases.flatMap((each) =>
+    readdirSync(join(golden, each.name))
+        .filter((file) => file !== "utilities.css")
+        .map((file) => ({ name: `${each.name}/${file}`, each, file })),
+);
+
+describe("golden CSS: the new core writes what old sugarcube writes", () => {
+    it.for(goldenFiles)("$name", async ({ name, each, file }) => {
+        const { config, doc } = await readCase(each);
+        const written = emitCSS(doc, config);
+        const css = written.find(({ path }) => path === file)?.css ?? "";
+        const expected = readFileSync(join(golden, name), "utf8");
+        if (pending[name]) expect(css, `pending (${pending[name]}) but matches`).not.toBe(expected);
+        else expect(css).toBe(expected);
+    });
+
+    it("lists as pending only files the golden set has", () => {
+        const names = new Set(goldenFiles.map(({ name }) => name));
+        expect(Object.keys(pending).filter((name) => !names.has(name))).toStrictEqual([]);
     });
 });
