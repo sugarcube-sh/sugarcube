@@ -37,7 +37,6 @@ const cases: Case[] = [
         "breakpoint-cascade",
         "breakpoint-distinct",
         "breakpoint-shared",
-        "complex",
         "multiple-modifiers",
         "no-modifiers",
         "non-orthogonal-modifiers",
@@ -53,6 +52,11 @@ const cases: Case[] = [
         name: `core/resolver/${name}`,
         resolver: join(fixtures, "resolver", `${name}.resolver.json`),
     })),
+    {
+        name: "core/resolver/complex",
+        resolver: join(fixtures, "resolver/complex.resolver.json"),
+        expected: ["diagnostic unknown-property"],
+    },
     {
         name: "core/resolver/provenance",
         resolver: join(fixtures, "resolver/provenance/provenance.resolver.json"),
