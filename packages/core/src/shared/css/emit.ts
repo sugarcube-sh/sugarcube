@@ -20,8 +20,9 @@ import { renderResolved } from "./values.js";
 /**
  * Writes the design system's CSS variables, one file per output path, named from the config's
  * `prefix` or `variableName`, with every reference to a token that has its own variable written
- * as `var()`. The first permutation writes every variable; each later one writes only those whose
- * value differs, under its own selector. Hands back every problem found, without throwing.
+ * as `var()`. The first permutation writes every variable. Each later one, under its own selector,
+ * writes only those whose value differs when the first block applies wherever it does (`:root`
+ * always does), and every variable otherwise. Hands back every problem found, without throwing.
  *
  * @example
  * const doc = await read(config.resolver, readOptions(config));
@@ -47,7 +48,9 @@ export function emitCSS(
         baseline,
         ...later.map(({ selector, declared }) => ({
             selector,
-            declared: declared.filter(({ name, value }) => inEffect.get(name) !== value),
+            declared: appliesWherever(baseline.selector, selector)
+                ? declared.filter(({ name, value }) => inEffect.get(name) !== value)
+                : declared,
         })),
     ].flatMap(({ selector, declared }) => (declared.length > 0 ? [block(selector, declared)] : []));
     const files =
@@ -89,6 +92,11 @@ function derivedSelector(doc: Document, input: Input): string {
         ([name, context]) => context !== doc.modifiers[name]?.default,
     );
     return changed ? `[data-${changed[0]}="${changed[1]}"]` : ":root";
+}
+
+function appliesWherever(earlier: string | string[], later: string | string[]): boolean {
+    const [reach, target] = [earlier, later].map((each) => [each].flat().join(","));
+    return reach === ":root" || reach === target;
 }
 
 function block(selector: string | string[], declared: Declaration[]): string {

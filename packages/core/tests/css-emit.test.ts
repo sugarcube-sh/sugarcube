@@ -148,6 +148,62 @@ describe("emitCSS", () => {
         ]);
     });
 
+    describe("writes a later permutation's block", () => {
+        const files = {
+            "tokens.resolver.json": {
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                    {
+                        type: "modifier",
+                        name: "brand",
+                        contexts: { house: [], ocean: [{ $ref: "ocean.json" }] },
+                        default: "house",
+                    },
+                ],
+            },
+            "tokens.json": { brand: color("#e11d48"), text: color("#111111") },
+            "ocean.json": { brand: color("#0ea5e9") },
+        };
+        const brands = (first: string) => [
+            { input: { brand: "house" }, selector: first },
+            { input: { brand: "ocean" }, selector: '[data-brand="ocean"]' },
+        ];
+
+        it("with only what changed when the first block reaches every element", () => {
+            expect(cssFor(files, { permutations: brands(":root") })).toBe(
+                [
+                    ":root {",
+                    "    --brand: #e11d48;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                    '[data-brand="ocean"] {',
+                    "    --brand: #0ea5e9;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("in full when the first block may not apply where it does", () => {
+            expect(cssFor(files, { permutations: brands('[data-brand="house"]') })).toBe(
+                [
+                    '[data-brand="house"] {',
+                    "    --brand: #e11d48;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                    '[data-brand="ocean"] {',
+                    "    --brand: #0ea5e9;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+    });
+
     it("leaves out a token whose value cannot be read, and writes the rest", () => {
         expect(cssFor({ "tokens.json": { broken: color("#e11d4"), fine: color("#e11d48") } })).toBe(
             ":root {\n    --fine: #e11d48;\n}\n",
