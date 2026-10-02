@@ -385,7 +385,7 @@ function resolvePermutation(
             ...(related.length > 0 && { related }),
             ...(similar !== undefined &&
                 edits.length > 0 && {
-                    fixes: [{ title: fixTitles.useReference(similar), safe: false, edits }],
+                    fixes: [{ title: fixTitles.useSimilar(similar), safe: false, edits }],
                 }),
         });
     }
