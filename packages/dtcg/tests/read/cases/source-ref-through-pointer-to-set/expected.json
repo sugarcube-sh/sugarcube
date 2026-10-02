@@ -1,0 +1,36 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.2.2: keys beside a $ref override what it reaches. Through a pointer to a source that is itself a $ref to a whole set, they override that set, exactly as when written beside #/sets/palette, so each of its sources is listed and takes the set's $extensions (4.1.5.1, Example 4)",
+  "files": ["tokens.resolver.json", "red.json", "blue.json"],
+  "permutations": [
+    {
+      "input": {},
+      "label": "default",
+      "sources": [
+        {
+          "file": "red.json",
+          "from": {
+            "set": "base"
+          },
+          "extensions": {
+            "sh.sugarcube": {
+              "emit": false
+            }
+          }
+        },
+        {
+          "file": "blue.json",
+          "from": {
+            "set": "base"
+          },
+          "extensions": {
+            "sh.sugarcube": {
+              "emit": false
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

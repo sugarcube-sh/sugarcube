@@ -1,0 +1,155 @@
+{
+  "entry": "tokens.json",
+  "spec": "P-017: with hexStringColors, a six- or eight-digit hex string is read as the sRGB color it names, with the string kept as hex and eight digits giving alpha, as a token's value or as a part, and the file's text kept in authored. Three or four digits are still hex-string-color, with the safe fix",
+  "options": {
+    "hexStringColors": true
+  },
+  "permutations": [
+    {
+      "tokens": [
+        {
+          "path": "color.brand",
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [0.8824, 0.1137, 0.2824],
+            "alpha": 1,
+            "hex": "#e11d48"
+          },
+          "authored": {
+            "value": "#e11d48",
+            "typeDeclared": false
+          }
+        },
+        {
+          "path": "color.loud",
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [0.8824, 0.1137, 0.2824],
+            "alpha": 1,
+            "hex": "#E11D48"
+          }
+        },
+        {
+          "path": "color.scrim",
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [0, 0, 0],
+            "alpha": 0.502,
+            "hex": "#000000"
+          }
+        },
+        {
+          "path": "color.white",
+          "invalid": true
+        },
+        {
+          "path": "color.danger",
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [0.8824, 0.1137, 0.2824],
+            "alpha": 1,
+            "hex": "#e11d48"
+          }
+        },
+        {
+          "path": "edge",
+          "resolved": {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [0, 0, 0],
+              "alpha": 1,
+              "hex": "#000000"
+            },
+            "width": {
+              "value": 1,
+              "unit": "px"
+            },
+            "style": {
+              "kind": "keyword",
+              "keyword": "solid"
+            }
+          }
+        },
+        {
+          "path": "lift",
+          "resolved": [
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [0, 0, 0],
+                "alpha": 0.502,
+                "hex": "#000000"
+              },
+              "offsetX": {
+                "value": 0,
+                "unit": "px"
+              },
+              "offsetY": {
+                "value": 2,
+                "unit": "px"
+              },
+              "blur": {
+                "value": 4,
+                "unit": "px"
+              },
+              "spread": {
+                "value": 0,
+                "unit": "px"
+              },
+              "inset": false
+            }
+          ]
+        },
+        {
+          "path": "fade",
+          "resolved": [
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [0, 0, 0],
+                "alpha": 1,
+                "hex": "#000000"
+              },
+              "position": 0
+            },
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [1, 1, 1],
+                "alpha": 1,
+                "hex": "#ffffff"
+              },
+              "position": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "hex-string-color",
+      "detail": {
+        "value": "#fff"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#fff\""
+      },
+      "path": "color.white",
+      "fixes": [
+        {
+          "title": "write the color as an object, keeping the hex",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#fff\"",
+              "replaceWith": "{ \"colorSpace\": \"srgb\", \"components\": [1, 1, 1], \"hex\": \"#ffffff\" }"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

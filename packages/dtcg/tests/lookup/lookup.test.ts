@@ -3,6 +3,7 @@ import {
     type Document,
     byToken,
     defaultPermutation,
+    errors,
     group,
     permutation,
     readFromMemory,
@@ -239,5 +240,28 @@ describe("byToken", () => {
         // @ts-expect-error
         const sortInPlace = () => byToken(twoThemes).sort();
         expect(sortInPlace).toBeTypeOf("function");
+    });
+});
+
+describe("errors", () => {
+    it("keeps the errors and leaves out warnings, in the order they were found", () => {
+        const checked = readFromMemory({
+            files: {
+                "tokens.json": JSON.stringify({
+                    " spaced": { $type: "number", $value: 1 },
+                    "first": { $type: "number", $value: "{missing.one}" },
+                    "second": { $type: "number", $value: "{missing.two}" },
+                }),
+            },
+        });
+        expect(checked.diagnostics.map(({ kind }) => kind)).toContain("whitespace-in-name");
+        expect(errors(checked).map(({ kind, path }) => [kind, path])).toStrictEqual([
+            ["missing-reference", "first"],
+            ["missing-reference", "second"],
+        ]);
+    });
+
+    it("is empty when nothing stops the design system from being used", () => {
+        expect(errors(readFromMemory({ files: { "tokens.json": "{}" } }))).toStrictEqual([]);
     });
 });

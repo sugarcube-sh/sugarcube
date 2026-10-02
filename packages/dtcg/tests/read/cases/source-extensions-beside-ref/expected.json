@@ -1,0 +1,31 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.2.2: $extensions beside a file's $ref replace the file's top-level $extensions, so they hold for that source as a whole. The $ref and the keys beside it are one source",
+  "files": ["tokens.resolver.json", "palette.json", "semantic.json"],
+  "permutations": [
+    {
+      "input": {},
+      "label": "default",
+      "sources": [
+        {
+          "file": "palette.json",
+          "from": {
+            "set": "base"
+          },
+          "extensions": {
+            "sh.sugarcube": {
+              "emit": false
+            }
+          }
+        },
+        {
+          "file": "semantic.json",
+          "from": {
+            "set": "base"
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

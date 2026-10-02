@@ -1,0 +1,12 @@
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "palette",
+      "sources": [{ "$ref": "palette.json" }],
+      "$extensions": { "com.example": { "owner": "design" } }
+    },
+    { "type": "set", "name": "semantic", "sources": [{ "$ref": "semantic.json" }] }
+  ]
+}

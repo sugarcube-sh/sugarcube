@@ -1,0 +1,23 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Format 6: the top of a file is a group, and its $extensions are passed through. They hold for the source as a whole, over those of the set that lists it (Resolver 4.1.5.1)",
+  "files": ["tokens.resolver.json", "palette.json", "semantic.json"],
+  "permutations": [
+    {
+      "input": {},
+      "label": "default",
+      "sources": [
+        {
+          "file": "palette.json",
+          "from": { "set": "palette" },
+          "extensions": {
+            "com.example": { "owner": "design" },
+            "sh.sugarcube": { "emit": false }
+          }
+        },
+        { "file": "semantic.json", "from": { "set": "semantic" } }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

@@ -238,7 +238,7 @@ function readGroupReference(
 
 function typeFix(file: string, node: Node, type: TokenType): Fix {
     return {
-        title: fixTitles.useType(type),
+        title: fixTitles.useSimilar(type),
         safe: false,
         edits: [{ file, offset: node.offset, length: node.length, text: JSON.stringify(type) }],
     };

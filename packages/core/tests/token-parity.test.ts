@@ -3,8 +3,6 @@ import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import {
-    type Document,
-    type Fix,
     type Input,
     type TokenType,
     permutation as permutationFor,
@@ -39,7 +37,6 @@ const cases: Case[] = [
         "breakpoint-cascade",
         "breakpoint-distinct",
         "breakpoint-shared",
-        "complex",
         "multiple-modifiers",
         "no-modifiers",
         "non-orthogonal-modifiers",
@@ -55,6 +52,11 @@ const cases: Case[] = [
         name: `core/resolver/${name}`,
         resolver: join(fixtures, "resolver", `${name}.resolver.json`),
     })),
+    {
+        name: "core/resolver/complex",
+        resolver: join(fixtures, "resolver/complex.resolver.json"),
+        expected: ["diagnostic unknown-property"],
+    },
     {
         name: "core/resolver/provenance",
         resolver: join(fixtures, "resolver/provenance/provenance.resolver.json"),
@@ -174,39 +176,6 @@ async function readOld(resolver: string, inputs: Input[] | undefined) {
     return { permutations, problems };
 }
 
-function safeEdits(doc: Document): Map<string, Fix["edits"]> {
-    const edits = new Map<string, Fix["edits"]>();
-    for (const fix of doc.diagnostics.flatMap((d) => d.fixes ?? [])) {
-        if (!fix.safe) continue;
-        for (const edit of fix.edits) {
-            const inFile = edits.get(edit.file) ?? [];
-            if (!inFile.some((each) => each.offset === edit.offset)) inFile.push(edit);
-            edits.set(edit.file, inFile);
-        }
-    }
-    return edits;
-}
-
-async function readMigrated(resolver: string, inputs: Input[]): Promise<Document> {
-    const options = { generators: [scaleGenerator], inputs };
-    const asWritten = await read(resolver, { ...options, readText: (p) => readFile(p, "utf8") });
-    const edits = safeEdits(asWritten);
-    return read(resolver, {
-        ...options,
-        readText: async (path) => {
-            let text = await readFile(path, "utf8");
-            const file = [...edits.keys()].find(
-                (each) => path === each || path.endsWith(`/${each}`),
-            );
-            const inFile = [...(edits.get(file ?? "") ?? [])].sort((a, b) => b.offset - a.offset);
-            for (const { offset, length, text: replacement } of inFile) {
-                text = text.slice(0, offset) + replacement + text.slice(offset + length);
-            }
-            return text;
-        },
-    });
-}
-
 function rounded(value: number): number {
     return Math.round(value * 10_000) / 10_000;
 }
@@ -247,7 +216,12 @@ async function differences(each: Case): Promise<string[]> {
     const found = old.problems.map(({ message }) => `old sugarcube reports: ${message}`);
 
     const inputs = old.permutations.map(({ input }) => input);
-    const doc = await readMigrated(resolver, inputs);
+    const doc = await read(resolver, {
+        generators: [scaleGenerator],
+        hexStringColors: true,
+        inputs,
+        readText: (path) => readFile(path, "utf8"),
+    });
     for (const { kind, detail, path } of doc.diagnostics) {
         const reason = "reason" in detail ? ` ${String(detail.reason)}` : "";
         found.push(`diagnostic ${kind}${reason} ${path ?? ""}`.trimEnd());

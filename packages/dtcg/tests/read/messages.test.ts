@@ -226,6 +226,11 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
     "circular-reference": [{ chain: ["color.a", "color.b", "color.a"] }],
     "type-mismatch": [{ ref: "space.md", expected: "color", found: "dimension" }],
     "whitespace-in-name": [{ name: "brand " }],
+    "unknown-property": [
+        { property: "colour", owner: "resolver" },
+        { property: "descripton", owner: "set" },
+        { property: "defualt", owner: "modifier" },
+    ],
     "permutation-limit": [{ count: 16384, limit: 64, built: 15 }],
     "no-default": [{ modifiers: ["size"] }, { modifiers: ["size", "theme"] }],
     "deprecated-reference": [{ ref: "color.old" }, { ref: "color.old", reason: "use color.brand" }],

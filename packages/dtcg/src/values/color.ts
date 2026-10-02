@@ -2,12 +2,14 @@ import type {
     ColorComponent,
     ColorSpace,
     JsonPath,
+    ParseOptions,
     ParseResult,
     Pointer,
     ValueError,
     UnresolvedValue,
 } from "../index.js";
 import { colorSpaces } from "./color-spaces.js";
+import { hexStringColor } from "./hex-color.js";
 import { isPlainObject, readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
@@ -18,10 +20,13 @@ const PROPERTIES = new Set(["colorSpace", "components", "alpha", "hex"]);
 
 /**
  * A color written as a hex string, in any of the four forms CSS allows: `#rgb`, `#rgba`, `#rrggbb`
- * or `#rrggbbaa`. A hex string is always an error. Recognising one lets the error say so, and show
- * how to write the color as an object instead.
+ * or `#rrggbbaa`. A hex string is an error unless `hexStringColors` is on, and then only with six or
+ * eight digits. Recognising one lets the error say so, and show how to write the color as an object
+ * instead.
  */
 const HEX_STRING = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+const READABLE_HEX_STRING = /^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 /**
  * The `hex` fallback on a color object: six-digit CSS hex, such as `"#e11d48"`, as the Color module
@@ -31,10 +36,17 @@ const SIX_DIGIT_HEX = /^#[0-9a-f]{6}$/i;
 
 const type = "color";
 
-export function readColor(raw: unknown, at: JsonPath): ParseResult<ColorAsWritten> {
+export function readColor(
+    raw: unknown,
+    at: JsonPath,
+    options?: ParseOptions,
+): ParseResult<ColorAsWritten> {
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference };
 
+    if (typeof raw === "string" && options?.hexStringColors && READABLE_HEX_STRING.test(raw)) {
+        return { ok: true, value: hexStringColor(raw) };
+    }
     if (typeof raw === "string" && HEX_STRING.test(raw)) {
         return { ok: false, errors: [valueError(at, { type, reason: "hex-string", value: raw })] };
     }

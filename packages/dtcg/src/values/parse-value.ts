@@ -1,4 +1,11 @@
-import type { JsonPath, ParseResult, TokenType, UnresolvedValue, ValueByType } from "../index.js";
+import type {
+    JsonPath,
+    ParseOptions,
+    ParseResult,
+    TokenType,
+    UnresolvedValue,
+    ValueByType,
+} from "../index.js";
 import { parsers } from "./parsers.js";
 import { isAlias, isPlainObject, isPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
@@ -14,7 +21,7 @@ export function parseValue<T extends TokenType>(
     type: T,
     raw: unknown,
     at: JsonPath,
-    options?: { references?: true },
+    options?: ParseOptions & { references?: true },
 ): ParseResult<UnresolvedValue<T>>;
 /**
  * Reads one value of a type given at run time, accepting only a literal value: a reference, in
@@ -29,15 +36,15 @@ export function parseValue<T extends TokenType>(
     type: T,
     raw: unknown,
     at: JsonPath,
-    options: { references: false },
+    options: ParseOptions & { references: false },
 ): ParseResult<ValueByType[T]>;
 export function parseValue<T extends TokenType>(
     type: T,
     raw: unknown,
     at: JsonPath,
-    { references = true }: { references?: boolean } = {},
+    { references = true, ...options }: ParseOptions & { references?: boolean } = {},
 ): ParseResult<UnresolvedValue<T> | ValueByType[T]> {
-    const read: ParseResult<unknown> = parsers[type](raw, at);
+    const read: ParseResult<unknown> = parsers[type](raw, at, options);
     if (!read.ok || references) return read as ParseResult<UnresolvedValue<T>>;
 
     const listed = Array.isArray(read.value) && !Array.isArray(raw);

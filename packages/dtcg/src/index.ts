@@ -365,7 +365,8 @@ export interface TokenBase<T extends TokenType> {
     extensions?: Record<string, unknown>;
     /**
      * Where the token was read from: which of the permutation's {@link Permutation.sources | sources}
-     * it came from, and its place in the file.
+     * it belongs to, and exactly where it is written. That is usually in the source's file, and in
+     * the resolver for a token written beside the source's `$ref`.
      */
     source: { index: number; at: Span };
     /**
@@ -410,10 +411,13 @@ export interface Group {
 }
 
 /**
- * One source of a permutation's tokens: a file, part of one, or tokens written in the resolver.
- * A set in the resolver can have several sources, so the same set can appear on several.
+ * One source of a permutation's tokens, as the resolver lists it: a file, part of one, or tokens
+ * written in the resolver. Keys written beside a source's `$ref` are part of that source, so a
+ * token written there belongs to it, and its {@link TokenBase.source | source.at} is in the
+ * resolver. A set in the resolver can have several sources, so the same set can appear on several.
  */
 export interface Source {
+    /** The file its tokens are written in, or the resolver for tokens written there. */
     file: string;
     /** Set when the source is only part of the file, such as `"#/color"`. */
     pointer?: string;
@@ -422,7 +426,11 @@ export interface Source {
      * by way of a set that context names. Absent when there is no resolver.
      */
     from?: { set: string } | { modifier: string; context: string; set?: string };
-    /** Vendor data from the `$extensions` of the set that lists it, passed through untouched. */
+    /**
+     * Vendor data for the source as a whole, passed through untouched: the `$extensions` of the
+     * set that lists it, then those at the top of the source, with the source's keys winning.
+     * `$extensions` written beside the source's `$ref` replace the ones at the top of the file.
+     */
     extensions?: Record<string, unknown>;
 }
 
@@ -564,6 +572,11 @@ export interface DiagnosticDetailByKind {
     "type-mismatch": { ref: string; expected: TokenType; found: TokenType };
     /** A name starts or ends with a space: legal, but almost always a typo. */
     "whitespace-in-name": { name: string };
+    /**
+     * An object in a resolver has a key the resolver specification does not define for it, so it is
+     * ignored. Your own data belongs in `$extensions`.
+     */
+    "unknown-property": { property: string; owner: "resolver" | "set" | "modifier" };
     /** A reference points at a token marked `$deprecated`. */
     "deprecated-reference": { ref: string; reason?: string };
     /** A resolver has more combinations than `permutationLimit`, so `"each-context"` was built instead. */
@@ -678,10 +691,7 @@ export type Diagnostic = {
     };
 }[DiagnosticKind];
 
-/** The diagnostics that stop a design system from being used: those with severity `"error"`. */
-export function errors(doc: Document): Diagnostic[] {
-    throw new Error("not implemented yet");
-}
+export { errors } from "./lookup/errors.js";
 
 /**
  * The diagnostics about one token or group, for showing on its own page: those at its path, and
@@ -741,7 +751,18 @@ export interface ValueError {
 export type ParseResult<V> = { ok: true; value: V } | { ok: false; errors: ValueError[] };
 
 /** Reads one raw value into its shape, or explains why it cannot. */
-export type Parse<V> = (raw: unknown, at: JsonPath) => ParseResult<V>;
+export type Parse<V> = (raw: unknown, at: JsonPath, options?: ParseOptions) => ParseResult<V>;
+
+/** How values are read, for {@link read} and the parsers alike. */
+export interface ParseOptions {
+    /**
+     * Reads a color written as a hex string, such as `"#e11d48"` or `"#e11d4880"`, as the sRGB
+     * color it names, with the string kept as `hex`. Not DTCG 2025.10, which writes every color as
+     * an object. Off, or with three or four digits, a hex string is a `hex-string-color` error.
+     * @default false
+     */
+    hexStringColors?: boolean;
+}
 
 export type { StandardSchemaV1, StandardTypedV1 } from "./standard-schema.js";
 
@@ -881,7 +902,7 @@ export interface Generator {
 export { defineGenerator } from "./read/generate.js";
 export { defineExtensionValidator } from "./read/validate-extensions.js";
 
-export interface ReadOptions {
+export interface ReadOptions extends ParseOptions {
     /**
      * The permutations to build. Modifiers left out take their default; an input that does not
      * fit the resolver is reported and not built.

@@ -1,8 +1,24 @@
 import type { Node } from "jsonc-parser";
-import type { Diagnostic, JsonPath, ResolverProblem } from "../index.js";
+import { fixTitles } from "../error-messages.js";
+import type { Diagnostic, DiagnosticDetailByKind, JsonPath, ResolverProblem } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
 import { type JsonFile, member, members, spanOf } from "./json.js";
 import { parsePointer } from "./pointer.js";
+import { similarName } from "./similar.js";
+
+const ROOT_KEYS = [
+    "version",
+    "name",
+    "description",
+    "sets",
+    "modifiers",
+    "resolutionOrder",
+    "$schema",
+    "$defs",
+];
+export const SET_KEYS = ["sources", "description", "$extensions"];
+const MODIFIER_KEYS = ["contexts", "description", "default", "$extensions"];
+const INLINE_KEYS = ["type", "name"];
 
 export interface SourceNode {
     node: Node;
@@ -40,6 +56,11 @@ export interface Reader {
     entries(node: Node): { key: string; value: Node }[];
     report(problem: ResolverProblem, node: Node): void;
     expect(node: Node | undefined, type: JsonType, name: string, at: JsonPath): node is Node;
+    checkKeys(
+        owner: Place,
+        kind: DiagnosticDetailByKind["unknown-property"]["owner"],
+        known: readonly string[],
+    ): void;
 }
 
 export interface Place {
@@ -64,6 +85,7 @@ export function checkResolver(file: JsonFile, diagnostics: Diagnostic[]): Resolv
     }
     optional(reader, root, "name", "string");
     optional(reader, root, "description", "string");
+    reader.checkKeys(root, "resolver", ROOT_KEYS);
 
     const sets = readAll(reader, root, "sets", readSet);
     const modifiers = readAll(reader, root, "modifiers", readModifier);
@@ -87,6 +109,24 @@ export function createReader(file: JsonFile, diagnostics: Diagnostic[]): Reader 
             if (node.type === type) return true;
             reader.report({ rule: "wrong-type", name, at, expected: type }, node);
             return false;
+        },
+        checkKeys: (owner, kind, known) => {
+            for (const { key, keyNode } of members(owner.node, file.hidden)) {
+                if (known.includes(key)) continue;
+                const { offset, length } = keyNode;
+                const similar = similarName(key, known);
+                const edits = similar && [
+                    { file: file.path, offset, length, text: JSON.stringify(similar) },
+                ];
+                const fixes = edits && [
+                    { title: fixTitles.useSimilar(similar), safe: false, edits },
+                ];
+                const at = spanOf(file.path, file.lineStarts, offset, length);
+                const detail = { property: key, owner: kind };
+                diagnostics.push(
+                    diagnostic("unknown-property", detail, { at, ...(fixes && { fixes }) }),
+                );
+            }
         },
     };
     return reader;
@@ -148,7 +188,13 @@ export function readSetParts(reader: Reader, owner: Place): Partial<SetDefinitio
     };
 }
 
-function readSet(reader: Reader, owner: Place, name: string): SetDefinition {
+function readSet(
+    reader: Reader,
+    owner: Place,
+    name: string,
+    alsoKnown: readonly string[] = [],
+): SetDefinition {
+    reader.checkKeys(owner, "set", [...SET_KEYS, ...alsoKnown]);
     present(reader, owner, "sources");
     return { name, sources: [], ...readSetParts(reader, owner) };
 }
@@ -184,7 +230,13 @@ function readModifierParts(
     };
 }
 
-function readModifier(reader: Reader, owner: Place, name: string): ModifierDefinition {
+function readModifier(
+    reader: Reader,
+    owner: Place,
+    name: string,
+    alsoKnown: readonly string[] = [],
+): ModifierDefinition {
+    reader.checkKeys(owner, "modifier", [...MODIFIER_KEYS, ...alsoKnown]);
     present(reader, owner, "contexts");
     return checkDefault(reader, owner, {
         name,
@@ -264,11 +316,13 @@ function readOrderRef(
     }
 
     if (collection === "sets") {
+        reader.checkKeys(owner, "set", ["$ref", ...SET_KEYS]);
         const set = sets.get(name);
         if (!set) reader.report({ rule: "unknown-set", name, at }, ref);
         return set && { kind: "set", set: { ...set, ...readSetParts(reader, owner) } };
     }
     if (collection === "modifiers") {
+        reader.checkKeys(owner, "modifier", ["$ref", ...MODIFIER_KEYS]);
         const modifier = modifiers.get(name);
         if (!modifier) reader.report({ rule: "unknown-modifier", name, at }, ref);
         return (
@@ -300,9 +354,9 @@ function readInline(reader: Reader, owner: Place, names: Set<string>): ResolverI
         return undefined;
     }
     names.add(name);
-    if (kind === "set") return { kind: "set", set: readSet(reader, owner, name) };
+    if (kind === "set") return { kind: "set", set: readSet(reader, owner, name, INLINE_KEYS) };
     if (kind === "modifier") {
-        return { kind: "modifier", modifier: readModifier(reader, owner, name) };
+        return { kind: "modifier", modifier: readModifier(reader, owner, name, INLINE_KEYS) };
     }
     return undefined;
 }

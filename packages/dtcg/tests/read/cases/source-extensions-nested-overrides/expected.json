@@ -1,0 +1,36 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.2.2: keys beside a $ref override the target's, and a target can itself have keys beside its own $ref. Every layer of the source they make together shares one set of top-level keys, each from the outermost layer that writes it, so $extensions written at one layer hold for all of them",
+  "files": ["tokens.resolver.json", "palette.json", "scale.json"],
+  "permutations": [
+    {
+      "input": {},
+      "label": "default",
+      "sources": [
+        {
+          "file": "palette.json",
+          "from": {
+            "set": "base"
+          },
+          "extensions": {
+            "com.example": {
+              "layer": "outer"
+            }
+          }
+        },
+        {
+          "file": "scale.json",
+          "from": {
+            "set": "base"
+          },
+          "extensions": {
+            "com.example": {
+              "layer": "inner"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

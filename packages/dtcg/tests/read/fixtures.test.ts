@@ -161,6 +161,14 @@ interface Expected {
 
 const expectedFailures: Expected[] = [
     {
+        project: "packages/core/tests/__fixtures__/resolver/complex.resolver.json",
+        why: "carries $extensions at its root, which old sugarcube's parser keeps and core's parse-resolver test checks; the Resolver module defines $extensions on sets and modifiers only, so dtcg warns (dtcg-spec-questions.md, R-2)",
+        matches: (d) =>
+            d.kind === "unknown-property" &&
+            d.detail.property === "$extensions" &&
+            d.detail.owner === "resolver",
+    },
+    {
         project: "packages/core/tests/__fixtures__/resolver/circular-a.resolver.json",
         why: "names circular-b, a resolver, as a token source, to test that it is refused",
         matches: (d) => d.kind === "resolver-invalid" && d.detail.rule === "resolver-as-source",

@@ -1,0 +1,20 @@
+{
+  "version": "2025.10",
+  "$schema": "https://www.designtokens.org/schemas/2025.10/resolver.json",
+  "colour": "red",
+  "sets": {
+    "base": { "sources": [{ "$ref": "base.json" }], "descripton": "Every token" }
+  },
+  "modifiers": {
+    "theme": {
+      "contexts": { "light": [], "dark": [{ "$ref": "dark.json" }] },
+      "defualt": "light"
+    }
+  },
+  "resolutionOrder": [
+    { "$ref": "#/sets/base", "owner": "design" },
+    { "type": "set", "name": "extra", "sources": [{ "$ref": "#/sets/base", "sourcse": [] }] },
+    { "$ref": "#/modifiers/theme", "default": "light" },
+    { "type": "modifier", "name": "size", "contexts": { "small": [], "large": [] }, "default": "small", "mode": 1 }
+  ]
+}

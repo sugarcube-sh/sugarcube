@@ -23,7 +23,7 @@ export interface NormalisedPermutation {
     groups: Group[];
 }
 
-// Walks each source once, then merges each permutation's sources in resolution order
+// Walks each piece of each source once, then merges a permutation's pieces in resolution order
 // into its tokens and groups.
 export function normalisePermutations(
     permutations: LoadedPermutation[],
@@ -39,11 +39,10 @@ export function normalisePermutations(
     };
 
     return permutations.map(({ input, label, sources }, index) => {
-        const merged = merge(
-            sources.map(({ loaded }) => walk(loaded)),
-            index,
-            diagnostics,
+        const walkedPieces = sources.flatMap((each, source) =>
+            each.pieces.map((piece) => ({ contents: walk(piece), source })),
         );
+        const merged = merge(walkedPieces, index, diagnostics);
         applyExtends(merged, index, diagnostics);
         generate(merged, index);
         const tokens = new Map<string, NormalisedToken>();
@@ -59,10 +58,14 @@ export function normalisePermutations(
                 diagnostics.push(diagnostic("missing-type", {}, where));
                 continue;
             }
-            tokens.set(token.path, { token, type, read: readValue(token, type) });
+            tokens.set(token.path, { token, type, read: readValue.read(token, type) });
         }
         const groups = [...merged.groups.values()].map(toGroup);
-        const publicSources = sources.map(({ source }) => source);
+        const publicSources = sources.map(({ source, pieces, extensionsOfSet }) => {
+            const own = pieces.map((each) => walk(each)?.root.extensions).find(Boolean);
+            const extensions = extensionsOfSet || own ? { ...extensionsOfSet, ...own } : undefined;
+            return { ...source, ...(extensions && { extensions }) };
+        });
         return { input, label, sources: publicSources, merged, tokens, groups };
     });
 }

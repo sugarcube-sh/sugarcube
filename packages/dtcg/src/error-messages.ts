@@ -84,10 +84,11 @@ export const relatedMessages = {
     alsoUsedHere: "also used here",
 };
 
+const ownerWords = { resolver: "the resolver", set: "a set", modifier: "a modifier" } as const;
+
 export const fixTitles = {
-    useType: (type: string) => `use \`${type}\`, which has a similar name`,
+    useSimilar: (name: string) => `use \`${name}\`, which has a similar name`,
     hexToObject: "write the color as an object, keeping the hex",
-    useReference: (path: string) => `use \`${path}\`, which has a similar name`,
     measureAsObject: (type: string) => `write the ${type} as an object`,
     sixDigitHex: (hex: string) => `write the hex with six digits, \`${hex}\``,
     referenceAsPointer: (pointer: string) =>
@@ -195,6 +196,11 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "whitespace-in-name": {
         severity: "warning",
         message: ({ name }) => `the name \`${name}\` starts or ends with a space`,
+    },
+    "unknown-property": {
+        severity: "warning",
+        message: ({ property, owner }) =>
+            `\`${property}\` is not a property of ${ownerWords[owner]}, so it is ignored`,
     },
     "permutation-limit": {
         severity: "warning",

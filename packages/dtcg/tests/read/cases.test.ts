@@ -19,7 +19,10 @@ import { withSpans } from "./positions.js";
 interface Expected {
     entry: string;
     spec?: string;
-    options?: Pick<ReadOptions, "inputs" | "permutations" | "permutationLimit"> & {
+    options?: Pick<
+        ReadOptions,
+        "inputs" | "permutations" | "permutationLimit" | "hexStringColors"
+    > & {
         generators?: (keyof typeof generators)[];
         extensionValidators?: (keyof typeof validators)[];
     };

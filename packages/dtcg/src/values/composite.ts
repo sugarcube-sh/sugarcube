@@ -3,6 +3,7 @@ import type {
     UnresolvedValueByType,
     JsonPath,
     Parse,
+    ParseOptions,
     ParseResult,
     Pointer,
     TokenType,
@@ -23,6 +24,7 @@ export function readComposite<O extends object>(
     parts: PartReaders<O>,
     raw: unknown,
     at: JsonPath,
+    options: ParseOptions | undefined,
     defaults: Partial<O> = {},
 ): ParseResult<O | Alias | Pointer> {
     const reference = readAlias(raw) ?? readPointer(raw);
@@ -54,7 +56,7 @@ export function readComposite<O extends object>(
             continue;
         }
 
-        const result = read(raw[name], [...at, name]);
+        const result = read(raw[name], [...at, name], options);
         if (result.ok) value[name] = result.value;
         else errors.push(...result.errors);
     }

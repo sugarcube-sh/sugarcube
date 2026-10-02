@@ -1,0 +1,27 @@
+{
+  "version": "2025.10",
+  "sets": {
+    "library": {
+      "sources": [
+        { "$ref": "palette.json", "$extensions": { "com.example": { "layer": "inner" } } },
+        { "$ref": "scale.json", "$extensions": { "com.example": { "layer": "inner" } } }
+      ]
+    }
+  },
+  "resolutionOrder": [
+    {
+      "type": "set",
+      "name": "base",
+      "sources": [
+        {
+          "$ref": "#/sets/library/sources/0",
+          "$extensions": { "com.example": { "layer": "outer" } }
+        },
+        {
+          "$ref": "#/sets/library/sources/1",
+          "b": { "$type": "number", "$value": 2 }
+        }
+      ]
+    }
+  ]
+}
