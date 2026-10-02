@@ -23,6 +23,7 @@ export type SourceEntry =
           path: JsonPath;
           holder?: SetDefinition;
           overriddenKeys?: string[];
+          layers?: SourceEntry[];
       }
     | {
           kind: "file";
@@ -32,6 +33,7 @@ export type SourceEntry =
           path: JsonPath;
           holder?: SetDefinition;
           overriddenKeys?: string[];
+          layers?: SourceEntry[];
       };
 
 export type ExpandedItem =
@@ -44,6 +46,7 @@ export interface LoadedSource {
     json?: JsonFile;
     tree?: Node;
     overriddenKeys?: string[];
+    layers?: LoadedSource[];
 }
 
 export function expandSources(resolver: Resolver, diagnostics: Diagnostic[]): ExpandedItem[] {
@@ -87,7 +90,11 @@ export function openSources(
     resolver: Resolver,
     entries: SourceEntry[],
 ): Map<SourceEntry, LoadedSource> {
-    return new Map(entries.map((entry) => [entry, openSource(files, resolver, entry)]));
+    const opened = new Map(entries.map((entry) => [entry, openSource(files, resolver, entry)]));
+    for (const [entry, loaded] of opened) {
+        if (entry.layers) loaded.layers = entry.layers.flatMap((each) => opened.get(each) ?? []);
+    }
+    return opened;
 }
 
 function openSource(files: Files, resolver: Resolver, entry: SourceEntry): LoadedSource {
@@ -254,11 +261,13 @@ function withOverride(
     overridden: string[],
 ): SourceEntry[] {
     if (overridden.length === 0) return entries;
-    return [
+    const layers: SourceEntry[] = [
         ...entries.map((entry) => ({
             ...entry,
             overriddenKeys: [...(entry.overriddenKeys ?? []), ...overridden],
         })),
         { kind: "inline", node: source.node, path: source.path, holder, overriddenKeys: ["$ref"] },
     ];
+    for (const layer of layers) layer.layers = layers;
+    return layers;
 }

@@ -1,0 +1,4 @@
+{
+  "$extensions": { "com.example": { "owner": "design" } },
+  "a": { "$type": "number", "$value": 1 }
+}

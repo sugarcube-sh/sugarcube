@@ -1,14 +1,18 @@
 import type { Diagnostic, DiagnosticDetailByKind, Input, Source } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
 import { type JsonFile, plainObject } from "./json.js";
-import type { Resolver, SetDefinition } from "./resolver.js";
+import type { Resolver } from "./resolver.js";
 import type { Loaded } from "./load.js";
 import type { ExpandedItem, LoadedSource, SourceEntry } from "./sources.js";
 
 export interface LoadedPermutation {
     input: Input;
     label: string;
-    sources: { source: Source; loaded: LoadedSource }[];
+    sources: {
+        source: Omit<Source, "extensions">;
+        loaded: LoadedSource;
+        extensionsOfSet?: Record<string, unknown>;
+    }[];
 }
 
 type Built = Pick<Loaded, "modifiers" | "usedBy" | "permutations">;
@@ -263,24 +267,11 @@ function described(
     from: Source["from"],
 ): LoadedPermutation["sources"] {
     const loaded = sources.get(entry);
-    return loaded ? [{ source: sourceOf(resolver, loaded, from, entry.holder), loaded }] : [];
-}
-
-function sourceOf(
-    resolver: Resolver,
-    loaded: LoadedSource,
-    from: Source["from"],
-    holder: SetDefinition | undefined,
-): Source {
-    const extensions = holder?.extensions
-        ? plainObject(holder.extensions, resolver.file.hidden)
-        : undefined;
-    return {
-        file: loaded.file,
-        ...(loaded.pointer && { pointer: loaded.pointer }),
-        from,
-        ...(extensions && { extensions }),
-    };
+    if (!loaded) return [];
+    const source = { file: loaded.file, ...(loaded.pointer && { pointer: loaded.pointer }), from };
+    const holder = entry.holder?.extensions;
+    const extensionsOfSet = holder && plainObject(holder, resolver.file.hidden);
+    return [{ source, loaded, ...(extensionsOfSet && { extensionsOfSet }) }];
 }
 
 function whoUsesEachFile(

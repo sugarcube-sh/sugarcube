@@ -1,0 +1,4 @@
+{
+  "$extensions": { "sh.sugarcube": { "emit": false } },
+  "a": { "$type": "number", "$value": 1 }
+}
