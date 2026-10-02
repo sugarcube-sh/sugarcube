@@ -3,6 +3,7 @@ import { diagnostic } from "./diagnostics.js";
 import { applyExtends } from "./extends.js";
 import { inheritedType } from "./inherit.js";
 import { type Merged, type MergedGroup, type MergedToken, merge } from "./merge.js";
+import { type Prefixes, inWrittenOrder } from "./order.js";
 import type { ValueReader } from "./parse-value.js";
 import type { LoadedPermutation } from "./permutations.js";
 import type { LoadedSource } from "./sources.js";
@@ -38,6 +39,7 @@ export function normalisePermutations(
         return walked.get(key);
     };
 
+    const prefixes: Prefixes = new Map();
     return permutations.map(({ input, label, sources }, index) => {
         const walkedPieces = sources.flatMap((each, source) =>
             each.pieces.map((piece) => ({ contents: walk(piece), source })),
@@ -45,6 +47,7 @@ export function normalisePermutations(
         const merged = merge(walkedPieces, index, diagnostics);
         applyExtends(merged, index, diagnostics);
         generate(merged, index);
+        inWrittenOrder(merged, prefixes);
         const tokens = new Map<string, NormalisedToken>();
         for (const token of merged.tokens.values()) {
             if (token.type === undefined && token.isReference) {

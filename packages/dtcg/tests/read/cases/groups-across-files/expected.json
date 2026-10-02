@@ -1,0 +1,25 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 6.2: sources combine into one tokens structure that behaves as if it were one source, so a group's tokens and groups stay together where the group is first written, whichever file adds them. semantic.json adds color.text.accent beside color.text.link, and color.accent after color.bg, ahead of border; its color.text.primary keeps its place (P-015)",
+  "permutations": [
+    {
+      "tokens": [
+        { "path": "color.text.primary" },
+        { "path": "color.text.link" },
+        { "path": "color.text.accent" },
+        { "path": "color.bg.subtle" },
+        { "path": "color.accent.strong" },
+        { "path": "border.width.hairline" }
+      ],
+      "groups": [
+        { "path": "color" },
+        { "path": "color.text" },
+        { "path": "color.bg" },
+        { "path": "color.accent" },
+        { "path": "border" },
+        { "path": "border.width" }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

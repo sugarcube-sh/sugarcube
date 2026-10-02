@@ -1,0 +1,12 @@
+{
+  "color": {
+    "$type": "color",
+    "text": {
+      "primary": { "$value": { "colorSpace": "srgb", "components": [0, 0, 0] } },
+      "link": { "$value": { "colorSpace": "srgb", "components": [0, 0, 1] } }
+    },
+    "bg": {
+      "subtle": { "$value": { "colorSpace": "srgb", "components": [1, 1, 1] } }
+    }
+  }
+}

@@ -445,11 +445,16 @@ export interface Permutation {
     /** Where the tokens come from, in the order they apply: a later source overrides an earlier one. */
     sources: Source[];
     /**
-     * Every token, in the order the files write them, invalid ones included. Tokens a
-     * {@link Generator} adds come at the end of their group. To find one by path, use {@link token}.
+     * Every token, in the order the files write them, invalid ones included. The files read as
+     * one: a group's tokens stay together where the group is first written, whichever file adds
+     * them, and a token a later file replaces keeps its place. Tokens a group inherits, or a
+     * {@link Generator} adds, come at the end of their group. To find one by path, use {@link token}.
      */
     tokens: Token[];
-    /** Every group, in the order the files write them. To find one by path, use {@link group}. */
+    /**
+     * Every group, in the same order as {@link Permutation.tokens | tokens}. To find one by path,
+     * use {@link group}.
+     */
     groups: Group[];
 }
 

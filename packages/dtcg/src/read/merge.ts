@@ -27,14 +27,19 @@ export interface MergedGroup extends Properties {
     declaredIn: Span[];
     extends?: GroupReference & { piece: Piece };
     extensionsAt?: Record<string, ExtensionsAt & { piece: Piece }>;
-    end?: { order: number; offset: number };
     inherited?: { from: string };
+}
+
+export interface Written {
+    order: number;
+    offset: number;
 }
 
 export interface Merged {
     root: MergedGroup;
     tokens: Map<string, MergedToken>;
     groups: Map<string, MergedGroup>;
+    written: Map<string, Written>;
 }
 
 export function merge(
@@ -46,6 +51,7 @@ export function merge(
         root: { path: "", declaredIn: [] },
         tokens: new Map(),
         groups: new Map(),
+        written: new Map(),
     };
     const conflict = (later: Span, earlier: Span[], earlierIs: "token" | "group") =>
         diagnostics.push(
@@ -66,8 +72,12 @@ export function merge(
     for (const [order, { contents, source }] of pieces.entries()) {
         if (!contents) continue;
         const piece = { order, source };
+        const firstWritten = ({ path, at }: { path: string; at: Span }) => {
+            if (!merged.written.has(path)) merged.written.set(path, { order, offset: at.offset });
+        };
         mergeGroupInto(merged.root, contents.root, piece);
         for (const group of contents.groups) {
+            firstWritten(group);
             const token = merged.tokens.get(group.path);
             if (token) {
                 conflict(group.at, [token.at], "token");
@@ -76,6 +86,7 @@ export function merge(
             mergeGroup(merged.groups, group, piece);
         }
         for (const token of contents.tokens) {
+            firstWritten(token);
             const group = merged.groups.get(token.path);
             if (group) {
                 conflict(token.at, group.declaredIn, "group");
@@ -97,7 +108,6 @@ function mergeGroupInto(existing: MergedGroup, group: SourceGroup, piece: Piece)
     const { path: _path, at, extends: extending, extensionsAt, ...properties } = group;
     mergeProperties(existing, properties);
     existing.declaredIn.push(at);
-    existing.end ??= { order: piece.order, offset: at.offset + at.length };
     if (extending) existing.extends = { ...extending, piece };
     if (extensionsAt && properties.extensions) {
         const declared = { ...extensionsAt, piece };

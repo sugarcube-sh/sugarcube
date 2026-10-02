@@ -1,0 +1,11 @@
+{
+  "color": {
+    "accent": {
+      "strong": { "$value": { "colorSpace": "srgb", "components": [1, 0, 0] } }
+    },
+    "text": {
+      "primary": { "$value": { "colorSpace": "srgb", "components": [0.1, 0.1, 0.1] } },
+      "accent": { "$value": { "colorSpace": "srgb", "components": [1, 0, 0.5] } }
+    }
+  }
+}
