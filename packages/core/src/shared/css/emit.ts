@@ -18,11 +18,11 @@ import { createVariableNameResolver } from "../resolve-variable-name.js";
 import { renderResolved } from "./values.js";
 
 /**
- * Writes the design system's CSS variables, one file per output path, named from the config's
- * `prefix` or `variableName`, with every reference to a token that has its own variable written
- * as `var()`. The first permutation writes every variable. Each later one, under its own selector,
- * writes only those whose value differs when the first block applies wherever it does (`:root`
- * always does), and every variable otherwise. Hands back every problem found, without throwing.
+ * Writes the design system's CSS variables to the config's `path`, named from its `prefix` or
+ * `variableName`, with every reference to a token that has its own variable written as `var()`.
+ * The first permutation writes every variable. Each later one, under its own selector, writes only
+ * those whose value differs when the first block applies wherever it does (`:root` always does),
+ * and every variable otherwise. Hands back every problem found, without throwing.
  *
  * @example
  * const doc = await read(config.resolver, readOptions(config));
