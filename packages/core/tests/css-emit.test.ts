@@ -247,4 +247,156 @@ describe("emitCSS", () => {
             );
         });
     });
+
+    describe("writes composites part by part", () => {
+        const px = (value: number) => ({ value, unit: "px" });
+        const palette = {
+            version: "2025.10",
+            resolutionOrder: [
+                {
+                    type: "set",
+                    name: "palette",
+                    sources: [{ $ref: "palette.json" }],
+                    $extensions: { "sh.sugarcube": { emit: false } },
+                },
+                { type: "set", name: "system", sources: [{ $ref: "system.json" }] },
+            ],
+        };
+        const declarations = (system: Record<string, unknown>) =>
+            cssFor({
+                "tokens.resolver.json": palette,
+                "palette.json": {
+                    rose: color("#e11d48"),
+                    hairline: { $type: "dimension", $value: px(1) },
+                },
+                "system.json": system,
+            })
+                ?.split("\n")
+                .filter((line) => line.startsWith("    "))
+                .map((line) => line.trim());
+
+        it("with var() for a part referring to a token with a variable, and the value otherwise", () => {
+            expect(
+                declarations({
+                    ink: color("#111111"),
+                    edge: {
+                        $type: "border",
+                        $value: { color: "{ink}", width: "{hairline}", style: "solid" },
+                    },
+                    lift: {
+                        $type: "shadow",
+                        $value: {
+                            color: "{rose}",
+                            offsetX: px(0),
+                            offsetY: px(1),
+                            blur: px(2),
+                            spread: px(0),
+                        },
+                    },
+                }),
+            ).toStrictEqual([
+                "--ink: #111111;",
+                "--edge: 1px solid var(--ink);",
+                "--lift: 0px 1px 2px 0px #e11d48;",
+            ]);
+        });
+
+        it("with the value for a part written as a JSON Pointer", () => {
+            expect(
+                declarations({
+                    deep: color({ colorSpace: "srgb", components: [0.2, 0, 0] }),
+                    edge: {
+                        $type: "border",
+                        $value: { color: { $ref: "#/deep/$value" }, width: px(2), style: "dashed" },
+                    },
+                    tint: color({
+                        colorSpace: "srgb",
+                        components: [{ $ref: "#/deep/$value/components/0" }, 1, 1],
+                    }),
+                }),
+            ).toStrictEqual([
+                "--deep: rgb(51 0 0);",
+                "--edge: 2px dashed rgb(51 0 0);",
+                "--tint: rgb(51 255 255);",
+            ]);
+        });
+
+        it("with var() for a shadow layer referring to a whole shadow token", () => {
+            expect(
+                declarations({
+                    lift: {
+                        $type: "shadow",
+                        $value: {
+                            color: "#000000",
+                            offsetX: px(0),
+                            offsetY: px(1),
+                            blur: px(2),
+                            spread: px(0),
+                        },
+                    },
+                    stack: {
+                        $type: "shadow",
+                        $value: [
+                            "{lift}",
+                            {
+                                color: "#000000",
+                                offsetX: px(0),
+                                offsetY: px(4),
+                                blur: px(8),
+                                spread: px(0),
+                                inset: true,
+                            },
+                        ],
+                    },
+                }),
+            ).toStrictEqual([
+                "--lift: 0px 1px 2px 0px #000000;",
+                "--stack: var(--lift), inset 0px 4px 8px 0px #000000;",
+            ]);
+        });
+
+        it("with a gradient's stops written out where a stop refers to another gradient", () => {
+            expect(
+                declarations({
+                    half: { $type: "number", $value: 0.5 },
+                    start: { $type: "gradient", $value: [{ color: "#ffffff", position: 0 }] },
+                    fade: {
+                        $type: "gradient",
+                        $value: ["{start}", { color: "{rose}", position: "{half}" }],
+                    },
+                }),
+            ).toStrictEqual([
+                "--half: 0.5;",
+                "--start: linear-gradient(#ffffff 0%);",
+                "--fade: linear-gradient(#ffffff 0%, #e11d48 clamp(0%, var(--half) * 100%, 100%));",
+            ]);
+        });
+
+        it("with typography as one variable per part, each part of a referred-to style its own var()", () => {
+            const body = {
+                $type: "typography",
+                $value: {
+                    fontFamily: ["Inter", "sans-serif"],
+                    fontSize: "{hairline}",
+                    fontWeight: 400,
+                    letterSpacing: px(0),
+                    lineHeight: 0,
+                },
+            };
+            expect(
+                declarations({ body, quote: { $type: "typography", $value: "{body}" } }),
+            ).toStrictEqual([
+                "--body-font-family: Inter, sans-serif;",
+                "--body-font-size: 1px;",
+                "--body-font-weight: 400;",
+                "--body-letter-spacing: 0px;",
+                "--body-line-height: 0;",
+                "--quote-font-family: var(--body-font-family);",
+                "--quote-font-size: var(--body-font-size);",
+                "--quote-font-weight: var(--body-font-weight);",
+                "--quote-letter-spacing: var(--body-letter-spacing);",
+                "--quote-line-height: var(--body-line-height);",
+            ]);
+        });
+    });
 });

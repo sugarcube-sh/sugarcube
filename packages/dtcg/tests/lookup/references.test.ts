@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFromMemory, references, token } from "../../src/index.js";
+import { readFromMemory, referenceAt, references, token } from "../../src/index.js";
 
 const color = { colorSpace: "srgb", components: [1, 0, 0] };
 const px = (value: number) => ({ value, unit: "px" });
@@ -59,11 +59,12 @@ const tokens = {
 };
 
 const doc = readFromMemory({ files: { "tokens.json": JSON.stringify(tokens) } });
-const referencesOf = (path: string) => {
+const tokenAt = (path: string) => {
     const found = token(doc, path);
     if (!found) throw new Error(`no token ${path}`);
-    return references(found);
+    return found;
 };
+const referencesOf = (path: string) => references(tokenAt(path));
 
 describe("references", () => {
     it("is empty for a value with no references", () => {
@@ -121,5 +122,44 @@ describe("references", () => {
 
     it("is empty for a token whose value could not be read", () => {
         expect(referencesOf("broken")).toStrictEqual([]);
+    });
+});
+
+describe("referenceAt", () => {
+    it("finds the reference written at a place in the value", () => {
+        expect(referenceAt(tokenAt("border"), ["width"])).toStrictEqual({ alias: "thin" });
+        expect(referenceAt(tokenAt("fade"), [1, "position"])).toStrictEqual({ alias: "half" });
+        expect(referenceAt(tokenAt("mixed"), ["components", 0])).toStrictEqual({
+            pointer: "#/blue/$value/components/0",
+        });
+    });
+
+    it("finds a whole value written as a reference at the top of the value", () => {
+        expect(referenceAt(tokenAt("accent"), [])).toStrictEqual({ alias: "red" });
+    });
+
+    it("finds a reference standing for a whole item of a list", () => {
+        expect(referenceAt(tokenAt("layered"), [0])).toStrictEqual({ alias: "lone" });
+    });
+
+    it("finds nothing where the file wrote a value", () => {
+        expect(referenceAt(tokenAt("border"), ["style"])).toBeUndefined();
+        expect(referenceAt(tokenAt("plain"), [])).toBeUndefined();
+    });
+
+    it("finds nothing at a part when the reference is around it or inside it", () => {
+        expect(referenceAt(tokenAt("accent"), ["components", 0])).toBeUndefined();
+        expect(referenceAt(tokenAt("mixed"), [])).toBeUndefined();
+    });
+
+    it("finds nothing at a place the value does not have", () => {
+        expect(referenceAt(tokenAt("border"), ["shade"])).toBeUndefined();
+        expect(referenceAt(tokenAt("layered"), [5, "color"])).toBeUndefined();
+        expect(referenceAt(tokenAt("border"), [0])).toBeUndefined();
+        expect(referenceAt(tokenAt("layered"), ["length"])).toBeUndefined();
+    });
+
+    it("finds nothing in a token whose value could not be read", () => {
+        expect(referenceAt(tokenAt("broken"), [])).toBeUndefined();
     });
 });

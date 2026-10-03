@@ -7,7 +7,7 @@ import {
     type JsonPath,
     type Token,
     isAlias,
-    references,
+    referenceAt,
     token,
 } from "@sugarcube-sh/dtcg";
 
@@ -19,9 +19,8 @@ declare function cssValue(part: unknown): string;
 
 const border = token(doc, "border.card", input);
 if (border?.type === "border" && border.resolved) {
-    const found = references(border);
     const part = (at: JsonPath, resolved: unknown) => {
-        const ref = found.find((each) => each.at.join("/") === at.join("/"))?.ref;
+        const ref = referenceAt(border, at);
         const target = ref && isAlias(ref) ? token(doc, ref.alias, input) : undefined;
         return target && !isPrivateToken(target)
             ? `var(--${cssName(target.path)})`

@@ -25,3 +25,26 @@ export function references(token: Token): { at: JsonPath; ref: Alias | Pointer }
     visit(token.value, []);
     return found;
 }
+
+/**
+ * The reference written at one place in a token's value, as {@link references} places it, or
+ * `undefined` when there is none there.
+ *
+ * @example
+ * // a border written { "color": "{color.brand}", "width": { "value": 1, "unit": "px" }, "style": "solid" }
+ * referenceAt(border, ["color"]) // { alias: "color.brand" }
+ * referenceAt(border, ["width"]) // undefined: written as a value
+ * // a border written "{border.default}"
+ * referenceAt(border, []) // { alias: "border.default" }
+ * referenceAt(border, ["color"]) // undefined: the reference is the whole value, at []
+ */
+export function referenceAt(token: Token, at: JsonPath): Alias | Pointer | undefined {
+    const found = at.reduce<unknown>((value, step) => {
+        if (Array.isArray(value)) return typeof step === "number" ? value[step] : undefined;
+        if (isPlainObject(value) && typeof step === "string" && Object.hasOwn(value, step)) {
+            return value[step];
+        }
+        return undefined;
+    }, token.value);
+    return isAlias(found) || isPointer(found) ? found : undefined;
+}

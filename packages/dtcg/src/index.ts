@@ -280,7 +280,7 @@ export interface UnresolvedValueByType {
 export type UnresolvedValue<T extends TokenType> = UnresolvedValueByType[T];
 
 export { isAlias, isPointer } from "./values/references.js";
-export { references } from "./lookup/references.js";
+export { referenceAt, references } from "./lookup/references.js";
 
 /**
  * A choice of context for each modifier, which is how every function names a permutation.

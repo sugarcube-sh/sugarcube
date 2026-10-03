@@ -15,7 +15,7 @@ import type { CSSFileOutput } from "../../types/generate.js";
 import { ErrorMessages } from "../constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { createVariableNameResolver } from "../resolve-variable-name.js";
-import { renderResolved } from "./values.js";
+import { type VariableFor, type Written, renderToken } from "./values.js";
 
 /**
  * Writes the design system's CSS variables to the config's `path`, named from its `prefix` or
@@ -39,7 +39,7 @@ export function emitCSS(
     const nameOf = createVariableNameResolver(config.variables);
     const [baseline, ...later] = toWrite(doc, config).map(({ permutation, selector }) => ({
         selector,
-        declared: declarations(doc, permutation, nameOf),
+        declared: declarations(permutation, nameOf),
     }));
     if (!baseline) return { files: [], diagnostics };
 
@@ -109,21 +109,26 @@ interface Declaration {
     value: string;
 }
 
-function declarations(
-    doc: Document,
-    permutation: Permutation,
-    nameOf: (path: string) => string,
-): Declaration[] {
-    const emitted = (each: Token | undefined): each is Token =>
-        each !== undefined && !each.invalid && !isPrivate(permutation.sources[each.source.index]);
-    return permutation.tokens.flatMap((each) => {
-        if (!emitted(each) || each.resolved === undefined) return [];
-        const target = isAlias(each.value)
-            ? token(doc, each.value.alias, permutation.input)
-            : undefined;
-        const value = emitted(target) ? `var(--${nameOf(target.path)})` : renderResolved(each);
-        return value === undefined ? [] : [{ name: `--${nameOf(each.path)}`, value }];
-    });
+function declarations(permutation: Permutation, nameOf: (path: string) => string): Declaration[] {
+    const variable = (path: string) => `--${nameOf(path)}`;
+    const writtenFor = new Map<Token, Written[] | undefined>();
+    const written = (each: Token): Written[] | undefined => {
+        if (!writtenFor.has(each)) {
+            const source = permutation.sources[each.source.index];
+            writtenFor.set(each, isPrivate(source) ? undefined : renderToken(each, variableFor));
+        }
+        return writtenFor.get(each);
+    };
+    const variableFor: VariableFor = (ref) => {
+        const target = isAlias(ref) ? token(permutation, ref.alias) : undefined;
+        return target && written(target) ? variable(target.path) : undefined;
+    };
+    return permutation.tokens.flatMap((each) =>
+        (written(each) ?? []).map(({ suffix, value }) => ({
+            name: `${variable(each.path)}${suffix}`,
+            value,
+        })),
+    );
 }
 
 function isPrivate(source: Source | undefined): boolean {

@@ -148,6 +148,14 @@ describe("token", () => {
         expect(token(doc, "toString")).toBeUndefined();
         expect(token(doc, "2", { theme: "sepia" })).toBeUndefined();
     });
+
+    it("finds a token in a permutation already in hand", () => {
+        const dark = permutation(doc, { theme: "dark" });
+        if (!dark) throw new Error("no dark permutation");
+        expect(valueOf(token(dark, "2"))).toBe(3);
+        expect(valueOf(token(dark, "glow"))).toBe(4);
+        expect(token(dark, "toString")).toBeUndefined();
+    });
 });
 
 describe("group", () => {
@@ -159,6 +167,13 @@ describe("group", () => {
     it("finds nothing for a path that is a token, not a group", () => {
         expect(group(doc, "space.sm")).toBeUndefined();
         expect(group(doc, "constructor")).toBeUndefined();
+    });
+
+    it("finds a group in a permutation already in hand", () => {
+        const compact = permutation(doc, { density: "compact" });
+        if (!compact) throw new Error("no compact permutation");
+        expect(group(compact, "space")?.type).toBe("dimension");
+        expect(group(compact, "space.sm")).toBeUndefined();
     });
 });
 
@@ -194,6 +209,17 @@ describe("tokensIn", () => {
     it("is empty for a path that is not a group, or an input that matches nothing", () => {
         expect(tokensIn(doc, "space.sm")).toStrictEqual([]);
         expect(tokensIn(doc, "space", { theme: "sepia" })).toStrictEqual([]);
+    });
+
+    it("lists the tokens of a permutation already in hand", () => {
+        const dark = permutation(doc, { theme: "dark" });
+        if (!dark) throw new Error("no dark permutation");
+        expect(paths(tokensIn(dark, ""))).toContain("glow");
+        expect(paths(tokensIn(dark, "space"))).toStrictEqual([
+            "space.$root",
+            "space.sm",
+            "space.inset.lg",
+        ]);
     });
 });
 

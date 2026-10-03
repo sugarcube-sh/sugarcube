@@ -173,19 +173,24 @@ const everyValue = "every value type, fluid and recipes: PR 3";
 const configOptions = "atRule, selector lists, path, propagateDependents, polyfill, layers: PR 4";
 
 const pending: Record<string, string> = {
-    "core/resolver/propagate-chain/variables.css": everyValue,
-    "core/resolver/provenance/variables.css": everyValue,
-    "studio/design-tokens/variables.css": `${everyValue}; whole-number keys in written order (P-015)`,
     "core/tokens/fluid/variables.css": everyValue,
     "registry/recipes/size-demo/variables.css": everyValue,
     "registry/recipes/space-demo/variables.css": everyValue,
-    "registry/starter-kits/static/variables.css": everyValue,
     "registry/starter-kits/fluid/variables.css": everyValue,
     "studio/demo/variables.css": everyValue,
     "every-value-form/native/variables.css": configOptions,
     "every-value-form/polyfill/variables.css": configOptions,
     "every-value-form/polyfill/dark.css": configOptions,
 };
+
+const decided: Record<string, { decision: string; differs: "in order only" }> = {
+    "studio/design-tokens/variables.css": {
+        decision: "P-015: whole-number keys stay where the file writes them",
+        differs: "in order only",
+    },
+};
+
+const linesByBlock = (css: string) => css.split("\n\n").map((block) => block.split("\n").sort());
 
 const goldenFiles = cases.flatMap((each) =>
     readdirSync(join(golden, each.name))
@@ -199,12 +204,18 @@ describe("golden CSS: the new core writes what old sugarcube writes", () => {
         const { files } = emitCSS(doc, config);
         const css = files.find(({ path }) => path === file)?.css ?? "";
         const expected = readFileSync(join(golden, name), "utf8");
+        const allowed = decided[name];
         if (pending[name]) expect(css, `pending (${pending[name]}) but matches`).not.toBe(expected);
-        else expect(css).toBe(expected);
+        else if (allowed) {
+            expect(css, `differs by ${allowed.decision} but matches`).not.toBe(expected);
+            expect(linesByBlock(css)).toStrictEqual(linesByBlock(expected));
+        } else expect(css).toBe(expected);
     });
 
-    it("lists as pending only files the golden set has", () => {
+    it("lists as pending or decided only files the golden set has, and none as both", () => {
         const names = new Set(goldenFiles.map(({ name }) => name));
-        expect(Object.keys(pending).filter((name) => !names.has(name))).toStrictEqual([]);
+        const listed = [...Object.keys(pending), ...Object.keys(decided)];
+        expect(listed.filter((name) => !names.has(name))).toStrictEqual([]);
+        expect(Object.keys(decided).filter((name) => name in pending)).toStrictEqual([]);
     });
 });
