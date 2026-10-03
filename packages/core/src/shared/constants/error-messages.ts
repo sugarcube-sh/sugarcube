@@ -252,6 +252,8 @@ export const ErrorMessages = {
                 names.length > 1 ? ["modifiers", "have", "them"] : ["modifier", "has", "it"];
             return `the ${noun} ${listed} ${verb} no default, so there is nothing to write on \`:root\`: give ${pronoun} a \`default\` in the resolver, or list the permutations to write in \`variables.permutations\``;
         },
+        "fluid-text-zoom": ({ from, to }: { from: number; to: number }) =>
+            `this fluid size grows too fast to zoom to 200% on screens ${from}px to ${to}px wide (WCAG 1.4.4): bring \`min\` and \`max\` closer together`,
     },
     FLUID_EXTENSION: {
         "not-an-object": ({ name }: { name: string }) => `\`${name}\` must be an object`,
@@ -288,3 +290,7 @@ export const ErrorMessages = {
             `Invalid $extends target at "${path}": "${target}" must reference a group, not a token`,
     },
 } as const;
+
+export function diagnosticDocs(kind: string): string {
+    return `https://sugarcube.sh/errors/${kind}`;
+}

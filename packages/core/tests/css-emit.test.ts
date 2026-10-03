@@ -608,6 +608,95 @@ describe("emitCSS", () => {
             );
         });
 
+        it("from its own range even when its value is a reference, as a fluid token never uses its value", () => {
+            const { files } = read({
+                step: fluid({ min: px(16), max: { value: 1.25, unit: "rem" } }),
+                own: { ...fluid({ min: px(20), max: px(24) }), $value: "{step}" },
+            });
+            expect(files[0]?.css).toBe(
+                [
+                    ":root {",
+                    "    --step: clamp(1rem, 0.9091rem + 0.4545vw, 1.25rem);",
+                    "    --own: clamp(1.25rem, 1.1591rem + 0.4545vw, 1.5rem);",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        describe("and warns when fluid text cannot be zoomed to 200% (WCAG 1.4.4)", () => {
+            const text = (fontSize: string) => ({
+                $type: "typography",
+                $value: {
+                    fontFamily: "Inter",
+                    fontSize,
+                    fontWeight: 400,
+                    letterSpacing: px(0),
+                    lineHeight: 1.5,
+                },
+            });
+            const zoom = (from: number, to: number) =>
+                `this fluid size grows too fast to zoom to 200% on screens ${from}px to ${to}px wide (WCAG 1.4.4): bring \`min\` and \`max\` closer together`;
+            const warnings = (diagnostics: { kind: string; path?: string; message: string }[]) =>
+                diagnostics.map(({ kind, path, message }) => [kind, path, message]);
+
+            it("on the fluid size a typography token uses, followed through references", () => {
+                const { diagnostics } = read({
+                    huge: fluid({ min: px(16), max: px(64) }),
+                    calm: fluid({ min: px(16), max: px(20) }),
+                    gap: fluid({ min: px(16), max: px(64) }),
+                    big: fluid({ min: px(24), max: px(72) }),
+                    heading: { $type: "dimension", $value: "{big}" },
+                    body: text("{huge}"),
+                    label: text("{calm}"),
+                    title: text("{heading}"),
+                });
+                expect(warnings(diagnostics)).toStrictEqual([
+                    ["fluid-text-zoom", "huge", zoom(760, 2480)],
+                    ["fluid-text-zoom", "big", zoom(980, 2040)],
+                ]);
+                expect(diagnostics.every(({ severity }) => severity === "warning")).toBe(true);
+            });
+
+            it("once, however many permutations hold it", () => {
+                const config = fillDefaults({
+                    variables: {
+                        path: "variables.css",
+                        transforms: { fluid: { min: 320, max: 1200 } },
+                    },
+                });
+                const resolver = {
+                    version: "2025.10",
+                    resolutionOrder: [
+                        { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
+                        {
+                            type: "modifier",
+                            name: "mode",
+                            default: "light",
+                            contexts: { light: [], dark: [{ $ref: "dark.json" }] },
+                        },
+                    ],
+                };
+                const files = Object.fromEntries(
+                    Object.entries({
+                        "tokens.resolver.json": resolver,
+                        "base.json": {
+                            huge: fluid({ min: px(16), max: px(64) }),
+                            body: text("{huge}"),
+                        },
+                        "dark.json": { ink: color("#eeeeee") },
+                    }).map(([path, json]) => [path, JSON.stringify(json)]),
+                );
+                const { diagnostics } = emitCSS(
+                    readFromMemory({ files }, readOptions(config)),
+                    config,
+                );
+                expect(warnings(diagnostics)).toStrictEqual([
+                    ["fluid-text-zoom", "huge", zoom(760, 2480)],
+                ]);
+            });
+        });
+
         it("for a recipe's steps", () => {
             const { files } = read({
                 space: {

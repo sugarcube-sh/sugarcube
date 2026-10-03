@@ -13,8 +13,8 @@ import {
 } from "@sugarcube-sh/dtcg";
 import type { FluidConfig } from "../../types/config.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
-import { type FluidRange, readFluid } from "../fluid.js";
-import { calculateClamp } from "./clamp.js";
+import { type FluidRange, pixels, readFluid } from "../fluid.js";
+import { calculateClamp } from "./utopia.js";
 
 export interface Written {
     suffix: string;
@@ -104,12 +104,11 @@ export function renderToken(
     };
 
     if (whole.type === "typography") return typography(whole);
-    const value = range && !variable(whole) ? clamp(range, options.fluid) : write(whole);
+    const value = range ? clamp(range, options.fluid) : write(whole);
     return [{ suffix: "", value }];
 }
 
 function clamp({ min, max }: FluidRange, viewport: FluidConfig): string {
-    const pixels = ({ value, unit }: FluidRange["min"]) => (unit === "px" ? value : value * 16);
     const [minSize, maxSize] = [pixels(min), pixels(max)];
     if (minSize === maxSize) return `${round(minSize / 16, 4)}rem`;
     return calculateClamp({ minSize, maxSize, minWidth: viewport.min, maxWidth: viewport.max });

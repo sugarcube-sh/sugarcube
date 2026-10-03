@@ -12,9 +12,10 @@ import {
 import type { FluidConfig, InternalConfig } from "../../types/config.js";
 import type { Reported } from "../../types/diagnostics.js";
 import type { CSSFileOutput } from "../../types/generate.js";
-import { ErrorMessages } from "../constants/error-messages.js";
+import { ErrorMessages, diagnosticDocs } from "../constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { createVariableNameResolver } from "../resolve-variable-name.js";
+import { textZoomWarnings } from "./text-zoom.js";
 import { type ReplacementFor, type Written, renderToken } from "./values.js";
 
 /**
@@ -32,14 +33,23 @@ export function emitCSS(
     doc: Document,
     config: InternalConfig,
 ): { files: CSSFileOutput; diagnostics: Reported[] } {
-    const diagnostics = doc.diagnostics.map(asReported);
-    if (diagnostics.some(({ kind }) => kind === "default-required"))
-        return { files: [], diagnostics };
+    const reported = doc.diagnostics.map(asReported);
+    if (reported.some(({ kind }) => kind === "default-required"))
+        return { files: [], diagnostics: reported };
 
+    const { fluid } = config.variables.transforms;
+    const entries = toWrite(doc, config);
+    const diagnostics = [
+        ...reported,
+        ...textZoomWarnings(
+            entries.map(({ permutation }) => permutation),
+            fluid,
+        ),
+    ];
     const nameOf = createVariableNameResolver(config.variables);
-    const [baseline, ...later] = toWrite(doc, config).map(({ permutation, selector }) => ({
+    const [baseline, ...later] = entries.map(({ permutation, selector }) => ({
         selector,
-        declared: declarations(permutation, nameOf, config.variables.transforms.fluid),
+        declared: declarations(permutation, nameOf, fluid),
     }));
     if (!baseline) return { files: [], diagnostics };
 
@@ -65,7 +75,7 @@ function asReported(found: Diagnostic): Reported {
         kind: "default-required",
         severity: "error",
         message: ErrorMessages.DIAGNOSTICS["default-required"]({ modifiers }),
-        docs: "https://sugarcube.sh/errors/default-required",
+        docs: diagnosticDocs("default-required"),
         detail: { modifiers },
     };
 }
