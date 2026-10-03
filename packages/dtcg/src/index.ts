@@ -300,9 +300,6 @@ export type Part =
     | GradientPart
     | TypographyPart;
 
-/** The part of type `T`. */
-export type PartOf<T extends TokenType> = Extract<Part, { type: T }>;
-
 /** The types whose values have no parts of their own. */
 export type SimplePartType =
     | "color"
