@@ -1,4 +1,5 @@
 import type { Alias, Pointer } from "../index.js";
+import { isJsonObject } from "./json.js";
 
 /**
  * A reference to a whole token: a token path between curly braces, such as `"{color.brand}"`.
@@ -36,10 +37,6 @@ export function readReference(raw: unknown): Alias | Pointer | undefined {
     return readAlias(raw) ?? readPointer(raw);
 }
 
-export function isPlainObject(raw: unknown): raw is Record<string, unknown> {
-    return typeof raw === "object" && raw !== null && !Array.isArray(raw);
-}
-
 /**
  * Whether a value from the model is a reference to a whole token: an {@link Alias}, as a parser
  * reads `"{color.brand}"`. Not for JSON as written in a file.
@@ -49,7 +46,7 @@ export function isPlainObject(raw: unknown): raw is Record<string, unknown> {
  */
 export function isAlias(value: unknown): value is Alias {
     return (
-        isPlainObject(value) && Object.keys(value).length === 1 && typeof value.alias === "string"
+        isJsonObject(value) && Object.keys(value).length === 1 && typeof value.alias === "string"
     );
 }
 
@@ -59,6 +56,6 @@ export function isAlias(value: unknown): value is Alias {
  */
 export function isPointer(value: unknown): value is Pointer {
     return (
-        isPlainObject(value) && Object.keys(value).length === 1 && typeof value.pointer === "string"
+        isJsonObject(value) && Object.keys(value).length === 1 && typeof value.pointer === "string"
     );
 }

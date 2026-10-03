@@ -7,7 +7,8 @@ import type {
 } from "../index.js";
 import { readDimension } from "./dimension.js";
 import { type LineCap, lineCaps, strokeStyleKeywords } from "./keywords.js";
-import { isPlainObject, readAlias, readPointer } from "./references.js";
+import { isJsonObject } from "./json.js";
+import { readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
 type Keyword = (typeof strokeStyleKeywords)[number];
@@ -38,7 +39,7 @@ export function readStrokeStyle(raw: unknown, at: JsonPath): ParseResult<Unresol
         };
     }
 
-    if (!isPlainObject(raw)) {
+    if (!isJsonObject(raw)) {
         return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
     }
 

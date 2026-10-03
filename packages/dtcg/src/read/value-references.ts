@@ -1,6 +1,7 @@
 import type { Node } from "jsonc-parser";
 import type { JsonPath, Span } from "../index.js";
-import { isPlainObject, readAlias, readPointer } from "../values/references.js";
+import { isJsonObject } from "../values/json.js";
+import { readAlias, readPointer } from "../values/references.js";
 import { type JsonFile, member, spanOf } from "./json.js";
 import { refSteps } from "./pointer.js";
 
@@ -23,7 +24,7 @@ export function referencesIn(raw: unknown, node: Node, json: JsonFile): Occurren
                 const child = at.type === "array" ? at.children?.[index] : undefined;
                 if (child) visit(item, child, [...path, index]);
             });
-        } else if (isPlainObject(each)) {
+        } else if (isJsonObject(each)) {
             for (const [key, item] of Object.entries(each)) {
                 const child = member(at, key, json.hidden);
                 if (child) visit(item, child, [...path, key]);

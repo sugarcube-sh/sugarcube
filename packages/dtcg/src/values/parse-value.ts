@@ -7,7 +7,8 @@ import type {
     ValueByType,
 } from "../index.js";
 import { parsers } from "./parsers.js";
-import { isAlias, isPlainObject, isPointer } from "./references.js";
+import { isJsonObject } from "./json.js";
+import { isAlias, isPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
 /**
@@ -62,7 +63,7 @@ function referencesIn(value: unknown, inside: JsonPath): { inside: JsonPath; wri
     if (isAlias(value)) return [{ inside, written: `{${value.alias}}` }];
     if (isPointer(value)) return [{ inside, written: value.pointer }];
     if (Array.isArray(value)) return value.flatMap((each, i) => referencesIn(each, [...inside, i]));
-    if (isPlainObject(value)) {
+    if (isJsonObject(value)) {
         return Object.entries(value).flatMap(([key, each]) => referencesIn(each, [...inside, key]));
     }
     return [];

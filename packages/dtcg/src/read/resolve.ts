@@ -14,7 +14,8 @@ import type {
     ValueByType,
 } from "../index.js";
 import { compositeParts } from "../values/composite-parts.js";
-import { isPlainObject, readPointer } from "../values/references.js";
+import { isJsonObject } from "../values/json.js";
+import { readPointer } from "../values/references.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { inheritedDeprecation, inheritedType } from "./inherit.js";
 import type { Merged, MergedToken } from "./merge.js";
@@ -267,7 +268,7 @@ function resolvePermutation(
             const items = raw.map((each) => replacePointers(each, token, seen));
             return items.includes(UNRESOLVED) ? UNRESOLVED : items;
         }
-        if (isPlainObject(raw)) {
+        if (isJsonObject(raw)) {
             const entries = Object.entries(raw).map(([key, each]) => [
                 key,
                 replacePointers(each, token, seen),
@@ -302,7 +303,7 @@ function resolvePermutation(
         if (type === "border" || type === "transition" || type === "typography") {
             return resolveParts(value, compositeParts[type], path, walk);
         }
-        if (type === "strokeStyle" && isPlainObject(value) && Array.isArray(value.dashArray)) {
+        if (type === "strokeStyle" && isJsonObject(value) && Array.isArray(value.dashArray)) {
             const dashArray = value.dashArray.map((item, i) =>
                 resolveValue(item, "dimension", [...path, "dashArray", i], walk),
             );
@@ -317,7 +318,7 @@ function resolvePermutation(
         path: JsonPath,
         walk: Walk,
     ): unknown => {
-        if (!isPlainObject(value)) return value;
+        if (!isJsonObject(value)) return value;
         const entries = Object.entries(value).map(([key, part]) => {
             const partType = parts[key];
             if (partType === undefined || partType === "boolean") return [key, part];
@@ -405,7 +406,7 @@ function stepInto(raw: unknown, steps: string[]): unknown {
     for (const step of steps) {
         if (Array.isArray(current) && /^(?:0|[1-9]\d*)$/.test(step))
             current = current[Number(step)];
-        else if (isPlainObject(current) && Object.hasOwn(current, step)) current = current[step];
+        else if (isJsonObject(current) && Object.hasOwn(current, step)) current = current[step];
         else return UNRESOLVED;
         if (current === undefined) return UNRESOLVED;
     }
@@ -413,7 +414,7 @@ function stepInto(raw: unknown, steps: string[]): unknown {
 }
 
 function aliasIn(value: unknown): string | undefined {
-    if (!isPlainObject(value)) return undefined;
+    if (!isJsonObject(value)) return undefined;
     const keys = Object.keys(value);
     return keys.length === 1 && typeof value.alias === "string" ? value.alias : undefined;
 }

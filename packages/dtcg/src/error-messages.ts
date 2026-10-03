@@ -76,6 +76,7 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
 export const thrownMessages = {
     asyncSchema: (key: string) =>
         `the schema for \`${key}\` returned a Promise: extension schemas must validate synchronously`,
+    emptyResult: "an extension reader's result needs a value, or a problem reported first",
 };
 
 export const relatedMessages = {

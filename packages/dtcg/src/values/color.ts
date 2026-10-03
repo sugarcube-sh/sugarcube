@@ -10,7 +10,8 @@ import type {
 } from "../index.js";
 import { colorSpaces } from "./color-spaces.js";
 import { hexStringColor } from "./hex-color.js";
-import { isPlainObject, readAlias, readPointer } from "./references.js";
+import { isJsonObject } from "./json.js";
+import { readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
 type ColorAsWritten = UnresolvedValue<"color">;
@@ -51,7 +52,7 @@ export function readColor(
         return { ok: false, errors: [valueError(at, { type, reason: "hex-string", value: raw })] };
     }
 
-    if (!isPlainObject(raw)) {
+    if (!isJsonObject(raw)) {
         return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
     }
 
