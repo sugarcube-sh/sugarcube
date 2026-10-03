@@ -283,6 +283,117 @@ export { isAlias, isPointer } from "./values/references.js";
 export { referenceAt, references } from "./lookup/references.js";
 
 /**
+ * One part of a token's value: the whole value, a part of a composite, a shadow layer or gradient
+ * stop, or a length in a dash pattern. Each is somewhere the spec lets a value or a reference to a
+ * token stand. Checking `type` narrows `resolved` and the part's own parts.
+ *
+ * @example
+ * const border = parts(token);
+ * if (border?.type === "border") border.width.resolved   // { value: 1, unit: "px" }
+ */
+export type Part =
+    | { [T in SimplePartType]: SimplePart<T> }[SimplePartType]
+    | StrokeStylePart
+    | BorderPart
+    | TransitionPart
+    | ShadowPart
+    | GradientPart
+    | TypographyPart;
+
+/** The part of type `T`. */
+export type PartOf<T extends TokenType> = Extract<Part, { type: T }>;
+
+/** The types whose values have no parts of their own. */
+export type SimplePartType =
+    | "color"
+    | "dimension"
+    | "duration"
+    | "cubicBezier"
+    | "number"
+    | "fontFamily"
+    | "fontWeight";
+
+/** What every part has: where it is, what it resolved to, and the reference written there. */
+export interface PartBase<V> {
+    /** Where the part sits in {@link TokenBase.value | value}, as {@link references} places it. */
+    at: JsonPath;
+    resolved: V;
+    /**
+     * The reference written at this place, if any. A pointer inside the part, such as at one
+     * component of a color, is not at it: what it reaches is in `resolved`.
+     */
+    ref?: Alias | Pointer;
+}
+
+/** A part with no parts of its own. */
+export interface SimplePart<T extends SimplePartType> extends PartBase<ValueByType[T]> {
+    type: T;
+}
+
+/**
+ * A stroke style: a keyword, or a dash pattern with a part for each of its lengths. Checking
+ * `"dashArray" in part` tells them apart.
+ */
+export type StrokeStylePart =
+    | (PartBase<Extract<StrokeStyleValue, { kind: "keyword" }>> & { type: "strokeStyle" })
+    | (PartBase<Extract<StrokeStyleValue, { kind: "dash" }>> & {
+          type: "strokeStyle";
+          dashArray: SimplePart<"dimension">[];
+      });
+
+export interface BorderPart extends PartBase<BorderValue> {
+    type: "border";
+    color: SimplePart<"color">;
+    width: SimplePart<"dimension">;
+    style: StrokeStylePart;
+}
+
+export interface TransitionPart extends PartBase<TransitionValue> {
+    type: "transition";
+    duration: SimplePart<"duration">;
+    delay: SimplePart<"duration">;
+    timingFunction: SimplePart<"cubicBezier">;
+}
+
+/** A shadow, as its layers. A single shadow has one. */
+export interface ShadowPart extends PartBase<ShadowValue> {
+    type: "shadow";
+    layers: ShadowLayerPart[];
+}
+
+/** One layer of a shadow. Its `ref` is a reference to a shadow token standing for the layer. */
+export interface ShadowLayerPart extends PartBase<ShadowLayer> {
+    color: SimplePart<"color">;
+    offsetX: SimplePart<"dimension">;
+    offsetY: SimplePart<"dimension">;
+    blur: SimplePart<"dimension">;
+    spread: SimplePart<"dimension">;
+}
+
+/** A gradient, as its stops. */
+export interface GradientPart extends PartBase<GradientValue> {
+    type: "gradient";
+    stops: GradientStopPart[];
+}
+
+/** One stop of a gradient. Its `ref` is a reference to a gradient token standing for the stop. */
+export interface GradientStopPart extends PartBase<GradientStop> {
+    color: SimplePart<"color">;
+    position: SimplePart<"number">;
+}
+
+export interface TypographyPart extends PartBase<TypographyValue> {
+    type: "typography";
+    fontFamily: SimplePart<"fontFamily">;
+    fontSize: SimplePart<"dimension">;
+    fontWeight: SimplePart<"fontWeight">;
+    letterSpacing: SimplePart<"dimension">;
+    lineHeight: SimplePart<"number">;
+}
+
+export { parts } from "./lookup/parts.js";
+
+/**
  * A choice of context for each modifier, which is how every function names a permutation.
  * Modifiers left out take their default, and matching ignores case.
  *

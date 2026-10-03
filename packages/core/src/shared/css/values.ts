@@ -2,13 +2,14 @@ import {
     type Alias,
     type ColorComponent,
     type ColorValue,
-    type JsonPath,
+    type GradientStopPart,
+    type Part,
+    type PartBase,
     type Pointer,
+    type ShadowLayerPart,
     type Token,
-    type TokenType,
-    type TypographyValue,
-    type ValueByType,
-    referenceAt,
+    type TypographyPart,
+    parts,
 } from "@sugarcube-sh/dtcg";
 
 export interface Written {
@@ -18,116 +19,80 @@ export interface Written {
 
 export type VariableFor = (ref: Alias | Pointer) => string | undefined;
 
-interface Writer {
-    variableAt(at: JsonPath): string | undefined;
-    part<T extends PartType>(at: JsonPath, type: T, value: ValueByType[T]): string;
-    unwritable(): void;
-}
-
-type PartType = Exclude<TokenType, "typography">;
-
 export function renderToken(token: Token, variableFor: VariableFor): Written[] | undefined {
-    if (token.resolved === undefined) return undefined;
+    const whole = parts(token);
+    if (!whole) return undefined;
     let writable = true;
-    const writer: Writer = {
-        variableAt: (at) => {
-            const ref = referenceAt(token, at);
-            return ref && variableFor(ref);
-        },
-        part: (at, type, value) => {
-            const variable = writer.variableAt(at);
-            return variable ? `var(${variable})` : renderers[type](value, at, writer);
-        },
-        unwritable: () => {
-            writable = false;
-        },
+
+    const variable = ({ ref }: PartBase<unknown>) => ref && variableFor(ref);
+
+    const write = (part: Exclude<Part, TypographyPart>): string => {
+        const named = variable(part);
+        if (named) return `var(${named})`;
+        switch (part.type) {
+            case "color": {
+                const css = renderColor(part.resolved);
+                if (css === undefined) writable = false;
+                return css ?? "";
+            }
+            case "dimension":
+            case "duration":
+                return `${part.resolved.value}${part.resolved.unit}`;
+            case "cubicBezier":
+                return `cubic-bezier(${part.resolved.join(", ")})`;
+            case "number":
+            case "fontWeight":
+                return String(part.resolved);
+            case "fontFamily":
+                return part.resolved.map(quoteFont).join(", ");
+            case "strokeStyle":
+                return "dashArray" in part
+                    ? `${part.dashArray.map(write).join(" ")} ${part.resolved.lineCap}`
+                    : part.resolved.keyword;
+            case "border":
+                return [part.width, part.style, part.color].map(write).join(" ");
+            case "transition":
+                return [part.duration, part.timingFunction, part.delay].map(write).join(" ");
+            case "shadow":
+                return part.layers.map(layer).join(", ");
+            case "gradient":
+                return `linear-gradient(${part.stops.map(stop).join(", ")})`;
+        }
     };
+
+    const layer = (part: ShadowLayerPart): string => {
+        const named = variable(part);
+        if (named) return `var(${named})`;
+        const lengths = [part.offsetX, part.offsetY, part.blur, part.spread, part.color];
+        return `${part.resolved.inset ? "inset " : ""}${lengths.map(write).join(" ")}`;
+    };
+
+    const stop = ({ color, position }: GradientStopPart): string => {
+        const named = variable(position);
+        const where = named
+            ? `clamp(0%, var(${named}) * 100%, 100%)`
+            : `${position.resolved * 100}%`;
+        return `${write(color)} ${where}`;
+    };
+
+    const typography = (part: TypographyPart): Written[] => {
+        const named = variable(part);
+        const each = [
+            ["-font-family", part.fontFamily],
+            ["-font-size", part.fontSize],
+            ["-font-weight", part.fontWeight],
+            ["-letter-spacing", part.letterSpacing],
+            ["-line-height", part.lineHeight],
+        ] as const;
+        return each.map(([suffix, of]) => ({
+            suffix,
+            value: named ? `var(${named}${suffix})` : write(of),
+        }));
+    };
+
     const written =
-        token.type === "typography"
-            ? typography(token.resolved, writer)
-            : [{ suffix: "", value: writer.part([], token.type, token.resolved) }];
+        whole.type === "typography" ? typography(whole) : [{ suffix: "", value: write(whole) }];
     return writable ? written : undefined;
-}
-
-const renderers: {
-    [T in PartType]: (value: ValueByType[T], at: JsonPath, writer: Writer) => string;
-} = {
-    color: (value, _at, writer) => {
-        const css = renderColor(value);
-        if (css === undefined) writer.unwritable();
-        return css ?? "";
-    },
-    dimension: ({ value, unit }) => `${value}${unit}`,
-    duration: ({ value, unit }) => `${value}${unit}`,
-    cubicBezier: (points) => `cubic-bezier(${points.join(", ")})`,
-    number: (value) => String(value),
-    fontFamily: (names) => names.map(quoteFont).join(", "),
-    fontWeight: (weight) => String(weight),
-    strokeStyle: (style, at, writer) => {
-        if (style.kind === "keyword") return style.keyword;
-        const dashes = style.dashArray.map((dash, index) =>
-            writer.part([...at, "dashArray", index], "dimension", dash),
-        );
-        return `${dashes.join(" ")} ${style.lineCap}`;
-    },
-    border: ({ width, style, color }, at, writer) =>
-        [
-            writer.part([...at, "width"], "dimension", width),
-            writer.part([...at, "style"], "strokeStyle", style),
-            writer.part([...at, "color"], "color", color),
-        ].join(" "),
-    transition: ({ duration, timingFunction, delay }, at, writer) =>
-        [
-            writer.part([...at, "duration"], "duration", duration),
-            writer.part([...at, "timingFunction"], "cubicBezier", timingFunction),
-            writer.part([...at, "delay"], "duration", delay),
-        ].join(" "),
-    shadow: (layers, at, writer) =>
-        layers
-            .map((layer, index) => {
-                const place = [...at, index];
-                const variable = writer.variableAt(place);
-                if (variable) return `var(${variable})`;
-                const parts = [
-                    writer.part([...place, "offsetX"], "dimension", layer.offsetX),
-                    writer.part([...place, "offsetY"], "dimension", layer.offsetY),
-                    writer.part([...place, "blur"], "dimension", layer.blur),
-                    writer.part([...place, "spread"], "dimension", layer.spread),
-                    writer.part([...place, "color"], "color", layer.color),
-                ];
-                return `${layer.inset ? "inset " : ""}${parts.join(" ")}`;
-            })
-            .join(", "),
-    gradient: (stops, at, writer) => {
-        const written = stops.map(({ color, position }, index) => {
-            const variable = writer.variableAt([...at, index, "position"]);
-            const where = variable
-                ? `clamp(0%, var(${variable}) * 100%, 100%)`
-                : `${position * 100}%`;
-            return `${writer.part([...at, index, "color"], "color", color)} ${where}`;
-        });
-        return `linear-gradient(${written.join(", ")})`;
-    },
-};
-
-function typography(value: TypographyValue, writer: Writer): Written[] {
-    const whole = writer.variableAt([]);
-    const part = <T extends PartType>(
-        suffix: string,
-        key: keyof TypographyValue,
-        type: T,
-        of: ValueByType[T],
-    ) => ({
-        suffix,
-        value: whole ? `var(${whole}${suffix})` : writer.part([key], type, of),
-    });
-    return [
-        part("-font-family", "fontFamily", "fontFamily", value.fontFamily),
-        part("-font-size", "fontSize", "dimension", value.fontSize),
-        part("-font-weight", "fontWeight", "fontWeight", value.fontWeight),
-        part("-letter-spacing", "letterSpacing", "dimension", value.letterSpacing),
-        part("-line-height", "lineHeight", "number", value.lineHeight),
-    ];
 }
 
 const GENERIC_FAMILIES = new Set([
