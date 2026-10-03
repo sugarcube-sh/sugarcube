@@ -71,10 +71,6 @@ const cases: Case[] = [
     {
         name: "studio/demo",
         resolver: join(repo, "packages/studio/demo/tokens.resolver.json"),
-        problems: [
-            ...partialTypography("typography.style.heading", 3),
-            ...partialTypography("typography.style.code", 1),
-        ],
     },
     {
         name: "studio/design-tokens",
@@ -173,8 +169,6 @@ const configOptions =
     "atRule, selector lists, path, propagateDependents, polyfill and layers are not written yet";
 
 const pending: Record<string, string> = {
-    "studio/demo/variables.css":
-        "two typography tokens without all five properties, which Format 9.8 requires",
     "every-value-form/native/variables.css": configOptions,
     "every-value-form/polyfill/variables.css": configOptions,
     "every-value-form/polyfill/dark.css": configOptions,
