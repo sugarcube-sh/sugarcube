@@ -52,7 +52,7 @@ describe("emitCSS", () => {
                     "linear": space("srgb-linear", [0.2, 0.5, 0.75]),
                     "hwb": space("hwb", [200, 12.5, 30]),
                     "hwb-none": color({ colorSpace: "hwb", components: [200, "none", 30] }),
-                    "lab": space("lab", [52.2345, 40.12346, -60.5]),
+                    "lab": space("lab", [52.2345, 40.12345, -60.5]),
                     "lch": space("lch", [52.2, 72.9, 303.45678]),
                     "oklab": space("oklab", [0.62, 0.11, -0.153]),
                     "a98": space("a98-rgb", [0.5, 0.25, 1]),
@@ -360,6 +360,25 @@ describe("emitCSS", () => {
             ]);
         });
 
+        it("with a dash pattern written as dashed, since CSS cannot draw one (Format 9.3.3)", () => {
+            expect(
+                declarations({
+                    dots: {
+                        $type: "strokeStyle",
+                        $value: { dashArray: ["{hairline}", px(2)], lineCap: "round" },
+                    },
+                    edge: {
+                        $type: "border",
+                        $value: {
+                            color: "#111111",
+                            width: px(2),
+                            style: { dashArray: [px(4), px(2)], lineCap: "butt" },
+                        },
+                    },
+                }),
+            ).toStrictEqual(["--dots: dashed;", "--edge: 2px dashed #111111;"]);
+        });
+
         it("with var() for a shadow layer referring to a whole shadow token", () => {
             expect(
                 declarations({
@@ -411,6 +430,42 @@ describe("emitCSS", () => {
             ]);
         });
 
+        it("with a font name quoted where CSS needs it, and vendor and generic names bare", () => {
+            expect(
+                declarations({
+                    stack: {
+                        $type: "fontFamily",
+                        $value: [
+                            "Inter",
+                            "-apple-system",
+                            "1Password",
+                            "inherit",
+                            'Say "hi"',
+                            "back\\slash",
+                            "Sans-Serif",
+                            "ui-monospace",
+                        ],
+                    },
+                }),
+            ).toStrictEqual([
+                '--stack: Inter, -apple-system, "1Password", "inherit", "Say \\"hi\\"", "back\\\\slash", Sans-Serif, ui-monospace;',
+            ]);
+        });
+
+        it("with a gradient position as a percentage, without float drift", () => {
+            expect(
+                declarations({
+                    third: {
+                        $type: "gradient",
+                        $value: [
+                            { color: "#ffffff", position: 0.3 },
+                            { color: "#000000", position: 0.57 },
+                        ],
+                    },
+                }),
+            ).toStrictEqual(["--third: linear-gradient(#ffffff 30%, #000000 57%);"]);
+        });
+
         it("with typography as one variable per part, each part of a referred-to style its own var()", () => {
             const body = {
                 $type: "typography",
@@ -457,16 +512,18 @@ describe("emitCSS", () => {
             return emitCSS(readFromMemory({ files }, readOptions(config)), config);
         };
 
-        it("from its min and max, the token's own value unused", () => {
+        it("from its min and max, as Utopia works it out, the token's own value unused", () => {
             const { files } = read({
                 step: fluid({ min: px(16), max: { value: 1.25, unit: "rem" } }),
+                shrink: fluid({ min: px(20), max: px(16) }),
                 flat: fluid({ min: px(16), max: px(16) }),
                 gap: { $type: "dimension", $value: "{step}" },
             });
             expect(files[0]?.css).toBe(
                 [
                     ":root {",
-                    "    --step: clamp(1rem, 0.91rem + 0.45vw, 1.25rem);",
+                    "    --step: clamp(1rem, 0.9091rem + 0.4545vw, 1.25rem);",
+                    "    --shrink: clamp(1rem, 1.3409rem + -0.4545vw, 1.25rem);",
                     "    --flat: 1rem;",
                     "    --gap: var(--step);",
                     "}",
@@ -490,7 +547,9 @@ describe("emitCSS", () => {
                     },
                 },
             });
-            expect(files[0]?.css).toContain("--space-md: clamp(1rem, 0.91rem + 0.45vw, 1.25rem);");
+            expect(files[0]?.css).toContain(
+                "--space-md: clamp(1rem, 0.9091rem + 0.4545vw, 1.25rem);",
+            );
         });
 
         it("only for a dimension, ignoring a fluid range on any other type", () => {

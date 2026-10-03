@@ -14,6 +14,7 @@ import {
 import type { FluidConfig } from "../../types/config.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { type FluidRange, readFluid } from "../fluid.js";
+import { calculateClamp } from "./clamp.js";
 
 export interface Written {
     suffix: string;
@@ -52,9 +53,7 @@ export function renderToken(
             case "fontFamily":
                 return part.resolved.map(quoteFont).join(", ");
             case "strokeStyle":
-                return "dashArray" in part
-                    ? `${part.dashArray.map(write).join(" ")} ${part.resolved.lineCap}`
-                    : part.resolved.keyword;
+                return part.resolved.kind === "dash" ? "dashed" : part.resolved.keyword;
             case "border":
                 return [part.width, part.style, part.color].map(write).join(" ");
             case "transition":
@@ -77,7 +76,7 @@ export function renderToken(
         const named = variable(position);
         const where = named
             ? `clamp(0%, var(${named}) * 100%, 100%)`
-            : `${position.resolved * 100}%`;
+            : `${round(position.resolved * 100, 4)}%`;
         return `${write(color)} ${where}`;
     };
 
@@ -102,18 +101,10 @@ export function renderToken(
 }
 
 function clamp({ min, max }: FluidRange, viewport: FluidConfig): string {
-    const rootSize = 16;
-    const pixels = ({ value, unit }: FluidRange["min"]) =>
-        unit === "px" ? value : value * rootSize;
+    const pixels = ({ value, unit }: FluidRange["min"]) => (unit === "px" ? value : value * 16);
     const [minSize, maxSize] = [pixels(min), pixels(max)];
-    if (minSize === maxSize) return `${minSize / rootSize}rem`;
-    const minSizeRem = minSize / rootSize;
-    const maxSizeRem = maxSize / rootSize;
-    const minViewportRem = viewport.min / rootSize;
-    const maxViewportRem = viewport.max / rootSize;
-    const slope = (maxSizeRem - minSizeRem) / (maxViewportRem - minViewportRem);
-    const intersection = -1 * minViewportRem * slope + minSizeRem;
-    return `clamp(${minSizeRem}rem, ${intersection.toFixed(2)}rem + ${(slope * 100).toFixed(2)}vw, ${maxSizeRem}rem)`;
+    if (minSize === maxSize) return `${round(minSize / 16, 4)}rem`;
+    return calculateClamp({ minSize, maxSize, minWidth: viewport.min, maxWidth: viewport.max });
 }
 
 const GENERIC_FAMILIES = new Set([
@@ -132,9 +123,23 @@ const GENERIC_FAMILIES = new Set([
     "fangsong",
 ]);
 
+const CSS_WIDE_KEYWORDS = new Set([
+    "inherit",
+    "initial",
+    "unset",
+    "revert",
+    "revert-layer",
+    "default",
+]);
+
 function quoteFont(name: string): string {
-    if (GENERIC_FAMILIES.has(name.toLowerCase())) return name;
-    return /[\s'"!@#$%^&*()=+[\]{};:|\\/,.<>?~]/.test(name) ? `"${name}"` : name;
+    const lower = name.toLowerCase();
+    if (GENERIC_FAMILIES.has(lower)) return name;
+    const bare =
+        !/[\s'"!@#$%^&*()=+[\]{};:|\\/,.<>?~]/.test(name) &&
+        !/^(-?\d|--)/.test(name) &&
+        !CSS_WIDE_KEYWORDS.has(lower);
+    return bare ? name : `"${name.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
 
 function renderColor({ colorSpace, components, alpha, hex }: ColorValue): string {
@@ -177,7 +182,12 @@ function percent(component: ColorComponent, digits: number): string {
 }
 
 function fixed(component: ColorComponent, digits: number): string {
-    return component === "none" ? "none" : String(Number(component.toFixed(digits)));
+    return component === "none" ? "none" : String(round(component, digits));
+}
+
+function round(value: number, digits: number): number {
+    const scaled = Number((Math.abs(value) * 10 ** digits).toPrecision(15));
+    return (Math.sign(value) * Math.round(scaled)) / 10 ** digits;
 }
 
 function hexOf(hex: string, alpha: number): string {

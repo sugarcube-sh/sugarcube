@@ -174,15 +174,94 @@ const pending: Record<string, string> = {
     "every-value-form/polyfill/dark.css": configOptions,
 };
 
-const decided: Record<string, { because: string; differs: "in order only" }> = {
-    "studio/design-tokens/variables.css": {
+interface Decision {
+    because: string;
+    explains: (before: string, after: string) => boolean;
+}
+
+const decisions = {
+    order: {
         because:
             "whole-number keys stay where the file writes them; old sugarcube sorted them first",
-        differs: "in order only",
+        explains: () => false,
     },
+    fluid: {
+        because:
+            "fluid sizes are worked out as Utopia does, to four decimals, with a size that shrinks as the screen widens kept in order",
+        explains: (before, after) => before.startsWith("clamp(") && after.startsWith("clamp("),
+    },
+    dashed: {
+        because: "CSS cannot draw a dash pattern, so one is written dashed (Format 9.3.3)",
+        explains: (before, after) =>
+            /\b(round|butt|square)\b/.test(before) &&
+            /\bdashed\b/.test(after) &&
+            !/\b(round|butt|square)\b/.test(after),
+    },
+} satisfies Record<string, Decision>;
+
+const decided: Record<string, (keyof typeof decisions)[]> = {
+    "studio/design-tokens/variables.css": ["order"],
+    "core/tokens/fluid/variables.css": ["fluid"],
+    "studio/demo/variables.css": ["fluid", "dashed"],
+    "registry/starter-kits/fluid/variables.css": ["fluid"],
+    "registry/recipes/size-demo/variables.css": ["fluid"],
+    "registry/recipes/space-demo/variables.css": ["fluid"],
 };
 
-const linesByBlock = (css: string) => css.split("\n\n").map((block) => block.split("\n").sort());
+interface Block {
+    selector: string;
+    names: string[];
+    values: Map<string, string>;
+}
+
+function blocksOf(css: string): Block[] {
+    return css
+        .trimEnd()
+        .split("\n\n")
+        .map((block) => {
+            const lines = block.split("\n");
+            const declared = lines.flatMap((line) => {
+                const found = /^ {4}(--[^:]+): (.*);$/.exec(line);
+                return found?.[1] && found[2] !== undefined ? [[found[1], found[2]] as const] : [];
+            });
+            return {
+                selector: lines
+                    .filter((line) => !line.startsWith("    ") && line !== "}")
+                    .join("\n"),
+                names: declared.map(([name]) => name),
+                values: new Map(declared),
+            };
+        });
+}
+
+function unexplained(css: string, expected: string, listed: (keyof typeof decisions)[]) {
+    const [written, old] = [blocksOf(css), blocksOf(expected)];
+    const sameNames = (block: Block, index: number) => {
+        const other = old[index]?.names ?? [];
+        return listed.includes("order")
+            ? [...block.names].sort().join() === [...other].sort().join()
+            : block.names.join() === other.join();
+    };
+    const used = new Set<keyof typeof decisions>(listed.includes("order") ? ["order"] : []);
+    const problems: string[] = [];
+    if (
+        written.map(({ selector }) => selector).join() !==
+        old.map(({ selector }) => selector).join()
+    )
+        problems.push("the blocks differ");
+    written.forEach((block, index) => {
+        if (!sameNames(block, index)) problems.push(`${block.selector}: the variables differ`);
+        for (const [name, after] of block.values) {
+            const before = old[index]?.values.get(name);
+            if (before === undefined || before === after) continue;
+            const by = listed.find((key) => decisions[key].explains(before, after));
+            if (by) used.add(by);
+            else problems.push(`${name}: ${before} → ${after}`);
+        }
+    });
+    for (const key of listed) if (!used.has(key)) problems.push(`${key} explains nothing here`);
+    return problems;
+}
 
 const goldenFiles = cases.flatMap((each) =>
     readdirSync(join(golden, each.name))
@@ -196,11 +275,12 @@ describe("golden CSS: the new core writes what old sugarcube writes", () => {
         const { files } = emitCSS(doc, config);
         const css = files.find(({ path }) => path === file)?.css ?? "";
         const expected = readFileSync(join(golden, name), "utf8");
-        const allowed = decided[name];
+        const listed = decided[name];
         if (pending[name]) expect(css, `pending (${pending[name]}) but matches`).not.toBe(expected);
-        else if (allowed) {
-            expect(css, `differs because ${allowed.because} but matches`).not.toBe(expected);
-            expect(linesByBlock(css)).toStrictEqual(linesByBlock(expected));
+        else if (listed) {
+            const because = listed.map((key) => decisions[key].because).join("; ");
+            expect(css, `differs because ${because} but matches`).not.toBe(expected);
+            expect(unexplained(css, expected, listed)).toStrictEqual([]);
         } else expect(css).toBe(expected);
     });
 
