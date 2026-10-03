@@ -279,34 +279,8 @@ export interface UnresolvedValueByType {
  */
 export type UnresolvedValue<T extends TokenType> = UnresolvedValueByType[T];
 
-/**
- * Replaces every reference in a value, {@link Alias} or {@link Pointer}, with what `replace`
- * returns for it. The rest of the value is kept as it is.
- *
- * @example
- * // a border whose color points at a token you are not emitting a variable for: inline that
- * // one part, keep the rest as var()
- * mapReferences(border.value, (ref) =>
- *   isAlias(ref) && !isInlined(ref.alias) ? `var(--${name(ref.alias)})` : resolveReference(doc, ref))
- */
-export function mapReferences<T extends TokenType>(
-    value: UnresolvedValue<T>,
-    replace: (ref: Alias | Pointer) => unknown,
-): unknown {
-    throw new Error("not implemented yet");
-}
-
 export { isAlias, isPointer } from "./values/references.js";
-
-/**
- * The value a reference reaches, with every reference inside it followed: the resolved value of
- * the token an {@link Alias} names, or the part a {@link Pointer} points at. `undefined` when it
- * reaches nothing.
- * @param input Which permutation. Defaults to the default permutation.
- */
-export function resolveReference(doc: Document, ref: Alias | Pointer, input?: Input): unknown {
-    throw new Error("not implemented yet");
-}
+export { references } from "./lookup/references.js";
 
 /**
  * A choice of context for each modifier, which is how every function names a permutation.
