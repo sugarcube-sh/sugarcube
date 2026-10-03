@@ -21,11 +21,13 @@ export interface Written {
     value: string;
 }
 
-export type VariableFor = (ref: Alias | Pointer) => string | undefined;
+export type Replacement = { variable: string } | { css: string };
+
+export type ReplacementFor = (ref: Alias | Pointer, suffix: string) => Replacement | undefined;
 
 export function renderToken(
     token: Token,
-    variableFor: VariableFor,
+    replacementFor: ReplacementFor,
     options: { fluid: FluidConfig },
 ): Written[] | undefined {
     const whole = parts(token);
@@ -34,11 +36,18 @@ export function renderToken(
     if (!whole || fluid?.ok === false) return undefined;
     const range = fluid?.ok ? fluid.value : undefined;
 
-    const variable = ({ ref }: PartBase<unknown>) => ref && variableFor(ref);
+    const replaced = ({ ref }: PartBase<unknown>, suffix = "") =>
+        ref && replacementFor(ref, suffix);
+    const variable = (part: PartBase<unknown>) => {
+        const replacement = replaced(part);
+        return replacement && "variable" in replacement ? replacement.variable : undefined;
+    };
+    const asCSS = (replacement: Replacement) =>
+        "variable" in replacement ? `var(${replacement.variable})` : replacement.css;
 
     const write = (part: Exclude<Part, TypographyPart>): string => {
-        const named = variable(part);
-        if (named) return `var(${named})`;
+        const replacement = replaced(part);
+        if (replacement) return asCSS(replacement);
         switch (part.type) {
             case "color":
                 return renderColor(part.resolved);
@@ -66,8 +75,8 @@ export function renderToken(
     };
 
     const layer = (part: ShadowLayerPart): string => {
-        const named = variable(part);
-        if (named) return `var(${named})`;
+        const replacement = replaced(part);
+        if (replacement) return asCSS(replacement);
         const lengths = [part.offsetX, part.offsetY, part.blur, part.spread, part.color];
         return `${part.resolved.inset ? "inset " : ""}${lengths.map(write).join(" ")}`;
     };
@@ -81,7 +90,6 @@ export function renderToken(
     };
 
     const typography = (part: TypographyPart): Written[] => {
-        const named = variable(part);
         const each = [
             ["-font-family", part.fontFamily],
             ["-font-size", part.fontSize],
@@ -89,10 +97,10 @@ export function renderToken(
             ["-letter-spacing", part.letterSpacing],
             ["-line-height", part.lineHeight],
         ] as const;
-        return each.map(([suffix, of]) => ({
-            suffix,
-            value: named ? `var(${named}${suffix})` : write(of),
-        }));
+        return each.map(([suffix, of]) => {
+            const replacement = replaced(part, suffix);
+            return { suffix, value: replacement ? asCSS(replacement) : write(of) };
+        });
     };
 
     if (whole.type === "typography") return typography(whole);

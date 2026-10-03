@@ -532,6 +532,82 @@ describe("emitCSS", () => {
             );
         });
 
+        it("wherever a token refers to a private one, which writes no variable of its own", () => {
+            const resolver = {
+                version: "2025.10",
+                resolutionOrder: [
+                    {
+                        type: "set",
+                        name: "palette",
+                        sources: [{ $ref: "palette.json" }],
+                        $extensions: { "sh.sugarcube": { emit: false } },
+                    },
+                    { type: "set", name: "system", sources: [{ $ref: "system.json" }] },
+                ],
+            };
+            const clamp = "clamp(1rem, 0.9091rem + 0.4545vw, 1.25rem)";
+            expect(
+                cssFor(
+                    {
+                        "tokens.resolver.json": resolver,
+                        "palette.json": {
+                            step: fluid({ min: px(16), max: { value: 1.25, unit: "rem" } }),
+                            alias: { $type: "dimension", $value: "{step}" },
+                            type: {
+                                $type: "typography",
+                                $value: {
+                                    fontFamily: "Inter",
+                                    fontSize: "{step}",
+                                    fontWeight: 700,
+                                    letterSpacing: px(0),
+                                    lineHeight: 1.2,
+                                },
+                            },
+                        },
+                        "system.json": {
+                            gap: { $type: "dimension", $value: "{step}" },
+                            through: { $type: "dimension", $value: "{alias}" },
+                            edge: {
+                                $type: "border",
+                                $value: { color: "#000000", width: "{step}", style: "solid" },
+                            },
+                            body: {
+                                $type: "typography",
+                                $value: {
+                                    fontFamily: "Inter",
+                                    fontSize: "{step}",
+                                    fontWeight: 400,
+                                    letterSpacing: px(0),
+                                    lineHeight: 1.5,
+                                },
+                            },
+                            heading: { $type: "typography", $value: "{type}" },
+                        },
+                    },
+                    { transforms: { fluid: { min: 320, max: 1200 } } },
+                ),
+            ).toBe(
+                [
+                    ":root {",
+                    `    --gap: ${clamp};`,
+                    `    --through: ${clamp};`,
+                    `    --edge: ${clamp} solid #000000;`,
+                    "    --body-font-family: Inter;",
+                    `    --body-font-size: ${clamp};`,
+                    "    --body-font-weight: 400;",
+                    "    --body-letter-spacing: 0px;",
+                    "    --body-line-height: 1.5;",
+                    "    --heading-font-family: Inter;",
+                    `    --heading-font-size: ${clamp};`,
+                    "    --heading-font-weight: 700;",
+                    "    --heading-letter-spacing: 0px;",
+                    "    --heading-line-height: 1.2;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
         it("for a recipe's steps", () => {
             const { files } = read({
                 space: {

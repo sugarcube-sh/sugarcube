@@ -15,7 +15,7 @@ import type { CSSFileOutput } from "../../types/generate.js";
 import { ErrorMessages } from "../constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { createVariableNameResolver } from "../resolve-variable-name.js";
-import { type VariableFor, type Written, renderToken } from "./values.js";
+import { type ReplacementFor, type Written, renderToken } from "./values.js";
 
 /**
  * Writes the design system's CSS variables to the config's `path`, named from its `prefix` or
@@ -115,30 +115,30 @@ function declarations(
     fluid: FluidConfig,
 ): Declaration[] {
     const variable = (path: string) => `--${nameOf(path)}`;
-    const writtenFor = new Map<Token, Written[] | undefined>();
-    const written = (each: Token): Written[] | undefined => {
-        if (!writtenFor.has(each)) {
-            const source = permutation.sources[each.source.index];
-            writtenFor.set(
-                each,
-                isPrivate(source) ? undefined : renderToken(each, variableFor, { fluid }),
-            );
-        }
-        return writtenFor.get(each);
+    const isPrivate = (each: Token) => privateSource(permutation.sources[each.source.index]);
+    const renderedFor = new Map<Token, Written[] | undefined>();
+    const rendered = (each: Token): Written[] | undefined => {
+        if (!renderedFor.has(each))
+            renderedFor.set(each, renderToken(each, replacementFor, { fluid }));
+        return renderedFor.get(each);
     };
-    const variableFor: VariableFor = (ref) => {
+    const replacementFor: ReplacementFor = (ref, suffix) => {
         const target = isAlias(ref) ? token(permutation, ref.alias) : undefined;
-        return target && written(target) ? variable(target.path) : undefined;
+        const written = target && rendered(target);
+        if (!target || !written) return undefined;
+        if (!isPrivate(target)) return { variable: `${variable(target.path)}${suffix}` };
+        const css = written.find((each) => each.suffix === suffix)?.value;
+        return css === undefined ? undefined : { css };
     };
     return permutation.tokens.flatMap((each) =>
-        (written(each) ?? []).map(({ suffix, value }) => ({
+        (isPrivate(each) ? [] : (rendered(each) ?? [])).map(({ suffix, value }) => ({
             name: `${variable(each.path)}${suffix}`,
             value,
         })),
     );
 }
 
-function isPrivate(source: Source | undefined): boolean {
+function privateSource(source: Source | undefined): boolean {
     const ours = source?.extensions?.[SUGARCUBE_NAMESPACE];
     return typeof ours === "object" && ours !== null && "emit" in ours && ours.emit === false;
 }
