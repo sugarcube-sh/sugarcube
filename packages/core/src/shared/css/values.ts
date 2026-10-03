@@ -11,6 +11,9 @@ import {
     type TypographyPart,
     parts,
 } from "@sugarcube-sh/dtcg";
+import type { FluidConfig } from "../../types/config.js";
+import { SUGARCUBE_NAMESPACE } from "../extensions.js";
+import { type FluidRange, readFluid } from "../fluid.js";
 
 export interface Written {
     suffix: string;
@@ -19,10 +22,16 @@ export interface Written {
 
 export type VariableFor = (ref: Alias | Pointer) => string | undefined;
 
-export function renderToken(token: Token, variableFor: VariableFor): Written[] | undefined {
+export function renderToken(
+    token: Token,
+    variableFor: VariableFor,
+    options: { fluid: FluidConfig },
+): Written[] | undefined {
     const whole = parts(token);
-    if (!whole) return undefined;
-    let writable = true;
+    const fluid =
+        token.type === "dimension" ? readFluid(token.extensions?.[SUGARCUBE_NAMESPACE]) : undefined;
+    if (!whole || fluid?.ok === false) return undefined;
+    const range = fluid?.ok ? fluid.value : undefined;
 
     const variable = ({ ref }: PartBase<unknown>) => ref && variableFor(ref);
 
@@ -30,11 +39,8 @@ export function renderToken(token: Token, variableFor: VariableFor): Written[] |
         const named = variable(part);
         if (named) return `var(${named})`;
         switch (part.type) {
-            case "color": {
-                const css = renderColor(part.resolved);
-                if (css === undefined) writable = false;
-                return css ?? "";
-            }
+            case "color":
+                return renderColor(part.resolved);
             case "dimension":
             case "duration":
                 return `${part.resolved.value}${part.resolved.unit}`;
@@ -90,9 +96,24 @@ export function renderToken(token: Token, variableFor: VariableFor): Written[] |
         }));
     };
 
-    const written =
-        whole.type === "typography" ? typography(whole) : [{ suffix: "", value: write(whole) }];
-    return writable ? written : undefined;
+    if (whole.type === "typography") return typography(whole);
+    const value = range && !variable(whole) ? clamp(range, options.fluid) : write(whole);
+    return [{ suffix: "", value }];
+}
+
+function clamp({ min, max }: FluidRange, viewport: FluidConfig): string {
+    const rootSize = 16;
+    const pixels = ({ value, unit }: FluidRange["min"]) =>
+        unit === "px" ? value : value * rootSize;
+    const [minSize, maxSize] = [pixels(min), pixels(max)];
+    if (minSize === maxSize) return `${minSize / rootSize}rem`;
+    const minSizeRem = minSize / rootSize;
+    const maxSizeRem = maxSize / rootSize;
+    const minViewportRem = viewport.min / rootSize;
+    const maxViewportRem = viewport.max / rootSize;
+    const slope = (maxSizeRem - minSizeRem) / (maxViewportRem - minViewportRem);
+    const intersection = -1 * minViewportRem * slope + minSizeRem;
+    return `clamp(${minSizeRem}rem, ${intersection.toFixed(2)}rem + ${(slope * 100).toFixed(2)}vw, ${maxSizeRem}rem)`;
 }
 
 const GENERIC_FAMILIES = new Set([
@@ -116,23 +137,30 @@ function quoteFont(name: string): string {
     return /[\s'"!@#$%^&*()=+[\]{};:|\\/,.<>?~]/.test(name) ? `"${name}"` : name;
 }
 
-function renderColor({ colorSpace, components, alpha, hex }: ColorValue): string | undefined {
+function renderColor({ colorSpace, components, alpha, hex }: ColorValue): string {
     const [a, b, c] = components;
+    const four = [a, b, c].map((each) => fixed(each, 4)).join(" ");
     switch (colorSpace) {
         case "srgb":
             if (hex !== undefined) return hexOf(hex, alpha);
             return withAlpha(`rgb(${[a, b, c].map(channel).join(" ")}`, alpha);
         case "hsl":
-            return withAlpha(`hsl(${fixed(a, 1)} ${percent(b)} ${percent(c)}`, alpha);
+            return withAlpha(`hsl(${fixed(a, 1)} ${percent(b, 0)} ${percent(c, 0)}`, alpha);
+        case "hwb":
+            return withAlpha(`hwb(${fixed(a, 4)} ${percent(b, 4)} ${percent(c, 4)}`, alpha);
+        case "lab":
+        case "lch":
+        case "oklab":
         case "oklch":
-            return withAlpha(`oklch(${[a, b, c].map((each) => fixed(each, 4)).join(" ")}`, alpha);
+            return withAlpha(`${colorSpace}(${four}`, alpha);
+        case "srgb-linear":
         case "display-p3":
-            return withAlpha(
-                `color(display-p3 ${[a, b, c].map((each) => fixed(each, 4)).join(" ")}`,
-                alpha,
-            );
-        default:
-            return undefined;
+        case "a98-rgb":
+        case "prophoto-rgb":
+        case "rec2020":
+        case "xyz-d65":
+        case "xyz-d50":
+            return withAlpha(`color(${colorSpace} ${four}`, alpha);
     }
 }
 
@@ -144,8 +172,8 @@ function channel(component: ColorComponent): string {
     return component === "none" ? "none" : String(Math.round(component * 255));
 }
 
-function percent(component: ColorComponent): string {
-    return component === "none" ? "none" : `${Math.round(component)}%`;
+function percent(component: ColorComponent, digits: number): string {
+    return component === "none" ? "none" : `${fixed(component, digits)}%`;
 }
 
 function fixed(component: ColorComponent, digits: number): string {

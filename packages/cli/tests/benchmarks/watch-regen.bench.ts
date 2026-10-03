@@ -7,9 +7,7 @@ import { afterAll, beforeAll, bench, describe } from "vitest";
 import { createWatchSession } from "../../src/watch/regenerate.js";
 
 // Measures the cost of a single watch change-event on an already-running
-// session, at a few project sizes. In Phase 0 every scenario does a full
-// rebuild (the pre-extraction behaviour), so this file captures the baseline
-// that later phases compare against. See notes/watcher-perf-spec.md §5.
+// session, at a few project sizes.
 
 type Fixture = {
     config: InternalConfig;

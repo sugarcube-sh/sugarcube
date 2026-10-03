@@ -169,23 +169,21 @@ describe("golden CSS: the new core reads every golden case", () => {
     });
 });
 
-const everyValue = "every value type, fluid and recipes: PR 3";
-const configOptions = "atRule, selector lists, path, propagateDependents, polyfill, layers: PR 4";
+const configOptions =
+    "atRule, selector lists, path, propagateDependents, polyfill and layers are not written yet";
 
 const pending: Record<string, string> = {
-    "core/tokens/fluid/variables.css": everyValue,
-    "registry/recipes/size-demo/variables.css": everyValue,
-    "registry/recipes/space-demo/variables.css": everyValue,
-    "registry/starter-kits/fluid/variables.css": everyValue,
-    "studio/demo/variables.css": everyValue,
+    "studio/demo/variables.css":
+        "two typography tokens without all five properties, which Format 9.8 requires",
     "every-value-form/native/variables.css": configOptions,
     "every-value-form/polyfill/variables.css": configOptions,
     "every-value-form/polyfill/dark.css": configOptions,
 };
 
-const decided: Record<string, { decision: string; differs: "in order only" }> = {
+const decided: Record<string, { because: string; differs: "in order only" }> = {
     "studio/design-tokens/variables.css": {
-        decision: "P-015: whole-number keys stay where the file writes them",
+        because:
+            "whole-number keys stay where the file writes them; old sugarcube sorted them first",
         differs: "in order only",
     },
 };
@@ -207,7 +205,7 @@ describe("golden CSS: the new core writes what old sugarcube writes", () => {
         const allowed = decided[name];
         if (pending[name]) expect(css, `pending (${pending[name]}) but matches`).not.toBe(expected);
         else if (allowed) {
-            expect(css, `differs by ${allowed.decision} but matches`).not.toBe(expected);
+            expect(css, `differs because ${allowed.because} but matches`).not.toBe(expected);
             expect(linesByBlock(css)).toStrictEqual(linesByBlock(expected));
         } else expect(css).toBe(expected);
     });

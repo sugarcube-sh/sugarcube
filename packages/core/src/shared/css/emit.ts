@@ -9,7 +9,7 @@ import {
     permutation as permutationFor,
     token,
 } from "@sugarcube-sh/dtcg";
-import type { InternalConfig } from "../../types/config.js";
+import type { FluidConfig, InternalConfig } from "../../types/config.js";
 import type { Reported } from "../../types/diagnostics.js";
 import type { CSSFileOutput } from "../../types/generate.js";
 import { ErrorMessages } from "../constants/error-messages.js";
@@ -39,7 +39,7 @@ export function emitCSS(
     const nameOf = createVariableNameResolver(config.variables);
     const [baseline, ...later] = toWrite(doc, config).map(({ permutation, selector }) => ({
         selector,
-        declared: declarations(permutation, nameOf),
+        declared: declarations(permutation, nameOf, config.variables.transforms.fluid),
     }));
     if (!baseline) return { files: [], diagnostics };
 
@@ -109,13 +109,20 @@ interface Declaration {
     value: string;
 }
 
-function declarations(permutation: Permutation, nameOf: (path: string) => string): Declaration[] {
+function declarations(
+    permutation: Permutation,
+    nameOf: (path: string) => string,
+    fluid: FluidConfig,
+): Declaration[] {
     const variable = (path: string) => `--${nameOf(path)}`;
     const writtenFor = new Map<Token, Written[] | undefined>();
     const written = (each: Token): Written[] | undefined => {
         if (!writtenFor.has(each)) {
             const source = permutation.sources[each.source.index];
-            writtenFor.set(each, isPrivate(source) ? undefined : renderToken(each, variableFor));
+            writtenFor.set(
+                each,
+                isPrivate(source) ? undefined : renderToken(each, variableFor, { fluid }),
+            );
         }
         return writtenFor.get(each);
     };

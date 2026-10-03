@@ -43,6 +43,45 @@ describe("emitCSS", () => {
         );
     });
 
+    it("writes every color space the DTCG Color module defines", () => {
+        const space = (colorSpace: string, components: number[], alpha?: number) =>
+            color({ colorSpace, components, ...(alpha !== undefined && { alpha }) });
+        expect(
+            cssFor({
+                "tokens.json": {
+                    "linear": space("srgb-linear", [0.2, 0.5, 0.75]),
+                    "hwb": space("hwb", [200, 12.5, 30]),
+                    "hwb-none": color({ colorSpace: "hwb", components: [200, "none", 30] }),
+                    "lab": space("lab", [52.2345, 40.12346, -60.5]),
+                    "lch": space("lch", [52.2, 72.9, 303.45678]),
+                    "oklab": space("oklab", [0.62, 0.11, -0.153]),
+                    "a98": space("a98-rgb", [0.5, 0.25, 1]),
+                    "prophoto": space("prophoto-rgb", [0.4, 0.3, 0.2]),
+                    "rec2020": space("rec2020", [0.1, 0.9, 0.3]),
+                    "xyz-d65": space("xyz-d65", [0.25, 0.4, 0.1], 0.5),
+                    "xyz-d50": space("xyz-d50", [0.3, 0.3, 0.3]),
+                },
+            }),
+        ).toBe(
+            [
+                ":root {",
+                "    --linear: color(srgb-linear 0.2 0.5 0.75);",
+                "    --hwb: hwb(200 12.5% 30%);",
+                "    --hwb-none: hwb(200 none 30%);",
+                "    --lab: lab(52.2345 40.1235 -60.5);",
+                "    --lch: lch(52.2 72.9 303.4568);",
+                "    --oklab: oklab(0.62 0.11 -0.153);",
+                "    --a98: color(a98-rgb 0.5 0.25 1);",
+                "    --prophoto: color(prophoto-rgb 0.4 0.3 0.2);",
+                "    --rec2020: color(rec2020 0.1 0.9 0.3);",
+                "    --xyz-d65: color(xyz-d65 0.25 0.4 0.1 / 0.5);",
+                "    --xyz-d50: color(xyz-d50 0.3 0.3 0.3);",
+                "}",
+                "",
+            ].join("\n"),
+        );
+    });
+
     it("writes var() for an alias to a token with a variable, and the value for one without", () => {
         const resolver = {
             version: "2025.10",
@@ -396,6 +435,92 @@ describe("emitCSS", () => {
                 "--quote-font-weight: var(--body-font-weight);",
                 "--quote-letter-spacing: var(--body-letter-spacing);",
                 "--quote-line-height: var(--body-line-height);",
+            ]);
+        });
+    });
+
+    describe("writes a fluid dimension as a clamp between the config's viewport widths", () => {
+        const fluid = (value: unknown) => ({
+            $type: "dimension",
+            $value: { value: 1, unit: "rem" },
+            $extensions: { "sh.sugarcube": { fluid: value } },
+        });
+        const px = (value: number) => ({ value, unit: "px" });
+        const read = (tokens: Record<string, unknown>) => {
+            const config = fillDefaults({
+                variables: {
+                    path: "variables.css",
+                    transforms: { fluid: { min: 320, max: 1200 } },
+                },
+            });
+            const files = { "tokens.json": JSON.stringify(tokens) };
+            return emitCSS(readFromMemory({ files }, readOptions(config)), config);
+        };
+
+        it("from its min and max, the token's own value unused", () => {
+            const { files } = read({
+                step: fluid({ min: px(16), max: { value: 1.25, unit: "rem" } }),
+                flat: fluid({ min: px(16), max: px(16) }),
+                gap: { $type: "dimension", $value: "{step}" },
+            });
+            expect(files[0]?.css).toBe(
+                [
+                    ":root {",
+                    "    --step: clamp(1rem, 0.91rem + 0.45vw, 1.25rem);",
+                    "    --flat: 1rem;",
+                    "    --gap: var(--step);",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("for a recipe's steps", () => {
+            const { files } = read({
+                space: {
+                    $type: "dimension",
+                    $extensions: {
+                        "sh.sugarcube": {
+                            scale: {
+                                mode: "multipliers",
+                                base: { min: px(16), max: px(20) },
+                                multipliers: { sm: 0.5, md: 1 },
+                            },
+                        },
+                    },
+                },
+            });
+            expect(files[0]?.css).toContain("--space-md: clamp(1rem, 0.91rem + 0.45vw, 1.25rem);");
+        });
+
+        it("only for a dimension, ignoring a fluid range on any other type", () => {
+            const { files, diagnostics } = read({
+                tint: {
+                    $type: "color",
+                    $value: "#e11d48",
+                    $extensions: { "sh.sugarcube": { fluid: "big" } },
+                },
+            });
+            expect(files[0]?.css).toBe(":root {\n    --tint: #e11d48;\n}\n");
+            expect(diagnostics).toStrictEqual([]);
+        });
+
+        it("and reports a fluid range it cannot read, leaving that token out", () => {
+            const { files, diagnostics } = read({
+                word: fluid("big"),
+                off: fluid(false),
+                half: fluid({ min: px(16) }),
+                text: fluid({ min: "16px", max: px(20) }),
+                fine: { $type: "dimension", $value: px(4) },
+            });
+            expect(files[0]?.css).toBe(":root {\n    --fine: 4px;\n}\n");
+            expect(
+                diagnostics.map(({ kind, path, message }) => [kind, path, message]),
+            ).toStrictEqual([
+                ["extension-invalid", "word", "`fluid` must be an object"],
+                ["extension-invalid", "off", "`fluid` must be an object"],
+                ["extension-invalid", "half", "the fluid range needs `max`"],
+                ["invalid-value", "text", expect.stringContaining("16px")],
             ]);
         });
     });

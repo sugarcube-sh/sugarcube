@@ -24,76 +24,64 @@ const readTogether = [
     ],
 ];
 
-interface AcceptSetEntry {
-    entry: number;
+interface OldForm {
     form: string;
     inRepo: boolean;
     matches: (d: Diagnostic) => boolean;
 }
 
-const acceptSet: AcceptSetEntry[] = [
+const oldForms: OldForm[] = [
     {
-        entry: 1,
         form: "a hex-string colour",
         inRepo: true,
         matches: (d) => d.kind === "hex-string-color",
     },
     {
-        entry: 2,
         form: "a hex field that is not six digits",
         inRepo: false,
         matches: (d) => reason(d) === "hex-not-six-digits",
     },
     {
-        entry: 3,
         form: "a reference as part of a value",
         inRepo: false,
         matches: (d) => reason(d) === "alias-not-allowed-here",
     },
     {
-        entry: 4,
         form: "an unknown property in a value",
         inRepo: false,
         matches: (d) => reason(d) === "unknown-property",
     },
     {
-        entry: 5,
         form: "an empty font name",
         inRepo: false,
         matches: (d) => reason(d) === "not-a-font-name",
     },
     {
-        entry: 6,
         form: "an empty font list",
         inRepo: false,
         matches: (d) => reason(d) === "empty-font-list",
     },
     {
-        entry: 7,
         form: "a string in a dashArray that is not a reference",
         inRepo: false,
         matches: (d) => d.kind === "invalid-value" && d.detail.at.includes("dashArray"),
     },
     {
-        entry: 8,
         form: "an empty dashArray",
         inRepo: false,
         matches: (d) => reason(d) === "empty-dash-array",
     },
     {
-        entry: 9,
         form: "an empty shadow list",
         inRepo: false,
         matches: (d) => reason(d) === "no-shadows",
     },
     {
-        entry: 10,
         form: "an empty gradient",
         inRepo: false,
         matches: (d) => reason(d) === "no-gradient-stops",
     },
     {
-        entry: 11,
         form: "typography without all five parts",
         inRepo: true,
         matches: (d) =>
@@ -102,19 +90,16 @@ const acceptSet: AcceptSetEntry[] = [
             d.detail.reason === "missing-property",
     },
     {
-        entry: 12,
         form: "a key written twice",
         inRepo: false,
         matches: (d) => d.kind === "duplicate-key",
     },
     {
-        entry: 13,
         form: "a JSON Pointer index that is not plain digits",
         inRepo: false,
         matches: (d) => d.kind === "missing-reference" && /\/(?:0\d|\+|\d+\.)/.test(d.detail.ref),
     },
     {
-        entry: 15,
         form: "a resolutionOrder $ref to something other than a set or modifier",
         inRepo: false,
         matches: (d) =>
@@ -123,7 +108,6 @@ const acceptSet: AcceptSetEntry[] = [
             d.detail.at[0] === "resolutionOrder",
     },
     {
-        entry: 16,
         form: "$description, $deprecated or $extensions of the wrong JSON type",
         inRepo: false,
         matches: (d) =>
@@ -131,13 +115,11 @@ const acceptSet: AcceptSetEntry[] = [
             ["$description", "$deprecated", "$extensions"].includes(d.detail.property),
     },
     {
-        entry: 17,
         form: "a $root holding tokens",
         inRepo: false,
         matches: (d) => d.kind === "invalid-name" && d.detail.name === "$root",
     },
     {
-        entry: 18,
         form: "$extends or $ref naming the group's own parent",
         inRepo: false,
         matches: (d) =>
@@ -146,7 +128,6 @@ const acceptSet: AcceptSetEntry[] = [
             (d.detail.chain[0] ?? "").startsWith(`${d.detail.chain[1] ?? ""}.`),
     },
     {
-        entry: 19,
         form: "a reference to a token of another type",
         inRepo: false,
         matches: (d) => d.kind === "type-mismatch",
@@ -162,7 +143,7 @@ interface Expected {
 const expectedFailures: Expected[] = [
     {
         project: "packages/core/tests/__fixtures__/resolver/complex.resolver.json",
-        why: "carries $extensions at its root, which old sugarcube's parser keeps and core's parse-resolver test checks; the Resolver module defines $extensions on sets and modifiers only, so dtcg warns (dtcg-spec-questions.md, R-2)",
+        why: "carries $extensions at its root, which old sugarcube's parser keeps and core's parse-resolver test checks; the Resolver module defines $extensions on sets and modifiers only, so dtcg warns",
         matches: (d) =>
             d.kind === "unknown-property" &&
             d.detail.property === "$extensions" &&
@@ -291,10 +272,10 @@ function located(d: Diagnostic): string {
 }
 
 describe("every token file and resolver in the repo", () => {
-    it("fails only with forms on old-accept-set.md, or where a fixture is meant to", () => {
+    it("fails only with forms old sugarcube accepted, or where a fixture is meant to", () => {
         const unexplained = [...projects].flatMap(([project, doc]) =>
             doc.diagnostics
-                .filter((d) => !acceptSet.some((each) => each.matches(d)))
+                .filter((d) => !oldForms.some((each) => each.matches(d)))
                 .filter(
                     (d) =>
                         !expectedFailures.some(
@@ -315,15 +296,12 @@ describe("every token file and resolver in the repo", () => {
         expect(stale).toStrictEqual([]);
     });
 
-    it("finds exactly the accept-set entries old-accept-set.md says are in the repo", () => {
+    it("finds in the repo exactly the forms old sugarcube accepted that are marked as there", () => {
         const all = [...projects.values()].flatMap((doc) => doc.diagnostics);
-        const found = acceptSet.map(({ entry, form, matches }) => ({
-            entry,
+        const found = oldForms.map(({ form, matches }) => ({
             form,
             inRepo: all.some(matches),
         }));
-        expect(found).toStrictEqual(
-            acceptSet.map(({ entry, form, inRepo }) => ({ entry, form, inRepo })),
-        );
+        expect(found).toStrictEqual(oldForms.map(({ form, inRepo }) => ({ form, inRepo })));
     });
 });

@@ -25,7 +25,7 @@ const layer = {
 
 describe("parseShadow", () => {
     describe("reads", () => {
-        it("one shadow as a list of one, with inset filled in as false, as contract 01 says", () => {
+        it("one shadow as a list of one, with inset filled in as false (Format 9.6)", () => {
             expect(read(layer)).toStrictEqual([{ ...layer, inset: false }]);
         });
 

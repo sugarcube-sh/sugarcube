@@ -253,6 +253,10 @@ export const ErrorMessages = {
             return `the ${noun} ${listed} ${verb} no default, so there is nothing to write on \`:root\`: give ${pronoun} a \`default\` in the resolver, or list the permutations to write in \`variables.permutations\``;
         },
     },
+    FLUID_EXTENSION: {
+        "not-an-object": ({ name }: { name: string }) => `\`${name}\` must be an object`,
+        "missing-property": ({ name }: { name: string }) => `the fluid range needs \`${name}\``,
+    },
     SCALE_RECIPE: {
         "not-an-object": ({ name }: { name: string }) => `\`${name}\` must be an object`,
         "missing-property": ({ name }: { name: string }) => `the recipe needs \`${name}\``,
