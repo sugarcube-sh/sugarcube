@@ -27,11 +27,6 @@ interface Case {
     expected?: string[];
 }
 
-const typographyWithoutAllFiveParts = (label: string) => [
-    `${label} typography.style.code: not read`,
-    `${label} typography.style.heading: not read`,
-];
-
 const cases: Case[] = [
     ...[
         "breakpoint-cascade",
@@ -81,14 +76,6 @@ const cases: Case[] = [
     {
         name: "studio/demo",
         resolver: join(repo, "packages/studio/demo/tokens.resolver.json"),
-        expected: [
-            "diagnostic invalid-value missing-property typography.style.code",
-            "diagnostic invalid-value missing-property typography.style.heading",
-            "diagnostic invalid-value missing-property typography.style.heading",
-            "diagnostic invalid-value missing-property typography.style.heading",
-            ...typographyWithoutAllFiveParts("mode=light"),
-            ...typographyWithoutAllFiveParts("mode=dark"),
-        ],
     },
     {
         name: "studio/design-tokens",

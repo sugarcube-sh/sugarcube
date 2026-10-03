@@ -15,7 +15,7 @@ function details(raw: unknown) {
 
 describe("parseFontFamily", () => {
     describe("reads", () => {
-        it("one name as a list of one, as contract 01 says", () => {
+        it("one name as a list of one", () => {
             expect(read("Comic Sans MS")).toStrictEqual(["Comic Sans MS"]);
         });
 

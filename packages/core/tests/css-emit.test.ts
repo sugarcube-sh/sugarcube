@@ -43,6 +43,45 @@ describe("emitCSS", () => {
         );
     });
 
+    it("writes every color space the DTCG Color module defines", () => {
+        const space = (colorSpace: string, components: number[], alpha?: number) =>
+            color({ colorSpace, components, ...(alpha !== undefined && { alpha }) });
+        expect(
+            cssFor({
+                "tokens.json": {
+                    "linear": space("srgb-linear", [0.2, 0.5, 0.75]),
+                    "hwb": space("hwb", [200, 12.5, 30]),
+                    "hwb-none": color({ colorSpace: "hwb", components: [200, "none", 30] }),
+                    "lab": space("lab", [52.2345, 40.12345, -60.5]),
+                    "lch": space("lch", [52.2, 72.9, 303.45678]),
+                    "oklab": space("oklab", [0.62, 0.11, -0.153]),
+                    "a98": space("a98-rgb", [0.5, 0.25, 1]),
+                    "prophoto": space("prophoto-rgb", [0.4, 0.3, 0.2]),
+                    "rec2020": space("rec2020", [0.1, 0.9, 0.3]),
+                    "xyz-d65": space("xyz-d65", [0.25, 0.4, 0.1], 0.5),
+                    "xyz-d50": space("xyz-d50", [0.3, 0.3, 0.3]),
+                },
+            }),
+        ).toBe(
+            [
+                ":root {",
+                "    --linear: color(srgb-linear 0.2 0.5 0.75);",
+                "    --hwb: hwb(200 12.5% 30%);",
+                "    --hwb-none: hwb(200 none 30%);",
+                "    --lab: lab(52.2345 40.1235 -60.5);",
+                "    --lch: lch(52.2 72.9 303.4568);",
+                "    --oklab: oklab(0.62 0.11 -0.153);",
+                "    --a98: color(a98-rgb 0.5 0.25 1);",
+                "    --prophoto: color(prophoto-rgb 0.4 0.3 0.2);",
+                "    --rec2020: color(rec2020 0.1 0.9 0.3);",
+                "    --xyz-d65: color(xyz-d65 0.25 0.4 0.1 / 0.5);",
+                "    --xyz-d50: color(xyz-d50 0.3 0.3 0.3);",
+                "}",
+                "",
+            ].join("\n"),
+        );
+    });
+
     it("writes var() for an alias to a token with a variable, and the value for one without", () => {
         const resolver = {
             version: "2025.10",
@@ -245,6 +284,303 @@ describe("emitCSS", () => {
             expect(cssFor(tokens, { variableName })).toContain(
                 "--color_on surface: var(--color_accent);",
             );
+        });
+    });
+
+    describe("writes composites part by part", () => {
+        const px = (value: number) => ({ value, unit: "px" });
+        const palette = {
+            version: "2025.10",
+            resolutionOrder: [
+                {
+                    type: "set",
+                    name: "palette",
+                    sources: [{ $ref: "palette.json" }],
+                    $extensions: { "sh.sugarcube": { emit: false } },
+                },
+                { type: "set", name: "system", sources: [{ $ref: "system.json" }] },
+            ],
+        };
+        const declarations = (system: Record<string, unknown>) =>
+            cssFor({
+                "tokens.resolver.json": palette,
+                "palette.json": {
+                    rose: color("#e11d48"),
+                    hairline: { $type: "dimension", $value: px(1) },
+                },
+                "system.json": system,
+            })
+                ?.split("\n")
+                .filter((line) => line.startsWith("    "))
+                .map((line) => line.trim());
+
+        it("with var() for a part referring to a token with a variable, and the value otherwise", () => {
+            expect(
+                declarations({
+                    ink: color("#111111"),
+                    edge: {
+                        $type: "border",
+                        $value: { color: "{ink}", width: "{hairline}", style: "solid" },
+                    },
+                    lift: {
+                        $type: "shadow",
+                        $value: {
+                            color: "{rose}",
+                            offsetX: px(0),
+                            offsetY: px(1),
+                            blur: px(2),
+                            spread: px(0),
+                        },
+                    },
+                }),
+            ).toStrictEqual([
+                "--ink: #111111;",
+                "--edge: 1px solid var(--ink);",
+                "--lift: 0px 1px 2px 0px #e11d48;",
+            ]);
+        });
+
+        it("with the value for a part written as a JSON Pointer", () => {
+            expect(
+                declarations({
+                    deep: color({ colorSpace: "srgb", components: [0.2, 0, 0] }),
+                    edge: {
+                        $type: "border",
+                        $value: { color: { $ref: "#/deep/$value" }, width: px(2), style: "dashed" },
+                    },
+                    tint: color({
+                        colorSpace: "srgb",
+                        components: [{ $ref: "#/deep/$value/components/0" }, 1, 1],
+                    }),
+                }),
+            ).toStrictEqual([
+                "--deep: rgb(51 0 0);",
+                "--edge: 2px dashed rgb(51 0 0);",
+                "--tint: rgb(51 255 255);",
+            ]);
+        });
+
+        it("with a dash pattern written as dashed, since CSS cannot draw one (Format 9.3.3)", () => {
+            expect(
+                declarations({
+                    dots: {
+                        $type: "strokeStyle",
+                        $value: { dashArray: ["{hairline}", px(2)], lineCap: "round" },
+                    },
+                    edge: {
+                        $type: "border",
+                        $value: {
+                            color: "#111111",
+                            width: px(2),
+                            style: { dashArray: [px(4), px(2)], lineCap: "butt" },
+                        },
+                    },
+                }),
+            ).toStrictEqual(["--dots: dashed;", "--edge: 2px dashed #111111;"]);
+        });
+
+        it("with var() for a shadow layer referring to a whole shadow token", () => {
+            expect(
+                declarations({
+                    lift: {
+                        $type: "shadow",
+                        $value: {
+                            color: "#000000",
+                            offsetX: px(0),
+                            offsetY: px(1),
+                            blur: px(2),
+                            spread: px(0),
+                        },
+                    },
+                    stack: {
+                        $type: "shadow",
+                        $value: [
+                            "{lift}",
+                            {
+                                color: "#000000",
+                                offsetX: px(0),
+                                offsetY: px(4),
+                                blur: px(8),
+                                spread: px(0),
+                                inset: true,
+                            },
+                        ],
+                    },
+                }),
+            ).toStrictEqual([
+                "--lift: 0px 1px 2px 0px #000000;",
+                "--stack: var(--lift), inset 0px 4px 8px 0px #000000;",
+            ]);
+        });
+
+        it("with a gradient's stops written out where a stop refers to another gradient", () => {
+            expect(
+                declarations({
+                    half: { $type: "number", $value: 0.5 },
+                    start: { $type: "gradient", $value: [{ color: "#ffffff", position: 0 }] },
+                    fade: {
+                        $type: "gradient",
+                        $value: ["{start}", { color: "{rose}", position: "{half}" }],
+                    },
+                }),
+            ).toStrictEqual([
+                "--half: 0.5;",
+                "--start: linear-gradient(#ffffff 0%);",
+                "--fade: linear-gradient(#ffffff 0%, #e11d48 clamp(0%, var(--half) * 100%, 100%));",
+            ]);
+        });
+
+        it("with a font name quoted where CSS needs it, and vendor and generic names bare", () => {
+            expect(
+                declarations({
+                    stack: {
+                        $type: "fontFamily",
+                        $value: [
+                            "Inter",
+                            "-apple-system",
+                            "1Password",
+                            "inherit",
+                            'Say "hi"',
+                            "back\\slash",
+                            "Sans-Serif",
+                            "ui-monospace",
+                        ],
+                    },
+                }),
+            ).toStrictEqual([
+                '--stack: Inter, -apple-system, "1Password", "inherit", "Say \\"hi\\"", "back\\\\slash", Sans-Serif, ui-monospace;',
+            ]);
+        });
+
+        it("with a gradient position as a percentage, without float drift", () => {
+            expect(
+                declarations({
+                    third: {
+                        $type: "gradient",
+                        $value: [
+                            { color: "#ffffff", position: 0.3 },
+                            { color: "#000000", position: 0.57 },
+                        ],
+                    },
+                }),
+            ).toStrictEqual(["--third: linear-gradient(#ffffff 30%, #000000 57%);"]);
+        });
+
+        it("with typography as one variable per part, each part of a referred-to style its own var()", () => {
+            const body = {
+                $type: "typography",
+                $value: {
+                    fontFamily: ["Inter", "sans-serif"],
+                    fontSize: "{hairline}",
+                    fontWeight: 400,
+                    letterSpacing: px(0),
+                    lineHeight: 0,
+                },
+            };
+            expect(
+                declarations({ body, quote: { $type: "typography", $value: "{body}" } }),
+            ).toStrictEqual([
+                "--body-font-family: Inter, sans-serif;",
+                "--body-font-size: 1px;",
+                "--body-font-weight: 400;",
+                "--body-letter-spacing: 0px;",
+                "--body-line-height: 0;",
+                "--quote-font-family: var(--body-font-family);",
+                "--quote-font-size: var(--body-font-size);",
+                "--quote-font-weight: var(--body-font-weight);",
+                "--quote-letter-spacing: var(--body-letter-spacing);",
+                "--quote-line-height: var(--body-line-height);",
+            ]);
+        });
+    });
+
+    describe("writes a fluid dimension as a clamp between the config's viewport widths", () => {
+        const fluid = (value: unknown) => ({
+            $type: "dimension",
+            $value: { value: 1, unit: "rem" },
+            $extensions: { "sh.sugarcube": { fluid: value } },
+        });
+        const px = (value: number) => ({ value, unit: "px" });
+        const read = (tokens: Record<string, unknown>) => {
+            const config = fillDefaults({
+                variables: {
+                    path: "variables.css",
+                    transforms: { fluid: { min: 320, max: 1200 } },
+                },
+            });
+            const files = { "tokens.json": JSON.stringify(tokens) };
+            return emitCSS(readFromMemory({ files }, readOptions(config)), config);
+        };
+
+        it("from its min and max, as Utopia works it out, the token's own value unused", () => {
+            const { files } = read({
+                step: fluid({ min: px(16), max: { value: 1.25, unit: "rem" } }),
+                shrink: fluid({ min: px(20), max: px(16) }),
+                flat: fluid({ min: px(16), max: px(16) }),
+                gap: { $type: "dimension", $value: "{step}" },
+            });
+            expect(files[0]?.css).toBe(
+                [
+                    ":root {",
+                    "    --step: clamp(1rem, 0.9091rem + 0.4545vw, 1.25rem);",
+                    "    --shrink: clamp(1rem, 1.3409rem + -0.4545vw, 1.25rem);",
+                    "    --flat: 1rem;",
+                    "    --gap: var(--step);",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("for a recipe's steps", () => {
+            const { files } = read({
+                space: {
+                    $type: "dimension",
+                    $extensions: {
+                        "sh.sugarcube": {
+                            scale: {
+                                mode: "multipliers",
+                                base: { min: px(16), max: px(20) },
+                                multipliers: { sm: 0.5, md: 1 },
+                            },
+                        },
+                    },
+                },
+            });
+            expect(files[0]?.css).toContain(
+                "--space-md: clamp(1rem, 0.9091rem + 0.4545vw, 1.25rem);",
+            );
+        });
+
+        it("only for a dimension, ignoring a fluid range on any other type", () => {
+            const { files, diagnostics } = read({
+                tint: {
+                    $type: "color",
+                    $value: "#e11d48",
+                    $extensions: { "sh.sugarcube": { fluid: "big" } },
+                },
+            });
+            expect(files[0]?.css).toBe(":root {\n    --tint: #e11d48;\n}\n");
+            expect(diagnostics).toStrictEqual([]);
+        });
+
+        it("and reports a fluid range it cannot read, leaving that token out", () => {
+            const { files, diagnostics } = read({
+                word: fluid("big"),
+                off: fluid(false),
+                half: fluid({ min: px(16) }),
+                text: fluid({ min: "16px", max: px(20) }),
+                fine: { $type: "dimension", $value: px(4) },
+            });
+            expect(files[0]?.css).toBe(":root {\n    --fine: 4px;\n}\n");
+            expect(
+                diagnostics.map(({ kind, path, message }) => [kind, path, message]),
+            ).toStrictEqual([
+                ["extension-invalid", "word", "`fluid` must be an object"],
+                ["extension-invalid", "off", "`fluid` must be an object"],
+                ["extension-invalid", "half", "the fluid range needs `max`"],
+                ["invalid-value", "text", expect.stringContaining("16px")],
+            ]);
         });
     });
 });
