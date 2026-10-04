@@ -165,8 +165,7 @@ describe("golden CSS: the new core reads every golden case", () => {
     });
 });
 
-const configOptions =
-    "atRule, selector lists, path, propagateDependents, polyfill and layers are not written yet";
+const configOptions = "propagateDependents and polyfill are not written yet";
 
 const pending: Record<string, string> = {
     "every-value-form/native/variables.css": configOptions,
@@ -221,12 +220,12 @@ function blocksOf(css: string): Block[] {
         .map((block) => {
             const lines = block.split("\n");
             const declared = lines.flatMap((line) => {
-                const found = /^ {4}(--[^:]+): (.*);$/.exec(line);
+                const found = /^\s+(--[^:]+): (.*);$/.exec(line);
                 return found?.[1] && found[2] !== undefined ? [[found[1], found[2]] as const] : [];
             });
             return {
                 selector: lines
-                    .filter((line) => !line.startsWith("    ") && line !== "}")
+                    .filter((line) => !/^\s+--/.test(line) && line.trim() !== "}")
                     .join("\n"),
                 names: declared.map(([name]) => name),
                 values: new Map(declared),
@@ -269,11 +268,18 @@ const goldenFiles = cases.flatMap((each) =>
         .map((file) => ({ name: `${each.name}/${file}`, each, file })),
 );
 
+function inLayer(css: string, layer: string | undefined): string {
+    if (!layer) return css;
+    const indented = css.split("\n").map((line) => (line.trim() ? `    ${line}` : line));
+    return `@layer ${layer} {\n${indented.join("\n")}}\n`;
+}
+
 describe("golden CSS: the new core writes what old sugarcube writes", () => {
     it.for(goldenFiles)("$name", async ({ name, each, file }) => {
         const { config, doc } = await readCase(each);
         const { files } = emitCSS(doc, config);
-        const css = files.find(({ path }) => path === file)?.css ?? "";
+        const written = files.find(({ path }) => path === file)?.css;
+        const css = written === undefined ? "" : inLayer(written, config.variables.layer);
         const expected = readFileSync(join(golden, name), "utf8");
         const listed = decided[name];
         if (pending[name]) expect(css, `pending (${pending[name]}) but matches`).not.toBe(expected);

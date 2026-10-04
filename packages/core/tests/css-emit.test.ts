@@ -6,13 +6,17 @@ import { readOptions } from "../src/shared/read-options.js";
 
 type Variables = Parameters<typeof fillDefaults>[0]["variables"];
 
-function cssFor(files: Record<string, unknown>, variables: Variables = {}) {
+function filesFor(files: Record<string, unknown>, variables: Variables = {}) {
     const config = fillDefaults({ variables: { path: "variables.css", ...variables } });
     const texts = Object.fromEntries(
         Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
     );
     const doc = readFromMemory({ files: texts }, readOptions(config));
-    return emitCSS(doc, config).files[0]?.css;
+    return emitCSS(doc, config).files;
+}
+
+function cssFor(files: Record<string, unknown>, variables: Variables = {}) {
+    return filesFor(files, variables)[0]?.css;
 }
 
 const color = (value: unknown) => ({ $type: "color", $value: value });
@@ -161,6 +165,157 @@ describe("emitCSS", () => {
             );
         });
 
+        it("with only what changed when an earlier selector list holds :root", () => {
+            expect(
+                cssFor(files, {
+                    permutations: [
+                        { input: { brand: "house" }, selector: [":root", '[data-brand="house"]'] },
+                        { input: { brand: "ocean" }, selector: '[data-brand="ocean"]' },
+                    ],
+                }),
+            ).toBe(
+                [
+                    ":root,",
+                    '[data-brand="house"] {',
+                    "    --brand: #e11d48;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                    '[data-brand="ocean"] {',
+                    "    --brand: #0ea5e9;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("compared with every earlier block that reaches everywhere it does, later winning", () => {
+            expect(
+                cssFor(files, {
+                    permutations: [
+                        { input: { brand: "house" }, selector: ".house" },
+                        { input: { brand: "ocean" }, selector: [".a", ".b"] },
+                        { input: { brand: "house" }, selector: ".a" },
+                    ],
+                }),
+            ).toBe(
+                [
+                    ".house {",
+                    "    --brand: #e11d48;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                    ".a,",
+                    ".b {",
+                    "    --brand: #0ea5e9;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                    ".a {",
+                    "    --brand: #e11d48;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("inside its at-rule, compared with a block the at-rule does not narrow", () => {
+            expect(
+                cssFor(files, {
+                    permutations: [
+                        { input: { brand: "house" }, selector: ":root" },
+                        {
+                            input: { brand: "ocean" },
+                            selector: ":root",
+                            atRule: "@media (prefers-color-scheme: dark)",
+                        },
+                        { input: { brand: "ocean" }, selector: '[data-brand="ocean"]' },
+                    ],
+                }),
+            ).toBe(
+                [
+                    ":root {",
+                    "    --brand: #e11d48;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                    "@media (prefers-color-scheme: dark) {",
+                    "    :root {",
+                    "        --brand: #0ea5e9;",
+                    "    }",
+                    "}",
+                    "",
+                    '[data-brand="ocean"] {',
+                    "    --brand: #0ea5e9;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("in full when an earlier block has an at-rule the later one does not", () => {
+            expect(
+                cssFor(files, {
+                    permutations: [
+                        {
+                            input: { brand: "ocean" },
+                            selector: ":root",
+                            atRule: "@media (min-width: 640px)",
+                        },
+                        { input: { brand: "house" }, selector: ":root" },
+                    ],
+                }),
+            ).toBe(
+                [
+                    "@media (min-width: 640px) {",
+                    "    :root {",
+                    "        --brand: #0ea5e9;",
+                    "        --text: #111111;",
+                    "    }",
+                    "}",
+                    "",
+                    ":root {",
+                    "    --brand: #e11d48;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("in its own file for a permutation with a path, whose first block is written in full", () => {
+            expect(
+                filesFor(files, {
+                    permutations: [
+                        { input: { brand: "house" }, selector: ":root" },
+                        { input: { brand: "ocean" }, selector: ":root", path: "ocean.css" },
+                        { input: { brand: "ocean" }, selector: '[data-brand="ocean"]' },
+                    ],
+                }),
+            ).toStrictEqual([
+                {
+                    path: "variables.css",
+                    css: [
+                        ":root {",
+                        "    --brand: #e11d48;",
+                        "    --text: #111111;",
+                        "}",
+                        "",
+                        '[data-brand="ocean"] {',
+                        "    --brand: #0ea5e9;",
+                        "}",
+                        "",
+                    ].join("\n"),
+                },
+                {
+                    path: "ocean.css",
+                    css: [":root {", "    --brand: #0ea5e9;", "    --text: #111111;", "}", ""].join(
+                        "\n",
+                    ),
+                },
+            ]);
+        });
+
         it("in full when the first block may not apply where it does", () => {
             expect(cssFor(files, { permutations: brands('[data-brand="house"]') })).toBe(
                 [
@@ -177,6 +332,72 @@ describe("emitCSS", () => {
                 ].join("\n"),
             );
         });
+    });
+
+    it("stacks a media query on an earlier one that matches wherever it does", () => {
+        const resolver = {
+            version: "2025.10",
+            resolutionOrder: [
+                { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                {
+                    type: "modifier",
+                    name: "screen",
+                    default: "narrow",
+                    contexts: {
+                        narrow: [],
+                        medium: [{ $ref: "medium.json" }],
+                        wide: [{ $ref: "wide.json" }],
+                    },
+                },
+            ],
+        };
+        const size = (value: number) => ({ $type: "dimension", $value: { value, unit: "px" } });
+        expect(
+            cssFor(
+                {
+                    "tokens.resolver.json": resolver,
+                    "tokens.json": { gap: size(4), text: size(14) },
+                    "medium.json": { gap: size(8), text: size(16) },
+                    "wide.json": { gap: size(8), text: size(18) },
+                },
+                {
+                    permutations: [
+                        { input: {}, selector: ":root" },
+                        {
+                            input: { screen: "medium" },
+                            selector: ":root",
+                            atRule: "@media (min-width: 640px)",
+                        },
+                        {
+                            input: { screen: "wide" },
+                            selector: ":root",
+                            atRule: "@media (min-width: 1024px)",
+                        },
+                    ],
+                },
+            ),
+        ).toBe(
+            [
+                ":root {",
+                "    --gap: 4px;",
+                "    --text: 14px;",
+                "}",
+                "",
+                "@media (min-width: 640px) {",
+                "    :root {",
+                "        --gap: 8px;",
+                "        --text: 16px;",
+                "    }",
+                "}",
+                "",
+                "@media (min-width: 1024px) {",
+                "    :root {",
+                "        --text: 18px;",
+                "    }",
+                "}",
+                "",
+            ].join("\n"),
+        );
     });
 
     it("leaves out a token whose value cannot be read, and writes the rest", () => {

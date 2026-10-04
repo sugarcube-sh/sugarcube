@@ -15,15 +15,18 @@ import type { Reported } from "../../types/diagnostics.js";
 import type { CSSFileOutput } from "../../types/generate.js";
 import { ErrorMessages, diagnosticDocs } from "../constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
+import { stacksOn } from "../pipeline/stacks-on.js";
 import { textZoomWarnings } from "./text-zoom.js";
 import { type ReplacementFor, type Written, renderToken } from "./values.js";
 
 /**
- * Writes the design system's CSS variables to the config's `path`, named from its `prefix` or
- * `variableName`, with every reference to a token that has its own variable written as `var()`.
- * The first permutation writes every variable. Each later one, under its own selector, writes only
- * those whose value differs when the first block applies wherever it does (`:root` always does),
- * and every variable otherwise. Hands back every problem found, without throwing.
+ * Writes the design system's CSS variables, named from the config's `prefix` or `variableName`,
+ * with every reference to a token that has its own variable written as `var()`. Each permutation
+ * is a block under its selector, inside its `atRule` if it has one, in its own `path` or the
+ * config's. A block writes only what differs from the earlier blocks in its file that reach every
+ * element and every screen it does (a selector list holding `:root` or all of its selectors; no
+ * at-rule, the same one, or a media query it stacks on), the later winning, so a block nothing
+ * reaches is written in full. Hands back every problem found, without throwing.
  *
  * @example
  * const doc = await read(config.resolver, readOptions(config));
@@ -48,24 +51,28 @@ export function emitCSS(
     ];
     const { prefix, variableName } = config.variables;
     const variable = (path: string) => cssVariable(path, { prefix, name: variableName });
-    const [baseline, ...later] = entries.map(({ permutation, selector }) => ({
-        selector,
-        declared: declarations(permutation, variable, fluid),
-    }));
-    if (!baseline) return { files: [], diagnostics };
+    const declaredIn = new Map<Permutation, Declaration[]>();
+    const declaredBy = (permutation: Permutation) => {
+        const found = declaredIn.get(permutation) ?? declarations(permutation, variable, fluid);
+        declaredIn.set(permutation, found);
+        return found;
+    };
 
-    const inEffect = new Map(baseline.declared.map(({ name, value }) => [name, value]));
-    const blocks = [
-        baseline,
-        ...later.map(({ selector, declared }) => ({
-            selector,
-            declared: appliesWherever(baseline.selector, selector)
-                ? declared.filter(({ name, value }) => inEffect.get(name) !== value)
-                : declared,
-        })),
-    ].flatMap(({ selector, declared }) => (declared.length > 0 ? [block(selector, declared)] : []));
-    const files =
-        blocks.length > 0 ? [{ path: config.variables.path, css: `${blocks.join("\n\n")}\n` }] : [];
+    const byFile = new Map<string, Block[]>();
+    for (const entry of entries) {
+        const earlier = byFile.get(entry.path) ?? [];
+        const inEffect = new Map<string, string>();
+        for (const each of earlier.filter((block) => reaches(block.entry, entry))) {
+            for (const { name, value } of each.declared) inEffect.set(name, value);
+        }
+        const declared = declaredBy(entry.permutation);
+        const changed = declared.filter(({ name, value }) => inEffect.get(name) !== value);
+        byFile.set(entry.path, [...earlier, { entry, declared, changed }]);
+    }
+    const files = [...byFile].flatMap(([path, blocks]) => {
+        const written = blocks.filter(({ changed }) => changed.length > 0).map(text);
+        return written.length > 0 ? [{ path, css: `${written.join("\n\n")}\n` }] : [];
+    });
     return { files, diagnostics };
 }
 
@@ -81,20 +88,39 @@ function asReported(found: Diagnostic): Reported {
     };
 }
 
-function toWrite(
-    doc: Document,
-    config: InternalConfig,
-): { permutation: Permutation; selector: string | string[] }[] {
+interface Entry {
+    permutation: Permutation;
+    selector: string | string[];
+    atRule?: string;
+    path: string;
+}
+
+interface Block {
+    entry: Entry;
+    declared: Declaration[];
+    changed: Declaration[];
+}
+
+function toWrite(doc: Document, config: InternalConfig): Entry[] {
     const listed = config.variables.permutations ?? [];
     if (listed.length === 0) {
         return doc.permutations.map((permutation) => ({
             permutation,
             selector: derivedSelector(doc, permutation.input),
+            path: config.variables.path,
         }));
     }
-    return listed.flatMap(({ input, selector }) => {
+    return listed.flatMap(({ input, selector, atRule, path }) => {
         const permutation = permutationFor(doc, input);
-        return permutation ? [{ permutation, selector }] : [];
+        if (!permutation) return [];
+        return [
+            {
+                permutation,
+                selector,
+                path: path ?? config.variables.path,
+                ...(atRule && { atRule }),
+            },
+        ];
     });
 }
 
@@ -105,14 +131,23 @@ function derivedSelector(doc: Document, input: Input): string {
     return changed ? `[data-${changed[0]}="${changed[1]}"]` : ":root";
 }
 
-function appliesWherever(earlier: string | string[], later: string | string[]): boolean {
-    const [reach, target] = [earlier, later].map((each) => [each].flat().join(","));
-    return reach === ":root" || reach === target;
+function reaches(earlier: Entry, later: Entry): boolean {
+    const reach = [earlier.selector].flat();
+    const target = [later.selector].flat();
+    const everyElement = reach.includes(":root") || target.every((each) => reach.includes(each));
+    const everyScreen =
+        earlier.atRule === undefined ||
+        earlier.atRule === later.atRule ||
+        stacksOn(earlier.atRule, later.atRule);
+    return everyElement && everyScreen;
 }
 
-function block(selector: string | string[], declared: Declaration[]): string {
-    const lines = declared.map(({ name, value }) => `    ${name}: ${value};`);
-    return `${[selector].flat().join(",\n")} {\n${lines.join("\n")}\n}`;
+function text({ entry: { selector, atRule }, changed }: Block): string {
+    const lines = changed.map(({ name, value }) => `    ${name}: ${value};`);
+    const rule = `${[selector].flat().join(",\n")} {\n${lines.join("\n")}\n}`;
+    if (!atRule) return rule;
+    const indented = rule.split("\n").map((line) => `    ${line}`);
+    return `${atRule} {\n${indented.join("\n")}\n}`;
 }
 
 interface Declaration {
