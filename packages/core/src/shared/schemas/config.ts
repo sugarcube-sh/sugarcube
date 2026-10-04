@@ -34,7 +34,22 @@ const utilityConfigSchema = z.object({
 
 const utilityConfigOrArraySchema = z.union([utilityConfigSchema, z.array(utilityConfigSchema)]);
 
-const utilityClassesSchema = z.record(z.string(), utilityConfigOrArraySchema);
+const utilityClassesSchema = z
+    .record(z.string(), utilityConfigOrArraySchema)
+    .superRefine((classes, ctx) => {
+        for (const [property, listed] of Object.entries(classes)) {
+            for (const [index, { source }] of [listed].flat().entries()) {
+                if (!source.includes("*") || source.endsWith(".*")) continue;
+                ctx.addIssue({
+                    code: "custom",
+                    path: Array.isArray(listed)
+                        ? [property, index, "source"]
+                        : [property, "source"],
+                    message: ErrorMessages.UTILITIES.INVALID_SOURCE_PATTERN(property, source),
+                });
+            }
+        }
+    });
 
 const transformsSchema = z.object({
     fluid: fluidSchema.optional(),
