@@ -1,4 +1,4 @@
-import type { Token, TokenType } from "@sugarcube-sh/dtcg";
+import { type Token, type TokenType, withoutRoot } from "@sugarcube-sh/dtcg";
 import type { UtilityClassesConfig } from "../../types/config.js";
 import type { Reported } from "../../types/diagnostics.js";
 import { diagnostic } from "../diagnostics.js";
@@ -140,12 +140,10 @@ function partsFor(
     for (const listed of tokens) {
         if (!("name" in listed)) continue;
         const { token } = listed;
-        if (!token.path.startsWith(`${base}.`)) continue;
+        const path = withoutRoot(token.path);
+        if (!path.startsWith(`${base}.`)) continue;
         if (types && !types.includes(token.type)) continue;
-        const segments = token.path.slice(base.length + 1).split(".");
-        if (segments.at(-1) === "$root") segments.pop();
-        if (segments.length === 0) continue;
-        const part = stripped(segments.join("-"), entry);
+        const part = stripped(path.slice(base.length + 1).replaceAll(".", "-"), entry);
         const earlier = parts.get(part);
         if (earlier) earlier.push(listed);
         else parts.set(part, [listed]);

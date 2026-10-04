@@ -1,3 +1,5 @@
+import { withoutRoot } from "../path.js";
+
 export interface CSSVariableOptions {
     /** Put before every name, joined with a dash. */
     prefix?: string;
@@ -25,7 +27,7 @@ export interface CSSVariableOptions {
  * cssVariable("color.brand", { prefix: "ds" })   // "--ds-color-brand"
  */
 export function cssVariable(path: string, options: CSSVariableOptions = {}): string {
-    const own = path.endsWith(".$root") ? path.slice(0, -".$root".length) : path;
+    const own = withoutRoot(path);
     const named = options.name
         ? options.name(own)
         : [

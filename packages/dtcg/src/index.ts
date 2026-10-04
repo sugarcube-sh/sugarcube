@@ -1069,6 +1069,7 @@ export interface TokenView {
 }
 
 export { byToken } from "./lookup/by-token.js";
+export { withoutRoot } from "./path.js";
 export { defaultPermutation, permutation } from "./lookup/permutation.js";
 export { group, token, tokensIn } from "./lookup/token.js";
 
