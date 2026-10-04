@@ -1,11 +1,10 @@
 import type { Diagnostic, Document, Permutation } from "@sugarcube-sh/dtcg";
-import { cssVariable } from "@sugarcube-sh/dtcg/css";
 import type { InternalConfig } from "../../types/config.js";
 import type { Reported } from "../../types/diagnostics.js";
 import type { CSSFileOutput } from "../../types/generate.js";
 import { diagnostic } from "../diagnostics.js";
 import { blocks, entries } from "./blocks.js";
-import { type Declared, declarations } from "./declarations.js";
+import { type Declared, declarationOptions, declarations } from "./declarations.js";
 import { files } from "./text.js";
 import { textZoomWarnings } from "./text-zoom.js";
 
@@ -35,12 +34,7 @@ export function emitCSS(
     if (reported.some(({ kind }) => kind === "default-required"))
         return { files: [], diagnostics: [...reported, ...renamed] };
 
-    const { prefix, variableName, transforms } = config.variables;
-    const options = {
-        variable: (path: string) => cssVariable(path, { prefix, name: variableName }),
-        fluid: transforms.fluid,
-        polyfill: transforms.colorFallbackStrategy === "polyfill",
-    };
+    const options = declarationOptions(config);
     const toWrite = entries(doc, config);
     const declaredIn = new Map<Permutation, Declared>();
     const declared = (permutation: Permutation) => {
@@ -57,7 +51,7 @@ export function emitCSS(
             ...renamed,
             ...textZoomWarnings(
                 toWrite.map(({ permutation }) => permutation),
-                transforms.fluid,
+                options.fluid,
             ),
             ...missingHex([...declaredIn.values()]),
             ...sameNames([...declaredIn.values()]),
