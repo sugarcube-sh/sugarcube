@@ -41,6 +41,11 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
         message: ({ colorSpace }) =>
             `this \`${colorSpace}\` color needs a \`hex\` to fall back to when \`colorFallbackStrategy\` is \`"polyfill"\`: add one, or use \`"native"\` if every browser you support has \`${colorSpace}\``,
     },
+    "same-variable-name": {
+        severity: "warning",
+        message: ({ name, paths: [first, later] }) =>
+            `\`${first}\` and \`${later}\` both make \`${name}\`, so only \`${later}\`'s value is used: rename one`,
+    },
 };
 
 export const ErrorMessages = {

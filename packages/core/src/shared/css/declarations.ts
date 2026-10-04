@@ -5,7 +5,7 @@ import { type Fallbacks, fallbacksIn, supportsCondition } from "./polyfill.js";
 import { type ReplacementFor, type Written, renderToken } from "./values.js";
 
 export interface Declaration {
-    path: string;
+    token: Token;
     name: string;
     value: string;
     supports?: { condition: string; value: string };
@@ -43,18 +43,18 @@ export function declarations(
     };
     const native = writer("native");
     const fallback = writer("hex");
-    const lines = ({ path }: Token, written: Written): Declaration[] => {
-        const name = variable(path);
-        if (typeof written === "string") return [{ path, name, value: written }];
+    const lines = (each: Token, written: Written): Declaration[] => {
+        const name = variable(each.path);
+        if (typeof written === "string") return [{ token: each, name, value: written }];
         return Object.entries(written).map(([property, value]) => ({
-            path,
+            token: each,
             name: `${name}-${property}`,
             value,
         }));
     };
 
     const missing: Fallbacks["missing"] = [];
-    const declared = permutation.tokens.flatMap((each) => {
+    const declare = (each: Token): Declaration[] => {
         const written = isPrivate(each) ? undefined : native(each);
         if (written === undefined) return [];
         const found = polyfill ? fallbacksIn(permutation, each, isPrivate) : undefined;
@@ -63,13 +63,15 @@ export function declarations(
         if (!found || plain === undefined) return lines(each, written);
         const real = new Map(lines(each, written).map(({ name, value }) => [name, value]));
         const condition = supportsCondition(found.spaces);
-        return lines(each, plain).map(({ path, name, value }) => {
+        return lines(each, plain).map(({ name, value }) => {
             const own = real.get(name);
             return own === undefined || own === value
-                ? { path, name, value }
-                : { path, name, value, supports: { condition, value: own } };
+                ? { token: each, name, value }
+                : { token: each, name, value, supports: { condition, value: own } };
         });
-    });
+    };
+
+    const declared = permutation.tokens.flatMap(declare);
     return { declarations: declared, missing };
 }
 

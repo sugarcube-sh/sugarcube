@@ -15,7 +15,8 @@ export interface CSSVariableOptions {
  * The CSS custom property for a token path: dots become dashes, a final `$root` is dropped, as it
  * names its group's own value, and anything a CSS name cannot hold is escaped, so the name always
  * works in a browser. A typography token's variables are this name, a dash, and each CSS property
- * {@link cssValue} gives it, such as `--type-body-font-size`.
+ * {@link cssValue} gives it, such as `--type-body-font-size`. Different paths can give the same
+ * name: `a.b-c` and `a-b.c` are both `--a-b-c`.
  *
  * @example
  * cssVariable("color.brand")                     // "--color-brand"

@@ -60,6 +60,7 @@ export function emitCSS(
                 transforms.fluid,
             ),
             ...missingHex([...declaredIn.values()]),
+            ...sameNames([...declaredIn.values()]),
         ],
     };
 }
@@ -90,6 +91,25 @@ function missingHex(declared: Declared[]): Reported[] {
     for (const { token, colorSpace } of declared.flatMap(({ missing }) => missing)) {
         const key = `${token.path}\u0000${colorSpace}`;
         if (!found.has(key)) found.set(key, diagnostic("fallback-missing", { colorSpace }, token));
+    }
+    return [...found.values()];
+}
+
+function sameNames(declared: Declared[]): Reported[] {
+    const found = new Map<string, Reported>();
+    for (const { declarations: lines } of declared) {
+        const first = new Map<string, string>();
+        for (const { name, token } of lines) {
+            const earlier = first.get(name);
+            if (earlier === undefined) {
+                first.set(name, token.path);
+                continue;
+            }
+            const key = `${earlier}\u0000${token.path}`;
+            if (earlier === token.path || found.has(key)) continue;
+            const paths: [string, string] = [earlier, token.path];
+            found.set(key, diagnostic("same-variable-name", { name, paths }, token));
+        }
     }
     return [...found.values()];
 }

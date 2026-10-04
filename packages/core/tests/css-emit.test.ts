@@ -759,6 +759,88 @@ describe("emitCSS", () => {
         });
     });
 
+    describe("warns when two tokens make the same variable name", () => {
+        const clash = (first: string, later: string, name: string) =>
+            `\`${first}\` and \`${later}\` both make \`${name}\`, so only \`${later}\`'s value is used: rename one`;
+        const warnings = (files: Record<string, unknown>, variables: Variables = {}) => {
+            const config = fillDefaults({ variables: { path: "variables.css", ...variables } });
+            const texts = Object.fromEntries(
+                Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
+            );
+            return emitCSS(
+                readFromMemory({ files: texts }, readOptions(config)),
+                config,
+            ).diagnostics.map(({ kind, severity, path, message }) => [
+                kind,
+                severity,
+                path,
+                message,
+            ]);
+        };
+        const px = (value: number) => ({ $type: "dimension", $value: { value, unit: "px" } });
+
+        it("on the later one, naming both", () => {
+            expect(
+                warnings({ "tokens.json": { "a": { "b-c": px(1) }, "a-b": { c: px(2) } } }),
+            ).toStrictEqual([
+                ["same-variable-name", "warning", "a-b.c", clash("a.b-c", "a-b.c", "--a-b-c")],
+            ]);
+        });
+
+        it("including a typography token's variables, and names a naming function makes alike", () => {
+            const heading = {
+                $type: "typography",
+                $value: {
+                    fontFamily: "Inter",
+                    fontSize: { value: 2, unit: "rem" },
+                    fontWeight: 700,
+                    letterSpacing: { value: 0, unit: "px" },
+                    lineHeight: 1.2,
+                },
+            };
+            expect(
+                warnings({ "tokens.json": { heading, "heading-font-size": px(32) } }),
+            ).toStrictEqual([
+                [
+                    "same-variable-name",
+                    "warning",
+                    "heading-font-size",
+                    clash("heading", "heading-font-size", "--heading-font-size"),
+                ],
+            ]);
+            expect(
+                warnings(
+                    { "tokens.json": { Brand: px(1), brand: px(2) } },
+                    { variableName: (path: string) => path.toLowerCase() },
+                ),
+            ).toStrictEqual([
+                ["same-variable-name", "warning", "brand", clash("Brand", "brand", "--brand")],
+            ]);
+        });
+
+        it("once, however many permutations hold the pair", () => {
+            const resolver = {
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                    {
+                        type: "modifier",
+                        name: "theme",
+                        default: "light",
+                        contexts: { light: [], dark: [{ $ref: "dark.json" }] },
+                    },
+                ],
+            };
+            expect(
+                warnings({
+                    "tokens.resolver.json": resolver,
+                    "tokens.json": { "a": { "b-c": px(1) }, "a-b": { c: px(2) } },
+                    "dark.json": { "a-b": { c: px(3) } },
+                }),
+            ).toHaveLength(1);
+        });
+    });
+
     it("stacks a media query on an earlier one that matches wherever it does", () => {
         const resolver = {
             version: "2025.10",

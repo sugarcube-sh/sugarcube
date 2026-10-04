@@ -114,9 +114,7 @@ function dependents(
     changed: Declaration[],
 ): Declaration[] {
     const written = new Set(changed.map(({ name }) => name));
-    const paths = [...new Set(changed.map(({ path }) => path))];
-    const referring = new Set(
-        referrers(permutation, paths, { transitive: true }).map(({ path }) => path),
-    );
-    return declared.filter(({ name, path }) => referring.has(path) && !written.has(name));
+    const paths = [...new Set(changed.map(({ token }) => token.path))];
+    const referring = new Set(referrers(permutation, paths, { transitive: true }));
+    return declared.filter(({ name, token }) => referring.has(token) && !written.has(name));
 }
