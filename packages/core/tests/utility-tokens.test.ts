@@ -42,20 +42,21 @@ const themed = {
 };
 
 describe("utilityTokens", () => {
-    it("lists each token with a variable in the first permutation, in file order, by its variable's name", () => {
+    it("lists each token with a variable in any permutation, once, in the order first met, by its variable's name", () => {
         expect(tokensFor(themed, { prefix: "ds" })).toStrictEqual([
             { path: "ink", type: "color", name: "--ds-ink" },
             { path: "space.1/2", type: "dimension", name: "--ds-space-1\\/2" },
+            { path: "glow", type: "color", name: "--ds-glow" },
         ]);
     });
 
-    it("reads the first permutation the config lists", () => {
-        const dark = { input: { theme: "dark" }, selector: ":root" };
-        expect(tokensFor(themed, { permutations: [dark] }).map(({ path }) => path)).toStrictEqual([
-            "ink",
-            "space.1/2",
-            "glow",
-        ]);
+    it("reads only the permutations the config lists", () => {
+        const light = { input: { theme: "light" }, selector: ":root" };
+        const dark = { input: { theme: "dark" }, selector: ".dark" };
+        const paths = (permutations: (typeof light)[]) =>
+            tokensFor(themed, { permutations }).map(({ path }) => path);
+        expect(paths([light])).toStrictEqual(["ink", "space.1/2"]);
+        expect(paths([light, dark, light])).toStrictEqual(["ink", "space.1/2", "glow"]);
     });
 
     it("names each token as variableName does", () => {
