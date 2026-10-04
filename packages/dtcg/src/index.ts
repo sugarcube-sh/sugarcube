@@ -538,15 +538,19 @@ export interface Permutation {
      * use {@link group}.
      */
     groups: Group[];
+    /**
+     * Every reference between this permutation's tokens, one per reference as written, in the
+     * order of {@link Permutation.tokens | tokens}. To ask what refers to a token, use
+     * {@link referrers}.
+     */
+    edges: Edge[];
 }
 
-/** One reference from one token to another, in one permutation. */
+/** One reference from one token to another, in the permutation that holds it. */
 export interface Edge {
     from: string;
     /** The token referred to. For a {@link Pointer} into part of a value, the token holding that part. */
     to: string;
-    /** Index into {@link Document.permutations}. */
-    permutation: number;
     /** Where the reference is written. */
     at: Span;
 }
@@ -833,8 +837,6 @@ export interface Document {
      */
     usedBy: Record<string, "everyone" | Input[]>;
     permutations: Permutation[];
-    /** Every reference between tokens, per permutation. */
-    graph: Edge[];
     /** Every error, warning and note, in file order. {@link errors} picks out the errors. */
     diagnostics: Diagnostic[];
 }
@@ -1171,28 +1173,7 @@ export interface Related {
     in: Input[];
 }
 
-/**
- * The tokens that refer to this one.
- * @param input Only this permutation. Left out: every permutation, each result saying where it holds.
- *
- * @example
- * referrers(doc, "palette.red.600")                     // everywhere
- * referrers(doc, "palette.red.600", { theme: "dark" })  // in dark only
- */
-export function referrers(
-    doc: Document,
-    path: string,
-    input?: Input,
-    options?: {
-        /**
-         * Include tokens that refer to it through others, however indirectly. Safe with cycles.
-         * @default false
-         */
-        transitive?: boolean;
-    },
-): Related[] {
-    throw new Error("not implemented yet");
-}
+export { type ReferrersOptions, referrers } from "./lookup/referrers.js";
 
 /**
  * The tokens this one refers to.

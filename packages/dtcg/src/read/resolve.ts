@@ -57,7 +57,7 @@ export function resolvePermutations(
     permutations: NormalisedPermutation[],
     readValue: ValueReader,
     diagnostics: Diagnostic[],
-): { permutations: Permutation[]; graph: Edge[] } {
+): Permutation[] {
     const found = new WeakMap<MergedToken["value"], Occurrence[]>();
     const referencesOf = (token: MergedToken) => {
         if (token.added) return referencesIn(token.authored, token.value, token.json);
@@ -68,18 +68,15 @@ export function resolvePermutations(
         return references;
     };
 
-    const graph: Edge[] = [];
-    const resolved = permutations.map((permutation, index) =>
-        resolvePermutation(permutation, index, { readValue, referencesOf, diagnostics, graph }),
+    return permutations.map((permutation, index) =>
+        resolvePermutation(permutation, index, { readValue, referencesOf, diagnostics }),
     );
-    return { permutations: resolved, graph };
 }
 
 interface Context {
     readValue: ValueReader;
     referencesOf: (token: MergedToken) => Occurrence[];
     diagnostics: Diagnostic[];
-    graph: Edge[];
 }
 
 interface Walk {
@@ -91,7 +88,7 @@ interface Walk {
 function resolvePermutation(
     permutation: NormalisedPermutation,
     index: number,
-    { readValue, referencesOf, diagnostics, graph }: Context,
+    { readValue, referencesOf, diagnostics }: Context,
 ): Permutation {
     const { tokens, merged } = permutation;
     const outcomes = new Map<string, Outcome | "resolving">();
@@ -354,13 +351,14 @@ function resolvePermutation(
     };
 
     const built: Token[] = [];
+    const edges: Edge[] = [];
     for (const [path, entry] of tokens) {
         const outcome = resolveToken(entry);
         if (outcome === "untyped") continue;
         built.push(toToken(entry.token, outcome, merged));
         if (!outcome.read.ok) continue;
         for (const use of referencesOf(entry.token)) {
-            graph.push({ from: path, to: targetOf(use, merged), permutation: index, at: use.at });
+            edges.push({ from: path, to: targetOf(use, merged), at: use.at });
         }
     }
 
@@ -392,7 +390,7 @@ function resolvePermutation(
     }
 
     const { input, label, sources, groups } = permutation;
-    return { input, label, sources, tokens: built, groups };
+    return { input, label, sources, tokens: built, groups, edges };
 }
 
 function targetOf(use: Occurrence, merged: Merged): string {
