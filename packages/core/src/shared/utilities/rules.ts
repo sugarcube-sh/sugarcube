@@ -1,4 +1,5 @@
 import { type Token, type TokenType, withoutRoot } from "@sugarcube-sh/dtcg";
+import { cssName } from "@sugarcube-sh/dtcg/css";
 import type { UtilityClassesConfig } from "../../types/config.js";
 import type { Reported } from "../../types/diagnostics.js";
 import { diagnostic } from "../diagnostics.js";
@@ -54,8 +55,8 @@ const TYPES: Record<string, TokenType[]> = {
 /**
  * The UnoCSS rules for the config's utility classes, and the classes the config asks to be
  * written whether or not markup uses them. A class is a start (the entry's `prefix`, or the first
- * segment of its `source`, with a direction's letter) and a part (the token's path below
- * `source`, joined with dashes, a final `$root` dropped), and writes that token's variable. Rules
+ * segment of its `source`, with a direction's letter) and a part (the {@link cssName} of the
+ * token's path below `source`, as its variable has it), and writes that token's variable. Rules
  * come in the config's order, each shorthand before its longhands; entries sharing a start are
  * tried in the config's order, and among tokens making the same class the first in file order is
  * used. A class two tokens with different variables make is reported, on the token not used.
@@ -143,7 +144,7 @@ function partsFor(
         const path = withoutRoot(token.path);
         if (!path.startsWith(`${base}.`)) continue;
         if (types && !types.includes(token.type)) continue;
-        const part = stripped(path.slice(base.length + 1).replaceAll(".", "-"), entry);
+        const part = stripped(cssName(path.slice(base.length + 1)), entry);
         const earlier = parts.get(part);
         if (earlier) earlier.push(listed);
         else parts.set(part, [listed]);

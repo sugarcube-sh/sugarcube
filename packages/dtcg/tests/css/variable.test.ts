@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { cssVariable } from "../../src/css.js";
+import { cssName, cssVariable } from "../../src/css.js";
+
+describe("cssName", () => {
+    it.for([
+        { path: "color.brand", name: "color-brand" },
+        { path: "color.accent.$root", name: "color-accent" },
+        { path: "type.body copy.size", name: "type-body-copy-size" },
+        { path: "type. body .size", name: "type-body-size" },
+        { path: "space.1/2", name: "space-1/2" },
+    ])("names $path as $name, unescaped", ({ path, name }) => {
+        expect(cssName(path)).toBe(name);
+    });
+});
 
 describe("cssVariable", () => {
     it.for([

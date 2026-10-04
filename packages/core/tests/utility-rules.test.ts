@@ -81,6 +81,15 @@ describe("utilityRules", () => {
         });
     });
 
+    it("writes a space in a name as a dash, as its variable does", () => {
+        const tokens = { type: { "body copy": { size: px(16) } } };
+        const classes = { "font-size": { source: "type.*", prefix: "text", safelist: true } };
+        expect(cssFor(tokens, classes, "text-body-copy-size")).toStrictEqual({
+            "font-size": "var(--type-body-copy-size)",
+        });
+        expect(ruled(tokens, classes).safelist).toStrictEqual(["text-body-copy-size"]);
+    });
+
     it("names a $root token's class after its group, as its variable is", () => {
         const tokens = { color: { $root: color(), accent: { $root: color() } } };
         const classes = {
