@@ -45,11 +45,12 @@ const TYPES: Record<string, TokenType[]> = {
 
 /**
  * The UnoCSS rules for the config's utility classes, and the classes the config asks to be
- * written whether or not markup uses them. A class is a start (the entry's `prefix`, or the first segment
- * of its `source`, with a direction's letter) and a part (the token's path below `source`, joined
- * with dashes), and writes that token's variable. Rules come in the config's order, each
- * shorthand before its longhands; entries sharing a start are tried in the config's order, and
- * among tokens making the same class the first in file order is used.
+ * written whether or not markup uses them. A class is a start (the entry's `prefix`, or the first
+ * segment of its `source`, with a direction's letter) and a part (the token's path below
+ * `source`, joined with dashes, a final `$root` dropped), and writes that token's variable. Rules
+ * come in the config's order, each shorthand before its longhands; entries sharing a start are
+ * tried in the config's order, and among tokens making the same class the first in file order is
+ * used.
  */
 export function utilityRules(
     tokens: UtilityToken[],
@@ -99,7 +100,10 @@ function partsFor(
     for (const token of tokens) {
         if (!("name" in token) || !token.path.startsWith(`${base}.`)) continue;
         if (types && !types.includes(token.type)) continue;
-        const part = stripped(token.path.slice(base.length + 1).replaceAll(".", "-"), entry);
+        const segments = token.path.slice(base.length + 1).split(".");
+        if (segments.at(-1) === "$root") segments.pop();
+        if (segments.length === 0) continue;
+        const part = stripped(segments.join("-"), entry);
         if (!parts.has(part)) parts.set(part, token.name);
     }
     return parts;

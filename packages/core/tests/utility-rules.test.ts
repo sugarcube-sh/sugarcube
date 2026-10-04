@@ -68,6 +68,16 @@ describe("utilityRules", () => {
         });
     });
 
+    it("names a $root token's class after its group, as its variable is", () => {
+        const tokens = [color("color.accent.$root", "--color-accent"), color("color.$root")];
+        const classes = { "background-color": { source: "color.*", prefix: "bg", safelist: true } };
+        expect(cssFor(tokens, classes, "bg-accent")).toStrictEqual({
+            "background-color": "var(--color-accent)",
+        });
+        expect(cssFor(tokens, classes, "bg-accent-$root")).toBeUndefined();
+        expect(utilityRules(tokens, classes).safelist).toStrictEqual(["bg-accent"]);
+    });
+
     it("takes only tokens of a type the property accepts, and any type for a custom property", () => {
         const tokens = [color("thing.ink"), dimension("thing.gap")];
         expect(
