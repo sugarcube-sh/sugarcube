@@ -19,7 +19,7 @@
  * OF THIS SOFTWARE.
  */
 
-function roundValue(n: number): number {
+export function roundValue(n: number): number {
     return Math.round((n + Number.EPSILON) * 10000) / 10000;
 }
 

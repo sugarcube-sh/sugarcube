@@ -9,12 +9,12 @@ import {
     permutation as permutationFor,
     token,
 } from "@sugarcube-sh/dtcg";
+import { cssVariable } from "@sugarcube-sh/dtcg/css";
 import type { FluidConfig, InternalConfig } from "../../types/config.js";
 import type { Reported } from "../../types/diagnostics.js";
 import type { CSSFileOutput } from "../../types/generate.js";
 import { ErrorMessages, diagnosticDocs } from "../constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
-import { createVariableNameResolver } from "../resolve-variable-name.js";
 import { textZoomWarnings } from "./text-zoom.js";
 import { type ReplacementFor, type Written, renderToken } from "./values.js";
 
@@ -46,10 +46,11 @@ export function emitCSS(
             fluid,
         ),
     ];
-    const nameOf = createVariableNameResolver(config.variables);
+    const { prefix, variableName } = config.variables;
+    const variable = (path: string) => cssVariable(path, { prefix, name: variableName });
     const [baseline, ...later] = entries.map(({ permutation, selector }) => ({
         selector,
-        declared: declarations(permutation, nameOf, fluid),
+        declared: declarations(permutation, variable, fluid),
     }));
     if (!baseline) return { files: [], diagnostics };
 
@@ -121,31 +122,32 @@ interface Declaration {
 
 function declarations(
     permutation: Permutation,
-    nameOf: (path: string) => string,
+    variable: (path: string) => string,
     fluid: FluidConfig,
 ): Declaration[] {
-    const variable = (path: string) => `--${nameOf(path)}`;
     const isPrivate = (each: Token) => privateSource(permutation.sources[each.source.index]);
-    const renderedFor = new Map<Token, Written[] | undefined>();
-    const rendered = (each: Token): Written[] | undefined => {
+    const renderedFor = new Map<Token, Written | undefined>();
+    const rendered = (each: Token): Written | undefined => {
         if (!renderedFor.has(each))
             renderedFor.set(each, renderToken(each, replacementFor, { fluid }));
         return renderedFor.get(each);
     };
-    const replacementFor: ReplacementFor = (ref, suffix) => {
+    const replacementFor: ReplacementFor = (ref) => {
         const target = isAlias(ref) ? token(permutation, ref.alias) : undefined;
         const written = target && rendered(target);
-        if (!target || !written) return undefined;
-        if (!isPrivate(target)) return { variable: `${variable(target.path)}${suffix}` };
-        const css = written.find((each) => each.suffix === suffix)?.value;
-        return css === undefined ? undefined : { css };
+        if (!target || written === undefined) return undefined;
+        return isPrivate(target) ? { written } : { variable: variable(target.path) };
     };
-    return permutation.tokens.flatMap((each) =>
-        (isPrivate(each) ? [] : (rendered(each) ?? [])).map(({ suffix, value }) => ({
-            name: `${variable(each.path)}${suffix}`,
+    return permutation.tokens.flatMap((each) => {
+        const written = isPrivate(each) ? undefined : rendered(each);
+        if (written === undefined) return [];
+        const name = variable(each.path);
+        if (typeof written === "string") return [{ name, value: written }];
+        return Object.entries(written).map(([property, value]) => ({
+            name: `${name}-${property}`,
             value,
-        })),
-    );
+        }));
+    });
 }
 
 function privateSource(source: Source | undefined): boolean {

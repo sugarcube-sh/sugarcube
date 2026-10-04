@@ -18,70 +18,6 @@ function cssFor(files: Record<string, unknown>, variables: Variables = {}) {
 const color = (value: unknown) => ({ $type: "color", $value: value });
 
 describe("emitCSS", () => {
-    it("writes an sRGB color with a hex as that hex, eight digits when it has alpha", () => {
-        expect(
-            cssFor({
-                "tokens.json": {
-                    plain: color("#e11d48"),
-                    scrim: color("#00000080"),
-                    loud: color("#0000FFCC"),
-                    object: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
-                    bare: color({ colorSpace: "srgb", components: [1, 0, 0] }),
-                },
-            }),
-        ).toBe(
-            [
-                ":root {",
-                "    --plain: #e11d48;",
-                "    --scrim: #00000080;",
-                "    --loud: #0000FFCC;",
-                "    --object: #ff0000;",
-                "    --bare: rgb(255 0 0);",
-                "}",
-                "",
-            ].join("\n"),
-        );
-    });
-
-    it("writes every color space the DTCG Color module defines", () => {
-        const space = (colorSpace: string, components: number[], alpha?: number) =>
-            color({ colorSpace, components, ...(alpha !== undefined && { alpha }) });
-        expect(
-            cssFor({
-                "tokens.json": {
-                    "linear": space("srgb-linear", [0.2, 0.5, 0.75]),
-                    "hwb": space("hwb", [200, 12.5, 30]),
-                    "hwb-none": color({ colorSpace: "hwb", components: [200, "none", 30] }),
-                    "lab": space("lab", [52.2345, 40.12345, -60.5]),
-                    "lch": space("lch", [52.2, 72.9, 303.45678]),
-                    "oklab": space("oklab", [0.62, 0.11, -0.153]),
-                    "a98": space("a98-rgb", [0.5, 0.25, 1]),
-                    "prophoto": space("prophoto-rgb", [0.4, 0.3, 0.2]),
-                    "rec2020": space("rec2020", [0.1, 0.9, 0.3]),
-                    "xyz-d65": space("xyz-d65", [0.25, 0.4, 0.1], 0.5),
-                    "xyz-d50": space("xyz-d50", [0.3, 0.3, 0.3]),
-                },
-            }),
-        ).toBe(
-            [
-                ":root {",
-                "    --linear: color(srgb-linear 0.2 0.5 0.75);",
-                "    --hwb: hwb(200 12.5% 30%);",
-                "    --hwb-none: hwb(200 none 30%);",
-                "    --lab: lab(52.2345 40.1235 -60.5);",
-                "    --lch: lch(52.2 72.9 303.4568);",
-                "    --oklab: oklab(0.62 0.11 -0.153);",
-                "    --a98: color(a98-rgb 0.5 0.25 1);",
-                "    --prophoto: color(prophoto-rgb 0.4 0.3 0.2);",
-                "    --rec2020: color(rec2020 0.1 0.9 0.3);",
-                "    --xyz-d65: color(xyz-d65 0.25 0.4 0.1 / 0.5);",
-                "    --xyz-d50: color(xyz-d50 0.3 0.3 0.3);",
-                "}",
-                "",
-            ].join("\n"),
-        );
-    });
-
     it("writes var() for an alias to a token with a variable, and the value for one without", () => {
         const resolver = {
             version: "2025.10",
@@ -279,10 +215,10 @@ describe("emitCSS", () => {
             );
         });
 
-        it("with the config's variableName instead, given the path without $root", () => {
+        it("with the config's variableName instead, given the path without $root, escaped", () => {
             const variableName = (path: string) => path.replaceAll(".", "_");
             expect(cssFor(tokens, { variableName })).toContain(
-                "--color_on surface: var(--color_accent);",
+                "--color_on\\ surface: var(--color_accent);",
             );
         });
     });
@@ -340,45 +276,6 @@ describe("emitCSS", () => {
             ]);
         });
 
-        it("with the value for a part written as a JSON Pointer", () => {
-            expect(
-                declarations({
-                    deep: color({ colorSpace: "srgb", components: [0.2, 0, 0] }),
-                    edge: {
-                        $type: "border",
-                        $value: { color: { $ref: "#/deep/$value" }, width: px(2), style: "dashed" },
-                    },
-                    tint: color({
-                        colorSpace: "srgb",
-                        components: [{ $ref: "#/deep/$value/components/0" }, 1, 1],
-                    }),
-                }),
-            ).toStrictEqual([
-                "--deep: rgb(51 0 0);",
-                "--edge: 2px dashed rgb(51 0 0);",
-                "--tint: rgb(51 255 255);",
-            ]);
-        });
-
-        it("with a dash pattern written as dashed, since CSS cannot draw one (Format 9.3.3)", () => {
-            expect(
-                declarations({
-                    dots: {
-                        $type: "strokeStyle",
-                        $value: { dashArray: ["{hairline}", px(2)], lineCap: "round" },
-                    },
-                    edge: {
-                        $type: "border",
-                        $value: {
-                            color: "#111111",
-                            width: px(2),
-                            style: { dashArray: [px(4), px(2)], lineCap: "butt" },
-                        },
-                    },
-                }),
-            ).toStrictEqual(["--dots: dashed;", "--edge: 2px dashed #111111;"]);
-        });
-
         it("with var() for a shadow layer referring to a whole shadow token", () => {
             expect(
                 declarations({
@@ -428,42 +325,6 @@ describe("emitCSS", () => {
                 "--start: linear-gradient(#ffffff 0%);",
                 "--fade: linear-gradient(#ffffff 0%, #e11d48 clamp(0%, var(--half) * 100%, 100%));",
             ]);
-        });
-
-        it("with a font name quoted where CSS needs it, and vendor and generic names bare", () => {
-            expect(
-                declarations({
-                    stack: {
-                        $type: "fontFamily",
-                        $value: [
-                            "Inter",
-                            "-apple-system",
-                            "1Password",
-                            "inherit",
-                            'Say "hi"',
-                            "back\\slash",
-                            "Sans-Serif",
-                            "ui-monospace",
-                        ],
-                    },
-                }),
-            ).toStrictEqual([
-                '--stack: Inter, -apple-system, "1Password", "inherit", "Say \\"hi\\"", "back\\\\slash", Sans-Serif, ui-monospace;',
-            ]);
-        });
-
-        it("with a gradient position as a percentage, without float drift", () => {
-            expect(
-                declarations({
-                    third: {
-                        $type: "gradient",
-                        $value: [
-                            { color: "#ffffff", position: 0.3 },
-                            { color: "#000000", position: 0.57 },
-                        ],
-                    },
-                }),
-            ).toStrictEqual(["--third: linear-gradient(#ffffff 30%, #000000 57%);"]);
         });
 
         it("with typography as one variable per part, each part of a referred-to style its own var()", () => {

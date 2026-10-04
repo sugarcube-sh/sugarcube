@@ -41,6 +41,10 @@
     "./values": {
       "types": "./dist/values.d.ts",
       "default": "./dist/values.js"
+    },
+    "./css": {
+      "types": "./dist/css.d.ts",
+      "default": "./dist/css.js"
     }
   },
   "scripts": {
