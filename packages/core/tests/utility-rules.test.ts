@@ -204,6 +204,15 @@ describe("utilityRules", () => {
         });
     });
 
+    it("strips the source's first segment with stripDuplicates when there is no prefix, as if it were the prefix", () => {
+        const tokens = { color: { color: { ink: color() } } };
+        const classes = { color: { source: "color.*", stripDuplicates: true, safelist: true } };
+        expect(cssFor(tokens, classes, "color-ink")).toStrictEqual({
+            color: "var(--color-color-ink)",
+        });
+        expect(ruled(tokens, classes).safelist).toStrictEqual(["color-ink"]);
+    });
+
     describe("entries sharing a class start", () => {
         it("keep their directions", () => {
             const classes: UtilityClassesConfig = {

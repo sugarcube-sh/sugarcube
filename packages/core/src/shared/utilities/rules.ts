@@ -153,8 +153,14 @@ function partsFor(
     return parts;
 }
 
-function stripped(part: string, { prefix, stripDuplicates }: PropertyUtilityConfig): string {
-    return stripDuplicates && prefix && part.startsWith(`${prefix}-`)
+function prefixOf({ prefix, source }: PropertyUtilityConfig): string {
+    const dot = source.indexOf(".");
+    return prefix ?? (dot === -1 ? source : source.slice(0, dot));
+}
+
+function stripped(part: string, entry: PropertyUtilityConfig): string {
+    const prefix = prefixOf(entry);
+    return entry.stripDuplicates && part.startsWith(`${prefix}-`)
         ? part.slice(prefix.length + 1)
         : part;
 }
@@ -163,8 +169,7 @@ function startsFor(
     entry: PropertyUtilityConfig,
     property: string,
 ): { start: string; property: string }[] {
-    const dot = entry.source.indexOf(".");
-    const prefix = entry.prefix ?? (dot === -1 ? entry.source : entry.source.slice(0, dot));
+    const prefix = prefixOf(entry);
     if (entry.directions === undefined) return [{ start: prefix, property }];
     const directions: string[] = [entry.directions].flat();
     const all = directions.includes("all");
