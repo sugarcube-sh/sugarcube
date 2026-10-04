@@ -25,22 +25,23 @@ export interface ReferrersOptions {
 }
 
 /**
- * The tokens that refer to this one, in file order, in a permutation you already hold. A pointer
- * into part of a token's value counts as referring to that token. The token itself is never
- * among them, even in a loop.
+ * The tokens that refer to this one, or to any of several, in file order, in a permutation you
+ * already hold. A pointer into part of a token's value counts as referring to that token. The
+ * tokens asked about are never among them, even in a loop.
  *
  * @example
  * referrers(permutation, "color.brand")                        // color.danger, border.focus
  * referrers(permutation, "palette.red", { transitive: true })   // everything a change would reach
+ * referrers(permutation, ["color.brand", "color.surface"])    // what refers to either
  */
 export function referrers(
     permutation: Permutation,
-    path: string,
+    path: string | string[],
     options?: ReferrersOptions,
 ): Token[];
 /**
- * The tokens that refer to this one across a document: each path once, with the permutations it
- * refers in, in the order they are first met.
+ * The tokens that refer to this one, or to any of several, across a document: each path once,
+ * with the permutations it refers in, in the order they are first met.
  * @param input Only this permutation. Left out: every permutation.
  *
  * @example
@@ -49,7 +50,7 @@ export function referrers(
  */
 export function referrers(
     doc: Document,
-    path: string,
+    path: string | string[],
     input?: Input,
     options?: ReferrersOptions,
 ): Related[];
@@ -72,8 +73,17 @@ export function referrers(...args: OnPermutation | OnDocument): Token[] | Relate
     return [...found].map(([referrer, inputs]) => ({ path: referrer, in: inputs }));
 }
 
-type OnPermutation = [permutation: Permutation, path: string, options?: ReferrersOptions];
-type OnDocument = [doc: Document, path: string, input?: Input, options?: ReferrersOptions];
+type OnPermutation = [
+    permutation: Permutation,
+    path: string | string[],
+    options?: ReferrersOptions,
+];
+type OnDocument = [
+    doc: Document,
+    path: string | string[],
+    input?: Input,
+    options?: ReferrersOptions,
+];
 
 function onPermutation(args: OnPermutation | OnDocument): args is OnPermutation {
     return !("permutations" in args[0]);
@@ -81,15 +91,16 @@ function onPermutation(args: OnPermutation | OnDocument): args is OnPermutation 
 
 function inPermutation(
     permutation: Permutation,
-    path: string,
+    path: string | string[],
     { transitive = false }: ReferrersOptions,
 ): Token[] {
     const index = referredByIn(permutation);
+    const asked = new Set([path].flat());
     const reached = new Set<string>();
-    const waiting = [path];
+    const waiting = [...asked];
     for (const next of waiting) {
         for (const from of index.get(next) ?? []) {
-            if (from === path || reached.has(from)) continue;
+            if (asked.has(from) || reached.has(from)) continue;
             reached.add(from);
             if (transitive) waiting.push(from);
         }

@@ -334,6 +334,100 @@ describe("emitCSS", () => {
         });
     });
 
+    describe("re-declares, in a later block, every variable referring to something it changes", () => {
+        const files = {
+            "tokens.resolver.json": {
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                    {
+                        type: "modifier",
+                        name: "theme",
+                        default: "light",
+                        contexts: { light: [], dark: [{ $ref: "dark.json" }] },
+                    },
+                ],
+            },
+            "tokens.json": {
+                brand: color("#e11d48"),
+                danger: color("{brand}"),
+                text: color("#111111"),
+                loud: color("{danger}"),
+            },
+            "dark.json": { brand: color("#0ea5e9") },
+        };
+        const root = [
+            ":root {",
+            "    --brand: #e11d48;",
+            "    --danger: var(--brand);",
+            "    --text: #111111;",
+            "    --loud: var(--danger);",
+            "}",
+            "",
+        ];
+        const emitted = (variables: Variables) => {
+            const config = fillDefaults({ variables: { path: "variables.css", ...variables } });
+            const texts = Object.fromEntries(
+                Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
+            );
+            return emitCSS(readFromMemory({ files: texts }, readOptions(config)), config);
+        };
+
+        it("by default, through chains, after what it changes, in file order", () => {
+            expect(cssFor(files)).toBe(
+                [
+                    ...root,
+                    '[data-theme="dark"] {',
+                    "    --brand: #0ea5e9;",
+                    "    --danger: var(--brand);",
+                    "    --loud: var(--danger);",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("not when redeclareDependents is false", () => {
+            expect(cssFor(files, { redeclareDependents: false })).toBe(
+                [...root, '[data-theme="dark"] {', "    --brand: #0ea5e9;", "}", ""].join("\n"),
+            );
+        });
+
+        it("adding nothing to a block written in full", () => {
+            expect(
+                cssFor(files, {
+                    permutations: [
+                        { input: {}, selector: ".light" },
+                        { input: { theme: "dark" }, selector: ".dark" },
+                    ],
+                }),
+            ).toBe(
+                [
+                    ...root.map((line) => (line === ":root {" ? ".light {" : line)),
+                    ".dark {",
+                    "    --brand: #0ea5e9;",
+                    "    --danger: var(--brand);",
+                    "    --text: #111111;",
+                    "    --loud: var(--danger);",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("reading the old name, propagateDependents, with a warning naming the new one", () => {
+            const renamed =
+                "`propagateDependents` is now `redeclareDependents`: rename it in your config; the old name stops working at 1.0";
+            const off = emitted({ propagateDependents: false });
+            expect(off.files[0]?.css).toContain('[data-theme="dark"] {\n    --brand: #0ea5e9;\n}');
+            expect(
+                off.diagnostics.map(({ kind, severity, message }) => [kind, severity, message]),
+            ).toStrictEqual([["option-renamed", "warning", renamed]]);
+            expect(emitted({ propagateDependents: true }).files[0]?.css).toBe(cssFor(files));
+            expect(emitted({}).diagnostics).toStrictEqual([]);
+        });
+    });
+
     it("stacks a media query on an earlier one that matches wherever it does", () => {
         const resolver = {
             version: "2025.10",

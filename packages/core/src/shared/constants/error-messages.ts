@@ -1,7 +1,42 @@
+import type {
+    SugarcubeDiagnosticDetailByKind,
+    SugarcubeDiagnosticKind,
+} from "../../types/diagnostics.js";
 import type { FluidExtension } from "../../types/extensions.js";
 
 /** How many referring tokens a grouped "missing reference" message names before summarising the rest. */
 export const MISSING_REFERRER_CAP = 3;
+
+type Entry<K extends SugarcubeDiagnosticKind> = {
+    severity: "error" | "warning";
+    message: (detail: SugarcubeDiagnosticDetailByKind[K]) => string;
+};
+
+const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
+    "default-required": {
+        severity: "error",
+        message: ({ modifiers }) => {
+            const names = modifiers.map((name) => `\`${name}\``);
+            const listed =
+                names.length > 2
+                    ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`
+                    : names.join(" and ");
+            const [noun, verb, pronoun] =
+                names.length > 1 ? ["modifiers", "have", "them"] : ["modifier", "has", "it"];
+            return `the ${noun} ${listed} ${verb} no default, so there is nothing to write on \`:root\`: give ${pronoun} a \`default\` in the resolver, or list the permutations to write in \`variables.permutations\``;
+        },
+    },
+    "fluid-text-zoom": {
+        severity: "warning",
+        message: ({ from, to }) =>
+            `this fluid size grows too fast to zoom to 200% on screens ${from}px to ${to}px wide (WCAG 1.4.4): bring \`min\` and \`max\` closer together`,
+    },
+    "option-renamed": {
+        severity: "warning",
+        message: ({ from, to }) =>
+            `\`${from}\` is now \`${to}\`: rename it in your config; the old name stops working at 1.0`,
+    },
+};
 
 export const ErrorMessages = {
     LOAD: {
@@ -241,20 +276,7 @@ export const ErrorMessages = {
             `Permutation references unknown context "${contextName}" for modifier "${modifierName}". Valid contexts: ${validContexts.join(", ")}`,
         EMPTY_SELECTOR: () => "Permutation selector cannot be empty",
     },
-    DIAGNOSTICS: {
-        "default-required": ({ modifiers }: { modifiers: string[] }) => {
-            const names = modifiers.map((name) => `\`${name}\``);
-            const listed =
-                names.length > 2
-                    ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`
-                    : names.join(" and ");
-            const [noun, verb, pronoun] =
-                names.length > 1 ? ["modifiers", "have", "them"] : ["modifier", "has", "it"];
-            return `the ${noun} ${listed} ${verb} no default, so there is nothing to write on \`:root\`: give ${pronoun} a \`default\` in the resolver, or list the permutations to write in \`variables.permutations\``;
-        },
-        "fluid-text-zoom": ({ from, to }: { from: number; to: number }) =>
-            `this fluid size grows too fast to zoom to 200% on screens ${from}px to ${to}px wide (WCAG 1.4.4): bring \`min\` and \`max\` closer together`,
-    },
+    DIAGNOSTICS: diagnostics,
     FLUID_EXTENSION: {
         "not-an-object": ({ name }: { name: string }) => `\`${name}\` must be an object`,
         "missing-property": ({ name }: { name: string }) => `the fluid range needs \`${name}\``,

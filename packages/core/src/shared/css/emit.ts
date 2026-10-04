@@ -7,13 +7,14 @@ import {
     type Token,
     isAlias,
     permutation as permutationFor,
+    referrers,
     token,
 } from "@sugarcube-sh/dtcg";
 import { cssVariable } from "@sugarcube-sh/dtcg/css";
 import type { FluidConfig, InternalConfig } from "../../types/config.js";
 import type { Reported } from "../../types/diagnostics.js";
 import type { CSSFileOutput } from "../../types/generate.js";
-import { ErrorMessages, diagnosticDocs } from "../constants/error-messages.js";
+import { diagnostic } from "../diagnostics.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { stacksOn } from "../pipeline/stacks-on.js";
 import { textZoomWarnings } from "./text-zoom.js";
@@ -41,15 +42,24 @@ export function emitCSS(
         return { files: [], diagnostics: reported };
 
     const { fluid } = config.variables.transforms;
+    const { prefix, variableName, redeclareDependents, propagateDependents } = config.variables;
+    const redeclare = redeclareDependents ?? propagateDependents ?? true;
     const entries = toWrite(doc, config);
     const diagnostics = [
         ...reported,
+        ...(propagateDependents === undefined
+            ? []
+            : [
+                  diagnostic("option-renamed", {
+                      from: "propagateDependents",
+                      to: "redeclareDependents",
+                  }),
+              ]),
         ...textZoomWarnings(
             entries.map(({ permutation }) => permutation),
             fluid,
         ),
     ];
-    const { prefix, variableName } = config.variables;
     const variable = (path: string) => cssVariable(path, { prefix, name: variableName });
     const declaredIn = new Map<Permutation, Declaration[]>();
     const declaredBy = (permutation: Permutation) => {
@@ -67,25 +77,21 @@ export function emitCSS(
         }
         const declared = declaredBy(entry.permutation);
         const changed = declared.filter(({ name, value }) => inEffect.get(name) !== value);
-        byFile.set(entry.path, [...earlier, { entry, declared, changed }]);
+        const written = redeclare
+            ? [...changed, ...dependents(entry.permutation, declared, changed)]
+            : changed;
+        byFile.set(entry.path, [...earlier, { entry, declared, written }]);
     }
     const files = [...byFile].flatMap(([path, blocks]) => {
-        const written = blocks.filter(({ changed }) => changed.length > 0).map(text);
-        return written.length > 0 ? [{ path, css: `${written.join("\n\n")}\n` }] : [];
+        const rules = blocks.filter(({ written }) => written.length > 0).map(text);
+        return rules.length > 0 ? [{ path, css: `${rules.join("\n\n")}\n` }] : [];
     });
     return { files, diagnostics };
 }
 
 function asReported(found: Diagnostic): Reported {
     if (found.kind !== "no-default") return found;
-    const { modifiers } = found.detail;
-    return {
-        kind: "default-required",
-        severity: "error",
-        message: ErrorMessages.DIAGNOSTICS["default-required"]({ modifiers }),
-        docs: diagnosticDocs("default-required"),
-        detail: { modifiers },
-    };
+    return diagnostic("default-required", { modifiers: found.detail.modifiers });
 }
 
 interface Entry {
@@ -98,7 +104,7 @@ interface Entry {
 interface Block {
     entry: Entry;
     declared: Declaration[];
-    changed: Declaration[];
+    written: Declaration[];
 }
 
 function toWrite(doc: Document, config: InternalConfig): Entry[] {
@@ -142,8 +148,21 @@ function reaches(earlier: Entry, later: Entry): boolean {
     return everyElement && everyScreen;
 }
 
-function text({ entry: { selector, atRule }, changed }: Block): string {
-    const lines = changed.map(({ name, value }) => `    ${name}: ${value};`);
+function dependents(
+    permutation: Permutation,
+    declared: Declaration[],
+    changed: Declaration[],
+): Declaration[] {
+    const written = new Set(changed.map(({ name }) => name));
+    const paths = [...new Set(changed.map(({ path }) => path))];
+    const referring = new Set(
+        referrers(permutation, paths, { transitive: true }).map(({ path }) => path),
+    );
+    return declared.filter(({ name, path }) => referring.has(path) && !written.has(name));
+}
+
+function text({ entry: { selector, atRule }, written }: Block): string {
+    const lines = written.map(({ name, value }) => `    ${name}: ${value};`);
     const rule = `${[selector].flat().join(",\n")} {\n${lines.join("\n")}\n}`;
     if (!atRule) return rule;
     const indented = rule.split("\n").map((line) => `    ${line}`);
@@ -151,6 +170,7 @@ function text({ entry: { selector, atRule }, changed }: Block): string {
 }
 
 interface Declaration {
+    path: string;
     name: string;
     value: string;
 }
@@ -177,8 +197,10 @@ function declarations(
         const written = isPrivate(each) ? undefined : rendered(each);
         if (written === undefined) return [];
         const name = variable(each.path);
-        if (typeof written === "string") return [{ name, value: written }];
+        const { path } = each;
+        if (typeof written === "string") return [{ path, name, value: written }];
         return Object.entries(written).map(([property, value]) => ({
+            path,
             name: `${name}-${property}`,
             value,
         }));

@@ -64,6 +64,16 @@ describe("referrers, in a permutation in hand", () => {
         ]);
     });
 
+    it("from several tokens at once, leaving out the ones it starts from", () => {
+        expect(paths(referrers(light, ["red", "blue"]))).toStrictEqual(["brand", "tint"]);
+        expect(paths(referrers(light, ["red", "brand"], { transitive: true }))).toStrictEqual([
+            "danger",
+            "edge",
+            "loud",
+        ]);
+        expect(referrers(light, [])).toStrictEqual([]);
+    });
+
     it("gives nothing for a path no token refers to", () => {
         expect(referrers(light, "loud")).toStrictEqual([]);
         expect(referrers(light, "nowhere")).toStrictEqual([]);
@@ -84,6 +94,13 @@ describe("referrers, across a document", () => {
         expect(referrers(doc, "blue")).toStrictEqual([
             { path: "tint", in: [light.input, dark.input] },
             { path: "brand", in: [dark.input] },
+        ]);
+    });
+
+    it("from several tokens at once", () => {
+        expect(referrers(doc, ["red", "blue"])).toStrictEqual([
+            { path: "brand", in: [light.input, dark.input] },
+            { path: "tint", in: [light.input, dark.input] },
         ]);
     });
 
