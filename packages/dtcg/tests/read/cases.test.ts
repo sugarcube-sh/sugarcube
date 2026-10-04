@@ -30,7 +30,6 @@ interface Expected {
     modifiers?: Document["modifiers"];
     usedBy?: Document["usedBy"];
     permutations?: Partial<Document["permutations"][number]>[];
-    graph?: Document["graph"];
     diagnostics: Pick<
         Document["diagnostics"][number],
         "kind" | "detail" | "at" | "related" | "path" | "permutation" | "fixes"
@@ -182,7 +181,6 @@ function observed(doc: Document, expected: Expected) {
         ...(expected.files && { files: doc.files }),
         ...(expected.modifiers && { modifiers: doc.modifiers }),
         ...(expected.usedBy && { usedBy: doc.usedBy }),
-        ...(expected.graph && { graph: doc.graph }),
         ...(expected.permutations && {
             permutations: doc.permutations.map((permutation, index) =>
                 observedPermutation(permutation, expected.permutations?.[index]),
@@ -206,14 +204,15 @@ function observedPermutation(
     permutation: Document["permutations"][number],
     expected: Partial<Document["permutations"][number]> = {},
 ) {
-    const { input, label, sources, tokens, groups } = permutation;
+    const { input, label, sources, tokens, groups, edges } = permutation;
     return {
-        ...(!expected.tokens && !expected.groups && { input, label, sources }),
+        ...(!expected.tokens && !expected.groups && !expected.edges && { input, label, sources }),
         ...("input" in expected && { input }),
         ...("label" in expected && { label }),
         ...("sources" in expected && { sources }),
         ...(expected.tokens && { tokens: picked(tokens, expected.tokens) }),
         ...(expected.groups && { groups: picked(groups, expected.groups) }),
+        ...(expected.edges && { edges }),
     };
 }
 

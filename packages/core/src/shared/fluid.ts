@@ -1,10 +1,15 @@
 import {
     type DimensionValue,
     type ExtensionError,
+    type Permutation,
+    type Token,
     type ValueError,
     defineExtensionValidator,
+    isAlias,
+    referenceAt,
+    token,
 } from "@sugarcube-sh/dtcg";
-import { parseValue } from "@sugarcube-sh/dtcg/values";
+import { extensionReader, isJsonObject } from "@sugarcube-sh/dtcg/values";
 import { ErrorMessages } from "./constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "./extensions.js";
 
@@ -13,33 +18,42 @@ export interface FluidRange {
     max: DimensionValue;
 }
 
-type Errors = (ExtensionError<typeof ErrorMessages.FLUID_EXTENSION> | ValueError)[];
+type Messages = typeof ErrorMessages.FLUID_EXTENSION;
+type Errors = (ExtensionError<Messages> | ValueError)[];
 
 export function readFluid(
     ours: unknown,
 ): { ok: true; value: FluidRange | undefined } | { ok: false; errors: Errors } {
-    if (!isObject(ours) || !Object.hasOwn(ours, "fluid")) return { ok: true, value: undefined };
+    if (!isJsonObject(ours) || !Object.hasOwn(ours, "fluid")) return { ok: true, value: undefined };
     const { fluid } = ours;
-    if (!isObject(fluid)) {
-        return {
-            ok: false,
-            errors: [{ path: ["fluid"], reason: "not-an-object", data: { name: "fluid" } }],
-        };
+    const reader = extensionReader<Messages>();
+    if (!isJsonObject(fluid)) {
+        reader.report(["fluid"], "not-an-object", { name: "fluid" });
+        return reader.result<FluidRange>(undefined);
     }
-    const errors: Errors = [];
-    const read = (end: "min" | "max") => {
-        if (!Object.hasOwn(fluid, end)) {
-            errors.push({ path: ["fluid"], reason: "missing-property", data: { name: end } });
-            return undefined;
-        }
-        const result = parseValue("dimension", fluid[end], ["fluid", end], { references: false });
-        if (result.ok) return result.value;
-        errors.push(...result.errors);
-        return undefined;
-    };
-    const [min, max] = [read("min"), read("max")];
-    if (min && max) return { ok: true, value: { min, max } };
-    return { ok: false, errors };
+    const [min, max] = (["min", "max"] as const).map((end) =>
+        Object.hasOwn(fluid, end)
+            ? reader.read("dimension", fluid[end], ["fluid", end])
+            : reader.report(["fluid"], "missing-property", { name: end }),
+    );
+    return reader.result(min && max && { min, max });
+}
+
+export function fluidRangeOf(
+    permutation: Permutation,
+    from: Token,
+): { token: Token; range: FluidRange } | undefined {
+    if (from.type !== "dimension" || from.resolved === undefined) return undefined;
+    const own = readFluid(from.extensions?.[SUGARCUBE_NAMESPACE]);
+    if (!own.ok) return undefined;
+    if (own.value) return { token: from, range: own.value };
+    const whole = referenceAt(from, []);
+    const target = whole && isAlias(whole) ? token(permutation, whole.alias) : undefined;
+    return target && fluidRangeOf(permutation, target);
+}
+
+export function pixels({ value, unit }: DimensionValue): number {
+    return unit === "px" ? value : value * 16;
 }
 
 export const fluidValidator = defineExtensionValidator({
@@ -51,7 +65,3 @@ export const fluidValidator = defineExtensionValidator({
         return read.ok ? [] : read.errors;
     },
 });
-
-function isObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-}

@@ -10,7 +10,8 @@ import type {
     ValueError,
     UnresolvedValue,
 } from "../index.js";
-import { isPlainObject, readAlias, readPointer } from "./references.js";
+import { isJsonObject } from "./json.js";
+import { readAlias, readPointer } from "./references.js";
 import { valueError } from "./value-errors.js";
 
 export type ObjectForm<T extends TokenType> = Exclude<UnresolvedValue<T>, Alias | Pointer>;
@@ -30,7 +31,7 @@ export function readComposite<O extends object>(
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference };
 
-    if (!isPlainObject(raw)) {
+    if (!isJsonObject(raw)) {
         return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
     }
 

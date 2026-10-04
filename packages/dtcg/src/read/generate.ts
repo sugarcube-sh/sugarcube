@@ -8,7 +8,8 @@ import type {
     StandardSchemaV1,
     ValueError,
 } from "../index.js";
-import { isPlainObject, readAlias, readPointer } from "../values/references.js";
+import { isJsonObject } from "../values/json.js";
+import { readAlias, readPointer } from "../values/references.js";
 import {
     type CheckedExtension,
     type ExtensionProblem,
@@ -136,7 +137,7 @@ function extensionOf(
     let value = group.extensions?.[key];
     let node: Node | undefined = member(at.node, key, at.json.hidden);
     for (const step of inside) {
-        if (!isPlainObject(value) || !node) return undefined;
+        if (!isJsonObject(value) || !node) return undefined;
         value = value[step];
         node = member(node, step, at.json.hidden);
     }

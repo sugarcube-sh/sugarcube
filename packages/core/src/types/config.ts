@@ -96,8 +96,15 @@ export interface VariablesConfig {
     permutations?: Permutation[];
 
     /**
-     * Re-emit dependent variables on modifier selectors.
-     * @default false
+     * Writes again, in each theme's block, every variable that refers to something the theme
+     * changes, so a theme set on any element, not only on `<html>`, gives the right values. Turn
+     * it off for the smallest CSS when a theme only ever sits on `<html>`.
+     * @default true
+     */
+    redeclareDependents?: boolean;
+
+    /**
+     * @deprecated Renamed `redeclareDependents`. Still read, with a warning, until 1.0.
      */
     propagateDependents?: boolean;
 }
@@ -316,6 +323,7 @@ export interface InternalConfig {
             colorFallbackStrategy: ColorFallbackStrategy;
         };
         permutations?: Permutation[];
+        redeclareDependents?: boolean;
         propagateDependents?: boolean;
     };
 

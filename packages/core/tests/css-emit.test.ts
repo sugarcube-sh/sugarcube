@@ -6,82 +6,22 @@ import { readOptions } from "../src/shared/read-options.js";
 
 type Variables = Parameters<typeof fillDefaults>[0]["variables"];
 
-function cssFor(files: Record<string, unknown>, variables: Variables = {}) {
+function filesFor(files: Record<string, unknown>, variables: Variables = {}) {
     const config = fillDefaults({ variables: { path: "variables.css", ...variables } });
     const texts = Object.fromEntries(
         Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
     );
     const doc = readFromMemory({ files: texts }, readOptions(config));
-    return emitCSS(doc, config).files[0]?.css;
+    return emitCSS(doc, config).files;
+}
+
+function cssFor(files: Record<string, unknown>, variables: Variables = {}) {
+    return filesFor(files, variables)[0]?.css;
 }
 
 const color = (value: unknown) => ({ $type: "color", $value: value });
 
 describe("emitCSS", () => {
-    it("writes an sRGB color with a hex as that hex, eight digits when it has alpha", () => {
-        expect(
-            cssFor({
-                "tokens.json": {
-                    plain: color("#e11d48"),
-                    scrim: color("#00000080"),
-                    loud: color("#0000FFCC"),
-                    object: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
-                    bare: color({ colorSpace: "srgb", components: [1, 0, 0] }),
-                },
-            }),
-        ).toBe(
-            [
-                ":root {",
-                "    --plain: #e11d48;",
-                "    --scrim: #00000080;",
-                "    --loud: #0000FFCC;",
-                "    --object: #ff0000;",
-                "    --bare: rgb(255 0 0);",
-                "}",
-                "",
-            ].join("\n"),
-        );
-    });
-
-    it("writes every color space the DTCG Color module defines", () => {
-        const space = (colorSpace: string, components: number[], alpha?: number) =>
-            color({ colorSpace, components, ...(alpha !== undefined && { alpha }) });
-        expect(
-            cssFor({
-                "tokens.json": {
-                    "linear": space("srgb-linear", [0.2, 0.5, 0.75]),
-                    "hwb": space("hwb", [200, 12.5, 30]),
-                    "hwb-none": color({ colorSpace: "hwb", components: [200, "none", 30] }),
-                    "lab": space("lab", [52.2345, 40.12345, -60.5]),
-                    "lch": space("lch", [52.2, 72.9, 303.45678]),
-                    "oklab": space("oklab", [0.62, 0.11, -0.153]),
-                    "a98": space("a98-rgb", [0.5, 0.25, 1]),
-                    "prophoto": space("prophoto-rgb", [0.4, 0.3, 0.2]),
-                    "rec2020": space("rec2020", [0.1, 0.9, 0.3]),
-                    "xyz-d65": space("xyz-d65", [0.25, 0.4, 0.1], 0.5),
-                    "xyz-d50": space("xyz-d50", [0.3, 0.3, 0.3]),
-                },
-            }),
-        ).toBe(
-            [
-                ":root {",
-                "    --linear: color(srgb-linear 0.2 0.5 0.75);",
-                "    --hwb: hwb(200 12.5% 30%);",
-                "    --hwb-none: hwb(200 none 30%);",
-                "    --lab: lab(52.2345 40.1235 -60.5);",
-                "    --lch: lch(52.2 72.9 303.4568);",
-                "    --oklab: oklab(0.62 0.11 -0.153);",
-                "    --a98: color(a98-rgb 0.5 0.25 1);",
-                "    --prophoto: color(prophoto-rgb 0.4 0.3 0.2);",
-                "    --rec2020: color(rec2020 0.1 0.9 0.3);",
-                "    --xyz-d65: color(xyz-d65 0.25 0.4 0.1 / 0.5);",
-                "    --xyz-d50: color(xyz-d50 0.3 0.3 0.3);",
-                "}",
-                "",
-            ].join("\n"),
-        );
-    });
-
     it("writes var() for an alias to a token with a variable, and the value for one without", () => {
         const resolver = {
             version: "2025.10",
@@ -165,6 +105,21 @@ describe("emitCSS", () => {
                     "the modifier `brand` has no default, so there is nothing to write on `:root`: give it a `default` in the resolver, or list the permutations to write in `variables.permutations`",
             });
         });
+
+        it("and still says what else the config needs, so one run shows everything", () => {
+            const renamed = fillDefaults({
+                variables: { path: "variables.css", propagateDependents: true },
+            });
+            const found = emitCSS(
+                readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(renamed)),
+                renamed,
+            );
+            expect(found.files).toStrictEqual([]);
+            expect(found.diagnostics.map(({ kind }) => kind)).toStrictEqual([
+                "default-required",
+                "option-renamed",
+            ]);
+        });
     });
 
     it("names every modifier that has no default", () => {
@@ -225,6 +180,157 @@ describe("emitCSS", () => {
             );
         });
 
+        it("with only what changed when an earlier selector list holds :root", () => {
+            expect(
+                cssFor(files, {
+                    permutations: [
+                        { input: { brand: "house" }, selector: [":root", '[data-brand="house"]'] },
+                        { input: { brand: "ocean" }, selector: '[data-brand="ocean"]' },
+                    ],
+                }),
+            ).toBe(
+                [
+                    ":root,",
+                    '[data-brand="house"] {',
+                    "    --brand: #e11d48;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                    '[data-brand="ocean"] {',
+                    "    --brand: #0ea5e9;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("compared with every earlier block that reaches everywhere it does, later winning", () => {
+            expect(
+                cssFor(files, {
+                    permutations: [
+                        { input: { brand: "house" }, selector: ".house" },
+                        { input: { brand: "ocean" }, selector: [".a", ".b"] },
+                        { input: { brand: "house" }, selector: ".a" },
+                    ],
+                }),
+            ).toBe(
+                [
+                    ".house {",
+                    "    --brand: #e11d48;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                    ".a,",
+                    ".b {",
+                    "    --brand: #0ea5e9;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                    ".a {",
+                    "    --brand: #e11d48;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("inside its at-rule, compared with a block the at-rule does not narrow", () => {
+            expect(
+                cssFor(files, {
+                    permutations: [
+                        { input: { brand: "house" }, selector: ":root" },
+                        {
+                            input: { brand: "ocean" },
+                            selector: ":root",
+                            atRule: "@media (prefers-color-scheme: dark)",
+                        },
+                        { input: { brand: "ocean" }, selector: '[data-brand="ocean"]' },
+                    ],
+                }),
+            ).toBe(
+                [
+                    ":root {",
+                    "    --brand: #e11d48;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                    "@media (prefers-color-scheme: dark) {",
+                    "    :root {",
+                    "        --brand: #0ea5e9;",
+                    "    }",
+                    "}",
+                    "",
+                    '[data-brand="ocean"] {',
+                    "    --brand: #0ea5e9;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("in full when an earlier block has an at-rule the later one does not", () => {
+            expect(
+                cssFor(files, {
+                    permutations: [
+                        {
+                            input: { brand: "ocean" },
+                            selector: ":root",
+                            atRule: "@media (min-width: 640px)",
+                        },
+                        { input: { brand: "house" }, selector: ":root" },
+                    ],
+                }),
+            ).toBe(
+                [
+                    "@media (min-width: 640px) {",
+                    "    :root {",
+                    "        --brand: #0ea5e9;",
+                    "        --text: #111111;",
+                    "    }",
+                    "}",
+                    "",
+                    ":root {",
+                    "    --brand: #e11d48;",
+                    "    --text: #111111;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("in its own file for a permutation with a path, whose first block is written in full", () => {
+            expect(
+                filesFor(files, {
+                    permutations: [
+                        { input: { brand: "house" }, selector: ":root" },
+                        { input: { brand: "ocean" }, selector: ":root", path: "ocean.css" },
+                        { input: { brand: "ocean" }, selector: '[data-brand="ocean"]' },
+                    ],
+                }),
+            ).toStrictEqual([
+                {
+                    path: "variables.css",
+                    css: [
+                        ":root {",
+                        "    --brand: #e11d48;",
+                        "    --text: #111111;",
+                        "}",
+                        "",
+                        '[data-brand="ocean"] {',
+                        "    --brand: #0ea5e9;",
+                        "}",
+                        "",
+                    ].join("\n"),
+                },
+                {
+                    path: "ocean.css",
+                    css: [":root {", "    --brand: #0ea5e9;", "    --text: #111111;", "}", ""].join(
+                        "\n",
+                    ),
+                },
+            ]);
+        });
+
         it("in full when the first block may not apply where it does", () => {
             expect(cssFor(files, { permutations: brands('[data-brand="house"]') })).toBe(
                 [
@@ -241,6 +347,564 @@ describe("emitCSS", () => {
                 ].join("\n"),
             );
         });
+    });
+
+    describe("re-declares, in a later block, every variable referring to something it changes", () => {
+        const files = {
+            "tokens.resolver.json": {
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                    {
+                        type: "modifier",
+                        name: "theme",
+                        default: "light",
+                        contexts: { light: [], dark: [{ $ref: "dark.json" }] },
+                    },
+                ],
+            },
+            "tokens.json": {
+                brand: color("#e11d48"),
+                danger: color("{brand}"),
+                text: color("#111111"),
+                loud: color("{danger}"),
+            },
+            "dark.json": { brand: color("#0ea5e9") },
+        };
+        const root = [
+            ":root {",
+            "    --brand: #e11d48;",
+            "    --danger: var(--brand);",
+            "    --text: #111111;",
+            "    --loud: var(--danger);",
+            "}",
+            "",
+        ];
+        const emitted = (variables: Variables) => {
+            const config = fillDefaults({ variables: { path: "variables.css", ...variables } });
+            const texts = Object.fromEntries(
+                Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
+            );
+            return emitCSS(readFromMemory({ files: texts }, readOptions(config)), config);
+        };
+
+        it("by default, through chains, after what it changes, in file order", () => {
+            expect(cssFor(files)).toBe(
+                [
+                    ...root,
+                    '[data-theme="dark"] {',
+                    "    --brand: #0ea5e9;",
+                    "    --danger: var(--brand);",
+                    "    --loud: var(--danger);",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("not when redeclareDependents is false", () => {
+            expect(cssFor(files, { redeclareDependents: false })).toBe(
+                [...root, '[data-theme="dark"] {', "    --brand: #0ea5e9;", "}", ""].join("\n"),
+            );
+        });
+
+        it("adding nothing to a block written in full", () => {
+            expect(
+                cssFor(files, {
+                    permutations: [
+                        { input: {}, selector: ".light" },
+                        { input: { theme: "dark" }, selector: ".dark" },
+                    ],
+                }),
+            ).toBe(
+                [
+                    ...root.map((line) => (line === ":root {" ? ".light {" : line)),
+                    ".dark {",
+                    "    --brand: #0ea5e9;",
+                    "    --danger: var(--brand);",
+                    "    --text: #111111;",
+                    "    --loud: var(--danger);",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("reading the old name, propagateDependents, with a warning naming the new one", () => {
+            const renamed =
+                "`propagateDependents` is now `redeclareDependents`: rename it in your config; the old name stops working at 1.0";
+            const off = emitted({ propagateDependents: false });
+            expect(off.files[0]?.css).toContain('[data-theme="dark"] {\n    --brand: #0ea5e9;\n}');
+            expect(
+                off.diagnostics.map(({ kind, severity, message }) => [kind, severity, message]),
+            ).toStrictEqual([["option-renamed", "warning", renamed]]);
+            expect(emitted({ propagateDependents: true }).files[0]?.css).toBe(cssFor(files));
+            expect(emitted({}).diagnostics).toStrictEqual([]);
+        });
+    });
+
+    describe("with polyfill, writes each color a browser may lack as its hex, and the color itself where supported", () => {
+        const oklch = (components: number[], hex?: string, alpha?: number) =>
+            color({
+                colorSpace: "oklch",
+                components,
+                ...(hex && { hex }),
+                ...(alpha !== undefined && { alpha }),
+            });
+        const p3 = (components: number[], hex?: string) =>
+            color({ colorSpace: "display-p3", components, ...(hex && { hex }) });
+        const polyfill = { transforms: { colorFallbackStrategy: "polyfill" as const } };
+        const px = (value: number) => ({ value, unit: "px" });
+        const themed = (base: Record<string, unknown>, dark: Record<string, unknown>) => ({
+            "tokens.resolver.json": {
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                    {
+                        type: "modifier",
+                        name: "theme",
+                        default: "light",
+                        contexts: { light: [], dark: [{ $ref: "dark.json" }] },
+                    },
+                ],
+            },
+            "tokens.json": base,
+            "dark.json": dark,
+        });
+
+        it("grouping each color space's query, in the order first met", () => {
+            expect(
+                cssFor(
+                    {
+                        "tokens.json": {
+                            brand: oklch([0.628, 0.2577, 29.23], "#ff0000"),
+                            glow: p3([0.9, 0.2, 0.1], "#e63946"),
+                            scrim: oklch([0.7016, 0.3225, 328.363], "#ff00ff", 0.8),
+                            plain: color({ colorSpace: "srgb", components: [0.8, 0.4, 0.2] }),
+                            soft: color({
+                                colorSpace: "hsl",
+                                components: [270, 80, 60],
+                                hex: "#9933e6",
+                            }),
+                            ink: color("{brand}"),
+                        },
+                    },
+                    polyfill,
+                ),
+            ).toBe(
+                [
+                    ":root {",
+                    "    --brand: #ff0000;",
+                    "    --glow: #e63946;",
+                    "    --scrim: #ff00ffcc;",
+                    "    --plain: rgb(204 102 51);",
+                    "    --soft: hsl(270 80% 60%);",
+                    "    --ink: var(--brand);",
+                    "}",
+                    "",
+                    "@supports (color: oklch(0 0 0)) {",
+                    "    :root {",
+                    "        --brand: oklch(0.628 0.2577 29.23);",
+                    "        --scrim: oklch(0.7016 0.3225 328.363 / 0.8);",
+                    "    }",
+                    "}",
+                    "",
+                    "@supports (color: color(display-p3 1 1 1)) {",
+                    "    :root {",
+                    "        --glow: color(display-p3 0.9 0.2 0.1);",
+                    "    }",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("for every space but sRGB and HSL, a composite's condition naming each space it uses", () => {
+            expect(
+                cssFor(
+                    {
+                        "tokens.json": {
+                            deep: color({
+                                colorSpace: "lab",
+                                components: [50, 20, -30],
+                                hex: "#8a6f9e",
+                            }),
+                            edge: {
+                                $type: "border",
+                                $value: {
+                                    color: {
+                                        colorSpace: "oklch",
+                                        components: [0.5, 0.1, 20],
+                                        hex: "#aa3344",
+                                    },
+                                    width: px(1),
+                                    style: "solid",
+                                },
+                            },
+                            fade: {
+                                $type: "gradient",
+                                $value: [
+                                    {
+                                        color: {
+                                            colorSpace: "oklch",
+                                            components: [0.5, 0.1, 20],
+                                            hex: "#aa3344",
+                                        },
+                                        position: 0,
+                                    },
+                                    {
+                                        color: {
+                                            colorSpace: "display-p3",
+                                            components: [0.1, 0.2, 0.3],
+                                            hex: "#1a334d",
+                                        },
+                                        position: 1,
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                    polyfill,
+                ),
+            ).toBe(
+                [
+                    ":root {",
+                    "    --deep: #8a6f9e;",
+                    "    --edge: 1px solid #aa3344;",
+                    "    --fade: linear-gradient(#aa3344 0%, #1a334d 100%);",
+                    "}",
+                    "",
+                    "@supports (color: lab(0 0 0)) {",
+                    "    :root {",
+                    "        --deep: lab(50 20 -30);",
+                    "    }",
+                    "}",
+                    "",
+                    "@supports (color: oklch(0 0 0)) {",
+                    "    :root {",
+                    "        --edge: 1px solid oklch(0.5 0.1 20);",
+                    "    }",
+                    "}",
+                    "",
+                    "@supports (color: oklch(0 0 0)) and (color: color(display-p3 1 1 1)) {",
+                    "    :root {",
+                    "        --fade: linear-gradient(oklch(0.5 0.1 20) 0%, color(display-p3 0.1 0.2 0.3) 100%);",
+                    "    }",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("reporting a color with no hex to fall back to, and writing it as it is", () => {
+            const config = fillDefaults({ variables: { path: "variables.css", ...polyfill } });
+            const files = {
+                "tokens.json": JSON.stringify({
+                    deep: color({ colorSpace: "lab", components: [50, 20, -30] }),
+                }),
+            };
+            const { files: written, diagnostics } = emitCSS(
+                readFromMemory({ files }, readOptions(config)),
+                config,
+            );
+            expect(written[0]?.css).toBe(":root {\n    --deep: lab(50 20 -30);\n}\n");
+            expect(
+                diagnostics.map(({ kind, severity, path, message }) => [
+                    kind,
+                    severity,
+                    path,
+                    message,
+                ]),
+            ).toStrictEqual([
+                [
+                    "fallback-missing",
+                    "error",
+                    "deep",
+                    'this `lab` color needs a `hex` to fall back to when `colorFallbackStrategy` is `"polyfill"`: add one, or use `"native"` if every browser you support has `lab`',
+                ],
+            ]);
+        });
+
+        it("in a later block, only where the color or its fallback changed", () => {
+            expect(
+                cssFor(
+                    themed(
+                        {
+                            same: oklch([0.5, 0.1, 20], "#aa3344"),
+                            both: oklch([0.5, 0.1, 20], "#aa3344"),
+                            native: oklch([0.5, 0.1, 20], "#aa3344"),
+                            fallback: oklch([0.5, 0.1, 20], "#aa3344"),
+                        },
+                        {
+                            both: oklch([0.8, 0.1, 20], "#ee8899"),
+                            native: oklch([0.6, 0.1, 20], "#aa3344"),
+                            fallback: oklch([0.5, 0.1, 20], "#bb4455"),
+                        },
+                    ),
+                    polyfill,
+                ),
+            ).toBe(
+                [
+                    ":root {",
+                    "    --same: #aa3344;",
+                    "    --both: #aa3344;",
+                    "    --native: #aa3344;",
+                    "    --fallback: #aa3344;",
+                    "}",
+                    "",
+                    "@supports (color: oklch(0 0 0)) {",
+                    "    :root {",
+                    "        --same: oklch(0.5 0.1 20);",
+                    "        --both: oklch(0.5 0.1 20);",
+                    "        --native: oklch(0.5 0.1 20);",
+                    "        --fallback: oklch(0.5 0.1 20);",
+                    "    }",
+                    "}",
+                    "",
+                    '[data-theme="dark"] {',
+                    "    --both: #ee8899;",
+                    "    --fallback: #bb4455;",
+                    "}",
+                    "",
+                    "@supports (color: oklch(0 0 0)) {",
+                    '    [data-theme="dark"] {',
+                    "        --both: oklch(0.8 0.1 20);",
+                    "        --native: oklch(0.6 0.1 20);",
+                    "        --fallback: oklch(0.5 0.1 20);",
+                    "    }",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("in a later block whose color has no fallback, equal to an earlier color's", () => {
+            expect(
+                cssFor(
+                    themed(
+                        { brand: oklch([0.628, 0.2577, 29.23], "#ff0000") },
+                        { brand: color("#ff0000") },
+                    ),
+                    polyfill,
+                ),
+            ).toBe(
+                [
+                    ":root {",
+                    "    --brand: #ff0000;",
+                    "}",
+                    "",
+                    "@supports (color: oklch(0 0 0)) {",
+                    "    :root {",
+                    "        --brand: oklch(0.628 0.2577 29.23);",
+                    "    }",
+                    "}",
+                    "",
+                    '[data-theme="dark"] {',
+                    "    --brand: #ff0000;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("inside a block's at-rule, and from a private token's own fallback and color", () => {
+            const resolver = {
+                version: "2025.10",
+                resolutionOrder: [
+                    {
+                        type: "set",
+                        name: "palette",
+                        sources: [{ $ref: "palette.json" }],
+                        $extensions: { "sh.sugarcube": { emit: false } },
+                    },
+                    { type: "set", name: "system", sources: [{ $ref: "system.json" }] },
+                ],
+            };
+            expect(
+                cssFor(
+                    {
+                        "tokens.resolver.json": resolver,
+                        "palette.json": { rose: oklch([0.6, 0.2, 10], "#e11d48") },
+                        "system.json": {
+                            brand: color("{rose}"),
+                            edge: {
+                                $type: "border",
+                                $value: { color: "{rose}", width: px(1), style: "solid" },
+                            },
+                        },
+                    },
+                    {
+                        ...polyfill,
+                        permutations: [{ input: {}, selector: ":root", atRule: "@media screen" }],
+                    },
+                ),
+            ).toBe(
+                [
+                    "@media screen {",
+                    "    :root {",
+                    "        --brand: #e11d48;",
+                    "        --edge: 1px solid #e11d48;",
+                    "    }",
+                    "",
+                    "    @supports (color: oklch(0 0 0)) {",
+                    "        :root {",
+                    "            --brand: oklch(0.6 0.2 10);",
+                    "            --edge: 1px solid oklch(0.6 0.2 10);",
+                    "        }",
+                    "    }",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+    });
+
+    describe("warns when two tokens make the same variable name", () => {
+        const clash = (first: string, later: string, name: string) =>
+            `\`${first}\` and \`${later}\` both make \`${name}\`, so only \`${later}\`'s value is used: rename one`;
+        const warnings = (files: Record<string, unknown>, variables: Variables = {}) => {
+            const config = fillDefaults({ variables: { path: "variables.css", ...variables } });
+            const texts = Object.fromEntries(
+                Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
+            );
+            return emitCSS(
+                readFromMemory({ files: texts }, readOptions(config)),
+                config,
+            ).diagnostics.map(({ kind, severity, path, message }) => [
+                kind,
+                severity,
+                path,
+                message,
+            ]);
+        };
+        const px = (value: number) => ({ $type: "dimension", $value: { value, unit: "px" } });
+
+        it("on the later one, naming both", () => {
+            expect(
+                warnings({ "tokens.json": { "a": { "b-c": px(1) }, "a-b": { c: px(2) } } }),
+            ).toStrictEqual([
+                ["same-variable-name", "warning", "a-b.c", clash("a.b-c", "a-b.c", "--a-b-c")],
+            ]);
+        });
+
+        it("including a typography token's variables, and names a naming function makes alike", () => {
+            const heading = {
+                $type: "typography",
+                $value: {
+                    fontFamily: "Inter",
+                    fontSize: { value: 2, unit: "rem" },
+                    fontWeight: 700,
+                    letterSpacing: { value: 0, unit: "px" },
+                    lineHeight: 1.2,
+                },
+            };
+            expect(
+                warnings({ "tokens.json": { heading, "heading-font-size": px(32) } }),
+            ).toStrictEqual([
+                [
+                    "same-variable-name",
+                    "warning",
+                    "heading-font-size",
+                    clash("heading", "heading-font-size", "--heading-font-size"),
+                ],
+            ]);
+            expect(
+                warnings(
+                    { "tokens.json": { Brand: px(1), brand: px(2) } },
+                    { variableName: (path: string) => path.toLowerCase() },
+                ),
+            ).toStrictEqual([
+                ["same-variable-name", "warning", "brand", clash("Brand", "brand", "--brand")],
+            ]);
+        });
+
+        it("once, however many permutations hold the pair", () => {
+            const resolver = {
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                    {
+                        type: "modifier",
+                        name: "theme",
+                        default: "light",
+                        contexts: { light: [], dark: [{ $ref: "dark.json" }] },
+                    },
+                ],
+            };
+            expect(
+                warnings({
+                    "tokens.resolver.json": resolver,
+                    "tokens.json": { "a": { "b-c": px(1) }, "a-b": { c: px(2) } },
+                    "dark.json": { "a-b": { c: px(3) } },
+                }),
+            ).toHaveLength(1);
+        });
+    });
+
+    it("stacks a media query on an earlier one that matches wherever it does", () => {
+        const resolver = {
+            version: "2025.10",
+            resolutionOrder: [
+                { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                {
+                    type: "modifier",
+                    name: "screen",
+                    default: "narrow",
+                    contexts: {
+                        narrow: [],
+                        medium: [{ $ref: "medium.json" }],
+                        wide: [{ $ref: "wide.json" }],
+                    },
+                },
+            ],
+        };
+        const size = (value: number) => ({ $type: "dimension", $value: { value, unit: "px" } });
+        expect(
+            cssFor(
+                {
+                    "tokens.resolver.json": resolver,
+                    "tokens.json": { gap: size(4), text: size(14) },
+                    "medium.json": { gap: size(8), text: size(16) },
+                    "wide.json": { gap: size(8), text: size(18) },
+                },
+                {
+                    permutations: [
+                        { input: {}, selector: ":root" },
+                        {
+                            input: { screen: "medium" },
+                            selector: ":root",
+                            atRule: "@media (min-width: 640px)",
+                        },
+                        {
+                            input: { screen: "wide" },
+                            selector: ":root",
+                            atRule: "@media (min-width: 1024px)",
+                        },
+                    ],
+                },
+            ),
+        ).toBe(
+            [
+                ":root {",
+                "    --gap: 4px;",
+                "    --text: 14px;",
+                "}",
+                "",
+                "@media (min-width: 640px) {",
+                "    :root {",
+                "        --gap: 8px;",
+                "        --text: 16px;",
+                "    }",
+                "}",
+                "",
+                "@media (min-width: 1024px) {",
+                "    :root {",
+                "        --text: 18px;",
+                "    }",
+                "}",
+                "",
+            ].join("\n"),
+        );
     });
 
     it("leaves out a token whose value cannot be read, and writes the rest", () => {
@@ -279,10 +943,10 @@ describe("emitCSS", () => {
             );
         });
 
-        it("with the config's variableName instead, given the path without $root", () => {
+        it("with the config's variableName instead, given the path without $root, escaped", () => {
             const variableName = (path: string) => path.replaceAll(".", "_");
             expect(cssFor(tokens, { variableName })).toContain(
-                "--color_on surface: var(--color_accent);",
+                "--color_on\\ surface: var(--color_accent);",
             );
         });
     });
@@ -340,45 +1004,6 @@ describe("emitCSS", () => {
             ]);
         });
 
-        it("with the value for a part written as a JSON Pointer", () => {
-            expect(
-                declarations({
-                    deep: color({ colorSpace: "srgb", components: [0.2, 0, 0] }),
-                    edge: {
-                        $type: "border",
-                        $value: { color: { $ref: "#/deep/$value" }, width: px(2), style: "dashed" },
-                    },
-                    tint: color({
-                        colorSpace: "srgb",
-                        components: [{ $ref: "#/deep/$value/components/0" }, 1, 1],
-                    }),
-                }),
-            ).toStrictEqual([
-                "--deep: rgb(51 0 0);",
-                "--edge: 2px dashed rgb(51 0 0);",
-                "--tint: rgb(51 255 255);",
-            ]);
-        });
-
-        it("with a dash pattern written as dashed, since CSS cannot draw one (Format 9.3.3)", () => {
-            expect(
-                declarations({
-                    dots: {
-                        $type: "strokeStyle",
-                        $value: { dashArray: ["{hairline}", px(2)], lineCap: "round" },
-                    },
-                    edge: {
-                        $type: "border",
-                        $value: {
-                            color: "#111111",
-                            width: px(2),
-                            style: { dashArray: [px(4), px(2)], lineCap: "butt" },
-                        },
-                    },
-                }),
-            ).toStrictEqual(["--dots: dashed;", "--edge: 2px dashed #111111;"]);
-        });
-
         it("with var() for a shadow layer referring to a whole shadow token", () => {
             expect(
                 declarations({
@@ -428,42 +1053,6 @@ describe("emitCSS", () => {
                 "--start: linear-gradient(#ffffff 0%);",
                 "--fade: linear-gradient(#ffffff 0%, #e11d48 clamp(0%, var(--half) * 100%, 100%));",
             ]);
-        });
-
-        it("with a font name quoted where CSS needs it, and vendor and generic names bare", () => {
-            expect(
-                declarations({
-                    stack: {
-                        $type: "fontFamily",
-                        $value: [
-                            "Inter",
-                            "-apple-system",
-                            "1Password",
-                            "inherit",
-                            'Say "hi"',
-                            "back\\slash",
-                            "Sans-Serif",
-                            "ui-monospace",
-                        ],
-                    },
-                }),
-            ).toStrictEqual([
-                '--stack: Inter, -apple-system, "1Password", "inherit", "Say \\"hi\\"", "back\\\\slash", Sans-Serif, ui-monospace;',
-            ]);
-        });
-
-        it("with a gradient position as a percentage, without float drift", () => {
-            expect(
-                declarations({
-                    third: {
-                        $type: "gradient",
-                        $value: [
-                            { color: "#ffffff", position: 0.3 },
-                            { color: "#000000", position: 0.57 },
-                        ],
-                    },
-                }),
-            ).toStrictEqual(["--third: linear-gradient(#ffffff 30%, #000000 57%);"]);
         });
 
         it("with typography as one variable per part, each part of a referred-to style its own var()", () => {
@@ -530,6 +1119,171 @@ describe("emitCSS", () => {
                     "",
                 ].join("\n"),
             );
+        });
+
+        it("wherever a token refers to a private one, which writes no variable of its own", () => {
+            const resolver = {
+                version: "2025.10",
+                resolutionOrder: [
+                    {
+                        type: "set",
+                        name: "palette",
+                        sources: [{ $ref: "palette.json" }],
+                        $extensions: { "sh.sugarcube": { emit: false } },
+                    },
+                    { type: "set", name: "system", sources: [{ $ref: "system.json" }] },
+                ],
+            };
+            const clamp = "clamp(1rem, 0.9091rem + 0.4545vw, 1.25rem)";
+            expect(
+                cssFor(
+                    {
+                        "tokens.resolver.json": resolver,
+                        "palette.json": {
+                            step: fluid({ min: px(16), max: { value: 1.25, unit: "rem" } }),
+                            alias: { $type: "dimension", $value: "{step}" },
+                            type: {
+                                $type: "typography",
+                                $value: {
+                                    fontFamily: "Inter",
+                                    fontSize: "{step}",
+                                    fontWeight: 700,
+                                    letterSpacing: px(0),
+                                    lineHeight: 1.2,
+                                },
+                            },
+                        },
+                        "system.json": {
+                            gap: { $type: "dimension", $value: "{step}" },
+                            through: { $type: "dimension", $value: "{alias}" },
+                            edge: {
+                                $type: "border",
+                                $value: { color: "#000000", width: "{step}", style: "solid" },
+                            },
+                            body: {
+                                $type: "typography",
+                                $value: {
+                                    fontFamily: "Inter",
+                                    fontSize: "{step}",
+                                    fontWeight: 400,
+                                    letterSpacing: px(0),
+                                    lineHeight: 1.5,
+                                },
+                            },
+                            heading: { $type: "typography", $value: "{type}" },
+                        },
+                    },
+                    { transforms: { fluid: { min: 320, max: 1200 } } },
+                ),
+            ).toBe(
+                [
+                    ":root {",
+                    `    --gap: ${clamp};`,
+                    `    --through: ${clamp};`,
+                    `    --edge: ${clamp} solid #000000;`,
+                    "    --body-font-family: Inter;",
+                    `    --body-font-size: ${clamp};`,
+                    "    --body-font-weight: 400;",
+                    "    --body-letter-spacing: 0px;",
+                    "    --body-line-height: 1.5;",
+                    "    --heading-font-family: Inter;",
+                    `    --heading-font-size: ${clamp};`,
+                    "    --heading-font-weight: 700;",
+                    "    --heading-letter-spacing: 0px;",
+                    "    --heading-line-height: 1.2;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("from its own range even when its value is a reference, as a fluid token never uses its value", () => {
+            const { files } = read({
+                step: fluid({ min: px(16), max: { value: 1.25, unit: "rem" } }),
+                own: { ...fluid({ min: px(20), max: px(24) }), $value: "{step}" },
+            });
+            expect(files[0]?.css).toBe(
+                [
+                    ":root {",
+                    "    --step: clamp(1rem, 0.9091rem + 0.4545vw, 1.25rem);",
+                    "    --own: clamp(1.25rem, 1.1591rem + 0.4545vw, 1.5rem);",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        describe("and warns when fluid text cannot be zoomed to 200% (WCAG 1.4.4)", () => {
+            const text = (fontSize: string) => ({
+                $type: "typography",
+                $value: {
+                    fontFamily: "Inter",
+                    fontSize,
+                    fontWeight: 400,
+                    letterSpacing: px(0),
+                    lineHeight: 1.5,
+                },
+            });
+            const zoom = (from: number, to: number) =>
+                `this fluid size grows too fast to zoom to 200% on screens ${from}px to ${to}px wide (WCAG 1.4.4): bring \`min\` and \`max\` closer together`;
+            const warnings = (diagnostics: { kind: string; path?: string; message: string }[]) =>
+                diagnostics.map(({ kind, path, message }) => [kind, path, message]);
+
+            it("on the fluid size a typography token uses, followed through references", () => {
+                const { diagnostics } = read({
+                    huge: fluid({ min: px(16), max: px(64) }),
+                    calm: fluid({ min: px(16), max: px(20) }),
+                    gap: fluid({ min: px(16), max: px(64) }),
+                    big: fluid({ min: px(24), max: px(72) }),
+                    heading: { $type: "dimension", $value: "{big}" },
+                    body: text("{huge}"),
+                    label: text("{calm}"),
+                    title: text("{heading}"),
+                });
+                expect(warnings(diagnostics)).toStrictEqual([
+                    ["fluid-text-zoom", "huge", zoom(760, 2480)],
+                    ["fluid-text-zoom", "big", zoom(980, 2040)],
+                ]);
+                expect(diagnostics.every(({ severity }) => severity === "warning")).toBe(true);
+            });
+
+            it("once, however many permutations hold it", () => {
+                const config = fillDefaults({
+                    variables: {
+                        path: "variables.css",
+                        transforms: { fluid: { min: 320, max: 1200 } },
+                    },
+                });
+                const resolver = {
+                    version: "2025.10",
+                    resolutionOrder: [
+                        { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
+                        {
+                            type: "modifier",
+                            name: "mode",
+                            default: "light",
+                            contexts: { light: [], dark: [{ $ref: "dark.json" }] },
+                        },
+                    ],
+                };
+                const files = Object.fromEntries(
+                    Object.entries({
+                        "tokens.resolver.json": resolver,
+                        "base.json": {
+                            huge: fluid({ min: px(16), max: px(64) }),
+                            body: text("{huge}"),
+                        },
+                        "dark.json": { ink: color("#eeeeee") },
+                    }).map(([path, json]) => [path, JSON.stringify(json)]),
+                );
+                const { diagnostics } = emitCSS(
+                    readFromMemory({ files }, readOptions(config)),
+                    config,
+                );
+                expect(warnings(diagnostics)).toStrictEqual([
+                    ["fluid-text-zoom", "huge", zoom(760, 2480)],
+                ]);
+            });
         });
 
         it("for a recipe's steps", () => {

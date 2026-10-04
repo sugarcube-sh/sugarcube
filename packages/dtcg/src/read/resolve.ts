@@ -14,7 +14,8 @@ import type {
     ValueByType,
 } from "../index.js";
 import { compositeParts } from "../values/composite-parts.js";
-import { isPlainObject, readPointer } from "../values/references.js";
+import { isJsonObject } from "../values/json.js";
+import { readPointer } from "../values/references.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { inheritedDeprecation, inheritedType } from "./inherit.js";
 import type { Merged, MergedToken } from "./merge.js";
@@ -56,7 +57,7 @@ export function resolvePermutations(
     permutations: NormalisedPermutation[],
     readValue: ValueReader,
     diagnostics: Diagnostic[],
-): { permutations: Permutation[]; graph: Edge[] } {
+): Permutation[] {
     const found = new WeakMap<MergedToken["value"], Occurrence[]>();
     const referencesOf = (token: MergedToken) => {
         if (token.added) return referencesIn(token.authored, token.value, token.json);
@@ -67,18 +68,15 @@ export function resolvePermutations(
         return references;
     };
 
-    const graph: Edge[] = [];
-    const resolved = permutations.map((permutation, index) =>
-        resolvePermutation(permutation, index, { readValue, referencesOf, diagnostics, graph }),
+    return permutations.map((permutation, index) =>
+        resolvePermutation(permutation, index, { readValue, referencesOf, diagnostics }),
     );
-    return { permutations: resolved, graph };
 }
 
 interface Context {
     readValue: ValueReader;
     referencesOf: (token: MergedToken) => Occurrence[];
     diagnostics: Diagnostic[];
-    graph: Edge[];
 }
 
 interface Walk {
@@ -90,7 +88,7 @@ interface Walk {
 function resolvePermutation(
     permutation: NormalisedPermutation,
     index: number,
-    { readValue, referencesOf, diagnostics, graph }: Context,
+    { readValue, referencesOf, diagnostics }: Context,
 ): Permutation {
     const { tokens, merged } = permutation;
     const outcomes = new Map<string, Outcome | "resolving">();
@@ -267,7 +265,7 @@ function resolvePermutation(
             const items = raw.map((each) => replacePointers(each, token, seen));
             return items.includes(UNRESOLVED) ? UNRESOLVED : items;
         }
-        if (isPlainObject(raw)) {
+        if (isJsonObject(raw)) {
             const entries = Object.entries(raw).map(([key, each]) => [
                 key,
                 replacePointers(each, token, seen),
@@ -302,7 +300,7 @@ function resolvePermutation(
         if (type === "border" || type === "transition" || type === "typography") {
             return resolveParts(value, compositeParts[type], path, walk);
         }
-        if (type === "strokeStyle" && isPlainObject(value) && Array.isArray(value.dashArray)) {
+        if (type === "strokeStyle" && isJsonObject(value) && Array.isArray(value.dashArray)) {
             const dashArray = value.dashArray.map((item, i) =>
                 resolveValue(item, "dimension", [...path, "dashArray", i], walk),
             );
@@ -317,7 +315,7 @@ function resolvePermutation(
         path: JsonPath,
         walk: Walk,
     ): unknown => {
-        if (!isPlainObject(value)) return value;
+        if (!isJsonObject(value)) return value;
         const entries = Object.entries(value).map(([key, part]) => {
             const partType = parts[key];
             if (partType === undefined || partType === "boolean") return [key, part];
@@ -353,13 +351,14 @@ function resolvePermutation(
     };
 
     const built: Token[] = [];
+    const edges: Edge[] = [];
     for (const [path, entry] of tokens) {
         const outcome = resolveToken(entry);
         if (outcome === "untyped") continue;
         built.push(toToken(entry.token, outcome, merged));
         if (!outcome.read.ok) continue;
         for (const use of referencesOf(entry.token)) {
-            graph.push({ from: path, to: targetOf(use, merged), permutation: index, at: use.at });
+            edges.push({ from: path, to: targetOf(use, merged), at: use.at });
         }
     }
 
@@ -391,7 +390,7 @@ function resolvePermutation(
     }
 
     const { input, label, sources, groups } = permutation;
-    return { input, label, sources, tokens: built, groups };
+    return { input, label, sources, tokens: built, groups, edges };
 }
 
 function targetOf(use: Occurrence, merged: Merged): string {
@@ -405,7 +404,7 @@ function stepInto(raw: unknown, steps: string[]): unknown {
     for (const step of steps) {
         if (Array.isArray(current) && /^(?:0|[1-9]\d*)$/.test(step))
             current = current[Number(step)];
-        else if (isPlainObject(current) && Object.hasOwn(current, step)) current = current[step];
+        else if (isJsonObject(current) && Object.hasOwn(current, step)) current = current[step];
         else return UNRESOLVED;
         if (current === undefined) return UNRESOLVED;
     }
@@ -413,7 +412,7 @@ function stepInto(raw: unknown, steps: string[]): unknown {
 }
 
 function aliasIn(value: unknown): string | undefined {
-    if (!isPlainObject(value)) return undefined;
+    if (!isJsonObject(value)) return undefined;
     const keys = Object.keys(value);
     return keys.length === 1 && typeof value.alias === "string" ? value.alias : undefined;
 }

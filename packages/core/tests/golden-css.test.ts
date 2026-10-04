@@ -165,25 +165,26 @@ describe("golden CSS: the new core reads every golden case", () => {
     });
 });
 
-const configOptions =
-    "atRule, selector lists, path, propagateDependents, polyfill and layers are not written yet";
-
-const pending: Record<string, string> = {
-    "every-value-form/native/variables.css": configOptions,
-    "every-value-form/polyfill/variables.css": configOptions,
-    "every-value-form/polyfill/dark.css": configOptions,
-};
-
 interface Decision {
     because: string;
-    explains: (before: string, after: string) => boolean;
+    explains?: (before: string, after: string) => boolean;
+    adds?: (name: string, value: string, block: number) => boolean;
+    drops?: (name: string) => boolean;
+}
+
+function asHex(rgb: string): string | undefined {
+    const found = /^rgb\((\d+) (\d+) (\d+)(?: \/ ([\d.]+))?\)$/.exec(rgb);
+    if (!found) return undefined;
+    const pair = (channel: number) => channel.toString(16).padStart(2, "0");
+    const alpha = found[4] === undefined ? 1 : Number(found[4]);
+    const channels = [found[1], found[2], found[3]].map((each) => pair(Number(each)));
+    return `#${channels.join("")}${alpha === 1 ? "" : pair(Math.round(alpha * 255))}`;
 }
 
 const decisions = {
     order: {
         because:
             "whole-number keys stay where the file writes them; old sugarcube sorted them first",
-        explains: () => false,
     },
     fluid: {
         because:
@@ -197,13 +198,39 @@ const decisions = {
             /\bdashed\b/.test(after) &&
             !/\b(round|butt|square)\b/.test(after),
     },
+    hex: {
+        because: "an sRGB color with a hex is written as that hex, the same color (P-017)",
+        explains: (before, after) => asHex(before) === after.toLowerCase(),
+    },
+    alpha: {
+        because:
+            "a polyfill fallback keeps its color's alpha, as eight-digit hex, as the Color module intends",
+        explains: (before, after) =>
+            /^#[0-9a-f]{6}$/i.test(before) && after.length === 9 && after.startsWith(before),
+    },
+    redeclare: {
+        because:
+            "a later block re-declares every variable referring to something it changes, by default",
+        adds: (_name, value, block) => block > 0 && value.includes("var("),
+    },
+    partial: {
+        because:
+            "typography needs all five properties (Format 9.8), so typography.partial is an error and writes nothing",
+        drops: (name) => name.startsWith("--ds-typography-partial-"),
+    },
 } satisfies Record<string, Decision>;
 
 const decided: Record<string, (keyof typeof decisions)[]> = {
-    "studio/design-tokens/variables.css": ["order"],
+    "studio/design-tokens/variables.css": ["order", "redeclare"],
     "core/tokens/fluid/variables.css": ["fluid"],
-    "studio/demo/variables.css": ["fluid", "dashed"],
-    "registry/starter-kits/fluid/variables.css": ["fluid"],
+    "studio/demo/variables.css": ["fluid", "dashed", "redeclare"],
+    "registry/starter-kits/fluid/variables.css": ["fluid", "redeclare"],
+    "registry/starter-kits/static/variables.css": ["redeclare"],
+    "core/resolver/complex/variables.css": ["redeclare"],
+    "core/resolver/propagate-chain/variables.css": ["redeclare"],
+    "every-value-form/native/variables.css": ["hex", "fluid", "dashed", "partial"],
+    "every-value-form/polyfill/variables.css": ["hex", "alpha"],
+    "every-value-form/polyfill/dark.css": ["hex", "alpha"],
     "registry/recipes/size-demo/variables.css": ["fluid"],
     "registry/recipes/space-demo/variables.css": ["fluid"],
 };
@@ -221,12 +248,12 @@ function blocksOf(css: string): Block[] {
         .map((block) => {
             const lines = block.split("\n");
             const declared = lines.flatMap((line) => {
-                const found = /^ {4}(--[^:]+): (.*);$/.exec(line);
+                const found = /^\s+(--[^:]+): (.*);$/.exec(line);
                 return found?.[1] && found[2] !== undefined ? [[found[1], found[2]] as const] : [];
             });
             return {
                 selector: lines
-                    .filter((line) => !line.startsWith("    ") && line !== "}")
+                    .filter((line) => !/^\s+--/.test(line) && line.trim() !== "}")
                     .join("\n"),
                 names: declared.map(([name]) => name),
                 values: new Map(declared),
@@ -236,27 +263,41 @@ function blocksOf(css: string): Block[] {
 
 function unexplained(css: string, expected: string, listed: (keyof typeof decisions)[]) {
     const [written, old] = [blocksOf(css), blocksOf(expected)];
-    const sameNames = (block: Block, index: number) => {
-        const other = old[index]?.names ?? [];
-        return listed.includes("order")
-            ? [...block.names].sort().join() === [...other].sort().join()
-            : block.names.join() === other.join();
-    };
+    const decision = (key: keyof typeof decisions): Decision => decisions[key];
     const used = new Set<keyof typeof decisions>(listed.includes("order") ? ["order"] : []);
     const problems: string[] = [];
+    const explainedBy = (test: (each: Decision) => boolean | undefined) => {
+        const by = listed.find((key) => test(decision(key)));
+        if (by) used.add(by);
+        return by;
+    };
     if (
         written.map(({ selector }) => selector).join() !==
         old.map(({ selector }) => selector).join()
     )
         problems.push("the blocks differ");
     written.forEach((block, index) => {
-        if (!sameNames(block, index)) problems.push(`${block.selector}: the variables differ`);
-        for (const [name, after] of block.values) {
-            const before = old[index]?.values.get(name);
-            if (before === undefined || before === after) continue;
-            const by = listed.find((key) => decisions[key].explains(before, after));
-            if (by) used.add(by);
-            else problems.push(`${name}: ${before} → ${after}`);
+        const before = old[index]?.names ?? [];
+        for (const name of block.names.filter((each) => !before.includes(each))) {
+            const value = block.values.get(name) ?? "";
+            if (!explainedBy((each) => each.adds?.(name, value, index)))
+                problems.push(`${name}: added`);
+        }
+        for (const name of before.filter((each) => !block.names.includes(each))) {
+            if (!explainedBy((each) => each.drops?.(name))) problems.push(`${name}: dropped`);
+        }
+        const [kept, wereKept] = [
+            block.names.filter((each) => before.includes(each)),
+            before.filter((each) => block.names.includes(each)),
+        ];
+        const order = (names: string[]) =>
+            (listed.includes("order") ? [...names].sort() : names).join();
+        if (order(kept) !== order(wereKept)) problems.push(`${block.selector}: the order differs`);
+        for (const name of kept) {
+            const [after, was] = [block.values.get(name), old[index]?.values.get(name)];
+            if (after === undefined || was === undefined || after === was) continue;
+            if (!explainedBy((each) => each.explains?.(was, after)))
+                problems.push(`${name}: ${was} → ${after}`);
         }
     });
     for (const key of listed) if (!used.has(key)) problems.push(`${key} explains nothing here`);
@@ -269,25 +310,29 @@ const goldenFiles = cases.flatMap((each) =>
         .map((file) => ({ name: `${each.name}/${file}`, each, file })),
 );
 
+function inLayer(css: string, layer: string | undefined): string {
+    if (!layer) return css;
+    const indented = css.split("\n").map((line) => (line.trim() ? `    ${line}` : line));
+    return `@layer ${layer} {\n${indented.join("\n")}}\n`;
+}
+
 describe("golden CSS: the new core writes what old sugarcube writes", () => {
     it.for(goldenFiles)("$name", async ({ name, each, file }) => {
         const { config, doc } = await readCase(each);
         const { files } = emitCSS(doc, config);
-        const css = files.find(({ path }) => path === file)?.css ?? "";
+        const written = files.find(({ path }) => path === file)?.css;
+        const css = written === undefined ? "" : inLayer(written, config.variables.layer);
         const expected = readFileSync(join(golden, name), "utf8");
         const listed = decided[name];
-        if (pending[name]) expect(css, `pending (${pending[name]}) but matches`).not.toBe(expected);
-        else if (listed) {
+        if (listed) {
             const because = listed.map((key) => decisions[key].because).join("; ");
             expect(css, `differs because ${because} but matches`).not.toBe(expected);
             expect(unexplained(css, expected, listed)).toStrictEqual([]);
         } else expect(css).toBe(expected);
     });
 
-    it("lists as pending or decided only files the golden set has, and none as both", () => {
+    it("lists as decided only files the golden set has", () => {
         const names = new Set(goldenFiles.map(({ name }) => name));
-        const listed = [...Object.keys(pending), ...Object.keys(decided)];
-        expect(listed.filter((name) => !names.has(name))).toStrictEqual([]);
-        expect(Object.keys(decided).filter((name) => name in pending)).toStrictEqual([]);
+        expect(Object.keys(decided).filter((name) => !names.has(name))).toStrictEqual([]);
     });
 });

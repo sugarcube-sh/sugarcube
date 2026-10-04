@@ -1,45 +1,35 @@
-// Turns tokens into CSS custom properties. Each theme gets a block with only the values that differ
-// from the default. Private tokens aren't output, and references to them are written as their
-// value.
+// Turns tokens into CSS custom properties. The default theme goes on `:root`; each other theme gets
+// a block with only the declarations that differ from it. A reference is written as `var()`, so it
+// follows its target wherever the target changes.
 import {
-    defaultPermutation,
-    token,
-    sameValue,
-    isAlias,
+    type Alias,
     type Document,
     type Permutation,
-    type Token,
+    type Pointer,
+    defaultPermutation,
+    isAlias,
 } from "@sugarcube-sh/dtcg";
+import { cssValue, cssVariable } from "@sugarcube-sh/dtcg/css";
 
 declare const doc: Document;
-declare function cssName(path: string): string;
 declare function selectorFor(p: Permutation): string;
-declare function renderLiteral(token: Token): string;
 
-function isPrivate(p: Permutation, t: Token): boolean {
-    const ext = p.sources[t.source.index]?.extensions?.["sh.sugarcube"] as
-        | { emit?: boolean }
-        | undefined;
-    return ext?.emit === false;
-}
+const replacement = (ref: Alias | Pointer) =>
+    isAlias(ref) ? { variable: cssVariable(ref.alias) } : undefined;
 
-function declaration(p: Permutation, t: Token): string {
-    if (isAlias(t.value)) {
-        const target = token(doc, t.value.alias, p.input);
-        if (target && !isPrivate(p, target)) return `var(--${cssName(target.path)})`;
-    }
-    return renderLiteral(t);
+function declarations(p: Permutation): string[] {
+    return p.tokens.flatMap((t) => {
+        const css = cssValue(t, { replacement });
+        const name = cssVariable(t.path);
+        if (css === undefined) return [];
+        if (typeof css === "string") return [`  ${name}: ${css};`];
+        return Object.entries(css).map(([property, value]) => `  ${name}-${property}: ${value};`);
+    });
 }
 
 const base = defaultPermutation(doc);
+const inBase = new Set(base ? declarations(base) : []);
 for (const p of doc.permutations) {
-    const lines: string[] = [];
-    for (const t of p.tokens) {
-        if (t.invalid || isPrivate(p, t)) continue;
-        const inBase = base && token(doc, t.path, base.input);
-        const same = p !== base && inBase !== undefined && sameValue(inBase, t);
-        if (same) continue;
-        lines.push(`  --${cssName(t.path)}: ${declaration(p, t)};`);
-    }
-    if (lines.length) row(`${selectorFor(p)} {\n${lines.join("\n")}\n}`);
+    const lines = p === base ? declarations(p) : declarations(p).filter((l) => !inBase.has(l));
+    if (lines.length) row(`${p === base ? ":root" : selectorFor(p)} {\n${lines.join("\n")}\n}`);
 }

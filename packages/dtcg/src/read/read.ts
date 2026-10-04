@@ -130,7 +130,7 @@ function toDocument(
     const resolving = performance.now();
     onStage?.("generate", generating);
     onStage?.("normalise", resolving - normalising - generating);
-    const { permutations, graph } = resolvePermutations(normalised, readValue, found);
+    const permutations = resolvePermutations(normalised, readValue, found);
     onStage?.("resolve", performance.now() - resolving);
     validateExtensions(normalised, permutations, extensionValidators, found);
 
@@ -140,7 +140,6 @@ function toDocument(
         modifiers: loaded.modifiers,
         usedBy: loaded.usedBy,
         permutations,
-        graph,
         diagnostics: [...loaded.diagnostics, ...collapse(found, permutations.length)],
     };
 }

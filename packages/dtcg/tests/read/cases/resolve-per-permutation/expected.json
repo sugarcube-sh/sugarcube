@@ -1,6 +1,6 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "Resolver 6.3 and contract 02, rule 4: references are followed within each permutation, so the same reference gives each permutation its own value, and the graph has one edge per reference per permutation. A reference broken in one permutation is reported for that permutation",
+  "spec": "Resolver 6.3 and contract 02, rule 4: references are followed within each permutation, so the same reference gives each permutation its own value, and each permutation's edges hold one edge per reference. A reference broken in one permutation is reported for that permutation",
   "permutations": [
     {
       "tokens": [
@@ -28,6 +28,25 @@
             "colorSpace": "srgb",
             "components": [1, 0, 0],
             "alpha": 1
+          }
+        }
+      ],
+      "edges": [
+        {
+          "from": "color.danger",
+          "to": "color.brand",
+          "at": {
+            "file": "base.json",
+            "text": "\"{color.brand}\""
+          }
+        },
+        {
+          "from": "color.accent",
+          "to": "color.brand",
+          "at": {
+            "file": "base.json",
+            "text": "\"{color.brand}\"",
+            "occurrence": 2
           }
         }
       ]
@@ -59,46 +78,25 @@
           },
           "resolved": null
         }
+      ],
+      "edges": [
+        {
+          "from": "color.danger",
+          "to": "color.brand",
+          "at": {
+            "file": "base.json",
+            "text": "\"{color.brand}\""
+          }
+        },
+        {
+          "from": "color.accent",
+          "to": "color.highlight",
+          "at": {
+            "file": "dark.json",
+            "text": "\"{color.highlight}\""
+          }
+        }
       ]
-    }
-  ],
-  "graph": [
-    {
-      "from": "color.danger",
-      "to": "color.brand",
-      "permutation": 0,
-      "at": {
-        "file": "base.json",
-        "text": "\"{color.brand}\""
-      }
-    },
-    {
-      "from": "color.accent",
-      "to": "color.brand",
-      "permutation": 0,
-      "at": {
-        "file": "base.json",
-        "text": "\"{color.brand}\"",
-        "occurrence": 2
-      }
-    },
-    {
-      "from": "color.danger",
-      "to": "color.brand",
-      "permutation": 1,
-      "at": {
-        "file": "base.json",
-        "text": "\"{color.brand}\""
-      }
-    },
-    {
-      "from": "color.accent",
-      "to": "color.highlight",
-      "permutation": 1,
-      "at": {
-        "file": "dark.json",
-        "text": "\"{color.highlight}\""
-      }
     }
   ],
   "diagnostics": [

@@ -1,5 +1,6 @@
 import type { Alias, JsonPath, Pointer, Token } from "../index.js";
-import { isAlias, isPlainObject, isPointer } from "../values/references.js";
+import { isJsonObject } from "../values/json.js";
+import { isAlias, isPointer } from "../values/references.js";
 
 /**
  * Every reference a token's value holds, and where in the value it sits: an {@link Alias} or a
@@ -18,7 +19,7 @@ export function references(token: Token): { at: JsonPath; ref: Alias | Pointer }
     const visit = (value: unknown, at: JsonPath) => {
         if (isAlias(value) || isPointer(value)) found.push({ at, ref: value });
         else if (Array.isArray(value)) value.forEach((item, index) => visit(item, [...at, index]));
-        else if (isPlainObject(value)) {
+        else if (isJsonObject(value)) {
             for (const [key, item] of Object.entries(value)) visit(item, [...at, key]);
         }
     };
@@ -41,7 +42,7 @@ export function references(token: Token): { at: JsonPath; ref: Alias | Pointer }
 export function referenceAt(token: Token, at: JsonPath): Alias | Pointer | undefined {
     const found = at.reduce<unknown>((value, step) => {
         if (Array.isArray(value)) return typeof step === "number" ? value[step] : undefined;
-        if (isPlainObject(value) && typeof step === "string" && Object.hasOwn(value, step)) {
+        if (isJsonObject(value) && typeof step === "string" && Object.hasOwn(value, step)) {
             return value[step];
         }
         return undefined;

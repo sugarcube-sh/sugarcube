@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 7.2.2 (Example 33) and Resolver 6.3: references are followed until a token with an explicit value; a typeless reference takes its target's type (5.2.2); aliasOf names the final token. Parts of a composite that are references are followed too (9.1 to 9.6). The graph has one edge per reference as written, at the reference",
+  "spec": "Format 7.2.2 (Example 33) and Resolver 6.3: references are followed until a token with an explicit value; a typeless reference takes its target's type (5.2.2); aliasOf names the final token. Parts of a composite that are references are followed too (9.1 to 9.6). Each permutation's edges hold one edge per reference as written, at the reference",
   "permutations": [
     {
       "tokens": [
@@ -85,65 +85,59 @@
             }
           ]
         }
+      ],
+      "edges": [
+        {
+          "from": "color.brand",
+          "to": "color.red",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{color.red}\""
+          }
+        },
+        {
+          "from": "semantic.danger",
+          "to": "color.brand",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{color.brand}\""
+          }
+        },
+        {
+          "from": "edge",
+          "to": "semantic.danger",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{semantic.danger}\""
+          }
+        },
+        {
+          "from": "edge",
+          "to": "space.sm",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{space.sm}\""
+          }
+        },
+        {
+          "from": "glow",
+          "to": "color.brand",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{color.brand}\"",
+            "occurrence": 2
+          }
+        },
+        {
+          "from": "glow",
+          "to": "space.sm",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{space.sm}\"",
+            "occurrence": 2
+          }
+        }
       ]
-    }
-  ],
-  "graph": [
-    {
-      "from": "color.brand",
-      "to": "color.red",
-      "permutation": 0,
-      "at": {
-        "file": "tokens.json",
-        "text": "\"{color.red}\""
-      }
-    },
-    {
-      "from": "semantic.danger",
-      "to": "color.brand",
-      "permutation": 0,
-      "at": {
-        "file": "tokens.json",
-        "text": "\"{color.brand}\""
-      }
-    },
-    {
-      "from": "edge",
-      "to": "semantic.danger",
-      "permutation": 0,
-      "at": {
-        "file": "tokens.json",
-        "text": "\"{semantic.danger}\""
-      }
-    },
-    {
-      "from": "edge",
-      "to": "space.sm",
-      "permutation": 0,
-      "at": {
-        "file": "tokens.json",
-        "text": "\"{space.sm}\""
-      }
-    },
-    {
-      "from": "glow",
-      "to": "color.brand",
-      "permutation": 0,
-      "at": {
-        "file": "tokens.json",
-        "text": "\"{color.brand}\"",
-        "occurrence": 2
-      }
-    },
-    {
-      "from": "glow",
-      "to": "space.sm",
-      "permutation": 0,
-      "at": {
-        "file": "tokens.json",
-        "text": "\"{space.sm}\"",
-        "occurrence": 2
-      }
     }
   ],
   "diagnostics": []
