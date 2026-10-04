@@ -165,11 +165,6 @@ describe("golden CSS: the new core reads every golden case", () => {
     });
 });
 
-const pending: Record<string, string> = {
-    "every-value-form/polyfill/variables.css": "polyfill is not written yet",
-    "every-value-form/polyfill/dark.css": "polyfill is not written yet",
-};
-
 interface Decision {
     because: string;
     explains?: (before: string, after: string) => boolean;
@@ -207,6 +202,12 @@ const decisions = {
         because: "an sRGB color with a hex is written as that hex, the same color (P-017)",
         explains: (before, after) => asHex(before) === after.toLowerCase(),
     },
+    alpha: {
+        because:
+            "a polyfill fallback keeps its color's alpha, as eight-digit hex, as the Color module intends",
+        explains: (before, after) =>
+            /^#[0-9a-f]{6}$/i.test(before) && after.length === 9 && after.startsWith(before),
+    },
     redeclare: {
         because:
             "a later block re-declares every variable referring to something it changes, by default",
@@ -228,6 +229,8 @@ const decided: Record<string, (keyof typeof decisions)[]> = {
     "core/resolver/complex/variables.css": ["redeclare"],
     "core/resolver/propagate-chain/variables.css": ["redeclare"],
     "every-value-form/native/variables.css": ["hex", "fluid", "dashed", "partial"],
+    "every-value-form/polyfill/variables.css": ["hex", "alpha"],
+    "every-value-form/polyfill/dark.css": ["hex", "alpha"],
     "registry/recipes/size-demo/variables.css": ["fluid"],
     "registry/recipes/space-demo/variables.css": ["fluid"],
 };
@@ -321,18 +324,15 @@ describe("golden CSS: the new core writes what old sugarcube writes", () => {
         const css = written === undefined ? "" : inLayer(written, config.variables.layer);
         const expected = readFileSync(join(golden, name), "utf8");
         const listed = decided[name];
-        if (pending[name]) expect(css, `pending (${pending[name]}) but matches`).not.toBe(expected);
-        else if (listed) {
+        if (listed) {
             const because = listed.map((key) => decisions[key].because).join("; ");
             expect(css, `differs because ${because} but matches`).not.toBe(expected);
             expect(unexplained(css, expected, listed)).toStrictEqual([]);
         } else expect(css).toBe(expected);
     });
 
-    it("lists as pending or decided only files the golden set has, and none as both", () => {
+    it("lists as decided only files the golden set has", () => {
         const names = new Set(goldenFiles.map(({ name }) => name));
-        const listed = [...Object.keys(pending), ...Object.keys(decided)];
-        expect(listed.filter((name) => !names.has(name))).toStrictEqual([]);
-        expect(Object.keys(decided).filter((name) => name in pending)).toStrictEqual([]);
+        expect(Object.keys(decided).filter((name) => !names.has(name))).toStrictEqual([]);
     });
 });

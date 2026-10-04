@@ -14,7 +14,7 @@ export type ReplacementFor = (ref: Alias | Pointer) => WrittenReplacement | unde
 export function renderToken(
     token: Token,
     replacementFor: ReplacementFor,
-    options: { fluid: FluidConfig },
+    options: { fluid: FluidConfig; colors: "native" | "hex" },
 ): Written | undefined {
     if (token.resolved === undefined) return undefined;
     if (token.type === "dimension") {
@@ -32,8 +32,9 @@ export function renderToken(
         if (!each || "variable" in each) return each;
         return typeof each.written === "string" ? { css: each.written } : undefined;
     };
-    if (token.type !== "gradient" || replaced) return cssValue(token, { replacement });
-    const stops = cssValue(token, { replacement });
+    const { colors } = options;
+    if (token.type !== "gradient" || replaced) return cssValue(token, { replacement, colors });
+    const stops = cssValue(token, { replacement, colors });
     return stops === undefined ? undefined : `linear-gradient(${stops})`;
 }
 

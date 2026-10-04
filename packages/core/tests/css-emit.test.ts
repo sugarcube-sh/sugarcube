@@ -105,6 +105,21 @@ describe("emitCSS", () => {
                     "the modifier `brand` has no default, so there is nothing to write on `:root`: give it a `default` in the resolver, or list the permutations to write in `variables.permutations`",
             });
         });
+
+        it("and still says what else the config needs, so one run shows everything", () => {
+            const renamed = fillDefaults({
+                variables: { path: "variables.css", propagateDependents: true },
+            });
+            const found = emitCSS(
+                readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(renamed)),
+                renamed,
+            );
+            expect(found.files).toStrictEqual([]);
+            expect(found.diagnostics.map(({ kind }) => kind)).toStrictEqual([
+                "default-required",
+                "option-renamed",
+            ]);
+        });
     });
 
     it("names every modifier that has no default", () => {
@@ -425,6 +440,322 @@ describe("emitCSS", () => {
             ).toStrictEqual([["option-renamed", "warning", renamed]]);
             expect(emitted({ propagateDependents: true }).files[0]?.css).toBe(cssFor(files));
             expect(emitted({}).diagnostics).toStrictEqual([]);
+        });
+    });
+
+    describe("with polyfill, writes each color a browser may lack as its hex, and the color itself where supported", () => {
+        const oklch = (components: number[], hex?: string, alpha?: number) =>
+            color({
+                colorSpace: "oklch",
+                components,
+                ...(hex && { hex }),
+                ...(alpha !== undefined && { alpha }),
+            });
+        const p3 = (components: number[], hex?: string) =>
+            color({ colorSpace: "display-p3", components, ...(hex && { hex }) });
+        const polyfill = { transforms: { colorFallbackStrategy: "polyfill" as const } };
+        const px = (value: number) => ({ value, unit: "px" });
+        const themed = (base: Record<string, unknown>, dark: Record<string, unknown>) => ({
+            "tokens.resolver.json": {
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
+                    {
+                        type: "modifier",
+                        name: "theme",
+                        default: "light",
+                        contexts: { light: [], dark: [{ $ref: "dark.json" }] },
+                    },
+                ],
+            },
+            "tokens.json": base,
+            "dark.json": dark,
+        });
+
+        it("grouping each color space's query, in the order first met", () => {
+            expect(
+                cssFor(
+                    {
+                        "tokens.json": {
+                            brand: oklch([0.628, 0.2577, 29.23], "#ff0000"),
+                            glow: p3([0.9, 0.2, 0.1], "#e63946"),
+                            scrim: oklch([0.7016, 0.3225, 328.363], "#ff00ff", 0.8),
+                            plain: color({ colorSpace: "srgb", components: [0.8, 0.4, 0.2] }),
+                            soft: color({
+                                colorSpace: "hsl",
+                                components: [270, 80, 60],
+                                hex: "#9933e6",
+                            }),
+                            ink: color("{brand}"),
+                        },
+                    },
+                    polyfill,
+                ),
+            ).toBe(
+                [
+                    ":root {",
+                    "    --brand: #ff0000;",
+                    "    --glow: #e63946;",
+                    "    --scrim: #ff00ffcc;",
+                    "    --plain: rgb(204 102 51);",
+                    "    --soft: hsl(270 80% 60%);",
+                    "    --ink: var(--brand);",
+                    "}",
+                    "",
+                    "@supports (color: oklch(0 0 0)) {",
+                    "    :root {",
+                    "        --brand: oklch(0.628 0.2577 29.23);",
+                    "        --scrim: oklch(0.7016 0.3225 328.363 / 0.8);",
+                    "    }",
+                    "}",
+                    "",
+                    "@supports (color: color(display-p3 1 1 1)) {",
+                    "    :root {",
+                    "        --glow: color(display-p3 0.9 0.2 0.1);",
+                    "    }",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("for every space but sRGB and HSL, a composite's condition naming each space it uses", () => {
+            expect(
+                cssFor(
+                    {
+                        "tokens.json": {
+                            deep: color({
+                                colorSpace: "lab",
+                                components: [50, 20, -30],
+                                hex: "#8a6f9e",
+                            }),
+                            edge: {
+                                $type: "border",
+                                $value: {
+                                    color: {
+                                        colorSpace: "oklch",
+                                        components: [0.5, 0.1, 20],
+                                        hex: "#aa3344",
+                                    },
+                                    width: px(1),
+                                    style: "solid",
+                                },
+                            },
+                            fade: {
+                                $type: "gradient",
+                                $value: [
+                                    {
+                                        color: {
+                                            colorSpace: "oklch",
+                                            components: [0.5, 0.1, 20],
+                                            hex: "#aa3344",
+                                        },
+                                        position: 0,
+                                    },
+                                    {
+                                        color: {
+                                            colorSpace: "display-p3",
+                                            components: [0.1, 0.2, 0.3],
+                                            hex: "#1a334d",
+                                        },
+                                        position: 1,
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                    polyfill,
+                ),
+            ).toBe(
+                [
+                    ":root {",
+                    "    --deep: #8a6f9e;",
+                    "    --edge: 1px solid #aa3344;",
+                    "    --fade: linear-gradient(#aa3344 0%, #1a334d 100%);",
+                    "}",
+                    "",
+                    "@supports (color: lab(0 0 0)) {",
+                    "    :root {",
+                    "        --deep: lab(50 20 -30);",
+                    "    }",
+                    "}",
+                    "",
+                    "@supports (color: oklch(0 0 0)) {",
+                    "    :root {",
+                    "        --edge: 1px solid oklch(0.5 0.1 20);",
+                    "    }",
+                    "}",
+                    "",
+                    "@supports (color: oklch(0 0 0)) and (color: color(display-p3 1 1 1)) {",
+                    "    :root {",
+                    "        --fade: linear-gradient(oklch(0.5 0.1 20) 0%, color(display-p3 0.1 0.2 0.3) 100%);",
+                    "    }",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("reporting a color with no hex to fall back to, and writing it as it is", () => {
+            const config = fillDefaults({ variables: { path: "variables.css", ...polyfill } });
+            const files = {
+                "tokens.json": JSON.stringify({
+                    deep: color({ colorSpace: "lab", components: [50, 20, -30] }),
+                }),
+            };
+            const { files: written, diagnostics } = emitCSS(
+                readFromMemory({ files }, readOptions(config)),
+                config,
+            );
+            expect(written[0]?.css).toBe(":root {\n    --deep: lab(50 20 -30);\n}\n");
+            expect(
+                diagnostics.map(({ kind, severity, path, message }) => [
+                    kind,
+                    severity,
+                    path,
+                    message,
+                ]),
+            ).toStrictEqual([
+                [
+                    "fallback-missing",
+                    "error",
+                    "deep",
+                    'this `lab` color needs a `hex` to fall back to when `colorFallbackStrategy` is `"polyfill"`: add one, or use `"native"` if every browser you support has `lab`',
+                ],
+            ]);
+        });
+
+        it("in a later block, only where the color or its fallback changed", () => {
+            expect(
+                cssFor(
+                    themed(
+                        {
+                            same: oklch([0.5, 0.1, 20], "#aa3344"),
+                            both: oklch([0.5, 0.1, 20], "#aa3344"),
+                            native: oklch([0.5, 0.1, 20], "#aa3344"),
+                            fallback: oklch([0.5, 0.1, 20], "#aa3344"),
+                        },
+                        {
+                            both: oklch([0.8, 0.1, 20], "#ee8899"),
+                            native: oklch([0.6, 0.1, 20], "#aa3344"),
+                            fallback: oklch([0.5, 0.1, 20], "#bb4455"),
+                        },
+                    ),
+                    polyfill,
+                ),
+            ).toBe(
+                [
+                    ":root {",
+                    "    --same: #aa3344;",
+                    "    --both: #aa3344;",
+                    "    --native: #aa3344;",
+                    "    --fallback: #aa3344;",
+                    "}",
+                    "",
+                    "@supports (color: oklch(0 0 0)) {",
+                    "    :root {",
+                    "        --same: oklch(0.5 0.1 20);",
+                    "        --both: oklch(0.5 0.1 20);",
+                    "        --native: oklch(0.5 0.1 20);",
+                    "        --fallback: oklch(0.5 0.1 20);",
+                    "    }",
+                    "}",
+                    "",
+                    '[data-theme="dark"] {',
+                    "    --both: #ee8899;",
+                    "    --fallback: #bb4455;",
+                    "}",
+                    "",
+                    "@supports (color: oklch(0 0 0)) {",
+                    '    [data-theme="dark"] {',
+                    "        --both: oklch(0.8 0.1 20);",
+                    "        --native: oklch(0.6 0.1 20);",
+                    "        --fallback: oklch(0.5 0.1 20);",
+                    "    }",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("in a later block whose color has no fallback, equal to an earlier color's", () => {
+            expect(
+                cssFor(
+                    themed(
+                        { brand: oklch([0.628, 0.2577, 29.23], "#ff0000") },
+                        { brand: color("#ff0000") },
+                    ),
+                    polyfill,
+                ),
+            ).toBe(
+                [
+                    ":root {",
+                    "    --brand: #ff0000;",
+                    "}",
+                    "",
+                    "@supports (color: oklch(0 0 0)) {",
+                    "    :root {",
+                    "        --brand: oklch(0.628 0.2577 29.23);",
+                    "    }",
+                    "}",
+                    "",
+                    '[data-theme="dark"] {',
+                    "    --brand: #ff0000;",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
+        it("inside a block's at-rule, and from a private token's own fallback and color", () => {
+            const resolver = {
+                version: "2025.10",
+                resolutionOrder: [
+                    {
+                        type: "set",
+                        name: "palette",
+                        sources: [{ $ref: "palette.json" }],
+                        $extensions: { "sh.sugarcube": { emit: false } },
+                    },
+                    { type: "set", name: "system", sources: [{ $ref: "system.json" }] },
+                ],
+            };
+            expect(
+                cssFor(
+                    {
+                        "tokens.resolver.json": resolver,
+                        "palette.json": { rose: oklch([0.6, 0.2, 10], "#e11d48") },
+                        "system.json": {
+                            brand: color("{rose}"),
+                            edge: {
+                                $type: "border",
+                                $value: { color: "{rose}", width: px(1), style: "solid" },
+                            },
+                        },
+                    },
+                    {
+                        ...polyfill,
+                        permutations: [{ input: {}, selector: ":root", atRule: "@media screen" }],
+                    },
+                ),
+            ).toBe(
+                [
+                    "@media screen {",
+                    "    :root {",
+                    "        --brand: #e11d48;",
+                    "        --edge: 1px solid #e11d48;",
+                    "    }",
+                    "",
+                    "    @supports (color: oklch(0 0 0)) {",
+                    "        :root {",
+                    "            --brand: oklch(0.6 0.2 10);",
+                    "            --edge: 1px solid oklch(0.6 0.2 10);",
+                    "        }",
+                    "    }",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
         });
     });
 

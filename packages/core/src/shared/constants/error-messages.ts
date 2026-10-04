@@ -36,6 +36,11 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
         message: ({ from, to }) =>
             `\`${from}\` is now \`${to}\`: rename it in your config; the old name stops working at 1.0`,
     },
+    "fallback-missing": {
+        severity: "error",
+        message: ({ colorSpace }) =>
+            `this \`${colorSpace}\` color needs a \`hex\` to fall back to when \`colorFallbackStrategy\` is \`"polyfill"\`: add one, or use \`"native"\` if every browser you support has \`${colorSpace}\``,
+    },
 };
 
 export const ErrorMessages = {
