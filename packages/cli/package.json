@@ -76,6 +76,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@sugarcube-sh/dtcg": "workspace:*",
     "cross-env": "7.0.3",
     "pkgroll": "^2.28.1",
     "tsx": "^4.23.13"
