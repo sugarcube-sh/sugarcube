@@ -200,10 +200,9 @@ describe("golden utilities: the new core writes what old sugarcube writes", () =
         });
         const doc = await read(resolver, readOptions(config));
         const tokens = utilityTokens(doc, config);
-        const { rules, safelist, diagnostics } = utilityRules(
-            tokens,
-            config.utilities.classes ?? {},
-        );
+        const { classes } = config.utilities;
+        ok(classes, `${name} lists utility classes`);
+        const { rules, safelist, diagnostics } = utilityRules(tokens, classes);
         expect(diagnostics).toStrictEqual([]);
         const generator = await createGenerator({
             presets: [{ name: "sugarcube", rules, preflights: [] }],
