@@ -56,8 +56,8 @@
   },
   "dependencies": {
     "@antfu/ni": "23.3.0",
-    "@clack/core": "1.4.3",
-    "@clack/prompts": "1.7.0",
+    "@clack/core": "1.5.1",
+    "@clack/prompts": "1.8.1",
     "@sugarcube-sh/core": "workspace:*",
     "@unocss/core": "^66.10.5",
     "chokidar": "^5.0.0",
