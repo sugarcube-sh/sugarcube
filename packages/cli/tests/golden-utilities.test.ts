@@ -166,7 +166,7 @@ function unexplained(
     const used = new Set<keyof typeof decisions>();
     if (others(written).join("\n") !== others(old).join("\n")) problems.push("the frame differs");
     const pathOf = new Map(
-        tokens.flatMap((each) => ("name" in each ? [[each.name, each.path]] : [])),
+        tokens.flatMap((each) => ("name" in each ? [[each.name, each.token.path]] : [])),
     );
     for (const { line, className, name } of parsed(written).filter(
         (each) => !old.includes(each.line),
@@ -200,7 +200,11 @@ describe("golden utilities: the new core writes what old sugarcube writes", () =
         });
         const doc = await read(resolver, readOptions(config));
         const tokens = utilityTokens(doc, config);
-        const { rules, safelist } = utilityRules(tokens, config.utilities.classes ?? {});
+        const { rules, safelist, diagnostics } = utilityRules(
+            tokens,
+            config.utilities.classes ?? {},
+        );
+        expect(diagnostics).toStrictEqual([]);
         const generator = await createGenerator({
             presets: [{ name: "sugarcube", rules, preflights: [] }],
             safelist,

@@ -11,7 +11,14 @@ function tokensFor(files: Record<string, unknown>, variables: Variables = {}) {
     const texts = Object.fromEntries(
         Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
     );
-    return utilityTokens(readFromMemory({ files: texts }, readOptions(config)), config);
+    return utilityTokens(readFromMemory({ files: texts }, readOptions(config)), config).map(
+        (listed) => {
+            const { path, type } = listed.token;
+            return "name" in listed
+                ? { path, type, name: listed.name }
+                : { path, type, variables: listed.variables };
+        },
+    );
 }
 
 const color = (value: unknown) => ({ $type: "color", $value: value });

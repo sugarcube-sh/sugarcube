@@ -1,21 +1,30 @@
+import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
-import type { UtilityClassesConfig } from "../src/types/config.js";
+import { fillDefaults } from "../src/node/config/normalize.js";
+import { readOptions } from "../src/shared/read-options.js";
 import { utilityRules } from "../src/shared/utilities/rules.js";
-import type { UtilityToken } from "../src/shared/utilities/tokens.js";
+import { utilityTokens } from "../src/shared/utilities/tokens.js";
+import type { UtilityClassesConfig } from "../src/types/config.js";
 
-const color = (path: string, name = `--${path.replaceAll(".", "-")}`): UtilityToken => ({
-    path,
-    type: "color",
-    name,
-});
-const dimension = (path: string, name = `--${path.replaceAll(".", "-")}`): UtilityToken => ({
-    path,
-    type: "dimension",
-    name,
-});
+type Variables = Parameters<typeof fillDefaults>[0]["variables"];
 
-function cssFor(tokens: UtilityToken[], classes: UtilityClassesConfig, className: string) {
-    return utilityRules(tokens, classes).rules.reduceRight<Record<string, string> | undefined>(
+const color = (value = "#111111") => ({ $type: "color", $value: value });
+const px = (value: number) => ({ $type: "dimension", $value: { value, unit: "px" } });
+
+function ruled(tokens: unknown, classes: UtilityClassesConfig, variables: Variables = {}) {
+    const config = fillDefaults({ variables: { path: "variables.css", ...variables } });
+    const files = { "tokens.json": JSON.stringify(tokens) };
+    const doc = readFromMemory({ files }, readOptions(config));
+    return utilityRules(utilityTokens(doc, config), classes);
+}
+
+function cssFor(
+    tokens: unknown,
+    classes: UtilityClassesConfig,
+    className: string,
+    variables: Variables = {},
+) {
+    return ruled(tokens, classes, variables).rules.reduceRight<Record<string, string> | undefined>(
         (found, [pattern, handler]) => {
             if (found) return found;
             const match = className.match(pattern);
@@ -25,11 +34,11 @@ function cssFor(tokens: UtilityToken[], classes: UtilityClassesConfig, className
     );
 }
 
-const starts = (classes: UtilityClassesConfig, tokens: UtilityToken[] = []) =>
-    utilityRules(tokens, classes).rules.map(([pattern]) => pattern.source.slice(1, -4));
+const starts = (classes: UtilityClassesConfig) =>
+    ruled({}, classes).rules.map(([pattern]) => pattern.source.slice(1, -4));
 
 describe("utilityRules", () => {
-    const palette = [color("color.primary"), color("color.secondary"), dimension("space.sm")];
+    const palette = { color: { primary: color(), secondary: color() }, space: { sm: px(8) } };
 
     it("writes the token's variable for the prefix and the path below source", () => {
         const classes = { color: { source: "color.*", prefix: "text" } };
@@ -41,14 +50,18 @@ describe("utilityRules", () => {
     });
 
     it("writes the variable by the name it was declared with", () => {
-        const tokens = [dimension("space.1/2", "--ds-space-1\\/2")];
         expect(
-            cssFor(tokens, { padding: { source: "space.*", prefix: "p" } }, "p-1/2"),
+            cssFor(
+                { space: { "1/2": px(2) } },
+                { padding: { source: "space.*", prefix: "p" } },
+                "p-1/2",
+                { prefix: "ds" },
+            ),
         ).toStrictEqual({ padding: "var(--ds-space-1\\/2)" });
     });
 
     it("starts classes with the source's first segment when there is no prefix", () => {
-        const tokens = [dimension("text.lg")];
+        const tokens = { text: { lg: px(18) } };
         expect(cssFor(tokens, { "font-size": { source: "text.*" } }, "text-lg")).toStrictEqual({
             "font-size": "var(--text-lg)",
         });
@@ -58,7 +71,7 @@ describe("utilityRules", () => {
     });
 
     it("joins a nested path with dashes, however its segments are written", () => {
-        const tokens = [dimension("space.big-gap.x"), dimension("space.inset.small")];
+        const tokens = { space: { "big-gap": { x: px(1) }, "inset": { small: px(2) } } };
         const classes = { padding: { source: "space.*", prefix: "p" } };
         expect(cssFor(tokens, classes, "p-big-gap-x")).toStrictEqual({
             padding: "var(--space-big-gap-x)",
@@ -69,40 +82,45 @@ describe("utilityRules", () => {
     });
 
     it("names a $root token's class after its group, as its variable is", () => {
-        const tokens = [color("color.accent.$root", "--color-accent"), color("color.$root")];
-        const classes = { "background-color": { source: "color.*", prefix: "bg", safelist: true } };
+        const tokens = { color: { $root: color(), accent: { $root: color() } } };
+        const classes = {
+            "background-color": { source: "color.*", prefix: "bg", safelist: true },
+        };
         expect(cssFor(tokens, classes, "bg-accent")).toStrictEqual({
             "background-color": "var(--color-accent)",
         });
         expect(cssFor(tokens, classes, "bg-accent-$root")).toBeUndefined();
-        expect(utilityRules(tokens, classes).safelist).toStrictEqual(["bg-accent"]);
+        expect(ruled(tokens, classes).safelist).toStrictEqual(["bg-accent"]);
     });
 
     it("takes only tokens of a type the property accepts, and any type for a custom property", () => {
-        const tokens = [color("thing.ink"), dimension("thing.gap")];
+        const tokens = { thing: { ink: color(), gap: px(4) } };
         expect(
             cssFor(tokens, { color: { source: "thing.*", prefix: "c" } }, "c-gap"),
         ).toBeUndefined();
         expect(
             cssFor(tokens, { "--x": { source: "thing.*", prefix: "x" } }, "x-gap"),
-        ).toStrictEqual({
-            "--x": "var(--thing-gap)",
-        });
+        ).toStrictEqual({ "--x": "var(--thing-gap)" });
     });
 
     it("gives no class to a token declared as several variables", () => {
-        const body: UtilityToken = {
-            path: "type.body",
-            type: "typography",
-            variables: [{ property: "font-size", name: "--type-body-font-size" }],
+        const body = {
+            $type: "typography",
+            $value: {
+                fontFamily: "Inter",
+                fontSize: { value: 16, unit: "px" },
+                fontWeight: 400,
+                letterSpacing: { value: 0, unit: "px" },
+                lineHeight: 1.5,
+            },
         };
         expect(
-            cssFor([body], { "--x": { source: "type.*", prefix: "x" } }, "x-body"),
+            cssFor({ type: { body } }, { "--x": { source: "type.*", prefix: "x" } }, "x-body"),
         ).toBeUndefined();
     });
 
     describe("directions", () => {
-        const space = [dimension("space.sm"), dimension("space.md")];
+        const space = { space: { sm: px(8), md: px(16) } };
 
         it("makes each direction listed, with its logical property", () => {
             const classes: UtilityClassesConfig = {
@@ -176,7 +194,7 @@ describe("utilityRules", () => {
     });
 
     it("strips the prefix from a path that repeats it, and still takes the class written in full", () => {
-        const tokens = [color("color.text.muted")];
+        const tokens = { color: { text: { muted: color() } } };
         const classes = { color: { source: "color.*", prefix: "text", stripDuplicates: true } };
         expect(cssFor(tokens, classes, "text-muted")).toStrictEqual({
             color: "var(--color-text-muted)",
@@ -188,13 +206,13 @@ describe("utilityRules", () => {
 
     describe("entries sharing a class start", () => {
         it("keep their directions", () => {
-            const space = [dimension("space.small"), dimension("space.medium")];
             const classes: UtilityClassesConfig = {
                 margin: [
                     { source: "space.*", prefix: "m", directions: ["all"] },
                     { source: "space.*", prefix: "m", directions: ["x", "bottom"] },
                 ],
             };
+            const space = { space: { small: px(4), medium: px(8) } };
             expect(cssFor(space, classes, "mt-small")).toStrictEqual({
                 "margin-block-start": "var(--space-small)",
             });
@@ -205,7 +223,7 @@ describe("utilityRules", () => {
         });
 
         it("are tried in the config's order", () => {
-            const tokens = [color("color.primary"), dimension("size.base")];
+            const tokens = { color: { primary: color() }, size: { base: px(16) } };
             const classes = {
                 "color": { source: "color.*", prefix: "brand" },
                 "background-color": { source: "color.*", prefix: "brand" },
@@ -222,17 +240,21 @@ describe("utilityRules", () => {
     });
 
     it("answers a class two tokens make with the first in file order", () => {
-        const tokens = [color("color.bg-offset", "--a"), color("color.bg.offset", "--b")];
+        const tokens = { color: { "bg-offset": color(), "bg": { offset: color() } } };
         expect(
-            cssFor(tokens, { color: { source: "color.*", prefix: "text" } }, "text-bg-offset"),
-        ).toStrictEqual({ color: "var(--a)" });
+            cssFor(tokens, { color: { source: "color.*", prefix: "text" } }, "text-bg-offset", {
+                variableName: (path) => path.replaceAll(".", "_"),
+            }),
+        ).toStrictEqual({ color: "var(--color_bg-offset)" });
     });
 
     it("lets a class reach past a rule whose start it also has", () => {
-        const tokens = [
-            { path: "font.weight.bold", type: "fontWeight", name: "--font-weight-bold" },
-            { path: "font.sans", type: "fontFamily", name: "--font-sans" },
-        ] satisfies UtilityToken[];
+        const tokens = {
+            font: {
+                weight: { bold: { $type: "fontWeight", $value: 700 } },
+                sans: { $type: "fontFamily", $value: "Inter" },
+            },
+        };
         const classes = {
             "font-weight": { source: "font.weight.*", prefix: "font-weight" },
             "font-family": { source: "font.*", prefix: "font" },
@@ -246,25 +268,26 @@ describe("utilityRules", () => {
     });
 
     it("keeps nothing between calls", () => {
+        const tokens = { color: { ink: color() } };
         const classes = { color: { source: "color.*", prefix: "text" } };
-        expect(cssFor([color("color.ink", "--ds-color-ink")], classes, "text-ink")).toStrictEqual({
+        expect(cssFor(tokens, classes, "text-ink", { prefix: "ds" })).toStrictEqual({
             color: "var(--ds-color-ink)",
         });
-        expect(cssFor([color("color.ink", "--color_ink")], classes, "text-ink")).toStrictEqual({
-            color: "var(--color_ink)",
-        });
+        expect(
+            cssFor(tokens, classes, "text-ink", {
+                variableName: (path) => path.replaceAll(".", "_"),
+            }),
+        ).toStrictEqual({ color: "var(--color_ink)" });
     });
 });
 
 describe("utilityRules' safelist", () => {
-    const tokens = [
-        color("color.primary"),
-        color("color.danger"),
-        color("color.text.muted"),
-        dimension("space.sm"),
-    ];
+    const tokens = {
+        color: { primary: color(), danger: color(), text: { muted: color() } },
+        space: { sm: px(8) },
+    };
     const safelistFor = (classes: UtilityClassesConfig) =>
-        [...utilityRules(tokens, classes).safelist].sort();
+        [...ruled(tokens, classes).safelist].sort();
 
     it("is empty when no entry asks for one", () => {
         expect(safelistFor({ color: { source: "color.*", prefix: "text" } })).toStrictEqual([]);
@@ -318,10 +341,118 @@ describe("utilityRules' safelist", () => {
                 { source: "space.*", prefix: "m", directions: ["x", "y"], safelist: ["sm"] },
             ],
         };
-        const { safelist } = utilityRules(tokens, classes);
+        const { safelist } = ruled(tokens, classes);
         expect(safelist.length).toBeGreaterThan(0);
         for (const className of safelist) {
             expect(cssFor(tokens, classes, className), className).toBeDefined();
         }
+    });
+});
+
+describe("utilityRules' warning for a class two tokens make", () => {
+    const warnings = (tokens: unknown, classes: UtilityClassesConfig, variables?: Variables) =>
+        ruled(tokens, classes, variables).diagnostics.map(({ kind, severity, path, message }) => [
+            kind,
+            severity,
+            path,
+            message,
+        ]);
+    const clash = (className: string, used: string, other: string) =>
+        `\`${className}\` could mean \`${used}\` or \`${other}\`, so it uses \`${used}\`: rename one, or change the entry's \`prefix\``;
+
+    it("on the token not used, naming both, once however many directions make it", () => {
+        const tokens = { color: { muted: color(), text: { muted: color() } } };
+        const classes: UtilityClassesConfig = {
+            color: { source: "color.*", prefix: "text", stripDuplicates: true },
+        };
+        expect(warnings(tokens, classes)).toStrictEqual([
+            [
+                "same-utility-class",
+                "warning",
+                "color.text.muted",
+                clash("text-muted", "color.muted", "color.text.muted"),
+            ],
+        ]);
+        const space = { space: { "big-gap": px(1), "big": { gap: px(2) } } };
+        expect(
+            warnings(
+                space,
+                { padding: { source: "space.*", prefix: "p", directions: ["all"] } },
+                { variableName: (path) => path.replaceAll(".", "_") },
+            ),
+        ).toStrictEqual([
+            [
+                "same-utility-class",
+                "warning",
+                "space.big.gap",
+                clash("p-big-gap", "space.big-gap", "space.big.gap"),
+            ],
+        ]);
+    });
+
+    it("across entries sharing a start", () => {
+        const tokens = { color: { brand: { primary: color() }, semantic: { primary: color() } } };
+        const classes: UtilityClassesConfig = {
+            color: [
+                { source: "color.brand.*", prefix: "text" },
+                { source: "color.semantic.*", prefix: "text" },
+            ],
+        };
+        expect(warnings(tokens, classes)).toStrictEqual([
+            [
+                "same-utility-class",
+                "warning",
+                "color.semantic.primary",
+                clash("text-primary", "color.brand.primary", "color.semantic.primary"),
+            ],
+        ]);
+    });
+
+    it("across starts, naming the later rule's token, as UnoCSS uses it", () => {
+        const tokens = { color: { x: { y: color() } }, tone: { y: color() } };
+        const classes: UtilityClassesConfig = {
+            "color": { source: "color.*", prefix: "text" },
+            "--tone": { source: "tone.*", prefix: "text-x" },
+        };
+        expect(cssFor(tokens, classes, "text-x-y")).toStrictEqual({ "--tone": "var(--tone-y)" });
+        expect(warnings(tokens, classes)).toStrictEqual([
+            [
+                "same-utility-class",
+                "warning",
+                "color.x.y",
+                clash("text-x-y", "tone.y", "color.x.y"),
+            ],
+        ]);
+    });
+
+    it("once for a pair, whichever of the two each class uses", () => {
+        const tokens = { color: { p: color() }, tone: { p: color() } };
+        const classes: UtilityClassesConfig = {
+            "color": { source: "color.*", prefix: "a" },
+            "--a": { source: "tone.*", prefix: "a" },
+            "--b": { source: "tone.*", prefix: "b" },
+            "--c": { source: "color.*", prefix: "b" },
+        };
+        expect(cssFor(tokens, classes, "a-p")).toStrictEqual({ color: "var(--color-p)" });
+        expect(cssFor(tokens, classes, "b-p")).toStrictEqual({ "--b": "var(--tone-p)" });
+        expect(warnings(tokens, classes)).toStrictEqual([
+            ["same-utility-class", "warning", "tone.p", clash("a-p", "color.p", "tone.p")],
+        ]);
+    });
+
+    it("not when both tokens write the same variable, or one token answers two entries", () => {
+        const tokens = { color: { "bg-offset": color(), "bg": { offset: color() } } };
+        expect(warnings(tokens, { color: { source: "color.*", prefix: "text" } })).toStrictEqual(
+            [],
+        );
+        expect(
+            warnings(
+                { color: { primary: color() } },
+                {
+                    "color": { source: "color.*", prefix: "brand" },
+                    "background-color": { source: "color.*", prefix: "brand" },
+                },
+            ),
+        ).toStrictEqual([]);
     });
 });

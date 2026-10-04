@@ -1,4 +1,4 @@
-import type { Document, Token, TokenType } from "@sugarcube-sh/dtcg";
+import type { Document, Token } from "@sugarcube-sh/dtcg";
 import type { InternalConfig } from "../../types/config.js";
 import { entries } from "../css/blocks.js";
 import { declarationOptions, declarations } from "../css/declarations.js";
@@ -6,8 +6,8 @@ import { declarationOptions, declarations } from "../css/declarations.js";
 export type UtilityVariable = { property: string; name: string };
 
 export type UtilityToken =
-    | { path: string; type: TokenType; name: string }
-    | { path: string; type: TokenType; variables: UtilityVariable[] };
+    | { token: Token; name: string }
+    | { token: Token; variables: UtilityVariable[] };
 
 /**
  * The tokens utility classes can use: each token the first permutation in the config's list
@@ -23,9 +23,8 @@ export function utilityTokens(doc: Document, config: InternalConfig): UtilityTok
         first.permutation,
         declarationOptions(config),
     ).declarations) {
-        const { path, type } = token;
         if (property === undefined) {
-            listed.push({ path, type, name });
+            listed.push({ token, name });
             continue;
         }
         const variables = parts.get(token);
@@ -35,7 +34,7 @@ export function utilityTokens(doc: Document, config: InternalConfig): UtilityTok
         }
         const firstPart = [{ property, name }];
         parts.set(token, firstPart);
-        listed.push({ path, type, variables: firstPart });
+        listed.push({ token, variables: firstPart });
     }
     return listed;
 }
