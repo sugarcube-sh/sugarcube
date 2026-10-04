@@ -78,75 +78,79 @@ export function cssValue(
 ): string | TypographyCSS | undefined;
 export function cssValue(
     of: Token | Part,
-    { replacement, colors = "native" }: CSSValueOptions = {},
+    options: CSSValueOptions = {},
 ): string | TypographyCSS | undefined {
     const whole = "path" in of ? parts(of) : of;
     if (!whole) return undefined;
+    return whole.type === "typography" ? typography(whole, options) : write(whole, options);
+}
 
-    const replaced = ({ ref }: PartBase<unknown>) => (ref ? replacement?.(ref) : undefined);
-    const variable = (part: PartBase<unknown>) => {
-        const answer = replaced(part);
-        return answer && "variable" in answer ? answer.variable : undefined;
+function replaced({ ref }: PartBase<unknown>, { replacement }: CSSValueOptions) {
+    return ref ? replacement?.(ref) : undefined;
+}
+
+function variable(part: PartBase<unknown>, options: CSSValueOptions): string | undefined {
+    const answer = replaced(part, options);
+    return answer && "variable" in answer ? answer.variable : undefined;
+}
+
+function write(part: Exclude<Part, TypographyPart>, options: CSSValueOptions): string {
+    const answer = replaced(part, options);
+    if (answer) return "variable" in answer ? `var(${answer.variable})` : answer.css;
+    const each = (inner: Exclude<Part, TypographyPart>) => write(inner, options);
+    switch (part.type) {
+        case "color":
+            return writeColor(part.resolved, options.colors ?? "native");
+        case "dimension":
+        case "duration":
+            return `${part.resolved.value}${part.resolved.unit}`;
+        case "cubicBezier":
+            return `cubic-bezier(${part.resolved.join(", ")})`;
+        case "number":
+        case "fontWeight":
+            return String(part.resolved);
+        case "fontFamily":
+            return part.resolved.map(quoteFont).join(", ");
+        case "strokeStyle":
+            return part.resolved.kind === "dash" ? "dashed" : part.resolved.keyword;
+        case "border":
+            return [part.width, part.style, part.color].map(each).join(" ");
+        case "transition":
+            return [part.duration, part.timingFunction, part.delay].map(each).join(" ");
+        case "shadow":
+            return part.layers.map((one) => layer(one, options)).join(", ");
+        case "gradient":
+            return part.stops.map((one) => stop(one, options)).join(", ");
+    }
+}
+
+function layer(part: ShadowLayerPart, options: CSSValueOptions): string {
+    const answer = replaced(part, options);
+    if (answer) return "variable" in answer ? `var(${answer.variable})` : answer.css;
+    const lengths = [part.offsetX, part.offsetY, part.blur, part.spread, part.color];
+    const written = lengths.map((one) => write(one, options));
+    return `${part.resolved.inset ? "inset " : ""}${written.join(" ")}`;
+}
+
+function stop({ color, position }: GradientStopPart, options: CSSValueOptions): string {
+    const named = variable(position, options);
+    const where = named
+        ? `clamp(0%, var(${named}) * 100%, 100%)`
+        : `${round(position.resolved * 100, 4)}%`;
+    return `${write(color, options)} ${where}`;
+}
+
+function typography(part: TypographyPart, options: CSSValueOptions): TypographyCSS {
+    const named = variable(part, options);
+    const each = (property: keyof TypographyCSS, value: Exclude<Part, TypographyPart>) =>
+        named ? `var(${named}-${property})` : write(value, options);
+    return {
+        "font-family": each("font-family", part.fontFamily),
+        "font-size": each("font-size", part.fontSize),
+        "font-weight": each("font-weight", part.fontWeight),
+        "letter-spacing": each("letter-spacing", part.letterSpacing),
+        "line-height": each("line-height", part.lineHeight),
     };
-
-    const write = (part: Exclude<Part, TypographyPart>): string => {
-        const answer = replaced(part);
-        if (answer) return "variable" in answer ? `var(${answer.variable})` : answer.css;
-        switch (part.type) {
-            case "color":
-                return writeColor(part.resolved, colors);
-            case "dimension":
-            case "duration":
-                return `${part.resolved.value}${part.resolved.unit}`;
-            case "cubicBezier":
-                return `cubic-bezier(${part.resolved.join(", ")})`;
-            case "number":
-            case "fontWeight":
-                return String(part.resolved);
-            case "fontFamily":
-                return part.resolved.map(quoteFont).join(", ");
-            case "strokeStyle":
-                return part.resolved.kind === "dash" ? "dashed" : part.resolved.keyword;
-            case "border":
-                return [part.width, part.style, part.color].map(write).join(" ");
-            case "transition":
-                return [part.duration, part.timingFunction, part.delay].map(write).join(" ");
-            case "shadow":
-                return part.layers.map(layer).join(", ");
-            case "gradient":
-                return part.stops.map(stop).join(", ");
-        }
-    };
-
-    const layer = (part: ShadowLayerPart): string => {
-        const answer = replaced(part);
-        if (answer) return "variable" in answer ? `var(${answer.variable})` : answer.css;
-        const lengths = [part.offsetX, part.offsetY, part.blur, part.spread, part.color];
-        return `${part.resolved.inset ? "inset " : ""}${lengths.map(write).join(" ")}`;
-    };
-
-    const stop = ({ color, position }: GradientStopPart): string => {
-        const named = variable(position);
-        const where = named
-            ? `clamp(0%, var(${named}) * 100%, 100%)`
-            : `${round(position.resolved * 100, 4)}%`;
-        return `${write(color)} ${where}`;
-    };
-
-    const typography = (part: TypographyPart): TypographyCSS => {
-        const named = variable(part);
-        const each = (property: keyof TypographyCSS, value: Exclude<Part, TypographyPart>) =>
-            named ? `var(${named}-${property})` : write(value);
-        return {
-            "font-family": each("font-family", part.fontFamily),
-            "font-size": each("font-size", part.fontSize),
-            "font-weight": each("font-weight", part.fontWeight),
-            "letter-spacing": each("letter-spacing", part.letterSpacing),
-            "line-height": each("line-height", part.lineHeight),
-        };
-    };
-
-    return whole.type === "typography" ? typography(whole) : write(whole);
 }
 
 const GENERIC_FAMILIES = new Set([
@@ -231,8 +235,12 @@ function fixed(component: ColorComponent, digits: number): string {
 }
 
 function round(value: number, digits: number): number {
-    const scaled = Number((Math.abs(value) * 10 ** digits).toPrecision(15));
-    return (Math.sign(value) * Math.round(scaled)) / 10 ** digits;
+    const factor = 10 ** digits;
+    const scaled = Math.abs(value) * factor;
+    // Computers store most decimals slightly off, so 40.12345 * 10000 comes out as
+    // 401234.49999999994 and would round down to 40.1234. Adding a tiny amount first
+    // makes it round up to 40.1235, as written.
+    return (Math.sign(value) * Math.round(scaled * (1 + 4 * Number.EPSILON))) / factor;
 }
 
 function hexOf(hex: string, alpha: number): string {

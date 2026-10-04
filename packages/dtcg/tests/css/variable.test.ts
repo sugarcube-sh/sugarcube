@@ -38,5 +38,6 @@ describe("cssVariable", () => {
     it("escapes what a naming function returns too", () => {
         expect(cssVariable("space.half", { name: () => "space/half" })).toBe("--space\\/half");
         expect(cssVariable("x", { name: () => "a\u0001b" })).toBe("--a\\1 b");
+        expect(cssVariable("x", { name: () => "a\u0000b" })).toBe("--a\uFFFDb");
     });
 });

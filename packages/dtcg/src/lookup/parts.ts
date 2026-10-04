@@ -35,98 +35,128 @@ import { referenceAt } from "./references.js";
  */
 export function parts(token: Token): Part | undefined {
     if (token.resolved === undefined) return undefined;
-    const base = <V>(resolved: V, at: JsonPath): PartBase<V> => {
-        const ref = referenceAt(token, at);
-        return ref ? { at, resolved, ref } : { at, resolved };
-    };
-    const simple = <T extends SimplePartType>(
-        type: T,
-        resolved: ValueByType[T],
-        at: JsonPath,
-    ): SimplePart<T> => ({ type, ...base(resolved, at) });
-    const strokeStyle = (resolved: StrokeStyleValue, at: JsonPath): StrokeStylePart =>
-        resolved.kind === "keyword"
-            ? { type: "strokeStyle", ...base(resolved, at) }
-            : {
-                  type: "strokeStyle",
-                  ...base(resolved, at),
-                  dashArray: resolved.dashArray.map((length, index) =>
-                      simple("dimension", length, [...at, "dashArray", index]),
-                  ),
-              };
-    const border = ({ color, width, style }: BorderValue, at: JsonPath) => ({
-        color: simple("color", color, [...at, "color"]),
-        width: simple("dimension", width, [...at, "width"]),
-        style: strokeStyle(style, [...at, "style"]),
-    });
-    const transition = ({ duration, delay, timingFunction }: TransitionValue, at: JsonPath) => ({
-        duration: simple("duration", duration, [...at, "duration"]),
-        delay: simple("duration", delay, [...at, "delay"]),
-        timingFunction: simple("cubicBezier", timingFunction, [...at, "timingFunction"]),
-    });
-    const layer = (resolved: ShadowLayer, at: JsonPath): ShadowLayerPart => ({
-        ...base(resolved, at),
-        color: simple("color", resolved.color, [...at, "color"]),
-        offsetX: simple("dimension", resolved.offsetX, [...at, "offsetX"]),
-        offsetY: simple("dimension", resolved.offsetY, [...at, "offsetY"]),
-        blur: simple("dimension", resolved.blur, [...at, "blur"]),
-        spread: simple("dimension", resolved.spread, [...at, "spread"]),
-    });
-    const stop = (resolved: GradientStop, at: JsonPath): GradientStopPart => ({
-        ...base(resolved, at),
-        color: simple("color", resolved.color, [...at, "color"]),
-        position: simple("number", resolved.position, [...at, "position"]),
-    });
-    const typography = (value: TypographyValue, at: JsonPath) => ({
-        fontFamily: simple("fontFamily", value.fontFamily, [...at, "fontFamily"]),
-        fontSize: simple("dimension", value.fontSize, [...at, "fontSize"]),
-        fontWeight: simple("fontWeight", value.fontWeight, [...at, "fontWeight"]),
-        letterSpacing: simple("dimension", value.letterSpacing, [...at, "letterSpacing"]),
-        lineHeight: simple("number", value.lineHeight, [...at, "lineHeight"]),
-    });
-
     switch (token.type) {
         case "strokeStyle":
-            return strokeStyle(token.resolved, []);
+            return strokeStyle(token, token.resolved, []);
         case "border":
-            return { type: "border", ...base(token.resolved, []), ...border(token.resolved, []) };
+            return {
+                type: "border",
+                ...base(token, token.resolved, []),
+                ...border(token, token.resolved, []),
+            };
         case "transition":
             return {
                 type: "transition",
-                ...base(token.resolved, []),
-                ...transition(token.resolved, []),
+                ...base(token, token.resolved, []),
+                ...transition(token, token.resolved, []),
             };
         case "shadow":
             return {
                 type: "shadow",
-                ...base(token.resolved, []),
-                layers: token.resolved.map((each, index) => layer(each, [index])),
+                ...base(token, token.resolved, []),
+                layers: token.resolved.map((each, index) => layer(token, each, [index])),
             };
         case "gradient":
             return {
                 type: "gradient",
-                ...base(token.resolved, []),
-                stops: token.resolved.map((each, index) => stop(each, [index])),
+                ...base(token, token.resolved, []),
+                stops: token.resolved.map((each, index) => stop(token, each, [index])),
             };
         case "typography":
             return {
                 type: "typography",
-                ...base(token.resolved, []),
-                ...typography(token.resolved, []),
+                ...base(token, token.resolved, []),
+                ...typography(token, token.resolved, []),
             };
         case "color":
-            return simple("color", token.resolved, []);
+            return simple(token, "color", token.resolved, []);
         case "dimension":
-            return simple("dimension", token.resolved, []);
+            return simple(token, "dimension", token.resolved, []);
         case "duration":
-            return simple("duration", token.resolved, []);
+            return simple(token, "duration", token.resolved, []);
         case "cubicBezier":
-            return simple("cubicBezier", token.resolved, []);
+            return simple(token, "cubicBezier", token.resolved, []);
         case "number":
-            return simple("number", token.resolved, []);
+            return simple(token, "number", token.resolved, []);
         case "fontFamily":
-            return simple("fontFamily", token.resolved, []);
+            return simple(token, "fontFamily", token.resolved, []);
         case "fontWeight":
-            return simple("fontWeight", token.resolved, []);
+            return simple(token, "fontWeight", token.resolved, []);
     }
+}
+
+function base<V>(token: Token, resolved: V, at: JsonPath): PartBase<V> {
+    const ref = referenceAt(token, at);
+    return ref ? { at, resolved, ref } : { at, resolved };
+}
+
+function simple<T extends SimplePartType>(
+    token: Token,
+    type: T,
+    resolved: ValueByType[T],
+    at: JsonPath,
+): SimplePart<T> {
+    const ref = referenceAt(token, at);
+    return ref ? { type, at, resolved, ref } : { type, at, resolved };
+}
+
+function strokeStyle(token: Token, resolved: StrokeStyleValue, at: JsonPath): StrokeStylePart {
+    return resolved.kind === "keyword"
+        ? { type: "strokeStyle", ...base(token, resolved, at) }
+        : {
+              type: "strokeStyle",
+              ...base(token, resolved, at),
+              dashArray: resolved.dashArray.map((length, index) =>
+                  simple(token, "dimension", length, [...at, "dashArray", index]),
+              ),
+          };
+}
+
+function border(token: Token, { color, width, style }: BorderValue, at: JsonPath) {
+    return {
+        color: simple(token, "color", color, [...at, "color"]),
+        width: simple(token, "dimension", width, [...at, "width"]),
+        style: strokeStyle(token, style, [...at, "style"]),
+    };
+}
+
+function transition(
+    token: Token,
+    { duration, delay, timingFunction }: TransitionValue,
+    at: JsonPath,
+) {
+    return {
+        duration: simple(token, "duration", duration, [...at, "duration"]),
+        delay: simple(token, "duration", delay, [...at, "delay"]),
+        timingFunction: simple(token, "cubicBezier", timingFunction, [...at, "timingFunction"]),
+    };
+}
+
+function layer(token: Token, resolved: ShadowLayer, at: JsonPath): ShadowLayerPart {
+    return {
+        ...base(token, resolved, at),
+        color: simple(token, "color", resolved.color, [...at, "color"]),
+        offsetX: simple(token, "dimension", resolved.offsetX, [...at, "offsetX"]),
+        offsetY: simple(token, "dimension", resolved.offsetY, [...at, "offsetY"]),
+        blur: simple(token, "dimension", resolved.blur, [...at, "blur"]),
+        spread: simple(token, "dimension", resolved.spread, [...at, "spread"]),
+    };
+}
+
+function stop(token: Token, resolved: GradientStop, at: JsonPath): GradientStopPart {
+    return {
+        ...base(token, resolved, at),
+        color: simple(token, "color", resolved.color, [...at, "color"]),
+        position: simple(token, "number", resolved.position, [...at, "position"]),
+    };
+}
+
+function typography(token: Token, value: TypographyValue, at: JsonPath) {
+    return {
+        fontFamily: simple(token, "fontFamily", value.fontFamily, [...at, "fontFamily"]),
+        fontSize: simple(token, "dimension", value.fontSize, [...at, "fontSize"]),
+        fontWeight: simple(token, "fontWeight", value.fontWeight, [...at, "fontWeight"]),
+        letterSpacing: simple(token, "dimension", value.letterSpacing, [...at, "letterSpacing"]),
+        lineHeight: simple(token, "number", value.lineHeight, [...at, "lineHeight"]),
+    };
 }

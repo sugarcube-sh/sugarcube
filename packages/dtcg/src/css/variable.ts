@@ -35,10 +35,11 @@ export function cssVariable(path: string, options: CSSVariableOptions = {}): str
 }
 
 function escape(name: string): string {
+    if (/^[\w-]*$/.test(name)) return name;
     let escaped = "";
     for (const character of name) {
-        const code = character.codePointAt(0) ?? 0;
-        if (code === 0) escaped += "�";
+        const code = character.charCodeAt(0);
+        if (code === 0) escaped += "\uFFFD";
         else if (code < 0x20 || code === 0x7f) escaped += `\\${code.toString(16)} `;
         else if (code >= 0x80 || /[\w-]/.test(character)) escaped += character;
         else escaped += `\\${character}`;
