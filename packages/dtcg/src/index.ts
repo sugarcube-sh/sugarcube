@@ -858,6 +858,11 @@ export interface Document {
      */
     usedBy: Record<string, "everyone" | Input[]>;
     permutations: Permutation[];
+    /**
+     * How the values were read. To read a value from the Document again, such as one inside
+     * `$extensions`, the same way, give these to `parseValue` or `extensionReader`.
+     */
+    parseOptions: Required<ParseOptions>;
     /** Every error, warning and note, in file order. {@link errors} picks out the errors. */
     diagnostics: Diagnostic[];
 }

@@ -38,7 +38,7 @@ export function emitCSS(
     if (reported.some(({ kind }) => kind === "default-required"))
         return { files: [], diagnostics: [...reported, ...renamed, ...deprecated] };
 
-    const options = declarationOptions(config);
+    const options = declarationOptions(doc, config);
     const toWrite = entries(doc, config);
     const declaredIn = new Map<Permutation, Declared>();
     const declared = (permutation: Permutation) => {
@@ -57,6 +57,7 @@ export function emitCSS(
             ...textZoomWarnings(
                 toWrite.map(({ permutation }) => permutation),
                 options.fluid,
+                options.parseOptions,
             ),
             ...missingHex([...declaredIn.values()]),
             ...sameNames([...declaredIn.values()]),

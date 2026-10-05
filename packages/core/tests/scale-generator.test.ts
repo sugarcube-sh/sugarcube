@@ -1,6 +1,5 @@
 import { type Document, readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
-import { parseOptions } from "../src/shared/parse-options.js";
 import { scaleGenerator } from "../src/shared/scale/generator.js";
 
 const base = { min: { value: 1, unit: "rem" }, max: { value: 1.125, unit: "rem" } };
@@ -16,7 +15,7 @@ function read(group: Record<string, unknown>): Document {
     const text = JSON.stringify({ size: { $type: "dimension", ...group } });
     return readFromMemory(
         { files: { "tokens.json": text } },
-        { generators: [scaleGenerator], ...parseOptions },
+        { generators: [scaleGenerator], ignoreUnknownProperties: true },
     );
 }
 

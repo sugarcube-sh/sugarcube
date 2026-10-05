@@ -1,4 +1,12 @@
-import { type Permutation, type Source, type Token, isAlias, token } from "@sugarcube-sh/dtcg";
+import {
+    type Document,
+    type ParseOptions,
+    type Permutation,
+    type Source,
+    type Token,
+    isAlias,
+    token,
+} from "@sugarcube-sh/dtcg";
 import { cssVariable } from "@sugarcube-sh/dtcg/css";
 import type { FluidConfig, InternalConfig } from "../../types/config.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
@@ -23,27 +31,32 @@ export interface DeclarationOptions {
     variable: (path: string) => string;
     fluid: FluidConfig;
     polyfill: boolean;
+    parseOptions: ParseOptions;
 }
 
-export function declarationOptions(config: InternalConfig): DeclarationOptions {
+export function declarationOptions(doc: Document, config: InternalConfig): DeclarationOptions {
     const { prefix, variableName, transforms } = config.variables;
     return {
         variable: (path) => cssVariable(path, { prefix, name: variableName }),
         fluid: transforms.fluid,
         polyfill: transforms.colorFallbackStrategy === "polyfill",
+        parseOptions: doc.parseOptions,
     };
 }
 
 export function declarations(
     permutation: Permutation,
-    { variable, fluid, polyfill }: DeclarationOptions,
+    { variable, fluid, polyfill, parseOptions }: DeclarationOptions,
 ): Declared {
     const isPrivate = (each: Token) => privateSource(permutation.sources[each.source.index]);
     const writer = (colors: "native" | "hex") => {
         const renderedFor = new Map<Token, Written | undefined>();
         const rendered = (each: Token): Written | undefined => {
             if (!renderedFor.has(each)) {
-                renderedFor.set(each, renderToken(each, replacementFor, { fluid, colors }));
+                renderedFor.set(
+                    each,
+                    renderToken(each, replacementFor, { fluid, colors, parseOptions }),
+                );
             }
             return renderedFor.get(each);
         };

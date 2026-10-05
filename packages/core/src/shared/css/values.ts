@@ -1,9 +1,14 @@
-import { type Alias, type Pointer, type Token, referenceAt } from "@sugarcube-sh/dtcg";
+import {
+    type Alias,
+    type ParseOptions,
+    type Pointer,
+    type Token,
+    referenceAt,
+} from "@sugarcube-sh/dtcg";
 import { type Replacement, type TypographyCSS, cssValue } from "@sugarcube-sh/dtcg/css";
 import type { FluidConfig } from "../../types/config.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { type FluidRange, pixels, readFluid } from "../fluid.js";
-import { parseOptions } from "../parse-options.js";
 import { calculateClamp, roundValue } from "./utopia.js";
 
 export type Written = string | TypographyCSS;
@@ -15,11 +20,11 @@ export type ReplacementFor = (ref: Alias | Pointer) => WrittenReplacement | unde
 export function renderToken(
     token: Token,
     replacementFor: ReplacementFor,
-    options: { fluid: FluidConfig; colors: "native" | "hex" },
+    options: { fluid: FluidConfig; colors: "native" | "hex"; parseOptions: ParseOptions },
 ): Written | undefined {
     if (token.resolved === undefined) return undefined;
     if (token.type === "dimension") {
-        const fluid = readFluid(token.extensions?.[SUGARCUBE_NAMESPACE], parseOptions);
+        const fluid = readFluid(token.extensions?.[SUGARCUBE_NAMESPACE], options.parseOptions);
         if (!fluid.ok) return undefined;
         if (fluid.value) return clamp(fluid.value, options.fluid);
     }

@@ -123,7 +123,10 @@ function toDocument(
     }: ReadOptions,
 ): Document {
     const found: Document["diagnostics"] = [];
-    const parseOptions = { hexStringColors, ignoreUnknownProperties };
+    const parseOptions = {
+        hexStringColors: hexStringColors ?? false,
+        ignoreUnknownProperties: ignoreUnknownProperties ?? false,
+    };
     const readValue = createValueReader(found, parseOptions);
     let generating = 0;
     const generate = (merged: Merged, permutation: number) => {
@@ -152,6 +155,7 @@ function toDocument(
         modifiers: loaded.modifiers,
         usedBy: loaded.usedBy,
         permutations,
+        parseOptions,
         diagnostics: [...loaded.diagnostics, ...collapse(found, permutations.length)],
     };
 }

@@ -131,6 +131,22 @@ describe("what is set aside is a warning, and what cannot be read an error", () 
     });
 });
 
+describe("the options a Document was read with", () => {
+    it("are recorded, so its values can be read again the same way", () => {
+        const options = { hexStringColors: true, ignoreUnknownProperties: true };
+        const doc = readFromMemory({ files: { "tokens.json": valid } }, options);
+        expect(doc.parseOptions).toStrictEqual(options);
+    });
+
+    it("are the defaults when none are given", () => {
+        const doc = readFromMemory({ files: { "tokens.json": valid } });
+        expect(doc.parseOptions).toStrictEqual({
+            hexStringColors: false,
+            ignoreUnknownProperties: false,
+        });
+    });
+});
+
 describe("read", () => {
     it("asks for each file by the entry's folder, and keeps paths relative to it", async () => {
         const readText = vi.fn(async () => valid);

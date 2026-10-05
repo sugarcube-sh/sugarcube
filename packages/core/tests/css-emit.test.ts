@@ -1385,6 +1385,23 @@ describe("emitCSS", () => {
             ]);
         });
 
+        it("reading a fluid range as the Document's values were read", () => {
+            const config = fillDefaults({
+                variables: {
+                    path: "variables.css",
+                    transforms: { fluid: { min: 320, max: 1200 } },
+                },
+            });
+            const files = {
+                "tokens.json": JSON.stringify({
+                    step: fluid({ min: { ...px(16), clamp: true }, max: px(20) }),
+                }),
+            };
+            const strict = { ...readOptions(config), ignoreUnknownProperties: false };
+            const { files: written } = emitCSS(readFromMemory({ files }, strict), config);
+            expect(written[0]?.css ?? "").not.toContain("clamp(");
+        });
+
         it("and reports a fluid range it cannot read, leaving that token out", () => {
             const { files, diagnostics } = read({
                 word: fluid("big"),

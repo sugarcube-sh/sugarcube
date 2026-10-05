@@ -11,7 +11,6 @@ import {
 import { type ExtensionResult, extensionReader, isJsonObject } from "@sugarcube-sh/dtcg/values";
 import { ErrorMessages } from "./constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "./extensions.js";
-import { parseOptions } from "./parse-options.js";
 
 export interface FluidRange {
     min: DimensionValue;
@@ -42,14 +41,15 @@ export function readFluid(
 export function fluidRangeOf(
     permutation: Permutation,
     from: Token,
+    options: ParseOptions,
 ): { token: Token; range: FluidRange } | undefined {
     if (from.type !== "dimension" || from.resolved === undefined) return undefined;
-    const own = readFluid(from.extensions?.[SUGARCUBE_NAMESPACE], parseOptions);
+    const own = readFluid(from.extensions?.[SUGARCUBE_NAMESPACE], options);
     if (!own.ok) return undefined;
     if (own.value) return { token: from, range: own.value };
     const whole = referenceAt(from, []);
     const target = whole && isAlias(whole) ? token(permutation, whole.alias) : undefined;
-    return target && fluidRangeOf(permutation, target);
+    return target && fluidRangeOf(permutation, target, options);
 }
 
 export function pixels({ value, unit }: DimensionValue): number {
