@@ -39,13 +39,19 @@ const utilityClassesSchema = z
     .superRefine((classes, ctx) => {
         for (const [property, listed] of Object.entries(classes)) {
             for (const [index, { source }] of [listed].flat().entries()) {
-                if (!source.includes("*") || source.endsWith(".*")) continue;
+                const message =
+                    source === ""
+                        ? ErrorMessages.UTILITIES.EMPTY_SOURCE(property)
+                        : source.includes("*") && !source.endsWith(".*")
+                          ? ErrorMessages.UTILITIES.INVALID_SOURCE_PATTERN(property, source)
+                          : undefined;
+                if (message === undefined) continue;
                 ctx.addIssue({
                     code: "custom",
                     path: Array.isArray(listed)
                         ? [property, index, "source"]
                         : [property, "source"],
-                    message: ErrorMessages.UTILITIES.INVALID_SOURCE_PATTERN(property, source),
+                    message,
                 });
             }
         }

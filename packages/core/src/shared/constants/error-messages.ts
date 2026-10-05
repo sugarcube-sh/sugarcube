@@ -281,8 +281,8 @@ export const ErrorMessages = {
         DUPLICATE_PREFIX: (prefix: string, tokenType: string) =>
             `Duplicate prefix "${prefix}" found in property mappings for ${tokenType} token type. Each property mapping must have a unique prefix to avoid class name collisions.`,
 
-        MISSING_SOURCE: (property: string) =>
-            `Utility config for '${property}' must have a valid 'source' property`,
+        EMPTY_SOURCE: (property: string) =>
+            `Utility config for '${property}' has an empty source. Name the group its tokens come from (e.g., 'color.*').`,
 
         INVALID_SOURCE_PATTERN: (property: string, source: string) =>
             `Utility config for '${property}' has invalid source pattern '${source}'. Only patterns ending with '.*' are supported (e.g., 'color.*', 'font.weight.*').`,

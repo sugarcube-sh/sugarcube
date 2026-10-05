@@ -31,4 +31,10 @@ describe("utility classes schema", () => {
             }),
         ).toStrictEqual([ErrorMessages.UTILITIES.INVALID_SOURCE_PATTERN("margin", "space*")]);
     });
+
+    it("refuses an empty source, naming the property", () => {
+        expect(issues({ "background-color": { source: "", prefix: "bg" } })).toStrictEqual([
+            "Utility config for 'background-color' has an empty source. Name the group its tokens come from (e.g., 'color.*').",
+        ]);
+    });
 });
