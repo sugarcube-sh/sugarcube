@@ -50,7 +50,7 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
     },
     "utility-without-classes": {
         severity: "warning",
-        message: (detail) => `${entryName(detail)} makes no classes: ${withoutClasses(detail)}`,
+        message: (detail) => `${entryName(detail)} makes no classes: ${reasonText(detail)}`,
     },
     "safelist-without-token": {
         severity: "warning",
@@ -59,7 +59,7 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
     },
 };
 
-function withoutClasses(detail: UtilityWithoutClasses): string {
+function reasonText(detail: UtilityWithoutClasses): string {
     const { property, source } = detail;
     switch (detail.reason) {
         case "no-tokens":

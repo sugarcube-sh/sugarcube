@@ -27,7 +27,6 @@ interface Entry {
     source: string;
     parts: Map<string, [Named, ...Named[]]>;
     skipped: Skipped[];
-    starts: string[];
 }
 
 interface Use {
@@ -89,8 +88,8 @@ const TYPES: Record<string, TokenType[]> = {
  * token's path below `source`, as its variable has it), and writes that token's variable. Rules
  * come in the config's order, each shorthand before its longhands; entries sharing a start are
  * tried in the config's order, and among tokens making the same class the first in file order is
- * used. A class two tokens with different variables make is reported, on the token not used,
- * and so is an entry that makes no classes, with the reason, and a part its `safelist` names that no
+ * used. A class two tokens with different variables make is reported, on the token not used;
+ * so is an entry that makes no classes, with the reason, and a part its `safelist` names that no
  * token under `source` makes.
  */
 export function utilityRules(
@@ -107,13 +106,7 @@ export function utilityRules(
             const { parts, skipped } = partsFor(tokens, config, property);
             const starts = startsFor(config, property);
             const about = several ? { property, entry: index } : { property };
-            const entry = {
-                about,
-                source: config.source,
-                parts,
-                skipped,
-                starts: starts.map(({ start }) => start),
-            };
+            const entry = { about, source: config.source, parts, skipped };
             entries.push(entry);
             const find = (part: string) => parts.get(stripped(part, config))?.[0].name;
             const named = Array.isArray(config.safelist) ? config.safelist : [];
