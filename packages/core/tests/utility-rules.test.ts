@@ -112,6 +112,26 @@ describe("utilityRules", () => {
         ).toStrictEqual({ "--x": "var(--thing-gap)" });
     });
 
+    it("takes a dimension for line-height and a number for font-weight, as CSS does", () => {
+        const tokens = {
+            leading: { loose: px(24), tight: { $type: "number", $value: 1.1 } },
+            weight: { bold: { $type: "number", $value: 700 } },
+        };
+        const classes: UtilityClassesConfig = {
+            "line-height": { source: "leading.*" },
+            "font-weight": { source: "weight.*" },
+        };
+        expect(cssFor(tokens, classes, "leading-loose")).toStrictEqual({
+            "line-height": "var(--leading-loose)",
+        });
+        expect(cssFor(tokens, classes, "leading-tight")).toStrictEqual({
+            "line-height": "var(--leading-tight)",
+        });
+        expect(cssFor(tokens, classes, "weight-bold")).toStrictEqual({
+            "font-weight": "var(--weight-bold)",
+        });
+    });
+
     it("gives no class to a token declared as several variables", () => {
         const body = {
             $type: "typography",
