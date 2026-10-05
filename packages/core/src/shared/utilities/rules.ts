@@ -43,6 +43,12 @@ interface Answer {
     start: string;
 }
 
+interface Lost {
+    starts: Set<string>;
+    by: Set<Entry>;
+    silent: boolean;
+}
+
 const SIDES = [
     { direction: "x", letter: "x", logical: "inline" },
     { direction: "y", letter: "y", logical: "block" },
@@ -123,6 +129,7 @@ export function utilityRules(
         }
     }
     const answered = answers(byStart);
+    const lost = lostBy(answered);
     return {
         rules: [...byStart].map(([start, uses]) => [
             new RegExp(`^${escaped(start)}-.+$`),
@@ -138,7 +145,7 @@ export function utilityRules(
         safelist: [...safelist],
         diagnostics: [
             ...sameClasses(answered),
-            ...entries.flatMap((entry) => withoutClasses(entry, answered)),
+            ...entries.flatMap((entry) => withoutClasses(entry, lost)),
         ],
     };
 }
@@ -177,8 +184,8 @@ function sameClasses(answered: Map<string, [Answer, ...Answer[]]>): Reported[] {
     return [...found.values()];
 }
 
-function withoutClasses(entry: Entry, answered: Map<string, [Answer, ...Answer[]]>): Reported[] {
-    const why = entry.parts.size === 0 ? emptied(entry) : answeredFirst(entry, answered);
+function withoutClasses(entry: Entry, lost: Map<Entry, Lost>): Reported[] {
+    const why = entry.parts.size === 0 ? emptied(entry) : answeredFirst(lost.get(entry));
     if (why === undefined) return [];
     return [
         diagnostic("utility-without-classes", { ...entry.about, source: entry.source, ...why }),
@@ -199,25 +206,35 @@ function emptied({ about, source, skipped }: Entry): UtilityWithoutClassesReason
     return undefined;
 }
 
-function answeredFirst(
-    entry: Entry,
-    answered: Map<string, [Answer, ...Answer[]]>,
-): UtilityWithoutClassesReason | undefined {
-    const starts = new Set<string>();
-    const by = new Set<Entry>();
-    let silent = false;
+function lostBy(answered: Map<string, [Answer, ...Answer[]]>): Map<Entry, Lost> {
+    const made = new Set<Entry>();
+    const lost = new Map<Entry, Lost>();
     for (const [first, ...others] of answered.values()) {
-        if (first.entry === entry) return undefined;
+        made.add(first.entry);
         for (const other of others) {
-            if (other.entry !== entry) continue;
-            if (sameVariable(first, other) && first.property === other.property) return undefined;
-            starts.add(other.start);
-            by.add(first.entry);
-            silent ||= sameVariable(first, other);
+            if (sameVariable(first, other) && first.property === other.property) {
+                made.add(other.entry);
+                continue;
+            }
+            const found = lost.get(other.entry) ?? {
+                starts: new Set(),
+                by: new Set(),
+                silent: false,
+            };
+            found.starts.add(other.start);
+            found.by.add(first.entry);
+            found.silent ||= sameVariable(first, other);
+            lost.set(other.entry, found);
         }
     }
-    if (!silent) return undefined;
-    return { reason: "answered-first", starts: [...starts], by: [...by].map(({ about }) => about) };
+    for (const entry of made) lost.delete(entry);
+    return lost;
+}
+
+function answeredFirst(lost: Lost | undefined): UtilityWithoutClassesReason | undefined {
+    if (!lost?.silent) return undefined;
+    const by = [...lost.by].map(({ about }) => about);
+    return { reason: "answered-first", starts: [...lost.starts], by };
 }
 
 function sameVariable(first: Answer, other: Answer): boolean {
