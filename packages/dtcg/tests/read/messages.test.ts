@@ -68,7 +68,7 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { property: "$extends", expected: "reference" },
     ],
     "missing-type": [{}],
-    "unknown-type": [{ type: "colour" }],
+    "unknown-type": [{ type: "colour" }, { type: "" }],
     "invalid-value": [
         { at: ["$value"], type: "dimension", reason: "wrong-shape", value: 16 },
         { at: ["$value"], type: "shadow", reason: "wrong-shape", value: "0 1px 2px black" },

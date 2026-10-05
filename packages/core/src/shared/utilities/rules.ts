@@ -106,6 +106,10 @@ export function utilityRules(
             const { parts, skipped } = partsFor(tokens, config, property);
             const starts = startsFor(config, property);
             const about = several ? { property, entry: index } : { property };
+            if ([config.directions].flat().includes("full")) {
+                const option = 'directions: "full"';
+                unmatched.push(diagnostic("option-deprecated", { option, ...about }));
+            }
             const entry = { about, source: config.source, parts, skipped };
             entries.push(entry);
             const find = (part: string) => parts.get(stripped(part, config))?.[0].name;

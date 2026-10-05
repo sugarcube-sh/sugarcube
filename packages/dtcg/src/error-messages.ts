@@ -167,7 +167,10 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "unknown-type": {
         severity: "error",
-        message: ({ type }) => `\`${type}\` is not a token type`,
+        message: ({ type }) =>
+            type === ""
+                ? "`$type` is empty, and a token needs a type"
+                : `\`${type}\` is not a token type`,
     },
     "invalid-value": {
         severity: "error",

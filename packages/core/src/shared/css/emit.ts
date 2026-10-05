@@ -31,8 +31,12 @@ export function emitCSS(
 ): { files: CSSFileOutput; diagnostics: Reported[] } {
     const reported = doc.diagnostics.map(asReported);
     const { redeclare, renamed } = redeclaring(config);
+    const deprecated =
+        config.variables.transforms.colorFallbackStrategy === "polyfill"
+            ? [diagnostic("option-deprecated", { option: 'colorFallbackStrategy: "polyfill"' })]
+            : [];
     if (reported.some(({ kind }) => kind === "default-required"))
-        return { files: [], diagnostics: [...reported, ...renamed] };
+        return { files: [], diagnostics: [...reported, ...renamed, ...deprecated] };
 
     const options = declarationOptions(config);
     const toWrite = entries(doc, config);
@@ -49,6 +53,7 @@ export function emitCSS(
         diagnostics: [
             ...reported,
             ...renamed,
+            ...deprecated,
             ...textZoomWarnings(
                 toWrite.map(({ permutation }) => permutation),
                 options.fluid,

@@ -601,7 +601,22 @@ describe("emitCSS", () => {
             );
         });
 
-        it("reporting a color with no hex to fall back to, and writing it as it is", () => {
+        it("warning, once, that polyfill will be removed", () => {
+            const config = fillDefaults({ variables: { path: "variables.css", ...polyfill } });
+            const files = { "tokens.json": JSON.stringify({ ink: color("#111111") }) };
+            const { diagnostics } = emitCSS(readFromMemory({ files }, readOptions(config)), config);
+            expect(
+                diagnostics.map(({ kind, severity, message }) => [kind, severity, message]),
+            ).toStrictEqual([
+                [
+                    "option-deprecated",
+                    "warning",
+                    '`colorFallbackStrategy: "polyfill"` is deprecated and will be removed in a later release',
+                ],
+            ]);
+        });
+
+        it("warning about a color with no hex to fall back to, and writing it as it is", () => {
             const config = fillDefaults({ variables: { path: "variables.css", ...polyfill } });
             const files = {
                 "tokens.json": JSON.stringify({
@@ -614,16 +629,13 @@ describe("emitCSS", () => {
             );
             expect(written[0]?.css).toBe(":root {\n    --deep: lab(50 20 -30);\n}\n");
             expect(
-                diagnostics.map(({ kind, severity, path, message }) => [
-                    kind,
-                    severity,
-                    path,
-                    message,
-                ]),
+                diagnostics
+                    .filter(({ kind }) => kind === "fallback-missing")
+                    .map(({ kind, severity, path, message }) => [kind, severity, path, message]),
             ).toStrictEqual([
                 [
                     "fallback-missing",
-                    "error",
+                    "warning",
                     "deep",
                     'this `lab` color needs a `hex` to fall back to when `colorFallbackStrategy` is `"polyfill"`: add one, or use `"native"` if every browser you support has `lab`',
                 ],
