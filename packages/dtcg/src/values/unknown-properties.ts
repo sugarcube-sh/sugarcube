@@ -12,15 +12,10 @@ export function unknownProperties(
     const ignored: IgnoredProperty[] = [];
     for (const name of Object.keys(raw)) {
         if (defines(name)) continue;
-        if (name !== "$ref" && !options?.ignoreUnknownProperties) {
-            errors.push(
-                valueError([...at, name], { type, reason: "unknown-property", property: name }),
-            );
-            continue;
-        }
-        if (name === "$ref")
-            errors.push(valueError([...at, name], { type, reason: "pointer-not-alone" }));
-        else ignored.push(ignoredProperty([...at, name], type, name));
+        const path = [...at, name];
+        if (name === "$ref") errors.push(valueError(path, { type, reason: "pointer-not-alone" }));
+        else if (options?.ignoreUnknownProperties) ignored.push(ignoredProperty(path, type, name));
+        else errors.push(valueError(path, { type, reason: "unknown-property", property: name }));
     }
     return ignored;
 }

@@ -44,6 +44,12 @@ export { compositeParts } from "./values/composite-parts.js";
  *
  * @example
  * parseColor({ colorSpace: "srgb", components: [1, 0, 1], name: "magenta" }, [])
+ * // { ok: false, errors: [{ kind: "invalid-value", path: ["name"], … }], ignored: [] }
+ *
+ * @example
+ * parseColor({ colorSpace: "srgb", components: [1, 0, 1], name: "magenta" }, [], {
+ *   ignoreUnknownProperties: true,
+ * })
  * // read without `name`, which is in `ignored`:
  * // [{ kind: "unknown-property", path: ["name"], detail: { type: "color", property: "name" }, … }]
  */
