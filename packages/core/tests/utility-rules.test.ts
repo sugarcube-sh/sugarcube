@@ -10,12 +10,42 @@ type Variables = Parameters<typeof fillDefaults>[0]["variables"];
 
 const color = (value = "#111111") => ({ $type: "color", $value: value });
 const px = (value: number) => ({ $type: "dimension", $value: { value, unit: "px" } });
+const shadow = {
+    $type: "shadow",
+    $value: {
+        offsetX: { value: 0, unit: "px" },
+        offsetY: { value: 1, unit: "px" },
+        blur: { value: 4, unit: "px" },
+        spread: { value: 0, unit: "px" },
+        color: "#00000040",
+    },
+};
+const typography = {
+    $type: "typography",
+    $value: {
+        fontFamily: "Inter",
+        fontSize: { value: 16, unit: "px" },
+        fontWeight: 400,
+        letterSpacing: { value: 0, unit: "px" },
+        lineHeight: 1.5,
+    },
+};
+
+function ruledFrom(
+    files: Record<string, unknown>,
+    classes: UtilityClassesConfig,
+    variables: Variables = {},
+) {
+    const config = fillDefaults({ variables: { path: "variables.css", ...variables } });
+    const texts = Object.fromEntries(
+        Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
+    );
+    const doc = readFromMemory({ files: texts }, readOptions(config));
+    return utilityRules(utilityTokens(doc, config), classes);
+}
 
 function ruled(tokens: unknown, classes: UtilityClassesConfig, variables: Variables = {}) {
-    const config = fillDefaults({ variables: { path: "variables.css", ...variables } });
-    const files = { "tokens.json": JSON.stringify(tokens) };
-    const doc = readFromMemory({ files }, readOptions(config));
-    return utilityRules(utilityTokens(doc, config), classes);
+    return ruledFrom({ "tokens.json": tokens }, classes, variables);
 }
 
 function cssFor(
@@ -112,19 +142,43 @@ describe("utilityRules", () => {
         ).toStrictEqual({ "--x": "var(--thing-gap)" });
     });
 
-    it("gives no class to a token declared as several variables", () => {
-        const body = {
-            $type: "typography",
-            $value: {
-                fontFamily: "Inter",
-                fontSize: { value: 16, unit: "px" },
-                fontWeight: 400,
-                letterSpacing: { value: 0, unit: "px" },
-                lineHeight: 1.5,
-            },
+    it("takes a dimension for line-height and a number for font-weight, as CSS does", () => {
+        const tokens = {
+            leading: { loose: px(24), tight: { $type: "number", $value: 1.1 } },
+            weight: { bold: { $type: "number", $value: 700 } },
         };
+        const classes: UtilityClassesConfig = {
+            "line-height": { source: "leading.*" },
+            "font-weight": { source: "weight.*" },
+        };
+        expect(cssFor(tokens, classes, "leading-loose")).toStrictEqual({
+            "line-height": "var(--leading-loose)",
+        });
+        expect(cssFor(tokens, classes, "leading-tight")).toStrictEqual({
+            "line-height": "var(--leading-tight)",
+        });
+        expect(cssFor(tokens, classes, "weight-bold")).toStrictEqual({
+            "font-weight": "var(--weight-bold)",
+        });
+    });
+
+    it("gives text-shadow no class, as a shadow is written with a spread, and a custom property any", () => {
+        const tokens = { shadow: { glow: shadow } };
         expect(
-            cssFor({ type: { body } }, { "--x": { source: "type.*", prefix: "x" } }, "x-body"),
+            cssFor(tokens, { "text-shadow": { source: "shadow.*" } }, "shadow-glow"),
+        ).toBeUndefined();
+        expect(
+            cssFor(tokens, { "--text-shadow": { source: "shadow.*" } }, "shadow-glow"),
+        ).toStrictEqual({ "--text-shadow": "var(--shadow-glow)" });
+    });
+
+    it("gives no class to a token declared as several variables", () => {
+        expect(
+            cssFor(
+                { type: { body: typography } },
+                { "--x": { source: "type.*", prefix: "x" } },
+                "x-body",
+            ),
         ).toBeUndefined();
     });
 
@@ -369,12 +423,9 @@ describe("utilityRules' safelist", () => {
 
 describe("utilityRules' warning for a class two tokens make", () => {
     const warnings = (tokens: unknown, classes: UtilityClassesConfig, variables?: Variables) =>
-        ruled(tokens, classes, variables).diagnostics.map(({ kind, severity, path, message }) => [
-            kind,
-            severity,
-            path,
-            message,
-        ]);
+        ruled(tokens, classes, variables)
+            .diagnostics.filter(({ kind }) => kind === "same-utility-class")
+            .map(({ kind, severity, path, message }) => [kind, severity, path, message]);
     const clash = (className: string, used: string, other: string) =>
         `\`${className}\` could mean \`${used}\` or \`${other}\`, so it uses \`${used}\`: rename one, or change the entry's \`prefix\``;
 
@@ -443,6 +494,35 @@ describe("utilityRules' warning for a class two tokens make", () => {
         ]);
     });
 
+    it("naming the token UnoCSS uses when entries sharing a start meet a later start", () => {
+        const tokens = {
+            color: { brand: { x: { y: color() } }, semantic: { x: { y: color() } } },
+            tone: { y: color() },
+        };
+        const classes: UtilityClassesConfig = {
+            "color": [
+                { source: "color.brand.*", prefix: "text" },
+                { source: "color.semantic.*", prefix: "text" },
+            ],
+            "--tone": { source: "tone.*", prefix: "text-x" },
+        };
+        expect(cssFor(tokens, classes, "text-x-y")).toStrictEqual({ "--tone": "var(--tone-y)" });
+        expect(warnings(tokens, classes)).toStrictEqual([
+            [
+                "same-utility-class",
+                "warning",
+                "color.brand.x.y",
+                clash("text-x-y", "tone.y", "color.brand.x.y"),
+            ],
+            [
+                "same-utility-class",
+                "warning",
+                "color.semantic.x.y",
+                clash("text-x-y", "tone.y", "color.semantic.x.y"),
+            ],
+        ]);
+    });
+
     it("once for a pair, whichever of the two each class uses", () => {
         const tokens = { color: { p: color() }, tone: { p: color() } };
         const classes: UtilityClassesConfig = {
@@ -471,6 +551,278 @@ describe("utilityRules' warning for a class two tokens make", () => {
                     "background-color": { source: "color.*", prefix: "brand" },
                 },
             ),
+        ).toStrictEqual([]);
+    });
+});
+
+describe("utilityRules' warning for an entry that makes no classes", () => {
+    const messagesOf = ({ diagnostics }: ReturnType<typeof utilityRules>) =>
+        diagnostics
+            .filter(({ kind }) => kind === "utility-without-classes")
+            .map(({ message }) => message);
+    const reported = (tokens: unknown, classes: UtilityClassesConfig) =>
+        messagesOf(ruled(tokens, classes));
+
+    it("when its source matches no token", () => {
+        expect(
+            reported(
+                { color: { ink: color() } },
+                { color: { source: "colour.*", prefix: "text" } },
+            ),
+        ).toStrictEqual(["`color` makes no classes: there are no tokens under `colour`"]);
+    });
+
+    it("when every token it could use is private", () => {
+        const files = {
+            "tokens.resolver.json": {
+                version: "2025.10",
+                resolutionOrder: [
+                    {
+                        type: "set",
+                        name: "palette",
+                        sources: [{ $ref: "palette.json" }],
+                        $extensions: { "sh.sugarcube": { emit: false } },
+                    },
+                    { type: "set", name: "semantic", sources: [{ $ref: "semantic.json" }] },
+                ],
+            },
+            "palette.json": { brand: { rose: color() } },
+            "semantic.json": { ink: color("{brand.rose}") },
+        };
+        expect(
+            messagesOf(ruledFrom(files, { color: { source: "brand.*", prefix: "text" } })),
+        ).toStrictEqual([
+            "`color` makes no classes: the tokens under `brand.*` are private, and a class needs a variable",
+        ]);
+    });
+
+    it("when none of its tokens is of a type the property takes", () => {
+        const tokens = { color: { ink: color() }, tone: { soft: { $type: "number", $value: 1 } } };
+        expect(
+            reported(tokens, {
+                "padding": { source: "color.*", prefix: "p" },
+                "line-height": { source: "color.*", prefix: "leading" },
+            }),
+        ).toStrictEqual([
+            "`padding` makes no classes: `color.*` has only color tokens, and it takes dimension",
+            "`line-height` makes no classes: `color.*` has only color tokens, and it takes number or dimension",
+        ]);
+    });
+
+    it("when it has only typography, whatever the property", () => {
+        expect(
+            reported(
+                { type: { body: typography } },
+                { "--font": { source: "type.*", prefix: "type" } },
+            ),
+        ).toStrictEqual([
+            "`--font` makes no classes: `type.*` has only typography tokens, which a single-property class cannot use",
+        ]);
+    });
+
+    it("for text-shadow, which no token type can be written as", () => {
+        expect(
+            reported(
+                { shadow: { glow: shadow } },
+                { "text-shadow": { source: "shadow.*", prefix: "glow" } },
+            ),
+        ).toStrictEqual(["`text-shadow` makes no classes: DTCG has no text shadow type"]);
+    });
+
+    it("when another entry answers every class it makes", () => {
+        expect(
+            reported(
+                { color: { ink: color(), rose: color() } },
+                { "color": { source: "color.*" }, "background-color": { source: "color.*" } },
+            ),
+        ).toStrictEqual([
+            "`background-color` makes no classes: every `color-…` class is answered by `color` first; give one of them a `prefix`",
+        ]);
+    });
+
+    it("naming an entry by its place when the property lists several, and every start and answer", () => {
+        expect(
+            reported(
+                { space: { sm: px(4) } },
+                {
+                    "padding": { source: "space.*", prefix: "mb" },
+                    "--inline": { source: "space.*", prefix: "mx" },
+                    "margin": [
+                        { source: "space.*", prefix: "m", directions: ["top"] },
+                        { source: "space.*", prefix: "m", directions: ["x", "bottom"] },
+                    ],
+                },
+            ),
+        ).toStrictEqual([
+            "`margin`'s 2nd entry makes no classes: every `mb-…` and `mx-…` class is answered by `padding` and `--inline` first; give one of them a `prefix`",
+        ]);
+    });
+
+    it("as a warning about the config, carrying the entry and the reason as facts", () => {
+        const { diagnostics } = ruled(
+            { color: { ink: color() } },
+            {
+                margin: [
+                    { source: "space.*", prefix: "m" },
+                    { source: "color.*", prefix: "p" },
+                ],
+                color: { source: "colour.*" },
+            },
+        );
+        expect(
+            diagnostics.map(({ kind, severity, path, at, detail }) => [
+                kind,
+                severity,
+                path,
+                at,
+                detail,
+            ]),
+        ).toStrictEqual([
+            [
+                "utility-without-classes",
+                "warning",
+                undefined,
+                undefined,
+                {
+                    property: "margin",
+                    entry: 0,
+                    source: "space.*",
+                    reason: "no-tokens",
+                    group: "space",
+                },
+            ],
+            [
+                "utility-without-classes",
+                "warning",
+                undefined,
+                undefined,
+                {
+                    property: "margin",
+                    entry: 1,
+                    source: "color.*",
+                    reason: "wrong-type",
+                    found: ["color"],
+                    takes: ["dimension"],
+                },
+            ],
+            [
+                "utility-without-classes",
+                "warning",
+                undefined,
+                undefined,
+                { property: "color", source: "colour.*", reason: "no-tokens", group: "colour" },
+            ],
+        ]);
+    });
+
+    it("not when some of its classes are answered by another entry", () => {
+        expect(
+            reported(
+                { color: { ink: color(), bg: { ink: color() } } },
+                {
+                    "color": { source: "color.*" },
+                    "background-color": { source: "color.bg.*", prefix: "color-bg" },
+                },
+            ),
+        ).toStrictEqual([]);
+    });
+
+    it("not when another entry writes the same CSS for every class it makes", () => {
+        expect(
+            reported(
+                { space: { sm: px(4) } },
+                {
+                    margin: [
+                        { source: "space.*", prefix: "m", directions: ["all"] },
+                        { source: "space.*", prefix: "m", directions: ["x", "bottom"] },
+                    ],
+                },
+            ),
+        ).toStrictEqual([]);
+    });
+
+    it("not when each class it loses goes to another token, which the same-class warning names", () => {
+        const { diagnostics } = ruled(
+            { color: { brand: { primary: color() }, semantic: { primary: color() } } },
+            {
+                color: [
+                    { source: "color.brand.*", prefix: "text" },
+                    { source: "color.semantic.*", prefix: "text" },
+                ],
+            },
+        );
+        expect(diagnostics.map(({ kind }) => kind)).toStrictEqual(["same-utility-class"]);
+    });
+
+    it("not when it matches only tokens that could not be written, which report themselves", () => {
+        expect(
+            reported(
+                { color: { broken: color("not a color") } },
+                { color: { source: "color.*", prefix: "text" } },
+            ),
+        ).toStrictEqual([]);
+    });
+});
+
+describe("utilityRules' warning for a safelisted class no token makes", () => {
+    const palette = { color: { primary: color(), text: { muted: color() } } };
+    const reported = (classes: UtilityClassesConfig) =>
+        ruled(palette, classes)
+            .diagnostics.filter(({ kind }) => kind === "safelist-without-token")
+            .map(({ message }) => message);
+
+    it("names the part and the entry", () => {
+        expect(
+            reported({
+                "background-color": { source: "color.*", prefix: "bg", safelist: ["primray"] },
+            }),
+        ).toStrictEqual([
+            "`primray` in `background-color`'s safelist matches no token, so no class is forced",
+        ]);
+    });
+
+    it("as a warning about the config, carrying the entry and the part as facts", () => {
+        const { diagnostics } = ruled(palette, {
+            color: [
+                { source: "color.*", prefix: "text" },
+                { source: "color.*", prefix: "ink", safelist: ["primary", "teal"] },
+            ],
+        });
+        expect(
+            diagnostics.map(({ kind, severity, path, at, detail }) => [
+                kind,
+                severity,
+                path,
+                at,
+                detail,
+            ]),
+        ).toStrictEqual([
+            [
+                "safelist-without-token",
+                "warning",
+                undefined,
+                undefined,
+                { property: "color", entry: 1, part: "teal" },
+            ],
+        ]);
+    });
+
+    it("not for a part written stripped or in full with stripDuplicates", () => {
+        expect(
+            reported({
+                color: {
+                    source: "color.*",
+                    prefix: "text",
+                    stripDuplicates: true,
+                    safelist: ["muted", "text-muted"],
+                },
+            }),
+        ).toStrictEqual([]);
+    });
+
+    it("not when the entry makes no classes, which its own warning explains", () => {
+        expect(
+            reported({ color: { source: "colour.*", prefix: "text", safelist: ["primary"] } }),
         ).toStrictEqual([]);
     });
 });

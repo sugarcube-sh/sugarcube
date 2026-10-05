@@ -353,7 +353,7 @@ function createDirectTokenPathRule(
 
 function validateUtilityConfig(config: PropertyUtilityConfig, property: string): void {
     if (!config?.source || typeof config.source !== "string") {
-        throw new Error(ErrorMessages.UTILITIES.MISSING_SOURCE(property));
+        throw new Error(ErrorMessages.UTILITIES.EMPTY_SOURCE(property));
     }
     // Validate that source pattern uses supported wildcard format (.* at the end)
     // Currently only supports patterns like "color.*", "font.weight.*", etc.
