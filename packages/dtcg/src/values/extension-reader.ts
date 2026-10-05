@@ -66,7 +66,7 @@ export function extensionReader<M extends ExtensionMessages>(): ExtensionReader<
     return {
         read: (type, raw, at) => {
             const read = parseValue(type, raw, at, { references: false });
-            if (read.ignored) ignored.push(...read.ignored);
+            ignored.push(...read.ignored);
             if (read.ok) return read.value;
             errors.push(...read.errors);
             return undefined;

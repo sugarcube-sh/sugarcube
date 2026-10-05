@@ -70,6 +70,46 @@ describe("positions", () => {
     });
 });
 
+describe("what is set aside is a warning, and what cannot be read an error", () => {
+    const severities = (text: string) =>
+        readFromMemory({ files: { "tokens.json": text } }).diagnostics.map(
+            ({ kind, severity, detail }) => [
+                kind,
+                severity,
+                "property" in detail ? detail.property : "",
+            ],
+        );
+
+    it("a key written twice, a description, deprecation or extensions of the wrong kind, and an unknown property in a value are warnings", () => {
+        const text = `{
+            "a": { "$type": "number", "$value": 1 },
+            "a": { "$type": "number", "$value": 2, "$description": 5 },
+            "b": { "$type": "number", "$value": 1, "$deprecated": 1, "$extensions": [] },
+            "c": { "$type": "dimension", "$value": { "value": 1, "unit": "px", "fluid": true } }
+        }`;
+        expect(severities(text)).toStrictEqual([
+            ["duplicate-key", "warning", ""],
+            ["invalid-property", "warning", "$description"],
+            ["invalid-property", "warning", "$deprecated"],
+            ["invalid-property", "warning", "$extensions"],
+            ["unknown-property", "warning", "fluid"],
+        ]);
+    });
+
+    it("a $type, $extends or $ref of the wrong kind stays an error, since it changes what the token is", () => {
+        const text = `{
+            "a": { "$type": 5, "$value": 1 },
+            "g": { "$extends": 5 },
+            "h": { "$ref": 5 }
+        }`;
+        expect(severities(text).filter(([kind]) => kind === "invalid-property")).toStrictEqual([
+            ["invalid-property", "error", "$type"],
+            ["invalid-property", "error", "$extends"],
+            ["invalid-property", "error", "$ref"],
+        ]);
+    });
+});
+
 describe("read", () => {
     it("asks for each file by the entry's folder, and keeps paths relative to it", async () => {
         const readText = vi.fn(async () => valid);

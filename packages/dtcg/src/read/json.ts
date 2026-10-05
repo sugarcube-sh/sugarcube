@@ -18,6 +18,7 @@ export interface DuplicateKey {
     key: string;
     first: Node;
     last: Node;
+    earlier: { offset: number; length: number };
 }
 
 export interface ParsedJson {
@@ -74,17 +75,25 @@ export function parseJson(text: string): ParsedJson {
 
 function findDuplicates(node: Node, duplicates: DuplicateKey[], hidden: Set<Node>): void {
     if (node.type === "object") {
-        const seen = new Map<string, { property: Node; keyNode: Node }>();
-        for (const property of node.children ?? []) {
+        const seen = new Map<string, { property: Node; keyNode: Node; next: Node | undefined }>();
+        const properties = node.children ?? [];
+        for (const [index, property] of properties.entries()) {
             const [keyNode] = property.children ?? [];
             if (!keyNode) continue;
             const key = String(keyNode.value);
             const earlier = seen.get(key);
             if (earlier) {
-                duplicates.push({ key, first: earlier.keyNode, last: keyNode });
+                const { offset } = earlier.property;
+                const length = (earlier.next ?? property).offset - offset;
+                duplicates.push({
+                    key,
+                    first: earlier.keyNode,
+                    last: keyNode,
+                    earlier: { offset, length },
+                });
                 hidden.add(earlier.property);
             }
-            seen.set(key, { property, keyNode });
+            seen.set(key, { property, keyNode, next: properties[index + 1] });
         }
     }
     for (const child of node.children ?? []) {

@@ -9,17 +9,14 @@ export type Occurrence =
     | { kind: "alias"; target: string; path: JsonPath; at: Span }
     | { kind: "pointer"; written: string; steps: string[] | undefined; path: JsonPath; at: Span };
 
-export function keptReferences(
-    found: Occurrence[],
-    ignored: IgnoredProperty[] | undefined,
-): Occurrence[] {
-    if (!ignored) return found;
+export function keptReferences(found: Occurrence[], ignored: IgnoredProperty[]): Occurrence[] {
+    if (ignored.length === 0) return found;
     const setAside = ignored.map(({ path }) => path.slice(1));
     return found.filter((each) => !setAside.some((path) => startsWith(each.path, path)));
 }
 
-export function withoutIgnored(raw: unknown, ignored: IgnoredProperty[] | undefined): unknown {
-    if (!ignored) return raw;
+export function withoutIgnored(raw: unknown, ignored: IgnoredProperty[]): unknown {
+    if (ignored.length === 0) return raw;
     const setAside = ignored.map(({ path }) => path.slice(1));
     const kept = (value: unknown, at: JsonPath): unknown => {
         if (Array.isArray(value)) return value.map((item, index) => kept(item, [...at, index]));

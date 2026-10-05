@@ -7,8 +7,10 @@ import type {
 } from "./index.js";
 import { ignoredMessage, valueErrorMessage, valueErrorMessages } from "./values/value-errors.js";
 
+type Severity = "error" | "warning";
+
 type Entry<K extends DiagnosticKind> = {
-    severity: "error" | "warning";
+    severity: Severity | ((detail: DiagnosticDetailByKind[K]) => Severity);
     message: (detail: DiagnosticDetailByKind[K]) => string;
 };
 
@@ -83,12 +85,17 @@ export const relatedMessages = {
     declaredAs: (kind: "token" | "group") => `declared as a ${kind} here`,
     partOfTheLoop: "part of the same loop",
     alsoUsedHere: "also used here",
+    alsoWrittenHere: "also written here",
 };
+
+const ignoredWhenInvalid: ReadonlySet<DiagnosticDetailByKind["invalid-property"]["property"]> =
+    new Set(["$description", "$deprecated", "$extensions"]);
 
 const ownerWords = { resolver: "the resolver", set: "a set", modifier: "a modifier" } as const;
 
 export const fixTitles = {
     useSimilar: (name: string) => `use \`${name}\`, which has a similar name`,
+    deleteEarlier: (key: string) => `delete the earlier \`${key}\`, which is never used`,
     hexToObject: "write the color as an object, keeping the hex",
     measureAsObject: (type: string) => `write the ${type} as an object`,
     sixDigitHex: (hex: string) => `write the hex with six digits, \`${hex}\``,
@@ -103,7 +110,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "invalid-json": { severity: "error", message: ({ reason }) => jsonReasons[reason] },
     "duplicate-key": {
-        severity: "error",
+        severity: "warning",
         message: ({ key }) =>
             `\`${key}\` is written more than once in this object, and only the last is used`,
     },
@@ -143,8 +150,11 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
             `\`${name}\` is ${foundWords[found]}, and a group holds only tokens and groups, which are objects`,
     },
     "invalid-property": {
-        severity: "error",
-        message: ({ property, expected }) => `\`${property}\` must be ${propertyWords[expected]}`,
+        severity: ({ property }) => (ignoredWhenInvalid.has(property) ? "warning" : "error"),
+        message: ({ property, expected }) =>
+            ignoredWhenInvalid.has(property)
+                ? `\`${property}\` must be ${propertyWords[expected]}, so it is ignored`
+                : `\`${property}\` must be ${propertyWords[expected]}`,
     },
     "missing-type": {
         severity: "error",

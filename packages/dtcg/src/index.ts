@@ -877,11 +877,11 @@ export interface IgnoredProperty {
 
 /**
  * The outcome of reading one value. `ignored` lists the properties set aside, whether or not the
- * rest of the value could be read.
+ * rest of the value could be read: empty when there are none.
  */
 export type ParseResult<V> =
-    | { ok: true; value: V; ignored?: IgnoredProperty[] }
-    | { ok: false; errors: ValueError[]; ignored?: IgnoredProperty[] };
+    | { ok: true; value: V; ignored: IgnoredProperty[] }
+    | { ok: false; errors: ValueError[]; ignored: IgnoredProperty[] };
 
 /** Reads one raw value into its shape, or explains why it cannot. */
 export type Parse<V> = (raw: unknown, at: JsonPath, options?: ParseOptions) => ParseResult<V>;

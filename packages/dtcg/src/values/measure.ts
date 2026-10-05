@@ -1,7 +1,7 @@
 import type { JsonPath, ParseResult, Pointer, ValueError, UnresolvedValue } from "../index.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
-import { setAside, withIgnored } from "./set-aside.js";
+import { setAside } from "./set-aside.js";
 import { valueError } from "./value-errors.js";
 
 type MeasureType = "dimension" | "duration";
@@ -22,19 +22,24 @@ export function readMeasure<T extends MeasureType>(
     at: JsonPath,
 ): ParseResult<UnresolvedValue<T>> {
     const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference as UnresolvedValue<T> };
+    if (reference) return { ok: true, value: reference as UnresolvedValue<T>, ignored: [] };
 
     if (typeof raw === "string") {
         if (STRING_WITH_UNIT.test(raw)) {
             return {
                 ok: false,
                 errors: [valueError(at, { type, reason: "string-with-unit", value: raw })],
+                ignored: [],
             };
         }
     }
 
     if (!isJsonObject(raw)) {
-        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
+        return {
+            ok: false,
+            errors: [valueError(at, { type, reason: "wrong-shape", value: raw })],
+            ignored: [],
+        };
     }
 
     const errors: ValueError[] = [];
@@ -44,9 +49,9 @@ export function readMeasure<T extends MeasureType>(
     const unit = readUnit(raw, at, type, units, errors);
 
     if (errors.length > 0 || value === undefined || unit === undefined) {
-        return withIgnored({ ok: false, errors }, ignored);
+        return { ok: false, errors, ignored };
     }
-    return withIgnored({ ok: true, value: { value, unit } as UnresolvedValue<T> }, ignored);
+    return { ok: true, value: { value, unit } as UnresolvedValue<T>, ignored };
 }
 
 function readAmount(

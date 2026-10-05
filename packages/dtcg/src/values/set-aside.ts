@@ -1,4 +1,4 @@
-import type { IgnoredProperty, JsonPath, ParseResult, TokenType, ValueError } from "../index.js";
+import type { IgnoredProperty, JsonPath, TokenType, ValueError } from "../index.js";
 import { ignoredProperty, valueError } from "./value-errors.js";
 
 export function setAside(
@@ -16,8 +16,4 @@ export function setAside(
         else ignored.push(ignoredProperty([...at, name], type, name));
     }
     return ignored;
-}
-
-export function withIgnored<V>(result: ParseResult<V>, ignored: IgnoredProperty[]): ParseResult<V> {
-    return ignored.length > 0 ? { ...result, ignored } : result;
 }

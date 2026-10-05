@@ -12,7 +12,7 @@ import { colorSpaces } from "./color-spaces.js";
 import { hexStringColor } from "./hex-color.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
-import { setAside, withIgnored } from "./set-aside.js";
+import { setAside } from "./set-aside.js";
 import { valueError } from "./value-errors.js";
 
 type ColorAsWritten = UnresolvedValue<"color">;
@@ -44,17 +44,25 @@ export function readColor(
     options?: ParseOptions,
 ): ParseResult<ColorAsWritten> {
     const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference };
+    if (reference) return { ok: true, value: reference, ignored: [] };
 
     if (typeof raw === "string" && options?.hexStringColors && READABLE_HEX_STRING.test(raw)) {
-        return { ok: true, value: hexStringColor(raw) };
+        return { ok: true, value: hexStringColor(raw), ignored: [] };
     }
     if (typeof raw === "string" && HEX_STRING.test(raw)) {
-        return { ok: false, errors: [valueError(at, { type, reason: "hex-string", value: raw })] };
+        return {
+            ok: false,
+            errors: [valueError(at, { type, reason: "hex-string", value: raw })],
+            ignored: [],
+        };
     }
 
     if (!isJsonObject(raw)) {
-        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
+        return {
+            ok: false,
+            errors: [valueError(at, { type, reason: "wrong-shape", value: raw })],
+            ignored: [],
+        };
     }
 
     const errors: ValueError[] = [];
@@ -66,13 +74,14 @@ export function readColor(
     const hex = readHex(raw, at, errors);
 
     if (errors.length > 0 || colorSpace === undefined || components === undefined) {
-        return withIgnored({ ok: false, errors }, ignored);
+        return { ok: false, errors, ignored };
     }
 
-    return withIgnored(
-        { ok: true, value: { colorSpace, components, alpha, ...(hex !== undefined && { hex }) } },
+    return {
+        ok: true,
+        value: { colorSpace, components, alpha, ...(hex !== undefined && { hex }) },
         ignored,
-    );
+    };
 }
 
 function readColorSpace(

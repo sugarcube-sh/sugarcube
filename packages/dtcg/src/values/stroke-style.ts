@@ -10,7 +10,7 @@ import { readDimension } from "./dimension.js";
 import { type LineCap, lineCaps, strokeStyleKeywords } from "./keywords.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
-import { setAside, withIgnored } from "./set-aside.js";
+import { setAside } from "./set-aside.js";
 import { valueError } from "./value-errors.js";
 
 type Keyword = (typeof strokeStyleKeywords)[number];
@@ -22,11 +22,11 @@ const type = "strokeStyle";
 
 export function readStrokeStyle(raw: unknown, at: JsonPath): ParseResult<UnresolvedStrokeStyle> {
     const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference };
+    if (reference) return { ok: true, value: reference, ignored: [] };
 
     if (typeof raw === "string") {
         if (strokeStyleKeywords.includes(raw as Keyword)) {
-            return { ok: true, value: { kind: "keyword", keyword: raw as Keyword } };
+            return { ok: true, value: { kind: "keyword", keyword: raw as Keyword }, ignored: [] };
         }
         return {
             ok: false,
@@ -38,11 +38,16 @@ export function readStrokeStyle(raw: unknown, at: JsonPath): ParseResult<Unresol
                     keywords: strokeStyleKeywords,
                 }),
             ],
+            ignored: [],
         };
     }
 
     if (!isJsonObject(raw)) {
-        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
+        return {
+            ok: false,
+            errors: [valueError(at, { type, reason: "wrong-shape", value: raw })],
+            ignored: [],
+        };
     }
 
     const errors: ValueError[] = [];
@@ -52,9 +57,9 @@ export function readStrokeStyle(raw: unknown, at: JsonPath): ParseResult<Unresol
     const lineCap = readLineCap(raw, at, errors);
 
     if (errors.length > 0 || dashArray === undefined || lineCap === undefined) {
-        return withIgnored({ ok: false, errors }, ignored);
+        return { ok: false, errors, ignored };
     }
-    return withIgnored({ ok: true, value: { kind: "dash", dashArray, lineCap } }, ignored);
+    return { ok: true, value: { kind: "dash", dashArray, lineCap }, ignored };
 }
 
 function readDashArray(
@@ -92,7 +97,7 @@ function readDashArray(
     const before = errors.length;
     const lengths = raw.dashArray.map((length: unknown, index) => {
         const result = readDimension(length, [...path, index]);
-        if (result.ignored) ignored.push(...result.ignored);
+        ignored.push(...result.ignored);
         if (!result.ok) {
             errors.push(...result.errors);
             return undefined;

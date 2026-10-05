@@ -43,8 +43,7 @@ export function createValueReader(diagnostics: Diagnostic[], options: ParseOptio
         const parser: Parse<UnresolvedValueByType[T]> = parsers[type];
         const result = parser(raw, ["$value"], options);
         if (!replaced) {
-            for (const each of result.ignored ?? [])
-                diagnostics.push(ignoredToDiagnostic(token, each));
+            for (const each of result.ignored) diagnostics.push(ignoredToDiagnostic(token, each));
         }
         if (!result.ok) {
             for (const error of result.errors) {

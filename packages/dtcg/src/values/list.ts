@@ -8,7 +8,6 @@ import type {
     ValueError,
 } from "../index.js";
 import { readAlias, readPointer } from "./references.js";
-import { withIgnored } from "./set-aside.js";
 
 export function readList<I>(
     items: unknown[],
@@ -27,12 +26,12 @@ export function readList<I>(
         if (reference) return reference;
 
         const result = readItem(item, [...at, index], options);
-        if (result.ignored) ignored.push(...result.ignored);
+        ignored.push(...result.ignored);
         if (result.ok) return result.value;
         errors.push(...result.errors);
         return undefined;
     });
 
-    if (errors.length > 0) return withIgnored({ ok: false, errors }, ignored);
-    return withIgnored({ ok: true, value: values as (I | Alias | Pointer)[] }, ignored);
+    if (errors.length > 0) return { ok: false, errors, ignored };
+    return { ok: true, value: values as (I | Alias | Pointer)[], ignored };
 }

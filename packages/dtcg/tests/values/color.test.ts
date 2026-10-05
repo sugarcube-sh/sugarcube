@@ -195,6 +195,7 @@ describe("parseColor", () => {
             expect(parseColor(raw, ["$value"], options)).toStrictEqual({
                 ok: true,
                 value: { colorSpace: "srgb", components, alpha, hex },
+                ignored: [],
             });
         });
 

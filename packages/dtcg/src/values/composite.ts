@@ -12,7 +12,7 @@ import type {
 } from "../index.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
-import { setAside, withIgnored } from "./set-aside.js";
+import { setAside } from "./set-aside.js";
 import { valueError } from "./value-errors.js";
 
 export type ObjectForm<T extends TokenType> = Exclude<UnresolvedValue<T>, Alias | Pointer>;
@@ -30,10 +30,14 @@ export function readComposite<O extends object>(
     defaults: Partial<O> = {},
 ): ParseResult<O | Alias | Pointer> {
     const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference };
+    if (reference) return { ok: true, value: reference, ignored: [] };
 
     if (!isJsonObject(raw)) {
-        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
+        return {
+            ok: false,
+            errors: [valueError(at, { type, reason: "wrong-shape", value: raw })],
+            ignored: [],
+        };
     }
 
     const errors: ValueError[] = [];
@@ -53,11 +57,11 @@ export function readComposite<O extends object>(
         }
 
         const result = read(raw[name], [...at, name], options);
-        if (result.ignored) ignored.push(...result.ignored);
+        ignored.push(...result.ignored);
         if (result.ok) value[name] = result.value;
         else errors.push(...result.errors);
     }
 
-    if (errors.length > 0) return withIgnored({ ok: false, errors }, ignored);
-    return withIgnored({ ok: true, value: value as O }, ignored);
+    if (errors.length > 0) return { ok: false, errors, ignored };
+    return { ok: true, value: value as O, ignored };
 }

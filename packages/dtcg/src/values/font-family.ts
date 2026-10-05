@@ -9,24 +9,33 @@ export function readFontFamily(
     at: JsonPath,
 ): ParseResult<UnresolvedValue<"fontFamily">> {
     const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference };
+    if (reference) return { ok: true, value: reference, ignored: [] };
 
     if (typeof raw === "string") {
         if (raw.trim() === "") {
             return {
                 ok: false,
                 errors: [valueError(at, { type, reason: "not-a-font-name", value: raw })],
+                ignored: [],
             };
         }
-        return { ok: true, value: [raw] };
+        return { ok: true, value: [raw], ignored: [] };
     }
 
     if (!Array.isArray(raw)) {
-        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
+        return {
+            ok: false,
+            errors: [valueError(at, { type, reason: "wrong-shape", value: raw })],
+            ignored: [],
+        };
     }
 
     if (raw.length === 0) {
-        return { ok: false, errors: [valueError(at, { type, reason: "empty-font-list" })] };
+        return {
+            ok: false,
+            errors: [valueError(at, { type, reason: "empty-font-list" })],
+            ignored: [],
+        };
     }
 
     const errors: ValueError[] = [];
@@ -52,6 +61,6 @@ export function readFontFamily(
         return name as string;
     });
 
-    if (errors.length > 0) return { ok: false, errors };
-    return { ok: true, value: names };
+    if (errors.length > 0) return { ok: false, errors, ignored: [] };
+    return { ok: true, value: names, ignored: [] };
 }

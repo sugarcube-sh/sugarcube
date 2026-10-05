@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "RFC 8259 4: names within an object SHOULD be unique. The last one is used, as JSON.parse does",
+  "spec": "RFC 8259 4: names within an object SHOULD be unique. The last one is used, as JSON.parse does, so the earlier one can be deleted without changing what the file means",
   "files": ["tokens.json"],
   "diagnostics": [
     {
@@ -37,6 +37,19 @@
               "column": 9
             }
           }
+        }
+      ],
+      "fixes": [
+        {
+          "title": "delete the earlier `sm`, which is never used",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"sm\": { \"$type\": \"number\", \"$value\": 1 },\n    ",
+              "replaceWith": ""
+            }
+          ]
         }
       ]
     }

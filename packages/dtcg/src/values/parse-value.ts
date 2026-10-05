@@ -9,7 +9,6 @@ import type {
 import { parsers } from "./parsers.js";
 import { isJsonObject } from "./json.js";
 import { isAlias, isPointer } from "./references.js";
-import { withIgnored } from "./set-aside.js";
 import { valueError } from "./value-errors.js";
 
 /**
@@ -58,7 +57,7 @@ export function parseValue<T extends TokenType>(
         }),
     );
     if (errors.length === 0) return read as ParseResult<ValueByType[T]>;
-    return withIgnored({ ok: false, errors }, read.ignored ?? []);
+    return { ok: false, errors, ignored: read.ignored };
 }
 
 function referencesIn(value: unknown, inside: JsonPath): { inside: JsonPath; written: string }[] {

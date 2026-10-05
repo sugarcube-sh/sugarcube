@@ -1,4 +1,5 @@
 import type { Diagnostic, Span } from "../index.js";
+import { fixTitles, relatedMessages } from "../error-messages.js";
 import { diagnostic } from "./diagnostics.js";
 import { type JsonFile, type JsonProblem, type ParsedJson, parseJson, spanOf } from "./json.js";
 
@@ -85,12 +86,21 @@ function openOnce(
     }
     if (problems.length > 0 || !root) return undefined;
 
-    for (const { key, first, last } of parsed.duplicates) {
+    for (const { key, first, last, earlier } of parsed.duplicates) {
+        const fix = {
+            title: fixTitles.deleteEarlier(key),
+            safe: true,
+            edits: [{ file: path, ...earlier, text: "" }],
+        };
         diagnostics.push(
             diagnostic(
                 "duplicate-key",
                 { key },
-                { at: at(last), related: [{ message: "also written here", at: at(first) }] },
+                {
+                    at: at(last),
+                    related: [{ message: relatedMessages.alsoWrittenHere, at: at(first) }],
+                    fixes: [fix],
+                },
             ),
         );
     }

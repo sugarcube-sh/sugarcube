@@ -3,13 +3,14 @@ import { parseNumber } from "../../src/values.js";
 
 describe("parseNumber", () => {
     it.for([0, 2.3, -1, 1e3])("reads %s", (raw) => {
-        expect(parseNumber(raw, [])).toStrictEqual({ ok: true, value: raw });
+        expect(parseNumber(raw, [])).toStrictEqual({ ok: true, value: raw, ignored: [] });
     });
 
     it("reads a reference to a whole token as an alias", () => {
         expect(parseNumber("{line-height.large}", [])).toStrictEqual({
             ok: true,
             value: { alias: "line-height.large" },
+            ignored: [],
         });
     });
 
@@ -17,6 +18,7 @@ describe("parseNumber", () => {
         expect(parseNumber({ $ref: "#/base/blue/$value/components/0" }, [])).toStrictEqual({
             ok: true,
             value: { pointer: "#/base/blue/$value/components/0" },
+            ignored: [],
         });
     });
 

@@ -16,16 +16,21 @@ export function readCubicBezier(
     at: JsonPath,
 ): ParseResult<UnresolvedValue<"cubicBezier">> {
     const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference };
+    if (reference) return { ok: true, value: reference, ignored: [] };
 
     if (!Array.isArray(raw)) {
-        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
+        return {
+            ok: false,
+            errors: [valueError(at, { type, reason: "wrong-shape", value: raw })],
+            ignored: [],
+        };
     }
 
     if (raw.length !== 4) {
         return {
             ok: false,
             errors: [valueError(at, { type, reason: "not-four-numbers", count: raw.length })],
+            ignored: [],
         };
     }
 
@@ -65,6 +70,10 @@ export function readCubicBezier(
         return coordinate;
     });
 
-    if (errors.length > 0) return { ok: false, errors };
-    return { ok: true, value: coordinates as [Coordinate, Coordinate, Coordinate, Coordinate] };
+    if (errors.length > 0) return { ok: false, errors, ignored: [] };
+    return {
+        ok: true,
+        value: coordinates as [Coordinate, Coordinate, Coordinate, Coordinate],
+        ignored: [],
+    };
 }
