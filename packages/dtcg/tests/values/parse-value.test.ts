@@ -3,10 +3,11 @@ import { parseValue } from "../../src/values.js";
 
 describe("parseValue", () => {
     it("reads a value of the type it is given, references allowed", () => {
-        expect(parseValue("number", 1.5, [])).toStrictEqual({ ok: true, value: 1.5 });
+        expect(parseValue("number", 1.5, [])).toStrictEqual({ ok: true, value: 1.5, ignored: [] });
         expect(parseValue("number", "{ratio.golden}", [])).toStrictEqual({
             ok: true,
             value: { alias: "ratio.golden" },
+            ignored: [],
         });
     });
 
@@ -23,7 +24,7 @@ describe("parseValue", () => {
     it("reads a literal value, when only literals are wanted", () => {
         expect(
             parseValue("dimension", { value: 1, unit: "rem" }, [], { references: false }),
-        ).toStrictEqual({ ok: true, value: { value: 1, unit: "rem" } });
+        ).toStrictEqual({ ok: true, value: { value: 1, unit: "rem" }, ignored: [] });
     });
 
     it.for([

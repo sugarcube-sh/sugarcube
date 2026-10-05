@@ -95,17 +95,10 @@ const oldForms: OldForm[] = [
         matches: (d) => d.kind === "duplicate-key",
     },
     {
-        form: "a JSON Pointer index that is not plain digits",
-        inRepo: false,
-        matches: (d) => d.kind === "missing-reference" && /\/(?:0\d|\+|\d+\.)/.test(d.detail.ref),
-    },
-    {
-        form: "a resolutionOrder $ref to something other than a set or modifier",
+        form: "a file named in resolutionOrder",
         inRepo: false,
         matches: (d) =>
-            d.kind === "resolver-invalid" &&
-            d.detail.rule === "invalid-pointer" &&
-            d.detail.at[0] === "resolutionOrder",
+            d.kind === "resolver-invalid" && d.detail.rule === "file-in-resolution-order",
     },
     {
         form: "$description, $deprecated or $extensions of the wrong JSON type",
@@ -131,6 +124,49 @@ const oldForms: OldForm[] = [
         form: "a reference to a token of another type",
         inRepo: false,
         matches: (d) => d.kind === "type-mismatch",
+    },
+    {
+        form: "a list as a group member",
+        inRepo: false,
+        matches: (d) => d.kind === "invalid-member" && d.detail.found === "array",
+    },
+    {
+        form: "$extends without braces, or a group $extends or $ref that is not a reference",
+        inRepo: false,
+        matches: (d) =>
+            d.kind === "invalid-property" && ["$extends", "$ref"].includes(d.detail.property),
+    },
+    {
+        form: "bad keys beside a $ref in resolutionOrder",
+        inRepo: false,
+        matches: (d) =>
+            d.kind === "resolver-invalid" &&
+            d.detail.at[0] === "resolutionOrder" &&
+            ["invalid-default", "wrong-type", "no-contexts"].includes(d.detail.rule),
+    },
+    {
+        form: "a source whose $ref is not a string",
+        inRepo: false,
+        matches: (d) =>
+            d.kind === "resolver-invalid" &&
+            d.detail.rule === "wrong-type" &&
+            d.detail.name === "$ref" &&
+            d.detail.at.includes("sources"),
+    },
+    {
+        form: "a token file whose top level is a list",
+        inRepo: false,
+        matches: (d) => d.kind === "invalid-json" && d.detail.reason === "not-an-object",
+    },
+    {
+        form: "a $ref that is not a JSON Pointer",
+        inRepo: false,
+        matches: (d) => d.kind === "malformed-pointer",
+    },
+    {
+        form: "a modifier listed twice in resolutionOrder",
+        inRepo: false,
+        matches: (d) => d.kind === "resolver-invalid" && d.detail.rule === "duplicate-name",
     },
 ];
 

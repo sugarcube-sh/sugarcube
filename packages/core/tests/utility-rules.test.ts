@@ -826,3 +826,33 @@ describe("utilityRules' warning for a safelisted class no token makes", () => {
         ).toStrictEqual([]);
     });
 });
+
+describe("utilityRules' warning that the direction full is deprecated", () => {
+    const space = { space: { md: { $type: "dimension", $value: { value: 1, unit: "rem" } } } };
+    const reported = (classes: UtilityClassesConfig) =>
+        ruled(space, classes).diagnostics.map(({ kind, severity, message }) => [
+            kind,
+            severity,
+            message,
+        ]);
+
+    it("names the entry, beside directions that make classes", () => {
+        expect(
+            reported({ padding: { source: "space.*", prefix: "p", directions: ["full", "x"] } }),
+        ).toStrictEqual([
+            [
+                "option-deprecated",
+                "warning",
+                '`directions: "full"` in `padding` is deprecated and will be removed in a later release',
+            ],
+        ]);
+    });
+
+    it("once, where full is the only direction and so the entry makes no classes", () => {
+        expect(
+            reported({ padding: { source: "space.*", prefix: "p", directions: "full" } }).map(
+                ([kind]) => kind,
+            ),
+        ).toStrictEqual(["option-deprecated"]);
+    });
+});

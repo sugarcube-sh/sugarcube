@@ -13,7 +13,7 @@ import {
     read,
     readFromMemory,
 } from "../../src/index.js";
-import { parseValue } from "../../src/values.js";
+import { extensionReader, parseValue } from "../../src/values.js";
 import { withSpans } from "./positions.js";
 
 interface Expected {
@@ -21,7 +21,11 @@ interface Expected {
     spec?: string;
     options?: Pick<
         ReadOptions,
-        "inputs" | "permutations" | "permutationLimit" | "hexStringColors"
+        | "inputs"
+        | "permutations"
+        | "permutationLimit"
+        | "hexStringColors"
+        | "ignoreUnknownProperties"
     > & {
         generators?: (keyof typeof generators)[];
         extensionValidators?: (keyof typeof validators)[];
@@ -108,6 +112,14 @@ const generators = {
                   };
         },
     }),
+    sized: defineGenerator({
+        extension: ["com.example", "sized"],
+        generate: (_group, extension, options) => {
+            const reader = extensionReader<Record<never, never>>(options);
+            const size = reader.read("dimension", (extension as { size?: unknown }).size, ["size"]);
+            return reader.result(size && [{ name: "1", $value: size }]);
+        },
+    }),
     counted: defineGenerator({
         extension: ["com.example", "counted"],
         schema: countSchema,
@@ -131,11 +143,14 @@ const validators = {
         key: "com.example",
         appliesTo: ["color"],
         messages: { "no-outline": () => "`outline` is missing" },
-        validate: (_token, extension) => {
+        validate: (_token, extension, options) => {
             const { outline } = extension as { outline?: unknown };
             if (outline === undefined) return [{ path: [], reason: "no-outline" }];
-            const parsed = parseValue("dimension", outline, ["outline"], { references: false });
-            return parsed.ok ? [] : parsed.errors;
+            const parsed = parseValue("dimension", outline, ["outline"], {
+                ...options,
+                references: false,
+            });
+            return [...parsed.ignored, ...(parsed.ok ? [] : parsed.errors)];
         },
     }),
     symbolPath: defineExtensionValidator({

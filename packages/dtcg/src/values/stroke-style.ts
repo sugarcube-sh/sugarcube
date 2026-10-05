@@ -1,4 +1,6 @@
 import type {
+    IgnoredProperty,
+    ParseOptions,
     UnresolvedStrokeStyle,
     JsonPath,
     ParseResult,
@@ -9,7 +11,9 @@ import { readDimension } from "./dimension.js";
 import { type LineCap, lineCaps, strokeStyleKeywords } from "./keywords.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
-import { valueError } from "./value-errors.js";
+import { refusedAlias } from "./refuse-alias.js";
+import { unknownProperties } from "./unknown-properties.js";
+import { refused, valueError } from "./value-errors.js";
 
 type Keyword = (typeof strokeStyleKeywords)[number];
 type DashArray = Extract<UnresolvedStrokeStyle, { kind: "dash" }>["dashArray"];
@@ -18,53 +22,55 @@ const PROPERTIES = new Set(["dashArray", "lineCap"]);
 
 const type = "strokeStyle";
 
-export function readStrokeStyle(raw: unknown, at: JsonPath): ParseResult<UnresolvedStrokeStyle> {
+export function readStrokeStyle(
+    raw: unknown,
+    at: JsonPath,
+    options?: ParseOptions,
+): ParseResult<UnresolvedStrokeStyle> {
     const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference };
+    if (reference) return { ok: true, value: reference, ignored: [] };
 
     if (typeof raw === "string") {
         if (strokeStyleKeywords.includes(raw as Keyword)) {
-            return { ok: true, value: { kind: "keyword", keyword: raw as Keyword } };
+            return { ok: true, value: { kind: "keyword", keyword: raw as Keyword }, ignored: [] };
         }
-        return {
-            ok: false,
-            errors: [
-                valueError(at, {
-                    type,
-                    reason: "unknown-stroke-style-keyword",
-                    value: raw,
-                    keywords: strokeStyleKeywords,
-                }),
-            ],
-        };
+        return refused(at, {
+            type,
+            reason: "unknown-stroke-style-keyword",
+            value: raw,
+            keywords: strokeStyleKeywords,
+        });
     }
 
     if (!isJsonObject(raw)) {
-        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
+        return refused(at, { type, reason: "wrong-shape", value: raw });
     }
 
     const errors: ValueError[] = [];
-    for (const name of Object.keys(raw)) {
-        if (!PROPERTIES.has(name)) {
-            errors.push(
-                valueError([...at, name], { type, reason: "unknown-property", property: name }),
-            );
-        }
-    }
+    const ignored = unknownProperties(
+        raw,
+        (name) => PROPERTIES.has(name),
+        type,
+        at,
+        errors,
+        options,
+    );
 
-    const dashArray = readDashArray(raw, at, errors);
+    const dashArray = readDashArray(raw, at, errors, ignored, options);
     const lineCap = readLineCap(raw, at, errors);
 
     if (errors.length > 0 || dashArray === undefined || lineCap === undefined) {
-        return { ok: false, errors };
+        return { ok: false, errors, ignored };
     }
-    return { ok: true, value: { kind: "dash", dashArray, lineCap } };
+    return { ok: true, value: { kind: "dash", dashArray, lineCap }, ignored };
 }
 
 function readDashArray(
     raw: Record<string, unknown>,
     at: JsonPath,
     errors: ValueError[],
+    ignored: IgnoredProperty[],
+    options: ParseOptions | undefined,
 ): DashArray | undefined {
     if (!("dashArray" in raw)) {
         errors.push(
@@ -79,6 +85,7 @@ function readDashArray(
 
     const pointer = readPointer(raw.dashArray);
     if (pointer) return pointer;
+    if (refusedAlias(raw.dashArray, [...at, "dashArray"], type, errors)) return undefined;
 
     const path = [...at, "dashArray"];
     if (!Array.isArray(raw.dashArray)) {
@@ -94,7 +101,8 @@ function readDashArray(
 
     const before = errors.length;
     const lengths = raw.dashArray.map((length: unknown, index) => {
-        const result = readDimension(length, [...path, index]);
+        const result = readDimension(length, [...path, index], options);
+        ignored.push(...result.ignored);
         if (!result.ok) {
             errors.push(...result.errors);
             return undefined;
@@ -124,6 +132,7 @@ function readLineCap(
 
     const pointer = readPointer(raw.lineCap);
     if (pointer) return pointer;
+    if (refusedAlias(raw.lineCap, [...at, "lineCap"], type, errors)) return undefined;
 
     if (lineCaps.includes(raw.lineCap as LineCap)) return raw.lineCap as LineCap;
     errors.push(

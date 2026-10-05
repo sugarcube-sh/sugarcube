@@ -18,7 +18,7 @@ export type UtilityToken =
  * any other could not be written.
  */
 export function utilityTokens(doc: Document, config: InternalConfig): UtilityToken[] {
-    const options = declarationOptions(config);
+    const options = declarationOptions(doc, config);
     const permutations = new Set(entries(doc, config).map((entry) => entry.permutation));
     const read = [...permutations].map((permutation) => declarations(permutation, options));
     const listed: UtilityToken[] = [];

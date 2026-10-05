@@ -18,6 +18,7 @@ export interface DuplicateKey {
     key: string;
     first: Node;
     last: Node;
+    earlier: { offset: number; length: number };
 }
 
 export interface ParsedJson {
@@ -81,7 +82,8 @@ function findDuplicates(node: Node, duplicates: DuplicateKey[], hidden: Set<Node
             const key = String(keyNode.value);
             const earlier = seen.get(key);
             if (earlier) {
-                duplicates.push({ key, first: earlier.keyNode, last: keyNode });
+                const { keyNode: first } = earlier;
+                duplicates.push({ key, first, last: keyNode, earlier: removal(earlier.property) });
                 hidden.add(earlier.property);
             }
             seen.set(key, { property, keyNode });
@@ -92,18 +94,46 @@ function findDuplicates(node: Node, duplicates: DuplicateKey[], hidden: Set<Node
     }
 }
 
+export function removal(property: Node): { offset: number; length: number } {
+    const siblings = property.parent?.children ?? [property];
+    const index = siblings.indexOf(property);
+    const end = property.offset + property.length;
+    const next = siblings[index + 1];
+    if (next) return { offset: property.offset, length: next.offset - property.offset };
+    const previous = siblings[index - 1];
+    const start = previous ? previous.offset + previous.length : property.offset;
+    return { offset: start, length: end - start };
+}
+
 export function members(
     node: Node,
     hidden: Set<Node>,
-): { key: string; keyNode: Node; value: Node }[] {
+): { key: string; keyNode: Node; value: Node; property: Node }[] {
     if (node.type !== "object") return [];
-    const found: { key: string; keyNode: Node; value: Node }[] = [];
+    const found: { key: string; keyNode: Node; value: Node; property: Node }[] = [];
     for (const property of node.children ?? []) {
         const [keyNode, value] = property.children ?? [];
         if (hidden.has(property) || !keyNode || !value) continue;
-        found.push({ key: String(keyNode.value), keyNode, value });
+        found.push({ key: String(keyNode.value), keyNode, value, property });
     }
     return found;
+}
+
+export function propertyKey(
+    node: Node,
+    steps: (string | number)[],
+    hidden: Set<Node>,
+): Node | undefined {
+    const name = steps.at(-1);
+    let current: Node | undefined = node;
+    for (const step of steps.slice(0, -1)) {
+        current =
+            current.type === "array"
+                ? current.children?.[Number(step)]
+                : member(current, String(step), hidden);
+        if (!current) return undefined;
+    }
+    return members(current, hidden).find(({ key }) => key === name)?.keyNode;
 }
 
 export function member(node: Node, key: string, hidden: Set<Node>): Node | undefined {

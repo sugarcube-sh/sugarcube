@@ -12,7 +12,8 @@ import type {
 } from "../index.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
-import { valueError } from "./value-errors.js";
+import { unknownProperties } from "./unknown-properties.js";
+import { refused, valueError } from "./value-errors.js";
 
 export type ObjectForm<T extends TokenType> = Exclude<UnresolvedValue<T>, Alias | Pointer>;
 
@@ -29,20 +30,21 @@ export function readComposite<O extends object>(
     defaults: Partial<O> = {},
 ): ParseResult<O | Alias | Pointer> {
     const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference };
+    if (reference) return { ok: true, value: reference, ignored: [] };
 
     if (!isJsonObject(raw)) {
-        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
+        return refused(at, { type, reason: "wrong-shape", value: raw });
     }
 
     const errors: ValueError[] = [];
-    for (const name of Object.keys(raw)) {
-        if (!Object.hasOwn(parts, name)) {
-            errors.push(
-                valueError([...at, name], { type, reason: "unknown-property", property: name }),
-            );
-        }
-    }
+    const ignored = unknownProperties(
+        raw,
+        (name) => Object.hasOwn(parts, name),
+        type,
+        at,
+        errors,
+        options,
+    );
 
     const value: Record<string, unknown> = {};
     for (const [name, read] of Object.entries(parts) as [string, Parse<unknown>][]) {
@@ -58,10 +60,11 @@ export function readComposite<O extends object>(
         }
 
         const result = read(raw[name], [...at, name], options);
+        ignored.push(...result.ignored);
         if (result.ok) value[name] = result.value;
         else errors.push(...result.errors);
     }
 
-    if (errors.length > 0) return { ok: false, errors };
-    return { ok: true, value: value as O };
+    if (errors.length > 0) return { ok: false, errors, ignored };
+    return { ok: true, value: value as O, ignored };
 }

@@ -6,7 +6,8 @@ import { scaleGenerator } from "./scale/generator.js";
 /**
  * How sugarcube reads a design system with `dtcg`: the permutations the config lists, or the
  * default and each context on its own when it lists none; the scale recipes; the fluid range's
- * check; and hex-string colors, which sugarcube accepts as shorthand for sRGB.
+ * check; a hex-string color as shorthand for sRGB; and a property a value's type does not define
+ * set aside with a warning, so a design tool's `paragraphSpacing` does not lose its token.
  *
  * @example
  * const doc = await read(config.resolver, readOptions(config));
@@ -20,5 +21,6 @@ export function readOptions(config: InternalConfig): ReadOptions {
         generators: [scaleGenerator],
         extensionValidators: [fluidValidator],
         hexStringColors: true,
+        ignoreUnknownProperties: true,
     };
 }

@@ -12,7 +12,9 @@ import { colorSpaces } from "./color-spaces.js";
 import { hexStringColor } from "./hex-color.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
-import { valueError } from "./value-errors.js";
+import { refusedAlias } from "./refuse-alias.js";
+import { unknownProperties } from "./unknown-properties.js";
+import { refused, valueError } from "./value-errors.js";
 
 type ColorAsWritten = UnresolvedValue<"color">;
 type Component = ColorComponent | Pointer;
@@ -43,27 +45,28 @@ export function readColor(
     options?: ParseOptions,
 ): ParseResult<ColorAsWritten> {
     const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference };
+    if (reference) return { ok: true, value: reference, ignored: [] };
 
     if (typeof raw === "string" && options?.hexStringColors && READABLE_HEX_STRING.test(raw)) {
-        return { ok: true, value: hexStringColor(raw) };
+        return { ok: true, value: hexStringColor(raw), ignored: [] };
     }
     if (typeof raw === "string" && HEX_STRING.test(raw)) {
-        return { ok: false, errors: [valueError(at, { type, reason: "hex-string", value: raw })] };
+        return refused(at, { type, reason: "hex-string", value: raw });
     }
 
     if (!isJsonObject(raw)) {
-        return { ok: false, errors: [valueError(at, { type, reason: "wrong-shape", value: raw })] };
+        return refused(at, { type, reason: "wrong-shape", value: raw });
     }
 
     const errors: ValueError[] = [];
-    for (const name of Object.keys(raw)) {
-        if (!PROPERTIES.has(name)) {
-            errors.push(
-                valueError([...at, name], { type, reason: "unknown-property", property: name }),
-            );
-        }
-    }
+    const ignored = unknownProperties(
+        raw,
+        (name) => PROPERTIES.has(name),
+        type,
+        at,
+        errors,
+        options,
+    );
 
     const colorSpace = readColorSpace(raw, at, errors);
     const components = readComponents(raw, at, colorSpace, errors);
@@ -71,12 +74,13 @@ export function readColor(
     const hex = readHex(raw, at, errors);
 
     if (errors.length > 0 || colorSpace === undefined || components === undefined) {
-        return { ok: false, errors };
+        return { ok: false, errors, ignored };
     }
 
     return {
         ok: true,
         value: { colorSpace, components, alpha, ...(hex !== undefined && { hex }) },
+        ignored,
     };
 }
 
@@ -98,6 +102,7 @@ function readColorSpace(
 
     const pointer = readPointer(raw.colorSpace);
     if (pointer) return pointer;
+    if (refusedAlias(raw.colorSpace, [...at, "colorSpace"], type, errors)) return undefined;
 
     if (typeof raw.colorSpace === "string" && Object.hasOwn(colorSpaces, raw.colorSpace)) {
         return raw.colorSpace as ColorSpace;
@@ -131,6 +136,7 @@ function readComponents(
 
     const pointer = readPointer(raw.components);
     if (pointer) return pointer;
+    if (refusedAlias(raw.components, [...at, "components"], type, errors)) return undefined;
 
     const path = [...at, "components"];
     if (!Array.isArray(raw.components) || raw.components.length !== 3) {
@@ -145,16 +151,7 @@ function readComponents(
     const components = raw.components.map((component: unknown, index): Component => {
         const componentPointer = readPointer(component);
         if (componentPointer) return componentPointer;
-        if (readAlias(component)) {
-            errors.push(
-                valueError([...path, index], {
-                    type,
-                    reason: "alias-not-allowed-here",
-                    reference: component as string,
-                }),
-            );
-            return 0;
-        }
+        if (refusedAlias(component, [...path, index], type, errors)) return 0;
 
         if (component === "none") return component;
         if (typeof component !== "number" || !Number.isFinite(component)) {
@@ -199,6 +196,7 @@ function readAlpha(
 
     const pointer = readPointer(raw.alpha);
     if (pointer) return pointer;
+    if (refusedAlias(raw.alpha, [...at, "alpha"], type, errors)) return 1;
 
     if (typeof raw.alpha !== "number" || !Number.isFinite(raw.alpha)) {
         errors.push(
@@ -228,6 +226,7 @@ function readHex(
 
     const pointer = readPointer(raw.hex);
     if (pointer) return pointer;
+    if (refusedAlias(raw.hex, [...at, "hex"], type, errors)) return undefined;
 
     if (typeof raw.hex === "string" && SIX_DIGIT_HEX.test(raw.hex)) return raw.hex;
     errors.push(valueError([...at, "hex"], { type, reason: "hex-not-six-digits", value: raw.hex }));

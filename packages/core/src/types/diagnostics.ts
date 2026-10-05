@@ -19,6 +19,7 @@ export interface SugarcubeDiagnosticDetailByKind {
     "default-required": { modifiers: string[] };
     "fluid-text-zoom": { from: number; to: number };
     "option-renamed": { from: string; to: string };
+    "option-deprecated": { option: string } & Partial<UtilityEntry>;
     "fallback-missing": { colorSpace: ColorSpace };
     "same-variable-name": { name: string; paths: [string, string] };
     "same-utility-class": { className: string; paths: [string, string] };

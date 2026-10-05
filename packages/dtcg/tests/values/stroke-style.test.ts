@@ -1,16 +1,24 @@
 import { describe, expect, it } from "vitest";
+import type { ParseOptions } from "../../src/index.js";
 import { lineCaps, parseStrokeStyle, strokeStyleKeywords } from "../../src/values.js";
 
-function read(raw: unknown) {
-    const result = parseStrokeStyle(raw, ["$value"]);
+const lenient: ParseOptions = { ignoreUnknownProperties: true };
+
+function read(raw: unknown, options?: ParseOptions) {
+    const result = parseStrokeStyle(raw, ["$value"], options);
     if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
     return result.value;
 }
 
-function details(raw: unknown) {
-    const result = parseStrokeStyle(raw, ["$value"]);
+function details(raw: unknown, options?: ParseOptions) {
+    const result = parseStrokeStyle(raw, ["$value"], options);
     if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
     return result.errors.map(({ path, detail }) => ({ path, detail }));
+}
+
+function ignored(raw: unknown, options?: ParseOptions) {
+    const result = parseStrokeStyle(raw, ["$value"], options);
+    return result.ignored.map(({ path, detail }) => ({ path, detail }));
 }
 
 const px = (value: number) => ({ value, unit: "px" });
@@ -67,6 +75,25 @@ describe("parseStrokeStyle", () => {
     });
 
     describe("refuses", () => {
+        it.for([
+            ["lineCap", { dashArray: [px(4)], lineCap: "{stroke.cap}" }],
+            ["dashArray", { dashArray: "{stroke.cap}", lineCap: "round" }],
+        ] as const)(
+            "a curly-brace reference as the %s, where a JSON Pointer can stand",
+            ([part, raw]) => {
+                expect(details(raw)).toStrictEqual([
+                    {
+                        path: ["$value", part],
+                        detail: {
+                            type: "strokeStyle",
+                            reason: "alias-not-allowed-here",
+                            reference: "{stroke.cap}",
+                        },
+                    },
+                ]);
+            },
+        );
+
         it.for(["Solid", "none", "hidden", "wavy", ""])(
             "the string %j, which is not a keyword",
             (raw) => {
@@ -165,11 +192,12 @@ describe("parseStrokeStyle", () => {
                 },
             ]);
         });
+    });
 
-        it("a property the spec does not define", () => {
-            expect(
-                details({ dashArray: [px(4)], lineCap: "round", dashOffset: px(1) }),
-            ).toStrictEqual([
+    describe("a property its type does not define", () => {
+        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
+            const raw = { dashArray: [px(4)], lineCap: "round", dashOffset: px(1) };
+            expect(details(raw)).toStrictEqual([
                 {
                     path: ["$value", "dashOffset"],
                     detail: {
@@ -179,6 +207,39 @@ describe("parseStrokeStyle", () => {
                     },
                 },
             ]);
+            expect(ignored(raw)).toStrictEqual([]);
+        });
+
+        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
+            it("a property the spec does not define", () => {
+                const raw = { dashArray: [px(4)], lineCap: "round", dashOffset: px(1) };
+                expect(read(raw, lenient)).toStrictEqual({
+                    kind: "dash",
+                    dashArray: [px(4)],
+                    lineCap: "round",
+                });
+                expect(ignored(raw, lenient)).toStrictEqual([
+                    {
+                        path: ["$value", "dashOffset"],
+                        detail: { type: "strokeStyle", property: "dashOffset" },
+                    },
+                ]);
+            });
+
+            it("a length's own property, at its full path", () => {
+                const raw = { dashArray: [{ ...px(4), fluid: true }], lineCap: "round" };
+                expect(read(raw, lenient)).toStrictEqual({
+                    kind: "dash",
+                    dashArray: [px(4)],
+                    lineCap: "round",
+                });
+                expect(ignored(raw, lenient)).toStrictEqual([
+                    {
+                        path: ["$value", "dashArray", 0, "fluid"],
+                        detail: { type: "dimension", property: "fluid" },
+                    },
+                ]);
+            });
         });
     });
 });

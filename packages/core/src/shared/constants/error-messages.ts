@@ -33,8 +33,13 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
         message: ({ from, to }) =>
             `\`${from}\` is now \`${to}\`: rename it in your config; the old name stops working at 1.0`,
     },
+    "option-deprecated": {
+        severity: "warning",
+        message: ({ option, property }) =>
+            `\`${option}\`${property ? ` in \`${property}\`` : ""} is deprecated and will be removed in a later release`,
+    },
     "fallback-missing": {
-        severity: "error",
+        severity: "warning",
         message: ({ colorSpace }) =>
             `this \`${colorSpace}\` color needs a \`hex\` to fall back to when \`colorFallbackStrategy\` is \`"polyfill"\`: add one, or use \`"native"\` if every browser you support has \`${colorSpace}\``,
     },

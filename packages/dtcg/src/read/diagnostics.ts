@@ -13,7 +13,7 @@ export function diagnostic<K extends DiagnosticKind>(
     const { severity, message } = diagnosticMessages[kind];
     return {
         kind,
-        severity,
+        severity: typeof severity === "function" ? severity(detail) : severity,
         message: message(detail),
         ...extra,
         docs: docsFor(kind, detail),

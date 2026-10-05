@@ -56,7 +56,8 @@ export function parseValue<T extends TokenType>(
             reference: written,
         }),
     );
-    return errors.length > 0 ? { ok: false, errors } : (read as ParseResult<ValueByType[T]>);
+    if (errors.length === 0) return read as ParseResult<ValueByType[T]>;
+    return { ok: false, errors, ignored: read.ignored };
 }
 
 function referencesIn(value: unknown, inside: JsonPath): { inside: JsonPath; written: string }[] {

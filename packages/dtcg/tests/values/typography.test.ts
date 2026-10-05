@@ -1,16 +1,24 @@
 import { describe, expect, it } from "vitest";
+import type { ParseOptions } from "../../src/index.js";
 import { parseTypography } from "../../src/values.js";
 
-function read(raw: unknown) {
-    const result = parseTypography(raw, ["$value"]);
+const lenient: ParseOptions = { ignoreUnknownProperties: true };
+
+function read(raw: unknown, options?: ParseOptions) {
+    const result = parseTypography(raw, ["$value"], options);
     if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
     return result.value;
 }
 
-function details(raw: unknown) {
-    const result = parseTypography(raw, ["$value"]);
+function details(raw: unknown, options?: ParseOptions) {
+    const result = parseTypography(raw, ["$value"], options);
     if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
     return result.errors.map(({ path, detail }) => ({ path, detail }));
+}
+
+function ignored(raw: unknown, options?: ParseOptions) {
+    const result = parseTypography(raw, ["$value"], options);
+    return result.ignored.map(({ path, detail }) => ({ path, detail }));
 }
 
 const px = (value: number) => ({ value, unit: "px" });
@@ -105,18 +113,6 @@ describe("parseTypography", () => {
             ]);
         });
 
-        it.for(["fontStyle", "textTransform", "textDecoration"])(
-            "the part %s, which spec 9.8 does not define",
-            (part) => {
-                expect(details({ ...heading, [part]: "italic" })).toStrictEqual([
-                    {
-                        path: ["$value", part],
-                        detail: { type: "typography", reason: "unknown-property", property: part },
-                    },
-                ]);
-            },
-        );
-
         it("a line height with a unit, since spec 9.8 makes it a number", () => {
             expect(details({ ...heading, lineHeight: px(24) })).toStrictEqual([
                 {
@@ -156,6 +152,57 @@ describe("parseTypography", () => {
                     },
                 },
             ]);
+        });
+    });
+
+    describe("a property its type does not define", () => {
+        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
+            const raw = { ...heading, paragraphSpacing: px(8) };
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value", "paragraphSpacing"],
+                    detail: {
+                        type: "typography",
+                        reason: "unknown-property",
+                        property: "paragraphSpacing",
+                    },
+                },
+            ]);
+            expect(ignored(raw)).toStrictEqual([]);
+        });
+
+        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
+            it.for(["paragraphSpacing", "fontStyle", "textTransform", "textDecoration"])(
+                "not %s, which spec 9.8 does not define: it is set aside and the rest read",
+                (part) => {
+                    const raw = { ...heading, [part]: "italic" };
+                    expect(read(raw, lenient)).toStrictEqual(read(heading, lenient));
+                    expect(ignored(raw, lenient)).toStrictEqual([
+                        { path: ["$value", part], detail: { type: "typography", property: part } },
+                    ]);
+                },
+            );
+
+            it("a part missing, with a part set aside beside it", () => {
+                const { lineHeight: _, ...partial } = heading;
+                const raw = { ...partial, paragraphSpacing: px(8) };
+                expect(details(raw, lenient)).toStrictEqual([
+                    {
+                        path: ["$value", "lineHeight"],
+                        detail: {
+                            type: "typography",
+                            reason: "missing-property",
+                            property: "lineHeight",
+                        },
+                    },
+                ]);
+                expect(ignored(raw, lenient)).toStrictEqual([
+                    {
+                        path: ["$value", "paragraphSpacing"],
+                        detail: { type: "typography", property: "paragraphSpacing" },
+                    },
+                ]);
+            });
         });
     });
 });

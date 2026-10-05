@@ -7,11 +7,11 @@ import { ErrorMessages } from "../constants/error-messages.js";
 export const scaleGenerator = defineGenerator({
     extension: [SUGARCUBE_NAMESPACE, "scale"],
     messages: ErrorMessages.SCALE_RECIPE,
-    generate: (_group, extension) => {
-        const recipe = readScaleRecipe(extension);
+    generate: (_group, extension, options) => {
+        const recipe = readScaleRecipe(extension, options);
         if (!recipe.ok) return recipe;
         return {
-            ok: true,
+            ...recipe,
             value: calculateScale(recipe.value).map(({ name, min, max }) => ({
                 name,
                 $type: "dimension",

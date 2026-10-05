@@ -1,4 +1,10 @@
-import { type Permutation, isAlias, referenceAt, token } from "@sugarcube-sh/dtcg";
+import {
+    type ParseOptions,
+    type Permutation,
+    isAlias,
+    referenceAt,
+    token,
+} from "@sugarcube-sh/dtcg";
 import type { FluidConfig } from "../../types/config.js";
 import type { SugarcubeDiagnostic } from "../../types/diagnostics.js";
 import { diagnostic } from "../diagnostics.js";
@@ -8,6 +14,7 @@ import { checkWCAG } from "./utopia.js";
 export function textZoomWarnings(
     permutations: Permutation[],
     viewport: FluidConfig,
+    options: ParseOptions,
 ): SugarcubeDiagnostic[] {
     const found = new Map<string, SugarcubeDiagnostic>();
     for (const permutation of permutations) {
@@ -15,7 +22,7 @@ export function textZoomWarnings(
             if (each.type !== "typography") continue;
             const ref = referenceAt(each, ["fontSize"]);
             const target = ref && isAlias(ref) ? token(permutation, ref.alias) : undefined;
-            const fluid = target && fluidRangeOf(permutation, target);
+            const fluid = target && fluidRangeOf(permutation, target, options);
             if (!fluid) continue;
             const fails = checkWCAG({
                 min: pixels(fluid.range.min),

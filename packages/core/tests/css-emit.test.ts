@@ -95,6 +95,11 @@ describe("emitCSS", () => {
             expect(written).toStrictEqual([]);
         });
 
+        it("keeps where the read found it, the modifier in the resolver", () => {
+            const [found] = diagnostics;
+            expect(found?.at?.file).toBe("tokens.resolver.json");
+        });
+
         it("says which modifier needs a default, in place of the read's warning", () => {
             expect(diagnostics.map(({ kind }) => kind)).toStrictEqual(["default-required"]);
             expect(diagnostics[0]).toMatchObject({
@@ -596,7 +601,22 @@ describe("emitCSS", () => {
             );
         });
 
-        it("reporting a color with no hex to fall back to, and writing it as it is", () => {
+        it("warning, once, that polyfill will be removed", () => {
+            const config = fillDefaults({ variables: { path: "variables.css", ...polyfill } });
+            const files = { "tokens.json": JSON.stringify({ ink: color("#111111") }) };
+            const { diagnostics } = emitCSS(readFromMemory({ files }, readOptions(config)), config);
+            expect(
+                diagnostics.map(({ kind, severity, message }) => [kind, severity, message]),
+            ).toStrictEqual([
+                [
+                    "option-deprecated",
+                    "warning",
+                    '`colorFallbackStrategy: "polyfill"` is deprecated and will be removed in a later release',
+                ],
+            ]);
+        });
+
+        it("warning about a color with no hex to fall back to, and writing it as it is", () => {
             const config = fillDefaults({ variables: { path: "variables.css", ...polyfill } });
             const files = {
                 "tokens.json": JSON.stringify({
@@ -609,16 +629,13 @@ describe("emitCSS", () => {
             );
             expect(written[0]?.css).toBe(":root {\n    --deep: lab(50 20 -30);\n}\n");
             expect(
-                diagnostics.map(({ kind, severity, path, message }) => [
-                    kind,
-                    severity,
-                    path,
-                    message,
-                ]),
+                diagnostics
+                    .filter(({ kind }) => kind === "fallback-missing")
+                    .map(({ kind, severity, path, message }) => [kind, severity, path, message]),
             ).toStrictEqual([
                 [
                     "fallback-missing",
-                    "error",
+                    "warning",
                     "deep",
                     'this `lab` color needs a `hex` to fall back to when `colorFallbackStrategy` is `"polyfill"`: add one, or use `"native"` if every browser you support has `lab`',
                 ],
@@ -978,6 +995,38 @@ describe("emitCSS", () => {
                 .filter((line) => line.startsWith("    "))
                 .map((line) => line.trim());
 
+        it("setting aside a property its type does not define, such as a design tool's paragraphSpacing, with a warning", () => {
+            const config = fillDefaults({ variables: { path: "variables.css" } });
+            const tokens = {
+                heading: {
+                    $type: "typography",
+                    $value: {
+                        fontFamily: "Inter",
+                        fontSize: { value: 2, unit: "rem" },
+                        fontWeight: 700,
+                        letterSpacing: px(0),
+                        lineHeight: 1.2,
+                        paragraphSpacing: px(16),
+                    },
+                },
+            };
+            const files = { "tokens.json": JSON.stringify(tokens) };
+            const { files: written, diagnostics } = emitCSS(
+                readFromMemory({ files }, readOptions(config)),
+                config,
+            );
+            expect(written[0]?.css).toContain("--heading-line-height: 1.2;");
+            expect(
+                diagnostics.map(({ kind, severity, message }) => [kind, severity, message]),
+            ).toStrictEqual([
+                [
+                    "unknown-property",
+                    "warning",
+                    "`paragraphSpacing` is not a property of a typography value, so it is ignored",
+                ],
+            ]);
+        });
+
         it("with var() for a part referring to a token with a variable, and the value otherwise", () => {
             expect(
                 declarations({
@@ -1316,6 +1365,41 @@ describe("emitCSS", () => {
             });
             expect(files[0]?.css).toBe(":root {\n    --tint: #e11d48;\n}\n");
             expect(diagnostics).toStrictEqual([]);
+        });
+
+        it("setting aside a property its min or max does not define, with a warning", () => {
+            const { files, diagnostics } = read({
+                step: fluid({ min: { ...px(16), clamp: true }, max: px(20) }),
+            });
+            expect(files[0]?.css).toBe(
+                ":root {\n    --step: clamp(1rem, 0.9091rem + 0.4545vw, 1.25rem);\n}\n",
+            );
+            expect(
+                diagnostics.map(({ kind, path, message }) => [kind, path, message]),
+            ).toStrictEqual([
+                [
+                    "unknown-property",
+                    "step",
+                    "`clamp` is not a property of a dimension, so it is ignored",
+                ],
+            ]);
+        });
+
+        it("reading a fluid range as the Document's values were read", () => {
+            const config = fillDefaults({
+                variables: {
+                    path: "variables.css",
+                    transforms: { fluid: { min: 320, max: 1200 } },
+                },
+            });
+            const files = {
+                "tokens.json": JSON.stringify({
+                    step: fluid({ min: { ...px(16), clamp: true }, max: px(20) }),
+                }),
+            };
+            const strict = { ...readOptions(config), ignoreUnknownProperties: false };
+            const { files: written } = emitCSS(readFromMemory({ files }, strict), config);
+            expect(written[0]?.css ?? "").not.toContain("clamp(");
         });
 
         it("and reports a fluid range it cannot read, leaving that token out", () => {

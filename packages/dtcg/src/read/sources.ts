@@ -3,7 +3,7 @@ import type { Diagnostic, JsonPath } from "../index.js";
 import { type Files, openFile, parseFile } from "./files.js";
 import { type JsonFile, spanOf } from "./json.js";
 import { folderOf, join } from "./paths.js";
-import { encodePointer, follow, parsePointer } from "./pointer.js";
+import { encodePointer, follow, parsePointer, readPointerText } from "./pointer.js";
 import {
     type ModifierDefinition,
     type Reader,
@@ -14,6 +14,7 @@ import {
     isResolver,
     SET_KEYS,
     readSetParts,
+    reportMalformed,
     resolverProblem,
 } from "./resolver.js";
 
@@ -198,14 +199,18 @@ function followSource(
         const hash = ref.indexOf("#");
         const fragment = hash === -1 ? "" : ref.slice(hash + 1);
         const file = hash === -1 ? ref : ref.slice(0, hash);
-        const steps =
-            fragment === ""
-                ? []
-                : parsePointer(fragment.startsWith("/") ? `#${fragment}` : `#/${fragment}`);
-        if (!steps) {
-            reader.report({ rule: "invalid-pointer", name: ref, at }, refNode);
+        const read = fragment === "" ? undefined : readPointerText(`#${fragment}`);
+        if (read && !read.ok) {
+            reportMalformed(
+                reader,
+                ref,
+                { ...read, corrected: `${file}${read.corrected}` },
+                refNode,
+                true,
+            );
             return [];
         }
+        const steps = read?.steps ?? [];
         const entry: SourceEntry = {
             kind: "file",
             file,
@@ -217,8 +222,16 @@ function followSource(
         return withOverrides(reader, [entry], overriding, holder);
     }
 
-    const steps = parsePointer(ref);
-    if (!steps || steps[0] === "modifiers" || steps[0] === "resolutionOrder") {
+    const read = readPointerText(ref);
+    if (!read.ok) {
+        const corrected = parsePointer(read.corrected);
+        const reaches =
+            corrected !== undefined && pointable(corrected) && follow(root, corrected).ok;
+        reportMalformed(reader, ref, read, refNode, reaches);
+        return [];
+    }
+    const steps = read.steps;
+    if (!pointable(steps)) {
         reader.report({ rule: "invalid-pointer", name: ref, at }, refNode);
         return [];
     }
@@ -290,4 +303,8 @@ function withOverride(
     ];
     for (const piece of pieces) piece.pieces = pieces;
     return pieces;
+}
+
+function pointable([first]: string[]): boolean {
+    return first !== "modifiers" && first !== "resolutionOrder";
 }

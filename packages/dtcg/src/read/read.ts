@@ -114,15 +114,25 @@ function permutationOptions({
 
 function toDocument(
     loaded: Loaded,
-    { onStage, generators = [], extensionValidators = [], hexStringColors }: ReadOptions,
+    {
+        onStage,
+        generators = [],
+        extensionValidators = [],
+        hexStringColors,
+        ignoreUnknownProperties,
+    }: ReadOptions,
 ): Document {
     const found: Document["diagnostics"] = [];
-    const readValue = createValueReader(found, { hexStringColors });
+    const parseOptions = {
+        hexStringColors: hexStringColors ?? false,
+        ignoreUnknownProperties: ignoreUnknownProperties ?? false,
+    };
+    const readValue = createValueReader(found, parseOptions);
     let generating = 0;
     const generate = (merged: Merged, permutation: number) => {
         if (generators.length === 0) return;
         const started = performance.now();
-        fillGenerated(merged, generators, permutation, found);
+        fillGenerated(merged, generators, { permutation, parseOptions }, found);
         generating += performance.now() - started;
     };
     const normalising = performance.now();
@@ -132,7 +142,12 @@ function toDocument(
     onStage?.("normalise", resolving - normalising - generating);
     const permutations = resolvePermutations(normalised, readValue, found);
     onStage?.("resolve", performance.now() - resolving);
-    validateExtensions(normalised, permutations, extensionValidators, found);
+    validateExtensions(
+        normalised,
+        permutations,
+        { validators: extensionValidators, parseOptions },
+        found,
+    );
 
     return {
         version: packageJson.version,
@@ -140,6 +155,7 @@ function toDocument(
         modifiers: loaded.modifiers,
         usedBy: loaded.usedBy,
         permutations,
+        parseOptions,
         diagnostics: [...loaded.diagnostics, ...collapse(found, permutations.length)],
     };
 }

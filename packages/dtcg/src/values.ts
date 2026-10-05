@@ -25,7 +25,11 @@ export {
 export { tokenTypes } from "./values/token-types.js";
 export { parseValue } from "./values/parse-value.js";
 export { isAlias, isPointer, readReference } from "./values/references.js";
-export { type ExtensionReader, extensionReader } from "./values/extension-reader.js";
+export {
+    type ExtensionReader,
+    type ExtensionResult,
+    extensionReader,
+} from "./values/extension-reader.js";
 export { isJsonObject } from "./values/json.js";
 export { compositeParts } from "./values/composite-parts.js";
 
@@ -36,11 +40,22 @@ export { compositeParts } from "./values/composite-parts.js";
  *
  * @example
  * parseColor({ colorSpace: "srgb", components: [1, 0, 1] }, [])
- * // { ok: true, value: { colorSpace: "srgb", components: [1, 0, 1], alpha: 1 } }
+ * // { ok: true, value: { colorSpace: "srgb", components: [1, 0, 1], alpha: 1 }, ignored: [] }
  *
  * @example
  * parseColor("{color.brand}", [])
- * // { ok: true, value: { alias: "color.brand" } }
+ * // { ok: true, value: { alias: "color.brand" }, ignored: [] }
+ *
+ * @example
+ * parseColor({ colorSpace: "srgb", components: [1, 0, 1], name: "magenta" }, [])
+ * // { ok: false, errors: [{ kind: "invalid-value", path: ["name"], … }], ignored: [] }
+ *
+ * @example
+ * parseColor({ colorSpace: "srgb", components: [1, 0, 1], name: "magenta" }, [], {
+ *   ignoreUnknownProperties: true,
+ * })
+ * // read without `name`, which is in `ignored`:
+ * // [{ kind: "unknown-property", path: ["name"], detail: { type: "color", property: "name" }, … }]
  */
 export const parseColor: Parse<UnresolvedValue<"color">> = readColor;
 /** Reads one dimension value. */
@@ -64,7 +79,7 @@ export const parseStrokeStyle: Parse<UnresolvedValue<"strokeStyle">> = readStrok
  * @example
  * parseBorder({ color: "{color.brand}", width: { value: 1, unit: "px" }, style: "solid" }, [])
  * // { ok: true, value: { color: { alias: "color.brand" }, width: { value: 1, unit: "px" },
- * //   style: { kind: "keyword", keyword: "solid" } } }
+ * //   style: { kind: "keyword", keyword: "solid" } }, ignored: [] }
  */
 export const parseBorder: Parse<UnresolvedValue<"border">> = readBorder;
 /** Reads one shadow value. A single shadow becomes a list of one. */

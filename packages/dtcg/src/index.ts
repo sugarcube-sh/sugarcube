@@ -651,6 +651,17 @@ export interface DiagnosticDetailByKind {
     };
     /** `$extends`, or a `$ref` standing for a group, points at a token (Format 6.4.6). */
     "not-a-group": { ref: string };
+    /**
+     * A `$ref` is not a JSON Pointer (RFC 6901): it does not start with `/` after the `#`, or a `~`
+     * in it is not `~0` or `~1`. A fix writes it correctly when that reaches something, and always
+     * for a reference into another file, whose target is not read.
+     */
+    "malformed-pointer": {
+        ref: string;
+        reason: "no-leading-slash" | "bad-escape";
+        /** The reference written correctly. */
+        corrected: string;
+    };
     /** A reference to a token points at a group (Format 6.2: `{color.accent}` names a group, not a token). */
     "not-a-token": { ref: string };
     /**
@@ -669,10 +680,19 @@ export interface DiagnosticDetailByKind {
     /** A name starts or ends with a space: legal, but almost always a typo. */
     "whitespace-in-name": { name: string };
     /**
-     * An object in a resolver has a key the resolver specification does not define for it, so it is
-     * ignored. Your own data belongs in `$extensions`.
+     * An object has a key the specification does not define for it, so it is ignored: in a
+     * resolver, or in a value, such as `paragraphSpacing` in a typography value. Your own data
+     * belongs in `$extensions`.
      */
-    "unknown-property": { property: string; owner: "resolver" | "set" | "modifier" };
+    "unknown-property":
+        | { property: string; owner: "resolver" | "set" | "modifier" }
+        | {
+              property: string;
+              /** The type of the value it is in, which for a part of a composite is the part's type. */
+              owner: TokenType;
+              /** Where in the token or group, such as `["$value", "paragraphSpacing"]`. */
+              at: JsonPath;
+          };
     /** A reference points at a token marked `$deprecated`. */
     "deprecated-reference": { ref: string; reason?: string };
     /** A resolver has more combinations than `permutationLimit`, so `"each-context"` was built instead. */
@@ -727,7 +747,8 @@ export type ResolverRule =
     | "unknown-item-type"
     | "no-contexts"
     | "single-context"
-    | "invalid-default";
+    | "invalid-default"
+    | "file-in-resolution-order";
 
 /**
  * A rule a resolver breaks, what it concerns and where. Checking `rule` narrows the rest.
@@ -837,6 +858,11 @@ export interface Document {
      */
     usedBy: Record<string, "everyone" | Input[]>;
     permutations: Permutation[];
+    /**
+     * How the values were read. To read a value from the Document again, such as one inside
+     * `$extensions`, the same way, give these to `parseValue` or `extensionReader`.
+     */
+    parseOptions: Required<ParseOptions>;
     /** Every error, warning and note, in file order. {@link errors} picks out the errors. */
     diagnostics: Diagnostic[];
 }
@@ -853,8 +879,26 @@ export interface ValueError {
     detail: ValueErrorDetail;
 }
 
-/** The outcome of reading one value. */
-export type ParseResult<V> = { ok: true; value: V } | { ok: false; errors: ValueError[] };
+/**
+ * A property a value's type does not define, such as `paragraphSpacing` in a typography value. It
+ * is set aside, and the rest of the value is read without it.
+ */
+export interface IgnoredProperty {
+    kind: "unknown-property";
+    /** Where the property is, such as `["$value", "paragraphSpacing"]`. */
+    path: JsonPath;
+    message: string;
+    /** The type of the value it is in, which for a part of a composite is the part's type. */
+    detail: { type: TokenType; property: string };
+}
+
+/**
+ * The outcome of reading one value. `ignored` lists the properties set aside, whether or not the
+ * rest of the value could be read: empty when there are none.
+ */
+export type ParseResult<V> =
+    | { ok: true; value: V; ignored: IgnoredProperty[] }
+    | { ok: false; errors: ValueError[]; ignored: IgnoredProperty[] };
 
 /** Reads one raw value into its shape, or explains why it cannot. */
 export type Parse<V> = (raw: unknown, at: JsonPath, options?: ParseOptions) => ParseResult<V>;
@@ -868,6 +912,16 @@ export interface ParseOptions {
      * @default false
      */
     hexStringColors?: boolean;
+    /**
+     * Reads a value that has a property its type does not define, such as `paragraphSpacing` in a
+     * typography value, by setting that property aside: each is listed in
+     * {@link ParseResult | `ignored`}, which `read` reports as an `unknown-property` warning, and
+     * the rest of the value is read. Not DTCG 2025.10, which makes such a composite token invalid
+     * (Format 9.2). Off, the property is an `invalid-value` error, for colors, dimensions and
+     * durations as for composites. A `$ref` with other properties beside it is an error either way.
+     * @default false
+     */
+    ignoreUnknownProperties?: boolean;
 }
 
 export type { StandardSchemaV1, StandardTypedV1 } from "./standard-schema.js";
@@ -900,7 +954,9 @@ export interface ExtensionValidator {
     /**
      * Why the extension is not valid, if it is not. An error's `path` starts at the extension. An
      * {@link ExtensionError} is worded from `messages`; a {@link ValueError}, from reading a value in
-     * the extension with `parseValue`, is reported as `invalid-value`.
+     * the extension with `parseValue`, is reported as `invalid-value`; an {@link IgnoredProperty}
+     * from the same, as an `unknown-property` warning. `options` are how the read reads values, to
+     * read the extension's the same way: give them to `extensionReader` or `parseValue`.
      */
     validate?(
         on: {
@@ -909,7 +965,8 @@ export interface ExtensionValidator {
             type: TokenType | "group";
         },
         extension: unknown,
-    ): (ExtensionError | ValueError)[];
+        options: ParseOptions,
+    ): (ExtensionError | ValueError | IgnoredProperty)[];
 }
 
 /** A token a generator makes, written as it would be in a file, with its name in the group. */
@@ -988,10 +1045,12 @@ export interface Generator {
      * Tokens no file writes are listed at the end of the group. An error's `path` starts at the
      * extension. An {@link ExtensionError} is reported as `extension-invalid`, worded from
      * `messages`; a {@link ValueError}, from reading a value in the extension with `parseValue`, is
-     * reported as `invalid-value`, as it would be in a token. With a `schema`, the extension is the
+     * reported as `invalid-value`, as it would be in a token, and each of its `ignored` properties
+     * as an `unknown-property` warning. With a `schema`, the extension is the
      * schema's output. A group whose extension is not valid gets no tokens added. The extension is
      * plain JSON, so whole-number keys inside it come first, in numeric order, whatever order the
-     * file writes them in.
+     * file writes them in. `options` are how the read reads values, to read the extension's the
+     * same way: give them to `extensionReader` or `parseValue`.
      */
     generate(
         group: {
@@ -1000,9 +1059,10 @@ export interface Generator {
             type?: TokenType;
         },
         extension: unknown,
+        options: ParseOptions,
     ):
-        | { ok: true; value: GeneratedToken[] }
-        | { ok: false; errors: (ExtensionError | ValueError)[] };
+        | { ok: true; value: GeneratedToken[]; ignored?: IgnoredProperty[] }
+        | { ok: false; errors: (ExtensionError | ValueError)[]; ignored?: IgnoredProperty[] };
 }
 
 export { defineGenerator } from "./read/generate.js";

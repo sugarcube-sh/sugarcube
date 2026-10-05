@@ -1,6 +1,7 @@
+import type { Node } from "jsonc-parser";
 import type { Diagnostic, DiagnosticDetailByKind, Input, Source } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
-import { type JsonFile, plainObject } from "./json.js";
+import { type JsonFile, plainObject, spanOf } from "./json.js";
 import type { Resolver } from "./resolver.js";
 import type { Loaded } from "./load.js";
 import type { ExpandedItem, LoadedSource, SourceEntry } from "./sources.js";
@@ -27,6 +28,7 @@ interface Modifier {
     name: string;
     contexts: string[];
     default?: string;
+    declared: Node;
 }
 
 export function fromTokenFiles(files: { path: string; json?: JsonFile }[]): Built {
@@ -54,7 +56,7 @@ export function fromResolver(
     diagnostics: Diagnostic[],
 ): Built {
     const modifiers = modifiersOf(items);
-    const inputs = chooseInputs(modifiers, options, diagnostics);
+    const inputs = chooseInputs(modifiers, options, { diagnostics, file: resolver.file });
     const labels = labelsFor(modifiers);
     return {
         modifiers: Object.fromEntries(
@@ -79,6 +81,7 @@ function modifiersOf(items: ExpandedItem[]): Modifier[] {
                   {
                       name: item.modifier.name,
                       contexts: [...item.contexts.keys()],
+                      declared: item.modifier.declared,
                       ...(item.modifier.default !== undefined && {
                           default: item.modifier.default,
                       }),
@@ -88,11 +91,17 @@ function modifiersOf(items: ExpandedItem[]): Modifier[] {
     );
 }
 
+interface Reporting {
+    diagnostics: Diagnostic[];
+    file: JsonFile;
+}
+
 function chooseInputs(
     modifiers: Modifier[],
     { inputs, permutations, limit }: PermutationOptions,
-    diagnostics: Diagnostic[],
+    reporting: Reporting,
 ): Input[] {
+    const { diagnostics } = reporting;
     if (modifiers.length === 0) return [{}];
     const chosen = inputs
         ? inputs.flatMap((raw, index) => {
@@ -100,8 +109,8 @@ function chooseInputs(
               return input ? [input] : [];
           })
         : permutations === "each-context"
-          ? eachContext(modifiers, diagnostics)
-          : allCombinations(modifiers, limit, diagnostics);
+          ? eachContext(modifiers, reporting)
+          : allCombinations(modifiers, limit, reporting);
     const seen = new Set<string>();
     return chosen.filter((input) => {
         const key = inputKey(modifiers, input);
@@ -177,7 +186,7 @@ export function findByName<T>(
     return folded.length === 1 ? folded[0] : undefined;
 }
 
-function allCombinations(modifiers: Modifier[], limit: number, diagnostics: Diagnostic[]): Input[] {
+function allCombinations(modifiers: Modifier[], limit: number, reporting: Reporting): Input[] {
     const count = modifiers.reduce((product, { contexts }) => product * contexts.length, 1);
     if (count <= limit) {
         const every = modifiers.reduce<Input[]>(
@@ -190,16 +199,24 @@ function allCombinations(modifiers: Modifier[], limit: number, diagnostics: Diag
         const defaults = hasDefaults(modifiers) ? [withDefaults(modifiers, {})] : [];
         return [...defaults, ...every];
     }
-    const built = eachContext(modifiers, diagnostics);
-    diagnostics.push(diagnostic("permutation-limit", { count, limit, built: built.length }));
+    const built = eachContext(modifiers, reporting);
+    reporting.diagnostics.push(
+        diagnostic("permutation-limit", { count, limit, built: built.length }),
+    );
     return built;
 }
 
-function eachContext(modifiers: Modifier[], diagnostics: Diagnostic[]): Input[] {
+function eachContext(modifiers: Modifier[], { diagnostics, file }: Reporting): Input[] {
     const withoutDefault = modifiers.filter(({ default: fallback }) => fallback === undefined);
-    if (withoutDefault.length > 0) {
+    const [first] = withoutDefault;
+    if (first) {
+        const { offset, length } = first.declared;
         diagnostics.push(
-            diagnostic("no-default", { modifiers: withoutDefault.map(({ name }) => name) }),
+            diagnostic(
+                "no-default",
+                { modifiers: withoutDefault.map(({ name }) => name) },
+                { at: spanOf(file.path, file.lineStarts, offset, length) },
+            ),
         );
     }
     const defaults = withoutDefault.length === 0 ? [withDefaults(modifiers, {})] : [];

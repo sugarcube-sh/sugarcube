@@ -13,7 +13,10 @@ const multipliers = { mode: "multipliers", base, multipliers: { sm: 1, md: 1.5, 
 
 function read(group: Record<string, unknown>): Document {
     const text = JSON.stringify({ size: { $type: "dimension", ...group } });
-    return readFromMemory({ files: { "tokens.json": text } }, { generators: [scaleGenerator] });
+    return readFromMemory(
+        { files: { "tokens.json": text } },
+        { generators: [scaleGenerator], ignoreUnknownProperties: true },
+    );
 }
 
 function withScale(scale: unknown, written: Record<string, unknown> = {}) {
@@ -132,6 +135,27 @@ describe("scale generator", () => {
                     type: "dimension",
                     reason: "reference-not-allowed",
                     reference: "#/size/base/$value",
+                },
+            },
+        ]);
+    });
+
+    it("sets aside a property its base's dimensions do not define, with a warning, and still adds the scale", () => {
+        const doc = withScale({
+            ...multipliers,
+            base: { ...base, min: { ...base.min, fluid: true } },
+        });
+        expect(tokens(doc).map((t) => t.path)).toEqual(["size.sm", "size.md", "size.lg"]);
+        expect(
+            doc.diagnostics.map(({ kind, severity, detail }) => ({ kind, severity, detail })),
+        ).toEqual([
+            {
+                kind: "unknown-property",
+                severity: "warning",
+                detail: {
+                    property: "fluid",
+                    owner: "dimension",
+                    at: ["$extensions", "sh.sugarcube", "scale", "base", "min", "fluid"],
                 },
             },
         ]);

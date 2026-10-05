@@ -1,5 +1,10 @@
-import type { ExtensionError, ValueError } from "@sugarcube-sh/dtcg";
-import { type ExtensionReader, extensionReader, isJsonObject } from "@sugarcube-sh/dtcg/values";
+import type { ParseOptions } from "@sugarcube-sh/dtcg";
+import {
+    type ExtensionReader,
+    type ExtensionResult,
+    extensionReader,
+    isJsonObject,
+} from "@sugarcube-sh/dtcg/values";
 import type {
     ExponentialScaleConfig,
     MultiplierScaleConfig,
@@ -9,12 +14,12 @@ import { ErrorMessages } from "../constants/error-messages.js";
 
 type Messages = typeof ErrorMessages.SCALE_RECIPE;
 type Reader = ExtensionReader<Messages>;
-type Errors = (ExtensionError<Messages> | ValueError)[];
 
 export function readScaleRecipe(
     raw: unknown,
-): { ok: true; value: ScaleExtension } | { ok: false; errors: Errors } {
-    const reader = extensionReader<Messages>();
+    options: ParseOptions,
+): ExtensionResult<ScaleExtension, Messages> {
+    const reader = extensionReader<Messages>(options);
     if (!isJsonObject(raw)) {
         reader.report([], "not-an-object", { name: "scale" });
         return reader.result<ScaleExtension>(undefined);

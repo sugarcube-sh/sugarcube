@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { read, readFromMemory } from "../../src/index.js";
+import { type ReadOptions, read, readFromMemory } from "../../src/index.js";
 
 const valid = '{ "a": { "$type": "number", "$value": 1 } }';
 
@@ -67,6 +67,83 @@ describe("positions", () => {
             { kind: "duplicate-key", detail: { key: "b" } },
             { kind: "duplicate-key", detail: { key: "b" } },
         ]);
+    });
+});
+
+describe("what is set aside is a warning, and what cannot be read an error", () => {
+    const severities = (text: string, options: ReadOptions = {}) =>
+        readFromMemory({ files: { "tokens.json": text } }, options).diagnostics.map(
+            ({ kind, severity, detail }) => [
+                kind,
+                severity,
+                "property" in detail ? detail.property : "",
+            ],
+        );
+
+    it("a key written twice, a description, deprecation or extensions of the wrong kind, and an unknown property in a value are warnings", () => {
+        const text = `{
+            "a": { "$type": "number", "$value": 1 },
+            "a": { "$type": "number", "$value": 2, "$description": 5 },
+            "b": { "$type": "number", "$value": 1, "$deprecated": 1, "$extensions": [] },
+            "c": { "$type": "dimension", "$value": { "value": 1, "unit": "px", "fluid": true } }
+        }`;
+        expect(severities(text, { ignoreUnknownProperties: true })).toStrictEqual([
+            ["duplicate-key", "warning", ""],
+            ["invalid-property", "warning", "$description"],
+            ["invalid-property", "warning", "$deprecated"],
+            ["invalid-property", "warning", "$extensions"],
+            ["unknown-property", "warning", "fluid"],
+        ]);
+    });
+
+    it("a pointer without its slash is an error in a reference to another file, as in a token file", () => {
+        const doc = readFromMemory({
+            files: {
+                "tokens.resolver.json": JSON.stringify({
+                    version: "2025.10",
+                    resolutionOrder: [
+                        { type: "set", name: "base", sources: [{ $ref: "all.json#space" }] },
+                    ],
+                }),
+                "all.json": JSON.stringify({
+                    space: { $type: "number", one: { $value: 1 }, two: { $ref: "#space/one" } },
+                }),
+            },
+            entry: "tokens.resolver.json",
+        });
+        expect(doc.diagnostics.map(({ kind, severity }) => [kind, severity])).toStrictEqual([
+            ["malformed-pointer", "error"],
+        ]);
+        expect(doc.permutations[0]?.tokens).toStrictEqual([]);
+    });
+
+    it("a $type, $extends or $ref of the wrong kind stays an error, since it changes what the token is", () => {
+        const text = `{
+            "a": { "$type": 5, "$value": 1 },
+            "g": { "$extends": 5 },
+            "h": { "$ref": 5 }
+        }`;
+        expect(severities(text).filter(([kind]) => kind === "invalid-property")).toStrictEqual([
+            ["invalid-property", "error", "$type"],
+            ["invalid-property", "error", "$extends"],
+            ["invalid-property", "error", "$ref"],
+        ]);
+    });
+});
+
+describe("the options a Document was read with", () => {
+    it("are recorded, so its values can be read again the same way", () => {
+        const options = { hexStringColors: true, ignoreUnknownProperties: true };
+        const doc = readFromMemory({ files: { "tokens.json": valid } }, options);
+        expect(doc.parseOptions).toStrictEqual(options);
+    });
+
+    it("are the defaults when none are given", () => {
+        const doc = readFromMemory({ files: { "tokens.json": valid } });
+        expect(doc.parseOptions).toStrictEqual({
+            hexStringColors: false,
+            ignoreUnknownProperties: false,
+        });
     });
 });
 
@@ -302,6 +379,21 @@ describe("each context on its own", () => {
             labels: ["small", "large"],
             diagnostics: [{ kind: "no-default", detail: { modifiers: ["size"] } }],
         });
+    });
+
+    it("points at the modifier with no default", () => {
+        const text = resolver({
+            size: { contexts: { small: [], large: [] } },
+            brand: { contexts: { house: [], ocean: [] }, default: "house" },
+        });
+        const [found] = readFromMemory(
+            { files: { "tokens.resolver.json": text } },
+            { permutations: "each-context" },
+        ).diagnostics;
+        expect(found?.at && text.slice(found.at.offset, found.at.offset + found.at.length)).toBe(
+            '{"contexts":{"small":[],"large":[]}}',
+        );
+        expect(found?.fixes).toBeUndefined();
     });
 });
 

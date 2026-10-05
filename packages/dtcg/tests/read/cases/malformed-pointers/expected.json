@@ -1,0 +1,151 @@
+{
+  "entry": "tokens.json",
+  "spec": "RFC 6901 3 and Format 7.3: a JSON Pointer starts with / after the #, and in it ~ is written ~0 and / is written ~1. A pointer that breaks either is not a pointer, so it is reported as malformed rather than as reaching nothing (Format 7: tools MUST report invalid JSON Pointer syntax). The fix writes the pointer correctly, and is offered only when that reaches something: in a value, as a token, and for a group",
+  "diagnostics": [
+    {
+      "kind": "malformed-pointer",
+      "detail": {
+        "ref": "#color/ink",
+        "reason": "no-leading-slash",
+        "corrected": "#/color/ink"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#color/ink\""
+      },
+      "path": "whole",
+      "fixes": [
+        {
+          "title": "write it as `#/color/ink`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#color/ink\"",
+              "replaceWith": "\"#/color/ink\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "malformed-pointer",
+      "detail": {
+        "ref": "#g",
+        "reason": "no-leading-slash",
+        "corrected": "#/g"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#g\""
+      },
+      "path": "grouped",
+      "fixes": [
+        {
+          "title": "write it as `#/g`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#g\"",
+              "replaceWith": "\"#/g\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "malformed-pointer",
+      "detail": {
+        "ref": "#g",
+        "reason": "no-leading-slash",
+        "corrected": "#/g"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#g\" }",
+        "occurrence": 2
+      },
+      "path": "extending",
+      "fixes": [
+        {
+          "title": "write it as `#/g`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#g\"",
+              "occurrence": 2,
+              "replaceWith": "\"#/g\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "malformed-pointer",
+      "detail": {
+        "ref": "#color/ink/$value/colorSpace",
+        "reason": "no-leading-slash",
+        "corrected": "#/color/ink/$value/colorSpace"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#color/ink/$value/colorSpace\" }"
+      },
+      "path": "part",
+      "fixes": [
+        {
+          "title": "write it as `#/color/ink/$value/colorSpace`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#color/ink/$value/colorSpace\"",
+              "replaceWith": "\"#/color/ink/$value/colorSpace\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "malformed-pointer",
+      "detail": {
+        "ref": "#/a~b/$value",
+        "reason": "bad-escape",
+        "corrected": "#/a~0b/$value"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#/a~b/$value\" }"
+      },
+      "path": "tilde",
+      "fixes": [
+        {
+          "title": "write it as `#/a~0b/$value`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#/a~b/$value\"",
+              "replaceWith": "\"#/a~0b/$value\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "malformed-pointer",
+      "detail": {
+        "ref": "#missing/$value",
+        "reason": "no-leading-slash",
+        "corrected": "#/missing/$value"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#missing/$value\" }"
+      },
+      "path": "nowhere"
+    }
+  ]
+}

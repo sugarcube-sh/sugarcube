@@ -1,16 +1,24 @@
 import { describe, expect, it } from "vitest";
+import type { ParseOptions } from "../../src/index.js";
 import { parseGradient } from "../../src/values.js";
 
-function read(raw: unknown) {
-    const result = parseGradient(raw, ["$value"]);
+const lenient: ParseOptions = { ignoreUnknownProperties: true };
+
+function read(raw: unknown, options?: ParseOptions) {
+    const result = parseGradient(raw, ["$value"], options);
     if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
     return result.value;
 }
 
-function details(raw: unknown) {
-    const result = parseGradient(raw, ["$value"]);
+function details(raw: unknown, options?: ParseOptions) {
+    const result = parseGradient(raw, ["$value"], options);
     if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
     return result.errors.map(({ path, detail }) => ({ path, detail }));
+}
+
+function ignored(raw: unknown, options?: ParseOptions) {
+    const result = parseGradient(raw, ["$value"], options);
+    return result.ignored.map(({ path, detail }) => ({ path, detail }));
 }
 
 const blue = { colorSpace: "srgb", components: [0, 0, 1] };
@@ -120,14 +128,33 @@ describe("parseGradient", () => {
                 },
             ]);
         });
+    });
 
-        it("a part the spec does not define", () => {
-            expect(details([{ color: red, position: 0, midpoint: 0.5 }])).toStrictEqual([
+    describe("a property its type does not define", () => {
+        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
+            const raw = [{ color: red, position: 0, midpoint: 0.5 }];
+            expect(details(raw)).toStrictEqual([
                 {
                     path: ["$value", 0, "midpoint"],
                     detail: { type: "gradient", reason: "unknown-property", property: "midpoint" },
                 },
             ]);
+            expect(ignored(raw)).toStrictEqual([]);
+        });
+
+        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
+            it("a part the spec does not define", () => {
+                const raw = [{ color: red, position: 0, midpoint: 0.5 }];
+                expect(read(raw, lenient)).toStrictEqual(
+                    read([{ color: red, position: 0 }], lenient),
+                );
+                expect(ignored(raw, lenient)).toStrictEqual([
+                    {
+                        path: ["$value", 0, "midpoint"],
+                        detail: { type: "gradient", property: "midpoint" },
+                    },
+                ]);
+            });
         });
     });
 });

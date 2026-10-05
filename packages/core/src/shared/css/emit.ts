@@ -31,10 +31,14 @@ export function emitCSS(
 ): { files: CSSFileOutput; diagnostics: Reported[] } {
     const reported = doc.diagnostics.map(asReported);
     const { redeclare, renamed } = redeclaring(config);
+    const deprecated =
+        config.variables.transforms.colorFallbackStrategy === "polyfill"
+            ? [diagnostic("option-deprecated", { option: 'colorFallbackStrategy: "polyfill"' })]
+            : [];
     if (reported.some(({ kind }) => kind === "default-required"))
-        return { files: [], diagnostics: [...reported, ...renamed] };
+        return { files: [], diagnostics: [...reported, ...renamed, ...deprecated] };
 
-    const options = declarationOptions(config);
+    const options = declarationOptions(doc, config);
     const toWrite = entries(doc, config);
     const declaredIn = new Map<Permutation, Declared>();
     const declared = (permutation: Permutation) => {
@@ -49,9 +53,11 @@ export function emitCSS(
         diagnostics: [
             ...reported,
             ...renamed,
+            ...deprecated,
             ...textZoomWarnings(
                 toWrite.map(({ permutation }) => permutation),
                 options.fluid,
+                options.parseOptions,
             ),
             ...missingHex([...declaredIn.values()]),
             ...sameNames([...declaredIn.values()]),
@@ -61,7 +67,11 @@ export function emitCSS(
 
 function asReported(found: Diagnostic): Reported {
     if (found.kind !== "no-default") return found;
-    return diagnostic("default-required", { modifiers: found.detail.modifiers });
+    const { at } = found;
+    return {
+        ...diagnostic("default-required", { modifiers: found.detail.modifiers }),
+        ...(at && { at }),
+    };
 }
 
 function redeclaring(config: InternalConfig): { redeclare: boolean; renamed: Reported[] } {
