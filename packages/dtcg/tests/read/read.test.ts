@@ -375,3 +375,21 @@ describe("readFromMemory", () => {
         expect(JSON.parse(JSON.stringify(doc))).toStrictEqual(doc);
     });
 });
+
+describe("a group referring to the whole document", () => {
+    it("is circular, as the document holds the group, and names the top level", () => {
+        const files = { "tokens.json": JSON.stringify({ g: { $ref: "#" } }) };
+        const found = readFromMemory({ files }).diagnostics.map(({ kind, detail, message }) => ({
+            kind,
+            detail,
+            message,
+        }));
+        expect(found).toStrictEqual([
+            {
+                kind: "circular-reference",
+                detail: { chain: ["g", ""] },
+                message: "these references lead back to where they started: g → the top level",
+            },
+        ]);
+    });
+});

@@ -1,4 +1,4 @@
-import { type Token, type TokenType, withoutRoot } from "@sugarcube-sh/dtcg";
+import { type Token, type TokenType, pathBelow, withoutRoot } from "@sugarcube-sh/dtcg";
 import { cssName } from "@sugarcube-sh/dtcg/css";
 import type { UtilityClassesConfig } from "../../types/config.js";
 import type {
@@ -251,14 +251,14 @@ function partsFor(
     const skipped: Skipped[] = [];
     for (const listed of tokens) {
         const { token } = listed;
-        const path = withoutRoot(token.path);
-        if (!path.startsWith(`${group}.`)) continue;
+        const below = pathBelow(withoutRoot(token.path), group);
+        if (below === undefined) continue;
         const skip = (why: Skipped["why"]) => skipped.push({ type: token.type, why });
         if ("variables" in listed) skip("typography");
         else if (types && !types.includes(token.type)) skip("type");
         else if ("private" in listed) skip(listed.private ? "private" : "unwritten");
         else {
-            const part = stripped(cssName(path.slice(group.length + 1)), entry);
+            const part = stripped(cssName(below), entry);
             const earlier = parts.get(part);
             if (earlier) earlier.push(listed);
             else parts.set(part, [listed]);

@@ -1,4 +1,5 @@
 import { relatedMessages } from "../error-messages.js";
+import { within } from "../path.js";
 import type { Diagnostic, Span } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
 import type {
@@ -122,7 +123,6 @@ export function mergeProperties(target: Properties, { extensions, ...rest }: Pro
 }
 
 export function removeGroup(merged: Merged, path: string): void {
-    const inside = (each: string) => each === path || each.startsWith(`${path}.`);
-    for (const each of merged.groups.keys()) if (inside(each)) merged.groups.delete(each);
-    for (const each of merged.tokens.keys()) if (inside(each)) merged.tokens.delete(each);
+    for (const each of merged.groups.keys()) if (within(each, path)) merged.groups.delete(each);
+    for (const each of merged.tokens.keys()) if (within(each, path)) merged.tokens.delete(each);
 }

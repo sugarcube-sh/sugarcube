@@ -1,4 +1,5 @@
 import type { Document, Group, Input, Permutation, Token } from "../index.js";
+import { pathBelow } from "../path.js";
 import { chosenPermutation } from "./permutation.js";
 
 interface Index {
@@ -58,8 +59,7 @@ export function tokensIn(doc: Document, path: string, input?: Input): Token[];
 export function tokensIn(permutation: Permutation, path: string): Token[];
 export function tokensIn(from: Document | Permutation, path: string, input?: Input) {
     const found = within(from, input);
-    const prefix = `${path}.`;
-    return (found?.tokens ?? []).filter((each) => path === "" || each.path.startsWith(prefix));
+    return (found?.tokens ?? []).filter((each) => pathBelow(each.path, path) !== undefined);
 }
 
 function within(from: Document | Permutation, input: Input | undefined): Permutation | undefined {

@@ -11,3 +11,21 @@
 export function withoutRoot(path: string): string {
     return path.endsWith(".$root") ? path.slice(0, -".$root".length) : path;
 }
+
+/**
+ * The rest of a path inside a group, or `undefined` when the path is not inside it. The group
+ * itself is not inside, and neither is a sibling whose name merely starts the same way. The group
+ * `""` is the top level, so every path is inside it.
+ *
+ * @example
+ * pathBelow("color.brand.ink", "color") // "brand.ink"
+ * pathBelow("colors.ink", "color")      // undefined
+ */
+export function pathBelow(path: string, group: string): string | undefined {
+    if (group === "") return path;
+    return path.startsWith(`${group}.`) ? path.slice(group.length + 1) : undefined;
+}
+
+export function within(path: string, group: string): boolean {
+    return path === group || pathBelow(path, group) !== undefined;
+}
