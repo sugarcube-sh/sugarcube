@@ -81,15 +81,16 @@
       "path": "text"
     },
     {
-      "kind": "unknown-property",
+      "kind": "invalid-value",
       "detail": {
-        "property": "fuzz",
-        "owner": "shadow",
-        "at": ["$value", 1, "fuzz"]
+        "type": "shadow",
+        "at": ["$value", 1, "fuzz"],
+        "reason": "unknown-property",
+        "property": "fuzz"
       },
       "at": {
         "file": "tokens.json",
-        "text": "\"fuzz\""
+        "text": "true"
       },
       "path": "layers"
     },

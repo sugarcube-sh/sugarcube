@@ -4,6 +4,7 @@ import type {
     ExtensionMessages,
     IgnoredProperty,
     JsonPath,
+    ParseOptions,
     TokenType,
     ValueByType,
     ValueError,
@@ -60,12 +61,14 @@ export interface ExtensionReader<M extends ExtensionMessages> {
  *
  * @throws {TypeError} When `result` is given no value and nothing was reported.
  */
-export function extensionReader<M extends ExtensionMessages>(): ExtensionReader<M> {
+export function extensionReader<M extends ExtensionMessages>(
+    options: ParseOptions = {},
+): ExtensionReader<M> {
     const errors: (ExtensionError<M> | ValueError)[] = [];
     const ignored: IgnoredProperty[] = [];
     return {
         read: (type, raw, at) => {
-            const read = parseValue(type, raw, at, { references: false });
+            const read = parseValue(type, raw, at, { ...options, references: false });
             ignored.push(...read.ignored);
             if (read.ok) return read.value;
             errors.push(...read.errors);

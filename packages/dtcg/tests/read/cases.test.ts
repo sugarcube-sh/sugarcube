@@ -21,7 +21,11 @@ interface Expected {
     spec?: string;
     options?: Pick<
         ReadOptions,
-        "inputs" | "permutations" | "permutationLimit" | "hexStringColors"
+        | "inputs"
+        | "permutations"
+        | "permutationLimit"
+        | "hexStringColors"
+        | "ignoreUnknownProperties"
     > & {
         generators?: (keyof typeof generators)[];
         extensionValidators?: (keyof typeof validators)[];
@@ -111,7 +115,7 @@ const generators = {
     sized: defineGenerator({
         extension: ["com.example", "sized"],
         generate: (_group, extension) => {
-            const reader = extensionReader<Record<never, never>>();
+            const reader = extensionReader<Record<never, never>>({ ignoreUnknownProperties: true });
             const size = reader.read("dimension", (extension as { size?: unknown }).size, ["size"]);
             return reader.result(size && [{ name: "1", $value: size }]);
         },
@@ -142,8 +146,11 @@ const validators = {
         validate: (_token, extension) => {
             const { outline } = extension as { outline?: unknown };
             if (outline === undefined) return [{ path: [], reason: "no-outline" }];
-            const parsed = parseValue("dimension", outline, ["outline"], { references: false });
-            return [...(parsed.ignored ?? []), ...(parsed.ok ? [] : parsed.errors)];
+            const parsed = parseValue("dimension", outline, ["outline"], {
+                references: false,
+                ignoreUnknownProperties: true,
+            });
+            return [...parsed.ignored, ...(parsed.ok ? [] : parsed.errors)];
         },
     }),
     symbolPath: defineExtensionValidator({

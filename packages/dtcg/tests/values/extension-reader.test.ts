@@ -25,8 +25,19 @@ describe("extensionReader", () => {
         ).toEqual([{ type: "dimension", reason: "string-with-unit", value: "16px" }]);
     });
 
-    it("keeps what a value sets aside, beside the result", () => {
+    it("refuses a property a value's type does not define, as a token's value would be", () => {
         const reader = extensionReader<typeof messages>();
+        expect(
+            reader.read("dimension", { value: 1, unit: "rem", fluid: true }, ["min"]),
+        ).toBeUndefined();
+        const result = reader.result(undefined);
+        expect(
+            result.ok ? [] : result.errors.map((each) => ("detail" in each ? each.detail : each)),
+        ).toEqual([{ type: "dimension", reason: "unknown-property", property: "fluid" }]);
+    });
+
+    it("with ignoreUnknownProperties, keeps what a value sets aside, beside the result", () => {
+        const reader = extensionReader<typeof messages>({ ignoreUnknownProperties: true });
         expect(
             reader.read("dimension", { value: 1, unit: "rem", fluid: true }, ["min"]),
         ).toStrictEqual({

@@ -1,21 +1,24 @@
 import { describe, expect, it } from "vitest";
+import type { ParseOptions } from "../../src/index.js";
 import { parseDimension } from "../../src/values.js";
 
-function read(raw: unknown) {
-    const result = parseDimension(raw, ["$value"]);
+const lenient: ParseOptions = { ignoreUnknownProperties: true };
+
+function read(raw: unknown, options?: ParseOptions) {
+    const result = parseDimension(raw, ["$value"], options);
     if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
     return result.value;
 }
 
-function details(raw: unknown) {
-    const result = parseDimension(raw, ["$value"]);
+function details(raw: unknown, options?: ParseOptions) {
+    const result = parseDimension(raw, ["$value"], options);
     if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
-function ignored(raw: unknown) {
-    const result = parseDimension(raw, ["$value"]);
-    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+function ignored(raw: unknown, options?: ParseOptions) {
+    const result = parseDimension(raw, ["$value"], options);
+    return result.ignored.map(({ path, detail }) => ({ path, detail }));
 }
 
 describe("parseDimension", () => {
@@ -140,13 +143,26 @@ describe("parseDimension", () => {
         });
     });
 
-    describe("sets aside a property its type does not define, and reads the rest", () => {
-        it("a property the spec does not define", () => {
+    describe("a property its type does not define", () => {
+        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
             const raw = { value: 16, unit: "px", fluid: true };
-            expect(read(raw)).toStrictEqual({ value: 16, unit: "px" });
-            expect(ignored(raw)).toStrictEqual([
-                { path: ["$value", "fluid"], detail: { type: "dimension", property: "fluid" } },
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value", "fluid"],
+                    detail: { type: "dimension", reason: "unknown-property", property: "fluid" },
+                },
             ]);
+            expect(ignored(raw)).toStrictEqual([]);
+        });
+
+        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
+            it("a property the spec does not define", () => {
+                const raw = { value: 16, unit: "px", fluid: true };
+                expect(read(raw, lenient)).toStrictEqual({ value: 16, unit: "px" });
+                expect(ignored(raw, lenient)).toStrictEqual([
+                    { path: ["$value", "fluid"], detail: { type: "dimension", property: "fluid" } },
+                ]);
+            });
         });
     });
 });

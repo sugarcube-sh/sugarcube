@@ -1,5 +1,6 @@
 import type {
     IgnoredProperty,
+    ParseOptions,
     UnresolvedStrokeStyle,
     JsonPath,
     ParseResult,
@@ -10,7 +11,7 @@ import { readDimension } from "./dimension.js";
 import { type LineCap, lineCaps, strokeStyleKeywords } from "./keywords.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
-import { setAside } from "./set-aside.js";
+import { unknownProperties } from "./unknown-properties.js";
 import { valueError } from "./value-errors.js";
 
 type Keyword = (typeof strokeStyleKeywords)[number];
@@ -20,7 +21,11 @@ const PROPERTIES = new Set(["dashArray", "lineCap"]);
 
 const type = "strokeStyle";
 
-export function readStrokeStyle(raw: unknown, at: JsonPath): ParseResult<UnresolvedStrokeStyle> {
+export function readStrokeStyle(
+    raw: unknown,
+    at: JsonPath,
+    options?: ParseOptions,
+): ParseResult<UnresolvedStrokeStyle> {
     const reference = readAlias(raw) ?? readPointer(raw);
     if (reference) return { ok: true, value: reference, ignored: [] };
 
@@ -51,9 +56,16 @@ export function readStrokeStyle(raw: unknown, at: JsonPath): ParseResult<Unresol
     }
 
     const errors: ValueError[] = [];
-    const ignored = setAside(raw, (name) => PROPERTIES.has(name), type, at, errors);
+    const ignored = unknownProperties(
+        raw,
+        (name) => PROPERTIES.has(name),
+        type,
+        at,
+        errors,
+        options,
+    );
 
-    const dashArray = readDashArray(raw, at, errors, ignored);
+    const dashArray = readDashArray(raw, at, errors, ignored, options);
     const lineCap = readLineCap(raw, at, errors);
 
     if (errors.length > 0 || dashArray === undefined || lineCap === undefined) {
@@ -67,6 +79,7 @@ function readDashArray(
     at: JsonPath,
     errors: ValueError[],
     ignored: IgnoredProperty[],
+    options: ParseOptions | undefined,
 ): DashArray | undefined {
     if (!("dashArray" in raw)) {
         errors.push(
@@ -96,7 +109,7 @@ function readDashArray(
 
     const before = errors.length;
     const lengths = raw.dashArray.map((length: unknown, index) => {
-        const result = readDimension(length, [...path, index]);
+        const result = readDimension(length, [...path, index], options);
         ignored.push(...result.ignored);
         if (!result.ok) {
             errors.push(...result.errors);

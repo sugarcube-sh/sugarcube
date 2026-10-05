@@ -49,7 +49,7 @@ const oldForms: OldForm[] = [
     {
         form: "an unknown property in a value",
         inRepo: false,
-        matches: (d) => d.kind === "unknown-property" && "at" in d.detail,
+        matches: (d) => reason(d) === "unknown-property",
     },
     {
         form: "an empty font name",

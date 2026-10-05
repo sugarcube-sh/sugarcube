@@ -73,6 +73,7 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { at: ["$value"], type: "dimension", reason: "wrong-shape", value: 16 },
         { at: ["$value"], type: "shadow", reason: "wrong-shape", value: "0 1px 2px black" },
         { at: ["$value"], type: "typography", reason: "wrong-shape", value: [] },
+        { at: ["$value", "blurr"], type: "shadow", reason: "unknown-property", property: "blurr" },
         { at: ["$value", "$ref"], type: "color", reason: "pointer-not-alone" },
         { at: ["$value", "blur"], type: "shadow", reason: "missing-property", property: "blur" },
         { at: ["$value", "value"], type: "dimension", reason: "not-a-number", value: "16" },

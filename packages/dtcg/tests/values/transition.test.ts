@@ -1,21 +1,24 @@
 import { describe, expect, it } from "vitest";
+import type { ParseOptions } from "../../src/index.js";
 import { parseTransition } from "../../src/values.js";
 
-function read(raw: unknown) {
-    const result = parseTransition(raw, ["$value"]);
+const lenient: ParseOptions = { ignoreUnknownProperties: true };
+
+function read(raw: unknown, options?: ParseOptions) {
+    const result = parseTransition(raw, ["$value"], options);
     if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
     return result.value;
 }
 
-function details(raw: unknown) {
-    const result = parseTransition(raw, ["$value"]);
+function details(raw: unknown, options?: ParseOptions) {
+    const result = parseTransition(raw, ["$value"], options);
     if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
-function ignored(raw: unknown) {
-    const result = parseTransition(raw, ["$value"]);
-    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+function ignored(raw: unknown, options?: ParseOptions) {
+    const result = parseTransition(raw, ["$value"], options);
+    return result.ignored.map(({ path, detail }) => ({ path, detail }));
 }
 
 const emphasis = {
@@ -90,16 +93,33 @@ describe("parseTransition", () => {
         });
     });
 
-    describe("sets aside a property its type does not define, and reads the rest", () => {
-        it("a part the spec does not define", () => {
+    describe("a property its type does not define", () => {
+        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
             const raw = { ...emphasis, property: "opacity" };
-            expect(read(raw)).toStrictEqual(read(emphasis));
-            expect(ignored(raw)).toStrictEqual([
+            expect(details(raw)).toStrictEqual([
                 {
                     path: ["$value", "property"],
-                    detail: { type: "transition", property: "property" },
+                    detail: {
+                        type: "transition",
+                        reason: "unknown-property",
+                        property: "property",
+                    },
                 },
             ]);
+            expect(ignored(raw)).toStrictEqual([]);
+        });
+
+        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
+            it("a part the spec does not define", () => {
+                const raw = { ...emphasis, property: "opacity" };
+                expect(read(raw, lenient)).toStrictEqual(read(emphasis, lenient));
+                expect(ignored(raw, lenient)).toStrictEqual([
+                    {
+                        path: ["$value", "property"],
+                        detail: { type: "transition", property: "property" },
+                    },
+                ]);
+            });
         });
     });
 });

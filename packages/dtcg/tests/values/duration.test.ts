@@ -1,21 +1,24 @@
 import { describe, expect, it } from "vitest";
+import type { ParseOptions } from "../../src/index.js";
 import { parseDuration } from "../../src/values.js";
 
-function read(raw: unknown) {
-    const result = parseDuration(raw, ["$value"]);
+const lenient: ParseOptions = { ignoreUnknownProperties: true };
+
+function read(raw: unknown, options?: ParseOptions) {
+    const result = parseDuration(raw, ["$value"], options);
     if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
     return result.value;
 }
 
-function details(raw: unknown) {
-    const result = parseDuration(raw, ["$value"]);
+function details(raw: unknown, options?: ParseOptions) {
+    const result = parseDuration(raw, ["$value"], options);
     if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
-function ignored(raw: unknown) {
-    const result = parseDuration(raw, ["$value"]);
-    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+function ignored(raw: unknown, options?: ParseOptions) {
+    const result = parseDuration(raw, ["$value"], options);
+    return result.ignored.map(({ path, detail }) => ({ path, detail }));
 }
 
 describe("parseDuration", () => {
@@ -85,13 +88,29 @@ describe("parseDuration", () => {
         });
     });
 
-    describe("sets aside a property its type does not define, and reads the rest", () => {
-        it("a property the spec does not define", () => {
+    describe("a property its type does not define", () => {
+        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
             const raw = { value: 200, unit: "ms", easing: "ease" };
-            expect(read(raw)).toStrictEqual({ value: 200, unit: "ms" });
-            expect(ignored(raw)).toStrictEqual([
-                { path: ["$value", "easing"], detail: { type: "duration", property: "easing" } },
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value", "easing"],
+                    detail: { type: "duration", reason: "unknown-property", property: "easing" },
+                },
             ]);
+            expect(ignored(raw)).toStrictEqual([]);
+        });
+
+        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
+            it("a property the spec does not define", () => {
+                const raw = { value: 200, unit: "ms", easing: "ease" };
+                expect(read(raw, lenient)).toStrictEqual({ value: 200, unit: "ms" });
+                expect(ignored(raw, lenient)).toStrictEqual([
+                    {
+                        path: ["$value", "easing"],
+                        detail: { type: "duration", property: "easing" },
+                    },
+                ]);
+            });
         });
     });
 });

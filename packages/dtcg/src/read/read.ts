@@ -114,10 +114,16 @@ function permutationOptions({
 
 function toDocument(
     loaded: Loaded,
-    { onStage, generators = [], extensionValidators = [], hexStringColors }: ReadOptions,
+    {
+        onStage,
+        generators = [],
+        extensionValidators = [],
+        hexStringColors,
+        ignoreUnknownProperties,
+    }: ReadOptions,
 ): Document {
     const found: Document["diagnostics"] = [];
-    const readValue = createValueReader(found, { hexStringColors });
+    const readValue = createValueReader(found, { hexStringColors, ignoreUnknownProperties });
     let generating = 0;
     const generate = (merged: Merged, permutation: number) => {
         if (generators.length === 0) return;

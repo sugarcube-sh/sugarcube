@@ -1,21 +1,24 @@
 import { describe, expect, it } from "vitest";
+import type { ParseOptions } from "../../src/index.js";
 import { parseColor } from "../../src/values.js";
 
-function read(raw: unknown) {
-    const result = parseColor(raw, ["$value"]);
+const lenient: ParseOptions = { ignoreUnknownProperties: true };
+
+function read(raw: unknown, options?: ParseOptions) {
+    const result = parseColor(raw, ["$value"], options);
     if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
     return result.value;
 }
 
-function details(raw: unknown) {
-    const result = parseColor(raw, ["$value"]);
+function details(raw: unknown, options?: ParseOptions) {
+    const result = parseColor(raw, ["$value"], options);
     if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
-function ignored(raw: unknown) {
-    const result = parseColor(raw, ["$value"]);
-    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+function ignored(raw: unknown, options?: ParseOptions) {
+    const result = parseColor(raw, ["$value"], options);
+    return result.ignored.map(({ path, detail }) => ({ path, detail }));
 }
 
 describe("parseColor", () => {
@@ -157,15 +160,15 @@ describe("parseColor", () => {
             });
         });
 
-        it("refuses a $ref beside a whole color, rather than set the pointer aside", () => {
+        it("refuses a $ref beside a whole color, even with ignoreUnknownProperties, rather than set the pointer aside", () => {
             const raw = { $ref: "#/color/brand/$value", colorSpace: "srgb", components: [1, 0, 0] };
-            expect(details(raw)).toStrictEqual([
+            expect(details(raw, lenient)).toStrictEqual([
                 {
                     path: ["$value", "$ref"],
                     detail: { type: "color", reason: "pointer-not-alone" },
                 },
             ]);
-            expect(ignored(raw)).toStrictEqual([]);
+            expect(ignored(raw, lenient)).toStrictEqual([]);
         });
 
         it("refuses a curly-brace reference in place of a component", () => {
@@ -391,13 +394,28 @@ describe("parseColor", () => {
         });
     });
 
-    describe("sets aside a property its type does not define, and reads the rest", () => {
-        it("a property the Color module does not define", () => {
+    describe("a property its type does not define", () => {
+        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
             const raw = { colorSpace: "srgb", components: [1, 0, 0], opacity: 1 };
-            expect(read(raw)).toStrictEqual(read({ colorSpace: "srgb", components: [1, 0, 0] }));
-            expect(ignored(raw)).toStrictEqual([
-                { path: ["$value", "opacity"], detail: { type: "color", property: "opacity" } },
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value", "opacity"],
+                    detail: { type: "color", reason: "unknown-property", property: "opacity" },
+                },
             ]);
+            expect(ignored(raw)).toStrictEqual([]);
+        });
+
+        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
+            it("a property the Color module does not define", () => {
+                const raw = { colorSpace: "srgb", components: [1, 0, 0], opacity: 1 };
+                expect(read(raw, lenient)).toStrictEqual(
+                    read({ colorSpace: "srgb", components: [1, 0, 0] }, lenient),
+                );
+                expect(ignored(raw, lenient)).toStrictEqual([
+                    { path: ["$value", "opacity"], detail: { type: "color", property: "opacity" } },
+                ]);
+            });
         });
     });
 });

@@ -13,6 +13,7 @@ import {
 import { extensionReader, isJsonObject } from "@sugarcube-sh/dtcg/values";
 import { ErrorMessages } from "./constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "./extensions.js";
+import { parseOptions } from "./parse-options.js";
 
 export interface FluidRange {
     min: DimensionValue;
@@ -29,7 +30,7 @@ export function readFluid(
     | { ok: false; errors: Errors; ignored?: IgnoredProperty[] } {
     if (!isJsonObject(ours) || !Object.hasOwn(ours, "fluid")) return { ok: true, value: undefined };
     const { fluid } = ours;
-    const reader = extensionReader<Messages>();
+    const reader = extensionReader<Messages>(parseOptions);
     if (!isJsonObject(fluid)) {
         reader.report(["fluid"], "not-an-object", { name: "fluid" });
         return reader.result<FluidRange>(undefined);

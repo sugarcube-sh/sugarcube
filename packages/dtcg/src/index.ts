@@ -895,6 +895,16 @@ export interface ParseOptions {
      * @default false
      */
     hexStringColors?: boolean;
+    /**
+     * Reads a value that has a property its type does not define, such as `paragraphSpacing` in a
+     * typography value, by setting that property aside: each is listed in
+     * {@link ParseResult | `ignored`}, which `read` reports as an `unknown-property` warning, and
+     * the rest of the value is read. Not DTCG 2025.10, which makes such a composite token invalid
+     * (Format 9.2). Off, the property is an `invalid-value` error, for colors, dimensions and
+     * durations as for composites. A `$ref` with other properties beside it is an error either way.
+     * @default false
+     */
+    ignoreUnknownProperties?: boolean;
 }
 
 export type { StandardSchemaV1, StandardTypedV1 } from "./standard-schema.js";

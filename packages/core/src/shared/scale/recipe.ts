@@ -6,6 +6,7 @@ import type {
     ScaleExtension,
 } from "../../types/extensions.js";
 import { ErrorMessages } from "../constants/error-messages.js";
+import { parseOptions } from "../parse-options.js";
 
 type Messages = typeof ErrorMessages.SCALE_RECIPE;
 type Reader = ExtensionReader<Messages>;
@@ -14,7 +15,7 @@ type Errors = (ExtensionError<Messages> | ValueError)[];
 export function readScaleRecipe(
     raw: unknown,
 ): { ok: true; value: ScaleExtension } | { ok: false; errors: Errors } {
-    const reader = extensionReader<Messages>();
+    const reader = extensionReader<Messages>(parseOptions);
     if (!isJsonObject(raw)) {
         reader.report([], "not-an-object", { name: "scale" });
         return reader.result<ScaleExtension>(undefined);

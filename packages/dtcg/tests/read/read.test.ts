@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { read, readFromMemory } from "../../src/index.js";
+import { type ReadOptions, read, readFromMemory } from "../../src/index.js";
 
 const valid = '{ "a": { "$type": "number", "$value": 1 } }';
 
@@ -71,8 +71,8 @@ describe("positions", () => {
 });
 
 describe("what is set aside is a warning, and what cannot be read an error", () => {
-    const severities = (text: string) =>
-        readFromMemory({ files: { "tokens.json": text } }).diagnostics.map(
+    const severities = (text: string, options: ReadOptions = {}) =>
+        readFromMemory({ files: { "tokens.json": text } }, options).diagnostics.map(
             ({ kind, severity, detail }) => [
                 kind,
                 severity,
@@ -87,7 +87,7 @@ describe("what is set aside is a warning, and what cannot be read an error", () 
             "b": { "$type": "number", "$value": 1, "$deprecated": 1, "$extensions": [] },
             "c": { "$type": "dimension", "$value": { "value": 1, "unit": "px", "fluid": true } }
         }`;
-        expect(severities(text)).toStrictEqual([
+        expect(severities(text, { ignoreUnknownProperties: true })).toStrictEqual([
             ["duplicate-key", "warning", ""],
             ["invalid-property", "warning", "$description"],
             ["invalid-property", "warning", "$deprecated"],

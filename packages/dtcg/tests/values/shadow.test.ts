@@ -1,21 +1,24 @@
 import { describe, expect, it } from "vitest";
+import type { ParseOptions } from "../../src/index.js";
 import { parseShadow } from "../../src/values.js";
 
-function read(raw: unknown) {
-    const result = parseShadow(raw, ["$value"]);
+const lenient: ParseOptions = { ignoreUnknownProperties: true };
+
+function read(raw: unknown, options?: ParseOptions) {
+    const result = parseShadow(raw, ["$value"], options);
     if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
     return result.value;
 }
 
-function details(raw: unknown) {
-    const result = parseShadow(raw, ["$value"]);
+function details(raw: unknown, options?: ParseOptions) {
+    const result = parseShadow(raw, ["$value"], options);
     if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
-function ignored(raw: unknown) {
-    const result = parseShadow(raw, ["$value"]);
-    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+function ignored(raw: unknown, options?: ParseOptions) {
+    const result = parseShadow(raw, ["$value"], options);
+    return result.ignored.map(({ path, detail }) => ({ path, detail }));
 }
 
 const rem = (value: number) => ({ value, unit: "rem" });
@@ -116,32 +119,53 @@ describe("parseShadow", () => {
         });
     });
 
-    describe("sets aside a property its type does not define, and reads the rest", () => {
-        it("a part the spec does not define", () => {
+    describe("a property its type does not define", () => {
+        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
             const raw = { ...layer, opacity: 0.5 };
-            expect(read(raw)).toStrictEqual(read(layer));
-            expect(ignored(raw)).toStrictEqual([
-                { path: ["$value", "opacity"], detail: { type: "shadow", property: "opacity" } },
-            ]);
-        });
-
-        it("a part's own property, in the second shadow of a list, at its full path", () => {
-            const raw = [layer, { ...layer, color: { ...layer.color, name: "ink" } }];
-            expect(read(raw)).toStrictEqual(read([layer, layer]));
-            expect(ignored(raw)).toStrictEqual([
+            expect(details(raw)).toStrictEqual([
                 {
-                    path: ["$value", 1, "color", "name"],
-                    detail: { type: "color", property: "name" },
+                    path: ["$value", "opacity"],
+                    detail: { type: "shadow", reason: "unknown-property", property: "opacity" },
                 },
             ]);
+            expect(ignored(raw)).toStrictEqual([]);
         });
 
-        it("a property set aside beside a part that fails", () => {
-            const raw = { ...layer, blur: "4px", opacity: 0.5 };
-            expect(details(raw).map(({ path }) => path)).toStrictEqual([["$value", "blur"]]);
-            expect(ignored(raw)).toStrictEqual([
-                { path: ["$value", "opacity"], detail: { type: "shadow", property: "opacity" } },
-            ]);
+        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
+            it("a part the spec does not define", () => {
+                const raw = { ...layer, opacity: 0.5 };
+                expect(read(raw, lenient)).toStrictEqual(read(layer, lenient));
+                expect(ignored(raw, lenient)).toStrictEqual([
+                    {
+                        path: ["$value", "opacity"],
+                        detail: { type: "shadow", property: "opacity" },
+                    },
+                ]);
+            });
+
+            it("a part's own property, in the second shadow of a list, at its full path", () => {
+                const raw = [layer, { ...layer, color: { ...layer.color, name: "ink" } }];
+                expect(read(raw, lenient)).toStrictEqual(read([layer, layer], lenient));
+                expect(ignored(raw, lenient)).toStrictEqual([
+                    {
+                        path: ["$value", 1, "color", "name"],
+                        detail: { type: "color", property: "name" },
+                    },
+                ]);
+            });
+
+            it("a property set aside beside a part that fails", () => {
+                const raw = { ...layer, blur: "4px", opacity: 0.5 };
+                expect(details(raw, lenient).map(({ path }) => path)).toStrictEqual([
+                    ["$value", "blur"],
+                ]);
+                expect(ignored(raw, lenient)).toStrictEqual([
+                    {
+                        path: ["$value", "opacity"],
+                        detail: { type: "shadow", property: "opacity" },
+                    },
+                ]);
+            });
         });
     });
 });

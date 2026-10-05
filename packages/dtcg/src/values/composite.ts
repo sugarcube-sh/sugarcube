@@ -12,7 +12,7 @@ import type {
 } from "../index.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
-import { setAside } from "./set-aside.js";
+import { unknownProperties } from "./unknown-properties.js";
 import { valueError } from "./value-errors.js";
 
 export type ObjectForm<T extends TokenType> = Exclude<UnresolvedValue<T>, Alias | Pointer>;
@@ -41,7 +41,14 @@ export function readComposite<O extends object>(
     }
 
     const errors: ValueError[] = [];
-    const ignored = setAside(raw, (name) => Object.hasOwn(parts, name), type, at, errors);
+    const ignored = unknownProperties(
+        raw,
+        (name) => Object.hasOwn(parts, name),
+        type,
+        at,
+        errors,
+        options,
+    );
 
     const value: Record<string, unknown> = {};
     for (const [name, read] of Object.entries(parts) as [string, Parse<unknown>][]) {

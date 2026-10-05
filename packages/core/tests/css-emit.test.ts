@@ -978,6 +978,38 @@ describe("emitCSS", () => {
                 .filter((line) => line.startsWith("    "))
                 .map((line) => line.trim());
 
+        it("setting aside a property its type does not define, such as a design tool's paragraphSpacing, with a warning", () => {
+            const config = fillDefaults({ variables: { path: "variables.css" } });
+            const tokens = {
+                heading: {
+                    $type: "typography",
+                    $value: {
+                        fontFamily: "Inter",
+                        fontSize: { value: 2, unit: "rem" },
+                        fontWeight: 700,
+                        letterSpacing: px(0),
+                        lineHeight: 1.2,
+                        paragraphSpacing: px(16),
+                    },
+                },
+            };
+            const files = { "tokens.json": JSON.stringify(tokens) };
+            const { files: written, diagnostics } = emitCSS(
+                readFromMemory({ files }, readOptions(config)),
+                config,
+            );
+            expect(written[0]?.css).toContain("--heading-line-height: 1.2;");
+            expect(
+                diagnostics.map(({ kind, severity, message }) => [kind, severity, message]),
+            ).toStrictEqual([
+                [
+                    "unknown-property",
+                    "warning",
+                    "`paragraphSpacing` is not a property of a typography value, so it is ignored",
+                ],
+            ]);
+        });
+
         it("with var() for a part referring to a token with a variable, and the value otherwise", () => {
             expect(
                 declarations({
