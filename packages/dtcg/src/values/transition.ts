@@ -1,7 +1,7 @@
-import { type Described, object, token } from "./shape.js";
+import { object, ofType } from "./syntax.js";
 
 export const transition = object({
-    duration: token("duration"),
-    delay: token("duration"),
-    timingFunction: token("cubicBezier"),
-}) satisfies Described<"transition">;
+    duration: ofType("duration"),
+    delay: ofType("duration"),
+    timingFunction: ofType("cubicBezier"),
+});

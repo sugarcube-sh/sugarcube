@@ -1,11 +1,10 @@
-import type { ColorComponent, ColorSpace } from "../index.js";
+import type { ColorSpace } from "../index.js";
 import { colorSpaces } from "./color-spaces.js";
 import { hexStringColor } from "./hex-color.js";
 import {
-    type Described,
     type Siblings,
     dependsOn,
-    forms,
+    oneOf,
     literal,
     no,
     object,
@@ -14,7 +13,7 @@ import {
     refuse,
     tuple,
     withDefault,
-} from "./shape.js";
+} from "./syntax.js";
 
 /**
  * A color written as a hex string, in any of the four forms CSS allows: `#rgb`, `#rgba`, `#rrggbb`
@@ -42,13 +41,13 @@ const hexString = literal((raw, options) => {
     return no({ reason: "wrong-shape", value: raw });
 });
 
-const colorSpace = literal<ColorSpace>((raw) =>
+const colorSpace = literal((raw) =>
     isColorSpace(raw) ? ok(raw) : no({ reason: "unknown-color-space", value: raw }),
 );
 
 function component(space: ColorSpace | undefined, index: 0 | 1 | 2) {
     const channel = space && colorSpaces[space][index];
-    return literal<ColorComponent>((raw) => {
+    return literal((raw) => {
         if (raw === "none") return ok(raw);
         if (typeof raw !== "number" || !Number.isFinite(raw)) {
             return no({ reason: "component-not-a-number", value: raw });
@@ -72,7 +71,7 @@ const notThree = refuse("not-three-components");
 
 function components(space: ColorSpace | undefined) {
     const items = [component(space, 0), component(space, 1), component(space, 2)] as const;
-    return forms({ array: tuple(items, notThree), other: notThree });
+    return oneOf({ array: tuple(items, notThree), other: notThree });
 }
 
 const alpha = literal((raw) => {
@@ -88,7 +87,7 @@ const hex = literal((raw) =>
         : no({ reason: "hex-not-six-digits", value: raw }),
 );
 
-export const color = forms({
+export const color = oneOf({
     string: hexString,
     object: object({
         colorSpace,
@@ -97,7 +96,7 @@ export const color = forms({
         hex: optional(hex),
     }),
     other: refuse("wrong-shape"),
-}) satisfies Described<"color">;
+});
 
 function componentsFor({ colorSpace: space }: Siblings): ReturnType<typeof components> {
     return components(isColorSpace(space) ? space : undefined);

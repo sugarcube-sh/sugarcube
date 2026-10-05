@@ -1,5 +1,5 @@
 import type { Parse, UnresolvedValue } from "./index.js";
-import { readToken } from "./values/read-shape.js";
+import { readToken } from "./values/read-syntax.js";
 
 export { colorSpaces, type ColorComponentRange } from "./values/color-spaces.js";
 export { dimensionUnits, durationUnits } from "./values/units.js";

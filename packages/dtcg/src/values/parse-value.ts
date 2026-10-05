@@ -6,7 +6,7 @@ import type {
     UnresolvedValue,
     ValueByType,
 } from "../index.js";
-import { type Noted, readToken } from "./read-shape.js";
+import { type Notes, readToken } from "./read-syntax.js";
 import { isAlias } from "./references.js";
 import { valueError } from "./value-errors.js";
 
@@ -46,10 +46,10 @@ export function parseValue<T extends TokenType>(
 ): ParseResult<UnresolvedValue<T> | ValueByType[T]> {
     if (references) return readToken(type, raw, at, options);
 
-    const noted: Noted = { found: [], rechecks: [] };
-    const read = readToken(type, raw, at, options, noted);
-    if (!read.ok || noted.found.length === 0) return read;
-    const errors = noted.found.map(({ ref, at: written }) =>
+    const notes: Notes = { references: [], readAgain: [] };
+    const read = readToken(type, raw, at, options, notes);
+    if (!read.ok || notes.references.length === 0) return read;
+    const errors = notes.references.map(({ ref, at: written }) =>
         valueError(written, {
             type,
             reason: "reference-not-allowed",

@@ -1,7 +1,7 @@
-import { type Described, object, token } from "./shape.js";
+import { object, ofType } from "./syntax.js";
 
 export const border = object({
-    color: token("color"),
-    width: token("dimension"),
-    style: token("strokeStyle"),
-}) satisfies Described<"border">;
+    color: ofType("color"),
+    width: ofType("dimension"),
+    style: ofType("strokeStyle"),
+});

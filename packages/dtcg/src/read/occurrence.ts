@@ -1,5 +1,5 @@
 import type { JsonPath, Span } from "../index.js";
-import type { Found } from "../values/read-shape.js";
+import type { ReferenceRead } from "../values/read-syntax.js";
 import { isAlias } from "../values/references.js";
 import { deepestNode, member, spanOf } from "./json.js";
 import type { MergedToken } from "./merge.js";
@@ -18,7 +18,7 @@ export type Occurrence =
 
 export function occurrence(
     token: MergedToken,
-    { ref, place, at }: Pick<Found, "ref" | "place" | "at">,
+    { ref, place, at }: Pick<ReferenceRead, "ref" | "place" | "at">,
 ): Occurrence {
     const { json, value } = token;
     const node = deepestNode(value, at.slice(1), json.hidden);

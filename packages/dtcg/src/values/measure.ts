@@ -1,4 +1,4 @@
-import { forms, literal, no, object, ok } from "./shape.js";
+import { oneOf, literal, no, object, ok } from "./syntax.js";
 
 /**
  * A number followed by a unit, such as `"16px"` or `"200ms"`: how earlier drafts of the spec wrote
@@ -14,13 +14,13 @@ const amount = literal((raw) =>
 );
 
 export function measure<U extends string>(units: readonly U[]) {
-    const unit = literal<U>((raw) => {
+    const unit = literal((raw) => {
         const known = units.find((each) => each === raw);
         return known === undefined
             ? no({ reason: "unit-not-allowed", unit: raw, allowed: units })
             : ok(known);
     });
-    return forms({
+    return oneOf({
         object: object({ value: amount, unit }),
         other: (raw) =>
             typeof raw === "string" && STRING_WITH_UNIT.test(raw)

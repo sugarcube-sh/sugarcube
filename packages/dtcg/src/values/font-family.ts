@@ -1,19 +1,13 @@
-import { type Described, forms, list, literal, no, ok, refuse } from "./shape.js";
-
-function isFontName(raw: unknown): raw is string {
-    return typeof raw === "string" && raw.trim() !== "";
-}
+import { oneOf, list, literal, no, ok, refuse, single } from "./syntax.js";
 
 const name = literal((raw) =>
-    isFontName(raw) ? ok(raw) : no({ reason: "not-a-font-name", value: raw }),
+    typeof raw === "string" && raw.trim() !== ""
+        ? ok(raw)
+        : no({ reason: "not-a-font-name", value: raw }),
 );
 
-const lone = literal((raw) =>
-    isFontName(raw) ? ok([raw]) : no({ reason: "not-a-font-name", value: raw }),
-);
-
-export const fontFamily = forms({
-    string: lone,
+export const fontFamily = oneOf({
+    string: single(name),
     array: list(name, "empty-font-list"),
     other: refuse("wrong-shape"),
-}) satisfies Described<"fontFamily">;
+});

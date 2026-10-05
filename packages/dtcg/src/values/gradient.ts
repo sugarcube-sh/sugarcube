@@ -1,11 +1,11 @@
-import { type Described, elements, forms, object, refuse, token } from "./shape.js";
+import { elements, oneOf, object, refuse, ofType } from "./syntax.js";
 
 export const stop = object({
-    color: token("color"),
-    position: token("number", (position) => Math.min(1, Math.max(0, position))),
+    color: ofType("color"),
+    position: ofType("number", (position) => Math.min(1, Math.max(0, position))),
 });
 
-export const gradient = forms({
-    array: elements(stop, "no-gradient-stops"),
+export const gradient = oneOf({
+    array: elements(stop, { empty: "no-gradient-stops", parts: "stops" }),
     other: refuse("wrong-shape"),
-}) satisfies Described<"gradient">;
+});

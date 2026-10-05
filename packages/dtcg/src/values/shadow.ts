@@ -1,15 +1,4 @@
-import {
-    type Described,
-    asList,
-    elements,
-    forms,
-    literal,
-    no,
-    object,
-    ok,
-    token,
-    withDefault,
-} from "./shape.js";
+import { elements, oneOf, literal, no, object, ok, single, ofType, withDefault } from "./syntax.js";
 
 const inset = literal(
     (raw) => (typeof raw === "boolean" ? ok(raw) : no({ reason: "not-a-boolean", value: raw })),
@@ -17,15 +6,15 @@ const inset = literal(
 );
 
 export const layer = object({
-    color: token("color"),
-    offsetX: token("dimension"),
-    offsetY: token("dimension"),
-    blur: token("dimension"),
-    spread: token("dimension"),
+    color: ofType("color"),
+    offsetX: ofType("dimension"),
+    offsetY: ofType("dimension"),
+    blur: ofType("dimension"),
+    spread: ofType("dimension"),
     inset: withDefault(inset, false),
 });
 
-export const shadow = forms({
-    array: elements(layer, "no-shadows"),
-    other: asList(layer),
-}) satisfies Described<"shadow">;
+export const shadow = oneOf({
+    array: elements(layer, { empty: "no-shadows", parts: "layers" }),
+    other: single(layer),
+});

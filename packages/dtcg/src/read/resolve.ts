@@ -4,7 +4,6 @@ import type {
     DiagnosticDetailByKind,
     DiagnosticKind,
     Edge,
-    JsonPath,
     ParseResult,
     Permutation,
     Span,
@@ -13,24 +12,21 @@ import type {
     TokenType,
     ValueByType,
 } from "../index.js";
-import { isJsonObject } from "../values/json.js";
-import type { Recheck } from "../values/read-shape.js";
-import type { Siblings } from "../values/shape.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { inheritedDeprecation, inheritedType } from "./inherit.js";
 import type { Merged, MergedToken } from "./merge.js";
 import type { NormalisedPermutation, NormalisedToken } from "./normalise.js";
-import type { Reference, ValueReader } from "./parse-value.js";
+import type { LocatedReference, ValueReader } from "./parse-value.js";
 import { malformation } from "./malformed-pointer.js";
-import { refSteps } from "./pointer.js";
 import { reach } from "./ref-meaning.js";
 import { similarName } from "./similar.js";
-import { type Occurrence, occurrence, wholeReference } from "./occurrence.js";
+import { type Occurrence, wholeReference } from "./occurrence.js";
+import { type Resolving, UNRESOLVED, resolveValue } from "./resolve-value.js";
 
 interface Resolved {
     type: TokenType;
     read: ParseResult<unknown>;
-    references: Reference[];
+    references: LocatedReference[];
     resolved?: unknown;
     aliasOf?: string;
 }
@@ -52,8 +48,6 @@ interface Missing {
     referencedBy: string[];
     uses: Use[];
 }
-
-const UNRESOLVED = Symbol("unresolved");
 
 export function resolvePermutations(
     permutations: NormalisedPermutation[],
@@ -186,12 +180,12 @@ function resolvePermutation(
         }
         if (type === undefined) return "untyped";
 
-        const { result: read, references, rechecks } = entry.read ?? readValue.read(token, type);
+        const { result: read, references, readAgain } = entry.read ?? readValue.read(token, type);
         const base = { type, read, references, ...(aliasOf !== undefined && { aliasOf }) };
         if (!read.ok) return base;
         if (references.length === 0) return { ...base, resolved: read.value };
 
-        const value = resolveValue(token, read.value, references, rechecks, [], undefined);
+        const value = resolveValue(resolving, token, read.value, references, readAgain);
         return value === UNRESOLVED ? base : { ...base, resolved: value };
     };
 
@@ -210,131 +204,14 @@ function resolvePermutation(
         return { type, read, references };
     };
 
-    const resolveValue = (
-        token: MergedToken,
-        value: unknown,
-        references: Reference[],
-        rechecks: Recheck[],
-        seen: string[],
-        within: Occurrence | undefined,
-    ): unknown => {
-        const later = (place: JsonPath) => rechecks.some((each) => startsWith(place, each.place));
-        const followed = new Map<Reference, unknown>();
-        let resolved = value;
-        for (const reference of references) {
-            if (later(reference.found.place)) continue;
-            const part = follow(token, reference, seen, within);
-            followed.set(reference, part);
-            if (part !== UNRESOLVED) resolved = replaced(resolved, reference.found.place, part);
-        }
-        if ([...followed.values()].includes(UNRESOLVED)) return UNRESOLVED;
-
-        for (const recheck of rechecks) {
-            const { at, owner, raw } = recheck;
-            const shape = recheck.from(resolvedSiblings(recheck, followed));
-            const again = readValue.readTarget(
-                token,
-                { shape, at, owner, element: false },
-                raw,
-                index,
-            );
-            if (!again.result.ok) return UNRESOLVED;
-            const inner = again.noted.found.map((found) => ({
-                found,
-                use: within ?? occurrence(token, found),
-            }));
-            const part = resolveValue(
-                token,
-                again.result.value,
-                inner,
-                again.noted.rechecks,
-                seen,
-                within,
-            );
-            if (part === UNRESOLVED) return UNRESOLVED;
-            resolved = replaced(resolved, recheck.place, part);
-        }
-        return resolved;
-    };
-
-    const follow = (
-        token: MergedToken,
-        { found, use: own }: Reference,
-        seen: string[],
-        within: Occurrence | undefined,
-    ): unknown => {
-        const { ref, shape, owner, element } = found;
-        const use = within ?? own;
-        const expected = shape.kind === "token" ? shape.type : owner;
-        const adjusted = (part: unknown) =>
-            part !== UNRESOLVED && shape.kind === "token" && shape.adjust
-                ? shape.adjust(part)
-                : part;
-        if ("alias" in ref) {
-            return adjusted(substitute(token, ref.alias, ref.alias, expected, use, element));
-        }
-
-        const { pointer: written } = ref;
-        if (seen.includes(written)) {
-            report("circular-reference", { chain: [...seen, written] }, token.path, use.at);
-            return UNRESOLVED;
-        }
-        const reached = reach(refSteps(written), merged);
-        const unreachable = () => {
-            if (!within) reportUnreachable(own, token.path);
-            else if (reached.kind === "group")
-                report("not-a-token", { ref: written }, token.path, use.at);
-            else recordMissing(written, token.path, { at: use.at, isAlias: false });
-            return UNRESOLVED;
-        };
-        if (reached.kind === "group" || reached.kind === "nothing") return unreachable();
-        const whole = reached.kind === "token" || reached.inside.length === 0;
-        if (whole && (shape.kind === "token" || element)) {
-            return adjusted(substitute(token, reached.path, written, expected, use, element));
-        }
-        const target = whole
-            ? reached.token.authored
-            : stepInto(reached.token.authored, reached.inside);
-        if (target === UNRESOLVED) return unreachable();
-        const again = readValue.readTarget(
-            token,
-            { shape, at: found.at, owner, element },
-            target,
-            index,
-        );
-        if (!again.result.ok) return UNRESOLVED;
-        const inner = again.noted.found.map((each) => ({ found: each, use }));
-        const { value } = again.result;
-        return resolveValue(token, value, inner, again.noted.rechecks, [...seen, written], use);
-    };
-
-    const substitute = (
-        token: MergedToken,
-        path: string,
-        shown: string,
-        expected: TokenType,
-        use: Occurrence,
-        element: boolean,
-    ): unknown => {
-        const { at } = use;
-        const target = outcomeOf(path, token.path, at);
-        if (target === undefined) {
-            if (merged.groups.has(path)) report("not-a-token", { ref: shown }, token.path, at);
-            else recordMissing(shown, token.path, { at, isAlias: use.kind === "alias" });
-            return UNRESOLVED;
-        }
-        if (target === "untyped" || !("resolved" in target)) return UNRESOLVED;
-        if (target.type !== expected) {
-            report("type-mismatch", { ref: shown, expected, found: target.type }, token.path, at);
-            return UNRESOLVED;
-        }
-        if (!element) return target.resolved;
-        const list = Array.isArray(target.resolved) ? target.resolved : [target.resolved];
-        if (list.length !== 1) {
-            report("reference-to-several", { ref: shown, count: list.length }, token.path, at);
-            return UNRESOLVED;
-        }
-        return list[0];
+    const resolving: Resolving = {
+        readValue,
+        merged,
+        permutation: index,
+        outcomeOf,
+        report,
+        recordMissing,
+        reportUnreachable,
     };
 
     const built: Token[] = [];
@@ -344,8 +221,8 @@ function resolvePermutation(
         if (outcome === "untyped") continue;
         built.push(toToken(entry.token, outcome, merged));
         if (!outcome.read.ok) continue;
-        for (const { use } of outcome.references) {
-            edges.push({ from: path, to: targetOf(use, merged), at: use.at });
+        for (const { occurrence } of outcome.references) {
+            edges.push({ from: path, to: targetOf(occurrence, merged), at: occurrence.at });
         }
     }
 
@@ -386,18 +263,6 @@ function targetOf(use: Occurrence, merged: Merged): string {
     return reached.kind === "nothing" ? use.written : reached.path;
 }
 
-function stepInto(raw: unknown, steps: string[]): unknown {
-    let current = raw;
-    for (const step of steps) {
-        if (Array.isArray(current) && /^(?:0|[1-9]\d*)$/.test(step))
-            current = current[Number(step)];
-        else if (isJsonObject(current) && Object.hasOwn(current, step)) current = current[step];
-        else return UNRESOLVED;
-        if (current === undefined) return UNRESOLVED;
-    }
-    return current;
-}
-
 function toToken<T extends TokenType>(
     token: MergedToken,
     outcome: Resolved & { type: T },
@@ -424,32 +289,4 @@ function toToken<T extends TokenType>(
         if ("resolved" in outcome) built.resolved = outcome.resolved as ValueByType[T];
     }
     return built as Token;
-}
-
-function replaced(value: unknown, place: JsonPath, part: unknown): unknown {
-    const [step, ...rest] = place;
-    if (step === undefined) return part;
-    if (Array.isArray(value)) {
-        return value.map((item, index) => (index === step ? replaced(item, rest, part) : item));
-    }
-    if (isJsonObject(value) && typeof step === "string") {
-        return { ...value, [step]: replaced(value[step], rest, part) };
-    }
-    return value;
-}
-
-function startsWith(path: JsonPath, start: JsonPath): boolean {
-    return start.length <= path.length && start.every((step, i) => path[i] === step);
-}
-
-function resolvedSiblings(recheck: Recheck, followed: Map<Reference, unknown>): Siblings {
-    const parent = recheck.place.slice(0, -1);
-    const siblings: Record<string, unknown> = { ...recheck.siblings };
-    for (const [{ found }, part] of followed) {
-        const name = found.place.at(-1);
-        const beside =
-            found.place.length === recheck.place.length && startsWith(found.place, parent);
-        if (beside && typeof name === "string") siblings[name] = part;
-    }
-    return siblings;
 }

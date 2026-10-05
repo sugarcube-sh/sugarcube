@@ -2,26 +2,26 @@ import type { TokenType } from "../index.js";
 import { border } from "./border.js";
 import { stop } from "./gradient.js";
 import { layer } from "./shadow.js";
-import type { DefaultNode, LiteralNode, TokenNode } from "./shape.js";
+import type { LiteralSyntax, OfTypeSyntax, WithDefault } from "./syntax.js";
 import { transition } from "./transition.js";
 import { typography } from "./typography.js";
 
 type Named =
-    | (TokenNode & { readonly type: TokenType })
-    | (DefaultNode & { readonly shape: LiteralNode & { readonly part: string } });
+    | (OfTypeSyntax & { readonly type: TokenType })
+    | (WithDefault & { readonly syntax: LiteralSyntax & { readonly part: string } });
 
 function partTypes<P extends Readonly<Record<string, Named>>>(composite: {
     readonly properties: P;
 }): {
-    readonly [K in keyof P]: P[K] extends { kind: "token"; type: infer T }
+    readonly [K in keyof P]: P[K] extends { kind: "ofType"; type: infer T }
         ? T
-        : P[K] extends { shape: { part: infer N } }
+        : P[K] extends { syntax: { part: infer N } }
           ? N
           : never;
 } {
     const entries = Object.entries(composite.properties).map(([name, part]) => [
         name,
-        part.kind === "token" ? part.type : part.shape.part,
+        part.kind === "ofType" ? part.type : part.syntax.part,
     ]);
     return Object.fromEntries(entries) as ReturnType<typeof partTypes<P>>;
 }

@@ -1,4 +1,4 @@
-import { type Described, forms, literal, no, ok, refuse, tuple } from "./shape.js";
+import { oneOf, literal, no, ok, refuse, tuple } from "./syntax.js";
 
 const y = literal((raw) =>
     typeof raw === "number" && Number.isFinite(raw)
@@ -17,10 +17,10 @@ function x(coordinate: "x1" | "x2") {
     });
 }
 
-export const cubicBezier = forms({
+export const cubicBezier = oneOf({
     array: tuple([x("x1"), y, x("x2"), y], (raw) => ({
         reason: "not-four-numbers",
         count: raw.length,
     })),
     other: refuse("wrong-shape"),
-}) satisfies Described<"cubicBezier">;
+});

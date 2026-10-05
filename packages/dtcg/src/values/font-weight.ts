@@ -1,5 +1,5 @@
 import { type FontWeightKeyword, fontWeightKeywords } from "./keywords.js";
-import { type Described, forms, literal, no, ok, refuse } from "./shape.js";
+import { oneOf, literal, no, ok, refuse } from "./syntax.js";
 
 const weight = literal((raw) => {
     if (typeof raw !== "number" || !Number.isFinite(raw)) {
@@ -8,7 +8,7 @@ const weight = literal((raw) => {
     return raw < 1 || raw > 1000 ? no({ reason: "font-weight-out-of-range", value: raw }) : ok(raw);
 });
 
-const keyword = literal<number>((raw) => {
+const keyword = literal((raw) => {
     if (typeof raw !== "string") return no({ reason: "wrong-shape", value: raw });
     return isKeyword(raw)
         ? ok(fontWeightKeywords[raw])
@@ -19,8 +19,8 @@ function isKeyword(raw: string): raw is FontWeightKeyword {
     return Object.hasOwn(fontWeightKeywords, raw);
 }
 
-export const fontWeight = forms({
+export const fontWeight = oneOf({
     number: weight,
     string: keyword,
     other: refuse("wrong-shape"),
-}) satisfies Described<"fontWeight">;
+});

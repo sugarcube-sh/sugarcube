@@ -1,9 +1,9 @@
-import { type Described, object, token } from "./shape.js";
+import { object, ofType } from "./syntax.js";
 
 export const typography = object({
-    fontFamily: token("fontFamily"),
-    fontSize: token("dimension"),
-    fontWeight: token("fontWeight"),
-    letterSpacing: token("dimension"),
-    lineHeight: token("number"),
-}) satisfies Described<"typography">;
+    fontFamily: ofType("fontFamily"),
+    fontSize: ofType("dimension"),
+    fontWeight: ofType("fontWeight"),
+    letterSpacing: ofType("dimension"),
+    lineHeight: ofType("number"),
+});
