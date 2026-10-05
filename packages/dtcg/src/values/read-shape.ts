@@ -12,7 +12,15 @@ import type {
 import { descriptions } from "./descriptions.js";
 import { isJsonObject } from "./json.js";
 import { isAlias, isPointer, readAlias, readPointer } from "./references.js";
-import type { ArrayNode, JsonKind, Node, ObjectNode, Problem, Siblings } from "./shape.js";
+import type {
+    ArrayNode,
+    JsonKind,
+    Node,
+    ObjectNode,
+    Problem,
+    PropertyNode,
+    Siblings,
+} from "./shape.js";
 import { unknownProperties } from "./unknown-properties.js";
 import { valueError } from "./value-errors.js";
 
@@ -138,9 +146,9 @@ function readNode(
                 const form = kind && shape.forms[kind];
                 if (form) return readNode(form, raw, at, place, reading);
             }
-            const { otherwise } = shape;
-            if (typeof otherwise === "function") return fail(at, otherwise(raw), reading);
-            return readNode(otherwise, raw, at, place, reading);
+            const { other } = shape;
+            if (typeof other === "function") return fail(at, other(raw), reading);
+            return readNode(other, raw, at, place, reading);
         }
         case "asList": {
             const value = readNode(shape.item, raw, at, [...place, 0], reading);
@@ -168,25 +176,15 @@ function readObject(
     let failed = errors.length > before;
     for (const [name, property] of Object.entries(properties)) {
         if (!Object.hasOwn(raw, name)) {
-            if (Object.hasOwn(property, "default")) value[name] = property.default;
-            else if (!property.optional) {
+            if (property.kind === "default") value[name] = property.value;
+            else if (property.kind !== "optional") {
                 failed = true;
                 fail([...at, name], { reason: "missing-property", property: name }, reading);
             }
             continue;
         }
-        let partShape: Node;
-        if ("shape" in property) partShape = property.shape;
-        else {
-            partShape = property.from(value);
-            if (Object.values(value).some(isReference)) {
-                const { from } = property;
-                const recheck = { place: [...place, name], at: [...at, name], raw: raw[name] };
-                reading.noted?.rechecks.push({ ...recheck, from, siblings: { ...value }, owner });
-            }
-        }
         const part = readPlace(
-            partShape,
+            partShape(property, value, raw[name], [...place, name], [...at, name], reading),
             raw[name],
             [...at, name],
             [...place, name],
@@ -197,6 +195,24 @@ function readObject(
         else value[name] = part;
     }
     return failed ? FAILED : value;
+}
+
+function partShape(
+    property: PropertyNode,
+    siblings: Record<string, unknown>,
+    raw: unknown,
+    place: JsonPath,
+    at: JsonPath,
+    reading: Reading,
+): Node {
+    if (property.kind === "default" || property.kind === "optional") return property.shape;
+    if (property.kind !== "dependent") return property;
+    if (Object.values(siblings).some(isReference)) {
+        const { from } = property;
+        const { owner } = reading;
+        reading.noted?.rechecks.push({ place, at, raw, from, siblings: { ...siblings }, owner });
+    }
+    return property.from(siblings);
 }
 
 function readArray(

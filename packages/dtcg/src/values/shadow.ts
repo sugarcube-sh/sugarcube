@@ -1,33 +1,31 @@
 import {
     type Described,
-    accepted,
     asList,
     elements,
     forms,
     literal,
+    no,
     object,
-    refusedAs,
+    ok,
     token,
+    withDefault,
 } from "./shape.js";
 
 const inset = literal(
-    (raw) =>
-        typeof raw === "boolean"
-            ? accepted(raw)
-            : refusedAs({ reason: "not-a-boolean", value: raw }),
+    (raw) => (typeof raw === "boolean" ? ok(raw) : no({ reason: "not-a-boolean", value: raw })),
     "boolean",
 );
 
 export const layer = object({
-    color: { shape: token("color") },
-    offsetX: { shape: token("dimension") },
-    offsetY: { shape: token("dimension") },
-    blur: { shape: token("dimension") },
-    spread: { shape: token("dimension") },
-    inset: { shape: inset, default: false },
+    color: token("color"),
+    offsetX: token("dimension"),
+    offsetY: token("dimension"),
+    blur: token("dimension"),
+    spread: token("dimension"),
+    inset: withDefault(inset, false),
 });
 
-export const shadow = forms(
-    { array: elements(layer, "no-shadows") },
-    asList(layer),
-) satisfies Described<"shadow">;
+export const shadow = forms({
+    array: elements(layer, "no-shadows"),
+    other: asList(layer),
+}) satisfies Described<"shadow">;
