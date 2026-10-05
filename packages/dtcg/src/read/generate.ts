@@ -11,7 +11,7 @@ import type {
     ValueError,
 } from "../index.js";
 import { isJsonObject } from "../values/json.js";
-import { readAlias, readPointer } from "../values/references.js";
+import { readReference } from "../values/references.js";
 import {
     type CheckedExtension,
     type ExtensionProblem,
@@ -166,7 +166,7 @@ function addedToken(
         json,
         value: node,
         authored: $value,
-        isReference: readAlias($value) !== undefined || readPointer($value) !== undefined,
+        reference: readReference($value),
         at: spanOf(json.path, json.lineStarts, node.offset, node.length),
         piece,
         generated,

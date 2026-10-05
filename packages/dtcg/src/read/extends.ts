@@ -173,7 +173,7 @@ function becomeToken(
         json: extending.json,
         value: extending.node,
         authored: { $ref: extending.written },
-        isReference: true,
+        reference: { pointer: extending.written },
         at: extending.declaredAt,
         piece: extending.piece,
         ...(type !== undefined && { type }),

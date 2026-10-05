@@ -25,16 +25,12 @@ import { malformation } from "./malformed-pointer.js";
 import { refSteps } from "./pointer.js";
 import { reach } from "./ref-meaning.js";
 import { similarName } from "./similar.js";
-import {
-    type Occurrence,
-    keptReferences,
-    referencesIn,
-    withoutIgnored,
-} from "./value-references.js";
+import { type Occurrence, wholeReference, withoutIgnored } from "./value-references.js";
 
 interface Resolved {
     type: TokenType;
     read: ParseResult<unknown>;
+    references: Occurrence[];
     resolved?: unknown;
     aliasOf?: string;
 }
@@ -64,24 +60,13 @@ export function resolvePermutations(
     readValue: ValueReader,
     diagnostics: Diagnostic[],
 ): Permutation[] {
-    const found = new WeakMap<MergedToken["value"], Occurrence[]>();
-    const referencesOf = (token: MergedToken) => {
-        if (token.added) return referencesIn(token.authored, token.value, token.json);
-        const cached = found.get(token.value);
-        if (cached) return cached;
-        const references = referencesIn(token.authored, token.value, token.json);
-        found.set(token.value, references);
-        return references;
-    };
-
     return permutations.map((permutation, index) =>
-        resolvePermutation(permutation, index, { readValue, referencesOf, diagnostics }),
+        resolvePermutation(permutation, index, { readValue, diagnostics }),
     );
 }
 
 interface Context {
     readValue: ValueReader;
-    referencesOf: (token: MergedToken) => Occurrence[];
     diagnostics: Diagnostic[];
 }
 
@@ -94,7 +79,7 @@ interface Walk {
 function resolvePermutation(
     permutation: NormalisedPermutation,
     index: number,
-    { readValue, referencesOf, diagnostics }: Context,
+    { readValue, diagnostics }: Context,
 ): Permutation {
     const { tokens, merged } = permutation;
     const outcomes = new Map<string, Outcome | "resolving">();
@@ -180,8 +165,7 @@ function resolvePermutation(
 
     const compute = (entry: NormalisedToken): Outcome => {
         const { token } = entry;
-        const references = referencesOf(token);
-        const whole = references.find((each) => each.path.length === 0);
+        const whole = wholeReference(token);
 
         let type = entry.type;
         let aliasOf: string | undefined;
@@ -208,29 +192,26 @@ function resolvePermutation(
         }
         if (type === undefined) return "untyped";
 
-        const read = entry.read ?? readValue.read(token, type);
-        const base = { type, read, ...(aliasOf !== undefined && { aliasOf }) };
+        const { result: read, references } = entry.read ?? readValue.read(token, type);
+        const base = { type, read, references, ...(aliasOf !== undefined && { aliasOf }) };
         if (!read.ok) return base;
-        const kept = keptReferences(references, read.ignored);
-        if (kept.length === 0) return { ...base, resolved: read.value };
+        if (references.length === 0) return { ...base, resolved: read.value };
 
         let parsed: unknown = read.value;
-        if (kept.some((each) => each.kind === "pointer")) {
+        if (references.some((each) => each.kind === "pointer")) {
             const authored = withoutIgnored(token.authored, read.ignored);
-            const replaced = replacePointers(authored, token, []);
+            const replaced = replacePointers(authored, token, references, []);
             if (replaced === UNRESOLVED) return base;
             const again = readValue.readReplaced(token, type, replaced, index);
             if (!again.ok) return base;
             parsed = again.value;
         }
 
-        const singleShadow = type === "shadow" && !Array.isArray(token.authored);
         const useAt = (canonical: JsonPath) => {
-            const written = singleShadow ? canonical.slice(1) : canonical;
             let closest: Occurrence | undefined;
-            for (const each of kept) {
-                const holds = each.path.every((step, i) => written[i] === step);
-                if (holds && (!closest || each.path.length > closest.path.length)) closest = each;
+            for (const each of references) {
+                const holds = each.place.every((step, i) => canonical[i] === step);
+                if (holds && (!closest || each.place.length > closest.place.length)) closest = each;
             }
             return closest;
         };
@@ -249,15 +230,20 @@ function resolvePermutation(
     };
 
     const unresolved = (entry: NormalisedToken, type: TokenType): Outcome => {
-        const read = entry.read ?? readValue.read(entry.token, type);
-        return { type, read };
+        const { result: read, references } = entry.read ?? readValue.read(entry.token, type);
+        return { type, read, references };
     };
 
-    const replacePointers = (raw: unknown, token: MergedToken, seen: string[]): unknown => {
+    const replacePointers = (
+        raw: unknown,
+        token: MergedToken,
+        references: Occurrence[],
+        seen: string[],
+    ): unknown => {
         const pointer = readPointer(raw);
         if (pointer) {
             const { pointer: written } = pointer;
-            const use = referencesOf(token).find(
+            const use = references.find(
                 (each) => each.kind === "pointer" && each.written === written,
             );
             if (seen.includes(written)) {
@@ -274,16 +260,16 @@ function resolvePermutation(
                 if (use) reportUnreachable(use, token.path);
                 return UNRESOLVED;
             }
-            return replacePointers(part, token, [...seen, written]);
+            return replacePointers(part, token, references, [...seen, written]);
         }
         if (Array.isArray(raw)) {
-            const items = raw.map((each) => replacePointers(each, token, seen));
+            const items = raw.map((each) => replacePointers(each, token, references, seen));
             return items.includes(UNRESOLVED) ? UNRESOLVED : items;
         }
         if (isJsonObject(raw)) {
             const entries = Object.entries(raw).map(([key, each]) => [
                 key,
-                replacePointers(each, token, seen),
+                replacePointers(each, token, references, seen),
             ]);
             return entries.some(([, each]) => each === UNRESOLVED)
                 ? UNRESOLVED
@@ -372,7 +358,7 @@ function resolvePermutation(
         if (outcome === "untyped") continue;
         built.push(toToken(entry.token, outcome, merged));
         if (!outcome.read.ok) continue;
-        for (const use of keptReferences(referencesOf(entry.token), outcome.read.ignored)) {
+        for (const use of outcome.references) {
             edges.push({ from: path, to: targetOf(use, merged), at: use.at });
         }
     }
