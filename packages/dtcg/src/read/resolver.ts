@@ -58,7 +58,7 @@ export interface Reader {
     expect(node: Node | undefined, type: JsonType, name: string, at: JsonPath): node is Node;
     checkKeys(
         owner: Place,
-        kind: DiagnosticDetailByKind["unknown-property"]["owner"],
+        kind: Exclude<DiagnosticDetailByKind["unknown-property"], { at: JsonPath }>["owner"],
         known: readonly string[],
     ): void;
 }

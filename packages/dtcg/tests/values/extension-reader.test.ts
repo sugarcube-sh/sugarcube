@@ -25,6 +25,21 @@ describe("extensionReader", () => {
         ).toEqual([{ type: "dimension", reason: "string-with-unit", value: "16px" }]);
     });
 
+    it("keeps what a value sets aside, beside the result", () => {
+        const reader = extensionReader<typeof messages>();
+        expect(
+            reader.read("dimension", { value: 1, unit: "rem", fluid: true }, ["min"]),
+        ).toStrictEqual({
+            value: 1,
+            unit: "rem",
+        });
+        const result = reader.result("done");
+        expect(result.ok).toBe(true);
+        expect(result.ignored?.map(({ path, detail }) => ({ path, detail }))).toStrictEqual([
+            { path: ["min", "fluid"], detail: { type: "dimension", property: "fluid" } },
+        ]);
+    });
+
     it("refuses a reference, since an extension's values are not resolved", () => {
         const reader = extensionReader<typeof messages>();
         expect(reader.read("number", "{ratio.golden}", ["ratio"])).toBeUndefined();

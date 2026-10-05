@@ -13,6 +13,11 @@ function details(raw: unknown) {
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
+function ignored(raw: unknown) {
+    const result = parseColor(raw, ["$value"]);
+    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+}
+
 describe("parseColor", () => {
     describe("reads", () => {
         it.for([
@@ -148,8 +153,19 @@ describe("parseColor", () => {
         it("refuses a $ref with other keys beside it, and flags the $ref", () => {
             expect(details({ $ref: "#/color/brand/$value", alpha: 0.5 })).toContainEqual({
                 path: ["$value", "$ref"],
-                detail: { type: "color", reason: "unknown-property", property: "$ref" },
+                detail: { type: "color", reason: "pointer-not-alone" },
             });
+        });
+
+        it("refuses a $ref beside a whole color, rather than set the pointer aside", () => {
+            const raw = { $ref: "#/color/brand/$value", colorSpace: "srgb", components: [1, 0, 0] };
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value", "$ref"],
+                    detail: { type: "color", reason: "pointer-not-alone" },
+                },
+            ]);
+            expect(ignored(raw)).toStrictEqual([]);
         });
 
         it("refuses a curly-brace reference in place of a component", () => {
@@ -350,17 +366,6 @@ describe("parseColor", () => {
             },
         );
 
-        it("a property the Color module does not define", () => {
-            expect(
-                details({ colorSpace: "srgb", components: [1, 0, 0], opacity: 1 }),
-            ).toStrictEqual([
-                {
-                    path: ["$value", "opacity"],
-                    detail: { type: "color", reason: "unknown-property", property: "opacity" },
-                },
-            ]);
-        });
-
         it("every problem in one go", () => {
             expect(
                 details({ colorSpace: "cmyk", components: [1, 0], alpha: 2, hex: "#fff" }),
@@ -381,6 +386,16 @@ describe("parseColor", () => {
                     path: ["$value", "hex"],
                     detail: { type: "color", reason: "hex-not-six-digits", value: "#fff" },
                 },
+            ]);
+        });
+    });
+
+    describe("sets aside a property its type does not define, and reads the rest", () => {
+        it("a property the Color module does not define", () => {
+            const raw = { colorSpace: "srgb", components: [1, 0, 0], opacity: 1 };
+            expect(read(raw)).toStrictEqual(read({ colorSpace: "srgb", components: [1, 0, 0] }));
+            expect(ignored(raw)).toStrictEqual([
+                { path: ["$value", "opacity"], detail: { type: "color", property: "opacity" } },
             ]);
         });
     });

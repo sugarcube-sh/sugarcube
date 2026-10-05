@@ -1,6 +1,7 @@
 import type { JsonPath, ParseResult, Pointer, ValueError, UnresolvedValue } from "../index.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
+import { setAside, withIgnored } from "./set-aside.js";
 import { valueError } from "./value-errors.js";
 
 type MeasureType = "dimension" | "duration";
@@ -37,21 +38,15 @@ export function readMeasure<T extends MeasureType>(
     }
 
     const errors: ValueError[] = [];
-    for (const name of Object.keys(raw)) {
-        if (!PROPERTIES.has(name)) {
-            errors.push(
-                valueError([...at, name], { type, reason: "unknown-property", property: name }),
-            );
-        }
-    }
+    const ignored = setAside(raw, (name) => PROPERTIES.has(name), type, at, errors);
 
     const value = readAmount(raw, at, type, errors);
     const unit = readUnit(raw, at, type, units, errors);
 
     if (errors.length > 0 || value === undefined || unit === undefined) {
-        return { ok: false, errors };
+        return withIgnored({ ok: false, errors }, ignored);
     }
-    return { ok: true, value: { value, unit } as UnresolvedValue<T> };
+    return withIgnored({ ok: true, value: { value, unit } as UnresolvedValue<T> }, ignored);
 }
 
 function readAmount(

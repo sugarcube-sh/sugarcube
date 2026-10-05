@@ -12,6 +12,7 @@ import { colorSpaces } from "./color-spaces.js";
 import { hexStringColor } from "./hex-color.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
+import { setAside, withIgnored } from "./set-aside.js";
 import { valueError } from "./value-errors.js";
 
 type ColorAsWritten = UnresolvedValue<"color">;
@@ -57,13 +58,7 @@ export function readColor(
     }
 
     const errors: ValueError[] = [];
-    for (const name of Object.keys(raw)) {
-        if (!PROPERTIES.has(name)) {
-            errors.push(
-                valueError([...at, name], { type, reason: "unknown-property", property: name }),
-            );
-        }
-    }
+    const ignored = setAside(raw, (name) => PROPERTIES.has(name), type, at, errors);
 
     const colorSpace = readColorSpace(raw, at, errors);
     const components = readComponents(raw, at, colorSpace, errors);
@@ -71,13 +66,13 @@ export function readColor(
     const hex = readHex(raw, at, errors);
 
     if (errors.length > 0 || colorSpace === undefined || components === undefined) {
-        return { ok: false, errors };
+        return withIgnored({ ok: false, errors }, ignored);
     }
 
-    return {
-        ok: true,
-        value: { colorSpace, components, alpha, ...(hex !== undefined && { hex }) },
-    };
+    return withIgnored(
+        { ok: true, value: { colorSpace, components, alpha, ...(hex !== undefined && { hex }) } },
+        ignored,
+    );
 }
 
 function readColorSpace(

@@ -24,7 +24,12 @@ import type { ValueReader } from "./parse-value.js";
 import { refSteps } from "./pointer.js";
 import { reach } from "./ref-meaning.js";
 import { similarName } from "./similar.js";
-import { type Occurrence, referencesIn } from "./value-references.js";
+import {
+    type Occurrence,
+    keptReferences,
+    referencesIn,
+    withoutIgnored,
+} from "./value-references.js";
 
 interface Resolved {
     type: TokenType;
@@ -198,11 +203,13 @@ function resolvePermutation(
         const read = entry.read ?? readValue.read(token, type);
         const base = { type, read, ...(aliasOf !== undefined && { aliasOf }) };
         if (!read.ok) return base;
-        if (references.length === 0) return { ...base, resolved: read.value };
+        const kept = keptReferences(references, read.ignored);
+        if (kept.length === 0) return { ...base, resolved: read.value };
 
         let parsed: unknown = read.value;
-        if (references.some((each) => each.kind === "pointer")) {
-            const replaced = replacePointers(token.authored, token, []);
+        if (kept.some((each) => each.kind === "pointer")) {
+            const authored = withoutIgnored(token.authored, read.ignored);
+            const replaced = replacePointers(authored, token, []);
             if (replaced === UNRESOLVED) return base;
             const again = readValue.readReplaced(token, type, replaced, index);
             if (!again.ok) return base;
@@ -213,7 +220,7 @@ function resolvePermutation(
         const useAt = (canonical: JsonPath) => {
             const written = singleShadow ? canonical.slice(1) : canonical;
             let closest: Occurrence | undefined;
-            for (const each of references) {
+            for (const each of kept) {
                 const holds = each.path.every((step, i) => written[i] === step);
                 if (holds && (!closest || each.path.length > closest.path.length)) closest = each;
             }
@@ -357,7 +364,7 @@ function resolvePermutation(
         if (outcome === "untyped") continue;
         built.push(toToken(entry.token, outcome, merged));
         if (!outcome.read.ok) continue;
-        for (const use of referencesOf(entry.token)) {
+        for (const use of keptReferences(referencesOf(entry.token), outcome.read.ignored)) {
             edges.push({ from: path, to: targetOf(use, merged), at: use.at });
         }
     }

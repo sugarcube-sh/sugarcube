@@ -13,6 +13,11 @@ function details(raw: unknown) {
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
+function ignored(raw: unknown) {
+    const result = parseShadow(raw, ["$value"]);
+    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+}
+
 const rem = (value: number) => ({ value, unit: "rem" });
 const black = (alpha: number) => ({ colorSpace: "srgb", components: [0, 0, 0], alpha });
 const layer = {
@@ -92,15 +97,6 @@ describe("parseShadow", () => {
             ]);
         });
 
-        it("a part the spec does not define", () => {
-            expect(details({ ...layer, opacity: 0.5 })).toStrictEqual([
-                {
-                    path: ["$value", "opacity"],
-                    detail: { type: "shadow", reason: "unknown-property", property: "opacity" },
-                },
-            ]);
-        });
-
         it("a bad part in the second shadow of a list, at its full path", () => {
             expect(details([layer, { ...layer, blur: "4px" }])).toStrictEqual([
                 {
@@ -116,6 +112,35 @@ describe("parseShadow", () => {
                     path: ["$value", 1],
                     detail: { type: "shadow", reason: "wrong-shape", value: 42 },
                 },
+            ]);
+        });
+    });
+
+    describe("sets aside a property its type does not define, and reads the rest", () => {
+        it("a part the spec does not define", () => {
+            const raw = { ...layer, opacity: 0.5 };
+            expect(read(raw)).toStrictEqual(read(layer));
+            expect(ignored(raw)).toStrictEqual([
+                { path: ["$value", "opacity"], detail: { type: "shadow", property: "opacity" } },
+            ]);
+        });
+
+        it("a part's own property, in the second shadow of a list, at its full path", () => {
+            const raw = [layer, { ...layer, color: { ...layer.color, name: "ink" } }];
+            expect(read(raw)).toStrictEqual(read([layer, layer]));
+            expect(ignored(raw)).toStrictEqual([
+                {
+                    path: ["$value", 1, "color", "name"],
+                    detail: { type: "color", property: "name" },
+                },
+            ]);
+        });
+
+        it("a property set aside beside a part that fails", () => {
+            const raw = { ...layer, blur: "4px", opacity: 0.5 };
+            expect(details(raw).map(({ path }) => path)).toStrictEqual([["$value", "blur"]]);
+            expect(ignored(raw)).toStrictEqual([
+                { path: ["$value", "opacity"], detail: { type: "shadow", property: "opacity" } },
             ]);
         });
     });

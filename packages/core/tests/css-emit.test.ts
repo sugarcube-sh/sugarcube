@@ -1318,6 +1318,24 @@ describe("emitCSS", () => {
             expect(diagnostics).toStrictEqual([]);
         });
 
+        it("setting aside a property its min or max does not define, with a warning", () => {
+            const { files, diagnostics } = read({
+                step: fluid({ min: { ...px(16), clamp: true }, max: px(20) }),
+            });
+            expect(files[0]?.css).toBe(
+                ":root {\n    --step: clamp(1rem, 0.9091rem + 0.4545vw, 1.25rem);\n}\n",
+            );
+            expect(
+                diagnostics.map(({ kind, path, message }) => [kind, path, message]),
+            ).toStrictEqual([
+                [
+                    "unknown-property",
+                    "step",
+                    "`clamp` is not a property of a dimension, so it is ignored",
+                ],
+            ]);
+        });
+
         it("and reports a fluid range it cannot read, leaving that token out", () => {
             const { files, diagnostics } = read({
                 word: fluid("big"),

@@ -1,5 +1,5 @@
 import type { Node } from "jsonc-parser";
-import type { JsonPath, Span } from "../index.js";
+import type { IgnoredProperty, JsonPath, Span } from "../index.js";
 import { isJsonObject } from "../values/json.js";
 import { readAlias, readPointer } from "../values/references.js";
 import { type JsonFile, member, spanOf } from "./json.js";
@@ -8,6 +8,38 @@ import { refSteps } from "./pointer.js";
 export type Occurrence =
     | { kind: "alias"; target: string; path: JsonPath; at: Span }
     | { kind: "pointer"; written: string; steps: string[] | undefined; path: JsonPath; at: Span };
+
+export function keptReferences(
+    found: Occurrence[],
+    ignored: IgnoredProperty[] | undefined,
+): Occurrence[] {
+    if (!ignored) return found;
+    const setAside = ignored.map(({ path }) => path.slice(1));
+    return found.filter((each) => !setAside.some((path) => startsWith(each.path, path)));
+}
+
+export function withoutIgnored(raw: unknown, ignored: IgnoredProperty[] | undefined): unknown {
+    if (!ignored) return raw;
+    const setAside = ignored.map(({ path }) => path.slice(1));
+    const kept = (value: unknown, at: JsonPath): unknown => {
+        if (Array.isArray(value)) return value.map((item, index) => kept(item, [...at, index]));
+        if (!isJsonObject(value)) return value;
+        return Object.fromEntries(
+            Object.entries(value)
+                .filter(([key]) => !setAside.some((path) => equal(path, [...at, key])))
+                .map(([key, item]) => [key, kept(item, [...at, key])]),
+        );
+    };
+    return kept(raw, []);
+}
+
+function startsWith(path: JsonPath, start: JsonPath): boolean {
+    return start.length <= path.length && start.every((step, i) => path[i] === step);
+}
+
+function equal(a: JsonPath, b: JsonPath): boolean {
+    return a.length === b.length && startsWith(a, b);
+}
 
 export function referencesIn(raw: unknown, node: Node, json: JsonFile): Occurrence[] {
     const found: Occurrence[] = [];

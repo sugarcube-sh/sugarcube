@@ -13,6 +13,11 @@ function details(raw: unknown) {
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
+function ignored(raw: unknown) {
+    const result = parseTransition(raw, ["$value"]);
+    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+}
+
 const emphasis = {
     duration: { value: 200, unit: "ms" },
     delay: { value: 0, unit: "ms" },
@@ -60,19 +65,6 @@ describe("parseTransition", () => {
             },
         );
 
-        it("a part the spec does not define", () => {
-            expect(details({ ...emphasis, property: "opacity" })).toStrictEqual([
-                {
-                    path: ["$value", "property"],
-                    detail: {
-                        type: "transition",
-                        reason: "unknown-property",
-                        property: "property",
-                    },
-                },
-            ]);
-        });
-
         it("each bad part, with its own parser's reason, at its full path", () => {
             expect(
                 details({
@@ -93,6 +85,19 @@ describe("parseTransition", () => {
                         value: 2,
                         coordinate: "x1",
                     },
+                },
+            ]);
+        });
+    });
+
+    describe("sets aside a property its type does not define, and reads the rest", () => {
+        it("a part the spec does not define", () => {
+            const raw = { ...emphasis, property: "opacity" };
+            expect(read(raw)).toStrictEqual(read(emphasis));
+            expect(ignored(raw)).toStrictEqual([
+                {
+                    path: ["$value", "property"],
+                    detail: { type: "transition", property: "property" },
                 },
             ]);
         });

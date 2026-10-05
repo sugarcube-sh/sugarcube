@@ -1,6 +1,7 @@
 import {
     type DimensionValue,
     type ExtensionError,
+    type IgnoredProperty,
     type Permutation,
     type Token,
     type ValueError,
@@ -23,7 +24,9 @@ type Errors = (ExtensionError<Messages> | ValueError)[];
 
 export function readFluid(
     ours: unknown,
-): { ok: true; value: FluidRange | undefined } | { ok: false; errors: Errors } {
+):
+    | { ok: true; value: FluidRange | undefined; ignored?: IgnoredProperty[] }
+    | { ok: false; errors: Errors; ignored?: IgnoredProperty[] } {
     if (!isJsonObject(ours) || !Object.hasOwn(ours, "fluid")) return { ok: true, value: undefined };
     const { fluid } = ours;
     const reader = extensionReader<Messages>();
@@ -62,6 +65,6 @@ export const fluidValidator = defineExtensionValidator({
     messages: ErrorMessages.FLUID_EXTENSION,
     validate: (_token, ours) => {
         const read = readFluid(ours);
-        return read.ok ? [] : read.errors;
+        return [...(read.ignored ?? []), ...(read.ok ? [] : read.errors)];
     },
 });

@@ -669,10 +669,19 @@ export interface DiagnosticDetailByKind {
     /** A name starts or ends with a space: legal, but almost always a typo. */
     "whitespace-in-name": { name: string };
     /**
-     * An object in a resolver has a key the resolver specification does not define for it, so it is
-     * ignored. Your own data belongs in `$extensions`.
+     * An object has a key the specification does not define for it, so it is ignored: in a
+     * resolver, or in a value, such as `paragraphSpacing` in a typography value. Your own data
+     * belongs in `$extensions`.
      */
-    "unknown-property": { property: string; owner: "resolver" | "set" | "modifier" };
+    "unknown-property":
+        | { property: string; owner: "resolver" | "set" | "modifier" }
+        | {
+              property: string;
+              /** The type of the value it is in, which for a part of a composite is the part's type. */
+              owner: TokenType;
+              /** Where in the token or group, such as `["$value", "paragraphSpacing"]`. */
+              at: JsonPath;
+          };
     /** A reference points at a token marked `$deprecated`. */
     "deprecated-reference": { ref: string; reason?: string };
     /** A resolver has more combinations than `permutationLimit`, so `"each-context"` was built instead. */
@@ -853,8 +862,26 @@ export interface ValueError {
     detail: ValueErrorDetail;
 }
 
-/** The outcome of reading one value. */
-export type ParseResult<V> = { ok: true; value: V } | { ok: false; errors: ValueError[] };
+/**
+ * A property a value's type does not define, such as `paragraphSpacing` in a typography value. It
+ * is set aside, and the rest of the value is read without it.
+ */
+export interface IgnoredProperty {
+    kind: "unknown-property";
+    /** Where the property is, such as `["$value", "paragraphSpacing"]`. */
+    path: JsonPath;
+    message: string;
+    /** The type of the value it is in, which for a part of a composite is the part's type. */
+    detail: { type: TokenType; property: string };
+}
+
+/**
+ * The outcome of reading one value. `ignored` lists the properties set aside, whether or not the
+ * rest of the value could be read.
+ */
+export type ParseResult<V> =
+    | { ok: true; value: V; ignored?: IgnoredProperty[] }
+    | { ok: false; errors: ValueError[]; ignored?: IgnoredProperty[] };
 
 /** Reads one raw value into its shape, or explains why it cannot. */
 export type Parse<V> = (raw: unknown, at: JsonPath, options?: ParseOptions) => ParseResult<V>;
@@ -900,7 +927,8 @@ export interface ExtensionValidator {
     /**
      * Why the extension is not valid, if it is not. An error's `path` starts at the extension. An
      * {@link ExtensionError} is worded from `messages`; a {@link ValueError}, from reading a value in
-     * the extension with `parseValue`, is reported as `invalid-value`.
+     * the extension with `parseValue`, is reported as `invalid-value`; an {@link IgnoredProperty}
+     * from the same, as an `unknown-property` warning.
      */
     validate?(
         on: {
@@ -909,7 +937,7 @@ export interface ExtensionValidator {
             type: TokenType | "group";
         },
         extension: unknown,
-    ): (ExtensionError | ValueError)[];
+    ): (ExtensionError | ValueError | IgnoredProperty)[];
 }
 
 /** A token a generator makes, written as it would be in a file, with its name in the group. */
@@ -988,7 +1016,8 @@ export interface Generator {
      * Tokens no file writes are listed at the end of the group. An error's `path` starts at the
      * extension. An {@link ExtensionError} is reported as `extension-invalid`, worded from
      * `messages`; a {@link ValueError}, from reading a value in the extension with `parseValue`, is
-     * reported as `invalid-value`, as it would be in a token. With a `schema`, the extension is the
+     * reported as `invalid-value`, as it would be in a token, and each of its `ignored` properties
+     * as an `unknown-property` warning. With a `schema`, the extension is the
      * schema's output. A group whose extension is not valid gets no tokens added. The extension is
      * plain JSON, so whole-number keys inside it come first, in numeric order, whatever order the
      * file writes them in.
@@ -1001,8 +1030,8 @@ export interface Generator {
         },
         extension: unknown,
     ):
-        | { ok: true; value: GeneratedToken[] }
-        | { ok: false; errors: (ExtensionError | ValueError)[] };
+        | { ok: true; value: GeneratedToken[]; ignored?: IgnoredProperty[] }
+        | { ok: false; errors: (ExtensionError | ValueError)[]; ignored?: IgnoredProperty[] };
 }
 
 export { defineGenerator } from "./read/generate.js";

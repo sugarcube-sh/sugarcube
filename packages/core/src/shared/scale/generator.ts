@@ -11,7 +11,7 @@ export const scaleGenerator = defineGenerator({
         const recipe = readScaleRecipe(extension);
         if (!recipe.ok) return recipe;
         return {
-            ok: true,
+            ...recipe,
             value: calculateScale(recipe.value).map(({ name, min, max }) => ({
                 name,
                 $type: "dimension",

@@ -1,0 +1,17 @@
+{
+  "entry": "tokens.json",
+  "spec": "a property an extension validator's value does not define is set aside as it would be in a token: an unknown-property warning at that part of the extension",
+  "options": { "extensionValidators": ["outline"] },
+  "diagnostics": [
+    {
+      "kind": "unknown-property",
+      "detail": {
+        "property": "style",
+        "owner": "dimension",
+        "at": ["$extensions", "com.example", "outline", "style"]
+      },
+      "at": { "file": "tokens.json", "text": "\"style\"" },
+      "path": "ink"
+    }
+  ]
+}

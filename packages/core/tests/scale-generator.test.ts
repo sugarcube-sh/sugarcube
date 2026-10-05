@@ -137,6 +137,27 @@ describe("scale generator", () => {
         ]);
     });
 
+    it("sets aside a property its base's dimensions do not define, with a warning, and still adds the scale", () => {
+        const doc = withScale({
+            ...multipliers,
+            base: { ...base, min: { ...base.min, fluid: true } },
+        });
+        expect(tokens(doc).map((t) => t.path)).toEqual(["size.sm", "size.md", "size.lg"]);
+        expect(
+            doc.diagnostics.map(({ kind, severity, detail }) => ({ kind, severity, detail })),
+        ).toEqual([
+            {
+                kind: "unknown-property",
+                severity: "warning",
+                detail: {
+                    property: "fluid",
+                    owner: "dimension",
+                    at: ["$extensions", "sh.sugarcube", "scale", "base", "min", "fluid"],
+                },
+            },
+        ]);
+    });
+
     it("refuses a reference in a scale, as old sugarcube does", () => {
         const doc = withScale({
             ...multipliers,

@@ -1,4 +1,5 @@
 import type {
+    IgnoredProperty,
     UnresolvedStrokeStyle,
     JsonPath,
     ParseResult,
@@ -9,6 +10,7 @@ import { readDimension } from "./dimension.js";
 import { type LineCap, lineCaps, strokeStyleKeywords } from "./keywords.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
+import { setAside, withIgnored } from "./set-aside.js";
 import { valueError } from "./value-errors.js";
 
 type Keyword = (typeof strokeStyleKeywords)[number];
@@ -44,27 +46,22 @@ export function readStrokeStyle(raw: unknown, at: JsonPath): ParseResult<Unresol
     }
 
     const errors: ValueError[] = [];
-    for (const name of Object.keys(raw)) {
-        if (!PROPERTIES.has(name)) {
-            errors.push(
-                valueError([...at, name], { type, reason: "unknown-property", property: name }),
-            );
-        }
-    }
+    const ignored = setAside(raw, (name) => PROPERTIES.has(name), type, at, errors);
 
-    const dashArray = readDashArray(raw, at, errors);
+    const dashArray = readDashArray(raw, at, errors, ignored);
     const lineCap = readLineCap(raw, at, errors);
 
     if (errors.length > 0 || dashArray === undefined || lineCap === undefined) {
-        return { ok: false, errors };
+        return withIgnored({ ok: false, errors }, ignored);
     }
-    return { ok: true, value: { kind: "dash", dashArray, lineCap } };
+    return withIgnored({ ok: true, value: { kind: "dash", dashArray, lineCap } }, ignored);
 }
 
 function readDashArray(
     raw: Record<string, unknown>,
     at: JsonPath,
     errors: ValueError[],
+    ignored: IgnoredProperty[],
 ): DashArray | undefined {
     if (!("dashArray" in raw)) {
         errors.push(
@@ -95,6 +92,7 @@ function readDashArray(
     const before = errors.length;
     const lengths = raw.dashArray.map((length: unknown, index) => {
         const result = readDimension(length, [...path, index]);
+        if (result.ignored) ignored.push(...result.ignored);
         if (!result.ok) {
             errors.push(...result.errors);
             return undefined;

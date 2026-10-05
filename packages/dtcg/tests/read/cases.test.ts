@@ -13,7 +13,7 @@ import {
     read,
     readFromMemory,
 } from "../../src/index.js";
-import { parseValue } from "../../src/values.js";
+import { extensionReader, parseValue } from "../../src/values.js";
 import { withSpans } from "./positions.js";
 
 interface Expected {
@@ -108,6 +108,14 @@ const generators = {
                   };
         },
     }),
+    sized: defineGenerator({
+        extension: ["com.example", "sized"],
+        generate: (_group, extension) => {
+            const reader = extensionReader<Record<never, never>>();
+            const size = reader.read("dimension", (extension as { size?: unknown }).size, ["size"]);
+            return reader.result(size && [{ name: "1", $value: size }]);
+        },
+    }),
     counted: defineGenerator({
         extension: ["com.example", "counted"],
         schema: countSchema,
@@ -135,7 +143,7 @@ const validators = {
             const { outline } = extension as { outline?: unknown };
             if (outline === undefined) return [{ path: [], reason: "no-outline" }];
             const parsed = parseValue("dimension", outline, ["outline"], { references: false });
-            return parsed.ok ? [] : parsed.errors;
+            return [...(parsed.ignored ?? []), ...(parsed.ok ? [] : parsed.errors)];
         },
     }),
     symbolPath: defineExtensionValidator({

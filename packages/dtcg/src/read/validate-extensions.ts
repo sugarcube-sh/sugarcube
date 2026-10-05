@@ -6,6 +6,7 @@ import type {
     ExtensionValidator,
     Permutation,
     StandardSchemaV1,
+    IgnoredProperty,
     ValueError,
 } from "../index.js";
 import { type SchemaOutput, checkSchema, extensionDiagnostic } from "./extension-check.js";
@@ -45,7 +46,7 @@ export function defineExtensionValidator<
         validate?: (
             on: Checked,
             extension: SchemaOutput<S>,
-        ) => (ExtensionError<NoInfer<M>> | ValueError)[];
+        ) => (ExtensionError<NoInfer<M>> | ValueError | IgnoredProperty)[];
     },
 ): ExtensionValidator {
     return validator;

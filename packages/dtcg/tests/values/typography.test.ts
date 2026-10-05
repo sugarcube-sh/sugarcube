@@ -13,6 +13,11 @@ function details(raw: unknown) {
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
+function ignored(raw: unknown) {
+    const result = parseTypography(raw, ["$value"]);
+    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+}
+
 const px = (value: number) => ({ value, unit: "px" });
 const heading = {
     fontFamily: "Roboto",
@@ -105,18 +110,6 @@ describe("parseTypography", () => {
             ]);
         });
 
-        it.for(["fontStyle", "textTransform", "textDecoration"])(
-            "the part %s, which spec 9.8 does not define",
-            (part) => {
-                expect(details({ ...heading, [part]: "italic" })).toStrictEqual([
-                    {
-                        path: ["$value", part],
-                        detail: { type: "typography", reason: "unknown-property", property: part },
-                    },
-                ]);
-            },
-        );
-
         it("a line height with a unit, since spec 9.8 makes it a number", () => {
             expect(details({ ...heading, lineHeight: px(24) })).toStrictEqual([
                 {
@@ -154,6 +147,40 @@ describe("parseTypography", () => {
                         reason: "unknown-font-weight-keyword",
                         value: "Bold",
                     },
+                },
+            ]);
+        });
+    });
+
+    describe("sets aside a property its type does not define, and reads the rest", () => {
+        it.for(["paragraphSpacing", "fontStyle", "textTransform", "textDecoration"])(
+            "not %s, which spec 9.8 does not define: it is set aside and the rest read",
+            (part) => {
+                const raw = { ...heading, [part]: "italic" };
+                expect(read(raw)).toStrictEqual(read(heading));
+                expect(ignored(raw)).toStrictEqual([
+                    { path: ["$value", part], detail: { type: "typography", property: part } },
+                ]);
+            },
+        );
+
+        it("a part missing, with a part set aside beside it", () => {
+            const { lineHeight: _, ...partial } = heading;
+            const raw = { ...partial, paragraphSpacing: px(8) };
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value", "lineHeight"],
+                    detail: {
+                        type: "typography",
+                        reason: "missing-property",
+                        property: "lineHeight",
+                    },
+                },
+            ]);
+            expect(ignored(raw)).toStrictEqual([
+                {
+                    path: ["$value", "paragraphSpacing"],
+                    detail: { type: "typography", property: "paragraphSpacing" },
                 },
             ]);
         });

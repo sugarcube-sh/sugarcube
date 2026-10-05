@@ -13,6 +13,11 @@ function details(raw: unknown) {
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
+function ignored(raw: unknown) {
+    const result = parseDimension(raw, ["$value"]);
+    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+}
+
 describe("parseDimension", () => {
     describe("reads", () => {
         it.for([
@@ -133,13 +138,14 @@ describe("parseDimension", () => {
                 },
             ]);
         });
+    });
 
+    describe("sets aside a property its type does not define, and reads the rest", () => {
         it("a property the spec does not define", () => {
-            expect(details({ value: 16, unit: "px", fluid: true })).toStrictEqual([
-                {
-                    path: ["$value", "fluid"],
-                    detail: { type: "dimension", reason: "unknown-property", property: "fluid" },
-                },
+            const raw = { value: 16, unit: "px", fluid: true };
+            expect(read(raw)).toStrictEqual({ value: 16, unit: "px" });
+            expect(ignored(raw)).toStrictEqual([
+                { path: ["$value", "fluid"], detail: { type: "dimension", property: "fluid" } },
             ]);
         });
     });

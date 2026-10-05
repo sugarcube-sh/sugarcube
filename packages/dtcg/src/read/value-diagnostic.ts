@@ -1,11 +1,12 @@
 import type { Node } from "jsonc-parser";
 import { fixTitles } from "../error-messages.js";
-import type { Diagnostic, Fix, JsonPath, ValueErrorDetail } from "../index.js";
+import type { Diagnostic, Fix, IgnoredProperty, JsonPath, ValueErrorDetail } from "../index.js";
 import { STRING_WITH_UNIT } from "../values/measure.js";
 import { readAlias } from "../values/references.js";
 import { dimensionUnits, durationUnits } from "../values/units.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { hexAsObject } from "./hex-fix.js";
+import { type JsonFile, deepestNode, propertyKey, spanOf } from "./json.js";
 
 const THREE_DIGIT_HEX = /^#[0-9a-f]{3}$/i;
 
@@ -27,6 +28,19 @@ export function valueDiagnostic(
         { title: fix.title, safe: true, edits: [{ file, offset, length, text: fix.text }] },
     ];
     return diagnostic("invalid-value", { at, ...detail }, { ...extra, ...(fixes && { fixes }) });
+}
+
+export function ignoredDiagnostic(
+    { detail }: IgnoredProperty,
+    at: JsonPath,
+    within: { node: Node; steps: JsonPath; json: JsonFile },
+    extra: DiagnosticExtra,
+): Diagnostic {
+    const { node, steps, json } = within;
+    const shown = propertyKey(node, steps, json.hidden) ?? deepestNode(node, steps, json.hidden);
+    const span = spanOf(json.path, json.lineStarts, shown.offset, shown.length);
+    const found = { property: detail.property, owner: detail.type, at };
+    return diagnostic("unknown-property", found, { ...extra, at: span });
 }
 
 function replacement(

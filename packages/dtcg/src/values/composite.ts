@@ -12,6 +12,7 @@ import type {
 } from "../index.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
+import { setAside, withIgnored } from "./set-aside.js";
 import { valueError } from "./value-errors.js";
 
 export type ObjectForm<T extends TokenType> = Exclude<UnresolvedValue<T>, Alias | Pointer>;
@@ -36,13 +37,7 @@ export function readComposite<O extends object>(
     }
 
     const errors: ValueError[] = [];
-    for (const name of Object.keys(raw)) {
-        if (!Object.hasOwn(parts, name)) {
-            errors.push(
-                valueError([...at, name], { type, reason: "unknown-property", property: name }),
-            );
-        }
-    }
+    const ignored = setAside(raw, (name) => Object.hasOwn(parts, name), type, at, errors);
 
     const value: Record<string, unknown> = {};
     for (const [name, read] of Object.entries(parts) as [string, Parse<unknown>][]) {
@@ -58,10 +53,11 @@ export function readComposite<O extends object>(
         }
 
         const result = read(raw[name], [...at, name], options);
+        if (result.ignored) ignored.push(...result.ignored);
         if (result.ok) value[name] = result.value;
         else errors.push(...result.errors);
     }
 
-    if (errors.length > 0) return { ok: false, errors };
-    return { ok: true, value: value as O };
+    if (errors.length > 0) return withIgnored({ ok: false, errors }, ignored);
+    return withIgnored({ ok: true, value: value as O }, ignored);
 }

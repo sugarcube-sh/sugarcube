@@ -106,6 +106,23 @@ export function members(
     return found;
 }
 
+export function propertyKey(
+    node: Node,
+    steps: (string | number)[],
+    hidden: Set<Node>,
+): Node | undefined {
+    const name = steps.at(-1);
+    let current: Node | undefined = node;
+    for (const step of steps.slice(0, -1)) {
+        current =
+            current.type === "array"
+                ? current.children?.[Number(step)]
+                : member(current, String(step), hidden);
+        if (!current) return undefined;
+    }
+    return members(current, hidden).find(({ key }) => key === name)?.keyNode;
+}
+
 export function member(node: Node, key: string, hidden: Set<Node>): Node | undefined {
     return members(node, hidden).find((each) => each.key === key)?.value;
 }

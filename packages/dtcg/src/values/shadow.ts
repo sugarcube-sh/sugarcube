@@ -11,6 +11,7 @@ import { type ObjectForm, type PartReaders, readComposite } from "./composite.js
 import { readDimension } from "./dimension.js";
 import { readList } from "./list.js";
 import { readAlias, readPointer } from "./references.js";
+import { withIgnored } from "./set-aside.js";
 import { valueError } from "./value-errors.js";
 
 type ShadowLayer = Exclude<ObjectForm<"shadow">[number], Alias | Pointer>;
@@ -37,7 +38,7 @@ export function readShadow(
     if (!Array.isArray(raw)) {
         const layer = readLayer(raw, at, options);
         if (!layer.ok) return layer;
-        return { ok: true, value: [layer.value] };
+        return withIgnored({ ok: true, value: [layer.value] }, layer.ignored ?? []);
     }
 
     if (raw.length === 0) {

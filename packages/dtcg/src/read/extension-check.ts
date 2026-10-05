@@ -4,19 +4,24 @@ import type {
     Diagnostic,
     ExtensionError,
     ExtensionMessages,
+    IgnoredProperty,
     JsonPath,
     StandardSchemaV1,
     ValueError,
 } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
 import { type JsonFile, deepestNode, spanOf } from "./json.js";
-import { valueDiagnostic } from "./value-diagnostic.js";
+import { ignoredDiagnostic, valueDiagnostic } from "./value-diagnostic.js";
 
 export type SchemaOutput<S> = S extends StandardSchemaV1
     ? StandardSchemaV1.InferOutput<S>
     : unknown;
 
-export type ExtensionProblem = ExtensionError | ValueError | { path: JsonPath; message: string };
+export type ExtensionProblem =
+    | ExtensionError
+    | ValueError
+    | IgnoredProperty
+    | { path: JsonPath; message: string };
 
 export interface CheckedExtension {
     within: [string, ...string[]];
@@ -56,8 +61,12 @@ export function extensionDiagnostic(
     problem: ExtensionProblem,
     { within, messages, json, node, path, permutation }: CheckedExtension,
 ): Diagnostic {
-    const found = deepestNode(node, problem.path, json.hidden);
     const at = ["$extensions", ...within, ...problem.path];
+    if ("kind" in problem && problem.kind === "unknown-property") {
+        const where = { node, steps: problem.path, json };
+        return ignoredDiagnostic(problem, at, where, { path, permutation });
+    }
+    const found = deepestNode(node, problem.path, json.hidden);
     const extra = {
         at: spanOf(json.path, json.lineStarts, found.offset, found.length),
         path,

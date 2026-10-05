@@ -2,6 +2,7 @@ import { thrownMessages } from "../error-messages.js";
 import type {
     ExtensionError,
     ExtensionMessages,
+    IgnoredProperty,
     JsonPath,
     TokenType,
     ValueByType,
@@ -16,7 +17,8 @@ import { parseValue } from "./parse-value.js";
 export interface ExtensionReader<M extends ExtensionMessages> {
     /**
      * Reads one literal value of a type. A value that does not fit, or a reference, which `read`
-     * never resolves inside an extension, gives `undefined` and keeps the parser's error.
+     * never resolves inside an extension, gives `undefined` and keeps the parser's error. A
+     * property the type does not define is set aside and kept for the result.
      */
     read<T extends TokenType>(type: T, raw: unknown, at: JsonPath): ValueByType[T] | undefined;
     /**
@@ -31,11 +33,14 @@ export interface ExtensionReader<M extends ExtensionMessages> {
     ): undefined;
     /**
      * The answer to return from `generate` or `validate`: the value when nothing was reported,
-     * otherwise every problem, in the order found. Give `undefined` when a problem left no value.
+     * otherwise every problem, in the order found, with the properties set aside either way. Give
+     * `undefined` when a problem left no value.
      */
     result<V>(
         value: V | undefined,
-    ): { ok: true; value: V } | { ok: false; errors: (ExtensionError<M> | ValueError)[] };
+    ):
+        | { ok: true; value: V; ignored?: IgnoredProperty[] }
+        | { ok: false; errors: (ExtensionError<M> | ValueError)[]; ignored?: IgnoredProperty[] };
 }
 
 /**
@@ -57,9 +62,11 @@ export interface ExtensionReader<M extends ExtensionMessages> {
  */
 export function extensionReader<M extends ExtensionMessages>(): ExtensionReader<M> {
     const errors: (ExtensionError<M> | ValueError)[] = [];
+    const ignored: IgnoredProperty[] = [];
     return {
         read: (type, raw, at) => {
             const read = parseValue(type, raw, at, { references: false });
+            if (read.ignored) ignored.push(...read.ignored);
             if (read.ok) return read.value;
             errors.push(...read.errors);
             return undefined;
@@ -70,9 +77,10 @@ export function extensionReader<M extends ExtensionMessages>(): ExtensionReader<
             return undefined;
         },
         result: (value) => {
-            if (errors.length > 0) return { ok: false, errors };
+            const setAside = ignored.length > 0 ? { ignored } : {};
+            if (errors.length > 0) return { ok: false, errors, ...setAside };
             if (value === undefined) throw new TypeError(thrownMessages.emptyResult);
-            return { ok: true, value };
+            return { ok: true, value, ...setAside };
         },
     };
 }

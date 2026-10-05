@@ -13,6 +13,11 @@ function details(raw: unknown) {
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
+function ignored(raw: unknown) {
+    const result = parseBorder(raw, ["$value"]);
+    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+}
+
 const color = { colorSpace: "srgb", components: [0.218, 0.218, 0.218] };
 const width = { value: 3, unit: "px" };
 
@@ -96,15 +101,6 @@ describe("parseBorder", () => {
             },
         );
 
-        it("a part that spec 9.2 does not define", () => {
-            expect(details({ color, width, style: "solid", radius: width })).toStrictEqual([
-                {
-                    path: ["$value", "radius"],
-                    detail: { type: "border", reason: "unknown-property", property: "radius" },
-                },
-            ]);
-        });
-
         it("each bad part, with its own parser's reason, at its full path", () => {
             expect(
                 details({
@@ -130,6 +126,16 @@ describe("parseBorder", () => {
                         allowed: ["px", "rem"],
                     },
                 },
+            ]);
+        });
+    });
+
+    describe("sets aside a property its type does not define, and reads the rest", () => {
+        it("a part that spec 9.2 does not define", () => {
+            const raw = { color, width, style: "solid", radius: width };
+            expect(read(raw)).toStrictEqual(read({ color, width, style: "solid" }));
+            expect(ignored(raw)).toStrictEqual([
+                { path: ["$value", "radius"], detail: { type: "border", property: "radius" } },
             ]);
         });
     });

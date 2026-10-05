@@ -5,7 +5,7 @@ import type {
     ResolverProblem,
     ResolverRule,
 } from "./index.js";
-import { valueErrorMessage, valueErrorMessages } from "./values/value-errors.js";
+import { ignoredMessage, valueErrorMessage, valueErrorMessages } from "./values/value-errors.js";
 
 type Entry<K extends DiagnosticKind> = {
     severity: "error" | "warning";
@@ -200,8 +200,10 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "unknown-property": {
         severity: "warning",
-        message: ({ property, owner }) =>
-            `\`${property}\` is not a property of ${ownerWords[owner]}, so it is ignored`,
+        message: (detail) =>
+            "at" in detail
+                ? ignoredMessage(detail.owner, detail.property)
+                : `\`${detail.property}\` is not a property of ${ownerWords[detail.owner]}, so it is ignored`,
     },
     "permutation-limit": {
         severity: "warning",

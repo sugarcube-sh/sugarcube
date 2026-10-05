@@ -1,0 +1,66 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 9 lists each composite's properties and says nothing of others (F-1). A property a value's type does not define is set aside with an unknown-property warning, as the resolver's are, and the rest of the value is read. A reference inside it is not followed: it is not part of the value. Each is reported once, though a pointer elsewhere in the value makes it be read again",
+  "permutations": [
+    {
+      "tokens": [
+        { "path": "space.md" },
+        {
+          "path": "heading",
+          "resolved": {
+            "fontFamily": ["Inter"],
+            "fontSize": { "value": 2, "unit": "rem" },
+            "fontWeight": 700,
+            "letterSpacing": { "value": 0, "unit": "px" },
+            "lineHeight": 1.2
+          },
+          "invalid": null
+        },
+        {
+          "path": "card",
+          "resolved": {
+            "color": { "colorSpace": "srgb", "components": [0, 0, 0], "alpha": 1 },
+            "width": { "value": 16, "unit": "px" },
+            "style": { "kind": "keyword", "keyword": "solid" }
+          },
+          "invalid": null
+        }
+      ],
+      "edges": [
+        {
+          "from": "card",
+          "to": "space.md",
+          "at": { "file": "tokens.json", "text": "{ \"$ref\": \"#/space/md/$value\" }" }
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "unknown-property",
+      "detail": {
+        "property": "paragraphSpacing",
+        "owner": "typography",
+        "at": ["$value", "paragraphSpacing"]
+      },
+      "at": { "file": "tokens.json", "text": "\"paragraphSpacing\"" },
+      "path": "heading"
+    },
+    {
+      "kind": "unknown-property",
+      "detail": {
+        "property": "textDecoration",
+        "owner": "typography",
+        "at": ["$value", "textDecoration"]
+      },
+      "at": { "file": "tokens.json", "text": "\"textDecoration\"" },
+      "path": "heading"
+    },
+    {
+      "kind": "unknown-property",
+      "detail": { "property": "radius", "owner": "border", "at": ["$value", "radius"] },
+      "at": { "file": "tokens.json", "text": "\"radius\"" },
+      "path": "card"
+    }
+  ]
+}

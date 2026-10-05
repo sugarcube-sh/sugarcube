@@ -1,12 +1,12 @@
-import type { ColorSpace, JsonPath, TokenType, ValueError } from "../index.js";
+import type { ColorSpace, IgnoredProperty, JsonPath, TokenType, ValueError } from "../index.js";
 import { fontWeightKeywords } from "./keywords.js";
 
 /** The facts each reason carries, beside `type` and `reason`. */
 export interface ValueErrorFacts {
     /** The value is not the JSON its type is written as, such as a number for a dimension. */
     "wrong-shape": { value: unknown };
-    /** An object has a property its type does not define. */
-    "unknown-property": { property: string };
+    /** A `$ref` has other properties beside it: a JSON Pointer stands alone. */
+    "pointer-not-alone": Record<never, never>;
     /** An object lacks a property its type needs. */
     "missing-property": { property: string };
     /** A number is needed, and the value is not one. */
@@ -152,8 +152,7 @@ export const valueErrorMessages: {
 } = {
     "wrong-shape": ({ type, value }) =>
         `${typeWords[type]} must be ${shapes[type]}, not ${found(value)}`,
-    "unknown-property": ({ type, property }) =>
-        `\`${property}\` is not a property of ${typeWords[type]}`,
+    "pointer-not-alone": ({ type }) => `\`$ref\` is not a property of ${typeWords[type]}`,
     "missing-property": ({ type, property }) => `${typeWords[type]} needs \`${property}\``,
     "not-a-number": ({ value }) => `a number is needed, not ${found(value)}`,
     "alias-not-allowed-here": ({ reference }) =>
@@ -210,4 +209,21 @@ export function valueErrorMessage(detail: ValueErrorDetail): string {
 
 export function valueError(path: JsonPath, detail: ValueErrorDetail): ValueError {
     return { kind: "invalid-value", path, message: valueErrorMessage(detail), detail };
+}
+
+export function ignoredMessage(type: TokenType, property: string): string {
+    return `\`${property}\` is not a property of ${typeWords[type]}, so it is ignored`;
+}
+
+export function ignoredProperty(
+    path: JsonPath,
+    type: TokenType,
+    property: string,
+): IgnoredProperty {
+    return {
+        kind: "unknown-property",
+        path,
+        message: ignoredMessage(type, property),
+        detail: { type, property },
+    };
 }

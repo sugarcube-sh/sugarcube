@@ -1,0 +1,18 @@
+{
+  "entry": "tokens.json",
+  "spec": "a property a generator's value does not define is set aside as it would be in a token: an unknown-property warning at that part of the extension, and the tokens are still made",
+  "options": { "generators": ["sized"] },
+  "permutations": [{ "tokens": [{ "path": "space.1", "resolved": { "value": 4, "unit": "px" } }] }],
+  "diagnostics": [
+    {
+      "kind": "unknown-property",
+      "detail": {
+        "property": "fluid",
+        "owner": "dimension",
+        "at": ["$extensions", "com.example", "sized", "size", "fluid"]
+      },
+      "at": { "file": "tokens.json", "text": "\"fluid\"" },
+      "path": "space"
+    }
+  ]
+}

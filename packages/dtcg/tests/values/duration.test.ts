@@ -13,6 +13,11 @@ function details(raw: unknown) {
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
+function ignored(raw: unknown) {
+    const result = parseDuration(raw, ["$value"]);
+    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+}
+
 describe("parseDuration", () => {
     describe("reads", () => {
         it.for([
@@ -78,13 +83,14 @@ describe("parseDuration", () => {
                 },
             ]);
         });
+    });
 
+    describe("sets aside a property its type does not define, and reads the rest", () => {
         it("a property the spec does not define", () => {
-            expect(details({ value: 200, unit: "ms", easing: "ease" })).toStrictEqual([
-                {
-                    path: ["$value", "easing"],
-                    detail: { type: "duration", reason: "unknown-property", property: "easing" },
-                },
+            const raw = { value: 200, unit: "ms", easing: "ease" };
+            expect(read(raw)).toStrictEqual({ value: 200, unit: "ms" });
+            expect(ignored(raw)).toStrictEqual([
+                { path: ["$value", "easing"], detail: { type: "duration", property: "easing" } },
             ]);
         });
     });

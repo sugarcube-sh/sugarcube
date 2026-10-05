@@ -13,6 +13,11 @@ function details(raw: unknown) {
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
+function ignored(raw: unknown) {
+    const result = parseGradient(raw, ["$value"]);
+    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+}
+
 const blue = { colorSpace: "srgb", components: [0, 0, 1] };
 const red = { colorSpace: "srgb", components: [1, 0, 0] };
 const withAlpha = (color: object) => ({ ...color, alpha: 1 });
@@ -120,12 +125,16 @@ describe("parseGradient", () => {
                 },
             ]);
         });
+    });
 
+    describe("sets aside a property its type does not define, and reads the rest", () => {
         it("a part the spec does not define", () => {
-            expect(details([{ color: red, position: 0, midpoint: 0.5 }])).toStrictEqual([
+            const raw = [{ color: red, position: 0, midpoint: 0.5 }];
+            expect(read(raw)).toStrictEqual(read([{ color: red, position: 0 }]));
+            expect(ignored(raw)).toStrictEqual([
                 {
                     path: ["$value", 0, "midpoint"],
-                    detail: { type: "gradient", reason: "unknown-property", property: "midpoint" },
+                    detail: { type: "gradient", property: "midpoint" },
                 },
             ]);
         });

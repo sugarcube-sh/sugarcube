@@ -6,6 +6,7 @@ import type {
     GeneratedToken,
     Generator,
     StandardSchemaV1,
+    IgnoredProperty,
     ValueError,
 } from "../index.js";
 import { isJsonObject } from "../values/json.js";
@@ -62,8 +63,12 @@ export function defineGenerator<
             group: Parameters<Generator["generate"]>[0],
             extension: SchemaOutput<S>,
         ) =>
-            | { ok: true; value: GeneratedToken[] }
-            | { ok: false; errors: (ExtensionError<NoInfer<M>> | ValueError)[] };
+            | { ok: true; value: GeneratedToken[]; ignored?: IgnoredProperty[] }
+            | {
+                  ok: false;
+                  errors: (ExtensionError<NoInfer<M>> | ValueError)[];
+                  ignored?: IgnoredProperty[];
+              };
     },
 ): Generator {
     return generator;
@@ -78,6 +83,7 @@ export function fillGenerated(
     const added: MergedToken[] = [];
     const addedPaths = new Set<string>();
     const reported = new Map<Generator, Set<Node>>();
+    const reportedIgnored = new Map<Generator, Set<Node>>();
 
     for (const group of [merged.root, ...merged.groups.values()]) {
         for (const generator of generators) {
@@ -91,9 +97,9 @@ export function fillGenerated(
                 path: group.path,
                 permutation,
             };
-            const report = (problems: ExtensionProblem[]) => {
-                const done = reported.get(generator) ?? new Set<Node>();
-                reported.set(generator, done);
+            const report = (problems: ExtensionProblem[], seen = reported) => {
+                const done = seen.get(generator) ?? new Set<Node>();
+                seen.set(generator, done);
                 if (done.has(extension.node)) return;
                 done.add(extension.node);
                 for (const problem of problems) {
@@ -110,6 +116,7 @@ export function fillGenerated(
                 { path: group.path, ...(type && { type }) },
                 passed.value,
             );
+            if (result.ignored) report(result.ignored, reportedIgnored);
             if (!result.ok) {
                 report(result.errors);
                 continue;

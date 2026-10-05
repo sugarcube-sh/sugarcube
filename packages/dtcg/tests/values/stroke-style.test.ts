@@ -13,6 +13,11 @@ function details(raw: unknown) {
     return result.errors.map(({ path, detail }) => ({ path, detail }));
 }
 
+function ignored(raw: unknown) {
+    const result = parseStrokeStyle(raw, ["$value"]);
+    return (result.ignored ?? []).map(({ path, detail }) => ({ path, detail }));
+}
+
 const px = (value: number) => ({ value, unit: "px" });
 
 describe("parseStrokeStyle", () => {
@@ -165,18 +170,27 @@ describe("parseStrokeStyle", () => {
                 },
             ]);
         });
+    });
 
+    describe("sets aside a property its type does not define, and reads the rest", () => {
         it("a property the spec does not define", () => {
-            expect(
-                details({ dashArray: [px(4)], lineCap: "round", dashOffset: px(1) }),
-            ).toStrictEqual([
+            const raw = { dashArray: [px(4)], lineCap: "round", dashOffset: px(1) };
+            expect(read(raw)).toStrictEqual({ kind: "dash", dashArray: [px(4)], lineCap: "round" });
+            expect(ignored(raw)).toStrictEqual([
                 {
                     path: ["$value", "dashOffset"],
-                    detail: {
-                        type: "strokeStyle",
-                        reason: "unknown-property",
-                        property: "dashOffset",
-                    },
+                    detail: { type: "strokeStyle", property: "dashOffset" },
+                },
+            ]);
+        });
+
+        it("a length's own property, at its full path", () => {
+            const raw = { dashArray: [{ ...px(4), fluid: true }], lineCap: "round" };
+            expect(read(raw)).toStrictEqual({ kind: "dash", dashArray: [px(4)], lineCap: "round" });
+            expect(ignored(raw)).toStrictEqual([
+                {
+                    path: ["$value", "dashArray", 0, "fluid"],
+                    detail: { type: "dimension", property: "fluid" },
                 },
             ]);
         });
