@@ -1,147 +1,46 @@
-import type {
-    IgnoredProperty,
-    ParseOptions,
-    UnresolvedStrokeStyle,
-    JsonPath,
-    ParseResult,
-    Pointer,
-    ValueError,
-} from "../index.js";
-import { readDimension } from "./dimension.js";
+import type { StrokeStyleValue } from "../index.js";
 import { type LineCap, lineCaps, strokeStyleKeywords } from "./keywords.js";
-import { isJsonObject } from "./json.js";
-import { readAlias, readPointer } from "./references.js";
-import { refusedAlias } from "./refuse-alias.js";
-import { unknownProperties } from "./unknown-properties.js";
-import { refused, valueError } from "./value-errors.js";
+import {
+    type Described,
+    accepted,
+    forms,
+    list,
+    literal,
+    object,
+    refusedAs,
+    token,
+} from "./shape.js";
 
-type Keyword = (typeof strokeStyleKeywords)[number];
-type DashArray = Extract<UnresolvedStrokeStyle, { kind: "dash" }>["dashArray"];
+type Keyword = Extract<StrokeStyleValue, { kind: "keyword" }>;
 
-const PROPERTIES = new Set(["dashArray", "lineCap"]);
+const keyword = literal<Keyword>((raw) => {
+    const known = strokeStyleKeywords.find((each) => each === raw);
+    if (known !== undefined) return accepted({ kind: "keyword", keyword: known });
+    return typeof raw === "string"
+        ? refusedAs({
+              reason: "unknown-stroke-style-keyword",
+              value: raw,
+              keywords: strokeStyleKeywords,
+          })
+        : refusedAs({ reason: "wrong-shape", value: raw });
+});
 
-const type = "strokeStyle";
+const lineCap = literal<LineCap>((raw) => {
+    const known = lineCaps.find((each) => each === raw);
+    return known === undefined
+        ? refusedAs({ reason: "unknown-line-cap", value: raw, lineCaps })
+        : accepted(known);
+});
 
-export function readStrokeStyle(
-    raw: unknown,
-    at: JsonPath,
-    options?: ParseOptions,
-): ParseResult<UnresolvedStrokeStyle> {
-    const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference, ignored: [] };
+const dashArray = forms({ array: list(token("dimension"), "empty-dash-array") }, (value) => ({
+    reason: "dash-array-not-a-list",
+    value,
+}));
 
-    if (typeof raw === "string") {
-        if (strokeStyleKeywords.includes(raw as Keyword)) {
-            return { ok: true, value: { kind: "keyword", keyword: raw as Keyword }, ignored: [] };
-        }
-        return refused(at, {
-            type,
-            reason: "unknown-stroke-style-keyword",
-            value: raw,
-            keywords: strokeStyleKeywords,
-        });
-    }
-
-    if (!isJsonObject(raw)) {
-        return refused(at, { type, reason: "wrong-shape", value: raw });
-    }
-
-    const errors: ValueError[] = [];
-    const ignored = unknownProperties(
-        raw,
-        (name) => PROPERTIES.has(name),
-        type,
-        at,
-        errors,
-        options,
-    );
-
-    const dashArray = readDashArray(raw, at, errors, ignored, options);
-    const lineCap = readLineCap(raw, at, errors);
-
-    if (errors.length > 0 || dashArray === undefined || lineCap === undefined) {
-        return { ok: false, errors, ignored };
-    }
-    return { ok: true, value: { kind: "dash", dashArray, lineCap }, ignored };
-}
-
-function readDashArray(
-    raw: Record<string, unknown>,
-    at: JsonPath,
-    errors: ValueError[],
-    ignored: IgnoredProperty[],
-    options: ParseOptions | undefined,
-): DashArray | undefined {
-    if (!("dashArray" in raw)) {
-        errors.push(
-            valueError([...at, "dashArray"], {
-                type,
-                reason: "missing-property",
-                property: "dashArray",
-            }),
-        );
-        return undefined;
-    }
-
-    const pointer = readPointer(raw.dashArray);
-    if (pointer) return pointer;
-    if (refusedAlias(raw.dashArray, [...at, "dashArray"], type, errors)) return undefined;
-
-    const path = [...at, "dashArray"];
-    if (!Array.isArray(raw.dashArray)) {
-        errors.push(
-            valueError(path, { type, reason: "dash-array-not-a-list", value: raw.dashArray }),
-        );
-        return undefined;
-    }
-    if (raw.dashArray.length === 0) {
-        errors.push(valueError(path, { type, reason: "empty-dash-array" }));
-        return undefined;
-    }
-
-    const before = errors.length;
-    const lengths = raw.dashArray.map((length: unknown, index) => {
-        const result = readDimension(length, [...path, index], options);
-        ignored.push(...result.ignored);
-        if (!result.ok) {
-            errors.push(...result.errors);
-            return undefined;
-        }
-        return result.value;
-    });
-
-    if (errors.length > before) return undefined;
-    return lengths as DashArray;
-}
-
-function readLineCap(
-    raw: Record<string, unknown>,
-    at: JsonPath,
-    errors: ValueError[],
-): LineCap | Pointer | undefined {
-    if (!("lineCap" in raw)) {
-        errors.push(
-            valueError([...at, "lineCap"], {
-                type,
-                reason: "missing-property",
-                property: "lineCap",
-            }),
-        );
-        return undefined;
-    }
-
-    const pointer = readPointer(raw.lineCap);
-    if (pointer) return pointer;
-    if (refusedAlias(raw.lineCap, [...at, "lineCap"], type, errors)) return undefined;
-
-    if (lineCaps.includes(raw.lineCap as LineCap)) return raw.lineCap as LineCap;
-    errors.push(
-        valueError([...at, "lineCap"], {
-            type,
-            reason: "unknown-line-cap",
-            value: raw.lineCap,
-            lineCaps,
-        }),
-    );
-    return undefined;
-}
+export const strokeStyle = forms(
+    {
+        string: keyword,
+        object: object({ dashArray: { shape: dashArray }, lineCap: { shape: lineCap } }, "dash"),
+    },
+    (value) => ({ reason: "wrong-shape", value }),
+) satisfies Described<"strokeStyle">;

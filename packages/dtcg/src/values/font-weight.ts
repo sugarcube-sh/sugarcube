@@ -1,30 +1,27 @@
-import type { JsonPath, ParseResult, UnresolvedValue } from "../index.js";
 import { type FontWeightKeyword, fontWeightKeywords } from "./keywords.js";
-import { readAlias, readPointer } from "./references.js";
-import { refused } from "./value-errors.js";
+import { type Described, accepted, forms, literal, refusedAs } from "./shape.js";
 
-const type = "fontWeight";
-
-export function readFontWeight(
-    raw: unknown,
-    at: JsonPath,
-): ParseResult<UnresolvedValue<"fontWeight">> {
-    const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference, ignored: [] };
-
-    if (typeof raw === "number" && Number.isFinite(raw)) {
-        if (raw < 1 || raw > 1000) {
-            return refused(at, { type, reason: "font-weight-out-of-range", value: raw });
-        }
-        return { ok: true, value: raw, ignored: [] };
+const weight = literal((raw) => {
+    if (typeof raw !== "number" || !Number.isFinite(raw)) {
+        return refusedAs({ reason: "wrong-shape", value: raw });
     }
+    return raw < 1 || raw > 1000
+        ? refusedAs({ reason: "font-weight-out-of-range", value: raw })
+        : accepted(raw);
+});
 
-    if (typeof raw === "string") {
-        if (Object.hasOwn(fontWeightKeywords, raw)) {
-            return { ok: true, value: fontWeightKeywords[raw as FontWeightKeyword], ignored: [] };
-        }
-        return refused(at, { type, reason: "unknown-font-weight-keyword", value: raw });
-    }
+const keyword = literal<number>((raw) => {
+    if (typeof raw !== "string") return refusedAs({ reason: "wrong-shape", value: raw });
+    return isKeyword(raw)
+        ? accepted(fontWeightKeywords[raw])
+        : refusedAs({ reason: "unknown-font-weight-keyword", value: raw });
+});
 
-    return refused(at, { type, reason: "wrong-shape", value: raw });
+function isKeyword(raw: string): raw is FontWeightKeyword {
+    return Object.hasOwn(fontWeightKeywords, raw);
 }
+
+export const fontWeight = forms({ number: weight, string: keyword }, (value) => ({
+    reason: "wrong-shape",
+    value,
+})) satisfies Described<"fontWeight">;

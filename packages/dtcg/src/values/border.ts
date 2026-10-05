@@ -1,19 +1,7 @@
-import type { JsonPath, ParseOptions, ParseResult, UnresolvedValue } from "../index.js";
-import { readColor } from "./color.js";
-import { type ObjectForm, type PartReaders, readComposite } from "./composite.js";
-import { readDimension } from "./dimension.js";
-import { readStrokeStyle } from "./stroke-style.js";
+import { type Described, object, token } from "./shape.js";
 
-const PARTS: PartReaders<ObjectForm<"border">> = {
-    color: readColor,
-    width: readDimension,
-    style: readStrokeStyle,
-};
-
-export function readBorder(
-    raw: unknown,
-    at: JsonPath,
-    options?: ParseOptions,
-): ParseResult<UnresolvedValue<"border">> {
-    return readComposite("border", PARTS, raw, at, options);
-}
+export const border = object({
+    color: { shape: token("color") },
+    width: { shape: token("dimension") },
+    style: { shape: token("strokeStyle") },
+}) satisfies Described<"border">;

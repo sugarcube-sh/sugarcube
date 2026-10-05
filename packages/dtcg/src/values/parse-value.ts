@@ -6,9 +6,8 @@ import type {
     UnresolvedValue,
     ValueByType,
 } from "../index.js";
-import { parsers } from "./parsers.js";
-import { isJsonObject } from "./json.js";
-import { isAlias, isPointer } from "./references.js";
+import { type Found, readToken } from "./read-shape.js";
+import { isAlias } from "./references.js";
 import { valueError } from "./value-errors.js";
 
 /**
@@ -45,27 +44,17 @@ export function parseValue<T extends TokenType>(
     at: JsonPath,
     { references = true, ...options }: ParseOptions & { references?: boolean } = {},
 ): ParseResult<UnresolvedValue<T> | ValueByType[T]> {
-    const read: ParseResult<unknown> = parsers[type](raw, at, options);
-    if (!read.ok || references) return read as ParseResult<UnresolvedValue<T>>;
+    if (references) return readToken(type, raw, at, options);
 
-    const listed = Array.isArray(read.value) && !Array.isArray(raw);
-    const errors = referencesIn(read.value, []).map(({ inside, written }) =>
-        valueError([...at, ...(listed ? inside.slice(1) : inside)], {
+    const found: Found[] = [];
+    const read = readToken(type, raw, at, options, found);
+    if (!read.ok || found.length === 0) return read;
+    const errors = found.map(({ ref, at: written }) =>
+        valueError(written, {
             type,
             reason: "reference-not-allowed",
-            reference: written,
+            reference: isAlias(ref) ? `{${ref.alias}}` : ref.pointer,
         }),
     );
-    if (errors.length === 0) return read as ParseResult<ValueByType[T]>;
     return { ok: false, errors, ignored: read.ignored };
-}
-
-function referencesIn(value: unknown, inside: JsonPath): { inside: JsonPath; written: string }[] {
-    if (isAlias(value)) return [{ inside, written: `{${value.alias}}` }];
-    if (isPointer(value)) return [{ inside, written: value.pointer }];
-    if (Array.isArray(value)) return value.flatMap((each, i) => referencesIn(each, [...inside, i]));
-    if (isJsonObject(value)) {
-        return Object.entries(value).flatMap(([key, each]) => referencesIn(each, [...inside, key]));
-    }
-    return [];
 }

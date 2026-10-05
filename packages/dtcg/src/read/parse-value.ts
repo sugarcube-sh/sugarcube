@@ -2,7 +2,6 @@ import type { Node } from "jsonc-parser";
 import type {
     Diagnostic,
     IgnoredProperty,
-    Parse,
     ParseOptions,
     ParseResult,
     TokenType,
@@ -10,7 +9,7 @@ import type {
     ValueError,
 } from "../index.js";
 import { ignoredDiagnostic, valueDiagnostic } from "./value-diagnostic.js";
-import { parsers } from "../values/parsers.js";
+import { readToken } from "../values/read-shape.js";
 import { deepestNode, spanOf } from "./json.js";
 import type { MergedToken } from "./merge.js";
 
@@ -40,8 +39,7 @@ export function createValueReader(diagnostics: Diagnostic[], options: ParseOptio
         raw: unknown,
         replaced?: { permutation: number },
     ) => {
-        const parser: Parse<UnresolvedValueByType[T]> = parsers[type];
-        const result = parser(raw, ["$value"], options);
+        const result = readToken(type, raw, ["$value"], options);
         if (!replaced) {
             for (const each of result.ignored) diagnostics.push(ignoredToDiagnostic(token, each));
         }

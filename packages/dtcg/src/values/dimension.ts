@@ -1,11 +1,5 @@
-import type { JsonPath, ParseOptions, ParseResult, UnresolvedValue } from "../index.js";
+import { measure } from "./measure.js";
+import type { Described } from "./shape.js";
 import { dimensionUnits } from "./units.js";
-import { readMeasure } from "./measure.js";
 
-export function readDimension(
-    raw: unknown,
-    at: JsonPath,
-    options?: ParseOptions,
-): ParseResult<UnresolvedValue<"dimension">> {
-    return readMeasure("dimension", dimensionUnits, raw, at, options);
-}
+export const dimension = measure(dimensionUnits) satisfies Described<"dimension">;
