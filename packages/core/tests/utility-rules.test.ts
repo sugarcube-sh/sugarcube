@@ -769,3 +769,57 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
         ).toStrictEqual([]);
     });
 });
+
+describe("utilityRules' warning for a safelisted class no token makes", () => {
+    const palette = { color: { primary: color(), text: { muted: color() } } };
+    const messages = (classes: UtilityClassesConfig) =>
+        ruled(palette, classes)
+            .diagnostics.filter(({ kind }) => kind === "safelist-without-token")
+            .map(({ severity, path, at, message }) => [severity, path, at, message]);
+
+    it("names the part and the entry", () => {
+        expect(
+            messages({
+                "background-color": { source: "color.*", prefix: "bg", safelist: ["primray"] },
+            }),
+        ).toStrictEqual([
+            [
+                "warning",
+                undefined,
+                undefined,
+                "`primray` in `background-color`'s safelist matches no token, so no class is forced",
+            ],
+        ]);
+    });
+
+    it("carries the entry and the part as facts", () => {
+        const { diagnostics } = ruled(palette, {
+            color: [
+                { source: "color.*", prefix: "text" },
+                { source: "color.*", prefix: "ink", safelist: ["primary", "teal"] },
+            ],
+        });
+        expect(diagnostics.map(({ kind, detail }) => [kind, detail])).toStrictEqual([
+            ["safelist-without-token", { property: "color", entry: 1, part: "teal" }],
+        ]);
+    });
+
+    it("not for a part written stripped or in full with stripDuplicates", () => {
+        expect(
+            messages({
+                color: {
+                    source: "color.*",
+                    prefix: "text",
+                    stripDuplicates: true,
+                    safelist: ["muted", "text-muted"],
+                },
+            }),
+        ).toStrictEqual([]);
+    });
+
+    it("not when the entry makes no classes, which its own warning explains", () => {
+        expect(
+            messages({ color: { source: "colour.*", prefix: "text", safelist: ["primary"] } }),
+        ).toStrictEqual([]);
+    });
+});

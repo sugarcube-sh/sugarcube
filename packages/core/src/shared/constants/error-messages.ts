@@ -52,6 +52,11 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
         severity: "warning",
         message: (detail) => `${entryName(detail)} makes no classes: ${withoutClasses(detail)}`,
     },
+    "safelist-without-token": {
+        severity: "warning",
+        message: (detail) =>
+            `\`${detail.part}\` in ${entryName(detail)}'s safelist matches no token, so no class is forced`,
+    },
 };
 
 function withoutClasses(detail: UtilityWithoutClasses): string {

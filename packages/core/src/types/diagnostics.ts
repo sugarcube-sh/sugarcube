@@ -23,6 +23,7 @@ export interface SugarcubeDiagnosticDetailByKind {
     "same-variable-name": { name: string; paths: [string, string] };
     "same-utility-class": { className: string; paths: [string, string] };
     "utility-without-classes": UtilityWithoutClasses;
+    "safelist-without-token": UtilityEntry & { part: string };
 }
 
 export type SugarcubeDiagnosticKind = keyof SugarcubeDiagnosticDetailByKind;

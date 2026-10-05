@@ -90,7 +90,8 @@ const TYPES: Record<string, TokenType[]> = {
  * come in the config's order, each shorthand before its longhands; entries sharing a start are
  * tried in the config's order, and among tokens making the same class the first in file order is
  * used. A class two tokens with different variables make is reported, on the token not used,
- * and so is an entry that makes no classes, with the reason.
+ * and so is an entry that makes no classes, with the reason, and a part its `safelist` names that no
+ * token under `source` makes.
  */
 export function utilityRules(
     tokens: UtilityToken[],
@@ -99,6 +100,7 @@ export function utilityRules(
     const byStart = new Map<string, Use[]>();
     const entries: Entry[] = [];
     const safelist = new Set<string>();
+    const unmatched: Reported[] = [];
     for (const [property, listed] of Object.entries(classes)) {
         const several = Array.isArray(listed);
         for (const [index, config] of [listed].flat().entries()) {
@@ -114,11 +116,15 @@ export function utilityRules(
             };
             entries.push(entry);
             const find = (part: string) => parts.get(stripped(part, config))?.[0].name;
-            const forced = Array.isArray(config.safelist)
-                ? config.safelist.filter((part) => find(part) !== undefined)
-                : config.safelist
-                  ? [...parts.keys()]
-                  : [];
+            const named = Array.isArray(config.safelist) ? config.safelist : [];
+            const forced =
+                config.safelist === true
+                    ? [...parts.keys()]
+                    : named.filter((part) => find(part) !== undefined);
+            for (const part of parts.size > 0 ? named : []) {
+                if (find(part) !== undefined) continue;
+                unmatched.push(diagnostic("safelist-without-token", { ...about, part }));
+            }
             for (const { start, property: written } of starts) {
                 byStart.set(start, [
                     ...(byStart.get(start) ?? []),
@@ -146,6 +152,7 @@ export function utilityRules(
         diagnostics: [
             ...sameClasses(answered),
             ...entries.flatMap((entry) => withoutClasses(entry, lost)),
+            ...unmatched,
         ],
     };
 }
