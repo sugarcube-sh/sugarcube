@@ -11,15 +11,35 @@ import type {
 } from "../index.js";
 import { descriptions } from "./descriptions.js";
 import { isJsonObject } from "./json.js";
-import { readAlias, readPointer } from "./references.js";
-import type { ArrayNode, JsonKind, Node, ObjectNode, Problem } from "./shape.js";
+import { isAlias, isPointer, readAlias, readPointer } from "./references.js";
+import type { ArrayNode, JsonKind, Node, ObjectNode, Problem, Siblings } from "./shape.js";
 import { unknownProperties } from "./unknown-properties.js";
 import { valueError } from "./value-errors.js";
 
-export interface Found {
+export interface Place {
+    shape: Node;
+    at: JsonPath;
+    owner: TokenType;
+    element: boolean;
+}
+
+export interface Found extends Place {
     ref: Alias | Pointer;
     place: JsonPath;
+}
+
+export interface Recheck {
+    place: JsonPath;
     at: JsonPath;
+    raw: unknown;
+    from(siblings: Siblings): Node;
+    siblings: Siblings;
+    owner: TokenType;
+}
+
+export interface Noted {
+    found: Found[];
+    rechecks: Recheck[];
 }
 
 interface Reading {
@@ -27,7 +47,7 @@ interface Reading {
     owner: TokenType;
     errors: ValueError[];
     ignored: IgnoredProperty[];
-    found: Found[] | undefined;
+    noted: Noted | undefined;
 }
 
 const FAILED = Symbol("failed");
@@ -37,13 +57,23 @@ export function readToken<T extends TokenType>(
     raw: unknown,
     at: JsonPath,
     options: ParseOptions = {},
-    found?: Found[],
+    noted?: Noted,
 ): ParseResult<UnresolvedValueByType[T]> {
-    const reading: Reading = { options, owner: type, errors: [], ignored: [], found };
-    const value = readPlace({ kind: "token", type }, raw, at, [], reading, false);
+    const place = { shape: { kind: "token", type }, at, owner: type, element: false } as const;
+    const read = readAt(place, raw, options, noted);
+    return read.ok ? { ...read, value: read.value as UnresolvedValueByType[T] } : read;
+}
+
+export function readAt(
+    { shape, at, owner, element }: Place,
+    raw: unknown,
+    options: ParseOptions,
+    noted: Noted | undefined,
+): ParseResult<unknown> {
+    const reading: Reading = { options, owner, errors: [], ignored: [], noted };
+    const value = readPlace(shape, raw, at, [], reading, element);
     const { errors, ignored } = reading;
-    if (value === FAILED) return { ok: false, errors, ignored };
-    return { ok: true, value: value as UnresolvedValueByType[T], ignored };
+    return value === FAILED ? { ok: false, errors, ignored } : { ok: true, value, ignored };
 }
 
 function readPlace(
@@ -55,20 +85,23 @@ function readPlace(
     element: boolean,
 ): unknown {
     const pointer = readPointer(raw);
-    if (pointer) return keep(pointer, at, place, reading);
+    if (pointer)
+        return keep({ ref: pointer, at, place, shape, owner: reading.owner, element }, reading);
 
     if (typeof raw === "string") {
         const alias = readAlias(raw);
-        if (alias && (element || shape.kind === "token")) return keep(alias, at, place, reading);
+        if (alias && (element || shape.kind === "token")) {
+            return keep({ ref: alias, at, place, shape, owner: reading.owner, element }, reading);
+        }
         if (alias) return fail(at, { reason: "alias-not-allowed-here", reference: raw }, reading);
     }
 
     return readNode(shape, raw, at, place, reading);
 }
 
-function keep(ref: Alias | Pointer, at: JsonPath, place: JsonPath, reading: Reading) {
-    reading.found?.push({ ref, place, at });
-    return ref;
+function keep(found: Found, reading: Reading) {
+    reading.noted?.found.push(found);
+    return found.ref;
 }
 
 function fail(at: JsonPath, problem: Problem, reading: Reading): typeof FAILED {
@@ -142,7 +175,16 @@ function readObject(
             }
             continue;
         }
-        const partShape = "shape" in property ? property.shape : property.from(value);
+        let partShape: Node;
+        if ("shape" in property) partShape = property.shape;
+        else {
+            partShape = property.from(value);
+            if (Object.values(value).some(isReference)) {
+                const { from } = property;
+                const recheck = { place: [...place, name], at: [...at, name], raw: raw[name] };
+                reading.noted?.rechecks.push({ ...recheck, from, siblings: { ...value }, owner });
+            }
+        }
         const part = readPlace(
             partShape,
             raw[name],
@@ -197,4 +239,8 @@ function scalarOrObject(raw: unknown): Exclude<JsonKind, "array"> | undefined {
     if (typeof raw === "number") return "number";
     if (typeof raw === "boolean") return "boolean";
     return undefined;
+}
+
+function isReference(value: unknown): boolean {
+    return isAlias(value) || isPointer(value);
 }

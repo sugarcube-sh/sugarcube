@@ -1,0 +1,54 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 7.1.2 and 7.2.2: a pointer reads what the file writes at its target, so a target written as {…} is that reference, followed in turn, and checked against the place the pointer stands in. A problem there is reported at the pointer",
+  "permutations": [
+    {
+      "tokens": [
+        {
+          "path": "ink"
+        },
+        {
+          "path": "card"
+        },
+        {
+          "path": "outline",
+          "resolved": {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [0, 0, 0],
+              "alpha": 1
+            },
+            "width": {
+              "value": 2,
+              "unit": "px"
+            },
+            "style": {
+              "kind": "keyword",
+              "keyword": "solid"
+            }
+          }
+        },
+        {
+          "path": "ring",
+          "resolved": null
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "type-mismatch",
+      "detail": {
+        "ref": "ink",
+        "expected": "number",
+        "found": "color"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#/card/$value/color\" }",
+        "occurrence": 2
+      },
+      "path": "ring"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import type { Node } from "jsonc-parser";
+import type { Node as JsonNode } from "jsonc-parser";
 import type {
     Diagnostic,
     IgnoredProperty,
@@ -9,14 +9,27 @@ import type {
     ValueError,
 } from "../index.js";
 import { ignoredDiagnostic, valueDiagnostic } from "./value-diagnostic.js";
-import { type Found, readToken } from "../values/read-shape.js";
+import {
+    type Found,
+    type Noted,
+    type Place,
+    type Recheck,
+    readAt,
+    readToken,
+} from "../values/read-shape.js";
 import { deepestNode, spanOf } from "./json.js";
 import type { MergedToken } from "./merge.js";
-import { type Occurrence, occurrence } from "./value-references.js";
+import { type Occurrence, occurrence } from "./occurrence.js";
+
+export interface Reference {
+    found: Found;
+    use: Occurrence;
+}
 
 export interface ValueRead<V = unknown> {
     result: ParseResult<V>;
-    references: Occurrence[];
+    references: Reference[];
+    rechecks: Recheck[];
 }
 
 type Read = <T extends TokenType>(
@@ -26,41 +39,28 @@ type Read = <T extends TokenType>(
 
 export interface ValueReader {
     read: Read;
-    readReplaced: <T extends TokenType>(
+    readTarget: (
         token: MergedToken,
-        type: T,
+        place: Place,
         raw: unknown,
         permutation: number,
-    ) => ParseResult<UnresolvedValueByType[T]>;
+    ) => { result: ParseResult<unknown>; noted: Noted };
 }
 
-type Cache = { [T in TokenType]?: Map<Node, ValueRead<UnresolvedValueByType[T]>> };
+type Cache = { [T in TokenType]?: Map<JsonNode, ValueRead<UnresolvedValueByType[T]>> };
 
 export function createValueReader(diagnostics: Diagnostic[], options: ParseOptions): ValueReader {
     const caches: Cache = {};
 
-    const parse = <T extends TokenType>(
-        token: MergedToken,
-        type: T,
-        raw: unknown,
-        { found, replaced }: { found?: Found[]; replaced?: { permutation: number } },
-    ) => {
-        const result = readToken(type, raw, ["$value"], options, found);
-        if (!replaced) {
-            for (const each of result.ignored) diagnostics.push(ignoredToDiagnostic(token, each));
-        }
-        if (!result.ok) {
-            for (const error of result.errors) {
-                diagnostics.push(toDiagnostic(token, error, replaced?.permutation));
-            }
-        }
-        return result;
-    };
-
     const read: Read = (token, type) => {
-        const found: Found[] = [];
-        const result = parse(token, type, token.authored, { found });
-        return { result, references: found.map((each) => occurrence(token, each)) };
+        const noted: Noted = { found: [], rechecks: [] };
+        const result = readToken(type, token.authored, ["$value"], options, noted);
+        for (const each of result.ignored) diagnostics.push(ignoredToDiagnostic(token, each));
+        if (!result.ok) {
+            for (const error of result.errors) diagnostics.push(toDiagnostic(token, error));
+        }
+        const references = noted.found.map((found) => ({ found, use: occurrence(token, found) }));
+        return { result, references, rechecks: noted.rechecks };
     };
 
     return {
@@ -74,8 +74,16 @@ export function createValueReader(diagnostics: Diagnostic[], options: ParseOptio
             cache.set(token.value, fresh);
             return fresh;
         },
-        readReplaced: (token, type, raw, permutation) =>
-            parse(token, type, raw, { replaced: { permutation } }),
+        readTarget: (token, place, raw, permutation) => {
+            const noted: Noted = { found: [], rechecks: [] };
+            const result = readAt(place, raw, options, noted);
+            if (!result.ok) {
+                for (const error of result.errors) {
+                    diagnostics.push(toDiagnostic(token, error, permutation));
+                }
+            }
+            return { result, noted };
+        },
     };
 }
 

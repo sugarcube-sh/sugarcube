@@ -1,5 +1,4 @@
-import type { IgnoredProperty, JsonPath, Span } from "../index.js";
-import { isJsonObject } from "../values/json.js";
+import type { JsonPath, Span } from "../index.js";
 import type { Found } from "../values/read-shape.js";
 import { isAlias } from "../values/references.js";
 import { deepestNode, member, spanOf } from "./json.js";
@@ -34,23 +33,4 @@ export function occurrence(
 export function wholeReference(token: MergedToken): Occurrence | undefined {
     const { reference } = token;
     return reference && occurrence(token, { ref: reference, place: [], at: ["$value"] });
-}
-
-export function withoutIgnored(raw: unknown, ignored: IgnoredProperty[]): unknown {
-    if (ignored.length === 0) return raw;
-    const setAside = ignored.map(({ path }) => path.slice(1));
-    const kept = (value: unknown, at: JsonPath): unknown => {
-        if (Array.isArray(value)) return value.map((item, index) => kept(item, [...at, index]));
-        if (!isJsonObject(value)) return value;
-        return Object.fromEntries(
-            Object.entries(value)
-                .filter(([key]) => !setAside.some((path) => equal(path, [...at, key])))
-                .map(([key, item]) => [key, kept(item, [...at, key])]),
-        );
-    };
-    return kept(raw, []);
-}
-
-function equal(a: JsonPath, b: JsonPath): boolean {
-    return a.length === b.length && a.every((step, i) => b[i] === step);
 }
