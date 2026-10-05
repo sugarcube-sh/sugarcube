@@ -47,7 +47,7 @@ const TYPES: Record<string, TokenType[]> = {
     "transition-timing-function": ["cubicBezier"],
     "border-style": ["strokeStyle"],
     "box-shadow": ["shadow"],
-    "text-shadow": ["shadow"],
+    "text-shadow": [],
     "background-image": ["gradient"],
     "opacity": ["number"],
 };

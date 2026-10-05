@@ -15,6 +15,7 @@ export interface Declaration {
 
 export interface Declared {
     declarations: Declaration[];
+    undeclared: { token: Token; private: boolean }[];
     missing: Fallbacks["missing"];
 }
 
@@ -68,9 +69,14 @@ export function declarations(
     };
 
     const missing: Fallbacks["missing"] = [];
+    const undeclared: Declared["undeclared"] = [];
     const declare = (each: Token): Declaration[] => {
-        const written = isPrivate(each) ? undefined : native(each);
-        if (written === undefined) return [];
+        const hidden = isPrivate(each);
+        const written = hidden ? undefined : native(each);
+        if (written === undefined) {
+            undeclared.push({ token: each, private: hidden });
+            return [];
+        }
         const found = polyfill ? fallbacksIn(permutation, each, isPrivate) : undefined;
         const plain = found && found.spaces.length > 0 ? fallback(each) : undefined;
         if (found) missing.push(...found.missing);
@@ -85,7 +91,7 @@ export function declarations(
     };
 
     const declared = permutation.tokens.flatMap(declare);
-    return { declarations: declared, missing };
+    return { declarations: declared, undeclared, missing };
 }
 
 function privateSource(source: Source | undefined): boolean {

@@ -132,6 +132,26 @@ describe("utilityRules", () => {
         });
     });
 
+    it("gives text-shadow no class, as a shadow is written with a spread, and a custom property any", () => {
+        const glow = {
+            $type: "shadow",
+            $value: {
+                offsetX: { value: 0, unit: "px" },
+                offsetY: { value: 1, unit: "px" },
+                blur: { value: 4, unit: "px" },
+                spread: { value: 0, unit: "px" },
+                color: "#00000040",
+            },
+        };
+        const tokens = { shadow: { glow } };
+        expect(
+            cssFor(tokens, { "text-shadow": { source: "shadow.*" } }, "shadow-glow"),
+        ).toBeUndefined();
+        expect(
+            cssFor(tokens, { "--text-shadow": { source: "shadow.*" } }, "shadow-glow"),
+        ).toStrictEqual({ "--text-shadow": "var(--shadow-glow)" });
+    });
+
     it("gives no class to a token declared as several variables", () => {
         const body = {
             $type: "typography",

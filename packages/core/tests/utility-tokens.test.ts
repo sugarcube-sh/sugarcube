@@ -14,9 +14,9 @@ function tokensFor(files: Record<string, unknown>, variables: Variables = {}) {
     return utilityTokens(readFromMemory({ files: texts }, readOptions(config)), config).map(
         (listed) => {
             const { path, type } = listed.token;
-            return "name" in listed
-                ? { path, type, name: listed.name }
-                : { path, type, variables: listed.variables };
+            if ("name" in listed) return { path, type, name: listed.name };
+            if ("variables" in listed) return { path, type, variables: listed.variables };
+            return { path, type, private: listed.private };
         },
     );
 }
@@ -68,7 +68,7 @@ describe("utilityTokens", () => {
         });
     });
 
-    it("leaves out private and invalid tokens, and keeps one referring to a private token", () => {
+    it("lists a token with no variable after every declared one, saying whether it is private", () => {
         const resolver = {
             version: "2025.10",
             resolutionOrder: [
@@ -84,9 +84,39 @@ describe("utilityTokens", () => {
         const found = tokensFor({
             "tokens.resolver.json": resolver,
             "palette.json": { rose: color("#e11d48") },
-            "semantic.json": { brand: color("{rose}"), broken: color("not a color") },
+            "semantic.json": { broken: color("not a color"), brand: color("{rose}") },
         });
-        expect(found).toStrictEqual([{ path: "brand", type: "color", name: "--brand" }]);
+        expect(found).toStrictEqual([
+            { path: "brand", type: "color", name: "--brand" },
+            { path: "rose", type: "color", private: true },
+            { path: "broken", type: "color", private: false },
+        ]);
+    });
+
+    it("lists a token private in one permutation and declared in another as declared", () => {
+        const resolver = {
+            version: "2025.10",
+            resolutionOrder: [
+                {
+                    type: "set",
+                    name: "palette",
+                    sources: [{ $ref: "palette.json" }],
+                    $extensions: { "sh.sugarcube": { emit: false } },
+                },
+                {
+                    type: "modifier",
+                    name: "theme",
+                    default: "light",
+                    contexts: { light: [], dark: [{ $ref: "dark.json" }] },
+                },
+            ],
+        };
+        const found = tokensFor({
+            "tokens.resolver.json": resolver,
+            "palette.json": { rose: color("#e11d48") },
+            "dark.json": { rose: color("#fb7185") },
+        });
+        expect(found).toStrictEqual([{ path: "rose", type: "color", name: "--rose" }]);
     });
 
     it("lists a color once under polyfill, though it is declared twice", () => {
