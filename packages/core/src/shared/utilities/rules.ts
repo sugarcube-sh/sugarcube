@@ -18,7 +18,7 @@ interface Named {
 }
 
 interface Skipped {
-    token: Token;
+    type: TokenType;
     why: "typography" | "type" | "private" | "unwritten";
 }
 
@@ -109,14 +109,12 @@ export function utilityRules(
             const entry = { about, source: config.source, parts, skipped };
             entries.push(entry);
             const find = (part: string) => parts.get(stripped(part, config))?.[0].name;
-            const named = Array.isArray(config.safelist) ? config.safelist : [];
-            const forced =
-                config.safelist === true
-                    ? [...parts.keys()]
-                    : named.filter((part) => find(part) !== undefined);
-            for (const part of parts.size > 0 ? named : []) {
-                if (find(part) !== undefined) continue;
-                unmatched.push(diagnostic("safelist-without-token", { ...about, part }));
+            const forced = config.safelist === true ? [...parts.keys()] : [];
+            for (const part of Array.isArray(config.safelist) ? config.safelist : []) {
+                if (find(part) !== undefined) forced.push(part);
+                else if (parts.size > 0) {
+                    unmatched.push(diagnostic("safelist-without-token", { ...about, part }));
+                }
             }
             for (const { start, property: written } of starts) {
                 byStart.set(start, [
@@ -158,9 +156,10 @@ function answers(byStart: Map<string, Use[]>): Map<string, [Answer, ...Answer[]]
             const answer = (named: Named): Answer => ({ named, property, entry, start });
             for (const [part, [first, ...rest]] of entry.parts) {
                 const className = `${start}-${part}`;
+                const found: [Answer, ...Answer[]] = [answer(first), ...rest.map(answer)];
                 const earlier = own.get(className);
-                if (earlier) earlier.push(answer(first), ...rest.map(answer));
-                else own.set(className, [answer(first), ...rest.map(answer)]);
+                if (earlier) earlier.push(...found);
+                else own.set(className, found);
             }
         }
         for (const [className, found] of own) {
@@ -199,7 +198,7 @@ function emptied({ about, source, skipped }: Entry): UtilityWithoutClassesReason
     if (takes?.length === 0) return { reason: "no-type" };
     if (found("private").length > 0) return { reason: "private" };
     if (takes && found("type").length > 0) {
-        const types = new Set(found("type", "typography").map(({ token }) => token.type));
+        const types = new Set(found("type", "typography").map(({ type }) => type));
         return { reason: "wrong-type", found: [...types], takes };
     }
     if (found("typography").length > 0) return { reason: "typography" };
@@ -254,7 +253,7 @@ function partsFor(
         const { token } = listed;
         const path = withoutRoot(token.path);
         if (!path.startsWith(`${group}.`)) continue;
-        const skip = (why: Skipped["why"]) => skipped.push({ token, why });
+        const skip = (why: Skipped["why"]) => skipped.push({ type: token.type, why });
         if ("variables" in listed) skip("typography");
         else if (types && !types.includes(token.type)) skip("type");
         else if ("private" in listed) skip(listed.private ? "private" : "unwritten");
