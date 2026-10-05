@@ -1,4 +1,4 @@
-import { elements, oneOf, object, refuse, ofType } from "./syntax.js";
+import { elements, object, ofType, oneOf, refuse } from "./syntax.js";
 
 export const stop = object({
     color: ofType("color"),

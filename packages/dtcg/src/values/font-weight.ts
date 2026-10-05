@@ -1,5 +1,5 @@
 import { type FontWeightKeyword, fontWeightKeywords } from "./keywords.js";
-import { oneOf, literal, no, ok, refuse } from "./syntax.js";
+import { literal, no, ok, oneOf, refuse } from "./syntax.js";
 
 const weight = literal((raw) => {
     if (typeof raw !== "number" || !Number.isFinite(raw)) {

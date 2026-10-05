@@ -1,4 +1,4 @@
-import { elements, oneOf, literal, no, object, ok, single, ofType, withDefault } from "./syntax.js";
+import { elements, literal, no, object, ofType, ok, oneOf, single, withDefault } from "./syntax.js";
 
 const inset = literal(
     (raw) => (typeof raw === "boolean" ? ok(raw) : no({ reason: "not-a-boolean", value: raw })),

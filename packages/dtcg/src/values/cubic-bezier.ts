@@ -1,4 +1,4 @@
-import { oneOf, literal, no, ok, refuse, tuple } from "./syntax.js";
+import { literal, no, ok, oneOf, refuse, tuple } from "./syntax.js";
 
 const y = literal((raw) =>
     typeof raw === "number" && Number.isFinite(raw)

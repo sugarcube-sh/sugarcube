@@ -1,4 +1,4 @@
-import { oneOf, literal, no, object, ok } from "./syntax.js";
+import { literal, no, object, ok, oneOf } from "./syntax.js";
 
 /**
  * A number followed by a unit, such as `"16px"` or `"200ms"`: how earlier drafts of the spec wrote
@@ -13,7 +13,7 @@ const amount = literal((raw) =>
         : no({ reason: "not-a-number", value: raw }),
 );
 
-export function measure<U extends string>(units: readonly U[]) {
+export function measure(units: readonly string[]) {
     const unit = literal((raw) => {
         const known = units.find((each) => each === raw);
         return known === undefined

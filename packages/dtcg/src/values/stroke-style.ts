@@ -1,5 +1,5 @@
 import { lineCaps, strokeStyleKeywords } from "./keywords.js";
-import { oneOf, list, literal, no, object, ok, refuse, ofType } from "./syntax.js";
+import { list, literal, no, object, ofType, ok, oneOf, refuse } from "./syntax.js";
 
 const keyword = literal((raw) => {
     const known = strokeStyleKeywords.find((each) => each === raw);

@@ -1,4 +1,4 @@
-import { oneOf, list, literal, no, ok, refuse, single } from "./syntax.js";
+import { list, literal, no, ok, oneOf, refuse, single } from "./syntax.js";
 
 const name = literal((raw) =>
     typeof raw === "string" && raw.trim() !== ""

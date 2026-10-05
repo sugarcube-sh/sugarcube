@@ -3,12 +3,13 @@ import { colorSpaces } from "./color-spaces.js";
 import { hexStringColor } from "./hex-color.js";
 import {
     type Siblings,
+    type Syntax,
     dependsOn,
-    oneOf,
     literal,
     no,
     object,
     ok,
+    oneOf,
     optional,
     refuse,
     tuple,
@@ -70,7 +71,7 @@ function component(space: ColorSpace | undefined, index: 0 | 1 | 2) {
 const notThree = refuse("not-three-components");
 
 function components(space: ColorSpace | undefined) {
-    const items = [component(space, 0), component(space, 1), component(space, 2)] as const;
+    const items = [component(space, 0), component(space, 1), component(space, 2)];
     return oneOf({ array: tuple(items, notThree), other: notThree });
 }
 
@@ -98,7 +99,7 @@ export const color = oneOf({
     other: refuse("wrong-shape"),
 });
 
-function componentsFor({ colorSpace: space }: Siblings): ReturnType<typeof components> {
+function componentsFor({ colorSpace: space }: Siblings): Syntax {
     return components(isColorSpace(space) ? space : undefined);
 }
 
