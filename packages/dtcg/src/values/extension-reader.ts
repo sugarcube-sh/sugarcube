@@ -12,6 +12,14 @@ import type {
 import { parseValue } from "./parse-value.js";
 
 /**
+ * What {@link ExtensionReader.result} gives, and so what a `generate` or `validate` written with
+ * one passes on: the value, or every problem, with the properties set aside either way.
+ */
+export type ExtensionResult<V, M extends ExtensionMessages> =
+    | { ok: true; value: V; ignored?: IgnoredProperty[] }
+    | { ok: false; errors: (ExtensionError<M> | ValueError)[]; ignored?: IgnoredProperty[] };
+
+/**
  * Reads an extension's values and collects why it is not valid, for a {@link Generator} or an
  * {@link ExtensionValidator}. Made by {@link extensionReader}.
  */
@@ -37,11 +45,7 @@ export interface ExtensionReader<M extends ExtensionMessages> {
      * otherwise every problem, in the order found, with the properties set aside either way. Give
      * `undefined` when a problem left no value.
      */
-    result<V>(
-        value: V | undefined,
-    ):
-        | { ok: true; value: V; ignored?: IgnoredProperty[] }
-        | { ok: false; errors: (ExtensionError<M> | ValueError)[]; ignored?: IgnoredProperty[] };
+    result<V>(value: V | undefined): ExtensionResult<V, M>;
 }
 
 /**

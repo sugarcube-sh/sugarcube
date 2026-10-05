@@ -1,17 +1,14 @@
 import {
     type DimensionValue,
-    type ExtensionError,
-    type IgnoredProperty,
     type ParseOptions,
     type Permutation,
     type Token,
-    type ValueError,
     defineExtensionValidator,
     isAlias,
     referenceAt,
     token,
 } from "@sugarcube-sh/dtcg";
-import { extensionReader, isJsonObject } from "@sugarcube-sh/dtcg/values";
+import { type ExtensionResult, extensionReader, isJsonObject } from "@sugarcube-sh/dtcg/values";
 import { ErrorMessages } from "./constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "./extensions.js";
 import { parseOptions } from "./parse-options.js";
@@ -22,14 +19,11 @@ export interface FluidRange {
 }
 
 type Messages = typeof ErrorMessages.FLUID_EXTENSION;
-type Errors = (ExtensionError<Messages> | ValueError)[];
 
 export function readFluid(
     ours: unknown,
     options: ParseOptions,
-):
-    | { ok: true; value: FluidRange | undefined; ignored?: IgnoredProperty[] }
-    | { ok: false; errors: Errors; ignored?: IgnoredProperty[] } {
+): ExtensionResult<FluidRange | undefined, Messages> {
     if (!isJsonObject(ours) || !Object.hasOwn(ours, "fluid")) return { ok: true, value: undefined };
     const { fluid } = ours;
     const reader = extensionReader<Messages>(options);
