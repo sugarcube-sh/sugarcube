@@ -1,5 +1,6 @@
 import { type Permutation, type Source, type Token, isAlias, token } from "@sugarcube-sh/dtcg";
-import type { FluidConfig } from "../../types/config.js";
+import { cssVariable } from "@sugarcube-sh/dtcg/css";
+import type { FluidConfig, InternalConfig } from "../../types/config.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { type Fallbacks, fallbacksIn, supportsCondition } from "./polyfill.js";
 import { type ReplacementFor, type Written, renderToken } from "./values.js";
@@ -7,6 +8,7 @@ import { type ReplacementFor, type Written, renderToken } from "./values.js";
 export interface Declaration {
     token: Token;
     name: string;
+    property?: string;
     value: string;
     supports?: { condition: string; value: string };
 }
@@ -16,13 +18,24 @@ export interface Declared {
     missing: Fallbacks["missing"];
 }
 
+export interface DeclarationOptions {
+    variable: (path: string) => string;
+    fluid: FluidConfig;
+    polyfill: boolean;
+}
+
+export function declarationOptions(config: InternalConfig): DeclarationOptions {
+    const { prefix, variableName, transforms } = config.variables;
+    return {
+        variable: (path) => cssVariable(path, { prefix, name: variableName }),
+        fluid: transforms.fluid,
+        polyfill: transforms.colorFallbackStrategy === "polyfill",
+    };
+}
+
 export function declarations(
     permutation: Permutation,
-    {
-        variable,
-        fluid,
-        polyfill,
-    }: { variable: (path: string) => string; fluid: FluidConfig; polyfill: boolean },
+    { variable, fluid, polyfill }: DeclarationOptions,
 ): Declared {
     const isPrivate = (each: Token) => privateSource(permutation.sources[each.source.index]);
     const writer = (colors: "native" | "hex") => {
@@ -49,6 +62,7 @@ export function declarations(
         return Object.entries(written).map(([property, value]) => ({
             token: each,
             name: `${name}-${property}`,
+            property,
             value,
         }));
     };
@@ -63,11 +77,10 @@ export function declarations(
         if (!found || plain === undefined) return lines(each, written);
         const real = new Map(lines(each, written).map(({ name, value }) => [name, value]));
         const condition = supportsCondition(found.spaces);
-        return lines(each, plain).map(({ name, value }) => {
-            const own = real.get(name);
-            return own === undefined || own === value
-                ? { token: each, name, value }
-                : { token: each, name, value, supports: { condition, value: own } };
+        return lines(each, plain).map((line) => {
+            const own = real.get(line.name);
+            if (own !== undefined && own !== line.value) line.supports = { condition, value: own };
+            return line;
         });
     };
 

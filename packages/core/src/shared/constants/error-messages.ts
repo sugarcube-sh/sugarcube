@@ -46,6 +46,11 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
         message: ({ name, paths: [first, later] }) =>
             `\`${first}\` and \`${later}\` both make \`${name}\`, so only \`${later}\`'s value is used: rename one`,
     },
+    "same-utility-class": {
+        severity: "warning",
+        message: ({ className, paths: [used, other] }) =>
+            `\`${className}\` could mean \`${used}\` or \`${other}\`, so it uses \`${used}\`: rename one, or change the entry's \`prefix\``,
+    },
 };
 
 export const ErrorMessages = {
