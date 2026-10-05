@@ -5,15 +5,13 @@ import type {
     ParseResult,
     Pointer,
     UnresolvedValue,
-    ValueError,
 } from "../index.js";
 import { readColor } from "./color.js";
 import { type ObjectForm, type PartReaders, readComposite } from "./composite.js";
 import { readDimension } from "./dimension.js";
 import { readList } from "./list.js";
 import { readAlias, readPointer } from "./references.js";
-import { refusedAlias } from "./refuse-alias.js";
-import { valueError } from "./value-errors.js";
+import { refused } from "./value-errors.js";
 
 type ShadowLayer = Exclude<ObjectForm<"shadow">[number], Alias | Pointer>;
 
@@ -43,11 +41,7 @@ export function readShadow(
     }
 
     if (raw.length === 0) {
-        return {
-            ok: false,
-            errors: [valueError(at, { type: "shadow", reason: "no-shadows" })],
-            ignored: [],
-        };
+        return refused(at, { type: "shadow", reason: "no-shadows" });
     }
     return readList(raw, at, readLayer, options);
 }
@@ -59,13 +53,9 @@ function readLayer(raw: unknown, at: JsonPath, options?: ParseOptions) {
 function readInset(raw: unknown, at: JsonPath): ParseResult<boolean | Pointer> {
     const pointer = readPointer(raw);
     if (pointer) return { ok: true, value: pointer, ignored: [] };
-    const errors: ValueError[] = [];
-    if (refusedAlias(raw, at, "shadow", errors)) return { ok: false, errors, ignored: [] };
-
     if (typeof raw === "boolean") return { ok: true, value: raw, ignored: [] };
-    return {
-        ok: false,
-        errors: [valueError(at, { type: "shadow", reason: "not-a-boolean", value: raw })],
-        ignored: [],
-    };
+    const alias = typeof raw === "string" && readAlias(raw);
+    return alias
+        ? refused(at, { type: "shadow", reason: "alias-not-allowed-here", reference: raw })
+        : refused(at, { type: "shadow", reason: "not-a-boolean", value: raw });
 }

@@ -1,4 +1,11 @@
-import type { ColorSpace, IgnoredProperty, JsonPath, TokenType, ValueError } from "../index.js";
+import type {
+    ColorSpace,
+    IgnoredProperty,
+    JsonPath,
+    ParseResult,
+    TokenType,
+    ValueError,
+} from "../index.js";
 import { fontWeightKeywords } from "./keywords.js";
 
 /** The facts each reason carries, beside `type` and `reason`. */
@@ -213,6 +220,10 @@ export function valueErrorMessage(detail: ValueErrorDetail): string {
 
 export function valueError(path: JsonPath, detail: ValueErrorDetail): ValueError {
     return { kind: "invalid-value", path, message: valueErrorMessage(detail), detail };
+}
+
+export function refused(path: JsonPath, detail: ValueErrorDetail): ParseResult<never> {
+    return { ok: false, errors: [valueError(path, detail)], ignored: [] };
 }
 
 export function ignoredMessage(type: TokenType, property: string): string {

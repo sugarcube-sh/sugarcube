@@ -1,7 +1,7 @@
 {
   "entry": "tokens.json",
-  "spec": "a property a generator's value does not define is set aside as it would be in a token: an unknown-property warning at that part of the extension, and the tokens are still made",
-  "options": { "generators": ["sized"] },
+  "spec": "a property a generator's value does not define is set aside as it would be in a token: an unknown-property warning at that part of the extension, and the tokens are still made; it reads with the read's own options, here ignoreUnknownProperties",
+  "options": { "generators": ["sized"], "ignoreUnknownProperties": true },
   "permutations": [{ "tokens": [{ "path": "space.1", "resolved": { "value": 4, "unit": "px" } }] }],
   "diagnostics": [
     {

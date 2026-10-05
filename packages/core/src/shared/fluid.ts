@@ -2,6 +2,7 @@ import {
     type DimensionValue,
     type ExtensionError,
     type IgnoredProperty,
+    type ParseOptions,
     type Permutation,
     type Token,
     type ValueError,
@@ -25,12 +26,13 @@ type Errors = (ExtensionError<Messages> | ValueError)[];
 
 export function readFluid(
     ours: unknown,
+    options: ParseOptions,
 ):
     | { ok: true; value: FluidRange | undefined; ignored?: IgnoredProperty[] }
     | { ok: false; errors: Errors; ignored?: IgnoredProperty[] } {
     if (!isJsonObject(ours) || !Object.hasOwn(ours, "fluid")) return { ok: true, value: undefined };
     const { fluid } = ours;
-    const reader = extensionReader<Messages>(parseOptions);
+    const reader = extensionReader<Messages>(options);
     if (!isJsonObject(fluid)) {
         reader.report(["fluid"], "not-an-object", { name: "fluid" });
         return reader.result<FluidRange>(undefined);
@@ -48,7 +50,7 @@ export function fluidRangeOf(
     from: Token,
 ): { token: Token; range: FluidRange } | undefined {
     if (from.type !== "dimension" || from.resolved === undefined) return undefined;
-    const own = readFluid(from.extensions?.[SUGARCUBE_NAMESPACE]);
+    const own = readFluid(from.extensions?.[SUGARCUBE_NAMESPACE], parseOptions);
     if (!own.ok) return undefined;
     if (own.value) return { token: from, range: own.value };
     const whole = referenceAt(from, []);
@@ -64,8 +66,8 @@ export const fluidValidator = defineExtensionValidator({
     key: SUGARCUBE_NAMESPACE,
     appliesTo: ["dimension"],
     messages: ErrorMessages.FLUID_EXTENSION,
-    validate: (_token, ours) => {
-        const read = readFluid(ours);
+    validate: (_token, ours, options) => {
+        const read = readFluid(ours, options);
         return [...(read.ignored ?? []), ...(read.ok ? [] : read.errors)];
     },
 });

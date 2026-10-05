@@ -14,7 +14,7 @@ import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
 import { refusedAlias } from "./refuse-alias.js";
 import { unknownProperties } from "./unknown-properties.js";
-import { valueError } from "./value-errors.js";
+import { refused, valueError } from "./value-errors.js";
 
 type ColorAsWritten = UnresolvedValue<"color">;
 type Component = ColorComponent | Pointer;
@@ -51,19 +51,11 @@ export function readColor(
         return { ok: true, value: hexStringColor(raw), ignored: [] };
     }
     if (typeof raw === "string" && HEX_STRING.test(raw)) {
-        return {
-            ok: false,
-            errors: [valueError(at, { type, reason: "hex-string", value: raw })],
-            ignored: [],
-        };
+        return refused(at, { type, reason: "hex-string", value: raw });
     }
 
     if (!isJsonObject(raw)) {
-        return {
-            ok: false,
-            errors: [valueError(at, { type, reason: "wrong-shape", value: raw })],
-            ignored: [],
-        };
+        return refused(at, { type, reason: "wrong-shape", value: raw });
     }
 
     const errors: ValueError[] = [];

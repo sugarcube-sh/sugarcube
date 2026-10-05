@@ -7,6 +7,7 @@ import type {
     Permutation,
     StandardSchemaV1,
     IgnoredProperty,
+    ParseOptions,
     ValueError,
 } from "../index.js";
 import { type SchemaOutput, checkSchema, extensionDiagnostic } from "./extension-check.js";
@@ -46,6 +47,7 @@ export function defineExtensionValidator<
         validate?: (
             on: Checked,
             extension: SchemaOutput<S>,
+            options: ParseOptions,
         ) => (ExtensionError<NoInfer<M>> | ValueError | IgnoredProperty)[];
     },
 ): ExtensionValidator {
@@ -55,7 +57,7 @@ export function defineExtensionValidator<
 export function validateExtensions(
     normalised: NormalisedPermutation[],
     permutations: Permutation[],
-    validators: ExtensionValidator[],
+    { validators, parseOptions }: { validators: ExtensionValidator[]; parseOptions: ParseOptions },
     diagnostics: Diagnostic[],
 ): void {
     if (validators.length === 0) return;
@@ -75,7 +77,7 @@ export function validateExtensions(
             done.add(node);
             const passed = checkSchema(validator.schema, value, validator.key);
             const problems = passed.ok
-                ? (validator.validate?.(on, passed.value) ?? [])
+                ? (validator.validate?.(on, passed.value, parseOptions) ?? [])
                 : passed.problems;
             const place = {
                 within: [validator.key] as [string],

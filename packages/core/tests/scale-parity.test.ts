@@ -8,6 +8,7 @@ import { SUGARCUBE_NAMESPACE } from "../src/shared/extensions.js";
 import { isToken } from "../src/shared/guards.js";
 import { expand } from "../src/shared/pipeline/expand.js";
 import { scaleGenerator } from "../src/shared/scale/generator.js";
+import { parseOptions } from "../src/shared/parse-options.js";
 import { readScaleRecipe } from "../src/shared/scale/recipe.js";
 import { validateScaleExtension } from "../src/shared/validators/scale.js";
 import type { TokenTree } from "../src/types/tokens.js";
@@ -256,7 +257,7 @@ describe("the problems scale recipes report, old sugarcube's validator against t
                     ({ path }) => path,
                 ),
             );
-            const result = readScaleRecipe(recipe);
+            const result = readScaleRecipe(recipe, parseOptions);
             const now = new Set(result.ok ? [] : result.errors.map(({ path }) => place(path)));
             return onlyIn(old, now)
                 .map((at) => ({ recipe, only: "old", place: at }))

@@ -7,6 +7,7 @@ import type {
     Generator,
     StandardSchemaV1,
     IgnoredProperty,
+    ParseOptions,
     ValueError,
 } from "../index.js";
 import { isJsonObject } from "../values/json.js";
@@ -62,6 +63,7 @@ export function defineGenerator<
         generate: (
             group: Parameters<Generator["generate"]>[0],
             extension: SchemaOutput<S>,
+            options: ParseOptions,
         ) =>
             | { ok: true; value: GeneratedToken[]; ignored?: IgnoredProperty[] }
             | {
@@ -77,7 +79,7 @@ export function defineGenerator<
 export function fillGenerated(
     merged: Merged,
     generators: Generator[],
-    permutation: number,
+    { permutation, parseOptions }: { permutation: number; parseOptions: ParseOptions },
     diagnostics: Diagnostic[],
 ): void {
     const added: MergedToken[] = [];
@@ -115,6 +117,7 @@ export function fillGenerated(
             const result = generator.generate(
                 { path: group.path, ...(type && { type }) },
                 passed.value,
+                parseOptions,
             );
             if (result.ignored) report(result.ignored, reportedIgnored);
             if (!result.ok) {

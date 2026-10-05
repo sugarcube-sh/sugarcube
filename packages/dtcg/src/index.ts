@@ -950,7 +950,8 @@ export interface ExtensionValidator {
      * Why the extension is not valid, if it is not. An error's `path` starts at the extension. An
      * {@link ExtensionError} is worded from `messages`; a {@link ValueError}, from reading a value in
      * the extension with `parseValue`, is reported as `invalid-value`; an {@link IgnoredProperty}
-     * from the same, as an `unknown-property` warning.
+     * from the same, as an `unknown-property` warning. `options` are how the read reads values, to
+     * read the extension's the same way: give them to `extensionReader` or `parseValue`.
      */
     validate?(
         on: {
@@ -959,6 +960,7 @@ export interface ExtensionValidator {
             type: TokenType | "group";
         },
         extension: unknown,
+        options: ParseOptions,
     ): (ExtensionError | ValueError | IgnoredProperty)[];
 }
 
@@ -1042,7 +1044,8 @@ export interface Generator {
      * as an `unknown-property` warning. With a `schema`, the extension is the
      * schema's output. A group whose extension is not valid gets no tokens added. The extension is
      * plain JSON, so whole-number keys inside it come first, in numeric order, whatever order the
-     * file writes them in.
+     * file writes them in. `options` are how the read reads values, to read the extension's the
+     * same way: give them to `extensionReader` or `parseValue`.
      */
     generate(
         group: {
@@ -1051,6 +1054,7 @@ export interface Generator {
             type?: TokenType;
         },
         extension: unknown,
+        options: ParseOptions,
     ):
         | { ok: true; value: GeneratedToken[]; ignored?: IgnoredProperty[] }
         | { ok: false; errors: (ExtensionError | ValueError)[]; ignored?: IgnoredProperty[] };

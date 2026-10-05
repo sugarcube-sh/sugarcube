@@ -3,6 +3,7 @@ import { type Replacement, type TypographyCSS, cssValue } from "@sugarcube-sh/dt
 import type { FluidConfig } from "../../types/config.js";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { type FluidRange, pixels, readFluid } from "../fluid.js";
+import { parseOptions } from "../parse-options.js";
 import { calculateClamp, roundValue } from "./utopia.js";
 
 export type Written = string | TypographyCSS;
@@ -18,7 +19,7 @@ export function renderToken(
 ): Written | undefined {
     if (token.resolved === undefined) return undefined;
     if (token.type === "dimension") {
-        const fluid = readFluid(token.extensions?.[SUGARCUBE_NAMESPACE]);
+        const fluid = readFluid(token.extensions?.[SUGARCUBE_NAMESPACE], parseOptions);
         if (!fluid.ok) return undefined;
         if (fluid.value) return clamp(fluid.value, options.fluid);
     }

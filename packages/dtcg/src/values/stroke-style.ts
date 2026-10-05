@@ -13,7 +13,7 @@ import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
 import { refusedAlias } from "./refuse-alias.js";
 import { unknownProperties } from "./unknown-properties.js";
-import { valueError } from "./value-errors.js";
+import { refused, valueError } from "./value-errors.js";
 
 type Keyword = (typeof strokeStyleKeywords)[number];
 type DashArray = Extract<UnresolvedStrokeStyle, { kind: "dash" }>["dashArray"];
@@ -34,26 +34,16 @@ export function readStrokeStyle(
         if (strokeStyleKeywords.includes(raw as Keyword)) {
             return { ok: true, value: { kind: "keyword", keyword: raw as Keyword }, ignored: [] };
         }
-        return {
-            ok: false,
-            errors: [
-                valueError(at, {
-                    type,
-                    reason: "unknown-stroke-style-keyword",
-                    value: raw,
-                    keywords: strokeStyleKeywords,
-                }),
-            ],
-            ignored: [],
-        };
+        return refused(at, {
+            type,
+            reason: "unknown-stroke-style-keyword",
+            value: raw,
+            keywords: strokeStyleKeywords,
+        });
     }
 
     if (!isJsonObject(raw)) {
-        return {
-            ok: false,
-            errors: [valueError(at, { type, reason: "wrong-shape", value: raw })],
-            ignored: [],
-        };
+        return refused(at, { type, reason: "wrong-shape", value: raw });
     }
 
     const errors: ValueError[] = [];

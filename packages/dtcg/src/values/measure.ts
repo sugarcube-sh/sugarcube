@@ -10,7 +10,7 @@ import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
 import { refusedAlias } from "./refuse-alias.js";
 import { unknownProperties } from "./unknown-properties.js";
-import { valueError } from "./value-errors.js";
+import { refused, valueError } from "./value-errors.js";
 
 type MeasureType = "dimension" | "duration";
 
@@ -35,20 +35,12 @@ export function readMeasure<T extends MeasureType>(
 
     if (typeof raw === "string") {
         if (STRING_WITH_UNIT.test(raw)) {
-            return {
-                ok: false,
-                errors: [valueError(at, { type, reason: "string-with-unit", value: raw })],
-                ignored: [],
-            };
+            return refused(at, { type, reason: "string-with-unit", value: raw });
         }
     }
 
     if (!isJsonObject(raw)) {
-        return {
-            ok: false,
-            errors: [valueError(at, { type, reason: "wrong-shape", value: raw })],
-            ignored: [],
-        };
+        return refused(at, { type, reason: "wrong-shape", value: raw });
     }
 
     const errors: ValueError[] = [];

@@ -114,8 +114,8 @@ const generators = {
     }),
     sized: defineGenerator({
         extension: ["com.example", "sized"],
-        generate: (_group, extension) => {
-            const reader = extensionReader<Record<never, never>>({ ignoreUnknownProperties: true });
+        generate: (_group, extension, options) => {
+            const reader = extensionReader<Record<never, never>>(options);
             const size = reader.read("dimension", (extension as { size?: unknown }).size, ["size"]);
             return reader.result(size && [{ name: "1", $value: size }]);
         },
@@ -143,12 +143,12 @@ const validators = {
         key: "com.example",
         appliesTo: ["color"],
         messages: { "no-outline": () => "`outline` is missing" },
-        validate: (_token, extension) => {
+        validate: (_token, extension, options) => {
             const { outline } = extension as { outline?: unknown };
             if (outline === undefined) return [{ path: [], reason: "no-outline" }];
             const parsed = parseValue("dimension", outline, ["outline"], {
+                ...options,
                 references: false,
-                ignoreUnknownProperties: true,
             });
             return [...parsed.ignored, ...(parsed.ok ? [] : parsed.errors)];
         },

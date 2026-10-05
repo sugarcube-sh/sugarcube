@@ -11,7 +11,7 @@ import { type ObjectForm, type PartReaders, readComposite } from "./composite.js
 import { readList } from "./list.js";
 import { readNumber } from "./number.js";
 import { readAlias, readPointer } from "./references.js";
-import { valueError } from "./value-errors.js";
+import { refused } from "./value-errors.js";
 
 type GradientStop = Exclude<ObjectForm<"gradient">[number], Alias | Pointer>;
 
@@ -26,19 +26,11 @@ export function readGradient(
     if (reference) return { ok: true, value: reference, ignored: [] };
 
     if (!Array.isArray(raw)) {
-        return {
-            ok: false,
-            errors: [valueError(at, { type: "gradient", reason: "wrong-shape", value: raw })],
-            ignored: [],
-        };
+        return refused(at, { type: "gradient", reason: "wrong-shape", value: raw });
     }
 
     if (raw.length === 0) {
-        return {
-            ok: false,
-            errors: [valueError(at, { type: "gradient", reason: "no-gradient-stops" })],
-            ignored: [],
-        };
+        return refused(at, { type: "gradient", reason: "no-gradient-stops" });
     }
     return readList(raw, at, readStop, options);
 }

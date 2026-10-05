@@ -123,12 +123,13 @@ function toDocument(
     }: ReadOptions,
 ): Document {
     const found: Document["diagnostics"] = [];
-    const readValue = createValueReader(found, { hexStringColors, ignoreUnknownProperties });
+    const parseOptions = { hexStringColors, ignoreUnknownProperties };
+    const readValue = createValueReader(found, parseOptions);
     let generating = 0;
     const generate = (merged: Merged, permutation: number) => {
         if (generators.length === 0) return;
         const started = performance.now();
-        fillGenerated(merged, generators, permutation, found);
+        fillGenerated(merged, generators, { permutation, parseOptions }, found);
         generating += performance.now() - started;
     };
     const normalising = performance.now();
@@ -138,7 +139,12 @@ function toDocument(
     onStage?.("normalise", resolving - normalising - generating);
     const permutations = resolvePermutations(normalised, readValue, found);
     onStage?.("resolve", performance.now() - resolving);
-    validateExtensions(normalised, permutations, extensionValidators, found);
+    validateExtensions(
+        normalised,
+        permutations,
+        { validators: extensionValidators, parseOptions },
+        found,
+    );
 
     return {
         version: packageJson.version,

@@ -9,6 +9,7 @@ import type {
 } from "../index.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { type JsonFile, member, members, spanOf } from "./json.js";
+import { malformedPointer } from "./malformed-pointer.js";
 import { type PointerReading, parsePointer, readPointerText } from "./pointer.js";
 import { similarName } from "./similar.js";
 
@@ -383,18 +384,13 @@ function readOrderRef(
 export function reportMalformed(
     reader: Reader,
     ref: string,
-    { problem, corrected }: Extract<PointerReading, { ok: false }>,
+    read: Extract<PointerReading, { ok: false }>,
     node: Node,
     reaches: boolean,
 ): void {
-    const { offset, length } = node;
-    const edits = [{ file: reader.file, offset, length, text: JSON.stringify(corrected) }];
-    const fixes = reaches
-        ? [{ title: fixTitles.writePointer(corrected), safe: true, edits }]
-        : undefined;
-    reader.diagnose("malformed-pointer", { ref, reason: problem, corrected }, node, {
-        ...(fixes && { fixes }),
-    });
+    const written = { file: reader.file, offset: node.offset, length: node.length };
+    const { detail, fixes } = malformedPointer(ref, read, written, reaches);
+    reader.diagnose("malformed-pointer", detail, node, fixes && { fixes });
 }
 
 function readInline(reader: Reader, owner: Place, names: Set<string>): ResolverItem | undefined {

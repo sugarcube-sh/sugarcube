@@ -1,7 +1,7 @@
 import type { JsonPath, ParseResult, Pointer, ValueError, UnresolvedValue } from "../index.js";
 import { readAlias, readPointer } from "./references.js";
 import { refusedAlias } from "./refuse-alias.js";
-import { valueError } from "./value-errors.js";
+import { refused, valueError } from "./value-errors.js";
 
 type Coordinate = number | Pointer;
 
@@ -20,19 +20,11 @@ export function readCubicBezier(
     if (reference) return { ok: true, value: reference, ignored: [] };
 
     if (!Array.isArray(raw)) {
-        return {
-            ok: false,
-            errors: [valueError(at, { type, reason: "wrong-shape", value: raw })],
-            ignored: [],
-        };
+        return refused(at, { type, reason: "wrong-shape", value: raw });
     }
 
     if (raw.length !== 4) {
-        return {
-            ok: false,
-            errors: [valueError(at, { type, reason: "not-four-numbers", count: raw.length })],
-            ignored: [],
-        };
+        return refused(at, { type, reason: "not-four-numbers", count: raw.length });
     }
 
     const errors: ValueError[] = [];

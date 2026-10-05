@@ -1,7 +1,7 @@
 import type { JsonPath, ParseResult, Pointer, ValueError, UnresolvedValue } from "../index.js";
 import { readAlias, readPointer } from "./references.js";
 import { refusedAlias } from "./refuse-alias.js";
-import { valueError } from "./value-errors.js";
+import { refused, valueError } from "./value-errors.js";
 
 const type = "fontFamily";
 
@@ -14,29 +14,17 @@ export function readFontFamily(
 
     if (typeof raw === "string") {
         if (raw.trim() === "") {
-            return {
-                ok: false,
-                errors: [valueError(at, { type, reason: "not-a-font-name", value: raw })],
-                ignored: [],
-            };
+            return refused(at, { type, reason: "not-a-font-name", value: raw });
         }
         return { ok: true, value: [raw], ignored: [] };
     }
 
     if (!Array.isArray(raw)) {
-        return {
-            ok: false,
-            errors: [valueError(at, { type, reason: "wrong-shape", value: raw })],
-            ignored: [],
-        };
+        return refused(at, { type, reason: "wrong-shape", value: raw });
     }
 
     if (raw.length === 0) {
-        return {
-            ok: false,
-            errors: [valueError(at, { type, reason: "empty-font-list" })],
-            ignored: [],
-        };
+        return refused(at, { type, reason: "empty-font-list" });
     }
 
     const errors: ValueError[] = [];

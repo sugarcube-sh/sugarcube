@@ -1,7 +1,7 @@
 import type { JsonPath, ParseResult, UnresolvedValue } from "../index.js";
 import { type FontWeightKeyword, fontWeightKeywords } from "./keywords.js";
 import { readAlias, readPointer } from "./references.js";
-import { valueError } from "./value-errors.js";
+import { refused } from "./value-errors.js";
 
 const type = "fontWeight";
 
@@ -14,11 +14,7 @@ export function readFontWeight(
 
     if (typeof raw === "number" && Number.isFinite(raw)) {
         if (raw < 1 || raw > 1000) {
-            return {
-                ok: false,
-                errors: [valueError(at, { type, reason: "font-weight-out-of-range", value: raw })],
-                ignored: [],
-            };
+            return refused(at, { type, reason: "font-weight-out-of-range", value: raw });
         }
         return { ok: true, value: raw, ignored: [] };
     }
@@ -27,16 +23,8 @@ export function readFontWeight(
         if (Object.hasOwn(fontWeightKeywords, raw)) {
             return { ok: true, value: fontWeightKeywords[raw as FontWeightKeyword], ignored: [] };
         }
-        return {
-            ok: false,
-            errors: [valueError(at, { type, reason: "unknown-font-weight-keyword", value: raw })],
-            ignored: [],
-        };
+        return refused(at, { type, reason: "unknown-font-weight-keyword", value: raw });
     }
 
-    return {
-        ok: false,
-        errors: [valueError(at, { type, reason: "wrong-shape", value: raw })],
-        ignored: [],
-    };
+    return refused(at, { type, reason: "wrong-shape", value: raw });
 }
