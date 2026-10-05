@@ -96,35 +96,37 @@ export function utilityRules(
             },
         ]),
         safelist: [...safelist],
-        diagnostics: sameClasses(byStart),
+        diagnostics: sameClasses(answers(byStart)),
     };
 }
 
-function sameClasses(byStart: Map<string, Use[]>): Reported[] {
-    const found = new Map<string, Reported>();
-    const report = (className: string, used: Named, other: Named) => {
-        const key = [used.token.path, other.token.path].sort().join("\u0000");
-        if (used.name === other.name || found.has(key)) return;
-        const paths: [string, string] = [used.token.path, other.token.path];
-        found.set(key, diagnostic("same-utility-class", { className, paths }, other.token));
-    };
-    const answered = new Map<string, Named>();
+function answers(byStart: Map<string, Use[]>): Map<string, [Named, ...Named[]]> {
+    const answered = new Map<string, [Named, ...Named[]]>();
     for (const [start, uses] of byStart) {
-        const own = new Map<string, Named>();
+        const own = new Map<string, [Named, ...Named[]]>();
         for (const { parts } of uses) {
             for (const [part, named] of parts) {
-                for (const each of named) {
-                    const className = `${start}-${part}`;
-                    const first = own.get(className);
-                    if (first) report(className, first, each);
-                    else own.set(className, each);
-                }
+                const className = `${start}-${part}`;
+                const earlier = own.get(className);
+                if (earlier) earlier.push(...named);
+                else own.set(className, [...named]);
             }
         }
-        for (const [className, each] of own) {
-            const earlier = answered.get(className);
-            if (earlier) report(className, each, earlier);
-            answered.set(className, each);
+        for (const [className, named] of own) {
+            answered.set(className, [...named, ...(answered.get(className) ?? [])]);
+        }
+    }
+    return answered;
+}
+
+function sameClasses(answered: Map<string, [Named, ...Named[]]>): Reported[] {
+    const found = new Map<string, Reported>();
+    for (const [className, [used, ...others]] of answered) {
+        for (const other of others) {
+            const key = [used.token.path, other.token.path].sort().join("\u0000");
+            if (used.name === other.name || found.has(key)) continue;
+            const paths: [string, string] = [used.token.path, other.token.path];
+            found.set(key, diagnostic("same-utility-class", { className, paths }, other.token));
         }
     }
     return [...found.values()];

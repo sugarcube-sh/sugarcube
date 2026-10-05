@@ -443,6 +443,35 @@ describe("utilityRules' warning for a class two tokens make", () => {
         ]);
     });
 
+    it("naming the token UnoCSS uses when entries sharing a start meet a later start", () => {
+        const tokens = {
+            color: { brand: { x: { y: color() } }, semantic: { x: { y: color() } } },
+            tone: { y: color() },
+        };
+        const classes: UtilityClassesConfig = {
+            "color": [
+                { source: "color.brand.*", prefix: "text" },
+                { source: "color.semantic.*", prefix: "text" },
+            ],
+            "--tone": { source: "tone.*", prefix: "text-x" },
+        };
+        expect(cssFor(tokens, classes, "text-x-y")).toStrictEqual({ "--tone": "var(--tone-y)" });
+        expect(warnings(tokens, classes)).toStrictEqual([
+            [
+                "same-utility-class",
+                "warning",
+                "color.brand.x.y",
+                clash("text-x-y", "tone.y", "color.brand.x.y"),
+            ],
+            [
+                "same-utility-class",
+                "warning",
+                "color.semantic.x.y",
+                clash("text-x-y", "tone.y", "color.semantic.x.y"),
+            ],
+        ]);
+    });
+
     it("once for a pair, whichever of the two each class uses", () => {
         const tokens = { color: { p: color() }, tone: { p: color() } };
         const classes: UtilityClassesConfig = {
