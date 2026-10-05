@@ -1,0 +1,46 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 7.3 and the Color module: a colour's components are checked against the ranges of its colour space, including when the colour space is reached by a pointer, so the check waits for the pointer to be followed",
+  "permutations": [
+    {
+      "tokens": [
+        {
+          "path": "hue"
+        },
+        {
+          "path": "tint",
+          "resolved": null
+        },
+        {
+          "path": "shade",
+          "resolved": {
+            "colorSpace": "hsl",
+            "components": [100, 50, 50],
+            "alpha": 1
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "invalid-value",
+      "detail": {
+        "at": ["$value", "components", 0],
+        "type": "color",
+        "reason": "component-out-of-range",
+        "value": 400,
+        "colorSpace": "hsl",
+        "component": "H",
+        "min": 0,
+        "max": 360,
+        "maxExclusive": true
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "400"
+      },
+      "path": "tint"
+    }
+  ]
+}

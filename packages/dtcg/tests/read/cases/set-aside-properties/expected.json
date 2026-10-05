@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 9.2: 'adding additional sub-values ... make the composite token invalid', so by default a property a value's type does not define makes the token invalid (invalid-values). With ignoreUnknownProperties, which is not DTCG 2025.10, it is set aside with an unknown-property warning, as the resolver's are, and the rest of the value is read. A reference inside it is not followed: it is not part of the value. Each is reported once, though a pointer elsewhere in the value makes it be read again",
+  "spec": "Format 9.2: 'adding additional sub-values ... make the composite token invalid', so by default a property a value's type does not define makes the token invalid (invalid-values). With ignoreUnknownProperties, which is not DTCG 2025.10, it is set aside with an unknown-property warning, as the resolver's are, and the rest of the value is read. A reference inside it is not followed: it is not part of the value. Each is reported once, at its key, and a pointer to a value holding one neither follows it nor reports it again",
   "options": {
     "ignoreUnknownProperties": true
   },
@@ -45,6 +45,51 @@
             }
           },
           "invalid": null
+        },
+        {
+          "path": "heading-copy",
+          "aliasOf": "heading",
+          "resolved": {
+            "fontFamily": ["Inter"],
+            "fontSize": {
+              "value": 2,
+              "unit": "rem"
+            },
+            "fontWeight": 700,
+            "letterSpacing": {
+              "value": 0,
+              "unit": "px"
+            },
+            "lineHeight": 1.2
+          },
+          "invalid": null
+        },
+        {
+          "path": "wide",
+          "resolved": {
+            "value": 4,
+            "unit": "px"
+          },
+          "invalid": null
+        },
+        {
+          "path": "framed",
+          "resolved": {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [0, 0, 0],
+              "alpha": 1
+            },
+            "width": {
+              "value": 4,
+              "unit": "px"
+            },
+            "style": {
+              "kind": "keyword",
+              "keyword": "solid"
+            }
+          },
+          "invalid": null
         }
       ],
       "edges": [
@@ -54,6 +99,22 @@
           "at": {
             "file": "tokens.json",
             "text": "{ \"$ref\": \"#/space/md/$value\" }"
+          }
+        },
+        {
+          "from": "heading-copy",
+          "to": "heading",
+          "at": {
+            "file": "tokens.json",
+            "text": "{ \"$ref\": \"#/heading/$value\" }"
+          }
+        },
+        {
+          "from": "framed",
+          "to": "wide",
+          "at": {
+            "file": "tokens.json",
+            "text": "{ \"$ref\": \"#/wide/$value\" }"
           }
         }
       ]
@@ -98,6 +159,19 @@
         "text": "\"radius\""
       },
       "path": "card"
+    },
+    {
+      "kind": "unknown-property",
+      "detail": {
+        "property": "extra",
+        "owner": "dimension",
+        "at": ["$value", "extra"]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"extra\""
+      },
+      "path": "wide"
     }
   ]
 }

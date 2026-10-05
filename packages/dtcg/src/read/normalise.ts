@@ -1,10 +1,10 @@
-import type { Diagnostic, Group, Input, ParseResult, Source, TokenType } from "../index.js";
+import type { Diagnostic, Group, Input, Source, TokenType } from "../index.js";
 import { diagnostic } from "./diagnostics.js";
 import { applyExtends } from "./extends.js";
 import { inheritedType } from "./inherit.js";
 import { type Merged, type MergedGroup, type MergedToken, merge } from "./merge.js";
 import { type Prefixes, inWrittenOrder } from "./order.js";
-import type { ValueReader } from "./parse-value.js";
+import type { ValueRead, ValueReader } from "./parse-value.js";
 import type { LoadedPermutation } from "./permutations.js";
 import type { LoadedSource } from "./sources.js";
 import { type SourceContents, walkSource } from "./walk.js";
@@ -12,7 +12,7 @@ import { type SourceContents, walkSource } from "./walk.js";
 export interface NormalisedToken {
     token: MergedToken;
     type?: TokenType;
-    read?: ParseResult<unknown>;
+    read?: ValueRead;
 }
 
 export interface NormalisedPermutation {
@@ -50,7 +50,7 @@ export function normalisePermutations(
         inWrittenOrder(merged, prefixes);
         const tokens = new Map<string, NormalisedToken>();
         for (const token of merged.tokens.values()) {
-            if (token.type === undefined && token.isReference) {
+            if (token.type === undefined && token.reference) {
                 tokens.set(token.path, { token });
                 continue;
             }

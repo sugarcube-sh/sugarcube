@@ -1,17 +1,5 @@
 import type { Parse, UnresolvedValue } from "./index.js";
-import { readBorder } from "./values/border.js";
-import { readColor } from "./values/color.js";
-import { readDimension } from "./values/dimension.js";
-import { readDuration } from "./values/duration.js";
-import { readCubicBezier } from "./values/cubic-bezier.js";
-import { readNumber } from "./values/number.js";
-import { readShadow } from "./values/shadow.js";
-import { readStrokeStyle } from "./values/stroke-style.js";
-import { readTransition } from "./values/transition.js";
-import { readTypography } from "./values/typography.js";
-import { readFontFamily } from "./values/font-family.js";
-import { readFontWeight } from "./values/font-weight.js";
-import { readGradient } from "./values/gradient.js";
+import { readToken } from "./values/read-syntax.js";
 
 export { colorSpaces, type ColorComponentRange } from "./values/color-spaces.js";
 export { dimensionUnits, durationUnits } from "./values/units.js";
@@ -57,21 +45,29 @@ export { compositeParts } from "./values/composite-parts.js";
  * // read without `name`, which is in `ignored`:
  * // [{ kind: "unknown-property", path: ["name"], detail: { type: "color", property: "name" }, … }]
  */
-export const parseColor: Parse<UnresolvedValue<"color">> = readColor;
+export const parseColor: Parse<UnresolvedValue<"color">> = (raw, at, options) =>
+    readToken("color", raw, at, options);
 /** Reads one dimension value. */
-export const parseDimension: Parse<UnresolvedValue<"dimension">> = readDimension;
+export const parseDimension: Parse<UnresolvedValue<"dimension">> = (raw, at, options) =>
+    readToken("dimension", raw, at, options);
 /** Reads one duration value. */
-export const parseDuration: Parse<UnresolvedValue<"duration">> = readDuration;
+export const parseDuration: Parse<UnresolvedValue<"duration">> = (raw, at, options) =>
+    readToken("duration", raw, at, options);
 /** Reads one cubic Bézier value. */
-export const parseCubicBezier: Parse<UnresolvedValue<"cubicBezier">> = readCubicBezier;
+export const parseCubicBezier: Parse<UnresolvedValue<"cubicBezier">> = (raw, at, options) =>
+    readToken("cubicBezier", raw, at, options);
 /** Reads one number value. */
-export const parseNumber: Parse<UnresolvedValue<"number">> = readNumber;
+export const parseNumber: Parse<UnresolvedValue<"number">> = (raw, at, options) =>
+    readToken("number", raw, at, options);
 /** Reads one font family value. A single name becomes a list of one. */
-export const parseFontFamily: Parse<UnresolvedValue<"fontFamily">> = readFontFamily;
+export const parseFontFamily: Parse<UnresolvedValue<"fontFamily">> = (raw, at, options) =>
+    readToken("fontFamily", raw, at, options);
 /** Reads one font weight value. Keywords become their numbers. */
-export const parseFontWeight: Parse<UnresolvedValue<"fontWeight">> = readFontWeight;
+export const parseFontWeight: Parse<UnresolvedValue<"fontWeight">> = (raw, at, options) =>
+    readToken("fontWeight", raw, at, options);
 /** Reads one stroke style value. */
-export const parseStrokeStyle: Parse<UnresolvedValue<"strokeStyle">> = readStrokeStyle;
+export const parseStrokeStyle: Parse<UnresolvedValue<"strokeStyle">> = (raw, at, options) =>
+    readToken("strokeStyle", raw, at, options);
 /**
  * Reads one border value. A part that is a reference is kept as an `Alias`, and checked
  * against its target when references are followed.
@@ -81,12 +77,17 @@ export const parseStrokeStyle: Parse<UnresolvedValue<"strokeStyle">> = readStrok
  * // { ok: true, value: { color: { alias: "color.brand" }, width: { value: 1, unit: "px" },
  * //   style: { kind: "keyword", keyword: "solid" } }, ignored: [] }
  */
-export const parseBorder: Parse<UnresolvedValue<"border">> = readBorder;
+export const parseBorder: Parse<UnresolvedValue<"border">> = (raw, at, options) =>
+    readToken("border", raw, at, options);
 /** Reads one shadow value. A single shadow becomes a list of one. */
-export const parseShadow: Parse<UnresolvedValue<"shadow">> = readShadow;
+export const parseShadow: Parse<UnresolvedValue<"shadow">> = (raw, at, options) =>
+    readToken("shadow", raw, at, options);
 /** Reads one gradient value. */
-export const parseGradient: Parse<UnresolvedValue<"gradient">> = readGradient;
+export const parseGradient: Parse<UnresolvedValue<"gradient">> = (raw, at, options) =>
+    readToken("gradient", raw, at, options);
 /** Reads one transition value. */
-export const parseTransition: Parse<UnresolvedValue<"transition">> = readTransition;
+export const parseTransition: Parse<UnresolvedValue<"transition">> = (raw, at, options) =>
+    readToken("transition", raw, at, options);
 /** Reads one typography value. */
-export const parseTypography: Parse<UnresolvedValue<"typography">> = readTypography;
+export const parseTypography: Parse<UnresolvedValue<"typography">> = (raw, at, options) =>
+    readToken("typography", raw, at, options);

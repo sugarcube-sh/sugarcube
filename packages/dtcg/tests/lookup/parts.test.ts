@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { type Part, parts, readFromMemory, token } from "../../src/index.js";
-import { compositeParts } from "../../src/values.js";
 
 const red = { colorSpace: "srgb", components: [1, 0, 0] };
 const redRead = { colorSpace: "srgb", components: [1, 0, 0], alpha: 1 };
@@ -191,7 +190,13 @@ describe("parts", () => {
     it("gives typography its five parts, in the spec's order", () => {
         const typography = partsOf("body");
         if (typography?.type !== "typography") throw new Error("not typography");
-        expect(typePartsOf(typography)).toStrictEqual(Object.entries(compositeParts.typography));
+        expect(typePartsOf(typography)).toStrictEqual([
+            ["fontFamily", "fontFamily"],
+            ["fontSize", "dimension"],
+            ["fontWeight", "fontWeight"],
+            ["letterSpacing", "dimension"],
+            ["lineHeight", "number"],
+        ]);
         expect(typography.fontFamily.ref).toStrictEqual({ alias: "family" });
         expect(typography.lineHeight).toStrictEqual({
             type: "number",
@@ -201,7 +206,7 @@ describe("parts", () => {
         });
     });
 
-    it("gives every composite exactly the parts compositeParts lists, with their types", () => {
+    it("gives every composite its parts, with their types, in the spec's order", () => {
         const motion = partsOf("motion");
         const edge = partsOf("edge");
         const shadow = partsOf("lone");
@@ -213,14 +218,27 @@ describe("parts", () => {
             gradient?.type !== "gradient"
         )
             throw new Error("wrong types");
-        const withoutBoolean = (listed: Record<string, string>) =>
-            Object.entries(listed).filter(([, type]) => type !== "boolean");
-        expect(typePartsOf(motion)).toStrictEqual(Object.entries(compositeParts.transition));
-        expect(typePartsOf(edge)).toStrictEqual(Object.entries(compositeParts.border));
-        expect(typePartsOf(shadow.layers[0])).toStrictEqual(withoutBoolean(compositeParts.shadow));
-        expect(typePartsOf(gradient.stops[0])).toStrictEqual(
-            Object.entries(compositeParts.gradient),
-        );
+        expect(typePartsOf(motion)).toStrictEqual([
+            ["duration", "duration"],
+            ["delay", "duration"],
+            ["timingFunction", "cubicBezier"],
+        ]);
+        expect(typePartsOf(edge)).toStrictEqual([
+            ["color", "color"],
+            ["width", "dimension"],
+            ["style", "strokeStyle"],
+        ]);
+        expect(typePartsOf(shadow.layers[0])).toStrictEqual([
+            ["color", "color"],
+            ["offsetX", "dimension"],
+            ["offsetY", "dimension"],
+            ["blur", "dimension"],
+            ["spread", "dimension"],
+        ]);
+        expect(typePartsOf(gradient.stops[0])).toStrictEqual([
+            ["color", "color"],
+            ["position", "number"],
+        ]);
     });
 
     it("is undefined for a token whose value could not be read", () => {

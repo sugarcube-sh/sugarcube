@@ -1,63 +1,26 @@
-import type { JsonPath, ParseResult, Pointer, ValueError, UnresolvedValue } from "../index.js";
-import { readAlias, readPointer } from "./references.js";
-import { refusedAlias } from "./refuse-alias.js";
-import { refused, valueError } from "./value-errors.js";
+import { literal, no, ok, oneOf, refuse, tuple } from "./syntax.js";
 
-type Coordinate = number | Pointer;
+const y = literal((raw) =>
+    typeof raw === "number" && Number.isFinite(raw)
+        ? ok(raw)
+        : no({ reason: "not-a-number", value: raw }),
+);
 
-const type = "cubicBezier";
-
-const X_COORDINATES = new Map([
-    [0, "x1"],
-    [2, "x2"],
-] as const);
-
-export function readCubicBezier(
-    raw: unknown,
-    at: JsonPath,
-): ParseResult<UnresolvedValue<"cubicBezier">> {
-    const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference, ignored: [] };
-
-    if (!Array.isArray(raw)) {
-        return refused(at, { type, reason: "wrong-shape", value: raw });
-    }
-
-    if (raw.length !== 4) {
-        return refused(at, { type, reason: "not-four-numbers", count: raw.length });
-    }
-
-    const errors: ValueError[] = [];
-    const coordinates = raw.map((coordinate: unknown, index): Coordinate => {
-        const pointer = readPointer(coordinate);
-        if (pointer) return pointer;
-        if (refusedAlias(coordinate, [...at, index], type, errors)) return 0;
-
-        if (typeof coordinate !== "number" || !Number.isFinite(coordinate)) {
-            errors.push(
-                valueError([...at, index], { type, reason: "not-a-number", value: coordinate }),
-            );
-            return 0;
+function x(coordinate: "x1" | "x2") {
+    return literal((raw) => {
+        if (typeof raw !== "number" || !Number.isFinite(raw)) {
+            return no({ reason: "not-a-number", value: raw });
         }
-
-        const x = X_COORDINATES.get(index as 0 | 2);
-        if (x && (coordinate < 0 || coordinate > 1)) {
-            errors.push(
-                valueError([...at, index], {
-                    type,
-                    reason: "x-out-of-range",
-                    value: coordinate,
-                    coordinate: x,
-                }),
-            );
-        }
-        return coordinate;
+        return raw < 0 || raw > 1
+            ? no({ reason: "x-out-of-range", value: raw, coordinate })
+            : ok(raw);
     });
-
-    if (errors.length > 0) return { ok: false, errors, ignored: [] };
-    return {
-        ok: true,
-        value: coordinates as [Coordinate, Coordinate, Coordinate, Coordinate],
-        ignored: [],
-    };
 }
+
+export const cubicBezier = oneOf({
+    array: tuple([x("x1"), y, x("x2"), y], (raw) => ({
+        reason: "not-four-numbers",
+        count: raw.length,
+    })),
+    other: refuse("wrong-shape"),
+});

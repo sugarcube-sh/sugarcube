@@ -1,25 +1,20 @@
-import type {
-    ColorComponent,
-    ColorSpace,
-    JsonPath,
-    ParseOptions,
-    ParseResult,
-    Pointer,
-    ValueError,
-    UnresolvedValue,
-} from "../index.js";
+import type { ColorSpace } from "../index.js";
 import { colorSpaces } from "./color-spaces.js";
 import { hexStringColor } from "./hex-color.js";
-import { isJsonObject } from "./json.js";
-import { readAlias, readPointer } from "./references.js";
-import { refusedAlias } from "./refuse-alias.js";
-import { unknownProperties } from "./unknown-properties.js";
-import { refused, valueError } from "./value-errors.js";
-
-type ColorAsWritten = UnresolvedValue<"color">;
-type Component = ColorComponent | Pointer;
-
-const PROPERTIES = new Set(["colorSpace", "components", "alpha", "hex"]);
+import {
+    type Siblings,
+    type Syntax,
+    dependsOn,
+    literal,
+    no,
+    object,
+    ok,
+    oneOf,
+    optional,
+    refuse,
+    tuple,
+    withDefault,
+} from "./syntax.js";
 
 /**
  * A color written as a hex string, in any of the four forms CSS allows: `#rgb`, `#rgba`, `#rrggbb`
@@ -37,200 +32,79 @@ const READABLE_HEX_STRING = /^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/i;
  */
 const SIX_DIGIT_HEX = /^#[0-9a-f]{6}$/i;
 
-const type = "color";
-
-export function readColor(
-    raw: unknown,
-    at: JsonPath,
-    options?: ParseOptions,
-): ParseResult<ColorAsWritten> {
-    const reference = readAlias(raw) ?? readPointer(raw);
-    if (reference) return { ok: true, value: reference, ignored: [] };
-
-    if (typeof raw === "string" && options?.hexStringColors && READABLE_HEX_STRING.test(raw)) {
-        return { ok: true, value: hexStringColor(raw), ignored: [] };
+const hexString = literal((raw, options) => {
+    if (typeof raw === "string" && options.hexStringColors && READABLE_HEX_STRING.test(raw)) {
+        return ok(hexStringColor(raw));
     }
     if (typeof raw === "string" && HEX_STRING.test(raw)) {
-        return refused(at, { type, reason: "hex-string", value: raw });
+        return no({ reason: "hex-string", value: raw });
     }
+    return no({ reason: "wrong-shape", value: raw });
+});
 
-    if (!isJsonObject(raw)) {
-        return refused(at, { type, reason: "wrong-shape", value: raw });
-    }
+const colorSpace = literal((raw) =>
+    isColorSpace(raw) ? ok(raw) : no({ reason: "unknown-color-space", value: raw }),
+);
 
-    const errors: ValueError[] = [];
-    const ignored = unknownProperties(
-        raw,
-        (name) => PROPERTIES.has(name),
-        type,
-        at,
-        errors,
-        options,
-    );
-
-    const colorSpace = readColorSpace(raw, at, errors);
-    const components = readComponents(raw, at, colorSpace, errors);
-    const alpha = readAlpha(raw, at, errors);
-    const hex = readHex(raw, at, errors);
-
-    if (errors.length > 0 || colorSpace === undefined || components === undefined) {
-        return { ok: false, errors, ignored };
-    }
-
-    return {
-        ok: true,
-        value: { colorSpace, components, alpha, ...(hex !== undefined && { hex }) },
-        ignored,
-    };
-}
-
-function readColorSpace(
-    raw: Record<string, unknown>,
-    at: JsonPath,
-    errors: ValueError[],
-): ColorSpace | Pointer | undefined {
-    if (!("colorSpace" in raw)) {
-        errors.push(
-            valueError([...at, "colorSpace"], {
-                type,
-                reason: "missing-property",
-                property: "colorSpace",
-            }),
-        );
-        return undefined;
-    }
-
-    const pointer = readPointer(raw.colorSpace);
-    if (pointer) return pointer;
-    if (refusedAlias(raw.colorSpace, [...at, "colorSpace"], type, errors)) return undefined;
-
-    if (typeof raw.colorSpace === "string" && Object.hasOwn(colorSpaces, raw.colorSpace)) {
-        return raw.colorSpace as ColorSpace;
-    }
-    errors.push(
-        valueError([...at, "colorSpace"], {
-            type,
-            reason: "unknown-color-space",
-            value: raw.colorSpace,
-        }),
-    );
-    return undefined;
-}
-
-function readComponents(
-    raw: Record<string, unknown>,
-    at: JsonPath,
-    colorSpace: ColorSpace | Pointer | undefined,
-    errors: ValueError[],
-): [Component, Component, Component] | Pointer | undefined {
-    if (!("components" in raw)) {
-        errors.push(
-            valueError([...at, "components"], {
-                type,
-                reason: "missing-property",
-                property: "components",
-            }),
-        );
-        return undefined;
-    }
-
-    const pointer = readPointer(raw.components);
-    if (pointer) return pointer;
-    if (refusedAlias(raw.components, [...at, "components"], type, errors)) return undefined;
-
-    const path = [...at, "components"];
-    if (!Array.isArray(raw.components) || raw.components.length !== 3) {
-        errors.push(
-            valueError(path, { type, reason: "not-three-components", value: raw.components }),
-        );
-        return undefined;
-    }
-
-    const channels = typeof colorSpace === "string" ? colorSpaces[colorSpace] : undefined;
-    const before = errors.length;
-    const components = raw.components.map((component: unknown, index): Component => {
-        const componentPointer = readPointer(component);
-        if (componentPointer) return componentPointer;
-        if (refusedAlias(component, [...path, index], type, errors)) return 0;
-
-        if (component === "none") return component;
-        if (typeof component !== "number" || !Number.isFinite(component)) {
-            errors.push(
-                valueError([...path, index], {
-                    type,
-                    reason: "component-not-a-number",
-                    value: component,
-                }),
-            );
-            return 0;
+function component(space: ColorSpace | undefined, index: 0 | 1 | 2) {
+    const channel = space && colorSpaces[space][index];
+    return literal((raw) => {
+        if (raw === "none") return ok(raw);
+        if (typeof raw !== "number" || !Number.isFinite(raw)) {
+            return no({ reason: "component-not-a-number", value: raw });
         }
-
-        const channel = channels?.[index];
-        if (channel && !inRange(component, channel.min, channel.max, channel.maxExclusive)) {
-            errors.push(
-                valueError([...path, index], {
-                    type,
-                    reason: "component-out-of-range",
-                    value: component,
-                    colorSpace: colorSpace as ColorSpace,
-                    component: channel.name,
-                    min: channel.min,
-                    ...(channel.max !== Infinity && { max: channel.max }),
-                    maxExclusive: channel.maxExclusive ?? false,
-                }),
-            );
+        if (channel && space && !inRange(raw, channel.min, channel.max, channel.maxExclusive)) {
+            return no({
+                reason: "component-out-of-range",
+                value: raw,
+                colorSpace: space,
+                component: channel.name,
+                min: channel.min,
+                ...(channel.max !== Infinity && { max: channel.max }),
+                maxExclusive: channel.maxExclusive ?? false,
+            });
         }
-        return component;
+        return ok(raw);
     });
-
-    if (errors.length > before) return undefined;
-    return components as [Component, Component, Component];
 }
 
-function readAlpha(
-    raw: Record<string, unknown>,
-    at: JsonPath,
-    errors: ValueError[],
-): number | Pointer {
-    if (!("alpha" in raw)) return 1;
+const notThree = refuse("not-three-components");
 
-    const pointer = readPointer(raw.alpha);
-    if (pointer) return pointer;
-    if (refusedAlias(raw.alpha, [...at, "alpha"], type, errors)) return 1;
-
-    if (typeof raw.alpha !== "number" || !Number.isFinite(raw.alpha)) {
-        errors.push(
-            valueError([...at, "alpha"], { type, reason: "not-a-number", value: raw.alpha }),
-        );
-        return 1;
-    }
-
-    if (!inRange(raw.alpha, 0, 1)) {
-        errors.push(
-            valueError([...at, "alpha"], {
-                type,
-                reason: "alpha-out-of-range",
-                value: raw.alpha,
-            }),
-        );
-    }
-    return raw.alpha;
+function components(space: ColorSpace | undefined) {
+    const items = [component(space, 0), component(space, 1), component(space, 2)];
+    return oneOf({ array: tuple(items, notThree), other: notThree });
 }
 
-function readHex(
-    raw: Record<string, unknown>,
-    at: JsonPath,
-    errors: ValueError[],
-): string | Pointer | undefined {
-    if (!("hex" in raw)) return undefined;
+const alpha = literal((raw) => {
+    if (typeof raw !== "number" || !Number.isFinite(raw)) {
+        return no({ reason: "not-a-number", value: raw });
+    }
+    return inRange(raw, 0, 1) ? ok(raw) : no({ reason: "alpha-out-of-range", value: raw });
+});
 
-    const pointer = readPointer(raw.hex);
-    if (pointer) return pointer;
-    if (refusedAlias(raw.hex, [...at, "hex"], type, errors)) return undefined;
+const hex = literal((raw) =>
+    typeof raw === "string" && SIX_DIGIT_HEX.test(raw)
+        ? ok(raw)
+        : no({ reason: "hex-not-six-digits", value: raw }),
+);
 
-    if (typeof raw.hex === "string" && SIX_DIGIT_HEX.test(raw.hex)) return raw.hex;
-    errors.push(valueError([...at, "hex"], { type, reason: "hex-not-six-digits", value: raw.hex }));
-    return undefined;
+export const color = oneOf({
+    string: hexString,
+    object: object({
+        colorSpace,
+        components: dependsOn(componentsFor),
+        alpha: withDefault(alpha, 1),
+        hex: optional(hex),
+    }),
+    other: refuse("wrong-shape"),
+});
+
+function componentsFor({ colorSpace: space }: Siblings): Syntax {
+    return components(isColorSpace(space) ? space : undefined);
+}
+
+function isColorSpace(value: unknown): value is ColorSpace {
+    return typeof value === "string" && Object.hasOwn(colorSpaces, value);
 }
 
 function inRange(value: number, min: number, max: number, maxExclusive = false): boolean {

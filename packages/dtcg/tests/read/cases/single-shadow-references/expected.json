@@ -1,0 +1,71 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 9.6: a single shadow is read as a list of one, so a reference in it is at [0, …] in the value, but it is written without [0]. Each reference's edge and each problem with one is placed where the file writes it",
+  "permutations": [
+    {
+      "edges": [
+        {
+          "from": "lifted",
+          "to": "color.ink",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{color.ink}\""
+          }
+        },
+        {
+          "from": "lifted",
+          "to": "space.sm",
+          "at": {
+            "file": "tokens.json",
+            "text": "{ \"$ref\": \"#/space/sm/$value\" }"
+          }
+        },
+        {
+          "from": "lifted",
+          "to": "color.ink",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{color.ink}\"",
+            "occurrence": 2
+          }
+        },
+        {
+          "from": "lifted",
+          "to": "space.missing",
+          "at": {
+            "file": "tokens.json",
+            "text": "\"{space.missing}\""
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "type-mismatch",
+      "detail": {
+        "ref": "color.ink",
+        "expected": "dimension",
+        "found": "color"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{color.ink}\"",
+        "occurrence": 2
+      },
+      "path": "lifted"
+    },
+    {
+      "kind": "missing-reference",
+      "detail": {
+        "ref": "space.missing",
+        "referencedBy": ["lifted"]
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{space.missing}\""
+      },
+      "path": "lifted"
+    }
+  ]
+}

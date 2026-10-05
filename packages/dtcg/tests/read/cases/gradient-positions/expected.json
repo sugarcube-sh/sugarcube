@@ -1,0 +1,59 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 9.7: a position outside 0 to 1 MUST be considered as if it were clamped, and a position may be a reference to a number token. So a stop's position is clamped however it is written: as a number, by {…} or by a pointer. The number tokens keep their own values",
+  "permutations": [
+    {
+      "tokens": [
+        {
+          "path": "ink"
+        },
+        {
+          "path": "beyond",
+          "resolved": 2
+        },
+        {
+          "path": "before",
+          "resolved": -1
+        },
+        {
+          "path": "fade",
+          "resolved": [
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [0, 0, 0],
+                "alpha": 1
+              },
+              "position": 1
+            },
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [0, 0, 0],
+                "alpha": 1
+              },
+              "position": 1
+            },
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [0, 0, 0],
+                "alpha": 1
+              },
+              "position": 1
+            },
+            {
+              "color": {
+                "colorSpace": "srgb",
+                "components": [0, 0, 0],
+                "alpha": 1
+              },
+              "position": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}

@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 7.1.2, 7.3 (Examples 35 to 37) and 7.4.3: a JSON Pointer reads any part of the document as written, so it can stand for part of a value. A pointer to a token stands for its value (7.4.2), and a typeless one takes its type. As written means a single shadow has no [0], and a pointer cannot see through a reference to what it resolves to: both reach nothing. What a pointer reaches is checked against the place it stands in. Pointers that loop MUST be reported (6.7.4)",
+  "spec": "Format 7.1.2, 7.3 (Examples 35 to 37) and 7.4.3: a JSON Pointer reads any part of the document as written, so it can stand for part of a value. A pointer to a token, or to its whole $value, stands for its value and is equivalent to {…} (7.1.2, Example 32): a typeless one takes its type, and one whose type is not the type needed where it stands is a type-mismatch, at a part as for a whole value. As written means a single shadow has no [0], and a pointer cannot see through a reference to what it resolves to: both reach nothing. What a pointer reaches is checked against the place it stands in. Pointers that loop MUST be reported (6.7.4)",
   "permutations": [
     {
       "tokens": [
@@ -91,6 +91,16 @@
           "resolved": null
         },
         {
+          "path": "semantic.wrong-type-part",
+          "type": "border",
+          "resolved": null
+        },
+        {
+          "path": "semantic.wrong-type-whole",
+          "type": "color",
+          "resolved": null
+        },
+        {
           "path": "semantic.wrong-kind",
           "type": "color",
           "resolved": null
@@ -109,6 +119,33 @@
     }
   ],
   "diagnostics": [
+    {
+      "kind": "type-mismatch",
+      "detail": {
+        "ref": "#/base/spacing",
+        "expected": "color",
+        "found": "dimension"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#/base/spacing\" }",
+        "occurrence": 2
+      },
+      "path": "semantic.wrong-type-part"
+    },
+    {
+      "kind": "type-mismatch",
+      "detail": {
+        "ref": "#/base/spacing/$value",
+        "expected": "color",
+        "found": "dimension"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#/base/spacing/$value\" }"
+      },
+      "path": "semantic.wrong-type-whole"
+    },
     {
       "kind": "invalid-value",
       "detail": {

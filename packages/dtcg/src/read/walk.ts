@@ -1,14 +1,16 @@
 import type { Node } from "jsonc-parser";
 import { fixTitles } from "../error-messages.js";
 import type {
+    Alias,
     Diagnostic,
     DiagnosticDetailByKind,
     DiagnosticKind,
     Fix,
+    Pointer,
     Span,
     TokenType,
 } from "../index.js";
-import { readAlias, readPointer } from "../values/references.js";
+import { readAlias, readPointer, readReference } from "../values/references.js";
 import { isTokenType, tokenTypes } from "../values/token-types.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { type JsonFile, members, plainObject, plainValue, removal, spanOf } from "./json.js";
@@ -28,7 +30,7 @@ export interface SourceToken extends Properties {
     json: JsonFile;
     value: Node;
     authored: unknown;
-    isReference: boolean;
+    reference: Alias | Pointer | undefined;
     at: Span;
 }
 
@@ -175,7 +177,7 @@ export function walkSource(
             json,
             value,
             authored,
-            isReference: readAlias(authored) !== undefined || readPointer(authored) !== undefined,
+            reference: readReference(authored),
             at: at(node),
             ...readProperties(path, entries),
         });

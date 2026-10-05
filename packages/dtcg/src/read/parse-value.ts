@@ -2,7 +2,6 @@ import type { Node } from "jsonc-parser";
 import type {
     Diagnostic,
     IgnoredProperty,
-    Parse,
     ParseOptions,
     ParseResult,
     TokenType,
@@ -10,61 +9,84 @@ import type {
     ValueError,
 } from "../index.js";
 import { ignoredDiagnostic, valueDiagnostic } from "./value-diagnostic.js";
-import { parsers } from "../values/parsers.js";
+import {
+    type Notes,
+    type Place,
+    type ReadAgain,
+    type ReferenceRead,
+    readPlace,
+    readToken,
+} from "../values/read-syntax.js";
 import { deepestNode, spanOf } from "./json.js";
 import type { MergedToken } from "./merge.js";
+import { type Occurrence, occurrence } from "./occurrence.js";
+
+export interface LocatedReference {
+    reference: ReferenceRead;
+    occurrence: Occurrence;
+}
+
+export interface ValueRead<V = unknown> {
+    result: ParseResult<V>;
+    references: LocatedReference[];
+    readAgain: ReadAgain[];
+}
 
 type Read = <T extends TokenType>(
     token: MergedToken,
     type: T,
-) => ParseResult<UnresolvedValueByType[T]>;
+) => ValueRead<UnresolvedValueByType[T]>;
 
 export interface ValueReader {
     read: Read;
-    readReplaced: <T extends TokenType>(
+    readTarget: (
         token: MergedToken,
-        type: T,
+        place: Place,
         raw: unknown,
         permutation: number,
-    ) => ParseResult<UnresolvedValueByType[T]>;
+    ) => { result: ParseResult<unknown>; notes: Notes };
 }
 
-type Cache = { [T in TokenType]?: Map<Node, ParseResult<UnresolvedValueByType[T]>> };
+type Cache = { [T in TokenType]?: Map<Node, ValueRead<UnresolvedValueByType[T]>> };
 
 export function createValueReader(diagnostics: Diagnostic[], options: ParseOptions): ValueReader {
     const caches: Cache = {};
 
-    const parse = <T extends TokenType>(
-        token: MergedToken,
-        type: T,
-        raw: unknown,
-        replaced?: { permutation: number },
-    ) => {
-        const parser: Parse<UnresolvedValueByType[T]> = parsers[type];
-        const result = parser(raw, ["$value"], options);
-        if (!replaced) {
-            for (const each of result.ignored) diagnostics.push(ignoredToDiagnostic(token, each));
-        }
+    const read: Read = (token, type) => {
+        const notes: Notes = { references: [], readAgain: [] };
+        const result = readToken(type, token.authored, ["$value"], options, notes);
+        for (const each of result.ignored) diagnostics.push(ignoredToDiagnostic(token, each));
         if (!result.ok) {
-            for (const error of result.errors) {
-                diagnostics.push(toDiagnostic(token, error, replaced?.permutation));
-            }
+            for (const error of result.errors) diagnostics.push(toDiagnostic(token, error));
         }
-        return result;
+        const references = notes.references.map((reference) => ({
+            reference,
+            occurrence: occurrence(token, reference),
+        }));
+        return { result, references, readAgain: notes.readAgain };
     };
 
     return {
         read: (token, type) => {
-            if (token.added) return parse(token, type, token.authored);
+            if (token.added) return read(token, type);
             const cache: NonNullable<Cache[typeof type]> = caches[type] ?? new Map();
             caches[type] = cache;
             const cached = cache.get(token.value);
             if (cached) return cached;
-            const result = parse(token, type, token.authored);
-            cache.set(token.value, result);
-            return result;
+            const fresh = read(token, type);
+            cache.set(token.value, fresh);
+            return fresh;
         },
-        readReplaced: (token, type, raw, permutation) => parse(token, type, raw, { permutation }),
+        readTarget: (token, place, raw, permutation) => {
+            const notes: Notes = { references: [], readAgain: [] };
+            const result = readPlace(place, raw, options, notes);
+            if (!result.ok) {
+                for (const error of result.errors) {
+                    diagnostics.push(toDiagnostic(token, error, permutation));
+                }
+            }
+            return { result, notes };
+        },
     };
 }
 

@@ -4,7 +4,6 @@ import type {
     DiagnosticDetailByKind,
     DiagnosticKind,
     Edge,
-    JsonPath,
     ParseResult,
     Permutation,
     Span,
@@ -13,28 +12,21 @@ import type {
     TokenType,
     ValueByType,
 } from "../index.js";
-import { compositeParts } from "../values/composite-parts.js";
-import { isJsonObject } from "../values/json.js";
-import { readPointer } from "../values/references.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { inheritedDeprecation, inheritedType } from "./inherit.js";
 import type { Merged, MergedToken } from "./merge.js";
 import type { NormalisedPermutation, NormalisedToken } from "./normalise.js";
-import type { ValueReader } from "./parse-value.js";
+import type { LocatedReference, ValueReader } from "./parse-value.js";
 import { malformation } from "./malformed-pointer.js";
-import { refSteps } from "./pointer.js";
 import { reach } from "./ref-meaning.js";
 import { similarName } from "./similar.js";
-import {
-    type Occurrence,
-    keptReferences,
-    referencesIn,
-    withoutIgnored,
-} from "./value-references.js";
+import { type Occurrence, wholeReference } from "./occurrence.js";
+import { type Resolving, UNRESOLVED, resolveValue } from "./resolve-value.js";
 
 interface Resolved {
     type: TokenType;
     read: ParseResult<unknown>;
+    references: LocatedReference[];
     resolved?: unknown;
     aliasOf?: string;
 }
@@ -57,44 +49,25 @@ interface Missing {
     uses: Use[];
 }
 
-const UNRESOLVED = Symbol("unresolved");
-
 export function resolvePermutations(
     permutations: NormalisedPermutation[],
     readValue: ValueReader,
     diagnostics: Diagnostic[],
 ): Permutation[] {
-    const found = new WeakMap<MergedToken["value"], Occurrence[]>();
-    const referencesOf = (token: MergedToken) => {
-        if (token.added) return referencesIn(token.authored, token.value, token.json);
-        const cached = found.get(token.value);
-        if (cached) return cached;
-        const references = referencesIn(token.authored, token.value, token.json);
-        found.set(token.value, references);
-        return references;
-    };
-
     return permutations.map((permutation, index) =>
-        resolvePermutation(permutation, index, { readValue, referencesOf, diagnostics }),
+        resolvePermutation(permutation, index, { readValue, diagnostics }),
     );
 }
 
 interface Context {
     readValue: ValueReader;
-    referencesOf: (token: MergedToken) => Occurrence[];
     diagnostics: Diagnostic[];
-}
-
-interface Walk {
-    token: MergedToken;
-    listItem: boolean;
-    useAt: (canonical: JsonPath) => Occurrence | undefined;
 }
 
 function resolvePermutation(
     permutation: NormalisedPermutation,
     index: number,
-    { readValue, referencesOf, diagnostics }: Context,
+    { readValue, diagnostics }: Context,
 ): Permutation {
     const { tokens, merged } = permutation;
     const outcomes = new Map<string, Outcome | "resolving">();
@@ -180,8 +153,7 @@ function resolvePermutation(
 
     const compute = (entry: NormalisedToken): Outcome => {
         const { token } = entry;
-        const references = referencesOf(token);
-        const whole = references.find((each) => each.path.length === 0);
+        const whole = wholeReference(token);
 
         let type = entry.type;
         let aliasOf: string | undefined;
@@ -208,33 +180,12 @@ function resolvePermutation(
         }
         if (type === undefined) return "untyped";
 
-        const read = entry.read ?? readValue.read(token, type);
-        const base = { type, read, ...(aliasOf !== undefined && { aliasOf }) };
+        const { result: read, references, readAgain } = entry.read ?? readValue.read(token, type);
+        const base = { type, read, references, ...(aliasOf !== undefined && { aliasOf }) };
         if (!read.ok) return base;
-        const kept = keptReferences(references, read.ignored);
-        if (kept.length === 0) return { ...base, resolved: read.value };
+        if (references.length === 0) return { ...base, resolved: read.value };
 
-        let parsed: unknown = read.value;
-        if (kept.some((each) => each.kind === "pointer")) {
-            const authored = withoutIgnored(token.authored, read.ignored);
-            const replaced = replacePointers(authored, token, []);
-            if (replaced === UNRESOLVED) return base;
-            const again = readValue.readReplaced(token, type, replaced, index);
-            if (!again.ok) return base;
-            parsed = again.value;
-        }
-
-        const singleShadow = type === "shadow" && !Array.isArray(token.authored);
-        const useAt = (canonical: JsonPath) => {
-            const written = singleShadow ? canonical.slice(1) : canonical;
-            let closest: Occurrence | undefined;
-            for (const each of kept) {
-                const holds = each.path.every((step, i) => written[i] === step);
-                if (holds && (!closest || each.path.length > closest.path.length)) closest = each;
-            }
-            return closest;
-        };
-        const value = resolveValue(parsed, type, [], { token, listItem: false, useAt });
+        const value = resolveValue(resolving, token, read.value, references, readAgain);
         return value === UNRESOLVED ? base : { ...base, resolved: value };
     };
 
@@ -249,120 +200,18 @@ function resolvePermutation(
     };
 
     const unresolved = (entry: NormalisedToken, type: TokenType): Outcome => {
-        const read = entry.read ?? readValue.read(entry.token, type);
-        return { type, read };
+        const { result: read, references } = entry.read ?? readValue.read(entry.token, type);
+        return { type, read, references };
     };
 
-    const replacePointers = (raw: unknown, token: MergedToken, seen: string[]): unknown => {
-        const pointer = readPointer(raw);
-        if (pointer) {
-            const { pointer: written } = pointer;
-            const use = referencesOf(token).find(
-                (each) => each.kind === "pointer" && each.written === written,
-            );
-            if (seen.includes(written)) {
-                report(
-                    "circular-reference",
-                    { chain: [...seen, written] },
-                    token.path,
-                    use?.at ?? token.at,
-                );
-                return UNRESOLVED;
-            }
-            const part = pointedAt(refSteps(written));
-            if (part === UNRESOLVED) {
-                if (use) reportUnreachable(use, token.path);
-                return UNRESOLVED;
-            }
-            return replacePointers(part, token, [...seen, written]);
-        }
-        if (Array.isArray(raw)) {
-            const items = raw.map((each) => replacePointers(each, token, seen));
-            return items.includes(UNRESOLVED) ? UNRESOLVED : items;
-        }
-        if (isJsonObject(raw)) {
-            const entries = Object.entries(raw).map(([key, each]) => [
-                key,
-                replacePointers(each, token, seen),
-            ]);
-            return entries.some(([, each]) => each === UNRESOLVED)
-                ? UNRESOLVED
-                : Object.fromEntries(entries);
-        }
-        return raw;
-    };
-
-    const pointedAt = (steps: string[] | undefined): unknown => {
-        const reached = reach(steps, merged);
-        if (reached.kind === "token") return reached.token.authored;
-        if (reached.kind === "part") return stepInto(reached.token.authored, reached.inside);
-        return UNRESOLVED;
-    };
-
-    const resolveValue = (value: unknown, type: TokenType, path: JsonPath, walk: Walk): unknown => {
-        const alias = aliasIn(value);
-        if (alias !== undefined) return substitute(alias, type, path, walk);
-        if (type === "shadow" || type === "gradient") {
-            if (!Array.isArray(value)) return value;
-            const items = value.map((item, i) => {
-                const itemAlias = aliasIn(item);
-                return itemAlias !== undefined
-                    ? substitute(itemAlias, type, [...path, i], { ...walk, listItem: true })
-                    : resolveParts(item, compositeParts[type], [...path, i], walk);
-            });
-            return items.includes(UNRESOLVED) ? UNRESOLVED : items;
-        }
-        if (type === "border" || type === "transition" || type === "typography") {
-            return resolveParts(value, compositeParts[type], path, walk);
-        }
-        if (type === "strokeStyle" && isJsonObject(value) && Array.isArray(value.dashArray)) {
-            const dashArray = value.dashArray.map((item, i) =>
-                resolveValue(item, "dimension", [...path, "dashArray", i], walk),
-            );
-            return dashArray.includes(UNRESOLVED) ? UNRESOLVED : { ...value, dashArray };
-        }
-        return value;
-    };
-
-    const resolveParts = (
-        value: unknown,
-        parts: Readonly<Record<string, TokenType | "boolean">>,
-        path: JsonPath,
-        walk: Walk,
-    ): unknown => {
-        if (!isJsonObject(value)) return value;
-        const entries = Object.entries(value).map(([key, part]) => {
-            const partType = parts[key];
-            if (partType === undefined || partType === "boolean") return [key, part];
-            return [key, resolveValue(part, partType, [...path, key], walk)];
-        });
-        return entries.some(([, each]) => each === UNRESOLVED)
-            ? UNRESOLVED
-            : Object.fromEntries(entries);
-    };
-
-    const substitute = (ref: string, expected: TokenType, path: JsonPath, walk: Walk): unknown => {
-        const { token, listItem, useAt } = walk;
-        const use = useAt(path);
-        const at = use?.at ?? token.at;
-        const target = outcomeOf(ref, token.path, at);
-        if (target === undefined) {
-            if (merged.groups.has(ref)) report("not-a-token", { ref }, token.path, at);
-            else recordMissing(ref, token.path, { at, isAlias: use?.kind === "alias" });
-            return UNRESOLVED;
-        }
-        if (target === "untyped" || !("resolved" in target)) return UNRESOLVED;
-        if (target.type !== expected) {
-            report("type-mismatch", { ref, expected, found: target.type }, token.path, at);
-            return UNRESOLVED;
-        }
-        if (!listItem) return target.resolved;
-        const list = Array.isArray(target.resolved) ? target.resolved : [target.resolved];
-        if (list.length !== 1) {
-            report("reference-to-several", { ref, count: list.length }, token.path, at);
-            return UNRESOLVED;
-        }
-        return list[0];
+    const resolving: Resolving = {
+        readValue,
+        merged,
+        permutation: index,
+        outcomeOf,
+        report,
+        recordMissing,
+        reportUnreachable,
     };
 
     const built: Token[] = [];
@@ -372,8 +221,8 @@ function resolvePermutation(
         if (outcome === "untyped") continue;
         built.push(toToken(entry.token, outcome, merged));
         if (!outcome.read.ok) continue;
-        for (const use of keptReferences(referencesOf(entry.token), outcome.read.ignored)) {
-            edges.push({ from: path, to: targetOf(use, merged), at: use.at });
+        for (const { occurrence } of outcome.references) {
+            edges.push({ from: path, to: targetOf(occurrence, merged), at: occurrence.at });
         }
     }
 
@@ -412,24 +261,6 @@ function targetOf(use: Occurrence, merged: Merged): string {
     if (use.kind === "alias") return use.target;
     const reached = reach(use.steps, merged);
     return reached.kind === "nothing" ? use.written : reached.path;
-}
-
-function stepInto(raw: unknown, steps: string[]): unknown {
-    let current = raw;
-    for (const step of steps) {
-        if (Array.isArray(current) && /^(?:0|[1-9]\d*)$/.test(step))
-            current = current[Number(step)];
-        else if (isJsonObject(current) && Object.hasOwn(current, step)) current = current[step];
-        else return UNRESOLVED;
-        if (current === undefined) return UNRESOLVED;
-    }
-    return current;
-}
-
-function aliasIn(value: unknown): string | undefined {
-    if (!isJsonObject(value)) return undefined;
-    const keys = Object.keys(value);
-    return keys.length === 1 && typeof value.alias === "string" ? value.alias : undefined;
 }
 
 function toToken<T extends TokenType>(
