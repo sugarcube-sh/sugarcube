@@ -96,6 +96,27 @@ describe("what is set aside is a warning, and what cannot be read an error", () 
         ]);
     });
 
+    it("a pointer without its slash is an error in a reference to another file, as in a token file", () => {
+        const doc = readFromMemory({
+            files: {
+                "tokens.resolver.json": JSON.stringify({
+                    version: "2025.10",
+                    resolutionOrder: [
+                        { type: "set", name: "base", sources: [{ $ref: "all.json#space" }] },
+                    ],
+                }),
+                "all.json": JSON.stringify({
+                    space: { $type: "number", one: { $value: 1 }, two: { $ref: "#space/one" } },
+                }),
+            },
+            entry: "tokens.resolver.json",
+        });
+        expect(doc.diagnostics.map(({ kind, severity }) => [kind, severity])).toStrictEqual([
+            ["malformed-pointer", "error"],
+        ]);
+        expect(doc.permutations[0]?.tokens).toStrictEqual([]);
+    });
+
     it("a $type, $extends or $ref of the wrong kind stays an error, since it changes what the token is", () => {
         const text = `{
             "a": { "$type": 5, "$value": 1 },
@@ -342,6 +363,21 @@ describe("each context on its own", () => {
             labels: ["small", "large"],
             diagnostics: [{ kind: "no-default", detail: { modifiers: ["size"] } }],
         });
+    });
+
+    it("points at the modifier with no default", () => {
+        const text = resolver({
+            size: { contexts: { small: [], large: [] } },
+            brand: { contexts: { house: [], ocean: [] }, default: "house" },
+        });
+        const [found] = readFromMemory(
+            { files: { "tokens.resolver.json": text } },
+            { permutations: "each-context" },
+        ).diagnostics;
+        expect(found?.at && text.slice(found.at.offset, found.at.offset + found.at.length)).toBe(
+            '{"contexts":{"small":[],"large":[]}}',
+        );
+        expect(found?.fixes).toBeUndefined();
     });
 });
 

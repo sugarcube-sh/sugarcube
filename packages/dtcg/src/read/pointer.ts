@@ -1,21 +1,42 @@
 import type { Node } from "jsonc-parser";
+import type { DiagnosticDetailByKind } from "../index.js";
 
 export type Followed = { ok: true; node: Node } | { ok: false; step: number };
 
 const arrayIndex = /^(?:0|[1-9]\d*)$/;
 const badEscape = /~(?![01])/;
+const badEscapes = new RegExp(badEscape.source, "g");
+
+export type PointerReading =
+    | { ok: true; steps: string[] }
+    | {
+          ok: false;
+          problem: DiagnosticDetailByKind["malformed-pointer"]["reason"];
+          corrected: string;
+      };
+
+export function readPointerText(text: string): PointerReading {
+    const pointer = text.startsWith("#") ? text.slice(1) : text;
+    if (pointer === "") return { ok: true, steps: [] };
+
+    const slashed = pointer.startsWith("/") ? pointer : `/${pointer}`;
+    const written = slashed.slice(1).split("/");
+    const problem = !pointer.startsWith("/")
+        ? "no-leading-slash"
+        : written.some((step) => badEscape.test(step))
+          ? "bad-escape"
+          : undefined;
+    if (problem) {
+        const escaped = written.map((step) => step.replaceAll(badEscapes, "~0"));
+        return { ok: false, problem, corrected: `#/${escaped.join("/")}` };
+    }
+    const steps = written.map((step) => step.replaceAll("~1", "/").replaceAll("~0", "~"));
+    return { ok: true, steps };
+}
 
 export function parsePointer(text: string): string[] | undefined {
-    const pointer = text.startsWith("#") ? text.slice(1) : text;
-    if (pointer === "") return [];
-    if (!pointer.startsWith("/")) return undefined;
-
-    const steps: string[] = [];
-    for (const step of pointer.slice(1).split("/")) {
-        if (badEscape.test(step)) return undefined;
-        steps.push(step.replaceAll("~1", "/").replaceAll("~0", "~"));
-    }
-    return steps;
+    const read = readPointerText(text);
+    return read.ok ? read.steps : undefined;
 }
 
 export function refSteps(ref: string): string[] | undefined {

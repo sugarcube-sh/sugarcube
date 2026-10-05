@@ -1,5 +1,6 @@
 import type { JsonPath, ParseResult, Pointer, ValueError, UnresolvedValue } from "../index.js";
 import { readAlias, readPointer } from "./references.js";
+import { refusedAlias } from "./refuse-alias.js";
 import { valueError } from "./value-errors.js";
 
 type Coordinate = number | Pointer;
@@ -38,16 +39,7 @@ export function readCubicBezier(
     const coordinates = raw.map((coordinate: unknown, index): Coordinate => {
         const pointer = readPointer(coordinate);
         if (pointer) return pointer;
-        if (readAlias(coordinate)) {
-            errors.push(
-                valueError([...at, index], {
-                    type,
-                    reason: "alias-not-allowed-here",
-                    reference: coordinate as string,
-                }),
-            );
-            return 0;
-        }
+        if (refusedAlias(coordinate, [...at, index], type, errors)) return 0;
 
         if (typeof coordinate !== "number" || !Number.isFinite(coordinate)) {
             errors.push(

@@ -1,0 +1,80 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 8: $type is one of the types, and 6.4: $extends is a reference. An empty or null $type says nothing, so deleting it is safe and the token takes its group's type; $extends written as a bare path most likely means that group, but whether it names one is not known until every file is read, so that fix is a guess for a person to confirm",
+  "diagnostics": [
+    {
+      "kind": "unknown-type",
+      "detail": {
+        "type": ""
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"\""
+      },
+      "path": "g.empty",
+      "fixes": [
+        {
+          "title": "delete this `$type`, so the token takes its group's type",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"$type\": \"\", ",
+              "replaceWith": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "invalid-property",
+      "detail": {
+        "property": "$type",
+        "expected": "string"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "null"
+      },
+      "fixes": [
+        {
+          "title": "delete this `$type`, so the token takes its group's type",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": ", \"$type\": null",
+              "replaceWith": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "invalid-property",
+      "detail": {
+        "property": "$extends",
+        "expected": "reference"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"base\"",
+        "occurrence": 2
+      },
+      "fixes": [
+        {
+          "title": "write it as the reference `{base}`",
+          "safe": false,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"base\"",
+              "occurrence": 2,
+              "replaceWith": "\"{base}\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

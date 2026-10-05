@@ -7,7 +7,14 @@ import { refSteps } from "./pointer.js";
 
 export type Occurrence =
     | { kind: "alias"; target: string; path: JsonPath; at: Span }
-    | { kind: "pointer"; written: string; steps: string[] | undefined; path: JsonPath; at: Span };
+    | {
+          kind: "pointer";
+          written: string;
+          steps: string[] | undefined;
+          path: JsonPath;
+          at: Span;
+          pointerAt: Span;
+      };
 
 export function keptReferences(found: Occurrence[], ignored: IgnoredProperty[]): Occurrence[] {
     if (ignored.length === 0) return found;
@@ -47,7 +54,10 @@ export function referencesIn(raw: unknown, node: Node, json: JsonFile): Occurren
         if (alias) found.push({ kind: "alias", target: alias.alias, path, at: span() });
         else if (pointer) {
             const { pointer: written } = pointer;
-            found.push({ kind: "pointer", written, steps: refSteps(written), path, at: span() });
+            const text = member(at, "$ref", json.hidden) ?? at;
+            const pointerAt = spanOf(json.path, json.lineStarts, text.offset, text.length);
+            const steps = refSteps(written);
+            found.push({ kind: "pointer", written, steps, path, at: span(), pointerAt });
         } else if (Array.isArray(each)) {
             each.forEach((item, index) => {
                 const child = at.type === "array" ? at.children?.[index] : undefined;

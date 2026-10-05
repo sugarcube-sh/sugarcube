@@ -11,7 +11,7 @@ import type {
 import { readAlias, readPointer } from "../values/references.js";
 import { isTokenType, tokenTypes } from "../values/token-types.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
-import { type JsonFile, members, plainObject, plainValue, spanOf } from "./json.js";
+import { type JsonFile, members, plainObject, plainValue, removal, spanOf } from "./json.js";
 import { refSteps } from "./pointer.js";
 import { similarName } from "./similar.js";
 import type { LoadedSource } from "./sources.js";
@@ -93,22 +93,24 @@ export function walkSource(
         extra: Omit<DiagnosticExtra, "at"> = {},
     ) => diagnostics.push(diagnostic(kind, detail, { at: at(node), ...extra }));
 
-    const readType = (path: string, node: Node, name: string): TokenType | "unusable" => {
+    const readType = (path: string, { value: node, property }: Member, name: string) => {
         if (isTokenType(name)) return name;
         const similar = similarName(name, tokenTypes);
-        report("unknown-type", { type: name }, node, {
-            path,
-            ...(similar && { fixes: [typeFix(json.path, node, similar)] }),
-        });
+        const fix =
+            name === ""
+                ? deleteTypeFix(json.path, property)
+                : similar && typeFix(json.path, node, similar);
+        report("unknown-type", { type: name }, node, { path, ...(fix && { fixes: [fix] }) });
         return "unusable";
     };
 
     const readProperties = (path: string, entries: Member[]): Properties => {
         const properties: Properties = {};
-        for (const { key, value } of entries) {
+        for (const member of entries) {
+            const { key, value } = member;
             const raw: unknown = value.value;
             if (key === "$type" && typeof raw === "string") {
-                properties.type = readType(path, value, raw);
+                properties.type = readType(path, member, raw);
             } else if (key === "$description" && typeof raw === "string") {
                 properties.description = raw;
             } else if (
@@ -119,7 +121,10 @@ export function walkSource(
             } else if (key === "$extensions" && value.type === "object") {
                 properties.extensions = plainObject(value, json.hidden);
             } else if (isProperty(key)) {
-                report("invalid-property", { property: key, expected: EXPECTED[key] }, value);
+                const empty = key === "$type" && raw === null;
+                report("invalid-property", { property: key, expected: EXPECTED[key] }, value, {
+                    ...(empty && { fixes: [deleteTypeFix(json.path, member.property)] }),
+                });
                 if (key === "$type") properties.type = "unusable";
             }
         }
@@ -143,7 +148,10 @@ export function walkSource(
             const read = readGroupReference(key, plainValue(value, json.hidden));
             if (read === undefined) {
                 const expected = key === "$ref" ? "string" : "reference";
-                report("invalid-property", { property: key, expected }, value);
+                const fix = key === "$extends" && extendsFix(json.path, value);
+                report("invalid-property", { property: key, expected }, value, {
+                    ...(fix && { fixes: [fix] }),
+                });
                 continue;
             }
             found = {
@@ -234,6 +242,23 @@ function readGroupReference(
     if (alias) return { written: alias.alias, steps: alias.alias.split(".") };
     const pointer = readPointer(raw);
     return pointer && { written: pointer.pointer, steps: refSteps(pointer.pointer) };
+}
+
+function deleteTypeFix(file: string, property: Node): Fix {
+    return {
+        title: fixTitles.deleteType,
+        safe: true,
+        edits: [{ file, ...removal(property), text: "" }],
+    };
+}
+
+function extendsFix(file: string, value: Node): Fix | undefined {
+    const path = value.value;
+    if (typeof path !== "string" || path === "" || /[{}#]/.test(path)) return undefined;
+    const reference = `{${path}}`;
+    const { offset, length } = value;
+    const edits = [{ file, offset, length, text: JSON.stringify(reference) }];
+    return { title: fixTitles.extendsAsReference(reference), safe: false, edits };
 }
 
 function typeFix(file: string, node: Node, type: TokenType): Fix {

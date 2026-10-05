@@ -75,6 +75,25 @@ describe("parseStrokeStyle", () => {
     });
 
     describe("refuses", () => {
+        it.for([
+            ["lineCap", { dashArray: [px(4)], lineCap: "{stroke.cap}" }],
+            ["dashArray", { dashArray: "{stroke.cap}", lineCap: "round" }],
+        ] as const)(
+            "a curly-brace reference as the %s, where a JSON Pointer can stand",
+            ([part, raw]) => {
+                expect(details(raw)).toStrictEqual([
+                    {
+                        path: ["$value", part],
+                        detail: {
+                            type: "strokeStyle",
+                            reason: "alias-not-allowed-here",
+                            reference: "{stroke.cap}",
+                        },
+                    },
+                ]);
+            },
+        );
+
         it.for(["Solid", "none", "hidden", "wavy", ""])(
             "the string %j, which is not a keyword",
             (raw) => {

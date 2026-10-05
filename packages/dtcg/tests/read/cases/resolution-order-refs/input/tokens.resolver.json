@@ -7,6 +7,7 @@
     { "$ref": "#/resolutionOrder/0" },
     { "$ref": "#/sets/base/sources" },
     { "$ref": "base.json" },
+    { "$ref": "#sets/base" },
     { "$ref": "#/sets/base" }
   ]
 }

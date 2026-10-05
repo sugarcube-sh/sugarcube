@@ -95,6 +95,11 @@ describe("emitCSS", () => {
             expect(written).toStrictEqual([]);
         });
 
+        it("keeps where the read found it, the modifier in the resolver", () => {
+            const [found] = diagnostics;
+            expect(found?.at?.file).toBe("tokens.resolver.json");
+        });
+
         it("says which modifier needs a default, in place of the read's warning", () => {
             expect(diagnostics.map(({ kind }) => kind)).toStrictEqual(["default-required"]);
             expect(diagnostics[0]).toMatchObject({

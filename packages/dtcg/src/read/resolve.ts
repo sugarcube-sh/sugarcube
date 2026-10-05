@@ -21,6 +21,7 @@ import { inheritedDeprecation, inheritedType } from "./inherit.js";
 import type { Merged, MergedToken } from "./merge.js";
 import type { NormalisedPermutation, NormalisedToken } from "./normalise.js";
 import type { ValueReader } from "./parse-value.js";
+import { malformation } from "./malformed-pointer.js";
 import { refSteps } from "./pointer.js";
 import { reach } from "./ref-meaning.js";
 import { similarName } from "./similar.js";
@@ -116,6 +117,13 @@ function resolvePermutation(
     };
 
     const reportUnreachable = (use: Occurrence, from: string) => {
+        const malformed =
+            use.kind === "pointer" && malformation(use.written, use.pointerAt, merged);
+        if (malformed) {
+            const { detail, fixes } = malformed;
+            report("malformed-pointer", detail, from, use.at, fixes && { fixes });
+            return;
+        }
         const ref = use.kind === "alias" ? use.target : use.written;
         const isGroup =
             use.kind === "alias"

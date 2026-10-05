@@ -8,6 +8,7 @@ import type {
 } from "../index.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
+import { refusedAlias } from "./refuse-alias.js";
 import { unknownProperties } from "./unknown-properties.js";
 import { valueError } from "./value-errors.js";
 
@@ -84,16 +85,7 @@ function readAmount(
 
     const pointer = readPointer(raw.value);
     if (pointer) return pointer;
-    if (readAlias(raw.value)) {
-        errors.push(
-            valueError([...at, "value"], {
-                type,
-                reason: "alias-not-allowed-here",
-                reference: raw.value as string,
-            }),
-        );
-        return undefined;
-    }
+    if (refusedAlias(raw.value, [...at, "value"], type, errors)) return undefined;
 
     if (typeof raw.value === "number" && Number.isFinite(raw.value)) return raw.value;
     errors.push(valueError([...at, "value"], { type, reason: "not-a-number", value: raw.value }));
@@ -116,16 +108,7 @@ function readUnit(
 
     const pointer = readPointer(raw.unit);
     if (pointer) return pointer;
-    if (readAlias(raw.unit)) {
-        errors.push(
-            valueError([...at, "unit"], {
-                type,
-                reason: "alias-not-allowed-here",
-                reference: raw.unit as string,
-            }),
-        );
-        return undefined;
-    }
+    if (refusedAlias(raw.unit, [...at, "unit"], type, errors)) return undefined;
 
     if (typeof raw.unit === "string" && units.includes(raw.unit)) return raw.unit;
     errors.push(

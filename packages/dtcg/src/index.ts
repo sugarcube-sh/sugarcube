@@ -651,6 +651,17 @@ export interface DiagnosticDetailByKind {
     };
     /** `$extends`, or a `$ref` standing for a group, points at a token (Format 6.4.6). */
     "not-a-group": { ref: string };
+    /**
+     * A `$ref` is not a JSON Pointer (RFC 6901): it does not start with `/` after the `#`, or a `~`
+     * in it is not `~0` or `~1`. A fix writes it correctly when that reaches something, and always
+     * for a reference into another file, whose target is not read.
+     */
+    "malformed-pointer": {
+        ref: string;
+        reason: "no-leading-slash" | "bad-escape";
+        /** The reference written correctly. */
+        corrected: string;
+    };
     /** A reference to a token points at a group (Format 6.2: `{color.accent}` names a group, not a token). */
     "not-a-token": { ref: string };
     /**
@@ -736,7 +747,8 @@ export type ResolverRule =
     | "unknown-item-type"
     | "no-contexts"
     | "single-context"
-    | "invalid-default";
+    | "invalid-default"
+    | "file-in-resolution-order";
 
 /**
  * A rule a resolver breaks, what it concerns and where. Checking `rule` narrows the rest.

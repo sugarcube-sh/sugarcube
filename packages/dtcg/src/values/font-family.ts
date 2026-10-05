@@ -1,5 +1,6 @@
 import type { JsonPath, ParseResult, Pointer, ValueError, UnresolvedValue } from "../index.js";
 import { readAlias, readPointer } from "./references.js";
+import { refusedAlias } from "./refuse-alias.js";
 import { valueError } from "./value-errors.js";
 
 const type = "fontFamily";
@@ -42,16 +43,7 @@ export function readFontFamily(
     const names = raw.map((name: unknown, index): string | Pointer => {
         const pointer = readPointer(name);
         if (pointer) return pointer;
-        if (readAlias(name)) {
-            errors.push(
-                valueError([...at, index], {
-                    type,
-                    reason: "alias-not-allowed-here",
-                    reference: name as string,
-                }),
-            );
-            return name as string;
-        }
+        if (refusedAlias(name, [...at, index], type, errors)) return name as string;
 
         if (typeof name !== "string" || name.trim() === "") {
             errors.push(

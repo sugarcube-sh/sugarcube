@@ -75,25 +75,18 @@ export function parseJson(text: string): ParsedJson {
 
 function findDuplicates(node: Node, duplicates: DuplicateKey[], hidden: Set<Node>): void {
     if (node.type === "object") {
-        const seen = new Map<string, { property: Node; keyNode: Node; next: Node | undefined }>();
-        const properties = node.children ?? [];
-        for (const [index, property] of properties.entries()) {
+        const seen = new Map<string, { property: Node; keyNode: Node }>();
+        for (const property of node.children ?? []) {
             const [keyNode] = property.children ?? [];
             if (!keyNode) continue;
             const key = String(keyNode.value);
             const earlier = seen.get(key);
             if (earlier) {
-                const { offset } = earlier.property;
-                const length = (earlier.next ?? property).offset - offset;
-                duplicates.push({
-                    key,
-                    first: earlier.keyNode,
-                    last: keyNode,
-                    earlier: { offset, length },
-                });
+                const { keyNode: first } = earlier;
+                duplicates.push({ key, first, last: keyNode, earlier: removal(earlier.property) });
                 hidden.add(earlier.property);
             }
-            seen.set(key, { property, keyNode, next: properties[index + 1] });
+            seen.set(key, { property, keyNode });
         }
     }
     for (const child of node.children ?? []) {
@@ -101,16 +94,27 @@ function findDuplicates(node: Node, duplicates: DuplicateKey[], hidden: Set<Node
     }
 }
 
+export function removal(property: Node): { offset: number; length: number } {
+    const siblings = property.parent?.children ?? [property];
+    const index = siblings.indexOf(property);
+    const end = property.offset + property.length;
+    const next = siblings[index + 1];
+    if (next) return { offset: property.offset, length: next.offset - property.offset };
+    const previous = siblings[index - 1];
+    const start = previous ? previous.offset + previous.length : property.offset;
+    return { offset: start, length: end - start };
+}
+
 export function members(
     node: Node,
     hidden: Set<Node>,
-): { key: string; keyNode: Node; value: Node }[] {
+): { key: string; keyNode: Node; value: Node; property: Node }[] {
     if (node.type !== "object") return [];
-    const found: { key: string; keyNode: Node; value: Node }[] = [];
+    const found: { key: string; keyNode: Node; value: Node; property: Node }[] = [];
     for (const property of node.children ?? []) {
         const [keyNode, value] = property.children ?? [];
         if (hidden.has(property) || !keyNode || !value) continue;
-        found.push({ key: String(keyNode.value), keyNode, value });
+        found.push({ key: String(keyNode.value), keyNode, value, property });
     }
     return found;
 }

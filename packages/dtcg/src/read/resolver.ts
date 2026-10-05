@@ -1,9 +1,15 @@
 import type { Node } from "jsonc-parser";
 import { fixTitles } from "../error-messages.js";
-import type { Diagnostic, DiagnosticDetailByKind, JsonPath, ResolverProblem } from "../index.js";
-import { diagnostic } from "./diagnostics.js";
+import type {
+    Diagnostic,
+    DiagnosticDetailByKind,
+    DiagnosticKind,
+    JsonPath,
+    ResolverProblem,
+} from "../index.js";
+import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { type JsonFile, member, members, spanOf } from "./json.js";
-import { parsePointer } from "./pointer.js";
+import { type PointerReading, parsePointer, readPointerText } from "./pointer.js";
 import { similarName } from "./similar.js";
 
 const ROOT_KEYS = [
@@ -36,6 +42,7 @@ export interface ModifierDefinition {
     contexts: Map<string, SourceNode[]>;
     default?: string;
     extensions?: Node;
+    declared: Node;
 }
 
 export type ResolverItem =
@@ -52,9 +59,16 @@ export interface Resolver {
 type JsonType = "string" | "object" | "array";
 
 export interface Reader {
+    file: string;
     get(node: Node, key: string): Node | undefined;
     entries(node: Node): { key: string; value: Node }[];
-    report(problem: ResolverProblem, node: Node): void;
+    report(problem: ResolverProblem, node: Node, extra?: Omit<DiagnosticExtra, "at">): void;
+    diagnose<K extends DiagnosticKind>(
+        kind: K,
+        detail: DiagnosticDetailByKind[K],
+        node: Node,
+        extra?: Omit<DiagnosticExtra, "at">,
+    ): void;
     expect(node: Node | undefined, type: JsonType, name: string, at: JsonPath): node is Node;
     checkKeys(
         owner: Place,
@@ -93,17 +107,29 @@ export function checkResolver(file: JsonFile, diagnostics: Diagnostic[]): Resolv
     return { file, sets, modifiers, order };
 }
 
-export function resolverProblem(file: JsonFile, problem: ResolverProblem, node: Node): Diagnostic {
+export function resolverProblem(
+    file: JsonFile,
+    problem: ResolverProblem,
+    node: Node,
+    extra: Omit<DiagnosticExtra, "at"> = {},
+): Diagnostic {
     return diagnostic("resolver-invalid", problem, {
+        ...extra,
         at: spanOf(file.path, file.lineStarts, node.offset, node.length),
     });
 }
 
 export function createReader(file: JsonFile, diagnostics: Diagnostic[]): Reader {
     const reader: Reader = {
+        file: file.path,
         get: (node, key) => member(node, key, file.hidden),
         entries: (node) => members(node, file.hidden),
-        report: (problem, node) => diagnostics.push(resolverProblem(file, problem, node)),
+        report: (problem, node, extra) =>
+            diagnostics.push(resolverProblem(file, problem, node, extra)),
+        diagnose: (kind, detail, node, extra = {}) => {
+            const at = spanOf(file.path, file.lineStarts, node.offset, node.length);
+            diagnostics.push(diagnostic(kind, detail, { ...extra, at }));
+        },
         expect: (node, type, name, at): node is Node => {
             if (!node) return false;
             if (node.type === type) return true;
@@ -241,6 +267,7 @@ function readModifier(
     return checkDefault(reader, owner, {
         name,
         contexts: new Map(),
+        declared: owner.node,
         ...readModifierParts(reader, owner, name),
     });
 }
@@ -308,8 +335,22 @@ function readOrderRef(
     if (!reader.expect(ref, "string", "$ref", at)) return undefined;
 
     const pointer = ref.value as string;
-    const steps = pointer.startsWith("#") ? parsePointer(pointer) : undefined;
-    const [collection, name, ...rest] = steps ?? [];
+    if (!pointer.startsWith("#")) {
+        reader.report({ rule: "file-in-resolution-order", name: pointer, at }, ref);
+        return undefined;
+    }
+    const read = readPointerText(pointer);
+    if (!read.ok) {
+        const [collection, name, ...rest] = parsePointer(read.corrected) ?? [];
+        const reaches =
+            rest.length === 0 &&
+            name !== undefined &&
+            ((collection === "sets" && sets.has(name)) ||
+                (collection === "modifiers" && modifiers.has(name)));
+        reportMalformed(reader, pointer, read, ref, reaches);
+        return undefined;
+    }
+    const [collection, name, ...rest] = read.steps;
     if (name === undefined || rest.length > 0) {
         reader.report({ rule: "invalid-pointer", name: pointer, at }, ref);
         return undefined;
@@ -337,6 +378,23 @@ function readOrderRef(
     }
     reader.report({ rule: "invalid-pointer", name: pointer, at }, ref);
     return undefined;
+}
+
+export function reportMalformed(
+    reader: Reader,
+    ref: string,
+    { problem, corrected }: Extract<PointerReading, { ok: false }>,
+    node: Node,
+    reaches: boolean,
+): void {
+    const { offset, length } = node;
+    const edits = [{ file: reader.file, offset, length, text: JSON.stringify(corrected) }];
+    const fixes = reaches
+        ? [{ title: fixTitles.writePointer(corrected), safe: true, edits }]
+        : undefined;
+    reader.diagnose("malformed-pointer", { ref, reason: problem, corrected }, node, {
+        ...(fixes && { fixes }),
+    });
 }
 
 function readInline(reader: Reader, owner: Place, names: Set<string>): ResolverItem | undefined {

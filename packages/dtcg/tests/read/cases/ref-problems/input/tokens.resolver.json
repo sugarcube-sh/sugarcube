@@ -9,7 +9,8 @@
         { "$ref": "all.json#/count" },
         { "$ref": "other.resolver.json" },
         { "$ref": "#/modifiers/theme" },
-        { "$ref": "#/sets/loop" }
+        { "$ref": "#/sets/loop" },
+        { "$ref": "#sets/loop" }
       ]
     }
   },

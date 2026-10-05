@@ -1,6 +1,6 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "Resolver 4.1.6: resolutionOrder holds sets and modifiers; 4.2.1: nothing may point into resolutionOrder",
+  "spec": "Resolver 4.1.6: resolutionOrder holds sets and modifiers, so a file named there is refused; 4.2.1: nothing may point into resolutionOrder; RFC 6901: a pointer starts with a slash after the #, so #sets/base is malformed, with a safe fix to #/sets/base, which names a set",
   "diagnostics": [
     {
       "kind": "resolver-invalid",
@@ -89,7 +89,7 @@
     {
       "kind": "resolver-invalid",
       "detail": {
-        "rule": "invalid-pointer",
+        "rule": "file-in-resolution-order",
         "name": "base.json",
         "at": ["resolutionOrder", 4, "$ref"]
       },
@@ -106,6 +106,31 @@
           "column": 26
         }
       }
+    },
+    {
+      "kind": "malformed-pointer",
+      "detail": {
+        "ref": "#sets/base",
+        "reason": "no-leading-slash",
+        "corrected": "#/sets/base"
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "text": "\"#sets/base\""
+      },
+      "fixes": [
+        {
+          "title": "write it as `#/sets/base`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.resolver.json",
+              "text": "\"#sets/base\"",
+              "replaceWith": "\"#/sets/base\""
+            }
+          ]
+        }
+      ]
     }
   ]
 }

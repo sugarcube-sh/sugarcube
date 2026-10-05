@@ -1,19 +1,12 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "Resolver 4.2, Example 10: a ref may name part of a file, written with or without the leading slash; Format 7.4.6: names with a space or a slash",
+  "spec": "Resolver 4.2: a ref may name part of a file, as a JSON Pointer (RFC 6901), which starts with a slash. Example 10 writes one without; the rule wins, so it is refused, with a safe fix adding the slash. Format 7.4.6: names with a space or a slash",
   "files": ["tokens.resolver.json", "all.json"],
   "permutations": [
     {
       "input": {},
       "label": "default",
       "sources": [
-        {
-          "file": "all.json",
-          "pointer": "#/color",
-          "from": {
-            "set": "parts"
-          }
-        },
         {
           "file": "all.json",
           "pointer": "#/color",
@@ -44,5 +37,31 @@
       ]
     }
   ],
-  "diagnostics": []
+  "diagnostics": [
+    {
+      "kind": "malformed-pointer",
+      "detail": {
+        "ref": "all.json#color",
+        "reason": "no-leading-slash",
+        "corrected": "all.json#/color"
+      },
+      "at": {
+        "file": "tokens.resolver.json",
+        "text": "\"all.json#color\""
+      },
+      "fixes": [
+        {
+          "title": "write it as `all.json#/color`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.resolver.json",
+              "text": "\"all.json#color\"",
+              "replaceWith": "\"all.json#/color\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

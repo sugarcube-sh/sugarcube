@@ -73,6 +73,8 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
         `the modifier \`${name}\` has only one context, which makes it a set`,
     "invalid-default": (name) =>
         `the default of the modifier \`${name}\` is not one of its contexts`,
+    "file-in-resolution-order": (name) =>
+        `\`${name}\` is a file, and an item in the resolution order is a set or a modifier`,
 };
 
 export const thrownMessages = {
@@ -96,6 +98,9 @@ const ownerWords = { resolver: "the resolver", set: "a set", modifier: "a modifi
 export const fixTitles = {
     useSimilar: (name: string) => `use \`${name}\`, which has a similar name`,
     deleteEarlier: (key: string) => `delete the earlier \`${key}\`, which is never used`,
+    writePointer: (pointer: string) => `write it as \`${pointer}\``,
+    deleteType: "delete this `$type`, so the token takes its group's type",
+    extendsAsReference: (reference: string) => `write it as the reference \`${reference}\``,
     hexToObject: "write the color as an object, keeping the hex",
     measureAsObject: (type: string) => `write the ${type} as an object`,
     sixDigitHex: (hex: string) => `write the hex with six digits, \`${hex}\``,
@@ -180,6 +185,13 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "missing-reference": {
         severity: "error",
         message: ({ ref }) => `\`${ref}\` does not exist`,
+    },
+    "malformed-pointer": {
+        severity: "error",
+        message: ({ ref, reason }) =>
+            reason === "no-leading-slash"
+                ? `\`${ref}\` is not a JSON Pointer, which starts with \`#/\``
+                : `\`${ref}\` is not a JSON Pointer: in one, \`~\` is written \`~0\` and \`/\` is written \`~1\``,
     },
     "not-a-token": {
         severity: "error",

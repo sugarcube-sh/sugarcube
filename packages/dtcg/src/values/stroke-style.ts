@@ -11,6 +11,7 @@ import { readDimension } from "./dimension.js";
 import { type LineCap, lineCaps, strokeStyleKeywords } from "./keywords.js";
 import { isJsonObject } from "./json.js";
 import { readAlias, readPointer } from "./references.js";
+import { refusedAlias } from "./refuse-alias.js";
 import { unknownProperties } from "./unknown-properties.js";
 import { valueError } from "./value-errors.js";
 
@@ -94,6 +95,7 @@ function readDashArray(
 
     const pointer = readPointer(raw.dashArray);
     if (pointer) return pointer;
+    if (refusedAlias(raw.dashArray, [...at, "dashArray"], type, errors)) return undefined;
 
     const path = [...at, "dashArray"];
     if (!Array.isArray(raw.dashArray)) {
@@ -140,6 +142,7 @@ function readLineCap(
 
     const pointer = readPointer(raw.lineCap);
     if (pointer) return pointer;
+    if (refusedAlias(raw.lineCap, [...at, "lineCap"], type, errors)) return undefined;
 
     if (lineCaps.includes(raw.lineCap as LineCap)) return raw.lineCap as LineCap;
     errors.push(

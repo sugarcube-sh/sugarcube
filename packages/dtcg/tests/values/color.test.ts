@@ -171,6 +171,23 @@ describe("parseColor", () => {
             expect(ignored(raw, lenient)).toStrictEqual([]);
         });
 
+        it.for(["colorSpace", "components", "alpha", "hex"])(
+            "refuses a curly-brace reference as the %s, where a JSON Pointer can stand",
+            (part) => {
+                const raw = { colorSpace: "srgb", components: [1, 0, 0], [part]: "{color.part}" };
+                expect(details(raw)).toStrictEqual([
+                    {
+                        path: ["$value", part],
+                        detail: {
+                            type: "color",
+                            reason: "alias-not-allowed-here",
+                            reference: "{color.part}",
+                        },
+                    },
+                ]);
+            },
+        );
+
         it("refuses a curly-brace reference in place of a component", () => {
             expect(
                 details({ colorSpace: "srgb", components: ["{color.red}", 0, 0] }),

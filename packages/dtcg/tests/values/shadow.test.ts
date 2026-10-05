@@ -68,6 +68,19 @@ describe("parseShadow", () => {
     });
 
     describe("refuses", () => {
+        it("a curly-brace reference as inset, where a JSON Pointer can stand", () => {
+            expect(details({ ...layer, inset: "{shadow.inset}" })).toStrictEqual([
+                {
+                    path: ["$value", "inset"],
+                    detail: {
+                        type: "shadow",
+                        reason: "alias-not-allowed-here",
+                        reference: "{shadow.inset}",
+                    },
+                },
+            ]);
+        });
+
         it("an empty list", () => {
             expect(details([])).toStrictEqual([
                 { path: ["$value"], detail: { type: "shadow", reason: "no-shadows" } },

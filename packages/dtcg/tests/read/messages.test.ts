@@ -228,6 +228,11 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
     ],
     "missing-reference": [{ ref: "color.brnad", referencedBy: ["color.danger"] }],
     "not-a-group": [{ ref: "color.brand" }],
+    "malformed-pointer": [
+        { ref: "#color/ink", reason: "no-leading-slash", corrected: "#/color/ink" },
+        { ref: "#/a~b/$value", reason: "bad-escape", corrected: "#/a~0b/$value" },
+        { ref: "all.json#color", reason: "no-leading-slash", corrected: "all.json#/color" },
+    ],
     "not-a-token": [{ ref: "color.accent" }],
     "reference-to-several": [{ ref: "shadow.layered", count: 3 }],
     "circular-reference": [{ chain: ["color.a", "color.b", "color.a"] }],

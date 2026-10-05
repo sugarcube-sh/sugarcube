@@ -61,7 +61,11 @@ export function emitCSS(
 
 function asReported(found: Diagnostic): Reported {
     if (found.kind !== "no-default") return found;
-    return diagnostic("default-required", { modifiers: found.detail.modifiers });
+    const { at } = found;
+    return {
+        ...diagnostic("default-required", { modifiers: found.detail.modifiers }),
+        ...(at && { at }),
+    };
 }
 
 function redeclaring(config: InternalConfig): { redeclare: boolean; renamed: Reported[] } {
