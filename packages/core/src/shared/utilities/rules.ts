@@ -1,7 +1,11 @@
 import { type Token, type TokenType, withoutRoot } from "@sugarcube-sh/dtcg";
 import { cssName } from "@sugarcube-sh/dtcg/css";
 import type { UtilityClassesConfig } from "../../types/config.js";
-import type { Reported } from "../../types/diagnostics.js";
+import type {
+    Reported,
+    UtilityEntry,
+    UtilityWithoutClassesReason,
+} from "../../types/diagnostics.js";
 import { diagnostic } from "../diagnostics.js";
 import type { PropertyUtilityConfig } from "../../types/utilities.js";
 import type { UtilityToken } from "./tokens.js";
@@ -13,10 +17,30 @@ interface Named {
     name: string;
 }
 
+interface Skipped {
+    token: Token;
+    why: "typography" | "type" | "private" | "unwritten";
+}
+
+interface Entry {
+    about: UtilityEntry;
+    source: string;
+    parts: Map<string, [Named, ...Named[]]>;
+    skipped: Skipped[];
+    starts: string[];
+}
+
 interface Use {
     property: string;
-    parts: Map<string, [Named, ...Named[]]>;
+    entry: Entry;
     find: (part: string) => string | undefined;
+}
+
+interface Answer {
+    named: Named;
+    property: string;
+    entry: Entry;
+    start: string;
 }
 
 const SIDES = [
@@ -59,30 +83,46 @@ const TYPES: Record<string, TokenType[]> = {
  * token's path below `source`, as its variable has it), and writes that token's variable. Rules
  * come in the config's order, each shorthand before its longhands; entries sharing a start are
  * tried in the config's order, and among tokens making the same class the first in file order is
- * used. A class two tokens with different variables make is reported, on the token not used.
+ * used. A class two tokens with different variables make is reported, on the token not used,
+ * and so is an entry that makes no classes, with the reason.
  */
 export function utilityRules(
     tokens: UtilityToken[],
     classes: UtilityClassesConfig,
 ): { rules: UtilityRule[]; safelist: string[]; diagnostics: Reported[] } {
     const byStart = new Map<string, Use[]>();
+    const entries: Entry[] = [];
     const safelist = new Set<string>();
     for (const [property, listed] of Object.entries(classes)) {
-        for (const entry of [listed].flat()) {
-            const parts = partsFor(tokens, entry, property);
-            const find = (part: string) => parts.get(stripped(part, entry))?.[0].name;
-            const forced = Array.isArray(entry.safelist)
-                ? entry.safelist.filter((part) => find(part) !== undefined)
-                : entry.safelist
+        const several = Array.isArray(listed);
+        for (const [index, config] of [listed].flat().entries()) {
+            const { parts, skipped } = partsFor(tokens, config, property);
+            const starts = startsFor(config, property);
+            const about = several ? { property, entry: index } : { property };
+            const entry = {
+                about,
+                source: config.source,
+                parts,
+                skipped,
+                starts: starts.map(({ start }) => start),
+            };
+            entries.push(entry);
+            const find = (part: string) => parts.get(stripped(part, config))?.[0].name;
+            const forced = Array.isArray(config.safelist)
+                ? config.safelist.filter((part) => find(part) !== undefined)
+                : config.safelist
                   ? [...parts.keys()]
                   : [];
-            for (const { start, property: written } of startsFor(entry, property)) {
-                const use = { property: written, parts, find };
-                byStart.set(start, [...(byStart.get(start) ?? []), use]);
+            for (const { start, property: written } of starts) {
+                byStart.set(start, [
+                    ...(byStart.get(start) ?? []),
+                    { property: written, entry, find },
+                ]);
                 for (const part of forced) safelist.add(`${start}-${part}`);
             }
         }
     }
+    const answered = answers(byStart);
     return {
         rules: [...byStart].map(([start, uses]) => [
             new RegExp(`^${escaped(start)}-.+$`),
@@ -96,35 +136,40 @@ export function utilityRules(
             },
         ]),
         safelist: [...safelist],
-        diagnostics: sameClasses(answers(byStart)),
+        diagnostics: [
+            ...sameClasses(answered),
+            ...entries.flatMap((entry) => withoutClasses(entry, answered)),
+        ],
     };
 }
 
-function answers(byStart: Map<string, Use[]>): Map<string, [Named, ...Named[]]> {
-    const answered = new Map<string, [Named, ...Named[]]>();
+function answers(byStart: Map<string, Use[]>): Map<string, [Answer, ...Answer[]]> {
+    const answered = new Map<string, [Answer, ...Answer[]]>();
     for (const [start, uses] of byStart) {
-        const own = new Map<string, [Named, ...Named[]]>();
-        for (const { parts } of uses) {
-            for (const [part, named] of parts) {
+        const own = new Map<string, [Answer, ...Answer[]]>();
+        for (const { entry, property } of uses) {
+            const answer = (named: Named): Answer => ({ named, property, entry, start });
+            for (const [part, [first, ...rest]] of entry.parts) {
                 const className = `${start}-${part}`;
                 const earlier = own.get(className);
-                if (earlier) earlier.push(...named);
-                else own.set(className, [...named]);
+                if (earlier) earlier.push(answer(first), ...rest.map(answer));
+                else own.set(className, [answer(first), ...rest.map(answer)]);
             }
         }
-        for (const [className, named] of own) {
-            answered.set(className, [...named, ...(answered.get(className) ?? [])]);
+        for (const [className, found] of own) {
+            answered.set(className, [...found, ...(answered.get(className) ?? [])]);
         }
     }
     return answered;
 }
 
-function sameClasses(answered: Map<string, [Named, ...Named[]]>): Reported[] {
+function sameClasses(answered: Map<string, [Answer, ...Answer[]]>): Reported[] {
     const found = new Map<string, Reported>();
-    for (const [className, [used, ...others]] of answered) {
-        for (const other of others) {
+    for (const [className, [first, ...others]] of answered) {
+        for (const each of others) {
+            const [used, other] = [first.named, each.named];
             const key = [used.token.path, other.token.path].sort().join("\u0000");
-            if (used.name === other.name || found.has(key)) continue;
+            if (sameVariable(first, each) || found.has(key)) continue;
             const paths: [string, string] = [used.token.path, other.token.path];
             found.set(key, diagnostic("same-utility-class", { className, paths }, other.token));
         }
@@ -132,26 +177,82 @@ function sameClasses(answered: Map<string, [Named, ...Named[]]>): Reported[] {
     return [...found.values()];
 }
 
+function withoutClasses(entry: Entry, answered: Map<string, [Answer, ...Answer[]]>): Reported[] {
+    const why = entry.parts.size === 0 ? emptied(entry) : answeredFirst(entry, answered);
+    if (why === undefined) return [];
+    return [
+        diagnostic("utility-without-classes", { ...entry.about, source: entry.source, ...why }),
+    ];
+}
+
+function emptied({ about, source, skipped }: Entry): UtilityWithoutClassesReason | undefined {
+    const takes = TYPES[about.property];
+    const found = (...why: Skipped["why"][]) => skipped.filter((each) => why.includes(each.why));
+    if (skipped.length === 0) return { reason: "no-tokens", group: groupOf(source) };
+    if (takes?.length === 0) return { reason: "no-type" };
+    if (found("private").length > 0) return { reason: "private" };
+    if (takes && found("type").length > 0) {
+        const types = new Set(found("type", "typography").map(({ token }) => token.type));
+        return { reason: "wrong-type", found: [...types], takes };
+    }
+    if (found("typography").length > 0) return { reason: "typography" };
+    return undefined;
+}
+
+function answeredFirst(
+    entry: Entry,
+    answered: Map<string, [Answer, ...Answer[]]>,
+): UtilityWithoutClassesReason | undefined {
+    const starts = new Set<string>();
+    const by = new Set<Entry>();
+    let silent = false;
+    for (const [first, ...others] of answered.values()) {
+        if (first.entry === entry) return undefined;
+        for (const other of others) {
+            if (other.entry !== entry) continue;
+            if (sameVariable(first, other) && first.property === other.property) return undefined;
+            starts.add(other.start);
+            by.add(first.entry);
+            silent ||= sameVariable(first, other);
+        }
+    }
+    if (!silent) return undefined;
+    return { reason: "answered-first", starts: [...starts], by: [...by].map(({ about }) => about) };
+}
+
+function sameVariable(first: Answer, other: Answer): boolean {
+    return first.named.name === other.named.name;
+}
+
 function partsFor(
     tokens: UtilityToken[],
     entry: PropertyUtilityConfig,
     property: string,
-): Map<string, [Named, ...Named[]]> {
-    const base = entry.source.endsWith(".*") ? entry.source.slice(0, -2) : entry.source;
+): { parts: Map<string, [Named, ...Named[]]>; skipped: Skipped[] } {
+    const group = groupOf(entry.source);
     const types = TYPES[property];
     const parts = new Map<string, [Named, ...Named[]]>();
+    const skipped: Skipped[] = [];
     for (const listed of tokens) {
-        if (!("name" in listed)) continue;
         const { token } = listed;
         const path = withoutRoot(token.path);
-        if (!path.startsWith(`${base}.`)) continue;
-        if (types && !types.includes(token.type)) continue;
-        const part = stripped(cssName(path.slice(base.length + 1)), entry);
-        const earlier = parts.get(part);
-        if (earlier) earlier.push(listed);
-        else parts.set(part, [listed]);
+        if (!path.startsWith(`${group}.`)) continue;
+        const skip = (why: Skipped["why"]) => skipped.push({ token, why });
+        if ("variables" in listed) skip("typography");
+        else if (types && !types.includes(token.type)) skip("type");
+        else if ("private" in listed) skip(listed.private ? "private" : "unwritten");
+        else {
+            const part = stripped(cssName(path.slice(group.length + 1)), entry);
+            const earlier = parts.get(part);
+            if (earlier) earlier.push(listed);
+            else parts.set(part, [listed]);
+        }
     }
-    return parts;
+    return { parts, skipped };
+}
+
+function groupOf(source: string): string {
+    return source.endsWith(".*") ? source.slice(0, -2) : source;
 }
 
 function prefixOf({ prefix, source }: PropertyUtilityConfig): string {

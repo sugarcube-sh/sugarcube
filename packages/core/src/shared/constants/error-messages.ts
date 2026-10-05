@@ -1,6 +1,8 @@
 import type {
     SugarcubeDiagnosticDetailByKind,
     SugarcubeDiagnosticKind,
+    UtilityEntry,
+    UtilityWithoutClasses,
 } from "../../types/diagnostics.js";
 import type { FluidExtension } from "../../types/extensions.js";
 
@@ -16,14 +18,9 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
     "default-required": {
         severity: "error",
         message: ({ modifiers }) => {
-            const names = modifiers.map((name) => `\`${name}\``);
-            const listed =
-                names.length > 2
-                    ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`
-                    : names.join(" and ");
             const [noun, verb, pronoun] =
-                names.length > 1 ? ["modifiers", "have", "them"] : ["modifier", "has", "it"];
-            return `the ${noun} ${listed} ${verb} no default, so there is nothing to write on \`:root\`: give ${pronoun} a \`default\` in the resolver, or list the permutations to write in \`variables.permutations\``;
+                modifiers.length > 1 ? ["modifiers", "have", "them"] : ["modifier", "has", "it"];
+            return `the ${noun} ${listed(modifiers.map(quoted))} ${verb} no default, so there is nothing to write on \`:root\`: give ${pronoun} a \`default\` in the resolver, or list the permutations to write in \`variables.permutations\``;
         },
     },
     "fluid-text-zoom": {
@@ -51,7 +48,55 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
         message: ({ className, paths: [used, other] }) =>
             `\`${className}\` could mean \`${used}\` or \`${other}\`, so it uses \`${used}\`: rename one, or change the entry's \`prefix\``,
     },
+    "utility-without-classes": {
+        severity: "warning",
+        message: (detail) => `${entryName(detail)} makes no classes: ${withoutClasses(detail)}`,
+    },
 };
+
+function withoutClasses(detail: UtilityWithoutClasses): string {
+    const { property, source } = detail;
+    switch (detail.reason) {
+        case "no-tokens":
+            return `there are no tokens under \`${detail.group}\``;
+        case "no-type":
+            return `DTCG has no ${property.replaceAll("-", " ")} type`;
+        case "private":
+            return `the tokens under \`${source}\` are private, and a class needs a variable`;
+        case "wrong-type":
+            return `\`${source}\` has only ${listed(detail.found)} tokens, and it takes ${listed(detail.takes, "or")}`;
+        case "typography":
+            return `\`${source}\` has only typography tokens, which a single-property class cannot use`;
+        case "answered-first":
+            return `every ${listed(detail.starts.map((start) => `\`${start}-…\``))} class is answered by ${listed(detail.by.map(entryName))} first; give one of them a \`prefix\``;
+    }
+}
+
+const ordinal = new Intl.PluralRules("en", { type: "ordinal" });
+const SUFFIXES: Record<Intl.LDMLPluralRule, string> = {
+    one: "st",
+    two: "nd",
+    few: "rd",
+    other: "th",
+    zero: "th",
+    many: "th",
+};
+
+function entryName({ property, entry }: UtilityEntry): string {
+    if (entry === undefined) return quoted(property);
+    const place = entry + 1;
+    return `${quoted(property)}'s ${place}${SUFFIXES[ordinal.select(place)]} entry`;
+}
+
+function quoted(name: string): string {
+    return `\`${name}\``;
+}
+
+function listed(items: string[], conjunction = "and"): string {
+    return items.length > 2
+        ? `${items.slice(0, -1).join(", ")} ${conjunction} ${items.at(-1)}`
+        : items.join(` ${conjunction} `);
+}
 
 export const ErrorMessages = {
     LOAD: {
