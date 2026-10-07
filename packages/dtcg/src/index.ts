@@ -774,11 +774,13 @@ export type DiagnosticKind = keyof DiagnosticDetailByKind;
  * A problem or a note about the files. Reading carries on, so one read reports everything.
  * Checking `kind` narrows `detail` to that kind's facts.
  *
- * The message says what is wrong in plain words and names no tool's command or flag. It holds
- * no location: that is in `at`, for the tool to present as it likes.
+ * The message says what is wrong in plain words and, where the reader knows, what would mend it
+ * ("did you mean `color.ink`?"); `detail` holds the same facts. It names no tool's command or flag,
+ * and holds no location: that is in `at`, for the tool to present as it likes. The changes that
+ * would mend a problem are made by `@sugarcube-sh/dtcg-edit`.
  *
  * @example
- * if (d.kind === "missing-reference") d.detail.referencedBy
+ * if (d.kind === "missing-reference") d.detail.similar // "color.ink"
  */
 export type Diagnostic = DiagnosticOf<DiagnosticDetailByKind>;
 
