@@ -54,7 +54,8 @@
       "kind": "invalid-property",
       "detail": {
         "property": "$extends",
-        "expected": "reference"
+        "expected": "reference",
+        "reference": "{base}"
       },
       "at": {
         "file": "tokens.json",

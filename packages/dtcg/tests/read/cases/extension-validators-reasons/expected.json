@@ -19,7 +19,8 @@
         "at": ["$extensions", "com.example", "outline"],
         "type": "dimension",
         "reason": "string-with-unit",
-        "value": "2px"
+        "value": "2px",
+        "asObject": { "value": 2, "unit": "px" }
       },
       "at": { "file": "tokens.json", "text": "\"2px\"" },
       "path": "color.outlined",

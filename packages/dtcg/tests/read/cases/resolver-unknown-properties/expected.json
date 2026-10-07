@@ -17,7 +17,8 @@
       "kind": "unknown-property",
       "detail": {
         "property": "descripton",
-        "owner": "set"
+        "owner": "set",
+        "similar": "description"
       },
       "at": {
         "file": "tokens.resolver.json",
@@ -41,7 +42,8 @@
       "kind": "unknown-property",
       "detail": {
         "property": "defualt",
-        "owner": "modifier"
+        "owner": "modifier",
+        "similar": "default"
       },
       "at": {
         "file": "tokens.resolver.json",
@@ -87,7 +89,8 @@
       "kind": "unknown-property",
       "detail": {
         "property": "sourcse",
-        "owner": "set"
+        "owner": "set",
+        "similar": "sources"
       },
       "at": {
         "file": "tokens.resolver.json",

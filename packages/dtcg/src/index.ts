@@ -619,11 +619,17 @@ export interface DiagnosticDetailByKind {
         property: "$type" | "$description" | "$deprecated" | "$extensions" | "$extends" | "$ref";
         /** `"reference"`: a `"{group}"` reference, or a `{ "$ref": "#/…" }` pointer. */
         expected: "string" | "object" | "boolean-or-string" | "reference";
+        /** For `$extends` written as a plain name, such as `base`, that name as a reference: `{base}`. */
+        reference?: string;
     };
     /** No type can be worked out for a token. */
     "missing-type": Record<string, never>;
     /** A `$type` is not one of the thirteen the specification defines (Format 8). */
-    "unknown-type": { type: string };
+    "unknown-type": {
+        type: string;
+        /** A type with a similar name, when exactly one is close. */
+        similar?: TokenType;
+    };
     /** A value does not fit its type. */
     "invalid-value": {
         /** Where in the token or group, such as `["$value", "unit"]`. */
@@ -648,19 +654,23 @@ export interface DiagnosticDetailByKind {
         ref: string;
         /** Every token or group that refers to it. */
         referencedBy: string[];
+        /** A token with a similar path, when exactly one is close. */
+        similar?: string;
     };
     /** `$extends`, or a `$ref` standing for a group, points at a token (Format 6.4.6). */
     "not-a-group": { ref: string };
     /**
      * A `$ref` is not a JSON Pointer (RFC 6901): it does not start with `/` after the `#`, or a `~`
-     * in it is not `~0` or `~1`. A fix writes it correctly when that reaches something, and always
-     * for a reference into another file, whose target is not read.
+     * in it is not `~0` or `~1`.
      */
     "malformed-pointer": {
         ref: string;
         reason: "no-leading-slash" | "bad-escape";
-        /** The reference written correctly. */
-        corrected: string;
+        /**
+         * The reference written correctly, when that reaches something, and always for a reference
+         * into another file, whose target is not read.
+         */
+        corrected?: string;
     };
     /** A reference to a token points at a group (Format 6.2: `{color.accent}` names a group, not a token). */
     "not-a-token": { ref: string };
@@ -685,7 +695,12 @@ export interface DiagnosticDetailByKind {
      * belongs in `$extensions`.
      */
     "unknown-property":
-        | { property: string; owner: "resolver" | "set" | "modifier" }
+        | {
+              property: string;
+              owner: "resolver" | "set" | "modifier";
+              /** A property it may have with a similar name, when exactly one is close. */
+              similar?: string;
+          }
         | {
               property: string;
               /** The type of the value it is in, which for a part of a composite is the part's type. */

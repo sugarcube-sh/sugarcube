@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { diagnosticMessages } from "../../src/error-messages.js";
 import {
+    type Diagnostic,
     type DiagnosticDetailByKind,
     type DiagnosticKind,
     type Generator,
@@ -66,9 +67,10 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { property: "$deprecated", expected: "boolean-or-string" },
         { property: "$extensions", expected: "object" },
         { property: "$extends", expected: "reference" },
+        { property: "$extends", expected: "reference", reference: "{base}" },
     ],
     "missing-type": [{}],
-    "unknown-type": [{ type: "colour" }, { type: "" }],
+    "unknown-type": [{ type: "colour" }, { type: "colour", similar: "color" }, { type: "" }],
     "invalid-value": [
         { at: ["$value"], type: "dimension", reason: "wrong-shape", value: 16 },
         { at: ["$value"], type: "shadow", reason: "wrong-shape", value: "0 1px 2px black" },
@@ -143,10 +145,35 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             maxExclusive: false,
         },
         { at: ["$value", "alpha"], type: "color", reason: "alpha-out-of-range", value: 1.5 },
-        { at: ["$value", "hex"], type: "color", reason: "hex-not-six-digits", value: "#e1d" },
+        {
+            at: ["$value", "hex"],
+            type: "color",
+            reason: "hex-not-six-digits",
+            value: "#e1d",
+            sixDigits: "#ee11dd",
+        },
+        { at: ["$value", "hex"], type: "color", reason: "hex-not-six-digits", value: "#e1dd" },
         { at: ["$value", "hex"], type: "color", reason: "hex-not-six-digits", value: 16711680 },
-        { at: ["$value"], type: "dimension", reason: "string-with-unit", value: "16px" },
-        { at: ["$value"], type: "duration", reason: "string-with-unit", value: "200ms" },
+        {
+            at: ["$value"],
+            type: "dimension",
+            reason: "string-with-unit",
+            value: "16px",
+            asObject: { value: 16, unit: "px" },
+        },
+        {
+            at: ["$value"],
+            type: "dimension",
+            reason: "string-with-unit",
+            value: "16em",
+        },
+        {
+            at: ["$value"],
+            type: "duration",
+            reason: "string-with-unit",
+            value: "200ms",
+            asObject: { value: 200, unit: "ms" },
+        },
         { at: ["$value"], type: "cubicBezier", reason: "not-four-numbers", count: 3 },
         {
             at: ["$value", 0],
@@ -226,10 +253,14 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             data: { ratio: 1 },
         },
     ],
-    "missing-reference": [{ ref: "color.brnad", referencedBy: ["color.danger"] }],
+    "missing-reference": [
+        { ref: "color.brnad", referencedBy: ["color.danger"] },
+        { ref: "color.brnad", referencedBy: ["color.danger"], similar: "color.brand" },
+    ],
     "not-a-group": [{ ref: "color.brand" }],
     "malformed-pointer": [
         { ref: "#color/ink", reason: "no-leading-slash", corrected: "#/color/ink" },
+        { ref: "#missing/$value", reason: "no-leading-slash" },
         { ref: "#/a~b/$value", reason: "bad-escape", corrected: "#/a~0b/$value" },
         { ref: "all.json#color", reason: "no-leading-slash", corrected: "all.json#/color" },
     ],
@@ -241,6 +272,7 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
     "unknown-property": [
         { property: "colour", owner: "resolver" },
         { property: "descripton", owner: "set" },
+        { property: "descripton", owner: "set", similar: "description" },
         { property: "defualt", owner: "modifier" },
         { property: "paragraphSpacing", owner: "typography", at: ["$value", "paragraphSpacing"] },
         { property: "fluid", owner: "dimension", at: ["$value", "width", "fluid"] },
@@ -272,8 +304,103 @@ describe("diagnostic messages", () => {
         expect(message).toMatch(/^[^A-Z]/);
         expect(message).not.toMatch(/\.$/);
         expect(message).not.toMatch(/(^|\s)(sugarcube|npx|pnpm|npm)\s|\s--?[a-z]/);
-        expect(message).not.toMatch(/did you mean/i);
     });
+});
+
+describe("diagnostic messages that say what would mend the problem", () => {
+    const worded = (found: Pick<Diagnostic, "kind" | "detail">) =>
+        (diagnosticMessages[found.kind].message as (detail: unknown) => string)(found.detail);
+
+    it.for([
+        {
+            found: {
+                kind: "missing-reference",
+                detail: { ref: "color.inc", referencedBy: ["color.muted"], similar: "color.ink" },
+            },
+            message: "`color.inc` does not exist; did you mean `color.ink`?",
+        },
+        {
+            found: { kind: "unknown-type", detail: { type: "colour", similar: "color" } },
+            message: "`colour` is not a token type; did you mean `color`?",
+        },
+        {
+            found: {
+                kind: "unknown-property",
+                detail: { property: "descripton", owner: "set", similar: "description" },
+            },
+            message:
+                "`descripton` is not a property of a set, so it is ignored; did you mean `description`?",
+        },
+        {
+            found: {
+                kind: "malformed-pointer",
+                detail: { ref: "#color/ink", reason: "no-leading-slash", corrected: "#/color/ink" },
+            },
+            message:
+                "`#color/ink` is not a JSON Pointer, which starts with `#/`; write it as `#/color/ink`",
+        },
+        {
+            found: {
+                kind: "malformed-pointer",
+                detail: { ref: "#/a~b", reason: "bad-escape", corrected: "#/a~0b" },
+            },
+            message:
+                "`#/a~b` is not a JSON Pointer: in one, `~` is written `~0` and `/` is written `~1`; write it as `#/a~0b`",
+        },
+        {
+            found: {
+                kind: "invalid-value",
+                detail: {
+                    at: ["$value"],
+                    type: "dimension",
+                    reason: "string-with-unit",
+                    value: "16px",
+                    asObject: { value: 16, unit: "px" },
+                },
+            },
+            message:
+                '`16px` is a string, and a dimension must be an object with a value and a unit, such as `{ "value": 16, "unit": "px" }`',
+        },
+        {
+            found: {
+                kind: "invalid-value",
+                detail: {
+                    at: ["$value"],
+                    type: "dimension",
+                    reason: "string-with-unit",
+                    value: "16em",
+                },
+            },
+            message:
+                "`16em` is a string, and a dimension must be an object with a value and a unit",
+        },
+        {
+            found: {
+                kind: "invalid-value",
+                detail: {
+                    at: ["$value", "hex"],
+                    type: "color",
+                    reason: "hex-not-six-digits",
+                    value: "#e1d",
+                    sixDigits: "#ee11dd",
+                },
+            },
+            message: "`#e1d` is not a six-digit hex color; did you mean `#ee11dd`?",
+        },
+        {
+            found: {
+                kind: "invalid-property",
+                detail: { property: "$extends", expected: "reference", reference: "{base}" },
+            },
+            message:
+                '`$extends` must be a reference, such as "{group}" or { "$ref": "#/group" }; did you mean `{base}`?',
+        },
+    ] satisfies { found: Pick<Diagnostic, "kind" | "detail">; message: string }[])(
+        "$message",
+        ({ found, message }) => {
+            expect(worded(found)).toBe(message);
+        },
+    );
 });
 
 describe("diagnostic messages from read", () => {

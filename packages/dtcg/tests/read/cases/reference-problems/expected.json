@@ -170,7 +170,8 @@
       "kind": "missing-reference",
       "detail": {
         "ref": "color.brnad",
-        "referencedBy": ["color.danger", "color.warning"]
+        "referencedBy": ["color.danger", "color.warning"],
+        "similar": "color.brand"
       },
       "at": {
         "file": "tokens.json",

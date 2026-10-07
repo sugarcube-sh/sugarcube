@@ -1,14 +1,10 @@
 import type { Node } from "jsonc-parser";
 import { fixTitles } from "../error-messages.js";
 import type { Diagnostic, Fix, IgnoredProperty, JsonPath, ValueErrorDetail } from "../index.js";
-import { STRING_WITH_UNIT } from "../values/measure.js";
 import { readAlias } from "../values/references.js";
-import { dimensionUnits, durationUnits } from "../values/units.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { hexAsObject } from "./hex-fix.js";
 import { type JsonFile, deepestNode, propertyKey, spanOf } from "./json.js";
-
-const THREE_DIGIT_HEX = /^#[0-9a-f]{3}$/i;
 
 export function valueDiagnostic(
     detail: ValueErrorDetail,
@@ -48,19 +44,17 @@ function replacement(
     written: unknown,
 ): { title: string; text: string } | undefined {
     if (detail.reason === "string-with-unit" && written === detail.value) {
-        const [, number, unit] = STRING_WITH_UNIT.exec(written) ?? [];
-        const units: readonly string[] =
-            detail.type === "duration" ? durationUnits : dimensionUnits;
-        if (number === undefined || unit === undefined || !units.includes(unit)) return undefined;
+        const { asObject } = detail;
+        if (asObject === undefined) return undefined;
         return {
             title: fixTitles.measureAsObject(detail.type),
-            text: `{ "value": ${Number(number)}, "unit": ${JSON.stringify(unit)} }`,
+            text: `{ "value": ${asObject.value}, "unit": ${JSON.stringify(asObject.unit)} }`,
         };
     }
-    if (detail.reason === "hex-not-six-digits" && typeof written === "string") {
-        if (written !== detail.value || !THREE_DIGIT_HEX.test(written)) return undefined;
-        const hex = `#${Array.from(written.slice(1), (digit) => digit + digit).join("")}`;
-        return { title: fixTitles.sixDigitHex(hex), text: JSON.stringify(hex) };
+    if (detail.reason === "hex-not-six-digits" && written === detail.value) {
+        const { sixDigits } = detail;
+        if (sixDigits === undefined) return undefined;
+        return { title: fixTitles.sixDigitHex(sixDigits), text: JSON.stringify(sixDigits) };
     }
     if (detail.reason === "alias-not-allowed-here" && written === detail.reference) {
         const alias = readAlias(written);

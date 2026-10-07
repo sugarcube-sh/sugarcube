@@ -149,7 +149,11 @@ export function createReader(file: JsonFile, diagnostics: Diagnostic[]): Reader 
                     { title: fixTitles.useSimilar(similar), safe: false, edits },
                 ];
                 const at = spanOf(file.path, file.lineStarts, offset, length);
-                const detail = { property: key, owner: kind };
+                const detail = {
+                    property: key,
+                    owner: kind,
+                    ...(similar !== undefined && { similar }),
+                };
                 diagnostics.push(
                     diagnostic("unknown-property", detail, { at, ...(fixes && { fixes }) }),
                 );

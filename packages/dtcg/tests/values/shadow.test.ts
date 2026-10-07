@@ -117,7 +117,12 @@ describe("parseShadow", () => {
             expect(details([layer, { ...layer, blur: "4px" }])).toStrictEqual([
                 {
                     path: ["$value", 1, "blur"],
-                    detail: { type: "dimension", reason: "string-with-unit", value: "4px" },
+                    detail: {
+                        type: "dimension",
+                        reason: "string-with-unit",
+                        value: "4px",
+                        asObject: { value: 4, unit: "px" },
+                    },
                 },
             ]);
         });

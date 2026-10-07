@@ -118,7 +118,12 @@ describe("parseBorder", () => {
                 },
                 {
                     path: ["$value", "width"],
-                    detail: { type: "dimension", reason: "string-with-unit", value: "1px" },
+                    detail: {
+                        type: "dimension",
+                        reason: "string-with-unit",
+                        value: "1px",
+                        asObject: { value: 1, unit: "px" },
+                    },
                 },
                 {
                     path: ["$value", "style", "dashArray", 0, "unit"],

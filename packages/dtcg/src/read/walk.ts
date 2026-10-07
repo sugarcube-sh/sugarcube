@@ -102,7 +102,8 @@ export function walkSource(
             name === ""
                 ? deleteTypeFix(json.path, property)
                 : similar && typeFix(json.path, node, similar);
-        report("unknown-type", { type: name }, node, { path, ...(fix && { fixes: [fix] }) });
+        const detail = { type: name, ...(similar !== undefined && { similar }) };
+        report("unknown-type", detail, node, { path, ...(fix && { fixes: [fix] }) });
         return "unusable";
     };
 
@@ -150,9 +151,13 @@ export function walkSource(
             const read = readGroupReference(key, plainValue(value, json.hidden));
             if (read === undefined) {
                 const expected = key === "$ref" ? "string" : "reference";
-                const fix = key === "$extends" && extendsFix(json.path, value);
-                report("invalid-property", { property: key, expected }, value, {
-                    ...(fix && { fixes: [fix] }),
+                const reference = key === "$extends" ? asReference(value.value) : undefined;
+                if (reference === undefined) {
+                    report("invalid-property", { property: key, expected }, value);
+                    continue;
+                }
+                report("invalid-property", { property: key, expected, reference }, value, {
+                    fixes: [extendsFix(json.path, value, reference)],
                 });
                 continue;
             }
@@ -254,10 +259,12 @@ function deleteTypeFix(file: string, property: Node): Fix {
     };
 }
 
-function extendsFix(file: string, value: Node): Fix | undefined {
-    const path = value.value;
-    if (typeof path !== "string" || path === "" || /[{}#]/.test(path)) return undefined;
-    const reference = `{${path}}`;
+function asReference(written: unknown): string | undefined {
+    if (typeof written !== "string" || written === "" || /[{}#]/.test(written)) return undefined;
+    return `{${written}}`;
+}
+
+function extendsFix(file: string, value: Node, reference: string): Fix {
     const { offset, length } = value;
     const edits = [{ file, offset, length, text: JSON.stringify(reference) }];
     return { title: fixTitles.extendsAsReference(reference), safe: false, edits };

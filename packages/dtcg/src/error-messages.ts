@@ -5,7 +5,12 @@ import type {
     ResolverProblem,
     ResolverRule,
 } from "./index.js";
-import { ignoredMessage, valueErrorMessage, valueErrorMessages } from "./values/value-errors.js";
+import {
+    didYouMean,
+    ignoredMessage,
+    valueErrorMessage,
+    valueErrorMessages,
+} from "./values/value-errors.js";
 
 type Severity = "error" | "warning";
 
@@ -156,10 +161,10 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "invalid-property": {
         severity: ({ property }) => (ignoredWhenInvalid.has(property) ? "warning" : "error"),
-        message: ({ property, expected }) =>
+        message: ({ property, expected, reference }) =>
             ignoredWhenInvalid.has(property)
                 ? `\`${property}\` must be ${propertyWords[expected]}, so it is ignored`
-                : `\`${property}\` must be ${propertyWords[expected]}`,
+                : `\`${property}\` must be ${propertyWords[expected]}${didYouMean(reference)}`,
     },
     "missing-type": {
         severity: "error",
@@ -167,10 +172,10 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "unknown-type": {
         severity: "error",
-        message: ({ type }) =>
+        message: ({ type, similar }) =>
             type === ""
                 ? "`$type` is empty, and a token needs a type"
-                : `\`${type}\` is not a token type`,
+                : `\`${type}\` is not a token type${didYouMean(similar)}`,
     },
     "invalid-value": {
         severity: "error",
@@ -187,14 +192,17 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "missing-reference": {
         severity: "error",
-        message: ({ ref }) => `\`${ref}\` does not exist`,
+        message: ({ ref, similar }) => `\`${ref}\` does not exist${didYouMean(similar)}`,
     },
     "malformed-pointer": {
         severity: "error",
-        message: ({ ref, reason }) =>
-            reason === "no-leading-slash"
-                ? `\`${ref}\` is not a JSON Pointer, which starts with \`#/\``
-                : `\`${ref}\` is not a JSON Pointer: in one, \`~\` is written \`~0\` and \`/\` is written \`~1\``,
+        message: ({ ref, reason, corrected }) => {
+            const problem =
+                reason === "no-leading-slash"
+                    ? `\`${ref}\` is not a JSON Pointer, which starts with \`#/\``
+                    : `\`${ref}\` is not a JSON Pointer: in one, \`~\` is written \`~0\` and \`/\` is written \`~1\``;
+            return corrected === undefined ? problem : `${problem}; write it as \`${corrected}\``;
+        },
     },
     "not-a-token": {
         severity: "error",
@@ -228,7 +236,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         message: (detail) =>
             "at" in detail
                 ? ignoredMessage(detail.owner, detail.property)
-                : `\`${detail.property}\` is not a property of ${ownerWords[detail.owner]}, so it is ignored`,
+                : `\`${detail.property}\` is not a property of ${ownerWords[detail.owner]}, so it is ignored${didYouMean(detail.similar)}`,
     },
     "permutation-limit": {
         severity: "warning",

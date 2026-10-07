@@ -78,7 +78,12 @@ describe("parseTransition", () => {
             ).toStrictEqual([
                 {
                     path: ["$value", "duration"],
-                    detail: { type: "duration", reason: "string-with-unit", value: "200ms" },
+                    detail: {
+                        type: "duration",
+                        reason: "string-with-unit",
+                        value: "200ms",
+                        asObject: { value: 200, unit: "ms" },
+                    },
                 },
                 {
                     path: ["$value", "timingFunction", 0],

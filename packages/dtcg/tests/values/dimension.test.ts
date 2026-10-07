@@ -61,17 +61,33 @@ describe("parseDimension", () => {
     });
 
     describe("refuses", () => {
-        it.for(["16px", "0.5rem", "-4px", ".5rem", "1em"])(
-            "the string %s, which earlier drafts allowed",
-            (raw) => {
-                expect(details(raw)).toStrictEqual([
-                    {
-                        path: ["$value"],
-                        detail: { type: "dimension", reason: "string-with-unit", value: raw },
+        it.for([
+            ["16px", 16, "px"],
+            ["0.5rem", 0.5, "rem"],
+            ["-4px", -4, "px"],
+            [".5rem", 0.5, "rem"],
+        ] as const)("the string %s, which earlier drafts allowed", ([raw, value, unit]) => {
+            expect(details(raw)).toStrictEqual([
+                {
+                    path: ["$value"],
+                    detail: {
+                        type: "dimension",
+                        reason: "string-with-unit",
+                        value: raw,
+                        asObject: { value, unit },
                     },
-                ]);
-            },
-        );
+                },
+            ]);
+        });
+
+        it("the string 1em, with no object to give, since a dimension cannot use em", () => {
+            expect(details("1em")).toStrictEqual([
+                {
+                    path: ["$value"],
+                    detail: { type: "dimension", reason: "string-with-unit", value: "1em" },
+                },
+            ]);
+        });
 
         it.for([16, "16", "wide", null, [16, "px"], true])(
             "%j, which is not a dimension",

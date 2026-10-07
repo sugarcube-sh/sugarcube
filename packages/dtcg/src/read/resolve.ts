@@ -244,7 +244,8 @@ function resolvePermutation(
         const related = uses
             .filter((use) => use !== first.use)
             .map((use) => ({ message: relatedMessages.alsoUsedHere, at: use.at }));
-        report("missing-reference", { ref, referencedBy }, first.from, first.use.at, {
+        const detail = { ref, referencedBy, ...(similar !== undefined && { similar }) };
+        report("missing-reference", detail, first.from, first.use.at, {
             ...(related.length > 0 && { related }),
             ...(similar !== undefined &&
                 edits.length > 0 && {

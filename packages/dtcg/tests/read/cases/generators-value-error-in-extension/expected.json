@@ -9,7 +9,8 @@
         "at": ["$extensions", "com.example", "ramp", "size"],
         "type": "dimension",
         "reason": "string-with-unit",
-        "value": "16px"
+        "value": "16px",
+        "asObject": { "value": 16, "unit": "px" }
       },
       "at": { "file": "tokens.json", "text": "\"16px\"" },
       "path": "space",

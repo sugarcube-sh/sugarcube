@@ -24,7 +24,8 @@
     {
       "kind": "unknown-type",
       "detail": {
-        "type": "colour"
+        "type": "colour",
+        "similar": "color"
       },
       "at": {
         "file": "tokens.json",
@@ -48,7 +49,8 @@
     {
       "kind": "unknown-type",
       "detail": {
-        "type": "Color"
+        "type": "Color",
+        "similar": "color"
       },
       "at": {
         "file": "tokens.json",

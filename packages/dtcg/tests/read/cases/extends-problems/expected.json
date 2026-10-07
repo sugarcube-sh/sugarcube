@@ -30,7 +30,8 @@
       "kind": "invalid-property",
       "detail": {
         "property": "$extends",
-        "expected": "reference"
+        "expected": "reference",
+        "reference": "{button}"
       },
       "at": {
         "file": "tokens.json",

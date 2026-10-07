@@ -165,7 +165,12 @@ describe("parseStrokeStyle", () => {
             ).toStrictEqual([
                 {
                     path: ["$value", "dashArray", 1],
-                    detail: { type: "dimension", reason: "string-with-unit", value: "4px" },
+                    detail: {
+                        type: "dimension",
+                        reason: "string-with-unit",
+                        value: "4px",
+                        asObject: { value: 4, unit: "px" },
+                    },
                 },
                 {
                     path: ["$value", "dashArray", 2, "unit"],

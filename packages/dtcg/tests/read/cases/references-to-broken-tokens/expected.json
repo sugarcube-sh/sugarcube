@@ -35,7 +35,8 @@
     {
       "kind": "unknown-type",
       "detail": {
-        "type": "colour"
+        "type": "colour",
+        "similar": "color"
       },
       "at": {
         "file": "tokens.json",

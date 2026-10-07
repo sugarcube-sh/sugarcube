@@ -46,11 +46,19 @@ describe("parseDuration", () => {
     });
 
     describe("refuses", () => {
-        it.for(["200ms", "1.5s"])("the string %s, which earlier drafts allowed", (raw) => {
+        it.for([
+            ["200ms", 200, "ms"],
+            ["1.5s", 1.5, "s"],
+        ] as const)("the string %s, which earlier drafts allowed", ([raw, value, unit]) => {
             expect(details(raw)).toStrictEqual([
                 {
                     path: ["$value"],
-                    detail: { type: "duration", reason: "string-with-unit", value: raw },
+                    detail: {
+                        type: "duration",
+                        reason: "string-with-unit",
+                        value: raw,
+                        asObject: { value, unit },
+                    },
                 },
             ]);
         });

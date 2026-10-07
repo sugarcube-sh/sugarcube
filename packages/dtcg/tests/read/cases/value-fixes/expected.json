@@ -8,7 +8,8 @@
         "at": ["$value"],
         "type": "dimension",
         "reason": "string-with-unit",
-        "value": "16px"
+        "value": "16px",
+        "asObject": { "value": 16, "unit": "px" }
       },
       "at": { "file": "tokens.json", "text": "\"16px\"" },
       "path": "space",
@@ -43,7 +44,8 @@
         "at": ["$value"],
         "type": "duration",
         "reason": "string-with-unit",
-        "value": "200ms"
+        "value": "200ms",
+        "asObject": { "value": 200, "unit": "ms" }
       },
       "at": { "file": "tokens.json", "text": "\"200ms\"" },
       "path": "fast",
@@ -91,7 +93,8 @@
         "at": ["$value", "hex"],
         "type": "color",
         "reason": "hex-not-six-digits",
-        "value": "#f00"
+        "value": "#f00",
+        "sixDigits": "#ff0000"
       },
       "at": { "file": "tokens.json", "text": "\"#f00\"" },
       "path": "red",
@@ -109,7 +112,8 @@
         "at": ["$value", "color", "hex"],
         "type": "color",
         "reason": "hex-not-six-digits",
-        "value": "#000"
+        "value": "#000",
+        "sixDigits": "#000000"
       },
       "at": { "file": "tokens.json", "text": "\"#000\"" },
       "path": "lift",
@@ -127,7 +131,8 @@
         "at": ["$value", "offsetX"],
         "type": "dimension",
         "reason": "string-with-unit",
-        "value": "0px"
+        "value": "0px",
+        "asObject": { "value": 0, "unit": "px" }
       },
       "at": { "file": "tokens.json", "text": "\"0px\"" },
       "path": "lift",

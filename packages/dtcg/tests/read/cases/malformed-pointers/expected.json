@@ -138,8 +138,7 @@
       "kind": "malformed-pointer",
       "detail": {
         "ref": "#missing/$value",
-        "reason": "no-leading-slash",
-        "corrected": "#/missing/$value"
+        "reason": "no-leading-slash"
       },
       "at": {
         "file": "tokens.json",

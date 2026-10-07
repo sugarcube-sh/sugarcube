@@ -12,8 +12,8 @@ export function malformedPointer(
     written: Omit<TextEdit, "text">,
     reaches: boolean,
 ): Malformed {
+    if (!reaches) return { detail: { ref, reason: problem } };
     const detail = { ref, reason: problem, corrected };
-    if (!reaches) return { detail };
     const edits = [{ ...written, text: JSON.stringify(corrected) }];
     return { detail, fixes: [{ title: fixTitles.writePointer(corrected), safe: true, edits }] };
 }
