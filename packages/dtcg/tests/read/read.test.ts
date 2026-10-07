@@ -410,7 +410,6 @@ describe("each context on its own", () => {
         expect(found?.at && text.slice(found.at.offset, found.at.offset + found.at.length)).toBe(
             '{"contexts":{"small":[],"large":[]}}',
         );
-        expect(found?.fixes).toBeUndefined();
     });
 });
 

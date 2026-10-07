@@ -29,7 +29,7 @@ export interface Resolving {
         path: string,
         at: Span,
     ): void;
-    recordMissing(ref: string, from: string, use: { at: Span; isAlias: boolean }): void;
+    recordMissing(ref: string, from: string, at: Span): void;
     reportUnreachable(use: Occurrence, from: string): void;
 }
 
@@ -117,7 +117,7 @@ function follow(resolving: Resolving, following: Following, located: LocatedRefe
         if (!within) reportUnreachable(located.occurrence, token.path);
         else if (reached.kind === "group") {
             report("not-a-token", { ref: written }, token.path, use.at);
-        } else recordMissing(written, token.path, { at: use.at, isAlias: false });
+        } else recordMissing(written, token.path, use.at);
         return UNRESOLVED;
     };
     if (reached.kind === "group" || reached.kind === "nothing") return unreachable();
@@ -151,7 +151,7 @@ function substitute(
     const target = outcomeOf(path, token.path, at);
     if (target === undefined) {
         if (merged.groups.has(path)) report("not-a-token", { ref: shown }, token.path, at);
-        else recordMissing(shown, token.path, { at, isAlias: use.kind === "alias" });
+        else recordMissing(shown, token.path, at);
         return UNRESOLVED;
     }
     if (target === "untyped" || !("resolved" in target)) return UNRESOLVED;

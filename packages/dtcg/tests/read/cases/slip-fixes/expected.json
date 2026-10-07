@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 8: $type is one of the types, and 6.4: $extends is a reference. An empty or null $type says nothing, so deleting it is safe and the token takes its group's type; $extends written as a bare path most likely means that group, but whether it names one is not known until every file is read, so that fix is a guess for a person to confirm",
+  "spec": "Format 8: $type is one of the types, and 6.4: $extends is a reference. An empty or null $type says nothing; $extends written as a bare path gives the reference it most likely means, though whether that names a group is not known until every file is read",
   "diagnostics": [
     {
       "kind": "unknown-type",
@@ -11,20 +11,7 @@
         "file": "tokens.json",
         "text": "\"\""
       },
-      "path": "g.empty",
-      "fixes": [
-        {
-          "title": "delete this `$type`, so the token takes its group's type",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"$type\": \"\", ",
-              "replaceWith": ""
-            }
-          ]
-        }
-      ]
+      "path": "g.empty"
     },
     {
       "kind": "invalid-property",
@@ -35,20 +22,7 @@
       "at": {
         "file": "tokens.json",
         "text": "null"
-      },
-      "fixes": [
-        {
-          "title": "delete this `$type`, so the token takes its group's type",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": ", \"$type\": null",
-              "replaceWith": ""
-            }
-          ]
-        }
-      ]
+      }
     },
     {
       "kind": "invalid-property",
@@ -61,21 +35,7 @@
         "file": "tokens.json",
         "text": "\"base\"",
         "occurrence": 2
-      },
-      "fixes": [
-        {
-          "title": "write it as the reference `{base}`",
-          "safe": false,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"base\"",
-              "occurrence": 2,
-              "replaceWith": "\"{base}\""
-            }
-          ]
-        }
-      ]
+      }
     }
   ]
 }

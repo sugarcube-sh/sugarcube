@@ -37,21 +37,7 @@
         "file": "tokens.json",
         "valueAfter": "\"$extends\":",
         "occurrence": 9
-      },
-      "fixes": [
-        {
-          "title": "write it as the reference `{button}`",
-          "safe": false,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"button\"",
-              "occurrence": 2,
-              "replaceWith": "\"{button}\""
-            }
-          ]
-        }
-      ]
+      }
     },
     {
       "kind": "invalid-property",

@@ -38,19 +38,6 @@
             }
           }
         }
-      ],
-      "fixes": [
-        {
-          "title": "delete the earlier `sm`, which is never used",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"sm\": { \"$type\": \"number\", \"$value\": 1 },\n    ",
-              "replaceWith": ""
-            }
-          ]
-        }
       ]
     }
   ]

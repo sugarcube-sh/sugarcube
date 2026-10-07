@@ -16,7 +16,7 @@ interface Expected {
     permutations?: Partial<Document["permutations"][number]>[];
     diagnostics: Pick<
         Document["diagnostics"][number],
-        "kind" | "detail" | "at" | "related" | "path" | "permutation" | "fixes"
+        "kind" | "detail" | "at" | "related" | "path" | "permutation"
     >[];
 }
 
@@ -38,17 +38,14 @@ function observed(doc: Document, expected: Expected) {
                 observedPermutation(permutation, expected.permutations?.[index]),
             ),
         }),
-        diagnostics: doc.diagnostics.map(
-            ({ kind, detail, at, related, path, permutation, fixes }) => ({
-                kind,
-                detail,
-                ...(at && { at }),
-                ...(related && { related }),
-                ...(path !== undefined && { path }),
-                ...(permutation !== undefined && { permutation }),
-                ...(fixes && { fixes }),
-            }),
-        ),
+        diagnostics: doc.diagnostics.map(({ kind, detail, at, related, path, permutation }) => ({
+            kind,
+            detail,
+            ...(at && { at }),
+            ...(related && { related }),
+            ...(path !== undefined && { path }),
+            ...(permutation !== undefined && { permutation }),
+        })),
     };
 }
 

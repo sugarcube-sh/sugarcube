@@ -42,20 +42,7 @@
         "file": "tokens.json",
         "text": "\"colour\""
       },
-      "path": "odd",
-      "fixes": [
-        {
-          "title": "use `color`, which has a similar name",
-          "safe": false,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"colour\"",
-              "replaceWith": "\"color\""
-            }
-          ]
-        }
-      ]
+      "path": "odd"
     },
     {
       "kind": "missing-type",

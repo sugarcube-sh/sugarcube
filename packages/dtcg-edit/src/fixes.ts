@@ -1,14 +1,8 @@
-import {
-    type Diagnostic,
-    type Fix,
-    type Span,
-    type TextEdit,
-    readFromMemory,
-} from "@sugarcube-sh/dtcg";
+import { type Diagnostic, type Span, readFromMemory } from "@sugarcube-sh/dtcg";
 import { readReference } from "@sugarcube-sh/dtcg/values";
 import type { Node } from "jsonc-parser";
 import { fixTitles } from "./error-messages.js";
-import type { Project } from "./index.js";
+import type { Fix, Project, TextEdit } from "./index.js";
 import { inline, memberRemoval, nodeAt, refString } from "./json-text.js";
 
 /**

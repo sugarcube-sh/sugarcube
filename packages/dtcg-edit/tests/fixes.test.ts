@@ -1,11 +1,11 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { type Diagnostic, type Fix, type Span, readFromMemory } from "@sugarcube-sh/dtcg";
+import { type Diagnostic, type Span, readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
 import { inputFiles, readOptions } from "../../dtcg/tests/read/case-options.js";
 import { withSpans } from "../../dtcg/tests/read/positions.js";
-import { type Project, fixesFor, open } from "../src/index.js";
+import { type Fix, type Project, fixesFor, open } from "../src/index.js";
 
 const casesFolder = join(import.meta.dirname, "../../dtcg/tests/read/cases");
 const expectedFolder = join(import.meta.dirname, "fixes");

@@ -555,26 +555,6 @@ export interface Edge {
     at: Span;
 }
 
-/** A replacement of some text in a file. The offset and length count as in {@link Span}. */
-export interface TextEdit {
-    file: string;
-    offset: number;
-    length: number;
-    text: string;
-}
-
-/** A change that would resolve a diagnostic. */
-export interface Fix {
-    /** What the fix does, for a menu or a prompt, such as "use `color.brand`, which has a similar name". */
-    title: string;
-    /**
-     * Whether it can be applied without a person checking it. A safe fix never changes what the
-     * design system means; an unsafe one is a likely guess a person should confirm.
-     */
-    safe: boolean;
-    edits: TextEdit[];
-}
-
 /**
  * The facts each kind of diagnostic carries, so a tool can word diagnostics itself without
  * parsing {@link Diagnostic.message}.
@@ -825,8 +805,6 @@ export type DiagnosticOf<DetailByKind> = {
         permutation?: number;
         /** Other places involved, such as every token that uses a missing one. */
         related?: { message: string; at: Span }[];
-        /** Changes that would resolve it. */
-        fixes?: Fix[];
         /** How an editor may show it: struck through for a deprecated reference. */
         tags?: ("deprecated" | "unnecessary")[];
         /** A page explaining this kind of diagnostic. */
@@ -1124,10 +1102,9 @@ export interface ReadOptions extends ParseOptions {
  * that is absolute or a URL is passed as written. Throwing, or rejecting, reports the file as not
  * found.
  *
- * Every file path in the results, in `Document.files`, `Span`, a project's files and every edit,
- * is relative to the entry's folder, with forward slashes, such as `"themes/dark.json"`. The
- * entry itself is its file name. That name is passed as `file`, for keeping each text by the name
- * the results use.
+ * Every file path in the results, in `Document.files` and every `Span`, is relative to the entry's
+ * folder, with forward slashes, such as `"themes/dark.json"`. The entry itself is its file name.
+ * That name is passed as `file`, for keeping each text by the name the results use.
  *
  * @example
  * const texts = new Map<string, string>();

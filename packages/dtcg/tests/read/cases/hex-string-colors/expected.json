@@ -1,6 +1,6 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "Color 4 (2025.10): a color is an object, so without hexStringColors (P-017) a hex string is an error, as a token's value or as a part. Each comes with a safe fix writing the sRGB object with the original kept as hex: eight digits give alpha, three are expanded. A problem in a file every permutation reads is reported once; dark replaces color.brand, so only light's is invalid",
+  "spec": "Color 4 (2025.10): a color is an object, so without hexStringColors (P-017) a hex string is an error, as a token's value or as a part. Each gives the sRGB object it stands for, with the original kept as hex: eight digits give alpha, three are expanded. A problem in a file every permutation reads is reported once; dark replaces color.brand, so only light's is invalid",
   "permutations": [
     {
       "tokens": [
@@ -62,20 +62,7 @@
         "file": "base.json",
         "text": "\"#e11d48\""
       },
-      "path": "color.brand",
-      "fixes": [
-        {
-          "title": "write the color as an object, keeping the hex",
-          "safe": true,
-          "edits": [
-            {
-              "file": "base.json",
-              "text": "\"#e11d48\"",
-              "replaceWith": "{ \"colorSpace\": \"srgb\", \"components\": [0.8824, 0.1137, 0.2824], \"hex\": \"#e11d48\" }"
-            }
-          ]
-        }
-      ]
+      "path": "color.brand"
     },
     {
       "kind": "hex-string-color",
@@ -92,20 +79,7 @@
         "file": "base.json",
         "text": "\"#00000080\""
       },
-      "path": "color.scrim",
-      "fixes": [
-        {
-          "title": "write the color as an object, keeping the hex",
-          "safe": true,
-          "edits": [
-            {
-              "file": "base.json",
-              "text": "\"#00000080\"",
-              "replaceWith": "{ \"colorSpace\": \"srgb\", \"components\": [0, 0, 0], \"alpha\": 0.502, \"hex\": \"#000000\" }"
-            }
-          ]
-        }
-      ]
+      "path": "color.scrim"
     },
     {
       "kind": "hex-string-color",
@@ -117,20 +91,7 @@
         "file": "base.json",
         "text": "\"#fff\""
       },
-      "path": "color.white",
-      "fixes": [
-        {
-          "title": "write the color as an object, keeping the hex",
-          "safe": true,
-          "edits": [
-            {
-              "file": "base.json",
-              "text": "\"#fff\"",
-              "replaceWith": "{ \"colorSpace\": \"srgb\", \"components\": [1, 1, 1], \"hex\": \"#ffffff\" }"
-            }
-          ]
-        }
-      ]
+      "path": "color.white"
     },
     {
       "kind": "hex-string-color",
@@ -146,20 +107,7 @@
         "file": "base.json",
         "text": "\"#E11D48\""
       },
-      "path": "edge",
-      "fixes": [
-        {
-          "title": "write the color as an object, keeping the hex",
-          "safe": true,
-          "edits": [
-            {
-              "file": "base.json",
-              "text": "\"#E11D48\"",
-              "replaceWith": "{ \"colorSpace\": \"srgb\", \"components\": [0.8824, 0.1137, 0.2824], \"hex\": \"#E11D48\" }"
-            }
-          ]
-        }
-      ]
+      "path": "edge"
     }
   ]
 }

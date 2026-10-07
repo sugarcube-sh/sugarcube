@@ -1,6 +1,6 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "Resolver 4.1: the properties each object may have; $schema and $defs are JSON Schema's. A key the specification does not define is ignored, and reported as a warning at the key, with a fix when a defined property has a similar name. 4.2.2: keys beside a $ref to a set or modifier override its properties, so they are checked the same way; keys beside a $ref to a token file are tokens",
+  "spec": "Resolver 4.1: the properties each object may have; $schema and $defs are JSON Schema's. A key the specification does not define is ignored, and reported as a warning at the key, naming a defined property with a similar name when there is one. 4.2.2: keys beside a $ref to a set or modifier override its properties, so they are checked the same way; keys beside a $ref to a token file are tokens",
   "diagnostics": [
     {
       "kind": "unknown-property",
@@ -23,20 +23,7 @@
       "at": {
         "file": "tokens.resolver.json",
         "text": "\"descripton\""
-      },
-      "fixes": [
-        {
-          "title": "use `description`, which has a similar name",
-          "safe": false,
-          "edits": [
-            {
-              "file": "tokens.resolver.json",
-              "text": "\"descripton\"",
-              "replaceWith": "\"description\""
-            }
-          ]
-        }
-      ]
+      }
     },
     {
       "kind": "unknown-property",
@@ -48,20 +35,7 @@
       "at": {
         "file": "tokens.resolver.json",
         "text": "\"defualt\""
-      },
-      "fixes": [
-        {
-          "title": "use `default`, which has a similar name",
-          "safe": false,
-          "edits": [
-            {
-              "file": "tokens.resolver.json",
-              "text": "\"defualt\"",
-              "replaceWith": "\"default\""
-            }
-          ]
-        }
-      ]
+      }
     },
     {
       "kind": "unknown-property",
@@ -95,20 +69,7 @@
       "at": {
         "file": "tokens.resolver.json",
         "text": "\"sourcse\""
-      },
-      "fixes": [
-        {
-          "title": "use `sources`, which has a similar name",
-          "safe": false,
-          "edits": [
-            {
-              "file": "tokens.resolver.json",
-              "text": "\"sourcse\"",
-              "replaceWith": "\"sources\""
-            }
-          ]
-        }
-      ]
+      }
     }
   ]
 }

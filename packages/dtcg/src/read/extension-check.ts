@@ -72,7 +72,7 @@ export function extensionDiagnostic(
         path,
         permutation,
     };
-    if ("kind" in problem) return valueDiagnostic(problem.detail, at, found, json.path, extra);
+    if ("kind" in problem) return valueDiagnostic(problem.detail, at, found, extra);
 
     const key = within[0];
     if ("message" in problem) {

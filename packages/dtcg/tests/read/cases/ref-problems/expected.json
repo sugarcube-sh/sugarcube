@@ -1,6 +1,6 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "Resolver 4.2: refs must reach something; 4.2.1: not a modifier from a set; 4.2: not circular. A resolver is not a token source; a same-document pointer without its leading slash is malformed, with a safe fix when the corrected pointer reaches something",
+  "spec": "Resolver 4.2: refs must reach something; 4.2.1: not a modifier from a set; 4.2: not circular. A resolver is not a token source; a same-document pointer without its leading slash is malformed, saying how it is written correctly when that reaches something",
   "files": ["tokens.resolver.json", "missing.json", "all.json", "other.resolver.json"],
   "diagnostics": [
     {
@@ -55,20 +55,7 @@
       "at": {
         "file": "tokens.resolver.json",
         "text": "\"#sets/loop\""
-      },
-      "fixes": [
-        {
-          "title": "write it as `#/sets/loop`",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.resolver.json",
-              "text": "\"#sets/loop\"",
-              "replaceWith": "\"#/sets/loop\""
-            }
-          ]
-        }
-      ]
+      }
     },
     {
       "kind": "file-not-found",

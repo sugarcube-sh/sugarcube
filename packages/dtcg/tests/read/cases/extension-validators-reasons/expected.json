@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "an extension validator without a schema reports its own reasons and facts as extension-invalid, and a value it reads with parseValue as invalid-value, with the same fixes as in a token",
+  "spec": "an extension validator without a schema reports its own reasons and facts as extension-invalid, and a value it reads with parseValue as invalid-value, with the same facts as in a token",
   "options": { "extensionValidators": ["outline"] },
   "diagnostics": [
     {
@@ -23,20 +23,7 @@
         "asObject": { "value": 2, "unit": "px" }
       },
       "at": { "file": "tokens.json", "text": "\"2px\"" },
-      "path": "color.outlined",
-      "fixes": [
-        {
-          "title": "write the dimension as an object",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"2px\"",
-              "replaceWith": "{ \"value\": 2, \"unit\": \"px\" }"
-            }
-          ]
-        }
-      ]
+      "path": "color.outlined"
     }
   ]
 }
