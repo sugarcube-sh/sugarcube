@@ -1,0 +1,24 @@
+{
+  "diagnostics": [
+    {
+      "kind": "invalid-value",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"2px\""
+      },
+      "fixes": [
+        {
+          "title": "write the dimension as an object",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"2px\"",
+              "replaceWith": "{ \"value\": 2, \"unit\": \"px\" }"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "diagnostics": [
+    {
+      "kind": "invalid-value",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"16px\""
+      },
+      "fixes": [
+        {
+          "title": "write the dimension as an object",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"16px\"",
+              "replaceWith": "{ \"value\": 16, \"unit\": \"px\" }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "invalid-value",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"200ms\""
+      },
+      "fixes": [
+        {
+          "title": "write the duration as an object",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"200ms\"",
+              "replaceWith": "{ \"value\": 200, \"unit\": \"ms\" }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "invalid-value",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{font.brand}\""
+      },
+      "fixes": [
+        {
+          "title": "write it as the pointer `#/font/brand/$value`, which can stand for part of a value",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"{font.brand}\"",
+              "replaceWith": "{ \"$ref\": \"#/font/brand/$value\" }"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "invalid-value",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#f00\""
+      },
+      "fixes": [
+        {
+          "title": "write the hex with six digits, `#ff0000`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#f00\"",
+              "replaceWith": "\"#ff0000\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "invalid-value",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#000\""
+      },
+      "fixes": [
+        {
+          "title": "write the hex with six digits, `#000000`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#000\"",
+              "replaceWith": "\"#000000\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "invalid-value",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"0px\""
+      },
+      "fixes": [
+        {
+          "title": "write the dimension as an object",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"0px\"",
+              "replaceWith": "{ \"value\": 0, \"unit\": \"px\" }"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

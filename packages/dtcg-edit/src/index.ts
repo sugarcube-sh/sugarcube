@@ -6,7 +6,6 @@ import type {
     JsonPath,
     Move,
     ReadOptions,
-    ReadText,
     TokenType,
 } from "@sugarcube-sh/dtcg";
 
@@ -24,23 +23,12 @@ export interface Project {
     readonly doc: Document;
     /** The text of every file, keyed by path, as described at `ReadText` in `@sugarcube-sh/dtcg`. */
     readonly files: Readonly<Record<string, string>>;
+    /** The options it was read with, for reading it again after an edit. */
+    readonly options: ReadOptions;
 }
 
-/**
- * Opens a design system for editing. Files are fetched through `readText`, so this runs
- * anywhere; `@sugarcube-sh/dtcg-edit/node` provides a version that reads from disk.
- *
- * @example
- * const project = await open("tokens.resolver.json", {
- *   readText: (path) => fetch(path).then((r) => r.text()),
- * });
- */
-export function open(
-    entry: string,
-    options: ReadOptions & { readText: ReadText },
-): Promise<Project> {
-    throw new Error("not implemented yet");
-}
+export { open } from "./open.js";
+export { fixesFor } from "./fixes.js";
 
 /**
  * Opens a design system for editing from text already in memory, by the rules of

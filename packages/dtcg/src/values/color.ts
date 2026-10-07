@@ -1,6 +1,6 @@
 import type { ColorSpace } from "../index.js";
 import { colorSpaces } from "./color-spaces.js";
-import { hexStringColor } from "./hex-color.js";
+import { hexStringAsObject, hexStringColor } from "./hex-color.js";
 import {
     type Siblings,
     type Syntax,
@@ -37,7 +37,7 @@ const hexString = literal((raw, options) => {
         return ok(hexStringColor(raw));
     }
     if (typeof raw === "string" && HEX_STRING.test(raw)) {
-        return no({ reason: "hex-string", value: raw });
+        return no({ reason: "hex-string", value: raw, asObject: hexStringAsObject(raw) });
     }
     return no({ reason: "wrong-shape", value: raw });
 });

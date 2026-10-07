@@ -1,5 +1,5 @@
 import type { StandardSchemaV1 } from "./standard-schema.js";
-import type { ValueErrorDetail } from "./values/value-errors.js";
+import type { ValueErrorDetail, ValueErrorFacts } from "./values/value-errors.js";
 
 /** A color space defined by the DTCG Color module. */
 export type ColorSpace =
@@ -636,7 +636,7 @@ export interface DiagnosticDetailByKind {
         at: JsonPath;
     } & ValueErrorDetail;
     /** A color written as a hex string, which the 2025.10 Color module no longer allows. */
-    "hex-string-color": { value: string };
+    "hex-string-color": ValueErrorFacts["hex-string"];
     /** An `$extensions` entry fails a registered check, such as a {@link Generator}'s. */
     "extension-invalid": {
         /** The `$extensions` key, such as `"com.example"`. */
@@ -1126,9 +1126,20 @@ export interface ReadOptions extends ParseOptions {
  *
  * Every file path in the results, in `Document.files`, `Span`, a project's files and every edit,
  * is relative to the entry's folder, with forward slashes, such as `"themes/dark.json"`. The
- * entry itself is its file name.
+ * entry itself is its file name. That name is passed as `file`, for keeping each text by the name
+ * the results use.
+ *
+ * @example
+ * const texts = new Map<string, string>();
+ * const doc = await read("tokens/tokens.resolver.json", {
+ *   readText: async (path, file) => {
+ *     const text = await readFile(path, "utf8");
+ *     texts.set(file, text); // "dark.json"
+ *     return text;
+ *   },
+ * });
  */
-export type ReadText = (path: string) => Promise<string>;
+export type ReadText = (path: string, file: string) => Promise<string>;
 
 export { read, readFromMemory } from "./read/read.js";
 

@@ -1,0 +1,24 @@
+{
+  "diagnostics": [
+    {
+      "kind": "malformed-pointer",
+      "at": {
+        "file": "tokens.resolver.json",
+        "text": "\"#sets/loop\""
+      },
+      "fixes": [
+        {
+          "title": "write it as `#/sets/loop`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.resolver.json",
+              "text": "\"#sets/loop\"",
+              "replaceWith": "\"#/sets/loop\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

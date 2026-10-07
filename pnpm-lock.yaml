@@ -295,6 +295,9 @@ importers:
       '@sugarcube-sh/dtcg':
         specifier: workspace:*
         version: link:../dtcg
+      jsonc-parser:
+        specifier: ^3.3.1
+        version: 3.3.1
     devDependencies:
       pkgroll:
         specifier: ^2.28.1

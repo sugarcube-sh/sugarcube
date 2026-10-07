@@ -1,0 +1,66 @@
+{
+  "diagnostics": [
+    {
+      "kind": "unknown-type",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"\""
+      },
+      "fixes": [
+        {
+          "title": "delete this `$type`, so the token takes its group's type",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"$type\": \"\", ",
+              "replaceWith": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "invalid-property",
+      "at": {
+        "file": "tokens.json",
+        "text": "null"
+      },
+      "fixes": [
+        {
+          "title": "delete this `$type`, so the token takes its group's type",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": ", \"$type\": null",
+              "replaceWith": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "invalid-property",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"base\"",
+        "occurrence": 2
+      },
+      "fixes": [
+        {
+          "title": "write it as the reference `{base}`",
+          "safe": false,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"base\"",
+              "occurrence": 2,
+              "replaceWith": "\"{base}\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

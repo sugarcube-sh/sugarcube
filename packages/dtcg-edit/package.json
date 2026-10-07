@@ -50,7 +50,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@sugarcube-sh/dtcg": "workspace:*"
+    "@sugarcube-sh/dtcg": "workspace:*",
+    "jsonc-parser": "^3.3.1"
   },
   "devDependencies": {
     "pkgroll": "^2.28.1"

@@ -1,5 +1,6 @@
 import type {
     ColorSpace,
+    ColorValue,
     DimensionValue,
     DurationValue,
     IgnoredProperty,
@@ -24,7 +25,11 @@ export interface ValueErrorFacts {
     /** A `"{token}"` reference is written inside a value, where only a JSON Pointer can be. */
     "alias-not-allowed-here": { reference: string };
     /** A color is written as a hex string. Through `read`, this is `hex-string-color`. */
-    "hex-string": { value: string };
+    "hex-string": {
+        value: string;
+        /** The color object it stands for, as it would be written: `alpha` only when the hex has alpha digits. */
+        asObject: Omit<ColorValue, "alpha"> & { alpha?: number };
+    };
     /** A color's `colorSpace` is not one the Color module defines. */
     "unknown-color-space": { value: unknown };
     /** A color's `components` is not a list of three. */

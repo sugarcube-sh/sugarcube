@@ -1,0 +1,106 @@
+{
+  "diagnostics": [
+    {
+      "kind": "malformed-pointer",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#color/ink\""
+      },
+      "fixes": [
+        {
+          "title": "write it as `#/color/ink`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#color/ink\"",
+              "replaceWith": "\"#/color/ink\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "malformed-pointer",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#g\""
+      },
+      "fixes": [
+        {
+          "title": "write it as `#/g`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#g\"",
+              "replaceWith": "\"#/g\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "malformed-pointer",
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#g\" }",
+        "occurrence": 2
+      },
+      "fixes": [
+        {
+          "title": "write it as `#/g`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#g\"",
+              "occurrence": 2,
+              "replaceWith": "\"#/g\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "malformed-pointer",
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#color/ink/$value/colorSpace\" }"
+      },
+      "fixes": [
+        {
+          "title": "write it as `#/color/ink/$value/colorSpace`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#color/ink/$value/colorSpace\"",
+              "replaceWith": "\"#/color/ink/$value/colorSpace\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "malformed-pointer",
+      "at": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#/a~b/$value\" }"
+      },
+      "fixes": [
+        {
+          "title": "write it as `#/a~0b/$value`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#/a~b/$value\"",
+              "replaceWith": "\"#/a~0b/$value\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

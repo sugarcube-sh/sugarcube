@@ -1,0 +1,24 @@
+{
+  "diagnostics": [
+    {
+      "kind": "malformed-pointer",
+      "at": {
+        "file": "tokens.resolver.json",
+        "text": "\"all.json#color\""
+      },
+      "fixes": [
+        {
+          "title": "write it as `all.json#/color`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.resolver.json",
+              "text": "\"all.json#color\"",
+              "replaceWith": "\"all.json#/color\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

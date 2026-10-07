@@ -1,0 +1,30 @@
+{
+  "diagnostics": [
+    {
+      "kind": "missing-reference",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"{color.brnad}\""
+      },
+      "fixes": [
+        {
+          "title": "use `color.brand`, which has a similar name",
+          "safe": false,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"{color.brnad}\"",
+              "replaceWith": "\"{color.brand}\""
+            },
+            {
+              "file": "tokens.json",
+              "text": "\"{color.brnad}\"",
+              "occurrence": 2,
+              "replaceWith": "\"{color.brand}\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

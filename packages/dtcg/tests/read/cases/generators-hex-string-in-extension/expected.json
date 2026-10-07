@@ -5,7 +5,14 @@
   "diagnostics": [
     {
       "kind": "hex-string-color",
-      "detail": { "value": "#e11d48" },
+      "detail": {
+        "value": "#e11d48",
+        "asObject": {
+          "colorSpace": "srgb",
+          "components": [0.8824, 0.1137, 0.2824],
+          "hex": "#e11d48"
+        }
+      },
       "at": { "file": "tokens.json", "text": "\"#e11d48\"" },
       "path": "space",
       "fixes": [

@@ -130,7 +130,8 @@
     {
       "kind": "hex-string-color",
       "detail": {
-        "value": "#fff"
+        "value": "#fff",
+        "asObject": { "colorSpace": "srgb", "components": [1, 1, 1], "hex": "#ffffff" }
       },
       "at": {
         "file": "tokens.json",

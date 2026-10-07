@@ -17,7 +17,8 @@ export function valueDiagnostic(
     if (detail.reason === "hex-string" && node.value === detail.value) {
         const edits = [{ file, offset, length, text: hexAsObject(detail.value) }];
         const fixes = [{ title: fixTitles.hexToObject, safe: true, edits }];
-        return diagnostic("hex-string-color", { value: detail.value }, { ...extra, fixes });
+        const { value, asObject } = detail;
+        return diagnostic("hex-string-color", { value, asObject }, { ...extra, fixes });
     }
     const fix = replacement(detail, node.value);
     const fixes: Fix[] | undefined = fix && [

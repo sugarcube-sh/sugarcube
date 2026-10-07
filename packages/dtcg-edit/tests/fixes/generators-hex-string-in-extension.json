@@ -1,0 +1,24 @@
+{
+  "diagnostics": [
+    {
+      "kind": "hex-string-color",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#e11d48\""
+      },
+      "fixes": [
+        {
+          "title": "write the color as an object, keeping the hex",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#e11d48\"",
+              "replaceWith": "{ \"colorSpace\": \"srgb\", \"components\": [0.8824, 0.1137, 0.2824], \"hex\": \"#e11d48\" }"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

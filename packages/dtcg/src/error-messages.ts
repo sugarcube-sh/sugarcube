@@ -183,8 +183,8 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "hex-string-color": {
         severity: "error",
-        message: ({ value }) =>
-            valueErrorMessages["hex-string"]({ type: "color", reason: "hex-string", value }),
+        message: (detail) =>
+            valueErrorMessages["hex-string"]({ type: "color", reason: "hex-string", ...detail }),
     },
     "extension-invalid": {
         severity: "error",

@@ -86,7 +86,13 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             reason: "alias-not-allowed-here",
             reference: "{font.brand}",
         },
-        { at: ["$value"], type: "color", reason: "hex-string", value: "#e11d48" },
+        {
+            at: ["$value"],
+            type: "color",
+            reason: "hex-string",
+            value: "#e11d48",
+            asObject: { colorSpace: "srgb", components: [0.8824, 0.1137, 0.2824], hex: "#e11d48" },
+        },
         {
             at: ["$value", "colorSpace"],
             type: "color",
@@ -243,7 +249,12 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             allowed: durationUnits,
         },
     ],
-    "hex-string-color": [{ value: "#e11d48" }],
+    "hex-string-color": [
+        {
+            value: "#e11d48",
+            asObject: { colorSpace: "srgb", components: [0.8824, 0.1137, 0.2824], hex: "#e11d48" },
+        },
+    ],
     "extension-invalid": [
         { key: "sh.sugarcube", at: ["$extensions", "sh.sugarcube", "scale", "mode"] },
         {

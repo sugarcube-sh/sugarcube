@@ -1,0 +1,44 @@
+{
+  "diagnostics": [
+    {
+      "kind": "unknown-type",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"colour\""
+      },
+      "fixes": [
+        {
+          "title": "use `color`, which has a similar name",
+          "safe": false,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"colour\"",
+              "replaceWith": "\"color\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "unknown-type",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"Color\""
+      },
+      "fixes": [
+        {
+          "title": "use `color`, which has a similar name",
+          "safe": false,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"Color\"",
+              "replaceWith": "\"color\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

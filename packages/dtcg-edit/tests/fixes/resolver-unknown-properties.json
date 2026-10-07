@@ -1,0 +1,64 @@
+{
+  "diagnostics": [
+    {
+      "kind": "unknown-property",
+      "at": {
+        "file": "tokens.resolver.json",
+        "text": "\"descripton\""
+      },
+      "fixes": [
+        {
+          "title": "use `description`, which has a similar name",
+          "safe": false,
+          "edits": [
+            {
+              "file": "tokens.resolver.json",
+              "text": "\"descripton\"",
+              "replaceWith": "\"description\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "unknown-property",
+      "at": {
+        "file": "tokens.resolver.json",
+        "text": "\"defualt\""
+      },
+      "fixes": [
+        {
+          "title": "use `default`, which has a similar name",
+          "safe": false,
+          "edits": [
+            {
+              "file": "tokens.resolver.json",
+              "text": "\"defualt\"",
+              "replaceWith": "\"default\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "unknown-property",
+      "at": {
+        "file": "tokens.resolver.json",
+        "text": "\"sourcse\""
+      },
+      "fixes": [
+        {
+          "title": "use `sources`, which has a similar name",
+          "safe": false,
+          "edits": [
+            {
+              "file": "tokens.resolver.json",
+              "text": "\"sourcse\"",
+              "replaceWith": "\"sources\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
