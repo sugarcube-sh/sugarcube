@@ -1,0 +1,5 @@
+{
+  "color": {
+    "missing": { "$value": { "colorSpace": "srgb", "components": [1, 1, 1] } }
+  }
+}

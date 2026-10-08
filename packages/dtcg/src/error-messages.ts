@@ -98,7 +98,13 @@ export const relatedMessages = {
 const ignoredWhenInvalid: ReadonlySet<DiagnosticDetailByKind["invalid-property"]["property"]> =
     new Set(["$description", "$deprecated", "$extensions"]);
 
-const ownerWords = { resolver: "the resolver", set: "a set", modifier: "a modifier" } as const;
+const ownerWords = {
+    resolver: "the resolver",
+    set: "a set",
+    modifier: "a modifier",
+    token: "a token",
+    group: "a group",
+} as const;
 
 export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "file-not-found": {
@@ -224,6 +230,11 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
             "at" in detail
                 ? ignoredMessage(detail.owner, detail.property)
                 : `\`${detail.property}\` is not a property of ${ownerWords[detail.owner]}, so it is ignored${didYouMean(detail.similar)}`,
+    },
+    "misspelt-property": {
+        severity: "error",
+        message: ({ written, property, owner }) =>
+            `\`${written}\` is not a ${owner} property; did you mean \`${property}\`?`,
     },
     "permutation-limit": {
         severity: "warning",

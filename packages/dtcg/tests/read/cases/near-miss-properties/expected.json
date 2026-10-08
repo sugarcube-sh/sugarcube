@@ -1,0 +1,161 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Format 5 and 6: a token is an object with $value, and $-prefixed names are the spec's own. A member that is almost certainly one of them (value or $vlaue or $Value for $value, type for $type, $descripton for $description) is read as it, with an error naming what was meant, so the token is not lost or read as a group, and nothing that depends on it fails as well. A member named value that holds a token stays a child. A $-prefixed name near none of them is ignored with a warning",
+  "permutations": [
+    {
+      "tokens": [
+        {
+          "path": "color.missing",
+          "type": "color"
+        },
+        {
+          "path": "color.swapped",
+          "type": "color"
+        },
+        {
+          "path": "color.capital",
+          "type": "color"
+        },
+        {
+          "path": "color.described",
+          "type": "color",
+          "description": "red"
+        },
+        {
+          "path": "color.unknown",
+          "type": "color"
+        },
+        {
+          "path": "color.named.value",
+          "type": "color"
+        },
+        {
+          "path": "color.text",
+          "type": "color",
+          "aliasOf": "color.missing"
+        },
+        {
+          "path": "space.sm",
+          "type": "dimension"
+        }
+      ]
+    },
+    {
+      "tokens": [
+        {
+          "path": "color.missing",
+          "type": "color"
+        },
+        {
+          "path": "color.swapped",
+          "type": "color"
+        },
+        {
+          "path": "color.capital",
+          "type": "color"
+        },
+        {
+          "path": "color.described",
+          "type": "color",
+          "description": "red"
+        },
+        {
+          "path": "color.unknown",
+          "type": "color"
+        },
+        {
+          "path": "color.named.value",
+          "type": "color"
+        },
+        {
+          "path": "color.text",
+          "type": "color",
+          "aliasOf": "color.missing"
+        },
+        {
+          "path": "space.sm",
+          "type": "dimension"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "misspelt-property",
+      "detail": {
+        "written": "value",
+        "property": "$value",
+        "owner": "token"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"value\""
+      },
+      "path": "color.missing"
+    },
+    {
+      "kind": "misspelt-property",
+      "detail": {
+        "written": "$vlaue",
+        "property": "$value",
+        "owner": "token"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"$vlaue\""
+      },
+      "path": "color.swapped"
+    },
+    {
+      "kind": "misspelt-property",
+      "detail": {
+        "written": "$Value",
+        "property": "$value",
+        "owner": "token"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"$Value\""
+      },
+      "path": "color.capital"
+    },
+    {
+      "kind": "misspelt-property",
+      "detail": {
+        "written": "$descripton",
+        "property": "$description",
+        "owner": "token"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"$descripton\""
+      },
+      "path": "color.described"
+    },
+    {
+      "kind": "unknown-property",
+      "detail": {
+        "property": "$whatever",
+        "owner": "token"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"$whatever\""
+      },
+      "path": "color.unknown"
+    },
+    {
+      "kind": "misspelt-property",
+      "detail": {
+        "written": "type",
+        "property": "$type",
+        "owner": "group"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"type\""
+      },
+      "path": "space"
+    }
+  ]
+}

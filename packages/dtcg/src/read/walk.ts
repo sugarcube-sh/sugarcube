@@ -69,6 +69,18 @@ type Property = Exclude<
 
 const FORBIDDEN = [".", "{", "}"] as const;
 
+type OwnProperty = DiagnosticDetailByKind["misspelt-property"]["property"];
+
+const OWN_PROPERTIES: readonly OwnProperty[] = [
+    "$value",
+    "$type",
+    "$description",
+    "$deprecated",
+    "$extensions",
+];
+
+const GROUP_KEYWORDS = new Set(["$extends", "$ref", "$root"]);
+
 const EXPECTED: Record<Property, DiagnosticDetailByKind["invalid-property"]["expected"]> = {
     $type: "string",
     $description: "string",
@@ -188,6 +200,35 @@ export function walkSource(
         visitMembers(segments, entries);
     };
 
+    const intended = (entry: Member): OwnProperty | undefined => {
+        const { key, value } = entry;
+        if (isOwnProperty(key)) return key;
+        if (GROUP_KEYWORDS.has(key)) return undefined;
+        if (key.startsWith("$")) return similarName(key, OWN_PROPERTIES);
+        const property = `$${key}`;
+        return isOwnProperty(property) && !holdsToken(value, json) ? property : undefined;
+    };
+
+    const asWritten = (path: string, entries: Member[], top: boolean): Member[] => {
+        const meant = entries.map((entry) => {
+            const property = intended(entry);
+            return top && property === "$value" ? undefined : property;
+        });
+        const owner = meant.includes("$value") ? "token" : "group";
+        return entries.map((entry, index) => {
+            const property = meant[index];
+            const { key, keyNode } = entry;
+            if (property !== undefined && property !== key) {
+                report("misspelt-property", { written: key, property, owner }, keyNode, { path });
+                return { ...entry, key: property };
+            }
+            if (property === undefined && key.startsWith("$") && !GROUP_KEYWORDS.has(key) && !top) {
+                report("unknown-property", { property: key, owner }, keyNode, { path });
+            }
+            return entry;
+        });
+    };
+
     const visitMembers = (segments: string[], entries: Member[]) => {
         for (const { key, keyNode, value } of entries) {
             if (key.startsWith("$") && key !== "$root") continue;
@@ -196,7 +237,11 @@ export function walkSource(
                 report("invalid-member", { name: key, found }, value);
                 continue;
             }
-            const inside = members(value, json.hidden);
+            const inside = asWritten(
+                [...segments, key].join("."),
+                members(value, json.hidden),
+                false,
+            );
             const tokenValue = inside.find((entry) => entry.key === "$value")?.value;
             if (key === "$root" && !tokenValue) {
                 report("invalid-name", { name: key, character: "$" }, keyNode);
@@ -215,7 +260,11 @@ export function walkSource(
         }
     };
 
-    const rootEntries = members(tree, json.hidden).filter(({ key }) => !overridden.has(key));
+    const rootEntries = asWritten(
+        "",
+        members(tree, json.hidden).filter(({ key }) => !overridden.has(key)),
+        true,
+    );
     contents.root = { path: "", at: at(tree), ...readGroupProperties("", rootEntries) };
     visitMembers([], rootEntries);
     return contents;
@@ -246,4 +295,15 @@ function asReference(written: unknown): string | undefined {
 
 function isProperty(key: string): key is Property {
     return Object.hasOwn(EXPECTED, key);
+}
+
+function isOwnProperty(key: string): key is OwnProperty {
+    return OWN_PROPERTIES.some((property) => property === key);
+}
+
+function holdsToken(node: Node, json: JsonFile): boolean {
+    if (node.type !== "object") return false;
+    return members(node, json.hidden).some(
+        ({ key, value }) => key === "$value" || holdsToken(value, json),
+    );
 }

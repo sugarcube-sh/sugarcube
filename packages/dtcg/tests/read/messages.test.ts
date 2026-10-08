@@ -292,8 +292,14 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { property: "descripton", owner: "set" },
         { property: "descripton", owner: "set", similar: "description" },
         { property: "defualt", owner: "modifier" },
+        { property: "$whatever", owner: "token" },
+        { property: "$whatever", owner: "group" },
         { property: "paragraphSpacing", owner: "typography", at: ["$value", "paragraphSpacing"] },
         { property: "fluid", owner: "dimension", at: ["$value", "width", "fluid"] },
+    ],
+    "misspelt-property": [
+        { written: "value", property: "$value", owner: "token" },
+        { written: "type", property: "$type", owner: "group" },
     ],
     "permutation-limit": [{ count: 16384, limit: 64, built: 15 }],
     "no-default": [{ modifiers: ["size"] }, { modifiers: ["size", "theme"] }],
@@ -336,6 +342,20 @@ describe("diagnostic messages that say what would mend the problem", () => {
                 detail: { ref: "color.inc", referencedBy: ["color.muted"], similar: "color.ink" },
             },
             message: "`color.inc` does not exist; did you mean `color.ink`?",
+        },
+        {
+            found: {
+                kind: "misspelt-property",
+                detail: { written: "value", property: "$value", owner: "token" },
+            },
+            message: "`value` is not a token property; did you mean `$value`?",
+        },
+        {
+            found: {
+                kind: "misspelt-property",
+                detail: { written: "$tpye", property: "$type", owner: "group" },
+            },
+            message: "`$tpye` is not a group property; did you mean `$type`?",
         },
         {
             found: { kind: "unknown-type", detail: { type: "colour", similar: "color" } },
@@ -445,6 +465,18 @@ describe("diagnostic messages that say what would mend the problem", () => {
             expect(worded(found)).toBe(message);
         },
     );
+});
+
+describe("diagnostic messages for a token's or group's own properties", () => {
+    it("says a `$` name the specification does not define is ignored", () => {
+        const { message } = diagnosticMessages["unknown-property"];
+        expect(message({ property: "$whatever", owner: "token" })).toBe(
+            "`$whatever` is not a property of a token, so it is ignored",
+        );
+        expect(message({ property: "$whatever", owner: "group" })).toBe(
+            "`$whatever` is not a property of a group, so it is ignored",
+        );
+    });
 });
 
 describe("diagnostic messages from read", () => {

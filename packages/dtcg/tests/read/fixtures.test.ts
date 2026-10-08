@@ -202,8 +202,8 @@ const expectedFailures: Expected[] = [
     },
     {
         project: "packages/core/tests/__fixtures__/resolver/invalid-structure.resolver.json",
-        why: "holds a group member that is not a token or a group, to test that it is refused",
-        matches: (d) => d.kind === "invalid-member",
+        why: "writes `value` for `$value`, to test that it is refused",
+        matches: (d) => d.kind === "misspelt-property",
     },
     {
         project: "packages/core/tests/__fixtures__/resolver/invalid-token.resolver.json",
@@ -232,8 +232,8 @@ const expectedFailures: Expected[] = [
     },
     {
         project: "packages/core/tests/__fixtures__/tokens/invalid-structure.json",
-        why: "holds a group member that is not a token or a group, to test that it is refused",
-        matches: (d) => d.kind === "invalid-member",
+        why: "writes `value` for `$value`, to test that it is refused",
+        matches: (d) => d.kind === "misspelt-property",
     },
     {
         project: "packages/core/tests/__fixtures__/tokens/invalid-token.json",

@@ -671,13 +671,13 @@ export interface DiagnosticDetailByKind {
     "whitespace-in-name": { name: string };
     /**
      * An object has a key the specification does not define for it, so it is ignored: in a
-     * resolver, or in a value, such as `paragraphSpacing` in a typography value. Your own data
-     * belongs in `$extensions`.
+     * resolver, a `$` name on a token or group, or in a value, such as `paragraphSpacing` in a
+     * typography value. Your own data belongs in `$extensions`.
      */
     "unknown-property":
         | {
               property: string;
-              owner: "resolver" | "set" | "modifier";
+              owner: "resolver" | "set" | "modifier" | "token" | "group";
               /** A property it may have with a similar name, when exactly one is close. */
               similar?: string;
           }
@@ -688,6 +688,17 @@ export interface DiagnosticDetailByKind {
               /** Where in the token or group, such as `["$value", "paragraphSpacing"]`. */
               at: JsonPath;
           };
+    /**
+     * A member is almost certainly one of the specification's own properties written another way:
+     * without its `$`, in other capitals, or with a letter out (`value`, `$Value` or `$vlaue` for
+     * `$value`). It is read as that property, so the token is not lost or read as a group, and
+     * nothing that depends on it fails as well (Format 5, 6).
+     */
+    "misspelt-property": {
+        written: string;
+        property: "$value" | "$type" | "$description" | "$deprecated" | "$extensions";
+        owner: "token" | "group";
+    };
     /** A reference points at a token marked `$deprecated`. */
     "deprecated-reference": { ref: string; reason?: string };
     /** A resolver has more combinations than `permutationLimit`, so `"each-context"` was built instead. */
