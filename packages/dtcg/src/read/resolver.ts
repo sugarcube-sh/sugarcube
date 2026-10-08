@@ -82,7 +82,7 @@ export interface Place {
 }
 
 export function isResolver(root: Node): boolean {
-    return members(root, new Set()).some(
+    return members(root).some(
         ({ key, value }) =>
             key === "resolutionOrder" || (key === "version" && value.type === "string"),
     );
@@ -120,8 +120,8 @@ export function resolverProblem(
 
 export function createReader(file: JsonFile, diagnostics: Diagnostic[]): Reader {
     const reader: Reader = {
-        get: (node, key) => member(node, key, file.hidden),
-        entries: (node) => members(node, file.hidden),
+        get: member,
+        entries: members,
         report: (problem, node, extra) =>
             diagnostics.push(resolverProblem(file, problem, node, extra)),
         diagnose: (kind, detail, node, extra = {}) => {
@@ -135,7 +135,7 @@ export function createReader(file: JsonFile, diagnostics: Diagnostic[]): Reader 
             return false;
         },
         checkKeys: (owner, kind, known) => {
-            for (const { key, keyNode } of members(owner.node, file.hidden)) {
+            for (const { key, keyNode } of members(owner.node)) {
                 if (known.includes(key)) continue;
                 const similar = similarName(key, known);
                 const at = spanOf(file.path, file.lineStarts, keyNode.offset, keyNode.length);

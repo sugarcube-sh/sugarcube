@@ -66,7 +66,7 @@ export function extensionDiagnostic(
         const where = { node, steps: problem.path, json };
         return ignoredDiagnostic(problem, at, where, { path, permutation });
     }
-    const found = deepestNode(node, problem.path, json.hidden);
+    const found = deepestNode(node, problem.path);
     const extra = {
         at: spanOf(json.path, json.lineStarts, found.offset, found.length),
         path,

@@ -14,7 +14,7 @@ export function occurrence(
     { ref, place, at }: Pick<ReferenceRead, "ref" | "place" | "at">,
 ): Occurrence {
     const { json, value } = token;
-    const node = deepestNode(value, at.slice(1), json.hidden);
+    const node = deepestNode(value, at.slice(1));
     const span = spanOf(json.path, json.lineStarts, node.offset, node.length);
     if (isAlias(ref)) return { kind: "alias", target: ref.alias, place, at: span };
     const { pointer: written } = ref;

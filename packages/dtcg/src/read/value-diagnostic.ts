@@ -23,7 +23,7 @@ export function ignoredDiagnostic(
     extra: DiagnosticExtra,
 ): Diagnostic {
     const { node, steps, json } = within;
-    const shown = propertyKey(node, steps, json.hidden) ?? deepestNode(node, steps, json.hidden);
+    const shown = propertyKey(node, steps) ?? deepestNode(node, steps);
     const span = spanOf(json.path, json.lineStarts, shown.offset, shown.length);
     const found = { property: detail.property, owner: detail.type, at };
     return diagnostic("unknown-property", found, { ...extra, at: span });
