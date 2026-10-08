@@ -24,10 +24,8 @@ export type { LoadResult } from "./node/load-tokens.js";
 export { createCoalescedRunner, debounce } from "./shared/scheduling.js";
 export type { DebouncedFn } from "./shared/scheduling.js";
 
-export { PerfMonitor, Instrumentation } from "./node/perf.js";
-
 export { writeCSSFiles } from "./node/write-css.js";
 
-export { problemCount, problemLines } from "./shared/problems.js";
+export { problemCount, problemLines, problemsText } from "./shared/problems.js";
 export type { Where } from "./shared/problems.js";
 export { plural } from "./shared/plural.js";

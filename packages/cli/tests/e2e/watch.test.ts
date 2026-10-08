@@ -199,23 +199,23 @@ describe("generate --watch", () => {
     );
 
     it(
-        "lists a config that cannot be loaded, and carries on with the last one",
+        "lists a config that cannot be loaded on every save, and writes again once it loads",
         { timeout: TEST_TIMEOUT },
         async () => {
             const { output, until } = await ready();
             const before = text(variables());
+            const listed = () => output().split("invalid-config").length - 1;
 
             await writeFile(join(dir, "sugarcube.config.ts"), "export default { variables: ;");
-            await until(() => output().includes("invalid-config"), "the config's problem");
-
+            await until(() => listed() === 1, "the config's problem");
             expect(output()).toMatch(/^sugarcube\.config\.ts {2}error {2}/m);
-            expect(text(variables())).toBe(before);
 
             await tokens({ color: { ink: color("#777777") } });
-            await until(
-                () => text(variables()).includes("#777777"),
-                "a build with the last config",
-            );
+            await until(() => listed() === 2, "the config's problem again");
+            expect(text(variables())).toBe(before);
+
+            await config("");
+            await until(() => text(variables()).includes("#777777"), "the CSS");
         },
     );
 });

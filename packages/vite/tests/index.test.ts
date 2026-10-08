@@ -1,303 +1,305 @@
-import { EventEmitter } from "node:events";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { type Logger, type ViteDevServer, build, createServer } from "vite";
+import { afterEach, describe, expect, it } from "vitest";
+import sugarcube, { SUGARCUBE_API_PLUGIN_NAME, type SugarcubePluginContext } from "../src/index.js";
 
-const { loadTokens, resolveTokens, loadInternalConfig } = vi.hoisted(() => ({
-    loadTokens: vi.fn(),
-    resolveTokens: vi.fn(),
-    loadInternalConfig: vi.fn(),
-}));
+const color = (hex: string) => ({ $type: "color", $value: hex });
 
-const config = {
+interface Served {
+    server: ViteDevServer;
+    context: SugarcubePluginContext;
+    logged: string[];
+    overlays: string[];
+    css: (classes: string) => Promise<string>;
+}
+
+const cwd = process.cwd();
+let folder: string;
+let served: Served | undefined;
+
+afterEach(async () => {
+    await served?.server.close();
+    served = undefined;
+    process.chdir(cwd);
+    await rm(folder, { recursive: true, force: true });
+});
+
+async function project(): Promise<void> {
+    folder = await mkdtemp(join(tmpdir(), "sugarcube-vite-"));
+    await mkdir(join(folder, "tokens"));
+    await tokens({ color: { ink: color("#111111") } });
+    await writeFile(
+        join(folder, "tokens/tokens.resolver.json"),
+        JSON.stringify({
+            version: "2025.10",
+            resolutionOrder: [{ type: "set", name: "base", sources: [{ $ref: "base.json" }] }],
+        }),
+    );
+    await config("");
+    await writeFile(
+        join(folder, "index.html"),
+        `<script type="module">import "virtual:sugarcube.css";</script><p class="text-ink">hi</p>`,
+    );
+    process.chdir(folder);
+}
+
+function tokens(json: unknown) {
+    return writeFile(join(folder, "tokens/base.json"), JSON.stringify(json, null, 2));
+}
+
+function config(variablesExtra: string) {
+    return writeFile(
+        join(folder, "sugarcube.config.ts"),
+        `export default {
     resolver: "tokens/tokens.resolver.json",
-    variables: {
-        path: "src/styles/tokens.css",
-        transforms: {
-            fluid: { min: 320, max: 1200 },
-            colorFallbackStrategy: "native",
+    variables: { path: "tokens.css"${variablesExtra} },
+    utilities: { classes: { color: { source: "color.*", prefix: "text" } } },
+};
+`,
+    );
+}
+
+function capturing(logged: string[]): Logger {
+    const log = (message: string) => {
+        logged.push(message);
+    };
+    return {
+        info: log,
+        warn: log,
+        warnOnce: log,
+        error: log,
+        clearScreen: () => {},
+        hasErrorLogged: () => false,
+        hasWarned: false,
+    };
+}
+
+async function serve(): Promise<Served> {
+    const logged: string[] = [];
+    const overlays: string[] = [];
+    const plugins = (await sugarcube()) as Array<{ name: string; api?: any }>;
+    let watching: Promise<void> = Promise.resolve();
+    const ready = {
+        name: "test:watcher-ready",
+        configureServer(dev: ViteDevServer) {
+            watching = new Promise((resolve) => dev.watcher.once("ready", () => resolve()));
         },
-    },
-    utilities: {
-        path: "src/styles/utilities.css",
-        classes: {},
-    },
-    cube: "src/styles",
-};
-
-const resolved = {
-    trees: [],
-    resolved: {} as any,
-    errors: { expandTree: [], flatten: [], validation: [], resolution: [] },
-    warnings: [],
-};
-
-vi.mock("@sugarcube-sh/core", async () => {
-    const actual = await vi.importActual<any>("@sugarcube-sh/core");
-    return {
-        ...actual,
-        loadInternalConfig,
-        loadTokens,
-        resolveTokens,
-        groupByContext: () => ({ default: {} }),
-        assignCSSNames: () => ({ default: { default: {} } }),
-        generateCSSVariables: async () => [{ css: "" }],
-        convertConfigToUnoRules: () => [],
     };
+    const server = await createServer({
+        root: folder,
+        configFile: false,
+        customLogger: capturing(logged),
+        plugins: [ready, ...plugins],
+        server: { port: 0 },
+    });
+    await watching;
+    const send = server.ws.send.bind(server.ws) as (payload: any) => void;
+    server.ws.send = ((payload: any) => {
+        if (payload?.type === "error") overlays.push(payload.err.message);
+        send(payload);
+    }) as typeof server.ws.send;
+    const context = plugins.find((p) => p.name === SUGARCUBE_API_PLUGIN_NAME)?.api.getContext();
+    const uno = plugins.find((p) => p.name === "unocss:api")?.api.getContext();
+    const css = async (classes: string) => (await uno.uno.generate(classes)).css as string;
+    served = { server, context, logged, overlays, css };
+    return served;
+}
+
+function reloaded(context: SugarcubePluginContext): Promise<void> {
+    return new Promise((resolve) => {
+        const stop = context.onReload(() => {
+            stop();
+            resolve();
+        });
+    });
+}
+
+async function until(done: () => boolean, what: string): Promise<void> {
+    const started = Date.now();
+    while (!done()) {
+        if (Date.now() - started > 5_000) throw new Error(`Waited for ${what}`);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+}
+
+describe("sugarcube's Vite plugin", () => {
+    it("serves the tokens' variables and the classes markup uses", async () => {
+        await project();
+        const { css } = await serve();
+
+        const written = await css("text-ink");
+
+        expect(written).toContain("--color-ink: #111111");
+        expect(written).toContain(".text-ink{color:var(--color-ink);}");
+    });
+
+    it("serves the new value when a token is saved", async () => {
+        await project();
+        const { context, css } = await serve();
+
+        const reload = reloaded(context);
+        await tokens({ color: { ink: color("#222222") } });
+        await reload;
+
+        expect(await css("text-ink")).toContain("--color-ink: #222222");
+    });
+
+    it("makes a new token's class while running", async () => {
+        await project();
+        const { context, css } = await serve();
+        expect(await css("text-paper")).not.toContain(".text-paper");
+
+        const reload = reloaded(context);
+        await tokens({ color: { ink: color("#111111"), paper: color("#ffffff") } });
+        await reload;
+
+        expect(await css("text-paper")).toContain(".text-paper{color:var(--color-paper);}");
+    });
+
+    it("keeps the last CSS when a save has errors, and shows them in the terminal and the overlay", async () => {
+        await project();
+        const { context, css, logged, overlays } = await serve();
+
+        const reload = reloaded(context);
+        await tokens({ color: { ink: color("#111111"), text: color("{color.inc}") } });
+        await reload;
+
+        expect(await css("text-ink")).toContain("--color-ink: #111111");
+        expect(await css("text-text")).not.toContain(".text-text");
+        expect(logged.join("\n")).toContain(
+            "tokens/base.json:9:17  error  `color.inc` does not exist; did you mean `color.ink`?",
+        );
+        expect(overlays).toHaveLength(1);
+        expect(overlays[0]).toContain(`${join(folder, "tokens/base.json")}:9:17  error`);
+        expect(overlays[0]).toMatch(/\n1 error\.$/);
+    });
+
+    it("serves the CSS again once the errors are fixed", async () => {
+        await project();
+        const { context, css } = await serve();
+        let reload = reloaded(context);
+        await tokens({ color: { ink: color("{color.inc}") } });
+        await reload;
+
+        reload = reloaded(context);
+        await tokens({ color: { ink: color("#333333") } });
+        await reload;
+
+        expect(context.problems).toEqual([]);
+        expect(await css("text-ink")).toContain("--color-ink: #333333");
+    });
+
+    it("shows the overlay to a page that opens while there are errors", async () => {
+        await project();
+        await tokens({ color: { ink: color("{color.inc}") } });
+        const { server } = await serve();
+        await server.listen();
+        const address = server.httpServer?.address();
+        const port = typeof address === "object" ? address?.port : undefined;
+
+        const received: Array<{ type: string; err?: { message: string } }> = [];
+        const socket = new WebSocket(
+            `ws://localhost:${port}/?token=${server.config.webSocketToken}`,
+            "vite-hmr",
+        );
+        socket.addEventListener("message", (event) =>
+            received.push(JSON.parse(String(event.data))),
+        );
+        try {
+            await until(() => received.some(({ type }) => type === "error"), "the overlay");
+        } finally {
+            socket.close();
+        }
+
+        expect(received.find(({ type }) => type === "error")?.err?.message).toContain(
+            "`color.inc` does not exist",
+        );
+    });
+
+    it("reads the config again when it is saved", async () => {
+        await project();
+        const { context, css } = await serve();
+
+        const reload = reloaded(context);
+        await config(`, prefix: "ds"`);
+        await reload;
+
+        expect(await css("text-ink")).toContain(".text-ink{color:var(--ds-color-ink);}");
+    });
+
+    it("shows a config that cannot be loaded until it loads, serving the last CSS", async () => {
+        await project();
+        const { context, css, logged, overlays } = await serve();
+
+        await writeFile(join(folder, "sugarcube.config.ts"), "export default { variables: ;");
+        await until(() => overlays.length > 0, "the config's problem");
+
+        expect(logged.join("\n")).toMatch(/^sugarcube\.config\.ts {2}error {2}/m);
+        expect(logged.join("\n")).toContain("invalid-config");
+        expect(overlays[0]).toContain(`${join(folder, "sugarcube.config.ts")}  error`);
+
+        let reload = reloaded(context);
+        await tokens({ color: { ink: color("#777777") } });
+        await reload;
+        expect(overlays).toHaveLength(2);
+        expect(overlays[1]).toContain("invalid-config");
+        expect(await css("text-ink")).toContain("--color-ink: #111111");
+
+        reload = reloaded(context);
+        await config("");
+        await reload;
+        expect(context.problems).toEqual([]);
+        expect(await css("text-ink")).toContain("--color-ink: #777777");
+    });
+
+    it("times each save with DEBUG=true, and only then", async () => {
+        await project();
+        const timed = /^\[sugarcube\] read \d+ms {2}css \d+ms {2}total \d+ms {2}\(base\.json\)$/m;
+        process.env.DEBUG = "true";
+        try {
+            const { context, logged } = await serve();
+            const reload = reloaded(context);
+            await tokens({ color: { ink: color("#444444") } });
+            await reload;
+            expect(logged.join("\n")).toMatch(timed);
+        } finally {
+            delete process.env.DEBUG;
+        }
+        await served?.server.close();
+
+        const { context, logged } = await serve();
+        const reload = reloaded(context);
+        await tokens({ color: { ink: color("#555555") } });
+        await reload;
+        expect(logged.join("\n")).not.toMatch(/\[sugarcube\] read/);
+    });
+
+    it("hands the config, the Document and its problems to other plugins", async () => {
+        await project();
+        const { context } = await serve();
+
+        expect(context.config.resolver).toContain("tokens.resolver.json");
+        expect(context.doc.files).toEqual(["tokens.resolver.json", "base.json"]);
+        expect(context.problems).toEqual([]);
+    });
 });
 
-import sugarcube, { SUGARCUBE_API_PLUGIN_NAME, extractTokenDirs } from "../src/index.js";
-
-const loaded = {
-    trees: [],
-    errors: [],
-    permutations: [{ name: "default", modifiers: {} }],
-    sources: {
-        files: { "/tokens/color.json": "{}" },
-        order: [{ context: "default", sources: [{ file: "/tokens/color.json" }] }],
-    },
-    defaultContext: "default",
-};
-
-function healthy() {
-    loadInternalConfig.mockResolvedValue({ config });
-    loadTokens.mockResolvedValue(loaded);
-    resolveTokens.mockReturnValue(resolved);
-}
-
-async function plugin(name: string) {
-    return (await sugarcubeWithUno()).named(name);
-}
-
-async function context() {
-    return (await sugarcubeWithUno()).ctx;
-}
-
-async function sugarcubeWithUno() {
-    const plugins = (await sugarcube()).flat();
-    const named = (name: string) => plugins.find((p: any) => p.name === name);
-    const uno = named("unocss:api").api.getContext();
-    vi.spyOn(uno, "invalidate").mockImplementation(() => {});
-    vi.spyOn(uno, "reloadConfig").mockResolvedValue(undefined);
-    const ctx = named(SUGARCUBE_API_PLUGIN_NAME).api.getContext();
-    return { named, uno, ctx };
-}
-
-function fakeServer() {
-    return {
-        watcher: new EventEmitter(),
-        config: { logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }, plugins: [] },
-        moduleGraph: { getModuleById: () => undefined },
-    };
-}
-
-function servedPage() {
-    return {
-        watcher: new EventEmitter(),
-        config: { logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() }, plugins: [] },
-        moduleGraph: { idToModuleMap: new Map(), urlToModuleMap: new Map() },
-    };
-}
-
-async function settle() {
-    await new Promise((r) => setImmediate(r));
-    await new Promise((r) => setImmediate(r));
-}
-
-function unhandledRejections() {
-    const seen: unknown[] = [];
-    const listener = (reason: unknown) => seen.push(reason);
-    process.on("unhandledRejection", listener);
-    return { seen, stop: () => process.off("unhandledRejection", listener) };
-}
-
-describe("vite-plugin-sugarcube", () => {
-    it("should return array of plugins with correct structure", async () => {
-        healthy();
+describe("vite build", () => {
+    it("fails with the problems listed when the tokens have errors", async () => {
+        await project();
+        await tokens({ color: { ink: color("{color.inc}") } });
         const plugins = await sugarcube();
-        expect(Array.isArray(plugins)).toBe(true);
-        const flat = plugins.flat();
-        expect(flat.every((p: any) => p.name)).toBe(true);
-    });
 
-    it("reports sources, permutations and defaultContext from loadTokens", async () => {
-        healthy();
-        const ctx = await context();
-        expect(ctx.sources).toBe(loaded.sources);
-        expect(ctx.permutations).toBe(loaded.permutations);
-        expect(ctx.defaultContext).toBe("default");
-    });
-
-    it("reports null sources and defaultContext when loadTokens has none", async () => {
-        healthy();
-        loadTokens.mockResolvedValue({ trees: [], errors: [], permutations: [] });
-        const ctx = await context();
-        expect(ctx.sources).toBeNull();
-        expect(ctx.defaultContext).toBeNull();
-        expect(ctx.permutations).toEqual([]);
-    });
-});
-
-describe("a reload that fails", () => {
-    it("rejects for the caller and raises no unhandled rejection", async () => {
-        healthy();
-        const ctx = await context();
-        const watch = unhandledRejections();
-        resolveTokens.mockImplementationOnce(() => {
-            throw new Error("boom");
+        const built = build({
+            root: folder,
+            configFile: false,
+            logLevel: "silent",
+            plugins,
+            build: { write: false },
         });
 
-        await expect(ctx.reloadTokens()).rejects.toThrow("boom");
-        await settle();
-        watch.stop();
-
-        expect(watch.seen).toEqual([]);
-    });
-
-    it("from a broken config file is logged, not thrown out of the watcher", async () => {
-        healthy();
-        const watcherPlugin = await plugin("sugarcube:config-watcher");
-        const server = fakeServer();
-        watcherPlugin.configureServer(server);
-        const watch = unhandledRejections();
-        loadInternalConfig.mockRejectedValueOnce(new Error("Unexpected token"));
-
-        server.watcher.emit("change", "/app/sugarcube.config.ts");
-        await settle();
-        watch.stop();
-
-        expect(watch.seen).toEqual([]);
-        expect(server.config.logger.error).toHaveBeenCalledWith(
-            expect.stringContaining("Unexpected token"),
-        );
-    });
-});
-
-describe("the context", () => {
-    it("reports the load's errors, one message each", async () => {
-        healthy();
-        loadTokens.mockResolvedValue({ ...loaded, errors: [{ message: "Missing file a.json" }] });
-        const ctx = await context();
-        expect(ctx.errors).toEqual(["Missing file a.json"]);
-    });
-
-    it("stops calling a reload listener once it unsubscribes", async () => {
-        healthy();
-        const ctx = await context();
-        const listener = vi.fn();
-        const unsubscribe = ctx.onReload(listener);
-
-        await ctx.reloadTokens();
-        unsubscribe();
-        await ctx.reloadTokens();
-
-        expect(listener).toHaveBeenCalledTimes(1);
-    });
-});
-
-describe("a change reaches the page", () => {
-    const tokenFile = join(process.cwd(), "tokens", "color.json");
-
-    it("refreshes UnoCSS's CSS after a token reload started through the context", async () => {
-        healthy();
-        const { ctx, uno } = await sugarcubeWithUno();
-
-        await ctx.reloadTokens();
-
-        expect(uno.invalidate).toHaveBeenCalled();
-    });
-
-    it("reloads UnoCSS's config, then refreshes its CSS, after a config reload started through the context", async () => {
-        healthy();
-        const { ctx, uno } = await sugarcubeWithUno();
-
-        await ctx.reloadConfig();
-
-        expect(uno.reloadConfig).toHaveBeenCalled();
-        expect(uno.invalidate).toHaveBeenCalled();
-    });
-
-    it("refreshes UnoCSS's CSS after a token file changes", async () => {
-        healthy();
-        const { named, uno } = await sugarcubeWithUno();
-        const server = servedPage();
-        await named("sugarcube:token-watcher").configureServer(server);
-
-        server.watcher.emit("change", tokenFile);
-
-        await vi.waitFor(() => expect(uno.invalidate).toHaveBeenCalled());
-    });
-
-    it("still refreshes after a second, short-lived server starts, as Astro's content sync does", async () => {
-        healthy();
-        const { named, uno } = await sugarcubeWithUno();
-        const devServer = servedPage();
-        const syncServer = servedPage();
-        await named("sugarcube:token-watcher").configureServer(devServer);
-        await named("sugarcube:token-watcher").configureServer(syncServer);
-        named("sugarcube:config-watcher").configureServer(syncServer);
-
-        devServer.watcher.emit("change", tokenFile);
-
-        await vi.waitFor(() => expect(uno.invalidate).toHaveBeenCalled());
-    });
-
-    it("reloads UnoCSS's config and refreshes its CSS after the config file changes", async () => {
-        healthy();
-        const { named, uno } = await sugarcubeWithUno();
-        const server = servedPage();
-        named("sugarcube:config-watcher").configureServer(server);
-
-        server.watcher.emit("change", "/app/sugarcube.config.ts");
-
-        await vi.waitFor(() => expect(uno.invalidate).toHaveBeenCalled());
-        expect(uno.reloadConfig).toHaveBeenCalled();
-    });
-
-    it("says it is reloading once for a save that fires two change events", async () => {
-        healthy();
-        const { named, uno } = await sugarcubeWithUno();
-        const server = servedPage();
-        await named("sugarcube:token-watcher").configureServer(server);
-
-        server.watcher.emit("change", tokenFile);
-        server.watcher.emit("change", tokenFile);
-        await vi.waitFor(() => expect(uno.invalidate).toHaveBeenCalled());
-
-        const reloading = server.config.logger.info.mock.calls.filter(([message]) =>
-            String(message).includes("Design tokens changed"),
-        );
-        expect(reloading).toHaveLength(1);
-    });
-});
-
-describe("extractTokenDirs", () => {
-    it("should return empty array when no resolver is set", () => {
-        expect(extractTokenDirs({ resolver: undefined })).toEqual([]);
-    });
-
-    it("should return absolute directory for relative resolver path", () => {
-        const dirs = extractTokenDirs({ resolver: "tokens/tokens.resolver.json" });
-        expect(dirs).toHaveLength(1);
-        expect(dirs[0]).toMatch(/\/tokens$/);
-        expect(dirs[0]).not.toContain("./");
-    });
-
-    it("should return absolute directory for ./ prefixed resolver path", () => {
-        const dirs = extractTokenDirs({ resolver: "./tokens/tokens.resolver.json" });
-        expect(dirs).toHaveLength(1);
-        expect(dirs[0]).toMatch(/\/tokens$/);
-        expect(dirs[0]).not.toContain("./");
-    });
-
-    it("should produce consistent paths regardless of ./ prefix", () => {
-        const withDot = extractTokenDirs({ resolver: "./tokens/tokens.resolver.json" });
-        const withoutDot = extractTokenDirs({ resolver: "tokens/tokens.resolver.json" });
-        expect(withDot).toEqual(withoutDot);
-    });
-
-    it("should handle resolver in project root", () => {
-        const dirs = extractTokenDirs({ resolver: "tokens.resolver.json" });
-        expect(dirs).toHaveLength(1);
-        expect(dirs[0]).toBe(process.cwd());
+        await expect(built).rejects.toThrow("`color.inc` does not exist");
     });
 });

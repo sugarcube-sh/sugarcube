@@ -1,17 +1,14 @@
 import { isDeepStrictEqual } from "node:util";
 import {
     type CSSFileOutput,
-    type Declarations,
     type InternalConfig,
     type LoadedConfig,
     type Reported,
+    type UtilityCSS,
     type UtilityStart,
-    declare,
-    emitCSS,
+    cssFrom,
     fillDefaults,
     readOptions,
-    utilityRules,
-    utilityTokens,
 } from "@sugarcube-sh/core";
 import { type Document, readFromMemory } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
@@ -48,14 +45,6 @@ interface Reading {
     configFile?: string;
 }
 
-interface Made {
-    files: CSSFileOutput;
-    diagnostics: Reported[];
-    generator?: UtilityGenerator;
-}
-
-const nothing: Made = { files: [], diagnostics: [] };
-
 export async function build(
     { config, configFile }: LoadedConfig,
     options: BuildOptions = {},
@@ -86,48 +75,41 @@ async function fromReading(
     options: BuildOptions,
     previous?: Built,
 ): Promise<Built> {
-    const declared = declare(doc, config);
-    const variables = options.utilitiesOnly ? nothing : variablesFrom(declared, config);
-    const utilities = options.variablesOnly
-        ? nothing
-        : await utilitiesFrom(declared, config, options.markup ?? true, previous);
+    const made = cssFrom(doc, config, {
+        variables: !options.utilitiesOnly,
+        utilities: !options.variablesOnly,
+    });
+    const markup = options.markup ?? true;
+    const utilities = await utilitiesFrom(made.utilities, config, markup, previous);
     return {
         doc,
         folder,
         configFile,
-        variables: variables.files,
+        variables: finished(made.variables, config.variables.layer),
         utilities: utilities.files,
-        diagnostics: [...declared.diagnostics, ...variables.diagnostics, ...utilities.diagnostics],
+        diagnostics: made.diagnostics,
         generator: utilities.generator,
     };
 }
 
-function variablesFrom(declared: Declarations, config: InternalConfig): Made {
-    const { files, diagnostics } = emitCSS(declared, config);
-    const { layer } = config.variables;
-    return { files: finished(files, layer), diagnostics };
-}
-
 async function utilitiesFrom(
-    declared: Declarations,
+    utilities: UtilityCSS | undefined,
     config: InternalConfig,
     markup: boolean,
     previous: Built | undefined,
-): Promise<Made> {
-    const { classes } = config.utilities;
-    if (!classes || Object.keys(classes).length === 0) return nothing;
-    const { rules, starts, safelist, diagnostics } = utilityRules(utilityTokens(declared), classes);
-    if (!markup) return { files: [], diagnostics };
+): Promise<{ files: CSSFileOutput; generator?: UtilityGenerator }> {
+    if (!utilities || !markup) return { files: [] };
+    const { rules, starts, safelist } = utilities;
     const kept = previous?.generator;
     if (kept && isDeepStrictEqual([kept.starts, kept.safelist], [starts, safelist])) {
-        return { files: previous.utilities, diagnostics, generator: kept };
+        return { files: previous.utilities, generator: kept };
     }
     const uno = await createGenerator({
         presets: [{ name: "sugarcube", rules, preflights: [] }],
         safelist,
     });
     const generator = { starts, safelist, uno };
-    return { files: await scanned(generator, config), diagnostics, generator };
+    return { files: await scanned(generator, config), generator };
 }
 
 async function scanned(generator: UtilityGenerator, config: InternalConfig) {

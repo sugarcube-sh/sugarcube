@@ -34,6 +34,8 @@ export { emitCSS } from "./shared/css/emit.js";
 export { utilityTokens } from "./shared/utilities/tokens.js";
 export { utilityRules } from "./shared/utilities/rules.js";
 export type { UtilityStart } from "./shared/utilities/rules.js";
+export { cssFrom } from "./shared/css-from.js";
+export type { MadeCSS, UtilityCSS } from "./shared/css-from.js";
 export type { Reported } from "./types/diagnostics.js";
 
 export { buildTokenGraph } from "./shared/graph/build-token-graph.js";

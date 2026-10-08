@@ -130,4 +130,6 @@ export const ERROR_MESSAGES = {
 
     ANALYZE_UNREAD_STYLESHEETS: (entries: Unread[]) =>
         `${unreadHeadline(entries)}\n\nTokens used only there appear unused. ${unreadFix(entries)}\n\n${color.cyan(LINKS.CONFIGURATION)}`,
+
+    NO_CSS_WRITTEN: () => "No CSS was written.",
 } as const;

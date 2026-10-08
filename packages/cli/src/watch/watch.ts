@@ -2,6 +2,7 @@ import {
     type CSSFileOutput,
     ConfigError,
     type LoadedConfig,
+    type Reported,
     configProblem,
     plural,
     writeCSSFiles,
@@ -9,6 +10,7 @@ import {
 import { resolve } from "pathe";
 import { type BuildOptions, type Built, build, filesOf, rescan } from "../build.js";
 import { type ConfigFlags, loadConfig } from "../config.js";
+import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { printProblems, whereOf } from "../problems.js";
 import { errorPrefix, logRegenerated, prefix, warnPrefix } from "./log.js";
 import { type ChangeKind, type Watched, startWatcher } from "./watcher.js";
@@ -25,11 +27,12 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
         utilitiesOnly: flags.utilitiesOnly,
     };
     let loaded = first;
+    let configProblems: Reported[] = [];
 
     const written = async (built: Built, files: CSSFileOutput): Promise<boolean> => {
-        const failed = printProblems(built.diagnostics, whereOf(built), {
+        const failed = printProblems([...configProblems, ...built.diagnostics], whereOf(built), {
             onlyErrors: flags.silent,
-            whenFailed: "No CSS was written.",
+            whenFailed: ERROR_MESSAGES.NO_CSS_WRITTEN(),
         });
         if (failed) return false;
         await writeCSSFiles(files);
@@ -42,15 +45,16 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
         console.log(`${prefix} Generated in ${since(started)}ms`);
     }
 
-    const rebuilt = async (kind: ChangeKind): Promise<Built | undefined> => {
+    const rebuilt = async (kind: ChangeKind): Promise<Built> => {
         if (kind === "markup") return rescan(last, loaded.config);
         if (kind === "token") return build(loaded, options, last);
         try {
             loaded = await loadConfig(flags);
+            configProblems = [];
         } catch (error) {
             if (!(error instanceof ConfigError)) throw error;
-            printProblems([configProblem(error)], whereOf(last));
-            return undefined;
+            configProblems = [configProblem(error)];
+            return last;
         }
         return build(loaded, options);
     };
@@ -58,9 +62,7 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
     const watcher = await startWatcher(watchedBy(last, loaded), {
         onChange: async (kind, changedPath) => {
             const begun = performance.now();
-            const next = await rebuilt(kind);
-            if (!next) return;
-            last = next;
+            last = await rebuilt(kind);
             const files = kind === "markup" ? last.utilities : filesOf(last);
             if (await written(last, files)) logRegenerated(changedPath, files, since(begun));
             await watcher.update(watchedBy(last, loaded));

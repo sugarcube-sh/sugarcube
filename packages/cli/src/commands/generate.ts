@@ -3,6 +3,7 @@ import { Command } from "commander";
 import color from "picocolors";
 import { build, filesOf } from "../build.js";
 import { loadConfig } from "../config.js";
+import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import { printProblems, whereOf } from "../problems.js";
 import { intro, label, outro } from "../prompts/common.js";
@@ -39,7 +40,7 @@ async function runOneTimeGeneration(loaded: LoadedConfig, options: GenerateFlags
     });
     const failed = printProblems(built.diagnostics, whereOf(built), {
         onlyErrors: options.silent,
-        whenFailed: "No CSS was written.",
+        whenFailed: ERROR_MESSAGES.NO_CSS_WRITTEN(),
     });
     if (failed) {
         process.exitCode = 1;
