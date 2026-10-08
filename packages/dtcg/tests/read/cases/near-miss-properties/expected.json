@@ -1,6 +1,6 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "Format 5 and 6: a token is an object with $value, and $-prefixed names are the spec's own. A member that is almost certainly one of them (value or $vlaue or $Value for $value, type for $type, $descripton for $description) is read as it, with an error naming what was meant, so the token is not lost or read as a group, and nothing that depends on it fails as well. A member named value that holds a token stays a child. A $-prefixed name near none of them is ignored with a warning",
+  "spec": "Format 5 and 6: a token is an object with $value, and $-prefixed names are the spec's own. A member that is almost certainly one of them (value or $vlaue or $Value for $value, type for $type, $descripton for $description) is read as it, with an error naming what was meant, so the token is not lost or read as a group, and nothing that depends on it fails as well. A member named value that holds a token stays a child. A $-prefixed name near none of them is ignored with a warning. A member that would be a near miss of a property written properly beside it is not taken for it: the property wins, and the member is what it would be without this rule",
   "permutations": [
     {
       "tokens": [
@@ -33,6 +33,15 @@
           "path": "color.text",
           "type": "color",
           "aliasOf": "color.missing"
+        },
+        {
+          "path": "color.both",
+          "type": "color",
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [0, 1, 1],
+            "alpha": 1
+          }
         },
         {
           "path": "space.sm",
@@ -71,6 +80,15 @@
           "path": "color.text",
           "type": "color",
           "aliasOf": "color.missing"
+        },
+        {
+          "path": "color.both",
+          "type": "color",
+          "resolved": {
+            "colorSpace": "srgb",
+            "components": [0, 1, 1],
+            "alpha": 1
+          }
         },
         {
           "path": "space.sm",
@@ -143,6 +161,18 @@
         "text": "\"$whatever\""
       },
       "path": "color.unknown"
+    },
+    {
+      "kind": "token-and-group",
+      "detail": {
+        "reason": "child",
+        "child": "value"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"value\"",
+        "occurrence": 3
+      }
     },
     {
       "kind": "misspelt-property",

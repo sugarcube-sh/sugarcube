@@ -216,6 +216,10 @@ export function walkSource(
     const asWritten = (path: string, entries: Member[], top: boolean): Member[] => {
         const meant = entries.map((entry) => {
             const property = intended(entry);
+            if (property === entry.key) return property;
+            if (property === undefined || entries.some(({ key }) => key === property)) {
+                return undefined;
+            }
             return top && property === "$value" ? undefined : property;
         });
         const owner = meant.includes("$value") ? "token" : "group";
