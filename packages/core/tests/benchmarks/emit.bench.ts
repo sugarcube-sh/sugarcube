@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { bench, describe } from "vitest";
 import { fillDefaults } from "../../src/node/config/normalize.js";
+import { declare } from "../../src/shared/css/declare.js";
 import { emitCSS } from "../../src/shared/css/emit.js";
 import { readOptions } from "../../src/shared/read-options.js";
 
@@ -25,10 +26,10 @@ const projects = {
     ),
 };
 
-describe("emitCSS, on a Document already read", () => {
+describe("declare and emitCSS, on a Document already read", () => {
     for (const [name, { config, doc }] of Object.entries(projects)) {
         bench(name, () => {
-            emitCSS(doc, config);
+            emitCSS(declare(doc, config), config);
         });
     }
 });

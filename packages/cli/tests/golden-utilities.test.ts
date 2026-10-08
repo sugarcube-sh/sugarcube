@@ -9,6 +9,7 @@ import wwwConfig from "../../../apps/www/sugarcube.config.js";
 import { fillDefaults } from "../../core/src/node/config/normalize.js";
 import { readOptions } from "../../core/src/shared/read-options.js";
 import { utilityRules } from "../../core/src/shared/utilities/rules.js";
+import { declare } from "../../core/src/shared/css/declare.js";
 import { type UtilityToken, utilityTokens } from "../../core/src/shared/utilities/tokens.js";
 import studioConfig from "../../studio/sugarcube.config.js";
 
@@ -199,7 +200,7 @@ describe("golden utilities: the new core writes what old sugarcube writes", () =
             variables: { ...base.variables, path: "variables.css" },
         });
         const doc = await read(resolver, readOptions(config));
-        const tokens = utilityTokens(doc, config);
+        const tokens = utilityTokens(declare(doc, config));
         const { classes } = config.utilities;
         ok(classes, `${name} lists utility classes`);
         const { rules, safelist, diagnostics } = utilityRules(tokens, classes);

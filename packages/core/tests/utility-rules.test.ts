@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
 import { readOptions } from "../src/shared/read-options.js";
 import { utilityRules } from "../src/shared/utilities/rules.js";
+import { declare } from "../src/shared/css/declare.js";
 import { utilityTokens } from "../src/shared/utilities/tokens.js";
 import type { UtilityClassesConfig } from "../src/types/config.js";
 
@@ -41,7 +42,7 @@ function ruledFrom(
         Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
     );
     const doc = readFromMemory({ files: texts }, readOptions(config));
-    return utilityRules(utilityTokens(doc, config), classes);
+    return utilityRules(utilityTokens(declare(doc, config)), classes);
 }
 
 function ruled(tokens: unknown, classes: UtilityClassesConfig, variables: Variables = {}) {

@@ -26,6 +26,13 @@ export { groupByContext } from "./shared/pipeline/group-by-context.js";
 export { assignCSSNames } from "./shared/pipeline/assign-css-names.js";
 export { generateCSSVariables } from "./shared/generate-css-variables.js";
 
+export { readOptions } from "./shared/read-options.js";
+export { declare } from "./shared/css/declare.js";
+export { emitCSS } from "./shared/css/emit.js";
+export { utilityTokens } from "./shared/utilities/tokens.js";
+export { utilityRules } from "./shared/utilities/rules.js";
+export type { Reported } from "./types/diagnostics.js";
+
 export { buildTokenGraph } from "./shared/graph/build-token-graph.js";
 export type { BuildTokenGraphOptions } from "./shared/graph/build-token-graph.js";
 export {

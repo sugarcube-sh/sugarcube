@@ -2,6 +2,7 @@ import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
 import { readOptions } from "../src/shared/read-options.js";
+import { declare } from "../src/shared/css/declare.js";
 import { utilityTokens } from "../src/shared/utilities/tokens.js";
 
 type Variables = Parameters<typeof fillDefaults>[0]["variables"];
@@ -11,14 +12,14 @@ function tokensFor(files: Record<string, unknown>, variables: Variables = {}) {
     const texts = Object.fromEntries(
         Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
     );
-    return utilityTokens(readFromMemory({ files: texts }, readOptions(config)), config).map(
-        (listed) => {
-            const { path, type } = listed.token;
-            if ("name" in listed) return { path, type, name: listed.name };
-            if ("variables" in listed) return { path, type, variables: listed.variables };
-            return { path, type, private: listed.private };
-        },
-    );
+    return utilityTokens(
+        declare(readFromMemory({ files: texts }, readOptions(config)), config),
+    ).map((listed) => {
+        const { path, type } = listed.token;
+        if ("name" in listed) return { path, type, name: listed.name };
+        if ("variables" in listed) return { path, type, variables: listed.variables };
+        return { path, type, private: listed.private };
+    });
 }
 
 const color = (value: unknown) => ({ $type: "color", $value: value });

@@ -5,6 +5,7 @@ import { errors } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
+import { declare } from "../src/shared/css/declare.js";
 import { emitCSS } from "../src/shared/css/emit.js";
 import { readOptions } from "../src/shared/read-options.js";
 import type { SugarcubeConfig } from "../src/types/config.js";
@@ -319,7 +320,7 @@ function inLayer(css: string, layer: string | undefined): string {
 describe("golden CSS: the new core writes what old sugarcube writes", () => {
     it.for(goldenFiles)("$name", async ({ name, each, file }) => {
         const { config, doc } = await readCase(each);
-        const { files } = emitCSS(doc, config);
+        const { files } = emitCSS(declare(doc, config), config);
         const written = files.find(({ path }) => path === file)?.css;
         const css = written === undefined ? "" : inLayer(written, config.variables.layer);
         const expected = readFileSync(join(golden, name), "utf8");

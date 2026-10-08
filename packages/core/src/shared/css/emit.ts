@@ -1,12 +1,10 @@
-import type { Diagnostic, Document, Permutation } from "@sugarcube-sh/dtcg";
 import type { InternalConfig } from "../../types/config.js";
 import type { Reported } from "../../types/diagnostics.js";
 import type { CSSFileOutput } from "../../types/generate.js";
 import { diagnostic } from "../diagnostics.js";
-import { blocks, entries } from "./blocks.js";
-import { type Declared, declarationOptions, declarations } from "./declarations.js";
+import { blocks } from "./blocks.js";
+import type { Declarations } from "./declare.js";
 import { files } from "./text.js";
-import { textZoomWarnings } from "./text-zoom.js";
 
 /**
  * Writes the design system's CSS variables, named from the config's `prefix` or `variableName`,
@@ -19,59 +17,19 @@ import { textZoomWarnings } from "./text-zoom.js";
  * refers to something it changed, unless `redeclareDependents` is `false`, so a theme set on any
  * element gives the right values. With `colorFallbackStrategy: "polyfill"`, a color outside sRGB
  * and HSL is written as its `hex`, and as itself inside an `@supports` block for browsers that
- * can show it. Hands back every problem found, without throwing.
+ * can show it. Hands back a warning when the config still says `propagateDependents`; what
+ * reading and declaring found is in `declared.diagnostics`.
  *
  * @example
  * const doc = await read(config.resolver, readOptions(config));
- * const { files, diagnostics } = emitCSS(doc, config);
+ * const { files, diagnostics } = emitCSS(declare(doc, config), config);
  */
 export function emitCSS(
-    doc: Document,
+    declared: Declarations,
     config: InternalConfig,
 ): { files: CSSFileOutput; diagnostics: Reported[] } {
-    const reported = doc.diagnostics.map(asReported);
     const { redeclare, renamed } = redeclaring(config);
-    const deprecated =
-        config.variables.transforms.colorFallbackStrategy === "polyfill"
-            ? [diagnostic("option-deprecated", { option: 'colorFallbackStrategy: "polyfill"' })]
-            : [];
-    if (reported.some(({ kind }) => kind === "default-required"))
-        return { files: [], diagnostics: [...reported, ...renamed, ...deprecated] };
-
-    const options = declarationOptions(doc, config);
-    const toWrite = entries(doc, config);
-    const declaredIn = new Map<Permutation, Declared>();
-    const declared = (permutation: Permutation) => {
-        const found = declaredIn.get(permutation) ?? declarations(permutation, options);
-        declaredIn.set(permutation, found);
-        return found.declarations;
-    };
-    const written = files(blocks(toWrite, { declared, redeclare }));
-
-    return {
-        files: written,
-        diagnostics: [
-            ...reported,
-            ...renamed,
-            ...deprecated,
-            ...textZoomWarnings(
-                toWrite.map(({ permutation }) => permutation),
-                options.fluid,
-                options.parseOptions,
-            ),
-            ...missingHex([...declaredIn.values()]),
-            ...sameNames([...declaredIn.values()]),
-        ],
-    };
-}
-
-function asReported(found: Diagnostic): Reported {
-    if (found.kind !== "no-default") return found;
-    const { at } = found;
-    return {
-        ...diagnostic("default-required", { modifiers: found.detail.modifiers }),
-        ...(at && { at }),
-    };
+    return { files: files(blocks(declared.entries, { redeclare })), diagnostics: renamed };
 }
 
 function redeclaring(config: InternalConfig): { redeclare: boolean; renamed: Reported[] } {
@@ -88,32 +46,4 @@ function redeclaring(config: InternalConfig): { redeclare: boolean; renamed: Rep
                       }),
                   ],
     };
-}
-
-function missingHex(declared: Declared[]): Reported[] {
-    const found = new Map<string, Reported>();
-    for (const { token, colorSpace } of declared.flatMap(({ missing }) => missing)) {
-        const key = `${token.path}\u0000${colorSpace}`;
-        if (!found.has(key)) found.set(key, diagnostic("fallback-missing", { colorSpace }, token));
-    }
-    return [...found.values()];
-}
-
-function sameNames(declared: Declared[]): Reported[] {
-    const found = new Map<string, Reported>();
-    for (const { declarations: lines } of declared) {
-        const first = new Map<string, string>();
-        for (const { name, token } of lines) {
-            const earlier = first.get(name);
-            if (earlier === undefined) {
-                first.set(name, token.path);
-                continue;
-            }
-            const key = `${earlier}\u0000${token.path}`;
-            if (earlier === token.path || found.has(key)) continue;
-            const paths: [string, string] = [earlier, token.path];
-            found.set(key, diagnostic("same-variable-name", { name, paths }, token));
-        }
-    }
-    return [...found.values()];
 }

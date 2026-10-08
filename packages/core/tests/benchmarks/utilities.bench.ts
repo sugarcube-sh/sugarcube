@@ -5,6 +5,7 @@ import { bench, describe } from "vitest";
 import wwwConfig from "../../../../apps/www/sugarcube.config.js";
 import { fillDefaults } from "../../src/node/config/normalize.js";
 import { loadTokens } from "../../src/node/load-tokens.js";
+import { declare } from "../../src/shared/css/declare.js";
 import { emitCSS } from "../../src/shared/css/emit.js";
 import { assignCSSNames } from "../../src/shared/pipeline/assign-css-names.js";
 import { groupByContext } from "../../src/shared/pipeline/group-by-context.js";
@@ -73,17 +74,23 @@ for (const [name, { config, doc, old }] of Object.entries(projects)) {
             );
         });
 
-        bench("new core: tokens, rules, safelist, answers", () => {
-            const { rules, safelist } = utilityRules(utilityTokens(doc, config), classes);
+        const declared = declare(doc, config);
+
+        bench("new core: tokens, rules, safelist, answers, from the build's declarations", () => {
+            const { rules, safelist } = utilityRules(utilityTokens(declared), classes);
             answerEach(rules, safelist);
         });
 
         bench("new core: the token list alone", () => {
-            utilityTokens(doc, config);
+            utilityTokens(declared);
+        });
+
+        bench("new core: declare, for scale", () => {
+            declare(doc, config);
         });
 
         bench("new core: emitCSS, for scale", () => {
-            emitCSS(doc, config);
+            emitCSS(declared, config);
         });
     });
 }
