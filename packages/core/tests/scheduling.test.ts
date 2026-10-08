@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { createCoalescedRunner, debounce } from "../src/shared/scheduling.js";
+import { describe, expect, it, vi } from "vitest";
+import { createCoalescedRunner } from "../src/shared/scheduling.js";
 
 function deferred<T = void>() {
     let resolve!: (value: T) => void;
@@ -10,61 +10,6 @@ function deferred<T = void>() {
     });
     return { promise, resolve, reject };
 }
-
-describe("debounce", () => {
-    afterEach(() => vi.useRealTimers());
-
-    it("collapses a burst of calls into a single trailing invocation", () => {
-        vi.useFakeTimers();
-        const fn = vi.fn();
-        const d = debounce(fn, 100);
-
-        d();
-        d();
-        d();
-        expect(fn).not.toHaveBeenCalled();
-
-        vi.advanceTimersByTime(100);
-        expect(fn).toHaveBeenCalledTimes(1);
-    });
-
-    it("resets the timer on each call", () => {
-        vi.useFakeTimers();
-        const fn = vi.fn();
-        const d = debounce(fn, 100);
-
-        d();
-        vi.advanceTimersByTime(80);
-        d();
-        vi.advanceTimersByTime(80);
-        expect(fn).not.toHaveBeenCalled();
-
-        vi.advanceTimersByTime(20);
-        expect(fn).toHaveBeenCalledTimes(1);
-    });
-
-    it("fires with the latest arguments", () => {
-        vi.useFakeTimers();
-        const fn = vi.fn();
-        const d = debounce(fn, 100);
-
-        d("first");
-        d("last");
-        vi.advanceTimersByTime(100);
-        expect(fn).toHaveBeenCalledWith("last");
-    });
-
-    it("cancel() prevents a pending invocation from firing", () => {
-        vi.useFakeTimers();
-        const fn = vi.fn();
-        const d = debounce(fn, 100);
-
-        d();
-        d.cancel();
-        vi.advanceTimersByTime(200);
-        expect(fn).not.toHaveBeenCalled();
-    });
-});
 
 describe("createCoalescedRunner", () => {
     it("runs sequential (non-overlapping) calls in full", async () => {

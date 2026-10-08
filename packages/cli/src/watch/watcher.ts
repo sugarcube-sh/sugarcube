@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
-import { createCoalescedRunner, debounce } from "@sugarcube-sh/core";
+import { createCoalescedRunner } from "@sugarcube-sh/core";
 import { type FSWatcher, watch as chokidarWatch } from "chokidar";
 import { normalize } from "pathe";
 import { IGNORED_DIR_NAMES, MARKUP_EXTENSIONS } from "../constants/markup.js";
@@ -32,7 +32,6 @@ const IN_ORDER: ChangeKind[] = ["config", "token", "markup"];
 
 export function createChangeQueue(
     callbacks: Pick<WatchCallbacks, "onChange" | "onError">,
-    wait = 100,
 ): ChangeQueue {
     const pending = new Map<ChangeKind, string>();
 
@@ -47,16 +46,11 @@ export function createChangeQueue(
         },
         (error) => callbacks.onError(error instanceof Error ? error : new Error(String(error))),
     );
-    const settled = debounce(() => drain(), wait);
-
     const queue = (kind: ChangeKind, changedPath: string) => {
         pending.set(kind, changedPath);
-        settled();
+        drain();
     };
-    queue.cancel = () => {
-        settled.cancel();
-        pending.clear();
-    };
+    queue.cancel = () => pending.clear();
     return queue;
 }
 
@@ -81,17 +75,11 @@ export function resolveMarkupWatchTargets(content: string[] | undefined): string
     return [...new Set(dirs)];
 }
 
-const WRITE_SETTLE = {
-    ignoreInitial: true,
-    awaitWriteFinish: {
-        stabilityThreshold: 50,
-        pollInterval: 10,
-    },
-};
+const CHANGES_ONLY = { ignoreInitial: true };
 
 function watchMarkup(content: string[] | undefined): FSWatcher {
     return chokidarWatch(resolveMarkupWatchTargets(content), {
-        ...WRITE_SETTLE,
+        ...CHANGES_ONLY,
         ignored: (path, stats) => {
             const segments = path.split("/");
             for (const segment of segments) {
@@ -129,7 +117,7 @@ export async function startWatcher(
     let watched = first;
     const queue = createChangeQueue(callbacks);
 
-    const files = chokidarWatch(pathsOf(watched), WRITE_SETTLE);
+    const files = chokidarWatch(pathsOf(watched), CHANGES_ONLY);
     const filesReady = ready(files);
     const onFile = (path: string) => queue(fileChange(path, watched), path);
     files.on("change", onFile);

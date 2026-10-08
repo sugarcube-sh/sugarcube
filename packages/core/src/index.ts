@@ -21,8 +21,7 @@ export type { ResolverDiscoveryResult } from "./node/resolver/find.js";
 
 export { loadTokens } from "./node/load-tokens.js";
 export type { LoadResult } from "./node/load-tokens.js";
-export { createCoalescedRunner, debounce } from "./shared/scheduling.js";
-export type { DebouncedFn } from "./shared/scheduling.js";
+export { createCoalescedRunner } from "./shared/scheduling.js";
 
 export { writeCSSFiles } from "./node/write-css.js";
 
