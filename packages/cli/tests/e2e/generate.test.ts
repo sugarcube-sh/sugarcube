@@ -4,7 +4,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execaCommand } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CLI_PATH, TEST_TIMEOUT, createPackageJson, createTokens } from "./helpers.js";
+import {
+    CLI_PATH,
+    PLAIN_OUTPUT,
+    TEST_TIMEOUT,
+    createPackageJson,
+    createTokens,
+} from "./helpers.js";
 
 describe("generate command", () => {
     let testDir: string;
@@ -49,6 +55,7 @@ describe("generate command", () => {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
+                env: PLAIN_OUTPUT,
             });
 
             expect(result.exitCode).toBe(1);
@@ -83,6 +90,7 @@ describe("generate command", () => {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
+                env: PLAIN_OUTPUT,
             });
 
             expect(result.exitCode).toBe(0);
@@ -108,6 +116,7 @@ describe("generate command", () => {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
+                env: PLAIN_OUTPUT,
             });
 
             expect(result.exitCode).toBe(1);
@@ -129,7 +138,7 @@ describe("generate command", () => {
 
             const result = await execaCommand(
                 `node ${CLI_PATH} generate --resolver design-tokens/tokens.resolver.json`,
-                { cwd: testDir, timeout: TEST_TIMEOUT, reject: false },
+                { cwd: testDir, timeout: TEST_TIMEOUT, reject: false, env: PLAIN_OUTPUT },
             );
 
             expect(result.exitCode).toBe(0);
@@ -147,6 +156,7 @@ describe("generate command", () => {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
+                env: PLAIN_OUTPUT,
             });
 
             expect(result.exitCode).toBe(1);
@@ -163,6 +173,7 @@ describe("generate command", () => {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
+                env: PLAIN_OUTPUT,
             },
         );
 
@@ -181,6 +192,7 @@ describe("generate command", () => {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
+                env: PLAIN_OUTPUT,
             },
         );
 
@@ -197,6 +209,7 @@ describe("generate command", () => {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
+                env: PLAIN_OUTPUT,
             },
         );
 
@@ -233,7 +246,7 @@ describe("generate command", () => {
 
             const result = await execaCommand(
                 `node ${CLI_PATH} generate --resolver ${resolver} --input theme=dark --selector .dark`,
-                { cwd: testDir, timeout: TEST_TIMEOUT, reject: false },
+                { cwd: testDir, timeout: TEST_TIMEOUT, reject: false, env: PLAIN_OUTPUT },
             );
 
             expect(result.exitCode).toBe(0);
@@ -253,6 +266,7 @@ describe("generate command", () => {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
+                env: PLAIN_OUTPUT,
             },
         );
 

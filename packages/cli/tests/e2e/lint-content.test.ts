@@ -3,7 +3,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execaCommand } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CLI_PATH, TEST_TIMEOUT, createPackageJson, createTokens } from "./helpers.js";
+import {
+    CLI_PATH,
+    PLAIN_OUTPUT,
+    TEST_TIMEOUT,
+    createPackageJson,
+    createTokens,
+} from "./helpers.js";
 
 describe("lint command: content globs", () => {
     let testDir: string;
@@ -49,6 +55,7 @@ describe("lint command: content globs", () => {
                 cwd: assetsJs,
                 timeout: TEST_TIMEOUT,
                 reject: false,
+                env: PLAIN_OUTPUT,
             });
 
             expect(result.exitCode).toBe(1);
@@ -65,6 +72,7 @@ describe("lint command: content globs", () => {
                 cwd: assetsJs,
                 timeout: TEST_TIMEOUT,
                 reject: false,
+                env: PLAIN_OUTPUT,
             });
 
             expect(result.stdout).toContain("--not-a-token");

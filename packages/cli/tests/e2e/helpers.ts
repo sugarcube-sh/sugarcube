@@ -4,6 +4,7 @@ import { join } from "node:path";
 export const CLI_PATH = join(__dirname, "../../dist/index.mjs");
 export const TEST_TIMEOUT = 60_000;
 export const FIXTURES_PATH = join(__dirname, "__fixtures__");
+export const PLAIN_OUTPUT = { NO_COLOR: "1" };
 
 export async function createPackageJson(dir: string): Promise<void> {
     await writeFile(
