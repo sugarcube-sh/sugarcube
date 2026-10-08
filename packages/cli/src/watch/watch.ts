@@ -3,7 +3,7 @@ import {
     ConfigError,
     type LoadedConfig,
     type Reported,
-    configProblem,
+    configProblems,
     plural,
     writeCSSFiles,
 } from "@sugarcube-sh/core";
@@ -27,10 +27,10 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
         utilitiesOnly: flags.utilitiesOnly,
     };
     let loaded = first;
-    let configProblems: Reported[] = [];
+    let fromConfig: Reported[] = [];
 
     const written = async (built: Built, files: CSSFileOutput): Promise<boolean> => {
-        const failed = printProblems([...configProblems, ...built.diagnostics], whereOf(built), {
+        const failed = printProblems([...fromConfig, ...built.diagnostics], whereOf(built), {
             onlyErrors: flags.silent,
             whenFailed: ERROR_MESSAGES.NO_CSS_WRITTEN(),
         });
@@ -50,10 +50,10 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
         if (kind === "token") return build(loaded, options, last);
         try {
             loaded = await loadConfig(flags);
-            configProblems = [];
+            fromConfig = [];
         } catch (error) {
             if (!(error instanceof ConfigError)) throw error;
-            configProblems = [configProblem(error)];
+            fromConfig = configProblems(error);
             return last;
         }
         return build(loaded, options);

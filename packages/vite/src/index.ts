@@ -7,7 +7,7 @@ import {
     type Reported,
     type UtilityCSS,
     type Where,
-    configProblem,
+    configProblems,
     cssFrom,
     loadInternalConfig,
     problemsText,
@@ -86,9 +86,9 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
         read: readOptions(loaded.config),
     }));
     let doc = await tokens.api.document();
-    let configProblems: Reported[] = [];
+    let fromConfig: Reported[] = [];
     let tokenProblems: Reported[] = [];
-    const problems = () => [...configProblems, ...tokenProblems];
+    const problems = () => [...fromConfig, ...tokenProblems];
     let good: Good = { css: "", utilities: NO_UTILITIES };
     let logger: Logger | undefined;
     let server: ViteDevServer | undefined;
@@ -130,10 +130,10 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
     const reloadConfig = async () => {
         try {
             loaded = await loadInternalConfig();
-            configProblems = [];
+            fromConfig = [];
         } catch (error) {
             if (!(error instanceof ConfigError)) throw error;
-            configProblems = [configProblem(error)];
+            fromConfig = configProblems(error);
             report();
             return;
         }

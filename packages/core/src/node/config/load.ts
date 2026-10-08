@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { createJiti } from "jiti";
-import { dirname, resolve } from "pathe";
+import { basename, dirname, resolve } from "pathe";
 import { validateInternalConfig, validateSugarcubeConfig } from "../../shared/config.js";
 import { ConfigError } from "../../shared/config-error.js";
 import { ErrorMessages } from "../../shared/constants/error-messages.js";
@@ -67,12 +67,10 @@ async function loadConfigFile(configFile: string): Promise<unknown> {
             ? result.default
             : result;
     } catch (error) {
-        if (error instanceof Error) {
-            throw new ConfigError(ErrorMessages.CONFIG.INVALID_CONFIG("root", error.message), {
-                cause: error,
-            });
-        }
-        throw error;
+        if (!(error instanceof Error)) throw error;
+        const cause = error.message.replace(/\s+/g, " ").trim();
+        const file = basename(configFile);
+        throw new ConfigError([{ reason: "not-loaded", file, cause }], { cause: error });
     }
 }
 

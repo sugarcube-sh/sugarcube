@@ -174,6 +174,7 @@ describe("sugarcube's Vite plugin", () => {
         expect(overlays).toHaveLength(1);
         expect(overlays[0]).toContain(`${join(folder, "tokens/base.json")}:9:17  error`);
         expect(overlays[0]).toMatch(/\n1 error\.$/);
+        expect(logged.join("\n")).toMatch(/\n1 error\.$/m);
     });
 
     it("serves the CSS again once the errors are fixed", async () => {

@@ -1,4 +1,5 @@
 import type {
+    ConfigIssue,
     SugarcubeDiagnosticDetailByKind,
     SugarcubeDiagnosticKind,
     UtilityEntry,
@@ -64,7 +65,7 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
     },
     "invalid-config": {
         severity: "error",
-        message: ({ problem }) => problem,
+        message: (issue) => configIssueText(issue),
     },
 };
 
@@ -95,6 +96,33 @@ const SUFFIXES: Record<Intl.LDMLPluralRule, string> = {
     zero: "th",
     many: "th",
 };
+
+export function configIssueText(issue: ConfigIssue): string {
+    const subject = "setting" in issue && issue.setting ? quoted(issue.setting) : "the config";
+    switch (issue.reason) {
+        case "not-loaded":
+            return `could not be loaded: ${issue.cause}`;
+        case "wrong-type":
+            return `${subject} must be ${listed(issue.expected.map(aOrAn), "or")}, not ${aOrAn(issue.received)}`;
+        case "missing":
+            return `${subject} needs a ${quoted(issue.property)}`;
+        case "not-allowed": {
+            const allowed = listed(
+                issue.allowed.map((value) => JSON.stringify(value)),
+                "or",
+            );
+            return `${subject} must be ${allowed}, not ${JSON.stringify(issue.value)}`;
+        }
+        case "invalid":
+            return issue.setting ? `${subject}: ${issue.message}` : issue.message;
+    }
+}
+
+function aOrAn(type: string): string {
+    if (type === "nan") return "NaN";
+    if (type === "null" || type === "undefined") return type;
+    return `${/^[aeiou]/.test(type) ? "an" : "a"} ${type}`;
+}
 
 function entryName({ property, entry }: UtilityEntry): string {
     if (entry === undefined) return quoted(property);
@@ -256,8 +284,6 @@ export const ErrorMessages = {
             `Failed to convert color: ${error}. This is a bug in sugarcube. Please report it at https://github.com/sugarcube-sh/sugarcube/issues`,
     },
     CONFIG: {
-        INVALID_CONFIG: (path: string, message: string) =>
-            `Invalid configuration at ${path}: ${message}`,
         MULTIPLE_RESOLVERS_FOUND: (paths: string[]) =>
             `Several resolver files were found:\n${paths.map((f) => `  - ${f}`).join("\n")}\n\nName the one to use as \`resolver\` in sugarcube.config.ts.`,
         NO_CONFIG_OR_RESOLVER: () =>

@@ -595,6 +595,10 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
         ).toStrictEqual(["`color` makes no classes: there are no tokens under `colour`"]);
     });
 
+    it("not when there are no tokens at all, as when they could not be read", () => {
+        expect(reported({}, { color: { source: "color.*", prefix: "text" } })).toStrictEqual([]);
+    });
+
     it("when every token it could use is private", () => {
         const files = {
             "tokens.resolver.json": {

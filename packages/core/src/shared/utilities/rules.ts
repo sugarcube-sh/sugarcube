@@ -99,8 +99,8 @@ const TYPES: Record<string, TokenType[]> = {
  * order, each shorthand before its longhands; entries sharing a start are tried in the config's
  * order, and among tokens making the same class the first in file order is used. A class two
  * tokens with different variables make is reported, on the token not used; so is an entry that
- * makes no classes, with the reason, and a part its `safelist` names that no token under `source`
- * makes.
+ * makes no classes, with the reason, when there are tokens to judge it by; and a part its
+ * `safelist` names that no token under `source` makes.
  */
 export function utilityRules(
     tokens: UtilityToken[],
@@ -158,7 +158,7 @@ export function utilityRules(
         safelist: [...safelist],
         diagnostics: [
             ...sameClasses(answered),
-            ...entries.flatMap((entry) => withoutClasses(entry, lost)),
+            ...(tokens.length === 0 ? [] : entries.flatMap((entry) => withoutClasses(entry, lost))),
             ...unmatched,
         ],
     };
