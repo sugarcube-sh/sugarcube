@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "P-017: with hexStringColors, a six- or eight-digit hex string is read as the sRGB color it names, with the string kept as hex and eight digits giving alpha, as a token's value or as a part, and the file's text kept in authored. Three or four digits are still hex-string-color, with the object they stand for",
+  "spec": "P-017: with hexStringColors, a six- or eight-digit hex string is read as the sRGB color it names, with the string kept as hex and eight digits giving alpha, as a token's value or as a part, and the file's text kept in authored. Three or four digits are an invalid value, giving the six or eight digits they stand for",
   "options": {
     "hexStringColors": true
   },
@@ -40,6 +40,10 @@
         },
         {
           "path": "color.white",
+          "invalid": true
+        },
+        {
+          "path": "color.veil",
           "invalid": true
         },
         {
@@ -128,16 +132,34 @@
   ],
   "diagnostics": [
     {
-      "kind": "hex-string-color",
+      "kind": "invalid-value",
       "detail": {
+        "at": ["$value"],
+        "type": "color",
+        "reason": "short-hex-string",
         "value": "#fff",
-        "asObject": { "colorSpace": "srgb", "components": [1, 1, 1], "hex": "#ffffff" }
+        "expanded": "#ffffff"
       },
       "at": {
         "file": "tokens.json",
         "text": "\"#fff\""
       },
       "path": "color.white"
+    },
+    {
+      "kind": "invalid-value",
+      "detail": {
+        "at": ["$value"],
+        "type": "color",
+        "reason": "short-hex-string",
+        "value": "#0008",
+        "expanded": "#00000088"
+      },
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#0008\""
+      },
+      "path": "color.veil"
     }
   ]
 }

@@ -103,7 +103,12 @@ function valueFix(
         case "hex-not-six-digits": {
             const { value, sixDigits } = detail;
             if (written !== value || sixDigits === undefined) return undefined;
-            return safe(fixTitles.sixDigitHex(sixDigits), replacing(at, sixDigits));
+            return safe(fixTitles.fullHex(sixDigits), replacing(at, sixDigits));
+        }
+        case "short-hex-string": {
+            const { value, expanded } = detail;
+            if (written !== value) return undefined;
+            return safe(fixTitles.fullHex(expanded), replacing(at, expanded));
         }
         case "alias-not-allowed-here": {
             const reference = readReference(detail.reference);

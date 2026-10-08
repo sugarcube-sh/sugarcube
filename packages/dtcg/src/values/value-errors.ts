@@ -56,6 +56,15 @@ export interface ValueErrorFacts {
         /** A three-digit hex, such as `#f0a`, written with six digits: `#ff00aa`. */
         sixDigits?: string;
     };
+    /**
+     * A hex string with three or four digits, read with `hexStringColors`, which takes six or
+     * eight.
+     */
+    "short-hex-string": {
+        value: string;
+        /** The six or eight digits it stands for: `#f0a` is `#ff00aa`, `#f0a8` is `#ff00aa88`. */
+        expanded: string;
+    };
     /** A dimension or duration is written as a string with its unit, such as `"16px"`. */
     "string-with-unit": {
         value: string;
@@ -206,6 +215,8 @@ export const valueErrorMessages: {
         `\`${value}\` is out of range for alpha, which is from 0 to 1`,
     "hex-not-six-digits": ({ value, sixDigits }) =>
         `${written(value)} is not a six-digit hex color${didYouMean(sixDigits)}`,
+    "short-hex-string": ({ value, expanded }) =>
+        `\`${value}\` is not ${expanded.length === 9 ? "an eight" : "a six"}-digit hex color${didYouMean(expanded)}`,
     "string-with-unit": ({ type, value, asObject }) =>
         `\`${value}\` is a string, and ${typeWords[type]} must be an object with a value and a unit${suchAs(asObject)}`,
     "not-four-numbers": ({ count }) => `a cubic Bézier has four numbers, and this has ${count}`,

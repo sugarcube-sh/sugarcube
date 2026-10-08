@@ -903,7 +903,8 @@ export interface ParseOptions {
     /**
      * Reads a color written as a hex string, such as `"#e11d48"` or `"#e11d4880"`, as the sRGB
      * color it names, with the string kept as `hex`. Not DTCG 2025.10, which writes every color as
-     * an object. Off, or with three or four digits, a hex string is a `hex-string-color` error.
+     * an object. Off, a hex string is a `hex-string-color` error; on, one with three or four digits
+     * is an `invalid-value` giving the six or eight digits it stands for.
      * @default false
      */
     hexStringColors?: boolean;

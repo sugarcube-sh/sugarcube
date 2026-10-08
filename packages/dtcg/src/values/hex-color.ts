@@ -2,8 +2,7 @@ import type { ColorValue } from "../index.js";
 import type { ValueErrorFacts } from "./value-errors.js";
 
 export function hexStringColor(hex: string): ColorValue {
-    const digits = hex.slice(1);
-    const full = digits.length <= 4 ? [...digits].map((digit) => digit + digit).join("") : digits;
+    const full = (hex.length <= 5 ? expandedHex(hex) : hex).slice(1);
     const channel = (at: number) => rounded(Number.parseInt(full.slice(at, at + 2), 16) / 255);
     return {
         colorSpace: "srgb",
@@ -17,6 +16,10 @@ export function hexStringAsObject(hex: string): ValueErrorFacts["hex-string"]["a
     const { colorSpace, components, alpha, hex: kept } = hexStringColor(hex);
     const withAlpha = hex.length === 5 || hex.length === 9;
     return { colorSpace, components, ...(withAlpha && { alpha }), hex: kept };
+}
+
+export function expandedHex(shortHex: string): string {
+    return `#${Array.from(shortHex.slice(1), (digit) => digit + digit).join("")}`;
 }
 
 function rounded(value: number): number {

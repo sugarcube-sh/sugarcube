@@ -227,12 +227,19 @@ describe("parseColor", () => {
             });
         });
 
-        it.for(["#fff", "#ffff"])("still refuses %s, which has too few digits", (raw) => {
-            const result = parseColor(raw, ["$value"], options);
-            expect(result.ok ? [] : result.errors.map(({ detail }) => detail)).toStrictEqual([
-                { type: "color", reason: "hex-string", value: raw, asObject: asObjects[raw] },
-            ]);
-        });
+        it.for([
+            ["#fff", "#ffffff"],
+            ["#F0a", "#FF00aa"],
+            ["#0008", "#00000088"],
+        ])(
+            "refuses %s, which has too few digits, giving the %s it stands for",
+            ([raw, expanded]) => {
+                const result = parseColor(raw, ["$value"], options);
+                expect(result.ok ? [] : result.errors.map(({ detail }) => detail)).toStrictEqual([
+                    { type: "color", reason: "short-hex-string", value: raw, expanded },
+                ]);
+            },
+        );
     });
 
     describe("refuses", () => {

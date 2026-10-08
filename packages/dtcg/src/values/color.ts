@@ -1,6 +1,6 @@
 import type { ColorSpace } from "../index.js";
 import { colorSpaces } from "./color-spaces.js";
-import { hexStringAsObject, hexStringColor } from "./hex-color.js";
+import { expandedHex, hexStringAsObject, hexStringColor } from "./hex-color.js";
 import {
     type Siblings,
     type Syntax,
@@ -19,8 +19,8 @@ import {
 /**
  * A color written as a hex string, in any of the four forms CSS allows: `#rgb`, `#rgba`, `#rrggbb`
  * or `#rrggbbaa`. A hex string is an error unless `hexStringColors` is on, and then only with six or
- * eight digits. Recognising one lets the error say so, and show how to write the color as an object
- * instead.
+ * eight digits. Recognising one lets the error say so: with the option off, how to write the color
+ * as an object; with it on, the six or eight digits a short one stands for.
  */
 const HEX_STRING = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
@@ -37,6 +37,9 @@ const hexString = literal((raw, options) => {
         return ok(hexStringColor(raw));
     }
     if (typeof raw === "string" && HEX_STRING.test(raw)) {
+        if (options.hexStringColors) {
+            return no({ reason: "short-hex-string", value: raw, expanded: expandedHex(raw) });
+        }
         return no({ reason: "hex-string", value: raw, asObject: hexStringAsObject(raw) });
     }
     return no({ reason: "wrong-shape", value: raw });
@@ -89,8 +92,7 @@ const hex = literal((raw) => {
     if (typeof raw !== "string" || !THREE_DIGIT_HEX.test(raw)) {
         return no({ reason: "hex-not-six-digits", value: raw });
     }
-    const sixDigits = `#${Array.from(raw.slice(1), (digit) => digit + digit).join("")}`;
-    return no({ reason: "hex-not-six-digits", value: raw, sixDigits });
+    return no({ reason: "hex-not-six-digits", value: raw, sixDigits: expandedHex(raw) });
 });
 
 export const color = oneOf({

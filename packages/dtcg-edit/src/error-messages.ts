@@ -6,7 +6,8 @@ export const fixTitles = {
     extendsAsReference: (reference: string) => `write it as the reference \`${reference}\``,
     hexToObject: "write the color as an object, keeping the hex",
     measureAsObject: (type: string) => `write the ${type} as an object`,
-    sixDigitHex: (hex: string) => `write the hex with six digits, \`${hex}\``,
+    fullHex: (hex: string) =>
+        `write the hex with ${hex.length === 9 ? "eight" : "six"} digits, \`${hex}\``,
     referenceAsPointer: (pointer: string) =>
         `write it as the pointer \`${pointer}\`, which can stand for part of a value`,
 };
