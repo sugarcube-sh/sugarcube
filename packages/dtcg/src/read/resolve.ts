@@ -221,7 +221,10 @@ function resolvePermutation(
 
     const knownPaths = [...tokens.keys()];
     for (const [ref, { first, referencedBy, uses }] of missing) {
-        const similar = similarName(ref, knownPaths);
+        const similar = similarName(
+            ref,
+            knownPaths.filter((path) => !referencedBy.includes(path)),
+        );
         const related = uses
             .filter((at) => at !== first.at)
             .map((at) => ({ message: relatedMessages.alsoUsedHere, at }));

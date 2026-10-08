@@ -32,4 +32,8 @@ export type { DebouncedFn } from "./shared/scheduling.js";
 
 export { PerfMonitor, Instrumentation } from "./node/perf.js";
 
-export { writeCSSVariablesToDisk, writeCSSUtilitiesToDisk } from "./node/write-css.js";
+export {
+    writeCSSFiles,
+    writeCSSVariablesToDisk,
+    writeCSSUtilitiesToDisk,
+} from "./node/write-css.js";

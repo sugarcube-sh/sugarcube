@@ -23,7 +23,7 @@
         "valueAfter": "\"md\":"
       },
       "path": "space.md",
-      "permutation": 1
+      "permutations": [1]
     }
   ]
 }

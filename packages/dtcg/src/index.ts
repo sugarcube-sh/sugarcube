@@ -803,8 +803,12 @@ export type DiagnosticOf<DetailByKind> = {
         at?: Span;
         /** The token or group it concerns. */
         path?: string;
-        /** Index into {@link Document.permutations}, when it concerns one permutation. */
-        permutation?: number;
+        /**
+         * Indexes into {@link Document.permutations}, in order, when only some permutations have
+         * it. Absent when every permutation has it, or it concerns none, such as a file that is not
+         * valid JSON.
+         */
+        permutations?: number[];
         /** Other places involved, such as every token that uses a missing one. */
         related?: { message: string; at: Span }[];
         /** How an editor may show it: struck through for a deprecated reference. */

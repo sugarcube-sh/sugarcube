@@ -6,6 +6,7 @@ import {
     fillDefaults,
     findResolverDocument,
     loadInternalConfig,
+    writeCSSFiles,
 } from "@sugarcube-sh/core";
 import type { InternalConfig } from "@sugarcube-sh/core";
 import { Command } from "commander";
@@ -16,11 +17,9 @@ import { handleError } from "../handle-error.js";
 import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
-import {
-    type GenerateAllCSSOptions,
-    createWatchSession,
-    runFullGeneration,
-} from "../watch/regenerate.js";
+import { printProblems } from "../problems.js";
+import { build } from "../build.js";
+import { type GenerateAllCSSOptions, createWatchSession } from "../watch/regenerate.js";
 import {
     errorPrefix,
     logRegenerated,
@@ -162,15 +161,20 @@ function hasConfigFlags(flags: GenerateFlags): boolean {
     );
 }
 
-async function resolveConfig(options: GenerateFlags): Promise<InternalConfig> {
+interface ResolvedConfig {
+    config: InternalConfig;
+    configFile?: string;
+}
+
+async function resolveConfig(options: GenerateFlags): Promise<ResolvedConfig> {
     if (configFileExists()) {
-        const { config: loadedConfig } = await loadInternalConfig();
-        return mergeConfigWithFlags(loadedConfig, options);
+        const { config: loadedConfig, configPath } = await loadInternalConfig();
+        return { config: mergeConfigWithFlags(loadedConfig, options), configFile: configPath };
     }
 
     // If --resolver is explicitly provided, use it directly
     if (options.resolver) {
-        return buildConfigFromFlags(options);
+        return { config: buildConfigFromFlags(options) };
     }
 
     // Note: We do our own discovery here instead of using loadInternalConfig's fallback
@@ -184,18 +188,10 @@ async function resolveConfig(options: GenerateFlags): Promise<InternalConfig> {
     const resolverPath = discovery.found === "one" ? discovery.path : undefined;
 
     if (resolverPath || hasConfigFlags(options)) {
-        return buildConfigFromFlags({ ...options, resolver: resolverPath });
+        return { config: buildConfigFromFlags({ ...options, resolver: resolverPath }) };
     }
 
     throw new CLIError(ERROR_MESSAGES.GENERATE_NO_CONFIG_OR_RESOLVER());
-}
-
-function displayWarnings(warnings: Array<{ path: string; message: string }>): void {
-    if (warnings.length === 0) return;
-
-    const warningMessages = warnings.map((w) => w.message).join("\n\n");
-    log.space(1);
-    warningBoxWithBadge(warningMessages);
 }
 
 async function logOneTimeResult(relativePaths: string[]): Promise<void> {
@@ -215,16 +211,25 @@ async function logOneTimeResult(relativePaths: string[]): Promise<void> {
     outro(color.green("CSS generated successfully."));
 }
 
-async function runOneTimeGeneration(config: InternalConfig, options: GenerateFlags): Promise<void> {
-    const { output, warnings } = await runFullGeneration(config, {
+async function runOneTimeGeneration(
+    { config, configFile }: ResolvedConfig,
+    options: GenerateFlags,
+): Promise<void> {
+    const built = await build(config, {
         variablesOnly: options.variablesOnly,
         utilitiesOnly: options.utilitiesOnly,
     });
-
-    if (!options.silent) {
-        displayWarnings(warnings);
-        await logOneTimeResult(outputPaths(output));
+    const failed = printProblems(built, {
+        configFile,
+        onlyErrors: options.silent,
+        whenFailed: "No CSS was written.",
+    });
+    if (failed) {
+        process.exitCode = 1;
+        return;
     }
+    await writeCSSFiles(built.files);
+    if (!options.silent) await logOneTimeResult(outputPaths(built.files));
 }
 
 async function runWatchMode(config: InternalConfig, options: GenerateFlags): Promise<void> {
@@ -312,10 +317,9 @@ export const generate = new Command()
                 intro(label("Generate CSS"));
             }
 
-            const finalConfig = await resolveConfig(options);
-
-            const run = options.watch ? runWatchMode : runOneTimeGeneration;
-            await run(finalConfig, options);
+            const resolved = await resolveConfig(options);
+            if (options.watch) await runWatchMode(resolved.config, options);
+            else await runOneTimeGeneration(resolved, options);
         } catch (error) {
             handleError(error);
         }

@@ -1,14 +1,14 @@
 import { diagnosticMessages } from "../error-messages.js";
 import type { Diagnostic, DiagnosticDetailByKind, DiagnosticKind } from "../index.js";
 
-export type DiagnosticExtra = Partial<
-    Pick<Diagnostic, "at" | "path" | "permutation" | "related" | "tags">
->;
+export type DiagnosticExtra = Partial<Pick<Diagnostic, "at" | "path" | "related" | "tags">> & {
+    permutation?: number;
+};
 
 export function diagnostic<K extends DiagnosticKind>(
     kind: K,
     detail: DiagnosticDetailByKind[K],
-    extra: DiagnosticExtra = {},
+    { permutation, ...extra }: DiagnosticExtra = {},
 ): Diagnostic {
     const { severity, message } = diagnosticMessages[kind];
     return {
@@ -16,6 +16,7 @@ export function diagnostic<K extends DiagnosticKind>(
         severity: typeof severity === "function" ? severity(detail) : severity,
         message: message(detail),
         ...extra,
+        ...(permutation !== undefined && { permutations: [permutation] }),
         docs: docsFor(kind, detail),
         detail,
     } as Diagnostic;
@@ -28,20 +29,18 @@ function docsFor<K extends DiagnosticKind>(kind: K, detail: DiagnosticDetailByKi
 }
 
 export function collapse(diagnostics: Diagnostic[], permutations: number): Diagnostic[] {
-    const alike = new Map<string, { first: Diagnostic; each: Map<number, Diagnostic> }>();
+    const alike = new Map<string, Diagnostic>();
     for (const found of diagnostics) {
-        const key = JSON.stringify({ ...found, permutation: undefined });
-        const group = alike.get(key) ?? { first: found, each: new Map<number, Diagnostic>() };
-        const { permutation } = found;
-        if (permutation !== undefined && !group.each.has(permutation)) {
-            group.each.set(permutation, found);
+        const key = JSON.stringify({ ...found, permutations: undefined });
+        const earlier = alike.get(key);
+        if (!earlier) alike.set(key, found);
+        else if (earlier.permutations && found.permutations) {
+            earlier.permutations = [...new Set([...earlier.permutations, ...found.permutations])];
         }
-        alike.set(key, group);
     }
-    return [...alike.values()].flatMap(({ first, each }) => {
-        if (each.size > 0 && each.size < permutations) return Array.from(each.values());
-        const everywhere = { ...first };
-        delete everywhere.permutation;
-        return [everywhere];
-    });
+    const collapsed = [...alike.values()];
+    for (const found of collapsed) {
+        if (found.permutations?.length === permutations) delete found.permutations;
+    }
+    return collapsed;
 }

@@ -220,10 +220,3 @@ export function createWatchSession(
         },
     };
 }
-
-export function runFullGeneration(
-    config: InternalConfig,
-    options: GenerateAllCSSOptions = {},
-): Promise<GenerationResult> {
-    return createWatchSession(config, options).primeAndBuild();
-}

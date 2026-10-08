@@ -12,6 +12,7 @@ import {
 import type { Document } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { createGenerator } from "@unocss/core";
+import { dirname } from "pathe";
 import { CLIError } from "./cli-error.js";
 import { ERROR_MESSAGES } from "./constants/error-messages.js";
 import { addBanner, utilitiesFromMarkup, wrapInLayer } from "./output.js";
@@ -23,6 +24,7 @@ export interface BuildOptions {
 
 export interface Built {
     doc: Document;
+    folder: string;
     files: CSSFileOutput;
     diagnostics: Reported[];
 }
@@ -37,6 +39,7 @@ export async function build(config: InternalConfig, options: BuildOptions = {}):
     const utilities = options.variablesOnly ? nothing : await utilitiesFrom(declared, config);
     return {
         doc,
+        folder: dirname(config.resolver),
         files: [...variables.files, ...utilities.files],
         diagnostics: [...declared.diagnostics, ...variables.diagnostics, ...utilities.diagnostics],
     };

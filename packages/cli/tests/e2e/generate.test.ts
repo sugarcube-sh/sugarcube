@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readFile, rm } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execaCommand } from "execa";
@@ -18,6 +18,79 @@ describe("generate command", () => {
     afterEach(async () => {
         await rm(testDir, { recursive: true, force: true });
     });
+
+    async function tokensWith(base: unknown): Promise<string> {
+        const dir = join(testDir, "tokens");
+        await mkdir(dir, { recursive: true });
+        await writeFile(join(dir, "base.json"), JSON.stringify(base, null, 2));
+        await writeFile(
+            join(dir, "tokens.resolver.json"),
+            JSON.stringify({
+                version: "2025.10",
+                resolutionOrder: [{ type: "set", name: "base", sources: [{ $ref: "base.json" }] }],
+            }),
+        );
+        return join(dir, "tokens.resolver.json");
+    }
+
+    it(
+        "with errors, lists each at its file, line and column, writes nothing and exits 1",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            const resolver = await tokensWith({
+                color: {
+                    $type: "color",
+                    ink: { $value: "#000000" },
+                    text: { $value: "{color.inc}" },
+                },
+            });
+
+            const result = await execaCommand(`node ${CLI_PATH} generate --resolver ${resolver}`, {
+                cwd: testDir,
+                timeout: TEST_TIMEOUT,
+                reject: false,
+            });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.stdout).toContain(
+                "tokens/base.json:8:17  error  `color.inc` does not exist; did you mean `color.ink`?  missing-reference",
+            );
+            expect(result.stdout).toContain("1 error. No CSS was written.");
+            expect(existsSync(join(testDir, "styles"))).toBe(false);
+        },
+    );
+
+    it(
+        "with warnings only, lists and counts them, then writes the CSS",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            const px = (value: number) => ({ value, unit: "px" });
+            const resolver = await tokensWith({
+                body: {
+                    $type: "typography",
+                    $value: {
+                        fontFamily: "Inter",
+                        fontSize: px(16),
+                        fontWeight: 400,
+                        letterSpacing: px(0),
+                        lineHeight: 1.5,
+                        paragraphSpacing: px(0),
+                    },
+                },
+            });
+
+            const result = await execaCommand(`node ${CLI_PATH} generate --resolver ${resolver}`, {
+                cwd: testDir,
+                timeout: TEST_TIMEOUT,
+                reject: false,
+            });
+
+            expect(result.exitCode).toBe(0);
+            expect(result.stdout).toContain("warning  `paragraphSpacing` is not a property");
+            expect(result.stdout).toContain("1 warning.");
+            expect(existsSync(join(testDir, "styles/variables.gen.css"))).toBe(true);
+        },
+    );
 
     it("writes to styles/ when no src/ exists", { timeout: TEST_TIMEOUT }, async () => {
         const tokensDir = await createTokens(testDir);
