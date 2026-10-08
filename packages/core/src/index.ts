@@ -17,8 +17,8 @@ export {
     configFileExists,
     isNoConfigError,
     loadInternalConfig,
-    loadSugarcubeConfig,
 } from "./node/config/load.js";
+export type { ConfigOverrides, LoadedConfig } from "./node/config/load.js";
 
 export { findResolverDocument } from "./node/resolver/find.js";
 export type { ResolverDiscoveryResult } from "./node/resolver/find.js";
@@ -32,4 +32,8 @@ export type { DebouncedFn } from "./shared/scheduling.js";
 
 export { PerfMonitor, Instrumentation } from "./node/perf.js";
 
-export { writeCSSVariablesToDisk, writeCSSUtilitiesToDisk } from "./node/write-css.js";
+export {
+    writeCSSFiles,
+    writeCSSVariablesToDisk,
+    writeCSSUtilitiesToDisk,
+} from "./node/write-css.js";

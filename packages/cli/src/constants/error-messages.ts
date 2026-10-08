@@ -23,42 +23,8 @@ const noStylesheetsHelp = (cwd: string) =>
     `Looked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}:\n\n  content: ["../css/**/*.css"]\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`;
 
 export const ERROR_MESSAGES = {
-    PROJECT_REQUIRED:
-        `No sugarcube project detected. Please run ${color.cyan(COMMANDS.INIT)} first.\n\n` +
-        `For more information, visit: ${color.cyan(LINKS.INITIALIZATION)}`,
-
     CONFIG_EXISTS: () =>
         `A sugarcube config file already exists in this project.\n\nTo start over, remove it and run ${color.cyan(COMMANDS.INIT)} again.`,
-
-    PLUGIN_INSTALL_FAILED: (ctx: { pluginToInstall: string; packageManager: string }) => {
-        // npm uses 'install', others use 'add'
-        const installCmd = ctx.packageManager === "npm" ? "install" : "add";
-        return `Failed to install ${ctx.pluginToInstall} plugin.\n
-This is usually a temporary issue. Try these steps:\n
-1. Run the command again
-2. Check your internet connection
-3. Install manually: ${ctx.packageManager} ${installCmd} ${ctx.pluginToInstall}\n
-If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
-    },
-
-    CLI_INSTALL_FAILED: (ctx: { packageManager: string }) => {
-        const installCmd = ctx.packageManager === "npm" ? "install" : "add";
-        return `Failed to install @sugarcube-sh/cli.\n
-This is usually a temporary issue. Try these steps:\n
-1. Run the command again
-2. Check your internet connection
-3. Install manually: ${ctx.packageManager} ${installCmd} -D @sugarcube-sh/cli\n
-If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
-    },
-
-    INITIALIZATION_INCOMPLETE: () =>
-        `The initialization process was not completed properly.\nThis is an internal error that should not occur.\nTry running the \`init\` command again.\n\nIf the problem persists, please report this issue at\n${LINKS.ISSUES}`,
-
-    CONFIG_WRITE_FAILED: () =>
-        "Failed to write configuration file. Check permissions and try again.",
-
-    KIT_INCOMPLETE: () =>
-        "The starter kit appears to be incomplete or corrupted.\n\nThis is likely a temporary issue. Please try running the command again or choose a different starter kit.",
 
     REGISTRY_AUTH_REQUIRED: (url: string) =>
         `Registry access denied: Authentication required\nURL: ${color.cyan(url)}`,
@@ -100,16 +66,6 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
             LINKS.RESOLVER,
         )} for more information.`,
 
-    RESOLVER_NOT_FOUND: (tokensDir: string) =>
-        `No resolver document found in ${color.cyan(
-            tokensDir,
-        )}.\n\nA resolver document (*.resolver.json) is required to define how your tokens are loaded.\n\nSee ${color.cyan(
-            LINKS.RESOLVER,
-        )} to learn how to create one.`,
-
-    RESOLVER_MULTIPLE_FOUND: (paths: string[]) =>
-        `Multiple resolver documents found:\n${paths.map((p) => `  - ${color.cyan(p)}`).join("\n")}\n\nA project should have only one resolver document. Please remove the extras or consolidate them.`,
-
     TOKEN_LOAD_FAILED: (errorMessages: string[]) =>
         `Failed to load token files:\n\n${errorMessages.join("\n")}\n\nPlease check your token files and try again.`,
 
@@ -141,8 +97,8 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
         return `${base}\n\n${color.dim(`${packageManager} output:`)}\n${stderr}`;
     },
 
-    VALIDATE_NO_PATH_SPECIFIED: () =>
-        `No path specified.\n\nRun ${color.cyan("sugarcube validate --help")} for more information.`,
+    VALIDATE_SEVERAL_RESOLVERS: (paths: string[]) =>
+        `Several resolver files were found:\n${paths.map((p) => `  - ${p}`).join("\n")}\n\nValidate one at a time, such as: ${color.cyan(`sugarcube validate ${paths[0]}`)}`,
 
     VALIDATE_PATH_NOT_FOUND: (path: string) =>
         `Path not found: ${path}\n\nPlease check that the specified path exists`,
@@ -156,20 +112,6 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
         )} for more information.`,
 
     COMPONENTS_INVALID_FRAMEWORK: () => "Invalid framework. Must be one of: react, css-only.",
-
-    COMPONENTS_DIRECTORY_NOT_CONFIGURED: () =>
-        "Components directory must be configured in non-interactive mode. Please run the 'components' command without arguments first.",
-
-    PLUGIN_DETECTED: (pluginName: string) =>
-        `Plugin detected: ${pluginName}\n\nThe 'generate' command is for manual generation without plugins. Since you have a plugin installed, use your development server instead:\n\nnpm run dev  # or your framework's dev command\n\nThe plugin will automatically generate CSS with hot module replacement.`,
-
-    GENERATE_NO_CONFIG_OR_RESOLVER: () =>
-        `No design tokens found.\n\nRun ${color.cyan(COMMANDS.INIT)} to set up your design tokens.\n\nStuck? ${color.cyan(
-            LINKS.DOCS,
-        )}`,
-
-    GENERATE_MULTIPLE_RESOLVERS_NO_CONFIG: (paths: string[]) =>
-        `No config file found, but multiple resolver files detected:\n${paths.map((p) => `  - ${p}`).join("\n")}\n\nPlease either:\n  - Create a config file with ${color.cyan(COMMANDS.INIT)}\n  - Use --resolver flag to specify which resolver to use`,
 
     FILENAME_CONTAINS_PATH: (flagName: string, value: string) =>
         `Invalid ${flagName} value: "${value}". Must be a filename, not a path.\n\nUse --variables-dir or --utilities-dir to specify the directory.`,

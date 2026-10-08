@@ -3,7 +3,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execaCommand } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CLI_PATH, TEST_TIMEOUT, createPackageJson, createTokens } from "./helpers.js";
+import {
+    CLI_PATH,
+    PLAIN_OUTPUT,
+    TEST_TIMEOUT,
+    createPackageJson,
+    createTokens,
+} from "./helpers.js";
 
 describe("lint command: content globs", () => {
     let testDir: string;
@@ -35,6 +41,30 @@ describe("lint command: content globs", () => {
     });
 
     it(
+        "shows a mistake in the config as the config's, not as missing tokens",
+        {
+            timeout: TEST_TIMEOUT,
+        },
+        async () => {
+            await writeFile(
+                join(assetsJs, "sugarcube.config.js"),
+                'export default { resolver: "./design-tokens/tokens.resolver.json", variables: { prefix: 5 } };',
+            );
+
+            const result = await execaCommand(`node ${CLI_PATH} lint`, {
+                cwd: assetsJs,
+                timeout: TEST_TIMEOUT,
+                reject: false,
+                env: PLAIN_OUTPUT,
+            });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.stdout).toContain("variables.prefix");
+            expect(result.stdout).not.toContain("No design tokens found");
+        },
+    );
+
+    it(
         "scans CSS reached via content and reports undeclared var() refs",
         { timeout: TEST_TIMEOUT },
         async () => {
@@ -42,6 +72,7 @@ describe("lint command: content globs", () => {
                 cwd: assetsJs,
                 timeout: TEST_TIMEOUT,
                 reject: false,
+                env: PLAIN_OUTPUT,
             });
 
             expect(result.stdout).toContain("--not-a-token");

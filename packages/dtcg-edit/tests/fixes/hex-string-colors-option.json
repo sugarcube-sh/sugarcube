@@ -1,20 +1,40 @@
 {
   "diagnostics": [
     {
-      "kind": "hex-string-color",
+      "kind": "invalid-value",
       "at": {
         "file": "tokens.json",
         "text": "\"#fff\""
       },
       "fixes": [
         {
-          "title": "write the color as an object, keeping the hex",
+          "title": "write the hex with six digits, `#ffffff`",
           "safe": true,
           "edits": [
             {
               "file": "tokens.json",
               "text": "\"#fff\"",
-              "replaceWith": "{ \"colorSpace\": \"srgb\", \"components\": [1, 1, 1], \"hex\": \"#ffffff\" }"
+              "replaceWith": "\"#ffffff\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "invalid-value",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#0008\""
+      },
+      "fixes": [
+        {
+          "title": "write the hex with eight digits, `#00000088`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#0008\"",
+              "replaceWith": "\"#00000088\""
             }
           ]
         }

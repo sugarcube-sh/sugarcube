@@ -69,7 +69,7 @@
           }
         }
       ],
-      "permutation": 1
+      "permutations": [1]
     },
     {
       "kind": "token-and-group",
@@ -87,7 +87,7 @@
           }
         }
       ],
-      "permutation": 1
+      "permutations": [1]
     }
   ]
 }

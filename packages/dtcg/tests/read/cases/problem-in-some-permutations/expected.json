@@ -1,0 +1,19 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "A problem only some permutations have is reported once, listing them by index into the Document's permutations; one every permutation has lists none",
+  "diagnostics": [
+    {
+      "kind": "missing-reference",
+      "detail": {
+        "ref": "color.ink",
+        "referencedBy": ["color.text"]
+      },
+      "at": {
+        "file": "base.json",
+        "text": "\"{color.ink}\""
+      },
+      "path": "color.text",
+      "permutations": [1, 2]
+    }
+  ]
+}

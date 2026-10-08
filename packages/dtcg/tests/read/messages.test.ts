@@ -159,6 +159,13 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             sixDigits: "#ee11dd",
         },
         { at: ["$value", "hex"], type: "color", reason: "hex-not-six-digits", value: "#e1dd" },
+        {
+            at: ["$value"],
+            type: "color",
+            reason: "short-hex-string",
+            value: "#e1d",
+            expanded: "#ee11dd",
+        },
         { at: ["$value", "hex"], type: "color", reason: "hex-not-six-digits", value: 16711680 },
         {
             at: ["$value"],
@@ -397,6 +404,32 @@ describe("diagnostic messages that say what would mend the problem", () => {
                 },
             },
             message: "`#e1d` is not a six-digit hex color; did you mean `#ee11dd`?",
+        },
+        {
+            found: {
+                kind: "invalid-value",
+                detail: {
+                    at: ["$value"],
+                    type: "color",
+                    reason: "short-hex-string",
+                    value: "#e1d",
+                    expanded: "#ee11dd",
+                },
+            },
+            message: "`#e1d` is not a six-digit hex color; did you mean `#ee11dd`?",
+        },
+        {
+            found: {
+                kind: "invalid-value",
+                detail: {
+                    at: ["$value"],
+                    type: "color",
+                    reason: "short-hex-string",
+                    value: "#e1d8",
+                    expanded: "#ee11dd88",
+                },
+            },
+            message: "`#e1d8` is not an eight-digit hex color; did you mean `#ee11dd88`?",
         },
         {
             found: {

@@ -1,7 +1,6 @@
-import type { Document, Token } from "@sugarcube-sh/dtcg";
-import type { InternalConfig } from "../../types/config.js";
-import { entries } from "../css/blocks.js";
-import { type Declared, declarationOptions, declarations } from "../css/declarations.js";
+import type { Token } from "@sugarcube-sh/dtcg";
+import type { Declarations } from "../css/declare.js";
+import type { Declared } from "../css/declarations.js";
 
 export type UtilityVariable = { property: string; name: string };
 
@@ -17,10 +16,8 @@ export type UtilityToken =
  * each token no listed permutation declares, once, saying whether that is because it is private;
  * any other could not be written.
  */
-export function utilityTokens(doc: Document, config: InternalConfig): UtilityToken[] {
-    const options = declarationOptions(doc, config);
-    const permutations = new Set(entries(doc, config).map((entry) => entry.permutation));
-    const read = [...permutations].map((permutation) => declarations(permutation, options));
+export function utilityTokens({ entries }: Declarations): UtilityToken[] {
+    const read = [...new Set(entries.map(({ declared }) => declared))];
     const listed: UtilityToken[] = [];
     const seen = new Set<string>();
     const add = (each: UtilityToken) => {

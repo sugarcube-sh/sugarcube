@@ -803,8 +803,12 @@ export type DiagnosticOf<DetailByKind> = {
         at?: Span;
         /** The token or group it concerns. */
         path?: string;
-        /** Index into {@link Document.permutations}, when it concerns one permutation. */
-        permutation?: number;
+        /**
+         * Indexes into {@link Document.permutations}, in order, when only some permutations have
+         * it. Absent when every permutation has it, or it concerns none, such as a file that is not
+         * valid JSON.
+         */
+        permutations?: number[];
         /** Other places involved, such as every token that uses a missing one. */
         related?: { message: string; at: Span }[];
         /** How an editor may show it: struck through for a deprecated reference. */
@@ -903,7 +907,8 @@ export interface ParseOptions {
     /**
      * Reads a color written as a hex string, such as `"#e11d48"` or `"#e11d4880"`, as the sRGB
      * color it names, with the string kept as `hex`. Not DTCG 2025.10, which writes every color as
-     * an object. Off, or with three or four digits, a hex string is a `hex-string-color` error.
+     * an object. Off, a hex string is a `hex-string-color` error; on, one with three or four digits
+     * is an `invalid-value` giving the six or eight digits it stands for.
      * @default false
      */
     hexStringColors?: boolean;

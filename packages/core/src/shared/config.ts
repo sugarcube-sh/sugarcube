@@ -1,4 +1,5 @@
 import type { InternalConfig, SugarcubeConfig } from "../types/config.js";
+import { ConfigError } from "./config-error.js";
 import { DEFAULT_CONFIG } from "./constants/config.js";
 import { ErrorMessages } from "./constants/error-messages.js";
 import { internalConfigSchema, userConfigSchema } from "./schemas/config.js";
@@ -103,9 +104,9 @@ export function fillDefaultsCore(userConfig: SugarcubeConfig, dirs: DefaultDirs)
  *
  * @param config - The user configuration object to validate
  * @returns The validated user configuration
- * @throws Error if the configuration is invalid
+ * @throws ConfigError if the configuration is invalid
  */
-export function validateSugarcubeConfig(config: Partial<SugarcubeConfig>): SugarcubeConfig {
+export function validateSugarcubeConfig(config: unknown): SugarcubeConfig {
     const userResult = userConfigSchema.safeParse(config);
 
     if (!userResult.success) {
@@ -114,7 +115,7 @@ export function validateSugarcubeConfig(config: Partial<SugarcubeConfig>): Sugar
             return ErrorMessages.CONFIG.INVALID_CONFIG(path || "root", err.message);
         });
 
-        throw new Error(errors.join("\n"));
+        throw new ConfigError(errors.join("\n"));
     }
 
     return userResult.data;
@@ -125,9 +126,9 @@ export function validateSugarcubeConfig(config: Partial<SugarcubeConfig>): Sugar
  *
  * @param config - The internal configuration object to validate
  * @returns The validated internal configuration
- * @throws Error if the configuration is invalid
+ * @throws ConfigError if the configuration is invalid
  */
-export function validateInternalConfig(config: InternalConfig): InternalConfig {
+export function validateInternalConfig(config: unknown): InternalConfig {
     const internalResult = internalConfigSchema.safeParse(config);
 
     if (!internalResult.success) {
@@ -136,7 +137,7 @@ export function validateInternalConfig(config: InternalConfig): InternalConfig {
             return ErrorMessages.CONFIG.INVALID_CONFIG(path || "root", err.message);
         });
 
-        throw new Error(errors.join("\n"));
+        throw new ConfigError(errors.join("\n"));
     }
 
     return internalResult.data;

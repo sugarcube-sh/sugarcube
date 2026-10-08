@@ -1,0 +1,16 @@
+{
+  "version": "2025.10",
+  "resolutionOrder": [
+    { "type": "set", "name": "base", "sources": [{ "$ref": "base.json" }] },
+    {
+      "type": "modifier",
+      "name": "theme",
+      "default": "light",
+      "contexts": {
+        "light": [{ "$ref": "light.json" }],
+        "dark": [{ "$ref": "dark.json" }],
+        "dim": [{ "$ref": "dark.json" }]
+      }
+    }
+  ]
+}
