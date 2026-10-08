@@ -1,11 +1,12 @@
 import { literal, no, object, ok, oneOf } from "./syntax.js";
+import type { DimensionValue, DurationValue } from "../index.js";
 
 /**
  * A number followed by a unit, such as `"16px"` or `"200ms"`: how earlier drafts of the spec wrote
- * dimensions and durations. It is always an error. Recognising one lets the error say so, and `read`
- * offer the object as a fix.
+ * dimensions and durations. It is always an error. Recognising one lets the error say so, and give
+ * the object it stands for when its unit is one the type allows.
  */
-export const STRING_WITH_UNIT = /^(-?(?:\d+(?:\.\d*)?|\.\d+))([a-z%]+)$/i;
+const STRING_WITH_UNIT = /^(-?(?:\d+(?:\.\d*)?|\.\d+))([a-z%]+)$/i;
 
 const amount = literal((raw) =>
     typeof raw === "number" && Number.isFinite(raw)
@@ -13,7 +14,7 @@ const amount = literal((raw) =>
         : no({ reason: "not-a-number", value: raw }),
 );
 
-export function measure(units: readonly string[]) {
+export function measure(units: readonly (DimensionValue["unit"] | DurationValue["unit"])[]) {
     const unit = literal((raw) => {
         const known = units.find((each) => each === raw);
         return known === undefined
@@ -22,9 +23,16 @@ export function measure(units: readonly string[]) {
     });
     return oneOf({
         object: object({ value: amount, unit }),
-        other: (raw) =>
-            typeof raw === "string" && STRING_WITH_UNIT.test(raw)
-                ? { reason: "string-with-unit", value: raw }
-                : { reason: "wrong-shape", value: raw },
+        other: (raw) => {
+            const found = typeof raw === "string" ? STRING_WITH_UNIT.exec(raw) : null;
+            if (!found) return { reason: "wrong-shape", value: raw };
+            const [value, number, suffix] = found;
+            const known = units.find((each) => each === suffix);
+            return {
+                reason: "string-with-unit",
+                value,
+                ...(known !== undefined && { asObject: { value: Number(number), unit: known } }),
+            };
+        },
     });
 }

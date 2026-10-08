@@ -1,0 +1,25 @@
+{
+  "diagnostics": [
+    {
+      "kind": "duplicate-key",
+      "at": {
+        "file": "base.json",
+        "text": "\"sm\"",
+        "occurrence": 3
+      },
+      "fixes": [
+        {
+          "title": "delete the earlier `sm`, which is never used",
+          "safe": true,
+          "edits": [
+            {
+              "file": "base.json",
+              "text": "\"sm\": { \"$value\": 1 },\n    ",
+              "replaceWith": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -45,14 +45,14 @@ export async function read(
     return toDocument(step.value, options);
 }
 
-async function fetchAll(paths: Request, folder: string, readText: ReadText): Promise<Answer> {
+async function fetchAll(files: Request, folder: string, readText: ReadText): Promise<Answer> {
     const fetched = await Promise.all(
-        paths.map(async (path): Promise<[string, FileText]> => {
+        files.map(async (file): Promise<[string, FileText]> => {
             try {
-                const text = await readText(join(folder, path));
-                return [path, typeof text === "string" ? { text } : { missing: true }];
+                const text = await readText(join(folder, file), file);
+                return [file, typeof text === "string" ? { text } : { missing: true }];
             } catch {
-                return [path, { missing: true }];
+                return [file, { missing: true }];
             }
         }),
     );

@@ -1,5 +1,4 @@
 import type { Node } from "jsonc-parser";
-import { fixTitles } from "../error-messages.js";
 import type {
     Diagnostic,
     DiagnosticDetailByKind,
@@ -10,7 +9,7 @@ import type {
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { type JsonFile, member, members, spanOf } from "./json.js";
 import { malformedPointer } from "./malformed-pointer.js";
-import { type PointerReading, parsePointer, readPointerText } from "./pointer.js";
+import { parsePointer, readPointerText } from "./pointer.js";
 import { similarName } from "./similar.js";
 
 const ROOT_KEYS = [
@@ -60,7 +59,6 @@ export interface Resolver {
 type JsonType = "string" | "object" | "array";
 
 export interface Reader {
-    file: string;
     get(node: Node, key: string): Node | undefined;
     entries(node: Node): { key: string; value: Node }[];
     report(problem: ResolverProblem, node: Node, extra?: Omit<DiagnosticExtra, "at">): void;
@@ -122,7 +120,6 @@ export function resolverProblem(
 
 export function createReader(file: JsonFile, diagnostics: Diagnostic[]): Reader {
     const reader: Reader = {
-        file: file.path,
         get: (node, key) => member(node, key, file.hidden),
         entries: (node) => members(node, file.hidden),
         report: (problem, node, extra) =>
@@ -140,19 +137,14 @@ export function createReader(file: JsonFile, diagnostics: Diagnostic[]): Reader 
         checkKeys: (owner, kind, known) => {
             for (const { key, keyNode } of members(owner.node, file.hidden)) {
                 if (known.includes(key)) continue;
-                const { offset, length } = keyNode;
                 const similar = similarName(key, known);
-                const edits = similar && [
-                    { file: file.path, offset, length, text: JSON.stringify(similar) },
-                ];
-                const fixes = edits && [
-                    { title: fixTitles.useSimilar(similar), safe: false, edits },
-                ];
-                const at = spanOf(file.path, file.lineStarts, offset, length);
-                const detail = { property: key, owner: kind };
-                diagnostics.push(
-                    diagnostic("unknown-property", detail, { at, ...(fixes && { fixes }) }),
-                );
+                const at = spanOf(file.path, file.lineStarts, keyNode.offset, keyNode.length);
+                const detail = {
+                    property: key,
+                    owner: kind,
+                    ...(similar !== undefined && { similar }),
+                };
+                diagnostics.push(diagnostic("unknown-property", detail, { at }));
             }
         },
     };
@@ -348,7 +340,7 @@ function readOrderRef(
             name !== undefined &&
             ((collection === "sets" && sets.has(name)) ||
                 (collection === "modifiers" && modifiers.has(name)));
-        reportMalformed(reader, pointer, read, ref, reaches);
+        reader.diagnose("malformed-pointer", malformedPointer(pointer, read, reaches), ref);
         return undefined;
     }
     const [collection, name, ...rest] = read.steps;
@@ -379,18 +371,6 @@ function readOrderRef(
     }
     reader.report({ rule: "invalid-pointer", name: pointer, at }, ref);
     return undefined;
-}
-
-export function reportMalformed(
-    reader: Reader,
-    ref: string,
-    read: Extract<PointerReading, { ok: false }>,
-    node: Node,
-    reaches: boolean,
-): void {
-    const written = { file: reader.file, offset: node.offset, length: node.length };
-    const { detail, fixes } = malformedPointer(ref, read, written, reaches);
-    reader.diagnose("malformed-pointer", detail, node, fixes && { fixes });
 }
 
 function readInline(reader: Reader, owner: Place, names: Set<string>): ResolverItem | undefined {

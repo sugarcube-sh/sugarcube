@@ -151,7 +151,7 @@ describe("read", () => {
     it("asks for each file by the entry's folder, and keeps paths relative to it", async () => {
         const readText = vi.fn(async () => valid);
         const doc = await read("tokens/base.json", { readText });
-        expect(readText.mock.calls).toStrictEqual([["tokens/base.json"]]);
+        expect(readText.mock.calls).toStrictEqual([["tokens/base.json", "base.json"]]);
         expect(doc.files).toStrictEqual(["base.json"]);
         expect(doc.permutations[0]?.sources).toStrictEqual([{ file: "base.json" }]);
     });
@@ -159,7 +159,7 @@ describe("read", () => {
     it("tidies the entry's folder", async () => {
         const readText = vi.fn(async () => valid);
         await read("./tokens/../design/base.json", { readText });
-        expect(readText.mock.calls).toStrictEqual([["design/base.json"]]);
+        expect(readText.mock.calls).toStrictEqual([["design/base.json", "base.json"]]);
     });
 
     it("reports a file as not found when readText throws before returning a promise", async () => {
@@ -226,6 +226,23 @@ describe("paths in a resolver", () => {
             "C:/tokens/windows.json",
         ]);
         expect(doc.diagnostics).toStrictEqual([]);
+    });
+
+    it("names each file it asks for as the Document will name it", async () => {
+        const asked: [string, string][] = [];
+        await read("tokens/design.resolver.json", {
+            readText: async (path, file) => {
+                asked.push([path, file]);
+                return path.endsWith(".resolver.json") ? resolver : valid;
+            },
+        });
+        expect(asked).toStrictEqual([
+            ["tokens/design.resolver.json", "design.resolver.json"],
+            ["tokens/dark.json", "dark.json"],
+            ["shared/base.json", "../shared/base.json"],
+            ["https://cdn.example.com/tokens.json", "https://cdn.example.com/tokens.json"],
+            ["C:/tokens/windows.json", "C:/tokens/windows.json"],
+        ]);
     });
 });
 
@@ -393,7 +410,6 @@ describe("each context on its own", () => {
         expect(found?.at && text.slice(found.at.offset, found.at.offset + found.at.length)).toBe(
             '{"contexts":{"small":[],"large":[]}}',
         );
-        expect(found?.fixes).toBeUndefined();
     });
 });
 

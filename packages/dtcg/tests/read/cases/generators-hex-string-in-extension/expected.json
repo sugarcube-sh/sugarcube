@@ -1,26 +1,20 @@
 {
   "entry": "tokens.json",
-  "spec": "a hex string a generator reads as a color in its extension is reported as it would be in a token: hex-string-color, with the same safe fix",
+  "spec": "a hex string a generator reads as a color in its extension is reported as it would be in a token: hex-string-color, with the object it stands for",
   "options": { "generators": ["ramp"] },
   "diagnostics": [
     {
       "kind": "hex-string-color",
-      "detail": { "value": "#e11d48" },
-      "at": { "file": "tokens.json", "text": "\"#e11d48\"" },
-      "path": "space",
-      "fixes": [
-        {
-          "title": "write the color as an object, keeping the hex",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"#e11d48\"",
-              "replaceWith": "{ \"colorSpace\": \"srgb\", \"components\": [0.8824, 0.1137, 0.2824], \"hex\": \"#e11d48\" }"
-            }
-          ]
+      "detail": {
+        "value": "#e11d48",
+        "asObject": {
+          "colorSpace": "srgb",
+          "components": [0.8824, 0.1137, 0.2824],
+          "hex": "#e11d48"
         }
-      ]
+      },
+      "at": { "file": "tokens.json", "text": "\"#e11d48\"" },
+      "path": "space"
     }
   ]
 }

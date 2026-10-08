@@ -1,0 +1,24 @@
+{
+  "diagnostics": [
+    {
+      "kind": "malformed-pointer",
+      "at": {
+        "file": "tokens.resolver.json",
+        "text": "\"#sets/base\""
+      },
+      "fixes": [
+        {
+          "title": "write it as `#/sets/base`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.resolver.json",
+              "text": "\"#sets/base\"",
+              "replaceWith": "\"#/sets/base\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

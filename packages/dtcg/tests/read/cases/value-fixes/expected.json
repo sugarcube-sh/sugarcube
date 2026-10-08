@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "the safe fixes for a bad value, each of which keeps what the value means: a string with an allowed unit becomes the object, a three-digit hex gets six digits, and a reference inside a value becomes a JSON Pointer to the same token's value. A string whose unit is not allowed gets no fix. Each is at the part it concerns, nested or not",
+  "spec": "what would mend a bad value, given as its facts: a string with an allowed unit gives the object it stands for, and a three-digit hex its six digits; a string whose unit is not allowed gives none, and a reference inside a value is refused. Each is at the part it concerns, nested or not",
   "diagnostics": [
     {
       "kind": "invalid-value",
@@ -8,23 +8,11 @@
         "at": ["$value"],
         "type": "dimension",
         "reason": "string-with-unit",
-        "value": "16px"
+        "value": "16px",
+        "asObject": { "value": 16, "unit": "px" }
       },
       "at": { "file": "tokens.json", "text": "\"16px\"" },
-      "path": "space",
-      "fixes": [
-        {
-          "title": "write the dimension as an object",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"16px\"",
-              "replaceWith": "{ \"value\": 16, \"unit\": \"px\" }"
-            }
-          ]
-        }
-      ]
+      "path": "space"
     },
     {
       "kind": "invalid-value",
@@ -43,23 +31,11 @@
         "at": ["$value"],
         "type": "duration",
         "reason": "string-with-unit",
-        "value": "200ms"
+        "value": "200ms",
+        "asObject": { "value": 200, "unit": "ms" }
       },
       "at": { "file": "tokens.json", "text": "\"200ms\"" },
-      "path": "fast",
-      "fixes": [
-        {
-          "title": "write the duration as an object",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"200ms\"",
-              "replaceWith": "{ \"value\": 200, \"unit\": \"ms\" }"
-            }
-          ]
-        }
-      ]
+      "path": "fast"
     },
     {
       "kind": "invalid-value",
@@ -70,20 +46,7 @@
         "reference": "{font.brand}"
       },
       "at": { "file": "tokens.json", "text": "\"{font.brand}\"" },
-      "path": "font.body",
-      "fixes": [
-        {
-          "title": "write it as the pointer `#/font/brand/$value`, which can stand for part of a value",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"{font.brand}\"",
-              "replaceWith": "{ \"$ref\": \"#/font/brand/$value\" }"
-            }
-          ]
-        }
-      ]
+      "path": "font.body"
     },
     {
       "kind": "invalid-value",
@@ -91,17 +54,11 @@
         "at": ["$value", "hex"],
         "type": "color",
         "reason": "hex-not-six-digits",
-        "value": "#f00"
+        "value": "#f00",
+        "sixDigits": "#ff0000"
       },
       "at": { "file": "tokens.json", "text": "\"#f00\"" },
-      "path": "red",
-      "fixes": [
-        {
-          "title": "write the hex with six digits, `#ff0000`",
-          "safe": true,
-          "edits": [{ "file": "tokens.json", "text": "\"#f00\"", "replaceWith": "\"#ff0000\"" }]
-        }
-      ]
+      "path": "red"
     },
     {
       "kind": "invalid-value",
@@ -109,17 +66,11 @@
         "at": ["$value", "color", "hex"],
         "type": "color",
         "reason": "hex-not-six-digits",
-        "value": "#000"
+        "value": "#000",
+        "sixDigits": "#000000"
       },
       "at": { "file": "tokens.json", "text": "\"#000\"" },
-      "path": "lift",
-      "fixes": [
-        {
-          "title": "write the hex with six digits, `#000000`",
-          "safe": true,
-          "edits": [{ "file": "tokens.json", "text": "\"#000\"", "replaceWith": "\"#000000\"" }]
-        }
-      ]
+      "path": "lift"
     },
     {
       "kind": "invalid-value",
@@ -127,23 +78,11 @@
         "at": ["$value", "offsetX"],
         "type": "dimension",
         "reason": "string-with-unit",
-        "value": "0px"
+        "value": "0px",
+        "asObject": { "value": 0, "unit": "px" }
       },
       "at": { "file": "tokens.json", "text": "\"0px\"" },
-      "path": "lift",
-      "fixes": [
-        {
-          "title": "write the dimension as an object",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"0px\"",
-              "replaceWith": "{ \"value\": 0, \"unit\": \"px\" }"
-            }
-          ]
-        }
-      ]
+      "path": "lift"
     }
   ]
 }

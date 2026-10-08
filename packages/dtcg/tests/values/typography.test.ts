@@ -141,7 +141,12 @@ describe("parseTypography", () => {
                 },
                 {
                     path: ["$value", "fontSize"],
-                    detail: { type: "dimension", reason: "string-with-unit", value: "42px" },
+                    detail: {
+                        type: "dimension",
+                        reason: "string-with-unit",
+                        value: "42px",
+                        asObject: { value: 42, unit: "px" },
+                    },
                 },
                 {
                     path: ["$value", "fontWeight"],

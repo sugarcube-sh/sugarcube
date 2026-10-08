@@ -18,7 +18,6 @@ export interface DuplicateKey {
     key: string;
     first: Node;
     last: Node;
-    earlier: { offset: number; length: number };
 }
 
 export interface ParsedJson {
@@ -83,7 +82,7 @@ function findDuplicates(node: Node, duplicates: DuplicateKey[], hidden: Set<Node
             const earlier = seen.get(key);
             if (earlier) {
                 const { keyNode: first } = earlier;
-                duplicates.push({ key, first, last: keyNode, earlier: removal(earlier.property) });
+                duplicates.push({ key, first, last: keyNode });
                 hidden.add(earlier.property);
             }
             seen.set(key, { property, keyNode });
@@ -94,27 +93,16 @@ function findDuplicates(node: Node, duplicates: DuplicateKey[], hidden: Set<Node
     }
 }
 
-export function removal(property: Node): { offset: number; length: number } {
-    const siblings = property.parent?.children ?? [property];
-    const index = siblings.indexOf(property);
-    const end = property.offset + property.length;
-    const next = siblings[index + 1];
-    if (next) return { offset: property.offset, length: next.offset - property.offset };
-    const previous = siblings[index - 1];
-    const start = previous ? previous.offset + previous.length : property.offset;
-    return { offset: start, length: end - start };
-}
-
 export function members(
     node: Node,
     hidden: Set<Node>,
-): { key: string; keyNode: Node; value: Node; property: Node }[] {
+): { key: string; keyNode: Node; value: Node }[] {
     if (node.type !== "object") return [];
-    const found: { key: string; keyNode: Node; value: Node; property: Node }[] = [];
+    const found: { key: string; keyNode: Node; value: Node }[] = [];
     for (const property of node.children ?? []) {
         const [keyNode, value] = property.children ?? [];
         if (hidden.has(property) || !keyNode || !value) continue;
-        found.push({ key: String(keyNode.value), keyNode, value, property });
+        found.push({ key: String(keyNode.value), keyNode, value });
     }
     return found;
 }

@@ -1,6 +1,6 @@
 import type { ColorSpace } from "../index.js";
 import { colorSpaces } from "./color-spaces.js";
-import { hexStringColor } from "./hex-color.js";
+import { hexStringAsObject, hexStringColor } from "./hex-color.js";
 import {
     type Siblings,
     type Syntax,
@@ -37,7 +37,7 @@ const hexString = literal((raw, options) => {
         return ok(hexStringColor(raw));
     }
     if (typeof raw === "string" && HEX_STRING.test(raw)) {
-        return no({ reason: "hex-string", value: raw });
+        return no({ reason: "hex-string", value: raw, asObject: hexStringAsObject(raw) });
     }
     return no({ reason: "wrong-shape", value: raw });
 });
@@ -82,11 +82,16 @@ const alpha = literal((raw) => {
     return inRange(raw, 0, 1) ? ok(raw) : no({ reason: "alpha-out-of-range", value: raw });
 });
 
-const hex = literal((raw) =>
-    typeof raw === "string" && SIX_DIGIT_HEX.test(raw)
-        ? ok(raw)
-        : no({ reason: "hex-not-six-digits", value: raw }),
-);
+const THREE_DIGIT_HEX = /^#[0-9a-f]{3}$/i;
+
+const hex = literal((raw) => {
+    if (typeof raw === "string" && SIX_DIGIT_HEX.test(raw)) return ok(raw);
+    if (typeof raw !== "string" || !THREE_DIGIT_HEX.test(raw)) {
+        return no({ reason: "hex-not-six-digits", value: raw });
+    }
+    const sixDigits = `#${Array.from(raw.slice(1), (digit) => digit + digit).join("")}`;
+    return no({ reason: "hex-not-six-digits", value: raw, sixDigits });
+});
 
 export const color = oneOf({
     string: hexString,

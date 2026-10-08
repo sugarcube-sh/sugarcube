@@ -2,7 +2,7 @@ import { diagnosticMessages } from "../error-messages.js";
 import type { Diagnostic, DiagnosticDetailByKind, DiagnosticKind } from "../index.js";
 
 export type DiagnosticExtra = Partial<
-    Pick<Diagnostic, "at" | "path" | "permutation" | "related" | "fixes" | "tags">
+    Pick<Diagnostic, "at" | "path" | "permutation" | "related" | "tags">
 >;
 
 export function diagnostic<K extends DiagnosticKind>(

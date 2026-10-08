@@ -1,4 +1,13 @@
-import type { ColorSpace, IgnoredProperty, JsonPath, TokenType, ValueError } from "../index.js";
+import type {
+    ColorSpace,
+    ColorValue,
+    DimensionValue,
+    DurationValue,
+    IgnoredProperty,
+    JsonPath,
+    TokenType,
+    ValueError,
+} from "../index.js";
 import { fontWeightKeywords } from "./keywords.js";
 
 /** The facts each reason carries, beside `type` and `reason`. */
@@ -16,7 +25,11 @@ export interface ValueErrorFacts {
     /** A `"{token}"` reference is written inside a value, where only a JSON Pointer can be. */
     "alias-not-allowed-here": { reference: string };
     /** A color is written as a hex string. Through `read`, this is `hex-string-color`. */
-    "hex-string": { value: string };
+    "hex-string": {
+        value: string;
+        /** The color object it stands for, as it would be written: `alpha` only when the hex has alpha digits. */
+        asObject: Omit<ColorValue, "alpha"> & { alpha?: number };
+    };
     /** A color's `colorSpace` is not one the Color module defines. */
     "unknown-color-space": { value: unknown };
     /** A color's `components` is not a list of three. */
@@ -38,9 +51,17 @@ export interface ValueErrorFacts {
     /** A color's `alpha` is outside 0 to 1. */
     "alpha-out-of-range": { value: number };
     /** A color's `hex` is not six hex digits after a `#`. */
-    "hex-not-six-digits": { value: unknown };
+    "hex-not-six-digits": {
+        value: unknown;
+        /** A three-digit hex, such as `#f0a`, written with six digits: `#ff00aa`. */
+        sixDigits?: string;
+    };
     /** A dimension or duration is written as a string with its unit, such as `"16px"`. */
-    "string-with-unit": { value: string };
+    "string-with-unit": {
+        value: string;
+        /** The object it stands for, `{ value: 16, unit: "px" }`, when its unit is one the type allows. */
+        asObject?: { value: number; unit: DimensionValue["unit"] | DurationValue["unit"] };
+    };
     /** A cubic Bézier does not have four numbers. */
     "not-four-numbers": { count: number };
     /** A cubic Bézier's `x1` or `x2` is outside 0 to 1. */
@@ -133,6 +154,15 @@ function found(value: unknown): string {
     return `\`${String(value)}\``;
 }
 
+export function didYouMean(similar: string | undefined): string {
+    return similar === undefined ? "" : `; did you mean \`${similar}\`?`;
+}
+
+function suchAs(object: ValueErrorFacts["string-with-unit"]["asObject"]): string {
+    if (object === undefined) return "";
+    return `, such as \`{ "value": ${object.value}, "unit": ${JSON.stringify(object.unit)} }\``;
+}
+
 function written(value: unknown): string {
     return typeof value === "string" && value !== "" ? `\`${value}\`` : found(value);
 }
@@ -174,9 +204,10 @@ export const valueErrorMessages: {
         `\`${value}\` is out of range for \`${component}\` in \`${colorSpace}\`, which is ${range(min, max, maxExclusive)}`,
     "alpha-out-of-range": ({ value }) =>
         `\`${value}\` is out of range for alpha, which is from 0 to 1`,
-    "hex-not-six-digits": ({ value }) => `${written(value)} is not a six-digit hex color`,
-    "string-with-unit": ({ type, value }) =>
-        `\`${value}\` is a string, and ${typeWords[type]} must be an object with a value and a unit`,
+    "hex-not-six-digits": ({ value, sixDigits }) =>
+        `${written(value)} is not a six-digit hex color${didYouMean(sixDigits)}`,
+    "string-with-unit": ({ type, value, asObject }) =>
+        `\`${value}\` is a string, and ${typeWords[type]} must be an object with a value and a unit${suchAs(asObject)}`,
     "not-four-numbers": ({ count }) => `a cubic Bézier has four numbers, and this has ${count}`,
     "x-out-of-range": ({ value, coordinate }) =>
         `\`${value}\` is out of range for \`${coordinate}\`, which is from 0 to 1`,

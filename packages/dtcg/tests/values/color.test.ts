@@ -21,6 +21,14 @@ function ignored(raw: unknown, options?: ParseOptions) {
     return result.ignored.map(({ path, detail }) => ({ path, detail }));
 }
 
+const asObjects: Record<string, unknown> = {
+    "#e11d48": { colorSpace: "srgb", components: [0.8824, 0.1137, 0.2824], hex: "#e11d48" },
+    "#E11D48": { colorSpace: "srgb", components: [0.8824, 0.1137, 0.2824], hex: "#E11D48" },
+    "#00000080": { colorSpace: "srgb", components: [0, 0, 0], alpha: 0.502, hex: "#000000" },
+    "#fff": { colorSpace: "srgb", components: [1, 1, 1], hex: "#ffffff" },
+    "#ffff": { colorSpace: "srgb", components: [1, 1, 1], alpha: 1, hex: "#ffffff" },
+};
+
 describe("parseColor", () => {
     describe("reads", () => {
         it.for([
@@ -222,19 +230,24 @@ describe("parseColor", () => {
         it.for(["#fff", "#ffff"])("still refuses %s, which has too few digits", (raw) => {
             const result = parseColor(raw, ["$value"], options);
             expect(result.ok ? [] : result.errors.map(({ detail }) => detail)).toStrictEqual([
-                { type: "color", reason: "hex-string", value: raw },
+                { type: "color", reason: "hex-string", value: raw, asObject: asObjects[raw] },
             ]);
         });
     });
 
     describe("refuses", () => {
         it.for(["#e11d48", "#E11D48", "#00000080", "#fff", "#ffff"])(
-            "the hex string %s, which the Color module no longer allows",
+            "the hex string %s, which the Color module no longer allows, giving the object it stands for",
             (raw) => {
                 expect(details(raw)).toStrictEqual([
                     {
                         path: ["$value"],
-                        detail: { type: "color", reason: "hex-string", value: raw },
+                        detail: {
+                            type: "color",
+                            reason: "hex-string",
+                            value: raw,
+                            asObject: asObjects[raw],
+                        },
                     },
                 ]);
             },
@@ -375,7 +388,7 @@ describe("parseColor", () => {
             ]);
         });
 
-        it.for(["#fff", "#00000080", "ff0000", "#gg0000", 16711680])(
+        it.for(["#00000080", "ff0000", "#gg0000", 16711680])(
             "hex %j, which is not six-digit CSS hex",
             (hex) => {
                 expect(details({ colorSpace: "srgb", components: [1, 0, 0], hex })).toStrictEqual([
@@ -386,6 +399,22 @@ describe("parseColor", () => {
                 ]);
             },
         );
+
+        it("a three-digit hex, giving it with six digits", () => {
+            expect(
+                details({ colorSpace: "srgb", components: [1, 0, 0], hex: "#F0a" }),
+            ).toStrictEqual([
+                {
+                    path: ["$value", "hex"],
+                    detail: {
+                        type: "color",
+                        reason: "hex-not-six-digits",
+                        value: "#F0a",
+                        sixDigits: "#FF00aa",
+                    },
+                },
+            ]);
+        });
 
         it("every problem in one go", () => {
             expect(
@@ -405,7 +434,12 @@ describe("parseColor", () => {
                 },
                 {
                     path: ["$value", "hex"],
-                    detail: { type: "color", reason: "hex-not-six-digits", value: "#fff" },
+                    detail: {
+                        type: "color",
+                        reason: "hex-not-six-digits",
+                        value: "#fff",
+                        sixDigits: "#ffffff",
+                    },
                 },
             ]);
         });

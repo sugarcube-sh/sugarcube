@@ -5,7 +5,12 @@ import type {
     ResolverProblem,
     ResolverRule,
 } from "./index.js";
-import { ignoredMessage, valueErrorMessage, valueErrorMessages } from "./values/value-errors.js";
+import {
+    didYouMean,
+    ignoredMessage,
+    valueErrorMessage,
+    valueErrorMessages,
+} from "./values/value-errors.js";
 
 type Severity = "error" | "warning";
 
@@ -95,19 +100,6 @@ const ignoredWhenInvalid: ReadonlySet<DiagnosticDetailByKind["invalid-property"]
 
 const ownerWords = { resolver: "the resolver", set: "a set", modifier: "a modifier" } as const;
 
-export const fixTitles = {
-    useSimilar: (name: string) => `use \`${name}\`, which has a similar name`,
-    deleteEarlier: (key: string) => `delete the earlier \`${key}\`, which is never used`,
-    writePointer: (pointer: string) => `write it as \`${pointer}\``,
-    deleteType: "delete this `$type`, so the token takes its group's type",
-    extendsAsReference: (reference: string) => `write it as the reference \`${reference}\``,
-    hexToObject: "write the color as an object, keeping the hex",
-    measureAsObject: (type: string) => `write the ${type} as an object`,
-    sixDigitHex: (hex: string) => `write the hex with six digits, \`${hex}\``,
-    referenceAsPointer: (pointer: string) =>
-        `write it as the pointer \`${pointer}\`, which can stand for part of a value`,
-};
-
 export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "file-not-found": {
         severity: "error",
@@ -156,10 +148,10 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "invalid-property": {
         severity: ({ property }) => (ignoredWhenInvalid.has(property) ? "warning" : "error"),
-        message: ({ property, expected }) =>
+        message: ({ property, expected, reference }) =>
             ignoredWhenInvalid.has(property)
                 ? `\`${property}\` must be ${propertyWords[expected]}, so it is ignored`
-                : `\`${property}\` must be ${propertyWords[expected]}`,
+                : `\`${property}\` must be ${propertyWords[expected]}${didYouMean(reference)}`,
     },
     "missing-type": {
         severity: "error",
@@ -167,10 +159,10 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "unknown-type": {
         severity: "error",
-        message: ({ type }) =>
+        message: ({ type, similar }) =>
             type === ""
                 ? "`$type` is empty, and a token needs a type"
-                : `\`${type}\` is not a token type`,
+                : `\`${type}\` is not a token type${didYouMean(similar)}`,
     },
     "invalid-value": {
         severity: "error",
@@ -178,8 +170,8 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "hex-string-color": {
         severity: "error",
-        message: ({ value }) =>
-            valueErrorMessages["hex-string"]({ type: "color", reason: "hex-string", value }),
+        message: (detail) =>
+            valueErrorMessages["hex-string"]({ type: "color", reason: "hex-string", ...detail }),
     },
     "extension-invalid": {
         severity: "error",
@@ -187,14 +179,17 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "missing-reference": {
         severity: "error",
-        message: ({ ref }) => `\`${ref}\` does not exist`,
+        message: ({ ref, similar }) => `\`${ref}\` does not exist${didYouMean(similar)}`,
     },
     "malformed-pointer": {
         severity: "error",
-        message: ({ ref, reason }) =>
-            reason === "no-leading-slash"
-                ? `\`${ref}\` is not a JSON Pointer, which starts with \`#/\``
-                : `\`${ref}\` is not a JSON Pointer: in one, \`~\` is written \`~0\` and \`/\` is written \`~1\``,
+        message: ({ ref, reason, corrected }) => {
+            const problem =
+                reason === "no-leading-slash"
+                    ? `\`${ref}\` is not a JSON Pointer, which starts with \`#/\``
+                    : `\`${ref}\` is not a JSON Pointer: in one, \`~\` is written \`~0\` and \`/\` is written \`~1\``;
+            return corrected === undefined ? problem : `${problem}; write it as \`${corrected}\``;
+        },
     },
     "not-a-token": {
         severity: "error",
@@ -228,7 +223,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         message: (detail) =>
             "at" in detail
                 ? ignoredMessage(detail.owner, detail.property)
-                : `\`${detail.property}\` is not a property of ${ownerWords[detail.owner]}, so it is ignored`,
+                : `\`${detail.property}\` is not a property of ${ownerWords[detail.owner]}, so it is ignored${didYouMean(detail.similar)}`,
     },
     "permutation-limit": {
         severity: "warning",

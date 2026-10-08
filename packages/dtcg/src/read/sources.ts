@@ -2,6 +2,7 @@ import type { Node } from "jsonc-parser";
 import type { Diagnostic, JsonPath } from "../index.js";
 import { type Files, openFile, parseFile } from "./files.js";
 import { type JsonFile, spanOf } from "./json.js";
+import { malformedPointer } from "./malformed-pointer.js";
 import { folderOf, join } from "./paths.js";
 import { encodePointer, follow, parsePointer, readPointerText } from "./pointer.js";
 import {
@@ -14,7 +15,6 @@ import {
     isResolver,
     SET_KEYS,
     readSetParts,
-    reportMalformed,
     resolverProblem,
 } from "./resolver.js";
 
@@ -201,13 +201,9 @@ function followSource(
         const file = hash === -1 ? ref : ref.slice(0, hash);
         const read = fragment === "" ? undefined : readPointerText(`#${fragment}`);
         if (read && !read.ok) {
-            reportMalformed(
-                reader,
-                ref,
-                { ...read, corrected: `${file}${read.corrected}` },
-                refNode,
-                true,
-            );
+            const corrected = `${file}${read.corrected}`;
+            const detail = malformedPointer(ref, { ...read, corrected }, true);
+            reader.diagnose("malformed-pointer", detail, refNode);
             return [];
         }
         const steps = read?.steps ?? [];
@@ -227,7 +223,7 @@ function followSource(
         const corrected = parsePointer(read.corrected);
         const reaches =
             corrected !== undefined && pointable(corrected) && follow(root, corrected).ok;
-        reportMalformed(reader, ref, read, refNode, reaches);
+        reader.diagnose("malformed-pointer", malformedPointer(ref, read, reaches), refNode);
         return [];
     }
     const steps = read.steps;

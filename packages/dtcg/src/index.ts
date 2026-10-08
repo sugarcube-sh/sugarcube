@@ -1,5 +1,5 @@
 import type { StandardSchemaV1 } from "./standard-schema.js";
-import type { ValueErrorDetail } from "./values/value-errors.js";
+import type { ValueErrorDetail, ValueErrorFacts } from "./values/value-errors.js";
 
 /** A color space defined by the DTCG Color module. */
 export type ColorSpace =
@@ -555,26 +555,6 @@ export interface Edge {
     at: Span;
 }
 
-/** A replacement of some text in a file. The offset and length count as in {@link Span}. */
-export interface TextEdit {
-    file: string;
-    offset: number;
-    length: number;
-    text: string;
-}
-
-/** A change that would resolve a diagnostic. */
-export interface Fix {
-    /** What the fix does, for a menu or a prompt, such as "use `color.brand`, which has a similar name". */
-    title: string;
-    /**
-     * Whether it can be applied without a person checking it. A safe fix never changes what the
-     * design system means; an unsafe one is a likely guess a person should confirm.
-     */
-    safe: boolean;
-    edits: TextEdit[];
-}
-
 /**
  * The facts each kind of diagnostic carries, so a tool can word diagnostics itself without
  * parsing {@link Diagnostic.message}.
@@ -619,18 +599,24 @@ export interface DiagnosticDetailByKind {
         property: "$type" | "$description" | "$deprecated" | "$extensions" | "$extends" | "$ref";
         /** `"reference"`: a `"{group}"` reference, or a `{ "$ref": "#/…" }` pointer. */
         expected: "string" | "object" | "boolean-or-string" | "reference";
+        /** For `$extends` written as a plain name, such as `base`, that name as a reference: `{base}`. */
+        reference?: string;
     };
     /** No type can be worked out for a token. */
     "missing-type": Record<string, never>;
     /** A `$type` is not one of the thirteen the specification defines (Format 8). */
-    "unknown-type": { type: string };
+    "unknown-type": {
+        type: string;
+        /** A type with a similar name, when exactly one is close. */
+        similar?: TokenType;
+    };
     /** A value does not fit its type. */
     "invalid-value": {
         /** Where in the token or group, such as `["$value", "unit"]`. */
         at: JsonPath;
     } & ValueErrorDetail;
     /** A color written as a hex string, which the 2025.10 Color module no longer allows. */
-    "hex-string-color": { value: string };
+    "hex-string-color": ValueErrorFacts["hex-string"];
     /** An `$extensions` entry fails a registered check, such as a {@link Generator}'s. */
     "extension-invalid": {
         /** The `$extensions` key, such as `"com.example"`. */
@@ -648,19 +634,23 @@ export interface DiagnosticDetailByKind {
         ref: string;
         /** Every token or group that refers to it. */
         referencedBy: string[];
+        /** A token with a similar path, when exactly one is close. */
+        similar?: string;
     };
     /** `$extends`, or a `$ref` standing for a group, points at a token (Format 6.4.6). */
     "not-a-group": { ref: string };
     /**
      * A `$ref` is not a JSON Pointer (RFC 6901): it does not start with `/` after the `#`, or a `~`
-     * in it is not `~0` or `~1`. A fix writes it correctly when that reaches something, and always
-     * for a reference into another file, whose target is not read.
+     * in it is not `~0` or `~1`.
      */
     "malformed-pointer": {
         ref: string;
         reason: "no-leading-slash" | "bad-escape";
-        /** The reference written correctly. */
-        corrected: string;
+        /**
+         * The reference written correctly, when that reaches something, and always for a reference
+         * into another file, whose target is not read.
+         */
+        corrected?: string;
     };
     /** A reference to a token points at a group (Format 6.2: `{color.accent}` names a group, not a token). */
     "not-a-token": { ref: string };
@@ -685,7 +675,12 @@ export interface DiagnosticDetailByKind {
      * belongs in `$extensions`.
      */
     "unknown-property":
-        | { property: string; owner: "resolver" | "set" | "modifier" }
+        | {
+              property: string;
+              owner: "resolver" | "set" | "modifier";
+              /** A property it may have with a similar name, when exactly one is close. */
+              similar?: string;
+          }
         | {
               property: string;
               /** The type of the value it is in, which for a part of a composite is the part's type. */
@@ -779,11 +774,13 @@ export type DiagnosticKind = keyof DiagnosticDetailByKind;
  * A problem or a note about the files. Reading carries on, so one read reports everything.
  * Checking `kind` narrows `detail` to that kind's facts.
  *
- * The message says what is wrong in plain words and names no tool's command or flag. It holds
- * no location: that is in `at`, for the tool to present as it likes.
+ * The message says what is wrong in plain words and, where the reader knows, what would mend it
+ * ("did you mean `color.ink`?"); `detail` holds the same facts. It names no tool's command or flag,
+ * and holds no location: that is in `at`, for the tool to present as it likes. The changes that
+ * would mend a problem are made by `@sugarcube-sh/dtcg-edit`.
  *
  * @example
- * if (d.kind === "missing-reference") d.detail.referencedBy
+ * if (d.kind === "missing-reference") d.detail.similar // "color.ink"
  */
 export type Diagnostic = DiagnosticOf<DiagnosticDetailByKind>;
 
@@ -810,8 +807,6 @@ export type DiagnosticOf<DetailByKind> = {
         permutation?: number;
         /** Other places involved, such as every token that uses a missing one. */
         related?: { message: string; at: Span }[];
-        /** Changes that would resolve it. */
-        fixes?: Fix[];
         /** How an editor may show it: struck through for a deprecated reference. */
         tags?: ("deprecated" | "unnecessary")[];
         /** A page explaining this kind of diagnostic. */
@@ -1109,11 +1104,21 @@ export interface ReadOptions extends ParseOptions {
  * that is absolute or a URL is passed as written. Throwing, or rejecting, reports the file as not
  * found.
  *
- * Every file path in the results, in `Document.files`, `Span`, a project's files and every edit,
- * is relative to the entry's folder, with forward slashes, such as `"themes/dark.json"`. The
- * entry itself is its file name.
+ * Every file path in the results, in `Document.files` and every `Span`, is relative to the entry's
+ * folder, with forward slashes, such as `"themes/dark.json"`. The entry itself is its file name.
+ * That name is passed as `file`, for keeping each text by the name the results use.
+ *
+ * @example
+ * const texts = new Map<string, string>();
+ * const doc = await read("tokens/tokens.resolver.json", {
+ *   readText: async (path, file) => {
+ *     const text = await readFile(path, "utf8");
+ *     texts.set(file, text); // "dark.json"
+ *     return text;
+ *   },
+ * });
  */
-export type ReadText = (path: string) => Promise<string>;
+export type ReadText = (path: string, file: string) => Promise<string>;
 
 export { read, readFromMemory } from "./read/read.js";
 

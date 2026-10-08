@@ -1,5 +1,4 @@
-// A code editor showing token problems as squiggles, with their severity, a link to docs, and quick
-// fixes.
+// A code editor showing token problems as squiggles, with their severity and a link to docs.
 import type { Document, Span } from "@sugarcube-sh/dtcg";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -32,7 +31,6 @@ for (const d of doc.diagnostics) {
             location: { uri: uri(r.at.file), range: range(r.at) },
             message: r.message,
         })),
-        data: d.fixes,
     };
     byFile.set(d.at.file, [...(byFile.get(d.at.file) ?? []), item]);
 }

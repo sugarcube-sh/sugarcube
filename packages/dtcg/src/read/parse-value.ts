@@ -101,5 +101,5 @@ function toDiagnostic(token: MergedToken, error: ValueError, permutation?: numbe
     const node = deepestNode(value, error.path.slice(1), json.hidden);
     const at = spanOf(json.path, json.lineStarts, node.offset, node.length);
     const extra = { at, path, ...(permutation !== undefined && { permutation }) };
-    return valueDiagnostic(error.detail, error.path, node, json.path, extra);
+    return valueDiagnostic(error.detail, error.path, node, extra);
 }

@@ -114,11 +114,21 @@ describe("parseBorder", () => {
             ).toStrictEqual([
                 {
                     path: ["$value", "color"],
-                    detail: { type: "color", reason: "hex-string", value: "#ff0000" },
+                    detail: {
+                        type: "color",
+                        reason: "hex-string",
+                        value: "#ff0000",
+                        asObject: { colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" },
+                    },
                 },
                 {
                     path: ["$value", "width"],
-                    detail: { type: "dimension", reason: "string-with-unit", value: "1px" },
+                    detail: {
+                        type: "dimension",
+                        reason: "string-with-unit",
+                        value: "1px",
+                        asObject: { value: 1, unit: "px" },
+                    },
                 },
                 {
                     path: ["$value", "style", "dashArray", 0, "unit"],

@@ -1,12 +1,10 @@
 import type {
     Change,
     Document,
-    Fix,
     Input,
     JsonPath,
     Move,
     ReadOptions,
-    ReadText,
     TokenType,
 } from "@sugarcube-sh/dtcg";
 
@@ -24,23 +22,37 @@ export interface Project {
     readonly doc: Document;
     /** The text of every file, keyed by path, as described at `ReadText` in `@sugarcube-sh/dtcg`. */
     readonly files: Readonly<Record<string, string>>;
+    /** The options it was read with, for reading it again after an edit. */
+    readonly options: ReadOptions;
 }
 
+export { open } from "./open.js";
+
 /**
- * Opens a design system for editing. Files are fetched through `readText`, so this runs
- * anywhere; `@sugarcube-sh/dtcg-edit/node` provides a version that reads from disk.
- *
- * @example
- * const project = await open("tokens.resolver.json", {
- *   readText: (path) => fetch(path).then((r) => r.text()),
- * });
+ * A replacement of some text in a file. The offset and length count UTF-16 code units, as a
+ * `Span` in `@sugarcube-sh/dtcg` does.
  */
-export function open(
-    entry: string,
-    options: ReadOptions & { readText: ReadText },
-): Promise<Project> {
-    throw new Error("not implemented yet");
+export interface TextEdit {
+    file: string;
+    offset: number;
+    length: number;
+    text: string;
 }
+
+/** A change that would mend a diagnostic, as {@link fixesFor} offers it. */
+export interface Fix {
+    /** What the fix does, for a menu or a prompt, such as "use `color.brand`, which has a similar name". */
+    title: string;
+    /**
+     * Whether it can be applied without a person checking it. A safe fix, applied, leaves the place
+     * it mends reading clean and changes nothing else the files mean; one that is not safe is a
+     * likely guess a person should confirm.
+     */
+    safe: boolean;
+    edits: TextEdit[];
+}
+
+export { fixesFor } from "./fixes.js";
 
 /**
  * Opens a design system for editing from text already in memory, by the rules of
@@ -281,12 +293,12 @@ export function setExtension(
 }
 
 /**
- * Turns fixes offered by this project's diagnostics into ordinary edits, so they can be undone,
+ * Turns fixes offered for this project's diagnostics into ordinary edits, so they can be undone,
  * saved and replayed like any other. Pass several to make them one step. Every fix must come from
- * `project.doc`.
+ * {@link fixesFor} for this project.
  *
  * @example
- * const safe = project.doc.diagnostics.flatMap((d) => (d.fixes ?? []).filter((f) => f.safe));
+ * const safe = project.doc.diagnostics.flatMap((d) => fixesFor(project, d).filter((f) => f.safe));
  * commit(project, fix(project, safe));
  */
 export function fix(project: Project, fixes: Fix[]): OpResult {

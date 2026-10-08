@@ -22,7 +22,14 @@ describe("extensionReader", () => {
         const result = reader.result(undefined);
         expect(
             result.ok ? [] : result.errors.map((each) => ("detail" in each ? each.detail : each)),
-        ).toEqual([{ type: "dimension", reason: "string-with-unit", value: "16px" }]);
+        ).toEqual([
+            {
+                type: "dimension",
+                reason: "string-with-unit",
+                value: "16px",
+                asObject: { value: 16, unit: "px" },
+            },
+        ]);
     });
 
     it("refuses a property a value's type does not define, as a token's value would be", () => {

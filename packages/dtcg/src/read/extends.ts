@@ -1,7 +1,6 @@
-import type { Diagnostic, DiagnosticDetailByKind, DiagnosticKind, Span } from "../index.js";
+import type { Diagnostic, DiagnosticDetailByKind, DiagnosticKind } from "../index.js";
 import { relatedMessages } from "../error-messages.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
-import { member, spanOf } from "./json.js";
 import { malformation } from "./malformed-pointer.js";
 import { type Merged, type MergedGroup, mergeProperties, removeGroup } from "./merge.js";
 import { pathBelow, within } from "../path.js";
@@ -58,15 +57,9 @@ export function applyExtends(merged: Merged, permutation: number, diagnostics: D
         if (state.get(group.path) === "in-a-loop") return;
 
         const reached = reach(steps, merged);
-        const malformed =
-            reached.kind === "nothing" && malformation(written, pointerAt(group), merged);
+        const malformed = reached.kind === "nothing" && malformation(written, merged);
         if (malformed) {
-            report(
-                "malformed-pointer",
-                malformed.detail,
-                group,
-                malformed.fixes && { fixes: malformed.fixes },
-            );
+            report("malformed-pointer", malformed, group);
         } else if (reached.kind === "nothing") {
             report("missing-reference", { ref: written, referencedBy: [group.path] }, group);
         } else if (reached.kind === "group") {
@@ -87,11 +80,6 @@ export function applyExtends(merged: Merged, permutation: number, diagnostics: D
     for (const group of Array.from(merged.groups.values())) {
         if (isExtending(group)) visit(group, []);
     }
-}
-
-function pointerAt({ extends: { node, json } }: Extending): Span {
-    const text = node.type === "string" ? node : (member(node, "$ref", json.hidden) ?? node);
-    return spanOf(json.path, json.lineStarts, text.offset, text.length);
 }
 
 function isExtending(group: MergedGroup): group is Extending {

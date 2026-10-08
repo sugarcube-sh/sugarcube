@@ -100,26 +100,14 @@
         "type": "dimension",
         "at": ["$value", 1, "blur"],
         "reason": "string-with-unit",
-        "value": "8px"
+        "value": "8px",
+        "asObject": { "value": 8, "unit": "px" }
       },
       "at": {
         "file": "tokens.json",
         "text": "\"8px\""
       },
-      "path": "layers",
-      "fixes": [
-        {
-          "title": "write the dimension as an object",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"8px\"",
-              "replaceWith": "{ \"value\": 8, \"unit\": \"px\" }"
-            }
-          ]
-        }
-      ]
+      "path": "layers"
     }
   ]
 }

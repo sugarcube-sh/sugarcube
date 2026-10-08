@@ -16,7 +16,12 @@ describe("parseValue", () => {
         expect(read.ok ? [] : read.errors.map(({ path, detail }) => ({ path, detail }))).toEqual([
             {
                 path: ["base"],
-                detail: { type: "dimension", reason: "string-with-unit", value: "16px" },
+                detail: {
+                    type: "dimension",
+                    reason: "string-with-unit",
+                    value: "16px",
+                    asObject: { value: 16, unit: "px" },
+                },
             },
         ]);
     });

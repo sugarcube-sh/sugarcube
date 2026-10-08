@@ -1,0 +1,24 @@
+{
+  "diagnostics": [
+    {
+      "kind": "hex-string-color",
+      "at": {
+        "file": "tokens.json",
+        "text": "\"#fff\""
+      },
+      "fixes": [
+        {
+          "title": "write the color as an object, keeping the hex",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#fff\"",
+              "replaceWith": "{ \"colorSpace\": \"srgb\", \"components\": [1, 1, 1], \"hex\": \"#ffffff\" }"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

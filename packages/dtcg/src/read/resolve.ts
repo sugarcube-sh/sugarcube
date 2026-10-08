@@ -1,4 +1,4 @@
-import { fixTitles, relatedMessages } from "../error-messages.js";
+import { relatedMessages } from "../error-messages.js";
 import type {
     Diagnostic,
     DiagnosticDetailByKind,
@@ -38,15 +38,10 @@ type Whole =
     | { kind: "part" }
     | { kind: "unreachable" };
 
-interface Use {
-    at: Span;
-    isAlias: boolean;
-}
-
 interface Missing {
-    first: { from: string; use: Use };
+    first: { from: string; at: Span };
     referencedBy: string[];
-    uses: Use[];
+    uses: Span[];
 }
 
 export function resolvePermutations(
@@ -82,19 +77,17 @@ function resolvePermutation(
         extra: Omit<DiagnosticExtra, "at" | "path" | "permutation"> = {},
     ) => diagnostics.push(diagnostic(kind, detail, { at, path, permutation: index, ...extra }));
 
-    const recordMissing = (ref: string, from: string, use: Use) => {
-        const entry = missing.get(ref) ?? { first: { from, use }, referencedBy: [], uses: [] };
+    const recordMissing = (ref: string, from: string, at: Span) => {
+        const entry = missing.get(ref) ?? { first: { from, at }, referencedBy: [], uses: [] };
         if (!entry.referencedBy.includes(from)) entry.referencedBy.push(from);
-        entry.uses.push(use);
+        entry.uses.push(at);
         missing.set(ref, entry);
     };
 
     const reportUnreachable = (use: Occurrence, from: string) => {
-        const malformed =
-            use.kind === "pointer" && malformation(use.written, use.pointerAt, merged);
+        const malformed = use.kind === "pointer" && malformation(use.written, merged);
         if (malformed) {
-            const { detail, fixes } = malformed;
-            report("malformed-pointer", detail, from, use.at, fixes && { fixes });
+            report("malformed-pointer", malformed, from, use.at);
             return;
         }
         const ref = use.kind === "alias" ? use.target : use.written;
@@ -103,7 +96,7 @@ function resolvePermutation(
                 ? merged.groups.has(use.target)
                 : reach(use.steps, merged).kind === "group";
         if (isGroup) report("not-a-token", { ref }, from, use.at);
-        else recordMissing(ref, from, { at: use.at, isAlias: use.kind === "alias" });
+        else recordMissing(ref, from, use.at);
     };
 
     const outcomeOf = (path: string, from: string, at: Span): Outcome | undefined => {
@@ -229,27 +222,12 @@ function resolvePermutation(
     const knownPaths = [...tokens.keys()];
     for (const [ref, { first, referencedBy, uses }] of missing) {
         const similar = similarName(ref, knownPaths);
-        const edits = uses.flatMap(({ isAlias, at }) =>
-            isAlias && similar !== undefined
-                ? [
-                      {
-                          file: at.file,
-                          offset: at.offset,
-                          length: at.length,
-                          text: JSON.stringify(`{${similar}}`),
-                      },
-                  ]
-                : [],
-        );
         const related = uses
-            .filter((use) => use !== first.use)
-            .map((use) => ({ message: relatedMessages.alsoUsedHere, at: use.at }));
-        report("missing-reference", { ref, referencedBy }, first.from, first.use.at, {
+            .filter((at) => at !== first.at)
+            .map((at) => ({ message: relatedMessages.alsoUsedHere, at }));
+        const detail = { ref, referencedBy, ...(similar !== undefined && { similar }) };
+        report("missing-reference", detail, first.from, first.at, {
             ...(related.length > 0 && { related }),
-            ...(similar !== undefined &&
-                edits.length > 0 && {
-                    fixes: [{ title: fixTitles.useSimilar(similar), safe: false, edits }],
-                }),
         });
     }
 

@@ -1,28 +1,22 @@
-import { fixTitles } from "../error-messages.js";
-import type { DiagnosticDetailByKind, Fix, Span, TextEdit } from "../index.js";
+import type { DiagnosticDetailByKind } from "../index.js";
 import type { Merged } from "./merge.js";
 import { type PointerReading, parsePointer, readPointerText } from "./pointer.js";
 import { reach } from "./ref-meaning.js";
 
-type Malformed = { detail: DiagnosticDetailByKind["malformed-pointer"]; fixes?: Fix[] };
+type Malformed = DiagnosticDetailByKind["malformed-pointer"];
 
 export function malformedPointer(
     ref: string,
     { problem, corrected }: Extract<PointerReading, { ok: false }>,
-    written: Omit<TextEdit, "text">,
     reaches: boolean,
 ): Malformed {
-    const detail = { ref, reason: problem, corrected };
-    if (!reaches) return { detail };
-    const edits = [{ ...written, text: JSON.stringify(corrected) }];
-    return { detail, fixes: [{ title: fixTitles.writePointer(corrected), safe: true, edits }] };
+    return { ref, reason: problem, ...(reaches && { corrected }) };
 }
 
-export function malformation(ref: string, pointerAt: Span, merged: Merged): Malformed | undefined {
+export function malformation(ref: string, merged: Merged): Malformed | undefined {
     if (!ref.startsWith("#")) return undefined;
     const read = readPointerText(ref);
     if (read.ok) return undefined;
-    const { file, offset, length } = pointerAt;
     const reaches = reach(parsePointer(read.corrected), merged).kind !== "nothing";
-    return malformedPointer(ref, read, { file, offset, length }, reaches);
+    return malformedPointer(ref, read, reaches);
 }
