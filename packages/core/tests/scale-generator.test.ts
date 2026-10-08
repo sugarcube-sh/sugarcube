@@ -117,6 +117,7 @@ describe("scale generator", () => {
                     type: "dimension",
                     reason: "string-with-unit",
                     value: "16px",
+                    asObject: { value: 16, unit: "px" },
                 },
             },
         ]);
