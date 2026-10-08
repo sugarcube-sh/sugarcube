@@ -27,12 +27,8 @@ interface Word {
 }
 
 export function printProblems(
-    { doc, folder, diagnostics }: Built,
-    {
-        configFile,
-        onlyErrors = false,
-        whenFailed,
-    }: { configFile?: string; onlyErrors?: boolean; whenFailed?: string },
+    { doc, folder, configFile, diagnostics }: Built,
+    { onlyErrors = false, whenFailed }: { onlyErrors?: boolean; whenFailed?: string } = {},
 ): boolean {
     const errors = diagnostics.filter(({ severity }) => severity === "error");
     const shown = onlyErrors ? errors : diagnostics;

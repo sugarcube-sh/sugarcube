@@ -7,7 +7,7 @@ import { CASES, GOLDEN_DIR, type GoldenCase, goldenConfig, withoutBanner } from 
 
 async function generate(goldenCase: GoldenCase, dir: string) {
     const outDir = join(dir, "out");
-    const config = goldenConfig(goldenCase, dir, outDir);
+    const { config } = goldenConfig(goldenCase, dir, outDir);
     const { output } = await createWatchSession(config).primeAndBuild();
     return output.map((file) => ({
         name: relative(outDir, file.path),

@@ -51,6 +51,6 @@ export async function findResolverDocument(directory: string): Promise<ResolverD
 
     return {
         found: "multiple",
-        paths: files.map((f) => relative(process.cwd(), f)),
+        paths: files.map((f) => relative(process.cwd(), f)).sort(),
     };
 }

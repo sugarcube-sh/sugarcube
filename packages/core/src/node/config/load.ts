@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
-import fs from "node:fs/promises";
 import { createJiti } from "jiti";
 import { dirname, resolve } from "pathe";
 import { validateInternalConfig, validateSugarcubeConfig } from "../../shared/config.js";
+import { ConfigError } from "../../shared/config-error.js";
 import { ErrorMessages } from "../../shared/constants/error-messages.js";
 import type { InternalConfig, SugarcubeConfig } from "../../types/config.js";
 import { findResolverDocument } from "../resolver/find.js";
@@ -20,56 +20,55 @@ function resolveContentGlobs(content: string[] | undefined, baseDir: string): st
 }
 
 /**
- * Result of loading a sugarcube configuration file.
- * Contains the validated, normalized configuration and its source path.
+ * A sugarcube configuration, validated and with defaults applied, with the resolver it reads
+ * always named: the config's own, or the one found in the project.
  */
-type LoadedConfig = {
-    /** The validated and normalized configuration with defaults applied. */
-    config: InternalConfig;
-    /** The absolute path to the config file that was loaded, or the resolver path if auto-discovered. */
-    configPath: string;
+export type LoadedConfig = {
+    config: InternalConfig & { resolver: string };
+    /** The config file it came from, when there is one. */
+    configFile?: string;
 };
 
-function findConfigFile(basePath = "sugarcube.config"): string | null {
-    const extensions = [".ts", ".js"];
-    const cwd = process.cwd();
+/**
+ * Settings to put over the config's, such as a command's flags: any of them, at any depth. A list
+ * replaces the config's whole list, and a setting left `undefined` keeps the config's.
+ */
+export type ConfigOverrides = Overrides<SugarcubeConfig>;
 
-    for (const ext of extensions) {
-        const fullPath = resolve(cwd, `${basePath}${ext}`);
-        if (existsSync(fullPath)) {
-            return fullPath;
-        }
-    }
-    return null;
+type Overrides<T> = {
+    [K in keyof T]?: NonNullable<T[K]> extends readonly unknown[] | ((...args: never[]) => unknown)
+        ? T[K]
+        : NonNullable<T[K]> extends object
+          ? Overrides<NonNullable<T[K]>>
+          : T[K];
+};
+
+function findConfigFile(): string | undefined {
+    return [".ts", ".js"]
+        .map((extension) => resolve(process.cwd(), `sugarcube.config${extension}`))
+        .find((path) => existsSync(path));
 }
 
 /**
- * Checks if a sugarcube configuration file exists.
- *
- * @param basePath - Base path without extension (default: "sugarcube.config")
- * @returns True if a .ts or .js config file exists
+ * Checks if `sugarcube.config.ts` or `.js` exists in the current folder.
  */
-export function configFileExists(basePath = "sugarcube.config"): boolean {
-    return findConfigFile(basePath) !== null;
+export function configFileExists(): boolean {
+    return findConfigFile() !== undefined;
 }
 
-async function loadTSConfig(configPath: string): Promise<unknown> {
+async function loadConfigFile(configFile: string): Promise<unknown> {
     try {
         const jiti = createJiti(import.meta.url, {
             interopDefault: true,
             moduleCache: false,
         });
-
-        const result = await jiti.import(configPath);
-
-        if (result && typeof result === "object" && "default" in result) {
-            return (result as { default: unknown }).default;
-        }
-
-        return result;
+        const result = await jiti.import(configFile);
+        return result && typeof result === "object" && "default" in result
+            ? result.default
+            : result;
     } catch (error) {
         if (error instanceof Error) {
-            throw new Error(ErrorMessages.CONFIG.INVALID_CONFIG("root", error.message), {
+            throw new ConfigError(ErrorMessages.CONFIG.INVALID_CONFIG("root", error.message), {
                 cause: error,
             });
         }
@@ -77,142 +76,44 @@ async function loadTSConfig(configPath: string): Promise<unknown> {
     }
 }
 
-async function loadConfigFile(configPath: string): Promise<unknown> {
-    const isTSOrJS = configPath.endsWith(".ts") || configPath.endsWith(".js");
-
-    if (isTSOrJS) {
-        return await loadTSConfig(configPath);
-    }
-
-    const content = await fs.readFile(configPath, "utf-8");
-    return JSON.parse(content);
-}
-
-function resolveConfigPath(configPath?: string): string {
-    if (configPath) {
-        return resolve(process.cwd(), configPath);
-    }
-
-    const found = findConfigFile();
-    if (!found) {
-        throw new Error(ErrorMessages.CONFIG.FILE_NOT_FOUND("sugarcube.config.ts"));
-    }
-
-    return found;
-}
-
 /**
- * Loads and validates a sugarcube configuration file.
- * Returns the user-facing config without internal defaults applied.
+ * Loads `sugarcube.config.ts` or `.js` from the current folder, when there is one, validates it
+ * and fills in its defaults; finds the resolver when nothing names one; then puts `overrides` on
+ * top and validates the result.
  *
- * @param configPath - Optional path to config file. If omitted, searches for sugarcube.config.ts/js
- * @returns The validated config and its resolved path
- * @throws Error if config file not found or invalid
+ * @param overrides - Settings over the config's, such as a command's flags; a `resolver` here is
+ * read without looking for one
+ * @returns The normalized config with defaults, and the config file it came from, if any
+ * @throws ConfigError if the config is invalid, or if no resolver, or several, are found
  */
-export async function loadSugarcubeConfig(configPath?: string): Promise<{
-    config: SugarcubeConfig;
-    configPath: string;
-}> {
-    const actualPath = resolveConfigPath(configPath);
-
-    try {
-        const configObject = await loadConfigFile(actualPath);
-        const validatedConfig = validateSugarcubeConfig(configObject as Partial<SugarcubeConfig>);
-
-        return {
-            config: validatedConfig,
-            configPath: actualPath,
-        };
-    } catch (error) {
-        if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-            throw new Error(ErrorMessages.CONFIG.FILE_NOT_FOUND(actualPath), { cause: error });
-        }
-
-        if (error instanceof SyntaxError) {
-            throw new Error(ErrorMessages.CONFIG.INVALID_JSON(error.message), { cause: error });
-        }
-
-        throw error;
-    }
+export async function loadInternalConfig(overrides: ConfigOverrides = {}): Promise<LoadedConfig> {
+    const configFile = findConfigFile();
+    const user = configFile ? validateSugarcubeConfig(await loadConfigFile(configFile)) : {};
+    const resolver = overrides.resolver ?? user.resolver ?? (await foundResolver());
+    const filled = fillDefaults({ ...user, resolver });
+    if (configFile) filled.content = resolveContentGlobs(filled.content, dirname(configFile));
+    const config = validateInternalConfig(overridden(filled, overrides));
+    return { config: { ...config, resolver }, configFile };
 }
 
-/**
- * Loads, validates, and normalizes a sugarcube configuration file.
- * Returns a complete internal config with all defaults applied.
- *
- * If no config file is found, attempts to auto-discover a resolver file and use defaults.
- *
- * @param configPath - Optional path to config file. If omitted, searches for sugarcube.config.ts/js
- * @returns The normalized config with defaults, its resolved path, and source type
- * @throws Error if config file not found, invalid, or if multiple resolvers are discovered
- */
-export async function loadInternalConfig(configPath?: string): Promise<LoadedConfig> {
-    // Try to find a config file
-    const foundConfigPath = configPath ? resolve(process.cwd(), configPath) : findConfigFile();
-
-    if (foundConfigPath) {
-        try {
-            const configObject = await loadConfigFile(foundConfigPath);
-            const userConfig = validateSugarcubeConfig(configObject as Partial<SugarcubeConfig>);
-
-            // If config has no resolver, try auto-discovery
-            if (!userConfig.resolver) {
-                const discovery = await findResolverDocument(process.cwd());
-
-                if (discovery.found === "one") {
-                    userConfig.resolver = discovery.path;
-                } else if (discovery.found === "multiple") {
-                    throw new Error(ErrorMessages.CONFIG.MULTIPLE_RESOLVERS_FOUND(discovery.paths));
-                } else if (discovery.found === "none") {
-                    throw new Error(ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER());
-                }
-            }
-
-            const internalConfig = fillDefaults(userConfig);
-            internalConfig.content = resolveContentGlobs(
-                internalConfig.content,
-                dirname(foundConfigPath),
-            );
-            const validatedConfig = validateInternalConfig(internalConfig);
-
-            return {
-                config: validatedConfig,
-                configPath: foundConfigPath,
-            };
-        } catch (error) {
-            if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-                throw new Error(ErrorMessages.CONFIG.FILE_NOT_FOUND(foundConfigPath), {
-                    cause: error,
-                });
-            }
-
-            if (error instanceof SyntaxError) {
-                throw new Error(ErrorMessages.CONFIG.INVALID_JSON(error.message), { cause: error });
-            }
-
-            throw error;
-        }
-    }
-
-    // No config file - try to auto-discover a resolver file
+async function foundResolver(): Promise<string> {
     const discovery = await findResolverDocument(process.cwd());
-
-    if (discovery.found === "one") {
-        const minimalConfig: SugarcubeConfig = {
-            resolver: discovery.path,
-        };
-        const internalConfig = fillDefaults(minimalConfig);
-        const validatedConfig = validateInternalConfig(internalConfig);
-
-        return {
-            config: validatedConfig,
-            configPath: discovery.path,
-        };
-    }
-
+    if (discovery.found === "one") return discovery.path;
     if (discovery.found === "multiple") {
-        throw new Error(ErrorMessages.CONFIG.MULTIPLE_RESOLVERS_FOUND(discovery.paths));
+        throw new ConfigError(ErrorMessages.CONFIG.MULTIPLE_RESOLVERS_FOUND(discovery.paths));
     }
+    throw new ConfigError(ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER());
+}
 
-    throw new Error(ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER());
+function overridden(base: unknown, overrides: unknown): unknown {
+    if (overrides === undefined) return base;
+    if (!isPlainObject(base) || !isPlainObject(overrides)) return overrides;
+    const merged: Record<string, unknown> = { ...base };
+    for (const [key, value] of Object.entries(overrides))
+        merged[key] = overridden(base[key], value);
+    return merged;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
 }

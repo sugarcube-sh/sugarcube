@@ -92,6 +92,68 @@ describe("generate command", () => {
         },
     );
 
+    it(
+        "shows a mistake in the config as the config's, not as a crash",
+        {
+            timeout: TEST_TIMEOUT,
+        },
+        async () => {
+            await createTokens(testDir);
+            await writeFile(
+                join(testDir, "sugarcube.config.ts"),
+                "export default { variables: { prefix: 5 } };",
+            );
+
+            const result = await execaCommand(`node ${CLI_PATH} generate`, {
+                cwd: testDir,
+                timeout: TEST_TIMEOUT,
+                reject: false,
+            });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.stdout).toContain("variables.prefix");
+            expect(result.stdout).not.toContain("unexpected error");
+        },
+    );
+
+    it(
+        "reads the resolver --resolver names, though the config names none and there are several",
+        {
+            timeout: TEST_TIMEOUT,
+        },
+        async () => {
+            const tokensDir = await createTokens(testDir);
+            const resolver = await readFile(join(tokensDir, "tokens.resolver.json"), "utf-8");
+            await writeFile(join(tokensDir, "other.resolver.json"), resolver);
+            await writeFile(join(testDir, "sugarcube.config.ts"), "export default {};");
+
+            const result = await execaCommand(
+                `node ${CLI_PATH} generate --resolver design-tokens/tokens.resolver.json`,
+                { cwd: testDir, timeout: TEST_TIMEOUT, reject: false },
+            );
+
+            expect(result.exitCode).toBe(0);
+            expect(existsSync(join(testDir, "styles/variables.gen.css"))).toBe(true);
+        },
+    );
+
+    it(
+        "says no tokens were found with no config and no resolver, whatever the flags",
+        {
+            timeout: TEST_TIMEOUT,
+        },
+        async () => {
+            const result = await execaCommand(`node ${CLI_PATH} generate --prefix ds`, {
+                cwd: testDir,
+                timeout: TEST_TIMEOUT,
+                reject: false,
+            });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.stdout).toContain("No design tokens found.");
+        },
+    );
+
     it("writes to styles/ when no src/ exists", { timeout: TEST_TIMEOUT }, async () => {
         const tokensDir = await createTokens(testDir);
 
@@ -141,6 +203,46 @@ describe("generate command", () => {
         expect(result.exitCode).toBe(0);
         expect(existsSync(join(testDir, "custom/css/tokens.css"))).toBe(true);
     });
+
+    it(
+        "writes the --input permutation in place of the config's, saying nothing",
+        {
+            timeout: TEST_TIMEOUT,
+        },
+        async () => {
+            const resolver = await tokensWith({ ink: { $type: "color", $value: "#000000" } });
+            await writeFile(
+                resolver,
+                JSON.stringify({
+                    version: "2025.10",
+                    resolutionOrder: [
+                        { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
+                        {
+                            type: "modifier",
+                            name: "theme",
+                            default: "light",
+                            contexts: { light: [], dark: [] },
+                        },
+                    ],
+                }),
+            );
+            await writeFile(
+                join(testDir, "sugarcube.config.ts"),
+                `export default { variables: { permutations: [{ input: {}, selector: ".from-config" }] } };`,
+            );
+
+            const result = await execaCommand(
+                `node ${CLI_PATH} generate --resolver ${resolver} --input theme=dark --selector .dark`,
+                { cwd: testDir, timeout: TEST_TIMEOUT, reject: false },
+            );
+
+            expect(result.exitCode).toBe(0);
+            expect(result.stdout).not.toContain("Config permutations ignored");
+            const css = await readFile(join(testDir, "styles/variables.gen.css"), "utf-8");
+            expect(css).toContain(".dark {");
+            expect(css).not.toContain(".from-config");
+        },
+    );
 
     it("respects --prefix flag", { timeout: TEST_TIMEOUT }, async () => {
         const tokensDir = await createTokens(testDir);

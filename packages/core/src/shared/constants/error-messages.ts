@@ -44,7 +44,7 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
             `this \`${colorSpace}\` color needs a \`hex\` to fall back to when \`colorFallbackStrategy\` is \`"polyfill"\`: add one, or use \`"native"\` if every browser you support has \`${colorSpace}\``,
     },
     "same-variable-name": {
-        severity: "warning",
+        severity: "error",
         message: ({ name, paths: [first, later] }) =>
             `\`${first}\` and \`${later}\` both make \`${name}\`, so only \`${later}\`'s value is used: rename one`,
     },
@@ -252,19 +252,14 @@ export const ErrorMessages = {
             `Failed to convert color: ${error}. This is a bug in sugarcube. Please report it at https://github.com/sugarcube-sh/sugarcube/issues`,
     },
     CONFIG: {
-        INVALID_JSON: (error: string) => `Invalid JSON in config file: ${error}`,
         INVALID_CONFIG: (path: string, message: string) =>
             `Invalid configuration at ${path}: ${message}`,
         DUPLICATE_FILENAMES: (filename: string, paths: string[]) =>
             `Duplicate filename "${filename}":\n${paths.map((p) => `  - ${p}`).join("\n")}`,
-        FILE_NOT_FOUND: (path: string) =>
-            path === "sugarcube.config.ts"
-                ? "Cannot find sugarcube config file. Please ensure you have a valid sugarcube.config.ts file in your project root."
-                : `Cannot find sugarcube config file at "${path}". Please check the path and file permissions.`,
         MULTIPLE_RESOLVERS_FOUND: (paths: string[]) =>
-            `Multiple resolver files found:\n${paths.map((f) => `  - ${f}`).join("\n")}\n\nPlease specify which one to use:\n  1. Create sugarcube.config.ts with resolver field\n  2. Use --resolver flag (generate command only)`,
+            `Several resolver files were found:\n${paths.map((f) => `  - ${f}`).join("\n")}\n\nName the one to use as \`resolver\` in sugarcube.config.ts.`,
         NO_CONFIG_OR_RESOLVER: () =>
-            "No configuration found. Either:\n  1. Run: npx @sugarcube-sh/cli init\n  2. Create a .resolver.json file\n  3. Create a sugarcube.config.ts file",
+            "No design tokens found.\n\nRun @sugarcube-sh/cli init to set up your design tokens.\n\nStuck? https://sugarcube.sh/docs",
         PANEL_MISSING_SOURCE: (section: string, token: string) =>
             `Panel section "${section}" has an alias binding for "${token}" with no choices. Set "options" to a glob like "radius.*", or "from" to a named source like "colorScale". Either can go on the section instead, to apply to every binding inside`,
         PANEL_AMBIGUOUS_SOURCE: (section: string, token: string) =>

@@ -1,20 +1,8 @@
-import {
-    type ColorFallbackStrategy,
-    type FluidConfig,
-    type SugarcubeConfig,
-    configFileExists,
-    fillDefaults,
-    findResolverDocument,
-    loadInternalConfig,
-    writeCSSFiles,
-} from "@sugarcube-sh/core";
-import type { InternalConfig } from "@sugarcube-sh/core";
+import { type InternalConfig, type LoadedConfig, writeCSSFiles } from "@sugarcube-sh/core";
 import { Command } from "commander";
 import color from "picocolors";
-import { CLIError } from "../cli-error.js";
-import { ERROR_MESSAGES } from "../constants/error-messages.js";
+import { type ConfigFlags, loadConfig } from "../config.js";
 import { handleError } from "../handle-error.js";
-import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 import { printProblems } from "../problems.js";
@@ -30,168 +18,12 @@ import {
 } from "../watch/log.js";
 import { startWatcher } from "../watch/watcher.js";
 
-interface GenerateFlags {
+interface GenerateFlags extends ConfigFlags {
     force?: boolean;
     silent?: boolean;
     watch?: boolean;
-    resolver?: string;
-    variables?: string;
-    utilities?: string;
-    fluidMin?: string;
-    fluidMax?: string;
-    colorFallback?: ColorFallbackStrategy;
-    prefix?: string;
-    input?: string[];
-    selector?: string;
     variablesOnly?: boolean;
     utilitiesOnly?: boolean;
-}
-
-/**
- * Parse --input flags into an input object.
- * Accepts formats like: --input theme=dark --input brand=ocean
- * Returns: { theme: "dark", brand: "ocean" }
- */
-function parseInputFlags(inputFlags: string[] | undefined): Record<string, string> {
-    if (!inputFlags || inputFlags.length === 0) return {};
-
-    const result: Record<string, string> = {};
-    for (const flag of inputFlags) {
-        const [modifier, contextValue] = flag.split("=");
-        if (modifier && contextValue) {
-            result[modifier] = contextValue;
-        }
-    }
-    return result;
-}
-
-function parseFluidValue(value: string | undefined, fallback: number): number {
-    return value ? Number.parseInt(value, 10) : fallback;
-}
-
-function buildFluidConfig(flags: GenerateFlags): FluidConfig | undefined {
-    if (!flags.fluidMin && !flags.fluidMax) return undefined;
-    return {
-        min: parseFluidValue(flags.fluidMin, 320),
-        max: parseFluidValue(flags.fluidMax, 1200),
-    };
-}
-
-/**
- * If --input flags are provided, convert them into a single permutation
- * and override any existing config permutations.
- */
-function applyInputFlags(config: InternalConfig, flags: GenerateFlags): InternalConfig {
-    const input = parseInputFlags(flags.input);
-    if (Object.keys(input).length === 0) return config;
-
-    if (config.variables.permutations && config.variables.permutations.length > 0) {
-        log.space(1);
-        warningBoxWithBadge("Config permutations ignored due to --input flag");
-    }
-
-    return {
-        ...config,
-        variables: {
-            ...config.variables,
-            permutations: [
-                {
-                    input,
-                    selector: flags.selector ?? ":root",
-                },
-            ],
-        },
-    };
-}
-
-function buildConfigFromFlags(flags: GenerateFlags): InternalConfig {
-    const userConfig: SugarcubeConfig = {
-        resolver: flags.resolver,
-        variables: {
-            path: flags.variables,
-            prefix: flags.prefix,
-            transforms: {
-                fluid: buildFluidConfig(flags),
-                colorFallbackStrategy: flags.colorFallback,
-            },
-        },
-        utilities: {
-            path: flags.utilities,
-        },
-    };
-
-    return applyInputFlags(fillDefaults(userConfig), flags);
-}
-
-function mergeConfigWithFlags(config: InternalConfig, flags: GenerateFlags): InternalConfig {
-    const merged: InternalConfig = {
-        ...config,
-        resolver: flags.resolver ?? config.resolver,
-        variables: {
-            ...config.variables,
-            path: flags.variables ?? config.variables.path,
-            prefix: flags.prefix ?? config.variables.prefix,
-            transforms: {
-                fluid: {
-                    min: parseFluidValue(flags.fluidMin, config.variables.transforms.fluid.min),
-                    max: parseFluidValue(flags.fluidMax, config.variables.transforms.fluid.max),
-                },
-                colorFallbackStrategy:
-                    flags.colorFallback ?? config.variables.transforms.colorFallbackStrategy,
-            },
-        },
-        utilities: {
-            ...config.utilities,
-            path: flags.utilities ?? config.utilities.path,
-        },
-    };
-
-    return applyInputFlags(merged, flags);
-}
-
-function hasConfigFlags(flags: GenerateFlags): boolean {
-    return !!(
-        flags.resolver ||
-        flags.variables ||
-        flags.utilities ||
-        flags.fluidMin ||
-        flags.fluidMax ||
-        flags.colorFallback ||
-        flags.prefix
-    );
-}
-
-interface ResolvedConfig {
-    config: InternalConfig;
-    configFile?: string;
-}
-
-async function resolveConfig(options: GenerateFlags): Promise<ResolvedConfig> {
-    if (configFileExists()) {
-        const { config: loadedConfig, configPath } = await loadInternalConfig();
-        return { config: mergeConfigWithFlags(loadedConfig, options), configFile: configPath };
-    }
-
-    // If --resolver is explicitly provided, use it directly
-    if (options.resolver) {
-        return { config: buildConfigFromFlags(options) };
-    }
-
-    // Note: We do our own discovery here instead of using loadInternalConfig's fallback
-    // because generate needs special flag-merging logic that loadInternalConfig doesn't handle.
-    const discovery = await findResolverDocument(process.cwd());
-
-    if (discovery.found === "multiple") {
-        throw new CLIError(ERROR_MESSAGES.GENERATE_MULTIPLE_RESOLVERS_NO_CONFIG(discovery.paths));
-    }
-
-    const resolverPath = discovery.found === "one" ? discovery.path : undefined;
-
-    if (resolverPath || hasConfigFlags(options)) {
-        return { config: buildConfigFromFlags({ ...options, resolver: resolverPath }) };
-    }
-
-    throw new CLIError(ERROR_MESSAGES.GENERATE_NO_CONFIG_OR_RESOLVER());
 }
 
 async function logOneTimeResult(relativePaths: string[]): Promise<void> {
@@ -211,16 +43,12 @@ async function logOneTimeResult(relativePaths: string[]): Promise<void> {
     outro(color.green("CSS generated successfully."));
 }
 
-async function runOneTimeGeneration(
-    { config, configFile }: ResolvedConfig,
-    options: GenerateFlags,
-): Promise<void> {
-    const built = await build(config, {
+async function runOneTimeGeneration(loaded: LoadedConfig, options: GenerateFlags): Promise<void> {
+    const built = await build(loaded, {
         variablesOnly: options.variablesOnly,
         utilitiesOnly: options.utilitiesOnly,
     });
     const failed = printProblems(built, {
-        configFile,
         onlyErrors: options.silent,
         whenFailed: "No CSS was written.",
     });
@@ -295,8 +123,16 @@ export const generate = new Command()
         "--utilities <path>",
         "Output path for utility classes (default: 'src/styles/utilities.css')",
     )
-    .option("--fluid-min <number>", "Minimum viewport width for fluid scaling (default: 320)")
-    .option("--fluid-max <number>", "Maximum viewport width for fluid scaling (default: 1200)")
+    .option(
+        "--fluid-min <number>",
+        "Minimum viewport width for fluid scaling (default: 320)",
+        Number,
+    )
+    .option(
+        "--fluid-max <number>",
+        "Maximum viewport width for fluid scaling (default: 1200)",
+        Number,
+    )
     .option(
         "--color-fallback <strategy>",
         "Color fallback strategy: 'native' or 'polyfill' (default: native)",
@@ -317,9 +153,9 @@ export const generate = new Command()
                 intro(label("Generate CSS"));
             }
 
-            const resolved = await resolveConfig(options);
-            if (options.watch) await runWatchMode(resolved.config, options);
-            else await runOneTimeGeneration(resolved, options);
+            const loaded = await loadConfig(options);
+            if (options.watch) await runWatchMode(loaded.config, options);
+            else await runOneTimeGeneration(loaded, options);
         } catch (error) {
             handleError(error);
         }

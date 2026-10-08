@@ -27,10 +27,10 @@ async function built(goldenCase: GoldenCase) {
     const dir = mkdtempSync(join(tmpdir(), "sugarcube-golden-build-"));
     try {
         const outDir = join(dir, "out");
-        const config = goldenConfig(goldenCase, dir, outDir);
-        const { doc, files, diagnostics } = await build(config);
+        const loaded = goldenConfig(goldenCase, dir, outDir);
+        const { doc, files, diagnostics } = await build(loaded);
         return {
-            config,
+            config: loaded.config,
             doc,
             diagnostics,
             files: files.map((file) => ({

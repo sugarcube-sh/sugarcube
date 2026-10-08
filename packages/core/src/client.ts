@@ -18,6 +18,7 @@ export {
     validateSugarcubeConfig,
 } from "./shared/config.js";
 export type { DefaultDirs } from "./shared/config.js";
+export { ConfigError } from "./shared/config-error.js";
 export { DEFAULT_CONFIG } from "./shared/constants/config.js";
 
 export { resolveTokens } from "./shared/resolve-tokens.js";

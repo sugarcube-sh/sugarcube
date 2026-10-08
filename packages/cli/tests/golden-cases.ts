@@ -1,6 +1,7 @@
+import { ok } from "node:assert";
 import { copyFileSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
-import { type InternalConfig, fillDefaults } from "@sugarcube-sh/core";
+import { type LoadedConfig, fillDefaults } from "@sugarcube-sh/core";
 import type { SugarcubeConfig, UtilityClassesConfig } from "@sugarcube-sh/core";
 import wwwConfig from "../../../apps/www/sugarcube.config.js";
 import studioConfig from "../../studio/sugarcube.config.js";
@@ -14,12 +15,11 @@ const EVERY_VALUE_FORM_RESOLVER = join(
     "__fixtures__/every-value-form/tokens.resolver.json",
 );
 
-export type GoldenCase = {
-    name: string;
-    resolver?: string;
-    files?: string[];
-    config?: SugarcubeConfig | ((outDir: string) => SugarcubeConfig);
-};
+type CaseConfig = SugarcubeConfig | ((outDir: string) => SugarcubeConfig);
+
+export type GoldenCase =
+    | { name: string; resolver: string; config?: CaseConfig }
+    | { name: string; files: string[]; config?: CaseConfig };
 
 const CORE_RESOLVERS = [
     "breakpoint-cascade",
@@ -53,11 +53,15 @@ function withSafelist(classes: UtilityClassesConfig | undefined): UtilityClasses
     );
 }
 
-function fromProject(config: SugarcubeConfig, projectDir: string): SugarcubeConfig {
+function fromProject(name: string, config: SugarcubeConfig, projectDir: string): GoldenCase {
+    ok(config.resolver, `${name}'s config names its resolver`);
     return {
-        resolver: resolve(projectDir, config.resolver ?? ""),
-        variables: config.variables,
-        utilities: { ...config.utilities, classes: withSafelist(config.utilities?.classes) },
+        name,
+        resolver: resolve(projectDir, config.resolver),
+        config: {
+            variables: config.variables,
+            utilities: { ...config.utilities, classes: withSafelist(config.utilities?.classes) },
+        },
     };
 }
 
@@ -116,14 +120,8 @@ export const CASES: GoldenCase[] = [
         name: "studio/demo",
         resolver: join(ROOT, "packages/studio/demo/tokens.resolver.json"),
     },
-    {
-        name: "studio/design-tokens",
-        config: fromProject(studioConfig, join(ROOT, "packages/studio")),
-    },
-    {
-        name: "registry/starter-kits/fluid",
-        config: fromProject(wwwConfig, join(ROOT, "apps/www")),
-    },
+    fromProject("studio/design-tokens", studioConfig, join(ROOT, "packages/studio")),
+    fromProject("registry/starter-kits/fluid", wwwConfig, join(ROOT, "apps/www")),
     {
         name: "registry/starter-kits/static",
         resolver: join(REGISTRY_TOKENS, "starter-kits/static/tokens.resolver.json"),
@@ -202,21 +200,21 @@ function writeSingleSetResolver(dir: string, files: string[]): string {
     return resolverPath;
 }
 
-export function goldenConfig(goldenCase: GoldenCase, dir: string, outDir: string): InternalConfig {
+export function goldenConfig(goldenCase: GoldenCase, dir: string, outDir: string): LoadedConfig {
     const base =
         typeof goldenCase.config === "function"
             ? goldenCase.config(outDir)
             : (goldenCase.config ?? {});
-    const resolver = goldenCase.files
-        ? writeSingleSetResolver(dir, goldenCase.files)
-        : (goldenCase.resolver ?? base.resolver);
-    return fillDefaults({
+    const resolver =
+        "files" in goldenCase ? writeSingleSetResolver(dir, goldenCase.files) : goldenCase.resolver;
+    const config = fillDefaults({
         ...base,
         resolver,
         content: [join(dir, "no-markup/**/*.html")],
         variables: { ...base.variables, path: join(outDir, "variables.css") },
         utilities: { ...base.utilities, path: join(outDir, "utilities.css") },
     });
+    return { config: { ...config, resolver } };
 }
 
 export function withoutBanner(css: string): string {

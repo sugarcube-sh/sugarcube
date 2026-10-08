@@ -141,8 +141,8 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
         return `${base}\n\n${color.dim(`${packageManager} output:`)}\n${stderr}`;
     },
 
-    VALIDATE_NO_PATH_SPECIFIED: () =>
-        `No path specified.\n\nRun ${color.cyan("sugarcube validate --help")} for more information.`,
+    VALIDATE_SEVERAL_RESOLVERS: (paths: string[]) =>
+        `Several resolver files were found:\n${paths.map((p) => `  - ${p}`).join("\n")}\n\nValidate one at a time, such as: ${color.cyan(`sugarcube validate ${paths[0]}`)}`,
 
     VALIDATE_PATH_NOT_FOUND: (path: string) =>
         `Path not found: ${path}\n\nPlease check that the specified path exists`,
@@ -162,14 +162,6 @@ If the problem continues, please open an issue at:\n${LINKS.ISSUES}`;
 
     PLUGIN_DETECTED: (pluginName: string) =>
         `Plugin detected: ${pluginName}\n\nThe 'generate' command is for manual generation without plugins. Since you have a plugin installed, use your development server instead:\n\nnpm run dev  # or your framework's dev command\n\nThe plugin will automatically generate CSS with hot module replacement.`,
-
-    GENERATE_NO_CONFIG_OR_RESOLVER: () =>
-        `No design tokens found.\n\nRun ${color.cyan(COMMANDS.INIT)} to set up your design tokens.\n\nStuck? ${color.cyan(
-            LINKS.DOCS,
-        )}`,
-
-    GENERATE_MULTIPLE_RESOLVERS_NO_CONFIG: (paths: string[]) =>
-        `No config file found, but multiple resolver files detected:\n${paths.map((p) => `  - ${p}`).join("\n")}\n\nPlease either:\n  - Create a config file with ${color.cyan(COMMANDS.INIT)}\n  - Use --resolver flag to specify which resolver to use`,
 
     FILENAME_CONTAINS_PATH: (flagName: string, value: string) =>
         `Invalid ${flagName} value: "${value}". Must be a filename, not a path.\n\nUse --variables-dir or --utilities-dir to specify the directory.`,

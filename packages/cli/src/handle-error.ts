@@ -1,10 +1,11 @@
+import { ConfigError } from "@sugarcube-sh/core";
 import colors from "picocolors";
 import { CLIError } from "./cli-error.js";
 import { errorBoxWithBadge } from "./prompts/box-with-badge.js";
 import { log } from "./prompts/log.js";
 
 export function handleError(error: unknown) {
-    if (error instanceof CLIError) {
+    if (error instanceof CLIError || error instanceof ConfigError) {
         log.space(1);
         errorBoxWithBadge(error.message, {});
     } else {

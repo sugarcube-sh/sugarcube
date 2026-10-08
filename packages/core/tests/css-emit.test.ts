@@ -824,10 +824,10 @@ describe("emitCSS", () => {
         });
     });
 
-    describe("warns when two tokens make the same variable name", () => {
+    describe("reports as an error two tokens that make the same variable name", () => {
         const clash = (first: string, later: string, name: string) =>
             `\`${first}\` and \`${later}\` both make \`${name}\`, so only \`${later}\`'s value is used: rename one`;
-        const warnings = (files: Record<string, unknown>, variables: Variables = {}) => {
+        const problems = (files: Record<string, unknown>, variables: Variables = {}) => {
             const config = fillDefaults({ variables: { path: "variables.css", ...variables } });
             const texts = Object.fromEntries(
                 Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
@@ -846,9 +846,9 @@ describe("emitCSS", () => {
 
         it("on the later one, naming both", () => {
             expect(
-                warnings({ "tokens.json": { "a": { "b-c": px(1) }, "a-b": { c: px(2) } } }),
+                problems({ "tokens.json": { "a": { "b-c": px(1) }, "a-b": { c: px(2) } } }),
             ).toStrictEqual([
-                ["same-variable-name", "warning", "a-b.c", clash("a.b-c", "a-b.c", "--a-b-c")],
+                ["same-variable-name", "error", "a-b.c", clash("a.b-c", "a-b.c", "--a-b-c")],
             ]);
         });
 
@@ -864,22 +864,22 @@ describe("emitCSS", () => {
                 },
             };
             expect(
-                warnings({ "tokens.json": { heading, "heading-font-size": px(32) } }),
+                problems({ "tokens.json": { heading, "heading-font-size": px(32) } }),
             ).toStrictEqual([
                 [
                     "same-variable-name",
-                    "warning",
+                    "error",
                     "heading-font-size",
                     clash("heading", "heading-font-size", "--heading-font-size"),
                 ],
             ]);
             expect(
-                warnings(
+                problems(
                     { "tokens.json": { Brand: px(1), brand: px(2) } },
                     { variableName: (path: string) => path.toLowerCase() },
                 ),
             ).toStrictEqual([
-                ["same-variable-name", "warning", "brand", clash("Brand", "brand", "--brand")],
+                ["same-variable-name", "error", "brand", clash("Brand", "brand", "--brand")],
             ]);
         });
 
@@ -897,7 +897,7 @@ describe("emitCSS", () => {
                 ],
             };
             expect(
-                warnings({
+                problems({
                     "tokens.resolver.json": resolver,
                     "tokens.json": { "a": { "b-c": px(1) }, "a-b": { c: px(2) } },
                     "dark.json": { "a-b": { c: px(3) } },

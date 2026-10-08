@@ -1,4 +1,4 @@
-import { type InternalConfig, loadInternalConfig } from "@sugarcube-sh/core";
+import { type InternalConfig, isNoConfigError, loadInternalConfig } from "@sugarcube-sh/core";
 import { CLIError } from "./cli-error.js";
 import { ERROR_MESSAGES } from "./constants/error-messages.js";
 
@@ -11,7 +11,9 @@ export async function loadTokenConfigOrThrow(command: string): Promise<InternalC
     try {
         const { config } = await loadInternalConfig();
         return config;
-    } catch {
-        throw new CLIError(ERROR_MESSAGES.NO_TOKENS_FOR_COMMAND(command));
+    } catch (error) {
+        if (isNoConfigError(error))
+            throw new CLIError(ERROR_MESSAGES.NO_TOKENS_FOR_COMMAND(command));
+        throw error;
     }
 }
