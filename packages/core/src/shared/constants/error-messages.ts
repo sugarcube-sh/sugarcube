@@ -254,8 +254,6 @@ export const ErrorMessages = {
     CONFIG: {
         INVALID_CONFIG: (path: string, message: string) =>
             `Invalid configuration at ${path}: ${message}`,
-        DUPLICATE_FILENAMES: (filename: string, paths: string[]) =>
-            `Duplicate filename "${filename}":\n${paths.map((p) => `  - ${p}`).join("\n")}`,
         MULTIPLE_RESOLVERS_FOUND: (paths: string[]) =>
             `Several resolver files were found:\n${paths.map((f) => `  - ${f}`).join("\n")}\n\nName the one to use as \`resolver\` in sugarcube.config.ts.`,
         NO_CONFIG_OR_RESOLVER: () =>
