@@ -55,7 +55,10 @@
     },
     {
       "kind": "token-and-group",
-      "detail": {},
+      "detail": {
+        "reason": "declared",
+        "here": "group"
+      },
       "at": {
         "file": "dark.json",
         "valueAfter": "\"scale\":"
@@ -73,7 +76,10 @@
     },
     {
       "kind": "token-and-group",
-      "detail": {},
+      "detail": {
+        "reason": "declared",
+        "here": "token"
+      },
       "at": {
         "file": "dark.json",
         "valueAfter": "\"radius\":"

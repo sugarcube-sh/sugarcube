@@ -1,0 +1,8 @@
+{
+  "color": {
+    "$type": "color",
+    "ink": {
+      "$value": "red"
+    }
+  }
+}

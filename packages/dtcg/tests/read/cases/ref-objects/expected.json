@@ -142,7 +142,10 @@
     },
     {
       "kind": "token-and-group",
-      "detail": {},
+      "detail": {
+        "reason": "ref",
+        "ref": "#/base"
+      },
       "at": {
         "file": "tokens.json",
         "text": "\"#/base\"",

@@ -58,7 +58,7 @@ export function merge(
         diagnostics.push(
             diagnostic(
                 "token-and-group",
-                {},
+                { reason: "declared", here: earlierIs === "token" ? "group" : "token" },
                 {
                     at: later,
                     permutation,

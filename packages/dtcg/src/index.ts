@@ -588,10 +588,15 @@ export interface DiagnosticDetailByKind {
     /** A token or group name uses a character the specification forbids. */
     "invalid-name": { name: string; character: "." | "{" | "}" | "$" };
     /**
-     * An object has a `$value` and also contains tokens or groups, or one file declares a token
-     * where another declares a group.
+     * Something is both a token and a group: an object has a `$value` and also holds `child`; one
+     * file declares a token where another declares a group (`here` says which this place is, and
+     * `related` where the other is); or an object's `$ref` points at a token, making it one, and it
+     * also holds tokens or groups.
      */
-    "token-and-group": Record<string, never>;
+    "token-and-group":
+        | { reason: "child"; child: string }
+        | { reason: "declared"; here: "token" | "group" }
+        | { reason: "ref"; ref: string };
     /** Something inside a group is neither a token nor a group: it is not an object. */
     "invalid-member": { name: string; found: "string" | "number" | "boolean" | "null" | "array" };
     /** A property the specification defines, such as `$description`, holds the wrong kind of JSON. */

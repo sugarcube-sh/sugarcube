@@ -14,6 +14,7 @@ import {
     refuse,
     tuple,
     withDefault,
+    wrongShape,
 } from "./syntax.js";
 
 /**
@@ -42,7 +43,7 @@ const hexString = literal((raw, options) => {
         }
         return no({ reason: "hex-string", value: raw, asObject: hexStringAsObject(raw) });
     }
-    return no({ reason: "wrong-shape", value: raw });
+    return no(wrongShape(raw));
 });
 
 const colorSpace = literal((raw) =>
@@ -103,7 +104,7 @@ export const color = oneOf({
         alpha: withDefault(alpha, 1),
         hex: optional(hex),
     }),
-    other: refuse("wrong-shape"),
+    other: wrongShape,
 });
 
 function componentsFor({ colorSpace: space }: Siblings): Syntax {

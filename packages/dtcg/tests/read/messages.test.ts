@@ -57,7 +57,12 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { name: "$brand", character: "$" },
         { name: "a.b", character: "." },
     ],
-    "token-and-group": [{}],
+    "token-and-group": [
+        { reason: "child", child: "light" },
+        { reason: "declared", here: "token" },
+        { reason: "declared", here: "group" },
+        { reason: "ref", ref: "#/base" },
+    ],
     "invalid-member": [
         { name: "brand", found: "string" },
         { name: "sizes", found: "array" },
@@ -73,6 +78,13 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
     "unknown-type": [{ type: "colour" }, { type: "colour", similar: "color" }, { type: "" }],
     "invalid-value": [
         { at: ["$value"], type: "dimension", reason: "wrong-shape", value: 16 },
+        {
+            at: ["$value"],
+            type: "color",
+            reason: "wrong-shape",
+            value: "color.ink",
+            reference: "{color.ink}",
+        },
         { at: ["$value"], type: "shadow", reason: "wrong-shape", value: "0 1px 2px black" },
         { at: ["$value"], type: "typography", reason: "wrong-shape", value: [] },
         { at: ["$value", "blurr"], type: "shadow", reason: "unknown-property", property: "blurr" },
@@ -356,6 +368,38 @@ describe("diagnostic messages that say what would mend the problem", () => {
                 detail: { written: "$tpye", property: "$type", owner: "group" },
             },
             message: "`$tpye` is not a group property; did you mean `$type`?",
+        },
+        {
+            found: {
+                kind: "invalid-value",
+                detail: {
+                    at: ["$value"],
+                    type: "color",
+                    reason: "wrong-shape",
+                    value: "color.ink",
+                    reference: "{color.ink}",
+                },
+            },
+            message:
+                "a color must be an object with `colorSpace` and `components`, not the string `color.ink`; did you mean `{color.ink}`?",
+        },
+        {
+            found: { kind: "token-and-group", detail: { reason: "child", child: "light" } },
+            message:
+                "`light` is inside a token (it has a `$value`), and a token cannot hold tokens or groups",
+        },
+        {
+            found: { kind: "token-and-group", detail: { reason: "declared", here: "token" } },
+            message: "this is a token here but a group in another file",
+        },
+        {
+            found: { kind: "token-and-group", detail: { reason: "declared", here: "group" } },
+            message: "this is a group here but a token in another file",
+        },
+        {
+            found: { kind: "token-and-group", detail: { reason: "ref", ref: "#/base" } },
+            message:
+                "this points at `#/base`, which is a token, so it is a token too, and a token cannot hold tokens or groups",
         },
         {
             found: { kind: "unknown-type", detail: { type: "colour", similar: "color" } },

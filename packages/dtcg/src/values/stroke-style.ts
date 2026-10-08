@@ -1,5 +1,5 @@
 import { lineCaps, strokeStyleKeywords } from "./keywords.js";
-import { list, literal, no, object, ofType, ok, oneOf, refuse } from "./syntax.js";
+import { list, literal, no, object, ofType, ok, oneOf, refuse, wrongShape } from "./syntax.js";
 
 const keyword = literal((raw) => {
     const known = strokeStyleKeywords.find((each) => each === raw);
@@ -10,7 +10,7 @@ const keyword = literal((raw) => {
               value: raw,
               keywords: strokeStyleKeywords,
           })
-        : no({ reason: "wrong-shape", value: raw });
+        : no(wrongShape(raw));
 });
 
 const lineCap = literal((raw) => {
@@ -28,5 +28,5 @@ const dashArray = oneOf({
 export const strokeStyle = oneOf({
     string: keyword,
     object: object({ dashArray, lineCap }, "dash"),
-    other: refuse("wrong-shape"),
+    other: wrongShape,
 });

@@ -1,4 +1,4 @@
-import { literal, no, ok, oneOf, refuse, tuple } from "./syntax.js";
+import { literal, no, ok, oneOf, tuple, wrongShape } from "./syntax.js";
 
 const y = literal((raw) =>
     typeof raw === "number" && Number.isFinite(raw)
@@ -22,5 +22,5 @@ export const cubicBezier = oneOf({
         reason: "not-four-numbers",
         count: raw.length,
     })),
-    other: refuse("wrong-shape"),
+    other: wrongShape,
 });

@@ -1,0 +1,8 @@
+{
+  "space": {
+    "$type": "dimension",
+    "sm": {
+      "$value": "16px"
+    }
+  }
+}

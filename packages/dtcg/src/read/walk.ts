@@ -79,6 +79,10 @@ const OWN_PROPERTIES: readonly OwnProperty[] = [
     "$extensions",
 ];
 
+const OWN: ReadonlySet<string> = new Set(OWN_PROPERTIES);
+
+const WITHOUT_DOLLAR = new Map(OWN_PROPERTIES.map((property) => [property.slice(1), property]));
+
 const GROUP_KEYWORDS = new Set(["$extends", "$ref", "$root"]);
 
 const EXPECTED: Record<Property, DiagnosticDetailByKind["invalid-property"]["expected"]> = {
@@ -175,7 +179,7 @@ export function walkSource(
 
     const visitToken = (node: Node, path: string, entries: Member[], value: Node) => {
         const child = entries.find(({ key }) => !key.startsWith("$"));
-        if (child) report("token-and-group", {}, child.keyNode);
+        if (child) report("token-and-group", { reason: "child", child: child.key }, child.keyNode);
         const authored = plainValue(value, json.hidden);
         contents.tokens.push({
             path,
@@ -205,8 +209,8 @@ export function walkSource(
         if (isOwnProperty(key)) return key;
         if (GROUP_KEYWORDS.has(key)) return undefined;
         if (key.startsWith("$")) return similarName(key, OWN_PROPERTIES);
-        const property = `$${key}`;
-        return isOwnProperty(property) && !holdsToken(value, json) ? property : undefined;
+        const property = WITHOUT_DOLLAR.get(key);
+        return property !== undefined && !holdsToken(value, json) ? property : undefined;
     };
 
     const asWritten = (path: string, entries: Member[], top: boolean): Member[] => {
@@ -215,18 +219,24 @@ export function walkSource(
             return top && property === "$value" ? undefined : property;
         });
         const owner = meant.includes("$value") ? "token" : "group";
-        return entries.map((entry, index) => {
+        let renamed: Member[] | undefined;
+        for (const [index, entry] of entries.entries()) {
             const property = meant[index];
             const { key, keyNode } = entry;
             if (property !== undefined && property !== key) {
                 report("misspelt-property", { written: key, property, owner }, keyNode, { path });
-                return { ...entry, key: property };
-            }
-            if (property === undefined && key.startsWith("$") && !GROUP_KEYWORDS.has(key) && !top) {
+                renamed ??= [...entries];
+                renamed[index] = { ...entry, key: property };
+            } else if (
+                property === undefined &&
+                key.startsWith("$") &&
+                !GROUP_KEYWORDS.has(key) &&
+                !top
+            ) {
                 report("unknown-property", { property: key, owner }, keyNode, { path });
             }
-            return entry;
-        });
+        }
+        return renamed ?? entries;
     };
 
     const visitMembers = (segments: string[], entries: Member[]) => {
@@ -298,7 +308,7 @@ function isProperty(key: string): key is Property {
 }
 
 function isOwnProperty(key: string): key is OwnProperty {
-    return OWN_PROPERTIES.some((property) => property === key);
+    return OWN.has(key);
 }
 
 function holdsToken(node: Node, json: JsonFile): boolean {

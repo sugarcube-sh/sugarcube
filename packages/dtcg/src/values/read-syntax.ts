@@ -21,6 +21,7 @@ import {
     type Syntax,
     choiceOf,
     syntaxOf,
+    wrongShape,
 } from "./syntax.js";
 import { unknownProperties } from "./unknown-properties.js";
 import { valueError } from "./value-errors.js";
@@ -137,7 +138,7 @@ function readSyntax(syntax: Syntax, raw: unknown, where: Where, reading: Reading
 }
 
 function readObject(syntax: ObjectSyntax, raw: unknown, where: Where, reading: Reading): unknown {
-    if (!isJsonObject(raw)) return fail(where, { reason: "wrong-shape", value: raw }, reading);
+    if (!isJsonObject(raw)) return fail(where, wrongShape(raw), reading);
 
     const { errors, options, owner } = reading;
     const defines = (name: string) => Object.hasOwn(syntax.properties, name);

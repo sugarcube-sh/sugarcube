@@ -17,6 +17,8 @@ const tokenFolders = [
 
 const notTokenFiles = ["packages/core/tests/__fixtures__/tokens/validators/"];
 
+const mistakesTheCLIShows = ["packages/cli/tests/__fixtures__/mistakes/"];
+
 const readTogether = [
     [
         "packages/core/tests/__fixtures__/tokens/glob/a.json",
@@ -275,7 +277,12 @@ function jsonFilesIn(folder: string): string[] {
     return readdirSync(join(repo, folder), { recursive: true, withFileTypes: true })
         .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
         .map((entry) => relative(repo, join(entry.parentPath, entry.name)).replaceAll("\\", "/"))
-        .filter((file) => !notTokenFiles.some((prefix) => file.startsWith(prefix)))
+        .filter(
+            (file) =>
+                ![...notTokenFiles, ...mistakesTheCLIShows].some((prefix) =>
+                    file.startsWith(prefix),
+                ),
+        )
         .sort();
 }
 

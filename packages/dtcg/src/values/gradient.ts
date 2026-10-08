@@ -1,4 +1,4 @@
-import { elements, object, ofType, oneOf, refuse } from "./syntax.js";
+import { elements, object, ofType, oneOf, wrongShape } from "./syntax.js";
 
 export const stop = object({
     color: ofType("color"),
@@ -7,5 +7,5 @@ export const stop = object({
 
 export const gradient = oneOf({
     array: elements(stop, { empty: "no-gradient-stops", parts: "stops" }),
-    other: refuse("wrong-shape"),
+    other: wrongShape,
 });

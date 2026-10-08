@@ -1,0 +1,11 @@
+{
+  "space": {
+    "$type": "dimension",
+    "sm": {
+      "$value": {
+        "value": 16,
+        "unit": "pt"
+      }
+    }
+  }
+}

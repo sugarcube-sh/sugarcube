@@ -144,8 +144,16 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "token-and-group": {
         severity: "error",
-        message: () =>
-            "this has a `$value`, so it is a token, and a token cannot hold tokens or groups",
+        message: (detail) => {
+            switch (detail.reason) {
+                case "child":
+                    return `\`${detail.child}\` is inside a token (it has a \`$value\`), and a token cannot hold tokens or groups`;
+                case "declared":
+                    return `this is a ${detail.here} here but a ${detail.here === "token" ? "group" : "token"} in another file`;
+                case "ref":
+                    return `this points at \`${detail.ref}\`, which is a token, so it is a token too, and a token cannot hold tokens or groups`;
+            }
+        },
     },
     "invalid-member": {
         severity: "error",

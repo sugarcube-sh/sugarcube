@@ -1,4 +1,4 @@
-import { list, literal, no, ok, oneOf, refuse, single } from "./syntax.js";
+import { list, literal, no, ok, oneOf, single, wrongShape } from "./syntax.js";
 
 const name = literal((raw) =>
     typeof raw === "string" && raw.trim() !== ""
@@ -9,5 +9,5 @@ const name = literal((raw) =>
 export const fontFamily = oneOf({
     string: single(name),
     array: list(name, "empty-font-list"),
-    other: refuse("wrong-shape"),
+    other: wrongShape,
 });

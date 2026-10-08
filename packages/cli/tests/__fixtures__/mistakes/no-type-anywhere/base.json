@@ -1,0 +1,10 @@
+{
+  "space": {
+    "sm": {
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      }
+    }
+  }
+}

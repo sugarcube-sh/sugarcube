@@ -19,7 +19,10 @@
   "diagnostics": [
     {
       "kind": "token-and-group",
-      "detail": {},
+      "detail": {
+        "reason": "child",
+        "child": "light"
+      },
       "at": {
         "file": "tokens.json",
         "text": "\"light\""
