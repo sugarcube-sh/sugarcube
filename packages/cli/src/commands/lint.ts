@@ -68,7 +68,7 @@ function formatGroupedRefs(refs: VarRef[]): string[] {
 
 export const lint = new Command()
     .name("lint")
-    .description("Find var() references to variables your tokens and CSS don't declare")
+    .description("Check your CSS and markup only use variables your tokens declare")
     .argument(
         "[paths...]",
         "Directories or globs to scan, e.g. ../css (default: project CSS and components)",

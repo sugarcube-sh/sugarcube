@@ -14,7 +14,7 @@ import { intro, label, outro } from "../prompts/common.js";
 
 export const validate = new Command()
     .name("validate")
-    .description("Validate design token files")
+    .description("Check your token files for errors")
     .argument("[paths...]", "Token files or directories to validate (e.g., src/design-tokens)")
     .action(async (paths: string[]) => {
         try {

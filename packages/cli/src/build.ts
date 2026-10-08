@@ -17,7 +17,7 @@ import { createGenerator } from "@unocss/core";
 import { dirname } from "pathe";
 import { addBanner, utilitiesFromMarkup, wrapInLayer } from "./output.js";
 
-export interface BuildOptions {
+interface BuildOptions {
     variablesOnly?: boolean;
     utilitiesOnly?: boolean;
     markup?: boolean;
