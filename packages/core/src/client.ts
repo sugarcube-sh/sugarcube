@@ -28,6 +28,7 @@ export { generateCSSVariables } from "./shared/generate-css-variables.js";
 
 export { readOptions } from "./shared/read-options.js";
 export { declare } from "./shared/css/declare.js";
+export type { Declarations } from "./shared/css/declare.js";
 export { emitCSS } from "./shared/css/emit.js";
 export { utilityTokens } from "./shared/utilities/tokens.js";
 export { utilityRules } from "./shared/utilities/rules.js";
