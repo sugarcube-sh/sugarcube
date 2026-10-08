@@ -207,6 +207,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 dev.ws.on("vite:client:connect", (_, client) => {
                     if (failed(problems())) client.send(overlay(problems(), where()));
                 });
+                if (loaded.configFile) dev.watcher.add(loaded.configFile);
                 dev.watcher.on("change", (file) => {
                     if (isConfigFile(file, loaded)) void reloadConfig();
                 });
