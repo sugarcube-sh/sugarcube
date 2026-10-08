@@ -1,36 +1,22 @@
+import { basename, dirname, resolve } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import {
-    Instrumentation,
-    PerfMonitor,
-    assignCSSNames,
-    clearMatchCache,
-    convertConfigToUnoRules,
-    createCoalescedRunner,
-    debounce,
-    enumerateSafelistClasses,
-    generateCSSVariables,
-    groupByContext,
+    ConfigError,
+    type InternalConfig,
+    type LoadedConfig,
+    type Reported,
+    type UtilityCSS,
+    type Where,
+    configProblems,
+    cssFrom,
     loadInternalConfig,
-    loadTokens,
-    resolveTokens,
+    problemsText,
+    readOptions,
 } from "@sugarcube-sh/core";
-import type {
-    InternalConfig,
-    NormalizedRenderableTokens,
-    Permutation,
-    ResolvedTokens,
-    TokenSources,
-    TokenTree,
-} from "@sugarcube-sh/core";
-
-import { dirname, resolve } from "node:path";
+import type { Document } from "@sugarcube-sh/dtcg";
+import dtcg, { type Read } from "@sugarcube-sh/dtcg-vite";
 import UnoCSS from "@unocss/vite";
-import type { Logger, Plugin, ViteDevServer } from "vite";
-
-/** CSS object for UnoCSS rules - matches @unocss/core CSSObject */
-type CSSObject = Record<string, string | number | undefined>;
-
-/** UnoCSS dynamic rule: [pattern, handler] */
-type UnoRule = [RegExp, (match: RegExpMatchArray) => CSSObject];
+import { type Logger, type Plugin, type ViteDevServer, normalizePath } from "vite";
 
 /** UnoCSS outputToCssLayers configuration */
 type OutputToCssLayersOptions =
@@ -70,311 +56,22 @@ interface SugarcubePluginOptions {
     unoOptions?: UnoOptions;
 }
 
-const perf = new PerfMonitor();
-
 export const SUGARCUBE_API_PLUGIN_NAME = "sugarcube:api";
 
+/** What other plugins, such as Studio's, can read from sugarcube's. */
 export interface SugarcubePluginContext {
-    ready: Promise<void>;
-    config: InternalConfig | null;
-    tokens: NormalizedRenderableTokens | null;
-    trees: TokenTree[] | null;
-    resolved: ResolvedTokens | null;
-    defaultContext: string | null;
-    permutations: Permutation[];
-    sources: TokenSources | null;
-    errors: readonly string[];
-    getCSS: () => string;
-    reloadConfig: () => Promise<void>;
-    reloadTokens: () => Promise<void>;
-    getRules: () => UnoRule[];
-    getSafelist: () => string[];
-    getTokenDirs: () => string[];
+    config: InternalConfig;
+    doc: Document;
+    problems: Reported[];
     onReload: (fn: () => void) => () => void;
-    tasks: Promise<void>[];
-    flushTasks: () => Promise<void>;
-    setLogger: (logger: Logger) => void;
 }
 
-function createSugarcubeContext(unocss: () => UnoContext | undefined): SugarcubePluginContext {
-    let config: InternalConfig | null = null;
-    let tokens: NormalizedRenderableTokens | null = null;
-    let trees: TokenTree[] | null = null;
-    let resolved: ResolvedTokens | null = null;
-    let sources: TokenSources | null = null;
-    let permutations: Permutation[] = [];
-    let defaultContext: string | null = null;
-    let errors: readonly string[] = [];
-    let cachedCSS = "";
-    let cachedRules: UnoRule[] = [];
-    let cachedSafelist: string[] = [];
-    const reloadCallbacks = new Set<() => void>();
-    const tasks: Promise<void>[] = [];
-    let logger: Logger | null = null;
-    const pendingLogs: Array<{ level: "info" | "warn"; msg: string }> = [];
-
-    const log = {
-        warn: (msg: string) => {
-            if (logger) logger.warn(msg);
-            else pendingLogs.push({ level: "warn", msg });
-        },
-        info: (msg: string) => {
-            if (logger) logger.info(msg);
-            else pendingLogs.push({ level: "info", msg });
-        },
-    };
-
-    const addTask = (task: Promise<void>) => {
-        tasks.push(task);
-        const remove = () => {
-            const index = tasks.indexOf(task);
-            if (index > -1) tasks.splice(index, 1);
-        };
-        task.then(remove, remove);
-        return task;
-    };
-
-    const buildRules = () => {
-        if (!tokens || !config) {
-            return [];
-        }
-
-        using I = new Instrumentation();
-        I.start("Build Rules");
-        const generatedRules = convertConfigToUnoRules(config.utilities.classes ?? {}, tokens);
-        I.end("Build Rules");
-
-        return generatedRules;
-    };
-
-    const buildSafelist = () => {
-        if (!tokens || !config) {
-            return [];
-        }
-        return enumerateSafelistClasses(config.utilities.classes ?? {}, tokens);
-    };
-
-    const generateCSS = async () => {
-        if (!tokens || !config) {
-            cachedCSS = "";
-            return;
-        }
-
-        using I = new Instrumentation();
-        I.start("Generate CSS Variables");
-        const output = await generateCSSVariables(tokens, config, permutations);
-
-        // Combine all CSS output files
-        cachedCSS = output.map((file) => file.css).join("\n");
-
-        I.end("Generate CSS Variables");
-    };
-
-    const updateAll = async () => {
-        await generateCSS();
-        cachedRules = buildRules();
-        cachedSafelist = buildSafelist();
-    };
-
-    const runPipeline = async () => {
-        if (!config) return;
-
-        if (!config.resolver) {
-            log.warn("[sugarcube] No resolver path specified in config. Skipping token loading.");
-            return;
-        }
-
-        // Clear the match cache when tokens are reloaded
-        clearMatchCache();
-
-        using I = new Instrumentation();
-        I.start("Load Tokens From Resolver");
-
-        const loaded = await loadTokens({
-            type: "resolver",
-            resolverPath: config.resolver,
-            config: config,
-        });
-
-        const resolveResult = resolveTokens(loaded.trees);
-
-        I.end("Load Tokens From Resolver");
-
-        const allErrors = [
-            ...loaded.errors,
-            ...resolveResult.errors.expandTree,
-            ...resolveResult.errors.flatten,
-            ...resolveResult.errors.validation,
-            ...resolveResult.errors.resolution,
-        ];
-
-        if (allErrors.length > 0) {
-            const errorList = allErrors
-                .map((error, index) => `  ${index + 1}. ${error.message}`)
-                .join("\n");
-            log.warn(`[sugarcube] Found ${allErrors.length} token error(s):\n${errorList}`);
-        }
-
-        if (resolveResult.warnings.length > 0) {
-            for (const warning of resolveResult.warnings) {
-                log.warn(`[sugarcube] ${warning.message}`);
-            }
-        }
-
-        trees = resolveResult.trees;
-        resolved = resolveResult.resolved;
-        sources = loaded.sources ?? null;
-        permutations = loaded.permutations;
-        defaultContext = loaded.defaultContext ?? null;
-        errors = allErrors.map((error) => error.message);
-
-        I.start("Process Tokens");
-        tokens = assignCSSNames(
-            groupByContext(trees, resolved),
-            config,
-            resolveResult.errors.validation,
-        );
-        I.end("Process Tokens");
-    };
-
-    const initialize = async () => {
-        using I = new Instrumentation();
-        I.start("Initial total process");
-
-        I.start("Load Config");
-        const { config: loadedConfig } = await loadInternalConfig();
-        I.end("Load Config");
-        config = loadedConfig;
-        await runPipeline();
-        await updateAll();
-
-        I.end("Initial total process");
-    };
-
-    const ctx = {
-        ready: addTask(initialize()),
-
-        get config() {
-            return config;
-        },
-        get tokens() {
-            return tokens;
-        },
-        get trees() {
-            return trees;
-        },
-        get resolved() {
-            return resolved;
-        },
-        get defaultContext() {
-            return defaultContext;
-        },
-        get permutations() {
-            return permutations;
-        },
-        get sources() {
-            return sources;
-        },
-        get errors() {
-            return errors;
-        },
-        get tasks() {
-            return tasks;
-        },
-
-        getRules() {
-            return cachedRules;
-        },
-
-        getSafelist() {
-            return cachedSafelist;
-        },
-
-        async reloadConfig() {
-            const task = (async () => {
-                using I = new Instrumentation();
-                I.start("Reload Config");
-
-                const { config: loadedConfig } = await loadInternalConfig();
-                config = loadedConfig;
-
-                // Permutation changes affect token resolution, so we need to re-run
-                // the full token pipeline, not just CSS regeneration
-                await runPipeline();
-                await updateAll();
-                // Without this, UnoCSS will not get the new rules
-                await unocss()?.reloadConfig();
-                unocss()?.invalidate();
-
-                for (const fn of reloadCallbacks) fn();
-                I.end("Reload Config");
-            })();
-
-            return addTask(task);
-        },
-
-        async reloadTokens() {
-            const task = (async () => {
-                using I = new Instrumentation();
-                I.start("Reload total process");
-
-                await runPipeline();
-                await updateAll();
-                unocss()?.invalidate();
-
-                for (const fn of reloadCallbacks) fn();
-                I.end("Reload total process");
-            })();
-
-            return addTask(task);
-        },
-
-        getCSS() {
-            return cachedCSS;
-        },
-
-        getTokenDirs(): string[] {
-            if (!config) return [];
-            return extractTokenDirs(config);
-        },
-
-        onReload(fn: () => void) {
-            reloadCallbacks.add(fn);
-            return () => {
-                reloadCallbacks.delete(fn);
-            };
-        },
-
-        async flushTasks() {
-            await Promise.all(tasks);
-        },
-
-        setLogger(l: Logger) {
-            logger = l;
-            for (const { level, msg } of pendingLogs) {
-                logger[level](msg);
-            }
-            pendingLogs.length = 0;
-        },
-    };
-
-    return ctx;
+interface Good {
+    css: string;
+    utilities: UtilityCSS;
 }
 
-/**
- * Extracts the token directory from the resolver path.
- * Assumes token files are in the same directory as the resolver document.
- * TODO: Support non-colocation of resolver and token files??
- */
-export function extractTokenDirs(config: Pick<InternalConfig, "resolver">): string[] {
-    if (!config.resolver) {
-        return [];
-    }
-
-    // Resolve to absolute path so it matches Vite's absolute watcher paths
-    // Without this working properly, the token watcher will not work correctly
-    return [dirname(resolve(process.cwd(), config.resolver))];
-}
+const NO_UTILITIES: UtilityCSS = { rules: [], starts: [], safelist: [] };
 
 // Returns Promise<any> rather than Promise<Plugin[]> to avoid exposing Vite's
 // Plugin type in the public API. Vite's Plugin type changes across major versions,
@@ -382,42 +79,148 @@ export function extractTokenDirs(config: Pick<InternalConfig, "resolver">): stri
 // version, causing TypeScript to treat identical types as incompatible.
 export default async function sugarcubePlugin(options: SugarcubePluginOptions = {}): Promise<any> {
     const { unoOptions = {} } = options;
-    let unocss: UnoContext | undefined;
-    const ctx = createSugarcubeContext(() => unocss);
-    // It's imperative to await the ready state otherwise
-    // UnoCSS will not get the generated rules
-    await ctx.ready;
+    const timed = process.env.DEBUG === "true";
+    let loaded = await loadInternalConfig();
+    const tokens = dtcg(() => ({
+        entry: loaded.config.resolver,
+        read: readOptions(loaded.config),
+    }));
+    let doc = await tokens.api.document();
+    let fromConfig: Reported[] = [];
+    let tokenProblems: Reported[] = [];
+    const problems = () => [...fromConfig, ...tokenProblems];
+    let good: Good = { css: "", utilities: NO_UTILITIES };
+    let logger: Logger | undefined;
+    let server: ViteDevServer | undefined;
+    const listeners = new Set<() => void>();
+
+    const where = (cwd?: string): Where => ({
+        cwd,
+        folder: dirname(resolve(loaded.config.resolver)),
+        labels: doc.permutations.map((permutation) => permutation.label),
+        configFile: loaded.configFile,
+    });
+
+    const report = () => {
+        const shown = problems();
+        if (shown.length > 0) {
+            const text = problemsText(shown, where(process.cwd()));
+            if (failed(shown)) logger?.error(text);
+            else logger?.warn(text);
+        }
+        if (failed(shown)) server?.ws.send(overlay(shown, where()));
+    };
+
+    const accept = (next: Document): boolean => {
+        doc = next;
+        const made = cssFrom(next, loaded.config);
+        tokenProblems = made.diagnostics;
+        if (failed(problems())) return false;
+        const utilities = made.utilities ?? NO_UTILITIES;
+        const same = isDeepStrictEqual(
+            [good.utilities.starts, good.utilities.safelist],
+            [utilities.starts, utilities.safelist],
+        );
+        good = { css: made.variables.map((file) => file.css).join("\n"), utilities };
+        return !same;
+    };
+
+    accept(doc);
+
+    const reloadConfig = async () => {
+        try {
+            loaded = await loadInternalConfig();
+            fromConfig = [];
+        } catch (error) {
+            if (!(error instanceof ConfigError)) throw error;
+            fromConfig = configProblems(error);
+            report();
+            return;
+        }
+        await tokens.api.reread();
+    };
+
+    const context: SugarcubePluginContext = {
+        get config() {
+            return loaded.config;
+        },
+        get doc() {
+            return doc;
+        },
+        get problems() {
+            return problems();
+        },
+        onReload(fn) {
+            listeners.add(fn);
+            return () => listeners.delete(fn);
+        },
+    };
 
     const sugarcubePreset: any = {
         name: "sugarcube",
         get rules() {
-            return ctx.getRules();
+            return good.utilities.rules;
         },
         get safelist() {
-            return ctx.getSafelist();
+            return good.utilities.safelist;
         },
-        // Variables are always included via preflight now
-        preflights: [
-            {
-                getCSS: () => ctx.getCSS(),
-            },
-        ],
+        preflights: [{ getCSS: () => good.css }],
     };
 
-    const unoConfig: any = {
+    const unoPlugins: Plugin[] = UnoCSS({
         configFile: false,
         ...unoOptions,
         presets: [...(unoOptions.presets || []), sugarcubePreset],
-    };
+    } as any);
+    const unocss: UnoContext | undefined = unoPlugins
+        .find((p) => p.name === "unocss:api")
+        ?.api?.getContext();
 
-    const unoPlugins: Plugin[] = UnoCSS(unoConfig);
-    unocss = unoPlugins.find((p) => p.name === "unocss:api")?.api?.getContext();
+    tokens.api.onRead(async (next, read) => {
+        const started = performance.now();
+        const utilitiesChanged = accept(next);
+        const css = performance.now() - started;
+        report();
+        let reloaded: number | undefined;
+        if (!failed(problems())) {
+            if (utilitiesChanged) {
+                const reloading = performance.now();
+                await unocss?.reloadConfig();
+                reloaded = performance.now() - reloading;
+            }
+            unocss?.invalidate();
+        }
+        if (timed) logger?.info(timing(read, css, reloaded, performance.now() - started));
+        for (const fn of listeners) fn();
+    });
 
     const plugins: Plugin[] = [
+        tokens,
         {
-            name: "sugarcube:config",
+            name: "sugarcube:report",
             configResolved(config) {
-                ctx.setLogger(config.logger);
+                logger = config.logger;
+                if (config.command === "serve") report();
+            },
+            configureServer(dev) {
+                server = dev;
+                dev.ws.on("vite:client:connect", (_, client) => {
+                    if (failed(problems())) client.send(overlay(problems(), where()));
+                });
+                if (loaded.configFile) dev.watcher.add(loaded.configFile);
+                dev.watcher.on("change", (file) => {
+                    if (isConfigFile(file, loaded)) void reloadConfig();
+                });
+            },
+        } satisfies Plugin,
+
+        {
+            name: "sugarcube:build",
+            apply: "build",
+            buildStart() {
+                if (failed(problems())) {
+                    this.error(problemsText(problems(), where(process.cwd())));
+                }
             },
         } satisfies Plugin,
 
@@ -447,123 +250,39 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
         } satisfies Plugin,
 
         {
-            name: "sugarcube:config-watcher",
-            apply: "serve",
-            configureServer(server: ViteDevServer) {
-                // Vite already watches the project root, so we just listen for changes
-                // to our config files without needing to call server.watcher.add()
-                server.watcher.on("change", async (file) => {
-                    if (
-                        file.endsWith("sugarcube.config.ts") ||
-                        file.endsWith("sugarcube.config.js")
-                    ) {
-                        server.config.logger.info("[sugarcube] Config changed, reloading...");
-                        perf.log("CONFIG CHANGE DETECTED", {
-                            file: file.split("/").slice(-2).join("/"),
-                        });
-
-                        try {
-                            await ctx.reloadConfig();
-                        } catch (error) {
-                            server.config.logger.error(
-                                `[sugarcube] Config reload failed: ${
-                                    error instanceof Error ? error.message : String(error)
-                                }`,
-                            );
-                        }
-                    }
-                });
-            },
-        } satisfies Plugin,
-
-        {
-            name: "sugarcube:token-watcher",
-            apply: "serve",
-            async configureServer(server: ViteDevServer) {
-                server.watcher.setMaxListeners(30);
-
-                // Start memory monitoring when dev server starts
-                perf.startMemoryMonitor();
-                perf.logModuleGraphStats(
-                    server.moduleGraph.idToModuleMap.size,
-                    server.moduleGraph.urlToModuleMap.size,
-                    "server start",
-                );
-
-                const tokenDirs = ctx.getTokenDirs();
-
-                if (tokenDirs.length === 0) {
-                    server.config.logger.warn(
-                        "[sugarcube] Could not determine token directories from config",
-                    );
-                    return;
-                }
-
-                // Vite already watches the project root by default, so we don't need
-                // to call server.watcher.add(). We just listen for change events and
-                // filter for our token directories.
-
-                // Track all watcher events for performance monitoring
-                server.watcher.on("all", (event, file) => {
-                    perf.trackWatcherEvent(file, server.moduleGraph.idToModuleMap.size);
-                });
-
-                // A single reload cycle: reload tokens, then invalidate the UnoCSS
-                // module (which holds both variables via preflight and utilities).
-                const runReload = createCoalescedRunner(
-                    async () => {
-                        server.config.logger.info(
-                            "[sugarcube] Design tokens changed, reloading...",
-                        );
-                        using I = new Instrumentation();
-                        I.start("Total File Change Handler");
-                        await ctx.reloadTokens();
-                        I.end("Total File Change Handler");
-                    },
-                    (error) => {
-                        server.config.logger.error(
-                            `[sugarcube] Token reload failed: ${
-                                error instanceof Error ? error.message : String(error)
-                            }`,
-                        );
-                    },
-                );
-
-                const scheduleReload = debounce(runReload, 100);
-
-                server.watcher.on("change", (file) => {
-                    if (file.endsWith(".json") && tokenDirs.some((dir) => file.includes(dir))) {
-                        scheduleReload();
-                    }
-                });
-
-                // Drop any pending reload when the dev server shuts down so a
-                // stray timer can't fire against a torn-down server.
-                server.httpServer?.once("close", () => scheduleReload.cancel());
-            },
-        } satisfies Plugin,
-
-        {
             name: SUGARCUBE_API_PLUGIN_NAME,
             api: {
-                getContext: () => ctx,
-            },
-        } satisfies Plugin,
-
-        {
-            name: "sugarcube:build",
-            apply: "build",
-            enforce: "pre",
-            async configResolved() {
-                await ctx.ready;
-            },
-            async buildStart() {
-                await ctx.flushTasks();
+                getContext: () => context,
             },
         } satisfies Plugin,
     ];
 
     return plugins;
+}
+
+function failed(problems: Reported[]): boolean {
+    return problems.some(({ severity }) => severity === "error");
+}
+
+function timing({ file, ms }: Read, css: number, unocss: number | undefined, after: number) {
+    const parts = [
+        `read ${Math.round(ms)}ms`,
+        `css ${Math.round(css)}ms`,
+        ...(unocss === undefined ? [] : [`unocss ${Math.round(unocss)}ms`]),
+        `total ${Math.round(ms + after)}ms`,
+        ...(file === undefined ? [] : [`(${basename(file)})`]),
+    ];
+    return `[sugarcube] ${parts.join("  ")}`;
+}
+
+function overlay(problems: Reported[], where: Where) {
+    const errors = problems.filter(({ severity }) => severity === "error");
+    const message = problemsText(errors, where, { colors: false });
+    return { type: "error" as const, err: { message, stack: "", plugin: "sugarcube" } };
+}
+
+function isConfigFile(file: string, { configFile }: LoadedConfig): boolean {
+    return configFile !== undefined && normalizePath(file) === normalizePath(configFile);
 }
 
 export { defineConfig, kebabCase } from "@sugarcube-sh/core";

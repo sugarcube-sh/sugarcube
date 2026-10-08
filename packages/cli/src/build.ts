@@ -1,34 +1,41 @@
+import { isDeepStrictEqual } from "node:util";
 import {
     type CSSFileOutput,
-    type Declarations,
     type InternalConfig,
     type LoadedConfig,
     type Reported,
-    declare,
-    emitCSS,
+    type UtilityCSS,
+    type UtilityStart,
+    cssFrom,
     fillDefaults,
     readOptions,
-    utilityRules,
-    utilityTokens,
 } from "@sugarcube-sh/core";
 import { type Document, readFromMemory } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
-import { createGenerator } from "@unocss/core";
+import { type UnoGenerator, createGenerator } from "@unocss/core";
 import { dirname } from "pathe";
 import { addBanner, utilitiesFromMarkup, wrapInLayer } from "./output.js";
 
-interface BuildOptions {
+export interface BuildOptions {
     variablesOnly?: boolean;
     utilitiesOnly?: boolean;
     markup?: boolean;
+}
+
+interface UtilityGenerator {
+    starts: UtilityStart[];
+    safelist: string[];
+    uno: UnoGenerator;
 }
 
 export interface Built {
     doc: Document;
     folder: string;
     configFile?: string;
-    files: CSSFileOutput;
+    variables: CSSFileOutput;
+    utilities: CSSFileOutput;
     diagnostics: Reported[];
+    generator?: UtilityGenerator;
 }
 
 interface Reading {
@@ -38,14 +45,14 @@ interface Reading {
     configFile?: string;
 }
 
-const nothing = { files: [], diagnostics: [] };
-
 export async function build(
     { config, configFile }: LoadedConfig,
     options: BuildOptions = {},
+    previous?: Built,
 ): Promise<Built> {
     const doc = await read(config.resolver, readOptions(config));
-    return fromReading({ doc, folder: dirname(config.resolver), config, configFile }, options);
+    const reading = { doc, folder: dirname(config.resolver), config, configFile };
+    return fromReading(reading, options, previous);
 }
 
 export function buildFiles(texts: Record<string, string>, folder: string): Promise<Built> {
@@ -54,41 +61,60 @@ export function buildFiles(texts: Record<string, string>, folder: string): Promi
     return fromReading({ doc, folder, config }, {});
 }
 
+export async function rescan(built: Built, config: InternalConfig): Promise<Built> {
+    if (!built.generator) return built;
+    return { ...built, utilities: await scanned(built.generator, config) };
+}
+
+export function filesOf({ variables, utilities }: Built): CSSFileOutput {
+    return [...variables, ...utilities];
+}
+
 async function fromReading(
     { doc, folder, config, configFile }: Reading,
     options: BuildOptions,
+    previous?: Built,
 ): Promise<Built> {
-    const declared = declare(doc, config);
-    const variables = options.utilitiesOnly ? nothing : variablesFrom(declared, config);
-    const utilities = options.variablesOnly
-        ? nothing
-        : await utilitiesFrom(declared, config, options.markup ?? true);
+    const made = cssFrom(doc, config, {
+        variables: !options.utilitiesOnly,
+        utilities: !options.variablesOnly,
+    });
+    const markup = options.markup ?? true;
+    const utilities = await utilitiesFrom(made.utilities, config, markup, previous);
     return {
         doc,
         folder,
         configFile,
-        files: [...variables.files, ...utilities.files],
-        diagnostics: [...declared.diagnostics, ...variables.diagnostics, ...utilities.diagnostics],
+        variables: finished(made.variables, config.variables.layer),
+        utilities: utilities.files,
+        diagnostics: made.diagnostics,
+        generator: utilities.generator,
     };
 }
 
-function variablesFrom(declared: Declarations, config: InternalConfig) {
-    const { files, diagnostics } = emitCSS(declared, config);
-    const { layer } = config.variables;
-    return { files: finished(files, layer), diagnostics };
-}
-
-async function utilitiesFrom(declared: Declarations, config: InternalConfig, markup: boolean) {
-    const { classes, layer } = config.utilities;
-    if (!classes || Object.keys(classes).length === 0) return nothing;
-    const { rules, safelist, diagnostics } = utilityRules(utilityTokens(declared), classes);
-    if (!markup) return { files: [], diagnostics };
-    const generator = await createGenerator({
+async function utilitiesFrom(
+    utilities: UtilityCSS | undefined,
+    config: InternalConfig,
+    markup: boolean,
+    previous: Built | undefined,
+): Promise<{ files: CSSFileOutput; generator?: UtilityGenerator }> {
+    if (!utilities || !markup) return { files: [] };
+    const { rules, starts, safelist } = utilities;
+    const kept = previous?.generator;
+    if (kept && isDeepStrictEqual([kept.starts, kept.safelist], [starts, safelist])) {
+        return { files: previous.utilities, generator: kept };
+    }
+    const uno = await createGenerator({
         presets: [{ name: "sugarcube", rules, preflights: [] }],
         safelist,
     });
-    const files = await utilitiesFromMarkup(generator, safelist, config);
-    return { files: finished(files, layer), diagnostics };
+    const generator = { starts, safelist, uno };
+    return { files: await scanned(generator, config), generator };
+}
+
+async function scanned(generator: UtilityGenerator, config: InternalConfig) {
+    const files = await utilitiesFromMarkup(generator.uno, generator.safelist, config);
+    return finished(files, config.utilities.layer);
 }
 
 function finished(files: CSSFileOutput, layer: string | undefined): CSSFileOutput {

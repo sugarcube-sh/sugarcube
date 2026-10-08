@@ -13,27 +13,18 @@
 export * from "./client.js";
 
 export { fillDefaults, validateConfig } from "./node/config/normalize.js";
-export {
-    configFileExists,
-    isNoConfigError,
-    loadInternalConfig,
-} from "./node/config/load.js";
+export { configFileExists, isNoConfigError, loadInternalConfig } from "./node/config/load.js";
 export type { ConfigOverrides, LoadedConfig } from "./node/config/load.js";
 
 export { findResolverDocument } from "./node/resolver/find.js";
 export type { ResolverDiscoveryResult } from "./node/resolver/find.js";
-export { extractFileRefs } from "./node/resolver/extract-refs.js";
-export type { ExtractFileRefsResult } from "./node/resolver/extract-refs.js";
 
 export { loadTokens } from "./node/load-tokens.js";
 export type { LoadResult } from "./node/load-tokens.js";
-export { createCoalescedRunner, debounce } from "./shared/scheduling.js";
-export type { DebouncedFn } from "./shared/scheduling.js";
+export { createCoalescedRunner } from "./shared/scheduling.js";
 
-export { PerfMonitor, Instrumentation } from "./node/perf.js";
+export { writeCSSFiles } from "./node/write-css.js";
 
-export {
-    writeCSSFiles,
-    writeCSSVariablesToDisk,
-    writeCSSUtilitiesToDisk,
-} from "./node/write-css.js";
+export { problemCount, problemLines, problemsText } from "./shared/problems.js";
+export type { Where } from "./shared/problems.js";
+export { plural } from "./shared/plural.js";

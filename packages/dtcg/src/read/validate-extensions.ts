@@ -96,7 +96,7 @@ export function validateExtensions(
             for (const validator of validators) {
                 const at = group.extensionsAt?.[validator.key];
                 if (!at || !validator.appliesTo.includes("group")) continue;
-                const node = member(at.node, validator.key, at.json.hidden);
+                const node = member(at.node, validator.key);
                 if (!node) continue;
                 const value = group.extensions?.[validator.key];
                 check(validator, { path: group.path, type: "group" }, value, at.json, node);
@@ -110,10 +110,10 @@ export function validateExtensions(
             const type = types.get(token.path);
             const object = token.value.parent?.parent;
             if (token.added || !type || !object || !token.extensions) continue;
-            const extensions = member(object, "$extensions", token.json.hidden);
+            const extensions = member(object, "$extensions");
             if (!extensions) continue;
             for (const validator of validators) {
-                const node = member(extensions, validator.key, token.json.hidden);
+                const node = member(extensions, validator.key);
                 if (!node || !validator.appliesTo.includes(type)) continue;
                 const value = token.extensions[validator.key];
                 check(validator, { path: token.path, type }, value, token.json, node);

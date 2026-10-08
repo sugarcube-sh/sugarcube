@@ -18,7 +18,8 @@ export {
     validateSugarcubeConfig,
 } from "./shared/config.js";
 export type { DefaultDirs } from "./shared/config.js";
-export { ConfigError } from "./shared/config-error.js";
+export { ConfigError, configProblems } from "./shared/config-error.js";
+export type { ConfigIssue } from "./types/diagnostics.js";
 export { DEFAULT_CONFIG } from "./shared/constants/config.js";
 
 export { resolveTokens } from "./shared/resolve-tokens.js";
@@ -33,6 +34,9 @@ export type { Declarations } from "./shared/css/declare.js";
 export { emitCSS } from "./shared/css/emit.js";
 export { utilityTokens } from "./shared/utilities/tokens.js";
 export { utilityRules } from "./shared/utilities/rules.js";
+export type { UtilityStart } from "./shared/utilities/rules.js";
+export { cssFrom } from "./shared/css-from.js";
+export type { MadeCSS, UtilityCSS } from "./shared/css-from.js";
 export type { Reported } from "./types/diagnostics.js";
 
 export { buildTokenGraph } from "./shared/graph/build-token-graph.js";

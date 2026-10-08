@@ -131,7 +131,7 @@ export function walkSource(
             ) {
                 properties.deprecated = raw;
             } else if (key === "$extensions" && value.type === "object") {
-                properties.extensions = plainObject(value, json.hidden);
+                properties.extensions = plainObject(value);
             } else if (isProperty(key)) {
                 report("invalid-property", { property: key, expected: EXPECTED[key] }, value);
                 if (key === "$type") properties.type = "unusable";
@@ -154,7 +154,7 @@ export function walkSource(
         let found: GroupReference | undefined;
         for (const { key, value } of entries) {
             if (key !== "$extends" && key !== "$ref") continue;
-            const read = readGroupReference(key, plainValue(value, json.hidden));
+            const read = readGroupReference(key, plainValue(value));
             if (read === undefined) {
                 const expected = key === "$ref" ? "string" : "reference";
                 const reference = key === "$extends" ? asReference(value.value) : undefined;
@@ -180,7 +180,7 @@ export function walkSource(
     const visitToken = (node: Node, path: string, entries: Member[], value: Node) => {
         const child = entries.find(({ key }) => !key.startsWith("$"));
         if (child) report("token-and-group", { reason: "child", child: child.key }, child.keyNode);
-        const authored = plainValue(value, json.hidden);
+        const authored = plainValue(value);
         contents.tokens.push({
             path,
             json,
@@ -251,11 +251,7 @@ export function walkSource(
                 report("invalid-member", { name: key, found }, value);
                 continue;
             }
-            const inside = asWritten(
-                [...segments, key].join("."),
-                members(value, json.hidden),
-                false,
-            );
+            const inside = asWritten([...segments, key].join("."), members(value), false);
             const tokenValue = inside.find((entry) => entry.key === "$value")?.value;
             if (key === "$root" && !tokenValue) {
                 report("invalid-name", { name: key, character: "$" }, keyNode);
@@ -276,7 +272,7 @@ export function walkSource(
 
     const rootEntries = asWritten(
         "",
-        members(tree, json.hidden).filter(({ key }) => !overridden.has(key)),
+        members(tree).filter(({ key }) => !overridden.has(key)),
         true,
     );
     contents.root = { path: "", at: at(tree), ...readGroupProperties("", rootEntries) };
@@ -317,7 +313,5 @@ function isOwnProperty(key: string): key is OwnProperty {
 
 function holdsToken(node: Node, json: JsonFile): boolean {
     if (node.type !== "object") return false;
-    return members(node, json.hidden).some(
-        ({ key, value }) => key === "$value" || holdsToken(value, json),
-    );
+    return members(node).some(({ key, value }) => key === "$value" || holdsToken(value, json));
 }

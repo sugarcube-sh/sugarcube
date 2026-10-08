@@ -294,7 +294,7 @@ function described(
     if (pieces[0] !== loaded) return [];
     const source = { file: loaded.file, ...(loaded.pointer && { pointer: loaded.pointer }), from };
     const holder = entry.holder?.extensions;
-    const extensionsOfSet = holder && plainObject(holder, resolver.file.hidden);
+    const extensionsOfSet = holder && plainObject(holder);
     return [{ source, pieces, ...(extensionsOfSet && { extensionsOfSet }) }];
 }
 

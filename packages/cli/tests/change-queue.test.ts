@@ -1,6 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createChangeQueue } from "../src/watch/watcher.js";
-import type { ChangeKind } from "../src/watch/regenerate.js";
+import { describe, expect, it } from "vitest";
+import { type ChangeKind, createChangeQueue } from "../src/watch/watcher.js";
 
 function recorder() {
     const runs: Array<[ChangeKind, string]> = [];
@@ -8,7 +7,7 @@ function recorder() {
     return {
         runs,
         callbacks: {
-            onRegenerate: async (kind: ChangeKind, path: string) => {
+            onChange: async (kind: ChangeKind, path: string) => {
                 runs.push([kind, path]);
                 if (release === null) return;
                 await new Promise<void>((resolve) => {
@@ -29,62 +28,53 @@ function recorder() {
 }
 
 const settle = async () => {
-    for (let i = 0; i < 5; i++) await Promise.resolve();
+    for (let i = 0; i < 20; i++) await Promise.resolve();
 };
 
 describe("the change queue", () => {
-    beforeEach(() => vi.useFakeTimers());
-    afterEach(() => vi.useRealTimers());
-
-    it("collapses a burst of changes to one file into one run", async () => {
-        const r = recorder();
-        const queue = createChangeQueue(r.callbacks);
-
-        queue("markup", "a.html");
-        queue("markup", "a.html");
-        await vi.advanceTimersByTimeAsync(100);
-
-        expect(r.runs).toEqual([["markup", "a.html"]]);
-    });
-
-    it("does not lose a token change when a markup change lands in the same window", async () => {
+    it("starts a run at once, without waiting", async () => {
         const r = recorder();
         const queue = createChangeQueue(r.callbacks);
 
         queue("token", "tokens/color.json");
-        queue("markup", "src/page.tsx");
-        await vi.advanceTimersByTimeAsync(100);
         await settle();
 
-        expect(r.runs.map(([kind]) => kind)).toContain("token");
+        expect(r.runs).toEqual([["token", "tokens/color.json"]]);
     });
 
-    it("does not lose a token change that arrives while a markup run is in flight", async () => {
+    it("runs once more for the changes that arrive during a run, however many", async () => {
         const r = recorder();
         const queue = createChangeQueue(r.callbacks);
 
         r.holdNextRun();
         queue("markup", "src/page.tsx");
-        await vi.advanceTimersByTimeAsync(100);
-        queue("token", "tokens/color.json");
-        await vi.advanceTimersByTimeAsync(100);
+        await settle();
         queue("markup", "src/other.tsx");
-        await vi.advanceTimersByTimeAsync(100);
+        queue("token", "tokens/color.json");
+        queue("markup", "src/last.tsx");
         r.releaseRun();
         await settle();
 
-        expect(r.runs.map(([kind]) => kind)).toContain("token");
+        expect(r.runs).toEqual([
+            ["markup", "src/page.tsx"],
+            ["token", "tokens/color.json"],
+            ["markup", "src/last.tsx"],
+        ]);
     });
 
-    it("runs the token change first when both are pending", async () => {
+    it("takes config, then tokens, then markup from the changes that arrived during a run", async () => {
         const r = recorder();
         const queue = createChangeQueue(r.callbacks);
 
-        queue("markup", "src/page.tsx");
+        r.holdNextRun();
         queue("token", "tokens/color.json");
-        await vi.advanceTimersByTimeAsync(100);
+        await settle();
+        queue("markup", "src/page.tsx");
+        queue("token", "tokens/dark.json");
+        queue("config", "sugarcube.config.ts");
+        r.releaseRun();
         await settle();
 
-        expect(r.runs[0]?.[0]).toBe("token");
+        expect(r.runs.slice(1).map(([kind]) => kind)).toEqual(["config", "token", "markup"]);
     });
 });

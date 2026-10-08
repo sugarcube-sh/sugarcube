@@ -1,21 +1,26 @@
-import type { InternalConfig } from "@sugarcube-sh/core";
-import { createCoalescedRunner, debounce, extractFileRefs } from "@sugarcube-sh/core";
+import { isDeepStrictEqual } from "node:util";
+import { createCoalescedRunner } from "@sugarcube-sh/core";
 import { type FSWatcher, watch as chokidarWatch } from "chokidar";
+import { normalize } from "pathe";
 import { IGNORED_DIR_NAMES, MARKUP_EXTENSIONS } from "../constants/markup.js";
-import type { ChangeKind } from "./regenerate.js";
+
+export type ChangeKind = "config" | "token" | "markup";
+
+export interface Watched {
+    tokens: string[];
+    config?: string;
+    content?: string[];
+    markup: boolean;
+}
 
 export type WatchCallbacks = {
-    onRegenerate: (kind: ChangeKind, changedPath: string) => Promise<void>;
+    onChange: (kind: ChangeKind, changedPath: string) => Promise<void>;
     onError: (error: Error) => void;
-    onReady: (tokenFileCount: number) => void;
-    onWarning?: (message: string) => void;
-};
-
-export type WatchOptions = {
-    markup?: boolean;
+    onWarning: (message: string) => void;
 };
 
 export type WatcherHandle = {
+    update: (watched: Watched) => Promise<void>;
     close: () => Promise<void>;
 };
 
@@ -23,32 +28,29 @@ export type ChangeQueue = ((kind: ChangeKind, changedPath: string) => void) & {
     cancel: () => void;
 };
 
+const IN_ORDER: ChangeKind[] = ["config", "token", "markup"];
+
 export function createChangeQueue(
-    callbacks: Pick<WatchCallbacks, "onRegenerate" | "onError">,
-    wait = 100,
+    callbacks: Pick<WatchCallbacks, "onChange" | "onError">,
 ): ChangeQueue {
     const pending = new Map<ChangeKind, string>();
 
     const drain = createCoalescedRunner(
         async () => {
-            const token = pending.get("token");
-            const markup = pending.get("markup");
+            const taken = IN_ORDER.flatMap((kind) => {
+                const path = pending.get(kind);
+                return path === undefined ? [] : [[kind, path] as const];
+            });
             pending.clear();
-            if (token !== undefined) await callbacks.onRegenerate("token", token);
-            if (markup !== undefined) await callbacks.onRegenerate("markup", markup);
+            for (const [kind, path] of taken) await callbacks.onChange(kind, path);
         },
         (error) => callbacks.onError(error instanceof Error ? error : new Error(String(error))),
     );
-    const settled = debounce(() => drain(), wait);
-
     const queue = (kind: ChangeKind, changedPath: string) => {
         pending.set(kind, changedPath);
-        settled();
+        drain();
     };
-    queue.cancel = () => {
-        settled.cancel();
-        pending.clear();
-    };
+    queue.cancel = () => pending.clear();
     return queue;
 }
 
@@ -73,17 +75,11 @@ export function resolveMarkupWatchTargets(content: string[] | undefined): string
     return [...new Set(dirs)];
 }
 
-const WRITE_SETTLE = {
-    ignoreInitial: true,
-    awaitWriteFinish: {
-        stabilityThreshold: 50,
-        pollInterval: 10,
-    },
-};
+const CHANGES_ONLY = { ignoreInitial: true };
 
-function watchMarkup(config: InternalConfig): FSWatcher {
-    return chokidarWatch(resolveMarkupWatchTargets(config.content), {
-        ...WRITE_SETTLE,
+function watchMarkup(content: string[] | undefined): FSWatcher {
+    return chokidarWatch(resolveMarkupWatchTargets(content), {
+        ...CHANGES_ONLY,
         ignored: (path, stats) => {
             const segments = path.split("/");
             for (const segment of segments) {
@@ -106,58 +102,66 @@ function ready(watcher: FSWatcher): Promise<void> {
     return new Promise<void>((resolve) => watcher.once("ready", resolve));
 }
 
+function pathsOf({ tokens, config }: Watched): string[] {
+    return config === undefined ? tokens : [...tokens, config];
+}
+
+export function fileChange(path: string, { config }: Watched): ChangeKind {
+    return normalize(path) === config ? "config" : "token";
+}
+
 export async function startWatcher(
-    config: InternalConfig,
+    first: Watched,
     callbacks: WatchCallbacks,
-    options: WatchOptions = {},
 ): Promise<WatcherHandle> {
-    if (!config.resolver) {
-        throw new Error("Resolver path is required for watch mode");
-    }
+    let watched = first;
+    const queue = createChangeQueue(callbacks);
 
-    const { filePaths, resolverPath } = await extractFileRefs(config.resolver);
+    const files = chokidarWatch(pathsOf(watched), CHANGES_ONLY);
+    const filesReady = ready(files);
+    const onFile = (path: string) => queue(fileChange(path, watched), path);
+    files.on("change", onFile);
+    files.on("add", onFile);
+    files.on("unlink", onFile);
 
-    const tokenPaths = [resolverPath, ...filePaths];
-
-    const debouncedRegenerate = createChangeQueue(callbacks);
-
-    const tokenWatcher = chokidarWatch(tokenPaths, WRITE_SETTLE);
-    const markupWatcher = options.markup === false ? null : watchMarkup(config);
-
-    const handleTokenChange = (path: string) => {
-        debouncedRegenerate("token", path);
-    };
-    const handleMarkupChange = (path: string) => {
-        debouncedRegenerate("markup", path);
-    };
-
-    tokenWatcher.on("change", handleTokenChange);
-    tokenWatcher.on("add", handleTokenChange);
-    tokenWatcher.on("unlink", handleTokenChange);
-
-    if (markupWatcher) {
-        markupWatcher.on("change", handleMarkupChange);
-        markupWatcher.on("add", handleMarkupChange);
-        markupWatcher.on("unlink", handleMarkupChange);
-    }
-
-    await Promise.all([ready(tokenWatcher), markupWatcher ? ready(markupWatcher) : undefined]);
-
-    if (markupWatcher) {
-        const watchedCount = countWatchedFiles(markupWatcher.getWatched());
+    const startMarkup = async (content: string[] | undefined): Promise<FSWatcher> => {
+        const markup = watchMarkup(content);
+        const markupReady = ready(markup);
+        const onMarkup = (path: string) => queue("markup", path);
+        markup.on("change", onMarkup);
+        markup.on("add", onMarkup);
+        markup.on("unlink", onMarkup);
+        await markupReady;
+        const watchedCount = countWatchedFiles(markup.getWatched());
         if (watchedCount > WATCH_TARGET_LIMIT) {
-            callbacks.onWarning?.(
+            callbacks.onWarning(
                 `Watching ${watchedCount} files for markup changes (limit: ${WATCH_TARGET_LIMIT}). This can make watch mode slow — set \`content\` in your config to narrow the directories that are scanned.`,
             );
         }
-    }
+        return markup;
+    };
 
-    callbacks.onReady(tokenPaths.length);
+    let markup = watched.markup ? await startMarkup(watched.content) : undefined;
+    await filesReady;
 
     return {
+        update: async (next) => {
+            const before = new Set(pathsOf(watched));
+            const after = new Set(pathsOf(next));
+            files.unwatch([...before].filter((path) => !after.has(path)));
+            files.add([...after].filter((path) => !before.has(path)));
+            if (
+                next.markup !== watched.markup ||
+                !isDeepStrictEqual(next.content, watched.content)
+            ) {
+                await markup?.close();
+                markup = next.markup ? await startMarkup(next.content) : undefined;
+            }
+            watched = next;
+        },
         close: async () => {
-            debouncedRegenerate.cancel();
-            await Promise.all([tokenWatcher.close(), markupWatcher?.close()]);
+            queue.cancel();
+            await Promise.all([files.close(), markup?.close()]);
         },
     };
 }

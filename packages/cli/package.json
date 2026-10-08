@@ -51,7 +51,7 @@
     "test:bench": "vitest bench --no-watch",
     "test:bench:save": "vitest bench --no-watch --outputJson benchmarks/$(date +%Y-%m-%d)-watch-results.json",
     "test:bench:compare": "./scripts/bench-compare.sh",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit && tsc --noEmit -p tests/tsconfig.json",
     "start": "cross-env REGISTRY_URL=https://sugarcube.sh/r tsx src/index.ts"
   },
   "dependencies": {

@@ -12,6 +12,17 @@ import type { UtilityToken } from "./tokens.js";
 
 export type UtilityRule = [RegExp, (match: RegExpMatchArray) => Record<string, string> | undefined];
 
+interface UtilityUse {
+    property: string;
+    strip?: string;
+    names: Map<string, string>;
+}
+
+export interface UtilityStart {
+    start: string;
+    uses: UtilityUse[];
+}
+
 interface Named {
     token: Token;
     name: string;
@@ -29,10 +40,8 @@ interface Entry {
     skipped: Skipped[];
 }
 
-interface Use {
-    property: string;
+interface Use extends UtilityUse {
     entry: Entry;
-    find: (part: string) => string | undefined;
 }
 
 interface Answer {
@@ -82,20 +91,26 @@ const TYPES: Record<string, TokenType[]> = {
 };
 
 /**
- * The UnoCSS rules for the config's utility classes, and the classes the config asks to be
- * written whether or not markup uses them. A class is a start (the entry's `prefix`, or the first
- * segment of its `source`, with a direction's letter) and a part (the {@link cssName} of the
- * token's path below `source`, as its variable has it), and writes that token's variable. Rules
- * come in the config's order, each shorthand before its longhands; entries sharing a start are
- * tried in the config's order, and among tokens making the same class the first in file order is
- * used. A class two tokens with different variables make is reported, on the token not used;
- * so is an entry that makes no classes, with the reason, and a part its `safelist` names that no
- * token under `source` makes.
+ * The UnoCSS rules for the config's utility classes, the same rules as data (`starts`, equal for
+ * two reads that make the same classes), and the classes the config asks to be written whether or
+ * not markup uses them. A class is a start (the entry's `prefix`, or the first segment of its
+ * `source`, with a direction's letter) and a part (the {@link cssName} of the token's path below
+ * `source`, as its variable has it), and writes that token's variable. Rules come in the config's
+ * order, each shorthand before its longhands; entries sharing a start are tried in the config's
+ * order, and among tokens making the same class the first in file order is used. A class two
+ * tokens with different variables make is reported, on the token not used; so is an entry that
+ * makes no classes, with the reason, when there are tokens to judge it by; and a part its
+ * `safelist` names that no token under `source` makes.
  */
 export function utilityRules(
     tokens: UtilityToken[],
     classes: UtilityClassesConfig,
-): { rules: UtilityRule[]; safelist: string[]; diagnostics: Reported[] } {
+): {
+    rules: UtilityRule[];
+    starts: UtilityStart[];
+    safelist: string[];
+    diagnostics: Reported[];
+} {
     const byStart = new Map<string, Use[]>();
     const entries: Entry[] = [];
     const safelist = new Set<string>();
@@ -112,7 +127,9 @@ export function utilityRules(
             }
             const entry = { about, source: config.source, parts, skipped };
             entries.push(entry);
-            const find = (part: string) => parts.get(stripped(part, config))?.[0].name;
+            const strip = stripOf(config);
+            const names = new Map([...parts].map(([part, [first]]) => [part, first.name]));
+            const find = (part: string) => names.get(stripped(part, strip));
             const forced = config.safelist === true ? [...parts.keys()] : [];
             for (const part of Array.isArray(config.safelist) ? config.safelist : []) {
                 if (find(part) !== undefined) forced.push(part);
@@ -123,7 +140,7 @@ export function utilityRules(
             for (const { start, property: written } of starts) {
                 byStart.set(start, [
                     ...(byStart.get(start) ?? []),
-                    { property: written, entry, find },
+                    { property: written, strip, names, entry },
                 ]);
                 for (const part of forced) safelist.add(`${start}-${part}`);
             }
@@ -131,25 +148,34 @@ export function utilityRules(
     }
     const answered = answers(byStart);
     const lost = lostBy(answered);
+    const starts = [...byStart].map(([start, uses]) => ({
+        start,
+        uses: uses.map(({ property, strip, names }) => ({ property, strip, names })),
+    }));
     return {
-        rules: [...byStart].map(([start, uses]) => [
-            new RegExp(`^${escaped(start)}-.+$`),
-            (match) => {
-                const part = match[0].slice(start.length + 1);
-                for (const { property, find } of uses) {
-                    const name = find(part);
-                    if (name !== undefined) return { [property]: `var(${name})` };
-                }
-                return undefined;
-            },
-        ]),
+        rules: starts.map(ruleFor),
+        starts,
         safelist: [...safelist],
         diagnostics: [
             ...sameClasses(answered),
-            ...entries.flatMap((entry) => withoutClasses(entry, lost)),
+            ...(tokens.length === 0 ? [] : entries.flatMap((entry) => withoutClasses(entry, lost))),
             ...unmatched,
         ],
     };
+}
+
+function ruleFor({ start, uses }: UtilityStart): UtilityRule {
+    return [
+        new RegExp(`^${escaped(start)}-.+$`),
+        (match) => {
+            const part = match[0].slice(start.length + 1);
+            for (const { property, strip, names } of uses) {
+                const name = names.get(stripped(part, strip));
+                if (name !== undefined) return { [property]: `var(${name})` };
+            }
+            return undefined;
+        },
+    ];
 }
 
 function answers(byStart: Map<string, Use[]>): Map<string, [Answer, ...Answer[]]> {
@@ -262,7 +288,7 @@ function partsFor(
         else if (types && !types.includes(token.type)) skip("type");
         else if ("private" in listed) skip(listed.private ? "private" : "unwritten");
         else {
-            const part = stripped(cssName(below), entry);
+            const part = stripped(cssName(below), stripOf(entry));
             const earlier = parts.get(part);
             if (earlier) earlier.push(listed);
             else parts.set(part, [listed]);
@@ -280,10 +306,13 @@ function prefixOf({ prefix, source }: PropertyUtilityConfig): string {
     return prefix ?? (dot === -1 ? source : source.slice(0, dot));
 }
 
-function stripped(part: string, entry: PropertyUtilityConfig): string {
-    const prefix = prefixOf(entry);
-    return entry.stripDuplicates && part.startsWith(`${prefix}-`)
-        ? part.slice(prefix.length + 1)
+function stripOf(entry: PropertyUtilityConfig): string | undefined {
+    return entry.stripDuplicates ? prefixOf(entry) : undefined;
+}
+
+function stripped(part: string, strip: string | undefined): string {
+    return strip !== undefined && part.startsWith(`${strip}-`)
+        ? part.slice(strip.length + 1)
         : part;
 }
 

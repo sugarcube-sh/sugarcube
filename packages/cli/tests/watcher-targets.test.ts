@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveMarkupWatchTargets } from "../src/watch/watcher.js";
+import { fileChange, resolveMarkupWatchTargets } from "../src/watch/watcher.js";
 
 describe("resolveMarkupWatchTargets", () => {
     it("falls back to the working directory when no content is configured", () => {
@@ -23,5 +23,22 @@ describe("resolveMarkupWatchTargets", () => {
         expect(
             resolveMarkupWatchTargets(["/root/lib/**/*.heex", "!/root/lib/**/vendor/**"]),
         ).toEqual(["/root/lib"]);
+    });
+});
+
+describe("fileChange", () => {
+    const watched = {
+        tokens: ["C:/project/tokens/base.json"],
+        config: "C:/project/sugarcube.config.ts",
+        markup: true,
+    };
+
+    it("is a config change for the config file, whichever way its slashes are written", () => {
+        expect(fileChange("C:\\project\\sugarcube.config.ts", watched)).toBe("config");
+        expect(fileChange("C:/project/sugarcube.config.ts", watched)).toBe("config");
+    });
+
+    it("is a token change for any other file", () => {
+        expect(fileChange("C:\\project\\tokens\\base.json", watched)).toBe("token");
     });
 });

@@ -354,6 +354,28 @@ describe("utilityRules", () => {
     });
 });
 
+describe("utilityRules' starts, the rules as data", () => {
+    const classes = { color: { source: "color.*", prefix: "text" } };
+
+    it("are the same for tokens that make the same classes, whatever their values", () => {
+        const before = ruled({ color: { ink: color("#111111") } }, classes).starts;
+        const after = ruled({ color: { ink: color("#222222") } }, classes).starts;
+        expect(after).toStrictEqual(before);
+    });
+
+    it("differ when a token makes a class no token made before", () => {
+        const before = ruled({ color: { ink: color() } }, classes).starts;
+        const after = ruled({ color: { ink: color(), paper: color() } }, classes).starts;
+        expect(after).not.toStrictEqual(before);
+    });
+
+    it("differ when a class writes another variable", () => {
+        const before = ruled({ color: { ink: color() } }, classes).starts;
+        const after = ruled({ color: { ink: color() } }, classes, { prefix: "ds" }).starts;
+        expect(after).not.toStrictEqual(before);
+    });
+});
+
 describe("utilityRules' safelist", () => {
     const tokens = {
         color: { primary: color(), danger: color(), text: { muted: color() } },
@@ -571,6 +593,10 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
                 { color: { source: "colour.*", prefix: "text" } },
             ),
         ).toStrictEqual(["`color` makes no classes: there are no tokens under `colour`"]);
+    });
+
+    it("not when there are no tokens at all, as when they could not be read", () => {
+        expect(reported({}, { color: { source: "color.*", prefix: "text" } })).toStrictEqual([]);
     });
 
     it("when every token it could use is private", () => {

@@ -1,7 +1,8 @@
+import type { ZodIssue } from "zod";
 import type { InternalConfig, SugarcubeConfig } from "../types/config.js";
+import type { ConfigIssue } from "../types/diagnostics.js";
 import { ConfigError } from "./config-error.js";
 import { DEFAULT_CONFIG } from "./constants/config.js";
-import { ErrorMessages } from "./constants/error-messages.js";
 import { internalConfigSchema, userConfigSchema } from "./schemas/config.js";
 
 // ============================================
@@ -108,16 +109,7 @@ export function fillDefaultsCore(userConfig: SugarcubeConfig, dirs: DefaultDirs)
  */
 export function validateSugarcubeConfig(config: unknown): SugarcubeConfig {
     const userResult = userConfigSchema.safeParse(config);
-
-    if (!userResult.success) {
-        const errors = userResult.error.errors.map((err) => {
-            const path = err.path.join(".");
-            return ErrorMessages.CONFIG.INVALID_CONFIG(path || "root", err.message);
-        });
-
-        throw new ConfigError(errors.join("\n"));
-    }
-
+    if (!userResult.success) throw new ConfigError(userResult.error.issues.flatMap(issuesOf));
     return userResult.data;
 }
 
@@ -130,16 +122,8 @@ export function validateSugarcubeConfig(config: unknown): SugarcubeConfig {
  */
 export function validateInternalConfig(config: unknown): InternalConfig {
     const internalResult = internalConfigSchema.safeParse(config);
-
-    if (!internalResult.success) {
-        const errors = internalResult.error.errors.map((err) => {
-            const path = err.path.join(".");
-            return ErrorMessages.CONFIG.INVALID_CONFIG(path || "root", err.message);
-        });
-
-        throw new ConfigError(errors.join("\n"));
-    }
-
+    if (!internalResult.success)
+        throw new ConfigError(internalResult.error.issues.flatMap(issuesOf));
     return internalResult.data;
 }
 
@@ -162,4 +146,44 @@ export function validateConfig(
     const userConfig = validateSugarcubeConfig(config);
     const internalConfig = fillDefaultsCore(userConfig, dirs);
     return validateInternalConfig(internalConfig);
+}
+
+type TypeIssue = Extract<ZodIssue, { code: "invalid_type" }>;
+type UnionIssue = Extract<ZodIssue, { code: "invalid_union" }>;
+
+function issuesOf(issue: ZodIssue): ConfigIssue[] {
+    const setting = issue.path.join(".");
+    if (issue.code === "invalid_union") return unionIssues(issue, setting);
+    if (issue.code === "invalid_enum_value") {
+        return [{ reason: "not-allowed", setting, allowed: issue.options, value: issue.received }];
+    }
+    if (issue.code === "invalid_type")
+        return typeIssues(issue.path, [issue.expected], issue.received);
+    return [{ reason: "invalid", setting, message: issue.message }];
+}
+
+function typeIssues(
+    path: (string | number)[],
+    expected: string[],
+    received: string,
+): ConfigIssue[] {
+    if (received === "undefined") {
+        const property = String(path.at(-1));
+        return [{ reason: "missing", setting: path.slice(0, -1).join("."), property }];
+    }
+    return [{ reason: "wrong-type", setting: path.join("."), expected, received }];
+}
+
+function unionIssues(issue: UnionIssue, setting: string): ConfigIssue[] {
+    const branches = issue.unionErrors.map(({ issues }) => issues);
+    const ownType = (issues: ZodIssue[]) =>
+        issues.find(
+            (each): each is TypeIssue =>
+                each.code === "invalid_type" && each.path.join(".") === setting,
+        );
+    const meant = branches.find((issues) => !ownType(issues));
+    if (meant) return meant.flatMap(issuesOf);
+    const types = branches.flatMap((issues) => ownType(issues) ?? []);
+    const received = types[0]?.received ?? "undefined";
+    return typeIssues(issue.path, [...new Set(types.map(({ expected }) => expected))], received);
 }
