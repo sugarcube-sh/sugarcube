@@ -1,29 +1,18 @@
-import { type InternalConfig, type LoadedConfig, writeCSSFiles } from "@sugarcube-sh/core";
+import { type LoadedConfig, writeCSSFiles } from "@sugarcube-sh/core";
 import { Command } from "commander";
 import color from "picocolors";
-import { type ConfigFlags, loadConfig } from "../config.js";
+import { build, filesOf } from "../build.js";
+import { loadConfig } from "../config.js";
 import { handleError } from "../handle-error.js";
+import { printProblems, whereOf } from "../problems.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
-import { printProblems } from "../problems.js";
-import { build } from "../build.js";
-import { type GenerateAllCSSOptions, createWatchSession } from "../watch/regenerate.js";
-import {
-    errorPrefix,
-    logRegenerated,
-    logWarnings,
-    outputPaths,
-    prefix,
-    warnPrefix,
-} from "../watch/log.js";
-import { startWatcher } from "../watch/watcher.js";
+import { outputPaths } from "../watch/log.js";
+import { type WatchFlags, watch } from "../watch/watch.js";
 
-interface GenerateFlags extends ConfigFlags {
+interface GenerateFlags extends WatchFlags {
     force?: boolean;
-    silent?: boolean;
     watch?: boolean;
-    variablesOnly?: boolean;
-    utilitiesOnly?: boolean;
 }
 
 async function logOneTimeResult(relativePaths: string[]): Promise<void> {
@@ -48,7 +37,7 @@ async function runOneTimeGeneration(loaded: LoadedConfig, options: GenerateFlags
         variablesOnly: options.variablesOnly,
         utilitiesOnly: options.utilitiesOnly,
     });
-    const failed = printProblems(built, {
+    const failed = printProblems(built.diagnostics, whereOf(built), {
         onlyErrors: options.silent,
         whenFailed: "No CSS was written.",
     });
@@ -56,56 +45,9 @@ async function runOneTimeGeneration(loaded: LoadedConfig, options: GenerateFlags
         process.exitCode = 1;
         return;
     }
-    await writeCSSFiles(built.files);
-    if (!options.silent) await logOneTimeResult(outputPaths(built.files));
-}
-
-async function runWatchMode(config: InternalConfig, options: GenerateFlags): Promise<void> {
-    const generateOptions: GenerateAllCSSOptions = {
-        variablesOnly: options.variablesOnly,
-        utilitiesOnly: options.utilitiesOnly,
-    };
-
-    const session = createWatchSession(config, generateOptions);
-
-    const startTime = performance.now();
-    const { warnings: initialWarnings } = await session.primeAndBuild();
-    const durationMs = Math.round(performance.now() - startTime);
-    logWarnings(initialWarnings);
-    console.log(`${prefix} Generated in ${durationMs}ms`);
-
-    const watcher = await startWatcher(config, {
-        onRegenerate: async (kind, changedPath: string) => {
-            const regenStart = performance.now();
-            const { output: regenOutput, warnings: regenWarnings } = await session.onChange(
-                kind,
-                changedPath,
-            );
-            const regenDurationMs = Math.round(performance.now() - regenStart);
-
-            logWarnings(regenWarnings);
-            logRegenerated(changedPath, regenOutput, regenDurationMs);
-        },
-        onError: (error: Error) => {
-            console.error(`${errorPrefix} ${error.message}`);
-        },
-        onReady: (tokenFileCount: number) => {
-            console.log(
-                `${prefix} Watching ${tokenFileCount} token file${tokenFileCount === 1 ? "" : "s"} + markup files...`,
-            );
-        },
-        onWarning: (message: string) => {
-            console.log(`${warnPrefix} ${message}`);
-        },
-    });
-
-    process.on("SIGINT", async () => {
-        await watcher.close();
-        console.log(`${prefix} Watch mode stopped.`);
-        process.exit(0);
-    });
-
-    await new Promise(() => {});
+    const files = filesOf(built);
+    await writeCSSFiles(files);
+    if (!options.silent) await logOneTimeResult(outputPaths(files));
 }
 
 export const generate = new Command()
@@ -154,7 +96,7 @@ export const generate = new Command()
             }
 
             const loaded = await loadConfig(options);
-            if (options.watch) await runWatchMode(loaded.config, options);
+            if (options.watch) await watch(options, loaded);
             else await runOneTimeGeneration(loaded, options);
         } catch (error) {
             handleError(error);

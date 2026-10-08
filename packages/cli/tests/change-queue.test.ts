@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createChangeQueue } from "../src/watch/watcher.js";
-import type { ChangeKind } from "../src/watch/regenerate.js";
+import { type ChangeKind, createChangeQueue } from "../src/watch/watcher.js";
 
 function recorder() {
     const runs: Array<[ChangeKind, string]> = [];
@@ -8,7 +7,7 @@ function recorder() {
     return {
         runs,
         callbacks: {
-            onRegenerate: async (kind: ChangeKind, path: string) => {
+            onChange: async (kind: ChangeKind, path: string) => {
                 runs.push([kind, path]);
                 if (release === null) return;
                 await new Promise<void>((resolve) => {
@@ -86,5 +85,18 @@ describe("the change queue", () => {
         await settle();
 
         expect(r.runs[0]?.[0]).toBe("token");
+    });
+
+    it("runs a config change before token and markup changes", async () => {
+        const r = recorder();
+        const queue = createChangeQueue(r.callbacks);
+
+        queue("markup", "src/page.tsx");
+        queue("token", "tokens/color.json");
+        queue("config", "sugarcube.config.ts");
+        await vi.advanceTimersByTimeAsync(100);
+        await settle();
+
+        expect(r.runs.map(([kind]) => kind)).toEqual(["config", "token", "markup"]);
     });
 });

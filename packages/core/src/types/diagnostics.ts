@@ -25,6 +25,7 @@ export interface SugarcubeDiagnosticDetailByKind {
     "same-utility-class": { className: string; paths: [string, string] };
     "utility-without-classes": UtilityWithoutClasses;
     "safelist-without-token": UtilityEntry & { part: string };
+    "invalid-config": { problem: string };
 }
 
 export type SugarcubeDiagnosticKind = keyof SugarcubeDiagnosticDetailByKind;

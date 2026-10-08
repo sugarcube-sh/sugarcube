@@ -1,17 +1,16 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fillDefaults } from "@sugarcube-sh/core";
-import type { InternalConfig } from "@sugarcube-sh/core";
-import { afterAll, beforeAll, bench, describe } from "vitest";
-import { createWatchSession } from "../../src/watch/regenerate.js";
+import { type LoadedConfig, fillDefaults } from "@sugarcube-sh/core";
+import { afterAll, bench, describe } from "vitest";
+import { type Built, build, rescan } from "../../src/build.js";
 
-// Measures the cost of a single watch change-event on an already-running
-// session, at a few project sizes.
+// Measures the cost of a single watch change-event after a first build, at a
+// few project sizes.
 
 type Fixture = {
-    config: InternalConfig;
-    markupPaths: string[];
+    loaded: LoadedConfig;
+    markupPath: string;
     tokenPath: string;
     cleanup: () => void;
 };
@@ -87,7 +86,6 @@ function makeFixture(opts: {
     );
 
     // Markup files using a rotating slice of the real class names.
-    const markupPaths: string[] = [];
     for (let m = 0; m < opts.markupFiles; m++) {
         const classes = Array.from(
             { length: opts.classesPerFile },
@@ -95,7 +93,6 @@ function makeFixture(opts: {
         ).join(" ");
         const p = join(srcDir, `component-${m}.html`);
         writeFileSync(p, `<div class="${classes}">hello</div>\n`);
-        markupPaths.push(p);
     }
 
     const config = fillDefaults({
@@ -111,8 +108,8 @@ function makeFixture(opts: {
     });
 
     return {
-        config,
-        markupPaths,
+        loaded: { config: { ...config, resolver: resolverPath } },
+        markupPath: join(srcDir, "component-0.html"),
         tokenPath: join(tokensDir, "set-0.json"),
         cleanup: () => rmSync(dir, { recursive: true, force: true }),
     };
@@ -163,28 +160,23 @@ for (const size of SIZES) {
     fixtures.push(fx);
 
     describe(size.label, () => {
-        // Cold build. Full generation from scratch (baseline reference). A fresh
-        // session each sample; session creation is cheap, the fixture is reused.
+        // Cold build. Full generation from scratch (baseline reference).
         bench("cold build", async () => {
-            const session = createWatchSession(fx.config, {});
-            await session.primeAndBuild();
+            await build(fx.loaded);
         });
 
-        // Warm sessions: primed once, then each sample measures one change event.
-        const markupSession = createWatchSession(fx.config, {});
-        const tokenSession = createWatchSession(fx.config, {});
-        beforeAll(async () => {
-            await markupSession.primeAndBuild();
-            await tokenSession.primeAndBuild();
-        }, 60_000);
+        // Warm: built on the first run, which warm-up absorbs, then each sample
+        // measures one change event.
+        let markupBuilt: Built | undefined;
+        let tokenBuilt: Built | undefined;
 
-        // One markup file edited on a warm session — the common hot path.
+        // One markup file edited after a build — the common hot path.
         bench("single markup change (warm)", async () => {
-            writeFileSync(fx.markupPaths[0], `<div class="text-f0-1">edited</div>\n`);
-            await markupSession.onChange("markup", fx.markupPaths[0]);
+            writeFileSync(fx.markupPath, `<div class="text-f0-1">edited</div>\n`);
+            markupBuilt = await rescan(markupBuilt ?? (await build(fx.loaded)), fx.loaded.config);
         });
 
-        // One token file edited on a warm session (a value change, structure intact).
+        // One token file edited after a build (a value change, structure intact).
         bench("single token change (warm)", async () => {
             writeFileSync(
                 fx.tokenPath,
@@ -196,7 +188,7 @@ for (const size of SIZES) {
                     },
                 }),
             );
-            await tokenSession.onChange("token", fx.tokenPath);
+            tokenBuilt = await build(fx.loaded, {}, tokenBuilt);
         });
     });
 }

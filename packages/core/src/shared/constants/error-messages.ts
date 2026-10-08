@@ -62,6 +62,10 @@ const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
         message: (detail) =>
             `\`${detail.part}\` in ${entryName(detail)}'s safelist matches no token, so no class is forced`,
     },
+    "invalid-config": {
+        severity: "error",
+        message: ({ problem }) => problem,
+    },
 };
 
 function reasonText(detail: UtilityWithoutClasses): string {

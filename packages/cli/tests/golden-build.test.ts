@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { declare, utilityTokens } from "@sugarcube-sh/core";
 import { describe, expect, it } from "vitest";
-import { build } from "../src/build.js";
+import { build, filesOf } from "../src/build.js";
 import { CASES, GOLDEN_DIR, type GoldenCase, goldenConfig, withoutBanner } from "./golden-cases.js";
 import {
     decidedUtilities,
@@ -28,12 +28,12 @@ async function built(goldenCase: GoldenCase) {
     try {
         const outDir = join(dir, "out");
         const loaded = goldenConfig(goldenCase, dir, outDir);
-        const { doc, files, diagnostics } = await build(loaded);
+        const made = await build(loaded);
         return {
             config: loaded.config,
-            doc,
-            diagnostics,
-            files: files.map((file) => ({
+            doc: made.doc,
+            diagnostics: made.diagnostics,
+            files: filesOf(made).map((file) => ({
                 name: relative(outDir, file.path),
                 css: withoutBanner(file.css),
             })),
