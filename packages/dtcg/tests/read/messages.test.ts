@@ -57,7 +57,12 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { name: "$brand", character: "$" },
         { name: "a.b", character: "." },
     ],
-    "token-and-group": [{}],
+    "token-and-group": [
+        { reason: "child", child: "light" },
+        { reason: "declared", here: "token" },
+        { reason: "declared", here: "group" },
+        { reason: "ref", ref: "#/base" },
+    ],
     "invalid-member": [
         { name: "brand", found: "string" },
         { name: "sizes", found: "array" },
@@ -73,6 +78,13 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
     "unknown-type": [{ type: "colour" }, { type: "colour", similar: "color" }, { type: "" }],
     "invalid-value": [
         { at: ["$value"], type: "dimension", reason: "wrong-shape", value: 16 },
+        {
+            at: ["$value"],
+            type: "color",
+            reason: "wrong-shape",
+            value: "color.ink",
+            reference: "{color.ink}",
+        },
         { at: ["$value"], type: "shadow", reason: "wrong-shape", value: "0 1px 2px black" },
         { at: ["$value"], type: "typography", reason: "wrong-shape", value: [] },
         { at: ["$value", "blurr"], type: "shadow", reason: "unknown-property", property: "blurr" },
@@ -292,8 +304,14 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { property: "descripton", owner: "set" },
         { property: "descripton", owner: "set", similar: "description" },
         { property: "defualt", owner: "modifier" },
+        { property: "$whatever", owner: "token" },
+        { property: "$whatever", owner: "group" },
         { property: "paragraphSpacing", owner: "typography", at: ["$value", "paragraphSpacing"] },
         { property: "fluid", owner: "dimension", at: ["$value", "width", "fluid"] },
+    ],
+    "misspelt-property": [
+        { written: "value", property: "$value", owner: "token" },
+        { written: "type", property: "$type", owner: "group" },
     ],
     "permutation-limit": [{ count: 16384, limit: 64, built: 15 }],
     "no-default": [{ modifiers: ["size"] }, { modifiers: ["size", "theme"] }],
@@ -336,6 +354,52 @@ describe("diagnostic messages that say what would mend the problem", () => {
                 detail: { ref: "color.inc", referencedBy: ["color.muted"], similar: "color.ink" },
             },
             message: "`color.inc` does not exist; did you mean `color.ink`?",
+        },
+        {
+            found: {
+                kind: "misspelt-property",
+                detail: { written: "value", property: "$value", owner: "token" },
+            },
+            message: "`value` is not a token property; did you mean `$value`?",
+        },
+        {
+            found: {
+                kind: "misspelt-property",
+                detail: { written: "$tpye", property: "$type", owner: "group" },
+            },
+            message: "`$tpye` is not a group property; did you mean `$type`?",
+        },
+        {
+            found: {
+                kind: "invalid-value",
+                detail: {
+                    at: ["$value"],
+                    type: "color",
+                    reason: "wrong-shape",
+                    value: "color.ink",
+                    reference: "{color.ink}",
+                },
+            },
+            message:
+                "a color must be an object with `colorSpace` and `components`, not the string `color.ink`; did you mean `{color.ink}`?",
+        },
+        {
+            found: { kind: "token-and-group", detail: { reason: "child", child: "light" } },
+            message:
+                "`light` is inside a token (it has a `$value`), and a token cannot hold tokens or groups",
+        },
+        {
+            found: { kind: "token-and-group", detail: { reason: "declared", here: "token" } },
+            message: "this is a token here but a group in another file",
+        },
+        {
+            found: { kind: "token-and-group", detail: { reason: "declared", here: "group" } },
+            message: "this is a group here but a token in another file",
+        },
+        {
+            found: { kind: "token-and-group", detail: { reason: "ref", ref: "#/base" } },
+            message:
+                "this points at `#/base`, which is a token, so it is a token too, and a token cannot hold tokens or groups",
         },
         {
             found: { kind: "unknown-type", detail: { type: "colour", similar: "color" } },
@@ -445,6 +509,18 @@ describe("diagnostic messages that say what would mend the problem", () => {
             expect(worded(found)).toBe(message);
         },
     );
+});
+
+describe("diagnostic messages for a token's or group's own properties", () => {
+    it("says a `$` name the specification does not define is ignored", () => {
+        const { message } = diagnosticMessages["unknown-property"];
+        expect(message({ property: "$whatever", owner: "token" })).toBe(
+            "`$whatever` is not a property of a token, so it is ignored",
+        );
+        expect(message({ property: "$whatever", owner: "group" })).toBe(
+            "`$whatever` is not a property of a group, so it is ignored",
+        );
+    });
 });
 
 describe("diagnostic messages from read", () => {

@@ -115,6 +115,22 @@ describe("problemLines", () => {
         ]);
     });
 
+    it("prints each place a problem points to as well, under its message", () => {
+        const conflict: Reported = {
+            kind: "token-and-group",
+            severity: "error",
+            message: "this is a token here but a group in another file",
+            at: at("dark.json", 3, 12),
+            related: [{ message: "declared as a group here", at: at("colors.json", 9, 17) }],
+            docs: "",
+            detail: { reason: "declared", here: "token" },
+        };
+        expect(problemLines([conflict], where, { colors: plain })).toStrictEqual([
+            "tokens/dark.json:3:12  error  this is a token here but a group in another file  token-and-group",
+            "                              tokens/colors.json:9:17  declared as a group here",
+        ]);
+    });
+
     it("prints every problem, however many share a message", () => {
         const many = Array.from({ length: 3 }, (_, index) =>
             ignored(at("type.json", 17 + index, 9)),

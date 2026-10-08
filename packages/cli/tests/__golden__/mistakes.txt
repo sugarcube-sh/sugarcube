@@ -1,0 +1,94 @@
+## a-theme-turns-a-token-into-a-group
+dark.json:3:12  error  this is a group here but a token in another file  in dark  token-and-group
+                       base.json:4:12  declared as a token here
+1 error.
+
+## colour-as-a-name
+base.json:5:17  error  a color must be an object with `colorSpace` and `components`, not the string `red`  invalid-value
+1 error.
+
+## description-misspelt
+base.json:6:7  error  `$descripton` is not a token property; did you mean `$description`?  misspelt-property
+1 error.
+
+## dimension-as-a-string
+base.json:5:17  error  `16px` is a string, and a dimension must be an object with a value and a unit, such as `{ "value": 16, "unit": "px" }`  invalid-value
+1 error.
+
+## key-written-twice
+base.json:5:5  warning  `ink` is written more than once in this object, and only the last is used  duplicate-key
+                        base.json:4:5  also written here
+1 warning.
+
+## no-type-anywhere
+base.json:3:11  error  no type can be worked out for this token  missing-type
+1 error.
+
+## reference-misspelt
+base.json:11:17  error  `color.inc` does not exist; did you mean `color.ink`?  missing-reference
+1 error.
+
+## reference-to-a-group
+base.json:11:17  error  `color` is a group, and a reference must name a token  not-a-token
+1 error.
+
+## reference-without-braces
+base.json:11:17  error  a color must be an object with `colorSpace` and `components`, not the string `color.ink`; did you mean `{color.ink}`?  invalid-value
+1 error.
+
+## references-in-a-circle
+base.json:5:17  error  these references lead back to where they started: color.a → color.b → color.a  circular-reference
+                       base.json:8:17  part of the same loop
+1 error.
+
+## resolver-names-a-missing-file
+tokens.resolver.json:12:19  error  the file `colours.json` could not be read  file-not-found
+1 error.
+
+## three-digit-hex
+base.json:5:17  error  `#fff` is not a six-digit hex color; did you mean `#ffffff`?  invalid-value
+1 error.
+
+## trailing-comma
+base.json:5:3  error  this is not valid JSON: a property name is missing  invalid-json
+1 error.
+
+## two-tokens-one-variable
+base.json:11:18  error  `color.brand-primary` and `color.brand.primary` both make `--color-brand-primary`, so only `color.brand.primary`'s value is used: rename one  same-variable-name
+1 error.
+
+## type-misspelt
+base.json:3:14  error  `colour` is not a token type; did you mean `color`?  unknown-type
+1 error.
+
+## type-without-dollar
+base.json:3:5  error  `type` is not a group property; did you mean `$type`?  misspelt-property
+1 error.
+
+## typography-missing-a-property
+base.json:5:17  error  a typography value needs `lineHeight`  invalid-value
+1 error.
+
+## unit-not-allowed
+base.json:7:17  error  `pt` is not a unit a dimension can have: the units are `px` and `rem`  invalid-value
+1 error.
+
+## unknown-dollar-name
+base.json:6:7  warning  `$figmaId` is not a property of a token, so it is ignored  unknown-property
+1 warning.
+
+## value-in-capitals
+base.json:5:7  error  `$Value` is not a token property; did you mean `$value`?  misspelt-property
+1 error.
+
+## value-misspelt
+base.json:5:7  error  `$vlaue` is not a token property; did you mean `$value`?  misspelt-property
+1 error.
+
+## value-without-dollar
+base.json:5:7  error  `value` is not a token property; did you mean `$value`?  misspelt-property
+1 error.
+
+## value-without-dollar-and-a-theme
+base.json:5:7  error  `value` is not a token property; did you mean `$value`?  misspelt-property
+1 error.

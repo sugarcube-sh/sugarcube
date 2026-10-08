@@ -98,7 +98,13 @@ export const relatedMessages = {
 const ignoredWhenInvalid: ReadonlySet<DiagnosticDetailByKind["invalid-property"]["property"]> =
     new Set(["$description", "$deprecated", "$extensions"]);
 
-const ownerWords = { resolver: "the resolver", set: "a set", modifier: "a modifier" } as const;
+const ownerWords = {
+    resolver: "the resolver",
+    set: "a set",
+    modifier: "a modifier",
+    token: "a token",
+    group: "a group",
+} as const;
 
 export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "file-not-found": {
@@ -138,8 +144,16 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "token-and-group": {
         severity: "error",
-        message: () =>
-            "this has a `$value`, so it is a token, and a token cannot hold tokens or groups",
+        message: (detail) => {
+            switch (detail.reason) {
+                case "child":
+                    return `\`${detail.child}\` is inside a token (it has a \`$value\`), and a token cannot hold tokens or groups`;
+                case "declared":
+                    return `this is a ${detail.here} here but a ${detail.here === "token" ? "group" : "token"} in another file`;
+                case "ref":
+                    return `this points at \`${detail.ref}\`, which is a token, so it is a token too, and a token cannot hold tokens or groups`;
+            }
+        },
     },
     "invalid-member": {
         severity: "error",
@@ -224,6 +238,11 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
             "at" in detail
                 ? ignoredMessage(detail.owner, detail.property)
                 : `\`${detail.property}\` is not a property of ${ownerWords[detail.owner]}, so it is ignored${didYouMean(detail.similar)}`,
+    },
+    "misspelt-property": {
+        severity: "error",
+        message: ({ written, property, owner }) =>
+            `\`${written}\` is not a ${owner} property; did you mean \`${property}\`?`,
     },
     "permutation-limit": {
         severity: "warning",

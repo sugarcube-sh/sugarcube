@@ -12,6 +12,8 @@ export default defineConfig({
         // Spec case inputs are exact bytes; offsets in expected.json depend on them.
         "packages/dtcg/tests/read/cases/*/input/**",
         "packages/cli/tests/__golden__/**",
+        // Common mistakes, some not valid JSON; positions in the golden output depend on them.
+        "packages/cli/tests/__fixtures__/mistakes/**",
     ],
     overrides: [
         {

@@ -193,6 +193,18 @@ export function tuple(
     return { kind: "tuple", items, wrongLength, hasParts: items.some((each) => each.hasParts) };
 }
 
+const PATH = /^[A-Za-z][^\s.{}#]*(\.[^\s.{}#]+)+$/;
+
+/**
+ * A value of the wrong JSON shape. A string that reads as a token's path, such as `color.ink`, comes
+ * with the reference it was probably meant as.
+ */
+export function wrongShape(value: unknown): Problem {
+    return typeof value === "string" && PATH.test(value)
+        ? { reason: "wrong-shape", value, reference: `{${value}}` }
+        : { reason: "wrong-shape", value };
+}
+
 export function refuse(reason: ValueReason): Refusal {
     return (value) => ({ reason, value });
 }

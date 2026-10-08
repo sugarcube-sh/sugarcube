@@ -17,6 +17,8 @@ const tokenFolders = [
 
 const notTokenFiles = ["packages/core/tests/__fixtures__/tokens/validators/"];
 
+const mistakesTheCLIShows = ["packages/cli/tests/__fixtures__/mistakes/"];
+
 const readTogether = [
     [
         "packages/core/tests/__fixtures__/tokens/glob/a.json",
@@ -202,8 +204,8 @@ const expectedFailures: Expected[] = [
     },
     {
         project: "packages/core/tests/__fixtures__/resolver/invalid-structure.resolver.json",
-        why: "holds a group member that is not a token or a group, to test that it is refused",
-        matches: (d) => d.kind === "invalid-member",
+        why: "writes `value` for `$value`, to test that it is refused",
+        matches: (d) => d.kind === "misspelt-property",
     },
     {
         project: "packages/core/tests/__fixtures__/resolver/invalid-token.resolver.json",
@@ -232,8 +234,8 @@ const expectedFailures: Expected[] = [
     },
     {
         project: "packages/core/tests/__fixtures__/tokens/invalid-structure.json",
-        why: "holds a group member that is not a token or a group, to test that it is refused",
-        matches: (d) => d.kind === "invalid-member",
+        why: "writes `value` for `$value`, to test that it is refused",
+        matches: (d) => d.kind === "misspelt-property",
     },
     {
         project: "packages/core/tests/__fixtures__/tokens/invalid-token.json",
@@ -275,7 +277,12 @@ function jsonFilesIn(folder: string): string[] {
     return readdirSync(join(repo, folder), { recursive: true, withFileTypes: true })
         .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
         .map((entry) => relative(repo, join(entry.parentPath, entry.name)).replaceAll("\\", "/"))
-        .filter((file) => !notTokenFiles.some((prefix) => file.startsWith(prefix)))
+        .filter(
+            (file) =>
+                ![...notTokenFiles, ...mistakesTheCLIShows].some((prefix) =>
+                    file.startsWith(prefix),
+                ),
+        )
         .sort();
 }
 

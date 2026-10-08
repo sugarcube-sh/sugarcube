@@ -1,0 +1,14 @@
+{
+  "color": {
+    "$type": "color",
+    "ink": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [0, 0, 0]
+      }
+    },
+    "text": {
+      "$value": "color.ink"
+    }
+  }
+}

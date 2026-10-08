@@ -501,3 +501,10 @@ describe("a group referring to the whole document", () => {
         ]);
     });
 });
+
+describe("a member named like a property at the top of a file", () => {
+    it("is not taken for `$value`, since the top of a file is never a token", () => {
+        const doc = readFromMemory({ files: { "tokens.json": JSON.stringify({ value: "x" }) } });
+        expect(doc.diagnostics.map(({ kind }) => kind)).toStrictEqual(["invalid-member"]);
+    });
+});

@@ -1,4 +1,4 @@
-import { literal, no, object, ok, oneOf } from "./syntax.js";
+import { literal, no, object, ok, oneOf, wrongShape } from "./syntax.js";
 import type { DimensionValue, DurationValue } from "../index.js";
 
 /**
@@ -25,7 +25,7 @@ export function measure(units: readonly (DimensionValue["unit"] | DurationValue[
         object: object({ value: amount, unit }),
         other: (raw) => {
             const found = typeof raw === "string" ? STRING_WITH_UNIT.exec(raw) : null;
-            if (!found) return { reason: "wrong-shape", value: raw };
+            if (!found) return wrongShape(raw);
             const [value, number, suffix] = found;
             const known = units.find((each) => each === suffix);
             return {

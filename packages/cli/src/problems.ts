@@ -1,4 +1,5 @@
 import type { Reported } from "@sugarcube-sh/core";
+import type { Span } from "@sugarcube-sh/dtcg";
 import { join, relative } from "pathe";
 import color from "picocolors";
 import type { Built } from "./build.js";
@@ -70,7 +71,10 @@ export function problemLines(
         const available = width === undefined ? undefined : width - indent;
         const padding = " ".repeat(severityWidth - problem.severity.length);
         const head = `${place.padEnd(placeWidth)}  ${tint[problem.severity](problem.severity)}${padding}  `;
-        return wrapped(words, colors, available).map(
+        const related = (problem.related ?? []).map(
+            ({ message, at }) => `${placeOf(at, where).place}  ${colors.dim(message)}`,
+        );
+        return [...wrapped(words, colors, available), ...related].map(
             (line, index) => (index === 0 ? head : " ".repeat(indent)) + line,
         );
     });
@@ -86,12 +90,17 @@ export function problemCount(problems: Reported[]): string {
     return `${counted.join(" and ")}.`;
 }
 
-function placedIn(problem: Reported, { cwd, folder, configFile }: Where): Placed {
+function placedIn(problem: Reported, where: Where): Placed {
     const { at } = problem;
-    if (!at) return { problem, place: configFile ? relative(cwd, configFile) : "" };
-    const file = relative(cwd, join(folder, at.file));
-    const { line, column } = at.start;
-    return { problem, place: `${file}:${line}:${column}`, at: { file, line, column } };
+    if (at) return { problem, ...placeOf(at, where) };
+    const { cwd, configFile } = where;
+    return { problem, place: configFile ? relative(cwd, configFile) : "" };
+}
+
+function placeOf(span: Span, { cwd, folder }: Where): Pick<Placed, "place" | "at"> {
+    const file = relative(cwd, join(folder, span.file));
+    const { line, column } = span.start;
+    return { place: `${file}:${line}:${column}`, at: { file, line, column } };
 }
 
 function byPlace({ at: a }: Placed, { at: b }: Placed): number {

@@ -152,7 +152,11 @@ function becomeToken(
     const inside = (each: string) => pathBelow(each, path) !== undefined;
     if ([...merged.tokens.keys(), ...merged.groups.keys()].some(inside)) {
         diagnostics.push(
-            diagnostic("token-and-group", {}, { at: extending.at, path, permutation }),
+            diagnostic(
+                "token-and-group",
+                { reason: "ref", ref: extending.written },
+                { at: extending.at, path, permutation },
+            ),
         );
     }
     removeGroup(merged, path);

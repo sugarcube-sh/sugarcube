@@ -13,7 +13,11 @@ import { fontWeightKeywords } from "./keywords.js";
 /** The facts each reason carries, beside `type` and `reason`. */
 export interface ValueErrorFacts {
     /** The value is not the JSON its type is written as, such as a number for a dimension. */
-    "wrong-shape": { value: unknown };
+    "wrong-shape": {
+        value: unknown;
+        /** A string that reads as a token's path, written as the reference it was probably meant as. */
+        reference?: string;
+    };
     /** An object has a property its type does not define. */
     "unknown-property": { property: string };
     /** A `$ref` has other properties beside it: a JSON Pointer stands alone. */
@@ -191,8 +195,8 @@ function range(min: number, max: number | undefined, maxExclusive: boolean): str
 export const valueErrorMessages: {
     [R in ValueErrorCode]: (detail: DetailOf<R>) => string;
 } = {
-    "wrong-shape": ({ type, value }) =>
-        `${typeWords[type]} must be ${shapes[type]}, not ${found(value)}`,
+    "wrong-shape": ({ type, value, reference }) =>
+        `${typeWords[type]} must be ${shapes[type]}, not ${found(value)}${didYouMean(reference)}`,
     "unknown-property": ({ type, property }) =>
         `\`${property}\` is not a property of ${typeWords[type]}`,
     "pointer-not-alone": ({ type }) => `\`$ref\` is not a property of ${typeWords[type]}`,

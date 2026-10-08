@@ -26,6 +26,28 @@ describe("parseValue", () => {
         ]);
     });
 
+    it.for([
+        ["color", "color.ink"],
+        ["dimension", "space.sm"],
+        ["shadow", "shadow.raised"],
+        ["cubicBezier", "easing.out"],
+    ] as const)("suggests braces for a %s written as a path, %s", ([type, value]) => {
+        const read = parseValue(type, value, ["$value"]);
+        expect(read.ok ? [] : read.errors.map(({ detail }) => detail)).toEqual([
+            { type, reason: "wrong-shape", value, reference: `{${value}}` },
+        ]);
+    });
+
+    it.for(["red", "1.5", "16 px", ".ink", "color.", "#color.ink", "{color.ink"])(
+        "suggests nothing for %j, which does not read as a path",
+        (value) => {
+            const read = parseValue("color", value, ["$value"]);
+            expect(read.ok ? [] : read.errors.map(({ detail }) => detail)).toEqual([
+                { type: "color", reason: "wrong-shape", value },
+            ]);
+        },
+    );
+
     it("reads a literal value, when only literals are wanted", () => {
         expect(
             parseValue("dimension", { value: 1, unit: "rem" }, [], { references: false }),
