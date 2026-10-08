@@ -23,7 +23,13 @@ export function reloadingWith(source: StudioTokenSource): Plugin {
                 config.logger.warn(MISSING_SUGARCUBE_PLUGIN);
                 return;
             }
-            context.onReload(() => void source.reloadTokens());
+            context.onReload(() => {
+                source.reloadTokens().catch((error: unknown) => {
+                    config.logger.error(
+                        `[studio] ${error instanceof Error ? error.message : String(error)}`,
+                    );
+                });
+            });
         },
     };
 }

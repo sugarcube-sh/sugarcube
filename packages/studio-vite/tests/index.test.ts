@@ -24,12 +24,16 @@ function source() {
 
 function resolve(plugin: ReturnType<typeof reloadingWith>, plugins: unknown[]) {
     const warnings: string[] = [];
+    const errors: string[] = [];
     const config = {
         plugins,
-        logger: { warn: (message: string) => warnings.push(message) },
+        logger: {
+            warn: (message: string) => warnings.push(message),
+            error: (message: string) => errors.push(message),
+        },
     } as unknown as ResolvedConfig;
     (plugin.configResolved as (config: ResolvedConfig) => void)(config);
-    return warnings;
+    return { warnings, errors };
 }
 
 describe("Studio's tokens under Vite", () => {
@@ -38,7 +42,7 @@ describe("Studio's tokens under Vite", () => {
         const { source: studio, reloads } = source();
         const plugin = reloadingWith(studio);
 
-        const warnings = resolve(plugin, [
+        const { warnings } = resolve(plugin, [
             { name: "vite:something" },
             { name: SUGARCUBE_API_PLUGIN_NAME, api: { getContext: () => ctx } },
         ]);
@@ -49,10 +53,25 @@ describe("Studio's tokens under Vite", () => {
         expect(plugin.apply).toBe("serve");
     });
 
+    it("log a reload that fails, rather than leave it unhandled", async () => {
+        const { ctx, readAgain } = context();
+        const failing = {
+            reloadTokens: () => Promise.reject(new Error("nothing to show")),
+        } as never;
+
+        const { errors } = resolve(reloadingWith(failing), [
+            { name: SUGARCUBE_API_PLUGIN_NAME, api: { getContext: () => ctx } },
+        ]);
+        readAgain();
+        await new Promise((done) => setTimeout(done, 0));
+
+        expect(errors).toEqual(["[studio] nothing to show"]);
+    });
+
     it("say why they never reload when sugarcube's plugin is not there", () => {
         const { source: studio } = source();
 
-        const warnings = resolve(reloadingWith(studio), [{ name: "vite:something" }]);
+        const { warnings } = resolve(reloadingWith(studio), [{ name: "vite:something" }]);
 
         expect(warnings).toHaveLength(1);
         expect(warnings[0]).toContain("@sugarcube-sh/vite");
