@@ -10,7 +10,7 @@
   },
   "type": "module",
   "scripts": {
-    "build": "pnpm --filter='@sugarcube-sh/core' build && pnpm -r --filter='@sugarcube-sh/*' --filter='!@sugarcube-sh/core' build",
+    "build": "pnpm -r --filter='@sugarcube-sh/*' build",
     "build:clean": "pnpm clean && pnpm build",
     "ci:install": "pnpm install",
     "ci:version": "changeset version",
