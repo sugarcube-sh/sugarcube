@@ -1,7 +1,7 @@
-import type { Reported } from "@sugarcube-sh/core";
+import type { Reported } from "../src/types/diagnostics.js";
 import color from "picocolors";
 import { describe, expect, it } from "vitest";
-import { type Where, problemLines, problemCount } from "../src/problems.js";
+import { type Where, problemLines, problemCount } from "../src/shared/problems.js";
 
 const plain = color.createColors(false);
 

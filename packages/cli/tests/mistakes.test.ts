@@ -1,10 +1,9 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { fillDefaults } from "@sugarcube-sh/core";
+import { fillDefaults, problemCount, problemLines } from "@sugarcube-sh/core";
 import color from "picocolors";
 import { expect, it } from "vitest";
 import { build } from "../src/build.js";
-import { problemCount, problemLines } from "../src/problems.js";
 
 const MISTAKES = join(__dirname, "__fixtures__/mistakes");
 const plain = color.createColors(false);

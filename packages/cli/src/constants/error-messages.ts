@@ -1,5 +1,5 @@
+import { plural } from "@sugarcube-sh/core";
 import color from "picocolors";
-import { plural } from "../plural.js";
 import { COMMANDS } from "./commands.js";
 import { LINKS } from "./links.js";
 
