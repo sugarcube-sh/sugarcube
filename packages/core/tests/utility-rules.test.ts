@@ -354,6 +354,74 @@ describe("utilityRules", () => {
     });
 });
 
+describe("utilityRules' starts, the rules as data", () => {
+    const classes = { color: { source: "color.*", prefix: "text" } };
+
+    it("are the same for tokens that make the same classes, whatever their values", () => {
+        const before = ruled({ color: { ink: color("#111111") } }, classes).starts;
+        const after = ruled({ color: { ink: color("#222222") } }, classes).starts;
+        expect(after).toStrictEqual(before);
+    });
+
+    it("differ when a token makes a class no token made before", () => {
+        const before = ruled({ color: { ink: color() } }, classes).starts;
+        const after = ruled({ color: { ink: color(), paper: color() } }, classes).starts;
+        expect(after).not.toStrictEqual(before);
+    });
+
+    it("differ when a class writes another variable", () => {
+        const before = ruled({ color: { ink: color() } }, classes).starts;
+        const after = ruled({ color: { ink: color() } }, classes, { prefix: "ds" }).starts;
+        expect(after).not.toStrictEqual(before);
+    });
+
+    it("differ when a class sets another property", () => {
+        const tokens = { color: { ink: color() } };
+        const before = ruled(tokens, classes).starts;
+        const after = ruled(tokens, {
+            "background-color": { source: "color.*", prefix: "text" },
+        }).starts;
+        expect(after).not.toStrictEqual(before);
+    });
+
+    it("differ when a class strips its prefix, though every token's part is the same", () => {
+        const tokens = { color: { ink: color() } };
+        const before = ruled(tokens, classes).starts;
+        const after = ruled(tokens, {
+            color: { source: "color.*", prefix: "text", stripDuplicates: true },
+        }).starts;
+        expect(after).not.toStrictEqual(before);
+    });
+
+    it("make the rules: each class writes what its start's uses say", () => {
+        const tokens = { color: { ink: color(), text: { muted: color() } } };
+        const stripping = {
+            color: { source: "color.*", prefix: "text", stripDuplicates: true },
+        };
+        expect(cssFor(tokens, stripping, "text-text-muted")).toStrictEqual({
+            color: "var(--color-text-muted)",
+        });
+        expect(cssFor(tokens, stripping, "text-muted")).toStrictEqual({
+            color: "var(--color-text-muted)",
+        });
+        expect(ruled(tokens, stripping).starts).toStrictEqual([
+            {
+                start: "text",
+                uses: [
+                    {
+                        property: "color",
+                        strip: "text",
+                        names: new Map([
+                            ["ink", "--color-ink"],
+                            ["muted", "--color-text-muted"],
+                        ]),
+                    },
+                ],
+            },
+        ]);
+    });
+});
+
 describe("utilityRules' safelist", () => {
     const tokens = {
         color: { primary: color(), danger: color(), text: { muted: color() } },
