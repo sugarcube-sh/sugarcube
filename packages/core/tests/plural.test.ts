@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { plural } from "../src/plural.js";
+import { plural } from "../src/shared/plural.js";
 
 describe("plural", () => {
     it("drops the s only at one", () => {

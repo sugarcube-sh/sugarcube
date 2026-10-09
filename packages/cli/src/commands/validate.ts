@@ -9,7 +9,7 @@ import { CLIError } from "../cli-error.js";
 import { loadConfig } from "../config.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
-import { printProblems } from "../problems.js";
+import { printProblems, whereOf } from "../problems.js";
 import { intro, label, outro } from "../prompts/common.js";
 
 export const validate = new Command()
@@ -23,7 +23,7 @@ export const validate = new Command()
                 paths.length > 0
                     ? await builtFromPaths(paths)
                     : await build(await loadConfig(), { markup: false });
-            if (printProblems(built)) {
+            if (printProblems(built.diagnostics, whereOf(built))) {
                 process.exitCode = 1;
                 return;
             }
