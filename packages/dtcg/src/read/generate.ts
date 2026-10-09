@@ -145,11 +145,11 @@ function extensionOf(
     const at = group.extensionsAt?.[key];
     if (!at) return undefined;
     let value = group.extensions?.[key];
-    let node: Node | undefined = member(at.node, key, at.json.hidden);
+    let node: Node | undefined = member(at.node, key);
     for (const step of inside) {
         if (!isJsonObject(value) || !node) return undefined;
         value = value[step];
-        node = member(node, step, at.json.hidden);
+        node = member(node, step);
     }
     if (value === undefined || !node) return undefined;
     return { value, json: at.json, node, piece: at.piece };

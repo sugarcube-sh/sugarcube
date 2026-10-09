@@ -98,7 +98,7 @@ function ignoredToDiagnostic(token: MergedToken, ignored: IgnoredProperty): Diag
 
 function toDiagnostic(token: MergedToken, error: ValueError, permutation?: number): Diagnostic {
     const { json, value, path } = token;
-    const node = deepestNode(value, error.path.slice(1), json.hidden);
+    const node = deepestNode(value, error.path.slice(1));
     const at = spanOf(json.path, json.lineStarts, node.offset, node.length);
     const extra = { at, path, ...(permutation !== undefined && { permutation }) };
     return valueDiagnostic(error.detail, error.path, node, extra);

@@ -90,5 +90,5 @@ function openOnce(
         const related = [{ message: relatedMessages.alsoWrittenHere, at: at(first) }];
         diagnostics.push(diagnostic("duplicate-key", { key }, { at: at(last), related }));
     }
-    return { path, root, lineStarts: parsed.lineStarts, hidden: parsed.hidden };
+    return { path, root, lineStarts: parsed.lineStarts };
 }
