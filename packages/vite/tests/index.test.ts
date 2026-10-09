@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { stripVTControlCharacters } from "node:util";
 import { type Logger, type ViteDevServer, build, createServer } from "vite";
 import { afterEach, describe, expect, it } from "vitest";
 import sugarcube, { SUGARCUBE_API_PLUGIN_NAME, type SugarcubePluginContext } from "../src/index.js";
@@ -63,7 +64,7 @@ function config(variablesExtra: string) {
 
 function capturing(logged: string[]): Logger {
     const log = (message: string) => {
-        logged.push(message);
+        logged.push(stripVTControlCharacters(message));
     };
     return {
         info: log,
