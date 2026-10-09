@@ -1,54 +1,66 @@
-import type { InternalConfig } from "@sugarcube-sh/core";
-import { createCoalescedRunner, debounce, extractFileRefs } from "@sugarcube-sh/core";
+import type { Stats } from "node:fs";
+import { isDeepStrictEqual } from "node:util";
+import type { Document } from "@sugarcube-sh/dtcg";
+import type { LiveDocument, ReadEvent } from "@sugarcube-sh/dtcg/node";
 import { type FSWatcher, watch as chokidarWatch } from "chokidar";
+import { normalize } from "pathe";
 import { IGNORED_DIR_NAMES, MARKUP_EXTENSIONS } from "../constants/markup.js";
-import type { ChangeKind } from "./regenerate.js";
+
+export type Change =
+    | { kind: "config"; path: string }
+    | { kind: "token"; doc: Document; read: ReadEvent }
+    | { kind: "markup"; path: string };
+
+export interface Watched {
+    content?: string[];
+    markup: boolean;
+}
 
 export type WatchCallbacks = {
-    onRegenerate: (kind: ChangeKind, changedPath: string) => Promise<void>;
-    onError: (error: Error) => void;
-    onReady: (tokenFileCount: number) => void;
-    onWarning?: (message: string) => void;
+    onChange: (change: Change) => Promise<Watched>;
+    onError: (error: unknown) => void;
+    onWarning: (message: string) => void;
 };
 
-export type WatchOptions = {
-    markup?: boolean;
+export type QueueCallbacks = {
+    onChange: (change: Change) => Promise<void>;
+    onError: (error: unknown) => void;
 };
 
 export type WatcherHandle = {
     close: () => Promise<void>;
 };
 
-export type ChangeQueue = ((kind: ChangeKind, changedPath: string) => void) & {
+export type ChangeQueue = ((change: Change) => void) & {
     cancel: () => void;
 };
 
-export function createChangeQueue(
-    callbacks: Pick<WatchCallbacks, "onRegenerate" | "onError">,
-    wait = 100,
-): ChangeQueue {
-    const pending = new Map<ChangeKind, string>();
+const IN_ORDER: Change["kind"][] = ["config", "token", "markup"];
 
-    const drain = createCoalescedRunner(
-        async () => {
-            const token = pending.get("token");
-            const markup = pending.get("markup");
-            pending.clear();
-            if (token !== undefined) await callbacks.onRegenerate("token", token);
-            if (markup !== undefined) await callbacks.onRegenerate("markup", markup);
-        },
-        (error) => callbacks.onError(error instanceof Error ? error : new Error(String(error))),
-    );
-    const settled = debounce(() => drain(), wait);
+export function createChangeQueue({ onChange, onError }: QueueCallbacks): ChangeQueue {
+    const waiting = new Map<Change["kind"], Change>();
+    let running = false;
 
-    const queue = (kind: ChangeKind, changedPath: string) => {
-        pending.set(kind, changedPath);
-        settled();
+    const next = () => IN_ORDER.map((kind) => waiting.get(kind)).find(Boolean);
+
+    const drain = async () => {
+        running = true;
+        for (let change = next(); change; change = next()) {
+            waiting.delete(change.kind);
+            try {
+                await onChange(change);
+            } catch (error) {
+                onError(error);
+            }
+        }
+        running = false;
     };
-    queue.cancel = () => {
-        settled.cancel();
-        pending.clear();
+
+    const queue = (change: Change) => {
+        waiting.set(change.kind, change);
+        if (!running) void drain();
     };
+    queue.cancel = () => waiting.clear();
     return queue;
 }
 
@@ -73,33 +85,15 @@ export function resolveMarkupWatchTargets(content: string[] | undefined): string
     return [...new Set(dirs)];
 }
 
-const WRITE_SETTLE = {
-    ignoreInitial: true,
-    awaitWriteFinish: {
-        stabilityThreshold: 50,
-        pollInterval: 10,
-    },
-};
+const CHANGES_ONLY = { ignoreInitial: true };
 
-function watchMarkup(config: InternalConfig): FSWatcher {
-    return chokidarWatch(resolveMarkupWatchTargets(config.content), {
-        ...WRITE_SETTLE,
-        ignored: (path, stats) => {
-            const segments = path.split("/");
-            for (const segment of segments) {
-                if (IGNORED_DIR_NAMES.has(segment)) {
-                    return true;
-                }
-            }
+export function ignoredMarkup(path: string, stats?: Stats): boolean {
+    if (path.split(/[\\/]/).some((segment) => IGNORED_DIR_NAMES.has(segment))) return true;
+    return stats?.isFile() === true && !MARKUP_EXTENSIONS.has(getExtension(path));
+}
 
-            if (stats?.isFile()) {
-                const ext = getExtension(path);
-                return !MARKUP_EXTENSIONS.has(ext);
-            }
-
-            return false;
-        },
-    });
+export function isConfigFile(path: string, configFile: string | undefined): boolean {
+    return configFile !== undefined && normalize(path) === configFile;
 }
 
 function ready(watcher: FSWatcher): Promise<void> {
@@ -107,57 +101,70 @@ function ready(watcher: FSWatcher): Promise<void> {
 }
 
 export async function startWatcher(
-    config: InternalConfig,
+    live: LiveDocument,
+    configFile: string | undefined,
+    first: Watched,
     callbacks: WatchCallbacks,
-    options: WatchOptions = {},
 ): Promise<WatcherHandle> {
-    if (!config.resolver) {
-        throw new Error("Resolver path is required for watch mode");
-    }
+    let watched = first;
 
-    const { filePaths, resolverPath } = await extractFileRefs(config.resolver);
-
-    const tokenPaths = [resolverPath, ...filePaths];
-
-    const debouncedRegenerate = createChangeQueue(callbacks);
-
-    const tokenWatcher = chokidarWatch(tokenPaths, WRITE_SETTLE);
-    const markupWatcher = options.markup === false ? null : watchMarkup(config);
-
-    const handleTokenChange = (path: string) => {
-        debouncedRegenerate("token", path);
-    };
-    const handleMarkupChange = (path: string) => {
-        debouncedRegenerate("markup", path);
-    };
-
-    tokenWatcher.on("change", handleTokenChange);
-    tokenWatcher.on("add", handleTokenChange);
-    tokenWatcher.on("unlink", handleTokenChange);
-
-    if (markupWatcher) {
-        markupWatcher.on("change", handleMarkupChange);
-        markupWatcher.on("add", handleMarkupChange);
-        markupWatcher.on("unlink", handleMarkupChange);
-    }
-
-    await Promise.all([ready(tokenWatcher), markupWatcher ? ready(markupWatcher) : undefined]);
-
-    if (markupWatcher) {
-        const watchedCount = countWatchedFiles(markupWatcher.getWatched());
+    const startMarkup = async (content: string[] | undefined): Promise<FSWatcher> => {
+        const markup = chokidarWatch(resolveMarkupWatchTargets(content), {
+            ...CHANGES_ONLY,
+            ignored: ignoredMarkup,
+        });
+        const markupReady = ready(markup);
+        const onMarkup = (path: string) => queue({ kind: "markup", path });
+        markup.on("change", onMarkup);
+        markup.on("add", onMarkup);
+        markup.on("unlink", onMarkup);
+        markup.on("error", callbacks.onError);
+        await markupReady;
+        const watchedCount = countWatchedFiles(markup.getWatched());
         if (watchedCount > WATCH_TARGET_LIMIT) {
-            callbacks.onWarning?.(
+            callbacks.onWarning(
                 `Watching ${watchedCount} files for markup changes (limit: ${WATCH_TARGET_LIMIT}). This can make watch mode slow — set \`content\` in your config to narrow the directories that are scanned.`,
             );
         }
-    }
+        return markup;
+    };
+    const markupFor = ({ markup, content }: Watched) =>
+        markup ? startMarkup(content) : Promise.resolve(undefined);
 
-    callbacks.onReady(tokenPaths.length);
+    const update = async (next: Watched) => {
+        if (next.markup !== watched.markup || !isDeepStrictEqual(next.content, watched.content)) {
+            await (await markup)?.close();
+            markup = markupFor(next);
+            await markup;
+        }
+        watched = next;
+    };
+
+    const queue = createChangeQueue({
+        onChange: async (change) => update(await callbacks.onChange(change)),
+        onError: callbacks.onError,
+    });
+
+    const files = chokidarWatch(configFile === undefined ? [] : [configFile], CHANGES_ONLY);
+    const filesReady = ready(files);
+    const onFile = (path: string) => {
+        if (isConfigFile(path, configFile)) queue({ kind: "config", path });
+    };
+    files.on("change", onFile);
+    files.on("add", onFile);
+    files.on("unlink", onFile);
+    files.on("error", callbacks.onError);
+    live.watch(files);
+    const stopReading = live.onRead((doc, read) => queue({ kind: "token", doc, read }));
+    let markup = markupFor(watched);
+
+    await Promise.all([markup, filesReady]);
 
     return {
         close: async () => {
-            debouncedRegenerate.cancel();
-            await Promise.all([tokenWatcher.close(), markupWatcher?.close()]);
+            stopReading();
+            queue.cancel();
+            await Promise.all([files.close(), markup.then((watcher) => watcher?.close())]);
         },
     };
 }
