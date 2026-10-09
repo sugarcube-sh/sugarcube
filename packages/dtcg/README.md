@@ -9,7 +9,7 @@ Currently the API is types and stubs only. Every function throws "not implemente
 | Import from | Holds | Runs in |
 | --- | --- | --- |
 | `@sugarcube-sh/dtcg` | `read`, `readFromMemory`, the helpers, the export, and every type | anywhere |
-| `@sugarcube-sh/dtcg/node` | `read` from disk, and `findResolver` | Node, Deno, Bun |
+| `@sugarcube-sh/dtcg/node` | `read` from disk, `liveDocument` to keep one current with its files, and `findResolver` | Node, Deno, Bun |
 | `@sugarcube-sh/dtcg/values` | one parser per token type, and the spec's lists of units, keywords, color spaces and composite parts | anywhere |
 
 ## Some quick examples

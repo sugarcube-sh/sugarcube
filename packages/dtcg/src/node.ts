@@ -12,3 +12,10 @@ export function findResolver(
 }
 
 export { read } from "./node/read.js";
+export {
+    type DocumentSource,
+    type FileWatcher,
+    type LiveDocument,
+    type ReadEvent,
+    liveDocument,
+} from "./node/live-document.js";
