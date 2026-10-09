@@ -2,10 +2,11 @@ import { type InternalConfig, type LoadedConfig, writeCSSFiles } from "@sugarcub
 import { Command } from "commander";
 import color from "picocolors";
 import { type ConfigFlags, loadConfig } from "../config.js";
+import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
-import { printProblems } from "../problems.js";
+import { printProblems, whereOf } from "../problems.js";
 import { build } from "../build.js";
 import { type GenerateAllCSSOptions, createWatchSession } from "../watch/regenerate.js";
 import {
@@ -48,9 +49,9 @@ async function runOneTimeGeneration(loaded: LoadedConfig, options: GenerateFlags
         variablesOnly: options.variablesOnly,
         utilitiesOnly: options.utilitiesOnly,
     });
-    const failed = printProblems(built, {
+    const failed = printProblems(built.diagnostics, whereOf(built), {
         onlyErrors: options.silent,
-        whenFailed: "No CSS was written.",
+        whenFailed: ERROR_MESSAGES.NO_CSS_WRITTEN(),
     });
     if (failed) {
         process.exitCode = 1;

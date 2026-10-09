@@ -7,6 +7,7 @@ import {
     dependentsParents,
     findUnusedTokens,
     groupByContext,
+    plural,
 } from "@sugarcube-sh/core";
 import { Command } from "commander";
 import { relative } from "pathe";
@@ -34,7 +35,6 @@ import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import type { VarRef } from "../lint/scan-css.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
-import { plural } from "../plural.js";
 import { prepareTokens } from "../prepare-tokens.js";
 import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";

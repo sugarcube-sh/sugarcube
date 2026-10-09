@@ -1,4 +1,4 @@
-import type { InternalConfig } from "@sugarcube-sh/core";
+import { type InternalConfig, plural } from "@sugarcube-sh/core";
 import { Command, Option } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
@@ -8,7 +8,6 @@ import { type VarRef, findUndeclared } from "../lint/scan-css.js";
 import { type SyntaxResolver, createSyntaxResolver } from "../lint/syntaxes.js";
 import { getGeneratedVarNames } from "../lint/token-var-names.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
-import { plural } from "../plural.js";
 import { findUnreadStylesheets, scanProjectCSS } from "../scan-project.js";
 import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";

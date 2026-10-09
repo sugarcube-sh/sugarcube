@@ -1126,8 +1126,9 @@ export interface ReadOptions extends ParseOptions {
  * found.
  *
  * Every file path in the results, in `Document.files` and every `Span`, is relative to the entry's
- * folder, with forward slashes, such as `"themes/dark.json"`. The entry itself is its file name.
- * That name is passed as `file`, for keeping each text by the name the results use.
+ * folder, with forward slashes, such as `"themes/dark.json"`; one written from the root or as a
+ * URL stays as written. The entry itself is its file name. That name is passed as `file`, for
+ * keeping each text by the name the results use, and {@link filePath} turns it back into `path`.
  *
  * @example
  * const texts = new Map<string, string>();
@@ -1142,6 +1143,7 @@ export interface ReadOptions extends ParseOptions {
 export type ReadText = (path: string, file: string) => Promise<string>;
 
 export { read, readFromMemory } from "./read/read.js";
+export { filePath } from "./read/paths.js";
 
 /** One token across every permutation. */
 export interface TokenView {

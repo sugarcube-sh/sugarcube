@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { type ReadOptions, read, readFromMemory } from "../../src/index.js";
+import { type ReadOptions, filePath, read, readFromMemory } from "../../src/index.js";
 
 const valid = '{ "a": { "$type": "number", "$value": 1 } }';
 
@@ -243,6 +243,23 @@ describe("paths in a resolver", () => {
             ["https://cdn.example.com/tokens.json", "https://cdn.example.com/tokens.json"],
             ["C:/tokens/windows.json", "C:/tokens/windows.json"],
         ]);
+    });
+
+    it("gives back, through filePath, the path it asked for each file the Document names", async () => {
+        const asked: [string, string][] = [];
+        await read("tokens/design.resolver.json", {
+            readText: async (path, file) => {
+                asked.push([path, file]);
+                return path.endsWith(".resolver.json") ? resolver : valid;
+            },
+        });
+        expect(asked.map(([, file]) => filePath("tokens", file))).toStrictEqual(
+            asked.map(([path]) => path),
+        );
+    });
+
+    it("leaves a file named from the root as written", () => {
+        expect(filePath("/project/tokens", "/shared/brand.json")).toBe("/shared/brand.json");
     });
 });
 
