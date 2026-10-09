@@ -15,6 +15,13 @@ export type UtilityWithoutClassesReason =
 
 export type UtilityWithoutClasses = UtilityEntry & { source: string } & UtilityWithoutClassesReason;
 
+export type ConfigIssue =
+    | { reason: "not-loaded"; file: string; cause: string }
+    | { reason: "wrong-type"; setting: string; expected: string[]; received: string }
+    | { reason: "missing"; setting: string; property: string }
+    | { reason: "not-allowed"; setting: string; allowed: unknown[]; value: unknown }
+    | { reason: "invalid"; setting: string; message: string };
+
 export interface SugarcubeDiagnosticDetailByKind {
     "default-required": { modifiers: string[] };
     "fluid-text-zoom": { from: number; to: number };
@@ -25,6 +32,7 @@ export interface SugarcubeDiagnosticDetailByKind {
     "same-utility-class": { className: string; paths: [string, string] };
     "utility-without-classes": UtilityWithoutClasses;
     "safelist-without-token": UtilityEntry & { part: string };
+    "invalid-config": ConfigIssue;
 }
 
 export type SugarcubeDiagnosticKind = keyof SugarcubeDiagnosticDetailByKind;
