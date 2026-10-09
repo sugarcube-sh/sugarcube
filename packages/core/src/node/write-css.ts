@@ -26,7 +26,3 @@ export async function writeCSSFiles(output: CSSFileOutput): Promise<CSSFileOutpu
 
     return output;
 }
-
-export const writeCSSVariablesToDisk = writeCSSFiles;
-
-export const writeCSSUtilitiesToDisk = writeCSSFiles;
