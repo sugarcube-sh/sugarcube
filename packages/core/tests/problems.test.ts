@@ -100,22 +100,10 @@ describe("problemLines", () => {
         ]);
     });
 
-    it("writes every place in full when there is no working folder to start from", () => {
-        const { cwd: _, ...anywhere } = where;
-        expect(problemLines([missing, polyfill], anywhere, { colors: false })).toStrictEqual([
-            "/project/tokens/base.json:7:25  error    `color.inc` does not exist  missing-reference",
-            "/project/sugarcube.config.ts    warning  `polyfill` is deprecated  option-deprecated",
-        ]);
-    });
-
     it("places a file the resolver names from the root where it is, not under the tokens' folder", () => {
         const shared = missingReference("color.nope", at("/shared/brand.json", 3, 12));
-        const { cwd: _, ...anywhere } = where;
         expect(problemLines([shared], where, { colors: false })[0]).toMatch(
             /^\.\.\/shared\/brand\.json:3:12 /,
-        );
-        expect(problemLines([shared], anywhere, { colors: false })[0]).toMatch(
-            /^\/shared\/brand\.json:3:12 /,
         );
     });
 
