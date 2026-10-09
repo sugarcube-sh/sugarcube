@@ -1,9 +1,9 @@
 import type { Node } from "jsonc-parser";
 import type { DiagnosticDetailByKind } from "../index.js";
+import { child } from "./json.js";
 
 export type Followed = { ok: true; node: Node } | { ok: false; step: number };
 
-const arrayIndex = /^(?:0|[1-9]\d*)$/;
 const badEscape = /~(?![01])/;
 const badEscapes = new RegExp(badEscape.source, "g");
 
@@ -51,19 +51,6 @@ export function follow(root: Node, steps: string[]): Followed {
         node = next;
     }
     return { ok: true, node };
-}
-
-function child(node: Node, step: string): Node | undefined {
-    if (node.type === "array") {
-        return arrayIndex.test(step) ? node.children?.[Number(step)] : undefined;
-    }
-    if (node.type !== "object") return undefined;
-
-    let found: Node | undefined;
-    for (const property of node.children ?? []) {
-        if (property.children?.[0]?.value === step) found = property.children[1];
-    }
-    return found;
 }
 
 export function encodePointer(steps: (string | number)[]): string {

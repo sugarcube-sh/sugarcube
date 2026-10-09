@@ -5,7 +5,6 @@ export interface JsonFile {
     path: string;
     root: Node;
     lineStarts: number[];
-    hidden: Set<Node>;
 }
 
 export interface JsonProblem {
@@ -20,10 +19,15 @@ export interface DuplicateKey {
     last: Node;
 }
 
+export interface Member {
+    key: string;
+    keyNode: Node;
+    value: Node;
+}
+
 export interface ParsedJson {
     root: Node | undefined;
     lineStarts: number[];
-    hidden: Set<Node>;
     comments: JsonProblem[];
     syntax?: JsonProblem;
     duplicates: DuplicateKey[];
@@ -67,65 +71,58 @@ export function parseJson(text: string): ParsedJson {
     if (!root) syntax ??= { reason: "value-expected", offset: 0, length: 0 };
 
     const duplicates: DuplicateKey[] = [];
-    const hidden = new Set<Node>();
-    if (root) findDuplicates(root, duplicates, hidden);
-    return { root, lineStarts, hidden, comments, syntax, duplicates };
+    if (root) collectMembers(root, duplicates);
+    return { root, lineStarts, comments, syntax, duplicates };
 }
 
-function findDuplicates(node: Node, duplicates: DuplicateKey[], hidden: Set<Node>): void {
-    if (node.type === "object") {
-        const seen = new Map<string, { property: Node; keyNode: Node }>();
-        for (const property of node.children ?? []) {
-            const [keyNode] = property.children ?? [];
-            if (!keyNode) continue;
-            const key = String(keyNode.value);
-            const earlier = seen.get(key);
-            if (earlier) {
-                const { keyNode: first } = earlier;
-                duplicates.push({ key, first, last: keyNode });
-                hidden.add(earlier.property);
-            }
-            seen.set(key, { property, keyNode });
-        }
-    }
-    for (const child of node.children ?? []) {
-        if (!hidden.has(child)) findDuplicates(child, duplicates, hidden);
-    }
-}
+const membersOf = new WeakMap<Node, Member[]>();
 
-export function members(
-    node: Node,
-    hidden: Set<Node>,
-): { key: string; keyNode: Node; value: Node }[] {
-    if (node.type !== "object") return [];
-    const found: { key: string; keyNode: Node; value: Node }[] = [];
+function collectMembers(node: Node, duplicates: DuplicateKey[]): void {
+    if (node.type === "array") {
+        for (const child of node.children ?? []) collectMembers(child, duplicates);
+        return;
+    }
+    if (node.type !== "object") return;
+    const byKey = new Map<string, Member>();
     for (const property of node.children ?? []) {
         const [keyNode, value] = property.children ?? [];
-        if (hidden.has(property) || !keyNode || !value) continue;
-        found.push({ key: String(keyNode.value), keyNode, value });
+        if (!keyNode || !value) continue;
+        const key = String(keyNode.value);
+        const earlier = byKey.get(key);
+        if (earlier) {
+            duplicates.push({ key, first: earlier.keyNode, last: keyNode });
+            byKey.delete(key);
+        }
+        byKey.set(key, { key, keyNode, value });
     }
-    return found;
+    const found = [...byKey.values()];
+    membersOf.set(node, found);
+    for (const { value } of found) collectMembers(value, duplicates);
 }
 
-export function propertyKey(
-    node: Node,
-    steps: (string | number)[],
-    hidden: Set<Node>,
-): Node | undefined {
+export function members(node: Node): readonly Member[] {
+    return membersOf.get(node) ?? [];
+}
+
+export function propertyKey(node: Node, steps: (string | number)[]): Node | undefined {
     const name = steps.at(-1);
     let current: Node | undefined = node;
     for (const step of steps.slice(0, -1)) {
-        current =
-            current.type === "array"
-                ? current.children?.[Number(step)]
-                : member(current, String(step), hidden);
+        current = child(current, step);
         if (!current) return undefined;
     }
-    return members(current, hidden).find(({ key }) => key === name)?.keyNode;
+    return members(current).find(({ key }) => key === name)?.keyNode;
 }
 
-export function member(node: Node, key: string, hidden: Set<Node>): Node | undefined {
-    return members(node, hidden).find((each) => each.key === key)?.value;
+export function member(node: Node, key: string): Node | undefined {
+    return members(node).find((each) => each.key === key)?.value;
+}
+
+const arrayIndex = /^(?:0|[1-9]\d*)$/;
+
+export function child(node: Node, step: string | number): Node | undefined {
+    if (node.type !== "array") return member(node, String(step));
+    return arrayIndex.test(String(step)) ? node.children?.[Number(step)] : undefined;
 }
 
 function findLineStarts(text: string): number[] {
@@ -159,26 +156,20 @@ function position(lineStarts: number[], offset: number): { line: number; column:
     return { line: low + 1, column: offset - (lineStarts[low] ?? 0) + 1 };
 }
 
-export function plainObject(node: Node, hidden: Set<Node>): Record<string, unknown> {
-    return Object.fromEntries(
-        members(node, hidden).map(({ key, value }) => [key, plainValue(value, hidden)]),
-    );
+export function plainObject(node: Node): Record<string, unknown> {
+    return Object.fromEntries(members(node).map(({ key, value }) => [key, plainValue(value)]));
 }
 
-export function plainValue(node: Node, hidden: Set<Node>): unknown {
-    if (node.type === "object") return plainObject(node, hidden);
-    if (node.type === "array")
-        return (node.children ?? []).map((child) => plainValue(child, hidden));
+export function plainValue(node: Node): unknown {
+    if (node.type === "object") return plainObject(node);
+    if (node.type === "array") return (node.children ?? []).map(plainValue);
     return node.value;
 }
 
-export function deepestNode(node: Node, steps: (string | number)[], hidden: Set<Node>): Node {
+export function deepestNode(node: Node, steps: (string | number)[]): Node {
     let current = node;
     for (const step of steps) {
-        const next =
-            current.type === "array"
-                ? current.children?.[Number(step)]
-                : member(current, String(step), hidden);
+        const next = child(current, step);
         if (!next) break;
         current = next;
     }

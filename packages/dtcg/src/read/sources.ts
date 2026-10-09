@@ -1,7 +1,7 @@
 import type { Node } from "jsonc-parser";
 import type { Diagnostic, JsonPath } from "../index.js";
 import { type Files, openFile, parseFile } from "./files.js";
-import { type JsonFile, spanOf } from "./json.js";
+import { type JsonFile, member, members, spanOf } from "./json.js";
 import { malformedPointer } from "./malformed-pointer.js";
 import { folderOf, join } from "./paths.js";
 import { encodePointer, follow, parsePointer, readPointerText } from "./pointer.js";
@@ -187,7 +187,7 @@ function followSource(
     pointedFrom: SourceNode[] = [],
 ): SourceEntry[] {
     const { reader, root, sets } = expander;
-    const refNode = reader.get(source.node, "$ref");
+    const refNode = member(source.node, "$ref");
     if (!refNode) return [{ kind: "inline", node: source.node, path: source.path, holder }];
 
     const at = [...source.path, "$ref"];
@@ -215,7 +215,7 @@ function followSource(
             path: source.path,
             holder,
         };
-        return withOverrides(reader, [entry], overriding, holder);
+        return withOverrides([entry], overriding, holder);
     }
 
     const read = readPointerText(ref);
@@ -244,7 +244,7 @@ function followSource(
             return [];
         }
         for (const each of overriding) reader.checkKeys(each, "set", ["$ref", ...SET_KEYS]);
-        const set = overriding.some((each) => keysBeside(reader, each).length > 0)
+        const set = overriding.some((each) => keysBeside(each).length > 0)
             ? Object.assign({ ...target }, ...overriding.map((each) => readSetParts(reader, each)))
             : target;
         return expandList(expander, set.sources, set, [...seen, ref]);
@@ -257,28 +257,26 @@ function followSource(
     }
     if (!reader.expect(followed.node, "object", ref, at)) return [];
     const target = { node: followed.node, path: steps };
-    if (reader.get(target.node, "$ref")) {
+    if (member(target.node, "$ref")) {
         return followSource(expander, target, holder, [...seen, ref], overriding);
     }
     const entries = expandSource(expander, target, holder, [...seen, ref]);
-    return withOverrides(reader, entries, overriding, holder);
+    return withOverrides(entries, overriding, holder);
 }
 
-function keysBeside(reader: Reader, source: SourceNode): string[] {
-    return reader
-        .entries(source.node)
+function keysBeside(source: SourceNode): string[] {
+    return members(source.node)
         .map(({ key }) => key)
         .filter((key) => key !== "$ref");
 }
 
 function withOverrides(
-    reader: Reader,
     entries: SourceEntry[],
     overriding: SourceNode[],
     holder: SetDefinition | undefined,
 ): SourceEntry[] {
     return overriding.reduce(
-        (inner, source) => withOverride(inner, source, holder, keysBeside(reader, source)),
+        (inner, source) => withOverride(inner, source, holder, keysBeside(source)),
         entries,
     );
 }
