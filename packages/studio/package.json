@@ -43,7 +43,7 @@
   "dependencies": {
     "@sugarcube-sh/core": "workspace:*",
     "culori": "^4.0.2",
-    "devframe": "^1.0.0",
+    "devframe": "^1.1.0",
     "hdr-color-input": "0.4.2",
     "jsonc-parser": "^3.3.1",
     "radix-ui": "^1.6.7"

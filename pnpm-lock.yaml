@@ -328,8 +328,8 @@ importers:
         specifier: ^4.0.2
         version: 4.0.2
       devframe:
-        specifier: ^1.0.0
-        version: 1.0.0(cac@7.0.0)(srvx@1.0.5)
+        specifier: ^1.1.0
+        version: 1.1.0(cac@7.0.0)(srvx@1.0.5)
       hdr-color-input:
         specifier: 0.4.2
         version: 0.4.2
@@ -342,7 +342,7 @@ importers:
     devDependencies:
       '@devframes/vite':
         specifier: ^1.0.0
-        version: 1.0.0(@devframes/hub-ui@1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 1.0.0(@devframes/hub-ui@1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       '@sugarcube-sh/cli':
         specifier: workspace:*
         version: link:../cli
@@ -399,16 +399,16 @@ importers:
     dependencies:
       '@devframes/hub':
         specifier: ^1.0.0
-        version: 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
+        version: 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5))
       '@devframes/hub-ui':
         specifier: ^1.0.0
-        version: 1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
+        version: 1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5))
       '@sugarcube-sh/studio':
         specifier: workspace:*
         version: link:../studio
       devframe:
-        specifier: ^1.0.0
-        version: 1.0.0(cac@7.0.0)(srvx@1.0.5)
+        specifier: ^1.1.0
+        version: 1.1.0(cac@7.0.0)(srvx@1.0.5)
     devDependencies:
       '@sugarcube-sh/core':
         specifier: workspace:*
@@ -424,13 +424,13 @@ importers:
     dependencies:
       '@devframes/hub':
         specifier: ^1.0.0
-        version: 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
+        version: 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5))
       '@devframes/hub-ui':
         specifier: ^1.0.0
-        version: 1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
+        version: 1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5))
       '@devframes/vite':
         specifier: ^1.0.0
-        version: 1.0.0(@devframes/hub-ui@1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 1.0.0(@devframes/hub-ui@1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
       '@sugarcube-sh/studio':
         specifier: workspace:*
         version: link:../studio
@@ -438,8 +438,8 @@ importers:
         specifier: workspace:*
         version: link:../vite
       devframe:
-        specifier: ^1.0.0
-        version: 1.0.0(cac@7.0.0)(srvx@1.0.5)
+        specifier: ^1.1.0
+        version: 1.1.0(cac@7.0.0)(srvx@1.0.5)
       vite:
         specifier: 8.3.0
         version: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
@@ -3744,8 +3744,8 @@ packages:
   boolbase@1.0.0:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
 
-  brace-expansion@5.0.9:
-    resolution: {integrity: sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==}
+  brace-expansion@5.0.12:
+    resolution: {integrity: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==}
     engines: {node: 20 || >=22}
 
   braces@3.0.3:
@@ -3985,11 +3985,11 @@ packages:
   devalue@5.8.1:
     resolution: {integrity: sha512-4CXDYRBGqN+57wVJkuXBYmpAVUSg3L6JAQa/DFqm238G73E1wuyc/JhGQJzN7vUf/CMphYau2zXbfWzDR5aTEw==}
 
-  devframe@1.0.0:
-    resolution: {integrity: sha512-u4eeDBJ8Cxd3n19o/cT6SQcoEgASzL9dL51IkYpIDriTNDmR7WBv+o+dufQmabir10KcozoRZqgwvDi/riASAQ==}
+  devframe@1.1.0:
+    resolution: {integrity: sha512-pvp42kOkiEr32Msqngb3mW9AQFHwOxNMn8MYNO/TBkJhyeykbDUWHwiZVubRYnasmZeqT4MLYGF9AHjHIkmDnA==}
     hasBin: true
     peerDependencies:
-      '@devframes/agentic': 1.0.0
+      '@devframes/agentic': 1.1.0
       cac: ^7.0.0
     peerDependenciesMeta:
       '@devframes/agentic':
@@ -6846,15 +6846,15 @@ snapshots:
 
   '@ctrl/tinycolor@4.2.0': {}
 
-  '@devframes/hub-ui@1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))':
+  '@devframes/hub-ui@1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5))':
     dependencies:
-      '@devframes/hub': 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
-      devframe: 1.0.0(cac@7.0.0)(srvx@1.0.5)
+      '@devframes/hub': 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5))
+      devframe: 1.1.0(cac@7.0.0)(srvx@1.0.5)
 
-  '@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))':
+  '@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5))':
     dependencies:
       destr: 2.0.5
-      devframe: 1.0.0(cac@7.0.0)(srvx@1.0.5)
+      devframe: 1.1.0(cac@7.0.0)(srvx@1.0.5)
       h3: 2.0.1-rc.32(crossws@0.4.12(srvx@1.0.5))
       pathe: 2.0.3
       tinyexec: 1.3.1
@@ -6863,13 +6863,13 @@ snapshots:
       - crossws
       - ocache
 
-  '@devframes/vite@1.0.0(@devframes/hub-ui@1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))':
+  '@devframes/vite@1.0.0(@devframes/hub-ui@1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5))(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))':
     dependencies:
-      devframe: 1.0.0(cac@7.0.0)(srvx@1.0.5)
+      devframe: 1.1.0(cac@7.0.0)(srvx@1.0.5)
       pathe: 2.0.3
     optionalDependencies:
-      '@devframes/hub': 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
-      '@devframes/hub-ui': 1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.0.0(cac@7.0.0)(srvx@1.0.5))
+      '@devframes/hub': 1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5))
+      '@devframes/hub-ui': 1.0.0(@devframes/hub@1.0.0(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5)))(devframe@1.1.0(cac@7.0.0)(srvx@1.0.5))
       vite: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
 
   '@emnapi/core@1.11.1':
@@ -8921,7 +8921,7 @@ snapshots:
       '@unocss/config': 66.10.5
       '@unocss/core': 66.10.5
       '@unocss/rule-utils': 66.10.5
-      devframe: 1.0.0(cac@7.0.0)(srvx@1.0.5)
+      devframe: 1.1.0(cac@7.0.0)(srvx@1.0.5)
       tinyglobby: 0.2.17
       unplugin-utils: 0.3.2
     transitivePeerDependencies:
@@ -9302,7 +9302,7 @@ snapshots:
 
   boolbase@1.0.0: {}
 
-  brace-expansion@5.0.9:
+  brace-expansion@5.0.12:
     dependencies:
       balanced-match: 4.0.4
 
@@ -9496,7 +9496,7 @@ snapshots:
 
   devalue@5.8.1: {}
 
-  devframe@1.0.0(cac@7.0.0)(srvx@1.0.5):
+  devframe@1.1.0(cac@7.0.0)(srvx@1.0.5):
     dependencies:
       crossws: 0.4.12(srvx@1.0.5)
       h3: 2.0.1-rc.32(crossws@0.4.12(srvx@1.0.5))
@@ -11010,7 +11010,7 @@ snapshots:
 
   minimatch@10.2.6:
     dependencies:
-      brace-expansion: 5.0.9
+      brace-expansion: 5.0.12
 
   minimist@1.2.8: {}
 
