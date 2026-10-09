@@ -162,6 +162,30 @@ describe("a source that cannot load", () => {
         expect(mostAtOnce).toBe(1);
         expect(loads).toBeLessThanOrEqual(3);
     });
+
+    it("waits for the first load before a reload, so the newer one is kept", async () => {
+        let inFlight = 0;
+        let mostAtOnce = 0;
+        let loads = 0;
+        const source = createNodeTokenSource({
+            loadConfig: async () => {
+                loads += 1;
+                const first = loads === 1;
+                inFlight += 1;
+                mostAtOnce = Math.max(mostAtOnce, inFlight);
+                await new Promise((resolve) => setTimeout(resolve, first ? 30 : 1));
+                inFlight -= 1;
+                const prefix = first ? "first" : "newer";
+                return { resolver: demoResolver, variables: { prefix } } as InternalConfig;
+            },
+        });
+
+        await source.reloadTokens();
+        await source.ready;
+
+        expect(mostAtOnce).toBe(1);
+        expect(source.config?.variables.prefix).toBe("newer");
+    });
 });
 
 describe("defineStudio on a filesystem source", () => {

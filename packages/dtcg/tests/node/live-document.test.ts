@@ -102,7 +102,7 @@ describe("a Document kept current with its files", () => {
         expect(reads.map(({ event }) => event.file)).toStrictEqual(["base.json", "base.json"]);
     });
 
-    it("collapses saves during a read into exactly one more read", async () => {
+    it("collapses saves during a read into exactly one more read, the one listeners hear", async () => {
         const entry = await project();
         const {
             live: doc,
@@ -117,11 +117,37 @@ describe("a Document kept current with its files", () => {
         await doc.document();
 
         save("base.json");
-        await vi.waitFor(() => expect(reads).toHaveLength(2));
+        await vi.waitFor(() => expect(reads).toHaveLength(1));
         await doc.document();
 
-        expect(reads).toHaveLength(2);
-        expect(reads.map(({ event }) => event.file)).toStrictEqual(["base.json", "base.json"]);
+        expect(reads).toHaveLength(1);
+        expect(reads.map(({ event }) => event.file)).toStrictEqual(["base.json"]);
+    });
+
+    it("tells listeners of a read only when no read waiting to start has replaced it", async () => {
+        const entry = await project();
+        let hexStringColors = false;
+        const {
+            live: doc,
+            reads,
+            save,
+        } = live(
+            () => ({ entry, options: { hexStringColors } }),
+            (read) => {
+                if (read !== 1) return;
+                hexStringColors = true;
+                void doc.reread();
+            },
+        );
+        await doc.document();
+
+        save("base.json");
+        await vi.waitFor(() => expect(reads).toHaveLength(1));
+        await doc.document();
+
+        expect(reads).toHaveLength(1);
+        expect(reads[0]?.doc.diagnostics).toStrictEqual([]);
+        expect(reads[0]?.event.file).toBeUndefined();
     });
 
     it("waits for a read waiting to start before answering with the Document", async () => {
@@ -141,7 +167,8 @@ describe("a Document kept current with its files", () => {
         save("base.json");
         await vi.waitFor(() => expect(answer).toBeDefined());
 
-        expect(await answer).toBe(reads[1]?.doc);
+        expect(await answer).toBe(reads[0]?.doc);
+        expect(reads).toHaveLength(1);
     });
 
     it("reads again when a file a read gains was saved during that read", async () => {
@@ -158,12 +185,10 @@ describe("a Document kept current with its files", () => {
         await resolver(["base.json", "more.json"]);
         save("tokens.resolver.json");
 
-        await vi.waitFor(() => expect(reads).toHaveLength(2));
-        expect(reads.map(({ event }) => event.file)).toStrictEqual([
-            "tokens.resolver.json",
-            "more.json",
-        ]);
-        expect(reads[1]?.doc.files).toContain("more.json");
+        await vi.waitFor(() => expect(reads).toHaveLength(1));
+        await doc.document();
+        expect(reads.map(({ event }) => event.file)).toStrictEqual(["more.json"]);
+        expect(reads[0]?.doc.files).toContain("more.json");
     });
 
     it("does not read again for a file the Document never listed", async () => {
@@ -317,11 +342,11 @@ describe("a Document kept current with its files", () => {
         );
 
         hexStringColors = true;
-        const next = await doc.reread();
+        await expect(doc.reread()).resolves.toBeUndefined();
+        const next = await doc.document();
 
         expect(asked).toBe(2);
         expect(next.diagnostics).toStrictEqual([]);
-        expect(await doc.document()).toBe(next);
         expect(reads.map(({ doc: read }) => read)).toStrictEqual([next]);
     });
 
@@ -386,6 +411,11 @@ describe("a Document kept current with its files", () => {
 
             expect(errors).toStrictEqual([failure]);
             expect(reads).toHaveLength(0);
+            expect(unhandled).toStrictEqual([]);
+
+            await expect(doc.reread()).resolves.toBeUndefined();
+            await new Promise((settled) => setTimeout(settled, 10));
+            expect(errors).toStrictEqual([failure, failure]);
             expect(unhandled).toStrictEqual([]);
 
             fail = false;

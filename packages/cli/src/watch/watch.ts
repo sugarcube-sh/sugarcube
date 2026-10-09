@@ -61,7 +61,7 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
             fromConfig = configProblems(error);
             return last;
         }
-        await live.reread().catch(() => undefined);
+        await live.reread();
         return undefined;
     };
 
