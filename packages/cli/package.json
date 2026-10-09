@@ -79,7 +79,7 @@
     "@sugarcube-sh/dtcg": "workspace:*",
     "cross-env": "7.0.3",
     "pkgroll": "^2.28.1",
-    "tsx": "^4.23.13"
+    "tsx": "^4.23.15"
   },
   "engines": {
     "node": ">=20.19.0"
