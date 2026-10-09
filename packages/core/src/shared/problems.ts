@@ -7,7 +7,7 @@ import { plural } from "./plural.js";
 type Colors = ReturnType<typeof color.createColors>;
 
 export interface Where {
-    cwd?: string;
+    cwd: string;
     folder: string;
     labels: string[];
     configFile?: string;
@@ -93,17 +93,13 @@ function placedIn(problem: Reported, where: Where): Placed {
     const { at } = problem;
     if (at) return { problem, ...placeOf(at, where) };
     const { cwd, configFile } = where;
-    return { problem, place: configFile ? shown(configFile, cwd) : "" };
+    return { problem, place: configFile ? relative(cwd, configFile) : "" };
 }
 
 function placeOf(span: Span, { cwd, folder }: Where): Pick<Placed, "place" | "at"> {
-    const file = shown(filePath(folder, span.file), cwd);
+    const file = relative(cwd, filePath(folder, span.file));
     const { line, column } = span.start;
     return { place: `${file}:${line}:${column}`, at: { file, line, column } };
-}
-
-function shown(path: string, cwd: string | undefined): string {
-    return cwd === undefined ? path : relative(cwd, path);
 }
 
 function byPlace({ at: a }: Placed, { at: b }: Placed): number {

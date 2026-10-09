@@ -1,5 +1,6 @@
 import type { Stats } from "node:fs";
 import { isDeepStrictEqual } from "node:util";
+import { createChangeQueue } from "@sugarcube-sh/core";
 import type { Document } from "@sugarcube-sh/dtcg";
 import type { LiveDocument, ReadEvent } from "@sugarcube-sh/dtcg/node";
 import { type FSWatcher, watch as chokidarWatch } from "chokidar";
@@ -22,47 +23,11 @@ export type WatchCallbacks = {
     onWarning: (message: string) => void;
 };
 
-export type QueueCallbacks = {
-    onChange: (change: Change) => Promise<void>;
-    onError: (error: unknown) => void;
-};
-
 export type WatcherHandle = {
     close: () => Promise<void>;
 };
 
-export type ChangeQueue = ((change: Change) => void) & {
-    cancel: () => void;
-};
-
 const IN_ORDER: Change["kind"][] = ["config", "token", "markup"];
-
-export function createChangeQueue({ onChange, onError }: QueueCallbacks): ChangeQueue {
-    const waiting = new Map<Change["kind"], Change>();
-    let running = false;
-
-    const next = () => IN_ORDER.map((kind) => waiting.get(kind)).find(Boolean);
-
-    const drain = async () => {
-        running = true;
-        for (let change = next(); change; change = next()) {
-            waiting.delete(change.kind);
-            try {
-                await onChange(change);
-            } catch (error) {
-                onError(error);
-            }
-        }
-        running = false;
-    };
-
-    const queue = (change: Change) => {
-        waiting.set(change.kind, change);
-        if (!running) void drain();
-    };
-    queue.cancel = () => waiting.clear();
-    return queue;
-}
 
 // Mirrors scan-markup's MAX_FILES
 const WATCH_TARGET_LIMIT = 10_000;
@@ -140,7 +105,7 @@ export async function startWatcher(
         watched = next;
     };
 
-    const queue = createChangeQueue({
+    const queue = createChangeQueue<Change>(IN_ORDER, {
         onChange: async (change) => update(await callbacks.onChange(change)),
         onError: callbacks.onError,
     });

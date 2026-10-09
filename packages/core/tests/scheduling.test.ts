@@ -1,181 +1,159 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { createCoalescedRunner, debounce } from "../src/shared/scheduling.js";
+import { describe, expect, it } from "vitest";
+import { createChangeQueue } from "../src/shared/scheduling.js";
 
-function deferred<T = void>() {
-    let resolve!: (value: T) => void;
-    let reject!: (reason?: unknown) => void;
-    const promise = new Promise<T>((res, rej) => {
-        resolve = res;
-        reject = rej;
-    });
-    return { promise, resolve, reject };
+type Change = { kind: "config" | "token" | "markup"; name: string };
+
+const IN_ORDER: Change["kind"][] = ["config", "token", "markup"];
+const config = (name: string): Change => ({ kind: "config", name });
+const markup = (name: string): Change => ({ kind: "markup", name });
+const token = (name: string): Change => ({ kind: "token", name });
+
+const named = (change: Change) => change.name;
+
+function recorder() {
+    const runs: Array<[Change["kind"], string]> = [];
+    let release: (() => void) | null = null;
+    return {
+        runs,
+        callbacks: {
+            onChange: async (change: Change) => {
+                runs.push([change.kind, named(change)]);
+                if (release === null) return;
+                await new Promise<void>((resolve) => {
+                    release = resolve;
+                });
+            },
+            onError: () => {},
+        },
+        holdNextRun: () => {
+            release = () => {};
+        },
+        releaseRun: () => {
+            const done = release;
+            release = null;
+            done?.();
+        },
+    };
 }
 
-describe("debounce", () => {
-    afterEach(() => vi.useRealTimers());
+const settle = async () => {
+    for (let i = 0; i < 20; i++) await Promise.resolve();
+};
 
-    it("collapses a burst of calls into a single trailing invocation", () => {
-        vi.useFakeTimers();
-        const fn = vi.fn();
-        const d = debounce(fn, 100);
+describe("a queue of changes run one at a time", () => {
+    it("starts a run at once, without waiting", async () => {
+        const r = recorder();
+        const queue = createChangeQueue(IN_ORDER, r.callbacks);
 
-        d();
-        d();
-        d();
-        expect(fn).not.toHaveBeenCalled();
+        queue(token("color.json"));
+        await settle();
 
-        vi.advanceTimersByTime(100);
-        expect(fn).toHaveBeenCalledTimes(1);
+        expect(r.runs).toEqual([["token", "color.json"]]);
     });
 
-    it("resets the timer on each call", () => {
-        vi.useFakeTimers();
-        const fn = vi.fn();
-        const d = debounce(fn, 100);
+    it("runs once more for the changes that arrive during a run, however many", async () => {
+        const r = recorder();
+        const queue = createChangeQueue(IN_ORDER, r.callbacks);
 
-        d();
-        vi.advanceTimersByTime(80);
-        d();
-        vi.advanceTimersByTime(80);
-        expect(fn).not.toHaveBeenCalled();
+        r.holdNextRun();
+        queue(markup("src/page.tsx"));
+        await settle();
+        queue(markup("src/other.tsx"));
+        queue(token("color.json"));
+        queue(markup("src/last.tsx"));
+        r.releaseRun();
+        await settle();
 
-        vi.advanceTimersByTime(20);
-        expect(fn).toHaveBeenCalledTimes(1);
+        expect(r.runs).toEqual([
+            ["markup", "src/page.tsx"],
+            ["token", "color.json"],
+            ["markup", "src/last.tsx"],
+        ]);
     });
 
-    it("fires with the latest arguments", () => {
-        vi.useFakeTimers();
-        const fn = vi.fn();
-        const d = debounce(fn, 100);
+    it("takes config, then tokens, then markup from the changes that arrived during a run", async () => {
+        const r = recorder();
+        const queue = createChangeQueue(IN_ORDER, r.callbacks);
 
-        d("first");
-        d("last");
-        vi.advanceTimersByTime(100);
-        expect(fn).toHaveBeenCalledWith("last");
+        r.holdNextRun();
+        queue(token("color.json"));
+        await settle();
+        queue(markup("src/page.tsx"));
+        queue(token("dark.json"));
+        queue(config("sugarcube.config.ts"));
+        r.releaseRun();
+        await settle();
+
+        expect(r.runs.slice(1).map(([kind]) => kind)).toEqual(["config", "token", "markup"]);
     });
 
-    it("cancel() prevents a pending invocation from firing", () => {
-        vi.useFakeTimers();
-        const fn = vi.fn();
-        const d = debounce(fn, 100);
-
-        d();
-        d.cancel();
-        vi.advanceTimersByTime(200);
-        expect(fn).not.toHaveBeenCalled();
-    });
-});
-
-describe("createCoalescedRunner", () => {
-    it("runs sequential (non-overlapping) calls in full", async () => {
-        const calls: string[] = [];
-        const run = createCoalescedRunner(async (arg: string) => {
-            calls.push(arg);
-        }, vi.fn());
-
-        run("a");
-        await Promise.resolve();
-        run("b");
-        await Promise.resolve();
-        await Promise.resolve();
-
-        expect(calls).toEqual(["a", "b"]);
-    });
-
-    it("does not start a second run while one is in flight", async () => {
-        const first = deferred();
-        const active: number[] = [];
-        let concurrent = 0;
-
-        const run = createCoalescedRunner(async (id: number) => {
-            concurrent++;
-            active.push(concurrent);
-            await (id === 1 ? first.promise : Promise.resolve());
-            concurrent--;
-        }, vi.fn());
-
-        run(1);
-        run(2);
-        await Promise.resolve();
-
-        expect(Math.max(...active)).toBe(1);
-
-        first.resolve();
-        await first.promise;
-        await Promise.resolve();
-        await Promise.resolve();
-
-        expect(active).toEqual([1, 1]);
-    });
-
-    it("coalesces multiple queued calls into one trailing run with the latest args", async () => {
-        const first = deferred();
-        const seen: string[] = [];
-
-        const run = createCoalescedRunner(async (arg: string) => {
-            seen.push(arg);
-            if (arg === "start") await first.promise;
-        }, vi.fn());
-
-        run("start");
-        run("dropped");
-        run("latest");
-        await Promise.resolve();
-
-        first.resolve();
-        await first.promise;
-        await Promise.resolve();
-        await Promise.resolve();
-
-        expect(seen).toEqual(["start", "latest"]);
-    });
-
-    it("works with no arguments and no error handler", async () => {
-        const first = deferred();
-        let runs = 0;
-
-        const run = createCoalescedRunner(async () => {
-            runs++;
-            if (runs === 1) await first.promise;
+    it("runs a token change that arrives during a config change in place of the one waiting", async () => {
+        const runs: string[] = [];
+        let release = () => {};
+        const held = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const queue = createChangeQueue<Change>(IN_ORDER, {
+            onChange: async (change: Change) => {
+                runs.push(named(change));
+                if (change.kind === "config") await held;
+            },
+            onError: () => {},
         });
 
-        run();
-        run();
-        run();
-        await Promise.resolve();
+        queue(markup("src/page.html"));
+        queue(config("sugarcube.config.ts"));
+        queue(token("old.json"));
+        await settle();
+        queue(token("new.json"));
+        release();
+        await settle();
 
-        first.resolve();
-        await first.promise;
-        await Promise.resolve();
-        await Promise.resolve();
-
-        expect(runs).toBe(2);
+        expect(runs).toEqual(["src/page.html", "sugarcube.config.ts", "new.json"]);
     });
 
-    it("routes errors to onError and still drains the queue", async () => {
-        const onError = vi.fn();
-        const first = deferred();
-        const seen: string[] = [];
+    it("reports a change that fails, and still runs the ones after it", async () => {
+        const runs: Change["kind"][] = [];
+        const errors: unknown[] = [];
+        let release = () => {};
+        const held = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const queue = createChangeQueue<Change>(IN_ORDER, {
+            onChange: async ({ kind }: Change) => {
+                runs.push(kind);
+                if (kind === "markup") await held;
+                if (kind === "config") throw new Error("the config broke");
+            },
+            onError: (error) => errors.push(error),
+        });
 
-        const run = createCoalescedRunner(async (arg: string) => {
-            seen.push(arg);
-            if (arg === "boom") {
-                await first.promise;
-                throw new Error("boom");
-            }
-        }, onError);
+        queue(markup("src/page.html"));
+        await settle();
+        queue(token("color.json"));
+        queue(config("sugarcube.config.ts"));
+        release();
+        await settle();
 
-        run("boom");
-        run("next");
-        await Promise.resolve();
+        expect(runs).toEqual(["markup", "config", "token"]);
+        expect(errors).toEqual([new Error("the config broke")]);
+    });
 
-        first.resolve();
-        await first.promise.catch(() => {});
-        await Promise.resolve();
-        await Promise.resolve();
+    it("runs a queue of one kind once more, with the newest change that waited", async () => {
+        const r = recorder();
+        const queue = createChangeQueue<Change>(["config"], r.callbacks);
 
-        expect(onError).toHaveBeenCalledTimes(1);
-        expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: "boom" }));
-        expect(seen).toEqual(["boom", "next"]);
+        r.holdNextRun();
+        queue(config("first"));
+        await settle();
+        queue(config("second"));
+        queue(config("third"));
+        r.releaseRun();
+        await settle();
+
+        expect(r.runs).toEqual([
+            ["config", "first"],
+            ["config", "third"],
+        ]);
     });
 });

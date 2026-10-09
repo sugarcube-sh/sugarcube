@@ -1,67 +1,38 @@
-export type DebouncedFn<Args extends unknown[]> = ((...args: Args) => void) & {
+export type ChangeQueue<Change extends { kind: string }> = ((change: Change) => void) & {
     cancel: () => void;
 };
 
-export function debounce<Args extends unknown[]>(
-    fn: (...args: Args) => void,
-    wait: number,
-): DebouncedFn<Args> {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-    const debounced = (...args: Args) => {
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-        }
-        timeoutId = setTimeout(() => {
-            timeoutId = undefined;
-            fn(...args);
-        }, wait);
-    };
-
-    debounced.cancel = () => {
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-            timeoutId = undefined;
-        }
-    };
-
-    return debounced;
+export interface ChangeQueueCallbacks<Change> {
+    onChange: (change: Change) => Promise<void>;
+    onError: (error: unknown) => void;
 }
 
-/**
- * This guards watch regeneration: a rebuild can take longer than the gap between
- * file events, and without this a second rebuild could start mid-flight and race
- * the first on the same output files. Errors are routed to `onError` so a
- * rejected run still releases the lock and drains any queued call.
- */
-export function createCoalescedRunner<Args extends unknown[]>(
-    fn: (...args: Args) => Promise<void>,
-    onError?: (error: unknown) => void,
-): (...args: Args) => void {
+export function createChangeQueue<Change extends { kind: string }>(
+    order: readonly Change["kind"][],
+    { onChange, onError }: ChangeQueueCallbacks<Change>,
+): ChangeQueue<Change> {
+    const waiting = new Map<Change["kind"], Change>();
     let running = false;
-    let queued: Args | null = null;
 
-    const run = async (...args: Args): Promise<void> => {
-        if (running) {
-            queued = args;
-            return;
-        }
+    const next = () => order.map((kind) => waiting.get(kind)).find(Boolean);
+
+    const drain = async () => {
         running = true;
-        try {
-            await fn(...args);
-        } catch (error) {
-            onError?.(error);
-        } finally {
-            running = false;
-            if (queued) {
-                const next = queued;
-                queued = null;
-                void run(...next);
+        for (let change = next(); change; change = next()) {
+            waiting.delete(change.kind);
+            try {
+                await onChange(change);
+            } catch (error) {
+                onError(error);
             }
         }
+        running = false;
     };
 
-    return (...args: Args) => {
-        void run(...args);
+    const queue = (change: Change) => {
+        waiting.set(change.kind, change);
+        if (!running) void drain();
     };
+    queue.cancel = () => waiting.clear();
+    return queue;
 }

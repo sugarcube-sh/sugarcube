@@ -15,9 +15,9 @@ export type { StudioDiskState };
 export type StudioSaveBundle = SaveBundle;
 
 /**
- * Studio never reads token files itself. Under Vite the sugarcube plugin hands
- * over tokens it has already parsed; the standalone Node server parses them on
- * its own. This is what those two have to look like from studio's side.
+ * Where Studio gets its tokens. Under Vite and the standalone Node server alike
+ * it is `createNodeTokenSource`; under Vite, sugarcube's plugin tells it when to
+ * reload. This is what a source has to look like from studio's side.
  */
 export interface StudioTokenSource {
     ready: Promise<void>;

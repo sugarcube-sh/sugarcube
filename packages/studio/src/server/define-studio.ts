@@ -21,13 +21,13 @@ export const STUDIO_SURFACE: StudioSurface = {
 
 const nothingToShow = (errors: readonly string[]) =>
     [
-        "[studio] The token source produced no config, trees or resolved tokens.",
+        "The token source produced no config, trees or resolved tokens.",
         "Studio mounts on the next load that succeeds.",
         ...errors,
     ].join(" ");
 
 const NAMING_DROPPED =
-    "[studio] The config names variables with a function, which cannot run in the browser. " +
+    "The config names variables with a function, which cannot run in the browser. " +
     "The page preview and any variable name Studio shows use the default naming.";
 
 const notLoaded = (path: string) =>

@@ -116,7 +116,7 @@ export function createNodeTokenSource(options: NodeTokenSourceOptions = {}): Nod
     const reloadCallbacks: Array<() => void> = [];
 
     return {
-        ready: load(),
+        ready: reload(),
         get config() {
             return state.config;
         },

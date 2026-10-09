@@ -4,6 +4,10 @@ import { STUDIO_RPC } from "../protocol";
 import type { StudioHostBridge } from "./types";
 
 export function createDevframeBridge(ctx: DevframeNodeContext): StudioHostBridge {
+    const diagnostics = ctx.diagnostics.defineDiagnostics({
+        codes: { studio: { why: ({ message }: { message: string }) => message, docs: false } },
+    });
+
     return {
         sharedState: (key, initialValue) => ctx.rpc.sharedState.get(key, { initialValue }),
 
@@ -17,7 +21,9 @@ export function createDevframeBridge(ctx: DevframeNodeContext): StudioHostBridge
             );
         },
 
-        warn: (message) => ctx.diagnostics.logger.warn(message),
+        warn: (message) => {
+            diagnostics.studio({ message });
+        },
 
         publishConfig: (config) => {
             ctx.staticConfig[STUDIO_RPC.CONFIG] = config;

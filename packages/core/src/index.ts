@@ -2,7 +2,7 @@
  * Node entry point for @sugarcube-sh/core.
  *
  * Exports everything the browser/client entry exports, plus Node-only
- * additions (file loaders, writers, perf tooling) and Node-flavoured
+ * additions (file loaders, writers) and Node-flavoured
  * overrides (one-arg `validateConfig` / `fillDefaults` that auto-detect
  * default directories via the filesystem).
  *
@@ -21,10 +21,8 @@ export type { ResolverDiscoveryResult } from "./node/resolver/find.js";
 
 export { loadTokens } from "./node/load-tokens.js";
 export type { LoadResult } from "./node/load-tokens.js";
-export { createCoalescedRunner, debounce } from "./shared/scheduling.js";
-export type { DebouncedFn } from "./shared/scheduling.js";
-
-export { PerfMonitor, Instrumentation } from "./node/perf.js";
+export { createChangeQueue } from "./shared/scheduling.js";
+export type { ChangeQueue, ChangeQueueCallbacks } from "./shared/scheduling.js";
 
 export { writeCSSFiles } from "./node/write-css.js";
 

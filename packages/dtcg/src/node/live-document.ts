@@ -37,7 +37,9 @@ export interface LiveDocument {
     document(): Promise<Document>;
     /**
      * Calls `listener` with each Document read after the first, and the {@link ReadEvent} that
-     * led to it. Returns a function that stops it.
+     * led to it. A read is not passed on when another is already waiting to start, so a listener
+     * never builds on a Document that a save or {@link LiveDocument.reread} has outdated. Returns a
+     * function that stops it.
      *
      * @example
      * const stop = live.onRead((doc, { file, ms }) => console.log(file, ms, errors(doc).length));
@@ -45,16 +47,19 @@ export interface LiveDocument {
     onRead(listener: (doc: Document, event: ReadEvent) => void): () => void;
     /**
      * Reads again, asking the source again when it was given as a function, such as after a
-     * config naming the entry has changed. Rejects when the read fails.
+     * config naming the entry has changed. Resolves once the read has finished: its Document
+     * goes to the listeners, and a failure to `onError`, as for a save.
      *
      * @example
-     * const doc = await live.reread();
+     * await live.reread();
      */
-    reread(): Promise<Document>;
+    reread(): Promise<void>;
     /**
      * Adds the files the Document lists to `watcher`, and each file a later read gains, and
      * reads again when one of them is saved, added or deleted. Files are never removed from it:
-     * an event for a file the latest Document does not list is ignored.
+     * an event for a file the latest Document does not list is ignored. Its files are added once
+     * the first read has finished, so a host waiting for its watcher to be ready awaits
+     * {@link LiveDocument.document} first.
      *
      * @example
      * live.watch(chokidar.watch([], { ignoreInitial: true }));
@@ -117,6 +122,7 @@ export function liveDocument(
         const started = performance.now();
         const doc = await readOnce();
         const ms = performance.now() - started;
+        if (queued) return doc;
         const event: ReadEvent = file === undefined ? { ms } : { file, ms };
         for (const listener of listeners) {
             try {
@@ -157,7 +163,11 @@ export function liveDocument(
             listeners.add(listener);
             return () => listeners.delete(listener);
         },
-        reread: () => readAgain(),
+        reread: () =>
+            readAgain().then(
+                () => undefined,
+                () => undefined,
+            ),
         watch(given) {
             watcher = given;
             given.on("change", changed);

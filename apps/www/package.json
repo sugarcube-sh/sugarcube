@@ -9,7 +9,7 @@
     "build:registry": "tsx scripts/build-registry.ts",
     "deploy": "pnpm run build && wrangler deploy",
     "dev": "cross-env REGISTRY_URL=/r astro dev",
-    "dev:debug": "cross-env DEBUG=true REGISTRY_URL=/r astro dev",
+    "dev:debug": "cross-env DEBUG=sugarcube REGISTRY_URL=/r astro dev",
     "preview": "astro preview",
     "type-check": "astro sync && tsc --noEmit"
   },
