@@ -46,13 +46,24 @@ async function project(): Promise<void> {
     process.chdir(folder);
 }
 
+const VITE_DROPS_RESAVES_WITHIN_MS = 50;
+const lastSaved = new Map<string, number>();
+
+async function save(file: string, text: string): Promise<void> {
+    const path = join(folder, file);
+    const wait = (lastSaved.get(path) ?? 0) + VITE_DROPS_RESAVES_WITHIN_MS + 10 - Date.now();
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+    await writeFile(path, text);
+    lastSaved.set(path, Date.now());
+}
+
 function tokens(json: unknown) {
-    return writeFile(join(folder, "tokens/base.json"), JSON.stringify(json, null, 2));
+    return save("tokens/base.json", JSON.stringify(json, null, 2));
 }
 
 function config(variablesExtra: string) {
-    return writeFile(
-        join(folder, "sugarcube.config.ts"),
+    return save(
+        "sugarcube.config.ts",
         `export default {
     resolver: "tokens/tokens.resolver.json",
     variables: { path: "tokens.css"${variablesExtra} },
@@ -233,7 +244,7 @@ describe("sugarcube's Vite plugin", () => {
         const { context, css, logged, overlays } = await serve();
 
         const configProblems = () => logged.filter((text) => text.includes("invalid-config"));
-        await writeFile(join(folder, "sugarcube.config.ts"), "export default { variables: ;");
+        await save("sugarcube.config.ts", "export default { variables: ;");
         await until(() => configProblems().length > 0, "the config's problem");
 
         expect(logged.join("\n")).toMatch(/^sugarcube\.config\.ts {2}error {2}/m);
@@ -308,8 +319,8 @@ describe("sugarcube's Vite plugin", () => {
         await project();
         const { context, css } = await serve();
 
-        await writeFile(
-            join(folder, "sugarcube.config.ts"),
+        await save(
+            "sugarcube.config.ts",
             `await new Promise((resolve) => setTimeout(resolve, 400));
 export default {
     resolver: "tokens/tokens.resolver.json",
