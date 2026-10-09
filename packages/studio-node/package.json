@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@devframes/hub": "^1.0.0",
-    "@devframes/hub-ui": "^1.0.0",
+    "@devframes/hub-ui": "^1.1.0",
     "@sugarcube-sh/studio": "workspace:*",
     "devframe": "^1.0.0"
   },
