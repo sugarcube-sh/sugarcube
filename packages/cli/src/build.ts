@@ -1,15 +1,12 @@
 import {
     type CSSFileOutput,
-    type Declarations,
     type InternalConfig,
     type LoadedConfig,
     type Reported,
-    declare,
-    emitCSS,
+    type UtilityCSS,
+    cssFrom,
     fillDefaults,
     readOptions,
-    utilityRules,
-    utilityTokens,
 } from "@sugarcube-sh/core";
 import { type Document, readFromMemory } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
@@ -38,8 +35,6 @@ interface Reading {
     configFile?: string;
 }
 
-const nothing = { files: [], diagnostics: [] };
-
 export async function build(
     { config, configFile }: LoadedConfig,
     options: BuildOptions = {},
@@ -58,37 +53,34 @@ async function fromReading(
     { doc, folder, config, configFile }: Reading,
     options: BuildOptions,
 ): Promise<Built> {
-    const declared = declare(doc, config);
-    const variables = options.utilitiesOnly ? nothing : variablesFrom(declared, config);
-    const utilities = options.variablesOnly
-        ? nothing
-        : await utilitiesFrom(declared, config, options.markup ?? true);
+    const made = cssFrom(doc, config, {
+        variables: !options.utilitiesOnly,
+        utilities: !options.variablesOnly,
+    });
+    const markup = options.markup ?? true;
+    const utilities = await utilitiesFrom(made.utilities, config, markup);
     return {
         doc,
         folder,
         configFile,
-        files: [...variables.files, ...utilities.files],
-        diagnostics: [...declared.diagnostics, ...variables.diagnostics, ...utilities.diagnostics],
+        files: [...finished(made.variables, config.variables.layer), ...utilities],
+        diagnostics: made.diagnostics,
     };
 }
 
-function variablesFrom(declared: Declarations, config: InternalConfig) {
-    const { files, diagnostics } = emitCSS(declared, config);
-    const { layer } = config.variables;
-    return { files: finished(files, layer), diagnostics };
-}
-
-async function utilitiesFrom(declared: Declarations, config: InternalConfig, markup: boolean) {
-    const { classes, layer } = config.utilities;
-    if (!classes || Object.keys(classes).length === 0) return nothing;
-    const { rules, safelist, diagnostics } = utilityRules(utilityTokens(declared), classes);
-    if (!markup) return { files: [], diagnostics };
+async function utilitiesFrom(
+    utilities: UtilityCSS | undefined,
+    config: InternalConfig,
+    markup: boolean,
+): Promise<CSSFileOutput> {
+    if (!utilities || !markup) return [];
+    const { rules, safelist } = utilities;
     const generator = await createGenerator({
         presets: [{ name: "sugarcube", rules, preflights: [] }],
         safelist,
     });
     const files = await utilitiesFromMarkup(generator, safelist, config);
-    return { files: finished(files, layer), diagnostics };
+    return finished(files, config.utilities.layer);
 }
 
 function finished(files: CSSFileOutput, layer: string | undefined): CSSFileOutput {
