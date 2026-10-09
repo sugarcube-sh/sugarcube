@@ -66,6 +66,6 @@
     "typescript": "^5.8.3",
     "vite": "^8",
     "zustand": "^5.0.15",
-    "@devframes/vite": "^1.0.0"
+    "@devframes/vite": "^1.1.0"
   }
 }
