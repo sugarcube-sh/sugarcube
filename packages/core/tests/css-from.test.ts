@@ -37,6 +37,15 @@ const classes = {
 };
 
 describe("cssFrom", () => {
+    it("gives the declarations it made, for a reader that needs which variable is which token", () => {
+        const { doc, config } = project(classes);
+
+        expect(cssFrom(doc, config).declared).toStrictEqual(declare(doc, config));
+        expect(cssFrom(doc, config, { variables: false, utilities: false }).declared).toStrictEqual(
+            declare(doc, config),
+        );
+    });
+
     it("gives what declaring, the variables and the utility rules give in turn", () => {
         const { doc, config } = project(classes);
         const declared = declare(doc, config);

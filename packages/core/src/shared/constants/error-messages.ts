@@ -116,6 +116,10 @@ export function configIssueText(issue: ConfigIssue): string {
         }
         case "invalid":
             return issue.setting ? `${subject}: ${issue.message}` : issue.message;
+        case "no-resolver":
+            return ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER();
+        case "several-resolvers":
+            return ErrorMessages.CONFIG.MULTIPLE_RESOLVERS_FOUND(issue.paths);
     }
 }
 

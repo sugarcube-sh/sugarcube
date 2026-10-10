@@ -1264,24 +1264,7 @@ export interface Related {
 
 export { type ReferrersOptions, referrers } from "./lookup/referrers.js";
 
-/**
- * The tokens this one refers to.
- * @param input Only this permutation. Left out: every permutation.
- */
-export function dependencies(
-    doc: Document,
-    path: string,
-    input?: Input,
-    options?: {
-        /**
-         * Include what it depends on through others, however indirectly. Safe with cycles.
-         * @default false
-         */
-        transitive?: boolean;
-    },
-): Related[] {
-    throw new Error("not implemented yet");
-}
+export { type DependenciesOptions, dependencies } from "./lookup/dependencies.js";
 
 /**
  * Every token passed through on the way from this one to its final value.

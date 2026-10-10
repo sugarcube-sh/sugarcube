@@ -30,18 +30,13 @@ export async function utilitiesFromMarkup(
     generator: UnoGenerator,
     safelist: string[],
     config: InternalConfig,
-): Promise<CSSFileOutput> {
-    const files = await getMarkupFiles(config.content);
-    if (files.length === 0 && safelist.length === 0) return [];
+): Promise<{ files: CSSFileOutput; markupFiles: string[] }> {
+    const markupFiles = await getMarkupFiles(config.content);
+    if (markupFiles.length === 0 && safelist.length === 0) return { files: [], markupFiles };
 
-    const sources = await readMarkupSources(files);
+    const sources = await readMarkupSources(markupFiles);
     const { css } = await generator.generate(sources.join("\n"), { preflights: false });
-    if (!css?.trim()) return [];
+    if (!css?.trim()) return { files: [], markupFiles };
 
-    return [
-        {
-            path: config.utilities.path,
-            css,
-        },
-    ];
+    return { files: [{ path: config.utilities.path, css }], markupFiles };
 }

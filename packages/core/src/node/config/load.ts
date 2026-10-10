@@ -3,13 +3,14 @@ import { createJiti } from "jiti";
 import { basename, dirname, resolve } from "pathe";
 import { validateInternalConfig, validateSugarcubeConfig } from "../../shared/config.js";
 import { ConfigError } from "../../shared/config-error.js";
-import { ErrorMessages } from "../../shared/constants/error-messages.js";
 import type { InternalConfig, SugarcubeConfig } from "../../types/config.js";
 import { findResolverDocument } from "../resolver/find.js";
 import { fillDefaults } from "./normalize.js";
 
 export function isNoConfigError(error: unknown): boolean {
-    return error instanceof Error && error.message === ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER();
+    return (
+        error instanceof ConfigError && error.issues.some(({ reason }) => reason === "no-resolver")
+    );
 }
 
 function resolveContentGlobs(content: string[] | undefined, baseDir: string): string[] | undefined {
@@ -98,9 +99,9 @@ async function foundResolver(): Promise<string> {
     const discovery = await findResolverDocument(process.cwd());
     if (discovery.found === "one") return discovery.path;
     if (discovery.found === "multiple") {
-        throw new ConfigError(ErrorMessages.CONFIG.MULTIPLE_RESOLVERS_FOUND(discovery.paths));
+        throw new ConfigError([{ reason: "several-resolvers", paths: discovery.paths }]);
     }
-    throw new ConfigError(ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER());
+    throw new ConfigError([{ reason: "no-resolver" }]);
 }
 
 function overridden(base: unknown, overrides: unknown): unknown {
