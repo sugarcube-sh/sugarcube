@@ -6,7 +6,6 @@ import {
     type LoadedConfig,
     type Reported,
     type UtilityCSS,
-    type UtilityStart,
     cssFrom,
     fillDefaults,
     readOptions,
@@ -15,7 +14,8 @@ import { type Document, readFromMemory } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { type UnoGenerator, createGenerator } from "@unocss/core";
 import { dirname } from "pathe";
-import { addBanner, utilitiesFromMarkup, wrapInLayer } from "./output.js";
+import { addBanner, wrapInLayer } from "./output.js";
+import { getMarkupFiles, readMarkupSources } from "./scan-markup.js";
 
 export interface BuildOptions {
     variablesOnly?: boolean;
@@ -23,10 +23,9 @@ export interface BuildOptions {
     markup?: boolean;
 }
 
-interface UtilityGenerator {
-    starts: UtilityStart[];
-    safelist: string[];
-    uno: UnoGenerator;
+interface MarkupScan {
+    utilities: CSSFileOutput;
+    markupFiles: string[];
 }
 
 export interface Built {
@@ -38,8 +37,9 @@ export interface Built {
     variables: CSSFileOutput;
     utilities: CSSFileOutput;
     markupFiles: string[];
+    utilityRules?: UtilityCSS;
     diagnostics: Reported[];
-    generator?: UtilityGenerator;
+    uno?: UnoGenerator;
 }
 
 interface Reading {
@@ -71,9 +71,16 @@ export function buildFiles(texts: Record<string, string>, folder: string): Promi
 }
 
 export async function rescan(built: Built): Promise<Built> {
-    if (!built.generator) return built;
-    const { files, markupFiles } = await scanned(built.generator, built.config);
-    return { ...built, utilities: files, markupFiles };
+    if (!built.uno || !built.utilityRules) return built;
+    return { ...built, ...(await scanMarkup(built.uno, built.utilityRules, built.config)) };
+}
+
+export function variablesOf({ declared }: Built): Map<string, string> {
+    const tokenOf = new Map<string, string>();
+    for (const { declared: made } of declared.entries) {
+        for (const { name, token } of made.declarations) tokenOf.set(name, token.path);
+    }
+    return tokenOf;
 }
 
 export function filesOf({ variables, utilities }: Built): CSSFileOutput {
@@ -89,8 +96,10 @@ async function fromReading(
         variables: !options.utilitiesOnly,
         utilities: !options.variablesOnly,
     });
-    const markup = options.markup ?? true;
-    const utilities = await utilitiesFrom(made.utilities, config, markup, previous);
+    const scan =
+        made.utilities && options.markup !== false
+            ? await markupUtilities(made.utilities, config, previous)
+            : { utilities: [], markupFiles: [] };
     return {
         doc,
         config,
@@ -98,41 +107,50 @@ async function fromReading(
         configFile,
         declared: made.declared,
         variables: finished(made.variables, config.variables.layer),
-        utilities: utilities.files,
-        markupFiles: utilities.markupFiles,
+        utilityRules: made.utilities,
         diagnostics: made.diagnostics,
-        generator: utilities.generator,
+        ...scan,
     };
 }
 
-async function utilitiesFrom(
-    utilities: UtilityCSS | undefined,
+async function markupUtilities(
+    rules: UtilityCSS,
     config: InternalConfig,
-    markup: boolean,
     previous: Built | undefined,
-): Promise<{ files: CSSFileOutput; markupFiles: string[]; generator?: UtilityGenerator }> {
-    if (!utilities || !markup) return { files: [], markupFiles: [] };
-    const { rules, starts, safelist } = utilities;
-    if (previous?.generator && previous.config === config) {
-        const { generator, utilities: files, markupFiles } = previous;
-        const same = isDeepStrictEqual([generator.starts, generator.safelist], [starts, safelist]);
-        if (same) return { files, markupFiles, generator };
+): Promise<MarkupScan & { uno: UnoGenerator }> {
+    if (previous?.uno && unchanged(previous, rules, config)) {
+        const { uno, utilities, markupFiles } = previous;
+        return { uno, utilities, markupFiles };
     }
-    const uno = await createGenerator({
-        presets: [{ name: "sugarcube", rules, preflights: [] }],
-        safelist,
-    });
-    const generator = { starts, safelist, uno };
-    return { ...(await scanned(generator, config)), generator };
+    const uno = await generatorFor(rules);
+    return { uno, ...(await scanMarkup(uno, rules, config)) };
 }
 
-async function scanned(generator: UtilityGenerator, config: InternalConfig) {
-    const { files, markupFiles } = await utilitiesFromMarkup(
-        generator.uno,
-        generator.safelist,
-        config,
+function unchanged(previous: Built, rules: UtilityCSS, config: InternalConfig): boolean {
+    const before = previous.utilityRules;
+    return (
+        previous.config === config &&
+        before !== undefined &&
+        isDeepStrictEqual([before.starts, before.safelist], [rules.starts, rules.safelist])
     );
-    return { files: finished(files, config.utilities.layer), markupFiles };
+}
+
+function generatorFor({ rules, safelist }: UtilityCSS): Promise<UnoGenerator> {
+    return createGenerator({ presets: [{ name: "sugarcube", rules, preflights: [] }], safelist });
+}
+
+async function scanMarkup(
+    uno: UnoGenerator,
+    { safelist }: UtilityCSS,
+    config: InternalConfig,
+): Promise<MarkupScan> {
+    const markupFiles = await getMarkupFiles(config.content);
+    if (markupFiles.length === 0 && safelist.length === 0) return { utilities: [], markupFiles };
+    const sources = await readMarkupSources(markupFiles);
+    const { css } = await uno.generate(sources.join("\n"), { preflights: false });
+    if (!css?.trim()) return { utilities: [], markupFiles };
+    const files = [{ path: config.utilities.path, css }];
+    return { utilities: finished(files, config.utilities.layer), markupFiles };
 }
 
 function finished(files: CSSFileOutput, layer: string | undefined): CSSFileOutput {

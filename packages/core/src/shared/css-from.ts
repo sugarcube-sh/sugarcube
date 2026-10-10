@@ -11,6 +11,7 @@ export interface UtilityCSS {
     rules: UtilityRule[];
     starts: UtilityStart[];
     safelist: string[];
+    customProperties: string[];
 }
 
 export interface MadeCSS {
@@ -40,7 +41,12 @@ export function cssFrom(
     return {
         declared,
         variables: emitted.files,
-        utilities: ruled && { rules: ruled.rules, starts: ruled.starts, safelist: ruled.safelist },
+        utilities: ruled && {
+            rules: ruled.rules,
+            starts: ruled.starts,
+            safelist: ruled.safelist,
+            customProperties: ruled.customProperties,
+        },
         diagnostics: [
             ...declared.diagnostics,
             ...emitted.diagnostics,

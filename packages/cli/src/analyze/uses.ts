@@ -1,8 +1,8 @@
 import type { UnoGenerator } from "@unocss/core";
 import { resolve } from "pathe";
-import type { Built } from "../build.js";
+import { type Built, variablesOf } from "../build.js";
 import { readMarkupSources } from "../scan-markup.js";
-import { type UnreadStylesheets, findUnreadStylesheets, scanProjectCSS } from "../scan-project.js";
+import { type UnreadStylesheets, scanStylesheets } from "../scan-stylesheets.js";
 
 export interface Use {
     token: string;
@@ -20,17 +20,17 @@ export interface Uses {
 
 export async function findUses(built: Built): Promise<Uses> {
     const tokenOf = variablesOf(built);
-    const { used, files } = await scanProjectCSS(built.config);
+    const { used, files, unread } = await scanStylesheets(built);
     const fromVar = used.flatMap(({ name, file, line }) => {
         const token = tokenOf.get(name);
         return token ? [{ token, file: resolve(file), line, var: name }] : [];
     });
     const markup = built.markupFiles.map((file) => resolve(file));
-    const { generator, configFile } = built;
-    const fromClass = generator ? await classUses(generator.uno, markup, tokenOf) : [];
+    const { uno, utilityRules, configFile } = built;
+    const fromClass = uno ? await classUses(uno, markup, tokenOf) : [];
     const safelisted =
-        generator && configFile
-            ? await safelistUses(generator.uno, generator.safelist, resolve(configFile), tokenOf)
+        uno && utilityRules && configFile
+            ? await safelistUses(uno, utilityRules.safelist, resolve(configFile), tokenOf)
             : [];
     return {
         uses: [...fromVar, ...fromClass, ...safelisted],
@@ -38,16 +38,8 @@ export async function findUses(built: Built): Promise<Uses> {
             forVarReferences: files.map((file) => resolve(file)),
             forUtilityClasses: markup,
         },
-        unread: await findUnreadStylesheets(built.config, files),
+        unread,
     };
-}
-
-function variablesOf({ declared }: Built): Map<string, string> {
-    const tokenOf = new Map<string, string>();
-    for (const { declared: made } of declared.entries) {
-        for (const { name, token } of made.declarations) tokenOf.set(name, token.path);
-    }
-    return tokenOf;
 }
 
 async function classUses(

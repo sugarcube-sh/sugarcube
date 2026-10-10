@@ -1,4 +1,5 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { stripVTControlCharacters } from "node:util";
@@ -46,15 +47,8 @@ async function project(): Promise<void> {
     process.chdir(folder);
 }
 
-const VITE_DROPS_RESAVES_WITHIN_MS = 50;
-const lastSaved = new Map<string, number>();
-
-async function save(file: string, text: string): Promise<void> {
-    const path = join(folder, file);
-    const wait = (lastSaved.get(path) ?? 0) + VITE_DROPS_RESAVES_WITHIN_MS + 10 - Date.now();
-    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-    await writeFile(path, text);
-    lastSaved.set(path, Date.now());
+function save(file: string, text: string): Promise<void> {
+    return writeFile(join(folder, file), text);
 }
 
 function tokens(json: unknown) {
@@ -313,6 +307,32 @@ describe("sugarcube's Vite plugin", () => {
         } finally {
             process.off("unhandledRejection", onUnhandled);
         }
+    });
+
+    it("reads a config save whose last write landed while Vite's watcher was dropping changes", async () => {
+        await project();
+        const { server, context } = await serve();
+        const path = join(folder, "sugarcube.config.ts");
+        const finished = `export default {
+    resolver: "tokens/tokens.resolver.json",
+    variables: { path: "tokens.css", prefix: "ds" },
+    utilities: { classes: { color: { source: "color.*", prefix: "text" } } },
+};
+`;
+        let reported = false;
+        server.watcher.on("change", (file) => {
+            if (reported || !file.endsWith("sugarcube.config.ts")) return;
+            reported = true;
+            writeFileSync(path, finished);
+        });
+
+        await until(() => {
+            if (!reported) writeFileSync(path, "");
+            return reported;
+        }, "Vite watching the config");
+        await until(() => context.config.variables.prefix === "ds", "the save's last write");
+
+        expect(context.problems).toEqual([]);
     });
 
     it("reads two quick config saves one at a time, the newer winning", async () => {

@@ -1,18 +1,19 @@
-import { type InternalConfig, plural } from "@sugarcube-sh/core";
+import { plural } from "@sugarcube-sh/core";
 import { Command, Option } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
+import { type Built, build, variablesOf } from "../build.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
-import { type VarRef, findUndeclared } from "../lint/scan-css.js";
-import { type SyntaxResolver, createSyntaxResolver } from "../lint/syntaxes.js";
-import { getGeneratedVarNames } from "../lint/token-var-names.js";
+import { findUndeclared } from "../lint/undeclared.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
-import { findUnreadStylesheets, scanProjectCSS } from "../scan-project.js";
-import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
+import { printProblems, whereOf } from "../problems.js";
+import type { VarRef } from "../scan-css.js";
+import { type Shortfall, scanStylesheets, shortfallOf } from "../scan-stylesheets.js";
+import { printWarning } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
-import type { LintOptions, ScanOutput } from "../types/commands.js";
+import type { LintOptions } from "../types/commands.js";
 
 function parseIgnore(value: string | undefined): string[] {
     if (!value) return [];
@@ -22,25 +23,27 @@ function parseIgnore(value: string | undefined): string[] {
         .filter(Boolean);
 }
 
-async function runScan(
-    config: InternalConfig,
-    paths: string[],
-    ignorePrefixes: string[],
-    resolver: SyntaxResolver,
-): Promise<ScanOutput> {
-    const declared = await getGeneratedVarNames(config);
-
-    const scan = await scanProjectCSS(config, paths, resolver);
-    for (const name of scan.declared) declared.add(name);
-
+async function runScan(built: Built, paths: string[], ignorePrefixes: string[]) {
+    const scan = await scanStylesheets(built, paths);
+    const declared = new Set([
+        ...variablesOf(built).keys(),
+        ...(built.utilityRules?.customProperties ?? []),
+        ...scan.declared,
+    ]);
     const { broken, fallback } = findUndeclared(scan.used, declared, ignorePrefixes);
     return {
         broken,
         fallback,
         refCount: scan.used.length,
         scannedFiles: scan.files.length,
-        unread: paths.length > 0 ? [] : await findUnreadStylesheets(config, scan.files, resolver),
+        shortfall: shortfallOf(scan),
     };
+}
+
+function shortfallWarning(found: Shortfall): string {
+    return found.kind === "nothing-read"
+        ? ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd())
+        : ERROR_MESSAGES.LINT_UNREAD_STYLESHEETS(found.unread);
 }
 
 function formatGroupedRefs(refs: VarRef[]): string[] {
@@ -86,26 +89,31 @@ export const lint = new Command()
         try {
             if (!options.json) intro(label("Lint"));
 
-            const { config } = await loadTokenConfigOrThrow("lint");
-            const resolver = createSyntaxResolver();
+            const built = await build(await loadTokenConfigOrThrow("lint"), { markup: false });
+            const failed = printProblems(built.diagnostics, whereOf(built), {
+                onlyErrors: true,
+                whenFailed: ERROR_MESSAGES.NOTHING_LINTED(),
+                ...(options.json && { to: process.stderr }),
+            });
+            if (failed) {
+                process.exitCode = 1;
+                return;
+            }
             const ignorePrefixes = parseIgnore(options.ignore);
             const fallbackLevel = options.fallback ?? "warn";
             const fallbackIsError = fallbackLevel === "error";
+            const { broken, fallback, refCount, scannedFiles, shortfall } = await runScan(
+                built,
+                paths,
+                ignorePrefixes,
+            );
+            if (broken.length > 0 || (fallbackIsError && fallback.length > 0)) {
+                process.exitCode = 1;
+            }
 
             if (options.json) {
-                const { broken, fallback, scannedFiles, unread } = await runScan(
-                    config,
-                    paths,
-                    ignorePrefixes,
-                    resolver,
-                );
-
-                if (scannedFiles === 0) {
-                    console.error(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
-                    process.exitCode = 1;
-                } else if (unread.length > 0) {
-                    console.error(ERROR_MESSAGES.LINT_UNREAD_STYLESHEETS(unread));
-                }
+                if (shortfall) printWarning(shortfallWarning(shortfall), { plain: true });
+                if (shortfall?.kind === "nothing-read") process.exitCode = 1;
 
                 const portable = (refs: VarRef[]) =>
                     refs.map((ref) => ({ ...ref, file: relative(process.cwd(), ref.file) }));
@@ -116,18 +124,9 @@ export const lint = new Command()
                         2,
                     ),
                 );
-                if (broken.length > 0 || (fallbackIsError && fallback.length > 0)) {
-                    process.exitCode = 1;
-                }
                 return;
             }
 
-            const { broken, fallback, refCount, scannedFiles, unread } = await runScan(
-                config,
-                paths,
-                ignorePrefixes,
-                resolver,
-            );
             const showFallback = fallbackLevel !== "off";
             const reportFallback = fallbackIsError ? log.error : log.warn;
 
@@ -157,16 +156,10 @@ export const lint = new Command()
 
             const visibleTotal = broken.length + (showFallback ? fallback.length : 0);
 
-            if (scannedFiles === 0) {
-                log.space(1);
-                warningBoxWithBadge(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
+            if (shortfall) printWarning(shortfallWarning(shortfall), { plain: false });
+            if (shortfall?.kind === "nothing-read") {
                 process.exitCode = 1;
                 return;
-            }
-
-            if (unread.length > 0) {
-                log.space(1);
-                warningBoxWithBadge(ERROR_MESSAGES.LINT_UNREAD_STYLESHEETS(unread));
             }
 
             if (visibleTotal === 0) {
@@ -174,7 +167,7 @@ export const lint = new Command()
                     ? "No undeclared references"
                     : "No references without fallback";
                 outro(
-                    unread.length > 0
+                    shortfall
                         ? color.yellow(`${headline}  ${scanned}`)
                         : color.greenBright(`${headline} ✨  ${scanned}`),
                 );
@@ -184,10 +177,6 @@ export const lint = new Command()
                 if (showFallback && fallback.length > 0)
                     parts.push(color.dim(`${fallback.length} with fallback`));
                 outro(`${parts.join(color.dim(", "))}  ${scanned}`);
-            }
-
-            if (broken.length > 0 || (fallbackIsError && fallback.length > 0)) {
-                process.exitCode = 1;
             }
         } catch (error) {
             handleError(error);

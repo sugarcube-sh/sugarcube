@@ -2,7 +2,7 @@ import type { Stats } from "node:fs";
 import { isDeepStrictEqual } from "node:util";
 import { createChangeQueue } from "@sugarcube-sh/core";
 import type { Document } from "@sugarcube-sh/dtcg";
-import type { LiveDocument, ReadEvent } from "@sugarcube-sh/dtcg/node";
+import { type LiveDocument, type ReadEvent, onFileChanged } from "@sugarcube-sh/dtcg/node";
 import { type FSWatcher, watch as chokidarWatch } from "chokidar";
 import { normalize } from "pathe";
 import { IGNORED_DIR_NAMES, MARKUP_EXTENSIONS } from "../constants/markup.js";
@@ -73,14 +73,14 @@ export async function startWatcher(
 ): Promise<WatcherHandle> {
     let watched = first;
 
-    const startMarkup = async (content: string[] | undefined): Promise<FSWatcher> => {
+    const startMarkup = async (content: string[] | undefined): Promise<WatcherHandle> => {
         const markup = chokidarWatch(resolveMarkupWatchTargets(content), {
             ...CHANGES_ONLY,
             ignored: ignoredMarkup,
         });
         const markupReady = ready(markup);
         const onMarkup = (path: string) => queue({ kind: "markup", path });
-        markup.on("change", onMarkup);
+        const stopChecks = onFileChanged(markup, onMarkup);
         markup.on("add", onMarkup);
         markup.on("unlink", onMarkup);
         markup.on("error", callbacks.onError);
@@ -91,7 +91,12 @@ export async function startWatcher(
                 `Watching ${watchedCount} files for markup changes (limit: ${WATCH_TARGET_LIMIT}). This can make watch mode slow — set \`content\` in your config to narrow the directories that are scanned.`,
             );
         }
-        return markup;
+        return {
+            close: () => {
+                stopChecks();
+                return markup.close();
+            },
+        };
     };
     const markupFor = ({ markup, content }: Watched) =>
         markup ? startMarkup(content) : Promise.resolve(undefined);
@@ -115,7 +120,7 @@ export async function startWatcher(
     const onFile = (path: string) => {
         if (isConfigFile(path, configFile)) queue({ kind: "config", path });
     };
-    files.on("change", onFile);
+    const stopFileChecks = onFileChanged(files, onFile);
     files.on("add", onFile);
     files.on("unlink", onFile);
     files.on("error", callbacks.onError);
@@ -128,6 +133,7 @@ export async function startWatcher(
     return {
         close: async () => {
             stopReading();
+            stopFileChecks();
             queue.cancel();
             await Promise.all([files.close(), markup.then((watcher) => watcher?.close())]);
         },

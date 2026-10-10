@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, realpath, rm, stat, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -189,14 +189,19 @@ describe("a Document kept current with its files", () => {
 
     it("reads again when a read caught a file half-saved and the watcher never says", async () => {
         const entry = await project();
-        const { live: doc, reads, save } = live({ entry });
+        const { live: doc, reads, watcher } = live({ entry });
         await doc.document();
 
-        await writeFile(join(folder, "base.json"), "");
-        afterRead.once = () => tokens("base.json", { color: { ink: color("#222222") } });
-        save("base.json");
+        const path = join(folder, "base.json");
+        await writeFile(path, "");
+        const looked = await stat(path);
+        afterRead.once = async () => {
+            await tokens("base.json", { color: { ink: color("#222222") } });
+            await utimes(path, looked.atime, looked.mtime);
+        };
+        watcher.emit("change", disk("base.json"), looked);
 
-        await vi.waitFor(() => expect(reads.length).toBeGreaterThan(0));
+        await vi.waitFor(() => expect(hexOf(reads.at(-1)?.doc as Document)).toContain("222222"));
         const last = await doc.document();
         expect(hexOf(last)).toContain("222222");
         expect(last.diagnostics.map(({ kind }) => kind)).not.toContain("invalid-json");

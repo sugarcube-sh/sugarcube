@@ -2,19 +2,26 @@ import { realpathSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
-import type { InternalConfig } from "@sugarcube-sh/core";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { findUnreadStylesheets, scanProjectCSS } from "../src/scan-project.js";
+import type { Built } from "../src/build.js";
+import { scanStylesheets, shortfallOf } from "../src/scan-stylesheets.js";
 
-function configWith(content?: string[], outputDir = "../css"): InternalConfig {
+function builtWriting(variables: string[], utilities: string, content?: string[]): Built {
     return {
-        variables: { path: `${outputDir}/tokens.css` },
-        utilities: { path: `${outputDir}/utilities.css` },
-        ...(content ? { content } : {}),
-    } as unknown as InternalConfig;
+        config: {
+            variables: { path: "styles/variables.gen.css" },
+            utilities: { path: utilities },
+            ...(content ? { content } : {}),
+        },
+        declared: { entries: variables.map((path) => ({ path })), diagnostics: [] },
+    } as unknown as Built;
 }
 
-describe("scanProjectCSS", () => {
+function builtWith(content?: string[], outputDir = "../css"): Built {
+    return builtWriting([`${outputDir}/tokens.css`], `${outputDir}/utilities.css`, content);
+}
+
+describe("scanStylesheets", () => {
     let base: string;
     let cwdDir: string;
     let originalCwd: string;
@@ -23,7 +30,7 @@ describe("scanProjectCSS", () => {
         originalCwd = process.cwd();
         // realpath, because on macOS tmpdir() is /var/... while chdir reports
         // /private/var/... — and this suite compares absolute paths against cwd.
-        base = join(realpathSync(tmpdir()), `sugarcube-scan-project-${Date.now()}`);
+        base = join(realpathSync(tmpdir()), `sugarcube-scan-stylesheets-${Date.now()}`);
         cwdDir = join(base, "assets", "js");
         const outputDir = join(base, "assets", "css");
         const templatesDir = join(base, "lib", "app_web");
@@ -60,7 +67,7 @@ describe("scanProjectCSS", () => {
     });
 
     const scanned = async (content?: string[], paths: string[] = []) => {
-        const scan = await scanProjectCSS(configWith(content), paths);
+        const scan = await scanStylesheets(builtWith(content), paths);
         return scan.files.map((file) => basename(file)).sort();
     };
 
@@ -114,23 +121,31 @@ describe("scanProjectCSS", () => {
     });
 
     it("collects var() refs from every discovered file", async () => {
-        const scan = await scanProjectCSS(configWith(markupOnlyContent()));
+        const scan = await scanStylesheets(builtWith(markupOnlyContent()));
         const names = scan.used.map((ref) => ref.name).sort();
         expect(names).toEqual(["--nope-htm", "--nope-local", "--nope-vue"]);
     });
 
-    // Generated output stays out of the scan even when named directly: lint gets those
-    // declarations from getGeneratedVarNames, which runs the real variable pipeline and
-    // so stays right when the file on disk is stale.
     it("skips generated output even when it is the only path named", async () => {
         const paths = [join(base, "assets", "css", "tokens.css")];
-        const scan = await scanProjectCSS(configWith(), paths);
+        const scan = await scanStylesheets(builtWith(), paths);
         expect(scan.files).toEqual([]);
         expect([...scan.declared]).toEqual([]);
     });
+
+    it("collects the variables the stylesheets declare themselves", async () => {
+        await writeFile(join(cwdDir, "local.css"), `.local { --own: 1px; color: var(--own); }`);
+        const scan = await scanStylesheets(builtWith(), [join(cwdDir, "local.css")]);
+        expect([...scan.declared]).toEqual(["--own"]);
+    });
+
+    it("reports nothing unread when paths are named", async () => {
+        const scan = await scanStylesheets(builtWith(), [join(cwdDir, "local.css")]);
+        expect(scan.unread).toEqual([]);
+    });
 });
 
-describe("findUnreadStylesheets", () => {
+describe("scanStylesheets: what went unread", () => {
     let base: string;
     let cwdDir: string;
     let originalCwd: string;
@@ -157,11 +172,8 @@ describe("findUnreadStylesheets", () => {
         await rm(base, { recursive: true, force: true });
     });
 
-    const scanThenCheck = async (content?: string[], outputDir?: string) => {
-        const config = configWith(content, outputDir);
-        const scan = await scanProjectCSS(config);
-        return findUnreadStylesheets(config, scan.files);
-    };
+    const scanThenCheck = async (content?: string[], outputDir?: string) =>
+        (await scanStylesheets(builtWith(content, outputDir))).unread;
 
     it("reports stylesheets in the output directory that the scan never read", async () => {
         expect(await scanThenCheck()).toEqual([{ dir: "../css", count: 2 }]);
@@ -192,44 +204,28 @@ describe("findUnreadStylesheets", () => {
     });
 
     it("reports each output directory separately when they differ", async () => {
-        const config = {
-            variables: { path: "../css/tokens.css" },
-            utilities: { path: "../generated/utilities.css" },
-        } as unknown as InternalConfig;
+        const built = builtWriting(["../css/tokens.css"], "../generated/utilities.css");
         await mkdir(join(base, "assets", "generated"), { recursive: true });
         await writeFile(join(base, "assets", "generated", "vendor.css"), `.v { color: red; }`);
 
-        const scan = await scanProjectCSS(config);
-        const entries = await findUnreadStylesheets(config, scan.files);
+        const { unread } = await scanStylesheets(built);
 
-        expect(entries).toEqual([
+        expect(unread).toEqual([
             { dir: "../css", count: 3 },
             { dir: "../generated", count: 1 },
         ]);
     });
 
-    describe("when permutations name the output files", () => {
-        const permutationConfig = () =>
-            ({
-                variables: {
-                    path: "styles/variables.gen.css",
-                    permutations: [
-                        { input: {}, selector: ":root", path: "../css/tokens.css" },
-                        {
-                            input: { theme: "alt" },
-                            selector: '[data-theme="alt"]',
-                            path: "../css/tokens.css",
-                        },
-                    ],
-                },
-                utilities: { path: "../css/utilities.css" },
-            }) as unknown as InternalConfig;
+    describe("when the build writes variables somewhere other than the default path", () => {
+        const permutationBuilt = (content?: string[]) =>
+            builtWriting(
+                ["../css/tokens.css", "../css/tokens.css"],
+                "../css/utilities.css",
+                content,
+            );
 
-        it("looks in the directory the permutations write to", async () => {
-            const config = permutationConfig();
-            const scan = await scanProjectCSS(config);
-
-            expect(await findUnreadStylesheets(config, scan.files)).toEqual([
+        it("looks in the directory the build writes to", async () => {
+            expect((await scanStylesheets(permutationBuilt())).unread).toEqual([
                 { dir: "../css", count: 2 },
             ]);
         });
@@ -237,10 +233,7 @@ describe("findUnreadStylesheets", () => {
         it("does not treat the unused default variables directory as output", async () => {
             await mkdir(join(cwdDir, "styles"), { recursive: true });
             await writeFile(join(cwdDir, "styles", "extra.css"), `.e { color: red; }`);
-            const config = permutationConfig();
-
-            const scan = await scanProjectCSS(config);
-            const dirs = (await findUnreadStylesheets(config, scan.files)).map((e) => e.dir);
+            const dirs = (await scanStylesheets(permutationBuilt())).unread.map((e) => e.dir);
 
             expect(dirs).not.toContain("styles");
         });
@@ -249,30 +242,35 @@ describe("findUnreadStylesheets", () => {
             const nested = join(base, "assets", "css", "utilities");
             await mkdir(nested, { recursive: true });
             await writeFile(join(nested, "extra.css"), `.e { color: red; }`);
-            const config = {
-                variables: {
-                    path: "styles/variables.gen.css",
-                    permutations: [{ input: {}, selector: ":root", path: "../css/tokens.css" }],
-                },
-                utilities: { path: "../css/utilities/utilities.gen.css" },
-            } as unknown as InternalConfig;
+            const built = builtWriting(["../css/tokens.css"], "../css/utilities/utilities.gen.css");
 
-            const scan = await scanProjectCSS(config);
-
-            expect(await findUnreadStylesheets(config, scan.files)).toEqual([
-                { dir: "../css", count: 4 },
-            ]);
+            expect((await scanStylesheets(built)).unread).toEqual([{ dir: "../css", count: 4 }]);
         });
 
         it("keeps generated output out of the scan", async () => {
-            const config = permutationConfig();
-            config.content = [join(base, "assets", "css", "**", "*.css")];
-
-            const files = (await scanProjectCSS(config)).files.map((file) => basename(file));
+            const content = [join(base, "assets", "css", "**", "*.css")];
+            const { files: read } = await scanStylesheets(permutationBuilt(content));
+            const files = read.map((file) => basename(file));
 
             expect(files).toContain("app.css");
             expect(files).not.toContain("tokens.css");
             expect(files).not.toContain("utilities.css");
         });
+    });
+});
+
+describe("shortfallOf", () => {
+    const unread = [{ dir: "../css", count: 2 }];
+
+    it("says nothing was read, before anything went unread", () => {
+        expect(shortfallOf({ files: [], unread })).toStrictEqual({ kind: "nothing-read" });
+    });
+
+    it("names the folders that went unread", () => {
+        expect(shortfallOf({ files: ["a.css"], unread })).toStrictEqual({ kind: "unread", unread });
+    });
+
+    it("says nothing when every stylesheet was read", () => {
+        expect(shortfallOf({ files: ["a.css"], unread: [] })).toBeUndefined();
     });
 });

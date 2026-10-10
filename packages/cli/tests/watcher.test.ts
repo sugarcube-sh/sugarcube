@@ -107,4 +107,63 @@ describe("startWatcher", () => {
             return changes.some((change) => change.kind === "markup" && change.path === page);
         }, "the markup change in the new folder");
     });
+
+    it("reports a markup save whose last write landed while the watcher was dropping changes", async () => {
+        const { folder, resolver, configFile } = project();
+        const page = join(folder, "a/page.html");
+        writeFileSync(page, "<p>0</p>");
+        const live = liveDocument({ entry: resolver }, { onError: () => {} });
+        await live.document();
+        const saves: string[] = [];
+        const watched: Watched = { content: [join(folder, "a/**/*.html")], markup: true };
+        handles.push(
+            await startWatcher(live, configFile, watched, {
+                onChange: async (change) => {
+                    if (change.kind !== "markup") return watched;
+                    saves.push(change.path);
+                    if (saves.length === 1) writeFileSync(page, '<p class="text-ink">finished</p>');
+                    return watched;
+                },
+                onError: () => {},
+                onWarning: () => {},
+            }),
+        );
+
+        await until(() => {
+            if (saves.length === 0) writeFileSync(page, "");
+            return saves.length >= 2;
+        }, "the save's last write");
+        expect(new Set(saves)).toStrictEqual(new Set([page]));
+    });
+
+    it("reports a config save whose last write landed while the watcher was dropping changes", async () => {
+        const { resolver, configFile } = project();
+        const live = liveDocument({ entry: resolver }, { onError: () => {} });
+        await live.document();
+        const saves: string[] = [];
+        const watched: Watched = { markup: false };
+        handles.push(
+            await startWatcher(live, configFile, watched, {
+                onChange: async (change) => {
+                    if (change.kind !== "config") return watched;
+                    saves.push(change.path);
+                    if (saves.length === 1) {
+                        writeFileSync(
+                            configFile,
+                            'export default { variables: { prefix: "ds" } };',
+                        );
+                    }
+                    return watched;
+                },
+                onError: () => {},
+                onWarning: () => {},
+            }),
+        );
+
+        await until(() => {
+            if (saves.length === 0) writeFileSync(configFile, "");
+            return saves.length >= 2;
+        }, "the save's last write");
+        expect(new Set(saves)).toStrictEqual(new Set([configFile]));
+    });
 });

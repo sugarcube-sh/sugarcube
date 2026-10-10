@@ -218,6 +218,20 @@ describe("analyze command: content globs", () => {
     });
 
     describe("when the scan reads nothing at all", () => {
+        it(
+            "says nothing was linted, how to reach the CSS, and how to name it for one run",
+            { timeout: TEST_TIMEOUT },
+            async () => {
+                await writeConfig(`"../../lib/**/*.heex"`);
+
+                const said = squash((await run("lint")).stdout);
+
+                expect(said).toContain(squash("No stylesheets found, so nothing was linted."));
+                expect(said).toContain(squash('content: ["../css/**/*.css"]'));
+                expect(said).toContain(squash("Or name it for one run: sugarcube lint ../css"));
+            },
+        );
+
         it("exits 1", { timeout: TEST_TIMEOUT }, async () => {
             await writeConfig(`"../../lib/**/*.heex"`);
 
