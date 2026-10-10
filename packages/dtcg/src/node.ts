@@ -12,6 +12,7 @@ export function findResolver(
 }
 
 export { read } from "./node/read.js";
+export { type FileStats, onFileChanged } from "./node/file-changed.js";
 export {
     type DocumentSource,
     type FileWatcher,

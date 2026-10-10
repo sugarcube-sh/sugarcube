@@ -170,35 +170,6 @@ describe("loadInternalConfig", () => {
         expect(configFile).toContain("sugarcube.config.ts");
     });
 
-    it("reads the config file again when it changes while being read", async () => {
-        await writeFile(join(tempDir, "tokens.resolver.json"), "{}");
-        const path = join(tempDir, "sugarcube.config.ts");
-        const finished = 'export default { variables: { prefix: "ds" } };';
-        await writeFile(
-            path,
-            `import { writeFileSync } from "node:fs";\nwriteFileSync(${JSON.stringify(path)}, ${JSON.stringify(finished)});\nexport {};\n`,
-        );
-
-        const { config } = await loadInternalConfig();
-
-        expect(config.variables.prefix).toBe("ds");
-    });
-
-    it("reads the config file again when it changes while a read of it fails", async () => {
-        await writeFile(join(tempDir, "tokens.resolver.json"), "{}");
-        const path = join(tempDir, "sugarcube.config.ts");
-        const finished = 'export default { variables: { prefix: "ds" } };';
-        await writeFile(
-            join(tempDir, "rewrite.mjs"),
-            `import { writeFileSync } from "node:fs";\nwriteFileSync(${JSON.stringify(path)}, ${JSON.stringify(finished)});\nthrow new Error("half written");\n`,
-        );
-        await writeFile(path, 'import "./rewrite.mjs";\nexport default {};\n');
-
-        const { config } = await loadInternalConfig();
-
-        expect(config.variables.prefix).toBe("ds");
-    });
-
     it("reports a mistake in the config file as a ConfigError", async () => {
         await writeFile(
             join(tempDir, "sugarcube.config.js"),

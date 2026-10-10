@@ -1,5 +1,5 @@
 import type { Document, ReadOptions } from "../index.js";
-import { stat } from "node:fs/promises";
+import { type FileStats, onFileChanged } from "./file-changed.js";
 import { diskPath, fileOnDisk, read } from "./read.js";
 
 /** What to read, as for `read`: a resolver or a token file, and how. */
@@ -23,7 +23,10 @@ export interface ReadEvent {
  */
 export interface FileWatcher {
     add(paths: string | readonly string[]): unknown;
-    on(event: "change" | "add" | "unlink", listener: (path: string) => void): unknown;
+    on(
+        event: "change" | "add" | "unlink",
+        listener: (path: string, stats?: FileStats) => void,
+    ): unknown;
 }
 
 /** A Document kept current with its files. Made by {@link liveDocument}. */
@@ -72,7 +75,8 @@ export interface LiveDocument {
  * Reads a design system from disk and keeps it current with its files, for a host that runs for
  * a while, such as a dev server or a watch command. It reads at once; once given a watcher, it
  * reads again when a file the Document lists is saved, added or deleted. Saves during a read lead
- * to one more read, and a file a read gains that was saved during it is read again.
+ * to one more read, a file a read gains that was saved during it is read again, and so is a save
+ * whose last write the watcher never reported ({@link onFileChanged}).
  *
  * What a listener throws, and a read that fails, go to `onError`, never into the watcher's event.
  *
@@ -108,16 +112,9 @@ export function liveDocument(
         savedDuringRead = new Set();
         try {
             const { entry, options } = typeof source === "function" ? source() : source;
-            const started = Date.now();
             const doc = await read(entry, options);
             names = new Map(doc.files.map((file) => [fileOnDisk(entry, file), file]));
             watchNewFiles();
-            const unreadable = doc.diagnostics.flatMap((found) =>
-                found.kind === "invalid-json" && found.at ? [fileOnDisk(entry, found.at.file)] : [],
-            );
-            for (const path of unreadable) {
-                if (await savedSince(path, started)) savedDuringRead.add(path);
-            }
             return doc;
         } finally {
             reading = false;
@@ -178,17 +175,10 @@ export function liveDocument(
             ),
         watch(given) {
             watcher = given;
-            given.on("change", changed);
+            onFileChanged(given, changed);
             given.on("add", changed);
             given.on("unlink", changed);
             watchNewFiles();
         },
     };
-}
-
-async function savedSince(path: string, time: number): Promise<boolean> {
-    return stat(path).then(
-        ({ mtimeMs }) => mtimeMs >= time,
-        () => false,
-    );
 }

@@ -14,6 +14,7 @@ import {
     readOptions,
 } from "@sugarcube-sh/core";
 import type { Document } from "@sugarcube-sh/dtcg";
+import { onFileChanged } from "@sugarcube-sh/dtcg/node";
 import dtcg, { type ReadEvent } from "@sugarcube-sh/dtcg-vite";
 import UnoCSS from "@unocss/vite";
 import { type Logger, type Plugin, normalizePath } from "vite";
@@ -219,7 +220,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             },
             configureServer(dev) {
                 if (loaded.configFile) dev.watcher.add(loaded.configFile);
-                dev.watcher.on("change", (file) => {
+                onFileChanged(dev.watcher, (file) => {
                     if (isConfigFile(file, loaded)) reloadConfig({ kind: "config" });
                 });
             },
