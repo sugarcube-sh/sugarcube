@@ -102,10 +102,16 @@ export const lint = new Command()
             const ignorePrefixes = parseIgnore(options.ignore);
             const fallbackLevel = options.fallback ?? "warn";
             const fallbackIsError = fallbackLevel === "error";
+            const { broken, fallback, refCount, scannedFiles, shortfall } = await runScan(
+                built,
+                paths,
+                ignorePrefixes,
+            );
+            if (broken.length > 0 || (fallbackIsError && fallback.length > 0)) {
+                process.exitCode = 1;
+            }
 
             if (options.json) {
-                const { broken, fallback, shortfall } = await runScan(built, paths, ignorePrefixes);
-
                 if (shortfall) printWarning(shortfallWarning(shortfall), { plain: true });
                 if (shortfall?.kind === "nothing-read") process.exitCode = 1;
 
@@ -118,17 +124,9 @@ export const lint = new Command()
                         2,
                     ),
                 );
-                if (broken.length > 0 || (fallbackIsError && fallback.length > 0)) {
-                    process.exitCode = 1;
-                }
                 return;
             }
 
-            const { broken, fallback, refCount, scannedFiles, shortfall } = await runScan(
-                built,
-                paths,
-                ignorePrefixes,
-            );
             const showFallback = fallbackLevel !== "off";
             const reportFallback = fallbackIsError ? log.error : log.warn;
 
@@ -179,10 +177,6 @@ export const lint = new Command()
                 if (showFallback && fallback.length > 0)
                     parts.push(color.dim(`${fallback.length} with fallback`));
                 outro(`${parts.join(color.dim(", "))}  ${scanned}`);
-            }
-
-            if (broken.length > 0 || (fallbackIsError && fallback.length > 0)) {
-                process.exitCode = 1;
             }
         } catch (error) {
             handleError(error);

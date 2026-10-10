@@ -4,8 +4,8 @@ import { extname } from "pathe";
 import color from "picocolors";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { MARKUP_EXTENSIONS } from "../constants/markup.js";
-import type { Dependent, Impact, Unused } from "./answers.js";
 import { shortfallOf } from "../scan-stylesheets.js";
+import type { Dependent, Impact, Unused } from "./answers.js";
 import type { Use, Uses } from "./uses.js";
 
 const GAP = "   ";
