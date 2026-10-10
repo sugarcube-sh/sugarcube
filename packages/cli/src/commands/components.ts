@@ -19,7 +19,7 @@ import { resolveTree } from "../registry/dependency-tree.js";
 import { cancel } from "@clack/prompts";
 import { isPackageInstalled } from "../project/is-package-installed.js";
 import { getPackageManager } from "../project/package-manager.js";
-import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
+import { printWarning } from "../prompts/box-with-badge.js";
 import { intro, label } from "../prompts/common.js";
 import { log, rawLog } from "../prompts/log.js";
 
@@ -87,8 +87,7 @@ export async function runComponents(
 
     const warningMessage = formatOverwriteWarnings(warnings);
     if (warningMessage && !options.overwrite && !options.silent) {
-        log.space(1);
-        warningBoxWithBadge(warningMessage, {});
+        printWarning(warningMessage, { plain: false });
         const confirmed = await confirmOverwrite("Continue?", false, {
             exitOnDecline: !options.continueOnDecline,
         });

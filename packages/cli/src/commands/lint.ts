@@ -9,8 +9,8 @@ import { findUndeclared } from "../lint/undeclared.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
 import { printProblems, whereOf } from "../problems.js";
 import type { VarRef } from "../scan-css.js";
-import { scanStylesheets } from "../scan-stylesheets.js";
-import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
+import { type Shortfall, scanStylesheets, shortfallOf } from "../scan-stylesheets.js";
+import { printWarning } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 import type { LintOptions } from "../types/commands.js";
@@ -36,8 +36,14 @@ async function runScan(built: Built, paths: string[], ignorePrefixes: string[]) 
         fallback,
         refCount: scan.used.length,
         scannedFiles: scan.files.length,
-        unread: scan.unread,
+        shortfall: shortfallOf(scan),
     };
+}
+
+function shortfallWarning(found: Shortfall): string {
+    return found.kind === "nothing-read"
+        ? ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd())
+        : ERROR_MESSAGES.LINT_UNREAD_STYLESHEETS(found.unread);
 }
 
 function formatGroupedRefs(refs: VarRef[]): string[] {
@@ -98,18 +104,10 @@ export const lint = new Command()
             const fallbackIsError = fallbackLevel === "error";
 
             if (options.json) {
-                const { broken, fallback, scannedFiles, unread } = await runScan(
-                    built,
-                    paths,
-                    ignorePrefixes,
-                );
+                const { broken, fallback, shortfall } = await runScan(built, paths, ignorePrefixes);
 
-                if (scannedFiles === 0) {
-                    console.error(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
-                    process.exitCode = 1;
-                } else if (unread.length > 0) {
-                    console.error(ERROR_MESSAGES.LINT_UNREAD_STYLESHEETS(unread));
-                }
+                if (shortfall) printWarning(shortfallWarning(shortfall), { plain: true });
+                if (shortfall?.kind === "nothing-read") process.exitCode = 1;
 
                 const portable = (refs: VarRef[]) =>
                     refs.map((ref) => ({ ...ref, file: relative(process.cwd(), ref.file) }));
@@ -126,7 +124,7 @@ export const lint = new Command()
                 return;
             }
 
-            const { broken, fallback, refCount, scannedFiles, unread } = await runScan(
+            const { broken, fallback, refCount, scannedFiles, shortfall } = await runScan(
                 built,
                 paths,
                 ignorePrefixes,
@@ -160,16 +158,10 @@ export const lint = new Command()
 
             const visibleTotal = broken.length + (showFallback ? fallback.length : 0);
 
-            if (scannedFiles === 0) {
-                log.space(1);
-                warningBoxWithBadge(ERROR_MESSAGES.LINT_NO_FILES_SCANNED(process.cwd()));
+            if (shortfall) printWarning(shortfallWarning(shortfall), { plain: false });
+            if (shortfall?.kind === "nothing-read") {
                 process.exitCode = 1;
                 return;
-            }
-
-            if (unread.length > 0) {
-                log.space(1);
-                warningBoxWithBadge(ERROR_MESSAGES.LINT_UNREAD_STYLESHEETS(unread));
             }
 
             if (visibleTotal === 0) {
@@ -177,7 +169,7 @@ export const lint = new Command()
                     ? "No undeclared references"
                     : "No references without fallback";
                 outro(
-                    unread.length > 0
+                    shortfall
                         ? color.yellow(`${headline}  ${scanned}`)
                         : color.greenBright(`${headline} ✨  ${scanned}`),
                 );

@@ -17,7 +17,7 @@ import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
 import { printProblems, whereOf } from "../problems.js";
-import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
+import { printWarning } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log, rawLog } from "../prompts/log.js";
 
@@ -38,11 +38,7 @@ async function systemFor(plain: boolean): Promise<{ built: Built; system: System
 async function usesFor(built: Built, asking: "unused" | "impact", plain: boolean): Promise<Uses> {
     const uses = await findUses(built);
     const warning = shortfall(uses, asking);
-    if (warning && plain) console.error(warning);
-    if (warning && !plain) {
-        log.space(1);
-        warningBoxWithBadge(warning);
-    }
+    if (warning) printWarning(warning, { plain });
     return uses;
 }
 

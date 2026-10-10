@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Built } from "../src/build.js";
-import { scanStylesheets } from "../src/scan-stylesheets.js";
+import { scanStylesheets, shortfallOf } from "../src/scan-stylesheets.js";
 
 function builtWriting(variables: string[], utilities: string, content?: string[]): Built {
     return {
@@ -256,5 +256,21 @@ describe("scanStylesheets: what went unread", () => {
             expect(files).not.toContain("tokens.css");
             expect(files).not.toContain("utilities.css");
         });
+    });
+});
+
+describe("shortfallOf", () => {
+    const unread = [{ dir: "../css", count: 2 }];
+
+    it("says nothing was read, before anything went unread", () => {
+        expect(shortfallOf({ files: [], unread })).toStrictEqual({ kind: "nothing-read" });
+    });
+
+    it("names the folders that went unread", () => {
+        expect(shortfallOf({ files: ["a.css"], unread })).toStrictEqual({ kind: "unread", unread });
+    });
+
+    it("says nothing when every stylesheet was read", () => {
+        expect(shortfallOf({ files: ["a.css"], unread: [] })).toBeUndefined();
     });
 });

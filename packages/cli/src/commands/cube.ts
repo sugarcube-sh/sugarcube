@@ -8,7 +8,7 @@ import { installCUBE } from "../installation/cube.js";
 import { collectCubeOverwriteWarnings } from "../overwrite-warnings/collect-overwrite-warnings.js";
 import { formatOverwriteWarnings } from "../overwrite-warnings/format-overwrite-warnings.js";
 import { getCubeDir } from "../project/output-dirs.js";
-import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
+import { printWarning } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
 import { confirmOverwrite } from "../prompts/prompts.js";
@@ -42,8 +42,7 @@ export async function runCube(options: RunCubeOptions = {}): Promise<void> {
 
     const warningMessage = formatOverwriteWarnings(warnings);
     if (warningMessage && !options.force && !options.silent) {
-        log.space(1);
-        warningBoxWithBadge(warningMessage, {});
+        printWarning(warningMessage, { plain: false });
         const confirmed = await confirmOverwrite("Continue?", false, {
             exitOnDecline: !options.continueOnDecline,
         });

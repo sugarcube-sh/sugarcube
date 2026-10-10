@@ -19,8 +19,8 @@ const unreadHeadline = (entries: Unread[]) => {
 const unreadFix = (entries: Unread[]) =>
     `Add the ${entries.length === 1 ? "folder" : "folders"} to ${color.cyan("content")}.`;
 
-const noStylesheetsHelp = (cwd: string) =>
-    `Looked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}:\n\n  content: ["../css/**/*.css"]\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`;
+const noStylesheetsHelp = (cwd: string, also = "") =>
+    `Looked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}:\n\n  content: ["../css/**/*.css"]\n\n${also}See ${color.cyan(LINKS.CONFIGURATION)} for more information.`;
 
 export const ERROR_MESSAGES = {
     CONFIG_EXISTS: () =>
@@ -87,7 +87,7 @@ export const ERROR_MESSAGES = {
         `Invalid ${flagName} value: "${value}". Must be a filename, not a path.\n\nUse --variables-dir or --utilities-dir to specify the directory.`,
 
     LINT_NO_FILES_SCANNED: (cwd: string) =>
-        `No stylesheets found.\n\nLooked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}, or pass a directory or glob directly.\n\nSee ${color.cyan(LINKS.CONFIGURATION)} for more information.`,
+        `No stylesheets found, so nothing was linted.\n\n${noStylesheetsHelp(cwd, `Or name it for one run: ${color.cyan("sugarcube lint ../css")}\n\n`)}`,
 
     ANALYZE_UNUSED_NO_FILES_SCANNED: (cwd: string) =>
         `No stylesheets found. Tokens reached only through your CSS are listed as unused below.\n\n${noStylesheetsHelp(cwd)}`,

@@ -19,6 +19,8 @@ interface Stylesheets {
     unread: UnreadStylesheets[];
 }
 
+export type Shortfall = { kind: "nothing-read" } | { kind: "unread"; unread: UnreadStylesheets[] };
+
 const STYLESHEETS = buildExtensionGlob(STYLESHEET_EXTENSIONS);
 
 export async function scanStylesheets(built: Built, paths: string[] = []): Promise<Stylesheets> {
@@ -48,6 +50,15 @@ export async function scanStylesheets(built: Built, paths: string[] = []): Promi
 
     const unread = paths.length > 0 ? [] : await unreadStylesheets(generated, files);
     return { files, used, declared, unread };
+}
+
+export function shortfallOf({
+    files,
+    unread,
+}: Pick<Stylesheets, "files" | "unread">): Shortfall | undefined {
+    if (files.length === 0) return { kind: "nothing-read" };
+    if (unread.length > 0) return { kind: "unread", unread };
+    return undefined;
 }
 
 function generatedPaths({ config, declared }: Built): string[] {

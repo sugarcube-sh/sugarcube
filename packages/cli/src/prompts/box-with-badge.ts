@@ -1,5 +1,6 @@
 import color from "picocolors";
 import { box } from "./box.js";
+import { log } from "./log.js";
 
 export function errorBoxWithBadge(message: string, options = {}) {
     const paddedMessage = `\n${message}`;
@@ -12,7 +13,7 @@ export function errorBoxWithBadge(message: string, options = {}) {
     });
 }
 
-export function warningBoxWithBadge(message: string, options = {}) {
+function warningBoxWithBadge(message: string, options = {}) {
     const paddedMessage = `\n${message}`;
 
     box(paddedMessage, color.black(color.bgYellow(" WARNING ")), {
@@ -32,4 +33,13 @@ export function infoBoxWithBadge(message: string, options = {}) {
         formatBorder: color.cyan,
         ...options,
     });
+}
+
+export function printWarning(message: string, { plain }: { plain: boolean }) {
+    if (plain) {
+        console.error(message);
+        return;
+    }
+    log.space(1);
+    warningBoxWithBadge(message);
 }

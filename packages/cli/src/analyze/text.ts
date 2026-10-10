@@ -5,6 +5,7 @@ import color from "picocolors";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { MARKUP_EXTENSIONS } from "../constants/markup.js";
 import type { Dependent, Impact, Unused } from "./answers.js";
+import { shortfallOf } from "../scan-stylesheets.js";
 import type { Use, Uses } from "./uses.js";
 
 const GAP = "   ";
@@ -108,12 +109,13 @@ export function unusedSummary({ unused, total }: Unused, uses: Uses): string {
 }
 
 export function shortfall(uses: Uses, asking: "unused" | "impact"): string | undefined {
-    if (uses.scanned.forVarReferences.length === 0) {
+    const found = shortfallOf({ files: uses.scanned.forVarReferences, unread: uses.unread });
+    if (found?.kind === "nothing-read") {
         return asking === "unused"
             ? ERROR_MESSAGES.ANALYZE_UNUSED_NO_FILES_SCANNED(process.cwd())
             : ERROR_MESSAGES.ANALYZE_IMPACT_NO_FILES_SCANNED(process.cwd());
     }
-    if (uses.unread.length > 0) return ERROR_MESSAGES.ANALYZE_UNREAD_STYLESHEETS(uses.unread);
+    if (found?.kind === "unread") return ERROR_MESSAGES.ANALYZE_UNREAD_STYLESHEETS(found.unread);
     return undefined;
 }
 
