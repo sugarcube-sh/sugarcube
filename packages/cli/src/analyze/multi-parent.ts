@@ -1,4 +1,5 @@
-import { type Permutation, referrers } from "@sugarcube-sh/dtcg";
+import { type Permutation, referrers, token } from "@sugarcube-sh/dtcg";
+import type { System } from "./system.js";
 
 export interface Hop {
     from: string;
@@ -64,59 +65,40 @@ export function chooseParents(
     return chosen;
 }
 
-export function describeElidedParents(hops: Hop[]): Map<string, string> {
+export function describeElidedParents(
+    hops: Hop[],
+    { permutations, defaultPermutation }: Pick<System, "permutations" | "defaultPermutation">,
+): Map<string, string> {
     const described = new Map<string, string>();
+    const base = defaultPermutation ?? permutations[0];
+    if (!base) return described;
 
     for (const [dependent, parents] of parentsOf(hops)) {
         if (parents.length < 2) continue;
 
-        const own = hops.filter(({ from }) => from === dependent);
-        const deciding = partitioningModifiers(own);
+        const parentsIn = (permutation: Permutation) =>
+            hops
+                .filter((hop) => hop.from === dependent && hop.in.includes(permutation))
+                .map(({ to }) => to)
+                .sort()
+                .join("\0");
+        const changed = permutations.filter((each) => parentsIn(each) !== parentsIn(base));
+        const setBy = new Set(changed.flatMap((each) => modifierSetting(each, dependent)));
 
-        if (deciding.length === 1) {
-            described.set(dependent, `per ${deciding[0]}`);
-        } else if (deciding.length > 1) {
-            described.set(dependent, "per context");
-        } else if (contextsDiffer(own)) {
-            described.set(dependent, "per context");
-        } else {
+        if (changed.length === 0) {
             described.set(dependent, `${parents.length} references`);
+        } else if (setBy.size === 1) {
+            described.set(dependent, `per ${[...setBy][0]}`);
+        } else {
+            described.set(dependent, "per context");
         }
     }
 
     return described;
 }
 
-function partitioningModifiers(hops: Hop[]): string[] {
-    const parentsByValue = new Map<string, Map<string, Set<string>>>();
-
-    for (const hop of hops) {
-        for (const permutation of hop.in) {
-            for (const [modifier, value] of Object.entries(permutation.input)) {
-                const values = parentsByValue.get(modifier) ?? new Map<string, Set<string>>();
-                const reached = values.get(value) ?? new Set<string>();
-                reached.add(hop.to);
-                values.set(value, reached);
-                parentsByValue.set(modifier, values);
-            }
-        }
-    }
-
-    return [...parentsByValue]
-        .filter(([, values]) => {
-            if (values.size < 2) return false;
-            if ([...values.values()].some((parents) => parents.size !== 1)) return false;
-            const landings = new Set([...values.values()].map((parents) => [...parents][0]));
-            return landings.size > 1;
-        })
-        .map(([modifier]) => modifier);
-}
-
-function contextsDiffer(hops: Hop[]): boolean {
-    const labels = (hop: Hop) =>
-        hop.in
-            .map(({ label }) => label)
-            .sort()
-            .join("\0");
-    return new Set(hops.map(labels)).size > 1;
+function modifierSetting(permutation: Permutation, path: string): string[] {
+    const found = token(permutation, path);
+    const from = found && permutation.sources[found.source.index]?.from;
+    return from && "modifier" in from ? [from.modifier] : [];
 }

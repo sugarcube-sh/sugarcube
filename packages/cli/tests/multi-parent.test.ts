@@ -1,3 +1,4 @@
+import { fillDefaults, readOptions } from "@sugarcube-sh/core";
 import { type Input, type Permutation, readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
 import {
@@ -8,6 +9,8 @@ import {
     hopsTo,
     parentsOf,
 } from "../src/analyze/multi-parent.js";
+import { systemOf } from "../src/analyze/system.js";
+import { buildFiles, buildFrom } from "../src/build.js";
 
 const perms = (...inputs: Input[]): Permutation[] =>
     inputs.map((input, index) => ({ input, label: `perm ${index}` }) as Permutation);
@@ -145,138 +148,120 @@ describe("defaultContextParents", () => {
 });
 
 describe("describeElidedParents", () => {
-    it("names the modifier that distinguishes the parents", () => {
-        expect(describeElidedParents(perVariantHops).get("v.on-strong")).toBe("per variant");
+    const color = (value: unknown) => ({ $type: "color", $value: value });
+    const dimension = (value: unknown) => ({ $type: "dimension", $value: value });
+    const files = {
+        "tokens.resolver.json": {
+            version: "2025.10",
+            resolutionOrder: [
+                { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
+                {
+                    type: "modifier",
+                    name: "theme",
+                    default: "light",
+                    contexts: {
+                        light: [],
+                        dark: [{ $ref: "dark.json" }],
+                        alt: [{ $ref: "alt.json" }],
+                    },
+                },
+                {
+                    type: "modifier",
+                    name: "brand",
+                    default: "a",
+                    contexts: { a: [], b: [{ $ref: "b.json" }] },
+                },
+                {
+                    type: "modifier",
+                    name: "debug",
+                    default: "off",
+                    contexts: { off: [], on: [] },
+                },
+            ],
+        },
+        "base.json": {
+            blue: color({ colorSpace: "srgb", components: [0, 0, 1] }),
+            soft: color("{blue}"),
+            strong: color("{blue}"),
+            muted: color("{blue}"),
+            button: color("{soft}"),
+            surface: color("{soft}"),
+            mixed: color("{soft}"),
+            only: color("{soft}"),
+            size: dimension({ value: 1, unit: "px" }),
+            small: dimension("{size}"),
+            large: dimension("{size}"),
+            lift: {
+                $type: "shadow",
+                $value: {
+                    color: "{blue}",
+                    offsetX: "{small}",
+                    offsetY: "{large}",
+                    blur: { value: 0, unit: "px" },
+                    spread: { value: 0, unit: "px" },
+                },
+            },
+        },
+        "dark.json": {
+            button: color("{soft}"),
+            surface: color("{strong}"),
+            mixed: color("{strong}"),
+        },
+        "alt.json": { surface: color("{soft}") },
+        "b.json": { button: color("{strong}"), mixed: color("{muted}") },
+    };
+    const labelsFor = async (target: string) => {
+        const texts = Object.fromEntries(
+            Object.entries(files).map(([name, json]) => [name, JSON.stringify(json)]),
+        );
+        const system = systemOf(await buildFiles(texts, "/project"));
+        return describeElidedParents(hopsTo(system.permutations, target), system);
+    };
+
+    it("names the modifier whose files set the token to another reference", async () => {
+        expect((await labelsFor("blue")).get("button")).toBe("per brand");
+        expect((await labelsFor("blue")).get("surface")).toBe("per theme");
     });
 
-    it("names whichever modifier the project declared, not a built-in one", () => {
-        const [comfortable, compact] = perms({ density: "comfortable" }, { density: "compact" });
-        if (!comfortable || !compact) throw new Error("two");
-        const reached = hops("space.gap", [
-            [comfortable, "space.md"],
-            [compact, "space.sm"],
-        ]);
+    it("ignores a file that sets the same reference again", async () => {
+        const labels = await labelsFor("blue");
 
-        expect(describeElidedParents(reached).get("space.gap")).toBe("per density");
+        expect(labels.get("button")).toBe("per brand");
+        expect(labels.get("surface")).toBe("per theme");
     });
 
-    it("finds the deciding modifier when two modifiers claim the same token", () => {
-        const matrix = perms(
-            { theme: "light", brand: "a" },
-            { theme: "light", brand: "b" },
-            { theme: "dark", brand: "a" },
-            { theme: "dark", brand: "b" },
-        );
-        const wins = ["blue", "red", "blue", "red"];
-        const reached = hops(
-            "color.button",
-            matrix.map((permutation, index) => [permutation, `color.${wins[index]}`]),
-        );
-
-        expect(describeElidedParents(reached).get("color.button")).toBe("per brand");
+    it("says 'per context' when more than one modifier sets it", async () => {
+        expect((await labelsFor("blue")).get("mixed")).toBe("per context");
     });
 
-    it("ignores a modifier whose values all lead to the same parent", () => {
-        const oneAxisEach = perms(
-            { theme: "default", brand: "default", variant: "accent" },
-            { theme: "alt", brand: "default", variant: "accent" },
-            { theme: "pronto", brand: "default", variant: "accent" },
-            { theme: "default", brand: "cbus", variant: "accent" },
-            { theme: "default", brand: "default", variant: "danger" },
-            { theme: "default", brand: "default", variant: "info" },
-        );
-        const targets = ["accent", "accent", "accent", "accent", "danger", "info"];
-        const reached = hops(
-            "v.on-strong",
-            oneAxisEach.map((permutation, index) => [
-                permutation,
-                `color.${targets[index]}.on-strong`,
+    it("says nothing about a token with a single parent", async () => {
+        expect((await labelsFor("blue")).has("only")).toBe(false);
+    });
+
+    it("names the modifier whose files set it, even when another lines up by chance", async () => {
+        const config = fillDefaults({
+            variables: {
+                permutations: [
+                    { input: { theme: "light", brand: "a" }, selector: ":root" },
+                    { input: { theme: "dark", brand: "b" }, selector: ".dark-b" },
+                ],
+            },
+        });
+        const texts = Object.fromEntries(
+            Object.entries({ ...files, "dark.json": {} }).map(([name, json]) => [
+                name,
+                JSON.stringify(json),
             ]),
         );
+        const doc = readFromMemory({ files: texts }, readOptions(config));
+        const system = systemOf(await buildFrom(doc, { config }));
 
-        expect(describeElidedParents(reached).get("v.on-strong")).toBe("per variant");
+        expect(
+            describeElidedParents(hopsTo(system.permutations, "blue"), system).get("button"),
+        ).toBe("per brand");
     });
 
-    it("ignores a modifier whose contexts contribute nothing", () => {
-        const matrix = perms(
-            { variant: "accent", debug: "false" },
-            { variant: "accent", debug: "true" },
-            { variant: "danger", debug: "false" },
-            { variant: "danger", debug: "true" },
-        );
-        const reached = hops(
-            "v.on-strong",
-            matrix.map((permutation, index) => [
-                permutation,
-                `color.${index < 2 ? "accent" : "danger"}.on-strong`,
-            ]),
-        );
-
-        expect(describeElidedParents(reached).get("v.on-strong")).toBe("per variant");
-    });
-
-    it("says nothing about a token with a single parent", () => {
-        const reached = hops(
-            "color.accent.on-strong",
-            perVariant.map((permutation) => [permutation, "color.base.white"]),
-        );
-
-        expect(describeElidedParents(reached).has("color.accent.on-strong")).toBe(false);
-    });
-
-    it("names the modifier that partitions the parents, not one that merely varies", () => {
-        const matrix = perms(
-            { variant: "accent", theme: "light" },
-            { variant: "accent", theme: "dark" },
-            { variant: "danger", theme: "light" },
-            { variant: "danger", theme: "dark" },
-        );
-        const reached = hops(
-            "v.on-strong",
-            matrix.map((permutation, index) => [
-                permutation,
-                `color.${index < 2 ? "accent" : "danger"}.on-strong`,
-            ]),
-        );
-
-        expect(describeElidedParents(reached).get("v.on-strong")).toBe("per variant");
-    });
-
-    it("falls back to 'per context' when more than one modifier differs", () => {
-        const mixed = perms(
-            { variant: "accent", theme: "light" },
-            { variant: "danger", theme: "dark" },
-        );
-        const reached = hops(
-            "v.on-strong",
-            mixed.map((permutation, index) => [
-                permutation,
-                `color.${index === 0 ? "accent" : "danger"}.on-strong`,
-            ]),
-        );
-
-        expect(describeElidedParents(reached).get("v.on-strong")).toBe("per context");
-    });
-
-    it("falls back to 'per context' when no one modifier decides the parent", () => {
-        const tangled = perms({ a: "1", b: "1" }, { a: "1", b: "2" }, { a: "2", b: "1" });
-        const targets = ["x", "y", "y"];
-        const reached = hops(
-            "v.on-strong",
-            tangled.map((permutation, index) => [permutation, `color.${targets[index]}`]),
-        );
-
-        expect(describeElidedParents(reached).get("v.on-strong")).toBe("per context");
-    });
-
-    it("says how many references when the parents don't vary by context", () => {
-        const [only] = perms({});
-        if (!only) throw new Error("one");
-        const reached = hops("shadow.md", [
-            [only, "space.sm"],
-            [only, "color.shadow"],
-        ]);
-
-        expect(describeElidedParents(reached).get("shadow.md")).toBe("2 references");
+    it("says how many references when the parents don't vary by context", async () => {
+        expect((await labelsFor("size")).get("lift")).toBe("2 references");
     });
 });

@@ -225,7 +225,7 @@ const impact = new Command()
                 usesOf,
                 defaultContextParents(hops, system.defaultPermutation),
             );
-            const elided = describeElidedParents(hops);
+            const elided = describeElidedParents(hops, system);
 
             if (options.json) {
                 console.log(
