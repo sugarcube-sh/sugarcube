@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import { readFileSync, writeFileSync } from "node:fs";
 import { mkdtemp, realpath, rm, stat, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -44,7 +45,7 @@ describe("onFileChanged", () => {
 
         await writeFile(file, "");
         watcher.emit("change", file, await stat(file));
-        await writeFile(file, '{ "a": 2 }');
+        writeFileSync(file, '{ "a": 2 }');
         await pastTheWindow();
 
         expect(paths).toStrictEqual([file, file]);
@@ -56,7 +57,7 @@ describe("onFileChanged", () => {
         await writeFile(file, "");
         const looked = await stat(file);
         watcher.emit("change", file, looked);
-        await writeFile(file, '{ "a": 2 }');
+        writeFileSync(file, '{ "a": 2 }');
         await utimes(file, looked.atime, looked.mtime);
         await pastTheWindow();
 
@@ -81,13 +82,28 @@ describe("onFileChanged", () => {
         expect(paths).toStrictEqual([file]);
     });
 
+    it("looks before the listener reads, when the watcher gives no stats", async () => {
+        const watcher = new EventEmitter();
+        const read: string[] = [];
+        onFileChanged(watcher, (path) => {
+            read.push(readFileSync(path, "utf8"));
+            if (read.length === 1) writeFileSync(path, '{ "a": 2 }');
+        });
+
+        await writeFile(file, "");
+        watcher.emit("change", file);
+        await pastTheWindow();
+
+        expect(read).toStrictEqual(["", '{ "a": 2 }']);
+    });
+
     it("reports nothing more once stopped", async () => {
         const { watcher, paths, stop } = heard();
 
         await writeFile(file, "");
         watcher.emit("change", file, await stat(file));
         stop();
-        await writeFile(file, '{ "a": 2 }');
+        writeFileSync(file, '{ "a": 2 }');
         await pastTheWindow();
 
         expect(paths).toStrictEqual([file]);
