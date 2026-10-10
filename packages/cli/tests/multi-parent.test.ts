@@ -254,7 +254,8 @@ describe("describeElidedParents", () => {
             ]),
         );
         const doc = readFromMemory({ files: texts }, readOptions(config));
-        const system = systemOf(await buildFrom(doc, { config }));
+        const loaded = { config: { ...config, resolver: "tokens.resolver.json" } };
+        const system = systemOf(await buildFrom(doc, loaded));
 
         expect(
             describeElidedParents(hopsTo(system.permutations, "blue"), system).get("button"),
