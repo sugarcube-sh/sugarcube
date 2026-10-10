@@ -4,18 +4,9 @@ import { read } from "@sugarcube-sh/dtcg/node";
 import { bench, describe } from "vitest";
 import wwwConfig from "../../../../apps/www/sugarcube.config.js";
 import { fillDefaults } from "../../src/node/config/normalize.js";
-import { loadTokens } from "../../src/node/load-tokens.js";
 import { declare } from "../../src/shared/css/declare.js";
 import { emitCSS } from "../../src/shared/css/emit.js";
-import { assignCSSNames } from "../../src/shared/pipeline/assign-css-names.js";
-import { groupByContext } from "../../src/shared/pipeline/group-by-context.js";
 import { readOptions } from "../../src/shared/read-options.js";
-import { resolveTokens } from "../../src/shared/resolve-tokens.js";
-import {
-    clearMatchCache,
-    convertConfigToUnoRules,
-    enumerateSafelistClasses,
-} from "../../src/shared/uno-rules.js";
 import { utilityRules } from "../../src/shared/utilities/rules.js";
 import { utilityTokens } from "../../src/shared/utilities/tokens.js";
 import type { UtilityClassesConfig } from "../../src/types/config.js";
@@ -37,10 +28,7 @@ async function project(resolver: string) {
         utilities: { classes },
     });
     const doc = await read(resolver, readOptions(config));
-    const loaded = await loadTokens({ type: "resolver", resolverPath: resolver, config });
-    const { trees, resolved } = resolveTokens(loaded.trees);
-    const old = assignCSSNames(groupByContext(trees, resolved), config);
-    return { config, doc, old };
+    return { config, doc };
 }
 
 type Rule = [RegExp, (match: RegExpMatchArray) => Record<string, unknown> | undefined];
@@ -64,16 +52,8 @@ const projects = {
     ),
 };
 
-for (const [name, { config, doc, old }] of Object.entries(projects)) {
+for (const [name, { config, doc }] of Object.entries(projects)) {
     describe(`utilities for ${name}, the fluid kit's classes, each safelisted class answered`, () => {
-        bench("old sugarcube: rules, safelist, answers", () => {
-            clearMatchCache();
-            answerEach(
-                convertConfigToUnoRules(classes, old),
-                enumerateSafelistClasses(classes, old),
-            );
-        });
-
         const declared = declare(doc, config);
 
         bench("new core: tokens, rules, safelist, answers, from the build's declarations", () => {

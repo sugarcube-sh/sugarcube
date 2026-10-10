@@ -1,19 +1,43 @@
-import type { TokenGraph } from "@sugarcube-sh/core";
+import { type Permutation, referrers } from "@sugarcube-sh/dtcg";
+
+export interface Hop {
+    from: string;
+    to: string;
+    in: Permutation[];
+}
+
+export function hopsTo(permutations: Permutation[], target: string): Hop[] {
+    const found = new Map<string, Hop>();
+    for (const permutation of permutations) {
+        const reached = new Set(
+            referrers(permutation, target, { transitive: true }).map(({ path }) => path),
+        );
+        for (const { from, to } of permutation.edges) {
+            if (!reached.has(from) || !(reached.has(to) || to === target)) continue;
+            const key = `${from}\0${to}`;
+            const hop = found.get(key) ?? { from, to, in: [] };
+            if (!hop.in.includes(permutation)) hop.in.push(permutation);
+            found.set(key, hop);
+        }
+    }
+    return [...found.values()];
+}
+
+export function parentsOf(hops: Hop[]): Map<string, string[]> {
+    const parents = new Map<string, string[]>();
+    for (const { from, to } of hops) parents.set(from, [...(parents.get(from) ?? []), to]);
+    return parents;
+}
 
 export function defaultContextParents(
-    graph: TokenGraph,
-    parents: Map<string, string[]>,
+    hops: Hop[],
+    defaultPermutation: Permutation | undefined,
 ): Map<string, string> {
-    const defaultContext = graph.defaultContext;
-    if (!defaultContext) return new Map();
-
     const preferred = new Map<string, string>();
-    for (const edge of graph.edges) {
-        const hops = parents.get(edge.from);
-        if (!hops?.includes(edge.to)) continue;
-        if (edge.contexts.includes(defaultContext)) preferred.set(edge.from, edge.to);
+    if (!defaultPermutation) return preferred;
+    for (const hop of hops) {
+        if (hop.in.includes(defaultPermutation)) preferred.set(hop.from, hop.to);
     }
-
     return preferred;
 }
 
@@ -40,49 +64,38 @@ export function chooseParents(
     return chosen;
 }
 
-function contextInput(graph: TokenGraph, id: string): Record<string, string> {
-    const info = graph.contexts.find((context) => context.id === id);
-    return (info?.input ?? {}) as Record<string, string>;
-}
-
-export function describeElidedParents(
-    graph: TokenGraph,
-    parents: Map<string, string[]>,
-): Map<string, string> {
+export function describeElidedParents(hops: Hop[]): Map<string, string> {
     const described = new Map<string, string>();
 
-    for (const [dependent, hops] of parents) {
-        if (hops.length < 2) continue;
+    for (const [dependent, parents] of parentsOf(hops)) {
+        if (parents.length < 2) continue;
 
-        const deciding = partitioningModifiers(graph, dependent, hops);
+        const own = hops.filter(({ from }) => from === dependent);
+        const deciding = partitioningModifiers(own);
 
         if (deciding.length === 1) {
             described.set(dependent, `per ${deciding[0]}`);
         } else if (deciding.length > 1) {
             described.set(dependent, "per context");
-        } else if (contextsDiffer(graph, dependent, hops)) {
-            // Contexts vary but carry no modifier input to name — a light/dark system built
-            // without permutations, say.
+        } else if (contextsDiffer(own)) {
             described.set(dependent, "per context");
         } else {
-            described.set(dependent, `${hops.length} references`);
+            described.set(dependent, `${parents.length} references`);
         }
     }
 
     return described;
 }
 
-function partitioningModifiers(graph: TokenGraph, dependent: string, hops: string[]): string[] {
+function partitioningModifiers(hops: Hop[]): string[] {
     const parentsByValue = new Map<string, Map<string, Set<string>>>();
 
-    for (const edge of graph.edges) {
-        if (edge.from !== dependent || !hops.includes(edge.to)) continue;
-
-        for (const context of edge.contexts) {
-            for (const [modifier, value] of Object.entries(contextInput(graph, context))) {
+    for (const hop of hops) {
+        for (const permutation of hop.in) {
+            for (const [modifier, value] of Object.entries(permutation.input)) {
                 const values = parentsByValue.get(modifier) ?? new Map<string, Set<string>>();
                 const reached = values.get(value) ?? new Set<string>();
-                reached.add(edge.to);
+                reached.add(hop.to);
                 values.set(value, reached);
                 parentsByValue.set(modifier, values);
             }
@@ -99,13 +112,11 @@ function partitioningModifiers(graph: TokenGraph, dependent: string, hops: strin
         .map(([modifier]) => modifier);
 }
 
-/** Whether a dependent reaches its parents through different contexts at all. */
-function contextsDiffer(graph: TokenGraph, dependent: string, hops: string[]): boolean {
-    const perParent = new Map<string, string>();
-    for (const edge of graph.edges) {
-        if (edge.from !== dependent || !hops.includes(edge.to)) continue;
-        perParent.set(edge.to, [...edge.contexts].sort().join(","));
-    }
-
-    return new Set(perParent.values()).size > 1;
+function contextsDiffer(hops: Hop[]): boolean {
+    const labels = (hop: Hop) =>
+        hop.in
+            .map(({ label }) => label)
+            .sort()
+            .join("\0");
+    return new Set(hops.map(labels)).size > 1;
 }

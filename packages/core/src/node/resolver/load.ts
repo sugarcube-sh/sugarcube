@@ -1,6 +1,6 @@
 import { dirname, isAbsolute, relative, resolve as resolvePath } from "pathe";
 import { ErrorMessages } from "../../shared/constants/error-messages.js";
-import { findDefaultContext } from "../../shared/graph/build-token-graph.js";
+import { findDefaultContext } from "./default-context.js";
 import type { Permutation } from "../../types/config.js";
 import type { LoadError, SourceOrder, TokenSources } from "../../types/load.js";
 import type { ResolverDocument } from "../../types/resolver.js";

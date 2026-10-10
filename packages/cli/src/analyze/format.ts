@@ -1,7 +1,8 @@
-import type { TokenGraph, TokenNode } from "@sugarcube-sh/core";
+import { stripRootSuffix } from "@sugarcube-sh/core";
+import type { Token } from "@sugarcube-sh/dtcg";
 import color from "picocolors";
 import type { VarRef } from "../lint/scan-css.js";
-import { UTILITY_SOURCE } from "./scan-utilities.js";
+import { UTILITY_SOURCE } from "./system.js";
 
 const ROOT_GROUP = "(root)";
 
@@ -15,19 +16,24 @@ function compareLeaf(a: string, b: string): number {
     return a.localeCompare(b, undefined, { numeric: true });
 }
 
-export function groupUnused(graph: TokenGraph, unusedPaths: string[]): UnusedGroup[] {
+function nameAndGroup(path: string): { name: string; group: string } {
+    const shown = stripRootSuffix(path);
+    const lastDot = shown.lastIndexOf(".");
+    if (lastDot === -1) return { name: shown, group: ROOT_GROUP };
+    return { name: shown.slice(lastDot + 1), group: shown.slice(0, lastDot) };
+}
+
+export function groupUnused(paths: Iterable<string>, unusedPaths: string[]): UnusedGroup[] {
     const totals = new Map<string, number>();
-    for (const node of graph.nodes.values()) {
-        const group = node.group || ROOT_GROUP;
+    for (const path of paths) {
+        const { group } = nameAndGroup(path);
         totals.set(group, (totals.get(group) ?? 0) + 1);
     }
 
     const leavesByGroup = new Map<string, string[]>();
     for (const path of unusedPaths) {
-        const node = graph.nodes.get(path);
-        const group = node?.group || ROOT_GROUP;
-        const leaf = node?.name ?? path;
-        leavesByGroup.set(group, [...(leavesByGroup.get(group) ?? []), leaf]);
+        const { group, name } = nameAndGroup(path);
+        leavesByGroup.set(group, [...(leavesByGroup.get(group) ?? []), name]);
     }
 
     return [...leavesByGroup.keys()].sort().map((group) => ({
@@ -242,8 +248,7 @@ export function formatImpactTree({
     return [header, rule, ...rows];
 }
 
-export function tokenValue(node: TokenNode): string {
-    const context = Object.keys(node.perContext)[0];
-    const raw = context ? node.perContext[context]?.raw : undefined;
-    return typeof raw === "string" ? `   ${color.dim(raw)}` : "";
+export function tokenValue(token: Token): string {
+    const authored = token.authored?.value;
+    return typeof authored === "string" ? `   ${color.dim(authored)}` : "";
 }

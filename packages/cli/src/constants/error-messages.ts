@@ -132,4 +132,10 @@ export const ERROR_MESSAGES = {
         `${unreadHeadline(entries)}\n\nTokens used only there appear unused. ${unreadFix(entries)}\n\n${color.cyan(LINKS.CONFIGURATION)}`,
 
     NO_CSS_WRITTEN: () => "No CSS was written.",
+
+    NOTHING_ANALYSED: () => "Nothing was analysed.",
+
+    ANALYZE_NO_TOKEN: (path: string) => `No token "${path}" in this system.`,
+
+    ANALYZE_GROUP_NOT_TOKEN: (path: string) => `\`${path}\` is a group; impact takes one token.`,
 } as const;

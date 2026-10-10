@@ -22,7 +22,8 @@ export interface MadeCSS {
 
 /**
  * The declarations both halves are made from, the variables' files, the utility rules (none when
- * the config makes no classes) and every problem found making them. Leave out either half with `variables: false` or `utilities: false`.
+ * the config makes no classes) and every problem found making them. Leave out either half with
+ * `variables: false` or `utilities: false`.
  */
 export function cssFrom(
     doc: Document,

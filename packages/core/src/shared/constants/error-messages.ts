@@ -302,32 +302,11 @@ export const ErrorMessages = {
     },
 
     UTILITIES: {
-        RESERVED_PREFIX: (prefix: string, tokenType: string) =>
-            `Cannot use reserved prefix "${prefix}" for ${tokenType} token type. This prefix is reserved for default utility classes. Please use a custom prefix instead.`,
-
-        DUPLICATE_CLASS_NAME: (className: string, paths: string[]) =>
-            `Ambiguous utility class "${className}" would be generated from multiple token paths: ${paths.join(
-                ", ",
-            )}. This would make it impossible to know which token value should be used when this class is applied in HTML. To fix this, configure one or more paths with custom prefixes to make the intent clear.`,
-
-        INVALID_PROPERTY_MAPPING: (tokenType: string) =>
-            `Invalid property mapping for ${tokenType} token type. When mapping multiple properties, each mapping must include a unique prefix to avoid class name collisions.`,
-
-        DUPLICATE_PREFIX: (prefix: string, tokenType: string) =>
-            `Duplicate prefix "${prefix}" found in property mappings for ${tokenType} token type. Each property mapping must have a unique prefix to avoid class name collisions.`,
-
         EMPTY_SOURCE: (property: string) =>
             `Utility config for '${property}' has an empty source. Name the group its tokens come from (e.g., 'color.*').`,
 
         INVALID_SOURCE_PATTERN: (property: string, source: string) =>
             `Utility config for '${property}' has invalid source pattern '${source}'. Only patterns ending with '.*' are supported (e.g., 'color.*', 'font.weight.*').`,
-
-        INVALID_DIRECTIONS: (property: string) =>
-            `Utility config for '${property}' must have 'directions' as an array`,
-
-        INVALID_CONFIG_OBJECT: "utilitiesConfig must be an object",
-
-        INVALID_TOKENS_OBJECT: "tokens must be an object",
     },
 
     RESOLVER: {
