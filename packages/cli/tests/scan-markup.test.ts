@@ -28,6 +28,20 @@ describe("getMarkupFiles with content patterns", () => {
         await rm(base, { recursive: true, force: true });
     });
 
+    it("lists the files in the same order every time", async () => {
+        const templatesDir = join(base, "lib", "app_web");
+        const names = ["zeta", "alpha", "mid", "beta", "omega", "gamma", "delta", "kappa"];
+        for (const name of names) {
+            await mkdir(join(templatesDir, name), { recursive: true });
+            await writeFile(join(templatesDir, name, "page.heex"), "<div></div>");
+        }
+        const pattern = join(base, "lib", "**", "*");
+
+        const files = await getMarkupFiles([pattern]);
+
+        expect(files).toStrictEqual([...files].sort());
+    });
+
     it("scans a content glob that points above the working directory", async () => {
         const pattern = join(base, "lib", "**", "*");
 

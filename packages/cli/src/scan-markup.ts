@@ -38,7 +38,7 @@ export async function getMarkupFiles(content?: string[]): Promise<string[]> {
         );
     }
 
-    return files;
+    return files.sort();
 }
 
 const READ_CONCURRENCY = 64;
