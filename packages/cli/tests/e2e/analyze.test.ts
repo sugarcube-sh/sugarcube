@@ -147,6 +147,60 @@ describe("analyze command", () => {
         },
     );
 
+    it(
+        "gives a use through a utility class its markup file, line and class",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            await writeFile(
+                join(testDir, "index.html"),
+                '<div class="p-md">hi</div>\n<section>\n  <p class="p-md">again</p>\n</section>',
+            );
+            const { stdout } = await run("analyze impact space.md --json");
+            const { consumers } = JSON.parse(stdout);
+
+            expect(consumers).toStrictEqual([
+                {
+                    file: "index.html",
+                    line: 1,
+                    var: "--space-md",
+                    token: "space.md",
+                    class: "p-md",
+                },
+                {
+                    file: "index.html",
+                    line: 3,
+                    var: "--space-md",
+                    token: "space.md",
+                    class: "p-md",
+                },
+            ]);
+        },
+    );
+
+    it("names the markup file where a class is used", { timeout: TEST_TIMEOUT }, async () => {
+        const { stdout } = await run("analyze impact space.md");
+
+        expect(stdout).toContain("index.html");
+        expect(stdout).not.toContain("utilities");
+    });
+
+    it("places a safelisted class at the config file", { timeout: TEST_TIMEOUT }, async () => {
+        await writeFile(
+            join(testDir, "sugarcube.config.js"),
+            CONFIG.replace(
+                'padding: { source: "space.*", prefix: "p" }',
+                'padding: { source: "space.*", prefix: "p", safelist: true }',
+            ),
+        );
+        await rm(join(testDir, "index.html"));
+        const { stdout } = await run("analyze impact space.md --json");
+        const { consumers } = JSON.parse(stdout);
+
+        expect(consumers).toStrictEqual([
+            { file: "sugarcube.config.js", var: "--space-md", token: "space.md", class: "p-md" },
+        ]);
+    });
+
     it("exits 0 even when tokens are unused", { timeout: TEST_TIMEOUT }, async () => {
         const { exitCode } = await run("analyze unused");
 

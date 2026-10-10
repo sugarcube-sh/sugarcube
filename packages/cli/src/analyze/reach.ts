@@ -30,41 +30,6 @@ export function parentsOf(hops: Hop[]): Map<string, string[]> {
     return parents;
 }
 
-export function defaultContextParents(
-    hops: Hop[],
-    defaultPermutation: Permutation | undefined,
-): Map<string, string> {
-    const preferred = new Map<string, string>();
-    if (!defaultPermutation) return preferred;
-    for (const hop of hops) {
-        if (hop.in.includes(defaultPermutation)) preferred.set(hop.from, hop.to);
-    }
-    return preferred;
-}
-
-export function chooseParents(
-    parents: Map<string, string[]>,
-    weight: (id: string) => number,
-    preferred: Map<string, string> = new Map(),
-): Map<string, string> {
-    const chosen = new Map<string, string>();
-
-    for (const [dependent, hops] of parents) {
-        const fromDefault = preferred.get(dependent);
-        if (fromDefault && hops.includes(fromDefault)) {
-            chosen.set(dependent, fromDefault);
-            continue;
-        }
-
-        const best = [...hops].sort(
-            (a, b) => weight(b) - weight(a) || a.localeCompare(b),
-        )[0] as string;
-        chosen.set(dependent, best);
-    }
-
-    return chosen;
-}
-
 export function describeElidedParents(
     hops: Hop[],
     { permutations, defaultPermutation }: Pick<System, "permutations" | "defaultPermutation">,

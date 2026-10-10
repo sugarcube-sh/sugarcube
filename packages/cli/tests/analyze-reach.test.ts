@@ -1,34 +1,12 @@
 import { fillDefaults, readOptions } from "@sugarcube-sh/core";
 import { type Input, type Permutation, readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
-import {
-    type Hop,
-    chooseParents,
-    defaultContextParents,
-    describeElidedParents,
-    hopsTo,
-    parentsOf,
-} from "../src/analyze/multi-parent.js";
+import { type Hop, describeElidedParents, hopsTo, parentsOf } from "../src/analyze/reach.js";
 import { systemOf } from "../src/analyze/system.js";
 import { buildFiles, buildFrom } from "../src/build.js";
 
 const perms = (...inputs: Input[]): Permutation[] =>
     inputs.map((input, index) => ({ input, label: `perm ${index}` }) as Permutation);
-
-const hops = (from: string, byPermutation: [Permutation, string][]): Hop[] => {
-    const found = new Map<string, Permutation[]>();
-    for (const [permutation, to] of byPermutation) {
-        found.set(to, [...(found.get(to) ?? []), permutation]);
-    }
-    return [...found].map(([to, within]) => ({ from, to, in: within }));
-};
-
-const VARIANTS = ["accent", "danger", "info"];
-const perVariant = perms(...VARIANTS.map((variant) => ({ variant })));
-const perVariantHops = hops(
-    "v.on-strong",
-    perVariant.map((permutation, index) => [permutation, `color.${VARIANTS[index]}.on-strong`]),
-);
 
 describe("hopsTo", () => {
     const color = (value: unknown) => ({ $type: "color", $value: value });
@@ -98,52 +76,6 @@ describe("parentsOf", () => {
                 ["danger", ["brand"]],
             ]),
         );
-    });
-});
-
-describe("chooseParents", () => {
-    it("keeps the only parent when there is one", () => {
-        const parents = new Map([["child", ["parent"]]]);
-        expect(chooseParents(parents, () => 0).get("child")).toBe("parent");
-    });
-
-    it("prefers the parent the default context points at, over the most-used one", () => {
-        const parents = new Map([["child", ["defaulted", "busy"]]]);
-        const uses = (id: string) => (id === "busy" ? 11 : 0);
-        const preferred = new Map([["child", "defaulted"]]);
-
-        expect(chooseParents(parents, uses, preferred).get("child")).toBe("defaulted");
-    });
-
-    it("falls back to the most-used parent when no context is the default", () => {
-        const parents = new Map([["child", ["quiet", "busy"]]]);
-        const uses = (id: string) => (id === "busy" ? 11 : 0);
-
-        expect(chooseParents(parents, uses).get("child")).toBe("busy");
-    });
-
-    it("breaks ties alphabetically, so runs are reproducible", () => {
-        const parents = new Map([["child", ["zeta", "alpha"]]]);
-        expect(chooseParents(parents, () => 0).get("child")).toBe("alpha");
-    });
-});
-
-describe("defaultContextParents", () => {
-    it("names the parent reached in the default permutation", () => {
-        const [accent, danger] = perms({ variant: "accent" }, { variant: "danger" });
-        if (!accent || !danger) throw new Error("two");
-        const reached = hops("v.on-strong", [
-            [accent, "color.accent.on-strong"],
-            [danger, "color.danger.on-strong"],
-        ]);
-
-        expect(defaultContextParents(reached, accent).get("v.on-strong")).toBe(
-            "color.accent.on-strong",
-        );
-    });
-
-    it("says nothing when no permutation is the default", () => {
-        expect(defaultContextParents(perVariantHops, undefined).size).toBe(0);
     });
 });
 
