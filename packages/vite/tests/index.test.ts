@@ -319,9 +319,17 @@ describe("sugarcube's Vite plugin", () => {
     utilities: { classes: { color: { source: "color.*", prefix: "text" } } },
 };
 `;
-        server.watcher.once("change", () => writeFileSync(path, finished));
+        let reported = false;
+        server.watcher.on("change", (file) => {
+            if (reported || !file.endsWith("sugarcube.config.ts")) return;
+            reported = true;
+            writeFileSync(path, finished);
+        });
 
-        await save("sugarcube.config.ts", "");
+        await until(() => {
+            if (!reported) writeFileSync(path, "");
+            return reported;
+        }, "Vite watching the config");
         await until(() => context.config.variables.prefix === "ds", "the save's last write");
 
         expect(context.problems).toEqual([]);
