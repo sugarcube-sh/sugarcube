@@ -1,44 +1,105 @@
-import { buildTokenGraph } from "@sugarcube-sh/core";
-import type { NormalizedRenderableTokens, Permutation, RenderableToken } from "@sugarcube-sh/core";
+import { fillDefaults, readOptions } from "@sugarcube-sh/core";
+import { type Input, type Permutation, readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
 import {
+    type Hop,
     chooseParents,
     defaultContextParents,
     describeElidedParents,
+    hopsTo,
+    parentsOf,
 } from "../src/analyze/multi-parent.js";
+import { systemOf } from "../src/analyze/system.js";
+import { buildFiles, buildFrom } from "../src/build.js";
 
-function tok(path: string, value: unknown, css: string): RenderableToken {
-    return {
-        $type: "color",
-        $path: path,
-        $value: value,
-        $names: { css },
-        $source: { sourcePath: "test" },
-        $originalPath: path,
-    } as RenderableToken;
-}
+const perms = (...inputs: Input[]): Permutation[] =>
+    inputs.map((input, index) => ({ input, label: `perm ${index}` }) as Permutation);
 
-const perms = (...inputs: Record<string, string>[]): Permutation[] =>
-    inputs.map((input, index) => ({ input, selector: `[data-perm="${index}"]` }));
+const hops = (from: string, byPermutation: [Permutation, string][]): Hop[] => {
+    const found = new Map<string, Permutation[]>();
+    for (const [permutation, to] of byPermutation) {
+        found.set(to, [...(found.get(to) ?? []), permutation]);
+    }
+    return [...found].map(([to, within]) => ({ from, to, in: within }));
+};
 
 const VARIANTS = ["accent", "danger", "info"];
-
-const permutations = perms(...VARIANTS.map((variant) => ({ variant })));
-
-const perVariantTokens: NormalizedRenderableTokens = Object.fromEntries(
-    VARIANTS.map((variant, index) => [
-        `perm:${index}`,
-        {
-            "v.on-strong": tok("v.on-strong", `{color.${variant}.on-strong}`, "v-on-strong"),
-            [`color.${variant}.on-strong`]: tok(
-                `color.${variant}.on-strong`,
-                "{color.base.white}",
-                `color-${variant}-on-strong`,
-            ),
-            "color.base.white": tok("color.base.white", "#ffffff", "color-base-white"),
-        },
-    ]),
+const perVariant = perms(...VARIANTS.map((variant) => ({ variant })));
+const perVariantHops = hops(
+    "v.on-strong",
+    perVariant.map((permutation, index) => [permutation, `color.${VARIANTS[index]}.on-strong`]),
 );
+
+describe("hopsTo", () => {
+    const color = (value: unknown) => ({ $type: "color", $value: value });
+    const doc = readFromMemory({
+        files: {
+            "tokens.resolver.json": JSON.stringify({
+                version: "2025.10",
+                resolutionOrder: [
+                    { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
+                    {
+                        type: "modifier",
+                        name: "theme",
+                        default: "light",
+                        contexts: { light: [], dark: [{ $ref: "dark.json" }] },
+                    },
+                ],
+            }),
+            "base.json": JSON.stringify({
+                red: color({ colorSpace: "srgb", components: [1, 0, 0] }),
+                blue: color({ colorSpace: "srgb", components: [0, 0, 1] }),
+                brand: color("{red}"),
+                danger: color("{brand}"),
+                edge: {
+                    $type: "border",
+                    $value: { color: "{brand}", width: "{brand}", style: "solid" },
+                },
+                other: color("{blue}"),
+            }),
+            "dark.json": JSON.stringify({ brand: color("{blue}") }),
+        },
+    });
+    const [light, dark] = doc.permutations;
+    if (!light || !dark) throw new Error("two permutations");
+
+    it("gives each reference on the way to a token once, with the permutations it is in", () => {
+        expect(hopsTo([light, dark], "red")).toStrictEqual([
+            { from: "brand", to: "red", in: [light] },
+            { from: "danger", to: "brand", in: [light] },
+            { from: "edge", to: "brand", in: [light] },
+        ]);
+        expect(hopsTo([light, dark], "blue")).toStrictEqual([
+            { from: "other", to: "blue", in: [light, dark] },
+            { from: "brand", to: "blue", in: [dark] },
+            { from: "danger", to: "brand", in: [dark] },
+            { from: "edge", to: "brand", in: [dark] },
+        ]);
+    });
+
+    it("leaves out a reference whose token the change does not reach in that permutation", () => {
+        expect(hopsTo([dark], "red")).toStrictEqual([]);
+    });
+});
+
+describe("parentsOf", () => {
+    it("gives each dependent the tokens one step closer to the target", () => {
+        const [light, dark] = perms({ theme: "light" }, { theme: "dark" });
+        if (!light || !dark) throw new Error("two");
+        const reached: Hop[] = [
+            { from: "brand", to: "red", in: [light] },
+            { from: "brand", to: "blue", in: [dark] },
+            { from: "danger", to: "brand", in: [light, dark] },
+        ];
+
+        expect(parentsOf(reached)).toStrictEqual(
+            new Map([
+                ["brand", ["red", "blue"]],
+                ["danger", ["brand"]],
+            ]),
+        );
+    });
+});
 
 describe("chooseParents", () => {
     it("keeps the only parent when there is one", () => {
@@ -68,229 +129,140 @@ describe("chooseParents", () => {
 });
 
 describe("defaultContextParents", () => {
-    it("names the parent reached in the context that selects no modifiers", () => {
-        const withDefault = perms({}, { variant: "danger" });
-        const tokens: NormalizedRenderableTokens = {
-            "perm:0": {
-                "v.on-strong": tok("v.on-strong", "{color.accent.on-strong}", "v-on-strong"),
-            },
-            "perm:1": {
-                "v.on-strong": tok("v.on-strong", "{color.danger.on-strong}", "v-on-strong"),
-            },
-        };
-        const graph = buildTokenGraph(tokens, { permutations: withDefault });
-        const parents = new Map([
-            ["v.on-strong", ["color.accent.on-strong", "color.danger.on-strong"]],
+    it("names the parent reached in the default permutation", () => {
+        const [accent, danger] = perms({ variant: "accent" }, { variant: "danger" });
+        if (!accent || !danger) throw new Error("two");
+        const reached = hops("v.on-strong", [
+            [accent, "color.accent.on-strong"],
+            [danger, "color.danger.on-strong"],
         ]);
 
-        expect(defaultContextParents(graph, parents).get("v.on-strong")).toBe(
+        expect(defaultContextParents(reached, accent).get("v.on-strong")).toBe(
             "color.accent.on-strong",
         );
     });
 
-    it("says nothing when no context is the default", () => {
-        const graph = buildTokenGraph(perVariantTokens, { permutations });
-        const parents = new Map([
-            ["v.on-strong", VARIANTS.map((variant) => `color.${variant}.on-strong`)],
-        ]);
-
-        expect(defaultContextParents(graph, parents).size).toBe(0);
-    });
-
-    it("says nothing when several contexts could be the default", () => {
-        const tokens: NormalizedRenderableTokens = {
-            default: {
-                "color.surface": tok("color.surface", "{color.neutral.50}", "color-surface"),
-            },
-            dark: { "color.surface": tok("color.surface", "{color.neutral.900}", "color-surface") },
-        };
-        const graph = buildTokenGraph(tokens);
-        const parents = new Map([["color.surface", ["color.neutral.50", "color.neutral.900"]]]);
-
-        expect(defaultContextParents(graph, parents).size).toBe(0);
+    it("says nothing when no permutation is the default", () => {
+        expect(defaultContextParents(perVariantHops, undefined).size).toBe(0);
     });
 });
 
 describe("describeElidedParents", () => {
-    it("names the modifier that distinguishes the parents", () => {
-        const graph = buildTokenGraph(perVariantTokens, { permutations });
-        const parents = new Map([
-            ["v.on-strong", VARIANTS.map((variant) => `color.${variant}.on-strong`)],
-        ]);
-
-        expect(describeElidedParents(graph, parents).get("v.on-strong")).toBe("per variant");
-    });
-
-    it("names whichever modifier the project declared, not a built-in one", () => {
-        const byDensity = perms({ density: "comfortable" }, { density: "compact" });
-        const tokens: NormalizedRenderableTokens = {
-            "perm:0": { "space.gap": tok("space.gap", "{space.md}", "space-gap") },
-            "perm:1": { "space.gap": tok("space.gap", "{space.sm}", "space-gap") },
-        };
-        const graph = buildTokenGraph(tokens, { permutations: byDensity });
-        const parents = new Map([["space.gap", ["space.md", "space.sm"]]]);
-
-        expect(describeElidedParents(graph, parents).get("space.gap")).toBe("per density");
-    });
-
-    // Resolver spec §2.1: modifiers may be non-orthogonal
-    it("finds the deciding modifier when two modifiers claim the same token", () => {
-        const matrix = perms(
-            { theme: "light", brand: "a" },
-            { theme: "light", brand: "b" },
-            { theme: "dark", brand: "a" },
-            { theme: "dark", brand: "b" },
-        );
-        const wins = ["blue", "red", "blue", "red"];
-        const tokens: NormalizedRenderableTokens = Object.fromEntries(
-            wins.map((colour, index) => [
-                `perm:${index}`,
-                { "color.button": tok("color.button", `{color.${colour}}`, "color-button") },
-            ]),
-        );
-        const graph = buildTokenGraph(tokens, { permutations: matrix });
-        const parents = new Map([["color.button", ["color.blue", "color.red"]]]);
-
-        expect(describeElidedParents(graph, parents).get("color.button")).toBe("per brand");
-    });
-
-    it("ignores a modifier whose values all lead to the same parent", () => {
-        const oneAxisEach = perms(
-            {},
-            { theme: "alt" },
-            { theme: "pronto" },
-            { brand: "cbus" },
-            { variant: "danger" },
-            { variant: "info" },
-        );
-
-        const targets = ["accent", "accent", "accent", "accent", "danger", "info"];
-        const tokens: NormalizedRenderableTokens = Object.fromEntries(
-            targets.map((variant, index) => [
-                `perm:${index}`,
+    const color = (value: unknown) => ({ $type: "color", $value: value });
+    const dimension = (value: unknown) => ({ $type: "dimension", $value: value });
+    const files = {
+        "tokens.resolver.json": {
+            version: "2025.10",
+            resolutionOrder: [
+                { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
                 {
-                    "v.on-strong": tok(
-                        "v.on-strong",
-                        `{color.${variant}.on-strong}`,
-                        "v-on-strong",
-                    ),
+                    type: "modifier",
+                    name: "theme",
+                    default: "light",
+                    contexts: {
+                        light: [],
+                        dark: [{ $ref: "dark.json" }],
+                        alt: [{ $ref: "alt.json" }],
+                    },
                 },
-            ]),
-        );
-        const graph = buildTokenGraph(tokens, { permutations: oneAxisEach });
-        const parents = new Map([
-            [
-                "v.on-strong",
-                ["color.accent.on-strong", "color.danger.on-strong", "color.info.on-strong"],
+                {
+                    type: "modifier",
+                    name: "brand",
+                    default: "a",
+                    contexts: { a: [], b: [{ $ref: "b.json" }] },
+                },
+                {
+                    type: "modifier",
+                    name: "debug",
+                    default: "off",
+                    contexts: { off: [], on: [] },
+                },
             ],
-        ]);
+        },
+        "base.json": {
+            blue: color({ colorSpace: "srgb", components: [0, 0, 1] }),
+            soft: color("{blue}"),
+            strong: color("{blue}"),
+            muted: color("{blue}"),
+            button: color("{soft}"),
+            surface: color("{soft}"),
+            mixed: color("{soft}"),
+            only: color("{soft}"),
+            size: dimension({ value: 1, unit: "px" }),
+            small: dimension("{size}"),
+            large: dimension("{size}"),
+            lift: {
+                $type: "shadow",
+                $value: {
+                    color: "{blue}",
+                    offsetX: "{small}",
+                    offsetY: "{large}",
+                    blur: { value: 0, unit: "px" },
+                    spread: { value: 0, unit: "px" },
+                },
+            },
+        },
+        "dark.json": {
+            button: color("{soft}"),
+            surface: color("{strong}"),
+            mixed: color("{strong}"),
+        },
+        "alt.json": { surface: color("{soft}") },
+        "b.json": { button: color("{strong}"), mixed: color("{muted}") },
+    };
+    const labelsFor = async (target: string) => {
+        const texts = Object.fromEntries(
+            Object.entries(files).map(([name, json]) => [name, JSON.stringify(json)]),
+        );
+        const system = systemOf(await buildFiles(texts, "/project"));
+        return describeElidedParents(hopsTo(system.permutations, target), system);
+    };
 
-        expect(describeElidedParents(graph, parents).get("v.on-strong")).toBe("per variant");
+    it("names the modifier whose files set the token to another reference", async () => {
+        expect((await labelsFor("blue")).get("button")).toBe("per brand");
+        expect((await labelsFor("blue")).get("surface")).toBe("per theme");
     });
 
-    // Spec Example 7: a modifier whose contexts contribute no tokens at all (a debug flag).
-    it("ignores a modifier whose contexts contribute nothing", () => {
-        const matrix = perms(
-            { variant: "accent", debug: "false" },
-            { variant: "accent", debug: "true" },
-            { variant: "danger", debug: "false" },
-            { variant: "danger", debug: "true" },
-        );
-        const tokens: NormalizedRenderableTokens = Object.fromEntries(
-            ["accent", "accent", "danger", "danger"].map((variant, index) => [
-                `perm:${index}`,
-                {
-                    "v.on-strong": tok(
-                        "v.on-strong",
-                        `{color.${variant}.on-strong}`,
-                        "v-on-strong",
-                    ),
-                },
+    it("ignores a file that sets the same reference again", async () => {
+        const labels = await labelsFor("blue");
+
+        expect(labels.get("button")).toBe("per brand");
+        expect(labels.get("surface")).toBe("per theme");
+    });
+
+    it("says 'per context' when more than one modifier sets it", async () => {
+        expect((await labelsFor("blue")).get("mixed")).toBe("per context");
+    });
+
+    it("says nothing about a token with a single parent", async () => {
+        expect((await labelsFor("blue")).has("only")).toBe(false);
+    });
+
+    it("names the modifier whose files set it, even when another lines up by chance", async () => {
+        const config = fillDefaults({
+            variables: {
+                permutations: [
+                    { input: { theme: "light", brand: "a" }, selector: ":root" },
+                    { input: { theme: "dark", brand: "b" }, selector: ".dark-b" },
+                ],
+            },
+        });
+        const texts = Object.fromEntries(
+            Object.entries({ ...files, "dark.json": {} }).map(([name, json]) => [
+                name,
+                JSON.stringify(json),
             ]),
         );
-        const graph = buildTokenGraph(tokens, { permutations: matrix });
-        const parents = new Map([
-            ["v.on-strong", ["color.accent.on-strong", "color.danger.on-strong"]],
-        ]);
+        const doc = readFromMemory({ files: texts }, readOptions(config));
+        const loaded = { config: { ...config, resolver: "tokens.resolver.json" } };
+        const system = systemOf(await buildFrom(doc, loaded));
 
-        expect(describeElidedParents(graph, parents).get("v.on-strong")).toBe("per variant");
+        expect(
+            describeElidedParents(hopsTo(system.permutations, "blue"), system).get("button"),
+        ).toBe("per brand");
     });
 
-    it("says nothing about a token with a single parent", () => {
-        const graph = buildTokenGraph(perVariantTokens, { permutations });
-        const parents = new Map([["color.accent.on-strong", ["color.base.white"]]]);
-
-        expect(describeElidedParents(graph, parents).has("color.accent.on-strong")).toBe(false);
-    });
-
-    it("names the modifier that partitions the parents, not one that merely varies", () => {
-        const matrix = perms(
-            { variant: "accent", theme: "light" },
-            { variant: "accent", theme: "dark" },
-            { variant: "danger", theme: "light" },
-            { variant: "danger", theme: "dark" },
-        );
-        const tokens: NormalizedRenderableTokens = Object.fromEntries(
-            ["accent", "accent", "danger", "danger"].map((variant, index) => [
-                `perm:${index}`,
-                {
-                    "v.on-strong": tok(
-                        "v.on-strong",
-                        `{color.${variant}.on-strong}`,
-                        "v-on-strong",
-                    ),
-                },
-            ]),
-        );
-        const graph = buildTokenGraph(tokens, { permutations: matrix });
-        const parents = new Map([
-            ["v.on-strong", ["color.accent.on-strong", "color.danger.on-strong"]],
-        ]);
-
-        expect(describeElidedParents(graph, parents).get("v.on-strong")).toBe("per variant");
-    });
-
-    it("falls back to 'per context' when more than one modifier differs", () => {
-        const mixed = perms(
-            { variant: "accent", theme: "light" },
-            { variant: "danger", theme: "dark" },
-        );
-        const tokens: NormalizedRenderableTokens = {
-            "perm:0": {
-                "v.on-strong": tok("v.on-strong", "{color.accent.on-strong}", "v-on-strong"),
-            },
-            "perm:1": {
-                "v.on-strong": tok("v.on-strong", "{color.danger.on-strong}", "v-on-strong"),
-            },
-        };
-        const graph = buildTokenGraph(tokens, { permutations: mixed });
-        const parents = new Map([
-            ["v.on-strong", ["color.accent.on-strong", "color.danger.on-strong"]],
-        ]);
-
-        expect(describeElidedParents(graph, parents).get("v.on-strong")).toBe("per context");
-    });
-
-    it("says how many references when the parents don't vary by context", () => {
-        const tokens: NormalizedRenderableTokens = {
-            default: {
-                "shadow.md": tok("shadow.md", "0 0 {space.sm} {color.shadow}", "shadow-md"),
-            },
-        };
-        const graph = buildTokenGraph(tokens);
-        const parents = new Map([["shadow.md", ["space.sm", "color.shadow"]]]);
-
-        expect(describeElidedParents(graph, parents).get("shadow.md")).toBe("2 references");
-    });
-
-    it("falls back to 'per context' when the contexts carry no modifier input", () => {
-        const tokens: NormalizedRenderableTokens = {
-            default: { "v.on-strong": tok("v.on-strong", "{color.a}", "v-on-strong") },
-            dark: { "v.on-strong": tok("v.on-strong", "{color.b}", "v-on-strong") },
-        };
-        const graph = buildTokenGraph(tokens);
-        const parents = new Map([["v.on-strong", ["color.a", "color.b"]]]);
-
-        expect(describeElidedParents(graph, parents).get("v.on-strong")).toBe("per context");
+    it("says how many references when the parents don't vary by context", async () => {
+        expect((await labelsFor("size")).get("lift")).toBe("2 references");
     });
 });

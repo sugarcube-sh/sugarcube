@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findDefaultContext } from "../src/shared/graph/build-token-graph";
+import { findDefaultContext } from "../src/node/resolver/default-context.js";
 import type { Permutation } from "../src/types/config";
 
 const perms = (...inputs: Array<Record<string, string>>): Permutation[] =>

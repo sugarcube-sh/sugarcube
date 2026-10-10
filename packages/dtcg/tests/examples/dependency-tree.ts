@@ -3,9 +3,11 @@ import { dependencies, defaultPermutation, type Document } from "@sugarcube-sh/d
 
 declare const doc: Document;
 
+const base = defaultPermutation(doc);
+
 function tree(path: string, depth = 0): void {
     row(`${"  ".repeat(depth)}${path}`);
-    const base = defaultPermutation(doc)?.input;
-    for (const dep of dependencies(doc, path, base)) tree(dep.path, depth + 1);
+    if (!base) return;
+    for (const dep of dependencies(base, path)) tree(dep.path, depth + 1);
 }
 tree("button.primary.background");

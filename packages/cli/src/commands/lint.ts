@@ -86,7 +86,7 @@ export const lint = new Command()
         try {
             if (!options.json) intro(label("Lint"));
 
-            const config = await loadTokenConfigOrThrow("lint");
+            const { config } = await loadTokenConfigOrThrow("lint");
             const resolver = createSyntaxResolver();
             const ignorePrefixes = parseIgnore(options.ignore);
             const fallbackLevel = options.fallback ?? "warn";

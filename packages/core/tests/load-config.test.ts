@@ -2,9 +2,10 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadInternalConfig } from "../src/node/config/load.js";
+import { isNoConfigError, loadInternalConfig } from "../src/node/config/load.js";
 import { ConfigError } from "../src/shared/config-error.js";
 import { DEFAULT_CONFIG } from "../src/shared/constants/config.js";
+import { ErrorMessages } from "../src/shared/constants/error-messages.js";
 
 describe("loadInternalConfig", () => {
     let tempDir: string;
@@ -165,6 +166,7 @@ describe("loadInternalConfig", () => {
         await expect(loading).rejects.toThrow(
             "No design tokens found.\n\nRun @sugarcube-sh/cli init to set up your design tokens.\n\nStuck? https://sugarcube.sh/docs",
         );
+        await expect(loading).rejects.toMatchObject({ issues: [{ reason: "no-resolver" }] });
     });
 
     it("names every resolver it found when nothing says which to use", async () => {
@@ -178,5 +180,32 @@ describe("loadInternalConfig", () => {
         await expect(loading).rejects.toThrow(
             "Several resolver files were found:\n  - a.resolver.json\n  - b.resolver.json\n\nName the one to use as `resolver` in sugarcube.config.ts.",
         );
+        await expect(loading).rejects.toMatchObject({
+            issues: [
+                { reason: "several-resolvers", paths: ["a.resolver.json", "b.resolver.json"] },
+            ],
+        });
+    });
+});
+
+describe("isNoConfigError", () => {
+    it("is true when no config and no resolver were found", () => {
+        expect(isNoConfigError(new ConfigError([{ reason: "no-resolver" }]))).toBe(true);
+    });
+
+    it("goes by the reason, not the words", () => {
+        const words = ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER();
+        const invalid = new ConfigError([{ reason: "invalid", setting: "", message: words }]);
+
+        expect(isNoConfigError(invalid)).toBe(false);
+        expect(isNoConfigError(new Error(words))).toBe(false);
+    });
+
+    it("is false for several resolvers", () => {
+        const several = new ConfigError([
+            { reason: "several-resolvers", paths: ["a.resolver.json"] },
+        ]);
+
+        expect(isNoConfigError(several)).toBe(false);
     });
 });

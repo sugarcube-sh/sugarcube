@@ -20,7 +20,9 @@ export type ConfigIssue =
     | { reason: "wrong-type"; setting: string; expected: string[]; received: string }
     | { reason: "missing"; setting: string; property: string }
     | { reason: "not-allowed"; setting: string; allowed: unknown[]; value: unknown }
-    | { reason: "invalid"; setting: string; message: string };
+    | { reason: "invalid"; setting: string; message: string }
+    | { reason: "no-resolver" }
+    | { reason: "several-resolvers"; paths: string[] };
 
 export interface SugarcubeDiagnosticDetailByKind {
     "default-required": { modifiers: string[] };

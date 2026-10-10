@@ -1,6 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
 import {
     type CSSFileOutput,
+    type Declarations,
     type InternalConfig,
     type LoadedConfig,
     type Reported,
@@ -33,8 +34,10 @@ export interface Built {
     config: InternalConfig;
     folder: string;
     configFile?: string;
+    declared: Declarations;
     variables: CSSFileOutput;
     utilities: CSSFileOutput;
+    markupFiles: string[];
     diagnostics: Reported[];
     generator?: UtilityGenerator;
 }
@@ -69,7 +72,8 @@ export function buildFiles(texts: Record<string, string>, folder: string): Promi
 
 export async function rescan(built: Built): Promise<Built> {
     if (!built.generator) return built;
-    return { ...built, utilities: await scanned(built.generator, built.config) };
+    const { files, markupFiles } = await scanned(built.generator, built.config);
+    return { ...built, utilities: files, markupFiles };
 }
 
 export function filesOf({ variables, utilities }: Built): CSSFileOutput {
@@ -92,8 +96,10 @@ async function fromReading(
         config,
         folder,
         configFile,
+        declared: made.declared,
         variables: finished(made.variables, config.variables.layer),
         utilities: utilities.files,
+        markupFiles: utilities.markupFiles,
         diagnostics: made.diagnostics,
         generator: utilities.generator,
     };
@@ -104,25 +110,29 @@ async function utilitiesFrom(
     config: InternalConfig,
     markup: boolean,
     previous: Built | undefined,
-): Promise<{ files: CSSFileOutput; generator?: UtilityGenerator }> {
-    if (!utilities || !markup) return { files: [] };
+): Promise<{ files: CSSFileOutput; markupFiles: string[]; generator?: UtilityGenerator }> {
+    if (!utilities || !markup) return { files: [], markupFiles: [] };
     const { rules, starts, safelist } = utilities;
     if (previous?.generator && previous.config === config) {
-        const { generator, utilities: files } = previous;
+        const { generator, utilities: files, markupFiles } = previous;
         const same = isDeepStrictEqual([generator.starts, generator.safelist], [starts, safelist]);
-        if (same) return { files, generator };
+        if (same) return { files, markupFiles, generator };
     }
     const uno = await createGenerator({
         presets: [{ name: "sugarcube", rules, preflights: [] }],
         safelist,
     });
     const generator = { starts, safelist, uno };
-    return { files: await scanned(generator, config), generator };
+    return { ...(await scanned(generator, config)), generator };
 }
 
 async function scanned(generator: UtilityGenerator, config: InternalConfig) {
-    const files = await utilitiesFromMarkup(generator.uno, generator.safelist, config);
-    return finished(files, config.utilities.layer);
+    const { files, markupFiles } = await utilitiesFromMarkup(
+        generator.uno,
+        generator.safelist,
+        config,
+    );
+    return { files: finished(files, config.utilities.layer), markupFiles };
 }
 
 function finished(files: CSSFileOutput, layer: string | undefined): CSSFileOutput {

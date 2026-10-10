@@ -7,7 +7,8 @@ import { isAlias, isPointer } from "../values/references.js";
  * {@link Pointer}, in the order the value lists them. `at` is the place in
  * {@link TokenBase.value | value}, which can differ from the file: a shadow written as one object
  * is a list of one, so a reference in its `color` is at `[0, "color"]`. A whole value written as a
- * reference is at `[]`. Empty for a token whose value could not be read.
+ * reference is at `[]`. Empty for a token whose value could not be read. For the tokens these
+ * lead to, through chains of references too, use {@link dependencies}.
  *
  * @example
  * // a border written { "color": "{color.brand}", "width": "{border.thin}", "style": "solid" }

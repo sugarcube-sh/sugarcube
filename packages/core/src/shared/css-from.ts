@@ -2,7 +2,7 @@ import type { Document } from "@sugarcube-sh/dtcg";
 import type { InternalConfig } from "../types/config.js";
 import type { Reported } from "../types/diagnostics.js";
 import type { CSSFileOutput } from "../types/generate.js";
-import { declare } from "./css/declare.js";
+import { type Declarations, declare } from "./css/declare.js";
 import { emitCSS } from "./css/emit.js";
 import { type UtilityRule, type UtilityStart, utilityRules } from "./utilities/rules.js";
 import { utilityTokens } from "./utilities/tokens.js";
@@ -14,14 +14,16 @@ export interface UtilityCSS {
 }
 
 export interface MadeCSS {
+    declared: Declarations;
     variables: CSSFileOutput;
     utilities?: UtilityCSS;
     diagnostics: Reported[];
 }
 
 /**
- * The variables' files, the utility rules (none when the config makes no classes) and every
- * problem found making them. Leave out either half with `variables: false` or `utilities: false`.
+ * The declarations both halves are made from, the variables' files, the utility rules (none when
+ * the config makes no classes) and every problem found making them. Leave out either half with
+ * `variables: false` or `utilities: false`.
  */
 export function cssFrom(
     doc: Document,
@@ -36,6 +38,7 @@ export function cssFrom(
             ? utilityRules(utilityTokens(declared), classes)
             : undefined;
     return {
+        declared,
         variables: emitted.files,
         utilities: ruled && { rules: ruled.rules, starts: ruled.starts, safelist: ruled.safelist },
         diagnostics: [

@@ -1,4 +1,4 @@
-import { type InternalConfig, isNoConfigError, loadInternalConfig } from "@sugarcube-sh/core";
+import { type LoadedConfig, isNoConfigError, loadInternalConfig } from "@sugarcube-sh/core";
 import { CLIError } from "./cli-error.js";
 import { ERROR_MESSAGES } from "./constants/error-messages.js";
 
@@ -7,10 +7,9 @@ import { ERROR_MESSAGES } from "./constants/error-messages.js";
  * For example, user runs `lint` or `analyze` but the CLI can't find any tokens to lint or analyze.
  * Need it for that reason.
  */
-export async function loadTokenConfigOrThrow(command: string): Promise<InternalConfig> {
+export async function loadTokenConfigOrThrow(command: string): Promise<LoadedConfig> {
     try {
-        const { config } = await loadInternalConfig();
-        return config;
+        return await loadInternalConfig();
     } catch (error) {
         if (isNoConfigError(error))
             throw new CLIError(ERROR_MESSAGES.NO_TOKENS_FOR_COMMAND(command));

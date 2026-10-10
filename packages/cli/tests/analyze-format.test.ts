@@ -1,4 +1,4 @@
-import type { TokenGraph, TokenNode } from "@sugarcube-sh/core";
+import { type Token, readFromMemory, token as tokenNamed } from "@sugarcube-sh/dtcg";
 import { beforeAll, describe, expect, it } from "vitest";
 import {
     type ImpactRow,
@@ -10,7 +10,7 @@ import {
     tokenValue,
     whereSummary,
 } from "../src/analyze/format.js";
-import { UTILITY_SOURCE } from "../src/analyze/scan-utilities.js";
+import { UTILITY_SOURCE } from "../src/analyze/system.js";
 import type { VarRef } from "../src/lint/scan-css.js";
 import { strip } from "../src/prompts/common.js";
 
@@ -20,19 +20,11 @@ beforeAll(() => {
     process.stdout.columns = 100;
 });
 
-function node(id: string, group: string, name: string, raw?: unknown): TokenNode {
-    return {
-        id,
-        name,
-        group,
-        type: "color",
-        cssName: id.replace(/\./g, "-"),
-        perContext: raw === undefined ? {} : { "perm:0": { raw, kind: "primitive" } },
-    } as TokenNode;
-}
-
-function graphOf(...nodes: TokenNode[]): TokenGraph {
-    return { contexts: [], edges: [], nodes: new Map(nodes.map((n) => [n.id, n])) };
+function tokenAt(tokens: object, path: string): Token {
+    const doc = readFromMemory({ files: { "tokens.json": JSON.stringify(tokens) } });
+    const found = tokenNamed(doc, path);
+    if (!found) throw new Error(`no ${path}`);
+    return found;
 }
 
 const ref = (file: string): VarRef => ({ name: "--x", line: 1, file });
@@ -58,13 +50,9 @@ describe("whereSummary", () => {
 
 describe("groupUnused", () => {
     it("groups leaves under their parent and sorts numerically", () => {
-        const graph = graphOf(
-            node("color.red.50", "color.red", "50"),
-            node("color.red.100", "color.red", "100"),
-            node("color.red.500", "color.red", "500"),
-        );
+        const paths = ["color.red.50", "color.red.100", "color.red.500"];
 
-        const groups = groupUnused(graph, ["color.red.500", "color.red.50", "color.red.100"]);
+        const groups = groupUnused(paths, ["color.red.500", "color.red.50", "color.red.100"]);
 
         expect(groups).toHaveLength(1);
         // Natural order — not lexicographic, which would put 100 before 50.
@@ -73,20 +61,23 @@ describe("groupUnused", () => {
     });
 
     it("files top-level tokens under (root)", () => {
-        const graph = graphOf(node("spacing", "", "spacing"));
+        expect(groupUnused(["spacing"], ["spacing"])[0]?.group).toBe("(root)");
+    });
 
-        expect(groupUnused(graph, ["spacing"])[0]?.group).toBe("(root)");
+    it("names a group's own $root token after the group", () => {
+        const paths = ["color.accent.$root", "color.accent.soft"];
+
+        expect(groupUnused(paths, ["color.accent.$root"])).toStrictEqual([
+            { group: "color", leaves: ["accent"], total: 1 },
+        ]);
     });
 });
 
 describe("formatUnusedTable", () => {
     it("collapses a wholly unused group to `all` instead of listing every leaf", () => {
-        const graph = graphOf(
-            node("color.red.50", "color.red", "50"),
-            node("color.red.100", "color.red", "100"),
-        );
+        const paths = ["color.red.50", "color.red.100"];
 
-        const lines = formatUnusedTable(groupUnused(graph, ["color.red.50", "color.red.100"]));
+        const lines = formatUnusedTable(groupUnused(paths, ["color.red.50", "color.red.100"]));
 
         expect(lines[0]).toContain("Group");
         expect(lines[0]).toContain("Unused");
@@ -95,12 +86,9 @@ describe("formatUnusedTable", () => {
     });
 
     it("lists the leaves when only part of a group is unused", () => {
-        const graph = graphOf(
-            node("color.red.50", "color.red", "50"),
-            node("color.red.100", "color.red", "100"),
-        );
+        const paths = ["color.red.50", "color.red.100"];
 
-        expect(formatUnusedTable(groupUnused(graph, ["color.red.50"])).at(-1)).toContain("50");
+        expect(formatUnusedTable(groupUnused(paths, ["color.red.50"])).at(-1)).toContain("50");
     });
 });
 
@@ -284,17 +272,19 @@ describe("formatImpactTree", () => {
 });
 
 describe("tokenValue", () => {
+    const tokens = {
+        palette: {
+            blue: { $type: "color", $value: { colorSpace: "srgb", components: [0, 0, 1] } },
+        },
+        color: { brand: { $type: "color", $value: "{palette.blue}" } },
+        space: { md: { $type: "dimension", $value: { value: 1, unit: "rem" } } },
+    };
+
     it("shows a value that is authored as a string", () => {
-        expect(tokenValue(node("color.brand", "color", "brand", "{palette.blue.500}"))).toContain(
-            "{palette.blue.500}",
-        );
+        expect(tokenValue(tokenAt(tokens, "color.brand"))).toContain("{palette.blue}");
     });
 
     it("shows nothing for an object-shaped value", () => {
-        expect(tokenValue(node("space.md", "space", "md", { value: 1, unit: "rem" }))).toBe("");
-    });
-
-    it("shows nothing when the token has no context", () => {
-        expect(tokenValue(node("space.md", "space", "md"))).toBe("");
+        expect(tokenValue(tokenAt(tokens, "space.md"))).toBe("");
     });
 });

@@ -1,19 +1,44 @@
-import type { TokenGraph } from "@sugarcube-sh/core";
+import { type Permutation, referrers, token } from "@sugarcube-sh/dtcg";
+import type { System } from "./system.js";
+
+export interface Hop {
+    from: string;
+    to: string;
+    in: Permutation[];
+}
+
+export function hopsTo(permutations: Permutation[], target: string): Hop[] {
+    const found = new Map<string, Hop>();
+    for (const permutation of permutations) {
+        const reached = new Set(
+            referrers(permutation, target, { transitive: true }).map(({ path }) => path),
+        );
+        for (const { from, to } of permutation.edges) {
+            if (!reached.has(from) || !(reached.has(to) || to === target)) continue;
+            const key = `${from}\0${to}`;
+            const hop = found.get(key) ?? { from, to, in: [] };
+            if (!hop.in.includes(permutation)) hop.in.push(permutation);
+            found.set(key, hop);
+        }
+    }
+    return [...found.values()];
+}
+
+export function parentsOf(hops: Hop[]): Map<string, string[]> {
+    const parents = new Map<string, string[]>();
+    for (const { from, to } of hops) parents.set(from, [...(parents.get(from) ?? []), to]);
+    return parents;
+}
 
 export function defaultContextParents(
-    graph: TokenGraph,
-    parents: Map<string, string[]>,
+    hops: Hop[],
+    defaultPermutation: Permutation | undefined,
 ): Map<string, string> {
-    const defaultContext = graph.defaultContext;
-    if (!defaultContext) return new Map();
-
     const preferred = new Map<string, string>();
-    for (const edge of graph.edges) {
-        const hops = parents.get(edge.from);
-        if (!hops?.includes(edge.to)) continue;
-        if (edge.contexts.includes(defaultContext)) preferred.set(edge.from, edge.to);
+    if (!defaultPermutation) return preferred;
+    for (const hop of hops) {
+        if (hop.in.includes(defaultPermutation)) preferred.set(hop.from, hop.to);
     }
-
     return preferred;
 }
 
@@ -40,72 +65,41 @@ export function chooseParents(
     return chosen;
 }
 
-function contextInput(graph: TokenGraph, id: string): Record<string, string> {
-    const info = graph.contexts.find((context) => context.id === id);
-    return (info?.input ?? {}) as Record<string, string>;
-}
-
 export function describeElidedParents(
-    graph: TokenGraph,
-    parents: Map<string, string[]>,
+    hops: Hop[],
+    { permutations, defaultPermutation }: Pick<System, "permutations" | "defaultPermutation">,
 ): Map<string, string> {
     const described = new Map<string, string>();
+    const base = defaultPermutation ?? permutations[0];
+    if (!base) return described;
 
-    for (const [dependent, hops] of parents) {
-        if (hops.length < 2) continue;
+    for (const [dependent, parents] of parentsOf(hops)) {
+        if (parents.length < 2) continue;
 
-        const deciding = partitioningModifiers(graph, dependent, hops);
+        const parentsIn = (permutation: Permutation) =>
+            hops
+                .filter((hop) => hop.from === dependent && hop.in.includes(permutation))
+                .map(({ to }) => to)
+                .sort()
+                .join("\0");
+        const before = parentsIn(base);
+        const changed = permutations.filter((each) => parentsIn(each) !== before);
+        const setBy = new Set(changed.flatMap((each) => modifierSetting(each, dependent)));
 
-        if (deciding.length === 1) {
-            described.set(dependent, `per ${deciding[0]}`);
-        } else if (deciding.length > 1) {
-            described.set(dependent, "per context");
-        } else if (contextsDiffer(graph, dependent, hops)) {
-            // Contexts vary but carry no modifier input to name — a light/dark system built
-            // without permutations, say.
-            described.set(dependent, "per context");
+        if (changed.length === 0) {
+            described.set(dependent, `${parents.length} references`);
+        } else if (setBy.size === 1) {
+            described.set(dependent, `per ${[...setBy][0]}`);
         } else {
-            described.set(dependent, `${hops.length} references`);
+            described.set(dependent, "per context");
         }
     }
 
     return described;
 }
 
-function partitioningModifiers(graph: TokenGraph, dependent: string, hops: string[]): string[] {
-    const parentsByValue = new Map<string, Map<string, Set<string>>>();
-
-    for (const edge of graph.edges) {
-        if (edge.from !== dependent || !hops.includes(edge.to)) continue;
-
-        for (const context of edge.contexts) {
-            for (const [modifier, value] of Object.entries(contextInput(graph, context))) {
-                const values = parentsByValue.get(modifier) ?? new Map<string, Set<string>>();
-                const reached = values.get(value) ?? new Set<string>();
-                reached.add(edge.to);
-                values.set(value, reached);
-                parentsByValue.set(modifier, values);
-            }
-        }
-    }
-
-    return [...parentsByValue]
-        .filter(([, values]) => {
-            if (values.size < 2) return false;
-            if ([...values.values()].some((parents) => parents.size !== 1)) return false;
-            const landings = new Set([...values.values()].map((parents) => [...parents][0]));
-            return landings.size > 1;
-        })
-        .map(([modifier]) => modifier);
-}
-
-/** Whether a dependent reaches its parents through different contexts at all. */
-function contextsDiffer(graph: TokenGraph, dependent: string, hops: string[]): boolean {
-    const perParent = new Map<string, string>();
-    for (const edge of graph.edges) {
-        if (edge.from !== dependent || !hops.includes(edge.to)) continue;
-        perParent.set(edge.to, [...edge.contexts].sort().join(","));
-    }
-
-    return new Set(perParent.values()).size > 1;
+function modifierSetting(permutation: Permutation, path: string): string[] {
+    const found = token(permutation, path);
+    const from = found && permutation.sources[found.source.index]?.from;
+    return from && "modifier" in from ? [from.modifier] : [];
 }

@@ -1,14 +1,5 @@
-import {
-    type InternalConfig,
-    type NormalizedRenderableTokens,
-    type TokenGraph,
-    assignCSSNames,
-    buildTokenGraph,
-    dependentsParents,
-    findUnusedTokens,
-    groupByContext,
-    plural,
-} from "@sugarcube-sh/core";
+import { plural } from "@sugarcube-sh/core";
+import { group } from "@sugarcube-sh/dtcg";
 import { Command } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
@@ -27,15 +18,25 @@ import {
     chooseParents,
     defaultContextParents,
     describeElidedParents,
+    hopsTo,
+    parentsOf,
 } from "../analyze/multi-parent.js";
-import { UTILITY_SOURCE, scanUtilityUsage } from "../analyze/scan-utilities.js";
-import { buildVarNameIndex, lookupToken, usageRoots } from "../analyze/usage-roots.js";
+import {
+    type System,
+    UTILITY_SOURCE,
+    lookupToken,
+    systemOf,
+    unusedTokens,
+    usageRoots,
+    utilityRefs,
+} from "../analyze/system.js";
+import { type Built, build } from "../build.js";
 import { CLIError } from "../cli-error.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import type { VarRef } from "../lint/scan-css.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
-import { prepareTokens } from "../prepare-tokens.js";
+import { printProblems, whereOf } from "../problems.js";
 import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log, rawLog } from "../prompts/log.js";
@@ -46,38 +47,44 @@ interface UnusedFlags {
     all?: boolean;
 }
 
-// Build the dependency graph from the same tokens `generate`
-// produces, so names and edges match the emitted CSS. Returns the converted
-// tokens too, since the utility scan needs them.
-async function buildGraph(
-    config: InternalConfig,
-): Promise<{ graph: TokenGraph; tokens: NormalizedRenderableTokens }> {
-    // NB. Permutations come from `prepareTokens`, not `config.variables.permutations`
-    const { trees, resolved, permutations, modifierDefaults } = await prepareTokens(config);
-    const tokens = assignCSSNames(groupByContext(trees, resolved), config);
-    const graph = buildTokenGraph(tokens, { permutations, modifierDefaults });
-    return { graph, tokens };
+async function systemFor(plain: boolean): Promise<{ built: Built; system: System } | undefined> {
+    const built = await build(await loadTokenConfigOrThrow("analyze"));
+    const failed = printProblems(built.diagnostics, whereOf(built), {
+        onlyErrors: true,
+        whenFailed: ERROR_MESSAGES.NOTHING_ANALYSED(),
+        ...(plain && { to: process.stderr }),
+    });
+    if (failed) {
+        process.exitCode = 1;
+        return undefined;
+    }
+    return { built, system: systemOf(built) };
 }
 
-async function scanUsage(
-    config: InternalConfig,
-    tokens: NormalizedRenderableTokens,
-): Promise<{
+async function scanUsage(built: Built): Promise<{
     refs: VarRef[];
     varScanned: number;
     classScanned: number;
     unread: UnreadStylesheets[];
 }> {
-    const { used, files } = await scanProjectCSS(config);
-    const utility = await scanUtilityUsage(config, tokens);
-    // NB. A component with a `<style>` block is read once for its `var()` and again for its class
-    // names, so adding the counts would double-count it.
+    const { used, files } = await scanProjectCSS(built.config);
     return {
-        refs: [...used, ...utility.refs],
+        refs: [...used, ...utilityRefs(built)],
         varScanned: files.length,
-        classScanned: utility.fileCount,
-        unread: await findUnreadStylesheets(config, files),
+        classScanned: built.markupFiles.length,
+        unread: await findUnreadStylesheets(built.config, files),
     };
+}
+
+function tokenFor(system: System, path: string) {
+    const found = system.tokens.get(path);
+    if (found) return found;
+    const isGroup = system.permutations.some((permutation) => group(permutation, path));
+    throw new CLIError(
+        isGroup
+            ? ERROR_MESSAGES.ANALYZE_GROUP_NOT_TOKEN(path)
+            : ERROR_MESSAGES.ANALYZE_NO_TOKEN(path),
+    );
 }
 
 const unused = new Command()
@@ -91,10 +98,11 @@ const unused = new Command()
             const plain = options.json === true || options.all === true;
             if (!plain) intro(label("Analyze"));
 
-            const config = await loadTokenConfigOrThrow("analyze");
-            const { graph, tokens } = await buildGraph(config);
+            const analysed = await systemFor(plain);
+            if (!analysed) return;
+            const { built, system } = analysed;
 
-            const usage = await scanUsage(config, tokens);
+            const usage = await scanUsage(built);
 
             const shortfall =
                 usage.varScanned === 0
@@ -112,10 +120,9 @@ const unused = new Command()
                 }
             }
 
-            const roots = usageRoots(graph, usage.refs);
-            const unusedPaths = findUnusedTokens(graph, roots);
+            const unusedPaths = unusedTokens(system, usageRoots(system, usage.refs));
 
-            const total = graph.nodes.size;
+            const total = system.tokens.size;
 
             if (options.json) {
                 console.log(
@@ -149,7 +156,7 @@ const unused = new Command()
                 return;
             }
 
-            const groups = groupUnused(graph, unusedPaths);
+            const groups = groupUnused(system.tokens.keys(), unusedPaths);
             log.message(formatUnusedTable(groups));
             outro(`${color.yellow(`${unusedPaths.length} of ${total} tokens unused`)}  ${scanned}`);
         } catch (error) {
@@ -174,22 +181,18 @@ const impact = new Command()
         try {
             if (!options.json) intro(label("Analyze"));
 
-            const config = await loadTokenConfigOrThrow("analyze");
-            const { graph, tokens } = await buildGraph(config);
+            const analysed = await systemFor(options.json === true);
+            if (!analysed) return;
+            const { built, system } = analysed;
 
-            const node = graph.nodes.get(token);
-            if (!node) {
-                const near = [...graph.nodes.keys()].filter((id) => id.includes(token)).slice(0, 5);
-                const hint = near.length > 0 ? ` Did you mean: ${near.join(", ")}?` : "";
-                throw new CLIError(`No token "${token}" in this system.${hint}`);
-            }
+            const found = tokenFor(system, token);
 
-            const parents = dependentsParents(graph, token);
+            const hops = hopsTo(system.permutations, token);
+            const parents = parentsOf(hops);
             const dependents = new Set(parents.keys());
 
             const affected = new Set([token, ...dependents]);
-            const index = buildVarNameIndex(graph);
-            const usage = await scanUsage(config, tokens);
+            const usage = await scanUsage(built);
 
             const shortfall =
                 usage.varScanned === 0
@@ -209,7 +212,7 @@ const impact = new Command()
 
             const refsByToken = new Map<string, VarRef[]>();
             for (const ref of usage.refs) {
-                const id = lookupToken(index, ref.name);
+                const id = lookupToken(system, ref.name);
                 if (id !== undefined && affected.has(id)) {
                     refsByToken.set(id, [...(refsByToken.get(id) ?? []), ref]);
                 }
@@ -217,22 +220,26 @@ const impact = new Command()
             const refCount = [...refsByToken.values()].reduce((n, refs) => n + refs.length, 0);
 
             const usesOf = (id: string) => refsByToken.get(id)?.length ?? 0;
-            const chosen = chooseParents(parents, usesOf, defaultContextParents(graph, parents));
-            const elided = describeElidedParents(graph, parents);
+            const chosen = chooseParents(
+                parents,
+                usesOf,
+                defaultContextParents(hops, system.defaultPermutation),
+            );
+            const elided = describeElidedParents(hops, system);
 
             if (options.json) {
                 console.log(
                     JSON.stringify(
                         {
                             token,
-                            type: node.type,
+                            type: found.type,
                             dependents: [...dependents].sort().map((id) => ({
                                 token: id,
                                 references: [...(parents.get(id) ?? [])].sort(),
                             })),
                             consumers: usage.refs
                                 .filter((ref) => {
-                                    const id = lookupToken(index, ref.name);
+                                    const id = lookupToken(system, ref.name);
                                     return id !== undefined && affected.has(id);
                                 })
                                 .map((ref) => ({
@@ -242,7 +249,7 @@ const impact = new Command()
                                             : relative(process.cwd(), ref.file),
                                     line: ref.line,
                                     var: ref.name,
-                                    token: lookupToken(index, ref.name),
+                                    token: lookupToken(system, ref.name),
                                 })),
                         },
                         null,
@@ -252,7 +259,7 @@ const impact = new Command()
                 return;
             }
 
-            log.message(`${color.bold(token)}${tokenValue(node)}`);
+            log.message(`${color.bold(token)}${tokenValue(found)}`);
 
             if (dependents.size === 0 && refCount === 0) {
                 outro(`No token references ${color.yellow(token)}, and no scanned file uses it.`);

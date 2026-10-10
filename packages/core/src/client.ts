@@ -39,31 +39,6 @@ export { cssFrom } from "./shared/css-from.js";
 export type { MadeCSS, UtilityCSS } from "./shared/css-from.js";
 export type { Reported } from "./types/diagnostics.js";
 
-export { buildTokenGraph } from "./shared/graph/build-token-graph.js";
-export type { BuildTokenGraphOptions } from "./shared/graph/build-token-graph.js";
-export {
-    reachableFrom,
-    findUnusedTokens,
-    directDependents,
-    dependentsOf,
-    dependentsVia,
-    dependentsParents,
-} from "./shared/graph/reachability.js";
-export type {
-    TokenGraph,
-    TokenNode,
-    TokenEdge,
-    GraphContext,
-    GraphContextInfo,
-    NodeKind,
-} from "./types/graph.js";
-
-export {
-    convertConfigToUnoRules,
-    enumerateSafelistClasses,
-    clearMatchCache,
-} from "./shared/uno-rules.js";
-
 export { formatCSSVarName } from "./shared/format-css-var-name.js";
 export { composeTrees } from "./shared/compose-trees.js";
 export type { ComposeError, Composed } from "./shared/compose-trees.js";
@@ -127,7 +102,6 @@ export type {
     RenderableTokens,
     NormalizedRenderableTokens,
 } from "./types/render.js";
-export { TYPOGRAPHY_CSS_PROPERTIES } from "./types/render.js";
 export type { CSSFileOutput } from "./types/generate.js";
 export type { userConfigSchema } from "./shared/schemas/config.js";
 
