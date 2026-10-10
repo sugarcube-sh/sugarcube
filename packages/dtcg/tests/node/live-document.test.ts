@@ -6,6 +6,22 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { type Document, token } from "../../src/index.js";
 import { type DocumentSource, type ReadEvent, liveDocument } from "../../src/node.js";
 
+const afterRead = vi.hoisted(() => ({ once: undefined as (() => Promise<void>) | undefined }));
+
+vi.mock("../../src/node/read.js", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../../src/node/read.js")>();
+    return {
+        ...actual,
+        read: async (...args: Parameters<typeof actual.read>) => {
+            const doc = await actual.read(...args);
+            const then = afterRead.once;
+            afterRead.once = undefined;
+            await then?.();
+            return doc;
+        },
+    };
+});
+
 const color = (hex: string) => ({ $type: "color", $value: hex });
 
 let folder: string;
@@ -169,6 +185,36 @@ describe("a Document kept current with its files", () => {
 
         expect(await answer).toBe(reads[0]?.doc);
         expect(reads).toHaveLength(1);
+    });
+
+    it("reads again when a read caught a file half-saved and the watcher never says", async () => {
+        const entry = await project();
+        const { live: doc, reads, save } = live({ entry });
+        await doc.document();
+
+        await writeFile(join(folder, "base.json"), "");
+        afterRead.once = () => tokens("base.json", { color: { ink: color("#222222") } });
+        save("base.json");
+
+        await vi.waitFor(() => expect(reads.length).toBeGreaterThan(0));
+        const last = await doc.document();
+        expect(hexOf(last)).toContain("222222");
+        expect(last.diagnostics.map(({ kind }) => kind)).not.toContain("invalid-json");
+        expect(hexOf(reads.at(-1)?.doc as Document)).toContain("222222");
+    });
+
+    it("reads a file that is broken, and left so, only once", async () => {
+        const entry = await project();
+        const { live: doc, reads, save } = live({ entry });
+        await doc.document();
+
+        await writeFile(join(folder, "base.json"), "{");
+        save("base.json");
+
+        await vi.waitFor(() => expect(reads).toHaveLength(1));
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        expect(reads).toHaveLength(1);
+        expect(reads[0]?.doc.diagnostics.map(({ kind }) => kind)).toContain("invalid-json");
     });
 
     it("reads again when a file a read gains was saved during that read", async () => {

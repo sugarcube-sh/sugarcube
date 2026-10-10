@@ -120,6 +120,8 @@ export function configIssueText(issue: ConfigIssue): string {
             return ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER();
         case "several-resolvers":
             return ErrorMessages.CONFIG.MULTIPLE_RESOLVERS_FOUND(issue.paths);
+        case "exports-nothing":
+            return `\`${issue.file}\` exports nothing; export your config as \`export default { … }\``;
     }
 }
 

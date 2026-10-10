@@ -22,7 +22,8 @@ export type ConfigIssue =
     | { reason: "not-allowed"; setting: string; allowed: unknown[]; value: unknown }
     | { reason: "invalid"; setting: string; message: string }
     | { reason: "no-resolver" }
-    | { reason: "several-resolvers"; paths: string[] };
+    | { reason: "several-resolvers"; paths: string[] }
+    | { reason: "exports-nothing"; file: string };
 
 export interface SugarcubeDiagnosticDetailByKind {
     "default-required": { modifiers: string[] };
