@@ -1,8 +1,8 @@
 import type { UnoGenerator } from "@unocss/core";
 import { resolve } from "pathe";
-import type { Built } from "../build.js";
+import { type Built, variablesOf } from "../build.js";
 import { readMarkupSources } from "../scan-markup.js";
-import { type UnreadStylesheets, findUnreadStylesheets, scanProjectCSS } from "../scan-project.js";
+import { type UnreadStylesheets, scanStylesheets } from "../scan-stylesheets.js";
 
 export interface Use {
     token: string;
@@ -20,7 +20,7 @@ export interface Uses {
 
 export async function findUses(built: Built): Promise<Uses> {
     const tokenOf = variablesOf(built);
-    const { used, files } = await scanProjectCSS(built.config);
+    const { used, files, unread } = await scanStylesheets(built);
     const fromVar = used.flatMap(({ name, file, line }) => {
         const token = tokenOf.get(name);
         return token ? [{ token, file: resolve(file), line, var: name }] : [];
@@ -38,16 +38,8 @@ export async function findUses(built: Built): Promise<Uses> {
             forVarReferences: files.map((file) => resolve(file)),
             forUtilityClasses: markup,
         },
-        unread: await findUnreadStylesheets(built.config, files),
+        unread,
     };
-}
-
-function variablesOf({ declared }: Built): Map<string, string> {
-    const tokenOf = new Map<string, string>();
-    for (const { declared: made } of declared.entries) {
-        for (const { name, token } of made.declarations) tokenOf.set(name, token.path);
-    }
-    return tokenOf;
 }
 
 async function classUses(

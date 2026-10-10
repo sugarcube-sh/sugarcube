@@ -52,11 +52,6 @@ export const ERROR_MESSAGES = {
     STARTER_KIT_UNAVAILABLE: (kitChoice: string) =>
         `Starter kit '${color.cyan(kitChoice)}' is currently unavailable.\n\nPlease try a different starter kit or run the command again in a few minutes.`,
 
-    RESOLVER_NOT_CONFIGURED: () =>
-        `No resolver path configured.\n\nAdd a resolver path to your sugarcube config:\n\n${color.cyan(
-            `export default {\n  resolver: "./tokens.resolver.json",\n  // ...\n}`,
-        )}\n\nSee ${color.cyan(LINKS.RESOLVER)} for more information.`,
-
     NO_TOKENS_FOR_COMMAND: (command: string) =>
         `No design tokens found.\n\n${color.cyan(
             `sugarcube ${command}`,
@@ -65,31 +60,6 @@ export const ERROR_MESSAGES = {
         )}, or run ${color.cyan("@sugarcube-sh/cli init")} to set one up.\n\nSee ${color.cyan(
             LINKS.RESOLVER,
         )} for more information.`,
-
-    TOKEN_LOAD_FAILED: (errorMessages: string[]) =>
-        `Failed to load token files:\n\n${errorMessages.join("\n")}\n\nPlease check your token files and try again.`,
-
-    TOKEN_VALIDATION_FAILED: (errorsByFile: Map<string, string[]>) => {
-        let errorMessage = "Token validation failed:\n\n";
-
-        for (const [sourcePath, messages] of errorsByFile) {
-            errorMessage += `Error(s) in ${color.cyan(sourcePath)}:\n`;
-            for (const message of messages) {
-                errorMessage += `  - ${message}\n`;
-            }
-            errorMessage += "\n";
-        }
-
-        errorMessage += `See ${color.cyan(LINKS.DESIGN_TOKENS)} for valid token formats`;
-
-        return errorMessage;
-    },
-
-    TOKEN_FILE_INVALID_JSON: (fileName: string) => `File ${fileName}: Invalid JSON syntax`,
-
-    TOKEN_FILE_INCOMPLETE_JSON: (fileName: string) => `File ${fileName}: Incomplete JSON file`,
-
-    TOKEN_FILE_GENERIC_ERROR: (fileName: string, message: string) => `File ${fileName}: ${message}`,
 
     DEPENDENCY_INSTALL_FAILED: (packageManager: string, stderr?: string) => {
         const base = `Failed to install dependencies using ${packageManager}.\nPlease check your package manager configuration and try again.`;
@@ -134,6 +104,8 @@ export const ERROR_MESSAGES = {
     NO_CSS_WRITTEN: () => "No CSS was written.",
 
     NOTHING_ANALYSED: () => "Nothing was analysed.",
+
+    NOTHING_LINTED: () => "Nothing was linted.",
 
     ANALYZE_NO_TOKEN: (path: string) => `No token "${path}" in this system.`,
 

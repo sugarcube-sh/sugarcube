@@ -76,6 +76,14 @@ export async function rescan(built: Built): Promise<Built> {
     return { ...built, utilities: files, markupFiles };
 }
 
+export function variablesOf({ declared }: Built): Map<string, string> {
+    const tokenOf = new Map<string, string>();
+    for (const { declared: made } of declared.entries) {
+        for (const { name, token } of made.declarations) tokenOf.set(name, token.path);
+    }
+    return tokenOf;
+}
+
 export function filesOf({ variables, utilities }: Built): CSSFileOutput {
     return [...variables, ...utilities];
 }

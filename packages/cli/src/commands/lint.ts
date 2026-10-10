@@ -1,18 +1,19 @@
-import { type InternalConfig, plural } from "@sugarcube-sh/core";
+import { plural } from "@sugarcube-sh/core";
 import { Command, Option } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
+import { type Built, build, variablesOf } from "../build.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
-import { type VarRef, findUndeclared } from "../lint/scan-css.js";
-import { type SyntaxResolver, createSyntaxResolver } from "../lint/syntaxes.js";
-import { getGeneratedVarNames } from "../lint/token-var-names.js";
+import { findUndeclared } from "../lint/undeclared.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
-import { findUnreadStylesheets, scanProjectCSS } from "../scan-project.js";
+import { printProblems, whereOf } from "../problems.js";
+import type { VarRef } from "../scan-css.js";
+import { scanStylesheets } from "../scan-stylesheets.js";
 import { warningBoxWithBadge } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log } from "../prompts/log.js";
-import type { LintOptions, ScanOutput } from "../types/commands.js";
+import type { LintOptions } from "../types/commands.js";
 
 function parseIgnore(value: string | undefined): string[] {
     if (!value) return [];
@@ -22,24 +23,16 @@ function parseIgnore(value: string | undefined): string[] {
         .filter(Boolean);
 }
 
-async function runScan(
-    config: InternalConfig,
-    paths: string[],
-    ignorePrefixes: string[],
-    resolver: SyntaxResolver,
-): Promise<ScanOutput> {
-    const declared = await getGeneratedVarNames(config);
-
-    const scan = await scanProjectCSS(config, paths, resolver);
-    for (const name of scan.declared) declared.add(name);
-
+async function runScan(built: Built, paths: string[], ignorePrefixes: string[]) {
+    const scan = await scanStylesheets(built, paths);
+    const declared = new Set([...variablesOf(built).keys(), ...scan.declared]);
     const { broken, fallback } = findUndeclared(scan.used, declared, ignorePrefixes);
     return {
         broken,
         fallback,
         refCount: scan.used.length,
         scannedFiles: scan.files.length,
-        unread: paths.length > 0 ? [] : await findUnreadStylesheets(config, scan.files, resolver),
+        unread: scan.unread,
     };
 }
 
@@ -86,18 +79,25 @@ export const lint = new Command()
         try {
             if (!options.json) intro(label("Lint"));
 
-            const { config } = await loadTokenConfigOrThrow("lint");
-            const resolver = createSyntaxResolver();
+            const built = await build(await loadTokenConfigOrThrow("lint"), { markup: false });
+            const failed = printProblems(built.diagnostics, whereOf(built), {
+                onlyErrors: true,
+                whenFailed: ERROR_MESSAGES.NOTHING_LINTED(),
+                ...(options.json && { to: process.stderr }),
+            });
+            if (failed) {
+                process.exitCode = 1;
+                return;
+            }
             const ignorePrefixes = parseIgnore(options.ignore);
             const fallbackLevel = options.fallback ?? "warn";
             const fallbackIsError = fallbackLevel === "error";
 
             if (options.json) {
                 const { broken, fallback, scannedFiles, unread } = await runScan(
-                    config,
+                    built,
                     paths,
                     ignorePrefixes,
-                    resolver,
                 );
 
                 if (scannedFiles === 0) {
@@ -123,10 +123,9 @@ export const lint = new Command()
             }
 
             const { broken, fallback, refCount, scannedFiles, unread } = await runScan(
-                config,
+                built,
                 paths,
                 ignorePrefixes,
-                resolver,
             );
             const showFallback = fallbackLevel !== "off";
             const reportFallback = fallbackIsError ? log.error : log.warn;
