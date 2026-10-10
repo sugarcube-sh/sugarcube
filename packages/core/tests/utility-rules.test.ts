@@ -422,6 +422,45 @@ describe("utilityRules' starts, the rules as data", () => {
     });
 });
 
+describe("utilityRules' custom properties, the variables its classes set", () => {
+    const space = { space: { sm: px(4), md: px(8) } };
+
+    it("lists a custom property an entry's classes set", () => {
+        const { customProperties } = ruled(space, {
+            "--gutter": { source: "space.*", prefix: "gutter" },
+        });
+
+        expect(customProperties).toStrictEqual(["--gutter"]);
+    });
+
+    it("leaves out a property that is not a custom property", () => {
+        const { customProperties } = ruled(space, {
+            "padding": { source: "space.*", prefix: "p" },
+            "--gutter": { source: "space.*", prefix: "gutter" },
+        });
+
+        expect(customProperties).toStrictEqual(["--gutter"]);
+    });
+
+    it("leaves out an entry that makes no classes", () => {
+        const { customProperties } = ruled(space, {
+            "--gutter": { source: "space.*", prefix: "gutter" },
+            "--tint": { source: "color.*", prefix: "tint" },
+        });
+
+        expect(customProperties).toStrictEqual(["--gutter"]);
+    });
+
+    it("leaves out an entry whose classes an earlier entry answers", () => {
+        const { customProperties } = ruled(space, {
+            "--gap-first": { source: "space.*", prefix: "gap" },
+            "--gap-second": { source: "space.*", prefix: "gap" },
+        });
+
+        expect(customProperties).toStrictEqual(["--gap-first"]);
+    });
+});
+
 describe("utilityRules' safelist", () => {
     const tokens = {
         color: { primary: color(), danger: color(), text: { muted: color() } },

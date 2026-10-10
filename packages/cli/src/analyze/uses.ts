@@ -26,11 +26,11 @@ export async function findUses(built: Built): Promise<Uses> {
         return token ? [{ token, file: resolve(file), line, var: name }] : [];
     });
     const markup = built.markupFiles.map((file) => resolve(file));
-    const { generator, configFile } = built;
-    const fromClass = generator ? await classUses(generator.uno, markup, tokenOf) : [];
+    const { uno, utilityRules, configFile } = built;
+    const fromClass = uno ? await classUses(uno, markup, tokenOf) : [];
     const safelisted =
-        generator && configFile
-            ? await safelistUses(generator.uno, generator.safelist, resolve(configFile), tokenOf)
+        uno && utilityRules && configFile
+            ? await safelistUses(uno, utilityRules.safelist, resolve(configFile), tokenOf)
             : [];
     return {
         uses: [...fromVar, ...fromClass, ...safelisted],

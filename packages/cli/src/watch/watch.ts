@@ -110,8 +110,8 @@ function savedFile(change: Change, { configFile }: LoadedConfig): string {
     return change.read.file ?? configFile ?? "";
 }
 
-function watchedBy({ config, generator }: Built): Watched {
-    return { content: config.content, markup: generator !== undefined };
+function watchedBy({ config, uno }: Built): Watched {
+    return { content: config.content, markup: uno !== undefined };
 }
 
 function since(start: number): number {

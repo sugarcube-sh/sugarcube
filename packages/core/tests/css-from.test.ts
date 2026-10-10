@@ -59,6 +59,7 @@ describe("cssFrom", () => {
             rules: expect.any(Array),
             starts: ruled.starts,
             safelist: ruled.safelist,
+            customProperties: ruled.customProperties,
         });
         expect(made.utilities?.rules.map(([pattern]) => pattern)).toStrictEqual(
             ruled.rules.map(([pattern]) => pattern),

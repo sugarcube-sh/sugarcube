@@ -93,7 +93,8 @@ const TYPES: Record<string, TokenType[]> = {
 /**
  * The UnoCSS rules for the config's utility classes, the same rules as data (`starts`, equal
  * exactly when two reads make the same rules), and the classes the config asks to be written whether or
- * not markup uses them. A class is a start (the entry's `prefix`, or the first segment of its
+ * not markup uses them, and the custom properties its classes set (`--gutter` for a `"--gutter"`
+ * entry that makes any class). A class is a start (the entry's `prefix`, or the first segment of its
  * `source`, with a direction's letter) and a part (the {@link cssName} of the token's path below
  * `source`, as its variable has it), and writes that token's variable. Rules come in the config's
  * order, each shorthand before its longhands; entries sharing a start are tried in the config's
@@ -109,6 +110,7 @@ export function utilityRules(
     rules: UtilityRule[];
     starts: UtilityStart[];
     safelist: string[];
+    customProperties: string[];
     diagnostics: Reported[];
 } {
     const byStart = new Map<string, Use[]>();
@@ -155,12 +157,18 @@ export function utilityRules(
         rules: starts.map(ruleFor),
         starts,
         safelist: [...safelist],
+        customProperties: customPropertiesOf(answered),
         diagnostics: [
             ...sameClasses(answered),
             ...(tokens.length === 0 ? [] : entries.flatMap((entry) => withoutClasses(entry, lost))),
             ...unmatched,
         ],
     };
+}
+
+function customPropertiesOf(answered: Map<string, [Answer, ...Answer[]]>): string[] {
+    const properties = [...answered.values()].map(([{ property }]) => property);
+    return [...new Set(properties.filter((property) => property.startsWith("--")))];
 }
 
 function ruleFor({ start, uses }: UtilityStart): UtilityRule {

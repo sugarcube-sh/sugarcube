@@ -25,7 +25,11 @@ function parseIgnore(value: string | undefined): string[] {
 
 async function runScan(built: Built, paths: string[], ignorePrefixes: string[]) {
     const scan = await scanStylesheets(built, paths);
-    const declared = new Set([...variablesOf(built).keys(), ...scan.declared]);
+    const declared = new Set([
+        ...variablesOf(built).keys(),
+        ...(built.utilityRules?.customProperties ?? []),
+        ...scan.declared,
+    ]);
     const { broken, fallback } = findUndeclared(scan.used, declared, ignorePrefixes);
     return {
         broken,

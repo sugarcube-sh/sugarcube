@@ -99,7 +99,7 @@ describe("a save while watching makes what a cold build makes", () => {
 
         expect(saved.utilities[0]?.css).toContain("text-b");
         expect(saved.variables).toBe(first.variables);
-        expect(saved.generator).toBe(first.generator);
+        expect(saved.uno).toBe(first.uno);
         expect(css(saved)).toStrictEqual(css(await build(fx.loaded)));
     });
 
@@ -123,8 +123,8 @@ describe("a save while watching makes what a cold build makes", () => {
         fx.tokens(2);
         const saved = await rebuilt(fx.loaded, first);
 
-        expect(first.generator).toBeDefined();
-        expect(saved.generator).toBe(first.generator);
+        expect(first.uno).toBeDefined();
+        expect(saved.uno).toBe(first.uno);
     });
 
     it("a token save that adds a class markup uses makes a new generator, and writes the class", async () => {
@@ -136,7 +136,7 @@ describe("a save while watching makes what a cold build makes", () => {
         fx.tokens(1, { c: { $value: "#333333" } });
         const saved = await rebuilt(fx.loaded, first);
 
-        expect(saved.generator).not.toBe(first.generator);
+        expect(saved.uno).not.toBe(first.uno);
         expect(saved.utilities[0]?.css).toContain("text-c");
         expect(css(saved)).toStrictEqual(css(await build(fx.loaded)));
     });
@@ -185,7 +185,7 @@ describe("a save while watching makes what a cold build makes", () => {
 
         const saved = await rebuilt({ config: moved }, first);
 
-        expect(saved.generator).not.toBe(first.generator);
+        expect(saved.uno).not.toBe(first.uno);
         expect(saved.utilities[0]?.path).toBe(moved.utilities.path);
     });
 

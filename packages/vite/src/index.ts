@@ -75,7 +75,7 @@ interface Good {
     utilities: UtilityCSS;
 }
 
-const NO_UTILITIES: UtilityCSS = { rules: [], starts: [], safelist: [] };
+const NO_UTILITIES: UtilityCSS = { rules: [], starts: [], safelist: [], customProperties: [] };
 
 // Returns Promise<any> rather than Promise<Plugin[]> to avoid exposing Vite's
 // Plugin type in the public API. Vite's Plugin type changes across major versions,
