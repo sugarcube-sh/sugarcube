@@ -82,7 +82,8 @@ export function describeElidedParents(
                 .map(({ to }) => to)
                 .sort()
                 .join("\0");
-        const changed = permutations.filter((each) => parentsIn(each) !== parentsIn(base));
+        const before = parentsIn(base);
+        const changed = permutations.filter((each) => parentsIn(each) !== before);
         const setBy = new Set(changed.flatMap((each) => modifierSetting(each, dependent)));
 
         if (changed.length === 0) {

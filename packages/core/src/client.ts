@@ -39,7 +39,7 @@ export { cssFrom } from "./shared/css-from.js";
 export type { MadeCSS, UtilityCSS } from "./shared/css-from.js";
 export type { Reported } from "./types/diagnostics.js";
 
-export { formatCSSVarName, stripRootSuffix } from "./shared/format-css-var-name.js";
+export { formatCSSVarName } from "./shared/format-css-var-name.js";
 export { composeTrees } from "./shared/compose-trees.js";
 export type { ComposeError, Composed } from "./shared/compose-trees.js";
 export type { SourceOrder, SourceRef, TokenSources } from "./types/load.js";

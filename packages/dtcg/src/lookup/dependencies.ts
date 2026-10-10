@@ -19,7 +19,7 @@ export interface DependenciesOptions {
  *
  * @example
  * dependencies(permutation, "color.danger")                      // color.brand
- * dependencies(permutation, "color.danger", { transitive: true }) // color.brand, palette.red
+ * dependencies(permutation, "color.danger", { transitive: true }) // palette.red, color.brand
  * dependencies(permutation, ["button.fill", "button.text"])      // what either refers to
  */
 export function dependencies(

@@ -1,5 +1,4 @@
-import { stripRootSuffix } from "@sugarcube-sh/core";
-import type { Token } from "@sugarcube-sh/dtcg";
+import { type Token, withoutRoot } from "@sugarcube-sh/dtcg";
 import color from "picocolors";
 import type { VarRef } from "../lint/scan-css.js";
 import { UTILITY_SOURCE } from "./system.js";
@@ -17,7 +16,7 @@ function compareLeaf(a: string, b: string): number {
 }
 
 function nameAndGroup(path: string): { name: string; group: string } {
-    const shown = stripRootSuffix(path);
+    const shown = withoutRoot(path);
     const lastDot = shown.lastIndexOf(".");
     if (lastDot === -1) return { name: shown, group: ROOT_GROUP };
     return { name: shown.slice(lastDot + 1), group: shown.slice(0, lastDot) };
