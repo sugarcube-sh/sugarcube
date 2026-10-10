@@ -1,4 +1,5 @@
 import type { Document, ReadOptions } from "../index.js";
+import { stat } from "node:fs/promises";
 import { diskPath, fileOnDisk, read } from "./read.js";
 
 /** What to read, as for `read`: a resolver or a token file, and how. */
@@ -107,9 +108,16 @@ export function liveDocument(
         savedDuringRead = new Set();
         try {
             const { entry, options } = typeof source === "function" ? source() : source;
+            const started = Date.now();
             const doc = await read(entry, options);
             names = new Map(doc.files.map((file) => [fileOnDisk(entry, file), file]));
             watchNewFiles();
+            const unreadable = doc.diagnostics.flatMap((found) =>
+                found.kind === "invalid-json" && found.at ? [fileOnDisk(entry, found.at.file)] : [],
+            );
+            for (const path of unreadable) {
+                if (await savedSince(path, started)) savedDuringRead.add(path);
+            }
             return doc;
         } finally {
             reading = false;
@@ -176,4 +184,11 @@ export function liveDocument(
             watchNewFiles();
         },
     };
+}
+
+async function savedSince(path: string, time: number): Promise<boolean> {
+    return stat(path).then(
+        ({ mtimeMs }) => mtimeMs >= time,
+        () => false,
+    );
 }

@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { stat } from "node:fs/promises";
 import { createJiti } from "jiti";
 import { basename, dirname, resolve } from "pathe";
 import { validateInternalConfig, validateSugarcubeConfig } from "../../shared/config.js";
@@ -58,15 +59,37 @@ export function configFileExists(): boolean {
 }
 
 async function loadConfigFile(configFile: string): Promise<unknown> {
+    const started = Date.now();
+    const read = await importConfigFile(configFile).then(
+        (exported) => ({ exported }),
+        (error: unknown) => ({ error }),
+    );
+    const failed = "error" in read || read.exported === undefined;
+    if (failed && (await savedSince(configFile, started))) return loadConfigFile(configFile);
+    if ("error" in read) throw read.error;
+    const { exported } = read;
+    if (exported === undefined) {
+        throw new ConfigError([{ reason: "exports-nothing", file: basename(configFile) }]);
+    }
+    return exported;
+}
+
+async function savedSince(file: string, time: number): Promise<boolean> {
+    return stat(file).then(
+        ({ mtimeMs }) => mtimeMs >= time,
+        () => false,
+    );
+}
+
+async function importConfigFile(configFile: string): Promise<unknown> {
     try {
         const jiti = createJiti(import.meta.url, {
             interopDefault: true,
             moduleCache: false,
         });
         const result = await jiti.import(configFile);
-        return result && typeof result === "object" && "default" in result
-            ? result.default
-            : result;
+        if (result && typeof result === "object" && "default" in result) return result.default;
+        return isPlainObject(result) && Object.keys(result).length === 0 ? undefined : result;
     } catch (error) {
         const thrown = error instanceof Error ? error.message : String(error);
         const cause = thrown.replace(/\s+/g, " ").trim();
