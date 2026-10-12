@@ -28,7 +28,7 @@
     "@devframes/vite": "^1.0.0",
     "@sugarcube-sh/studio": "workspace:*",
     "@sugarcube-sh/vite": "workspace:*",
-    "devframe": "^1.0.0"
+    "devframe": "^1.1.0"
   },
   "devDependencies": {
     "pkgroll": "^2.28.1",
