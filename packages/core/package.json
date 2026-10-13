@@ -1,6 +1,6 @@
 {
   "name": "@sugarcube-sh/core",
-  "version": "0.2.21",
+  "version": "0.3.0",
   "description": "Core functionality for sugarcube",
   "keywords": [
     "css",
