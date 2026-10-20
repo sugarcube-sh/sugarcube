@@ -2,6 +2,7 @@ import {
     type DesignTokens,
     type Group,
     type Input,
+    type JsonValue,
     type Permutation,
     PermutationError,
     type Permutations,
@@ -12,8 +13,9 @@ import {
     type Token,
     parentOf,
 } from "@sugarcube-sh/dtcg";
+import { isJsonObject } from "@sugarcube-sh/dtcg/values";
 import { refused } from "./error-messages.js";
-import type { OpResult, Question, Refusal, ValueOptions, Where } from "./index.js";
+import type { OpResult, PlaceOptions, Question, Refusal, Where } from "./index.js";
 import { type Member, memberAt, writtenIn } from "./file-text.js";
 
 interface Choice {
@@ -57,7 +59,7 @@ interface Chosen {
 export function placement(
     tokens: DesignTokens,
     path: string,
-    where: ValueOptions,
+    where: PlaceOptions,
     place?: string,
 ): Placement {
     if (where.at) return writtenPlace(tokens, path, where.at);
@@ -105,6 +107,15 @@ export function describedPlace(
     const describing = places.find(describes);
     if (describing)
         return { at: describing, alsoAffects: seenReading(tokens, [describing.span.file]) };
+    return widestPlace(tokens, path, places, place);
+}
+
+function widestPlace(
+    tokens: DesignTokens,
+    path: string,
+    places: Copy[],
+    place: string | undefined,
+): { at: Member; alsoAffects: Permutations } | { choose: Choice } | { refused: Refusal } {
     const most = Math.max(...places.map(({ readers }) => readers));
     const widest = places.filter(({ readers }) => readers === most);
     const file = chosenFile(path, unique(widest.map(({ span }) => span)), [], place);
@@ -112,6 +123,102 @@ export function describedPlace(
     const at = widest.find(({ span }) => span.file === file);
     if (!at) return refused({ kind: "not-found", path });
     return { at, alsoAffects: seenReading(tokens, [file]) };
+}
+
+export function ownProperties(token: Token): Record<string, JsonValue> {
+    const own = token.valueFrom.written;
+    return isJsonObject(own) ? (own as Record<string, JsonValue>) : {};
+}
+
+type ExtensionPlace =
+    | { at: Member; alsoAffects: Permutations }
+    | { into: string; inForce: JsonValue | undefined; alsoAffects: Permutations }
+    | { choose: Choice }
+    | { refused: Refusal };
+
+export function extensionPlace(
+    tokens: DesignTokens,
+    path: string,
+    key: string,
+    where: PlaceOptions,
+    place?: string,
+): ExtensionPlace {
+    const copies = copiesOf(tokens, path);
+    if ("refused" in copies) return copies;
+    if (where.at) {
+        const at = copies.places.find(({ span }) => sameSpan(span, where.at));
+        if (!at) return refused({ kind: "not-written-there", path, at: where.at });
+        return { at, alsoAffects: seenReading(tokens, [at.span.file]) };
+    }
+    for (const perm of tokens.permutations) {
+        const refusal = takenFromExtended(perm.group(path), key);
+        if (refusal) return refusal;
+    }
+    const chosen = chosenContext(tokens, where.input ?? {});
+    if (chosen && "refused" in chosen) return chosen;
+    return chosen
+        ? contextExtensionPlace(tokens, path, key, chosen, place)
+        : sharedExtensionPlace(tokens, path, key, copies.places, place);
+}
+
+function takenFromExtended(
+    group: Group | undefined,
+    key: string,
+): { refused: Refusal } | undefined {
+    if (!group || group.extensionsWrittenAt[key]) return undefined;
+    for (let from = group.extends; from; from = from.extends) {
+        if (from.extensionsWrittenAt[key]) {
+            return refused({ kind: "inherited", path: group.path, from: from.path });
+        }
+    }
+    return undefined;
+}
+
+function sharedExtensionPlace(
+    tokens: DesignTokens,
+    path: string,
+    key: string,
+    copies: Copy[],
+    place: string | undefined,
+): ExtensionPlace {
+    const winnerIn = (perm: Permutation) => perm.group(path)?.extensionsWrittenAt[key];
+    const written = tokens.permutations.flatMap((perm) => winnerIn(perm) ?? []);
+    if (written.length > 0) {
+        const shared = written.find(({ source }) => everyoneReads(source));
+        const at = shared && memberAt(tokens, tokens.spanOf(shared));
+        if (!shared || !at) return refused({ kind: "no-shared-value", path });
+        return {
+            at,
+            alsoAffects: alsoIn(tokens.permutations.where((perm) => winnerIn(perm) === shared)),
+        };
+    }
+    return widestPlace(tokens, path, copies, place);
+}
+
+function contextExtensionPlace(
+    tokens: DesignTokens,
+    path: string,
+    key: string,
+    chosen: Chosen,
+    place: string | undefined,
+): ExtensionPlace {
+    const { perm } = chosen;
+    const group = perm.group(path);
+    if (!group) return refused({ kind: "not-found", path });
+    const winner = group.extensionsWrittenAt[key];
+    const winnerSpan = winner && tokens.spanOf(winner);
+    if (winner && winnerSpan && winner.source.context === chosen.context) {
+        const at = memberAt(tokens, winnerSpan);
+        if (!at) return refused({ kind: "not-found", path });
+        return { at, alsoAffects: seenReading(tokens, [winnerSpan.file], chosen) };
+    }
+    const groupSpans = group.writtenAt.map((each) => tokens.spanOf(each));
+    const winnerAt = winner && winnerSpan && { source: winner.source, span: winnerSpan };
+    const into = overrideFile(path, chosen, winnerAt, groupSpans, place);
+    if (typeof into !== "string") return into;
+    const extensions = isJsonObject(winner?.written) ? winner.written.$extensions : undefined;
+    const inForce = isJsonObject(extensions) ? extensions[key] : undefined;
+    return { into, inForce, alsoAffects: seenReading(tokens, [into], chosen) };
 }
 
 function lookUp(
@@ -153,7 +260,10 @@ function writtenPlace(
     return { at: member, alsoAffects: alsoIn(there.winsIn) };
 }
 
-function sameSpan(span: Span, { file, offset, length }: Pick<Span, "file" | "offset" | "length">) {
+function sameSpan(
+    span: Span,
+    { file, offset, length }: Pick<Span, "file" | "offset" | "length">,
+): boolean {
     return span.file === file && span.offset === offset && span.length === length;
 }
 
@@ -188,7 +298,6 @@ export function contextPlace(
     place: string | undefined,
 ): Placement {
     const { perm } = chosen;
-    const input = inputOf(chosen);
     const written = perm.token(path);
     if (!written) return refused({ kind: "not-found", path });
     const refusal = refusalFor(written);
@@ -203,20 +312,36 @@ export function contextPlace(
         return { at, alsoAffects: alsoIn(there.winsIn, chosen) };
     }
 
-    const own = writable(perm, chosen);
-    if (own.length === 0) return refused({ kind: "no-file-for-context", path, input });
-    const winnerIndex = perm.sources.indexOf(winner.source);
-    const winning = own.filter(({ index }) => index > winnerIndex);
-    if (winning.length === 0) {
-        return refused({ kind: "hidden-by-later-file", path, input, file: winnerSpan.file });
-    }
-
     const parent = parentOf(path);
     const group = parent === undefined ? undefined : perm.group(parent);
     const groupSpans = (group?.writtenAt ?? []).map((each) => tokens.spanOf(each));
-    const into = chosenFile(path, unique(winning), groupSpans, place);
+    const into = overrideFile(
+        path,
+        chosen,
+        { source: winner.source, span: winnerSpan },
+        groupSpans,
+        place,
+    );
     if (typeof into !== "string") return into;
     return { token: written, into, alsoAffects: seenReading(tokens, [into], chosen) };
+}
+
+function overrideFile(
+    path: string,
+    chosen: Chosen,
+    winner: { source: Source; span: Span } | undefined,
+    groupSpans: Span[],
+    place: string | undefined,
+): string | { choose: Choice } | { refused: Refusal } {
+    const input = inputOf(chosen);
+    const own = writable(chosen.perm, chosen);
+    if (own.length === 0) return refused({ kind: "no-file-for-context", path, input });
+    const winnerIndex = winner ? chosen.perm.sources.indexOf(winner.source) : -1;
+    const later = own.filter(({ index }) => index > winnerIndex);
+    if (later.length === 0 && winner) {
+        return refused({ kind: "hidden-by-later-file", path, input, file: winner.span.file });
+    }
+    return chosenFile(path, unique(later), groupSpans, place);
 }
 
 function newContextPlace(

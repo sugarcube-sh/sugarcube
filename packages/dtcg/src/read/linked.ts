@@ -36,6 +36,7 @@ import { samePlace } from "./same-object.js";
 
 export const NO_REFERENCES: readonly Reference[] = Object.freeze([]);
 export const NO_PLACES: readonly Place[] = Object.freeze([]);
+export const NO_EXTENSION_PLACES: Readonly<Record<string, Place>> = Object.freeze({});
 
 const NOT_YET = Symbol("not yet worked out");
 

@@ -209,11 +209,14 @@ export interface Overridable {
 
 export { overridable } from "./overridable.js";
 
+/** Where an edit goes: for a context, or at one place the token or group is written. */
+export type PlaceOptions = (Where & { at?: undefined }) | PlaceAt;
+
 /**
  * How a value change is made: for a context or at a place the token is written, and which part of
  * the value it changes.
  */
-export type ValueOptions = ((Where & { at?: undefined }) | ValueAt) & {
+export type ValueOptions = PlaceOptions & {
     /**
      * A part of the value to change on its own, such as `["color"]` of a shadow or
      * `[1, "color"]` of its second layer, leaving every other part as written. A member the value
@@ -223,11 +226,11 @@ export type ValueOptions = ((Where & { at?: undefined }) | ValueAt) & {
     part?: JsonPath;
 };
 
-/** A value change at one place the token is written, rather than for a context. */
-export interface ValueAt {
+/** An edit at one place the token or group is written, rather than for a context. */
+export interface PlaceAt {
     /**
-     * A place the token is written, as `tokens.writtenAt(path)` gives it: the value written there
-     * changes, in every permutation that reads it. No file is chosen and nothing is asked.
+     * A place the token or group is written, as `tokens.writtenAt(path)` gives it: what is written
+     * there changes, in every permutation that reads it. No file is chosen and nothing is asked.
      */
     at: Pick<Span, "file" | "offset" | "length">;
     input?: undefined;
@@ -295,22 +298,7 @@ export function deprecate(
     throw new Error("not implemented yet");
 }
 
-/**
- * Changes one setting inside a token's or group's `$extensions`, leaving the rest as written, so
- * other tools' settings are never touched. `jsonPath` starts with the extension's key; give only
- * the key to replace the whole extension. `null` removes the setting.
- *
- * @example
- * setExtension(tokens, "space", ["com.example", "scale", "ratio"], 1.333)
- */
-export function setExtension(
-    tokens: DesignTokens,
-    path: string,
-    jsonPath: JsonPath,
-    value: JsonValue | null,
-): OpResult {
-    throw new Error("not implemented yet");
-}
+export { setExtension } from "./set-extension.js";
 
 /**
  * Turns fixes offered for these design tokens' diagnostics into ordinary edits, so they can be

@@ -83,3 +83,62 @@ describe("what a token writes itself", () => {
         expect(tokens.permutation().token("space.sm")?.authored).toStrictEqual({ value: 1 });
     });
 });
+
+describe("where a group's extensions are written", () => {
+    const files: Record<string, string> = {
+        "tokens.resolver.json": JSON.stringify({
+            version: "2025.10",
+            resolutionOrder: [
+                { type: "set", name: "base", sources: [{ $ref: "a.json" }, { $ref: "b.json" }] },
+                {
+                    type: "modifier",
+                    name: "mode",
+                    default: "light",
+                    contexts: { light: [], dark: [{ $ref: "dark.json" }] },
+                },
+            ],
+        }),
+        "a.json": JSON.stringify({
+            space: {
+                $type: "dimension",
+                $extensions: { "com.example": { steps: 1 }, "org.other": { kept: true } },
+            },
+            inset: { $extends: "{space}" },
+            plain: { $type: "number" },
+        }),
+        "b.json": JSON.stringify({ space: { $extensions: { "com.example": { steps: 2 } } } }),
+        "dark.json": JSON.stringify({ space: { $extensions: { "com.example": { steps: 3 } } } }),
+    };
+    const tokens = readFromMemory({ files, entry: "tokens.resolver.json" });
+    const filesOf = (path: string, input: Record<string, string> = {}) =>
+        Object.fromEntries(
+            Object.entries(tokens.permutation(input).group(path)?.extensionsWrittenAt ?? {}).map(
+                ([key, place]) => [key, tokens.spanOf(place).file],
+            ),
+        );
+
+    it("is the file read last that writes each key, since that file's key is used whole", () => {
+        expect(filesOf("space")).toStrictEqual({ "com.example": "b.json", "org.other": "a.json" });
+    });
+
+    it("is one of the group's own places", () => {
+        const space = tokens.permutation().group("space");
+        expect(space?.writtenAt).toContain(space?.extensionsWrittenAt["com.example"]);
+    });
+
+    it("follows the permutation: a context's file writing a key is where it is written there", () => {
+        expect(filesOf("space", { mode: "dark" })).toStrictEqual({
+            "com.example": "dark.json",
+            "org.other": "a.json",
+        });
+    });
+
+    it("leaves out a key the group takes from the group it extends", () => {
+        expect(tokens.permutation().group("inset")?.extensions).toHaveProperty("com.example");
+        expect(filesOf("inset")).toStrictEqual({});
+    });
+
+    it("is empty for a group that writes no extensions", () => {
+        expect(tokens.permutation().group("plain")?.extensionsWrittenAt).toStrictEqual({});
+    });
+});

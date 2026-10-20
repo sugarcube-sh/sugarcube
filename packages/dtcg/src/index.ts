@@ -718,6 +718,15 @@ export interface Group {
      */
     readonly writtenAt: readonly Place[];
     /**
+     * The place, among {@link Group.writtenAt}, that writes each `$extensions` key the group writes
+     * itself. When several files write a key, it is the last one read, whose value for that key is
+     * used whole. A key the group takes from the group it extends is left out.
+     *
+     * @example
+     * tokens.spanOf(space.extensionsWrittenAt["com.example"]).file // "space.json"
+     */
+    readonly extensionsWrittenAt: Readonly<Record<string, Place>>;
+    /**
      * Set when the group is here only because of `$extends`, or a `$ref` to another group, at
      * `from`.
      */
