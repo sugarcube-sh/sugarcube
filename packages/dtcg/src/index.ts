@@ -1171,6 +1171,24 @@ export interface DiagnosticDetailByKind {
         /** The facts the check's message is worded from. */
         readonly data?: unknown;
     };
+    /**
+     * A file writes a token or group with a name a {@link Generator} makes. The generator owns
+     * every name it makes, so the generated token is used and what the file writes there is not;
+     * `related` is the extension that makes it.
+     */
+    "written-generated": {
+        /** The name, such as `"space.2"`. */
+        readonly path: string;
+        /**
+         * The group it is made in, absent for the top level of a file. A group that extends
+         * another makes its tokens too, so this may not be the group that writes the extension.
+         */
+        readonly from?: string;
+        /** The generator's extension, such as `["com.example", "steps"]`. */
+        readonly extension: readonly [string, ...string[]];
+        /** What the file writes with that name. */
+        readonly written: "token" | "group";
+    };
     /** A reference points at nothing: no token, or for `$extends`, no group. */
     "missing-reference": {
         /** The reference as written, without braces: a path such as `color.brnad`, or a pointer. */

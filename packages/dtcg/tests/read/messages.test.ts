@@ -326,6 +326,15 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             data: { ratio: 1 },
         },
     ],
+    "written-generated": [
+        {
+            path: "size.step.3",
+            from: "size.step",
+            extension: ["sh.sugarcube", "scale"],
+            written: "token",
+        },
+        { path: "space.md", extension: ["sh.sugarcube", "scale"], written: "group" },
+    ],
     "missing-reference": [
         { ref: "color.brnad", from: ["color.danger"] },
         { ref: "color.brnad", from: ["color.danger"], similar: "color.brand" },

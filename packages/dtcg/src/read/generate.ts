@@ -10,6 +10,7 @@ import type {
     IgnoredProperty,
     Input,
     ParseOptions,
+    Span,
     StandardSchemaV1,
     ValueError,
 } from "../index.js";
@@ -25,6 +26,7 @@ import {
 } from "./extension-check.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
 import { type JsonFile, spanOf } from "./json.js";
+import { relatedMessages } from "../error-messages.js";
 import { type Merged, type MergedToken, everyGroup } from "./merge.js";
 import { usableType } from "./walk.js";
 
@@ -33,6 +35,7 @@ interface Extension {
     json: JsonFile;
     node: Node;
     source: number;
+    group?: string;
 }
 
 /**
@@ -143,9 +146,25 @@ export function fillGenerated(
                     continue;
                 }
                 const path = childPath(groupPath, made.name);
-                const written = merged.tokens.get(path);
-                if (written) merged.tokens.set(path, { ...written, generated: from });
-                if (written || merged.groups.has(path) || added.has(path)) continue;
+                if (added.has(path)) continue;
+                const written = writtenPlaces(merged, path);
+                if (written) {
+                    const detail = { path, ...from, written: written.kind };
+                    const related = [
+                        {
+                            message: relatedMessages.madeByThisExtension,
+                            span: spanOf(extension.json, extension.node),
+                            ...(extension.group !== undefined && { path: extension.group }),
+                        },
+                    ];
+                    for (const span of written.spans) {
+                        diagnostics.found(
+                            diagnostic("written-generated", detail, { span, path, related }),
+                            input,
+                        );
+                    }
+                    merged.order.delete(path);
+                }
                 added.set(path, addedToken(path, made, from, extension));
             }
         }
@@ -156,10 +175,25 @@ export function fillGenerated(
     }
 }
 
-function extensionOf(group: Settings, extension: Generator["extension"]): Extension | undefined {
-    const written = group.extensionsAt?.[extension[0]];
-    const found = extensionAt(group.extensions, written, extension);
-    return written && found && { ...found, json: written.json, source: written.source };
+function writtenPlaces(
+    merged: Merged,
+    path: string,
+): { kind: "token" | "group"; spans: Span[] } | undefined {
+    const token = merged.tokens.get(path);
+    if (token) {
+        return { kind: "token", spans: [...(token.replaces ?? []), token].map(({ span }) => span) };
+    }
+    const group = merged.groups.get(path);
+    if (group) return { kind: "group", spans: group.declaredIn.map(({ span }) => span) };
+    return undefined;
+}
+
+function extensionOf(settings: Settings, extension: Generator["extension"]): Extension | undefined {
+    const written = settings.extensionsAt?.[extension[0]];
+    const found = extensionAt(settings.extensions, written, extension);
+    if (!written || !found) return undefined;
+    const { json, source, group } = written;
+    return { ...found, json, source, ...(group !== undefined && { group }) };
 }
 
 function addedToken(

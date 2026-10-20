@@ -133,6 +133,7 @@ export const relatedMessages = {
     partOfTheLoop: "part of the same loop",
     alsoUsedHere: "also used here",
     alsoWrittenHere: "also written here",
+    madeByThisExtension: "made by this extension",
 };
 
 const ignoredWhenInvalid: ReadonlySet<DiagnosticDetailByKind["invalid-property"]["property"]> =
@@ -223,6 +224,14 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "extension-invalid": {
         severity: "error",
         message: ({ key }) => `the \`${key}\` extension is not valid`,
+    },
+    "written-generated": {
+        severity: "error",
+        message: ({ path, from, extension, written }) => {
+            const where = from === undefined ? "at the top of its file" : `on \`${from}\``;
+            const what = written === "token" ? "value" : "group";
+            return `\`${path}\` is made by \`${extension.join(".")}\` ${where}, so the ${what} written here is not used; change the extension instead`;
+        },
     },
     "missing-reference": {
         severity: "error",
