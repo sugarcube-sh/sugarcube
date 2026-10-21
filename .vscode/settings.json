@@ -3,20 +3,10 @@
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
   "json.schemaDownload.enable": true,
-  "files.associations": {
-    "**/tests/fixtures/outputs/**/*.json": "jsonc"
-  },
   "json.schemas": [
     {
       "fileMatch": ["**/*.resolver.json"],
       "url": "https://www.designtokens.org/schemas/2025.10/resolver.json"
-    },
-    {
-      "fileMatch": ["**/tests/fixtures/outputs/**/*.json"],
-      "schema": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "allowTrailingCommas": true
-      }
     },
     {
       "fileMatch": ["**/wrangler.jsonc"],
