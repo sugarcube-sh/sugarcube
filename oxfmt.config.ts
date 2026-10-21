@@ -19,7 +19,6 @@ export default defineConfig({
     overrides: [
         {
             files: ["**/*.json", "**/*.jsonc", "**/*.toml", "**/*.yml", "**/*.yaml"],
-
             options: { tabWidth: 2 },
         },
     ],
