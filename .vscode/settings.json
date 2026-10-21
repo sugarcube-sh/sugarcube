@@ -1,5 +1,4 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib",
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
   "json.schemaDownload.enable": true,
