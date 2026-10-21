@@ -1,6 +1,7 @@
 import { defineConfig } from "oxfmt";
 
 export default defineConfig({
+    astro: true,
     tabWidth: 4,
     quoteProps: "consistent",
     ignorePatterns: [
