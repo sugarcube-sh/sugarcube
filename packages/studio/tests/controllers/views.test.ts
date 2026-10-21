@@ -1,7 +1,14 @@
 import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
 import { plain } from "../../src/adapters/plain";
-import { groupView, referable, sidebarTree, tokenRow, trail } from "../../src/controllers/views";
+import {
+    groupPage,
+    groupView,
+    referable,
+    sidebarTree,
+    tokenRow,
+    trail,
+} from "../../src/controllers/views";
 import { demoFiles, demoMessage, studioOn } from "./demo-message";
 
 const blue = { colorSpace: "srgb", components: [0, 0, 1] };
@@ -111,6 +118,46 @@ describe("groupView", () => {
             ["glow", 1],
         ]);
         expect(view?.tokens.map((row) => row.name)).toEqual(["bg"]);
+    });
+});
+
+describe("groupPage", () => {
+    it("is the group's view with its recipe's form, when the adapter offers one", () => {
+        const { state } = studioOn();
+        const page = groupPage(state, state.showing.group("size.step")!);
+
+        expect(page.form?.label).toBe("Scale");
+        expect(page.tokens.map((row) => row.name)).toContain("-1");
+        expect(groupPage(state, state.showing.group("color")!).form).toBeUndefined();
+    });
+
+    it("says why a group lists no tokens: none at all, or only in the groups inside it", () => {
+        const { state } = studioOn(
+            demoMessage({
+                entry: "tokens.json",
+                files: {
+                    "tokens.json": JSON.stringify({
+                        empty: { $type: "number" },
+                        outer: { inner: { one: { $type: "number", $value: 1 } } },
+                    }),
+                },
+            }),
+        );
+
+        expect(groupPage(state, state.showing.group("empty")!).noTokens).toBe("at-all");
+        expect(groupPage(state, state.showing.group("outer")!).noTokens).toBe("directly");
+        expect(groupPage(state, state.showing.group("outer.inner")!).noTokens).toBeUndefined();
+    });
+
+    it("writes each token's CSS from the theme shown, whichever theme the group came from", () => {
+        const studio = studioOn();
+        const lightGroup = studio.state.showing.group("color.text")!;
+        studio.show({ mode: "dark" });
+        const { state } = studio;
+        const [row] = groupPage(state, lightGroup).tokens;
+        const darkToken = state.showing.token(row!.path)!;
+
+        expect(row?.css).toBe(state.value(darkToken));
     });
 });
 

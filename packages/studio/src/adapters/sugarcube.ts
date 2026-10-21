@@ -6,10 +6,12 @@ import {
 } from "@sugarcube-sh/core/client";
 import { cssWriter } from "@sugarcube-sh/dtcg/css";
 import type { BuildAdapter } from "../controllers/adapter";
+import { sugarcubeForm } from "./sugarcube-forms";
 
 export function sugarcube(config: InternalConfig): BuildAdapter {
     return {
         read: readOptions(config),
+        formFor: sugarcubeForm,
         write(tokens) {
             const values = cssWriter({ ...cssWriterOptions(tokens, config), references: "values" });
             const made = cssFrom(tokens, config, { utilities: false });

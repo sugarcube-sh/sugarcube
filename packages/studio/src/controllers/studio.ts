@@ -1,8 +1,10 @@
 import {
     type Change,
     type DesignTokens,
+    type Group,
     type Input,
     type Permutation,
+    type Token,
     readFromMemory,
     sameJson,
 } from "@sugarcube-sh/dtcg";
@@ -11,16 +13,18 @@ import {
     type Committed,
     type Edits,
     type OpResult,
+    type PlaceAt,
     createSession,
     keepYours,
 } from "@sugarcube-sh/dtcg-edit";
 import type { SaveOutcome, SentAdapter, StudioMessage, StudioSave } from "../protocol";
-import type { BuildAdapter, BuildProblem, BuildOutput } from "./adapter";
+import type { BuildAdapter, BuildOutput, BuildProblem, ExtensionForm } from "./adapter";
 
 export interface StudioState {
     readonly tokens: DesignTokens;
     readonly showing: Permutation;
     readonly value: BuildOutput["value"];
+    formFor(node: Token | Group, at?: PlaceAt["at"]): ExtensionForm | undefined;
     readonly css: string;
     readonly problems: readonly BuildProblem[];
     readonly changes: readonly Change[];
@@ -62,6 +66,7 @@ export function createStudio(
             tokens,
             showing: tokens.permutations.matching(showing) ?? tokens.permutation(),
             value: written.value,
+            formFor: (node, at) => adapter.formFor?.(tokens, node, at),
             css: written.css,
             problems: [...message.adapter.problems, ...written.problems],
             changes: session.changes(),

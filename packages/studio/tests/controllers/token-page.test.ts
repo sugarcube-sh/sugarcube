@@ -1,8 +1,14 @@
 import { remove, setValue } from "@sugarcube-sh/dtcg-edit";
 import { describe, expect, it } from "vitest";
-import { newToken, placeRows, valueView } from "../../src/controllers/token-page";
+import {
+    madeBy,
+    newToken,
+    placeRows,
+    tokenPage,
+    valueView,
+} from "../../src/controllers/token-page";
 import { problemRows } from "../../src/controllers/views";
-import { studioOn } from "./demo-message";
+import { demoMessage, studioOn } from "./demo-message";
 
 describe("placeRows", () => {
     it("labels each place by the theme whose file writes it, or the set it is shared through", () => {
@@ -161,5 +167,113 @@ describe("valueView's offers", () => {
             }),
         );
         expect(valueView(studio.state.tokens, "typography.text.sm", []).offers).toEqual([]);
+    });
+});
+
+describe("a recipe's step", () => {
+    it("has no value rows, offers no override, and can't be renamed or removed", () => {
+        const { tokens } = studioOn().state;
+
+        expect(valueView(tokens, "size.step.-1", [])).toEqual({
+            rows: [],
+            offers: [],
+            actions: false,
+        });
+    });
+
+    it("is unlike a token a file writes, which can be renamed and removed", () => {
+        const { tokens } = studioOn().state;
+
+        expect(valueView(tokens, "size.fluid.gutter", []).actions).toBe(true);
+    });
+
+    it("says the group whose recipe makes it, by the name of that group's form", () => {
+        const { state } = studioOn();
+        const step = state.showing.token("size.step.-1");
+
+        expect(step && madeBy(step, state.showing, state.formFor)).toEqual({
+            kind: "recipe",
+            from: "size.step",
+            by: "scale",
+        });
+    });
+
+    it("names no recipe when the adapter has no form for the group", () => {
+        const { state } = studioOn();
+        const step = state.showing.token("size.step.-1");
+
+        expect(step && madeBy(step, state.showing, () => undefined)).toEqual({
+            kind: "group",
+            from: "size.step",
+        });
+    });
+
+    it("says it is made at the top of its file when no group holds the recipe", () => {
+        const { state } = studioOn(
+            demoMessage({
+                entry: "tokens.json",
+                files: {
+                    "tokens.json": JSON.stringify({
+                        $extensions: {
+                            "sh.sugarcube": {
+                                scale: {
+                                    mode: "multipliers",
+                                    base: {
+                                        min: { value: 1, unit: "rem" },
+                                        max: { value: 1, unit: "rem" },
+                                    },
+                                    multipliers: { md: 1 },
+                                },
+                            },
+                        },
+                    }),
+                },
+            }),
+        );
+        const md = state.showing.token("md");
+
+        expect(md && madeBy(md, state.showing, state.formFor)).toEqual({ kind: "top-level" });
+    });
+
+    it("is nothing for a token a file writes", () => {
+        const { state } = studioOn();
+        const gutter = state.showing.token("size.fluid.gutter");
+
+        expect(gutter && madeBy(gutter, state.showing, state.formFor)).toBeUndefined();
+    });
+});
+
+describe("tokenPage", () => {
+    it("holds everything a written token's page draws, each row with its own form", () => {
+        const { state } = studioOn();
+        const gutter = state.showing.token("size.fluid.gutter")!;
+        const page = tokenPage(state, gutter, []);
+
+        expect(page.row.css).toBe("clamp(1rem, 0.6364rem + 1.8182vw, 2rem)");
+        expect(page.rows.map((row) => row.form?.label)).toEqual(["Fluid"]);
+        expect(page.actions).toBe(true);
+        expect(page.made).toBeUndefined();
+        expect(page.form).toBeUndefined();
+        expect(page.problems).toEqual([]);
+    });
+
+    it("gives a step no rows, its recipe's line and its range's form, read only", () => {
+        const { state } = studioOn();
+        const page = tokenPage(state, state.showing.token("size.step.-1")!, []);
+
+        expect(page.rows).toEqual([]);
+        expect(page.actions).toBe(false);
+        expect(page.made).toEqual({ kind: "recipe", from: "size.step", by: "scale" });
+        expect(page.form?.label).toBe("Fluid");
+        expect(page.form?.write).toBeUndefined();
+    });
+
+    it("gives an override row no form until it is written", () => {
+        const { state } = studioOn();
+        const page = tokenPage(state, state.showing.token("size.fluid.gutter")!, ["mode: dark"]);
+        const adding = page.rows.find((row) => row.unwritten);
+
+        expect(adding).toBeDefined();
+        expect(adding?.form).toBeUndefined();
     });
 });

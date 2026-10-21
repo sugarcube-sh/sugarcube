@@ -1,26 +1,24 @@
 import { NavLink } from "react-router";
 import { hrefFor } from "../app/token-path";
-import type { Group, Token } from "@sugarcube-sh/dtcg";
-import { groupView } from "../controllers/views";
+import type { Group } from "@sugarcube-sh/dtcg";
+import { groupPage } from "../controllers/views";
 import { useStudioState } from "../providers/studio-context";
+import { ExtensionFields } from "./ExtensionFields";
 import { NewToken } from "./NewToken";
 import { Showing } from "./Showing";
 import { AsCSS, Written } from "./Value";
 
 export function GroupPage({ group, shown }: { group: Group; shown: boolean }) {
-    const value = useStudioState((state) => state.value);
-    const showing = useStudioState((state) => state.showing);
-    const view = groupView(group, (token: Token) => {
-        const here = showing.token(token.path);
-        return here && value(here);
-    });
+    const state = useStudioState((each) => each);
+    const view = groupPage(state, group);
 
     return (
         <article>
             <h1>{view.path}</h1>
             {view.description && <p>{view.description}</p>}
             <Showing />
-            {!shown && <p>Not in {showing.label}</p>}
+            {!shown && <p>Not in {state.showing.label}</p>}
+            {view.form && <ExtensionFields form={view.form} label={undefined} />}
 
             {view.groups.length > 0 && (
                 <table>
@@ -45,12 +43,8 @@ export function GroupPage({ group, shown }: { group: Group; shown: boolean }) {
                 </table>
             )}
 
-            {view.tokens.length === 0 ? (
-                <p>
-                    {view.groups.length > 0
-                        ? "No tokens directly in this group."
-                        : "This group has no tokens."}
-                </p>
+            {view.noTokens ? (
+                <p>{noTokensText[view.noTokens]}</p>
             ) : (
                 <table>
                     <thead>
@@ -83,3 +77,8 @@ export function GroupPage({ group, shown }: { group: Group; shown: boolean }) {
         </article>
     );
 }
+
+const noTokensText = {
+    "at-all": "This group has no tokens.",
+    "directly": "No tokens directly in this group.",
+} as const;
