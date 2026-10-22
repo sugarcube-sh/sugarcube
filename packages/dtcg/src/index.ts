@@ -564,6 +564,16 @@ export interface TokenBase<T extends TokenType> {
     /** `true`, or a message explaining what to use instead. */
     readonly deprecated?: boolean | string;
     /**
+     * The group that writes the `$deprecated` in force, when the token doesn't write its own: the
+     * closest group above it with one of its own or through the group it extends (Format 6.3.1,
+     * 6.4). Absent when the token writes its own, when the top level of its file writes it, or when
+     * none applies.
+     *
+     * @example
+     * if (token.deprecated && token.deprecatedFrom) say(`Deprecated by ${token.deprecatedFrom}`);
+     */
+    readonly deprecatedFrom?: string;
+    /**
      * Vendor data from `$extensions`, passed through untouched. Plain JSON, so whole-number keys
      * inside it come first, in numeric order, as in any JavaScript object.
      */
@@ -697,6 +707,12 @@ export interface Group {
     readonly description?: string;
     /** Its own, else the group it extends, else the group it is inside (Format 6.3.1). */
     readonly deprecated?: boolean | string;
+    /**
+     * The group that writes the `$deprecated` in force, when the group doesn't write its own: the
+     * group it extends, else the closest group above it (Format 6.3.1, 6.4). Absent when it writes
+     * its own, when the top level of its file writes it, or when none applies.
+     */
+    readonly deprecatedFrom?: string;
     /** Its own, over those of the group it extends. */
     readonly extensions?: Readonly<Record<string, JsonValue>>;
     /**

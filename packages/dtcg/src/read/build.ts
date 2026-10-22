@@ -18,7 +18,7 @@ import { withoutRoot } from "../path.js";
 import { namedPath, referenceText } from "../values/references.js";
 import type { Building } from "./building.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
-import { applying, inherited } from "./inherit.js";
+import { applying, deprecatedFrom, inherited } from "./inherit.js";
 import {
     NO_EXTENSION_PLACES,
     NO_PLACES,
@@ -145,12 +145,14 @@ function buildPermutation(
         beingMade.delete(path);
         const { replaces, source, span } = written;
         const { read } = value;
+        const deprecated = inherited(written, merged, "deprecated");
         const now: MadeFrom = {
             type: value.type,
             value: read.ok ? read.value : undefined,
             resolved: read.ok && "resolved" in value ? value.resolved : undefined,
             invalid: read.ok ? undefined : true,
-            deprecated: inherited(written, merged, "deprecated"),
+            deprecated,
+            deprecatedFrom: deprecatedFrom(merged, written, deprecated),
             writtenAt: replaces
                 ? [...placed(replaces, path), places.at(sourceAt(source), span, path)]
                 : places.only(sourceAt(source), span, path),
@@ -205,14 +207,17 @@ function buildPermutation(
         const extending =
             written.extendsGroup === undefined ? undefined : groupAt(written.extendsGroup);
         const applies = applying(merged, written);
+        const from = deprecatedFrom(merged, written, applies.deprecated, applies.deprecatedAt);
         const writtenAt = placed(written.declaredIn, path);
         const kept = earlier.groups
             .get(path)
-            ?.find((each) => sameGroup(each, written, applies, writtenAt, children, extending));
+            ?.find((each) =>
+                sameGroup(each, written, applies, from, writtenAt, children, extending),
+            );
         if (kept && written.extends) places.movedTo(kept.references, [written.extends.span]);
         const group =
             kept ??
-            newGroup(written, groupFields(written, applies, writtenAt), children, extending);
+            newGroup(written, groupFields(written, applies, from, writtenAt), children, extending);
         builtGroups.set(path, group);
         return group;
     };
@@ -452,6 +457,7 @@ function publicTopLevel(top: MergedTopLevel, writtenAt: readonly Place[]): TopLe
 function groupFields(
     group: MergedGroup,
     applies: Properties,
+    markedBy: string | undefined,
     writtenAt: readonly Place[],
 ): Parameters<typeof linkedGroup>[0] {
     const { path, inherited: from } = group;
@@ -459,6 +465,7 @@ function groupFields(
     return {
         path,
         ...publicProperties(applies),
+        ...(markedBy !== undefined && { deprecatedFrom: markedBy }),
         writtenAt,
         extensionsWrittenAt: extensionPlaces(group, writtenAt),
         children: [],
@@ -509,6 +516,7 @@ function tokenFields(token: MergedToken, now: MadeFrom): Parameters<typeof linke
         invalid: now.invalid,
         description: token.description,
         deprecated: now.deprecated,
+        deprecatedFrom: now.deprecatedFrom,
         extensions: token.extensions,
         authored: token.added
             ? undefined

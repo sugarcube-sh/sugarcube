@@ -1,15 +1,14 @@
 import { parentOf } from "../path.js";
 import type { Merged, MergedGroup, MergedTopLevel } from "./merge.js";
 import { type Settings, settingsOf } from "./settings.js";
-import type { Properties } from "./walk.js";
 
-export type Inheritable = "type" | "deprecated";
+export type Inheritable = "type" | "deprecated" | "deprecatedAt";
 
 export function inherited<K extends Inheritable>(
-    item: Properties & { path: string },
+    item: Pick<Settings, Inheritable> & { path: string },
     merged: Merged,
     property: K,
-): Properties[K] {
+): Settings[K] {
     return item[property] ?? closest(item.path, merged, property);
 }
 
@@ -23,7 +22,7 @@ export function applying(merged: Merged, group: MergedTopLevel | MergedGroup): S
     };
 }
 
-function closest<K extends Inheritable>(path: string, merged: Merged, property: K): Properties[K] {
+function closest<K extends Inheritable>(path: string, merged: Merged, property: K): Settings[K] {
     return atGroup(merged, property, parentOf(path));
 }
 
@@ -31,9 +30,9 @@ function atGroup<K extends Inheritable>(
     merged: Merged,
     property: K,
     group: string | undefined,
-): Properties[K] {
-    if (group === undefined) return merged.root[property];
-    const known: Map<string, Properties[K]> = merged.inheritedAt[property];
+): Settings[K] {
+    if (group === undefined) return settingsOf(merged, merged.root)[property];
+    const known: Map<string, Settings[K]> = merged.inheritedAt[property];
     const found = known.get(group);
     if (found !== undefined || known.has(group)) return found;
     const each = merged.groups.get(group);
@@ -41,4 +40,14 @@ function atGroup<K extends Inheritable>(
         (each && settingsOf(merged, each)[property]) ?? atGroup(merged, property, parentOf(group));
     known.set(group, applies);
     return applies;
+}
+
+export function deprecatedFrom(
+    merged: Merged,
+    item: Pick<Settings, "deprecated"> & { path: string },
+    inForce: Settings["deprecated"],
+    extended?: string,
+): string | undefined {
+    if (inForce === undefined || item.deprecated !== undefined) return undefined;
+    return extended ?? closest(item.path, merged, "deprecatedAt");
 }

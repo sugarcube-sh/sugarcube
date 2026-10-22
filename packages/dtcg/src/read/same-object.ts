@@ -15,6 +15,7 @@ export interface MadeFrom {
     resolved: unknown;
     invalid: true | undefined;
     deprecated: boolean | string | undefined;
+    deprecatedFrom: string | undefined;
     writtenAt: readonly Place[];
 }
 
@@ -25,6 +26,7 @@ export function sameToken(
     targets: readonly Target[],
 ): boolean {
     if (earlier.type !== now.type || earlier.deprecated !== now.deprecated) return false;
+    if (earlier.deprecatedFrom !== now.deprecatedFrom) return false;
     if (!sameList(earlier.writtenAt, now.writtenAt)) return false;
     if (earlier.generated?.from !== written.generated?.from) return false;
     if (earlier.generated?.extension !== written.generated?.extension) return false;
@@ -51,6 +53,7 @@ export function sameGroup(
     earlier: Group,
     written: MergedGroup,
     applies: Properties,
+    deprecatedFrom: string | undefined,
     writtenAt: readonly Place[],
     children: readonly (Token | Group)[],
     extending: Group | undefined,
@@ -59,6 +62,7 @@ export function sameGroup(
         earlier.extends === extending &&
         earlier.type === usableType(applies.type) &&
         earlier.deprecated === applies.deprecated &&
+        earlier.deprecatedFrom === deprecatedFrom &&
         earlier.inherited?.from === written.inherited?.from &&
         sameList(earlier.writtenAt, writtenAt) &&
         sameList(earlier.children, children)

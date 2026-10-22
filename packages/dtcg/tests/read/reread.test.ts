@@ -242,3 +242,52 @@ describe("a reread of every file", () => {
         );
     });
 });
+
+describe("a reread and where a deprecation comes from", () => {
+    const marked = (inner: object) =>
+        JSON.stringify({
+            outer: {
+                $type: "number",
+                $deprecated: "Use gap",
+                inner: { ...inner, n: { $value: 1 } },
+            },
+        });
+
+    it("names the group that now marks a token, though the mark reads the same", () => {
+        const first = readFromMemory({
+            files: { "tokens.json": marked({ $deprecated: "Use gap" }) },
+        });
+        const second = first.reread({ "tokens.json": marked({}) });
+
+        expect(first.permutation().token("outer.inner.n")?.deprecatedFrom).toBe("outer.inner");
+        expect(second.permutation().token("outer.inner.n")?.deprecated).toBe("Use gap");
+        expect(second.permutation().token("outer.inner.n")?.deprecatedFrom).toBe("outer");
+        expect(second.permutation().group("outer.inner")?.deprecatedFrom).toBe("outer");
+    });
+});
+
+describe("a reread and a group in a file that didn't change", () => {
+    const resolver = JSON.stringify({
+        version: "2025.10",
+        resolutionOrder: [
+            { type: "set", name: "base", sources: [{ $ref: "a.json" }, { $ref: "b.json" }] },
+        ],
+    });
+    const a = (mid: object) =>
+        JSON.stringify({ outer: { $type: "number", $deprecated: "Use gap", mid } });
+
+    it("names the group that now marks it, though the mark reads the same", () => {
+        const first = readFromMemory({
+            files: {
+                "tokens.resolver.json": resolver,
+                "a.json": a({ $deprecated: "Use gap" }),
+                "b.json": JSON.stringify({ outer: { mid: { inner: {} } } }),
+            },
+            entry: "tokens.resolver.json",
+        });
+        const second = first.reread({ "a.json": a({}) });
+
+        expect(first.permutation().group("outer.mid.inner")?.deprecatedFrom).toBe("outer.mid");
+        expect(second.permutation().group("outer.mid.inner")?.deprecatedFrom).toBe("outer");
+    });
+});
