@@ -8,9 +8,11 @@ import { ChangeBar } from "../inspector/ChangeBar";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { Search } from "./Search";
 import { useSearch } from "./use-search";
+import { useUndoKeys } from "./use-undo-keys";
 
 export function App() {
     const { open, close } = useSearch();
+    useUndoKeys();
 
     return (
         <SidebarProvider className="shell">

@@ -1,8 +1,7 @@
-import type { Group, JsonValue, TokenType } from "@sugarcube-sh/dtcg";
-import { create } from "@sugarcube-sh/dtcg-edit";
+import { type Group, type JsonValue, type TokenType, childPath } from "@sugarcube-sh/dtcg";
 import { tokenTypes } from "@sugarcube-sh/dtcg/values";
 import { useId, useState } from "react";
-import { newToken } from "../controllers/token-page";
+import { canAddToken, newTokenEdit } from "../controllers/actions";
 import { hasField } from "../controllers/value-field";
 import { useStudio } from "../providers/studio-context";
 import { JsonInput } from "./JsonInput";
@@ -18,24 +17,27 @@ export function NewToken({ group }: { group: Group }) {
     const [value, setValue] = useState<JsonValue>();
     const [text, setText] = useState("");
     const valueId = useId();
-    const path = `${group.path}.${name}`;
+    const heading = useId();
+    const path = childPath(group.path, name);
 
     return (
         <form
+            aria-labelledby={heading}
             onSubmit={(event) => {
                 event.preventDefault();
                 if (value === undefined) return;
-                const made = edit.run(
-                    create(studio.state.tokens, path, newToken({ type, value }, group)),
-                );
-                if (made) {
+                const { result, options } = newTokenEdit(studio.state.tokens, group, name, {
+                    type,
+                    value,
+                });
+                if (edit.run(result, options)) {
                     setName("");
                     setValue(undefined);
                     setText("");
                 }
             }}
         >
-            <h2>New token</h2>
+            <h2 id={heading}>New token</h2>
             <label>
                 Name <input value={name} onChange={(event) => setName(event.target.value)} />
             </label>{" "}
@@ -79,7 +81,7 @@ export function NewToken({ group }: { group: Group }) {
                     />
                 </>
             )}{" "}
-            <button type="submit" disabled={name === "" || value === undefined}>
+            <button type="submit" disabled={!canAddToken(name, value)}>
                 Add
             </button>
             {edit.view}

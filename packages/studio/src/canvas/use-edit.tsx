@@ -1,20 +1,22 @@
-import type { OpResult, Question } from "@sugarcube-sh/dtcg-edit";
+import type { OpResult, Question, StepOptions } from "@sugarcube-sh/dtcg-edit";
 import { type ReactNode, useState } from "react";
-import { useStudio } from "../providers/studio-context";
+import { reasonsFor } from "../controllers/held";
+import { useStudio, useStudioState } from "../providers/studio-context";
+import { useHeld } from "./use-held";
 
-export function useEdit(): { run(result: OpResult): boolean; view: ReactNode } {
+export function useEdit(): {
+    run(result: OpResult, options?: StepOptions): boolean;
+    view: ReactNode;
+} {
     const studio = useStudio();
-    const [asking, setAsking] = useState<Question>();
-    const [reasons, setReasons] = useState<readonly string[]>([]);
+    const tokens = useStudioState((state) => state.tokens);
+    const [asking, holdAsking] = useHeld<Question>(tokens);
+    const [reasons = [], holdReasons] = useHeld<readonly string[]>(tokens);
 
-    const run = (result: OpResult): boolean => {
-        const done = studio.do(result);
-        setAsking(done.question);
-        setReasons(
-            done.refused
-                ? [done.refused.reason]
-                : (done.conflicts ?? []).map((conflict) => conflict.reason),
-        );
+    const run = (result: OpResult, options?: StepOptions): boolean => {
+        const done = studio.do(result, options);
+        holdAsking(done.question, studio.state.tokens);
+        holdReasons(reasonsFor(done), studio.state.tokens);
         return done.tokens !== undefined;
     };
 

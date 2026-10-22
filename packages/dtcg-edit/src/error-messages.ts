@@ -4,6 +4,8 @@ import type { Conflict, FileOp, Refusal } from "./index.js";
 export const thrown = {
     operationDoesNotFit:
         "an operation's edits don't fit the design tokens it was given; make them from the tokens the operation is passed",
+    stepsNoLongerFit:
+        "the session's unsaved steps no longer fit the files they were put back on, so the version before the last can't be worked out",
 };
 
 export const fixTitles = {

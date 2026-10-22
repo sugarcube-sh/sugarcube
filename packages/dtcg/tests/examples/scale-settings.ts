@@ -1,6 +1,7 @@
 // A spacing scale made from settings on a group, plus a check that the tool's own `$extensions`
 // settings are well formed. Both take a schema from any Standard Schema library, such as Zod.
 import {
+    type GeneratedToken,
     type StandardSchemaV1,
     defineExtensionValidator,
     defineGenerator,
@@ -10,9 +11,7 @@ import {
 type ScaleSettings = { mode: "exponential" | "multipliers" };
 declare const scaleSettings: StandardSchemaV1<unknown, ScaleSettings>;
 declare const toolSettings: StandardSchemaV1<unknown, { fluid?: boolean }>;
-declare function expandScale(
-    settings: ScaleSettings,
-): { name: string; $value: unknown; $extensions?: Record<string, unknown> }[];
+declare function expandScale(settings: ScaleSettings): GeneratedToken[];
 
 const scales = defineGenerator({
     extension: ["com.example", "scale"],

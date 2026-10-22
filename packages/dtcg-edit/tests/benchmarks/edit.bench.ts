@@ -52,6 +52,19 @@ function edits(name: string, opened: DesignTokens) {
             editing.restore(kept.unsaved);
             editing.rebase(opened);
         });
+        bench("restore two edits, rebase, then undo the last", () => {
+            const editing = createSession(opened);
+            editing.restore(kept.unsaved);
+            editing.rebase(opened);
+            editing.undo();
+        });
+        const undoing = createSession(opened);
+        undoing.do(setValue(undoing.tokens, "color.c0", red));
+        undoing.do(rename(undoing.tokens, "color", "colour"));
+        bench("undo a rename, then redo it", () => {
+            undoing.undo();
+            undoing.redo();
+        });
         const session = createSession(opened);
         let turn = 0;
         bench("setValue, the shared value: operation and session.do", () => {

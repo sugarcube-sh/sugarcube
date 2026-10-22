@@ -1,7 +1,6 @@
 import type { TokenType } from "@sugarcube-sh/dtcg";
-import { setValue } from "@sugarcube-sh/dtcg-edit";
 import type { ExtensionForm } from "../controllers/adapter";
-import type { ValueRow } from "../controllers/token-page";
+import { type PageRow, valueEdit } from "../controllers/token-page";
 import { useStudio } from "../providers/studio-context";
 import { EditedTokenContext } from "../providers/edited-token-context";
 import { ExtensionFields } from "./ExtensionFields";
@@ -14,32 +13,37 @@ export function EditRow({
     path,
     form,
 }: {
-    row: ValueRow;
+    row: PageRow;
     type: TokenType | undefined;
     path: string;
     form: ExtensionForm | undefined;
 }) {
     const studio = useStudio();
     const edit = useEdit();
-    const label = row.unwritten ? `Override for ${row.label}` : row.label;
 
     return (
         <>
-            <dt>{label}</dt>
+            <dt>{row.name}</dt>
             <dd>
                 <EditedTokenContext.Provider value={path}>
                     <TypedField
                         type={type}
                         written={row.value}
-                        label={label ?? path}
-                        onWrite={(next, part) =>
-                            edit.run(
-                                setValue(studio.state.tokens, path, next, { ...row.where, part }),
-                            )
-                        }
+                        label={row.fieldLabel}
+                        onWrite={(next, part, control) => {
+                            const { result, options } = valueEdit(
+                                studio.state.tokens,
+                                path,
+                                row,
+                                next,
+                                part,
+                                control,
+                            );
+                            edit.run(result, options);
+                        }}
                     />
                     {edit.view}
-                    {form && <ExtensionFields form={form} label={label} />}
+                    {form && <ExtensionFields path={path} form={form} label={row.name} />}
                 </EditedTokenContext.Provider>
             </dd>
         </>

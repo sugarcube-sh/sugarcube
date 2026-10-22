@@ -2,9 +2,9 @@ import { remove, setValue } from "@sugarcube-sh/dtcg-edit";
 import { describe, expect, it } from "vitest";
 import {
     madeBy,
-    newToken,
     placeRows,
     tokenPage,
+    valueEdit,
     valueView,
 } from "../../src/controllers/token-page";
 import { problemRows } from "../../src/controllers/views";
@@ -51,32 +51,6 @@ describe("placeRows", () => {
         expect(
             placeRows(studio.state.tokens, "color.text.default").map((row) => row.value),
         ).toEqual(["{color.neutral.800}", "{color.neutral.50}"]);
-    });
-});
-
-describe("newToken", () => {
-    it("leaves the type out when it is the group's, so the token takes it from the group", () => {
-        const group = studioOn().state.tokens.permutation().group("color.text");
-
-        expect(newToken({ type: "color", value: "{color.brand.500}" }, group)).toEqual({
-            $value: "{color.brand.500}",
-        });
-    });
-
-    it("writes the type when it isn't the group's", () => {
-        const group = studioOn().state.tokens.permutation().group("color.text");
-
-        expect(newToken({ type: "dimension", value: { value: 1, unit: "rem" } }, group)).toEqual({
-            $type: "dimension",
-            $value: { value: 1, unit: "rem" },
-        });
-    });
-
-    it("writes the type for a token made at the top, with no group", () => {
-        expect(newToken({ type: "number", value: 1 }, undefined)).toEqual({
-            $type: "number",
-            $value: 1,
-        });
     });
 });
 
@@ -255,6 +229,8 @@ describe("tokenPage", () => {
         expect(page.made).toBeUndefined();
         expect(page.form).toBeUndefined();
         expect(page.problems).toEqual([]);
+        expect(page.description).toEqual({ text: "", editable: true });
+        expect(page.deprecation).toEqual({ box: { checked: false, untick: null, message: "" } });
     });
 
     it("gives a step no rows, its recipe's line and its range's form, read only", () => {
@@ -266,6 +242,26 @@ describe("tokenPage", () => {
         expect(page.made).toEqual({ kind: "recipe", from: "size.step", by: "scale" });
         expect(page.form?.label).toBe("Fluid");
         expect(page.form?.write).toBeUndefined();
+        expect(page.description.editable).toBe(false);
+        expect(page.deprecation.box).toBeUndefined();
+    });
+
+    it("offers no description or deprecation for a token only there through $extends", () => {
+        const { state } = studioOn(
+            demoMessage({
+                entry: "tokens.json",
+                files: {
+                    "tokens.json": JSON.stringify({
+                        button: { $type: "number", pad: { $value: 4 } },
+                        primary: { $extends: "{button}" },
+                    }),
+                },
+            }),
+        );
+        const page = tokenPage(state, state.showing.token("primary.pad")!, []);
+
+        expect(page.description.editable).toBe(false);
+        expect(page.deprecation.box).toBeUndefined();
     });
 
     it("gives an override row no form until it is written", () => {
@@ -275,5 +271,33 @@ describe("tokenPage", () => {
 
         expect(adding).toBeDefined();
         expect(adding?.form).toBeUndefined();
+    });
+});
+
+describe("valueEdit", () => {
+    const { state } = studioOn();
+    const [base, dark] = tokenPage(state, state.showing.token("color.text.default")!, []).rows;
+
+    it("writes the value at the row's place", () => {
+        const edit = valueEdit(state.tokens, "color.text.default", base!, "{color.neutral.800}");
+
+        expect(edit.result.ops).toEqual([
+            expect.objectContaining({
+                kind: "set",
+                file: base?.where.at?.file,
+                value: "{color.neutral.800}",
+            }),
+        ]);
+    });
+
+    it("names one undo field for each row, each part and each control", () => {
+        const name = (row = base!, part?: (string | number)[], control?: string) =>
+            valueEdit(state.tokens, "color.text.default", row, "{color.neutral.800}", part, control)
+                .options.merge;
+
+        expect(name()).toBe(name());
+        expect(name()).not.toBe(name(dark));
+        expect(name(base, ["color"])).not.toBe(name(base, ["blur"]));
+        expect(name(base, undefined, "space")).not.toBe(name(base, undefined, "channel 0"));
     });
 });

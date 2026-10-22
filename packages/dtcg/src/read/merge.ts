@@ -47,7 +47,7 @@ export interface Merged {
     order: Set<string>;
     children: Map<string | undefined, string[]>;
     settings: Map<MergedTopLevel, Settings>;
-    inheritedAt: { [K in Inheritable]: Map<string, Properties[K]> };
+    inheritedAt: { [K in Inheritable]: Map<string, Settings[K]> };
 }
 
 export function merge(
@@ -62,7 +62,7 @@ export function merge(
         order: new Set(),
         children: new Map(),
         settings: new Map(),
-        inheritedAt: { type: new Map(), deprecated: new Map() },
+        inheritedAt: { type: new Map(), deprecated: new Map(), deprecatedAt: new Map() },
     };
     const conflict = (path: string, later: Span, earlier: Span[], earlierIs: "token" | "group") =>
         diagnostics.found(

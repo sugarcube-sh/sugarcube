@@ -59,6 +59,7 @@ class TokenObject {
         if (fields.invalid) self.invalid = fields.invalid;
         if (fields.description !== undefined) self.description = fields.description;
         if (fields.deprecated !== undefined) self.deprecated = fields.deprecated;
+        if (fields.deprecatedFrom !== undefined) self.deprecatedFrom = fields.deprecatedFrom;
         if (fields.extensions) self.extensions = fields.extensions;
         if (fields.authored) self.authored = fields.authored;
         if (fields.generated) self.generated = fields.generated;

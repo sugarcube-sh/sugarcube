@@ -1,7 +1,11 @@
 import type { Merged, MergedGroup, MergedTopLevel } from "./merge.js";
 import type { Properties } from "./walk.js";
 
-export type Settings = Properties & Pick<MergedTopLevel, "extensionsAt">;
+export type Settings = Properties &
+    Pick<MergedTopLevel, "extensionsAt"> & {
+        /** The group writing the `deprecated` these settings hold. */
+        deprecatedAt?: string;
+    };
 
 export function settingsOf(merged: Merged, group: MergedTopLevel | MergedGroup): Settings {
     const known = merged.settings;
@@ -35,11 +39,13 @@ export function settingsOf(merged: Merged, group: MergedTopLevel | MergedGroup):
     return of(group);
 }
 
-function written({ type, description, deprecated, extensions, extensionsAt }: Settings): Settings {
+function written(group: MergedTopLevel | MergedGroup): Settings {
+    const { type, description, deprecated, extensions, extensionsAt } = group;
     return {
         ...(type !== undefined && { type }),
         ...(description !== undefined && { description }),
         ...(deprecated !== undefined && { deprecated }),
+        ...(deprecated !== undefined && "path" in group && { deprecatedAt: group.path }),
         ...(extensions && { extensions }),
         ...(extensionsAt && { extensionsAt }),
     };

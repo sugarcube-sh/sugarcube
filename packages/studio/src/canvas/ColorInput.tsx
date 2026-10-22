@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useHeld } from "./use-held";
 import {
     type ColorDraft,
     type ColorField,
@@ -22,13 +22,10 @@ export function ColorInput({
     draft: ColorDraft;
     shown: ColorField | undefined;
     label: string;
-    onDraft(draft: ColorDraft): void;
+    onDraft(draft: ColorDraft, control: string): void;
 }) {
-    const [fitted, setFitted] = useState<string>();
-    const change = (next: ColorDraft) => {
-        setFitted(undefined);
-        onDraft(next);
-    };
+    const [fitted, holdFitted] = useHeld<string>(draft);
+    const change = (next: ColorDraft, control: string) => onDraft(next, control);
     const gamut = shown && gamutOf(shown);
     const swatch = shown && (
         <span
@@ -51,14 +48,15 @@ export function ColorInput({
                 <input
                     aria-label={label}
                     value={draft.hex}
-                    onChange={(event) => change({ ...draft, hex: event.target.value })}
+                    onChange={(event) => change({ ...draft, hex: event.target.value }, "hex")}
                 />{" "}
                 {where}
             </>
         );
     }
 
-    const component = (index: number, text: string) => change(withComponent(draft, index, text));
+    const component = (index: number, text: string) =>
+        change(withComponent(draft, index, text), `channel ${index}`);
 
     return (
         <fieldset aria-label={label}>
@@ -69,8 +67,8 @@ export function ColorInput({
                 choices={spaceNames}
                 onChoose={(space) => {
                     const converted = inSpace(draft, space, shown);
-                    onDraft(converted.draft);
-                    setFitted(converted.fitted);
+                    onDraft(converted.draft, "space");
+                    holdFitted(converted.fitted, converted.draft);
                 }}
             />{" "}
             {where}
@@ -106,13 +104,17 @@ export function ColorInput({
                         max={1}
                         step={0.001}
                         value={sliderValue(draft.alpha, 1)}
-                        onChange={(event) => change({ ...draft, alpha: event.target.value })}
+                        onChange={(event) =>
+                            change({ ...draft, alpha: event.target.value }, "alpha")
+                        }
                     />{" "}
                     <input
                         aria-label={`${label}, alpha`}
                         inputMode="decimal"
                         value={draft.alpha}
-                        onChange={(event) => change({ ...draft, alpha: event.target.value })}
+                        onChange={(event) =>
+                            change({ ...draft, alpha: event.target.value }, "alpha")
+                        }
                     />
                 </div>
             )}

@@ -1,5 +1,12 @@
 import { SUGARCUBE_NAMESPACE } from "@sugarcube-sh/core/client";
-import type { DesignTokens, Group, JsonValue, Token, TokenType } from "@sugarcube-sh/dtcg";
+import type {
+    DesignTokens,
+    Group,
+    JsonObject,
+    JsonValue,
+    Token,
+    TokenType,
+} from "@sugarcube-sh/dtcg";
 import { type PlaceAt, combine, setExtension, setValue } from "@sugarcube-sh/dtcg-edit";
 import { isJsonObject } from "@sugarcube-sh/dtcg/values";
 import type { ExtensionForm, FormField } from "../controllers/adapter";
@@ -98,22 +105,22 @@ function scaleSettings(scale: Record<string, unknown>): readonly Setting[] | und
     ];
 }
 
-function sugarcubeSetting(extensions: unknown, name: string): Record<string, unknown> | undefined {
+function sugarcubeSetting(extensions: JsonValue | undefined, name: string): JsonObject | undefined {
     const settings = isJsonObject(extensions) ? extensions[SUGARCUBE_NAMESPACE] : undefined;
     const found = isJsonObject(settings) ? settings[name] : undefined;
     return isJsonObject(found) ? found : undefined;
 }
 
-function fieldsOf(settings: readonly Setting[], from: Record<string, unknown>): FormField[] {
+function fieldsOf(settings: readonly Setting[], from: JsonObject): FormField[] {
     return settings.map(([key, label, type]) => ({
         key,
         label,
         type,
         value: key
             .split(".")
-            .reduce<unknown>(
+            .reduce<JsonValue | undefined>(
                 (value, step) => (isJsonObject(value) ? value[step] : undefined),
                 from,
-            ) as JsonValue | undefined,
+            ),
     }));
 }

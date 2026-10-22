@@ -142,3 +142,46 @@ describe("where a group's extensions are written", () => {
         expect(tokens.permutation().group("plain")?.extensionsWrittenAt).toStrictEqual({});
     });
 });
+
+describe("where a deprecation comes from", () => {
+    const tokens = oneFile({
+        $deprecated: true,
+        $type: "number",
+        top: { $value: 1 },
+        old: {
+            $deprecated: "use new",
+            a: { $value: 2 },
+            b: { $deprecated: "use new.b", $value: 3 },
+            inner: { c: { $value: 4 } },
+            kept: { $deprecated: false, d: { $value: 5 } },
+        },
+        button: { $deprecated: "Use control", pad: { $value: 4 } },
+        primary: { $extends: "{button}", gap: { $value: 2 } },
+    });
+    const token = (path: string) => tokens.permutation().token(path);
+    const group = (path: string) => tokens.permutation().group(path);
+
+    it("names the group whose $deprecated applies to a token above it", () => {
+        expect(token("old.a")?.deprecatedFrom).toBe("old");
+        expect(token("old.inner.c")?.deprecatedFrom).toBe("old");
+        expect(token("old.kept.d")?.deprecatedFrom).toBe("old.kept");
+    });
+
+    it("names the group whose $deprecated applies to a group, above it or through $extends", () => {
+        expect(group("old.inner")?.deprecatedFrom).toBe("old");
+        expect(group("primary")?.deprecatedFrom).toBe("button");
+        expect(token("primary.gap")?.deprecatedFrom).toBe("button");
+    });
+
+    it("names none for a mark of its own, one from the top level, or none at all", () => {
+        expect(token("old.b")?.deprecatedFrom).toBeUndefined();
+        expect(group("old")?.deprecatedFrom).toBeUndefined();
+        expect(group("old.kept")?.deprecatedFrom).toBeUndefined();
+        expect(token("top")?.deprecatedFrom).toBeUndefined();
+        expect(
+            oneFile({ n: { $type: "number", $value: 1 } })
+                .permutation()
+                .token("n"),
+        ).not.toHaveProperty("deprecatedFrom");
+    });
+});

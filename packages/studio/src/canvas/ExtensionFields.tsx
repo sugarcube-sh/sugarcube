@@ -1,13 +1,15 @@
 import type { ExtensionForm } from "../controllers/adapter";
-import { fieldName } from "../controllers/forms";
+import { fieldName, settingEdit } from "../controllers/forms";
 import { fieldText } from "../controllers/value-field";
 import { TypedField } from "./TypedField";
 import { useEdit } from "./use-edit";
 
 export function ExtensionFields({
+    path,
     form,
     label,
 }: {
+    path: string;
     form: ExtensionForm;
     label: string | undefined;
 }) {
@@ -28,7 +30,14 @@ export function ExtensionFields({
                                     written={field.value}
                                     label={fieldName(label, form.label, field.label)}
                                     references={false}
-                                    onWrite={(value) => edit.run(write(field.key, value))}
+                                    onWrite={(value) => {
+                                        const { result, options } = settingEdit(
+                                            { path, form: form.label, key: field.key, row: label },
+                                            write,
+                                            value,
+                                        );
+                                        edit.run(result, options);
+                                    }}
                                 />
                             ) : (
                                 <code>{fieldText(field.type, field.value)}</code>

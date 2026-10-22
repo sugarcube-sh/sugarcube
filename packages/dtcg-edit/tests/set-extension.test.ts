@@ -217,10 +217,81 @@ describe("setExtension on a group", () => {
         ]);
     });
 
-    it("refuses a setting the group takes from the group it extends, naming that group", () => {
-        const result = setExtension(spread, "inset", ["com.example", "steps"], 3);
+    it("gives a group its own copy of an extension it takes from the group it extends, whole, with the setting changed", () => {
+        expect(opsOf(setExtension(spread, "inset", ["com.example", "steps"], 3))).toEqual([
+            {
+                kind: "add",
+                file: "a.json",
+                jsonPath: ["inset", "$extensions", "com.example"],
+                value: { steps: 3, from: "b" },
+            },
+        ]);
+    });
 
-        expect(result.refused).toMatchObject({ kind: "inherited", path: "inset", from: "space" });
+    it("keeps the group it extends as it was, and every other setting the group takes", () => {
+        const after = committed(spread, setExtension(spread, "inset", ["com.example", "steps"], 3));
+
+        expect(after.permutation().group("inset")?.extensions).toEqual({
+            "com.example": { steps: 3, from: "b" },
+            "org.other": { kept: true },
+        });
+        expect(after.permutation().group("space")?.extensions?.["com.example"]).toEqual({
+            steps: 2,
+            from: "b",
+        });
+    });
+
+    it("refuses a shared change when only a context's file writes the extension the group takes", () => {
+        const darkOnly = opened({
+            "tokens.resolver.json": resolver([{ $ref: "a.json" }], {
+                light: [],
+                dark: [{ $ref: "dark.json" }],
+            }),
+            "a.json": JSON.stringify({
+                space: { $type: "number" },
+                inset: { $extends: "{space}" },
+            }),
+            "dark.json": JSON.stringify({ space: { $extensions: { "com.x": { a: 1, b: 2 } } } }),
+        });
+
+        expect(setExtension(darkOnly, "inset", ["com.x", "a"], 5).refused?.kind).toBe(
+            "no-shared-value",
+        );
+    });
+
+    it("refuses a shared change when a context gives the extension the group takes a value of its own", () => {
+        const themed = opened({
+            "tokens.resolver.json": resolver([{ $ref: "a.json" }], {
+                light: [],
+                dark: [{ $ref: "dark.json" }],
+            }),
+            "a.json": JSON.stringify({
+                space: { $type: "number", $extensions: { "com.x": { a: 1, b: 2 } } },
+                inset: { $extends: "{space}" },
+            }),
+            "dark.json": JSON.stringify({ space: { $extensions: { "com.x": { a: 9, b: 9 } } } }),
+        });
+
+        expect(setExtension(themed, "inset", ["com.x", "a"], 5).refused?.kind).toBe(
+            "no-shared-value",
+        );
+    });
+
+    it("writes nothing for a setting set to what the group already takes", () => {
+        expect(opsOf(setExtension(spread, "inset", ["com.example", "steps"], 2))).toEqual([]);
+    });
+
+    it("gives a context its own copy of an extension the group takes from the group it extends", () => {
+        const dark = { input: { mode: "dark" } };
+
+        expect(opsOf(setExtension(spread, "inset", ["com.example", "steps"], 3, dark))).toEqual([
+            {
+                kind: "add",
+                file: "dark.json",
+                jsonPath: ["inset", "$extensions", "com.example"],
+                value: { steps: 3, from: "b" },
+            },
+        ]);
     });
 
     it("refuses a shared change when only a context's file writes the extension", () => {

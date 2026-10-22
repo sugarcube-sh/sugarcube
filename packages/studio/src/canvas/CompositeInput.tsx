@@ -12,7 +12,7 @@ import { JsonField } from "./JsonField";
 import { TypedField } from "./TypedField";
 import { useItemKeys } from "./use-draft";
 
-type Write = (value: JsonValue, part?: JsonPath) => void;
+type Write = (value: JsonValue, part?: JsonPath, control?: string) => void;
 
 const itemNames = { shadow: "Layer", gradient: "Stop" } as const;
 
@@ -36,7 +36,7 @@ export function CompositeInput({
 }
 
 function within(at: JsonPath, onWrite: Write): Write {
-    return (value, part = []) => onWrite(value, [...at, ...part]);
+    return (value, part = [], control) => onWrite(value, [...at, ...part], control);
 }
 
 function Parts({

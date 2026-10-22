@@ -1,5 +1,6 @@
 // A token editor next to a live page. Every edit sends the page fresh CSS, so the page restyles as
-// you type. If edits arrive faster than the CSS can be built, only the newest is sent.
+// you type. If edits arrive faster than the CSS can be built, only the newest is sent. Typing in
+// one field is one step, undone as one.
 import type { DesignTokens } from "@sugarcube-sh/dtcg";
 import { setValue, type Session } from "@sugarcube-sh/dtcg-edit";
 
@@ -16,5 +17,5 @@ session.subscribe(async () => {
 });
 
 export function onType(path: string, text: string): void {
-    session.do(setValue(session.tokens, path, text));
+    session.do(setValue(session.tokens, path, text), { merge: `value ${path}` });
 }

@@ -283,20 +283,7 @@ export function move(
 
 export { remove } from "./remove.js";
 
-/**
- * Marks a token or group as deprecated, with a message saying what to use instead, or `true` for
- * none. `null` removes the mark.
- *
- * @example
- * deprecate(tokens, "color.old", "Use color.primary instead")
- */
-export function deprecate(
-    tokens: DesignTokens,
-    path: string,
-    reason: string | true | null,
-): OpResult {
-    throw new Error("not implemented yet");
-}
+export { deprecate } from "./deprecate.js";
 
 export { setExtension } from "./set-extension.js";
 
@@ -508,6 +495,15 @@ export interface ClashPart {
     readonly theirs?: JsonValue;
 }
 
+/** How {@link Session.do} keeps an edit among the steps undo takes back. */
+export interface StepOptions {
+    /**
+     * The field the edit comes from, such as `"value color.brand"`: edits given the same `merge`
+     * one after another are one step.
+     */
+    readonly merge?: string;
+}
+
 /**
  * An editing session: design tokens as a person edits them, with undo, the unsaved edits, and
  * what changed since they were opened. It changes as it is used, like a store; the design tokens in
@@ -529,27 +525,46 @@ export interface Session {
     readonly opened: DesignTokens;
     /** The edits since {@link Session.opened}, with the moves they made: what a save sends, and what to keep for a reload. */
     readonly unsaved: Edits;
-    /** Whether there is an edit to undo. */
+    /** Whether there is an unsaved step to undo. */
     readonly canUndo: boolean;
-    /** Whether there is an undone edit to do again. */
+    /** Whether there is an undone step to do again. */
     readonly canRedo: boolean;
     /**
-     * Commits an operation's result. On success the design tokens move on and the change goes on
-     * the undo history; otherwise nothing changes, and the answer says why.
+     * Commits an operation's result. On success the design tokens move on, the change is a new
+     * unsaved step, and nothing undone can be done again; otherwise nothing changes, and the
+     * answer says why.
+     *
+     * Edits given the same `merge` one after another are one step, undone as one, such as every
+     * move of a slider for one value. Several edits to one place in a file are kept as one, and a
+     * step whose edits come back to where it started is dropped, the design tokens going back to
+     * those before it. Anything else ends the step: an edit with another `merge` or none, undo,
+     * redo, a save, a discard, a reload, a change on disk, or {@link Session.endStep}.
+     *
+     * @example
+     * session.do(setValue(session.tokens, "color.brand", next), { merge: "value color.brand" });
      */
-    do(result: OpResult): Committed;
+    do(result: OpResult, options?: StepOptions): Committed;
+    /**
+     * Ends the step edits are being merged into, so the next edit is a step of its own even with
+     * the same `merge`. Call it when a save starts, since the session can't see that, so the step
+     * being sent doesn't change under it.
+     */
+    endStep(): void;
     /** Commits an operation's result without keeping it, for previewing, such as while a slider moves. */
     preview(result: OpResult): Committed;
-    /** Undoes the last edit done, as one step. */
+    /**
+     * Takes back the last unsaved step, whole, going back to the design tokens before it and the
+     * ids they had. Undo stops at a save: with nothing unsaved, nothing happens.
+     */
     undo(): void;
-    /** Does again the last edit undone. */
+    /** Does again the last step undone, as the same step. Nothing happens when there is none. */
     redo(): void;
     /** What changed since {@link Session.opened}, renames included. */
     changes(): readonly Change[];
     /**
      * Records that the unsaved edits were saved: the current version becomes
-     * {@link Session.opened}. Undo still works; undoing past a save makes unsaved edits that
-     * revert it.
+     * {@link Session.opened}. Undo stops here: what was saved can't be undone, and what was undone
+     * before the save can't be done again.
      *
      * Given the edits a save sent, as {@link Session.unsaved} was when it began, only those count
      * as saved: anything done while the save was on its way stays unsaved, measured from them.
@@ -561,14 +576,15 @@ export interface Session {
      * session.markSaved(sent);
      */
     markSaved(saved?: Edits): void;
-    /** Goes back to {@link Session.opened} and drops the unsaved edits. The undo history starts again. */
+    /** Goes back to {@link Session.opened} and drops the unsaved edits, so there is nothing to undo or redo. */
     discard(): void;
     /**
      * Puts back unsaved edits kept from before a reload, such as in session storage, on top
      * of the current version, where they are unsaved again; {@link Session.discard} still goes
      * back to {@link Session.opened}. Each {@link EditStep} whose edits all still fit is put back
      * whole; a step with one that doesn't is left out whole, so a rename is never half kept, and
-     * comes back as one {@link Clash}, holding each part of a file it changes.
+     * comes back as one {@link Clash}, holding each part of a file it changes. The steps put back
+     * can be undone one at a time; nothing undone before can be done again.
      */
     restore(unsaved: Edits): Clash[];
     /**
@@ -576,8 +592,8 @@ export interface Session {
      * becomes {@link Session.opened}, and each unsaved {@link EditStep} whose edits all still fit is
      * put back on top of it, whole; a step with one that doesn't is left out whole, and comes back as
      * one {@link Clash}, holding each part of a file it changes, the files showing theirs. A
-     * token still there keeps its id, one gone loses it, and a new one gets a new id. The undo
-     * history starts again.
+     * token still there keeps its id, one gone loses it, and a new one gets a new id. The steps
+     * put back can still be undone; nothing undone before can be done again.
      */
     rebase(fresh: DesignTokens): Clash[];
     /** Calls `listener` whenever the session changes. Returns a function that stops listening. */

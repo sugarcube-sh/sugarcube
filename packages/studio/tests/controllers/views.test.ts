@@ -90,10 +90,9 @@ describe("trail", () => {
 });
 
 describe("groupView", () => {
-    it("lists a group's description, groups and tokens", () => {
+    it("lists a group's groups and tokens", () => {
         const view = groupView(light.group("color.text")!, value);
 
-        expect(view?.description).toBe("Foreground");
         expect(view?.groups).toEqual([]);
         expect(view?.tokens.map((row) => row.name)).toEqual(["default"]);
     });
@@ -129,6 +128,30 @@ describe("groupPage", () => {
         expect(page.form?.label).toBe("Scale");
         expect(page.tokens.map((row) => row.name)).toContain("-1");
         expect(groupPage(state, state.showing.group("color")!).form).toBeUndefined();
+    });
+
+    it("offers a group's description and deprecation, except where it is only there through $extends", () => {
+        const { state } = studioOn(
+            demoMessage({
+                entry: "tokens.json",
+                files: {
+                    "tokens.json": JSON.stringify({
+                        button: {
+                            $description: "The base.",
+                            icon: { size: { $type: "number", $value: 1 } },
+                        },
+                        primary: { $extends: "{button}" },
+                    }),
+                },
+            }),
+        );
+        const primary = groupPage(state, state.showing.group("primary")!);
+        const icon = groupPage(state, state.showing.group("primary.icon")!);
+
+        expect(primary.description).toEqual({ text: "The base.", editable: true, from: "button" });
+        expect(primary.deprecation).toEqual({ box: { checked: false, untick: null, message: "" } });
+        expect(icon.description.editable).toBe(false);
+        expect(icon.deprecation.box).toBeUndefined();
     });
 
     it("says why a group lists no tokens: none at all, or only in the groups inside it", () => {

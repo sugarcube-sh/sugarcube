@@ -14,6 +14,7 @@ import {
     type Edits,
     type OpResult,
     type PlaceAt,
+    type StepOptions,
     createSession,
     keepYours,
 } from "@sugarcube-sh/dtcg-edit";
@@ -29,6 +30,9 @@ export interface StudioState {
     readonly problems: readonly BuildProblem[];
     readonly changes: readonly Change[];
     readonly clashes: readonly Clash[];
+    readonly canUndo: boolean;
+    readonly canRedo: boolean;
+    readonly saving: boolean;
 }
 
 export interface Studio {
@@ -38,7 +42,9 @@ export interface Studio {
     destroy(): void;
     show(input: Input): void;
     receive(message: StudioMessage): void;
-    do(result: OpResult): Committed;
+    do(result: OpResult, options?: StepOptions): Committed;
+    undo(): void;
+    redo(): void;
     discard(): void;
     restore(edits: Edits): void;
     keep(clash: Clash, side: "yours" | "theirs"): Committed | undefined;
@@ -57,6 +63,7 @@ export function createStudio(
     const session = createSession(read(first, adapter));
     const listeners = new Set<() => void>();
     let clashes: readonly Clash[] = [];
+    let saving = false;
     let state = built(session.tokens.permutation().input);
 
     function built(showing: Input): StudioState {
@@ -71,6 +78,9 @@ export function createStudio(
             problems: [...message.adapter.problems, ...written.problems],
             changes: session.changes(),
             clashes,
+            canUndo: session.canUndo,
+            canRedo: session.canRedo,
+            saving,
         };
     }
 
@@ -95,11 +105,19 @@ export function createStudio(
 
     const save = saveEdits
         ? async () => {
+              session.endStep();
               const sent = session.unsaved;
-              const saved = await saveEdits(sent, session.changes());
-              if (!saved.conflicts) session.markSaved(sent);
-              if (saved.files) takeIn(saved.files);
-              return saved;
+              saving = true;
+              publish({ ...state, saving });
+              try {
+                  const saved = await saveEdits(sent, session.changes());
+                  if (!saved.conflicts) session.markSaved(sent);
+                  if (saved.files) takeIn(saved.files);
+                  return saved;
+              } finally {
+                  saving = false;
+                  publish({ ...state, saving });
+              }
           }
         : undefined;
 
@@ -122,8 +140,14 @@ export function createStudio(
         show(input) {
             publish({ ...state, showing: state.tokens.permutation(input) });
         },
-        do(result) {
-            return session.do(result);
+        do(result, options) {
+            return session.do(result, options);
+        },
+        undo() {
+            session.undo();
+        },
+        redo() {
+            session.redo();
         },
         discard() {
             clashes = [];

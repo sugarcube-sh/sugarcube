@@ -6,6 +6,7 @@ import type {
     DiagnosticKind,
     Span,
     JsonPointerReference,
+    JsonValue,
     TokenType,
     WrittenReference,
 } from "../index.js";
@@ -21,7 +22,7 @@ export interface Properties {
     type?: TokenType | "unusable";
     description?: string;
     deprecated?: boolean | string;
-    extensions?: Record<string, unknown>;
+    extensions?: Record<string, JsonValue>;
 }
 
 export function usableType(type: TokenType | "unusable" | undefined): TokenType | undefined {

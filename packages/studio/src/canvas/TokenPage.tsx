@@ -1,28 +1,33 @@
 import type { Token } from "@sugarcube-sh/dtcg";
-import { useState } from "react";
 import { NavLink } from "react-router";
 import { hrefFor } from "../app/token-path";
 import { type MadeBy, tokenPage } from "../controllers/token-page";
 import { useStudioState } from "../providers/studio-context";
 import { EditRow } from "./EditRow";
 import { ExtensionFields } from "./ExtensionFields";
+import { DeprecatedLine, DeprecationRow, DescriptionRow } from "./Properties";
 import { Showing } from "./Showing";
-import { TokenActions } from "./TokenActions";
+import { useDraft } from "./use-draft";
+import { NodeActions } from "./NodeActions";
 import { AsCSS } from "./Value";
 
 export function TokenPage({ token, shown }: { token: Token; shown: boolean }) {
     const state = useStudioState((each) => each);
-    const [adding, setAdding] = useState<readonly string[]>([]);
+    const [adding, setAdding] = useDraft<readonly string[]>([], token.path);
     const page = tokenPage(state, token, adding);
 
     return (
         <article>
             <h1>{token.path}</h1>
-            {token.description && <p>{token.description}</p>}
+            {page.deprecation.line && <DeprecatedLine line={page.deprecation.line} />}
             <Showing />
             {page.made && <MadeByLine made={page.made} />}
-            {page.form && <ExtensionFields form={page.form} label={undefined} />}
+            {page.form && <ExtensionFields path={token.path} form={page.form} label={undefined} />}
             <dl>
+                <DescriptionRow path={token.path} view={page.description} />
+                {page.deprecation.box && (
+                    <DeprecationRow path={token.path} box={page.deprecation.box} />
+                )}
                 <dt>Type</dt>
                 <dd>{token.type}</dd>
                 {page.rows.map((each) => (
@@ -61,15 +66,11 @@ export function TokenPage({ token, shown }: { token: Token; shown: boolean }) {
                 </dd>
             </dl>
             {page.offers.map((label) => (
-                <button
-                    key={label}
-                    type="button"
-                    onClick={() => setAdding((labels) => [...labels, label])}
-                >
+                <button key={label} type="button" onClick={() => setAdding([...adding, label])}>
                     Override for {label}
                 </button>
             ))}
-            {page.actions && <TokenActions path={token.path} />}
+            {page.actions && <NodeActions path={token.path} />}
         </article>
     );
 }

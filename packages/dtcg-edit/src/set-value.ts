@@ -2,8 +2,9 @@ import type { DesignTokens, JsonPath, JsonValue } from "@sugarcube-sh/dtcg";
 import { isJsonObject, readReference } from "@sugarcube-sh/dtcg/values";
 import { refused } from "./error-messages.js";
 import type { FileOp, OpResult, Refusal, ValueOptions } from "./index.js";
-import { asked, copiesOf, describedPlace, ownProperties, placement } from "./placement.js";
+import { asked, ownProperties, placement } from "./placement.js";
 import { opsAt } from "./file-text.js";
+import { propertyEdit } from "./property.js";
 
 /**
  * Changes a token's value.
@@ -117,10 +118,12 @@ function withPart(
 /**
  * Changes a token's description in every file that writes the token, so every context keeps the
  * same one, or a group's in the file that writes it. `null` removes it; removing one that isn't
- * there changes nothing.
+ * there changes nothing. A group that takes its description from the group it extends is given
+ * its own, as the spec allows: "Replace any inherited tokens/properties where local ones exist"
+ * (Format 6.4.2).
  *
  * Refused, with the reason: a path that is neither a token nor a group, a token a generator
- * makes, or a token or group inherited through `$extends`.
+ * makes, or a token or group there only because of `$extends`.
  *
  * @example
  * setDescription(tokens, "color.brand", "The house colour.")
@@ -130,26 +133,5 @@ export function setDescription(
     path: string,
     description: string | null,
 ): OpResult {
-    return setDescriptionIn(tokens, path, description);
-}
-
-function setDescriptionIn(
-    tokens: DesignTokens,
-    path: string,
-    description: string | null,
-    place?: string,
-): OpResult {
-    const copies = copiesOf(tokens, path);
-    if ("refused" in copies) return copies;
-    if (copies.of === "token") {
-        const ops = copies.places.flatMap((at) => opsAt(tokens, at, ["$description"], description));
-        return { ops, alsoAffects: copies.alsoAffects, moved: [] };
-    }
-    const described = describedPlace(tokens, path, copies.places, place);
-    if ("choose" in described) {
-        return asked(described.choose, (file) => setDescriptionIn(tokens, path, description, file));
-    }
-    if ("refused" in described) return described;
-    const ops = opsAt(tokens, described.at, ["$description"], description);
-    return { ops, alsoAffects: described.alsoAffects, moved: [] };
+    return propertyEdit(tokens, path, "$description", description);
 }
