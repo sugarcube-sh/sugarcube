@@ -537,8 +537,23 @@ export interface Session {
      * Commits an operation's result. On success the design tokens move on, the change is a new
      * unsaved step, and nothing undone can be done again; otherwise nothing changes, and the
      * answer says why.
+     *
+     * Edits given the same `merge` one after another are one step, undone as one, such as every
+     * move of a slider for one value. Several edits to one place in a file are kept as one, and a
+     * step whose edits come back to where it started is dropped, the design tokens going back to
+     * those before it. Anything else ends the step: an edit with another `merge` or none, undo,
+     * redo, a save, a discard, a reload, a change on disk, or {@link Session.endStep}.
+     *
+     * @example
+     * session.do(setValue(session.tokens, "color.brand", next), { merge: "value color.brand" });
      */
-    do(result: OpResult): Committed;
+    do(result: OpResult, options?: { merge?: string }): Committed;
+    /**
+     * Ends the step edits are being merged into, so the next edit is a step of its own even with
+     * the same `merge`. Call it when a save starts, since the session can't see that, so the step
+     * being sent doesn't change under it.
+     */
+    endStep(): void;
     /** Commits an operation's result without keeping it, for previewing, such as while a slider moves. */
     preview(result: OpResult): Committed;
     /**

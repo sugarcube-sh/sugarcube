@@ -2,6 +2,7 @@ import { type DesignTokens, type Move, movedPath } from "@sugarcube-sh/dtcg";
 import { applyStepsThatFit, commit } from "./apply.js";
 import { clashesOf } from "./clashes.js";
 import { thrown } from "./error-messages.js";
+import { merged } from "./merge.js";
 import type { Committed, EditStep, Edits, OpResult, Session } from "./index.js";
 
 /**
@@ -22,6 +23,7 @@ export function createSession(tokens: DesignTokens): Session {
     let openedIds = ids;
     let befores: (Version | undefined)[] = [];
     let undone: Undone[] = [];
+    let open: { merge: string; before: Version } | undefined;
     const listeners = new Set<() => void>();
     const changed = () => {
         for (const listener of listeners) listener();
@@ -43,16 +45,40 @@ export function createSession(tokens: DesignTokens): Session {
         get canRedo() {
             return undone.length > 0;
         },
-        do(result: OpResult): Committed {
+        do(result: OpResult, options = {}): Committed {
             const done = commit(current, result);
             if (!done.tokens) return done;
-            befores = [...befores, { tokens: current, ids }];
+            const step = { ops: done.ops, moved: done.moved };
+            const last = unsaved.steps.at(-1);
             undone = [];
+            if (last && open && options.merge === open.merge) {
+                const joined = merged(last, step);
+                const earlier = unsaved.steps.slice(0, -1);
+                if (joined.ops.length === 0 && joined.moved.length === 0) {
+                    befores = befores.slice(0, -1);
+                    unsaved = { steps: earlier };
+                    current = open.before.tokens;
+                    ids = open.before.ids;
+                    open = undefined;
+                } else {
+                    unsaved = { steps: [...earlier, joined] };
+                    current = done.tokens;
+                    ids = followed(ids, done.moved, current, counter);
+                }
+                changed();
+                return done;
+            }
+            const before = { tokens: current, ids };
+            befores = [...befores, before];
             current = done.tokens;
-            unsaved = { steps: [...unsaved.steps, { ops: done.ops, moved: done.moved }] };
+            unsaved = { steps: [...unsaved.steps, step] };
             ids = followed(ids, done.moved, current, counter);
+            open = options.merge === undefined ? undefined : { merge: options.merge, before };
             changed();
             return done;
+        },
+        endStep() {
+            open = undefined;
         },
         preview() {
             throw new Error("not implemented yet");
@@ -62,6 +88,7 @@ export function createSession(tokens: DesignTokens): Session {
             if (!step) return;
             const kept = unsaved.steps.slice(0, -1);
             const before = befores.at(-1) ?? workedOut(kept, step);
+            open = undefined;
             undone = [...undone, { step, before, after: { tokens: current, ids } }];
             befores = befores.slice(0, -1);
             unsaved = { steps: kept };
@@ -115,6 +142,7 @@ export function createSession(tokens: DesignTokens): Session {
             ids = followed(ids, movesIn(applied), current, counter);
             befores = [...befores, ...applied.map(() => undefined)];
             undone = [];
+            open = undefined;
             changed();
             return clashes;
         },
@@ -128,6 +156,7 @@ export function createSession(tokens: DesignTokens): Session {
             unsaved = { steps: applied };
             befores = applied.map(() => undefined);
             undone = [];
+            open = undefined;
             changed();
             return clashes;
         },
