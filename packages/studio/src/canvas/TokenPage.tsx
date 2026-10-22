@@ -1,5 +1,4 @@
 import type { Token } from "@sugarcube-sh/dtcg";
-import { useState } from "react";
 import { NavLink } from "react-router";
 import { hrefFor } from "../app/token-path";
 import { type MadeBy, tokenPage } from "../controllers/token-page";
@@ -8,12 +7,13 @@ import { EditRow } from "./EditRow";
 import { ExtensionFields } from "./ExtensionFields";
 import { DeprecatedLine, DeprecationRow, DescriptionRow } from "./Properties";
 import { Showing } from "./Showing";
-import { TokenActions } from "./TokenActions";
+import { useDraft } from "./use-draft";
+import { NodeActions } from "./NodeActions";
 import { AsCSS } from "./Value";
 
 export function TokenPage({ token, shown }: { token: Token; shown: boolean }) {
     const state = useStudioState((each) => each);
-    const [adding, setAdding] = useState<readonly string[]>([]);
+    const [adding, setAdding] = useDraft<readonly string[]>([], token.path);
     const page = tokenPage(state, token, adding);
 
     return (
@@ -66,15 +66,11 @@ export function TokenPage({ token, shown }: { token: Token; shown: boolean }) {
                 </dd>
             </dl>
             {page.offers.map((label) => (
-                <button
-                    key={label}
-                    type="button"
-                    onClick={() => setAdding((labels) => [...labels, label])}
-                >
+                <button key={label} type="button" onClick={() => setAdding([...adding, label])}>
                     Override for {label}
                 </button>
             ))}
-            {page.actions && <TokenActions path={token.path} />}
+            {page.actions && <NodeActions path={token.path} />}
         </article>
     );
 }

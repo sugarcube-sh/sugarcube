@@ -1,21 +1,13 @@
 import type {
     DesignTokens,
-    Group,
     JsonPath,
     JsonValue,
     Permutation,
     PlaceInPermutations,
     Span,
     Token,
-    TokenType,
 } from "@sugarcube-sh/dtcg";
-import {
-    type Clash,
-    type NewToken,
-    type ValueOptions,
-    overridable,
-    setValue,
-} from "@sugarcube-sh/dtcg-edit";
+import { type Clash, type ValueOptions, overridable, setValue } from "@sugarcube-sh/dtcg-edit";
 import { isJsonObject } from "@sugarcube-sh/dtcg/values";
 import type { ExtensionForm } from "./adapter";
 import {
@@ -137,6 +129,13 @@ export function madeBy(
 
 export interface PageRow extends ValueRow {
     readonly form: ExtensionForm | undefined;
+    readonly name: string | undefined;
+    readonly fieldLabel: string;
+}
+
+function pageRow(row: ValueRow, token: Token, formFor: StudioState["formFor"]): PageRow {
+    const name = row.unwritten ? `Override for ${row.label}` : row.label;
+    return { ...row, form: formFor(token, row.where.at), name, fieldLabel: name ?? token.path };
 }
 
 export interface TokenPageView {
@@ -161,9 +160,9 @@ export function tokenPage(
     const editable = view.actions && token.inherited === undefined;
     return {
         row: tokenRow(token, token.path, value),
-        rows: view.rows.map((row) => ({ ...row, form: formFor(token, row.where.at) })),
+        rows: view.rows.map((row) => pageRow(row, token, formFor)),
         offers: view.offers,
-        actions: view.actions,
+        actions: editable,
         problems: problemRows(tokens.diagnosticsFor(token.path)),
         made: madeBy(token, showing, formFor),
         form: formFor(token),
@@ -200,13 +199,6 @@ export function clashRows(tokens: DesignTokens, clashes: readonly Clash[]): Clas
             theirs: valueOf(part?.theirs),
         };
     });
-}
-
-export function newToken(
-    { type, value }: { type: TokenType; value: JsonValue },
-    group: Group | undefined,
-): NewToken {
-    return type === group?.type ? { $value: value } : { $type: type, $value: value };
 }
 
 function labelOf({ sources, readIn }: PlaceInPermutations): string | undefined {

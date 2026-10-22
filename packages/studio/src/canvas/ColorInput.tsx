@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useHeld } from "./use-held";
 import {
     type ColorDraft,
     type ColorField,
@@ -24,11 +24,8 @@ export function ColorInput({
     label: string;
     onDraft(draft: ColorDraft, control: string): void;
 }) {
-    const [fitted, setFitted] = useState<string>();
-    const change = (next: ColorDraft, control: string) => {
-        setFitted(undefined);
-        onDraft(next, control);
-    };
+    const [fitted, holdFitted] = useHeld<string>(draft);
+    const change = (next: ColorDraft, control: string) => onDraft(next, control);
     const gamut = shown && gamutOf(shown);
     const swatch = shown && (
         <span
@@ -71,7 +68,7 @@ export function ColorInput({
                 onChoose={(space) => {
                     const converted = inSpace(draft, space, shown);
                     onDraft(converted.draft, "space");
-                    setFitted(converted.fitted);
+                    holdFitted(converted.fitted, converted.draft);
                 }}
             />{" "}
             {where}

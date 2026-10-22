@@ -1,5 +1,7 @@
 import type { Clash } from "@sugarcube-sh/dtcg-edit";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useHeld } from "../canvas/use-held";
+import { reasonsFor } from "../controllers/held";
 import { type ClashRow, clashRows } from "../controllers/token-page";
 import { useStudio, useStudioState } from "../providers/studio-context";
 
@@ -8,16 +10,12 @@ export function Clashes() {
     const tokens = useStudioState((state) => state.tokens);
     const clashes = useStudioState((state) => state.clashes);
     const rows = useMemo(() => clashRows(tokens, clashes), [tokens, clashes]);
-    const [why, setWhy] = useState<readonly string[]>([]);
+    const [why = [], holdWhy] = useHeld<readonly string[]>(clashes);
     if (rows.length === 0) return null;
 
     const keepYours = (clash: Clash) => {
         const done = studio.keep(clash, "yours");
-        setWhy(
-            done?.refused
-                ? [done.refused.reason]
-                : (done?.conflicts ?? []).map((conflict) => conflict.reason),
-        );
+        holdWhy(reasonsFor(done), studio.state.clashes);
     };
 
     return (

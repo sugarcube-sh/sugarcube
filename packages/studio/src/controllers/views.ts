@@ -145,6 +145,7 @@ export interface GroupPageView extends GroupView {
     readonly noTokens: "at-all" | "directly" | undefined;
     readonly description: DescriptionView;
     readonly deprecation: DeprecationView;
+    readonly actions: boolean;
 }
 
 export function groupPage(state: StudioState, group: Group): GroupPageView {
@@ -163,6 +164,7 @@ export function groupPage(state: StudioState, group: Group): GroupPageView {
         noTokens,
         description: descriptionView(group, editable),
         deprecation: deprecationView(group, editable),
+        actions: editable,
     };
 }
 

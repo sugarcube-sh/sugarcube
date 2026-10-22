@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { NavLink } from "react-router";
 import { hrefFor } from "../app/token-path";
 import type { Group } from "@sugarcube-sh/dtcg";
@@ -5,7 +6,9 @@ import { groupPage } from "../controllers/views";
 import { useStudioState } from "../providers/studio-context";
 import { ExtensionFields } from "./ExtensionFields";
 import { DeprecatedLine, DeprecationRow, DescriptionRow } from "./Properties";
+import { NewGroup } from "./NewGroup";
 import { NewToken } from "./NewToken";
+import { NodeActions } from "./NodeActions";
 import { Showing } from "./Showing";
 import { AsCSS, Written } from "./Value";
 
@@ -80,7 +83,13 @@ export function GroupPage({ group, shown }: { group: Group; shown: boolean }) {
                     </tbody>
                 </table>
             )}
-            <NewToken group={group} />
+            {view.actions && (
+                <Fragment key={group.path}>
+                    <NewToken group={group} />
+                    <NewGroup parent={group.path} />
+                    <NodeActions path={group.path} />
+                </Fragment>
+            )}
         </article>
     );
 }

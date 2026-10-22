@@ -1,4 +1,5 @@
 import type { Group, Token } from "@sugarcube-sh/dtcg";
+import { rename, setDescription } from "@sugarcube-sh/dtcg-edit";
 import { describe, expect, it } from "vitest";
 import { MemoryRouter } from "react-router";
 import { render } from "vitest-browser-react";
@@ -27,6 +28,7 @@ const files = {
             brand: {
                 $value: { colorSpace: "oklch", components: [0.624, 0.181, 258], hex: "#3884f2" },
             },
+            vivid: { $value: { colorSpace: "oklch", components: [0.7, 0.28, 145] } },
         },
         space: { $type: "dimension", s: { $value: { value: 4, unit: "px" } } },
         legacy: { $type: "number", $deprecated: "Use space", n: { $value: 1 } },
@@ -115,7 +117,8 @@ describe("a new token", () => {
         );
         const add = screen.getByRole("button", { name: "Add" });
 
-        await screen.getByRole("textbox", { name: "Name" }).fill("l");
+        const form = screen.getByRole("form", { name: "New token" });
+        await form.getByRole("textbox", { name: "Name" }).fill("l");
         await screen.getByRole("spinbutton", { name: "Value, amount" }).fill("12");
         await expect.element(add).toBeDisabled();
         await screen.getByRole("combobox", { name: "Value, unit" }).selectOptions("px");
@@ -243,5 +246,53 @@ describe("description and deprecation", () => {
         await expect
             .element(screen.getByRole("checkbox", { name: "Deprecated" }))
             .not.toBeInTheDocument();
+    });
+});
+
+describe("what the page shows goes with what it is about", () => {
+    it("drops the chroma note once Undo takes the switch back", async () => {
+        const { studio, Page } = studioPage("color.vivid");
+        const screen = await render(<Page />);
+
+        await screen.getByRole("combobox", { name: "base, colour space" }).selectOptions("srgb");
+        await expect.element(screen.getByText("Chroma reduced to fit sRGB.")).toBeVisible();
+
+        studio.undo();
+        await expect
+            .element(screen.getByText("Chroma reduced to fit sRGB."))
+            .not.toBeInTheDocument();
+    });
+
+    it("drops a refusal once another edit is made", async () => {
+        const { studio, Page } = studioPage("space.s");
+        const screen = await render(<Page />);
+        const refused = rename(studio.state.tokens, "space.s", "a.b").refused?.reason ?? "";
+        const form = screen.getByRole("form", { name: "Rename" });
+
+        await form.getByRole("textbox", { name: "Name" }).fill("a.b");
+        await form.getByRole("button", { name: "Rename" }).click();
+        await expect.element(screen.getByText(refused)).toBeVisible();
+
+        studio.do(setDescription(studio.state.tokens, "space.s", "Small."));
+        await expect.element(screen.getByText(refused)).not.toBeInTheDocument();
+    });
+
+    it("forgets overrides being added when it shows another token", async () => {
+        const studio = studioOnFiles();
+        const page = (path: string) => (
+            <MemoryRouter>
+                <StudioContext.Provider value={studio}>
+                    <TokenPage token={studio.state.showing.token(path) as Token} shown />
+                </StudioContext.Provider>
+            </MemoryRouter>
+        );
+        const screen = await render(page("space.s"));
+        await screen.getByRole("button", { name: "Override for mode: dark" }).click();
+
+        await screen.rerender(page("legacy.n"));
+
+        await expect
+            .element(screen.getByRole("button", { name: "Override for mode: dark" }))
+            .toBeVisible();
     });
 });

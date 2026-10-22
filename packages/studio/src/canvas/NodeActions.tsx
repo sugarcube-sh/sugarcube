@@ -1,20 +1,23 @@
-import { type OpResult, remove, rename } from "@sugarcube-sh/dtcg-edit";
 import { useState } from "react";
+import { type Removal, nameOf, removal, renameEdit } from "../controllers/actions";
 import { useStudio } from "../providers/studio-context";
+import { useDraft } from "./use-draft";
 import { useEdit } from "./use-edit";
 
-export function TokenActions({ path }: { path: string }) {
+export function NodeActions({ path }: { path: string }) {
     const studio = useStudio();
     const edit = useEdit();
-    const [name, setName] = useState(path.slice(path.lastIndexOf(".") + 1));
-    const [breaking, setBreaking] = useState<{ result: OpResult; broken: readonly string[] }>();
+    const [name, setName] = useDraft(nameOf(path), path);
+    const [breaking, setBreaking] = useState<Extract<Removal, { kind: "asks" }>>();
 
     return (
         <>
             <form
+                aria-label="Rename"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    edit.run(rename(studio.state.tokens, path, name));
+                    const { result, options } = renameEdit(studio.state.tokens, path, name);
+                    edit.run(result, options);
                 }}
             >
                 <label>
@@ -25,14 +28,17 @@ export function TokenActions({ path }: { path: string }) {
             {breaking ? (
                 <p>
                     Breaks{" "}
-                    {breaking.broken.map((each, index) => (
+                    {breaking.breaks.map((each, index) => (
                         <span key={each}>
                             {index > 0 && ", "}
                             <code>{each}</code>
                         </span>
                     ))}
                     .{" "}
-                    <button type="button" onClick={() => edit.run(breaking.result)}>
+                    <button
+                        type="button"
+                        onClick={() => edit.run(breaking.edit.result, breaking.edit.options)}
+                    >
                         Remove anyway
                     </button>{" "}
                     <button type="button" onClick={() => setBreaking(undefined)}>
@@ -43,10 +49,9 @@ export function TokenActions({ path }: { path: string }) {
                 <button
                     type="button"
                     onClick={() => {
-                        const result = remove(studio.state.tokens, path);
-                        const broken = (result.ops && result.broken) || [];
-                        if (broken.length > 0) setBreaking({ result, broken });
-                        else edit.run(result);
+                        const asked = removal(studio.state.tokens, path);
+                        if (asked.kind === "asks") setBreaking(asked);
+                        else edit.run(asked.edit.result, asked.edit.options);
                     }}
                 >
                     Remove
