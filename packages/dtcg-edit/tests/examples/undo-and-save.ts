@@ -1,5 +1,5 @@
-// An editor's undo history. Every edit is kept so it can be undone, and the kept edits are what
-// gets saved.
+// An editor's undo history. Every unsaved edit can be undone, and the edits left are what gets
+// saved. Undo stops at the save: once saved, there is nothing to undo.
 import { type DesignTokens } from "@sugarcube-sh/dtcg";
 import { createSession, rename, setValue } from "@sugarcube-sh/dtcg-edit";
 

@@ -529,27 +529,31 @@ export interface Session {
     readonly opened: DesignTokens;
     /** The edits since {@link Session.opened}, with the moves they made: what a save sends, and what to keep for a reload. */
     readonly unsaved: Edits;
-    /** Whether there is an edit to undo. */
+    /** Whether there is an unsaved step to undo. */
     readonly canUndo: boolean;
-    /** Whether there is an undone edit to do again. */
+    /** Whether there is an undone step to do again. */
     readonly canRedo: boolean;
     /**
-     * Commits an operation's result. On success the design tokens move on and the change goes on
-     * the undo history; otherwise nothing changes, and the answer says why.
+     * Commits an operation's result. On success the design tokens move on, the change is a new
+     * unsaved step, and nothing undone can be done again; otherwise nothing changes, and the
+     * answer says why.
      */
     do(result: OpResult): Committed;
     /** Commits an operation's result without keeping it, for previewing, such as while a slider moves. */
     preview(result: OpResult): Committed;
-    /** Undoes the last edit done, as one step. */
+    /**
+     * Takes back the last unsaved step, whole, going back to the design tokens before it and the
+     * ids they had. Undo stops at a save: with nothing unsaved, nothing happens.
+     */
     undo(): void;
-    /** Does again the last edit undone. */
+    /** Does again the last step undone, as the same step. Nothing happens when there is none. */
     redo(): void;
     /** What changed since {@link Session.opened}, renames included. */
     changes(): readonly Change[];
     /**
      * Records that the unsaved edits were saved: the current version becomes
-     * {@link Session.opened}. Undo still works; undoing past a save makes unsaved edits that
-     * revert it.
+     * {@link Session.opened}. Undo stops here: what was saved can't be undone, and what was undone
+     * before the save can't be done again.
      *
      * Given the edits a save sent, as {@link Session.unsaved} was when it began, only those count
      * as saved: anything done while the save was on its way stays unsaved, measured from them.
@@ -561,14 +565,15 @@ export interface Session {
      * session.markSaved(sent);
      */
     markSaved(saved?: Edits): void;
-    /** Goes back to {@link Session.opened} and drops the unsaved edits. The undo history starts again. */
+    /** Goes back to {@link Session.opened} and drops the unsaved edits, so there is nothing to undo or redo. */
     discard(): void;
     /**
      * Puts back unsaved edits kept from before a reload, such as in session storage, on top
      * of the current version, where they are unsaved again; {@link Session.discard} still goes
      * back to {@link Session.opened}. Each {@link EditStep} whose edits all still fit is put back
      * whole; a step with one that doesn't is left out whole, so a rename is never half kept, and
-     * comes back as one {@link Clash}, holding each part of a file it changes.
+     * comes back as one {@link Clash}, holding each part of a file it changes. The steps put back
+     * can be undone one at a time; nothing undone before can be done again.
      */
     restore(unsaved: Edits): Clash[];
     /**
@@ -576,8 +581,8 @@ export interface Session {
      * becomes {@link Session.opened}, and each unsaved {@link EditStep} whose edits all still fit is
      * put back on top of it, whole; a step with one that doesn't is left out whole, and comes back as
      * one {@link Clash}, holding each part of a file it changes, the files showing theirs. A
-     * token still there keeps its id, one gone loses it, and a new one gets a new id. The undo
-     * history starts again.
+     * token still there keeps its id, one gone loses it, and a new one gets a new id. The steps
+     * put back can still be undone; nothing undone before can be done again.
      */
     rebase(fresh: DesignTokens): Clash[];
     /** Calls `listener` whenever the session changes. Returns a function that stops listening. */
