@@ -1,9 +1,9 @@
-import type { DesignTokens, JsonPath, Token, JsonValue } from "@sugarcube-sh/dtcg";
+import type { DesignTokens, JsonPath, JsonValue } from "@sugarcube-sh/dtcg";
 import { isJsonObject, readReference } from "@sugarcube-sh/dtcg/values";
 import { refused } from "./error-messages.js";
 import type { FileOp, OpResult, Refusal, ValueOptions } from "./index.js";
-import { asked, copiesOf, describedPlace, placement } from "./placement.js";
-import { type Member, writtenIn } from "./file-text.js";
+import { asked, copiesOf, describedPlace, ownProperties, placement } from "./placement.js";
+import { opsAt } from "./file-text.js";
 
 /**
  * Changes a token's value.
@@ -69,7 +69,7 @@ function setValueIn(
         const whole = isJsonObject(at.written) ? at.written.$value : undefined;
         const checked = withPart(path, whole, part, value);
         if ("refused" in checked) return checked;
-        return { ops: written(tokens, at, ["$value", ...part], value), alsoAffects, moved: [] };
+        return { ops: opsAt(tokens, at, ["$value", ...part], value), alsoAffects, moved: [] };
     }
     const { token, into, alsoAffects } = placed;
     const own = ownProperties(token);
@@ -114,11 +114,6 @@ function withPart(
     return refused({ kind: "no-such-part", path, part });
 }
 
-function ownProperties(token: Token): Record<string, JsonValue> {
-    const own = token.valueFrom.written;
-    return isJsonObject(own) ? (own as Record<string, JsonValue>) : {};
-}
-
 /**
  * Changes a token's description in every file that writes the token, so every context keeps the
  * same one, or a group's in the file that writes it. `null` removes it; removing one that isn't
@@ -147,9 +142,7 @@ function setDescriptionIn(
     const copies = copiesOf(tokens, path);
     if ("refused" in copies) return copies;
     if (copies.of === "token") {
-        const ops = copies.places.flatMap((at) =>
-            written(tokens, at, ["$description"], description),
-        );
+        const ops = copies.places.flatMap((at) => opsAt(tokens, at, ["$description"], description));
         return { ops, alsoAffects: copies.alsoAffects, moved: [] };
     }
     const described = describedPlace(tokens, path, copies.places, place);
@@ -157,21 +150,6 @@ function setDescriptionIn(
         return asked(described.choose, (file) => setDescriptionIn(tokens, path, description, file));
     }
     if ("refused" in described) return described;
-    const ops = written(tokens, described.at, ["$description"], description);
+    const ops = opsAt(tokens, described.at, ["$description"], description);
     return { ops, alsoAffects: described.alsoAffects, moved: [] };
-}
-
-function written(
-    tokens: DesignTokens,
-    at: Member,
-    inside: JsonPath,
-    value: JsonValue | null,
-): FileOp[] {
-    const { file } = at.span;
-    const jsonPath = [...at.jsonPath, ...inside];
-    const was = writtenIn(tokens, file, jsonPath);
-    if (value === null) return was === undefined ? [] : [{ kind: "remove", file, jsonPath, was }];
-    return was === undefined
-        ? [{ kind: "add", file, jsonPath, value }]
-        : [{ kind: "set", file, jsonPath, value, was }];
 }

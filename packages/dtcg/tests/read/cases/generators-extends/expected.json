@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 6.4: a group that extends another inherits its extensions, so the generator adds its tokens too, marked as generated from the extending group",
+  "spec": "Format 6.4: a group that extends another inherits its extensions, so the generator adds its tokens too, marked as generated from the extending group, which owns those names as well: its own written step is reported and not used",
   "options": {
     "generators": ["steps"]
   },
@@ -24,8 +24,8 @@
         {
           "path": "inset.2",
           "resolved": {
-            "value": 5,
-            "unit": "px"
+            "value": 2,
+            "unit": "rem"
           },
           "generated": {
             "from": "inset",
@@ -58,5 +58,30 @@
       ]
     }
   ],
-  "diagnostics": []
+  "diagnostics": [
+    {
+      "kind": "written-generated",
+      "detail": {
+        "path": "inset.2",
+        "from": "inset",
+        "extension": ["com.example", "steps"],
+        "written": "token"
+      },
+      "span": {
+        "file": "tokens.json",
+        "valueAfter": "\"2\":"
+      },
+      "related": [
+        {
+          "message": "made by this extension",
+          "span": {
+            "file": "tokens.json",
+            "valueAfter": "\"steps\":"
+          },
+          "path": "space"
+        }
+      ],
+      "path": "inset.2"
+    }
+  ]
 }

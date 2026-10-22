@@ -19,21 +19,19 @@ const itemNames = { shadow: "Layer", gradient: "Stop" } as const;
 export function CompositeInput({
     field,
     label,
-    path,
     onWrite,
 }: {
     field: FieldWithParts;
     label: string;
-    path: string;
     onWrite: Write;
 }) {
     switch (field.kind) {
         case "parts":
-            return <Parts parts={field.parts} label={label} path={path} onWrite={onWrite} />;
+            return <Parts parts={field.parts} label={label} onWrite={onWrite} />;
         case "list":
-            return <List field={field} label={label} path={path} onWrite={onWrite} />;
+            return <List field={field} label={label} onWrite={onWrite} />;
         case "dashes":
-            return <Dashes field={field} label={label} path={path} onWrite={onWrite} />;
+            return <Dashes field={field} label={label} onWrite={onWrite} />;
     }
 }
 
@@ -44,12 +42,10 @@ function within(at: JsonPath, onWrite: Write): Write {
 function Parts({
     parts,
     label,
-    path,
     onWrite,
 }: {
     parts: readonly FieldPart[];
     label: string;
-    path: string;
     onWrite: Write;
 }) {
     return (
@@ -60,7 +56,6 @@ function Parts({
                     <SlotField
                         slot={part}
                         label={`${label}, ${part.name}`}
-                        path={path}
                         onWrite={within(part.at, onWrite)}
                     />
                 </div>
@@ -69,17 +64,7 @@ function Parts({
     );
 }
 
-function SlotField({
-    slot,
-    label,
-    path,
-    onWrite,
-}: {
-    slot: Slot;
-    label: string;
-    path: string;
-    onWrite: Write;
-}) {
+function SlotField({ slot, label, onWrite }: { slot: Slot; label: string; onWrite: Write }) {
     if (slot.type === "boolean") {
         return (
             <input
@@ -90,26 +75,16 @@ function SlotField({
             />
         );
     }
-    return (
-        <TypedField
-            type={slot.type}
-            written={slot.written}
-            label={label}
-            path={path}
-            onWrite={onWrite}
-        />
-    );
+    return <TypedField type={slot.type} written={slot.written} label={label} onWrite={onWrite} />;
 }
 
 function List({
     field,
     label,
-    path,
     onWrite,
 }: {
     field: Extract<FieldWithParts, { kind: "list" }>;
     label: string;
-    path: string;
     onWrite: Write;
 }) {
     const keys = useItemKeys(field.items.length);
@@ -124,13 +99,12 @@ function List({
                     <li key={keys.keys[index]}>
                         {name} {index + 1}{" "}
                         {item.shown === "parts" ? (
-                            <Parts parts={item.parts} label={here} path={path} onWrite={write} />
+                            <Parts parts={item.parts} label={here} onWrite={write} />
                         ) : item.shown === "reference" ? (
                             <TypedField
                                 type={field.type}
                                 written={item.written}
                                 label={here}
-                                path={path}
                                 onWrite={write}
                             />
                         ) : (
@@ -167,12 +141,10 @@ function List({
 function Dashes({
     field,
     label,
-    path,
     onWrite,
 }: {
     field: Extract<FieldWithParts, { kind: "dashes" }>;
     label: string;
-    path: string;
     onWrite: Write;
 }) {
     const keys = useItemKeys(field.dashes.length);
@@ -194,7 +166,6 @@ function Dashes({
                         <SlotField
                             slot={dash}
                             label={`${label}, dash ${index + 1}`}
-                            path={path}
                             onWrite={within(dash.at, onWrite)}
                         />{" "}
                         <button

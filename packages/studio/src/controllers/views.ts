@@ -8,7 +8,8 @@ import type {
     TokenType,
 } from "@sugarcube-sh/dtcg";
 import type { TypographyCSS } from "@sugarcube-sh/dtcg/css";
-import type { BuildProblem, BuildOutput } from "./adapter";
+import type { BuildOutput, BuildProblem, ExtensionForm } from "./adapter";
+import type { StudioState } from "./studio";
 
 export interface TreeNode {
     readonly path: string;
@@ -135,6 +136,23 @@ export function groupView(group: Group, value: BuildOutput["value"]): GroupView 
     };
 }
 
+export interface GroupPageView extends GroupView {
+    readonly form: ExtensionForm | undefined;
+    readonly noTokens: "at-all" | "directly" | undefined;
+}
+
+export function groupPage(state: StudioState, group: Group): GroupPageView {
+    const { showing, value, formFor } = state;
+    const shownValue = (token: Token) => {
+        const here = showing.token(token.path);
+        return here && value(here);
+    };
+    const view = groupView(group, shownValue);
+    const noTokens =
+        view.tokens.length > 0 ? undefined : view.groups.length > 0 ? "directly" : "at-all";
+    return { ...view, form: formFor(group), noTokens };
+}
+
 export function tokenRow(token: Token, name: string, value: BuildOutput["value"]): TokenRow {
     return {
         path: token.path,
@@ -208,7 +226,7 @@ export function referable(
     tokens: DesignTokens,
     showing: Permutation,
     type: TokenType,
-    path: string,
+    path: string | undefined,
 ): string[] {
     return tokens.tokenPaths().filter((each) => {
         if (each === path) return false;

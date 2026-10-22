@@ -1,4 +1,5 @@
 import type { DesignTokens, JsonPath, Span, JsonValue } from "@sugarcube-sh/dtcg";
+import type { FileOp } from "./index.js";
 import {
     type Node,
     findNodeAtLocation,
@@ -46,4 +47,19 @@ export function writtenIn(
 export function memberAt(tokens: DesignTokens, span: Span): Member | undefined {
     const node = nodeAt(tokens, span);
     return node && { span, jsonPath: getNodePath(node), written: getNodeValue(node) as JsonValue };
+}
+
+export function opsAt(
+    tokens: DesignTokens,
+    at: Member,
+    inside: JsonPath,
+    value: JsonValue | null,
+): FileOp[] {
+    const { file } = at.span;
+    const jsonPath = [...at.jsonPath, ...inside];
+    const was = writtenIn(tokens, file, jsonPath);
+    if (value === null) return was === undefined ? [] : [{ kind: "remove", file, jsonPath, was }];
+    return was === undefined
+        ? [{ kind: "add", file, jsonPath, value }]
+        : [{ kind: "set", file, jsonPath, value, was }];
 }

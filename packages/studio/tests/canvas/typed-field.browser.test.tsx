@@ -9,7 +9,7 @@ function Row({ type, start }: { type: TokenType | undefined; start: JsonValue })
     const [written, setWritten] = useState(start);
     return (
         <>
-            <TypedField type={type} written={written} label="base" path="x" onWrite={setWritten} />
+            <TypedField type={type} written={written} label="base" onWrite={setWritten} />
             <output aria-label="written">{JSON.stringify(written)}</output>
         </>
     );

@@ -2,12 +2,17 @@ import type {
     DesignTokens,
     Group,
     JsonValue,
+    Permutation,
     PlaceInPermutations,
     Span,
+    Token,
     TokenType,
 } from "@sugarcube-sh/dtcg";
 import { type Clash, type NewToken, type ValueOptions, overridable } from "@sugarcube-sh/dtcg-edit";
 import { isJsonObject } from "@sugarcube-sh/dtcg/values";
+import type { ExtensionForm } from "./adapter";
+import type { StudioState } from "./studio";
+import { type ProblemRow, type TokenRow, problemRows, tokenRow } from "./views";
 
 export interface PlaceRow {
     readonly label: string | undefined;
@@ -34,6 +39,7 @@ export interface ValueRow {
 export interface ValueView {
     readonly rows: readonly ValueRow[];
     readonly offers: readonly string[];
+    readonly actions: boolean;
 }
 
 export function valueView(
@@ -41,6 +47,9 @@ export function valueView(
     path: string,
     adding: readonly string[],
 ): ValueView {
+    if (tokens.permutations.some((perm) => perm.token(path)?.generated)) {
+        return { rows: [], offers: [], actions: false };
+    }
     const places = placeRows(tokens, path);
     const offered = overridable(tokens, path);
     const written = places
@@ -74,6 +83,57 @@ export function valueView(
     return {
         rows: [...written, ...overrides],
         offers: offered.map(({ label }) => label).filter((label) => !adding.includes(label)),
+        actions: true,
+    };
+}
+
+export type MadeBy =
+    | { readonly kind: "recipe"; readonly from: string; readonly by: string }
+    | { readonly kind: "group"; readonly from: string }
+    | { readonly kind: "top-level" };
+
+export function madeBy(
+    token: Token,
+    showing: Permutation,
+    formFor: StudioState["formFor"],
+): MadeBy | undefined {
+    if (!token.generated) return undefined;
+    const { from } = token.generated;
+    if (from === undefined) return { kind: "top-level" };
+    const group = showing.group(from);
+    const by = group && formFor(group)?.label.toLowerCase();
+    return by === undefined ? { kind: "group", from } : { kind: "recipe", from, by };
+}
+
+export interface PageRow extends ValueRow {
+    readonly form: ExtensionForm | undefined;
+}
+
+export interface TokenPageView {
+    readonly row: TokenRow;
+    readonly rows: readonly PageRow[];
+    readonly offers: readonly string[];
+    readonly actions: boolean;
+    readonly problems: readonly ProblemRow[];
+    readonly made: MadeBy | undefined;
+    readonly form: ExtensionForm | undefined;
+}
+
+export function tokenPage(
+    state: StudioState,
+    token: Token,
+    adding: readonly string[],
+): TokenPageView {
+    const { tokens, showing, value, formFor } = state;
+    const view = valueView(tokens, token.path, adding);
+    return {
+        row: tokenRow(token, token.path, value),
+        rows: view.rows.map((row) => ({ ...row, form: formFor(token, row.where.at) })),
+        offers: view.offers,
+        actions: view.actions,
+        problems: problemRows(tokens.diagnosticsFor(token.path)),
+        made: madeBy(token, showing, formFor),
+        form: formFor(token),
     };
 }
 

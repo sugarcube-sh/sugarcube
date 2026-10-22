@@ -29,7 +29,7 @@ export interface MergedToken extends SourceToken {
 
 export interface MergedTopLevel extends Properties {
     declaredIn: WrittenAt[];
-    extensionsAt?: Record<string, ExtensionsAt & { source: number }>;
+    extensionsAt?: Record<string, ExtensionsAt & { source: number; group?: string }>;
 }
 
 export interface MergedGroup extends MergedTopLevel {
@@ -128,12 +128,20 @@ function mergeGroup(groups: Map<string, MergedGroup>, group: SourceGroup, source
     groups.set(path, existing);
 }
 
-function mergeInto(existing: MergedTopLevel, written: SourceTopLevel, source: number): void {
+function mergeInto(
+    existing: MergedTopLevel | MergedGroup,
+    written: SourceTopLevel,
+    source: number,
+): void {
     const { span, extensionsAt, ...properties } = written;
     mergeProperties(existing, properties);
     existing.declaredIn.push({ source, span });
     if (extensionsAt && properties.extensions) {
-        const declared = { ...extensionsAt, source };
+        const declared = {
+            ...extensionsAt,
+            source,
+            ...("path" in existing && { group: existing.path }),
+        };
         const keys = Object.keys(properties.extensions).map((key) => [key, declared]);
         existing.extensionsAt = { ...existing.extensionsAt, ...Object.fromEntries(keys) };
     }

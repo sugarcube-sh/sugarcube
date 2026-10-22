@@ -1,6 +1,7 @@
 import { defineConfig } from "oxfmt";
 
 export default defineConfig({
+    astro: true,
     tabWidth: 4,
     quoteProps: "consistent",
     ignorePatterns: [
@@ -18,7 +19,6 @@ export default defineConfig({
     overrides: [
         {
             files: ["**/*.json", "**/*.jsonc", "**/*.toml", "**/*.yml", "**/*.yaml"],
-
             options: { tabWidth: 2 },
         },
     ],

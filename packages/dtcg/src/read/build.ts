@@ -20,6 +20,7 @@ import type { Building } from "./building.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
 import { applying, inherited } from "./inherit.js";
 import {
+    NO_EXTENSION_PLACES,
     NO_PLACES,
     NO_REFERENCES,
     type Places,
@@ -459,11 +460,27 @@ function groupFields(
         path,
         ...publicProperties(applies),
         writtenAt,
+        extensionsWrittenAt: extensionPlaces(group, writtenAt),
         children: [],
         references: NO_REFERENCES,
         ...(from && { inherited: from }),
         ...(Object.keys(authored).length > 0 && { authored }),
     };
+}
+
+function extensionPlaces(
+    { extensionsAt, declaredIn }: MergedGroup,
+    writtenAt: readonly Place[],
+): Readonly<Record<string, Place>> {
+    if (!extensionsAt) return NO_EXTENSION_PLACES;
+    const places: Record<string, Place> = {};
+    for (const [key, { source }] of Object.entries(extensionsAt)) {
+        declaredIn.forEach((each, index) => {
+            const place = writtenAt[index];
+            if (each.source === source && place) places[key] = place;
+        });
+    }
+    return Object.freeze(places);
 }
 
 function publicProperties({

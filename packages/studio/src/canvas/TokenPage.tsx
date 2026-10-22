@@ -1,39 +1,45 @@
 import type { Token } from "@sugarcube-sh/dtcg";
 import { useState } from "react";
-import { valueView } from "../controllers/token-page";
-import { problemRows, tokenRow } from "../controllers/views";
+import { NavLink } from "react-router";
+import { hrefFor } from "../app/token-path";
+import { type MadeBy, tokenPage } from "../controllers/token-page";
 import { useStudioState } from "../providers/studio-context";
 import { EditRow } from "./EditRow";
+import { ExtensionFields } from "./ExtensionFields";
 import { Showing } from "./Showing";
 import { TokenActions } from "./TokenActions";
 import { AsCSS } from "./Value";
 
 export function TokenPage({ token, shown }: { token: Token; shown: boolean }) {
-    const showing = useStudioState((state) => state.showing);
-    const tokens = useStudioState((state) => state.tokens);
-    const value = useStudioState((state) => state.value);
+    const state = useStudioState((each) => each);
     const [adding, setAdding] = useState<readonly string[]>([]);
-    const row = tokenRow(token, token.path, value);
-    const view = valueView(tokens, token.path, adding);
-    const problems = problemRows(tokens.diagnosticsFor(token.path));
+    const page = tokenPage(state, token, adding);
 
     return (
         <article>
             <h1>{token.path}</h1>
             {token.description && <p>{token.description}</p>}
             <Showing />
+            {page.made && <MadeByLine made={page.made} />}
+            {page.form && <ExtensionFields form={page.form} label={undefined} />}
             <dl>
                 <dt>Type</dt>
                 <dd>{token.type}</dd>
-                {view.rows.map((each) => (
-                    <EditRow key={each.key} row={each} type={token.type} path={token.path} />
+                {page.rows.map((each) => (
+                    <EditRow
+                        key={each.key}
+                        row={each}
+                        type={token.type}
+                        path={token.path}
+                        form={each.form}
+                    />
                 ))}
-                {problems.length > 0 && (
+                {page.problems.length > 0 && (
                     <>
                         <dt>Problems</dt>
                         <dd>
                             <ul>
-                                {problems.map((problem) => (
+                                {page.problems.map((problem) => (
                                     <li
                                         key={`${problem.kind} ${problem.message} ${problem.inPermutations}`}
                                     >
@@ -47,10 +53,14 @@ export function TokenPage({ token, shown }: { token: Token; shown: boolean }) {
                 )}
                 <dt>CSS</dt>
                 <dd>
-                    {shown ? <AsCSS type={row.type} css={row.css} /> : <>Not in {showing.label}</>}
+                    {shown ? (
+                        <AsCSS type={page.row.type} css={page.row.css} />
+                    ) : (
+                        <>Not in {state.showing.label}</>
+                    )}
                 </dd>
             </dl>
-            {view.offers.map((label) => (
+            {page.offers.map((label) => (
                 <button
                     key={label}
                     type="button"
@@ -59,7 +69,26 @@ export function TokenPage({ token, shown }: { token: Token; shown: boolean }) {
                     Override for {label}
                 </button>
             ))}
-            <TokenActions path={token.path} />
+            {page.actions && <TokenActions path={token.path} />}
         </article>
     );
+}
+
+function MadeByLine({ made }: { made: MadeBy }) {
+    switch (made.kind) {
+        case "recipe":
+            return (
+                <p>
+                    Made by the {made.by} on <NavLink to={hrefFor(made.from)}>{made.from}</NavLink>.
+                </p>
+            );
+        case "group":
+            return (
+                <p>
+                    Made by <NavLink to={hrefFor(made.from)}>{made.from}</NavLink>.
+                </p>
+            );
+        case "top-level":
+            return <p>Made by a recipe at the top of its file.</p>;
+    }
 }

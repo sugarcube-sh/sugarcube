@@ -190,10 +190,9 @@ describe("tokens that are not written", () => {
                 files: {
                     "tokens.json": JSON.stringify({
                         space: {
-                            "$type": "number",
-                            "$extensions": { "com.example": { steps: 3 } },
-                            "2": { $value: 20 },
-                            "sub": {},
+                            $type: "number",
+                            $extensions: { "com.example": { steps: 3 } },
+                            sub: {},
                         },
                     }),
                 },
@@ -206,7 +205,7 @@ describe("tokens that are not written", () => {
             .filter((path) => path.startsWith("space."));
         const children = paths(tokens.permutation().group("space")?.children);
         expect(children?.filter((path) => path !== "space.sub")).toStrictEqual(tokenOrder);
-        expect(children?.indexOf("space.sub")).toBe(1);
+        expect(children?.indexOf("space.sub")).toBe(0);
     });
 });
 

@@ -6,6 +6,7 @@ import {
     draftFor,
     fieldFor,
     fieldFrom,
+    fieldText,
     hasField,
     says,
     withPoint,
@@ -401,5 +402,18 @@ describe("withPoint", () => {
         if (draft.kind !== "cubicBezier") throw new Error(draft.kind);
 
         expect(withPoint(draft, 2, "0.3").points).toEqual(["0.4", "0", "0.3", "1"]);
+    });
+});
+
+describe("fieldText", () => {
+    it("words a value the way its field shows it, for a field that can't be edited", () => {
+        expect(fieldText("dimension", { value: 0.8333, unit: "rem" })).toBe("0.8333rem");
+        expect(fieldText("duration", { value: 200, unit: "ms" })).toBe("200ms");
+        expect(fieldText("number", 1.25)).toBe("1.25");
+    });
+
+    it("falls back to the JSON as written for a value with no field, or one a field can't show", () => {
+        expect(fieldText(undefined, "adjacent")).toBe('"adjacent"');
+        expect(fieldText("dimension", { value: 1, unit: "em" })).toBe('{"value":1,"unit":"em"}');
     });
 });

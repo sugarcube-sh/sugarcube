@@ -1,6 +1,6 @@
 import type { JsonPath, JsonValue, TokenType } from "@sugarcube-sh/dtcg";
 import { dimensionUnits, durationUnits, strokeStyleKeywords } from "@sugarcube-sh/dtcg/values";
-import { useId, useMemo } from "react";
+import { useContext, useId, useMemo } from "react";
 import {
     type Draft,
     type Field,
@@ -22,6 +22,7 @@ import { useStudioState } from "../providers/studio-context";
 import { Choice } from "./Choice";
 import { ColorInput } from "./ColorInput";
 import { CompositeInput } from "./CompositeInput";
+import { EditedTokenContext } from "../providers/edited-token-context";
 import { JsonField } from "./JsonField";
 import { useDraft, useItemKeys } from "./use-draft";
 
@@ -29,13 +30,13 @@ export function TypedField({
     type,
     written,
     label,
-    path,
+    references = true,
     onWrite,
 }: {
     type: TokenType | undefined;
     written: JsonValue | undefined;
     label: string;
-    path: string;
+    references?: boolean;
     onWrite(value: JsonValue, part?: JsonPath): void;
 }) {
     const field = written === undefined ? undefined : fieldFor(type, written);
@@ -55,36 +56,37 @@ export function TypedField({
 
     return (
         <>
-            <fieldset aria-label={label}>
-                <label>
-                    <input
-                        type="radio"
-                        name={name}
-                        checked={side === "value"}
-                        onChange={() => setSide("value")}
-                    />{" "}
-                    Value
-                </label>{" "}
-                <label>
-                    <input
-                        type="radio"
-                        name={name}
-                        checked={side === "token"}
-                        onChange={() => setSide("token")}
-                    />{" "}
-                    Token
-                </label>
-            </fieldset>
-            {side === "token" ? (
+            {references && (
+                <fieldset aria-label={label}>
+                    <label>
+                        <input
+                            type="radio"
+                            name={name}
+                            checked={side === "value"}
+                            onChange={() => setSide("value")}
+                        />{" "}
+                        Value
+                    </label>{" "}
+                    <label>
+                        <input
+                            type="radio"
+                            name={name}
+                            checked={side === "token"}
+                            onChange={() => setSide("token")}
+                        />{" "}
+                        Token
+                    </label>
+                </fieldset>
+            )}
+            {references && side === "token" ? (
                 <TokenInput
                     type={type}
-                    path={path}
                     label={label}
                     referred={field?.kind === "reference" ? field.path : undefined}
                     onPath={(to) => write({ kind: "reference", path: to })}
                 />
             ) : field && hasParts(field) ? (
-                <CompositeInput field={field} label={label} path={path} onWrite={onWrite} />
+                <CompositeInput field={field} label={label} onWrite={onWrite} />
             ) : hasField(type) ? (
                 <ValueInput
                     type={type}
@@ -101,19 +103,18 @@ export function TypedField({
 
 function TokenInput({
     type,
-    path,
     label,
     referred,
     onPath,
 }: {
     type: TokenType;
-    path: string;
     label: string;
     referred: string | undefined;
     onPath(path: string): void;
 }) {
     const tokens = useStudioState((state) => state.tokens);
     const showing = useStudioState((state) => state.showing);
+    const path = useContext(EditedTokenContext);
     const listed = useMemo(
         () => referable(tokens, showing, type, path),
         [tokens, showing, type, path],

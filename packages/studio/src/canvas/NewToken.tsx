@@ -6,6 +6,7 @@ import { newToken } from "../controllers/token-page";
 import { hasField } from "../controllers/value-field";
 import { useStudio } from "../providers/studio-context";
 import { JsonInput } from "./JsonInput";
+import { EditedTokenContext } from "../providers/edited-token-context";
 import { TypedField } from "./TypedField";
 import { useEdit } from "./use-edit";
 
@@ -56,14 +57,15 @@ export function NewToken({ group }: { group: Group }) {
                 </select>
             </label>{" "}
             {hasField(type) ? (
-                <TypedField
-                    key={type}
-                    type={type}
-                    written={value}
-                    label="Value"
-                    path={path}
-                    onWrite={setValue}
-                />
+                <EditedTokenContext.Provider value={path}>
+                    <TypedField
+                        key={type}
+                        type={type}
+                        written={value}
+                        label="Value"
+                        onWrite={setValue}
+                    />
+                </EditedTokenContext.Provider>
             ) : (
                 <>
                     <label htmlFor={valueId}>Value</label>{" "}

@@ -718,6 +718,15 @@ export interface Group {
      */
     readonly writtenAt: readonly Place[];
     /**
+     * The place, among {@link Group.writtenAt}, that writes each `$extensions` key the group writes
+     * itself. When several files write a key, it is the last one read, whose value for that key is
+     * used whole. A key the group takes from the group it extends is left out.
+     *
+     * @example
+     * tokens.spanOf(space.extensionsWrittenAt["com.example"]).file // "space.json"
+     */
+    readonly extensionsWrittenAt: Readonly<Record<string, Place>>;
+    /**
      * Set when the group is here only because of `$extends`, or a `$ref` to another group, at
      * `from`.
      */
@@ -1170,6 +1179,24 @@ export interface DiagnosticDetailByKind {
         readonly reason?: string;
         /** The facts the check's message is worded from. */
         readonly data?: unknown;
+    };
+    /**
+     * A file writes a token or group with a name a {@link Generator} makes. The generator owns
+     * every name it makes, so the generated token is used and what the file writes there is not;
+     * `related` is the extension that makes it.
+     */
+    "written-generated": {
+        /** The name, such as `"space.2"`. */
+        readonly path: string;
+        /**
+         * The group it is made in, absent for the top level of a file. A group that extends
+         * another makes its tokens too, so this may not be the group that writes the extension.
+         */
+        readonly from?: string;
+        /** The generator's extension, such as `["com.example", "steps"]`. */
+        readonly extension: readonly [string, ...string[]];
+        /** What the file writes with that name. */
+        readonly written: "token" | "group";
     };
     /** A reference points at nothing: no token, or for `$extends`, no group. */
     "missing-reference": {

@@ -1,29 +1,12 @@
 {
   "entry": "tokens.json",
-  "spec": "a generator adds the tokens its extension makes that the group does not write, at the end of the group, in the generator's order; the extension owns every token it makes, written or added, so both are marked generated; a written token keeps its value and its authored value; an added token has no authored value and its source is the extension",
+  "spec": "a generator adds every token its extension makes, at the end of the group, in the generator's order, each marked generated, with no authored value, its source the extension; the extension owns every name it makes, so a token a file writes with one of those names is not used, and the file is reported where it writes it",
   "options": {
     "generators": ["steps"]
   },
   "permutations": [
     {
       "tokens": [
-        {
-          "path": "space.2",
-          "resolved": {
-            "value": 20,
-            "unit": "px"
-          },
-          "authored": {
-            "value": {
-              "value": 20,
-              "unit": "px"
-            }
-          },
-          "generated": {
-            "from": "space",
-            "extension": ["com.example", "steps"]
-          }
-        },
         {
           "path": "space.3",
           "resolved": {
@@ -35,6 +18,27 @@
             "extension": ["com.example", "steps"]
           },
           "authored": null
+        },
+        {
+          "path": "space.2",
+          "resolved": {
+            "value": 2,
+            "unit": "rem"
+          },
+          "generated": {
+            "from": "space",
+            "extension": ["com.example", "steps"]
+          },
+          "authored": null,
+          "writtenAt": [
+            {
+              "source": 0,
+              "span": {
+                "file": "tokens.json",
+                "valueAfter": "\"steps\":"
+              }
+            }
+          ]
         },
         {
           "path": "space.1",
@@ -72,5 +76,30 @@
       ]
     }
   ],
-  "diagnostics": []
+  "diagnostics": [
+    {
+      "kind": "written-generated",
+      "detail": {
+        "path": "space.2",
+        "from": "space",
+        "extension": ["com.example", "steps"],
+        "written": "token"
+      },
+      "span": {
+        "file": "tokens.json",
+        "valueAfter": "\"2\":"
+      },
+      "related": [
+        {
+          "message": "made by this extension",
+          "span": {
+            "file": "tokens.json",
+            "valueAfter": "\"steps\":"
+          },
+          "path": "space"
+        }
+      ],
+      "path": "space.2"
+    }
+  ]
 }

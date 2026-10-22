@@ -268,3 +268,17 @@ export function says(draft: Draft, field: Field | undefined): boolean {
 function same(a: JsonValue, b: JsonValue): boolean {
     return JSON.stringify(a) === JSON.stringify(b);
 }
+
+export function fieldText(type: TokenType | undefined, written: JsonValue | undefined): string {
+    if (written === undefined) return "";
+    const field = fieldFor(type, written);
+    switch (field.kind) {
+        case "dimension":
+        case "duration":
+            return `${field.value}${field.unit}`;
+        case "number":
+            return String(field.value);
+        default:
+            return JSON.stringify(writtenFor(field));
+    }
+}

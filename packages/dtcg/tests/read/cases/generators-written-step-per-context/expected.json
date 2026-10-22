@@ -1,0 +1,68 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "a name the extension makes is reported in every file that writes it, each in the permutations that read that file, and the extension's token is used in each",
+  "options": {
+    "generators": ["steps"]
+  },
+  "permutations": [
+    {
+      "tokens": [
+        {
+          "path": "space.2",
+          "resolved": { "value": 2, "unit": "rem" },
+          "authored": null
+        },
+        { "path": "space.1" }
+      ]
+    },
+    {
+      "tokens": [
+        {
+          "path": "space.2",
+          "resolved": { "value": 2, "unit": "rem" },
+          "authored": null
+        },
+        { "path": "space.1" }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "written-generated",
+      "detail": {
+        "path": "space.2",
+        "from": "space",
+        "extension": ["com.example", "steps"],
+        "written": "token"
+      },
+      "span": { "file": "base.json", "valueAfter": "\"2\":" },
+      "related": [
+        {
+          "message": "made by this extension",
+          "span": { "file": "base.json", "valueAfter": "\"steps\":" },
+          "path": "space"
+        }
+      ],
+      "path": "space.2"
+    },
+    {
+      "kind": "written-generated",
+      "detail": {
+        "path": "space.2",
+        "from": "space",
+        "extension": ["com.example", "steps"],
+        "written": "token"
+      },
+      "span": { "file": "roomy.json", "valueAfter": "\"2\":" },
+      "related": [
+        {
+          "message": "made by this extension",
+          "span": { "file": "base.json", "valueAfter": "\"steps\":" },
+          "path": "space"
+        }
+      ],
+      "permutations": [{ "density": "roomy" }],
+      "path": "space.2"
+    }
+  ]
+}

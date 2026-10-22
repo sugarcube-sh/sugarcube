@@ -1,6 +1,6 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "tokens are added after the files merge, so a written token keeps its value whichever file writes it: here one written before the file with the extension. The extension still owns it",
+  "spec": "tokens are added after the files merge, so the extension owns a name whichever file writes it: here one read before the file with the extension, which is reported and not used",
   "options": {
     "generators": ["steps"]
   },
@@ -8,10 +8,17 @@
     {
       "tokens": [
         {
+          "path": "space.2",
+          "generated": {
+            "from": "space",
+            "extension": ["com.example", "steps"]
+          }
+        },
+        {
           "path": "space.1",
           "resolved": {
-            "value": 4,
-            "unit": "px"
+            "value": 1,
+            "unit": "rem"
           },
           "generated": {
             "from": "space",
@@ -19,23 +26,41 @@
           },
           "writtenAt": [
             {
-              "source": 0,
+              "source": 1,
               "span": {
-                "file": "steps.json",
-                "valueAfter": "\"1\":"
+                "file": "recipe.json",
+                "valueAfter": "\"steps\":"
               }
             }
           ]
-        },
-        {
-          "path": "space.2",
-          "generated": {
-            "from": "space",
-            "extension": ["com.example", "steps"]
-          }
         }
       ]
     }
   ],
-  "diagnostics": []
+  "diagnostics": [
+    {
+      "kind": "written-generated",
+      "detail": {
+        "path": "space.1",
+        "from": "space",
+        "extension": ["com.example", "steps"],
+        "written": "token"
+      },
+      "span": {
+        "file": "steps.json",
+        "valueAfter": "\"1\":"
+      },
+      "related": [
+        {
+          "message": "made by this extension",
+          "span": {
+            "file": "recipe.json",
+            "valueAfter": "\"steps\":"
+          },
+          "path": "space"
+        }
+      ],
+      "path": "space.1"
+    }
+  ]
 }
