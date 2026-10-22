@@ -1,11 +1,12 @@
 import type { Group, Token } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
+import { MemoryRouter } from "react-router";
 import { render } from "vitest-browser-react";
 import { plain } from "../../src/adapters/plain";
 import { NewToken } from "../../src/canvas/NewToken";
 import { TokenPage } from "../../src/canvas/TokenPage";
 import { createStudio } from "../../src/controllers/studio";
-import { StudioContext } from "../../src/providers/studio-context";
+import { StudioContext, useStudioState } from "../../src/providers/studio-context";
 
 const files = {
     "tokens.resolver.json": JSON.stringify({
@@ -28,6 +29,7 @@ const files = {
             },
         },
         space: { $type: "dimension", s: { $value: { value: 4, unit: "px" } } },
+        legacy: { $type: "number", $deprecated: "Use space", n: { $value: 1 } },
         shadow: {
             $type: "shadow",
             sm: {
@@ -67,12 +69,19 @@ function studioOnFiles() {
     );
 }
 
+function CurrentToken({ path }: { path: string }) {
+    const showing = useStudioState((state) => state.showing);
+    return <TokenPage token={showing.token(path) as Token} shown />;
+}
+
 function studioPage(path: string) {
     const studio = studioOnFiles();
     const Page = () => (
-        <StudioContext.Provider value={studio}>
-            <TokenPage token={studio.state.showing.token(path) as Token} shown />
-        </StudioContext.Provider>
+        <MemoryRouter>
+            <StudioContext.Provider value={studio}>
+                <CurrentToken path={path} />
+            </StudioContext.Provider>
+        </MemoryRouter>
     );
     return { studio, Page };
 }
@@ -187,5 +196,52 @@ describe("undo steps", () => {
         await screen.getByRole("spinbutton", { name: "base, layer 1, offsetX, amount" }).fill("3");
 
         expect(studio.unsaved.steps).toHaveLength(2);
+    });
+});
+
+describe("description and deprecation", () => {
+    const written = (studio: ReturnType<typeof studioOnFiles>) =>
+        JSON.parse(studio.state.tokens.text("base.json") ?? "{}");
+
+    it("writes a description as you type, as one step, and removes it when emptied", async () => {
+        const { studio, Page } = studioPage("space.s");
+        const screen = await render(<Page />);
+        const box = screen.getByRole("textbox", { name: "Description" });
+
+        await box.fill("Small gaps.");
+        expect(written(studio).space.s.$description).toBe("Small gaps.");
+        expect(studio.unsaved.steps).toHaveLength(1);
+
+        await box.fill("");
+        expect(written(studio).space.s).not.toHaveProperty("$description");
+        expect(studio.unsaved.steps).toHaveLength(0);
+    });
+
+    it("marks a token deprecated with a reason, as one step, and unmarks it", async () => {
+        const { studio, Page } = studioPage("space.s");
+        const screen = await render(<Page />);
+        const box = screen.getByRole("checkbox", { name: "Deprecated" });
+
+        await box.click();
+        expect(written(studio).space.s.$deprecated).toBe(true);
+        const reason = screen.getByRole("textbox", { name: "Reason" });
+        await expect.element(reason).toHaveAttribute("placeholder", "Optional");
+        await reason.fill("Use space.m");
+        expect(written(studio).space.s.$deprecated).toBe("Use space.m");
+        await expect.element(screen.getByText("Deprecated: Use space.m.")).toBeVisible();
+        expect(studio.unsaved.steps).toHaveLength(1);
+
+        await box.click();
+        expect(written(studio).space.s).not.toHaveProperty("$deprecated");
+    });
+
+    it("names the group a token's deprecation comes from, and offers no box", async () => {
+        const { Page } = studioPage("legacy.n");
+        const screen = await render(<Page />);
+
+        await expect.element(screen.getByText("Deprecated by legacy: Use space.")).toBeVisible();
+        await expect
+            .element(screen.getByRole("checkbox", { name: "Deprecated" }))
+            .not.toBeInTheDocument();
     });
 });

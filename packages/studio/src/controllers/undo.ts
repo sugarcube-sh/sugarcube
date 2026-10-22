@@ -1,5 +1,11 @@
 import type { JsonPath } from "@sugarcube-sh/dtcg";
+import type { OpResult, StepOptions } from "@sugarcube-sh/dtcg-edit";
 import type { Studio } from "./studio";
+
+export interface Edit {
+    readonly result: OpResult;
+    readonly options: StepOptions;
+}
 
 export interface Field {
     readonly path: string;

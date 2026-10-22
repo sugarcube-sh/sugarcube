@@ -5,6 +5,7 @@ import {
     newToken,
     placeRows,
     tokenPage,
+    valueEdit,
     valueView,
 } from "../../src/controllers/token-page";
 import { problemRows } from "../../src/controllers/views";
@@ -255,6 +256,8 @@ describe("tokenPage", () => {
         expect(page.made).toBeUndefined();
         expect(page.form).toBeUndefined();
         expect(page.problems).toEqual([]);
+        expect(page.description).toEqual({ text: "", editable: true });
+        expect(page.deprecation).toEqual({ box: { checked: false, untick: null, message: "" } });
     });
 
     it("gives a step no rows, its recipe's line and its range's form, read only", () => {
@@ -266,6 +269,26 @@ describe("tokenPage", () => {
         expect(page.made).toEqual({ kind: "recipe", from: "size.step", by: "scale" });
         expect(page.form?.label).toBe("Fluid");
         expect(page.form?.write).toBeUndefined();
+        expect(page.description.editable).toBe(false);
+        expect(page.deprecation.box).toBeUndefined();
+    });
+
+    it("offers no description or deprecation for a token only there through $extends", () => {
+        const { state } = studioOn(
+            demoMessage({
+                entry: "tokens.json",
+                files: {
+                    "tokens.json": JSON.stringify({
+                        button: { $type: "number", pad: { $value: 4 } },
+                        primary: { $extends: "{button}" },
+                    }),
+                },
+            }),
+        );
+        const page = tokenPage(state, state.showing.token("primary.pad")!, []);
+
+        expect(page.description.editable).toBe(false);
+        expect(page.deprecation.box).toBeUndefined();
     });
 
     it("gives an override row no form until it is written", () => {
@@ -275,5 +298,33 @@ describe("tokenPage", () => {
 
         expect(adding).toBeDefined();
         expect(adding?.form).toBeUndefined();
+    });
+});
+
+describe("valueEdit", () => {
+    const { state } = studioOn();
+    const [base, dark] = tokenPage(state, state.showing.token("color.text.default")!, []).rows;
+
+    it("writes the value at the row's place", () => {
+        const edit = valueEdit(state.tokens, "color.text.default", base!, "{color.neutral.800}");
+
+        expect(edit.result.ops).toEqual([
+            expect.objectContaining({
+                kind: "set",
+                file: base?.where.at?.file,
+                value: "{color.neutral.800}",
+            }),
+        ]);
+    });
+
+    it("names one undo field for each row, each part and each control", () => {
+        const name = (row = base!, part?: (string | number)[], control?: string) =>
+            valueEdit(state.tokens, "color.text.default", row, "{color.neutral.800}", part, control)
+                .options.merge;
+
+        expect(name()).toBe(name());
+        expect(name()).not.toBe(name(dark));
+        expect(name(base, ["color"])).not.toBe(name(base, ["blur"]));
+        expect(name(base, undefined, "space")).not.toBe(name(base, undefined, "channel 0"));
     });
 });

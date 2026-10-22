@@ -4,6 +4,7 @@ import type { Group } from "@sugarcube-sh/dtcg";
 import { groupPage } from "../controllers/views";
 import { useStudioState } from "../providers/studio-context";
 import { ExtensionFields } from "./ExtensionFields";
+import { DeprecatedLine, DeprecationRow, DescriptionRow } from "./Properties";
 import { NewToken } from "./NewToken";
 import { Showing } from "./Showing";
 import { AsCSS, Written } from "./Value";
@@ -15,9 +16,15 @@ export function GroupPage({ group, shown }: { group: Group; shown: boolean }) {
     return (
         <article>
             <h1>{view.path}</h1>
-            {view.description && <p>{view.description}</p>}
+            {view.deprecation.line && <DeprecatedLine line={view.deprecation.line} />}
             <Showing />
             {!shown && <p>Not in {state.showing.label}</p>}
+            <dl>
+                <DescriptionRow path={group.path} view={view.description} />
+                {view.deprecation.box && (
+                    <DeprecationRow path={group.path} box={view.deprecation.box} />
+                )}
+            </dl>
             {view.form && <ExtensionFields path={group.path} form={view.form} label={undefined} />}
 
             {view.groups.length > 0 && (

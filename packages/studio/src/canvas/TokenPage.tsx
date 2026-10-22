@@ -6,6 +6,7 @@ import { type MadeBy, tokenPage } from "../controllers/token-page";
 import { useStudioState } from "../providers/studio-context";
 import { EditRow } from "./EditRow";
 import { ExtensionFields } from "./ExtensionFields";
+import { DeprecatedLine, DeprecationRow, DescriptionRow } from "./Properties";
 import { Showing } from "./Showing";
 import { TokenActions } from "./TokenActions";
 import { AsCSS } from "./Value";
@@ -18,11 +19,15 @@ export function TokenPage({ token, shown }: { token: Token; shown: boolean }) {
     return (
         <article>
             <h1>{token.path}</h1>
-            {token.description && <p>{token.description}</p>}
+            {page.deprecation.line && <DeprecatedLine line={page.deprecation.line} />}
             <Showing />
             {page.made && <MadeByLine made={page.made} />}
             {page.form && <ExtensionFields path={token.path} form={page.form} label={undefined} />}
             <dl>
+                <DescriptionRow path={token.path} view={page.description} />
+                {page.deprecation.box && (
+                    <DeprecationRow path={token.path} box={page.deprecation.box} />
+                )}
                 <dt>Type</dt>
                 <dd>{token.type}</dd>
                 {page.rows.map((each) => (

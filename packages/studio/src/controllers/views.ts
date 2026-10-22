@@ -10,6 +10,12 @@ import type {
 import type { TypographyCSS } from "@sugarcube-sh/dtcg/css";
 import type { BuildOutput, BuildProblem, ExtensionForm } from "./adapter";
 import type { StudioState } from "./studio";
+import {
+    type DeprecationView,
+    type DescriptionView,
+    deprecationView,
+    descriptionView,
+} from "./properties";
 
 export interface TreeNode {
     readonly path: string;
@@ -56,7 +62,6 @@ export interface ChangeLine {
 
 export interface GroupView {
     readonly path: string;
-    readonly description?: string;
     readonly groups: readonly GroupRow[];
     readonly tokens: readonly TokenRow[];
 }
@@ -128,7 +133,6 @@ export function groupView(group: Group, value: BuildOutput["value"]): GroupView 
     const below = (child: Token | Group) => child.path.slice(group.path.length + 1);
     return {
         path: group.path,
-        ...(group.description === undefined ? {} : { description: group.description }),
         groups: group.children
             .filter((child): child is Group => child.kind === "group")
             .map((child) => ({ path: child.path, name: below(child), count: child.tokens.length })),
@@ -139,6 +143,8 @@ export function groupView(group: Group, value: BuildOutput["value"]): GroupView 
 export interface GroupPageView extends GroupView {
     readonly form: ExtensionForm | undefined;
     readonly noTokens: "at-all" | "directly" | undefined;
+    readonly description: DescriptionView;
+    readonly deprecation: DeprecationView;
 }
 
 export function groupPage(state: StudioState, group: Group): GroupPageView {
@@ -150,7 +156,14 @@ export function groupPage(state: StudioState, group: Group): GroupPageView {
     const view = groupView(group, shownValue);
     const noTokens =
         view.tokens.length > 0 ? undefined : view.groups.length > 0 ? "directly" : "at-all";
-    return { ...view, form: formFor(group), noTokens };
+    const editable = group.inherited === undefined;
+    return {
+        ...view,
+        form: formFor(group),
+        noTokens,
+        description: descriptionView(group, editable),
+        deprecation: deprecationView(group, editable),
+    };
 }
 
 export function tokenRow(token: Token, name: string, value: BuildOutput["value"]): TokenRow {

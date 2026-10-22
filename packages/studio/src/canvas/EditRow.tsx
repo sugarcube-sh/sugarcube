@@ -1,8 +1,6 @@
 import type { TokenType } from "@sugarcube-sh/dtcg";
-import { setValue } from "@sugarcube-sh/dtcg-edit";
 import type { ExtensionForm } from "../controllers/adapter";
-import type { ValueRow } from "../controllers/token-page";
-import { fieldKey } from "../controllers/undo";
+import { type ValueRow, valueEdit } from "../controllers/token-page";
 import { useStudio } from "../providers/studio-context";
 import { EditedTokenContext } from "../providers/edited-token-context";
 import { ExtensionFields } from "./ExtensionFields";
@@ -33,20 +31,17 @@ export function EditRow({
                         type={type}
                         written={row.value}
                         label={label ?? path}
-                        onWrite={(next, part, control) =>
-                            edit.run(
-                                setValue(studio.state.tokens, path, next, { ...row.where, part }),
-                                {
-                                    merge: fieldKey({
-                                        path,
-                                        writes: "value",
-                                        place: row.label,
-                                        part,
-                                        control,
-                                    }),
-                                },
-                            )
-                        }
+                        onWrite={(next, part, control) => {
+                            const { result, options } = valueEdit(
+                                studio.state.tokens,
+                                path,
+                                row,
+                                next,
+                                part,
+                                control,
+                            );
+                            edit.run(result, options);
+                        }}
                     />
                     {edit.view}
                     {form && <ExtensionFields path={path} form={form} label={label} />}

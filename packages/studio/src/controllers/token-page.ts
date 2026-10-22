@@ -1,6 +1,7 @@
 import type {
     DesignTokens,
     Group,
+    JsonPath,
     JsonValue,
     Permutation,
     PlaceInPermutations,
@@ -8,10 +9,23 @@ import type {
     Token,
     TokenType,
 } from "@sugarcube-sh/dtcg";
-import { type Clash, type NewToken, type ValueOptions, overridable } from "@sugarcube-sh/dtcg-edit";
+import {
+    type Clash,
+    type NewToken,
+    type ValueOptions,
+    overridable,
+    setValue,
+} from "@sugarcube-sh/dtcg-edit";
 import { isJsonObject } from "@sugarcube-sh/dtcg/values";
 import type { ExtensionForm } from "./adapter";
+import {
+    type DeprecationView,
+    type DescriptionView,
+    deprecationView,
+    descriptionView,
+} from "./properties";
 import type { StudioState } from "./studio";
+import { type Edit, fieldKey } from "./undo";
 import { type ProblemRow, type TokenRow, problemRows, tokenRow } from "./views";
 
 export interface PlaceRow {
@@ -34,6 +48,22 @@ export interface ValueRow {
     readonly value: JsonValue | undefined;
     readonly unwritten: boolean;
     readonly where: ValueOptions;
+}
+
+export function valueEdit(
+    tokens: DesignTokens,
+    path: string,
+    row: ValueRow,
+    value: JsonValue,
+    part?: JsonPath,
+    control?: string,
+): Edit {
+    return {
+        result: setValue(tokens, path, value, { ...row.where, part }),
+        options: {
+            merge: fieldKey({ path, writes: "value", place: row.label, part, control }),
+        },
+    };
 }
 
 export interface ValueView {
@@ -117,6 +147,8 @@ export interface TokenPageView {
     readonly problems: readonly ProblemRow[];
     readonly made: MadeBy | undefined;
     readonly form: ExtensionForm | undefined;
+    readonly description: DescriptionView;
+    readonly deprecation: DeprecationView;
 }
 
 export function tokenPage(
@@ -126,6 +158,7 @@ export function tokenPage(
 ): TokenPageView {
     const { tokens, showing, value, formFor } = state;
     const view = valueView(tokens, token.path, adding);
+    const editable = view.actions && token.inherited === undefined;
     return {
         row: tokenRow(token, token.path, value),
         rows: view.rows.map((row) => ({ ...row, form: formFor(token, row.where.at) })),
@@ -134,6 +167,8 @@ export function tokenPage(
         problems: problemRows(tokens.diagnosticsFor(token.path)),
         made: madeBy(token, showing, formFor),
         form: formFor(token),
+        description: descriptionView(token, editable),
+        deprecation: deprecationView(token, editable),
     };
 }
 
