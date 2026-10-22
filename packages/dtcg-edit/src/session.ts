@@ -18,15 +18,19 @@ export function createSession(tokens: DesignTokens): Session {
     let current = tokens;
     let opened = tokens;
     let unsaved: Edits = { steps: [] };
+    let history: readonly Kept[] = [];
+    let undone: readonly Undone[] = [];
+    let run: string | undefined;
     const counter = { made: 0 };
     let ids = followed(undefined, [], tokens, counter);
     let openedIds = ids;
-    let befores: (Version | undefined)[] = [];
-    let undone: Undone[] = [];
-    let open: { merge: string; before: Version } | undefined;
     const listeners = new Set<() => void>();
     const changed = () => {
         for (const listener of listeners) listener();
+    };
+    const keep = (next: readonly Kept[]) => {
+        history = next;
+        unsaved = { steps: next.map(({ step }) => step) };
     };
 
     return {
@@ -40,7 +44,7 @@ export function createSession(tokens: DesignTokens): Session {
             return unsaved;
         },
         get canUndo() {
-            return unsaved.steps.length > 0;
+            return history.length > 0;
         },
         get canRedo() {
             return undone.length > 0;
@@ -49,59 +53,53 @@ export function createSession(tokens: DesignTokens): Session {
             const done = commit(current, result);
             if (!done.tokens) return done;
             const step = { ops: done.ops, moved: done.moved };
-            const last = unsaved.steps.at(-1);
+            const last = history.at(-1);
+            const earlier = history.slice(0, -1);
             undone = [];
-            if (last && open && options.merge === open.merge) {
-                const joined = merged(last, step);
-                const earlier = unsaved.steps.slice(0, -1);
-                if (joined.ops.length === 0 && joined.moved.length === 0) {
-                    befores = befores.slice(0, -1);
-                    unsaved = { steps: earlier };
-                    current = open.before.tokens;
-                    ids = open.before.ids;
-                    open = undefined;
-                } else {
-                    unsaved = { steps: [...earlier, joined] };
+            if (last?.before && options.merge !== undefined && options.merge === run) {
+                const joined = merged(last.step, step);
+                if (joined.ops.length > 0 || joined.moved.length > 0) {
+                    keep([...earlier, { step: joined, before: last.before }]);
                     current = done.tokens;
                     ids = followed(ids, done.moved, current, counter);
+                } else {
+                    keep(earlier);
+                    current = last.before.tokens;
+                    ids = last.before.ids;
+                    run = undefined;
                 }
-                changed();
-                return done;
+            } else {
+                keep([...history, { step, before: { tokens: current, ids } }]);
+                current = done.tokens;
+                ids = followed(ids, done.moved, current, counter);
+                run = options.merge;
             }
-            const before = { tokens: current, ids };
-            befores = [...befores, before];
-            current = done.tokens;
-            unsaved = { steps: [...unsaved.steps, step] };
-            ids = followed(ids, done.moved, current, counter);
-            open = options.merge === undefined ? undefined : { merge: options.merge, before };
             changed();
-            return done;
+            return { ...done, tokens: current };
         },
         endStep() {
-            open = undefined;
+            run = undefined;
         },
         preview() {
             throw new Error("not implemented yet");
         },
         undo() {
-            const step = unsaved.steps.at(-1);
-            if (!step) return;
-            const kept = unsaved.steps.slice(0, -1);
-            const before = befores.at(-1) ?? workedOut(kept, step);
-            open = undefined;
-            undone = [...undone, { step, before, after: { tokens: current, ids } }];
-            befores = befores.slice(0, -1);
-            unsaved = { steps: kept };
+            const last = history.at(-1);
+            if (!last) return;
+            const earlier = history.slice(0, -1);
+            const before = last.before ?? workedOut(earlier, last.step);
+            undone = [...undone, { step: last.step, before, after: { tokens: current, ids } }];
+            keep(earlier);
             current = before.tokens;
             ids = before.ids;
+            run = undefined;
             changed();
         },
         redo() {
             const last = undone.at(-1);
             if (!last) return;
             undone = undone.slice(0, -1);
-            befores = [...befores, last.before];
-            unsaved = { steps: [...unsaved.steps, last.step] };
+            keep([...history, { step: last.step, before: last.before }]);
             current = last.after.tokens;
             ids = last.after.ids;
             changed();
@@ -120,16 +118,14 @@ export function createSession(tokens: DesignTokens): Session {
                 opened = applyStepsThatFit(opened, kept).tokens;
                 openedIds = followed(openedIds, movesIn(kept), opened, counter, ids);
             }
-            unsaved = { steps: unsaved.steps.slice(count) };
-            befores = befores.slice(count);
+            keep(history.slice(count));
             undone = [];
             changed();
         },
         discard() {
             current = opened;
-            unsaved = { steps: [] };
+            keep([]);
             ids = openedIds;
-            befores = [];
             undone = [];
             changed();
         },
@@ -138,11 +134,9 @@ export function createSession(tokens: DesignTokens): Session {
             const clashes = clashesOf(skipped, current, next);
             if (applied.length === 0) return clashes;
             current = next;
-            unsaved = { steps: [...unsaved.steps, ...applied] };
+            keep([...history, ...applied.map((step) => ({ step }))]);
             ids = followed(ids, movesIn(applied), current, counter);
-            befores = [...befores, ...applied.map(() => undefined)];
             undone = [];
-            open = undefined;
             changed();
             return clashes;
         },
@@ -153,10 +147,8 @@ export function createSession(tokens: DesignTokens): Session {
             ids = followed(ids, [], next, counter, openedIds);
             opened = fresh;
             current = next;
-            unsaved = { steps: applied };
-            befores = applied.map(() => undefined);
+            keep(applied.map((step) => ({ step })));
             undone = [];
-            open = undefined;
             changed();
             return clashes;
         },
@@ -172,26 +164,29 @@ export function createSession(tokens: DesignTokens): Session {
         },
     };
 
-    function workedOut(kept: readonly EditStep[], step: EditStep): Version {
-        const { tokens: earlier, skipped } = applyStepsThatFit(opened, kept);
+    function workedOut(earlier: readonly Kept[], step: EditStep): Version {
+        const steps = earlier.map((each) => each.step);
+        const { tokens: before, skipped } = applyStepsThatFit(opened, steps);
         if (skipped.length > 0) throw new Error(thrown.stepsNoLongerFit);
         const known = unmoved(ids, step.moved);
-        return {
-            tokens: earlier,
-            ids: followed(openedIds, movesIn(kept), earlier, counter, known),
-        };
+        return { tokens: before, ids: followed(openedIds, movesIn(steps), before, counter, known) };
     }
 }
 
+interface Kept {
+    readonly step: EditStep;
+    readonly before?: Version;
+}
+
 interface Version {
-    tokens: DesignTokens;
-    ids: Ids;
+    readonly tokens: DesignTokens;
+    readonly ids: Ids;
 }
 
 interface Undone {
-    step: EditStep;
-    before: Version;
-    after: Version;
+    readonly step: EditStep;
+    readonly before: Version;
+    readonly after: Version;
 }
 
 function unmoved(ids: Ids, moved: readonly Move[]): Ids {

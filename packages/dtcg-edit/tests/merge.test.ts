@@ -90,6 +90,17 @@ describe("edits merged into one step", () => {
         expect(session.tokens).toBe(before);
     });
 
+    it("answers with the design tokens it holds when a run comes back to where it started", () => {
+        const session = createSession(demo);
+        const was = at(demo, "color.json", ["color", "brand", "500", "$value"]) ?? null;
+        session.do(setValue(session.tokens, "color.brand.500", red), { merge: brand });
+        const done = session.do(setValue(session.tokens, "color.brand.500", was), {
+            merge: brand,
+        });
+
+        expect(done.tokens).toBe(session.tokens);
+    });
+
     it("leaves no step when a value is set back to what it was", () => {
         const session = createSession(demo);
         const was = at(demo, "color.json", ["color", "brand", "500", "$value"]) ?? null;
