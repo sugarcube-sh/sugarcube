@@ -1,14 +1,17 @@
-import type { OpResult, Question } from "@sugarcube-sh/dtcg-edit";
+import type { OpResult, Question, StepOptions } from "@sugarcube-sh/dtcg-edit";
 import { type ReactNode, useState } from "react";
 import { useStudio } from "../providers/studio-context";
 
-export function useEdit(): { run(result: OpResult): boolean; view: ReactNode } {
+export function useEdit(): {
+    run(result: OpResult, options?: StepOptions): boolean;
+    view: ReactNode;
+} {
     const studio = useStudio();
     const [asking, setAsking] = useState<Question>();
     const [reasons, setReasons] = useState<readonly string[]>([]);
 
-    const run = (result: OpResult): boolean => {
-        const done = studio.do(result);
+    const run = (result: OpResult, options?: StepOptions): boolean => {
+        const done = studio.do(result, options);
         setAsking(done.question);
         setReasons(
             done.refused

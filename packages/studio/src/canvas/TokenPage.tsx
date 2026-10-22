@@ -21,7 +21,7 @@ export function TokenPage({ token, shown }: { token: Token; shown: boolean }) {
             {token.description && <p>{token.description}</p>}
             <Showing />
             {page.made && <MadeByLine made={page.made} />}
-            {page.form && <ExtensionFields form={page.form} label={undefined} />}
+            {page.form && <ExtensionFields path={token.path} form={page.form} label={undefined} />}
             <dl>
                 <dt>Type</dt>
                 <dd>{token.type}</dd>

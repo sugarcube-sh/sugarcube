@@ -37,7 +37,7 @@ export function TypedField({
     written: JsonValue | undefined;
     label: string;
     references?: boolean;
-    onWrite(value: JsonValue, part?: JsonPath): void;
+    onWrite(value: JsonValue, part?: JsonPath, control?: string): void;
 }) {
     const field = written === undefined ? undefined : fieldFor(type, written);
     const shown = written === undefined ? "" : JSON.stringify(written);
@@ -46,8 +46,8 @@ export function TypedField({
         shown,
     );
     const name = useId();
-    const write = (next: Field) => {
-        if (changes(next, written)) onWrite(writtenFor(next));
+    const write = (next: Field, control?: string) => {
+        if (changes(next, written)) onWrite(writtenFor(next), undefined, control);
     };
 
     if (type === undefined || field?.kind === "json") {
@@ -153,17 +153,17 @@ function ValueInput({
     type: FieldType;
     field: Field | undefined;
     label: string;
-    write(field: Field): void;
+    write(field: Field, control?: string): void;
 }) {
     const [draft, setDraft] = useDraft(
         draftFor(type, field),
         field ? JSON.stringify(field) : "",
         (kept) => says(kept, field),
     );
-    const change = (next: Draft) => {
+    const change = (next: Draft, control?: string) => {
         setDraft(next);
         const made = fieldFrom(next);
-        if (made) write(made);
+        if (made) write(made, control);
     };
 
     switch (draft.kind) {

@@ -21,6 +21,12 @@ const files = {
         ],
     }),
     "base.json": JSON.stringify({
+        color: {
+            $type: "color",
+            brand: {
+                $value: { colorSpace: "oklch", components: [0.624, 0.181, 258], hex: "#3884f2" },
+            },
+        },
         space: { $type: "dimension", s: { $value: { value: 4, unit: "px" } } },
         shadow: {
             $type: "shadow",
@@ -147,5 +153,39 @@ describe("a composite", () => {
             ],
             lineCap: "round",
         });
+    });
+});
+
+describe("undo steps", () => {
+    it("makes typing in one box one step, and switching the colour space one of its own", async () => {
+        const { studio, Page } = studioPage("color.brand");
+        const screen = await render(<Page />);
+        const chroma = screen.getByRole("textbox", { name: "base, C" });
+
+        await chroma.fill("0.1");
+        await chroma.fill("0.12");
+        expect(studio.unsaved.steps).toHaveLength(1);
+
+        await screen
+            .getByRole("combobox", { name: "base, colour space" })
+            .selectOptions("display-p3");
+        expect(studio.unsaved.steps).toHaveLength(2);
+
+        studio.undo();
+        const written = JSON.parse(studio.state.tokens.text("base.json") ?? "{}").color.brand
+            .$value;
+        expect(written).toMatchObject({ colorSpace: "oklch", components: [0.624, 0.12, 258] });
+    });
+
+    it("makes each part of a composite its own step", async () => {
+        const { studio, Page } = studioPage("shadow.sm");
+        const screen = await render(<Page />);
+        const blur = screen.getByRole("spinbutton", { name: "base, layer 1, blur, amount" });
+
+        await blur.fill("8");
+        await blur.fill("9");
+        await screen.getByRole("spinbutton", { name: "base, layer 1, offsetX, amount" }).fill("3");
+
+        expect(studio.unsaved.steps).toHaveLength(2);
     });
 });

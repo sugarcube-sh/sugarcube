@@ -495,6 +495,15 @@ export interface ClashPart {
     readonly theirs?: JsonValue;
 }
 
+/** How {@link Session.do} keeps an edit among the steps undo takes back. */
+export interface StepOptions {
+    /**
+     * The field the edit comes from, such as `"value color.brand"`: edits given the same `merge`
+     * one after another are one step.
+     */
+    readonly merge?: string;
+}
+
 /**
  * An editing session: design tokens as a person edits them, with undo, the unsaved edits, and
  * what changed since they were opened. It changes as it is used, like a store; the design tokens in
@@ -534,7 +543,7 @@ export interface Session {
      * @example
      * session.do(setValue(session.tokens, "color.brand", next), { merge: "value color.brand" });
      */
-    do(result: OpResult, options?: { merge?: string }): Committed;
+    do(result: OpResult, options?: StepOptions): Committed;
     /**
      * Ends the step edits are being merged into, so the next edit is a step of its own even with
      * the same `merge`. Call it when a save starts, since the session can't see that, so the step

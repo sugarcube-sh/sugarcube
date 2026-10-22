@@ -18,7 +18,7 @@ export function GroupPage({ group, shown }: { group: Group; shown: boolean }) {
             {view.description && <p>{view.description}</p>}
             <Showing />
             {!shown && <p>Not in {state.showing.label}</p>}
-            {view.form && <ExtensionFields form={view.form} label={undefined} />}
+            {view.form && <ExtensionFields path={group.path} form={view.form} label={undefined} />}
 
             {view.groups.length > 0 && (
                 <table>
