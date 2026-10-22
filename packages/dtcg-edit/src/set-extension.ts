@@ -19,9 +19,14 @@ import { asked, extensionPlace, ownProperties, placement } from "./placement.js"
  * The value is written exactly as given. Whether the setting is right is for the read to say, as
  * with any edit. Removing a setting that isn't there changes nothing.
  *
+ * A group that takes the extension from the group it extends is given its own copy, whole, with the
+ * setting changed, so its other settings are kept: "Replace any inherited tokens/properties where
+ * local ones exist" (Format 6.4.2) replaces a key whole, so writing the one setting alone would
+ * lose the rest.
+ *
  * Refused, with the reason: a path that is neither a token nor a group, a token a generator makes,
- * a token or group inherited through `$extends` or a group whose extension comes from the group it
- * extends, and the refusals {@link setValue} gives for where a value goes.
+ * a token or group there only because of `$extends`, and the refusals {@link setValue} gives for
+ * where a value goes.
  *
  * @example
  * setExtension(tokens, "space", ["com.example", "scale", "ratio"], 1.333)
@@ -58,7 +63,17 @@ function setExtensionIn(
     if ("refused" in placed) return placed;
     const { alsoAffects } = placed;
     if ("at" in placed) {
-        const ops = opsAt(tokens, placed.at, ["$extensions", ...jsonPath], value);
+        const { at, inForce } = placed;
+        if (inForce === undefined) {
+            return {
+                ops: opsAt(tokens, at, ["$extensions", ...jsonPath], value),
+                alsoAffects,
+                moved: [],
+            };
+        }
+        const [key, ...within] = jsonPath;
+        const made = withSetting(inForce, within, value);
+        const ops = made === inForce ? [] : opsAt(tokens, at, ["$extensions", key], made ?? null);
         return { ops, alsoAffects, moved: [] };
     }
     const { into, inside, was } = placed;

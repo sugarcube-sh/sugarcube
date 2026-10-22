@@ -6,6 +6,7 @@ import {
     type Permutation,
     PermutationError,
     type Permutations,
+    type Place,
     type PlaceInPermutations,
     type ResolverContext,
     type Source,
@@ -96,17 +97,17 @@ export function copiesOf(tokens: DesignTokens, path: string): Copies {
     return { of: found.of, places, alsoAffects };
 }
 
-export function describedPlace(
+export function propertyPlace(
     tokens: DesignTokens,
     path: string,
+    key: string,
     places: Copy[],
     place: string | undefined,
 ): { at: Member; alsoAffects: Permutations } | { choose: Choice } | { refused: Refusal } {
-    const describes = (member: Member) =>
-        writtenIn(tokens, member.span.file, [...member.jsonPath, "$description"]) !== undefined;
-    const describing = places.find(describes);
-    if (describing)
-        return { at: describing, alsoAffects: seenReading(tokens, [describing.span.file]) };
+    const writes = (member: Member) =>
+        writtenIn(tokens, member.span.file, [...member.jsonPath, key]) !== undefined;
+    const writing = places.find(writes);
+    if (writing) return { at: writing, alsoAffects: seenReading(tokens, [writing.span.file]) };
     return widestPlace(tokens, path, places, place);
 }
 
@@ -131,7 +132,7 @@ export function ownProperties(token: Token): Record<string, JsonValue> {
 }
 
 type ExtensionPlace =
-    | { at: Member; alsoAffects: Permutations }
+    | { at: Member; inForce?: JsonValue; alsoAffects: Permutations }
     | { into: string; inForce: JsonValue | undefined; alsoAffects: Permutations }
     | { choose: Choice }
     | { refused: Refusal };
@@ -150,10 +151,6 @@ export function extensionPlace(
         if (!at) return refused({ kind: "not-written-there", path, at: where.at });
         return { at, alsoAffects: seenReading(tokens, [at.span.file]) };
     }
-    for (const perm of tokens.permutations) {
-        const refusal = takenFromExtended(perm.group(path), key);
-        if (refusal) return refusal;
-    }
     const chosen = chosenContext(tokens, where.input ?? {});
     if (chosen && "refused" in chosen) return chosen;
     return chosen
@@ -161,17 +158,17 @@ export function extensionPlace(
         : sharedExtensionPlace(tokens, path, key, copies.places, place);
 }
 
-function takenFromExtended(
-    group: Group | undefined,
-    key: string,
-): { refused: Refusal } | undefined {
-    if (!group || group.extensionsWrittenAt[key]) return undefined;
-    for (let from = group.extends; from; from = from.extends) {
-        if (from.extensionsWrittenAt[key]) {
-            return refused({ kind: "inherited", path: group.path, from: from.path });
-        }
+function extendedPlace(group: Group | undefined, key: string): Place | undefined {
+    for (let from = group?.extends; from; from = from.extends) {
+        const place = from.extensionsWrittenAt[key];
+        if (place) return place;
     }
     return undefined;
+}
+
+function extensionIn(written: JsonValue | undefined, key: string): JsonValue | undefined {
+    const extensions = isJsonObject(written) ? written.$extensions : undefined;
+    return isJsonObject(extensions) ? extensions[key] : undefined;
 }
 
 function sharedExtensionPlace(
@@ -181,18 +178,26 @@ function sharedExtensionPlace(
     copies: Copy[],
     place: string | undefined,
 ): ExtensionPlace {
-    const winnerIn = (perm: Permutation) => perm.group(path)?.extensionsWrittenAt[key];
-    const written = tokens.permutations.flatMap((perm) => winnerIn(perm) ?? []);
-    if (written.length > 0) {
-        const shared = written.find(({ source }) => everyoneReads(source));
+    const ownIn = (perm: Permutation) => perm.group(path)?.extensionsWrittenAt[key];
+    const own = tokens.permutations.flatMap((perm) => ownIn(perm) ?? []);
+    if (own.length > 0) {
+        const shared = own.find(({ source }) => everyoneReads(source));
         const at = shared && memberAt(tokens, tokens.spanOf(shared));
         if (!shared || !at) return refused({ kind: "no-shared-value", path });
         return {
             at,
-            alsoAffects: alsoIn(tokens.permutations.where((perm) => winnerIn(perm) === shared)),
+            alsoAffects: alsoIn(tokens.permutations.where((perm) => ownIn(perm) === shared)),
         };
     }
-    return widestPlace(tokens, path, copies, place);
+    const taken = tokens.permutations.flatMap((perm) => extendedPlace(perm.group(path), key) ?? []);
+    if (taken.length === 0) return widestPlace(tokens, path, copies, place);
+    const [shared] = taken;
+    const same = taken.every((each) => each === shared);
+    if (!shared || !same || !everyoneReads(shared.source)) {
+        return refused({ kind: "no-shared-value", path });
+    }
+    const placed = widestPlace(tokens, path, copies, place);
+    return "at" in placed ? { ...placed, inForce: extensionIn(shared.written, key) } : placed;
 }
 
 function contextExtensionPlace(
@@ -216,8 +221,7 @@ function contextExtensionPlace(
     const winnerAt = winner && winnerSpan && { source: winner.source, span: winnerSpan };
     const into = overrideFile(path, chosen, winnerAt, groupSpans, place);
     if (typeof into !== "string") return into;
-    const extensions = isJsonObject(winner?.written) ? winner.written.$extensions : undefined;
-    const inForce = isJsonObject(extensions) ? extensions[key] : undefined;
+    const inForce = extensionIn((winner ?? extendedPlace(group, key))?.written, key);
     return { into, inForce, alsoAffects: seenReading(tokens, [into], chosen) };
 }
 

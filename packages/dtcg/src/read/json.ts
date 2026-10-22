@@ -1,5 +1,5 @@
 import { type Node, parseTree, printParseErrorCode } from "jsonc-parser";
-import type { JsonErrorReason, Span } from "../index.js";
+import type { JsonErrorReason, JsonValue, Span } from "../index.js";
 
 export interface JsonFile {
     path: string;
@@ -166,11 +166,11 @@ function position(lineStarts: number[], offset: number): { line: number; column:
     return { line: low + 1, column: offset - (lineStarts[low] ?? 0) + 1 };
 }
 
-export function plainObject(node: Node): Record<string, unknown> {
+export function plainObject(node: Node): Record<string, JsonValue> {
     return Object.fromEntries(members(node).map(({ key, value }) => [key, plainValue(value)]));
 }
 
-export function plainValue(node: Node): unknown {
+export function plainValue(node: Node): JsonValue {
     if (node.type === "object") return plainObject(node);
     if (node.type === "array") return (node.children ?? []).map(plainValue);
     return node.value;

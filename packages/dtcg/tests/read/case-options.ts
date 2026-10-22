@@ -97,7 +97,9 @@ const generators = {
         generate: (_group, extension, options) => {
             const reader = extensionReader<Record<never, never>>(options);
             const size = reader.read("dimension", (extension as { size?: unknown }).size, ["size"]);
-            return reader.result(size && [{ name: "1", $value: size }]);
+            return reader.result(
+                size && [{ name: "1", $value: { value: size.value, unit: size.unit } }],
+            );
         },
     }),
     counted: defineGenerator({

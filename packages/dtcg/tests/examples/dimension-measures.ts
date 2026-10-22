@@ -2,6 +2,7 @@
 // right preview next to it. A setting on the token or on any group above it can say so, and so
 // can being used as the font size of a typography token or the width of a border.
 import { type DesignTokens, parentOf } from "@sugarcube-sh/dtcg";
+import { isJsonObject } from "@sugarcube-sh/dtcg/values";
 
 declare const tokens: DesignTokens;
 
@@ -9,8 +10,8 @@ function declared(path: string): string | undefined {
     const permutation = tokens.permutation();
     for (let at: string | undefined = path; at !== undefined; at = parentOf(at)) {
         const found = permutation.token(at) ?? permutation.group(at);
-        const setting = found?.extensions?.["com.example"] as { measures?: string } | undefined;
-        if (setting?.measures) return setting.measures;
+        const setting = found?.extensions?.["com.example"];
+        if (isJsonObject(setting) && typeof setting.measures === "string") return setting.measures;
     }
     return undefined;
 }

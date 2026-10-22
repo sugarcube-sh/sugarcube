@@ -283,20 +283,7 @@ export function move(
 
 export { remove } from "./remove.js";
 
-/**
- * Marks a token or group as deprecated, with a message saying what to use instead, or `true` for
- * none. `null` removes the mark.
- *
- * @example
- * deprecate(tokens, "color.old", "Use color.primary instead")
- */
-export function deprecate(
-    tokens: DesignTokens,
-    path: string,
-    reason: string | true | null,
-): OpResult {
-    throw new Error("not implemented yet");
-}
+export { deprecate } from "./deprecate.js";
 
 export { setExtension } from "./set-extension.js";
 

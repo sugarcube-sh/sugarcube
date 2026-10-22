@@ -567,7 +567,7 @@ export interface TokenBase<T extends TokenType> {
      * Vendor data from `$extensions`, passed through untouched. Plain JSON, so whole-number keys
      * inside it come first, in numeric order, as in any JavaScript object.
      */
-    readonly extensions?: Readonly<Record<string, unknown>>;
+    readonly extensions?: Readonly<Record<string, JsonValue>>;
     /**
      * Every place the permutation's sources write the token, in the order they are read, the one
      * that wins last: a later source writes a token whole (Resolver 6.2). Usually one place. A
@@ -586,7 +586,7 @@ export interface TokenBase<T extends TokenType> {
      * and `$extensions` are always its own, so they are on the token and not repeated here. Absent
      * when no file writes the token: one a {@link Generator} added.
      */
-    readonly authored?: { readonly value: unknown } & Pick<Written, "type" | "deprecated">;
+    readonly authored?: { readonly value: JsonValue } & Pick<Written, "type" | "deprecated">;
     /**
      * Set when a {@link Generator} makes the token from an extension on the group at `from`,
      * whether a file writes the token or it was added. `from` is absent for an extension on the top
@@ -679,7 +679,7 @@ export interface Written {
     readonly type?: TokenType;
     readonly description?: string;
     readonly deprecated?: boolean | string;
-    readonly extensions?: Readonly<Record<string, unknown>>;
+    readonly extensions?: Readonly<Record<string, JsonValue>>;
 }
 
 /** A group of tokens. */
@@ -698,7 +698,7 @@ export interface Group {
     /** Its own, else the group it extends, else the group it is inside (Format 6.3.1). */
     readonly deprecated?: boolean | string;
     /** Its own, over those of the group it extends. */
-    readonly extensions?: Readonly<Record<string, unknown>>;
+    readonly extensions?: Readonly<Record<string, JsonValue>>;
     /**
      * The group this one takes tokens from, through `$extends` or a `$ref` to another group
      * (Format 6.4), when the reference reaches one. The reference itself is among its
@@ -778,7 +778,7 @@ export interface TopLevel {
     readonly type?: TokenType;
     readonly description?: string;
     readonly deprecated?: boolean | string;
-    readonly extensions?: Readonly<Record<string, unknown>>;
+    readonly extensions?: Readonly<Record<string, JsonValue>>;
     /** The top of each file that writes something there. */
     readonly writtenAt: readonly Place[];
 }
@@ -873,7 +873,7 @@ export interface Source {
      * `$ref`, or else those at the top of its file. A set's and a modifier's stay on them, in
      * {@link DesignTokens.resolver}.
      */
-    readonly extensions?: Readonly<Record<string, unknown>>;
+    readonly extensions?: Readonly<Record<string, JsonValue>>;
     /**
      * Who reads it: `"everyone"` when a set `resolutionOrder` names reaches it, otherwise each
      * context whose permutations read it. Every context the resolver declares counts, including
@@ -897,7 +897,7 @@ export interface Source {
  */
 export interface SetOnRoute {
     readonly name: string;
-    readonly extensions?: Readonly<Record<string, unknown>>;
+    readonly extensions?: Readonly<Record<string, JsonValue>>;
 }
 
 /**
@@ -935,7 +935,7 @@ export interface ResolverSet {
     readonly name: string;
     readonly description?: string;
     /** The set's own `$extensions`, passed through untouched. */
-    readonly extensions?: Readonly<Record<string, unknown>>;
+    readonly extensions?: Readonly<Record<string, JsonValue>>;
     /** Its sources, in order, as written. */
     readonly sources: readonly SourceRef[];
     /** Where it is written: under `sets`, or inline in `resolutionOrder`. */
@@ -947,7 +947,7 @@ export interface ResolverModifier {
     readonly name: string;
     readonly description?: string;
     /** The modifier's own `$extensions`, passed through untouched. */
-    readonly extensions?: Readonly<Record<string, unknown>>;
+    readonly extensions?: Readonly<Record<string, JsonValue>>;
     /** Its contexts, in the order they are written, each with its sources. */
     readonly contexts: readonly ResolverContext[];
     readonly default?: string;
@@ -1915,9 +1915,14 @@ export interface GeneratedToken {
     name: string;
     /** @default the group's type */
     $type?: TokenType;
-    $value: unknown;
+    /**
+     * As a file would write it, such as `{ value: 1, unit: "rem" }` for a size: plain JSON, not a
+     * value read from a token, whose shape can differ (a stroke style written `"solid"` is read as
+     * `{ kind: "keyword", keyword: "solid" }`).
+     */
+    $value: JsonValue;
     $description?: string;
-    $extensions?: Record<string, unknown>;
+    $extensions?: Record<string, JsonValue>;
 }
 
 /**
