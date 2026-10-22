@@ -45,7 +45,7 @@
     "radix-ui": "^1.6.7"
   },
   "devDependencies": {
-    "@devframes/vite": "^1.0.0",
+    "@devframes/vite": "^1.2.4",
     "@sugarcube-sh/vite": "workspace:*",
     "@types/culori": "^4.0.1",
     "@types/react": "^19.2.18",
