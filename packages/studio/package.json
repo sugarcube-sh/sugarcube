@@ -42,6 +42,7 @@
     "@sugarcube-sh/dtcg-edit": "workspace:*",
     "culori": "^4.0.2",
     "devframe": "^1.0.0",
+    "forges": "0.2.0",
     "radix-ui": "^1.6.7"
   },
   "devDependencies": {
