@@ -20,6 +20,10 @@ import {
 } from "@sugarcube-sh/dtcg-edit";
 import type { SaveOutcome, SentAdapter, StudioMessage, StudioSave } from "../protocol";
 import type { BuildAdapter, BuildOutput, BuildProblem, ExtensionForm } from "./adapter";
+import { type Held, heldFor } from "./held";
+import { failedText } from "./views";
+
+export type SaveShown = SaveOutcome | { readonly failed: string };
 
 export interface StudioState {
     readonly tokens: DesignTokens;
@@ -33,6 +37,7 @@ export interface StudioState {
     readonly canUndo: boolean;
     readonly canRedo: boolean;
     readonly saving: boolean;
+    readonly saved: SaveShown | undefined;
 }
 
 export interface Studio {
@@ -50,7 +55,7 @@ export interface Studio {
     keep(clash: Clash, side: "yours" | "theirs"): Committed | undefined;
     idOf(path: string): string | undefined;
     pathOf(id: string): string | undefined;
-    save?(): Promise<SaveOutcome>;
+    save?(): Promise<SaveOutcome | undefined>;
 }
 
 export function createStudio(
@@ -64,6 +69,7 @@ export function createStudio(
     const listeners = new Set<() => void>();
     let clashes: readonly Clash[] = [];
     let saving = false;
+    let lastSave: Held<SaveShown> | undefined;
     let state = built(session.tokens.permutation().input);
 
     function built(showing: Input): StudioState {
@@ -81,6 +87,7 @@ export function createStudio(
             canUndo: session.canUndo,
             canRedo: session.canRedo,
             saving,
+            saved: heldFor(lastSave, session.unsaved),
         };
     }
 
@@ -109,15 +116,20 @@ export function createStudio(
               const sent = session.unsaved;
               saving = true;
               publish({ ...state, saving });
+              let saved: SaveOutcome | undefined;
+              let shown: SaveShown;
               try {
-                  const saved = await saveEdits(sent, session.changes());
+                  saved = await saveEdits(sent, session.changes());
                   if (!saved.conflicts) session.markSaved(sent);
                   if (saved.files) takeIn(saved.files);
-                  return saved;
-              } finally {
-                  saving = false;
-                  publish({ ...state, saving });
+                  shown = saved;
+              } catch (error) {
+                  shown = { failed: failedText(error) };
               }
+              saving = false;
+              lastSave = { value: shown, about: session.unsaved };
+              publish(built(state.showing.input));
+              return saved;
           }
         : undefined;
 

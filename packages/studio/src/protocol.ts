@@ -4,13 +4,6 @@ import type { Conflict, Edits } from "@sugarcube-sh/dtcg-edit";
 import type { PlainSettings } from "./adapters/plain";
 import type { BuildProblem } from "./controllers/adapter";
 
-export const STUDIO_RPC = {
-    SAVE: "sugarcube:studio:save",
-    MESSAGE: "sugarcube:studio:message",
-    /** Not a method: studio's key in the handshake's `configs`. */
-    CONFIG: "sugarcube:studio",
-} as const;
-
 /** Settings the host publishes in the handshake for clients to read. */
 export type StudioConnectionConfig = {
     /** Where saves go when there's no server to write files: a service that opens a pull request. */

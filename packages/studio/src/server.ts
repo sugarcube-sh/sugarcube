@@ -1,4 +1,5 @@
-export { STUDIO_ROUTE, STUDIO_SURFACE, defineStudio } from "./server/define-studio";
+export { STUDIO_SURFACE, defineStudio } from "./server/define-studio";
+export { STUDIO_ROUTE, STUDIO_VITE_PLUGIN } from "./studio-names";
 export type {
     DefineStudioOptions,
     StudioHostBridge,

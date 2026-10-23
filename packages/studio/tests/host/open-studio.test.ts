@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { openStudio } from "../../src/host/open-studio";
 import type { StudioMessage } from "../../src/protocol";
 import { demoMessage, withFile } from "../controllers/demo-message";
@@ -20,6 +20,16 @@ function shared(initial?: StudioMessage) {
 }
 
 describe("openStudio", () => {
+    it("starts the sign-in with the studio it opened", async () => {
+        const started: unknown[] = [];
+        const signIn = { start: async (studio: unknown) => void started.push(studio) };
+        const studio = await openStudio(
+            { message: shared(demoMessage()), signIn },
+            new AbortController().signal,
+        );
+        await vi.waitFor(() => expect(started).toStrictEqual([studio]));
+    });
+
     it("opens the message the host has already shared", async () => {
         const studio = await openStudio(
             { message: shared(demoMessage()) },

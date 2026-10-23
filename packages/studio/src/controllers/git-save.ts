@@ -1,6 +1,6 @@
 import { type Change, filePath, read } from "@sugarcube-sh/dtcg";
 import { changedFiles } from "@sugarcube-sh/dtcg-edit";
-import { ErrorMessages } from "../error-messages";
+import { ErrorMessages, UserFacingError } from "../error-messages";
 import type { GitHost } from "../git-hosts/git-host";
 import type { StudioSave } from "../protocol";
 import { changeLines, changeText } from "./views";
@@ -20,7 +20,9 @@ export function gitSave({
             },
         );
         if (fetched.text(fetched.entry) === undefined)
-            throw new Error(ErrorMessages.ENTRY_NOT_THERE(entry, host.repository, host.branch));
+            throw new UserFacingError(
+                ErrorMessages.ENTRY_NOT_THERE(entry, host.repository, host.branch),
+            );
         const { files } = fetched.toMemory();
         const changed = changedFiles(fetched, edits);
         if (changed.conflicts) return { conflicts: changed.conflicts, files, changedOn: host.name };

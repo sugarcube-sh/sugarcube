@@ -99,7 +99,7 @@ describe("what the person signed in may do on the repository", () => {
 
     it("is nothing for someone GitHub doesn't show the repository to, with no pointer to install", async () => {
         const { host } = github({ installations: [{ id: 9, owner: "acme", selection: "all" }] });
-        expect(await host.access()).toStrictEqual({ can: "nothing" });
+        expect(await host.access()).toStrictEqual({ can: "nothing", reason: "no-access" });
     });
 
     it("is nothing, with the pointer to install, when the app isn't on the owner's account", async () => {
@@ -107,7 +107,11 @@ describe("what the person signed in may do on the repository", () => {
             installations: [{ id: 9, owner: "someone-else", selection: "all" }],
             site: writer,
         });
-        expect(await host.access()).toStrictEqual({ can: "nothing", install: INSTALL });
+        expect(await host.access()).toStrictEqual({
+            can: "nothing",
+            reason: "not-installed",
+            install: INSTALL,
+        });
     });
 
     it("is nothing, with the pointer to install, when the app is on some of the owner's repositories but not this one", async () => {
@@ -116,7 +120,11 @@ describe("what the person signed in may do on the repository", () => {
             repositories: [repository("docs", writer)],
             site: writer,
         });
-        expect(await host.access()).toStrictEqual({ can: "nothing", install: INSTALL });
+        expect(await host.access()).toStrictEqual({
+            can: "nothing",
+            reason: "not-installed",
+            install: INSTALL,
+        });
     });
 
     it("takes the person's role from the installation's list when the app is on some repositories", async () => {
@@ -189,19 +197,23 @@ describe("the rule for what someone may do", () => {
         expect(accessFrom({ installed: true, permissions: reader })).toStrictEqual({ can: "read" });
         expect(accessFrom({ installed: true, permissions: none })).toStrictEqual({
             can: "nothing",
+            reason: "no-access",
         });
         expect(accessFrom({ installed: true, permissions: undefined })).toStrictEqual({
             can: "nothing",
+            reason: "no-access",
         });
     });
 
-    it("points to installing the app only when it isn't installed, and only when there is somewhere to point", () => {
+    it("says the app isn't installed, with the pointer to install when there is one", () => {
         expect(accessFrom({ installed: false, permissions: writer }, INSTALL)).toStrictEqual({
             can: "nothing",
+            reason: "not-installed",
             install: INSTALL,
         });
         expect(accessFrom({ installed: false, permissions: writer })).toStrictEqual({
             can: "nothing",
+            reason: "not-installed",
         });
     });
 });

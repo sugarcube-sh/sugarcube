@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
-import type { SaveOutcome } from "../protocol";
 import { Icon } from "../components/ui/icon/Icons";
+import { barMessages, pressSaveWith, saveFor } from "../controllers/sign-in";
+import type { SaveShown } from "../controllers/studio";
 import { changeBarActions } from "../controllers/undo";
 import { type ChangeLine, changeLines, clashText, doneWord } from "../controllers/views";
 import { Clashes } from "./Clashes";
+import { useSignIn } from "../providers/sign-in-context";
 import { useStudio, useStudioState } from "../providers/studio-context";
 
 export function ChangeBar() {
@@ -12,24 +14,11 @@ export function ChangeBar() {
     const { changes, saving } = state;
     const lines = useMemo(() => changeLines(changes), [changes]);
     const [open, setOpen] = useState(false);
-    const [outcome, setOutcome] = useState<{
-        shown: SaveOutcome | { failed: string };
-        at: typeof changes;
-    }>();
+    const signIn = useSignIn();
     const count = lines.length;
-    const { save } = studio;
-    const offered = changeBarActions({ state, save });
-
-    const onSave = async () => {
-        if (!save) return;
-        try {
-            const shown = await save();
-            setOutcome({ shown, at: studio.state.changes });
-        } catch (error) {
-            const failed = error instanceof Error ? error.message : String(error);
-            setOutcome({ shown: { failed }, at: studio.state.changes });
-        }
-    };
+    const offer = saveFor(signIn);
+    const offered = changeBarActions(studio, offer);
+    const says = barMessages(state.saved, offer);
 
     return (
         <div className="change-bar">
@@ -43,7 +32,18 @@ export function ChangeBar() {
                     ))}
                 </ul>
             )}
-            {outcome?.at === changes && <Outcome outcome={outcome.shown} />}
+            {says.outcome && <Outcome outcome={says.outcome} />}
+            {says.reason && (
+                <p>
+                    {says.reason}
+                    {says.install && (
+                        <>
+                            {" "}
+                            <a href={says.install}>Install on GitHub</a>
+                        </>
+                    )}
+                </p>
+            )}
             <div
                 className="inspector-actions repel"
                 role="toolbar"
@@ -95,7 +95,7 @@ export function ChangeBar() {
                         className="button"
                         data-role="primary"
                         disabled={!offered.save}
-                        onClick={onSave}
+                        onClick={() => void pressSaveWith(studio, signIn)}
                     >
                         {saving ? "Saving" : "Save"}
                     </button>
@@ -105,8 +105,8 @@ export function ChangeBar() {
     );
 }
 
-function Outcome({ outcome }: { outcome: SaveOutcome | { failed: string } }) {
-    if ("failed" in outcome) return <p>Save failed: {outcome.failed}</p>;
+function Outcome({ outcome }: { outcome: SaveShown }) {
+    if ("failed" in outcome) return <p>{outcome.failed}</p>;
     if (outcome.pullRequest) {
         return (
             <p>

@@ -8,6 +8,7 @@ import type {
     TokenType,
 } from "@sugarcube-sh/dtcg";
 import type { TypographyCSS } from "@sugarcube-sh/dtcg/css";
+import { UserFacingError } from "../error-messages";
 import type { BuildOutput, BuildProblem, ExtensionForm } from "./adapter";
 import type { StudioState } from "./studio";
 import {
@@ -252,4 +253,9 @@ export function referable(
 
 export function clashText({ changedOn }: { changedOn?: string | undefined }): string {
     return `Not saved: changed ${changedOn ? `on ${changedOn}` : "elsewhere"}.`;
+}
+
+export function failedText(error: unknown): string {
+    if (error instanceof UserFacingError) return error.message;
+    return `Save failed: ${error instanceof Error ? error.message : String(error)}`;
 }

@@ -2,12 +2,8 @@ import { connectDevframe } from "devframe/client";
 import type { Edits } from "@sugarcube-sh/dtcg-edit";
 import type { StudioConnection } from "../host/open-studio";
 import { pickSave } from "../host/save";
-import {
-    STUDIO_RPC,
-    type SaveOutcome,
-    type StudioConnectionConfig,
-    type StudioMessage,
-} from "../protocol";
+import { STUDIO_RPC } from "../studio-names";
+import type { SaveOutcome, StudioConnectionConfig, StudioMessage } from "../protocol";
 
 /**
  * A devframe host (i.e. whichever dev server studio is running in) publishes `__connection.json`, which tells a client where to

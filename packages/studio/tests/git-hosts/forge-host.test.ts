@@ -1,7 +1,19 @@
-import { ForgeNetworkError, RateLimitedError } from "forges";
+import {
+    ForbiddenError,
+    ForgeNetworkError,
+    InsufficientScopeError,
+    NotFoundError,
+    RateLimitedError,
+    TokenRevokedError,
+} from "forges";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { pullRequestBranch } from "../../src/git-hosts/forge-host";
+import { KeyRefused, Refused } from "../../src/git-hosts/git-host";
+import { UserFacingError } from "../../src/error-messages";
+import { STUDIO_BRANCH_PREFIX } from "../../src/studio-names";
 import { BUILT, fakeGitHub } from "./fake-github";
+
+const OPENED_AT = new RegExp(`^${STUDIO_BRANCH_PREFIX}/mark/20261023-140509-[0-9a-f]{4}$`);
 
 const acme = () => fakeGitHub({ "tokens/color.json": "as built", "tokens/old.json": "{}" });
 
@@ -45,9 +57,7 @@ describe("a pull request", () => {
     it("commits the written and deleted files on a new branch from the commit it builds on", async () => {
         const { host, pulls, onBranch, lastCommit } = acme();
         await host.openPullRequest({ from: BUILT, ...changes });
-        expect(pulls()[0]?.thread.branches?.head.ref).toMatch(
-            /^studio\/mark\/20261023-140509-[0-9a-f]{4}$/,
-        );
+        expect(pulls()[0]?.thread.branches?.head.ref).toMatch(OPENED_AT);
         expect(await onBranch("tokens/color.json")).toBe("mine");
         expect(await onBranch("tokens/old.json")).toBeUndefined();
         expect(lastCommit()?.parents).toStrictEqual([BUILT]);
@@ -75,7 +85,9 @@ describe("a pull request", () => {
             title: "color.brand changed",
             body: "- color.brand changed",
             branches: {
-                head: { ref: expect.stringMatching(/^studio\/mark\/20261023-140509-[0-9a-f]{4}$/) },
+                head: {
+                    ref: expect.stringMatching(OPENED_AT),
+                },
                 base: { ref: "main" },
             },
         });
@@ -90,9 +102,9 @@ describe("a pull request", () => {
 });
 
 describe("a pull request's branch name", () => {
-    it("is studio, the person, the time in UTC and a tag", () => {
+    it("is studio's prefix, the person, the time in UTC and a tag", () => {
         expect(pullRequestBranch("mark", new Date("2026-01-02T03:04:05Z"), "3fa9")).toBe(
-            "studio/mark/20260102-030405-3fa9",
+            `${STUDIO_BRANCH_PREFIX}/mark/20260102-030405-3fa9`,
         );
     });
 
@@ -152,5 +164,64 @@ describe("a host that can't answer", () => {
                 new RateLimitedError("limited", 403, "", { forge: "fake", instance: "fake.test" }),
         );
         await expect(host.latest()).rejects.toThrow(/^Too many requests\. Try again\.$/);
+    });
+});
+
+describe("a host that refuses", () => {
+    const at = { forge: "fake", instance: "fake.test" } as const;
+
+    it("says the key was refused when GitHub won't take it", async () => {
+        const { forge, host } = acme();
+        forge.failNext("contents.resolveRef", () => new TokenRevokedError("bad key", 401, "", at));
+        await expect(host.latest()).rejects.toBeInstanceOf(KeyRefused);
+    });
+
+    it("says it refused, for studio to ask what the person may do now, on a 403", async () => {
+        const { forge, host } = acme();
+        forge.failNext(
+            "contents.commitFiles",
+            () => new ForbiddenError("no", 403, "", "unknown", at),
+        );
+        await expect(host.openPullRequest({ from: BUILT, ...changes })).rejects.toBeInstanceOf(
+            Refused,
+        );
+    });
+
+    it("says it refused when the repository can't be seen", async () => {
+        const { forge, host } = acme();
+        forge.failNext("contents.resolveRef", () => new NotFoundError("gone", 404, "", at));
+        await expect(host.latest()).rejects.toBeInstanceOf(Refused);
+    });
+
+    it("asks for the company's single sign-on when that is why", async () => {
+        const { forge, host } = acme();
+        forge.failNext(
+            "contents.resolveRef",
+            () => new ForbiddenError("sso", 403, "", "sso_required", at),
+        );
+        const refused = host.latest();
+        await expect(refused).rejects.toBeInstanceOf(UserFacingError);
+        await expect(refused).rejects.toThrow(
+            "Sign in to acme with single sign-on, then try again.",
+        );
+    });
+
+    it("says the app needs a permission when it lacks one", async () => {
+        const { forge, host } = acme();
+        forge.failNext(
+            "contents.commitFiles",
+            () => new InsufficientScopeError("scope", 403, "", at),
+        );
+        const refused = host.openPullRequest({ from: BUILT, ...changes });
+        await expect(refused).rejects.toBeInstanceOf(UserFacingError);
+        await expect(refused).rejects.toThrow(
+            "studio's GitHub App needs permission to write to acme/site.",
+        );
+    });
+
+    it("words a connection failure as studio's own line", async () => {
+        const { forge, host } = acme();
+        forge.offline();
+        await expect(host.latest()).rejects.toBeInstanceOf(UserFacingError);
     });
 });

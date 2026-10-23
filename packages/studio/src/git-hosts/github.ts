@@ -25,7 +25,7 @@ export function githubHost({ key, install, fetch, ...options }: GitHubHostOption
         ...(fetch && { fetch }),
     });
     const host = forgeHost(forge, { name: "GitHub", ...options });
-    const plainly = inPlainWords(host.name);
+    const plainly = inPlainWords(host.name, repoRef(forge, host.repository));
     return {
         ...host,
         access: () =>
@@ -41,10 +41,13 @@ export type AccessFacts = {
 };
 
 export function accessFrom({ installed, permissions }: AccessFacts, install?: string): Access {
-    if (!installed) return install ? { can: "nothing", install } : { can: "nothing" };
+    if (!installed)
+        return install
+            ? { can: "nothing", reason: "not-installed", install }
+            : { can: "nothing", reason: "not-installed" };
     if (permissions?.push) return { can: "write" };
     if (permissions?.pull) return { can: "read" };
-    return { can: "nothing" };
+    return { can: "nothing", reason: "no-access" };
 }
 
 type Installation = {

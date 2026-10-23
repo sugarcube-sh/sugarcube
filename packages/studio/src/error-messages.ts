@@ -21,4 +21,14 @@ export const ErrorMessages = {
     COULD_NOT_REACH: (host: string) => `Couldn't reach ${host}. Try again.`,
     TOO_MANY_REQUESTS: (at: string | undefined) =>
         at ? `Too many requests. Try again at ${at}.` : "Too many requests. Try again.",
+    SINGLE_SIGN_ON: (owner: string) => `Sign in to ${owner} with single sign-on, then try again.`,
+    APP_LACKS_PERMISSION: (repository: string) =>
+        `studio's GitHub App needs permission to write to ${repository}.`,
+    NOT_SIGNED_IN: "Not signed in. Try again.",
+    CANT_SAVE: (repository: string) => `You can't save to ${repository}.`,
+    NOT_INSTALLED: (repository: string) => `studio isn't installed on ${repository}.`,
 } as const;
+
+export class UserFacingError extends Error {
+    override name = "UserFacingError";
+}

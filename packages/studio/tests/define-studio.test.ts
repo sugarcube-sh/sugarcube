@@ -5,8 +5,9 @@ import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { createSession, setValue } from "@sugarcube-sh/dtcg-edit";
 import { afterEach, describe, expect, it } from "vitest";
-import { STUDIO_RPC, type StudioMessage } from "../src/protocol";
-import { STUDIO_ROUTE, STUDIO_SURFACE, defineStudio } from "../src/server/define-studio";
+import type { StudioMessage } from "../src/protocol";
+import { STUDIO_SURFACE, defineStudio } from "../src/server/define-studio";
+import { STUDIO_DEVFRAME_ID, STUDIO_ROUTE, STUDIO_RPC } from "../src/studio-names";
 import type { FilesNow, StudioFiles } from "../src/server/files";
 import type { StudioHostBridge, StudioSharedState } from "../src/server/types";
 import { configProblem, sugarcubeSettings } from "./controllers/demo-message";
@@ -84,7 +85,7 @@ async function setup(change: Partial<FilesNow> = {}) {
 describe("defineStudio", () => {
     it("names the surface as data, leaving each host to mount it", () => {
         expect(STUDIO_SURFACE).toEqual({
-            id: "sugarcube-studio",
+            id: STUDIO_DEVFRAME_ID,
             title: "studio",
             route: STUDIO_ROUTE,
         });
