@@ -42,25 +42,6 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(@types/node@24.13.3)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-istanbul@4.1.11)(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
-  apps/studio:
-    dependencies:
-      '@sugarcube-sh/dtcg':
-        specifier: workspace:*
-        version: link:../../packages/dtcg
-      '@sugarcube-sh/dtcg-edit':
-        specifier: workspace:*
-        version: link:../../packages/dtcg-edit
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^5.20260907.1
-        version: 5.20260907.1
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      wrangler:
-        specifier: ^4.129.0
-        version: 4.129.0(@cloudflare/workers-types@5.20260907.1)
-
   apps/www:
     dependencies:
       '@astrojs/mdx':
@@ -7038,7 +7019,8 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260903.1':
     optional: true
 
-  '@cloudflare/workers-types@5.20260907.1': {}
+  '@cloudflare/workers-types@5.20260907.1':
+    optional: true
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -9280,7 +9262,7 @@ snapshots:
       magicast: 0.5.4
       obug: 2.2.1
       tinyrainbow: 3.1.1
-      vitest: 4.1.11(@types/node@26.5.1)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-istanbul@4.1.11)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+      vitest: 4.1.11(@types/node@24.13.3)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-istanbul@4.1.11)(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
     transitivePeerDependencies:
       - supports-color
 
