@@ -36,9 +36,22 @@ export type SaveOutcome =
           pullRequest?: undefined;
           conflicts?: undefined;
           files?: undefined;
+          changedOn?: undefined;
       }
-    | { pullRequest: PullRequest; files: Files; written?: undefined; conflicts?: undefined }
-    | { conflicts: Conflict[]; files?: Files; written?: undefined; pullRequest?: undefined };
+    | {
+          pullRequest: PullRequest;
+          files: Files;
+          written?: undefined;
+          conflicts?: undefined;
+          changedOn?: undefined;
+      }
+    | {
+          conflicts: Conflict[];
+          files?: Files;
+          changedOn?: string | undefined;
+          written?: undefined;
+          pullRequest?: undefined;
+      };
 
 export type PullRequest = { readonly number: number; readonly url?: string | undefined };
 

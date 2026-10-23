@@ -1,6 +1,5 @@
-import type { Change } from "@sugarcube-sh/dtcg";
 import type { Edits } from "@sugarcube-sh/dtcg-edit";
-import { changeLines, changeText } from "../controllers/views";
+import { pullRequestText } from "../controllers/git-save";
 import type { SaveOutcome, SaveTo, StudioSave } from "../protocol";
 
 export function pickSave({
@@ -27,13 +26,5 @@ export function pullRequestSave({ url, entry }: SaveTo): StudioSave {
         if (body && (response.status === 201 || response.status === 409))
             return body as SaveOutcome;
         throw new Error(body?.error ?? `The save was refused (${response.status})`);
-    };
-}
-
-function pullRequestText(changes: readonly Change[]): { title: string; description: string } {
-    const lines = changeLines(changes).map(changeText);
-    return {
-        title: lines.length === 1 ? (lines[0] ?? "") : `${lines.length} changes from studio`,
-        description: lines.map((line) => `- ${line}`).join("\n"),
     };
 }

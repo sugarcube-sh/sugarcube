@@ -166,6 +166,21 @@ describe("what the person signed in may do on the repository", () => {
     });
 });
 
+describe("asking GitHub what someone may do", () => {
+    it("says GitHub couldn't be reached when it can't be", async () => {
+        const host = githubHost({
+            key: "ghu_key",
+            repository: "acme/site",
+            branch: "main",
+            login: "mark",
+            fetch: async () => {
+                throw new TypeError("Failed to fetch");
+            },
+        });
+        await expect(host.access()).rejects.toThrow("Couldn't reach GitHub. Try again.");
+    });
+});
+
 describe("the rule for what someone may do", () => {
     it("is write with push, read with pull, and does nothing otherwise", () => {
         expect(accessFrom({ installed: true, permissions: writer })).toStrictEqual({

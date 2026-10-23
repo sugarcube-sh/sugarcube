@@ -249,3 +249,7 @@ export function referable(
         return node?.kind !== "group" && node?.type === type;
     });
 }
+
+export function clashText({ changedOn }: { changedOn?: string | undefined }): string {
+    return `Not saved: changed ${changedOn ? `on ${changedOn}` : "elsewhere"}.`;
+}

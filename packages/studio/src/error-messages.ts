@@ -16,4 +16,9 @@ export const ErrorMessages = {
     NO_MOUNT_POINT: `${prefix} The mount point "#root" is not in index.html.`,
     NO_MESSAGE: `${prefix} The host sent no token files. studio needs the files to show them.`,
     DEMO_FAILED: `${prefix} Reading the demo tokens failed:`,
+    ENTRY_NOT_THERE: (entry: string, repository: string, branch: string) =>
+        `${entry} is not in ${repository} on ${branch}.`,
+    COULD_NOT_REACH: (host: string) => `Couldn't reach ${host}. Try again.`,
+    TOO_MANY_REQUESTS: (at: string | undefined) =>
+        at ? `Too many requests. Try again at ${at}.` : "Too many requests. Try again.",
 } as const;

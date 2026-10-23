@@ -10,10 +10,10 @@ import {
     repoRef,
 } from "forges";
 import { github } from "forges/github";
-import { type ForgeHostOptions, forgeHost } from "./forge-host";
+import { type ForgeHostOptions, forgeHost, inPlainWords } from "./forge-host";
 import type { Access, GitHost } from "./git-host";
 
-export type GitHubHostOptions = ForgeHostOptions & {
+export type GitHubHostOptions = Omit<ForgeHostOptions, "name"> & {
     readonly key: GitHubTokenAuth["token"];
     readonly install?: string | undefined;
     readonly fetch?: FetchLike;
@@ -24,10 +24,14 @@ export function githubHost({ key, install, fetch, ...options }: GitHubHostOption
         auth: { type: "token", token: key, kind: "app-user" },
         ...(fetch && { fetch }),
     });
+    const host = forgeHost(forge, { name: "GitHub", ...options });
+    const plainly = inPlainWords(host.name);
     return {
-        ...forgeHost(forge, options),
-        access: async () =>
-            accessFrom(await accessFacts(forge, repoRef(forge, options.repository)), install),
+        ...host,
+        access: () =>
+            plainly(async () =>
+                accessFrom(await accessFacts(forge, repoRef(forge, host.repository)), install),
+            ),
     };
 }
 

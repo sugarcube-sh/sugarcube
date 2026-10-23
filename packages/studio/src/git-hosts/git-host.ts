@@ -1,6 +1,9 @@
 import type { PullRequest } from "../protocol";
 
 export interface GitHost {
+    readonly name: string;
+    readonly repository: string;
+    readonly branch: string;
     latest(): Promise<string>;
     file(commit: string, path: string): Promise<string | undefined>;
     access(): Promise<Access>;

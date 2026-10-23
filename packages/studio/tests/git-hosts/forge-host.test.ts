@@ -1,33 +1,9 @@
-import { repoRef } from "forges";
-import { fake } from "forges/fake";
+import { ForgeNetworkError, RateLimitedError } from "forges";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { forgeHost, pullRequestBranch } from "../../src/git-hosts/forge-host";
+import { pullRequestBranch } from "../../src/git-hosts/forge-host";
+import { BUILT, fakeGitHub } from "./fake-github";
 
-const BUILT = "1".repeat(40);
-const REPOSITORY = "acme/site";
-
-function acme() {
-    const forge = fake({
-        viewer: "mark",
-        seed: {
-            repos: [{ repo: REPOSITORY }],
-            commits: [{ repo: REPOSITORY, sha: BUILT, message: "Start" }],
-            files: [
-                { repo: REPOSITORY, path: "tokens/color.json", content: "as built", ref: BUILT },
-                { repo: REPOSITORY, path: "tokens/old.json", content: "{}", ref: BUILT },
-            ],
-        },
-    });
-    const host = forgeHost(forge, { repository: REPOSITORY, branch: "main", login: "mark" });
-    const repo = repoRef(forge, REPOSITORY);
-    const changeElsewhere = (content: string) =>
-        forge.contents.commitFiles(repo, {
-            branch: "main",
-            message: "Changed on GitHub",
-            changes: [{ path: "tokens/color.json", content }],
-        });
-    return { forge, host, repo, changeElsewhere };
-}
+const acme = () => fakeGitHub({ "tokens/color.json": "as built", "tokens/old.json": "{}" });
 
 const changes = {
     written: { "tokens/color.json": "mine" },
@@ -45,17 +21,17 @@ afterEach(() => vi.useRealTimers());
 
 describe("the branch's latest commit", () => {
     it("is the commit the branch points at now", async () => {
-        const { host, changeElsewhere } = acme();
+        const { host, changeOnGitHub } = acme();
         expect(await host.latest()).toBe(BUILT);
-        const moved = await changeElsewhere("new");
+        const moved = await changeOnGitHub("tokens/color.json", "new");
         expect(await host.latest()).toBe(moved.sha);
     });
 });
 
 describe("a file at a commit", () => {
     it("is the file as it was at that commit, not as the branch has it now", async () => {
-        const { host, changeElsewhere } = acme();
-        await changeElsewhere("changed since");
+        const { host, changeOnGitHub } = acme();
+        await changeOnGitHub("tokens/color.json", "changed since");
         expect(await host.file(BUILT, "tokens/color.json")).toBe("as built");
     });
 
@@ -63,56 +39,43 @@ describe("a file at a commit", () => {
         const { host } = acme();
         expect(await host.file(BUILT, "tokens/missing.json")).toBeUndefined();
     });
-
-    it("rejects when the host can't be reached", async () => {
-        const { forge, host } = acme();
-        forge.offline();
-        await expect(host.file(BUILT, "tokens/color.json")).rejects.toThrow();
-    });
 });
 
 describe("a pull request", () => {
     it("commits the written and deleted files on a new branch from the commit it builds on", async () => {
-        const { forge, host, repo } = acme();
+        const { host, pulls, onBranch, lastCommit } = acme();
         await host.openPullRequest({ from: BUILT, ...changes });
-        const branch = "studio/mark/20261023-140509";
-        const read = (path: string) =>
-            forge.contents.getFile(repo, path, { ref: branch, as: "text" }).then(
-                (file) => file.content,
-                () => undefined,
-            );
-        expect(await read("tokens/color.json")).toBe("mine");
-        expect(await read("tokens/old.json")).toBeUndefined();
-        const [commit] = forge.store.repos.get(REPOSITORY)?.commits.slice(-1) ?? [];
-        expect(commit?.parents).toStrictEqual([BUILT]);
-        expect(commit?.message).toBe("color.brand changed");
+        expect(pulls()[0]?.thread.branches?.head.ref).toMatch(
+            /^studio\/mark\/20261023-140509-[0-9a-f]{4}$/,
+        );
+        expect(await onBranch("tokens/color.json")).toBe("mine");
+        expect(await onBranch("tokens/old.json")).toBeUndefined();
+        expect(lastCommit()?.parents).toStrictEqual([BUILT]);
+        expect(lastCommit()?.message).toBe("color.brand changed");
     });
 
     it("builds on the commit it was given, though the branch has moved since", async () => {
-        const { forge, host, changeElsewhere } = acme();
-        await changeElsewhere("changed since");
+        const { host, changeOnGitHub, lastCommit } = acme();
+        await changeOnGitHub("tokens/color.json", "changed since");
         await host.openPullRequest({ from: BUILT, ...changes });
-        const [commit] = forge.store.repos.get(REPOSITORY)?.commits.slice(-1) ?? [];
-        expect(commit?.parents).toStrictEqual([BUILT]);
+        expect(lastCommit()?.parents).toStrictEqual([BUILT]);
     });
 
     it("is committed as the person signed in, with no author of its own", async () => {
-        const { forge, host } = acme();
+        const { host, lastCommit } = acme();
         await host.openPullRequest({ from: BUILT, ...changes });
-        const [commit] = forge.store.repos.get(REPOSITORY)?.commits.slice(-1) ?? [];
-        expect(commit?.author?.actor?.login).toBe("mark");
+        expect(lastCommit()?.author?.actor?.login).toBe("mark");
     });
 
     it("opens a pull request from the new branch into the branch, titled and described", async () => {
-        const { forge, host } = acme();
+        const { host, pulls } = acme();
         const opened = await host.openPullRequest({ from: BUILT, ...changes });
-        const [pull] = forge.store.repos.get(REPOSITORY)?.threads.values() ?? [];
-        expect(pull?.thread).toMatchObject({
+        expect(pulls()[0]?.thread).toMatchObject({
             kind: "pull_request",
             title: "color.brand changed",
             body: "- color.brand changed",
             branches: {
-                head: { ref: "studio/mark/20261023-140509" },
+                head: { ref: expect.stringMatching(/^studio\/mark\/20261023-140509-[0-9a-f]{4}$/) },
                 base: { ref: "main" },
             },
         });
@@ -127,9 +90,67 @@ describe("a pull request", () => {
 });
 
 describe("a pull request's branch name", () => {
-    it("is studio, the person and the time in UTC", () => {
-        expect(pullRequestBranch("mark", new Date("2026-01-02T03:04:05Z"))).toBe(
-            "studio/mark/20260102-030405",
+    it("is studio, the person, the time in UTC and a tag", () => {
+        expect(pullRequestBranch("mark", new Date("2026-01-02T03:04:05Z"), "3fa9")).toBe(
+            "studio/mark/20260102-030405-3fa9",
         );
+    });
+
+    it("differs between two pull requests opened in the same second", async () => {
+        const { host, pulls } = acme();
+        await host.openPullRequest({ from: BUILT, ...changes });
+        await host.openPullRequest({ from: BUILT, ...changes });
+        const heads = pulls().map(({ thread }) => thread.branches?.head.ref);
+        expect(new Set(heads).size).toBe(2);
+    });
+});
+
+describe("a host that can't answer", () => {
+    it("says it couldn't be reached", async () => {
+        const { forge, host } = acme();
+        forge.offline();
+        await expect(host.latest()).rejects.toThrow("Couldn't reach GitHub. Try again.");
+        await expect(host.file(BUILT, "tokens/color.json")).rejects.toThrow(
+            "Couldn't reach GitHub. Try again.",
+        );
+        await expect(host.openPullRequest({ from: BUILT, ...changes })).rejects.toThrow(
+            "Couldn't reach GitHub. Try again.",
+        );
+    });
+
+    it("says it couldn't be reached when the connection drops", async () => {
+        const { forge, host } = acme();
+        forge.failNext(
+            "contents.getFile",
+            () => new ForgeNetworkError("offline", { forge: "fake", instance: "fake.test" }),
+        );
+        await expect(host.file(BUILT, "tokens/color.json")).rejects.toThrow(
+            "Couldn't reach GitHub. Try again.",
+        );
+    });
+
+    it("says when to try again after too many requests, by the person's clock", async () => {
+        const { forge, host } = acme();
+        const resetAt = new Date(2026, 9, 23, 14, 5);
+        forge.failNext(
+            "contents.resolveRef",
+            () =>
+                new RateLimitedError("limited", 403, "", {
+                    resetAt,
+                    forge: "fake",
+                    instance: "fake.test",
+                }),
+        );
+        await expect(host.latest()).rejects.toThrow("Too many requests. Try again at 14:05.");
+    });
+
+    it("says to try again after too many requests when it doesn't say when", async () => {
+        const { forge, host } = acme();
+        forge.failNext(
+            "contents.resolveRef",
+            () =>
+                new RateLimitedError("limited", 403, "", { forge: "fake", instance: "fake.test" }),
+        );
+        await expect(host.latest()).rejects.toThrow(/^Too many requests\. Try again\.$/);
     });
 });

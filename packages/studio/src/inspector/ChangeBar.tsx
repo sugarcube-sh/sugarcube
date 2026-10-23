@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { SaveOutcome } from "../protocol";
 import { Icon } from "../components/ui/icon/Icons";
 import { changeBarActions } from "../controllers/undo";
-import { type ChangeLine, changeLines, doneWord } from "../controllers/views";
+import { type ChangeLine, changeLines, clashText, doneWord } from "../controllers/views";
 import { Clashes } from "./Clashes";
 import { useStudio, useStudioState } from "../providers/studio-context";
 
@@ -117,7 +117,7 @@ function Outcome({ outcome }: { outcome: SaveOutcome | { failed: string } }) {
             </p>
         );
     }
-    if (outcome.conflicts) return <p>Not saved: changed elsewhere.</p>;
+    if (outcome.conflicts) return <p>{clashText(outcome)}</p>;
     const files = [...outcome.written, ...outcome.deleted];
     return (
         <p>
