@@ -48,11 +48,12 @@ export function createSignIn({
     const waitingKey = `${STUDIO_STORAGE.saveWaiting}${entry}`;
     const listeners = new Set<() => void>();
     let state: SignInState = {
-        person: page.cookie(STUDIO_COOKIES.login),
+        person: githubLogin(page.cookie(STUDIO_COOKIES.login)),
         access: undefined,
         said: undefined,
     };
     let host: { login: string; host: GitHost } | undefined;
+    let heldKey: string | undefined;
 
     function set(change: Partial<SignInState>) {
         state = { ...state, ...change };
@@ -67,16 +68,25 @@ export function createSignIn({
     }
 
     async function key(): Promise<string> {
-        const now = page.cookie(STUDIO_COOKIES.key);
-        if (now) return now;
-        throw new KeyRefused("The key has run out");
+        heldKey ??= await keyFrom("key");
+        if (heldKey) return heldKey;
+        throw new KeyRefused("No key from the sign-in function");
     }
 
-    function refresh(): Promise<boolean> {
-        return page.fetch(`${base}/refresh`, { method: "POST", credentials: "same-origin" }).then(
-            (response) => response.ok,
-            () => false,
-        );
+    async function refresh(): Promise<boolean> {
+        heldKey = await keyFrom("refresh");
+        return heldKey !== undefined;
+    }
+
+    async function keyFrom(address: "key" | "refresh"): Promise<string | undefined> {
+        const response = await page
+            .fetch(`${base}/${address}`, { method: "POST", credentials: "same-origin" })
+            .catch(() => undefined);
+        if (!response?.ok) return undefined;
+        const answer = (await response.json().catch(() => undefined)) as
+            | { key?: string }
+            | undefined;
+        return answer?.key;
     }
 
     async function withKey<T>(run: () => Promise<T>): Promise<T> {
@@ -200,4 +210,10 @@ export function barMessages(
         ...(reason !== undefined && { reason }),
         ...(install !== undefined && { install }),
     };
+}
+
+const GITHUB_LOGIN = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
+
+function githubLogin(given: string | undefined): string | undefined {
+    return given !== undefined && GITHUB_LOGIN.test(given) ? given : undefined;
 }

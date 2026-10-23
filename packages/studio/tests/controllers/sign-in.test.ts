@@ -27,7 +27,9 @@ const PAGE = "/docs/colours?tab=dark#brand";
 function page({ signedIn = true, key = "ghu_one", refreshes = true } = {}) {
     const cookies = new Map<string, string>();
     if (signedIn) cookies.set(STUDIO_COOKIES.login, "mark");
-    if (signedIn && key) cookies.set(STUDIO_COOKIES.key, key);
+    let held = signedIn && key ? key : undefined;
+    const json = (body: unknown) =>
+        new Response(JSON.stringify(body), { headers: { "content-type": "application/json" } });
     const stored = new Map<string, string>();
     const asked: Array<{ url: string; method: string | undefined }> = [];
     const went: string[] = [];
@@ -42,12 +44,14 @@ function page({ signedIn = true, key = "ghu_one", refreshes = true } = {}) {
         },
         fetch: async (url, init) => {
             asked.push({ url, method: init.method });
-            if (url.endsWith("/refresh") && refreshes) {
-                cookies.set(STUDIO_COOKIES.key, "ghu_fresh");
-                return new Response(null, { status: 200 });
+            if (url.endsWith("/key") && held) return json({ key: held });
+            if ((url.endsWith("/key") || url.endsWith("/refresh")) && signedIn && refreshes) {
+                held = "ghu_fresh";
+                return json({ key: held });
             }
             if (url.endsWith("/sign-out")) {
                 cookies.clear();
+                held = undefined;
                 return new Response(null, { status: 204 });
             }
             return new Response(null, { status: 401 });
@@ -192,6 +196,38 @@ describe("coming back from GitHub", () => {
 });
 
 describe("someone signed in", () => {
+    it("isn't taken from a cookie that doesn't hold a GitHub login", () => {
+        for (const given of ["../../main", "mark/evil", "-mark", "a".repeat(40), "mark name"]) {
+            const at = setUp();
+            at.cookies.set(STUDIO_COOKIES.login, given);
+            const signIn = createSignIn({
+                page: at.page,
+                repository: "acme/site",
+                entry: "tokens/tokens.resolver.json",
+                hostFor: () => ({ ...at.github.host, access: async () => ({ can: "write" }) }),
+            });
+            expect(signIn.state.person).toBeUndefined();
+        }
+    });
+
+    it("gets their key from the sign-in function once, and keeps it only in memory", async () => {
+        const { signIn, studio, edit, asked, cookies, stored } = setUp();
+        await signIn.start(studio);
+        edit();
+        await signIn.pressSave(studio);
+        expect(asked.filter(({ url }) => url.endsWith("/key"))).toHaveLength(1);
+        expect([...cookies.keys()]).toStrictEqual([STUDIO_COOKIES.login]);
+        expect([...stored.values()].some((value) => value.includes("ghu_one"))).toBe(false);
+    });
+
+    it("forgets their key on signing out", async () => {
+        const { signIn, studio, asked } = setUp();
+        await signIn.start(studio);
+        await signIn.signOut();
+        await signIn.start(studio);
+        expect(asked.filter(({ url }) => url.endsWith("/key"))).toHaveLength(1);
+    });
+
     it("is shown by name from the cookie, with no request for it", () => {
         const { signIn, asked } = setUp();
         expect(signIn.state.person).toBe("mark");
@@ -218,7 +254,7 @@ describe("someone signed in", () => {
     it("gets a new key first when theirs has run out", async () => {
         const { signIn, studio, asked } = setUp({ key: "" });
         await signIn.start(studio);
-        expect(asked).toStrictEqual([{ url: `${STUDIO_SIGN_IN_BASE}/refresh`, method: "POST" }]);
+        expect(asked).toStrictEqual([{ url: `${STUDIO_SIGN_IN_BASE}/key`, method: "POST" }]);
         expect(signIn.state.access).toStrictEqual({ can: "write" });
     });
 
@@ -265,7 +301,10 @@ describe("someone signed in", () => {
         const { signIn, studio, asked } = setUp();
         await signIn.start(studio);
         await signIn.signOut();
-        expect(asked).toStrictEqual([{ url: `${STUDIO_SIGN_IN_BASE}/sign-out`, method: "POST" }]);
+        expect(asked).toStrictEqual([
+            { url: `${STUDIO_SIGN_IN_BASE}/key`, method: "POST" },
+            { url: `${STUDIO_SIGN_IN_BASE}/sign-out`, method: "POST" },
+        ]);
         expect(signIn.state).toMatchObject({ person: undefined, access: undefined });
     });
 

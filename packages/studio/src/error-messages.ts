@@ -27,6 +27,10 @@ export const ErrorMessages = {
     NOT_SIGNED_IN: "Not signed in. Try again.",
     CANT_SAVE: (repository: string) => `You can't save to ${repository}.`,
     NOT_INSTALLED: (repository: string) => `studio isn't installed on ${repository}.`,
+    SHORT_SECRET: (name: string, length: number) =>
+        `${prefix} ${name} is too short. Use a random value of at least ${length} characters.`,
+    MISSING_SETTING: (name: string) =>
+        `${prefix} ${name} isn't set. The sign-in function needs it on the host.`,
 } as const;
 
 export class UserFacingError extends Error {
