@@ -18,11 +18,7 @@ export async function defineStudio(
     host: StudioHostBridge,
     options: DefineStudioOptions = {},
 ): Promise<void> {
-    if (options.saveUrl) {
-        host.publishConfig?.({
-            saveTo: { url: options.saveUrl, entry: files.now().config.resolver },
-        });
-    }
+    if (options.gitSave) host.publishConfig?.({ gitSave: options.gitSave });
 
     let warnedNaming = false;
     const message = (now: FilesNow): StudioMessage => {

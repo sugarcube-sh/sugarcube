@@ -6,7 +6,11 @@ export type CookieOptions = {
 };
 
 export function cookieFrom(request: Request, name: string): string | undefined {
-    for (const part of (request.headers.get("cookie") ?? "").split(";")) {
+    return cookieIn(request.headers.get("cookie") ?? "", name);
+}
+
+export function cookieIn(header: string, name: string): string | undefined {
+    for (const part of header.split(";")) {
         const at = part.indexOf("=");
         if (at > 0 && part.slice(0, at).trim() === name) return part.slice(at + 1).trim();
     }

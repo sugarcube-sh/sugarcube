@@ -10,7 +10,6 @@ export const STUDIO_COOKIES = {
 export const STUDIO_SETTINGS = {
     clientId: "SUGARCUBE_STUDIO_GITHUB_CLIENT_ID",
     clientSecret: "SUGARCUBE_STUDIO_GITHUB_CLIENT_SECRET",
-    appSlug: "SUGARCUBE_STUDIO_GITHUB_APP_SLUG",
     secret: "SUGARCUBE_STUDIO_SECRET",
 } as const;
 

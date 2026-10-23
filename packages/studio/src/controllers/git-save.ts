@@ -41,7 +41,7 @@ export function gitSave({
     };
 }
 
-export function pullRequestText(changes: readonly Change[]): {
+function pullRequestText(changes: readonly Change[]): {
     title: string;
     description: string;
 } {

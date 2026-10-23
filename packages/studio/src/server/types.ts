@@ -1,4 +1,4 @@
-import type { StudioConnectionConfig } from "../protocol";
+import type { GitSaveSettings, StudioConnectionConfig } from "../protocol";
 
 export interface StudioSharedState<T extends object> {
     mutate(fn: (draft: T) => void): void;
@@ -23,5 +23,5 @@ export interface StudioHostBridge {
 }
 
 export interface DefineStudioOptions {
-    saveUrl?: string;
+    gitSave?: GitSaveSettings | undefined;
 }

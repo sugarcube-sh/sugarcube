@@ -1,6 +1,7 @@
 import { connectDevframe } from "devframe/client";
 import type { Edits } from "@sugarcube-sh/dtcg-edit";
 import type { StudioConnection } from "../host/open-studio";
+import { browserPage } from "../host/browser-page";
 import { pickSave } from "../host/save";
 import { STUDIO_RPC } from "../studio-names";
 import type { SaveOutcome, StudioConnectionConfig, StudioMessage } from "../protocol";
@@ -29,13 +30,15 @@ export async function connectStudio(signal: AbortSignal): Promise<StudioConnecti
 
     const shared = await client.sharedState.get<StudioMessage>(STUDIO_RPC.MESSAGE);
     const config: StudioConnectionConfig = client.connectionMeta.configs?.[STUDIO_RPC.CONFIG] ?? {};
-    const save = pickSave({
+    const { save, signIn } = pickSave({
         live: client.connectionMeta.backend !== "static",
         call: (edits: Edits): Promise<SaveOutcome> => client.call(STUDIO_RPC.SAVE, edits),
-        saveTo: config.saveTo,
+        gitSave: config.gitSave,
+        page: browserPage(),
     });
     return {
         ...(save && { save }),
+        ...(signIn && { signIn }),
         message: {
             value: () => shared.value() as unknown as StudioMessage | undefined,
             on: (event, listener) =>

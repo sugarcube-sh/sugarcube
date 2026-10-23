@@ -91,14 +91,19 @@ describe("defineStudio", () => {
         });
     });
 
-    it("bakes where saves go into the handshake when a build names it, with the resolver's path in the project", async () => {
+    it("bakes where the tokens live into the handshake when a build says, for studio to save to", async () => {
         const s = await setup();
+        const gitSave = {
+            host: "github",
+            repository: "acme/site",
+            branch: "main",
+            entry: "tokens/tokens.resolver.json",
+            signIn: "/api/sugarcube-studio",
+        } as const;
 
-        await defineStudio(s.files, s.host, { saveUrl: "https://example.test/submit-pr" });
+        await defineStudio(s.files, s.host, { gitSave });
 
-        expect(s.configs).toEqual([
-            { saveTo: { url: "https://example.test/submit-pr", entry: s.config.resolver } },
-        ]);
+        expect(s.configs).toEqual([{ gitSave }]);
     });
 
     it("publishes nothing about saving when there is a server to save to", async () => {

@@ -4,16 +4,18 @@ import type { Conflict, Edits } from "@sugarcube-sh/dtcg-edit";
 import type { PlainSettings } from "./adapters/plain";
 import type { BuildProblem } from "./controllers/adapter";
 
-/** Settings the host publishes in the handshake for clients to read. */
-export type StudioConnectionConfig = {
-    /** Where saves go when there's no server to write files: a service that opens a pull request. */
-    saveTo?: SaveTo;
+export type GitSaveSettings = {
+    readonly host: "github";
+    readonly repository: string;
+    readonly branch: string;
+    readonly entry: string;
+    readonly signIn: string;
+    readonly install?: string;
 };
 
-export type SaveTo = {
-    readonly url: string;
-    /** The resolver's path in the repository, as the build read it from the project's root. */
-    readonly entry: string;
+/** Settings the host publishes in the handshake for clients to read. */
+export type StudioConnectionConfig = {
+    gitSave?: GitSaveSettings;
 };
 
 type Files = Readonly<Record<string, string>>;

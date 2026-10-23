@@ -4,6 +4,7 @@ import { type Studio, createStudio } from "../controllers/studio";
 import { keepUnsaved } from "../controllers/unsaved";
 import { ErrorMessages } from "../error-messages";
 import { STUDIO_STORAGE } from "../studio-names";
+import { sessionStorageOf } from "./browser-page";
 import type { StudioMessage, StudioSave } from "../protocol";
 
 const WAIT_MS = 10_000;
@@ -68,12 +69,4 @@ function arrived(
         };
         signal.addEventListener("abort", aborted, { once: true });
     });
-}
-
-function sessionStorageOf(): Storage | undefined {
-    try {
-        return globalThis.sessionStorage;
-    } catch {
-        return undefined;
-    }
 }
