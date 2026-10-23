@@ -40,7 +40,7 @@ export type SaveOutcome =
     | { pullRequest: PullRequest; files: Files; written?: undefined; conflicts?: undefined }
     | { conflicts: Conflict[]; files?: Files; written?: undefined; pullRequest?: undefined };
 
-export type PullRequest = { readonly number: number; readonly url: string };
+export type PullRequest = { readonly number: number; readonly url?: string | undefined };
 
 export type StudioSave = (edits: Edits, changes: readonly Change[]) => Promise<SaveOutcome>;
 
