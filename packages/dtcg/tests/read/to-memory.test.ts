@@ -21,7 +21,7 @@ const disk: Record<string, string> = {
     "shared/brand.json": brand,
 };
 
-const fromDisk = async (path: string) => disk[path] ?? Promise.reject(new Error("missing"));
+const fromDisk = async (path: string) => disk[path];
 
 describe("tokens.entry", () => {
     it("is the file the read started from, by the name the design tokens give it", async () => {
@@ -67,12 +67,9 @@ describe("tokens.toMemory", () => {
         ]);
     });
 
-    it("leaves out a file that could not be read, as the design tokens report it", async () => {
+    it("leaves out a file that is not there, as the design tokens report it", async () => {
         const tokens = await read("tokens/design.resolver.json", {
-            readText: async (path) =>
-                path === "shared/brand.json"
-                    ? Promise.reject(new Error("gone"))
-                    : (disk[path] ?? ""),
+            readText: async (path) => (path === "shared/brand.json" ? undefined : disk[path]),
         });
         expect(Object.keys(tokens.toMemory().files)).toStrictEqual([
             "design.resolver.json",

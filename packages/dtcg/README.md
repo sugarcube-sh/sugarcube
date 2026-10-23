@@ -20,7 +20,12 @@ Read a design system in any runtime:
 import { read } from "@sugarcube-sh/dtcg";
 
 const doc = await read("tokens.resolver.json", {
-    readText: (path) => fetch(path).then((r) => r.text()),
+    readText: async (path) => {
+        const response = await fetch(path);
+        if (response.status === 404) return undefined;
+        if (!response.ok) throw new Error(`${response.status}`);
+        return response.text();
+    },
 });
 ```
 

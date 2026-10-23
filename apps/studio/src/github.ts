@@ -104,10 +104,11 @@ async function githubGet(token: string, path: string): Promise<unknown> {
     return res.json();
 }
 
-async function githubText(token: string, path: string): Promise<string> {
+async function githubText(token: string, path: string): Promise<string | undefined> {
     const res = await fetch(`${GITHUB_API}${path}`, {
         headers: { ...githubHeaders(token), Accept: "application/vnd.github.raw+json" },
     });
+    if (res.status === 404) return undefined;
     if (!res.ok) throw new Error(`GitHub GET ${path} failed (${res.status})`);
     return res.text();
 }

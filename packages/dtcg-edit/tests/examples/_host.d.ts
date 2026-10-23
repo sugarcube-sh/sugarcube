@@ -17,7 +17,7 @@ declare function report(
 declare function goTo(where: { file: string; offset: number; length: number }): void;
 declare function showConflicts(conflicts: { reason: string }[]): void;
 declare function showClash(where: string, yours: unknown, theirs: unknown): void;
-declare function fromGit(ref: string): (path: string) => Promise<string>;
+declare function fromGit(ref: string): (path: string) => Promise<string | undefined>;
 declare function comment(text: string): void;
 declare const figmaValue: string;
 declare const fromUrl: string;

@@ -2080,8 +2080,9 @@ export interface ReadOptions extends ParseOptions {
  *
  * It is asked for each file by the entry's folder, as you gave it, joined with the file's path
  * from there: reading `"tokens/tokens.resolver.json"` asks for `"tokens/dark.json"`. A path
- * that is absolute or a URL is passed as written. Throwing, or rejecting, reports the file as not
- * found.
+ * that is absolute or a URL is passed as written. Give `undefined` for a file that is not there,
+ * which is reported as not found; throw, or reject, for one that could not be fetched, which
+ * rejects the read.
  *
  * Every file path in the results, in `DesignTokens.files` and every `Span`, is relative to the
  * entry's folder, with forward slashes, such as `"themes/dark.json"`; one written from the root or
@@ -2098,7 +2099,7 @@ export interface ReadOptions extends ParseOptions {
  *   },
  * });
  */
-export type ReadText = (path: string, file: string) => Promise<string>;
+export type ReadText = (path: string, file: string) => Promise<string | undefined>;
 
 export { read, readFromMemory } from "./read/read.js";
 
