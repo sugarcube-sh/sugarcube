@@ -79,7 +79,8 @@ describe("undo and redo in studio", () => {
         studio.do(setValue(studio.state.tokens, "color.brand.500", blue));
         const second = studio.save?.();
         fail(new Error("offline"));
-        await expect(second).rejects.toThrow("offline");
+        expect(await second).toBeUndefined();
+        expect(studio.state.saved).toStrictEqual({ failed: "Save failed: offline" });
         expect(studio.state.saving).toBe(false);
     });
 });
@@ -171,6 +172,17 @@ describe("the change bar's buttons", () => {
         studio.do(setValue(studio.state.tokens, "color.brand.500", red));
 
         expect(changeBarActions(studio)).toMatchObject({ discard: true, save: false });
+    });
+
+    it("offers no save when the sign-in doesn't allow one", () => {
+        const studio = createStudio(demoMessage(), adapterFor, async () => ({
+            written: [],
+            deleted: [],
+        }));
+        studio.do(setValue(studio.state.tokens, "color.brand.500", red));
+
+        expect(changeBarActions(studio, { canSave: false })).toMatchObject({ save: false });
+        expect(changeBarActions(studio, { canSave: true })).toMatchObject({ save: true });
     });
 });
 

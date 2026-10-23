@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
-import { type DesignTokens, read, readFromMemory } from "@sugarcube-sh/dtcg";
+import { type DesignTokens, readFromMemory } from "@sugarcube-sh/dtcg";
+import { read } from "@sugarcube-sh/dtcg/node";
 import { beforeAll, describe, expect, it } from "vitest";
 import { loadTokens } from "../src/node/load-tokens.js";
 import { SUGARCUBE_NAMESPACE } from "../src/shared/extensions.js";
@@ -109,10 +109,7 @@ beforeAll(async () => {
             resolverPath,
             config: { variables: {} } as never,
         });
-        const tokens = await read(entry, {
-            readText: (path) => readFile(join(repo, path), "utf8"),
-            generators: [scaleGenerator],
-        });
+        const tokens = await read(resolverPath, { generators: [scaleGenerator] });
         for (const file of tokens.files) covered.add(join(entry, "..", file));
         if (loaded.errors.length > 0) continue;
         projects.push({
@@ -156,8 +153,7 @@ describe("the tokens scale recipes make, old expand against dtcg with the scale 
     });
 
     it("reads Studio's demo, whose type scale is a recipe, with nothing missing", async () => {
-        const tokens = await read("packages/studio/demo/tokens.resolver.json", {
-            readText: (path) => readFile(join(repo, path), "utf8"),
+        const tokens = await read(join(repo, "packages/studio/demo/tokens.resolver.json"), {
             generators: [scaleGenerator],
         });
         expect(tokens.diagnostics.filter(({ kind }) => kind === "missing-reference")).toEqual([]);

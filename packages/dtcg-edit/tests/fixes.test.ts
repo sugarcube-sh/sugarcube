@@ -1,9 +1,9 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { type DesignTokens, type Diagnostic, type Span, read } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
 import { inputFiles, readOptions } from "../../dtcg/tests/read/case-options.js";
+import { textIn } from "../../dtcg/tests/read/on-disk.js";
 import { withSpans } from "../../dtcg/tests/read/positions.js";
 import { type Fix, fixesFor } from "../src/index.js";
 
@@ -24,7 +24,7 @@ async function openCase(name: string): Promise<DesignTokens> {
     const { entry, options } = JSON.parse(readFileSync(join(folder, "expected.json"), "utf8"));
     return read(entry, {
         ...readOptions(options),
-        readText: (path) => readFile(join(folder, "input", path), "utf8"),
+        readText: textIn(join(folder, "input")),
     });
 }
 
@@ -57,7 +57,7 @@ async function readFiles(files: Record<string, string>): Promise<DesignTokens> {
     const [entry] = Object.keys(files);
     if (entry === undefined) throw new Error("design tokens need a file");
     return read(entry, {
-        readText: async (path) => files[path] ?? Promise.reject(new Error("missing")),
+        readText: async (path) => files[path],
     });
 }
 

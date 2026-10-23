@@ -1,8 +1,10 @@
 import { type ReactNode, useEffect, useState } from "react";
+import type { SignIn } from "../controllers/sign-in";
 import type { Studio } from "../controllers/studio";
 import { openStudio } from "../host/open-studio";
 import { attachPageChannel } from "../host/page-channel";
 import { connectStudio } from "./rpc-client";
+import { SignInContext } from "./sign-in-context";
 import { StudioContext } from "./studio-context";
 
 type Props = {
@@ -12,7 +14,7 @@ type Props = {
 type Opening =
     | { kind: "loading" }
     | { kind: "error"; message: string }
-    | { kind: "ready"; studio: Studio };
+    | { kind: "ready"; studio: Studio; signIn: SignIn | undefined };
 
 /**
  * Studio is always a devframe client. Whether the other end is a live server
@@ -28,7 +30,8 @@ export function StudioProvider({ children }: Props) {
             try {
                 const connection = await connectStudio(controller.signal);
                 const studio = await openStudio(connection, controller.signal);
-                if (!controller.signal.aborted) setState({ kind: "ready", studio });
+                if (!controller.signal.aborted)
+                    setState({ kind: "ready", studio, signIn: connection.signIn });
             } catch (err) {
                 if (controller.signal.aborted) return;
                 setState({
@@ -63,5 +66,9 @@ export function StudioProvider({ children }: Props) {
         );
     }
 
-    return <StudioContext.Provider value={state.studio}>{children}</StudioContext.Provider>;
+    return (
+        <StudioContext.Provider value={state.studio}>
+            <SignInContext.Provider value={state.signIn}>{children}</SignInContext.Provider>
+        </StudioContext.Provider>
+    );
 }

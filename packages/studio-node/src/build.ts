@@ -3,20 +3,19 @@ import { DEVFRAMES_HUB_BASE } from "@devframes/hub/initiate";
 import { buildHub } from "@devframes/hub/build";
 import { clientPath } from "@sugarcube-sh/studio/client";
 import {
+    type GitSaveSettings,
     STUDIO_SURFACE,
     type StudioFiles,
     projectFiles,
     refuseEmpty,
     studioDevframe,
 } from "@sugarcube-sh/studio/server";
+import { gitIn, gitSaveFor } from "./source";
 import { HUB_NAME, hubUi, studioDock } from "./studio-hub";
 
 export type BuildStudioOptions = {
     files?: StudioFiles;
     outDir: string;
-    /** A static build cannot write files, so saves are posted here instead, to
-     * a service that opens a pull request. */
-    saveUrl?: string;
 };
 
 export type StudioBuild = {
@@ -27,20 +26,28 @@ export type StudioBuild = {
     embedTag: string;
     /** The path where studio opens on a page of its own, rather than over someone's. */
     studioPath: string;
+    gitSave: GitSaveSettings | undefined;
+    warnings: readonly string[];
 };
 
 /**
  * Builds studio into plain files that any web server can host, with nothing
- * running behind them. Run it from the project root: the paths to the token
- * files are worked out from the directory you run in, and a save later replays
- * the edits against those same paths in the repository. Run it from anywhere
- * else and a save will aim at files that are not there.
+ * running behind them. A save from the built studio opens a pull request on the
+ * repository named in sugarcube.config.ts's studio settings, against the branch being built.
  */
 export async function buildStudio(options: BuildStudioOptions): Promise<StudioBuild> {
-    const { outDir, saveUrl } = options;
+    const { outDir } = options;
     const files = options.files ?? (await projectFiles());
 
     refuseEmpty(files);
+    const cwd = process.cwd();
+    const { config } = files.now();
+    const { gitSave, warnings } = gitSaveFor({
+        ...(config.studio && { studio: config.studio }),
+        resolver: config.resolver,
+        cwd,
+        git: gitIn(cwd),
+    });
 
     const base = DEVFRAMES_HUB_BASE;
     const rootDir = resolve(outDir);
@@ -50,7 +57,7 @@ export async function buildStudio(options: BuildStudioOptions): Promise<StudioBu
         outDir: hubDir,
         base,
         name: HUB_NAME,
-        devframes: [studioDock(studioDevframe({ files, clientAssets: clientPath, saveUrl }))],
+        devframes: [studioDock(studioDevframe({ files, clientAssets: clientPath, gitSave }))],
         ui: hubUi(),
     });
 
@@ -59,5 +66,7 @@ export async function buildStudio(options: BuildStudioOptions): Promise<StudioBu
         hubDir,
         embedTag: `<script type="module" src="${base}embedded.js"></script>`,
         studioPath: `${base}${STUDIO_SURFACE.id}/`,
+        gitSave,
+        warnings,
     };
 }

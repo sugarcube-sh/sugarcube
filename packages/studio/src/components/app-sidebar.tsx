@@ -2,11 +2,14 @@ import { useMemo, useState } from "react";
 import { Link, NavLink, useLocation, useMatch } from "react-router";
 import { ancestorsOf, hrefFor } from "../app/token-path";
 import { Logo } from "../app/Logo";
+import { signedInAs } from "../controllers/sign-in";
+import { useSignIn } from "../providers/sign-in-context";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible/collapsible";
 import { Icon } from "./ui/icon/Icons";
 import {
     Sidebar,
     SidebarContent,
+    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
@@ -180,6 +183,23 @@ export function AppSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
+            <Person />
         </Sidebar>
+    );
+}
+
+function Person() {
+    const signIn = useSignIn();
+    const person = signedInAs(signIn);
+    if (!signIn || person === undefined) return null;
+    return (
+        <SidebarFooter>
+            <div className="repel">
+                <span>{person}</span>
+                <button type="button" className="button" onClick={() => void signIn.signOut()}>
+                    Sign out
+                </button>
+            </div>
+        </SidebarFooter>
     );
 }

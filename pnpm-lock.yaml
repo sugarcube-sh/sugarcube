@@ -42,25 +42,6 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(@types/node@24.13.3)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-istanbul@4.1.11)(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
-  apps/studio:
-    dependencies:
-      '@sugarcube-sh/dtcg':
-        specifier: workspace:*
-        version: link:../../packages/dtcg
-      '@sugarcube-sh/dtcg-edit':
-        specifier: workspace:*
-        version: link:../../packages/dtcg-edit
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: ^5.20260907.1
-        version: 5.20260907.1
-      typescript:
-        specifier: ^5.8.3
-        version: 5.9.3
-      wrangler:
-        specifier: ^4.129.0
-        version: 4.129.0(@cloudflare/workers-types@5.20260907.1)
-
   apps/www:
     dependencies:
       '@astrojs/mdx':
@@ -342,6 +323,9 @@ importers:
       devframe:
         specifier: ^1.0.0
         version: 1.0.0(cac@7.0.0)(srvx@1.0.5)
+      forges:
+        specifier: 0.2.0
+        version: 0.2.0
       radix-ui:
         specifier: ^1.6.7
         version: 1.6.7(@types/react-dom@19.2.7(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -467,7 +451,7 @@ importers:
         version: link:../core
       '@unocss/vite':
         specifier: ^66.10.5
-        version: 66.10.5(cac@7.0.0)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+        version: 66.10.5(cac@7.0.0)(srvx@1.0.5)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
     devDependencies:
       '@sugarcube-sh/dtcg':
         specifier: workspace:*
@@ -4409,6 +4393,10 @@ packages:
     resolution: {integrity: sha512-piJxbLnkD9Xcyi7dWJRnqszEURixe7CrF/efBfbffe2DPyabmuIuqraruY8cXTs19QoM8VJzx47BDRVNXETM7Q==}
     engines: {node: '>=20'}
 
+  forges@0.2.0:
+    resolution: {integrity: sha512-n7r9408sEp5U53P7JalJ0bPxqUO7uR0WXQ3HyWTcJc/M2ItXL+mDSUALU7cz4Uig0zNWBAOE68ITPjSVoFktww==}
+    engines: {node: '>=22.18'}
+
   formatly@0.3.0:
     resolution: {integrity: sha512-9XNj/o4wrRFyhSMJOvsuyMwy8aUfBaZ1VrqHVfohyXf0Sw0e+yfKG+xZaY3arGCOMdwFsqObtzVOc1gU9KiT9w==}
     engines: {node: '>=18.3.0'}
@@ -7031,7 +7019,8 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260903.1':
     optional: true
 
-  '@cloudflare/workers-types@5.20260907.1': {}
+  '@cloudflare/workers-types@5.20260907.1':
+    optional: true
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -9127,7 +9116,7 @@ snapshots:
     dependencies:
       '@unocss/core': 66.10.5
 
-  '@unocss/inspector@66.10.5(cac@7.0.0)':
+  '@unocss/inspector@66.10.5(cac@7.0.0)(srvx@1.0.5)':
     dependencies:
       '@unocss/config': 66.10.5
       '@unocss/core': 66.10.5
@@ -9164,12 +9153,12 @@ snapshots:
       '@unocss/core': 66.10.5
       magic-string: 1.4.2
 
-  '@unocss/vite@66.10.5(cac@7.0.0)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))':
+  '@unocss/vite@66.10.5(cac@7.0.0)(srvx@1.0.5)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))':
     dependencies:
       '@jridgewell/remapping': 2.3.5
       '@unocss/config': 66.10.5
       '@unocss/core': 66.10.5
-      '@unocss/inspector': 66.10.5(cac@7.0.0)
+      '@unocss/inspector': 66.10.5(cac@7.0.0)(srvx@1.0.5)
       chokidar: 5.0.0
       magic-string: 1.4.2
       pathe: 2.0.3
@@ -10205,6 +10194,8 @@ snapshots:
   fontkitten@1.0.2:
     dependencies:
       tiny-inflate: 1.0.3
+
+  forges@0.2.0: {}
 
   formatly@0.3.0:
     dependencies:

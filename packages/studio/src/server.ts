@@ -1,4 +1,11 @@
-export { STUDIO_ROUTE, STUDIO_SURFACE, defineStudio } from "./server/define-studio";
+export { STUDIO_SURFACE, defineStudio } from "./server/define-studio";
+export {
+    STUDIO_DEVFRAME_ID,
+    STUDIO_ROUTE,
+    STUDIO_RPC,
+    STUDIO_SIGN_IN_BASE,
+    STUDIO_VITE_PLUGIN,
+} from "./studio-names";
 export type {
     DefineStudioOptions,
     StudioHostBridge,
@@ -12,5 +19,5 @@ export type { FilesNow, StudioFiles } from "./server/files";
 export { nodeFiles, projectFiles, refuseEmpty } from "./server/node-files";
 export { studioMessage } from "./server/message";
 export type { SaveOutcome } from "./protocol";
-export type { StudioConnectionConfig, StudioMessage } from "./protocol";
+export type { GitSaveSettings, StudioConnectionConfig, StudioMessage } from "./protocol";
 export { ErrorMessages, STUDIO_NAME } from "./error-messages";

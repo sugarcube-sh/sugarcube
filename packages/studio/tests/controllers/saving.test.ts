@@ -6,6 +6,7 @@ import { type Edits, setValue } from "@sugarcube-sh/dtcg-edit";
 import { afterEach, describe, expect, it } from "vitest";
 import { adapterFor } from "../../src/adapters";
 import { createStudio } from "../../src/controllers/studio";
+import { UserFacingError } from "../../src/error-messages";
 import type { SaveOutcome } from "../../src/protocol";
 import { saveEdits } from "../../src/server/save";
 import { demoCopy } from "../server/demo-copy";
@@ -174,5 +175,60 @@ describe("saving", () => {
         expect(await studio.save?.()).toEqual({ written: ["dark.json"], deleted: [] });
         expect(readFileSync(join(copy.dir, "dark.json"), "utf8")).toContain("{color.neutral.100}");
         expect(studio.state.changes).toEqual([]);
+    });
+
+    it("keeps the save's result in its state, shown until the edits change", async () => {
+        const pullRequest = { number: 7, url: "https://github.com/pr/7" };
+        const { studio } = withHost(async () => ({ pullRequest, files: demoMessage().files }));
+        studio.do(
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+        );
+        await studio.save?.();
+        expect(studio.state.saved).toStrictEqual({ pullRequest, files: demoMessage().files });
+        studio.do(
+            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkText),
+        );
+        expect(studio.state.saved).toBeUndefined();
+    });
+
+    it("keeps a clash's result while the clash is shown", async () => {
+        const { studio } = withHost(
+            async (edits) =>
+                ({
+                    conflicts: [{ kind: "changed", reason: "changed", op: edits.steps[0]?.ops[0] }],
+                    files: demoMessage().files,
+                    changedOn: "GitHub",
+                }) as SaveOutcome,
+        );
+        studio.do(
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+        );
+        await studio.save?.();
+        expect(studio.state.saved).toMatchObject({ conflicts: [expect.anything()] });
+    });
+
+    it("doesn't throw when a save fails, and keeps studio's own words for why alone", async () => {
+        const { studio } = withHost(async () => {
+            throw new UserFacingError("Couldn't reach GitHub. Try again.");
+        });
+        studio.do(
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+        );
+        expect(await studio.save?.()).toBeUndefined();
+        expect(studio.state.saved).toStrictEqual({ failed: "Couldn't reach GitHub. Try again." });
+        expect(studio.state.saving).toBe(false);
+    });
+
+    it('puts "Save failed:" before any other failure\'s words', async () => {
+        const { studio } = withHost(async () => {
+            throw new Error("EACCES: permission denied, open 'dark.json'");
+        });
+        studio.do(
+            setValue(studio.state.tokens, "color.text.default", "{color.neutral.100}", darkText),
+        );
+        await studio.save?.();
+        expect(studio.state.saved).toStrictEqual({
+            failed: "Save failed: EACCES: permission denied, open 'dark.json'",
+        });
     });
 });

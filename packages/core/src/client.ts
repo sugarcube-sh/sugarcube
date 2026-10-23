@@ -77,19 +77,8 @@ export type {
     UtilitiesOutputConfig,
     UtilityClassesConfig,
     StudioConfig,
-    ColorScaleConfig,
-    PanelSection,
-    BindingSection,
-    PanelBinding,
-    AliasBinding,
-    PanelSource,
-    ScaleBinding,
-    LinkBinding,
-    PaletteSwapBinding,
     VariableNameFn,
 } from "./types/config.js";
-export { panelSourceIssue, resolvePanelDefaults } from "./shared/panel.js";
-export type { AliasOptions, PanelDefaults } from "./shared/panel.js";
 export type {
     PipelineContext,
     PipelineEvent,

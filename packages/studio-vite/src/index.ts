@@ -1,5 +1,10 @@
 import { clientPath, pageScriptPath } from "@sugarcube-sh/studio/client";
-import { ErrorMessages, type StudioFiles, studioDevframe } from "@sugarcube-sh/studio/server";
+import {
+    ErrorMessages,
+    STUDIO_VITE_PLUGIN,
+    type StudioFiles,
+    studioDevframe,
+} from "@sugarcube-sh/studio/server";
 import { SUGARCUBE_API_PLUGIN_NAME, type SugarcubePluginContext } from "@sugarcube-sh/vite";
 import { viteDevframeHub } from "@devframes/vite/hub";
 import type { Plugin } from "vite";
@@ -11,7 +16,7 @@ export function filesFromSugarcube(): { plugin: Plugin; files: Promise<StudioFil
     });
 
     const plugin: Plugin = {
-        name: "sugarcube:studio:files",
+        name: STUDIO_VITE_PLUGIN,
         apply: "serve",
 
         configResolved(config) {

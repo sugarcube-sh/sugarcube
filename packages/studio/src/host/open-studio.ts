@@ -1,11 +1,13 @@
 import { adapterFor } from "../adapters";
+import type { SignIn } from "../controllers/sign-in";
 import { type Studio, createStudio } from "../controllers/studio";
 import { keepUnsaved } from "../controllers/unsaved";
 import { ErrorMessages } from "../error-messages";
+import { STUDIO_STORAGE } from "../studio-names";
+import { sessionStorageOf } from "./browser-page";
 import type { StudioMessage, StudioSave } from "../protocol";
 
 const WAIT_MS = 10_000;
-const UNSAVED_KEY = "sugarcube:studio:unsaved:";
 
 export interface SharedMessage {
     value(): StudioMessage | undefined;
@@ -15,17 +17,25 @@ export interface SharedMessage {
 export interface StudioConnection {
     readonly message: SharedMessage;
     readonly save?: StudioSave | undefined;
+    readonly signIn?: SignIn | undefined;
 }
 
+type Opening = Omit<StudioConnection, "signIn"> & {
+    readonly signIn?: Pick<SignIn, "start"> | undefined;
+};
+
 export async function openStudio(
-    { message: shared, save }: StudioConnection,
+    { message: shared, save, signIn }: Opening,
     signal: AbortSignal,
     { waitMs = WAIT_MS }: { waitMs?: number } = {},
 ): Promise<Studio> {
     const first = shared.value() ?? (await arrived(shared, signal, waitMs));
     const studio = createStudio(first, adapterFor, save);
     const storage = sessionStorageOf();
-    if (storage) void keepUnsaved(studio, storage, `${UNSAVED_KEY}${first.entry}`);
+    const restored = storage
+        ? keepUnsaved(studio, storage, `${STUDIO_STORAGE.unsaved}${first.entry}`)
+        : Promise.resolve();
+    void restored.then(() => signIn?.start(studio));
     const stop = shared.on("updated", (next) => studio.receive(next));
     signal.addEventListener("abort", () => {
         stop();
@@ -59,12 +69,4 @@ function arrived(
         };
         signal.addEventListener("abort", aborted, { once: true });
     });
-}
-
-function sessionStorageOf(): Storage | undefined {
-    try {
-        return globalThis.sessionStorage;
-    } catch {
-        return undefined;
-    }
 }

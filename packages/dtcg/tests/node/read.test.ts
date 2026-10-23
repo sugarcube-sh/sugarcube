@@ -41,4 +41,8 @@ describe("read from disk", () => {
             { kind: "file-not-found", detail: { file: "missing.resolver.json" } },
         ]);
     });
+
+    it("rejects, naming the file, when a file is there but cannot be read", async () => {
+        await expect(read(folder)).rejects.toThrow(folder.replaceAll("\\", "/"));
+    });
 });

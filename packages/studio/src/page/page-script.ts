@@ -1,5 +1,6 @@
 import { createPageScriptChannel } from "devframe/in-page-channel";
-import { STUDIO_PAGE_CHANNEL, type StudioPageProtocol } from "./protocol";
+import { STUDIO_PAGE_CHANNEL } from "../studio-names";
+import type { StudioPageProtocol } from "./protocol";
 
 /**
  * The dock injects this script into the user's page and runs this function

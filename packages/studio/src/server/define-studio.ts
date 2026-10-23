@@ -1,15 +1,14 @@
 import { tokensOnDisk } from "@sugarcube-sh/core";
 import { ErrorMessages } from "../error-messages";
-import { STUDIO_RPC, type StudioMessage } from "../protocol";
+import type { StudioMessage } from "../protocol";
+import { STUDIO_DEVFRAME_ID, STUDIO_ROUTE, STUDIO_RPC } from "../studio-names";
 import type { FilesNow, StudioFiles } from "./files";
 import { studioMessage } from "./message";
 import { saveEdits } from "./save";
 import type { DefineStudioOptions, StudioHostBridge, StudioSurface } from "./types";
 
-export const STUDIO_ROUTE = "/__studio/";
-
 export const STUDIO_SURFACE: StudioSurface = {
-    id: "sugarcube-studio",
+    id: STUDIO_DEVFRAME_ID,
     title: "studio",
     route: STUDIO_ROUTE,
 };
@@ -19,11 +18,7 @@ export async function defineStudio(
     host: StudioHostBridge,
     options: DefineStudioOptions = {},
 ): Promise<void> {
-    if (options.saveUrl) {
-        host.publishConfig?.({
-            saveTo: { url: options.saveUrl, entry: files.now().config.resolver },
-        });
-    }
+    if (options.gitSave) host.publishConfig?.({ gitSave: options.gitSave });
 
     let warnedNaming = false;
     const message = (now: FilesNow): StudioMessage => {

@@ -1,9 +1,9 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { type DesignTokens, type Permutation, read, readFromMemory } from "../../src/index.js";
 import { type CaseOptions, inputFiles, readOptions } from "./case-options.js";
+import { textIn } from "./on-disk.js";
 import { withSpans } from "./positions.js";
 
 interface Expected {
@@ -114,7 +114,7 @@ describe.each(cases)("%s", (name) => {
     it("reads through read", async () => {
         const tokens = await read(expected.entry, {
             ...readOptions(expected.options),
-            readText: (path) => readFile(join(input, path), "utf8"),
+            readText: textIn(input),
         });
         expect(observed(tokens, expected)).toStrictEqual(expected);
     });

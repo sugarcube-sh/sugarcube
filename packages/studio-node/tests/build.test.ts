@@ -3,18 +3,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { type StudioBuild, buildStudio } from "../src/build";
-import { filesAt } from "./demo";
+import { STUDIO_DEVFRAME_ID, STUDIO_RPC } from "@sugarcube-sh/studio/server";
+import { demoResolver, filesAt } from "./demo";
 
 describe("buildStudio", () => {
     let outDir: string;
     let built: StudioBuild;
-    let entry: string;
 
     beforeAll(async () => {
         outDir = mkdtempSync(join(tmpdir(), "studio-build-"));
-        const files = await filesAt();
-        entry = files.now().config.resolver;
-        built = await buildStudio({ files, outDir, saveUrl: "https://example.test/submit-pr" });
+        const files = await filesAt(demoResolver, { repository: "acme/site", branch: "main" });
+        built = await buildStudio({ files, outDir });
     }, 60_000);
 
     afterAll(() => {
@@ -38,13 +37,24 @@ describe("buildStudio", () => {
         expect(meta.backend).toBe("static");
     });
 
-    it("bakes where saves go into the handshake, with the resolver's path in the project", () => {
+    it("bakes where the tokens live into the handshake, for studio to save to", () => {
         const meta = JSON.parse(
-            readFileSync(join(built.hubDir, "sugarcube-studio", "__connection.json"), "utf8"),
+            readFileSync(join(built.hubDir, STUDIO_DEVFRAME_ID, "__connection.json"), "utf8"),
         );
-        expect(meta.configs["sugarcube:studio"]).toEqual({
-            saveTo: { url: "https://example.test/submit-pr", entry },
+        expect(meta.configs[STUDIO_RPC.CONFIG]).toEqual({
+            gitSave: {
+                host: "github",
+                repository: "acme/site",
+                branch: "main",
+                entry: "packages/studio/demo/tokens.resolver.json",
+                signIn: "/api/sugarcube-studio",
+            },
         });
+    });
+
+    it("hands back what the developer should know, such as no app name for the install link", () => {
+        expect(built.warnings).toHaveLength(1);
+        expect(built.warnings[0]).toContain("studio.app");
     });
 
     it("bakes the token files into the dump, so studio boots with no server", () => {

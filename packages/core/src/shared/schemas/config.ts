@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { ErrorMessages } from "../constants/error-messages.js";
-import { panelSourceIssue, resolvePanelDefaults } from "../panel.js";
 
 const fluidSchema = z.object({
     min: z.number(),
@@ -88,92 +87,21 @@ const utilitiesOutputConfigSchema = z.object({
     classes: utilityClassesSchema.optional(),
 });
 
-const panelSourceSchema = z.enum(["colorScale"]);
-
-const aliasOptionsSchema = z.union([z.string().min(1), z.record(z.string(), z.string())]);
-
-const aliasBindingSchema = z.object({
-    type: z.literal("alias"),
-    token: z.string().min(1, "Token path cannot be empty"),
-    from: panelSourceSchema.optional(),
-    options: aliasOptionsSchema.optional(),
-    label: z.string().optional(),
-    labels: z.record(z.string(), z.string()).optional(),
-    only: z.array(z.string().min(1, "Segment name cannot be empty")).min(1).optional(),
-});
-
-const scaleBindingSchema = z.object({
-    type: z.literal("scale"),
-    token: z.string().min(1, "Token path cannot be empty"),
-    label: z.string().optional(),
-    base: z.string().min(1).optional(),
-    min: z.number().optional(),
-    max: z.number().optional(),
-    step: z.number().optional(),
-});
-
-const linkBindingSchema = z.object({
-    type: z.literal("link"),
-    token: z.string().min(1, "Token path cannot be empty"),
-    scalesWith: z.string().min(1, "scalesWith path cannot be empty"),
-    label: z.string().optional(),
-});
-
-const paletteSwapBindingSchema = z.object({
-    type: z.literal("palette-swap"),
-    family: z.string().min(1, "Family path cannot be empty"),
-    label: z.string().optional(),
-    palettes: z
-        .array(z.string().min(1, "Palette name cannot be empty"))
-        .min(1, "Palettes array cannot be empty")
-        .optional(),
-});
-
-const panelBindingSchema = z.discriminatedUnion("type", [
-    aliasBindingSchema,
-    scaleBindingSchema,
-    linkBindingSchema,
-    paletteSwapBindingSchema,
-]);
-
-const colorScaleConfigSchema = z.object({
-    palettes: z
-        .array(z.string().min(1, "Palette path cannot be empty"))
-        .min(1, "Palettes array cannot be empty"),
-    steps: z
-        .array(z.string().min(1, "Step name cannot be empty"))
-        .min(1, "Steps array cannot be empty")
-        .optional(),
-});
-
-const panelSectionSchema = z
-    .object({
-        title: z.string().min(1, "Section title cannot be empty"),
-        from: panelSourceSchema.optional(),
-        options: aliasOptionsSchema.optional(),
-        bindings: z.array(panelBindingSchema).min(1, "Bindings array cannot be empty"),
-    })
-    .superRefine((section, ctx) => {
-        for (const [index, binding] of section.bindings.entries()) {
-            if (binding.type !== "alias") continue;
-
-            const issue = panelSourceIssue(resolvePanelDefaults(section, binding));
-            if (!issue) continue;
-
-            ctx.addIssue({
-                code: "custom",
-                path: ["bindings", index, issue === "ambiguous" ? "from" : "options"],
-                message:
-                    issue === "ambiguous"
-                        ? ErrorMessages.CONFIG.PANEL_AMBIGUOUS_SOURCE(section.title, binding.token)
-                        : ErrorMessages.CONFIG.PANEL_MISSING_SOURCE(section.title, binding.token),
-            });
-        }
-    });
-
 const studioConfigSchema = z.object({
-    colorScale: colorScaleConfigSchema.optional(),
-    panel: z.array(panelSectionSchema).optional(),
+    repository: z
+        .string()
+        .regex(/^[\w.-]+\/[\w.-]+$/, ErrorMessages.CONFIG.STUDIO_REPOSITORY)
+        .optional(),
+    branch: z.string().min(1).optional(),
+    app: z
+        .string()
+        .regex(/^[a-z0-9][a-z0-9-]*$/, ErrorMessages.CONFIG.STUDIO_APP)
+        .optional(),
+    save: z.boolean().optional(),
+    signIn: z
+        .string()
+        .regex(/^\/(?!\/)/, ErrorMessages.CONFIG.STUDIO_SIGN_IN)
+        .optional(),
 });
 
 export const userConfigSchema = z.object({

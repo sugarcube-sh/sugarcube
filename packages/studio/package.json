@@ -22,6 +22,10 @@
     "./server": {
       "types": "./dist/server.d.mts",
       "import": "./dist/server.mjs"
+    },
+    "./sign-in": {
+      "types": "./dist/sign-in.d.mts",
+      "import": "./dist/sign-in.mjs"
     }
   },
   "scripts": {
@@ -42,6 +46,7 @@
     "@sugarcube-sh/dtcg-edit": "workspace:*",
     "culori": "^4.0.2",
     "devframe": "^1.0.0",
+    "forges": "0.2.0",
     "radix-ui": "^1.6.7"
   },
   "devDependencies": {

@@ -1,7 +1,8 @@
 import { connectPanelChannel } from "devframe/in-page-channel";
 import { followCSS } from "../controllers/page-css";
 import type { Studio } from "../controllers/studio";
-import { STUDIO_PAGE_CHANNEL, type StudioPageProtocol } from "../page/protocol";
+import type { StudioPageProtocol } from "../page/protocol";
+import { STUDIO_PAGE_CHANNEL } from "../studio-names";
 
 export function attachPageChannel(studio: Studio): () => void {
     const channel = connectPanelChannel<StudioPageProtocol>({
