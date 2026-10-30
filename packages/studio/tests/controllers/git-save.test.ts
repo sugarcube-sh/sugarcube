@@ -1,5 +1,5 @@
 import { readFromMemory } from "@sugarcube-sh/dtcg";
-import { type Edits, createSession, setValue } from "@sugarcube-sh/dtcg-edit";
+import { type Edits, createSession, rename, setValue } from "@sugarcube-sh/dtcg-edit";
 import { ForgeNetworkError } from "forges";
 import { describe, expect, it } from "vitest";
 import { adapterFor } from "../../src/adapters";
@@ -235,6 +235,26 @@ describe("saving from studio to GitHub", () => {
         const second = await studio.save?.();
         expect(second?.conflicts).toBeUndefined();
         expect(github.pulls()).toHaveLength(2);
+    });
+
+    it("sends only the new change in a second save after a group rename, never the first save's rename again", async () => {
+        const message = demoMessage();
+        const github = onGitHub(message.files);
+        const studio = studioSavingTo(message, github);
+        studio.do(rename(studio.state.tokens, "radius", "corner"));
+        await studio.save?.();
+        expect(studio.state.changes).toStrictEqual([]);
+        studio.do(
+            setValue(studio.state.tokens, "color.text.muted", "{color.neutral.300}", darkText),
+        );
+        await studio.save?.();
+        const [, second] = github.pulls();
+        const head = second?.thread.branches?.head.ref;
+        expect(await github.onBranch("tokens/radius.json", head)).toBe(
+            message.files["radius.json"],
+        );
+        expect(await github.onBranch("tokens/dark.json", head)).toContain("{color.neutral.300}");
+        expect(second?.thread.title).toBe("`color.text.muted` changed (mode: dark)");
     });
 });
 
