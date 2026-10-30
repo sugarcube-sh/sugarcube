@@ -28,8 +28,12 @@ export const STUDIO_RPC = {
     CONFIG: "sugarcube:studio",
 } as const;
 
-export const STUDIO_DEVFRAME_ID = "sugarcube-studio";
+export const STUDIO_DEVFRAME_ID = "studio";
 
 export const STUDIO_VITE_PLUGIN = "sugarcube:studio:files";
 
-export const STUDIO_ROUTE = "/__studio/";
+export const STUDIO_HUB_BASE = "/__sugarcube/";
+
+export const STUDIO_ROUTE = "/__sugarcube/studio/";
+
+export const STUDIO_DOCK_SCRIPT = "/__sugarcube/embedded.js";

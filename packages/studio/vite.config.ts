@@ -6,6 +6,7 @@ import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 import { BUILT_APP } from "./src/built-files";
 import { demoStudio } from "./src/dev/demo";
+import { STUDIO_ROUTE } from "./src/studio-names";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 
@@ -65,7 +66,7 @@ export default defineConfig(({ command, mode }) => ({
             : {}),
         // The app is served at the root here; the bridge answers at its own base.
         "import.meta.env.VITE_STUDIO_RPC_BASE": JSON.stringify(
-            command === "serve" ? "/__studio/" : "",
+            command === "serve" ? STUDIO_ROUTE : "",
         ),
     },
 }));

@@ -3,6 +3,8 @@ import {
     STUDIO_BRANCH_PREFIX,
     STUDIO_COOKIES,
     STUDIO_DEVFRAME_ID,
+    STUDIO_DOCK_SCRIPT,
+    STUDIO_HUB_BASE,
     STUDIO_PAGE_CHANNEL,
     STUDIO_ROUTE,
     STUDIO_RPC,
@@ -24,7 +26,9 @@ describe("the names studio puts where it shares space with others", () => {
             STUDIO_RPC,
             STUDIO_DEVFRAME_ID,
             STUDIO_VITE_PLUGIN,
+            STUDIO_HUB_BASE,
             STUDIO_ROUTE,
+            STUDIO_DOCK_SCRIPT,
         }).toStrictEqual({
             STUDIO_SIGN_IN_BASE: "/api/sugarcube-studio",
             STUDIO_COOKIES: {
@@ -49,9 +53,11 @@ describe("the names studio puts where it shares space with others", () => {
                 MESSAGE: "sugarcube:studio:message",
                 CONFIG: "sugarcube:studio",
             },
-            STUDIO_DEVFRAME_ID: "sugarcube-studio",
+            STUDIO_DEVFRAME_ID: "studio",
             STUDIO_VITE_PLUGIN: "sugarcube:studio:files",
-            STUDIO_ROUTE: "/__studio/",
+            STUDIO_HUB_BASE: "/__sugarcube/",
+            STUDIO_ROUTE: "/__sugarcube/studio/",
+            STUDIO_DOCK_SCRIPT: "/__sugarcube/embedded.js",
         });
     });
 });

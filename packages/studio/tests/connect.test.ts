@@ -32,7 +32,9 @@ describe("one connection per mount", () => {
     beforeEach(() => {
         clients.length = 0;
         settle = [];
-        vi.stubGlobal("window", { location: { href: "http://localhost:1234/__studio/" } });
+        vi.stubGlobal("window", {
+            location: { href: "http://localhost:1234/__sugarcube/studio/" },
+        });
     });
     afterEach(() => vi.unstubAllGlobals());
 

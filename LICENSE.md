@@ -1,7 +1,7 @@
-> **Scope.** This MIT licence covers this repository except the studio packages
-> (`packages/studio`, `packages/studio-vite`, `packages/studio-node`),
-> which are not licensed for reuse or redistribution (`"license": "UNLICENSED"` in each manifest)
-> until a licence for them is chosen. The source is public so it can be read.
+> **Scope.** This MIT licence covers this repository except the studio package
+> (`packages/studio`),
+> which is not licensed for reuse or redistribution (`"license": "UNLICENSED"` in its manifest)
+> until a licence for it is chosen. The source is public so it can be read.
 
 MIT License
 

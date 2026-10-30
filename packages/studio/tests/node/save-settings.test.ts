@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gitSaveFor, repositoryFromRemote } from "../src/source";
+import { gitSaveFor, repositoryFromRemote } from "../../src/node/save-settings";
 
 describe("the repository a git remote points at", () => {
     it.for([

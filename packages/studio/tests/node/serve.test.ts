@@ -1,7 +1,7 @@
-import { createServer } from "node:http";
-import { studioDevframe } from "@sugarcube-sh/studio/server";
+import { createServer, request } from "node:http";
+import { studioDevframe } from "../../src/server/definition";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { STUDIO_PORT, serveStudioHub } from "../src/hub";
+import { STUDIO_PORT, serveFiles } from "../../src/node/serve";
 import { filesAt } from "./demo";
 
 vi.mock("devframe/utils/open", () => ({
@@ -14,17 +14,17 @@ describe("studioDevframe", () => {
     it("declares the studio route and dock without any host running", () => {
         const def = studioDevframe({ files: filesAt() });
 
-        expect(def.id).toBe("sugarcube-studio");
-        expect(def.basePath).toBe("/__studio/");
+        expect(def.id).toBe("studio");
+        expect(def.basePath).toBe("/__sugarcube/studio/");
         expect(def.dock?.title).toBe("studio");
     });
 });
 
-describe("serveStudioHub", () => {
-    let hub: Awaited<ReturnType<typeof serveStudioHub>>;
+describe("serveStudio", () => {
+    let hub: Awaited<ReturnType<typeof serveFiles>>;
 
     beforeAll(async () => {
-        hub = await serveStudioHub({ files: await filesAt(), port: 0 });
+        hub = await serveFiles(await filesAt(), { port: 0 });
     }, 30_000);
 
     afterAll(async () => {
@@ -36,6 +36,18 @@ describe("serveStudioHub", () => {
         expect(hub.origin).toMatch(/^http:\/\/localhost:\d+$/);
     });
 
+    it("says where studio opens and where its script is, and nothing about how it's served", () => {
+        expect(Object.keys(hub).sort()).toStrictEqual([
+            "close",
+            "embedScriptUrl",
+            "origin",
+            "port",
+            "studioUrl",
+        ]);
+        expect(hub.studioUrl).toBe(`${hub.origin}/__sugarcube/studio/`);
+        expect(hub.embedScriptUrl).toBe(`${hub.origin}/__sugarcube/embedded.js`);
+    });
+
     it("serves studio full width under the hub", async () => {
         const response = await fetch(hub.studioUrl);
 
@@ -44,7 +56,7 @@ describe("serveStudioHub", () => {
     });
 
     it("serves the connection descriptor the browser client fetches first", async () => {
-        const response = await fetch(`${hub.origin}/__devframes/__connection.json`);
+        const response = await fetch(`${hub.origin}/__sugarcube/__connection.json`);
 
         expect(response.status).toBe(200);
         const meta = (await response.json()) as { backend?: string };
@@ -70,7 +82,7 @@ describe("serveStudioHub", () => {
 
     it("serves the page script the dock imports into the page, where the hub put it", async () => {
         const response = await fetch(
-            `${hub.origin}/__devframes/sugarcube-studio/__page-script/page-script.mjs`,
+            `${hub.origin}/__sugarcube/studio/__page-script/page-script.mjs`,
             { headers: { Origin: "http://localhost:8080" } },
         );
 
@@ -80,7 +92,55 @@ describe("serveStudioHub", () => {
     });
 });
 
-describe("serveStudioHub, when things go wrong", () => {
+function upgradeFrom(origin: string, url: string): Promise<number | undefined> {
+    return new Promise((resolve, reject) => {
+        const asking = request(url, {
+            headers: {
+                "Origin": origin,
+                "Connection": "Upgrade",
+                "Upgrade": "websocket",
+                "Sec-WebSocket-Version": "13",
+                "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
+            },
+        });
+        asking.on("upgrade", (response, socket) => {
+            socket.destroy();
+            resolve(response.statusCode);
+        });
+        asking.on("response", (response) => {
+            response.resume();
+            resolve(response.statusCode);
+        });
+        asking.on("error", reject);
+        asking.end();
+    });
+}
+
+describe("serveStudio's live connection", () => {
+    let hub: Awaited<ReturnType<typeof serveFiles>>;
+
+    beforeAll(async () => {
+        hub = await serveFiles(await filesAt(), { port: 0 });
+    }, 30_000);
+
+    afterAll(async () => {
+        await hub?.close();
+    });
+
+    it("opens for a page on this machine", async () => {
+        expect(await upgradeFrom("http://localhost:8080", `${hub.origin}/__sugarcube/__ws`)).toBe(
+            101,
+        );
+    });
+
+    it("stays shut to a site on the internet, which could otherwise save to the token files", async () => {
+        expect(
+            await upgradeFrom("https://evil.example", `${hub.origin}/__sugarcube/__ws`),
+        ).not.toBe(101);
+    });
+});
+
+describe("serveStudio, when things go wrong", () => {
     it("has a fixed port by default, so a pasted script tag keeps working", () => {
         expect(STUDIO_PORT).toBe(2823);
     });
@@ -91,7 +151,7 @@ describe("serveStudioHub, when things go wrong", () => {
         const address = taken.address();
         const port = typeof address === "object" && address ? address.port : 0;
 
-        await expect(serveStudioHub({ files: await filesAt(), port })).rejects.toMatchObject({
+        await expect(serveFiles(await filesAt(), { port })).rejects.toMatchObject({
             code: "EADDRINUSE",
         });
 
@@ -100,7 +160,7 @@ describe("serveStudioHub, when things go wrong", () => {
 
     it("still serves when the browser cannot be opened", async () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-        const hub = await serveStudioHub({ files: await filesAt(), port: 0, open: true });
+        const hub = await serveFiles(await filesAt(), { port: 0, open: true });
 
         expect((await fetch(hub.studioUrl)).status).toBe(200);
         expect(warn).toHaveBeenCalledWith(expect.stringContaining(hub.studioUrl));

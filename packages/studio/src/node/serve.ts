@@ -1,64 +1,50 @@
-import { type Server, createServer } from "node:http";
-import { DEVFRAMES_HUB_BASE, initHub } from "@devframes/hub/initiate";
-import { clientPath } from "@sugarcube-sh/studio/client";
-import {
-    ErrorMessages,
-    STUDIO_SURFACE,
-    type StudioFiles,
-    projectFiles,
-    studioDevframe,
-} from "@sugarcube-sh/studio/server";
+import { createServer } from "node:http";
+import { initHub } from "@devframes/hub/initiate";
 import { getPort } from "devframe/utils/get-port";
 import { open as openInBrowser } from "devframe/utils/open";
 import { isAllowedOrigin } from "devframe/utils/origin";
-import { HUB_NAME, hubUi, studioDock } from "./studio-hub";
+import { BUILT_APP } from "../built-files";
+import { ErrorMessages } from "../error-messages";
+import { studioHub } from "../hub/studio-hub";
+import { STUDIO_SURFACE } from "../server/define-studio";
+import { studioDevframe } from "../server/definition";
+import type { StudioFiles } from "../server/files";
+import { STUDIO_DOCK_SCRIPT, STUDIO_ROUTE } from "../studio-names";
+import { projectFiles } from "./project-files";
 
 export const STUDIO_PORT = 2823;
 
 const HOST = "localhost";
 
-export type ServeStudioHubOptions = {
-    files?: StudioFiles;
+export type ServeStudioOptions = {
     port?: number;
     open?: boolean;
 };
 
-export type StudioHubServer = {
+export type StudioServer = {
     origin: string;
     port: number;
-    /** Where studio opens on its own, full width. */
     studioUrl: string;
-    /** A page loads this with `<script type="module">` to get the dock. */
     embedScriptUrl: string;
-    server: Server;
     close: () => Promise<void>;
 };
 
-/**
- * Serves studio from a port of its own, so a project not running Vite can still
- * put the dock on its pages: the page loads `embedded.js` from here. Only a hub
- * serves that file, which is why studio runs as one rather than as devframe's
- * simpler single-devframe server. The Vite adapter mounts the same thing.
- */
-export async function serveStudioHub(
-    options: ServeStudioHubOptions = {},
-): Promise<StudioHubServer> {
+export async function serveStudio(options: ServeStudioOptions = {}): Promise<StudioServer> {
+    return serveFiles(await projectFiles(), options);
+}
+
+export async function serveFiles(
+    files: StudioFiles,
+    options: ServeStudioOptions = {},
+): Promise<StudioServer> {
     const { open = false } = options;
-    const files = options.files ?? (await projectFiles());
     const port = options.port ?? (await getPort({ port: STUDIO_PORT, host: HOST }));
 
     const hub = initHub({
-        base: DEVFRAMES_HUB_BASE,
-        name: HUB_NAME,
-        devframes: [studioDock(studioDevframe({ files, clientAssets: clientPath }))],
-        ui: hubUi(),
+        ...studioHub(studioDevframe({ files, clientAssets: BUILT_APP })),
         auth: false,
     });
 
-    // The page sits on a different port, so everything it fetches from here —
-    // embedded.js, then __connection.json — is cross-origin. Under Vite this
-    // never comes up, because there studio shares the page's origin. Say yes to
-    // any localhost origin, since that is where a page can be coming from.
     const server = createServer((req, res) => {
         const origin = req.headers.origin;
         if (origin && isAllowedOrigin(origin, [])) {
@@ -91,14 +77,9 @@ export async function serveStudioHub(
     const boundPort = typeof address === "object" && address ? address.port : port;
     const origin = `http://${HOST}:${boundPort}`;
 
-    // The dock's iframe URL and page script come out starting with a slash,
-    // which a page on another port would resolve against its own server. Put
-    // this origin in front of both so they point back here.
     const ctx = await hub.context;
     const dock = ctx.docks.values().find((entry) => entry.id === STUDIO_SURFACE.id);
-    let studioPath = `${hub.base}${STUDIO_SURFACE.id}/`;
     if (dock && dock.type === "iframe" && dock.url.startsWith("/")) {
-        studioPath = dock.url;
         const { clientScript } = dock;
         ctx.docks.update({
             ...dock,
@@ -114,7 +95,7 @@ export async function serveStudioHub(
         });
     }
 
-    const studioUrl = `${origin}${studioPath}`;
+    const studioUrl = `${origin}${STUDIO_ROUTE}`;
     if (open) {
         try {
             await openInBrowser(studioUrl);
@@ -128,8 +109,7 @@ export async function serveStudioHub(
         origin,
         port: boundPort,
         studioUrl,
-        embedScriptUrl: `${origin}${hub.base}embedded.js`,
-        server,
+        embedScriptUrl: `${origin}${STUDIO_DOCK_SCRIPT}`,
         close: async () => {
             detach();
             await hub.close();

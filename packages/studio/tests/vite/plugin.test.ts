@@ -1,7 +1,7 @@
 import { SUGARCUBE_API_PLUGIN_NAME, type SugarcubePluginContext } from "@sugarcube-sh/vite";
 import type { ResolvedConfig } from "vite";
 import { describe, expect, it, vi } from "vitest";
-import sugarcubeStudio, { filesFromSugarcube } from "../src/index";
+import sugarcubeStudio, { filesFromSugarcube } from "../../src/vite/plugin";
 
 function context() {
     const listeners = new Set<() => void>();

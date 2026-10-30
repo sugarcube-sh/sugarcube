@@ -1,32 +1,35 @@
-# Developing Studio
+# Working on studio
 
-Studio is the visual editor UI. Three ways to run it, all the same app over the same
-devframe definition. Only where the files come from differs.
-
-## From this package
+## Try it on its own
 
 ```bash
+cd packages/studio
 pnpm dev
 ```
 
-Open http://localhost:5173/. Vite serves the app at the root with HMR; devframe's bridge
-answers at `/__studio/` against the demo tokens in `demo/`, and a change to one of those
-files reloads Studio. See `src/dev/demo.ts`.
+Open http://localhost:5173/. Studio edits the example tokens in `demo/`. Change one of those files
+and studio updates.
 
-## Inside apps/www
-
-The Vite plugin mounts a devframes hub in the site's dev server: Studio as a dock over the
-site, editing the site's real tokens. Setup: see `apps/www/CONTRIBUTING.md`.
-
-## From the command
+## Try it on the website
 
 ```bash
-sugarcube studio
+cd packages/studio
+pnpm build
+cd ../../apps/www
+pnpm dev
 ```
 
-Runs the same hub on its own port for any project, Vite or not, and prints the one script tag
-a page adds to get the dock. See `packages/studio-node/src/hub.ts` and
-`notes/studio/devframe-audit.md` for why it is a hub.
+Studio appears on every page of the site and edits the site's own tokens. See
+[apps/www/CONTRIBUTING.md](../../apps/www/CONTRIBUTING.md).
 
-Whatever the host, run `pnpm build` in this package after changing `src/server/*` or the page
-script: the adapters load Studio's built output.
+## After you change studio
+
+```bash
+pnpm build
+```
+
+## Tests
+
+```bash
+pnpm test
+```

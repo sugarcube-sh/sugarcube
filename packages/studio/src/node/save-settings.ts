@@ -1,11 +1,9 @@
 import { execFileSync } from "node:child_process";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import type { InternalConfig } from "@sugarcube-sh/core";
-import {
-    ErrorMessages,
-    type GitSaveSettings,
-    STUDIO_SIGN_IN_BASE,
-} from "@sugarcube-sh/studio/server";
+import { ErrorMessages } from "../error-messages";
+import type { GitSaveSettings } from "../protocol";
+import { STUDIO_SIGN_IN_BASE } from "../studio-names";
 
 export type Git = (args: readonly string[]) => string | undefined;
 
