@@ -10,7 +10,7 @@ import type { SaveOutcome, StudioConnectionConfig, StudioMessage } from "../prot
  * A devframe host (i.e. whichever dev server studio is running in) publishes `__connection.json`, which tells a client where to
  * open the RPC socket. Studio doesn't know which host mounted it, so it tries
  * its own URL first, then a level up. The env var covers `pnpm dev` in this
- * package, where the app sits at the root and the server answers at /__studio/.
+ * package, where the app sits at the root and the server answers at studio's route.
  */
 function connectionBases(): string[] {
     const here = new URL(".", window.location.href).href;

@@ -1,11 +1,5 @@
-import {
-    type LoadedConfig,
-    loadInternalConfig,
-    problemsText,
-    tokensOnDisk,
-} from "@sugarcube-sh/core";
+import { type LoadedConfig, tokensOnDisk } from "@sugarcube-sh/core";
 import { type FileWatcher, liveTokens } from "@sugarcube-sh/dtcg/node";
-import { ErrorMessages } from "../error-messages";
 import type { StudioFiles } from "./files";
 
 export async function nodeFiles(
@@ -28,18 +22,4 @@ export async function nodeFiles(
         },
         watch: (watcher) => live.watch(watcher),
     };
-}
-
-export async function projectFiles(): ReturnType<typeof nodeFiles> {
-    const { config } = await loadInternalConfig();
-    return nodeFiles(config, {
-        onError: (error) => console.error(ErrorMessages.READ_FAILED, error),
-    });
-}
-
-export function refuseEmpty(files: StudioFiles): void {
-    const { config, tokens } = files.now();
-    if (tokens.tokenPaths().length > 0) return;
-    const where = { cwd: process.cwd(), entry: config.resolver };
-    throw new Error(ErrorMessages.NOTHING_TO_BUILD(problemsText(tokens.diagnostics, where)));
 }

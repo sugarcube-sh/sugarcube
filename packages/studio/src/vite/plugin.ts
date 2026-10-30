@@ -1,13 +1,12 @@
-import { clientPath, pageScriptPath } from "@sugarcube-sh/studio/client";
-import {
-    ErrorMessages,
-    STUDIO_VITE_PLUGIN,
-    type StudioFiles,
-    studioDevframe,
-} from "@sugarcube-sh/studio/server";
-import { SUGARCUBE_API_PLUGIN_NAME, type SugarcubePluginContext } from "@sugarcube-sh/vite";
 import { viteDevframeHub } from "@devframes/vite/hub";
+import { SUGARCUBE_API_PLUGIN_NAME, type SugarcubePluginContext } from "@sugarcube-sh/vite";
 import type { Plugin } from "vite";
+import { BUILT_APP } from "../built-files";
+import { ErrorMessages } from "../error-messages";
+import { studioHub } from "../hub/studio-hub";
+import { studioDevframe } from "../server/definition";
+import type { StudioFiles } from "../server/files";
+import { STUDIO_VITE_PLUGIN } from "../studio-names";
 
 export function filesFromSugarcube(): { plugin: Plugin; files: Promise<StudioFiles> } {
     let found: (files: StudioFiles) => void = () => {};
@@ -35,19 +34,7 @@ export function filesFromSugarcube(): { plugin: Plugin; files: Promise<StudioFil
 
 export default function sugarcubeStudio(): Plugin[] {
     const { plugin, files } = filesFromSugarcube();
-    const definition = studioDevframe({ files, clientAssets: clientPath });
+    const hub = studioHub(studioDevframe({ files, clientAssets: BUILT_APP }));
 
-    return [
-        plugin,
-        viteDevframeHub({
-            devframes: [
-                {
-                    devframe: definition,
-                    dock: { clientScript: { importFrom: pageScriptPath, eager: true } },
-                },
-            ],
-            auth: false,
-            quiet: true,
-        }),
-    ];
+    return [plugin, viteDevframeHub({ ...hub, auth: false, quiet: true })];
 }

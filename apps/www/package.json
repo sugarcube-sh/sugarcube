@@ -35,7 +35,7 @@
     "@radix-ui/react-tabs": "^1.1.21",
     "@sugarcube-sh/cli": "workspace:*",
     "@sugarcube-sh/core": "workspace:*",
-    "@sugarcube-sh/studio-vite": "workspace:*",
+    "@sugarcube-sh/studio": "workspace:*",
     "@sugarcube-sh/vite": "workspace:*",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",

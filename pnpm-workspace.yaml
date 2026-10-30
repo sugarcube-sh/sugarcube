@@ -24,6 +24,7 @@ trustPolicyExclude:
 
 overrides:
   vite: 8.3.0
+  "@types/node": "$@types/node"
 
 # pnpm 11 replaces onlyBuiltDependencies. Each detected lifecycle-script package
 # needs an explicit opt-in. Keep this list minimal — only allow what you trust

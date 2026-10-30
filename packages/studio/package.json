@@ -9,19 +9,19 @@
     "email": "mark@marktomlinson.dev",
     "url": "https://marktomlinson.dev"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+    "./vite": {
+      "types": "./dist/vite.d.mts",
+      "import": "./dist/vite.mjs"
     },
-    "./client": {
-      "types": "./dist/client.d.mts",
-      "import": "./dist/client.mjs"
-    },
-    "./server": {
-      "types": "./dist/server.d.mts",
-      "import": "./dist/server.mjs"
+    "./node": {
+      "types": "./dist/node.d.mts",
+      "import": "./dist/node.mjs"
     },
     "./sign-in": {
       "types": "./dist/sign-in.d.mts",
@@ -29,7 +29,7 @@
     }
   },
   "scripts": {
-    "build": "pkgroll --minify && pnpm run build:client && pnpm run build:page-script",
+    "build": "pkgroll --minify --clean-dist && pnpm run build:client && pnpm run build:page-script",
     "build:client": "vite build",
     "dev": "vite",
     "dev:dist": "pnpm run \"/^dev:(lib|client)$/\"",
@@ -41,16 +41,15 @@
     "build:page-script": "vite build --config vite.page-script.config.ts"
   },
   "dependencies": {
+    "@devframes/hub": "^1.0.0",
+    "@devframes/hub-ui": "^1.0.0",
+    "@devframes/vite": "^1.0.0",
     "@sugarcube-sh/core": "workspace:*",
     "@sugarcube-sh/dtcg": "workspace:*",
     "@sugarcube-sh/dtcg-edit": "workspace:*",
-    "culori": "^4.0.2",
-    "devframe": "^1.0.0",
-    "forges": "0.2.0",
-    "radix-ui": "^1.6.7"
+    "devframe": "^1.0.0"
   },
   "devDependencies": {
-    "@devframes/vite": "^1.0.0",
     "@sugarcube-sh/vite": "workspace:*",
     "@types/culori": "^4.0.1",
     "@types/react": "^19.2.18",
@@ -60,14 +59,32 @@
     "@vitest/browser-playwright": "4.1.11",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "culori": "^4.0.2",
+    "forges": "0.2.0",
     "lucide-react": "^1.41.0",
     "pkgroll": "^2.28.1",
     "playwright": "^1.64.1",
+    "radix-ui": "^1.6.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "^7.9.6",
     "typescript": "^5.8.3",
     "vite": "^8",
     "vitest-browser-react": "^2.3.0"
+  },
+  "peerDependencies": {
+    "@sugarcube-sh/vite": "workspace:^",
+    "vite": "^7 || ^8"
+  },
+  "peerDependenciesMeta": {
+    "@sugarcube-sh/vite": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=22.14.0"
   }
 }
