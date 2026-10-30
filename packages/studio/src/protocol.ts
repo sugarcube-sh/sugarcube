@@ -4,23 +4,18 @@ import type { Conflict, Edits } from "@sugarcube-sh/dtcg-edit";
 import type { PlainSettings } from "./adapters/plain";
 import type { BuildProblem } from "./controllers/adapter";
 
-export const STUDIO_RPC = {
-    SAVE: "sugarcube:studio:save",
-    MESSAGE: "sugarcube:studio:message",
-    /** Not a method: studio's key in the handshake's `configs`. */
-    CONFIG: "sugarcube:studio",
-} as const;
+export type GitSaveSettings = {
+    readonly host: "github";
+    readonly repository: string;
+    readonly branch: string;
+    readonly entry: string;
+    readonly signIn: string;
+    readonly install?: string;
+};
 
 /** Settings the host publishes in the handshake for clients to read. */
 export type StudioConnectionConfig = {
-    /** Where saves go when there's no server to write files: a service that opens a pull request. */
-    saveTo?: SaveTo;
-};
-
-export type SaveTo = {
-    readonly url: string;
-    /** The resolver's path in the repository, as the build read it from the project's root. */
-    readonly entry: string;
+    gitSave?: GitSaveSettings;
 };
 
 type Files = Readonly<Record<string, string>>;
@@ -36,11 +31,24 @@ export type SaveOutcome =
           pullRequest?: undefined;
           conflicts?: undefined;
           files?: undefined;
+          changedOn?: undefined;
       }
-    | { pullRequest: PullRequest; files: Files; written?: undefined; conflicts?: undefined }
-    | { conflicts: Conflict[]; files?: Files; written?: undefined; pullRequest?: undefined };
+    | {
+          pullRequest: PullRequest;
+          files: Files;
+          written?: undefined;
+          conflicts?: undefined;
+          changedOn?: undefined;
+      }
+    | {
+          conflicts: Conflict[];
+          files?: Files;
+          changedOn?: string | undefined;
+          written?: undefined;
+          pullRequest?: undefined;
+      };
 
-export type PullRequest = { readonly number: number; readonly url: string };
+export type PullRequest = { readonly number: number; readonly url?: string | undefined };
 
 export type StudioSave = (edits: Edits, changes: readonly Change[]) => Promise<SaveOutcome>;
 

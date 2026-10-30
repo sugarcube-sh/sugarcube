@@ -13,6 +13,15 @@ import { slashed } from "./paths.js";
 export function read(entry: string, options: ReadOptions = {}): Promise<DesignTokens> {
     return readAnywhere(slashed(entry), {
         ...options,
-        readText: (file) => readFile(file, "utf8"),
+        readText: textOnDisk,
     });
+}
+
+export async function textOnDisk(file: string): Promise<string | undefined> {
+    try {
+        return await readFile(file, "utf8");
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+        throw error;
+    }
 }

@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { type Diagnostic, type DesignTokens, read, readFromMemory } from "../../src/index.js";
+import { textIn } from "./on-disk.js";
 
 const repo = join(import.meta.dirname, "../../../..");
 
@@ -299,7 +299,7 @@ beforeAll(async () => {
     const covered = new Set<string>();
     for (const entry of files.filter((file) => file.endsWith(".resolver.json"))) {
         const tokens = await read(entry, {
-            readText: (path) => readFile(join(repo, path), "utf8"),
+            readText: textIn(repo),
         });
         for (const file of tokens.files) covered.add(join(dirname(entry), file));
         projects.set(entry, tokens);

@@ -111,6 +111,7 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
 };
 
 export const thrownMessages = {
+    couldNotFetch: (path: string) => `\`${path}\` could not be fetched`,
     permutation: (detail: PermutationErrorDetail) =>
         detail.reason === "not-read"
             ? `\`${permutationLabel(detail.input)}\` was not built by this read`

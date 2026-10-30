@@ -24,9 +24,11 @@ const { performance } = globalThis as unknown as { performance: { now(): number 
  * Files are fetched through `readText`, so this runs anywhere: a browser, a worker, Deno, Bun or
  * Node. `@sugarcube-sh/dtcg/node` provides a version that reads from disk.
  *
- * Never rejects because of what is, or is not, in the files. A file that cannot be fetched
- * (`readText` throws) or cannot be read is reported in {@link DesignTokens.diagnostics}, and the
- * rest is still read.
+ * Never rejects because of what is, or is not, in the files. A file that is not there
+ * (`readText` gives `undefined`) or cannot be understood is reported in
+ * {@link DesignTokens.diagnostics}, and the rest is still read. A file that could not be fetched
+ * (`readText` throws or rejects) rejects the read, naming the file, with the error as its `cause`:
+ * a network or permission failure is not a deleted file.
  *
  * @param entry A resolver document or a token file. It is read as a resolver when its name ends
  * `.resolver.json` (Resolver 3.2) or its top level has `resolutionOrder` (Resolver 4.1), and as a
@@ -34,7 +36,12 @@ const { performance } = globalThis as unknown as { performance: { now(): number 
  *
  * @example
  * const tokens = await read("tokens.resolver.json", {
- *   readText: (path) => fetch(path).then((r) => r.text()),
+ *   readText: async (path) => {
+ *     const response = await fetch(path);
+ *     if (response.status === 404) return undefined;
+ *     if (!response.ok) throw new Error(`${response.status}`);
+ *     return response.text();
+ *   },
  * });
  */
 export async function read(
@@ -54,12 +61,14 @@ export async function read(
 async function fetchAll(files: Request, folder: string, readText: ReadText): Promise<Answer> {
     const fetched = await Promise.all(
         files.map(async (file): Promise<[string, FileText]> => {
+            const path = join(folder, file);
+            let text: string | undefined;
             try {
-                const text = await readText(join(folder, file), file);
-                return [file, typeof text === "string" ? { text } : { missing: true }];
-            } catch {
-                return [file, { missing: true }];
+                text = await readText(path, file);
+            } catch (cause) {
+                throw new Error(thrownMessages.couldNotFetch(path), { cause });
             }
+            return [file, text === undefined ? { missing: true } : { text }];
         }),
     );
     return Object.fromEntries(fetched);

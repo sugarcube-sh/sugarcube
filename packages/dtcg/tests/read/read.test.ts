@@ -173,15 +173,42 @@ describe("read", () => {
         expect(readText.mock.calls).toStrictEqual([["design/base.json", "base.json"]]);
     });
 
-    it("reports a file as not found when readText throws before returning a promise", async () => {
-        const tokens = await read("tokens.json", {
+    it("reports a file as not found when readText gives undefined", async () => {
+        const tokens = await read("tokens.json", { readText: async () => undefined });
+        expect(tokens.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toStrictEqual([
+            { kind: "file-not-found", detail: { file: "tokens.json" } },
+        ]);
+    });
+
+    it("rejects, naming the file, when readText rejects", async () => {
+        const offline = new Error("offline");
+        const reading = read("tokens/tokens.json", {
+            readText: () => Promise.reject(offline),
+        });
+        await expect(reading).rejects.toThrow("tokens/tokens.json");
+        await expect(reading).rejects.toMatchObject({ cause: offline });
+    });
+
+    it("rejects when readText throws before returning a promise", async () => {
+        const reading = read("tokens.json", {
             readText: () => {
                 throw new Error("no");
             },
         });
-        expect(tokens.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toStrictEqual([
-            { kind: "file-not-found", detail: { file: "tokens.json" } },
-        ]);
+        await expect(reading).rejects.toThrow("tokens.json");
+    });
+
+    it("rejects when a file the resolver names cannot be read, not only the entry", async () => {
+        const resolver = JSON.stringify({
+            version: "2025.10",
+            sets: { base: { sources: [{ $ref: "base.json" }] } },
+            resolutionOrder: [{ $ref: "#/sets/base" }],
+        });
+        const reading = read("tokens.resolver.json", {
+            readText: async (path) =>
+                path === "base.json" ? Promise.reject(new Error("503")) : resolver,
+        });
+        await expect(reading).rejects.toThrow("base.json");
     });
 
     it("reports the time the load took", async () => {

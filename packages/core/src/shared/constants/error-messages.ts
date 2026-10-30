@@ -302,10 +302,10 @@ export const ErrorMessages = {
             `Several resolver files were found:\n${paths.map((f) => `  - ${f}`).join("\n")}\n\nName the one to use as \`resolver\` in sugarcube.config.ts.`,
         NO_CONFIG_OR_RESOLVER: () =>
             "No design tokens found.\n\nRun @sugarcube-sh/cli init to set up your design tokens.\n\nStuck? https://sugarcube.sh/docs",
-        PANEL_MISSING_SOURCE: (section: string, token: string) =>
-            `Panel section "${section}" has an alias binding for "${token}" with no choices. Set "options" to a glob like "radius.*", or "from" to a named source like "colorScale". Either can go on the section instead, to apply to every binding inside`,
-        PANEL_AMBIGUOUS_SOURCE: (section: string, token: string) =>
-            `Panel section "${section}" has an alias binding for "${token}" with both "from" and "options". They are alternatives: "options" is the set itself, "from" names a source declared elsewhere in studio config. Remove one — note that either may have been inherited from the section`,
+        STUDIO_REPOSITORY: 'studio.repository is written as "owner/name", such as "acme/site".',
+        STUDIO_APP:
+            'studio.app is the GitHub App\'s name as it appears in its address, such as "acme-studio" in github.com/apps/acme-studio.',
+        STUDIO_SIGN_IN: 'studio.signIn is a path on your site, such as "/api/sugarcube-studio".',
     },
 
     UTILITIES: {

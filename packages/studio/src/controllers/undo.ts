@@ -19,13 +19,16 @@ export function fieldKey({ path, writes, place, part = [], control }: Field): st
     return JSON.stringify([path, writes, place ?? null, part, control ?? null]);
 }
 
-export function changeBarActions({ state, save }: Pick<Studio, "state" | "save">) {
+export function changeBarActions(
+    { state, save }: Pick<Studio, "state" | "save">,
+    { canSave }: { canSave: boolean } = { canSave: true },
+) {
     const { changes, canUndo, canRedo, saving } = state;
     return {
         undo: canUndo && !saving,
         redo: canRedo && !saving,
         discard: changes.length > 0 && !saving,
-        save: save !== undefined && changes.length > 0 && !saving,
+        save: canSave && save !== undefined && changes.length > 0 && !saving,
     };
 }
 
