@@ -4,10 +4,10 @@ import presetWind3 from "@unocss/preset-wind3";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
+import { BUILT_APP } from "./src/built-files";
 import { demoStudio } from "./src/dev/demo";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
-const outDir = fileURLToPath(new URL("./dist/client", import.meta.url));
 
 export default defineConfig(({ command, mode }) => ({
     root,
@@ -22,7 +22,7 @@ export default defineConfig(({ command, mode }) => ({
         demoStudio(),
     ],
     build: {
-        outDir,
+        outDir: BUILT_APP,
         emptyOutDir: true,
         // Seems that `vite build` minifies by default. This is annoying in development so we disable it.
         minify: mode !== "development",
