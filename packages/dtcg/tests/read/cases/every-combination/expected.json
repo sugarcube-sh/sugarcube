@@ -162,7 +162,7 @@
         "theme": "light",
         "brand": "house"
       },
-      "label": "default",
+      "label": "theme: light, brand: house",
       "sources": [0]
     },
     {
@@ -170,7 +170,7 @@
         "theme": "light",
         "brand": "ocean"
       },
-      "label": "brand: ocean",
+      "label": "theme: light, brand: ocean",
       "sources": [0, 1]
     },
     {
@@ -178,7 +178,7 @@
         "theme": "dark",
         "brand": "house"
       },
-      "label": "theme: dark",
+      "label": "theme: dark, brand: house",
       "sources": [0, 2]
     },
     {
@@ -203,31 +203,25 @@
     },
     {
       "file": "ocean.json",
-      "context": {
-        "modifier": "brand",
-        "name": "ocean"
-      },
       "sets": [],
       "readBy": [
         {
           "modifier": "brand",
           "name": "ocean"
         }
-      ]
+      ],
+      "modifier": "brand"
     },
     {
       "file": "dark.json",
-      "context": {
-        "modifier": "theme",
-        "name": "dark"
-      },
       "sets": [],
       "readBy": [
         {
           "modifier": "theme",
           "name": "dark"
         }
-      ]
+      ],
+      "modifier": "theme"
     }
   ]
 }

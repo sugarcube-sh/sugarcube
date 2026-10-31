@@ -37,14 +37,19 @@ export function normalisePermutations(
         return found.contents;
     };
     const published = new Map<ListedSource, Source>();
+    const readSources: Source[] = [];
     const publish = (listed: ListedSource): Source => {
         const found = published.get(listed);
         if (found) return found;
         const { source, pieces } = listed;
         const extensions = pieces.map((each) => walk(each)?.root.extensions).find(Boolean);
         const made = { ...source, ...(extensions && { extensions }) };
-        const was = previous?.[published.size];
-        const kept = was && sameSource(was, made) ? was : withPosition(made, published.size);
+        let kept = readSources.find((each) => sameSource(each, made));
+        if (!kept) {
+            const was = previous?.[readSources.length];
+            kept = was && sameSource(was, made) ? was : withPosition(made, readSources.length);
+            readSources.push(kept);
+        }
         published.set(listed, kept);
         return kept;
     };
@@ -59,5 +64,5 @@ export function normalisePermutations(
         inWrittenOrder(merged);
         return { input, label, contexts, sources: sources.map(publish), merged };
     });
-    return { permutations: normalised, sources: [...published.values()] };
+    return { permutations: normalised, sources: readSources };
 }

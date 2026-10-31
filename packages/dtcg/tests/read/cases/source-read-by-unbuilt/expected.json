@@ -13,7 +13,7 @@
       "input": {
         "mode": "light"
       },
-      "label": "default",
+      "label": "mode: light",
       "sources": [0, 1, 2]
     }
   ],
@@ -40,10 +40,6 @@
     },
     {
       "file": "both.json",
-      "context": {
-        "modifier": "mode",
-        "name": "light"
-      },
       "sets": [],
       "readBy": [
         {
@@ -54,7 +50,8 @@
           "modifier": "mode",
           "name": "dark"
         }
-      ]
+      ],
+      "modifier": "mode"
     }
   ]
 }

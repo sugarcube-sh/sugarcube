@@ -81,7 +81,7 @@ export function sameSource(was: Source, now: Source): boolean {
     return (
         was.file === now.file &&
         was.pointer === now.pointer &&
-        was.context === now.context &&
+        was.modifier === now.modifier &&
         sameReaders(was.readBy, now.readBy) &&
         sameJson(was.sets, now.sets) &&
         sameJson(was.extensions, now.extensions)

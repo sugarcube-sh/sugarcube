@@ -156,7 +156,7 @@ function listedSources(
         const source = {
             file: loaded.file,
             ...(loaded.pointer && { pointer: loaded.pointer }),
-            ...(context && { context }),
+            ...(context && { modifier: context.modifier }),
             sets: route(first),
             readBy: readBy.get(sourceKey(loaded)) ?? "everyone",
         };

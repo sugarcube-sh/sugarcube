@@ -7,6 +7,7 @@ import type {
     Span,
 } from "../index.js";
 import { permutationsOf } from "../read/permutations-of.js";
+import { jsonPathIn } from "./json-path.js";
 
 export function writtenAtIn(tokens: DesignTokens, path: string): PlaceInPermutations[] {
     const found = new Map<Span, { sources: Source[]; readIn: Permutation[]; first: Place }>();
@@ -29,6 +30,9 @@ export function writtenAtIn(tokens: DesignTokens, path: string): PlaceInPermutat
     }
     return [...found].map(([span, { sources, readIn, first }]) => ({
         span,
+        get jsonPath() {
+            return jsonPathIn(tokens, span);
+        },
         get written() {
             return first.written;
         },

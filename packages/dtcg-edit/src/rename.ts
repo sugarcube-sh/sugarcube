@@ -8,7 +8,7 @@ import {
 import { refused } from "./error-messages.js";
 import type { FileOp, OpResult } from "./index.js";
 import { copiesOf } from "./placement.js";
-import { type Member, memberAt } from "./file-text.js";
+import type { Member } from "./file-text.js";
 
 /**
  * Renames a token or group where each is written, and rewrites every reference to it or to
@@ -48,11 +48,16 @@ export function rename(tokens: DesignTokens, path: string, newName: string): OpR
     }));
     const all = tokens.referencedBy(path);
     const references = all.filter(isWritten).flatMap((reference): FileOp[] => {
-        const member = memberAt(tokens, reference.span);
-        if (!member) return [];
-        const jsonPath = afterKeys(member, copies.places, newName);
+        const { span } = reference;
+        const was = tokens.jsonAt(span.file, reference.jsonPath);
+        if (was === undefined) return [];
+        const jsonPath = afterKeys(
+            { span, jsonPath: reference.jsonPath, written: was },
+            copies.places,
+            newName,
+        );
         const value = reference.moved(moved);
-        return [{ kind: "set", file: member.span.file, jsonPath, value, was: member.written }];
+        return [{ kind: "set", file: span.file, jsonPath, value, was }];
     });
     const broken = [...new Set(all.filter((each) => !isWritten(each)).map(({ from }) => from))];
     return { ops: [...keys, ...references], alsoAffects: copies.alsoAffects, broken, moved };

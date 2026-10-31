@@ -70,7 +70,7 @@ describe("a token's writtenAt, across sources", () => {
         const winner = dark?.writtenAt.at(-1);
 
         expect(dark?.writtenAt.every(({ source }) => sources.includes(source))).toBe(true);
-        expect(winner?.source.context?.name).toBe("dark");
+        expect(winner?.source.modifier?.name).toBe("mode");
         expect(winner?.source.sets).toStrictEqual([]);
     });
 

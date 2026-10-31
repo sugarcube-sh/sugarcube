@@ -230,8 +230,10 @@ export const doneWord: Record<Exclude<ChangeLine["kind"], "renamed" | "group-ren
 };
 
 function partialLabel(permutations: Permutations | undefined): string | undefined {
-    const label = permutations?.label;
-    return label === "everywhere" || label === "nowhere" ? undefined : label;
+    if (!permutations || permutations.length === 0 || permutations.others.length === 0) {
+        return undefined;
+    }
+    return permutations.label;
 }
 
 function isPath(path: string | undefined): path is string {

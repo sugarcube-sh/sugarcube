@@ -1,9 +1,10 @@
-import type {
-    DesignTokens,
-    Permutations,
-    ResolverContext,
-    Source,
-    Token,
+import {
+    type DesignTokens,
+    type Permutations,
+    type ResolverContext,
+    type Source,
+    type Token,
+    everyPermutation,
 } from "@sugarcube-sh/dtcg";
 import type { Use, Uses } from "./uses.js";
 
@@ -40,9 +41,11 @@ export interface Impact {
 export function unused({ tokens, uses }: Analysis): Unused {
     const used = uses.uses.map(({ token }) => token);
     const reached = new Set(used);
-    for (const path of used) {
-        for (const { path: named } of tokens.references(path, { chained: true })) {
-            if (named !== undefined) reached.add(named);
+    for (const permutation of tokens.permutations) {
+        for (const path of used) {
+            for (const { path: named } of permutation.refersTo(path, { chained: true })) {
+                if (named !== undefined) reached.add(named);
+            }
         }
     }
     const paths = tokens.tokenPaths();
@@ -65,11 +68,14 @@ interface Named {
 
 export function impact({ tokens, uses }: Analysis, path: string, written: Written[]): Impact {
     const byDependent = new Map<string, Named[]>();
-    for (const reference of tokens.referencedBy(path, { chained: true })) {
-        const { from, permutations } = reference;
-        if (from === path || reference.path === undefined) continue;
-        const named = { path: reference.path, permutations };
-        byDependent.set(from, [...(byDependent.get(from) ?? []), named]);
+    const asked = everyPermutation(tokens, (p) => p.referencedBy(path, { chained: true }));
+    for (const { answer, permutations } of asked) {
+        for (const reference of answer) {
+            const from = reference.from.path;
+            if (from === path || reference.path === undefined) continue;
+            const named = { path: reference.path, permutations };
+            byDependent.set(from, [...(byDependent.get(from) ?? []), named]);
+        }
     }
     const dependents = [...byDependent]
         .map(([from, references]) => dependent(tokens, from, references))

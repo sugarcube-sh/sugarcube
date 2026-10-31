@@ -732,12 +732,12 @@ describe("labels", () => {
     });
     const tokens = readFromMemory({ files: { "tokens.resolver.json": resolver } });
 
-    it("name what is away from each modifier's default, even a context called default", () => {
+    it("name each modifier's context, so a context called default can't be mistaken", () => {
         expect(tokens.permutations.map(({ input, label }) => [input, label])).toStrictEqual([
-            [{ theme: "light", size: "default" }, "size: default"],
-            [{ theme: "light", size: "large" }, "default"],
+            [{ theme: "light", size: "default" }, "theme: light, size: default"],
+            [{ theme: "light", size: "large" }, "theme: light, size: large"],
             [{ theme: "dark", size: "default" }, "theme: dark, size: default"],
-            [{ theme: "dark", size: "large" }, "theme: dark"],
+            [{ theme: "dark", size: "large" }, "theme: dark, size: large"],
         ]);
     });
 

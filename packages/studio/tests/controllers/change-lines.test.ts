@@ -33,7 +33,7 @@ describe("changeLines", () => {
                 kind: "renamed",
                 from: "color.text.default",
                 path: "color.text.body",
-                inPermutations: "default",
+                inPermutations: "mode: light",
             },
             {
                 kind: "renamed",

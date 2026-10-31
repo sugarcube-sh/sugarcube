@@ -1,3 +1,4 @@
+import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { remove, setValue } from "@sugarcube-sh/dtcg-edit";
 import { describe, expect, it } from "vitest";
 import { problemRows } from "../../src/controllers/views";
@@ -18,6 +19,40 @@ describe("problemRows", () => {
         const studio = studioOn(withFile("dark.json", '{ "color": { "text": '));
 
         expect(problemRows(studio.state.problems)[0]?.inPermutations).toBe("mode: dark");
+    });
+
+    it("names no themes for a problem in every permutation read, though the read built only some", () => {
+        const read = readFromMemory(
+            {
+                files: {
+                    "tokens.resolver.json": JSON.stringify({
+                        version: "2025.10",
+                        resolutionOrder: [
+                            { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
+                            {
+                                type: "modifier",
+                                name: "mode",
+                                default: "light",
+                                contexts: { light: [], dark: [] },
+                            },
+                            {
+                                type: "modifier",
+                                name: "density",
+                                default: "comfy",
+                                contexts: { comfy: [], compact: [] },
+                            },
+                        ],
+                    }),
+                    "base.json": '{ "gap": ',
+                },
+            },
+            { permutations: "each-context" },
+        );
+
+        const [row] = problemRows(read.diagnostics);
+
+        expect(read.diagnostics[0]?.permutations.label).not.toBe("everywhere");
+        expect(row?.inPermutations).toBeUndefined();
     });
 
     it("gives a problem in no file no place", () => {

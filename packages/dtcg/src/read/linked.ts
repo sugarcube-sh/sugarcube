@@ -20,16 +20,10 @@ import type {
 } from "../index.js";
 import { diagnosticsAtIn, diagnosticsForIn, diagnosticsIn } from "../lookup/diagnostics.js";
 import { diffIn } from "../lookup/diff.js";
+import { jsonIn, jsonPathIn } from "../lookup/json-path.js";
 import { partsOf } from "../lookup/parts.js";
-import { modifierIn, permutationIn } from "../lookup/permutation.js";
-import {
-    referencedByIn,
-    referencedIn,
-    referencesIn,
-    usedByIn,
-    usedIn,
-} from "../lookup/references.js";
-import { resolvedValuesIn } from "../lookup/resolved-values.js";
+import { modifierIn, onlyPermutation, permutationIn } from "../lookup/permutation.js";
+import { referencedByIn, referencedIn, refersToIn, usedIn } from "../lookup/references.js";
 import { writtenAtIn } from "../lookup/written-at.js";
 import { spanOfReference } from "./reference.js";
 import { samePlace } from "./same-object.js";
@@ -176,6 +170,10 @@ class PermutationObject {
         return usedIn(this.#self, path, options);
     }
 
+    refersTo(path: string, options?: ReferenceOptions): Reference[] {
+        return refersToIn(this.#self, path, options);
+    }
+
     diagnosticsFor(path: string): Diagnostic[] {
         return diagnosticsIn(this.#designTokens as DesignTokens, this.#self, path);
     }
@@ -229,28 +227,48 @@ class DesignTokensObject {
         this.#kept = kept;
     }
 
-    references(path: string, options?: ReferenceOptions) {
-        return referencesIn(this.#self, path, options);
-    }
-
-    referencedBy(path: string, options?: ReferenceOptions) {
-        return referencedByIn(this.#self, path, options);
-    }
-
-    usedBy(path: string, options?: ReferenceOptions) {
-        return usedByIn(this.#self, path, options);
+    referencedBy(path: string) {
+        return referencedByIn(this.#self, path);
     }
 
     writtenAt(path: string) {
         return writtenAtIn(this.#self, path);
     }
 
-    resolvedValues(path: string) {
-        return resolvedValuesIn(this.#self, path);
-    }
-
     permutation(input?: Input) {
         return permutationIn(this.#self, input);
+    }
+
+    token(path: string) {
+        return onlyPermutation(this.#self, "token()").token(path);
+    }
+
+    group(path: string) {
+        return onlyPermutation(this.#self, "group()").group(path);
+    }
+
+    usedBy(path: string, options?: ReferenceOptions) {
+        return onlyPermutation(this.#self, "usedBy()").usedBy(path, options);
+    }
+
+    refersTo(path: string, options?: ReferenceOptions) {
+        return onlyPermutation(this.#self, "refersTo()").refersTo(path, options);
+    }
+
+    get tokens() {
+        return onlyPermutation(this.#self, "tokens").tokens;
+    }
+
+    get groups() {
+        return onlyPermutation(this.#self, "groups").groups;
+    }
+
+    get children() {
+        return onlyPermutation(this.#self, "children").children;
+    }
+
+    get root() {
+        return onlyPermutation(this.#self, "root").root;
     }
 
     modifier(name: string) {
@@ -314,6 +332,14 @@ class DesignTokensObject {
         return "source" in of ? PlaceObject.spanOf(of as PlaceObject) : spanOfReference(of);
     }
 
+    jsonPathOf(of: Place | Reference): JsonPath {
+        return jsonPathIn(this.#self, this.spanOf(of));
+    }
+
+    jsonAt(file: string, jsonPath: JsonPath) {
+        return jsonIn(this.#self, file, jsonPath);
+    }
+
     has(path: string) {
         return this.#self.permutations.some(
             (each) => (each.token(path) ?? each.group(path)) !== undefined,
@@ -359,6 +385,11 @@ class SourceObject {
 
     static positionOf(source: Source): number {
         return (source as unknown as SourceObject).#position;
+    }
+
+    toJSON() {
+        const { modifier, ...fields } = this as unknown as Source;
+        return modifier ? { ...fields, modifier: modifier.name } : fields;
     }
 }
 

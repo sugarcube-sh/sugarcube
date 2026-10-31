@@ -58,8 +58,8 @@ export function problemLines(
         hint: colors.cyan,
     };
     return placed.flatMap(({ problem, place }) => {
-        const label = problem.permutations?.label;
-        const some = label === "everywhere" || label === "nowhere" ? undefined : label;
+        const held = problem.permutations;
+        const some = held && held.length > 0 && held.others.length > 0 ? held.label : undefined;
         const words: Word[] = [
             ...problem.message.split(" ").map((text) => ({ text })),
             ...(some ? [{ text: `in ${some}`, apart: true, dim: true }] : []),

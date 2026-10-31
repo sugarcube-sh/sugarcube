@@ -231,9 +231,10 @@ describe("cssBlocks, the modifiers a block's input names", () => {
 
     it("knows which modifier writes each token, from the context listing the file", () => {
         const surface = brands.permutation({ mode: "dark" }).token("surface");
-        expect(surface?.writtenAt.map(({ source }) => source.context?.modifier.name)).toStrictEqual(
-            [undefined, "mode"],
-        );
+        expect(surface?.writtenAt.map(({ source }) => source.modifier?.name)).toStrictEqual([
+            undefined,
+            "mode",
+        ]);
     });
 
     describe("a block whose input names some modifiers stacks with the others", () => {

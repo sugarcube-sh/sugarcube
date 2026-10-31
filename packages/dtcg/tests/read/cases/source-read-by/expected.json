@@ -6,7 +6,7 @@
       "input": {
         "mode": "light"
       },
-      "label": "default",
+      "label": "mode: light",
       "sources": [0, 1, 2]
     },
     {
@@ -14,7 +14,7 @@
         "mode": "dark"
       },
       "label": "mode: dark",
-      "sources": [0, 1, 3, 4, 5]
+      "sources": [0, 1, 3, 2, 4]
     }
   ],
   "diagnostics": [],
@@ -40,10 +40,6 @@
     },
     {
       "file": "both.json",
-      "context": {
-        "modifier": "mode",
-        "name": "light"
-      },
       "sets": [],
       "readBy": [
         {
@@ -54,49 +50,26 @@
           "modifier": "mode",
           "name": "dark"
         }
-      ]
+      ],
+      "modifier": "mode"
     },
     {
       "file": "all.json",
       "pointer": "#/dark",
-      "context": {
-        "modifier": "mode",
-        "name": "dark"
-      },
       "sets": [],
       "readBy": [
         {
           "modifier": "mode",
           "name": "dark"
         }
-      ]
-    },
-    {
-      "file": "both.json",
-      "context": {
-        "modifier": "mode",
-        "name": "dark"
-      },
-      "sets": [],
-      "readBy": [
-        {
-          "modifier": "mode",
-          "name": "light"
-        },
-        {
-          "modifier": "mode",
-          "name": "dark"
-        }
-      ]
+      ],
+      "modifier": "mode"
     },
     {
       "file": "shared.json",
-      "context": {
-        "modifier": "mode",
-        "name": "dark"
-      },
       "sets": [],
-      "readBy": "everyone"
+      "readBy": "everyone",
+      "modifier": "mode"
     }
   ]
 }

@@ -139,13 +139,15 @@ describe("a problem in a file only some permutations read", () => {
         expect([...(broken?.permutations ?? [])]).toStrictEqual([]);
     });
 
-    it("names every permutation for a problem in no file", () => {
-        const unknown = readFromMemory(
+    it("names every permutation the read built for a problem in no file", () => {
+        const read = readFromMemory(
             { files, entry: "tokens.resolver.json" },
             { inputs: [{}, { shade: "deep" }] },
-        ).diagnostics.find(({ span }) => span === undefined);
+        );
+        const unknown = read.diagnostics.find(({ span }) => span === undefined);
         expect(unknown).toBeDefined();
-        expect(unknown?.permutations.label).toBe("everywhere");
+        expect([...(unknown?.permutations ?? [])]).toStrictEqual([...read.permutations]);
+        expect(unknown?.permutations.label).toBe("mode: light");
     });
 });
 

@@ -56,12 +56,17 @@ class ReferenceObject {
         return writtenAfter(this.#written, moves, this.#pointerAlone);
     }
 
-    across(permutations: Permutations, span: Span): ReferenceAcrossPermutations {
+    across(
+        permutations: Permutations,
+        span: Span,
+        jsonPath: () => JsonPath,
+    ): ReferenceAcrossPermutations {
         return new ReferenceAcrossPermutations(
             this,
             this.#written,
             permutations,
             span,
+            jsonPath,
             this.#pointerAlone,
         );
     }
@@ -85,6 +90,7 @@ class ReferenceAcrossPermutations {
     readonly property: JsonPath | undefined;
     readonly permutations: Permutations;
     readonly #written: WrittenReference;
+    readonly #jsonPath: () => JsonPath;
     readonly #pointerAlone: boolean;
 
     constructor(
@@ -92,6 +98,7 @@ class ReferenceAcrossPermutations {
         written: WrittenReference,
         permutations: Permutations,
         span: Span,
+        jsonPath: () => JsonPath,
         alone: boolean,
     ) {
         this.syntax = written.syntax;
@@ -103,7 +110,12 @@ class ReferenceAcrossPermutations {
         this.property = reference.property;
         this.permutations = permutations;
         this.#written = written;
+        this.#jsonPath = jsonPath;
         this.#pointerAlone = alone;
+    }
+
+    get jsonPath(): JsonPath {
+        return this.#jsonPath();
     }
 
     moved(moves: readonly Move[]): JsonValue {
@@ -127,8 +139,9 @@ export function acrossPermutations(
     reference: Reference,
     permutations: Permutations,
     span: Span,
+    jsonPath: () => JsonPath,
 ): ReferenceInPermutations {
-    const across = (reference as unknown as ReferenceObject).across(permutations, span);
+    const across = (reference as unknown as ReferenceObject).across(permutations, span, jsonPath);
     return across as unknown as ReferenceInPermutations;
 }
 

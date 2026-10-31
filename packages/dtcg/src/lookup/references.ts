@@ -1,7 +1,6 @@
 import type {
     DesignTokens,
     Group,
-    PathInPermutations,
     Permutation,
     Reference,
     ReferenceInPermutations,
@@ -11,6 +10,7 @@ import type {
 } from "../index.js";
 import { atOrWithin } from "../path.js";
 import { permutationsOf } from "../read/permutations-of.js";
+import { jsonPathIn } from "./json-path.js";
 import { acrossPermutations } from "../read/reference.js";
 import { samePlace } from "../read/same-object.js";
 
@@ -57,37 +57,31 @@ export function usedIn(
     return [...new Set(referencedIn(permutation, path, options).map(({ from }) => from))];
 }
 
-export function referencedByIn(
-    tokens: DesignTokens,
-    path: string,
-    options?: ReferenceOptions,
-): ReferenceInPermutations[] {
-    return across(tokens, (permutation) => referencedIn(permutation, path, options));
+export function referencedByIn(tokens: DesignTokens, path: string): ReferenceInPermutations[] {
+    return across(tokens, (permutation) => referencedIn(permutation, path));
 }
 
-export function referencesIn(
-    tokens: DesignTokens,
+export function refersToIn(
+    permutation: Permutation,
     path: string,
     { chained = false }: ReferenceOptions = {},
-): ReferenceInPermutations[] {
-    return across(tokens, (permutation) => {
-        const start = permutation.token(path) ?? permutation.group(path);
-        if (!start) return [];
-        const found: Reference[] = [];
-        const seen = new Set<Token | Group>([start]);
-        const waiting: (Token | Group)[] = [start];
-        for (const each of waiting) {
-            for (const reference of each.references) {
-                found.push(reference);
-                const next =
-                    reference.path === undefined ? undefined : permutation.token(reference.path);
-                if (!chained || !next || seen.has(next)) continue;
-                seen.add(next);
-                waiting.push(next);
-            }
+): Reference[] {
+    const start = permutation.token(path) ?? permutation.group(path);
+    if (!start) return [];
+    const found: Reference[] = [];
+    const seen = new Set<Token | Group>([start]);
+    const waiting: (Token | Group)[] = [start];
+    for (const each of waiting) {
+        for (const reference of each.references) {
+            found.push(reference);
+            const next =
+                reference.path === undefined ? undefined : permutation.token(reference.path);
+            if (!chained || !next || seen.has(next)) continue;
+            seen.add(next);
+            waiting.push(next);
         }
-        return found;
-    });
+    }
+    return found;
 }
 
 function writtenIn(permutation: Permutation): WrittenIn {
@@ -113,25 +107,6 @@ function writtenIn(permutation: Permutation): WrittenIn {
     return built;
 }
 
-export function usedByIn(
-    tokens: DesignTokens,
-    path: string,
-    options?: ReferenceOptions,
-): PathInPermutations[] {
-    const users = new Map<string, Permutation[]>();
-    for (const permutation of tokens.permutations) {
-        for (const from of usedIn(permutation, path, options)) {
-            const found = users.get(from.path);
-            if (found) found.push(permutation);
-            else users.set(from.path, [permutation]);
-        }
-    }
-    return [...users].map(([user, permutations]) => ({
-        path: user,
-        permutations: permutationsOf(permutations, tokens.permutations),
-    }));
-}
-
 function across(
     tokens: DesignTokens,
     inPermutation: (permutation: Permutation) => Reference[],
@@ -149,7 +124,12 @@ function across(
     }
     return [...merged].flatMap(([span, here]) =>
         here.map(({ reference, permutations }) =>
-            acrossPermutations(reference, permutationsOf(permutations, tokens.permutations), span),
+            acrossPermutations(
+                reference,
+                permutationsOf(permutations, tokens.permutations),
+                span,
+                () => jsonPathIn(tokens, span),
+            ),
         ),
     );
 }

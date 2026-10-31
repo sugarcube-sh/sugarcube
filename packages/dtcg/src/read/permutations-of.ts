@@ -54,13 +54,22 @@ function listed(
     const held = new Set(given);
     const list = all.filter((each) => held.has(each));
     const inputs = () => list.map(({ input }) => input);
+    let others: Permutations | undefined;
     const permutations = Object.defineProperties(list, {
         inputs: { get: inputs },
+        others: {
+            get: () =>
+                (others ??= listed(
+                    all.filter((each) => !held.has(each)),
+                    all,
+                    matchingAll,
+                )),
+        },
         scope: { get: () => wordedFor(held, list, all).scope },
         label: {
             get: () => {
                 const worded = wordedFor(held, list, all);
-                worded.label ??= scopeLabel(worded.scope, all);
+                worded.label ??= scopeLabel(worded.scope);
                 return worded.label;
             },
         },

@@ -93,31 +93,25 @@
   "sources": [
     {
       "file": "light.json",
-      "context": {
-        "modifier": "theme",
-        "name": "light"
-      },
       "sets": [],
       "readBy": [
         {
           "modifier": "theme",
           "name": "light"
         }
-      ]
+      ],
+      "modifier": "theme"
     },
     {
       "file": "dark.json",
-      "context": {
-        "modifier": "theme",
-        "name": "dark"
-      },
       "sets": [],
       "readBy": [
         {
           "modifier": "theme",
           "name": "dark"
         }
-      ]
+      ],
+      "modifier": "theme"
     }
   ]
 }

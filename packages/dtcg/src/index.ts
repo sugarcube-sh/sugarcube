@@ -259,26 +259,27 @@ export interface ReferenceBase {
 }
 
 /**
- * A reference, as {@link DesignTokens.references} and {@link DesignTokens.referencedBy} give it:
- * written once at `span`, holding in each of `permutations`. `from` is the path that writes it,
+ * A reference, as {@link DesignTokens.referencedBy} gives it: written once at `span`, holding in
+ * each of `permutations`. `from` is the path that writes it,
  * since it can be a different token in each permutation.
  */
 export type ReferenceInPermutations = Omit<ReferenceBase, "from" | "token" | "moved"> &
     (CurlyBraceReference | (JsonPointerReference & { readonly path?: string })) & {
         /** Where it is written, in this read's text. */
         readonly span: Span;
+        /** Where it is written in its file, as {@link DesignTokens.jsonPathOf} gives it. */
+        readonly jsonPath: JsonPath;
         readonly from: string;
         readonly permutations: Permutations;
         moved(moves: readonly Move[]): JsonValue;
     };
 
 /**
- * A token or group by its path, with the permutations where it refers to the path asked about, as
- * {@link DesignTokens.usedBy} gives it. A path, not a token, because each permutation has its own
- * token at that path.
+ * One answer {@link everyPermutation} gives: what the question answered, and the permutations
+ * that answered it.
  */
-export interface PathInPermutations {
-    readonly path: string;
+export interface AnswerInPermutations<Answer> {
+    readonly answer: Answer;
     readonly permutations: Permutations;
 }
 
@@ -586,7 +587,7 @@ export interface TokenBase<T extends TokenType> {
      *
      * @example
      * const winner = token.writtenAt.at(-1);
-     * winner?.source.context // the context whose own file writes it, if one does
+     * winner?.source.modifier // the modifier whose context's own file writes it, if one does
      */
     readonly writtenAt: readonly Place[];
     /**
@@ -650,7 +651,7 @@ export interface TokenBase<T extends TokenType> {
      *
      * @example
      * text.valueFrom.source.file     // "dark.json"
-     * text.valueFrom.source.context  // the context whose own file writes it, if one does
+     * text.valueFrom.source.modifier // the modifier whose context's own file writes it, if one does
      * goTo(text.valueFrom.span)      // where in the file
      */
     readonly valueFrom: Place;
@@ -820,10 +821,13 @@ export interface Place {
 
 /**
  * A place, as {@link DesignTokens.writtenAt} gives it: written once at `span`, read through each of
- * `sources` (a file several contexts list is a source for each).
+ * `sources`. A file several contexts list the same way is one source; listed with different
+ * `$extensions` beside its `$ref`, or through different sets, it is a source for each.
  */
 export interface PlaceInPermutations {
     readonly span: Span;
+    /** Where it is written in its file, as {@link DesignTokens.jsonPathOf} gives it. */
+    readonly jsonPath: JsonPath;
     /**
      * The JSON the file writes at `span`, exactly as written, as {@link Place.written} gives it.
      */
@@ -844,15 +848,6 @@ export interface PlaceInPermutations {
 }
 
 /**
- * One value a token resolves to, as {@link DesignTokens.resolvedValues} gives it: `token` is the
- * token in the first of `permutations`, the permutations where it resolves to that value.
- */
-export interface ResolvedInPermutations {
-    readonly token: Token;
-    readonly permutations: Permutations;
-}
-
-/**
  * One source of tokens, as the resolver lists it: a file, part of one, or tokens written in the
  * resolver. Keys written beside a source's `$ref` are part of that source, so a token written there
  * belongs to it, and its place is in the resolver. One object for each source the resolver lists,
@@ -869,13 +864,17 @@ export interface Source {
      */
     readonly pointer?: string;
     /**
-     * The context it is listed under, when the resolver lists it under one: the context itself, as
-     * {@link DesignTokens.resolver} holds it. "Did a context's own file write this?" is this.
+     * The modifier whose contexts list it, when the resolver lists it under one, as
+     * {@link DesignTokens.resolver} holds it. The context is the permutation's: a file the contexts
+     * `dark` and `dim` both list the same way is one source, read through `dark` in the dark
+     * permutation and through `dim` in the dim one. "Did a context's own file write this?" is this.
      *
      * @example
-     * token.writtenAt.at(-1)?.source.context?.name // "dark"
+     * const source = dim.token("color.text")?.valueFrom.source;
+     * source?.modifier?.name                                            // "mode"
+     * dim.contexts.find(({ modifier }) => modifier === source?.modifier) // the context dim
      */
-    readonly context?: ResolverContext;
+    readonly modifier?: ResolverModifier;
     /**
      * Every set on the way to it, outermost first, each as it is in effect at that step. Empty
      * when it is reached through none, or there is no resolver.
@@ -1009,12 +1008,12 @@ export interface Permutation {
      */
     readonly input: Input;
     /**
-     * Its shortest input written out for people: each modifier away from its default, and any with
-     * no default, in the order `resolutionOrder` names them, such as
-     * `"theme: dark, brand: ocean"`, since a modifier with a default may be left out of an input
-     * (Resolver 6.1). `"default"` for the permutation an empty input names. Empty when there are
-     * no modifiers, as for token files read without a resolver. For display only: functions take
-     * an {@link Input}, never a label.
+     * Its input written out for people: every modifier and its context, in the order
+     * `resolutionOrder` names them, such as `"theme: dark, brand: house"`, the default permutation
+     * included. The same text as the {@link Permutations.label | label} of a list holding only
+     * this permutation, so a label always means the same permutations. Empty when there are no
+     * modifiers, as for a token file: there is nothing to name, and nothing to tell apart. For
+     * display only: functions take an {@link Input}, never a label.
      */
     readonly label: string;
     /**
@@ -1088,6 +1087,18 @@ export interface Permutation {
      * dark.referencedBy("color.red", { chained: true })           // everything a change would reach
      */
     referencedBy(path: string, options?: ReferenceOptions): readonly Reference[];
+    /**
+     * The references the token or group at `path` writes in this permutation, each with what it
+     * references; with `chained`, also those written by each token they name, however indirectly
+     * (for a property-level reference, the token holding the property), each once, safe with
+     * loops. A group's are its `$extends`, or its `$ref` to another group. Empty for a path that
+     * isn't there.
+     *
+     * @example
+     * light.refersTo("color.text").map(({ path }) => path)                   // ["color.brand"]
+     * light.refersTo("color.text", { chained: true }).map(({ path }) => path) // ["color.brand", "color.red"]
+     */
+    refersTo(path: string, options?: ReferenceOptions): readonly Reference[];
     /**
      * Each token or group that refers to `path` in this permutation, once, however many references
      * it writes to it; with `chained`, also each one that refers to those, however indirectly. Wider
@@ -1524,33 +1535,15 @@ export interface DesignTokens {
      */
     readonly diagnostics: readonly Diagnostic[];
     /**
-     * The references the token or group at `path` writes, in every permutation, each once with the
-     * permutations it holds in; with `chained`, also those written by each token they name (for a
-     * property-level reference, the token holding the property), however indirectly.
-     *
-     * @example
-     * tokens.references("color.text", { chained: true }).map(({ path }) => path)
-     */
-    references(path: string, options?: ReferenceOptions): readonly ReferenceInPermutations[];
-    /**
-     * Every reference to `path`, in every permutation, each once with the permutations it holds
-     * in; with `chained`, also every reference to each token that writes one. A group's path
-     * covers what is written to it, such as an `$extends`, and to everything inside it.
+     * Every reference to `path` written in the files, each once with the permutations it holds
+     * in: what renaming `path` rewrites. A group's path covers what is written to it, such as an
+     * `$extends`, and to everything inside it. To follow chained references, which go through
+     * each permutation's own tokens, ask a permutation ({@link Permutation.referencedBy}).
      *
      * @example
      * for (const { from, span } of tokens.referencedBy("color.brand")) show(from, span);
      */
-    referencedBy(path: string, options?: ReferenceOptions): readonly ReferenceInPermutations[];
-    /**
-     * Each token or group that refers to `path`, in any permutation, once, however many references
-     * it writes, with the permutations where it does; with `chained`, also each that refers to those.
-     * A group's path covers what refers to it and to everything inside it, as
-     * {@link DesignTokens.referencedBy} does.
-     *
-     * @example
-     * for (const { path, permutations } of tokens.usedBy("color.red")) row(path, permutations.label);
-     */
-    usedBy(path: string, options?: ReferenceOptions): readonly PathInPermutations[];
+    referencedBy(path: string): readonly ReferenceInPermutations[];
     /**
      * Every place the token or group at `path` is written, in any permutation, each span once with
      * the sources and permutations that read it and the permutations whose value comes from it, in
@@ -1561,19 +1554,6 @@ export interface DesignTokens {
      * for (const { span, winsIn } of tokens.writtenAt("color.brand")) row(span.file, winsIn.label);
      */
     writtenAt(path: string): readonly PlaceInPermutations[];
-    /**
-     * Each value the token at `path` resolves to, in the order first met, with the permutations
-     * where it does: what it looks like, where {@link DesignTokens.writtenAt} gives where it is
-     * written. A reference written once can resolve differently per permutation. Values are compared
-     * with {@link sameValue} after the type, and a token whose value can't be worked out by what it
-     * says. Permutations without the token are in none; a group's path gives none.
-     *
-     * @example
-     * for (const { token, permutations } of tokens.resolvedValues("color.button.background")) {
-     *   row(swatch(token.resolved), permutations.label);   // "#0b5fff  everywhere" when it never changes
-     * }
-     */
-    resolvedValues(path: string): readonly ResolvedInPermutations[];
     /**
      * The permutation for an input: modifiers left out take their default (Resolver 4.1.5.3), and
      * names match whatever their case (Resolver 5.1). With no input, the default permutation.
@@ -1586,6 +1566,66 @@ export interface DesignTokens {
      * const dark = tokens.permutation({ mode: "dark" });
      */
     permutation(input?: Input): Permutation;
+    /**
+     * The token at `path`, when the read has one permutation: a token file, or a resolver with no
+     * modifiers. As {@link Permutation.token}, of that permutation. With several, which one is
+     * meant has to be said: pick one with {@link DesignTokens.permutation}, or ask every one with
+     * {@link everyPermutation}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     *
+     * @example
+     * const tokens = await read("color.json");
+     * tokens.token("color.red")?.resolved
+     */
+    token(path: string): Token | undefined;
+    /**
+     * The group at `path`, when the read has one permutation. As {@link Permutation.group}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    group(path: string): Group | undefined;
+    /**
+     * The tokens and groups that refer to `path`, when the read has one permutation. As
+     * {@link Permutation.usedBy}. With several, ask each: whether anything uses it in any
+     * permutation is `tokens.permutations.some((p) => p.usedBy(path).length > 0)`.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    usedBy(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
+    /**
+     * The references the value at `path` writes, when the read has one permutation. As
+     * {@link Permutation.refersTo}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    refersTo(path: string, options?: ReferenceOptions): readonly Reference[];
+    /**
+     * Every token, when the read has one permutation. As {@link Permutation.tokens}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    readonly tokens: readonly Token[];
+    /**
+     * Every group, when the read has one permutation. As {@link Permutation.groups}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    readonly groups: readonly Group[];
+    /**
+     * The tokens and groups at the top level, when the read has one permutation. As
+     * {@link Permutation.children}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    readonly children: readonly (Token | Group)[];
+    /**
+     * What the top level of the files writes, when the read has one permutation. As
+     * {@link Permutation.root}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    readonly root: TopLevel;
     /**
      * A modifier that takes part, by its name, whatever its case (Resolver 5.1), with its contexts
      * and default.
@@ -1711,19 +1751,47 @@ export interface DesignTokens {
      * goTo(file, tokens.spanOf(token.references[0]).offset);
      */
     spanOf(of: Place | Reference): Span;
+    /**
+     * Where a place or a reference these design tokens hold is written in its file, as the keys
+     * from the top of the file down, part of a file included: what a tool writing the file
+     * changes. A root token's place is its `$root`, a token a group inherits is where its value is
+     * written in the group it comes from, and a token a {@link Generator} makes, and its
+     * reference, are at the extension that makes it. The top of a file is `[]`. Worked out from
+     * this read's text when asked, so a read that never asks pays nothing.
+     *
+     * @throws an `Error` for a place or reference whose position, in this read's text, writes
+     * nothing: one from a read of other text.
+     *
+     * @example
+     * tokens.jsonPathOf(text.valueFrom)     // ["color", "text"]
+     * tokens.jsonPathOf(text.references[0]) // ["color", "text", "$value"]
+     */
+    jsonPathOf(of: Place | Reference): JsonPath;
+    /**
+     * What `file` writes at `jsonPath` in this read's text, exactly as written: the companion of
+     * {@link DesignTokens.jsonPathOf}, for a tool writing the file to see what is there now.
+     * `undefined` where the file writes nothing, or the read has no such file. Worked out when
+     * asked, reading each file's text once for both questions.
+     *
+     * @example
+     * tokens.jsonAt("color.json", ["color", "text", "$value"]) // "{color.brand}"
+     */
+    jsonAt(file: string, jsonPath: JsonPath): JsonValue | undefined;
 }
 
 /**
  * Which permutations a group holds, described by their contexts: parts joined by "or", each part
  * naming, for each modifier that narrows it, the contexts it keeps. A modifier a part leaves out may
  * be any of its contexts, unlike in an {@link Input}, where it is at its default (Resolver 6.1).
- * Every part matches only permutations in the group, among those the read built. Modifiers come in
- * the order `resolutionOrder` names them, contexts as they are written.
+ * Every part matches only permutations in the group, among every combination the resolver's
+ * modifiers make, built or not: so a group that is every permutation of a read that built only
+ * some isn't `[{}]`, and a group of one permutation names every modifier. Modifiers come in the
+ * order `resolutionOrder` names them, contexts as they are written.
  *
  * @example
  * [{ mode: ["dark", "dim"], contrast: ["high"] }]       // dark or dim, in high contrast
  * [{ brand: ["cbus", "hesta-super"] }, { inverted: ["on"] }]  // those brands, or inverted
- * [{}]                                                  // every permutation
+ * [{}]                                                  // every combination
  * []                                                    // none
  */
 export type Scope = readonly Readonly<Record<string, readonly string[]>>[];
@@ -1750,11 +1818,24 @@ export interface Permutations extends ReadonlyArray<Permutation> {
      */
     readonly scope: Scope;
     /**
+     * Every permutation the read built that it doesn't hold, in their order: for "everywhere
+     * but …", and for whether it is every permutation the read built (none other). Not the same as
+     * a {@link Permutations.label | label} of `"everywhere"`, which is every combination the
+     * resolver's modifiers make: a read limited by `inputs`, or built `"each-context"`, can hold
+     * every permutation it built without holding every combination.
+     *
+     * @example
+     * // say where a problem is only when it isn't everywhere the read looked
+     * const { permutations } = problem;
+     * const where = permutations.others.length === 0 ? "" : ` in ${permutations.label}`;
+     */
+    readonly others: Permutations;
+    /**
      * Its {@link Permutations.scope | scope} written out: each modifier and the contexts it keeps,
-     * such as `"mode: dark, dim, contrast: high"`, parts joined with `"; "`. A part matching only the
-     * default permutation is `"default"`; every permutation is `"everywhere"`, none `"nowhere"`. A
-     * modifier left out may be any context, so `"mode: dark"` here is every dark permutation, where a
-     * permutation's own `"mode: dark"` is the one at the default otherwise.
+     * such as `"mode: dark, dim, contrast: high"`, parts joined with `"; "`. A modifier left out may
+     * be any of its contexts, so `"mode: dark"` is every dark permutation; one permutation alone
+     * names every modifier, as its own {@link Permutation.label | label} does. Every combination is
+     * `"everywhere"`, none `"nowhere"`.
      */
     readonly label: string;
     /**
@@ -1790,6 +1871,19 @@ export interface Permutations extends ReadonlyArray<Permutation> {
 export type PermutationErrorDetail = InputProblem | { reason: "not-read"; input: Input };
 
 /**
+ * Why a question of one permutation, such as {@link DesignTokens.token}, was asked of design
+ * tokens with several, with the facts its message is worded from.
+ */
+export interface SeveralPermutationsDetail {
+    /** What was asked, such as `"token()"` or `"tokens"`. */
+    readonly asked: string;
+    /** The resolver's modifiers. */
+    readonly modifiers: readonly string[];
+    /** An input that picks a permutation, for the message to show. */
+    readonly example: Input;
+}
+
+/**
  * Why an input does not fit the resolver's modifiers (Resolver 5.2, 6.1): a modifier it doesn't
  * declare, a context that isn't a string or that the modifier doesn't declare, or a modifier with
  * no default left out. The read reports each as an `input-invalid` problem;
@@ -1815,7 +1909,7 @@ export type InputProblem = { readonly modifier: string } & (
     | { readonly reason: "not-a-string" }
 );
 
-export { PermutationError } from "./lookup/permutation.js";
+export { PermutationError, SeveralPermutationsError } from "./lookup/permutation.js";
 
 export type { ValueErrorCode, ValueErrorDetail, ValueErrorFacts } from "./values/value-errors.js";
 
@@ -2128,6 +2222,7 @@ export {
 } from "./path.js";
 export { completeInput } from "./lookup/permutation.js";
 export { permutationLabel } from "./lookup/permutation-label.js";
+export { everyPermutation } from "./lookup/every-permutation.js";
 
 /**
  * What {@link completeInput} gives: the full input, or the first problem with it.
