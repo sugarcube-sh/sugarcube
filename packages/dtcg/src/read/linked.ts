@@ -21,7 +21,7 @@ import type {
 import { diagnosticsAtIn, diagnosticsForIn, diagnosticsIn } from "../lookup/diagnostics.js";
 import { diffIn } from "../lookup/diff.js";
 import { partsOf } from "../lookup/parts.js";
-import { modifierIn, permutationIn } from "../lookup/permutation.js";
+import { modifierIn, onlyPermutation, permutationIn } from "../lookup/permutation.js";
 import {
     referencedByIn,
     referencedIn,
@@ -251,6 +251,30 @@ class DesignTokensObject {
 
     permutation(input?: Input) {
         return permutationIn(this.#self, input);
+    }
+
+    token(path: string) {
+        return onlyPermutation(this.#self, "token()").token(path);
+    }
+
+    group(path: string) {
+        return onlyPermutation(this.#self, "group()").group(path);
+    }
+
+    get tokens() {
+        return onlyPermutation(this.#self, "tokens").tokens;
+    }
+
+    get groups() {
+        return onlyPermutation(this.#self, "groups").groups;
+    }
+
+    get children() {
+        return onlyPermutation(this.#self, "children").children;
+    }
+
+    get root() {
+        return onlyPermutation(this.#self, "root").root;
     }
 
     modifier(name: string) {

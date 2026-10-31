@@ -1601,6 +1601,51 @@ export interface DesignTokens {
      */
     permutation(input?: Input): Permutation;
     /**
+     * The token at `path`, when the read has one permutation: a token file, or a resolver with no
+     * modifiers. As {@link Permutation.token}, of that permutation. With several, which one is
+     * meant has to be said: pick one with {@link DesignTokens.permutation}, or ask every one with
+     * {@link everyPermutation}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     *
+     * @example
+     * const tokens = await read("color.json");
+     * tokens.token("color.red")?.resolved
+     */
+    token(path: string): Token | undefined;
+    /**
+     * The group at `path`, when the read has one permutation. As {@link Permutation.group}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    group(path: string): Group | undefined;
+    /**
+     * Every token, when the read has one permutation. As {@link Permutation.tokens}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    readonly tokens: readonly Token[];
+    /**
+     * Every group, when the read has one permutation. As {@link Permutation.groups}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    readonly groups: readonly Group[];
+    /**
+     * The tokens and groups at the top level, when the read has one permutation. As
+     * {@link Permutation.children}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    readonly children: readonly (Token | Group)[];
+    /**
+     * What the top level of the files writes, when the read has one permutation. As
+     * {@link Permutation.root}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    readonly root: TopLevel;
+    /**
      * A modifier that takes part, by its name, whatever its case (Resolver 5.1), with its contexts
      * and default.
      *
@@ -1804,6 +1849,19 @@ export interface Permutations extends ReadonlyArray<Permutation> {
 export type PermutationErrorDetail = InputProblem | { reason: "not-read"; input: Input };
 
 /**
+ * Why a question of one permutation, such as {@link DesignTokens.token}, was asked of design
+ * tokens with several, with the facts its message is worded from.
+ */
+export interface SeveralPermutationsDetail {
+    /** What was asked, such as `"token()"` or `"tokens"`. */
+    readonly asked: string;
+    /** The resolver's modifiers. */
+    readonly modifiers: readonly string[];
+    /** An input that picks a permutation, for the message to show. */
+    readonly example: Input;
+}
+
+/**
  * Why an input does not fit the resolver's modifiers (Resolver 5.2, 6.1): a modifier it doesn't
  * declare, a context that isn't a string or that the modifier doesn't declare, or a modifier with
  * no default left out. The read reports each as an `input-invalid` problem;
@@ -1829,7 +1887,7 @@ export type InputProblem = { readonly modifier: string } & (
     | { readonly reason: "not-a-string" }
 );
 
-export { PermutationError } from "./lookup/permutation.js";
+export { PermutationError, SeveralPermutationsError } from "./lookup/permutation.js";
 
 export type { ValueErrorCode, ValueErrorDetail, ValueErrorFacts } from "./values/value-errors.js";
 

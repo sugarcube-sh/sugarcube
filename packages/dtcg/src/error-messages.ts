@@ -2,11 +2,13 @@ import type {
     Diagnostic,
     DiagnosticDetailByKind,
     DiagnosticKind,
+    Input,
     JsonErrorReason,
     InputProblem,
     PermutationErrorDetail,
     ResolverProblem,
     ResolverRule,
+    SeveralPermutationsDetail,
 } from "./index.js";
 import { permutationLabel } from "./lookup/permutation-label.js";
 import {
@@ -77,16 +79,28 @@ function inputWords(problem: InputProblem): string {
         case "unknown-context":
             return `\`${problem.context}\` is not a context of the modifier \`${modifier}\``;
         case "missing-modifier":
-            return `the input doesn't choose a context for the modifier \`${modifier}\`, which has no default: choose ${oneOf(problem.valid)}`;
+            return `the input doesn't choose a context for the modifier \`${modifier}\`, which has no default: choose ${listed(problem.valid)}`;
         case "not-a-string":
             return `the input for the modifier \`${modifier}\` must be a string`;
     }
 }
 
-function oneOf(names: readonly string[]): string {
+function inputText(input: Input): string {
+    const entries = Object.entries(input).map(
+        ([name, context]) =>
+            `${plainName(name) ? name : JSON.stringify(name)}: ${JSON.stringify(context)}`,
+    );
+    return `{ ${entries.join(", ")} }`;
+}
+
+function plainName(name: string): boolean {
+    return /^[A-Za-z_$][\w$]*$/.test(name);
+}
+
+function listed(names: readonly string[], joiner: "or" | "and" = "or"): string {
     const quoted = names.map((name) => `\`${name}\``);
     const last = quoted.pop();
-    return quoted.length === 0 ? (last ?? "") : `${quoted.join(", ")} or ${last}`;
+    return quoted.length === 0 ? (last ?? "") : `${quoted.join(", ")} ${joiner} ${last}`;
 }
 
 const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) => string> = {
@@ -116,6 +130,10 @@ export const thrownMessages = {
         detail.reason === "not-read"
             ? `\`${permutationLabel(detail.input)}\` was not built by this read`
             : inputWords(detail),
+    severalPermutations: ({ asked, modifiers, example }: SeveralPermutationsDetail) => {
+        const named = `${modifiers.length === 1 ? "the modifier" : "the modifiers"} ${listed(modifiers, "and")}`;
+        return `tokens.${asked} needs a permutation: this resolver has ${named}. Pick one with tokens.permutation(${inputText(example)}), or ask them all with everyPermutation(tokens, …)`;
+    },
     noResolver: (files: string[]) =>
         files.length === 0
             ? "no files were given to read"

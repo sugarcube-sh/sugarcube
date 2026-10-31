@@ -6,6 +6,7 @@ import type {
     Permutation,
     PermutationErrorDetail,
     ResolverModifier,
+    SeveralPermutationsDetail,
 } from "../index.js";
 import { checkedInput, findByName, modifiersIn } from "../read/input.js";
 
@@ -29,6 +30,41 @@ export class PermutationError extends Error {
         this.name = "PermutationError";
         this.detail = detail;
     }
+}
+
+/**
+ * Thrown by a question of one permutation asked of design tokens with several, such as
+ * {@link DesignTokens.token}: which permutation it is for has to be said. The message says how to
+ * pick one; `detail` holds the facts it is worded from.
+ *
+ * @example
+ * try {
+ *   tokens.token("color.text");
+ * } catch (error) {
+ *   if (error instanceof SeveralPermutationsError) error.detail.example // { mode: "dark" }
+ * }
+ */
+export class SeveralPermutationsError extends Error {
+    readonly detail: SeveralPermutationsDetail;
+
+    constructor(detail: SeveralPermutationsDetail) {
+        super(thrownMessages.severalPermutations(detail));
+        this.name = "SeveralPermutationsError";
+        this.detail = detail;
+    }
+}
+
+export function onlyPermutation(tokens: DesignTokens, asked: string): Permutation {
+    const [only, ...more] = tokens.permutations;
+    if (only && more.length === 0) return only;
+    const away = tokens.permutations.find((each) => !each.isDefault);
+    const example = Object.fromEntries(
+        (away?.contexts ?? [])
+            .filter((context) => !context.isDefault)
+            .map((context) => [context.modifier.name, context.name]),
+    );
+    const modifiers = modifiersIn(tokens.resolver).map(({ name }) => name);
+    throw new SeveralPermutationsError({ asked, modifiers, example });
 }
 
 export function permutationIn(tokens: DesignTokens, input: Input = {}): Permutation {
