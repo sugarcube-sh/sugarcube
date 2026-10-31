@@ -43,14 +43,15 @@ import { read } from "@sugarcube-sh/dtcg/node";
 
 const tokens = await read("color.json");
 
-const text = tokens.token("color.text");
-text.type                               // "color"
-text.value                              // { syntax: "curly-brace", path: "color.brand" }, as written
-text.resolved                           // { colorSpace: "srgb", components: [0.86, 0.15, 0.15], alpha: 1 }
-text.aliasChain.map((t) => t.path)      // ["color.text", "color.brand", "color.red"]
+const text = tokens.token("color.text"); // undefined for a path that isn't there
+text?.type                              // "color"
+text?.value                             // { syntax: "curly-brace", path: "color.brand" }, as written
+text?.resolved                          // { colorSpace: "srgb", components: [0.86, 0.15, 0.15], alpha: 1 }
+text?.aliasChain.map((t) => t.path)     // ["color.text", "color.brand", "color.red"]
 
 tokens.usedBy("color.red")              // [color.brand]
-tokens.group("color").tokens            // every token in the group, in the order the file writes them
+tokens.refersTo("color.text")           // the reference its value writes, to color.brand
+tokens.group("color")?.tokens           // every token in the group, in the order the file writes them
 ```
 
 `color.link` has a typo on purpose. A problem never stops a read: it goes in `tokens.diagnostics`,
@@ -95,8 +96,9 @@ Now `color.text` has two answers, so `tokens` can't give one:
 const tokens = await read("tokens.resolver.json");
 
 tokens.token("color.text")
-// Error: this resolver has the modifier "mode", so pick a context:
-//   tokens.permutation({ mode: "dark" })
+// SeveralPermutationsError: tokens.token() needs a permutation: this resolver has the modifier
+// `mode`. Pick one with tokens.permutation({ mode: "dark" }), or ask them all with
+// everyPermutation(tokens, …)
 ```
 
 Pick a context for each modifier. The spec calls that an input, and the tokens it gives a
@@ -105,46 +107,61 @@ permutation. You ask a permutation exactly what you'd ask a single file:
 ```ts
 const dark = tokens.permutation({ mode: "dark" });
 
-dark.token("color.text").resolved       // blue
+dark.token("color.text")?.resolved      // blue
 dark.usedBy("color.red")                // [color.brand]
+dark.label                              // "mode: dark"
 
 const light = tokens.permutation();     // no input: every modifier at its default
-light.token("color.text").resolved      // red
+light.token("color.text")?.resolved     // red
+light.label                             // "mode: light"
 ```
+
+What's about the files themselves, not one permutation, `tokens` still answers with a resolver:
+where a token is written (`tokens.writtenAt(path)`), every reference typed to it
+(`tokens.referencedBy(path)`), and whether a name is there at all (`tokens.has(path)`).
 
 ## Ask every permutation at once
 
-Write the question you'd ask one permutation, and `everyPermutation` asks it of each. Permutations
-that give the same answer come back together.
+`tokens.permutations` is a list, so a question with one answer across all of them, such as whether
+anything still uses a token before you delete it, is a plain `some`, `every` or `find`:
+
+```ts
+const usedAnywhere = tokens.permutations.some((p) => p.usedBy("color.red").length > 0);
+```
+
+To see permutations side by side, write the question you'd ask one permutation, and
+`everyPermutation` asks it of each. Permutations that give the same answer come back together:
 
 ```ts
 import { everyPermutation } from "@sugarcube-sh/dtcg";
 
-everyPermutation(tokens, (p) => p.token("color.text").resolved)
-// [{ answer: red,  permutations: default },
+everyPermutation(tokens, (p) => p.token("color.text")?.resolved)
+// [{ answer: red,  permutations: mode: light },
 //  { answer: blue, permutations: mode: dark }]
 ```
 
-That's how you'd check whether anything still uses a token before deleting it, in any permutation:
+That's a docs page, each token's value in each permutation:
 
 ```ts
-const usedAnywhere = everyPermutation(tokens, (p) => p.usedBy("color.red"))
-  .some(({ answer }) => answer.length > 0);
-```
+import { cssValue } from "@sugarcube-sh/dtcg/css";
 
-Or show each token's value in each permutation, for a docs page:
-
-```ts
 for (const path of tokens.tokenPaths()) {
   for (const { answer, permutations } of everyPermutation(tokens, (p) => p.token(path))) {
-    row(path, permutations.label, cssValue(answer));
+    row(path, permutations.label, answer && cssValue(answer));
   }
 }
-// color.text   default      rgb(219 38 38)
-// color.text   mode: dark   rgb(38 99 235)
+// color.red    everywhere    rgb(219 38 38)
+// color.blue   everywhere    rgb(38 99 235)
+// color.brand  everywhere    rgb(219 38 38)
+// color.text   mode: light   rgb(219 38 38)
+// color.text   mode: dark    rgb(38 99 235)
+// color.link   everywhere    undefined, since its reference names no token
 ```
 
-`tokens.permutations` lists them all, if you'd rather loop yourself.
+A permutation's label names every modifier's context, and a group's names only what it narrows:
+with two modifiers, `mode: dark, size: small` is one permutation, and `size: large` is every large
+one. A token file has no modifiers, so its one permutation's label is `""`, and a tool can leave
+labels out when `tokens.permutations.length === 1`.
 
 ## When files change
 
@@ -205,8 +222,8 @@ import { cssBlocks, cssText, cssValue, cssVariable } from "@sugarcube-sh/dtcg/cs
 const text = tokens.permutation({ mode: "dark" }).token("color.text");
 
 cssVariable("color.text")               // "--color-text"
-cssValue(text)                          // "rgb(38 99 235)"
-cssValue(text, {
+text && cssValue(text)                  // "rgb(38 99 235)"
+text && cssValue(text, {
   replacement: (ref) => (ref.token ? { variable: cssVariable(ref.token.path) } : undefined),
 })                                      // "var(--color-blue)"
 ```
@@ -303,16 +320,21 @@ const tokens = await read("tokens.resolver.json", { extensionValidators: [fluid]
 ### Questions you ask a permutation
 
 Ask them of `tokens` when there's one permutation (a token file, or a resolver with no
-modifiers), and of `tokens.permutation(input)` otherwise.
+modifiers), and of `tokens.permutation(input)` otherwise: with several, `tokens` throws a
+`SeveralPermutationsError` saying how to pick one. `usedBy`, `refersTo` and `referencedBy` take
+`{ chained: true }` to follow references through other tokens. `token`, `group`, `tokens`,
+`groups`, `children`, `root`, `usedBy` and `refersTo` are the ones `tokens` answers directly;
+`referencedBy` and `diagnosticsFor` on `tokens` cover every permutation (below).
 
 | | What it gives |
 | --- | --- |
 | `token(path)`, `group(path)` | One token or group |
 | `tokens`, `groups`, `children`, `root` | Every token and group, and what's at the top level |
 | `usedBy(path)` | The tokens and groups that reference a path |
+| `refersTo(path)` | The references a path's value writes, each with what it reaches |
 | `referencedBy(path)` | Every reference to a path, with the token or group that writes it |
 | `diagnosticsFor(path)` | The problems about one token or group |
-| `input`, `label`, `isDefault` | The input that built it, a label for people, and whether every modifier is at its default |
+| `input`, `label`, `isDefault` | The input that built it, a label for people naming every modifier's context, and whether every modifier is at its default |
 | `contexts`, `sources` | The context it picks for each modifier, and every source it reads, in resolution order |
 
 ### What a read gives you
@@ -322,9 +344,13 @@ modifiers), and of `tokens.permutation(input)` otherwise.
 | `files`, `entry`, `text(file)` | Every file the read used, the one it started from, and a file's text exactly as read |
 | `resolver`, `modifier(name)` | What the resolver document says about itself, and one modifier with its contexts and default |
 | `permutations`, `permutation(input)` | Every permutation built, and one by its input. `permutation()` gives the default |
-| `tokenPaths()`, `has(path)` | Every token path, and whether a path is there, in any permutation |
-| `diagnostics` | Every problem, each with the permutations it holds in |
+| `tokenPaths()`, `groupPaths()`, `has(path)` | Every token and group path, and whether a path is there, in any permutation |
+| `writtenAt(path)` | Every place a token or group is written in the files, each with the permutations that read it and the ones its value wins in |
+| `referencedBy(path)` | Every reference to a path typed in the files, each with the permutations it holds in: what renaming it rewrites |
+| `sources` | Every source the resolver lists, once |
+| `diagnostics`, `diagnosticsFor(path)` | Every problem, or those about one token or group, each with the permutations it holds in |
 | `diagnosticsAt(place)`, `spanOf(place)` | The problems at a place in a file, and where something is written, for editors |
+| `jsonPathOf(place)`, `jsonAt(file, jsonPath)` | Where a place or reference sits in its file's JSON, such as `["color", "text"]`, and what the file writes there, for a tool writing files |
 | `reread(changed)`, `rereadAll(files)`, `diff(before)` | New tokens after files changed, and what changed |
 | `toMemory()` | The entry and every file's text, to read the same tokens somewhere else |
 
@@ -337,7 +363,7 @@ modifiers), and of `tokens.permutation(input)` otherwise.
 | `invalid` | Set when its value couldn't be read |
 | `description`, `deprecated`, `extensions` | Its `$description`, `$deprecated` and `$extensions` |
 | `references`, `referenceAt(property)`, `aliasChain` | The references its value writes, and every token it passes through to resolve |
-| `valueFrom`, `writtenAt`, `authored` | Where its value comes from, every place it's written, and what that file wrote. `tokens.spanOf(place)` gives a place's position in the file |
+| `valueFrom`, `writtenAt`, `authored` | Where its value comes from, every place it's written, and what that file wrote. `tokens.spanOf(place)` gives a place's position in the file, `tokens.jsonPathOf(place)` its path in the JSON |
 | `inherited`, `generated` | Set when it's there because of `$extends`, or a generator made it |
 | `parts` | Each part of a composite value, each shadow layer or gradient stop, with what it resolved to |
 
@@ -345,7 +371,27 @@ modifiers), and of `tokens.permutation(input)` otherwise.
 
 Asks `question` of every permutation, and gives back each answer once, with the permutations it
 came from: `{ answer, permutations }`. Two answers are the same when they're the same value, or
-lists of the same values in the same order.
+lists of the same values in the same order. A token the same in two permutations is one object in
+both, so asking for it puts them together. One answer means it's the same everywhere.
+
+### A list of permutations
+
+`tokens.permutations`, and the `permutations` of an answer, a problem or a change, is a read-only
+list of permutations, with:
+
+| | What it is |
+| --- | --- |
+| `label` | Which permutations it holds, for people, such as `mode: dark` or `everywhere` |
+| `inputs`, `scope` | Their inputs, and which permutations it holds by their contexts, for a tool that words them its own way |
+| `others` | Every permutation the read built that it doesn't hold, itself a list: none when it holds them all |
+| `where(test)`, `matching(input)` | The ones that pass a test, and the one an input picks |
+
+### Errors
+
+| | Thrown by |
+| --- | --- |
+| `PermutationError` | `tokens.permutation(input)` when no permutation fits the input; `detail` says why |
+| `SeveralPermutationsError` | A question of one permutation asked of `tokens` with several; `detail` has an example input |
 
 ### Helpers
 
@@ -360,7 +406,8 @@ lists of the same values in the same order.
 | `@sugarcube-sh/dtcg/values` | `readReference(value)` | Which reference a value written in a file is, in either syntax |
 | | `writtenColor(color)` | A color ready to write into a file, rounded to four decimal places |
 | | `compositeParts` | The parts of each composite type, and each part's type |
-| | `tokenTypes`, `colorSpaces`, `dimensionUnits`, `durationUnits`, `fontWeightKeywords`, `strokeStyleKeywords`, `lineCaps` | The spec's lists |
+| | `tokenTypes`, `dimensionUnits`, `durationUnits`, `fontWeightKeywords`, `strokeStyleKeywords`, `lineCaps` | The spec's lists |
+| | `colorSpaces` | Each color space, with its components' ranges |
 | `@sugarcube-sh/dtcg/css` | `cssName(path)` | The name CSS knows a token path by, before escaping |
 | | `cssWriter(options)` | A writer with your own opinions: naming, such as a prefix, fallbacks, and which tokens to leave out. Pass it to `cssBlocks` |
 
@@ -368,7 +415,7 @@ lists of the same values in the same order.
 
 | Import from | For | Runs in |
 | --- | --- | --- |
-| `@sugarcube-sh/dtcg` | `read` with your own `readText`, `readFromMemory`, `everyPermutation`, the helpers, and every type | anywhere |
+| `@sugarcube-sh/dtcg` | `read` with your own `readText`, `readFromMemory`, `everyPermutation`, the errors, the helpers, and every type | anywhere |
 | `@sugarcube-sh/dtcg/node` | `read` from disk, `liveTokens`, `findResolver` | Node |
 | `@sugarcube-sh/dtcg/css` | CSS variables, values and stylesheets | anywhere |
 | `@sugarcube-sh/dtcg/values` | checking one value, and the spec's lists | anywhere |
