@@ -14,21 +14,21 @@
         "theme": "lightHighContrast"
       },
       "label": "theme: lightHighContrast",
-      "sources": [0, 1, 2, 4, 5]
+      "sources": [0, 1, 2, 3, 4]
     },
     {
       "input": {
         "theme": "dark"
       },
       "label": "theme: dark",
-      "sources": [0, 1, 2, 6]
+      "sources": [0, 1, 2, 5]
     },
     {
       "input": {
         "theme": "darkHighContrast"
       },
       "label": "theme: darkHighContrast",
-      "sources": [0, 1, 2, 7, 8]
+      "sources": [0, 1, 2, 5, 4]
     }
   ],
   "diagnostics": [],
@@ -62,10 +62,6 @@
     },
     {
       "file": "theme/light.json",
-      "context": {
-        "modifier": "theme",
-        "name": "light"
-      },
       "sets": [],
       "readBy": [
         {
@@ -76,32 +72,11 @@
           "modifier": "theme",
           "name": "lightHighContrast"
         }
-      ]
-    },
-    {
-      "file": "theme/light.json",
-      "context": {
-        "modifier": "theme",
-        "name": "lightHighContrast"
-      },
-      "sets": [],
-      "readBy": [
-        {
-          "modifier": "theme",
-          "name": "light"
-        },
-        {
-          "modifier": "theme",
-          "name": "lightHighContrast"
-        }
-      ]
+      ],
+      "modifier": "theme"
     },
     {
       "file": "theme/dark-high-contrast.json",
-      "context": {
-        "modifier": "theme",
-        "name": "lightHighContrast"
-      },
       "sets": [],
       "readBy": [
         {
@@ -112,14 +87,11 @@
           "modifier": "theme",
           "name": "darkHighContrast"
         }
-      ]
+      ],
+      "modifier": "theme"
     },
     {
       "file": "theme/dark.json",
-      "context": {
-        "modifier": "theme",
-        "name": "dark"
-      },
       "sets": [],
       "readBy": [
         {
@@ -130,43 +102,8 @@
           "modifier": "theme",
           "name": "darkHighContrast"
         }
-      ]
-    },
-    {
-      "file": "theme/dark.json",
-      "context": {
-        "modifier": "theme",
-        "name": "darkHighContrast"
-      },
-      "sets": [],
-      "readBy": [
-        {
-          "modifier": "theme",
-          "name": "dark"
-        },
-        {
-          "modifier": "theme",
-          "name": "darkHighContrast"
-        }
-      ]
-    },
-    {
-      "file": "theme/dark-high-contrast.json",
-      "context": {
-        "modifier": "theme",
-        "name": "darkHighContrast"
-      },
-      "sets": [],
-      "readBy": [
-        {
-          "modifier": "theme",
-          "name": "lightHighContrast"
-        },
-        {
-          "modifier": "theme",
-          "name": "darkHighContrast"
-        }
-      ]
+      ],
+      "modifier": "theme"
     }
   ]
 }

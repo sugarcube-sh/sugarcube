@@ -140,7 +140,7 @@ function providedBy(
     for (const { declarations } of blocks) {
         for (const { token } of declarations) {
             for (const { source } of token.writtenAt) {
-                const modifier = source.context?.modifier;
+                const { modifier } = source;
                 if (!modifier) continue;
                 const paths = provided.get(modifier);
                 if (paths) paths.add(token.path);

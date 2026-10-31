@@ -212,7 +212,7 @@ function contextExtensionPlace(
     if (!group) return refused({ kind: "not-found", path });
     const winner = group.extensionsWrittenAt[key];
     const winnerSpan = winner && tokens.spanOf(winner);
-    if (winner && winnerSpan && winner.source.context === chosen.context) {
+    if (winner && winnerSpan && chosenContextLists(chosen, winner.source)) {
         const at = memberAt(tokens, winnerSpan);
         if (!at) return refused({ kind: "not-found", path });
         return { at, alsoAffects: seenReading(tokens, [winnerSpan.file], chosen) };
@@ -309,7 +309,7 @@ export function contextPlace(
 
     const winner = written.valueFrom;
     const winnerSpan = tokens.spanOf(winner);
-    if (winner.source.context === chosen.context) {
+    if (chosenContextLists(chosen, winner.source)) {
         const there = tokens.writtenAt(path).find(({ span }) => span === winnerSpan);
         const at = memberAt(tokens, winnerSpan);
         if (!there || !at) return refused({ kind: "not-found", path });
@@ -362,7 +362,7 @@ function newContextPlace(
     const groupPlaces = parent === undefined ? [] : perm.group(parent)?.writtenAt;
     if (!groupPlaces) return refused({ kind: "not-found", path: parent ?? path });
     const existing = perm.token(path);
-    if (existing && existing.valueFrom.source.context !== chosen.context) {
+    if (existing && !chosenContextLists(chosen, existing.valueFrom.source)) {
         return refused({ kind: "override-instead", path, input: inputOf(chosen) });
     }
     if (existing || perm.group(path)) return refused({ kind: "taken", path });
@@ -400,9 +400,13 @@ export function chosenContext(
 }
 
 function writable(perm: Permutation, chosen: Chosen): { file: string; index: number }[] {
-    return perm.sources.flatMap(({ context, pointer, file }, index) =>
-        context === chosen.context && !pointer ? [{ file, index }] : [],
+    return perm.sources.flatMap((source, index) =>
+        chosenContextLists(chosen, source) && !source.pointer ? [{ file: source.file, index }] : [],
     );
+}
+
+function chosenContextLists({ context }: Chosen, { modifier }: Source): boolean {
+    return modifier === context.modifier;
 }
 
 function chosenFile(

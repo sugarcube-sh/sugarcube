@@ -39,31 +39,25 @@
   "sources": [
     {
       "file": "beta.json",
-      "context": {
-        "modifier": "beta",
-        "name": "true"
-      },
       "sets": [],
       "readBy": [
         {
           "modifier": "beta",
           "name": "true"
         }
-      ]
+      ],
+      "modifier": "beta"
     },
     {
       "file": "debug.json",
-      "context": {
-        "modifier": "debug",
-        "name": "true"
-      },
       "sets": [],
       "readBy": [
         {
           "modifier": "debug",
           "name": "true"
         }
-      ]
+      ],
+      "modifier": "debug"
     }
   ]
 }

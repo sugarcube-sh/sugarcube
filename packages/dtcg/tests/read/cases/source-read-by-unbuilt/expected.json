@@ -40,10 +40,6 @@
     },
     {
       "file": "both.json",
-      "context": {
-        "modifier": "mode",
-        "name": "light"
-      },
       "sets": [],
       "readBy": [
         {
@@ -54,7 +50,8 @@
           "modifier": "mode",
           "name": "dark"
         }
-      ]
+      ],
+      "modifier": "mode"
     }
   ]
 }

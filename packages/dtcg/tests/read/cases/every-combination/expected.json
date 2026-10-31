@@ -203,31 +203,25 @@
     },
     {
       "file": "ocean.json",
-      "context": {
-        "modifier": "brand",
-        "name": "ocean"
-      },
       "sets": [],
       "readBy": [
         {
           "modifier": "brand",
           "name": "ocean"
         }
-      ]
+      ],
+      "modifier": "brand"
     },
     {
       "file": "dark.json",
-      "context": {
-        "modifier": "theme",
-        "name": "dark"
-      },
       "sets": [],
       "readBy": [
         {
           "modifier": "theme",
           "name": "dark"
         }
-      ]
+      ],
+      "modifier": "theme"
     }
   ]
 }

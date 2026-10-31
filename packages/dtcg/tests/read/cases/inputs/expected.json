@@ -35,17 +35,14 @@
   "sources": [
     {
       "file": "dark.json",
-      "context": {
-        "modifier": "theme",
-        "name": "dark"
-      },
       "sets": [],
       "readBy": [
         {
           "modifier": "theme",
           "name": "dark"
         }
-      ]
+      ],
+      "modifier": "theme"
     }
   ]
 }

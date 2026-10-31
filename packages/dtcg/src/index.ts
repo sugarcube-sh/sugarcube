@@ -586,7 +586,7 @@ export interface TokenBase<T extends TokenType> {
      *
      * @example
      * const winner = token.writtenAt.at(-1);
-     * winner?.source.context // the context whose own file writes it, if one does
+     * winner?.source.modifier // the modifier whose context's own file writes it, if one does
      */
     readonly writtenAt: readonly Place[];
     /**
@@ -650,7 +650,7 @@ export interface TokenBase<T extends TokenType> {
      *
      * @example
      * text.valueFrom.source.file     // "dark.json"
-     * text.valueFrom.source.context  // the context whose own file writes it, if one does
+     * text.valueFrom.source.modifier // the modifier whose context's own file writes it, if one does
      * goTo(text.valueFrom.span)      // where in the file
      */
     readonly valueFrom: Place;
@@ -820,7 +820,8 @@ export interface Place {
 
 /**
  * A place, as {@link DesignTokens.writtenAt} gives it: written once at `span`, read through each of
- * `sources` (a file several contexts list is a source for each).
+ * `sources`. A file several contexts list the same way is one source; listed with different
+ * `$extensions` beside its `$ref`, or through different sets, it is a source for each.
  */
 export interface PlaceInPermutations {
     readonly span: Span;
@@ -869,13 +870,17 @@ export interface Source {
      */
     readonly pointer?: string;
     /**
-     * The context it is listed under, when the resolver lists it under one: the context itself, as
-     * {@link DesignTokens.resolver} holds it. "Did a context's own file write this?" is this.
+     * The modifier whose contexts list it, when the resolver lists it under one, as
+     * {@link DesignTokens.resolver} holds it. The context is the permutation's: a file the contexts
+     * `dark` and `dim` both list the same way is one source, read through `dark` in the dark
+     * permutation and through `dim` in the dim one. "Did a context's own file write this?" is this.
      *
      * @example
-     * token.writtenAt.at(-1)?.source.context?.name // "dark"
+     * const source = dim.token("color.text")?.valueFrom.source;
+     * source?.modifier?.name                                            // "mode"
+     * dim.contexts.find(({ modifier }) => modifier === source?.modifier) // the context dim
      */
-    readonly context?: ResolverContext;
+    readonly modifier?: ResolverModifier;
     /**
      * Every set on the way to it, outermost first, each as it is in effect at that step. Empty
      * when it is reached through none, or there is no resolver.

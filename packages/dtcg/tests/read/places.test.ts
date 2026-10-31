@@ -38,10 +38,10 @@ describe("sources", () => {
         expect(tokens.sources).toStrictEqual([dark?.sources[0], dark?.sources[1]]);
     });
 
-    it("say the context they are listed under, as the resolver's own context object", () => {
+    it("say the modifier whose context lists them, as the resolver's own modifier object", () => {
         const [base, darkFile] = tokens.sources;
-        expect(base?.context).toBeUndefined();
-        expect(darkFile?.context).toBe(darkContext);
+        expect(base?.modifier).toBeUndefined();
+        expect(darkFile?.modifier).toBe(darkContext?.modifier);
     });
 
     it("say every set on the way, outermost first, and none when there is none", () => {
@@ -223,12 +223,83 @@ describe("on the design tokens, a file several contexts list", () => {
         entry: "tokens.resolver.json",
     });
 
-    it("writtenAt gives its place once, with each source that reads it", () => {
+    it("writtenAt gives its place once, with the one source both contexts read it through", () => {
         const [, night, ...rest] = shared.writtenAt("gap");
         expect(rest).toStrictEqual([]);
         expect(night?.span.file).toBe("night.json");
-        expect(night?.sources.map(({ context }) => context?.name)).toStrictEqual(["dark", "dim"]);
+        expect(night?.sources.map(({ modifier }) => modifier?.name)).toStrictEqual(["mode"]);
         expect(night?.readIn.inputs).toStrictEqual([{ mode: "dark" }, { mode: "dim" }]);
+    });
+
+    const inDark = shared.permutation({ mode: "dark" });
+    const inDim = shared.permutation({ mode: "dim" });
+
+    it("is one place in every permutation that reads it", () => {
+        expect(inDim.token("gap")?.valueFrom).toBe(inDark.token("gap")?.valueFrom);
+    });
+
+    it("gives the permutations that read it the same token, when nothing else differs", () => {
+        expect(inDim.token("gap")).toBe(inDark.token("gap"));
+    });
+
+    it("stays one token across a reread that changes another file", () => {
+        const after = shared.reread({
+            "base.json": JSON.stringify({
+                gap: { $type: "number", $value: 1 },
+                rim: { $value: 1 },
+            }),
+        });
+
+        expect(after.permutation({ mode: "dim" }).token("gap")).toBe(inDark.token("gap"));
+        expect(after.permutation({ mode: "dark" }).token("gap")).toBe(inDark.token("gap"));
+    });
+
+    it("says which modifier's contexts list it, the permutation saying which context", () => {
+        const source = inDim.token("gap")?.valueFrom.source;
+
+        expect(source?.modifier?.name).toBe("mode");
+        expect(inDim.contexts.find(({ modifier }) => modifier === source?.modifier)?.name).toBe(
+            "dim",
+        );
+    });
+
+    it("is a place for each route into the file that writes different extensions beside its $ref", () => {
+        const routes = readFromMemory({
+            files: {
+                "tokens.resolver.json": JSON.stringify({
+                    version: "2025.10",
+                    resolutionOrder: [
+                        { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
+                        {
+                            type: "modifier",
+                            name: "mode",
+                            default: "light",
+                            contexts: {
+                                light: [],
+                                dark: [
+                                    {
+                                        $ref: "night.json",
+                                        $extensions: { "com.example": { hidden: true } },
+                                    },
+                                ],
+                                dim: [{ $ref: "night.json" }],
+                            },
+                        },
+                    ],
+                }),
+                "base.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }),
+                "night.json": JSON.stringify({ gap: { $type: "number", $value: 2 } }),
+            },
+            entry: "tokens.resolver.json",
+        });
+        const throughDark = routes.permutation({ mode: "dark" }).token("gap");
+        const throughDim = routes.permutation({ mode: "dim" }).token("gap");
+
+        expect(throughDark?.valueFrom).not.toBe(throughDim?.valueFrom);
+        expect(throughDark?.valueFrom.source.extensions).toStrictEqual({
+            "com.example": { hidden: true },
+        });
+        expect(throughDim?.valueFrom.source.extensions).toBeUndefined();
     });
 });
 
@@ -254,8 +325,8 @@ describe("the plain form", () => {
         expect(bg).not.toHaveProperty("replaces");
     });
 
-    it("writes a context link as its modifier and name, and a modifier's contexts in full", () => {
-        expect(plain.sources[1].context).toStrictEqual({ modifier: "mode", name: "dark" });
+    it("writes a source's modifier and a context link by name, and a modifier's contexts in full", () => {
+        expect(plain.sources[1].modifier).toBe("mode");
         expect(plain.sources[1].readBy).toStrictEqual([{ modifier: "mode", name: "dark" }]);
         const [, darkWritten] = plain.resolver.modifiers[0].contexts;
         expect(Object.keys(darkWritten).sort()).toStrictEqual(["name", "sources", "span"]);

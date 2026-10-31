@@ -360,6 +360,11 @@ class SourceObject {
     static positionOf(source: Source): number {
         return (source as unknown as SourceObject).#position;
     }
+
+    toJSON() {
+        const { modifier, ...fields } = this as unknown as Source;
+        return modifier ? { ...fields, modifier: modifier.name } : fields;
+    }
 }
 
 export function withPosition(fields: Source, position: number): Source {

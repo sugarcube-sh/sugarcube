@@ -202,7 +202,7 @@ export function clashRows(tokens: DesignTokens, clashes: readonly Clash[]): Clas
 }
 
 function labelOf({ sources, readIn }: PlaceInPermutations): string | undefined {
-    if (sources.some((source) => source.context)) return readIn.label;
+    if (sources.some((source) => source.modifier)) return readIn.label;
     return sources[0]?.sets[0]?.name;
 }
 
