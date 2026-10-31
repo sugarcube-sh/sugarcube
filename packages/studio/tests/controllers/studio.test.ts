@@ -13,7 +13,7 @@ describe("createStudio", () => {
         const studio = studioOn(demoMessage());
 
         expect(studio.state.tokens.has("color.text.onBrand")).toBe(true);
-        expect(studio.state.showing.label).toBe("default");
+        expect(studio.state.showing.label).toBe("mode: light");
         expect(studio.state.showing.isDefault).toBe(true);
         expect(studio.state.changes).toEqual([]);
     });
@@ -143,7 +143,7 @@ describe("createStudio", () => {
 
         studio.receive(withFile("tokens.resolver.json", JSON.stringify(resolver)));
 
-        expect(studio.state.showing.label).toBe("default");
+        expect(studio.state.showing.label).toBe("mode: light");
     });
 
     it("asks the adapter for a token's value, so a fluid size is the clamp() the page gets", () => {

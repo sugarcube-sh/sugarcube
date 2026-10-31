@@ -13,7 +13,7 @@
       "input": {
         "mode": "light"
       },
-      "label": "default",
+      "label": "mode: light",
       "sources": [0, 1, 2]
     }
   ],

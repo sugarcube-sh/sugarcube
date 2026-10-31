@@ -59,7 +59,7 @@ describe("editing in studio", () => {
                 permutations.label,
             ]),
         ).toEqual([
-            ["renamed", "color.text.body", "default"],
+            ["renamed", "color.text.body", "mode: light"],
             ["renamed", "color.text.body", "mode: dark"],
         ]);
     });

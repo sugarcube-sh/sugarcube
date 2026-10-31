@@ -25,7 +25,7 @@
         "size": "large",
         "beta": "false"
       },
-      "label": "theme: dark, size: large",
+      "label": "theme: dark, size: large, beta: false",
       "sources": []
     }
   ],

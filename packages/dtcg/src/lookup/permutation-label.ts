@@ -14,12 +14,7 @@ export function permutationLabel(input: Input): string {
 }
 
 export function ownLabel(contexts: ResolverContext[]): string {
-    if (contexts.length === 0) return "";
-    const away = contexts.filter(({ isDefault }) => !isDefault);
-    if (away.length === 0) return "default";
-    return permutationLabel(
-        Object.fromEntries(away.map((each) => [each.modifier.name, each.name])),
-    );
+    return partText(Object.fromEntries(contexts.map((each) => [each.modifier.name, [each.name]])));
 }
 
 type Part = Record<string, string[]>;
@@ -27,8 +22,14 @@ type Part = Record<string, string[]>;
 export function scopeOf(set: readonly Permutation[], all: readonly Permutation[]): Scope {
     const [first] = set;
     if (!first) return [];
-    const inSet = (perm: Permutation) => set.includes(perm);
-    const exact = (part: Part) => all.every((perm) => !matches(part, perm) || inSet(perm));
+    const modifiers = first.contexts.map(({ modifier }) => modifier);
+    const exact = (part: Part) => {
+        const combinations = modifiers.reduce(
+            (count, { name, contexts }) => count * (part[name]?.length ?? contexts.length),
+            1,
+        );
+        return set.filter((perm) => matches(part, perm)).length === combinations;
+    };
     const pinned = set.map((perm): Part => {
         const part: Part = {};
         for (const { modifier, name } of perm.contexts) part[modifier.name] = [name];
@@ -50,19 +51,20 @@ function inWrittenOrder(part: Part, contexts: readonly ResolverContext[]): Part 
     return ordered;
 }
 
-export function scopeLabel(scope: Scope, all: readonly Permutation[]): string {
+export function scopeLabel(scope: Scope): string {
     if (scope.length === 0) return "nowhere";
     return scope
         .map((part) => {
-            const covered = all.filter((perm) => matches(part, perm));
-            const [only] = covered;
             if (Object.keys(part).length === 0) return "everywhere";
-            if (covered.length === 1 && only?.isDefault) return "default";
-            return Object.entries(part)
-                .map(([modifier, contexts]) => `${modifier}: ${contexts.join(", ")}`)
-                .join(", ");
+            return partText(part);
         })
         .join("; ");
+}
+
+function partText(part: Scope[number]): string {
+    return Object.entries(part)
+        .map(([modifier, contexts]) => `${modifier}: ${contexts.join(", ")}`)
+        .join(", ");
 }
 
 function matches(part: Scope[number], perm: Permutation): boolean {

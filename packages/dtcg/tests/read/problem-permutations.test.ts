@@ -139,8 +139,8 @@ describe("a problem every permutation finds again for itself", () => {
     it("is two problems at one spot when the permutations say different things there", () => {
         const missing = both.diagnostics.filter(({ kind }) => kind === "missing-reference");
         expect(missing.map(({ permutations }) => permutations.label).sort()).toStrictEqual([
-            "default",
             "mode: dark",
+            "mode: light",
         ]);
         expect(missing[0]?.span).toStrictEqual(missing[1]?.span);
     });

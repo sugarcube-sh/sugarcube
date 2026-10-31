@@ -312,10 +312,10 @@ describe("permutationLabel", () => {
         );
     });
 
-    it("writes out every modifier it is given, where a permutation's label leaves out defaults", () => {
+    it("writes a permutation's input as its label, every modifier named", () => {
         const compact = tokens.permutation({ density: "compact" });
-        expect(permutationLabel(compact.input)).not.toBe(compact.label);
-        expect(compact.label).toBe("density: compact");
+        expect(permutationLabel(compact.input)).toBe(compact.label);
+        expect(compact.label).toBe("theme: light, density: compact");
     });
 });
 

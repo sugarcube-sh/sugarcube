@@ -1004,12 +1004,12 @@ export interface Permutation {
      */
     readonly input: Input;
     /**
-     * Its shortest input written out for people: each modifier away from its default, and any with
-     * no default, in the order `resolutionOrder` names them, such as
-     * `"theme: dark, brand: ocean"`, since a modifier with a default may be left out of an input
-     * (Resolver 6.1). `"default"` for the permutation an empty input names. Empty when there are
-     * no modifiers, as for token files read without a resolver. For display only: functions take
-     * an {@link Input}, never a label.
+     * Its input written out for people: every modifier and its context, in the order
+     * `resolutionOrder` names them, such as `"theme: dark, brand: house"`, the default permutation
+     * included. The same text as the {@link Permutations.label | label} of a list holding only
+     * this permutation, so a label always means the same permutations. Empty when there are no
+     * modifiers, as for a token file: there is nothing to name, and nothing to tell apart. For
+     * display only: functions take an {@link Input}, never a label.
      */
     readonly label: string;
     /**
@@ -1753,13 +1753,15 @@ export interface DesignTokens {
  * Which permutations a group holds, described by their contexts: parts joined by "or", each part
  * naming, for each modifier that narrows it, the contexts it keeps. A modifier a part leaves out may
  * be any of its contexts, unlike in an {@link Input}, where it is at its default (Resolver 6.1).
- * Every part matches only permutations in the group, among those the read built. Modifiers come in
- * the order `resolutionOrder` names them, contexts as they are written.
+ * Every part matches only permutations in the group, among every combination the resolver's
+ * modifiers make, built or not: so a group that is every permutation of a read that built only
+ * some isn't `[{}]`, and a group of one permutation names every modifier. Modifiers come in the
+ * order `resolutionOrder` names them, contexts as they are written.
  *
  * @example
  * [{ mode: ["dark", "dim"], contrast: ["high"] }]       // dark or dim, in high contrast
  * [{ brand: ["cbus", "hesta-super"] }, { inverted: ["on"] }]  // those brands, or inverted
- * [{}]                                                  // every permutation
+ * [{}]                                                  // every combination
  * []                                                    // none
  */
 export type Scope = readonly Readonly<Record<string, readonly string[]>>[];
@@ -1786,11 +1788,24 @@ export interface Permutations extends ReadonlyArray<Permutation> {
      */
     readonly scope: Scope;
     /**
+     * Every permutation the read built that it doesn't hold, in their order: for "everywhere
+     * but …", and for whether it is every permutation the read built (none other). Not the same as
+     * a {@link Permutations.label | label} of `"everywhere"`, which is every combination the
+     * resolver's modifiers make: a read limited by `inputs`, or built `"each-context"`, can hold
+     * every permutation it built without holding every combination.
+     *
+     * @example
+     * // say where a problem is only when it isn't everywhere the read looked
+     * const { permutations } = problem;
+     * const where = permutations.others.length === 0 ? "" : ` in ${permutations.label}`;
+     */
+    readonly others: Permutations;
+    /**
      * Its {@link Permutations.scope | scope} written out: each modifier and the contexts it keeps,
-     * such as `"mode: dark, dim, contrast: high"`, parts joined with `"; "`. A part matching only the
-     * default permutation is `"default"`; every permutation is `"everywhere"`, none `"nowhere"`. A
-     * modifier left out may be any context, so `"mode: dark"` here is every dark permutation, where a
-     * permutation's own `"mode: dark"` is the one at the default otherwise.
+     * such as `"mode: dark, dim, contrast: high"`, parts joined with `"; "`. A modifier left out may
+     * be any of its contexts, so `"mode: dark"` is every dark permutation; one permutation alone
+     * names every modifier, as its own {@link Permutation.label | label} does. Every combination is
+     * `"everywhere"`, none `"nowhere"`.
      */
     readonly label: string;
     /**
