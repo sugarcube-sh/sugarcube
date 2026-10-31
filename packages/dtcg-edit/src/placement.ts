@@ -17,7 +17,7 @@ import {
 import { isJsonObject } from "@sugarcube-sh/dtcg/values";
 import { refused } from "./error-messages.js";
 import type { OpResult, PlaceOptions, Question, Refusal, Where } from "./index.js";
-import { type Member, memberAt, writtenIn } from "./file-text.js";
+import { type Member, memberOf } from "./file-text.js";
 
 interface Choice {
     path: string;
@@ -86,11 +86,12 @@ export function newPlace(
 export function copiesOf(tokens: DesignTokens, path: string): Copies {
     const found = lookUp(tokens, path, (perm) => perm.token(path) ?? perm.group(path));
     if ("refused" in found) return found;
-    const places = tokens.writtenAt(path).flatMap(({ span, readIn }) => {
-        const member = memberAt(tokens, span);
-        if (!member) return [];
-        return [{ ...member, readers: readIn.length }];
-    });
+    const places = tokens.writtenAt(path).map(({ span, jsonPath, written, readIn }) => ({
+        span,
+        jsonPath,
+        written,
+        readers: readIn.length,
+    }));
     const alsoAffects = alsoIn(
         tokens.permutations.where((perm) => (perm.token(path) ?? perm.group(path)) !== undefined),
     );
@@ -105,7 +106,7 @@ export function propertyPlace(
     place: string | undefined,
 ): { at: Member; alsoAffects: Permutations } | { choose: Choice } | { refused: Refusal } {
     const writes = (member: Member) =>
-        writtenIn(tokens, member.span.file, [...member.jsonPath, key]) !== undefined;
+        tokens.jsonAt(member.span.file, [...member.jsonPath, key]) !== undefined;
     const writing = places.find(writes);
     if (writing) return { at: writing, alsoAffects: seenReading(tokens, [writing.span.file]) };
     return widestPlace(tokens, path, places, place);
@@ -182,10 +183,9 @@ function sharedExtensionPlace(
     const own = tokens.permutations.flatMap((perm) => ownIn(perm) ?? []);
     if (own.length > 0) {
         const shared = own.find(({ source }) => everyoneReads(source));
-        const at = shared && memberAt(tokens, tokens.spanOf(shared));
-        if (!shared || !at) return refused({ kind: "no-shared-value", path });
+        if (!shared) return refused({ kind: "no-shared-value", path });
         return {
-            at,
+            at: memberOf(tokens, shared),
             alsoAffects: alsoIn(tokens.permutations.where((perm) => ownIn(perm) === shared)),
         };
     }
@@ -213,8 +213,7 @@ function contextExtensionPlace(
     const winner = group.extensionsWrittenAt[key];
     const winnerSpan = winner && tokens.spanOf(winner);
     if (winner && winnerSpan && chosenContextLists(chosen, winner.source)) {
-        const at = memberAt(tokens, winnerSpan);
-        if (!at) return refused({ kind: "not-found", path });
+        const at = memberOf(tokens, winner);
         return { at, alsoAffects: seenReading(tokens, [winnerSpan.file], chosen) };
     }
     const groupSpans = group.writtenAt.map((each) => tokens.spanOf(each));
@@ -246,9 +245,8 @@ function sharedPlace(tokens: DesignTokens, path: string): Placement {
     for (const place of tokens.writtenAt(path)) {
         if (place.sources.some(everyoneReads)) shared = place;
     }
-    const at = shared && memberAt(tokens, shared.span);
-    if (!shared || !at) return refused({ kind: "no-shared-value", path });
-    return { at, alsoAffects: alsoIn(shared.winsIn) };
+    if (!shared) return refused({ kind: "no-shared-value", path });
+    return { at: shared, alsoAffects: alsoIn(shared.winsIn) };
 }
 
 function writtenPlace(
@@ -259,9 +257,8 @@ function writtenPlace(
     const found = lookUp(tokens, path, (perm) => perm.token(path));
     if ("refused" in found) return found;
     const there = tokens.writtenAt(path).find(({ span }) => sameSpan(span, at));
-    const member = there && memberAt(tokens, there.span);
-    if (!there || !member) return refused({ kind: "not-written-there", path, at });
-    return { at: member, alsoAffects: alsoIn(there.winsIn) };
+    if (!there) return refused({ kind: "not-written-there", path, at });
+    return { at: there, alsoAffects: alsoIn(there.winsIn) };
 }
 
 function sameSpan(
@@ -311,9 +308,8 @@ export function contextPlace(
     const winnerSpan = tokens.spanOf(winner);
     if (chosenContextLists(chosen, winner.source)) {
         const there = tokens.writtenAt(path).find(({ span }) => span === winnerSpan);
-        const at = memberAt(tokens, winnerSpan);
-        if (!there || !at) return refused({ kind: "not-found", path });
-        return { at, alsoAffects: alsoIn(there.winsIn, chosen) };
+        if (!there) return refused({ kind: "not-found", path });
+        return { at: memberOf(tokens, winner), alsoAffects: alsoIn(there.winsIn, chosen) };
     }
 
     const parent = parentOf(path);

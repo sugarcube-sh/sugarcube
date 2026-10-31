@@ -20,6 +20,7 @@ import type {
 } from "../index.js";
 import { diagnosticsAtIn, diagnosticsForIn, diagnosticsIn } from "../lookup/diagnostics.js";
 import { diffIn } from "../lookup/diff.js";
+import { jsonIn, jsonPathIn } from "../lookup/json-path.js";
 import { partsOf } from "../lookup/parts.js";
 import { modifierIn, onlyPermutation, permutationIn } from "../lookup/permutation.js";
 import { referencedByIn, referencedIn, refersToIn, usedIn } from "../lookup/references.js";
@@ -329,6 +330,14 @@ class DesignTokensObject {
         const moved = this.#kept.moved.get(of);
         if (moved) return moved;
         return "source" in of ? PlaceObject.spanOf(of as PlaceObject) : spanOfReference(of);
+    }
+
+    jsonPathOf(of: Place | Reference): JsonPath {
+        return jsonPathIn(this.#self, this.spanOf(of));
+    }
+
+    jsonAt(file: string, jsonPath: JsonPath) {
+        return jsonIn(this.#self, file, jsonPath);
     }
 
     has(path: string) {

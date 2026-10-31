@@ -10,6 +10,7 @@ import type {
 } from "../index.js";
 import { atOrWithin } from "../path.js";
 import { permutationsOf } from "../read/permutations-of.js";
+import { jsonPathIn } from "./json-path.js";
 import { acrossPermutations } from "../read/reference.js";
 import { samePlace } from "../read/same-object.js";
 
@@ -123,7 +124,12 @@ function across(
     }
     return [...merged].flatMap(([span, here]) =>
         here.map(({ reference, permutations }) =>
-            acrossPermutations(reference, permutationsOf(permutations, tokens.permutations), span),
+            acrossPermutations(
+                reference,
+                permutationsOf(permutations, tokens.permutations),
+                span,
+                () => jsonPathIn(tokens, span),
+            ),
         ),
     );
 }

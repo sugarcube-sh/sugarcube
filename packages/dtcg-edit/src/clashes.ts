@@ -1,6 +1,5 @@
 import { type DesignTokens, type JsonPath, forbiddenInName } from "@sugarcube-sh/dtcg";
 import { editedText } from "./apply.js";
-import { memberAt, writtenIn } from "./file-text.js";
 import type { Clash, ClashPart, EditStep, FileOp } from "./index.js";
 import { valueAt } from "./text-edits.js";
 
@@ -39,7 +38,7 @@ function partsOf(
         const path = named.get(key);
         if (path !== undefined) part.path = path;
         const yours = forced === undefined ? undefined : valueAt(forced, jsonPath);
-        const now = writtenIn(theirs, file, jsonPath);
+        const now = theirs.jsonAt(file, jsonPath);
         if (yours !== undefined) part.yours = yours;
         if (now !== undefined) part.theirs = now;
         return part;
@@ -70,11 +69,10 @@ function pathsByMember(versions: DesignTokens[], files: Set<string>): Map<string
     const named = new Map<string, string>();
     for (const tokens of versions) {
         for (const path of [...tokens.tokenPaths(), ...tokens.groupPaths()]) {
-            for (const { span } of tokens.writtenAt(path)) {
+            for (const { span, jsonPath } of tokens.writtenAt(path)) {
                 if (!files.has(span.file)) continue;
-                const member = memberAt(tokens, span);
-                const key = member && memberKey(span.file, member.jsonPath);
-                if (key && !named.has(key)) named.set(key, path);
+                const key = memberKey(span.file, jsonPath);
+                if (!named.has(key)) named.set(key, path);
             }
         }
     }

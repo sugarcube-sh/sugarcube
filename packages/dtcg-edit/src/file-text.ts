@@ -1,13 +1,6 @@
-import type { DesignTokens, JsonPath, Span, JsonValue } from "@sugarcube-sh/dtcg";
+import type { DesignTokens, JsonPath, Place, Span, JsonValue } from "@sugarcube-sh/dtcg";
 import type { FileOp } from "./index.js";
-import {
-    type Node,
-    findNodeAtLocation,
-    findNodeAtOffset,
-    getNodePath,
-    getNodeValue,
-    parseTree,
-} from "jsonc-parser";
+import { type Node, findNodeAtOffset, parseTree } from "jsonc-parser";
 
 export interface Member {
     span: Span;
@@ -34,19 +27,12 @@ export function nodeAt(tokens: DesignTokens, { file, offset, length }: Span): No
     return node;
 }
 
-export function writtenIn(
-    tokens: DesignTokens,
-    file: string,
-    jsonPath: JsonPath,
-): JsonValue | undefined {
-    const tree = treeOf(tokens, file);
-    const node = tree && findNodeAtLocation(tree, [...jsonPath]);
-    return node && (getNodeValue(node) as JsonValue);
-}
-
-export function memberAt(tokens: DesignTokens, span: Span): Member | undefined {
-    const node = nodeAt(tokens, span);
-    return node && { span, jsonPath: getNodePath(node), written: getNodeValue(node) as JsonValue };
+export function memberOf(tokens: DesignTokens, place: Place): Member {
+    return {
+        span: tokens.spanOf(place),
+        jsonPath: tokens.jsonPathOf(place),
+        written: place.written,
+    };
 }
 
 export function opsAt(
@@ -57,7 +43,7 @@ export function opsAt(
 ): FileOp[] {
     const { file } = at.span;
     const jsonPath = [...at.jsonPath, ...inside];
-    const was = writtenIn(tokens, file, jsonPath);
+    const was = tokens.jsonAt(file, jsonPath);
     if (value === null) return was === undefined ? [] : [{ kind: "remove", file, jsonPath, was }];
     return was === undefined
         ? [{ kind: "add", file, jsonPath, value }]

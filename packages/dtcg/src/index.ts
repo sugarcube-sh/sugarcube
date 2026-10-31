@@ -267,6 +267,8 @@ export type ReferenceInPermutations = Omit<ReferenceBase, "from" | "token" | "mo
     (CurlyBraceReference | (JsonPointerReference & { readonly path?: string })) & {
         /** Where it is written, in this read's text. */
         readonly span: Span;
+        /** Where it is written in its file, as {@link DesignTokens.jsonPathOf} gives it. */
+        readonly jsonPath: JsonPath;
         readonly from: string;
         readonly permutations: Permutations;
         moved(moves: readonly Move[]): JsonValue;
@@ -824,6 +826,8 @@ export interface Place {
  */
 export interface PlaceInPermutations {
     readonly span: Span;
+    /** Where it is written in its file, as {@link DesignTokens.jsonPathOf} gives it. */
+    readonly jsonPath: JsonPath;
     /**
      * The JSON the file writes at `span`, exactly as written, as {@link Place.written} gives it.
      */
@@ -1747,6 +1751,32 @@ export interface DesignTokens {
      * goTo(file, tokens.spanOf(token.references[0]).offset);
      */
     spanOf(of: Place | Reference): Span;
+    /**
+     * Where a place or a reference these design tokens hold is written in its file, as the keys
+     * from the top of the file down, part of a file included: what a tool writing the file
+     * changes. A root token's place is its `$root`, a token a group inherits is where its value is
+     * written in the group it comes from, and a token a {@link Generator} makes, and its
+     * reference, are at the extension that makes it. The top of a file is `[]`. Worked out from
+     * this read's text when asked, so a read that never asks pays nothing.
+     *
+     * @throws an `Error` for a place or reference whose position, in this read's text, writes
+     * nothing: one from a read of other text.
+     *
+     * @example
+     * tokens.jsonPathOf(text.valueFrom)     // ["color", "text"]
+     * tokens.jsonPathOf(text.references[0]) // ["color", "text", "$value"]
+     */
+    jsonPathOf(of: Place | Reference): JsonPath;
+    /**
+     * What `file` writes at `jsonPath` in this read's text, exactly as written: the companion of
+     * {@link DesignTokens.jsonPathOf}, for a tool writing the file to see what is there now.
+     * `undefined` where the file writes nothing, or the read has no such file. Worked out when
+     * asked, reading each file's text once for both questions.
+     *
+     * @example
+     * tokens.jsonAt("color.json", ["color", "text", "$value"]) // "{color.brand}"
+     */
+    jsonAt(file: string, jsonPath: JsonPath): JsonValue | undefined;
 }
 
 /**

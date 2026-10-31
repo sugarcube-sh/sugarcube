@@ -126,6 +126,8 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
 
 export const thrownMessages = {
     couldNotFetch: (path: string) => `\`${path}\` could not be fetched`,
+    nothingWrittenThere: (file: string) =>
+        `nothing is written at that place in \`${file}\` in this read: it comes from a read of other text`,
     permutation: (detail: PermutationErrorDetail) =>
         detail.reason === "not-read"
             ? `\`${permutationLabel(detail.input)}\` was not built by this read`
