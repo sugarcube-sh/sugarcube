@@ -282,6 +282,15 @@ export interface PathInPermutations {
     readonly permutations: Permutations;
 }
 
+/**
+ * One answer {@link everyPermutation} gives: what the question answered, and the permutations
+ * that answered it.
+ */
+export interface AnswerInPermutations<Answer> {
+    readonly answer: Answer;
+    readonly permutations: Permutations;
+}
+
 /** How far a permutation's and the design tokens' reference questions look. */
 export interface ReferenceOptions {
     /**
@@ -2133,6 +2142,7 @@ export {
 } from "./path.js";
 export { completeInput } from "./lookup/permutation.js";
 export { permutationLabel } from "./lookup/permutation-label.js";
+export { everyPermutation } from "./lookup/every-permutation.js";
 
 /**
  * What {@link completeInput} gives: the full input, or the first problem with it.
