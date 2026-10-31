@@ -24,9 +24,9 @@ export function remove(tokens: DesignTokens, path: string): OpResult {
         jsonPath,
         was: written,
     }));
-    const broken = tokens
-        .usedBy(path)
-        .map((user) => user.path)
-        .filter((user) => !atOrWithin(user, path));
+    const users = tokens.permutations.flatMap((permutation) => permutation.usedBy(path));
+    const broken = [...new Set(users.map((user) => user.path))].filter(
+        (user) => !atOrWithin(user, path),
+    );
     return { ops, alsoAffects: copies.alsoAffects, broken, moved: [] };
 }

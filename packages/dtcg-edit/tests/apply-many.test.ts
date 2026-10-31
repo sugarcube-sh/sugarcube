@@ -128,7 +128,9 @@ describe("applying many edits to one file", () => {
     });
 
     it("removes every unused token of the demo in one step without breaking a file", () => {
-        const unused = demo.tokenPaths().filter((path) => demo.usedBy(path).length === 0);
+        const unused = demo
+            .tokenPaths()
+            .filter((path) => demo.permutations.every((p) => p.usedBy(path).length === 0));
         const done = commit(
             demo,
             combine(

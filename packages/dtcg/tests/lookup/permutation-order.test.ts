@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { Permutations } from "../../src/index.js";
+import { type Permutation, type Permutations, everyPermutation } from "../../src/index.js";
 import { twoModifierFiles, twoModifiers } from "./two-modifiers.js";
 
 const tokens = twoModifiers();
+
+function asked(question: (permutation: Permutation) => unknown): Permutations[] {
+    return everyPermutation(tokens, question).map(({ permutations }) => permutations);
+}
 
 function inTheirOrder(permutations: Permutations): void {
     const positions = permutations.map((each) => tokens.permutations.indexOf(each));
@@ -18,12 +22,12 @@ describe("every answer's permutations, with two modifiers and files that overlap
         const answers = [
             ...tokens.writtenAt("gap").flatMap(({ readIn, winsIn }) => [readIn, winsIn]),
             ...tokens.writtenAt("color.x").flatMap(({ readIn, winsIn }) => [readIn, winsIn]),
-            ...tokens.resolvedValues("gap").map(({ permutations }) => permutations),
-            ...tokens.resolvedValues("color.x").map(({ permutations }) => permutations),
+            ...asked((p) => p.token("gap")?.resolved),
+            ...asked((p) => p.token("color.x")),
             ...tokens.referencedBy("color.red").map(({ permutations }) => permutations),
-            ...tokens.references("color.x").map(({ permutations }) => permutations),
-            ...tokens.references("fade").map(({ permutations }) => permutations),
-            ...tokens.usedBy("color.red").map(({ permutations }) => permutations),
+            ...asked((p) => p.refersTo("color.x")),
+            ...asked((p) => p.refersTo("fade")),
+            ...asked((p) => p.usedBy("color.red")),
             ...tokens.diagnostics.flatMap(({ permutations }) =>
                 permutations ? [permutations] : [],
             ),

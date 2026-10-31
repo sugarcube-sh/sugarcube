@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { type DesignTokens, type Span, isReference, readFromMemory } from "../../src/index.js";
+import {
+    type DesignTokens,
+    type Reference,
+    type Span,
+    isReference,
+    readFromMemory,
+} from "../../src/index.js";
 
 const color = (red: number) => ({ $value: { colorSpace: "srgb", components: [red, 0, 0] } });
 const px = (value: number) => ({ value, unit: "px" });
@@ -327,34 +333,24 @@ describe("moved", () => {
     });
 });
 
-describe("on the design tokens", () => {
-    it("referencedBy gives every reference to a path, each with the permutations it is in", () => {
-        const reaching = tokens.referencedBy("color.red");
-        expect(reaching.map(({ from, permutations }) => [from, permutations.inputs])).toStrictEqual(
-            [
-                ["color.brand", [{ mode: "light" }]],
-                ["color.tint", [{ mode: "light" }, { mode: "dark" }]],
-            ],
-        );
-        expect(reaching[0]).not.toHaveProperty("token");
-        expect(reaching[0] && written(reaching[0].span)).toBe('"{color.red}"');
+describe("refersTo, on a permutation", () => {
+    const named = (references: readonly Reference[]) =>
+        references.map(({ from, path }) => `${from.path} > ${path}`);
+
+    it("gives the references a path's value writes, as that permutation reads it", () => {
+        const [red] = light.refersTo("color.brand");
+        expect(red?.path).toBe("color.red");
+        expect(red && tokens.spanOf(red).file).toBe("base.json");
+        expect(dark.refersTo("color.brand").map(({ path }) => path)).toStrictEqual(["color.blue"]);
     });
 
-    it("references gives the references a path writes, in every permutation", () => {
-        const writes = tokens.references("color.brand");
-        expect(
-            writes.map(({ path, span, permutations }) => [path, span.file, permutations.inputs]),
-        ).toStrictEqual([
-            ["color.red", "base.json", [{ mode: "light" }]],
-            ["color.blue", "dark.json", [{ mode: "dark" }]],
-        ]);
-    });
-
-    it("follows chained references in each permutation", () => {
-        const chained = tokens.references("color.text", { chained: true });
-        expect(chained.map(({ from, path }) => `${from} > ${path}`)).toStrictEqual([
+    it("follows chained references, each once", () => {
+        expect(named(light.refersTo("color.text", { chained: true }))).toStrictEqual([
             "color.text > color.brand",
             "color.brand > color.red",
+        ]);
+        expect(named(dark.refersTo("color.text", { chained: true }))).toStrictEqual([
+            "color.text > color.brand",
             "color.brand > color.blue",
         ]);
     });
@@ -368,11 +364,41 @@ describe("on the design tokens", () => {
             },
             gap: { $type: "dimension", $value: { $ref: "#/line/$value/width" } },
         });
-        const chained = pointed.references("gap", { chained: true });
-        expect(chained.map(({ from, path }) => `${from} > ${path}`)).toStrictEqual([
+        expect(named(pointed.refersTo("gap", { chained: true }))).toStrictEqual([
             "gap > line",
             "line > ink",
         ]);
+    });
+
+    it("gives a group's $extends, and nothing for a path that isn't there", () => {
+        const extending = oneFile({
+            button: { $type: "number", pad: { $value: 1 } },
+            primary: { $extends: "{button}" },
+        });
+        expect(named(extending.refersTo("primary"))).toStrictEqual(["primary > button"]);
+        expect(extending.refersTo("nope")).toStrictEqual([]);
+    });
+
+    it("is safe with a loop", () => {
+        const looped = oneFile({
+            a: { $type: "number", $value: "{b}" },
+            b: { $type: "number", $value: "{a}" },
+        });
+        expect(named(looped.refersTo("a", { chained: true }))).toStrictEqual(["a > b", "b > a"]);
+    });
+});
+
+describe("on the design tokens", () => {
+    it("referencedBy gives every reference to a path, each with the permutations it is in", () => {
+        const reaching = tokens.referencedBy("color.red");
+        expect(reaching.map(({ from, permutations }) => [from, permutations.inputs])).toStrictEqual(
+            [
+                ["color.brand", [{ mode: "light" }]],
+                ["color.tint", [{ mode: "light" }, { mode: "dark" }]],
+            ],
+        );
+        expect(reaching[0]).not.toHaveProperty("token");
+        expect(reaching[0] && written(reaching[0].span)).toBe('"{color.red}"');
     });
 
     it("referencedBy a group's path covers its $extends and the tokens inside it", () => {

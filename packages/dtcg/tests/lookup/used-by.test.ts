@@ -29,36 +29,6 @@ const tokens = readFromMemory({
     },
 });
 
-const used = (target: string, chained = false) =>
-    tokens.usedBy(target, { chained }).map(({ path, permutations }) => ({
-        path,
-        label: permutations.label,
-        count: permutations.length,
-    }));
-const firstMet = (paths: string[]) => [...new Set(paths)];
-
-describe("tokens.usedBy", () => {
-    it("gives each token that refers to the path once, with every permutation it does in", () => {
-        expect(used("color.red")).toStrictEqual([
-            { path: "color.brand", label: "everywhere", count: 2 },
-            { path: "fade", label: "everywhere", count: 2 },
-            { path: "color.muted", label: "mode: dark", count: 1 },
-        ]);
-    });
-
-    it("with chained, also each token that refers to one of those, in referencedBy's order", () => {
-        const references = tokens.referencedBy("color.red", { chained: true });
-        expect(used("color.red", true).map(({ path }) => path)).toStrictEqual(
-            firstMet(references.map(({ from }) => from)),
-        );
-        expect(used("color.red", true).map(({ path }) => path)).toContain("color.text");
-    });
-
-    it("is empty for a token nothing refers to", () => {
-        expect(used("color.text")).toStrictEqual([]);
-    });
-});
-
 describe("permutation.usedBy", () => {
     it("gives each token that refers to the path in this permutation once, in referencedBy's order", () => {
         for (const permutation of tokens.permutations) {
@@ -79,5 +49,18 @@ describe("permutation.usedBy", () => {
         expect(
             dark.referencedBy("color.red").filter(({ from }) => from.path === "fade"),
         ).toHaveLength(2);
+    });
+
+    it("with chained, also each token that refers to one of those, in the order they are written", () => {
+        const light = tokens.permutation();
+        expect(light.usedBy("color.red", { chained: true }).map(({ path }) => path)).toStrictEqual([
+            "color.brand",
+            "color.text",
+            "fade",
+        ]);
+    });
+
+    it("is empty for a token nothing refers to", () => {
+        expect(tokens.permutation().usedBy("color.text")).toStrictEqual([]);
     });
 });

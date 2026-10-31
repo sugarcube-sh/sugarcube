@@ -64,6 +64,8 @@ describe("the design tokens of a read with one permutation", () => {
         expect(file.groups).toBe(only.groups);
         expect(file.children).toBe(only.children);
         expect(file.root).toBe(only.root);
+        expect(file.usedBy("gap")).toStrictEqual(only.usedBy("gap"));
+        expect(file.refersTo("gap")).toStrictEqual(only.refersTo("gap"));
     });
 
     it("answer for a resolver with no modifiers", () => {
@@ -107,6 +109,8 @@ describe("the design tokens of a read with several permutations", () => {
             ["groups", (tokens) => tokens.groups],
             ["children", (tokens) => tokens.children],
             ["root", (tokens) => tokens.root],
+            ["usedBy()", (tokens) => tokens.usedBy("color.red")],
+            ["refersTo()", (tokens) => tokens.refersTo("color.x")],
         ];
 
         for (const [asked, ask] of asks) {
@@ -147,6 +151,13 @@ describe("the design tokens of a read with several permutations", () => {
         expect(refusal(() => contrast.token("gap")).message).toContain(
             'tokens.permutation({ "high-contrast": "on" })',
         );
+    });
+
+    it("have no copies of a permutation's questions that answer for every permutation", () => {
+        expect("references" in modes).toBe(false);
+        expect("resolvedValues" in modes).toBe(false);
+        // @ts-expect-error a chained reference is followed in one permutation, so it's asked of one
+        modes.referencedBy("color.red", { chained: true });
     });
 
     it("keep answering what is about the files, not one permutation", () => {

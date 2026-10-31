@@ -22,14 +22,7 @@ import { diagnosticsAtIn, diagnosticsForIn, diagnosticsIn } from "../lookup/diag
 import { diffIn } from "../lookup/diff.js";
 import { partsOf } from "../lookup/parts.js";
 import { modifierIn, onlyPermutation, permutationIn } from "../lookup/permutation.js";
-import {
-    referencedByIn,
-    referencedIn,
-    referencesIn,
-    usedByIn,
-    usedIn,
-} from "../lookup/references.js";
-import { resolvedValuesIn } from "../lookup/resolved-values.js";
+import { referencedByIn, referencedIn, refersToIn, usedIn } from "../lookup/references.js";
 import { writtenAtIn } from "../lookup/written-at.js";
 import { spanOfReference } from "./reference.js";
 import { samePlace } from "./same-object.js";
@@ -176,6 +169,10 @@ class PermutationObject {
         return usedIn(this.#self, path, options);
     }
 
+    refersTo(path: string, options?: ReferenceOptions): Reference[] {
+        return refersToIn(this.#self, path, options);
+    }
+
     diagnosticsFor(path: string): Diagnostic[] {
         return diagnosticsIn(this.#designTokens as DesignTokens, this.#self, path);
     }
@@ -229,24 +226,12 @@ class DesignTokensObject {
         this.#kept = kept;
     }
 
-    references(path: string, options?: ReferenceOptions) {
-        return referencesIn(this.#self, path, options);
-    }
-
-    referencedBy(path: string, options?: ReferenceOptions) {
-        return referencedByIn(this.#self, path, options);
-    }
-
-    usedBy(path: string, options?: ReferenceOptions) {
-        return usedByIn(this.#self, path, options);
+    referencedBy(path: string) {
+        return referencedByIn(this.#self, path);
     }
 
     writtenAt(path: string) {
         return writtenAtIn(this.#self, path);
-    }
-
-    resolvedValues(path: string) {
-        return resolvedValuesIn(this.#self, path);
     }
 
     permutation(input?: Input) {
@@ -259,6 +244,14 @@ class DesignTokensObject {
 
     group(path: string) {
         return onlyPermutation(this.#self, "group()").group(path);
+    }
+
+    usedBy(path: string, options?: ReferenceOptions) {
+        return onlyPermutation(this.#self, "usedBy()").usedBy(path, options);
+    }
+
+    refersTo(path: string, options?: ReferenceOptions) {
+        return onlyPermutation(this.#self, "refersTo()").refersTo(path, options);
     }
 
     get tokens() {

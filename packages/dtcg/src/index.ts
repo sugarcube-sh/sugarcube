@@ -259,8 +259,8 @@ export interface ReferenceBase {
 }
 
 /**
- * A reference, as {@link DesignTokens.references} and {@link DesignTokens.referencedBy} give it:
- * written once at `span`, holding in each of `permutations`. `from` is the path that writes it,
+ * A reference, as {@link DesignTokens.referencedBy} gives it: written once at `span`, holding in
+ * each of `permutations`. `from` is the path that writes it,
  * since it can be a different token in each permutation.
  */
 export type ReferenceInPermutations = Omit<ReferenceBase, "from" | "token" | "moved"> &
@@ -271,16 +271,6 @@ export type ReferenceInPermutations = Omit<ReferenceBase, "from" | "token" | "mo
         readonly permutations: Permutations;
         moved(moves: readonly Move[]): JsonValue;
     };
-
-/**
- * A token or group by its path, with the permutations where it refers to the path asked about, as
- * {@link DesignTokens.usedBy} gives it. A path, not a token, because each permutation has its own
- * token at that path.
- */
-export interface PathInPermutations {
-    readonly path: string;
-    readonly permutations: Permutations;
-}
 
 /**
  * One answer {@link everyPermutation} gives: what the question answered, and the permutations
@@ -854,15 +844,6 @@ export interface PlaceInPermutations {
 }
 
 /**
- * One value a token resolves to, as {@link DesignTokens.resolvedValues} gives it: `token` is the
- * token in the first of `permutations`, the permutations where it resolves to that value.
- */
-export interface ResolvedInPermutations {
-    readonly token: Token;
-    readonly permutations: Permutations;
-}
-
-/**
  * One source of tokens, as the resolver lists it: a file, part of one, or tokens written in the
  * resolver. Keys written beside a source's `$ref` are part of that source, so a token written there
  * belongs to it, and its place is in the resolver. One object for each source the resolver lists,
@@ -1102,6 +1083,18 @@ export interface Permutation {
      * dark.referencedBy("color.red", { chained: true })           // everything a change would reach
      */
     referencedBy(path: string, options?: ReferenceOptions): readonly Reference[];
+    /**
+     * The references the token or group at `path` writes in this permutation, each with what it
+     * references; with `chained`, also those written by each token they name, however indirectly
+     * (for a property-level reference, the token holding the property), each once, safe with
+     * loops. A group's are its `$extends`, or its `$ref` to another group. Empty for a path that
+     * isn't there.
+     *
+     * @example
+     * light.refersTo("color.text").map(({ path }) => path)                   // ["color.brand"]
+     * light.refersTo("color.text", { chained: true }).map(({ path }) => path) // ["color.brand", "color.red"]
+     */
+    refersTo(path: string, options?: ReferenceOptions): readonly Reference[];
     /**
      * Each token or group that refers to `path` in this permutation, once, however many references
      * it writes to it; with `chained`, also each one that refers to those, however indirectly. Wider
@@ -1538,33 +1531,15 @@ export interface DesignTokens {
      */
     readonly diagnostics: readonly Diagnostic[];
     /**
-     * The references the token or group at `path` writes, in every permutation, each once with the
-     * permutations it holds in; with `chained`, also those written by each token they name (for a
-     * property-level reference, the token holding the property), however indirectly.
-     *
-     * @example
-     * tokens.references("color.text", { chained: true }).map(({ path }) => path)
-     */
-    references(path: string, options?: ReferenceOptions): readonly ReferenceInPermutations[];
-    /**
-     * Every reference to `path`, in every permutation, each once with the permutations it holds
-     * in; with `chained`, also every reference to each token that writes one. A group's path
-     * covers what is written to it, such as an `$extends`, and to everything inside it.
+     * Every reference to `path` written in the files, each once with the permutations it holds
+     * in: what renaming `path` rewrites. A group's path covers what is written to it, such as an
+     * `$extends`, and to everything inside it. To follow chained references, which go through
+     * each permutation's own tokens, ask a permutation ({@link Permutation.referencedBy}).
      *
      * @example
      * for (const { from, span } of tokens.referencedBy("color.brand")) show(from, span);
      */
-    referencedBy(path: string, options?: ReferenceOptions): readonly ReferenceInPermutations[];
-    /**
-     * Each token or group that refers to `path`, in any permutation, once, however many references
-     * it writes, with the permutations where it does; with `chained`, also each that refers to those.
-     * A group's path covers what refers to it and to everything inside it, as
-     * {@link DesignTokens.referencedBy} does.
-     *
-     * @example
-     * for (const { path, permutations } of tokens.usedBy("color.red")) row(path, permutations.label);
-     */
-    usedBy(path: string, options?: ReferenceOptions): readonly PathInPermutations[];
+    referencedBy(path: string): readonly ReferenceInPermutations[];
     /**
      * Every place the token or group at `path` is written, in any permutation, each span once with
      * the sources and permutations that read it and the permutations whose value comes from it, in
@@ -1575,19 +1550,6 @@ export interface DesignTokens {
      * for (const { span, winsIn } of tokens.writtenAt("color.brand")) row(span.file, winsIn.label);
      */
     writtenAt(path: string): readonly PlaceInPermutations[];
-    /**
-     * Each value the token at `path` resolves to, in the order first met, with the permutations
-     * where it does: what it looks like, where {@link DesignTokens.writtenAt} gives where it is
-     * written. A reference written once can resolve differently per permutation. Values are compared
-     * with {@link sameValue} after the type, and a token whose value can't be worked out by what it
-     * says. Permutations without the token are in none; a group's path gives none.
-     *
-     * @example
-     * for (const { token, permutations } of tokens.resolvedValues("color.button.background")) {
-     *   row(swatch(token.resolved), permutations.label);   // "#0b5fff  everywhere" when it never changes
-     * }
-     */
-    resolvedValues(path: string): readonly ResolvedInPermutations[];
     /**
      * The permutation for an input: modifiers left out take their default (Resolver 4.1.5.3), and
      * names match whatever their case (Resolver 5.1). With no input, the default permutation.
@@ -1619,6 +1581,21 @@ export interface DesignTokens {
      * @throws {@link SeveralPermutationsError} when the read has several permutations.
      */
     group(path: string): Group | undefined;
+    /**
+     * The tokens and groups that refer to `path`, when the read has one permutation. As
+     * {@link Permutation.usedBy}. With several, ask each: whether anything uses it in any
+     * permutation is `tokens.permutations.some((p) => p.usedBy(path).length > 0)`.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    usedBy(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
+    /**
+     * The references the value at `path` writes, when the read has one permutation. As
+     * {@link Permutation.refersTo}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    refersTo(path: string, options?: ReferenceOptions): readonly Reference[];
     /**
      * Every token, when the read has one permutation. As {@link Permutation.tokens}.
      *
