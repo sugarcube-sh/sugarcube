@@ -26,9 +26,9 @@ import { propertyEdit } from "./property.js";
  * "Sub-values may be explicit values (e.g. `color` values) or references to other design tokens
  * that have the sub-value's type" (Format 9).
  *
- * The value is written exactly as given, keeping the file's own spelling; use `toDTCGValue`
- * from `@sugarcube-sh/dtcg` to write a value taken from the model. A value the read finds wrong,
- * such as a reference to a token not made yet, is still written, and the read reports it.
+ * The value is written exactly as given, as JSON, keeping the file's own spelling. A value the
+ * read finds wrong, such as a reference to a token not made yet, is still written, and the read
+ * reports it.
  *
  * Refused, with the reason: a token that doesn't exist, one a generator makes, one a group
  * inherits through `$extends`, an override for two contexts at once, a context with no whole

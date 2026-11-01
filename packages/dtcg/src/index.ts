@@ -2363,21 +2363,6 @@ export interface GroupChange {
 
 export { isEqualJson, isEquivalentValue } from "./values/same-value.js";
 
-/** What is at a position in a file. */
-export type AtOffset =
-    | { kind: "token"; path: string; expects?: TokenType }
-    | { kind: "group"; path: string }
-    | { kind: "reference"; from: string; to: string; input: Input; expects?: TokenType }
-    | { kind: "nothing" };
-
-/**
- * What is at a position in a file: a token, a group, or a reference, with the type a value there
- * must have. For editors and language servers.
- */
-export function atOffset(tokens: DesignTokens, file: string, offset: number): AtOffset {
-    throw new Error("not implemented yet");
-}
-
 /** A JSON object, such as a DTCG file's top level: every value in it is plain JSON. */
 export type JsonObject = { readonly [key: string]: JsonValue };
 
@@ -2389,74 +2374,3 @@ export type JsonValue =
     | null
     | readonly JsonValue[]
     | { readonly [key: string]: JsonValue };
-
-/**
- * Turns a value from the model back into the JSON written in a DTCG file, with references as
- * `"{path}"` and pointers as `{ "$ref": "#/…" }`. Use this before writing a value from the model
- * into a file.
- *
- * @example
- * toDTCGValue("color", { syntax: "curly-brace", path: "color.brand" }) // "{color.brand}"
- * toDTCGValue("fontWeight", 400, { like: "regular" }) // "regular"
- */
-export function toDTCGValue<T extends TokenType>(
-    type: T,
-    value: UnresolvedValue<T>,
-    options?: {
-        /**
-         * An earlier value as the file wrote it, such as `token.authored.value`. Where the spec
-         * allows more than one spelling, the result uses the same one: the same keyword, or a
-         * number, for a font weight; one name or a list for a font family; one layer or a list for
-         * a shadow.
-         * @default the spec's own form
-         */
-        like?: unknown;
-    },
-): JsonValue {
-    throw new Error("not implemented yet");
-}
-
-/** How design tokens are written out as DTCG files. */
-export interface ExportOptions {
-    /**
-     * Whether to write references as references, or as the values they point to.
-     * @default "keep"
-     */
-    references?: "keep" | "resolve";
-    /** Which tokens to write. A reference to a token left out is written as its value. */
-    include?: (token: Token) => boolean;
-}
-
-/**
- * Writes one permutation as one self-contained DTCG file.
- *
- * Generated and inherited tokens are left out, and the group settings and `$extends` that make
- * them are written instead.
- * Invalid tokens are left out and listed in `skipped`.
- *
- * @param input Which permutation. Defaults to the default permutation.
- */
-export function toDTCG(
-    doc: DesignTokens,
-    input?: Input,
-    options?: ExportOptions,
-): { tokens: JsonObject; skipped: string[] } {
-    throw new Error("not implemented yet");
-}
-
-/**
- * Writes all the design tokens as a resolver and its files: the default permutation in full,
- * then, for each other context, only what differs.
- */
-export function toDTCGProject(
-    doc: DesignTokens,
-    options?: ExportOptions & {
-        /**
-         * Write a single resolver file with every source inline.
-         * @default false
-         */
-        single?: boolean;
-    },
-): { files: Record<string, JsonObject>; skipped: string[] } {
-    throw new Error("not implemented yet");
-}

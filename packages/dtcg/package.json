@@ -2,7 +2,7 @@
   "name": "@sugarcube-sh/dtcg",
   "version": "0.0.0",
   "private": true,
-  "description": "Read, check and export DTCG design tokens",
+  "description": "Read and check DTCG design tokens",
   "keywords": [
     "design-system",
     "design-tokens",

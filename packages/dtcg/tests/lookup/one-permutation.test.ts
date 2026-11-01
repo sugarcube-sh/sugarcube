@@ -200,7 +200,7 @@ describe("what the top of the files writes", () => {
 });
 
 describe("what the root entry gives", () => {
-    it("has neither completeInput nor the path helpers one by one, which tokenPath gives", async () => {
+    it("has neither completeInput nor the path helpers one by one, which tokenPath gives, nor anything not built yet", async () => {
         const root = await import("../../src/index.js");
         for (const gone of [
             "completeInput",
@@ -214,6 +214,10 @@ describe("what the root entry gives", () => {
             "sameJson",
             "sameValue",
             "movedPath",
+            "atOffset",
+            "toDTCG",
+            "toDTCGProject",
+            "toDTCGValue",
         ]) {
             expect(gone in root).toBe(false);
         }
