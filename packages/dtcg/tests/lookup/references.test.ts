@@ -139,11 +139,11 @@ describe("a reference to nothing", () => {
         });
         expect(
             misspelt
-                .referencedBy("color.inc")
-                .map(({ from, path, syntax }) => ({ from, path, syntax })),
+                .referencesTo("color.inc")
+                .map(({ fromPaths, path, syntax }) => ({ fromPaths, path, syntax })),
         ).toStrictEqual([
-            { from: "text", path: "color.inc", syntax: "json-pointer" },
-            { from: "border", path: "color.inc", syntax: "curly-brace" },
+            { fromPaths: ["text"], path: "color.inc", syntax: "json-pointer" },
+            { fromPaths: ["border"], path: "color.inc", syntax: "curly-brace" },
         ]);
     });
 });

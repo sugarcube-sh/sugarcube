@@ -71,7 +71,7 @@ function changesWhatTheReadGave(): void {
     // @ts-expect-error an answer is part of what the read gives, so it can't be changed either
     tokens.usedBy("color.red").sort();
     // @ts-expect-error
-    permutation.referencedBy("color.red").pop();
+    tokens.referencesTo("color.red").pop();
     // @ts-expect-error
     tokens.tokenPaths().reverse();
     // @ts-expect-error

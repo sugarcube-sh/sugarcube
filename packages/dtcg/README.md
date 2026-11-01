@@ -118,15 +118,21 @@ light.label                             // "mode: light"
 
 What's about the files themselves, not one permutation, `tokens` still answers with a resolver:
 where a token is written (`tokens.writtenAt(path)`), every reference typed to it
-(`tokens.referencedBy(path)`), and whether a name is there at all (`tokens.has(path)`).
+(`tokens.referencesTo(path)`), and whether a name is there at all (`tokens.has(path)`). So whether
+anything uses a token, before you delete it, is a question for the files, and it counts a
+reference in a context the read didn't build:
+
+```ts
+const used = tokens.referencesTo("color.red").length > 0;
+```
 
 ## Ask every permutation at once
 
 `tokens.permutations` is a list, so a question with one answer across all of them, such as whether
-anything still uses a token before you delete it, is a plain `some`, `every` or `find`:
+a token is missing from any permutation, is a plain `some`, `every` or `find`:
 
 ```ts
-const usedAnywhere = tokens.permutations.some((p) => p.usedBy("color.red").length > 0);
+const missingSomewhere = tokens.permutations.some((p) => p.token("color.text") === undefined);
 ```
 
 To see permutations side by side, write the question you'd ask one permutation, and
@@ -147,7 +153,7 @@ import { cssValue } from "@sugarcube-sh/dtcg/css";
 
 for (const path of tokens.tokenPaths()) {
   for (const { answer, permutations } of everyPermutation(tokens, (p) => p.token(path))) {
-    row(path, permutations.label, answer && cssValue(answer));
+    row(path, permutations.label, cssValue(answer));
   }
 }
 // color.red    everywhere    rgb(204 51 51)
@@ -224,8 +230,8 @@ import { cssBlocks, cssCustomProperty, cssText, cssValue } from "@sugarcube-sh/d
 const text = tokens.permutation({ mode: "dark" }).token("color.text");
 
 cssCustomProperty("color.text")         // "--color-text"
-text && cssValue(text)                  // "rgb(51 102 204)"
-text && cssValue(text, {
+cssValue(text)                          // "rgb(51 102 204)"
+cssValue(text, {
   replacement: (ref) =>
     ref.token ? { customProperty: cssCustomProperty(ref.token.path) } : undefined,
 })                                      // "var(--color-blue)"
@@ -324,10 +330,12 @@ const tokens = await read("tokens.resolver.json", { extensionValidators: [fluid]
 
 Ask them of `tokens` when there's one permutation (a token file, or a resolver with no
 modifiers), and of `tokens.permutation(input)` otherwise: with several, `tokens` throws a
-`SeveralPermutationsError` saying how to pick one. `usedBy`, `refersTo` and `referencedBy` take
+`SeveralPermutationsError` saying how to pick one. `refersTo`, `referencesTo` and `usedBy` take
 `{ chained: true }` to follow references through other tokens. `token`, `group`, `tokenOrGroup`,
 `tokens`, `groups`, `children`, `topLevel`, `usedBy` and `refersTo` are the ones `tokens` answers
-directly; `referencedBy` and `diagnosticsFor` on `tokens` cover every permutation (below).
+directly. `referencesTo` and `diagnosticsFor` are asked of both: asked of a permutation, the
+answer is about that permutation; asked of `tokens`, about the whole read, each part with the
+permutations it holds in (below).
 
 | | What it gives |
 | --- | --- |
@@ -335,7 +343,7 @@ directly; `referencedBy` and `diagnosticsFor` on `tokens` cover every permutatio
 | `tokens`, `groups`, `children` | Every token, every group, and the tokens and groups at the top level |
 | `topLevel` | What the top of the files writes: its `$type`, `$description`, `$deprecated` and `$extensions` |
 | `refersTo(path)` | The references a path's value writes: what it points to |
-| `referencedBy(path)` | Every reference written to a path, each one, with where it is: what renaming it rewrites |
+| `referencesTo(path)` | Every reference written to a path, each with the token that writes it |
 | `usedBy(path)` | Each token or group that refers to a path, once: what depends on it |
 | `diagnosticsFor(path)` | The problems about one token or group |
 | `input`, `label`, `isDefault` | The input that built it, a label for people naming every modifier's context, and whether every modifier is at its default |
@@ -344,9 +352,10 @@ directly; `referencedBy` and `diagnosticsFor` on `tokens` cover every permutatio
 The three about references, side by side:
 
 ```ts
-dark.refersTo("color.text")      // the references color.text's value writes: to color.brand
-dark.referencedBy("color.red")   // each reference written to color.red, where it's written
-dark.usedBy("color.red")         // each token or group that refers to color.red, once: [color.brand]
+dark.refersTo("color.text")        // the references color.text's value writes: to color.blue
+dark.referencesTo("color.red")     // each reference written to color.red, with the token that writes it
+dark.usedBy("color.red")           // each token or group that refers to color.red, once: [color.brand]
+tokens.referencesTo("color.red")   // each place {color.red} is typed in the files, with the tokens that have it
 ```
 
 ### What a read gives you
@@ -354,11 +363,11 @@ dark.usedBy("color.red")         // each token or group that refers to color.red
 | | What it is |
 | --- | --- |
 | `files`, `entry`, `text(file)` | Every file the read used, the one it started from, and a file's text exactly as read |
-| `resolver`, `modifier(name)` | What the resolver document says about itself, and one modifier with its contexts and default |
+| `resolver` | What the resolver document says about itself: its sets, and its modifiers with their contexts and defaults |
 | `permutations`, `permutation(input)` | Every permutation built, and one by its input. `permutation()` gives the default |
 | `tokenPaths()`, `groupPaths()`, `has(path)` | Every token and group path, and whether a path is there, in any permutation |
 | `writtenAt(path)` | Every place a token or group is written in the files, each with the permutations that read it and the ones its value wins in |
-| `referencedBy(path)` | Every reference to a path typed in the files, each with the permutations it holds in: what renaming it rewrites |
+| `referencesTo(path)` | Every reference to a path typed in the files, each place once, with the tokens that have it and the permutations it holds in: what renaming it rewrites, and whether anything uses it at all |
 | `sources` | Every source the resolver lists, once |
 | `diagnostics`, `diagnosticsFor(path)` | Every problem, or those about one token or group, each with the permutations it holds in |
 | `diagnosticsAt(place)`, `spanOf(place)` | The problems at a place in a file, and where something is written, for editors |

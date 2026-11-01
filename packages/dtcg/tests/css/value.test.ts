@@ -154,6 +154,14 @@ describe("cssValue", () => {
         expect(cssValue(at("oklch"))).toBe("oklch(0.7 0.3 328 / 0.8)");
     });
 
+    it("gives undefined for a token that isn't there, so a missing path needs no check first", () => {
+        const at = readFromMemory({
+            files: { "tokens.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }) },
+        }).permutation();
+        expect(cssValue(at.token("nope"))).toBeUndefined();
+        expect(cssValue(at.token("gap"))).toBe("1");
+    });
+
     it("writes the other simple types as CSS writes them", () => {
         const at = read({
             size: { $type: "dimension", $value: { value: 1.5, unit: "rem" } },

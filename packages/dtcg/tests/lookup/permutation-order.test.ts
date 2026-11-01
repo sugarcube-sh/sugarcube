@@ -24,7 +24,7 @@ describe("every answer's permutations, with two modifiers and files that overlap
             ...tokens.writtenAt("color.x").flatMap(({ readIn, winsIn }) => [readIn, winsIn]),
             ...asked((p) => p.token("gap")?.resolved),
             ...asked((p) => p.token("color.x")),
-            ...tokens.referencedBy("color.red").map(({ permutations }) => permutations),
+            ...tokens.referencesTo("color.red").map(({ permutations }) => permutations),
             ...asked((p) => p.refersTo("color.x")),
             ...asked((p) => p.refersTo("fade")),
             ...asked((p) => p.usedBy("color.red")),

@@ -259,9 +259,10 @@ export interface ReferenceBase {
 }
 
 /**
- * A reference, as {@link DesignTokens.referencedBy} gives it: written once at `span`, holding in
- * each of `permutations`. `from` is the path that writes it,
- * since it can be a different token in each permutation.
+ * A reference, as {@link DesignTokens.referencesTo} gives it: written once at `span`, holding in
+ * each of `permutations`. `fromPaths` are the paths of the tokens or groups that have it, as paths
+ * since each can be a different object in each permutation: the one whose file writes it first,
+ * then each that inherits it through `$extends`.
  */
 export type ReferenceInPermutations = Omit<ReferenceBase, "from" | "token" | "moved"> &
     (CurlyBraceReference | (JsonPointerReference & { readonly path?: string })) & {
@@ -269,7 +270,7 @@ export type ReferenceInPermutations = Omit<ReferenceBase, "from" | "token" | "mo
         readonly span: Span;
         /** Where it is written in its file, as {@link DesignTokens.jsonPathOf} gives it. */
         readonly jsonPath: JsonPath;
-        readonly from: string;
+        readonly fromPaths: readonly string[];
         readonly permutations: Permutations;
         moved(moves: readonly Move[]): JsonValue;
     };
@@ -1091,14 +1092,15 @@ export interface Permutation {
     tokenOrGroup(path: string): Token | Group | undefined;
     /**
      * Every reference to `path` in this permutation, each with the token or group that writes it in
-     * `from`; with `chained`, also every reference to each of those, however indirectly. A group's
-     * path covers what is written to it, such as an `$extends`, and to everything inside it.
+     * `from`; with `chained`, also every reference to each of those, however indirectly, each once,
+     * safe with loops. A group's path covers what is written to it, such as an `$extends`, and to
+     * everything inside it. {@link DesignTokens.referencesTo} asks the same of the whole read.
      *
      * @example
-     * dark.referencedBy("color.red").map(({ from }) => from.path) // ["color.brand"]
-     * dark.referencedBy("color.red", { chained: true })           // everything a change would reach
+     * dark.referencesTo("color.red").map(({ from }) => from.path) // ["color.brand"]
+     * dark.referencesTo("color.red", { chained: true })           // everything a change would reach
      */
-    referencedBy(path: string, options?: ReferenceOptions): readonly Reference[];
+    referencesTo(path: string, options?: ReferenceOptions): readonly Reference[];
     /**
      * The references the token or group at `path` writes in this permutation, each with what it
      * references; with `chained`, also those written by each token they name, however indirectly
@@ -1547,15 +1549,17 @@ export interface DesignTokens {
      */
     readonly diagnostics: readonly Diagnostic[];
     /**
-     * Every reference to `path` written in the files, each once with the permutations it holds
-     * in: what renaming `path` rewrites. A group's path covers what is written to it, such as an
-     * `$extends`, and to everything inside it. To follow chained references, which go through
-     * each permutation's own tokens, ask a permutation ({@link Permutation.referencedBy}).
+     * Every reference to `path` written in the files, each place once, with the permutations it
+     * holds in and the tokens that have it: what renaming `path` rewrites, and whether anything
+     * uses it at all, built or not. A group's path covers what is written to it, such as an
+     * `$extends`, and to everything inside it. To follow chained references, which go through each
+     * permutation's own tokens, ask a permutation ({@link Permutation.referencesTo}).
      *
      * @example
-     * for (const { from, span } of tokens.referencedBy("color.brand")) show(from, span);
+     * for (const { span } of tokens.referencesTo("color.brand")) rewrite(span);
+     * const unused = tokens.referencesTo("color.legacy").length === 0;
      */
-    referencedBy(path: string): readonly ReferenceInPermutations[];
+    referencesTo(path: string): readonly ReferenceInPermutations[];
     /**
      * Every place the token or group at `path` is written, in any permutation, each span once with
      * the sources and permutations that read it and the permutations whose value comes from it, in
@@ -1606,8 +1610,8 @@ export interface DesignTokens {
     tokenOrGroup(path: string): Token | Group | undefined;
     /**
      * The tokens and groups that refer to `path`, when the read has one permutation. As
-     * {@link Permutation.usedBy}. With several, ask each: whether anything uses it in any
-     * permutation is `tokens.permutations.some((p) => p.usedBy(path).length > 0)`.
+     * {@link Permutation.usedBy}. Whether anything uses it in any permutation, or one the read
+     * didn't build, is whether {@link DesignTokens.referencesTo | referencesTo} gives any.
      *
      * @throws {@link SeveralPermutationsError} when the read has several permutations.
      */
@@ -1645,14 +1649,6 @@ export interface DesignTokens {
      * @throws {@link SeveralPermutationsError} when the read has several permutations.
      */
     readonly topLevel: TopLevel;
-    /**
-     * A modifier that takes part, by its name, whatever its case (Resolver 5.1), with its contexts
-     * and default.
-     *
-     * @example
-     * tokens.modifier("mode")?.contexts.map(({ name }) => name) // ["light", "dark"]
-     */
-    modifier(name: string): ResolverModifier | undefined;
     /**
      * Every token's path in any permutation, each once, in the order the permutations list them:
      * a token only a later permutation has comes after the earlier ones' tokens.
@@ -1821,8 +1817,8 @@ export type Scope = readonly Readonly<Record<string, readonly string[]>>[];
  * as on any array, with the inputs, the scope and a label beside it.
  *
  * @example
- * for (const { from, permutations } of tokens.referencedBy("color.red")) {
- *   row(from, permutations.label);   // "mode: dark, sepia", or "everywhere"
+ * for (const { fromPaths, permutations } of tokens.referencesTo("color.red")) {
+ *   row(fromPaths, permutations.label);   // "mode: dark, sepia", or "everywhere"
  * }
  */
 export interface Permutations extends ReadonlyArray<Permutation> {

@@ -57,6 +57,7 @@ class ReferenceObject {
     }
 
     across(
+        fromPaths: readonly string[],
         permutations: Permutations,
         span: Span,
         jsonPath: () => JsonPath,
@@ -64,6 +65,7 @@ class ReferenceObject {
         return new ReferenceAcrossPermutations(
             this,
             this.#written,
+            fromPaths,
             permutations,
             span,
             jsonPath,
@@ -84,7 +86,7 @@ class ReferenceAcrossPermutations {
     readonly syntax: WrittenReference["syntax"];
     readonly path: string | undefined;
     readonly pointer: string | undefined;
-    readonly from: string;
+    readonly fromPaths: readonly string[];
     readonly targetProperty: JsonPath | undefined;
     readonly span: Span;
     readonly property: JsonPath | undefined;
@@ -96,6 +98,7 @@ class ReferenceAcrossPermutations {
     constructor(
         reference: ReferenceObject,
         written: WrittenReference,
+        fromPaths: readonly string[],
         permutations: Permutations,
         span: Span,
         jsonPath: () => JsonPath,
@@ -104,7 +107,7 @@ class ReferenceAcrossPermutations {
         this.syntax = written.syntax;
         this.path = reference.path;
         this.pointer = written.syntax === "json-pointer" ? written.pointer : undefined;
-        this.from = reference.from.path;
+        this.fromPaths = fromPaths;
         this.targetProperty = reference.targetProperty;
         this.span = span;
         this.property = reference.property;
@@ -137,11 +140,17 @@ export function spanOfReference(reference: Reference): Span {
 
 export function acrossPermutations(
     reference: Reference,
+    fromPaths: readonly string[],
     permutations: Permutations,
     span: Span,
     jsonPath: () => JsonPath,
 ): ReferenceInPermutations {
-    const across = (reference as unknown as ReferenceObject).across(permutations, span, jsonPath);
+    const across = (reference as unknown as ReferenceObject).across(
+        fromPaths,
+        permutations,
+        span,
+        jsonPath,
+    );
     return across as unknown as ReferenceInPermutations;
 }
 

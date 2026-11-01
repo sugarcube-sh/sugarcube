@@ -22,8 +22,8 @@ import { diagnosticsAtIn, diagnosticsForIn, diagnosticsIn } from "../lookup/diag
 import { diffIn } from "../lookup/diff.js";
 import { jsonIn, jsonPathIn } from "../lookup/json-path.js";
 import { partsOf } from "../lookup/parts.js";
-import { modifierIn, onlyPermutation, permutationIn } from "../lookup/permutation.js";
-import { referencedByIn, referencedIn, refersToIn, usedIn } from "../lookup/references.js";
+import { onlyPermutation, permutationIn } from "../lookup/permutation.js";
+import { referencedIn, referencesToIn, refersToIn, usedIn } from "../lookup/references.js";
 import { writtenAtIn } from "../lookup/written-at.js";
 import { spanOfReference } from "./reference.js";
 import { samePlace } from "./same-object.js";
@@ -166,7 +166,7 @@ class PermutationObject {
         return this.#tokens.get(path) ?? this.#groups.get(path);
     }
 
-    referencedBy(path: string, options?: ReferenceOptions): Reference[] {
+    referencesTo(path: string, options?: ReferenceOptions): Reference[] {
         return referencedIn(this.#self, path, options);
     }
 
@@ -231,8 +231,8 @@ class DesignTokensObject {
         this.#kept = kept;
     }
 
-    referencedBy(path: string) {
-        return referencedByIn(this.#self, path);
+    referencesTo(path: string) {
+        return referencesToIn(this.#self, path);
     }
 
     writtenAt(path: string) {
@@ -277,10 +277,6 @@ class DesignTokensObject {
 
     tokenOrGroup(path: string) {
         return onlyPermutation(this.#self, "tokenOrGroup()").tokenOrGroup(path);
-    }
-
-    modifier(name: string) {
-        return modifierIn(this.#self, name);
     }
 
     tokenPaths() {

@@ -40,7 +40,7 @@ export function rename(tokens: DesignTokens, path: string, newName: string): OpR
         name: newName,
         was: written,
     }));
-    const all = tokens.referencedBy(path);
+    const all = tokens.referencesTo(path);
     const references = all.filter(isWritten).flatMap((reference): FileOp[] => {
         const { span } = reference;
         const was = tokens.jsonAt(span.file, reference.jsonPath);
@@ -53,7 +53,9 @@ export function rename(tokens: DesignTokens, path: string, newName: string): OpR
         const value = reference.moved(moved);
         return [{ kind: "set", file: span.file, jsonPath, value, was }];
     });
-    const broken = [...new Set(all.filter((each) => !isWritten(each)).map(({ from }) => from))];
+    const broken = [
+        ...new Set(all.filter((each) => !isWritten(each)).flatMap(({ fromPaths }) => fromPaths)),
+    ];
     return { ops: [...keys, ...references], alsoAffects: copies.alsoAffects, broken, moved };
 }
 
@@ -70,5 +72,6 @@ function afterKeys(member: Member, keys: Member[], name: string): Member["jsonPa
 }
 
 function isWritten(reference: ReferenceInPermutations): boolean {
-    return !reference.permutations.some((each) => each.token(reference.from)?.generated);
+    const [writer] = reference.fromPaths;
+    return !reference.permutations.some((each) => writer && each.token(writer)?.generated);
 }

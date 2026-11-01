@@ -19,7 +19,7 @@ import { sameList } from "../read/same-object.js";
  *
  * @example
  * for (const { answer, permutations } of everyPermutation(tokens, (p) => p.token("color.text"))) {
- *   row(permutations.label, answer && cssValue(answer));
+ *   row(permutations.label, cssValue(answer));
  * }
  *
  * @example

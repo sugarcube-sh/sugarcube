@@ -223,7 +223,7 @@ describe("permutations.matching", () => {
 });
 
 describe("the permutations an answer holds in", () => {
-    const [reference] = tokens.referencedBy("red");
+    const [reference] = tokens.referencesTo("red");
 
     it("are the permutations themselves", () => {
         expect(reference?.permutations).toContain(named({ mode: "dark" }));
@@ -263,7 +263,7 @@ describe("a label", () => {
     const themed = readWith({ permutations: "each-context" });
 
     it("names a modifier when leaving it out would take in combinations the read didn't build", () => {
-        const [reference] = themed.referencedBy("red");
+        const [reference] = themed.referencesTo("red");
         expect(reference?.permutations).toHaveLength(2);
         expect(reference?.permutations.label).toBe("mode: dark, sepia, density: comfy");
         const compact = themed.writtenAt("gap").find(({ span }) => span.file === "compact.json");

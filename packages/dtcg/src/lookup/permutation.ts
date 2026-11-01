@@ -5,10 +5,9 @@ import type {
     InputProblem,
     Permutation,
     PermutationErrorDetail,
-    ResolverModifier,
     SeveralPermutationsDetail,
 } from "../index.js";
-import { checkedInput, findByName, modifiersIn } from "../read/input.js";
+import { checkedInput, modifiersIn } from "../read/input.js";
 
 /**
  * Thrown by {@link DesignTokens.permutation} when there is no permutation for the input. The
@@ -103,8 +102,4 @@ type CompleteInput = { ok: true; input: Input } | ({ ok: false } & InputProblem)
 export function completeInput(tokens: DesignTokens, input: Input): CompleteInput {
     const checked = checkedInput(modifiersIn(tokens.resolver), input);
     return checked.ok ? checked : { ok: false, ...checked.problems[0] };
-}
-
-export function modifierIn(tokens: DesignTokens, name: string): ResolverModifier | undefined {
-    return findByName(tokens.resolver?.modifiers ?? [], name, (each) => each.name);
 }

@@ -160,14 +160,14 @@ describe("the design tokens of a read with several permutations", () => {
         expect("references" in modes).toBe(false);
         expect("resolvedValues" in modes).toBe(false);
         // @ts-expect-error a chained reference is followed in one permutation, so it's asked of one
-        modes.referencedBy("color.red", { chained: true });
+        modes.referencesTo("color.red", { chained: true });
     });
 
     it("keep answering what is about the files, not one permutation", () => {
         expect(() => modes.tokenPaths()).not.toThrow();
         expect(() => modes.has("gap")).not.toThrow();
         expect(() => modes.writtenAt("gap")).not.toThrow();
-        expect(() => modes.referencedBy("color.red")).not.toThrow();
+        expect(() => modes.referencesTo("color.red")).not.toThrow();
         expect(() => modes.diagnosticsFor("gap")).not.toThrow();
         expect(() => modes.sources).not.toThrow();
     });

@@ -7,7 +7,7 @@ const after = await read("tokens.resolver.json", { readText: fromGit("HEAD") });
 
 for (const change of after.diff(before)) {
     if (change.kind !== "changed" || !change.properties.includes("value")) continue;
-    const users = after.permutations.flatMap((p) => p.usedBy(change.path));
-    const dependents = new Set(users.map(({ path }) => path)).size;
+    const users = after.referencesTo(change.path).flatMap(({ fromPaths }) => fromPaths);
+    const dependents = new Set(users).size;
     comment(`${change.path} changed; ${dependents} tokens depend on it`);
 }

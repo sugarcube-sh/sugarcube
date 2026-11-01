@@ -68,7 +68,7 @@ interface Named {
 
 export function impact({ tokens, uses }: Analysis, path: string, written: Written[]): Impact {
     const byDependent = new Map<string, Named[]>();
-    const asked = everyPermutation(tokens, (p) => p.referencedBy(path, { chained: true }));
+    const asked = everyPermutation(tokens, (p) => p.referencesTo(path, { chained: true }));
     for (const { answer, permutations } of asked) {
         for (const reference of answer) {
             const from = reference.from.path;

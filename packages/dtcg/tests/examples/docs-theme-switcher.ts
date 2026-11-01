@@ -6,7 +6,8 @@ import { cssValue } from "@sugarcube-sh/dtcg/css";
 declare const tokens: DesignTokens;
 declare const picked: string;
 
-const known = tokens.modifier("theme")?.contexts.some(({ name }) => name === picked);
+const theme = tokens.resolver?.modifiers.find(({ name }) => name === "theme");
+const known = theme?.contexts.some(({ name }) => name === picked);
 const current = known ? tokens.permutation({ theme: picked }) : tokens.permutation();
 
 for (const t of current.tokens) {

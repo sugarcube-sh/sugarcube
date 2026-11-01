@@ -115,15 +115,17 @@ describe("where a reference is in its file, as a JSON path", () => {
         expect(referencesOf("g.a")).toStrictEqual([["g", "$extensions", "com.example", "steps"]]);
     });
 
-    it("is on each reference the design tokens give for a path, an inherited one where it is written", () => {
+    it("is on each reference the design tokens give for a path, an inherited one once, where it is written", () => {
         expect(
-            tokens.referencedBy("base").map(({ from, jsonPath }) => [from, jsonPath]),
+            tokens.referencesTo("base").map(({ fromPaths, jsonPath }) => [fromPaths, jsonPath]),
         ).toStrictEqual([
-            ["color.x", ["color", "x", "$value"]],
-            ["b.x", ["color", "x", "$value"]],
-            ["g.a", ["g", "$extensions", "com.example", "steps"]],
-            ["pointer", ["pointer", "$value"]],
-            ["line", ["line", "$value", "color"]],
+            [
+                ["color.x", "b.x"],
+                ["color", "x", "$value"],
+            ],
+            [["g.a"], ["g", "$extensions", "com.example", "steps"]],
+            [["pointer"], ["pointer", "$value"]],
+            [["line"], ["line", "$value", "color"]],
         ]);
     });
 });

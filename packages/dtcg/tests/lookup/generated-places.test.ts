@@ -39,10 +39,10 @@ describe("generated tokens across permutations", () => {
     });
 
     it("is one reference to what it references, in every permutation", () => {
-        const references = tokens.referencedBy("base");
+        const references = tokens.referencesTo("base");
         expect(
-            references.map(({ from, permutations }) => [from, permutations.label]),
-        ).toStrictEqual([["g.a", "everywhere"]]);
+            references.map(({ fromPaths, permutations }) => [fromPaths, permutations.label]),
+        ).toStrictEqual([[["g.a"], "everywhere"]]);
     });
 
     it("has the same span in every permutation", () => {
@@ -52,7 +52,7 @@ describe("generated tokens across permutations", () => {
         expect(tokens.spanOf(inLight.valueFrom)).toBe(tokens.spanOf(inDark.valueFrom));
     });
 
-    it("are each a reference when a generator makes several from one setting", () => {
+    it("are one reference, with each token, when a generator makes several from one setting", () => {
         const two = defineGenerator({
             extension: ["com.example", "steps"],
             messages: {},
@@ -75,7 +75,9 @@ describe("generated tokens across permutations", () => {
             },
             { generators: [two] },
         );
-        expect(both.referencedBy("base").map(({ from }) => from)).toStrictEqual(["g.a", "g.b"]);
+        expect(both.referencesTo("base").map(({ fromPaths }) => fromPaths)).toStrictEqual([
+            ["g.a", "g.b"],
+        ]);
     });
 });
 

@@ -299,17 +299,13 @@ describe("tokens.has", () => {
     });
 });
 
-describe("tokens.modifier", () => {
-    it("is a modifier that takes part, by its name, whatever its case", () => {
-        expect(tokens.modifier("Theme")).toMatchObject({ name: "theme", default: "light" });
-        expect(tokens.modifier("theme")?.contexts.map(({ name }) => name)).toStrictEqual([
-            "light",
-            "dark",
+describe("the modifiers that take part", () => {
+    it("are the resolver's, with their contexts and default", () => {
+        expect(tokens.resolver?.modifiers.map(({ name }) => name)).toStrictEqual([
+            "theme",
+            "density",
         ]);
-    });
-
-    it("is undefined for a name the resolver doesn't use", () => {
-        expect(tokens.modifier("brand")).toBeUndefined();
+        expect(tokens.resolver?.modifiers[0]).toMatchObject({ name: "theme", default: "light" });
     });
 });
 

@@ -30,10 +30,10 @@ const tokens = readFromMemory({
 });
 
 describe("permutation.usedBy", () => {
-    it("gives each token that refers to the path in this permutation once, in referencedBy's order", () => {
+    it("gives each token that refers to the path in this permutation once, in referencesTo's order", () => {
         for (const permutation of tokens.permutations) {
             for (const chained of [false, true]) {
-                const references = permutation.referencedBy("color.red", { chained });
+                const references = permutation.referencesTo("color.red", { chained });
                 expect(permutation.usedBy("color.red", { chained })).toStrictEqual([
                     ...new Set(references.map(({ from }) => from)),
                 ]);
@@ -46,9 +46,7 @@ describe("permutation.usedBy", () => {
                 .map(({ path }) => path)
                 .sort(),
         ).toStrictEqual(["color.brand", "color.muted", "fade"]);
-        expect(
-            dark.referencedBy("color.red").filter(({ from }) => from.path === "fade"),
-        ).toHaveLength(2);
+        expect(dark.refersTo("fade").filter(({ path }) => path === "color.red")).toHaveLength(2);
     });
 
     it("with chained, also each token that refers to one of those, in the order they are written", () => {

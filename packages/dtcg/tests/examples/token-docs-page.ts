@@ -10,8 +10,6 @@ const dark = tokens.permutation({ theme: "dark" });
 for (const path of tokens.tokenPaths()) {
     const inLight = light.token(path);
     const inDark = dark.token(path);
-    const users = new Set(
-        tokens.permutations.flatMap((p) => p.usedBy(path)).map((user) => user.path),
-    );
+    const users = new Set(tokens.referencesTo(path).flatMap(({ fromPaths }) => fromPaths));
     row(path, (inLight ?? inDark)?.type, inLight?.resolved, inDark?.resolved, [...users]);
 }

@@ -59,7 +59,7 @@ type TypographyToken = Extract<Token, { type: "typography" }>;
  * sRGB color as `rgb()`, its channels from 0 to 255 to two; its `hex` only when asked for. A color
  * read from a hex string, with `hexStringColors`, is written as that string. A gradient is written
  * as its stops, for any gradient function: `linear-gradient(${css})`. `undefined` for a token with
- * no resolved value.
+ * no resolved value, or for no token, so `cssValue(permutation.token(path))` needs no check first.
  *
  * @example
  * cssValue(brand)                  // "rgb(225 29 72)"
@@ -72,21 +72,22 @@ type TypographyToken = Extract<Token, { type: "typography" }>;
  * if (border?.type === "border") swatch(cssValue(border.color));
  */
 export function cssValue(
-    of: TypographyToken | TypographyPart,
+    of: TypographyToken | TypographyPart | undefined,
     options?: CSSValueOptions,
 ): TypographyCSS | undefined;
 export function cssValue(
-    of: Exclude<Token, TypographyToken> | Exclude<Part, TypographyPart>,
+    of: Exclude<Token, TypographyToken> | Exclude<Part, TypographyPart> | undefined,
     options?: CSSValueOptions,
 ): string | undefined;
 export function cssValue(
-    of: Token | Part,
+    of: Token | Part | undefined,
     options?: CSSValueOptions,
 ): string | TypographyCSS | undefined;
 export function cssValue(
-    of: Token | Part,
+    of: Token | Part | undefined,
     options: CSSValueOptions = {},
 ): string | TypographyCSS | undefined {
+    if (of === undefined) return undefined;
     const whole = "path" in of ? of.parts : of;
     if (!whole) return undefined;
     return whole.type === "typography" ? typography(whole, options) : write(whole, options);

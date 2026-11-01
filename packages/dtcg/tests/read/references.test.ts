@@ -151,7 +151,7 @@ describe("a token's references", () => {
         const line = invalid.permutation().token("line");
         expect(line?.invalid).toBe(true);
         expect(line?.references.map(({ path }) => path)).toStrictEqual(["color.ink"]);
-        expect(invalid.permutation().referencedBy("color.ink")[0]?.from).toBe(line);
+        expect(invalid.permutation().usedBy("color.ink")).toStrictEqual([line]);
     });
 });
 
@@ -193,16 +193,49 @@ describe("referenceAt", () => {
     });
 });
 
-describe("permutation.referencedBy", () => {
+describe("permutation.usedBy", () => {
+    const paths = (users: readonly { path: string }[]) => users.map(({ path }) => path);
+
+    it("is every token that refers to the path", () => {
+        expect(paths(light.usedBy("color.red"))).toStrictEqual(["color.brand", "color.tint"]);
+    });
+
+    it("follows chained references when asked (Format 7.2.2), each once, in written order", () => {
+        expect(paths(light.usedBy("color.red", { chained: true }))).toStrictEqual([
+            "color.brand",
+            "color.text",
+            "color.tint",
+            "border.focus",
+        ]);
+    });
+
+    it("is the permutation's own: in mode: dark, color.red's only user is the tint", () => {
+        expect(paths(dark.usedBy("color.red"))).toStrictEqual(["color.tint"]);
+    });
+
+    it("follows a loop once, without repeating", () => {
+        const loop = oneFile({
+            a: { $type: "number", $value: "{b}" },
+            b: { $type: "number", $value: "{a}" },
+        });
+        expect(paths(loop.permutation().usedBy("a", { chained: true }))).toStrictEqual(["a", "b"]);
+    });
+
+    it("is empty when nothing refers to it", () => {
+        expect(light.usedBy("color.text")).toStrictEqual([]);
+    });
+});
+
+describe("permutation.referencesTo", () => {
     it("is every reference to the path, each with the token that writes it", () => {
         const red = inLight("color.red");
-        const reaching = light.referencedBy("color.red");
+        const reaching = light.referencesTo("color.red");
         expect(reaching.map(({ from }) => from.path)).toStrictEqual(["color.brand", "color.tint"]);
         expect(reaching.every(({ path }) => path === red?.path)).toBe(true);
     });
 
     it("follows chained references when asked (Format 7.2.2), each once, in written order", () => {
-        const chained = light.referencedBy("color.red", { chained: true });
+        const chained = light.referencesTo("color.red", { chained: true });
         expect(chained.map(({ from, path }) => `${from.path} > ${path}`)).toStrictEqual([
             "color.brand > color.red",
             "color.text > color.brand",
@@ -211,9 +244,10 @@ describe("permutation.referencedBy", () => {
         ]);
     });
 
-    it("is the permutation's own: in mode: dark, color.red's only user is the tint", () => {
-        const reaching = dark.referencedBy("color.red");
-        expect(reaching.map(({ from }) => from.path)).toStrictEqual(["color.tint"]);
+    it("is the permutation's own: in mode: dark, color.red's only reference is the tint's", () => {
+        expect(dark.referencesTo("color.red").map(({ from }) => from.path)).toStrictEqual([
+            "color.tint",
+        ]);
     });
 
     it("follows a loop once, without repeating", () => {
@@ -221,12 +255,16 @@ describe("permutation.referencedBy", () => {
             a: { $type: "number", $value: "{b}" },
             b: { $type: "number", $value: "{a}" },
         });
-        const chained = loop.permutation().referencedBy("a", { chained: true });
+        const chained = loop.permutation().referencesTo("a", { chained: true });
         expect(chained.map(({ from }) => from.path)).toStrictEqual(["a", "b"]);
     });
 
     it("is empty when nothing references it", () => {
-        expect(light.referencedBy("color.text")).toStrictEqual([]);
+        expect(light.referencesTo("color.text")).toStrictEqual([]);
+    });
+
+    it("has no referencedBy beside it", () => {
+        expect("referencedBy" in light).toBe(false);
     });
 });
 
@@ -389,44 +427,62 @@ describe("refersTo, on a permutation", () => {
 });
 
 describe("on the design tokens", () => {
-    it("referencedBy gives every reference to a path, each with the permutations it is in", () => {
-        const reaching = tokens.referencedBy("color.red");
-        expect(reaching.map(({ from, permutations }) => [from, permutations.inputs])).toStrictEqual(
-            [
-                ["color.brand", [{ mode: "light" }]],
-                ["color.tint", [{ mode: "light" }, { mode: "dark" }]],
-            ],
-        );
+    it("referencesTo gives every reference to a path, each with the permutations it is in", () => {
+        const reaching = tokens.referencesTo("color.red");
+        expect(
+            reaching.map(({ fromPaths, permutations }) => [fromPaths, permutations.inputs]),
+        ).toStrictEqual([
+            [["color.brand"], [{ mode: "light" }]],
+            [["color.tint"], [{ mode: "light" }, { mode: "dark" }]],
+        ]);
         expect(reaching[0]).not.toHaveProperty("token");
         expect(reaching[0] && written(reaching[0].span)).toBe('"{color.red}"');
     });
 
-    it("referencedBy a group's path covers its $extends and the tokens inside it", () => {
+    it("referencesTo a group's path covers its $extends and the tokens inside it", () => {
         const referring = oneFile({
             button: { $type: "number", pad: { $value: 1 } },
             primary: { $extends: "{button}" },
             gap: { $type: "number", $value: "{button.pad}" },
         });
-        const reaching = referring.referencedBy("button");
-        expect(reaching.map(({ from, path }) => `${from} > ${path}`)).toStrictEqual([
+        const reaching = referring.referencesTo("button");
+        expect(reaching.map(({ fromPaths, path }) => `${fromPaths} > ${path}`)).toStrictEqual([
             "primary > button",
             "gap > button.pad",
         ]);
     });
 
-    it("referencedBy a group's path gives its references in the order they are written", () => {
+    it("referencesTo a group's path gives its references in the order they are written", () => {
         const referring = oneFile({
             size: { $type: "number", small: { $value: 1 }, large: { $value: 2 } },
             a: { $type: "number", $value: "{size.small}" },
             b: { $type: "number", $value: "{size.large}" },
             c: { $type: "number", $value: "{size.small}" },
         });
-        const reaching = referring.referencedBy("size");
-        expect(reaching.map(({ from }) => `${from}`)).toStrictEqual(["a", "b", "c"]);
+        const reaching = referring.referencesTo("size");
+        expect(reaching.map(({ fromPaths }) => `${fromPaths}`)).toStrictEqual(["a", "b", "c"]);
+    });
+
+    it("referencesTo lists a reference a group inherits through $extends once, with every token that has it", () => {
+        const inherited = oneFile({
+            base: { $type: "number", $value: 1 },
+            color: { $type: "number", x: { $value: "{base}" } },
+            b: { $extends: "{color}" },
+            c: { $extends: "{b}" },
+        });
+        const reaching = inherited.referencesTo("base");
+        expect(reaching.map(({ fromPaths }) => fromPaths)).toStrictEqual([
+            ["color.x", "b.x", "c.x"],
+        ]);
+    });
+
+    it("is not referencedBy, nor modifier(name): the resolver's modifiers are the list", () => {
+        expect("referencedBy" in tokens).toBe(false);
+        expect("modifier" in tokens).toBe(false);
     });
 
     it("gives records that can be moved", () => {
-        const [reference] = tokens.referencedBy("color.red");
+        const [reference] = tokens.referencesTo("color.red");
         expect(reference?.moved([{ from: "color.red", to: "color.crimson" }])).toBe(
             "{color.crimson}",
         );

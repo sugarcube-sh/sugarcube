@@ -57,7 +57,7 @@ export function usedIn(
     return [...new Set(referencedIn(permutation, path, options).map(({ from }) => from))];
 }
 
-export function referencedByIn(tokens: DesignTokens, path: string): ReferenceInPermutations[] {
+export function referencesToIn(tokens: DesignTokens, path: string): ReferenceInPermutations[] {
     return across(tokens, (permutation) => referencedIn(permutation, path));
 }
 
@@ -111,21 +111,29 @@ function across(
     tokens: DesignTokens,
     inPermutation: (permutation: Permutation) => Reference[],
 ): ReferenceInPermutations[] {
-    const merged = new Map<Span, { reference: Reference; permutations: Permutation[] }[]>();
+    const merged = new Map<Span, Merged[]>();
     for (const permutation of tokens.permutations) {
         for (const reference of inPermutation(permutation)) {
             const span = tokens.spanOf(reference);
             let atSpan = merged.get(span);
             if (!atSpan) merged.set(span, (atSpan = []));
-            const found = atSpan.find((each) => sameReference(each.reference, reference));
-            if (found) found.permutations.push(permutation);
-            else atSpan.push({ reference, permutations: [permutation] });
+            let here = atSpan.find((each) =>
+                samePlace(each.reference.property, reference.property ?? []),
+            );
+            if (!here) {
+                here = { reference, writers: new Set(), heirs: new Set(), permutations: [] };
+                atSpan.push(here);
+            }
+            if (!here.permutations.includes(permutation)) here.permutations.push(permutation);
+            const { from } = reference;
+            (from.inherited ? here.heirs : here.writers).add(from.path);
         }
     }
     return [...merged].flatMap(([span, here]) =>
-        here.map(({ reference, permutations }) =>
+        here.map(({ reference, writers, heirs, permutations }) =>
             acrossPermutations(
                 reference,
+                [...new Set([...writers, ...heirs])],
                 permutationsOf(permutations, tokens.permutations),
                 span,
                 () => jsonPathIn(tokens, span),
@@ -134,6 +142,9 @@ function across(
     );
 }
 
-function sameReference(a: Reference, b: Reference): boolean {
-    return a.from.path === b.from.path && samePlace(a.property, b.property ?? []);
+interface Merged {
+    reference: Reference;
+    writers: Set<string>;
+    heirs: Set<string>;
+    permutations: Permutation[];
 }
