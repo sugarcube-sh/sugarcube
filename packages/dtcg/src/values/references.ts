@@ -4,7 +4,7 @@ import type {
     Move,
     WrittenReference,
 } from "../index.js";
-import { movedPath } from "../path.js";
+import { tokenPath } from "../path.js";
 import { encodePointer, refSteps } from "../read/pointer.js";
 import { pointerParts } from "../read/ref-meaning.js";
 import { isJsonObject } from "./json.js";
@@ -97,13 +97,13 @@ export function toJsonPointer(reference: WrittenReference): { $ref: string } {
 export function movedReference<R extends WrittenReference>(ref: R, moved: readonly Move[]): R;
 export function movedReference(ref: WrittenReference, moved: readonly Move[]): WrittenReference {
     if (ref.syntax === "curly-brace") {
-        return { syntax: "curly-brace", path: movedPath(ref.path, moved) };
+        return { syntax: "curly-brace", path: tokenPath.afterMoves(ref.path, moved) };
     }
     const steps = refSteps(ref.pointer);
     if (!steps) return ref;
     const { path, inside } = pointerParts(steps);
     if (path === undefined) return ref;
-    const now = movedPath(path, moved);
+    const now = tokenPath.afterMoves(path, moved);
     if (now === path) return ref;
     const pointer = encodePointer([...now.split("."), ...(inside ? ["$value", ...inside] : [])]);
     return { syntax: "json-pointer", pointer };

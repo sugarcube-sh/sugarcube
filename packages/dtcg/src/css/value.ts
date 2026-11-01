@@ -10,6 +10,7 @@ import type {
     TypographyPart,
 } from "../index.js";
 import { colorDecimals, roundedTo } from "../values/decimals.js";
+import { hexStringOf } from "../values/hex-color.js";
 
 /** A typography value written as CSS: one value for each CSS property it sets, in this order. */
 export interface TypographyCSS {
@@ -40,9 +41,9 @@ export interface CSSValueOptions {
      */
     replacement?: (ref: Reference, cssProperty?: keyof TypographyCSS) => Replacement | undefined;
     /**
-     * `"hex"` writes every color that has a `hex` as that hex, with two more digits when it is
-     * not opaque, for a browser that cannot show its color space. A color without a `hex` is
-     * written as usual.
+     * `"native"` writes every color from its components, in its own color space. `"hex"` writes
+     * every color that has a `hex` as that hex, with two more digits when it is not opaque, for a
+     * browser that cannot show its color space, and a color without a `hex` as `"native"` does.
      * @default "native"
      */
     colors?: "native" | "hex";
@@ -54,13 +55,15 @@ type TypographyToken = Extract<Token, { type: "typography" }>;
  * A token's value, or a part of one, written as CSS: a string for every type but typography,
  * which sets five CSS properties and so gives an object with a value for each. Code holding a
  * token of any type checks its `type` first, as it would to show typography differently anyway.
- * A color is written in its own color space, and an sRGB color with a `hex` as that hex. A
- * gradient is written as its stops, for any gradient function: `linear-gradient(${css})`.
- * `undefined` for a token with no resolved value.
+ * A color is written from its components in its own color space, to four decimal places, and an
+ * sRGB color as `rgb()`, its channels from 0 to 255 to two; its `hex` only when asked for. A color
+ * read from a hex string, with `hexStringColors`, is written as that string. A gradient is written
+ * as its stops, for any gradient function: `linear-gradient(${css})`. `undefined` for a token with
+ * no resolved value.
  *
  * @example
- * cssValue(brand)                  // "#e11d48"
- * cssValue(card)                   // "0px 2px 4px 0px #00000033"
+ * cssValue(brand)                  // "rgb(225 29 72)"
+ * cssValue(card)                   // "0px 2px 4px 0px rgb(0 0 0 / 0.2)"
  * if (token.type === "typography") cssValue(token)?.["font-size"]   // "1rem"
  *
  * @example
@@ -200,11 +203,11 @@ function quoteFont(name: string): string {
     return bare ? name : `"${name.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
 
-function writeColor(
-    { colorSpace, components, alpha, hex }: ColorValue,
-    colors: "native" | "hex",
-): string {
-    if (hex !== undefined && (colors === "hex" || colorSpace === "srgb")) return hexOf(hex, alpha);
+function writeColor(color: ColorValue, colors: "native" | "hex"): string {
+    const { colorSpace, components, alpha, hex } = color;
+    const asRead = hexStringOf(color);
+    if (asRead !== undefined) return asRead;
+    if (hex !== undefined && colors === "hex") return hexOf(hex, alpha);
     const [a, b, c] = components;
     const numbers = [a, b, c].map((each) => fixed(each)).join(" ");
     switch (colorSpace) {
@@ -235,7 +238,7 @@ function withAlpha(opened: string, alpha: number): string {
 }
 
 function channel(component: ColorComponent): string {
-    return component === "none" ? "none" : String(Math.round(component * 255));
+    return component === "none" ? "none" : String(roundedTo(component * 255, 2));
 }
 
 function percent(component: ColorComponent): string {

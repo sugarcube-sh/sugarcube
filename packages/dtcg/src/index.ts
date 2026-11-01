@@ -1971,9 +1971,10 @@ export type ParseResult<V> =
 export interface ParseOptions {
     /**
      * Reads a color written as a hex string, such as `"#e11d48"` or `"#e11d4880"`, as the sRGB
-     * color it names, with the string kept as `hex`. Not DTCG 2025.10, which writes every color as
-     * an object. Off, a hex string is a `hex-string-color` error; on, one with three or four digits
-     * is an `invalid-value` giving the six or eight digits it stands for.
+     * color it names, with the string kept as `hex`, and `dtcg/css` writes it as that string. Not
+     * DTCG 2025.10, which writes every color as an object. Off, a hex string is a
+     * `hex-string-color` error; on, one with three or four digits is an `invalid-value` giving the
+     * six or eight digits it stands for.
      * @default false
      */
     hexStringColors?: boolean;
@@ -2231,7 +2232,7 @@ export interface TokensInMemory {
 }
 export { filePath } from "./read/paths.js";
 
-export { movedPath, tokenPath } from "./path.js";
+export { tokenPath } from "./path.js";
 export { inputLabel } from "./lookup/permutation-label.js";
 export { everyPermutation } from "./lookup/every-permutation.js";
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cssValue } from "../../src/css.js";
-import { writtenColor } from "../../src/values.js";
+import { cssValue } from "@sugarcube-sh/dtcg/css";
+import { writtenColor } from "../../src/controllers/written-color";
 
 describe("writtenColor", () => {
     it("rounds every number to four decimal places", () => {

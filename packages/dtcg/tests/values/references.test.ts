@@ -94,5 +94,6 @@ describe("the /values entry", () => {
     it("leaves isReference to the root entry, where Token is", async () => {
         const values = await import("../../src/values.js");
         expect("isReference" in values).toBe(false);
+        expect("writtenColor" in values).toBe(false);
     });
 });

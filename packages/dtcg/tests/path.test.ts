@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { movedPath, tokenPath } from "../src/index.js";
+import { tokenPath } from "../src/index.js";
 
 describe("tokenPath.withoutRoot", () => {
     it.for([
@@ -86,7 +86,7 @@ describe("tokenPath.invalidCharacter", () => {
     });
 });
 
-describe("movedPath", () => {
+describe("tokenPath.afterMoves", () => {
     const moved = [
         { from: "color.brand", to: "color.house" },
         { from: "color.house.500", to: "color.house.550" },
@@ -99,12 +99,12 @@ describe("movedPath", () => {
         { path: "color.branding", expected: "color.branding" },
         { path: "space.sm", expected: "space.sm" },
     ])("$path ends up at $expected", ({ path, expected }) => {
-        expect(movedPath(path, moved)).toBe(expected);
+        expect(tokenPath.afterMoves(path, moved)).toBe(expected);
     });
 
     it('carries what is inside the group named "", and nothing at the top level', () => {
         const renamed = [{ from: "", to: "named" }];
-        expect(movedPath(".x", renamed)).toBe("named.x");
-        expect(movedPath("color", renamed)).toBe("color");
+        expect(tokenPath.afterMoves(".x", renamed)).toBe("named.x");
+        expect(tokenPath.afterMoves("color", renamed)).toBe("color");
     });
 });

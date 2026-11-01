@@ -11,7 +11,7 @@
           "path": "color.brand",
           "resolved": {
             "colorSpace": "srgb",
-            "components": [0.8824, 0.1137, 0.2824],
+            "components": [0.8823529411764706, 0.11372549019607843, 0.2823529411764706],
             "alpha": 1,
             "hex": "#e11d48"
           },
@@ -23,7 +23,7 @@
           "path": "color.loud",
           "resolved": {
             "colorSpace": "srgb",
-            "components": [0.8824, 0.1137, 0.2824],
+            "components": [0.8823529411764706, 0.11372549019607843, 0.2823529411764706],
             "alpha": 1,
             "hex": "#E11D48"
           }
@@ -33,7 +33,7 @@
           "resolved": {
             "colorSpace": "srgb",
             "components": [0, 0, 0],
-            "alpha": 0.502,
+            "alpha": 0.5019607843137255,
             "hex": "#000000"
           }
         },
@@ -49,7 +49,7 @@
           "path": "color.danger",
           "resolved": {
             "colorSpace": "srgb",
-            "components": [0.8824, 0.1137, 0.2824],
+            "components": [0.8823529411764706, 0.11372549019607843, 0.2823529411764706],
             "alpha": 1,
             "hex": "#e11d48"
           }
@@ -80,7 +80,7 @@
               "color": {
                 "colorSpace": "srgb",
                 "components": [0, 0, 0],
-                "alpha": 0.502,
+                "alpha": 0.5019607843137255,
                 "hex": "#000000"
               },
               "offsetX": {

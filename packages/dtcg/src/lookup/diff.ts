@@ -17,7 +17,7 @@ import type {
     WrittenToken,
 } from "../index.js";
 import { permutationsOf } from "../read/permutations-of.js";
-import { movedPath } from "../path.js";
+import { tokenPath } from "../path.js";
 import { isJsonObject } from "../values/json.js";
 import { isReference, movedReference } from "../values/references.js";
 import { type Said, isEqualJson, saysTheSame } from "../values/same-value.js";
@@ -58,7 +58,7 @@ function matched<T extends Token | Group>(
 ): Pair<T>[] {
     const byPath = new Map<string, T>();
     for (const each of earlier) {
-        const path = movedPath(each.path, moved);
+        const path = tokenPath.afterMoves(each.path, moved);
         if (path !== each.path || !byPath.has(path)) byPath.set(path, each);
     }
     const left = new Set(earlier);
@@ -143,7 +143,7 @@ function groupDifferences(before: Group, after: Group, moved: Move[]): GroupProp
     const extended = extendedPath(before);
     return differing({
         ...sameWritten(before.authored ?? {}, after.authored ?? {}),
-        extends: (extended && movedPath(extended, moved)) === extendedPath(after),
+        extends: (extended && tokenPath.afterMoves(extended, moved)) === extendedPath(after),
     });
 }
 

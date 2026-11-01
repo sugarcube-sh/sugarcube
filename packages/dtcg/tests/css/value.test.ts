@@ -25,17 +25,67 @@ const asVariables: CSSValueOptions = {
 };
 
 describe("cssValue", () => {
-    it("writes an sRGB color with a hex as that hex, eight digits when it has alpha", () => {
+    it("writes a color read from a hex string as that string, however it is reached", () => {
         const at = read({
             plain: color("#e11d48"),
             scrim: color("#00000080"),
             loud: color("#0000FFCC"),
-            object: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
-            bare: color({ colorSpace: "srgb", components: [1, 0, 0] }),
+            alias: color("{loud}"),
+            start: { $type: "gradient", $value: [{ color: "#ffffff", position: 0 }] },
+            fade: { $type: "gradient", $value: ["{start}", { color: "{plain}", position: 1 }] },
         });
         expect(
-            ["plain", "scrim", "loud", "object", "bare"].map((path) => cssValue(at(path))),
-        ).toStrictEqual(["#e11d48", "#00000080", "#0000FFCC", "#ff0000", "rgb(255 0 0)"]);
+            ["plain", "scrim", "loud", "alias", "fade"].map((path) => cssValue(at(path))),
+        ).toStrictEqual([
+            "#e11d48",
+            "#00000080",
+            "#0000FFCC",
+            "#0000FFCC",
+            "#ffffff 0%, #e11d48 100%",
+        ]);
+        expect(cssValue(at("scrim"), { colors: "hex" })).toBe("#00000080");
+    });
+
+    it("writes an sRGB color object from its components, to four places, whatever its hex says", () => {
+        const at = read({
+            exact: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
+            converted: color({
+                colorSpace: "srgb",
+                components: [0.8824, 0.1137, 0.2824],
+                hex: "#e11d48",
+            }),
+            stale: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#00ff00" }),
+            grey: color({ colorSpace: "srgb", components: [0.5, 0.5, 0.5] }),
+            faint: color({
+                colorSpace: "srgb",
+                components: [0, 0, 0],
+                alpha: 0.15,
+                hex: "#000000",
+            }),
+        });
+        expect(
+            ["exact", "converted", "stale", "grey", "faint"].map((path) => cssValue(at(path))),
+        ).toStrictEqual([
+            "rgb(255 0 0)",
+            "rgb(225.01 28.99 72.01)",
+            "rgb(255 0 0)",
+            "rgb(127.5 127.5 127.5)",
+            "rgb(0 0 0 / 0.15)",
+        ]);
+        expect(cssValue(at("stale"), { colors: "hex" })).toBe("#00ff00");
+        expect(cssValue(at("faint"), { colors: "hex" })).toBe("#00000026");
+    });
+
+    it("writes a color object from its components without hexStringColors too", () => {
+        const strict = readFromMemory({
+            files: {
+                "tokens.json": JSON.stringify({
+                    exact: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
+                }),
+            },
+        });
+        const exact = strict.permutation().token("exact");
+        expect(exact && cssValue(exact)).toBe("rgb(255 0 0)");
     });
 
     it("writes every color space the DTCG Color module defines", () => {

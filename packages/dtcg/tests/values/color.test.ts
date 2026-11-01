@@ -219,16 +219,19 @@ describe("parseValue, color", () => {
         const options = { hexStringColors: true };
 
         it.for([
-            ["#e11d48", [0.8824, 0.1137, 0.2824], 1, "#e11d48"],
-            ["#E11D48", [0.8824, 0.1137, 0.2824], 1, "#E11D48"],
-            ["#00000080", [0, 0, 0], 0.502, "#000000"],
-        ] as const)("reads %s as the sRGB color it names", ([raw, components, alpha, hex]) => {
-            expect(parseValue("color", raw, ["$value"], options)).toStrictEqual({
-                ok: true,
-                value: { colorSpace: "srgb", components, alpha, hex },
-                ignored: [],
-            });
-        });
+            ["#e11d48", [225 / 255, 29 / 255, 72 / 255], 1, "#e11d48"],
+            ["#E11D48", [225 / 255, 29 / 255, 72 / 255], 1, "#E11D48"],
+            ["#00000080", [0, 0, 0], 128 / 255, "#000000"],
+        ] as const)(
+            "reads %s as the sRGB color it names, exactly",
+            ([raw, components, alpha, hex]) => {
+                expect(parseValue("color", raw, ["$value"], options)).toStrictEqual({
+                    ok: true,
+                    value: { colorSpace: "srgb", components, alpha, hex },
+                    ignored: [],
+                });
+            },
+        );
 
         it.for([
             ["#fff", "#ffffff"],

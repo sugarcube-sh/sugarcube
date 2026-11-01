@@ -134,7 +134,7 @@ describe("parseValue", () => {
         });
         expect(result.ok && result.value.map(({ color }) => color)).toStrictEqual([
             { colorSpace: "srgb", components: [0, 0, 0], alpha: 1, hex: "#000000" },
-            { colorSpace: "srgb", components: [1, 1, 1], alpha: 0.502, hex: "#ffffff" },
+            { colorSpace: "srgb", components: [1, 1, 1], alpha: 128 / 255, hex: "#ffffff" },
         ]);
     });
 });

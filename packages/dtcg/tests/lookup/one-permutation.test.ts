@@ -213,6 +213,7 @@ describe("what the root entry gives", () => {
             "permutationLabel",
             "sameJson",
             "sameValue",
+            "movedPath",
         ]) {
             expect(gone in root).toBe(false);
         }

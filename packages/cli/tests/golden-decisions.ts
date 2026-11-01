@@ -7,13 +7,9 @@ interface VariablesDecision {
     drops?: (name: string) => boolean;
 }
 
-function asHex(rgb: string): string | undefined {
-    const found = /^rgb\((\d+) (\d+) (\d+)(?: \/ ([\d.]+))?\)$/.exec(rgb);
-    if (!found) return undefined;
-    const pair = (channel: number) => channel.toString(16).padStart(2, "0");
-    const alpha = found[4] === undefined ? 1 : Number(found[4]);
-    const channels = [found[1], found[2], found[3]].map((each) => pair(Number(each)));
-    return `#${channels.join("")}${alpha === 1 ? "" : pair(Math.round(alpha * 255))}`;
+function channelsOf(rgb: string): number[] | undefined {
+    const found = /^rgb\(([\d.]+) ([\d.]+) ([\d.]+)\)$/.exec(rgb);
+    return found ? [found[1], found[2], found[3]].map(Number) : undefined;
 }
 
 const variablesDecisions = {
@@ -33,9 +29,18 @@ const variablesDecisions = {
             /\bdashed\b/.test(after) &&
             !/\b(round|butt|square)\b/.test(after),
     },
-    hex: {
-        because: "an sRGB color with a hex is written as that hex, the same color (P-017)",
-        explains: (before, after) => asHex(before) === after.toLowerCase(),
+    exact: {
+        because:
+            "an sRGB color is written from its components to four decimal places; old sugarcube rounded each channel to a whole number",
+        explains: (before, after) => {
+            const [old, now] = [channelsOf(before), channelsOf(after)];
+            return (
+                old !== undefined &&
+                now !== undefined &&
+                now.some((channel) => !Number.isInteger(channel)) &&
+                now.every((channel, index) => Math.round(channel) === old[index])
+            );
+        },
     },
     alpha: {
         because:
@@ -63,9 +68,9 @@ export const decidedVariables: Record<string, (keyof typeof variablesDecisions)[
     "registry/starter-kits/static/variables.css": ["redeclare"],
     "core/resolver/complex/variables.css": ["redeclare"],
     "core/resolver/propagate-chain/variables.css": ["redeclare"],
-    "every-value-form/native/variables.css": ["hex", "fluid", "dashed", "partial"],
-    "every-value-form/polyfill/variables.css": ["hex", "alpha"],
-    "every-value-form/polyfill/dark.css": ["hex", "alpha"],
+    "every-value-form/native/variables.css": ["exact", "fluid", "dashed", "partial"],
+    "every-value-form/polyfill/variables.css": ["alpha"],
+    "every-value-form/polyfill/dark.css": ["alpha"],
     "registry/recipes/size-demo/variables.css": ["fluid"],
     "registry/recipes/space-demo/variables.css": ["fluid"],
 };

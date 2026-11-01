@@ -167,11 +167,48 @@ describe("emitCSS", () => {
         ).toBe(
             [
                 ":root {",
-                "    --ink: #333333;",
+                "    --ink: rgb(51 51 51);",
                 "    --text: var(--ink);",
                 "    --tint: rgb(51 255 255);",
-                "    --line: 1px solid #333333;",
-                "    --edge: 2px dashed #333333;",
+                "    --line: 1px solid rgb(51 51 51);",
+                "    --edge: 2px dashed rgb(51 51 51);",
+                "}",
+                "",
+            ].join("\n"),
+        );
+    });
+
+    it("writes a color written as a hex string as that string, and a color object from its components", () => {
+        const px = (value: number) => ({ value, unit: "px" });
+        expect(
+            cssFor({
+                "tokens.json": {
+                    brand: color("#E11D48"),
+                    scrim: color("#00000080"),
+                    converted: color({
+                        colorSpace: "srgb",
+                        components: [0.8824, 0.1137, 0.2824],
+                        hex: "#e11d48",
+                    }),
+                    lift: {
+                        $type: "shadow",
+                        $value: {
+                            color: "#00000033",
+                            offsetX: px(0),
+                            offsetY: px(1),
+                            blur: px(2),
+                            spread: px(0),
+                        },
+                    },
+                },
+            }),
+        ).toBe(
+            [
+                ":root {",
+                "    --brand: #E11D48;",
+                "    --scrim: #00000080;",
+                "    --converted: rgb(225.01 28.99 72.01);",
+                "    --lift: 0px 1px 2px 0px #00000033;",
                 "}",
                 "",
             ].join("\n"),

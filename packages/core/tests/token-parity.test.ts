@@ -158,15 +158,11 @@ async function readOld(resolver: string, inputs: Input[] | undefined) {
     return { permutations, problems };
 }
 
-function rounded(value: number): number {
-    return Math.round(value * 10_000) / 10_000;
-}
-
 function hexAsColor(hex: string): unknown {
     if (!/^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(hex)) return hex;
     const digits = hex.slice(1);
     const full = digits.length <= 4 ? [...digits].map((digit) => digit + digit).join("") : digits;
-    const channel = (at: number) => rounded(Number.parseInt(full.slice(at, at + 2), 16) / 255);
+    const channel = (at: number) => Number.parseInt(full.slice(at, at + 2), 16) / 255;
     return {
         colorSpace: "srgb",
         components: [channel(0), channel(2), channel(4)],

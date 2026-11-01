@@ -17,4 +17,3 @@ export {
 } from "./values/extension-reader.js";
 export { isJsonObject } from "./values/json.js";
 export { compositeParts } from "./values/composite-parts.js";
-export { type WrittenColor, writtenColor } from "./values/written-color.js";

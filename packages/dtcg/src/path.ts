@@ -84,19 +84,20 @@ export const tokenPath = {
         if (name.startsWith("$") && name !== "$root") return "$";
         return FORBIDDEN.find((each) => name.includes(each));
     },
+    /**
+     * Where a token or group is after a list of {@link Move}s, such as a rename, made in order. A
+     * group's move carries everything inside it; a path no move reaches stays as it is. What
+     * `tokens.diff` follows when told what moved.
+     *
+     * @example
+     * tokenPath.afterMoves("color.brand.500", [{ from: "color.brand", to: "color.house" }])
+     * // "color.house.500"
+     */
+    afterMoves(path: string, moved: readonly Move[]): string {
+        return moved.reduce((current, { from, to }) => {
+            if (current === from) return to;
+            const rest = tokenPath.relative(from, current);
+            return rest === undefined ? current : `${to}.${rest}`;
+        }, path);
+    },
 } as const;
-
-/**
- * Where a token or group is after a list of {@link Move}s, made in order. A group's move carries
- * everything inside it; a path no move reaches stays as it is.
- *
- * @example
- * movedPath("color.brand.500", [{ from: "color.brand", to: "color.house" }]) // "color.house.500"
- */
-export function movedPath(path: string, moved: readonly Move[]): string {
-    return moved.reduce((current, { from, to }) => {
-        if (current === from) return to;
-        const rest = tokenPath.relative(from, current);
-        return rest === undefined ? current : `${to}.${rest}`;
-    }, path);
-}

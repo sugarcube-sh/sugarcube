@@ -5,7 +5,8 @@ import type {
     JsonObject,
     JsonValue,
 } from "@sugarcube-sh/dtcg";
-import { colorSpaces, isJsonObject, parseValue, writtenColor } from "@sugarcube-sh/dtcg/values";
+import { colorSpaces, isJsonObject, parseValue } from "@sugarcube-sh/dtcg/values";
+import { writtenColor } from "./written-color";
 import { type Color, type Mode, converter, formatCss, formatHex, toGamut } from "culori";
 import { numberIn } from "./typed-text";
 

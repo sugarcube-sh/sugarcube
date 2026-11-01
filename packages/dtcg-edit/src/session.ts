@@ -1,4 +1,4 @@
-import { type DesignTokens, type Move, movedPath } from "@sugarcube-sh/dtcg";
+import { type DesignTokens, type Move, tokenPath } from "@sugarcube-sh/dtcg";
 import { applyStepsThatFit, commit } from "./apply.js";
 import { clashesOf } from "./clashes.js";
 import { thrown } from "./error-messages.js";
@@ -195,7 +195,7 @@ function unmoved(ids: Ids, moved: readonly Move[]): Ids {
     const byId = new Map<string, string>();
     const byPath = new Map<string, string>();
     for (const [id, path] of ids.byId) {
-        const was = movedPath(path, back);
+        const was = tokenPath.afterMoves(path, back);
         byId.set(id, was);
         byPath.set(was, id);
     }
@@ -223,7 +223,7 @@ function followed(
     };
     const from = ids?.byId ?? new Map([...paths].map((path) => [path, path]));
     for (const [id, path] of from) {
-        const now = movedPath(path, moved);
+        const now = tokenPath.afterMoves(path, moved);
         if (paths.has(now)) set(id, now);
     }
     const taken = (id: string) => byId.has(id) || (known?.byId.has(id) ?? false);

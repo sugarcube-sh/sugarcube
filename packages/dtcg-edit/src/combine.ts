@@ -1,4 +1,4 @@
-import { type DesignTokens, movedPath } from "@sugarcube-sh/dtcg";
+import { type DesignTokens, tokenPath } from "@sugarcube-sh/dtcg";
 import { apply } from "./apply.js";
 import { thrown } from "./error-messages.js";
 import type { FileOp, OpResult, Operation } from "./index.js";
@@ -52,7 +52,7 @@ function together(tokens: DesignTokens, last: DesignTokens, made: Made[]): OpRes
     );
     const left = made.flatMap(({ broken = [] }, index) => {
         const later = made.slice(index + 1).flatMap(({ moved }) => moved);
-        return broken.map((path) => movedPath(path, later));
+        return broken.map((path) => tokenPath.afterMoves(path, later));
     });
     return {
         ops: made.flatMap(({ ops }) => ops),

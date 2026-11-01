@@ -29,8 +29,8 @@ npm install @sugarcube-sh/dtcg
 {
   "color": {
     "$type": "color",
-    "red":   { "$value": { "colorSpace": "srgb", "components": [0.86, 0.15, 0.15] } },
-    "blue":  { "$value": { "colorSpace": "srgb", "components": [0.15, 0.39, 0.92] } },
+    "red":   { "$value": { "colorSpace": "srgb", "components": [0.8, 0.2, 0.2] } },
+    "blue":  { "$value": { "colorSpace": "srgb", "components": [0.2, 0.4, 0.8] } },
     "brand": { "$value": "{color.red}" },
     "text":  { "$value": "{color.brand}" },
     "link":  { "$value": "{color.bleu}" }
@@ -46,7 +46,7 @@ const tokens = await read("color.json");
 const text = tokens.token("color.text"); // undefined for a path that isn't there
 text?.type                              // "color"
 text?.value                             // { syntax: "curly-brace", path: "color.brand" }, as written
-text?.resolved                          // { colorSpace: "srgb", components: [0.86, 0.15, 0.15], alpha: 1 }
+text?.resolved                          // { colorSpace: "srgb", components: [0.8, 0.2, 0.2], alpha: 1 }
 text?.aliasChain.map((t) => t.path)     // ["color.text", "color.brand", "color.red"]
 
 tokens.usedBy("color.red")              // [color.brand]
@@ -150,11 +150,11 @@ for (const path of tokens.tokenPaths()) {
     row(path, permutations.label, answer && cssValue(answer));
   }
 }
-// color.red    everywhere    rgb(219 38 38)
-// color.blue   everywhere    rgb(38 99 235)
-// color.brand  everywhere    rgb(219 38 38)
-// color.text   mode: light   rgb(219 38 38)
-// color.text   mode: dark    rgb(38 99 235)
+// color.red    everywhere    rgb(204 51 51)
+// color.blue   everywhere    rgb(51 102 204)
+// color.brand  everywhere    rgb(204 51 51)
+// color.text   mode: light   rgb(204 51 51)
+// color.text   mode: dark    rgb(51 102 204)
 // color.link   everywhere    undefined, since its reference names no token
 ```
 
@@ -224,7 +224,7 @@ import { cssBlocks, cssCustomProperty, cssText, cssValue } from "@sugarcube-sh/d
 const text = tokens.permutation({ mode: "dark" }).token("color.text");
 
 cssCustomProperty("color.text")         // "--color-text"
-text && cssValue(text)                  // "rgb(38 99 235)"
+text && cssValue(text)                  // "rgb(51 102 204)"
 text && cssValue(text, {
   replacement: (ref) =>
     ref.token ? { customProperty: cssCustomProperty(ref.token.path) } : undefined,
@@ -244,8 +244,8 @@ cssText(
 
 ```css
 :root {
-    --color-red: rgb(219 38 38);
-    --color-blue: rgb(38 99 235);
+    --color-red: rgb(204 51 51);
+    --color-blue: rgb(51 102 204);
     --color-brand: var(--color-red);
     --color-text: var(--color-brand);
 }
@@ -317,7 +317,7 @@ const tokens = await read("tokens.resolver.json", { extensionValidators: [fluid]
 | `extensionValidators` | Checks for your own `$extensions`, made with `defineExtensionValidator`. |
 | `generators` | Tokens made from an extension on a group, made with `defineGenerator`. |
 | `onStage` | Called as each stage of a read finishes, with how long it took. |
-| `hexStringColors` | Reads a color written as a hex string, such as `"#e11d48"`, as sRGB. Not DTCG 2025.10. Off by default. |
+| `hexStringColors` | Reads a color written as a hex string, such as `"#e11d48"`, as sRGB, and writes it to CSS as that string. Not DTCG 2025.10. Off by default. |
 | `ignoreUnknownProperties` | Reads a value with a property its type doesn't define by setting that property aside, with a warning. Not DTCG 2025.10. Off by default. |
 
 ### Questions you ask a permutation
@@ -421,7 +421,13 @@ tokenPath.relative("color", "color.brand.ink")         // "brand.ink"; undefined
 tokenPath.contains("color.brand", "color.brand.500")   // true, and for "color.brand" itself
 tokenPath.withoutRoot("color.accent.$root")            // "color.accent", the name a $root token stands for
 tokenPath.invalidCharacter("brand.500")                // ".", which no name may hold; undefined for a valid name
+tokenPath.afterMoves("color.brand.500", [{ from: "color.brand", to: "color.house" }])
+                                                       // "color.house.500", where it is after a rename
 ```
+
+When files changed because something was renamed, tell `diff` what moved, and it reports the
+token as renamed rather than removed and added: `after.diff(before, { moved })`. Each reference's
+`moved(moves)` gives how it's written after the rename.
 
 ### Writing files
 
