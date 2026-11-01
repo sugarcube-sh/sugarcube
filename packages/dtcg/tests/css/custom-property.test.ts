@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { cssName, cssVariable } from "../../src/css.js";
+import { cssIdentifier, cssCustomProperty } from "../../src/css.js";
 
-describe("cssName", () => {
+describe("cssIdentifier", () => {
     it.for([
         { path: "color.brand", name: "color-brand" },
         { path: "color.accent.$root", name: "color-accent" },
@@ -9,21 +9,21 @@ describe("cssName", () => {
         { path: "type. body .size", name: "type-body-size" },
         { path: "space.1/2", name: "space-1/2" },
     ])("names $path as $name, unescaped", ({ path, name }) => {
-        expect(cssName(path)).toBe(name);
+        expect(cssIdentifier(path)).toBe(name);
     });
 });
 
-describe("cssVariable", () => {
+describe("cssCustomProperty", () => {
     it.for([
         { path: "color.brand", name: "--color-brand" },
         { path: "color.accent.$root", name: "--color-accent" },
         { path: "type.body copy.size", name: "--type-body-copy-size" },
     ])("names $path as $name", ({ path, name }) => {
-        expect(cssVariable(path)).toBe(name);
+        expect(cssCustomProperty(path)).toBe(name);
     });
 
     it("puts a prefix first", () => {
-        expect(cssVariable("color.brand", { prefix: "ds" })).toBe("--ds-color-brand");
+        expect(cssCustomProperty("color.brand", { prefix: "ds" })).toBe("--ds-color-brand");
     });
 
     it("makes the name with a function instead, given the path without $root", () => {
@@ -32,23 +32,25 @@ describe("cssVariable", () => {
             seen.push(path);
             return path.replaceAll(".", "_");
         };
-        expect(cssVariable("color.accent.$root", { prefix: "ds", name })).toBe("--color_accent");
+        expect(cssCustomProperty("color.accent.$root", { prefix: "ds", name })).toBe(
+            "--color_accent",
+        );
         expect(seen).toStrictEqual(["color.accent"]);
     });
 
     it("joins every part with the delimiter: the prefix, the path's names and the words in them", () => {
-        expect(cssVariable("color.brand", { delimiter: "_" })).toBe("--color_brand");
-        expect(cssVariable("color.brand", { prefix: "ds", delimiter: "_" })).toBe(
+        expect(cssCustomProperty("color.brand", { delimiter: "_" })).toBe("--color_brand");
+        expect(cssCustomProperty("color.brand", { prefix: "ds", delimiter: "_" })).toBe(
             "--ds_color_brand",
         );
-        expect(cssVariable("type.body copy.size", { delimiter: "_" })).toBe(
+        expect(cssCustomProperty("type.body copy.size", { delimiter: "_" })).toBe(
             "--type_body_copy_size",
         );
-        expect(cssVariable("color.accent.$root", { delimiter: "_" })).toBe("--color_accent");
+        expect(cssCustomProperty("color.accent.$root", { delimiter: "_" })).toBe("--color_accent");
     });
 
     it("keeps what a name already holds, joining only the parts it splits", () => {
-        expect(cssVariable("color.brand-primary", { delimiter: "_" })).toBe(
+        expect(cssCustomProperty("color.brand-primary", { delimiter: "_" })).toBe(
             "--color_brand-primary",
         );
     });
@@ -62,22 +64,26 @@ describe("cssVariable", () => {
     ])(
         "splits camelCase and PascalCase into lowercase words with case kebab: $path as $name",
         ({ path, name }) => {
-            expect(cssVariable(path, { case: "kebab" })).toBe(name);
+            expect(cssCustomProperty(path, { case: "kebab" })).toBe(name);
         },
     );
 
     it("joins kebab's words with the delimiter, and never changes the prefix's case", () => {
         expect(
-            cssVariable("color.brandPrimary", { prefix: "DS", case: "kebab", delimiter: "_" }),
+            cssCustomProperty("color.brandPrimary", {
+                prefix: "DS",
+                case: "kebab",
+                delimiter: "_",
+            }),
         ).toBe("--DS_color_brand_primary");
     });
 
-    it("names one of a typography token's variables by its CSS property, joined like any part", () => {
-        expect(cssVariable("type.body", { cssProperty: "font-size" })).toBe(
+    it("names one of a typography token's custom properties by its CSS property, joined like any part", () => {
+        expect(cssCustomProperty("type.body", { cssProperty: "font-size" })).toBe(
             "--type-body-font-size",
         );
         expect(
-            cssVariable("type.bodyCopy", {
+            cssCustomProperty("type.bodyCopy", {
                 case: "kebab",
                 delimiter: "_",
                 cssProperty: "font-size",
@@ -87,16 +93,16 @@ describe("cssVariable", () => {
 
     it("joins a CSS property to a naming function's name with the delimiter", () => {
         const name = (path: string) => path.replaceAll(".", "_");
-        expect(cssVariable("type.body", { name, cssProperty: "font-size" })).toBe(
+        expect(cssCustomProperty("type.body", { name, cssProperty: "font-size" })).toBe(
             "--type_body-font-size",
         );
-        expect(cssVariable("type.body", { name, delimiter: "_", cssProperty: "font-size" })).toBe(
-            "--type_body_font-size",
-        );
+        expect(
+            cssCustomProperty("type.body", { name, delimiter: "_", cssProperty: "font-size" }),
+        ).toBe("--type_body_font-size");
     });
 
     it("escapes a delimiter a CSS name cannot hold", () => {
-        expect(cssVariable("color.brand", { delimiter: "/" })).toBe("--color\\/brand");
+        expect(cssCustomProperty("color.brand", { delimiter: "/" })).toBe("--color\\/brand");
     });
 
     it.for([
@@ -107,12 +113,14 @@ describe("cssVariable", () => {
         { path: "tone.café", name: "--tone-café" },
         { path: "tone.a+b", name: "--tone-a\\+b" },
     ])("escapes what a CSS name cannot hold: $path as $name", ({ path, name }) => {
-        expect(cssVariable(path)).toBe(name);
+        expect(cssCustomProperty(path)).toBe(name);
     });
 
     it("escapes what a naming function returns too", () => {
-        expect(cssVariable("space.half", { name: () => "space/half" })).toBe("--space\\/half");
-        expect(cssVariable("x", { name: () => "a\u0001b" })).toBe("--a\\1 b");
-        expect(cssVariable("x", { name: () => "a\u0000b" })).toBe("--a\uFFFDb");
+        expect(cssCustomProperty("space.half", { name: () => "space/half" })).toBe(
+            "--space\\/half",
+        );
+        expect(cssCustomProperty("x", { name: () => "a\u0001b" })).toBe("--a\\1 b");
+        expect(cssCustomProperty("x", { name: () => "a\u0000b" })).toBe("--a\uFFFDb");
     });
 });

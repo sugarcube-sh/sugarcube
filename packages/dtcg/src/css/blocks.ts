@@ -44,7 +44,7 @@ export interface CSSBlock extends CSSBlockInput {
  * when a context of a modifier the block decides provides a value for its token (see
  * {@link CSSBlockInput.input}) and an earlier block that might also apply writes another value for
  * it. Then, unless the block says `redeclare: false`, every declaration referring to what it
- * writes, through every step, since a variable referring to another is worked out where it is
+ * writes, through every step, since a custom property referring to another is worked out where it is
  * declared. An earlier block surely applies when it applies to every element and every screen the
  * later one does: its selectors include `:root` or all of the later block's, and it has no
  * at-rules, the same ones, or a width query every screen the later one matches also matches. Any

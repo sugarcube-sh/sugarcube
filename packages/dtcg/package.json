@@ -48,7 +48,7 @@
     }
   },
   "scripts": {
-    "build": "pkgroll --minify",
+    "build": "pkgroll --minify --clean-dist",
     "dev": "pkgroll --watch",
     "test": "vitest run",
     "type-check": "tsc --noEmit -p tsconfig.anywhere.json && tsc --noEmit -p tsconfig.node.json",

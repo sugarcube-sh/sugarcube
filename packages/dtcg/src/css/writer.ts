@@ -1,7 +1,7 @@
 import { thrownMessages } from "../error-messages.js";
 import type { Permutation, Reference, Token } from "../index.js";
 import { type CSSValueOptions, type Replacement, type TypographyCSS, cssValue } from "./value.js";
-import { type CSSNaming, cssVariable } from "./variable.js";
+import { type CSSNaming, cssCustomProperty } from "./custom-property.js";
 
 /** A value written as CSS, and the tokens it names with `var()`. */
 export interface CSSWritten {
@@ -34,7 +34,7 @@ export interface CSSFallback {
 
 /** The opinions a CSS writer takes; with none, it writes every token as `dtcg` does. */
 export interface CSSWriterOptions {
-    /** How each token's variable is named. */
+    /** How each token's custom property is named. */
     naming?: CSSNaming;
     /**
      * Writes a token's value another way. It gets the value as written, and `write` for writing CSS
@@ -69,22 +69,22 @@ export interface CSSWriterOptions {
     ) => CSSFallback | undefined;
     /**
      * Leaves a token out: it gets no declaration, and a reference to it is written as its value,
-     * since a `var()` to a variable never declared names nothing.
+     * since a `var()` to a custom property never declared names nothing.
      */
     skip?: (token: Token) => boolean;
     /**
      * `"values"` writes every reference as its target's value, as the writer writes it, rather
      * than as `var()`: a token's value as a page would compute it, for showing one token alone.
-     * @default "variables"
+     * @default "custom-properties"
      */
-    references?: "variables" | "values";
+    references?: "custom-properties" | "values";
 }
 
 /** One custom property a token declares. */
 export interface CSSDeclaration {
     readonly token: Token;
     readonly name: string;
-    /** For a typography token, which CSS property this variable holds. */
+    /** For a typography token, which CSS property this custom property holds. */
     readonly cssProperty?: keyof TypographyCSS;
     readonly value: string;
     /** What to declare instead where a browser supports `condition`. */
@@ -119,7 +119,7 @@ export interface CSSWriter {
 type Colors = NonNullable<CSSValueOptions["colors"]>;
 
 /**
- * A writer of CSS custom properties, taking a tool's opinions as options: how variables are
+ * A writer of CSS custom properties, taking a tool's opinions as options: how they are
  * named, how a value is written, what a declaration falls back to, which tokens are left out, and
  * whether references are written as `var()` or as values. A token the same in two permutations is
  * the same object, so it is written once. A writer keeps every token it has written, so make one
@@ -136,7 +136,7 @@ type Colors = NonNullable<CSSValueOptions["colors"]>;
  * cssWriter({ references: "values" }).written(token)
  */
 export function cssWriter(options: CSSWriterOptions = {}): CSSWriter {
-    const { naming, value, fallback, skip, references = "variables" } = options;
+    const { naming, value, fallback, skip, references = "custom-properties" } = options;
     const skipped = (token: Token) => skip?.(token) ?? false;
     const inlined = (token: Token) => references === "values" || skipped(token);
 
@@ -167,7 +167,7 @@ export function cssWriter(options: CSSWriterOptions = {}): CSSWriter {
         if (!own) return undefined;
         if (!inlined(target)) {
             refersTo.push(target);
-            return { variable: cssVariable(target.path, { ...naming, cssProperty }) };
+            return { customProperty: cssCustomProperty(target.path, { ...naming, cssProperty }) };
         }
         if (typeof own.css !== "string") return undefined;
         refersTo.push(...own.refersTo);
@@ -212,7 +212,8 @@ export function cssWriter(options: CSSWriterOptions = {}): CSSWriter {
         }
         if (part.type === "typography") throw new TypeError(thrownMessages.typographyPlaced);
         const answer = refer(part, colors, refersTo);
-        if (answer) return "variable" in answer ? `var(${answer.variable})` : answer.css;
+        if (answer)
+            return "customProperty" in answer ? `var(${answer.customProperty})` : answer.css;
         const own = cssValue(part, { colors });
         if (typeof own !== "string") throw new TypeError(thrownMessages.typographyPlaced);
         return own;
@@ -231,7 +232,7 @@ export function cssWriter(options: CSSWriterOptions = {}): CSSWriter {
             cssProperty?: keyof TypographyCSS,
         ): CSSDeclaration => ({
             token,
-            name: cssVariable(token.path, { ...naming, cssProperty }),
+            name: cssCustomProperty(token.path, { ...naming, cssProperty }),
             ...(cssProperty && { cssProperty }),
             value: css,
             ...(fell &&

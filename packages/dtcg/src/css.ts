@@ -1,4 +1,9 @@
-export { type CSSNaming, type CSSVariableOptions, cssName, cssVariable } from "./css/variable.js";
+export {
+    type CSSNaming,
+    type CSSCustomPropertyOptions,
+    cssIdentifier,
+    cssCustomProperty,
+} from "./css/custom-property.js";
 export {
     type CSSValueOptions,
     type Replacement,

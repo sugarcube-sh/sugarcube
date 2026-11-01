@@ -1,5 +1,5 @@
 import { type Token, type TokenType, tokenPath } from "@sugarcube-sh/dtcg";
-import { cssName } from "@sugarcube-sh/dtcg/css";
+import { cssIdentifier } from "@sugarcube-sh/dtcg/css";
 import type { UtilityClassesConfig } from "../../types/config.js";
 import type {
     Reported,
@@ -95,7 +95,7 @@ const TYPES: Record<string, TokenType[]> = {
  * exactly when two reads make the same rules), and the classes the config asks to be written whether or
  * not markup uses them, and the custom properties its classes set (`--gutter` for a `"--gutter"`
  * entry that makes any class). A class is a start (the entry's `prefix`, or the first segment of its
- * `source`, with a direction's letter) and a part (the {@link cssName} of the token's path below
+ * `source`, with a direction's letter) and a part (the {@link cssIdentifier} of the token's path below
  * `source`, as its variable has it), and writes that token's variable. Rules come in the config's
  * order, each shorthand before its longhands; entries sharing a start are tried in the config's
  * order, and among tokens making the same class the first in file order is used. A class two
@@ -300,7 +300,7 @@ function partsFor(
         else if (types && !types.includes(token.type)) skip("type");
         else if ("private" in listed) skip(listed.private ? "private" : "unwritten");
         else {
-            const part = stripped(cssName(below), stripOf(entry));
+            const part = stripped(cssIdentifier(below), stripOf(entry));
             const earlier = parts.get(part);
             if (earlier) earlier.push(listed);
             else parts.set(part, [listed]);

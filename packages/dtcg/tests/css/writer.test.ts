@@ -73,7 +73,7 @@ describe("cssWriter", () => {
             expect(declarations.find(({ name }) => name === "--gap")?.refersTo).toStrictEqual([]);
         });
 
-        it("names variables by its naming, in declarations and references alike", () => {
+        it("names custom properties by its naming, in declarations and references alike", () => {
             expect(lines(modes, { naming: { prefix: "ds", delimiter: "_" } })).toContain(
                 "--ds_color_text: var(--ds_color_neutral_900)",
             );
@@ -207,7 +207,7 @@ describe("cssWriter", () => {
             expect(text?.refersTo).toStrictEqual([tokenAt(modes, "color.neutral.900"), gap]);
         });
 
-        it("refuses a typography token placed in write, which is one variable per CSS property", () => {
+        it("refuses a typography token placed in write, which is one custom property per CSS property", () => {
             const tokens = one({
                 body: {
                     $type: "typography",
@@ -336,6 +336,13 @@ describe("cssWriter", () => {
     });
 
     describe("written", () => {
+        it("writes references as custom properties when asked by name, as it does by default", () => {
+            const token = tokenAt(modes, "color.text");
+            expect(cssWriter({ references: "custom-properties" }).written(token)).toStrictEqual(
+                cssWriter().written(token),
+            );
+        });
+
         it("gives one token's value as the writer writes it, with the tokens it names", () => {
             const writer = cssWriter({ references: "values" });
             expect(writer.written(tokenAt(modes, "color.text", { mode: "dark" }))).toStrictEqual({

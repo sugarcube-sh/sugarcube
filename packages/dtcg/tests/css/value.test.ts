@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type CSSValueOptions, cssValue, cssVariable } from "../../src/css.js";
+import { type CSSValueOptions, cssValue, cssCustomProperty } from "../../src/css.js";
 import { type Token, readFromMemory } from "../../src/index.js";
 
 const px = (value: number) => ({ value, unit: "px" });
@@ -19,7 +19,9 @@ function read(json: Record<string, unknown>): (path: string) => Token {
 
 const asVariables: CSSValueOptions = {
     replacement: (ref, cssProperty) =>
-        ref.token ? { variable: cssVariable(ref.token.path, { cssProperty }) } : undefined,
+        ref.token
+            ? { customProperty: cssCustomProperty(ref.token.path, { cssProperty }) }
+            : undefined,
 };
 
 describe("cssValue", () => {
@@ -290,7 +292,7 @@ describe("cssValue", () => {
             ]);
         });
 
-        it("each property a variable of its own when the whole value is a reference", () => {
+        it("each property a custom property of its own when the whole value is a reference", () => {
             expect(cssValue(at("quote"), asVariables)).toStrictEqual({
                 "font-family": "var(--body-font-family)",
                 "font-size": "var(--body-font-size)",
@@ -300,13 +302,18 @@ describe("cssValue", () => {
             });
         });
 
-        it("asking for each CSS property's variable, so a caller's naming decides how it is joined", () => {
+        it("asking for each CSS property's custom property, so a caller's naming decides how it is joined", () => {
             const asked: (string | undefined)[] = [];
             const css = cssValue(at("quote"), {
                 replacement: (ref, cssProperty) => {
                     asked.push(cssProperty);
                     return ref.token
-                        ? { variable: cssVariable(ref.token.path, { delimiter: "_", cssProperty }) }
+                        ? {
+                              customProperty: cssCustomProperty(ref.token.path, {
+                                  delimiter: "_",
+                                  cssProperty,
+                              }),
+                          }
                         : undefined;
                 },
             });
