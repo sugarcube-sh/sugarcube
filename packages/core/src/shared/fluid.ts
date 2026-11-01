@@ -4,7 +4,7 @@ import {
     type Token,
     defineExtensionValidator,
 } from "@sugarcube-sh/dtcg";
-import { type ExtensionResult, extensionReader, isJsonObject } from "@sugarcube-sh/dtcg/values";
+import { type ExtensionResult, createExtensionReader, isJsonObject } from "@sugarcube-sh/dtcg/values";
 import { ErrorMessages } from "./constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "./extensions.js";
 
@@ -21,7 +21,7 @@ export function readFluid(
 ): ExtensionResult<FluidRange | undefined, Messages> {
     if (!isJsonObject(ours) || !Object.hasOwn(ours, "fluid")) return { ok: true, value: undefined };
     const { fluid } = ours;
-    const reader = extensionReader<Messages>(options);
+    const reader = createExtensionReader<Messages>(options);
     if (!isJsonObject(fluid)) {
         reader.report(["fluid"], "not-an-object", { name: "fluid" });
         return reader.result<FluidRange>(undefined);

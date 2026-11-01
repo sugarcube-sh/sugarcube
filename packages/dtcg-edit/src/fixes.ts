@@ -1,5 +1,5 @@
 import type { DesignTokens, Diagnostic, Span } from "@sugarcube-sh/dtcg";
-import { asJsonPointer, readReference, referenceText } from "@sugarcube-sh/dtcg/values";
+import { toJsonPointer, parseReference, referenceText } from "@sugarcube-sh/dtcg/values";
 import { type Node, getNodeValue } from "jsonc-parser";
 import { fixTitles } from "./error-messages.js";
 import type { Fix, TextEdit } from "./index.js";
@@ -120,11 +120,11 @@ function valueFix(
             return safe(fixTitles.fullHex(expanded), replacing(span, expanded));
         }
         case "curly-brace-not-allowed-here": {
-            const reference = readReference(detail.reference);
+            const reference = parseReference(detail.reference);
             if (written !== detail.reference || reference?.syntax !== "curly-brace") {
                 return undefined;
             }
-            const pointer = asJsonPointer(reference);
+            const pointer = toJsonPointer(reference);
             const change = { ...range(span), text: inline(pointer) };
             if (!readsClean(tokens, [change])) return undefined;
             return safe(fixTitles.referenceAsPointer(pointer.$ref), change);
@@ -162,7 +162,7 @@ function renamedReference(
     similar: string,
 ): TextEdit[] {
     const node = nodeAt(tokens, use);
-    const reference = node && readReference(getNodeValue(node));
+    const reference = node && parseReference(getNodeValue(node));
     const text = node && refString(node);
     if (!reference || !text || referenceText(reference) !== ref) return [];
     const renamed = reference.syntax === "curly-brace" ? `{${similar}}` : similar;

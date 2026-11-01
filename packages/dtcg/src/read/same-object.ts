@@ -1,7 +1,7 @@
 import type { Group, JsonPath, Place, Resolver, Source, Token, TokenType } from "../index.js";
 import type { MergedGroup, MergedToken } from "./merge.js";
 import { type Properties, usableType } from "./walk.js";
-import { sameJson } from "../values/same-value.js";
+import { isEqualJson } from "../values/same-value.js";
 
 export interface Target {
     path?: string | undefined;
@@ -39,13 +39,13 @@ export function sameToken(
         if (!reference || reference.token !== token || reference.path !== path) return false;
         if (targetProperty !== undefined) intoParts = true;
     }
-    const resolved = !intoParts || sameJson(earlier.resolved, now.resolved);
+    const resolved = !intoParts || isEqualJson(earlier.resolved, now.resolved);
     if (!written.added) return resolved;
     return (
         resolved &&
-        sameJson(earlier.value, now.value) &&
+        isEqualJson(earlier.value, now.value) &&
         earlier.description === written.description &&
-        sameJson(earlier.extensions, written.extensions)
+        isEqualJson(earlier.extensions, written.extensions)
     );
 }
 
@@ -83,8 +83,8 @@ export function sameSource(was: Source, now: Source): boolean {
         was.pointer === now.pointer &&
         was.modifier === now.modifier &&
         sameReaders(was.readBy, now.readBy) &&
-        sameJson(was.sets, now.sets) &&
-        sameJson(was.extensions, now.extensions)
+        isEqualJson(was.sets, now.sets) &&
+        isEqualJson(was.extensions, now.extensions)
     );
 }
 

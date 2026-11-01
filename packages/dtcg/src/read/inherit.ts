@@ -1,4 +1,4 @@
-import { parentOf } from "../path.js";
+import { tokenPath } from "../path.js";
 import type { Merged, MergedGroup, MergedTopLevel } from "./merge.js";
 import { type Settings, settingsOf } from "./settings.js";
 
@@ -23,7 +23,7 @@ export function applying(merged: Merged, group: MergedTopLevel | MergedGroup): S
 }
 
 function closest<K extends Inheritable>(path: string, merged: Merged, property: K): Settings[K] {
-    return atGroup(merged, property, parentOf(path));
+    return atGroup(merged, property, tokenPath.parent(path));
 }
 
 function atGroup<K extends Inheritable>(
@@ -37,7 +37,8 @@ function atGroup<K extends Inheritable>(
     if (found !== undefined || known.has(group)) return found;
     const each = merged.groups.get(group);
     const applies =
-        (each && settingsOf(merged, each)[property]) ?? atGroup(merged, property, parentOf(group));
+        (each && settingsOf(merged, each)[property]) ??
+        atGroup(merged, property, tokenPath.parent(group));
     known.set(group, applies);
     return applies;
 }

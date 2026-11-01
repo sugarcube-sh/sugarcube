@@ -6,7 +6,7 @@ import type {
     Input,
     Permutations,
 } from "../index.js";
-import { sameJson } from "../values/same-value.js";
+import { isEqualJson } from "../values/same-value.js";
 import type { Building } from "./building.js";
 
 export type DiagnosticExtra = Partial<
@@ -43,7 +43,7 @@ export class Problems {
     found(problem: Diagnostic, input?: Input): Diagnostic {
         const spot = spotOf(problem);
         const here = this.#atSpot.get(spot);
-        const kept = here?.find((each) => sameJson(each, problem)) ?? problem;
+        const kept = here?.find((each) => isEqualJson(each, problem)) ?? problem;
         if (kept === problem) {
             if (here) here.push(problem);
             else this.#atSpot.set(spot, [problem]);

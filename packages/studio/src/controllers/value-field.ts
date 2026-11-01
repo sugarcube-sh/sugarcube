@@ -12,7 +12,7 @@ import {
     durationUnits,
     fontWeightKeywords,
     parseValue,
-    readReference,
+    parseReference,
     strokeStyleKeywords,
 } from "@sugarcube-sh/dtcg/values";
 import { type ColorDraft, type ColorField, colorDraft, colorField, colorFrom } from "./color";
@@ -75,7 +75,7 @@ export function hasField(type: TokenType): type is FieldType {
 export function fieldFor(type: TokenType | undefined, written: JsonValue): Field {
     const json: Field = { kind: "json", value: written };
     if (type === undefined) return json;
-    const reference = readReference(written);
+    const reference = parseReference(written);
     if (reference) {
         return reference.syntax === "curly-brace"
             ? { kind: "reference", path: reference.path }

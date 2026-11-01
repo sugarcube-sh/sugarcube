@@ -162,6 +162,10 @@ class PermutationObject {
         return this.#groups.get(path);
     }
 
+    tokenOrGroup(path: string): Token | Group | undefined {
+        return this.#tokens.get(path) ?? this.#groups.get(path);
+    }
+
     referencedBy(path: string, options?: ReferenceOptions): Reference[] {
         return referencedIn(this.#self, path, options);
     }
@@ -267,8 +271,12 @@ class DesignTokensObject {
         return onlyPermutation(this.#self, "children").children;
     }
 
-    get root() {
-        return onlyPermutation(this.#self, "root").root;
+    get topLevel() {
+        return onlyPermutation(this.#self, "topLevel").topLevel;
+    }
+
+    tokenOrGroup(path: string) {
+        return onlyPermutation(this.#self, "tokenOrGroup()").tokenOrGroup(path);
     }
 
     modifier(name: string) {
@@ -341,9 +349,7 @@ class DesignTokensObject {
     }
 
     has(path: string) {
-        return this.#self.permutations.some(
-            (each) => (each.token(path) ?? each.group(path)) !== undefined,
-        );
+        return this.#self.permutations.some((each) => each.tokenOrGroup(path) !== undefined);
     }
 
     get #self(): DesignTokens {
@@ -508,7 +514,7 @@ function placesBy(tokens: DesignTokens): Map<string | undefined, PlaceObject[]> 
         }
     };
     for (const permutation of tokens.permutations) {
-        add(undefined, permutation.root);
+        add(undefined, permutation.topLevel);
         for (const token of permutation.tokens) add(token.path, token);
         for (const group of permutation.groups) add(group.path, group);
     }

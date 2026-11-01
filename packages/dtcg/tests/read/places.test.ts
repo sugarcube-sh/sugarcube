@@ -144,7 +144,7 @@ describe("a group's writtenAt", () => {
     });
 
     it("of the top level is the top of each file that writes there", () => {
-        expect(dark?.root.writtenAt.map(({ source }) => source.file)).toStrictEqual([
+        expect(dark?.topLevel.writtenAt.map(({ source }) => source.file)).toStrictEqual([
             "base.json",
             "dark.json",
         ]);

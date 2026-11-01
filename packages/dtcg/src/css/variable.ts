@@ -1,4 +1,4 @@
-import { withoutRoot } from "../path.js";
+import { tokenPath } from "../path.js";
 
 /** How a token path becomes a CSS custom property's name, as settings any tool can pass on. */
 export interface CSSNaming {
@@ -40,7 +40,7 @@ export interface CSSVariableOptions extends CSSNaming {
 
 /**
  * The name CSS knows a token path by, before any escaping: a final `$root` dropped (see
- * {@link withoutRoot}), each segment trimmed, spaces inside it made dashes, and the segments joined
+ * `tokenPath.withoutRoot`), each segment trimmed, spaces inside it made dashes, and the segments joined
  * with dashes. {@link cssVariable} is this with `--` and any prefix, escaped for a stylesheet; a
  * class name made from it is written plainly in markup and escaped only in its selector.
  *
@@ -80,8 +80,9 @@ function named(
     { prefix, case: casing, delimiter = "-", name, cssProperty }: CSSVariableOptions,
 ): string {
     let whole = name
-        ? name(withoutRoot(path))
-        : withoutRoot(path)
+        ? name(tokenPath.withoutRoot(path))
+        : tokenPath
+              .withoutRoot(path)
               .split(".")
               .map((segment) => words(segment, casing, delimiter))
               .join(delimiter);

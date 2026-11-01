@@ -20,7 +20,7 @@ import { permutationsOf } from "../read/permutations-of.js";
 import { movedPath } from "../path.js";
 import { isJsonObject } from "../values/json.js";
 import { isReference, movedReference } from "../values/references.js";
-import { type Said, sameJson, saysTheSame } from "../values/same-value.js";
+import { type Said, isEqualJson, saysTheSame } from "../values/same-value.js";
 import { findPermutation } from "./permutation.js";
 
 export function diffIn(
@@ -33,7 +33,7 @@ export function diffIn(
     for (const now of after.permutations) {
         const was = findPermutation(before, now.input);
         if ("reason" in was) continue;
-        changes.add(topLevelChange(was.root, now.root), now);
+        changes.add(topLevelChange(was.topLevel, now.topLevel), now);
         for (const pair of matched(was.groups, now.groups, moved)) {
             if (pair.before !== pair.after) changes.add(groupChange(pair, moved), now);
         }
@@ -134,7 +134,7 @@ function tokenDifferences(before: Token, after: Token, moved: Move[]): TokenProp
         type: saidType(before) === saidType(after),
         description: before.description === after.description,
         deprecated: saidDeprecation(before) === saidDeprecation(after),
-        extensions: sameJson(before.extensions, after.extensions),
+        extensions: isEqualJson(before.extensions, after.extensions),
     };
     return differing(same);
 }
@@ -163,7 +163,7 @@ function sameWritten(before: Written, after: Written): Record<TopLevelProperty, 
         type: before.type === after.type,
         description: before.description === after.description,
         deprecated: before.deprecated === after.deprecated,
-        extensions: sameJson(before.extensions, after.extensions),
+        extensions: isEqualJson(before.extensions, after.extensions),
     };
 }
 
@@ -187,7 +187,7 @@ class Changes {
         if (!change) return;
         const key = `${change.kind} ${change.path ?? ""} ${"from" in change ? change.from : ""}`;
         const earlier = this.#byKey.get(key) ?? [];
-        const same = earlier.find((each) => sameJson(each.change, change));
+        const same = earlier.find((each) => isEqualJson(each.change, change));
         if (same) {
             same.permutations.push(permutation);
             return;

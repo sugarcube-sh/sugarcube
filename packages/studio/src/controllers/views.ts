@@ -116,10 +116,10 @@ export function nodeAt(
     showing: Permutation,
     path: string,
 ): { node: Token | Group; shown: boolean } | undefined {
-    const here = showing.token(path) ?? showing.group(path);
+    const here = showing.tokenOrGroup(path);
     if (here) return { node: here, shown: true };
     for (const permutation of tokens.permutations) {
-        const there = permutation.token(path) ?? permutation.group(path);
+        const there = permutation.tokenOrGroup(path);
         if (there) return { node: there, shown: false };
     }
     return undefined;

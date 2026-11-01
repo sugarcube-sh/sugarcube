@@ -39,9 +39,9 @@ export function readJsonPointer(raw: unknown): JsonPointerReference | undefined 
  * else is not a reference, and gives `undefined`.
  *
  * @example
- * readReference("{color.brand}") // { syntax: "curly-brace", path: "color.brand" }
+ * parseReference("{color.brand}") // { syntax: "curly-brace", path: "color.brand" }
  */
-export function readReference(raw: unknown): WrittenReference | undefined {
+export function parseReference(raw: unknown): WrittenReference | undefined {
     return readCurlyBrace(raw) ?? readJsonPointer(raw);
 }
 
@@ -63,8 +63,8 @@ export function isReference(value: unknown): value is WrittenReference {
  * braces, or a JSON Pointer as written.
  *
  * @example
- * referenceText(readReference("{color.ink}"))                // "color.ink"
- * referenceText(readReference({ $ref: "#/color/ink/$value" })) // "#/color/ink/$value"
+ * referenceText(parseReference("{color.ink}"))                // "color.ink"
+ * referenceText(parseReference({ $ref: "#/color/ink/$value" })) // "#/color/ink/$value"
  */
 export function referenceText(reference: WrittenReference): string {
     return reference.syntax === "curly-brace" ? reference.path : reference.pointer;
@@ -87,9 +87,9 @@ export function namedPath(ref: WrittenReference): string | undefined {
  * is written.
  *
  * @example
- * asJsonPointer(readReference("{color.ink}")) // { $ref: "#/color/ink/$value" }
+ * toJsonPointer(parseReference("{color.ink}")) // { $ref: "#/color/ink/$value" }
  */
-export function asJsonPointer(reference: WrittenReference): { $ref: string } {
+export function toJsonPointer(reference: WrittenReference): { $ref: string } {
     if (reference.syntax === "json-pointer") return { $ref: reference.pointer };
     return { $ref: encodePointer([...reference.path.split("."), "$value"]) };
 }

@@ -3,7 +3,7 @@ import {
     type Group,
     type JsonValue,
     type TokenType,
-    childPath,
+    tokenPath,
 } from "@sugarcube-sh/dtcg";
 import { type NewToken, create, remove, rename } from "@sugarcube-sh/dtcg-edit";
 import type { Edit } from "./undo";
@@ -32,7 +32,7 @@ export function newGroupEdit(
     parent: string,
     name: string,
 ): Edit & { readonly path: string } {
-    const path = childPath(parent, name);
+    const path = tokenPath.join(parent, name);
     return { result: create(tokens, path, { group: true }), options: {}, path };
 }
 
@@ -42,7 +42,7 @@ export function newTokenEdit(
     name: string,
     made: { type: TokenType; value: JsonValue },
 ): Edit {
-    const path = childPath(group.path, name);
+    const path = tokenPath.join(group.path, name);
     return { result: create(tokens, path, newToken(made, group)), options: {} };
 }
 

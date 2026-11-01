@@ -6,7 +6,7 @@ import {
     type Permutation,
     type Token,
     readFromMemory,
-    sameJson,
+    isEqualJson,
 } from "@sugarcube-sh/dtcg";
 import {
     type Clash,
@@ -187,13 +187,13 @@ export function createStudio(
             if (
                 next.entry !== previous.entry ||
                 next.adapter.name !== previous.adapter.name ||
-                !sameJson(next.adapter.settings, previous.adapter.settings)
+                !isEqualJson(next.adapter.settings, previous.adapter.settings)
             ) {
                 adapter = adapterFor(next.adapter);
                 settled(session.rebase(read(next, adapter)));
                 return;
             }
-            if (!takeIn(next.files) && !sameJson(next.adapter.problems, previous.adapter.problems))
+            if (!takeIn(next.files) && !isEqualJson(next.adapter.problems, previous.adapter.problems))
                 publish(built(state.showing.input));
         },
     };

@@ -8,7 +8,7 @@ import type {
     Span,
     Token,
 } from "../index.js";
-import { atOrWithin } from "../path.js";
+import { tokenPath } from "../path.js";
 import { permutationsOf } from "../read/permutations-of.js";
 import { jsonPathIn } from "./json-path.js";
 import { acrossPermutations } from "../read/reference.js";
@@ -30,7 +30,7 @@ export function referencedIn(
     const reaching = (each: string, isToken: boolean): Reference[] => {
         if (isToken) return byPath.get(each) ?? [];
         return [...byPath].flatMap(([named, references]) =>
-            atOrWithin(named, each) ? references : [],
+            tokenPath.contains(each, named) ? references : [],
         );
     };
     const first = reaching(path, permutation.token(path) !== undefined);
@@ -66,7 +66,7 @@ export function refersToIn(
     path: string,
     { chained = false }: ReferenceOptions = {},
 ): Reference[] {
-    const start = permutation.token(path) ?? permutation.group(path);
+    const start = permutation.tokenOrGroup(path);
     if (!start) return [];
     const found: Reference[] = [];
     const seen = new Set<Token | Group>([start]);

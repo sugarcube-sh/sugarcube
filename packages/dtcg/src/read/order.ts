@@ -1,11 +1,11 @@
-import { parentOf } from "../path.js";
+import { tokenPath } from "../path.js";
 import type { Merged } from "./merge.js";
 
 export function inWrittenOrder(merged: Merged): void {
     const { tokens, groups, order } = merged;
     const children = new Map<string | undefined, string[]>();
     const place = (path: string) => {
-        const parent = parentOf(path);
+        const parent = tokenPath.parent(path);
         const siblings = children.get(parent);
         if (siblings) siblings.push(path);
         else children.set(parent, [path]);

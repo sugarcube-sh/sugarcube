@@ -1,5 +1,5 @@
 import type { JsonPath, JsonValue, TokenType } from "@sugarcube-sh/dtcg";
-import { compositeParts, isJsonObject, readReference } from "@sugarcube-sh/dtcg/values";
+import { compositeParts, isJsonObject, parseReference } from "@sugarcube-sh/dtcg/values";
 import { without } from "./lists";
 import type { Field } from "./value-field";
 
@@ -115,7 +115,7 @@ export function withRemoved(field: Listed, at: number): JsonValue {
 }
 
 function itemAt(type: "shadow" | "gradient", written: JsonValue, at: JsonPath): ListItem {
-    if (readReference(written)) return { at, written, shown: "reference" };
+    if (parseReference(written)) return { at, written, shown: "reference" };
     const parts = partsOf(type, written);
     return parts ? { at, written, shown: "parts", parts } : { at, written, shown: "json" };
 }

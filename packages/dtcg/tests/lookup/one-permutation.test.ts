@@ -63,7 +63,9 @@ describe("the design tokens of a read with one permutation", () => {
         expect(file.tokens).toBe(only.tokens);
         expect(file.groups).toBe(only.groups);
         expect(file.children).toBe(only.children);
-        expect(file.root).toBe(only.root);
+        expect(file.topLevel).toBe(only.topLevel);
+        expect(file.tokenOrGroup("gap")).toBe(only.token("gap"));
+        expect(file.tokenOrGroup("space")).toBe(only.group("space"));
         expect(file.usedBy("gap")).toStrictEqual(only.usedBy("gap"));
         expect(file.refersTo("gap")).toStrictEqual(only.refersTo("gap"));
     });
@@ -108,7 +110,8 @@ describe("the design tokens of a read with several permutations", () => {
             ["tokens", (tokens) => tokens.tokens],
             ["groups", (tokens) => tokens.groups],
             ["children", (tokens) => tokens.children],
-            ["root", (tokens) => tokens.root],
+            ["topLevel", (tokens) => tokens.topLevel],
+            ["tokenOrGroup()", (tokens) => tokens.tokenOrGroup("gap")],
             ["usedBy()", (tokens) => tokens.usedBy("color.red")],
             ["refersTo()", (tokens) => tokens.refersTo("color.x")],
         ];
@@ -167,5 +170,51 @@ describe("the design tokens of a read with several permutations", () => {
         expect(() => modes.referencedBy("color.red")).not.toThrow();
         expect(() => modes.diagnosticsFor("gap")).not.toThrow();
         expect(() => modes.sources).not.toThrow();
+    });
+});
+
+describe("a permutation's token or group at a path", () => {
+    const read = modes.permutation();
+
+    it("is the token there, or the group, or undefined", () => {
+        expect(read.tokenOrGroup("gap")).toBe(read.token("gap"));
+        expect(read.tokenOrGroup("color")).toBe(read.group("color"));
+        expect(read.tokenOrGroup("nope")).toBeUndefined();
+    });
+});
+
+describe("what the top of the files writes", () => {
+    it("is the permutation's topLevel, not a $root token", () => {
+        const topped = readFromMemory({
+            files: {
+                "tokens.json": JSON.stringify({
+                    $description: "Every token",
+                    gap: { $type: "number", $value: 1 },
+                }),
+            },
+        });
+
+        expect(topped.permutation().topLevel.description).toBe("Every token");
+        expect(topped.permutation()).not.toHaveProperty("root");
+    });
+});
+
+describe("what the root entry gives", () => {
+    it("has neither completeInput nor the path helpers one by one, which tokenPath gives", async () => {
+        const root = await import("../../src/index.js");
+        for (const gone of [
+            "completeInput",
+            "parentOf",
+            "childPath",
+            "pathBelow",
+            "atOrWithin",
+            "withoutRoot",
+            "forbiddenInName",
+            "permutationLabel",
+            "sameJson",
+            "sameValue",
+        ]) {
+            expect(gone in root).toBe(false);
+        }
     });
 });

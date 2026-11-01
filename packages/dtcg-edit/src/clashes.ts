@@ -1,4 +1,4 @@
-import { type DesignTokens, type JsonPath, forbiddenInName } from "@sugarcube-sh/dtcg";
+import { type DesignTokens, type JsonPath, tokenPath } from "@sugarcube-sh/dtcg";
 import { editedText } from "./apply.js";
 import type { Clash, ClashPart, EditStep, FileOp } from "./index.js";
 import { valueAt } from "./text-edits.js";
@@ -54,7 +54,7 @@ type Writable<T> = { -readonly [K in keyof T]: T[K] };
 function editedMember(op: FileOp): JsonPath {
     if (!("jsonPath" in op)) return [];
     const end = op.jsonPath.findIndex(
-        (step) => typeof step === "string" && forbiddenInName(step) === "$",
+        (step) => typeof step === "string" && tokenPath.invalidCharacter(step) === "$",
     );
     return end === -1 ? op.jsonPath : op.jsonPath.slice(0, end);
 }

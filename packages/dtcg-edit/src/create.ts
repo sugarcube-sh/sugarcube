@@ -1,4 +1,4 @@
-import { type DesignTokens, forbiddenInName, parentOf, type JsonValue } from "@sugarcube-sh/dtcg";
+import { type DesignTokens, type JsonValue, tokenPath } from "@sugarcube-sh/dtcg";
 import { refused } from "./error-messages.js";
 import type { FileOp, NewToken, OpResult, Where } from "./index.js";
 import { asked, newPlace } from "./placement.js";
@@ -38,10 +38,10 @@ function createIn(
     place?: string,
 ): OpResult {
     if (options.after !== undefined) throw new Error("not implemented yet");
-    const parent = parentOf(path);
+    const parent = tokenPath.parent(path);
     const name = parent === undefined ? path : path.slice(parent.length + 1);
     if (name === "") return refused({ kind: "invalid-name", name });
-    const character = forbiddenInName(name);
+    const character = tokenPath.invalidCharacter(name);
     if (character) return refused({ kind: "invalid-name", name, character });
     const placed = newPlace(tokens, path, options, place);
     if ("choose" in placed) {

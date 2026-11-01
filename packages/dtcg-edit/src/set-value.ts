@@ -1,5 +1,5 @@
 import type { DesignTokens, JsonPath, JsonValue } from "@sugarcube-sh/dtcg";
-import { isJsonObject, readReference } from "@sugarcube-sh/dtcg/values";
+import { isJsonObject, parseReference } from "@sugarcube-sh/dtcg/values";
 import { refused } from "./error-messages.js";
 import type { FileOp, OpResult, Refusal, ValueOptions } from "./index.js";
 import { asked, ownProperties, placement } from "./placement.js";
@@ -94,7 +94,7 @@ function withPart(
     from = 0,
 ): { value: JsonValue } | { refused: Refusal } {
     if (from === part.length) return { value };
-    if (readReference(whole)) return refused({ kind: "part-in-reference", path, part });
+    if (parseReference(whole)) return refused({ kind: "part-in-reference", path, part });
     const step = part[from];
     if (
         Array.isArray(whole) &&

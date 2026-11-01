@@ -80,7 +80,7 @@ describe("where a place is in its file, as a JSON path", () => {
         expect(
             read.group("color")?.writtenAt.map((place) => tokens.jsonPathOf(place)),
         ).toStrictEqual([["color"]]);
-        expect(read.root.writtenAt.map((place) => tokens.jsonPathOf(place))).toStrictEqual([
+        expect(read.topLevel.writtenAt.map((place) => tokens.jsonPathOf(place))).toStrictEqual([
             [],
             ["inner"],
             ["resolutionOrder", 0, "sources", 2],
@@ -96,9 +96,7 @@ describe("where a place is in its file, as a JSON path", () => {
 
 describe("where a reference is in its file, as a JSON path", () => {
     const referencesOf = (path: string) =>
-        (read.token(path) ?? read.group(path))?.references.map((reference) =>
-            tokens.jsonPathOf(reference),
-        );
+        read.tokenOrGroup(path)?.references.map((reference) => tokens.jsonPathOf(reference));
 
     it("is the value that writes it", () => {
         expect(referencesOf("color.x")).toStrictEqual([["color", "x", "$value"]]);

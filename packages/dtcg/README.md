@@ -372,7 +372,7 @@ dark.usedBy("color.red")         // each token or group that refers to color.red
 | | What it is |
 | --- | --- |
 | `path`, `type` | Its path and its type |
-| `value`, `resolved` | Its value as written, with references kept, and its resolved value |
+| `value`, `resolved` | Its value as written, with references kept, and its resolved value. `isReference(token.value)` (from `@sugarcube-sh/dtcg`) tells a reference from a value |
 | `invalid` | Set when its value couldn't be read |
 | `description`, `deprecated`, `extensions` | Its `$description`, `$deprecated` and `$extensions` |
 | `references`, `referenceAt(property)`, `aliasChain` | The references its value writes, and every token it passes through to resolve |

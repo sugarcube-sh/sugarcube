@@ -8,7 +8,7 @@ import {
     defineExtensionValidator,
     defineGenerator,
 } from "../../src/index.js";
-import { extensionReader, parseValue } from "../../src/values.js";
+import { createExtensionReader, parseValue } from "../../src/values.js";
 
 export type CaseOptions = Pick<
     ReadOptions,
@@ -95,7 +95,7 @@ const generators = {
     sized: defineGenerator({
         extension: ["com.example", "sized"],
         generate: (_group, extension, options) => {
-            const reader = extensionReader<Record<never, never>>(options);
+            const reader = createExtensionReader<Record<never, never>>(options);
             const size = reader.read("dimension", (extension as { size?: unknown }).size, ["size"]);
             return reader.result(
                 size && [{ name: "1", $value: { value: size.value, unit: size.unit } }],

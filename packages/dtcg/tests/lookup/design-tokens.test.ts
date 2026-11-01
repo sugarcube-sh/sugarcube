@@ -3,8 +3,7 @@ import {
     type DesignTokens,
     type Input,
     PermutationError,
-    completeInput,
-    permutationLabel,
+    inputLabel,
     readFromMemory,
 } from "../../src/index.js";
 
@@ -160,22 +159,31 @@ describe("tokens.permutation", () => {
     });
 });
 
-describe("completeInput", () => {
+function completed(from: DesignTokens, input: Input) {
+    try {
+        return { ok: true as const, input: from.permutation(input).input };
+    } catch (error) {
+        if (error instanceof PermutationError) return { ok: false as const, ...error.detail };
+        throw error;
+    }
+}
+
+describe("tokens.permutation, completing an input", () => {
     it("gives every modifier, defaults filled in and names as the resolver writes them", () => {
-        expect(completeInput(tokens, { Theme: "DARK" })).toStrictEqual({
+        expect(completed(tokens, { Theme: "DARK" })).toStrictEqual({
             ok: true,
             input: { theme: "dark", density: "comfy" },
         });
     });
 
     it("says which modifier or context the resolver does not declare", () => {
-        expect(completeInput(tokens, { mood: "calm" })).toStrictEqual({
+        expect(completed(tokens, { mood: "calm" })).toStrictEqual({
             ok: false,
             reason: "unknown-modifier",
             modifier: "mood",
             valid: ["theme", "density"],
         });
-        expect(completeInput(tokens, { theme: "sepia" })).toStrictEqual({
+        expect(completed(tokens, { theme: "sepia" })).toStrictEqual({
             ok: false,
             reason: "unknown-context",
             modifier: "theme",
@@ -185,7 +193,7 @@ describe("completeInput", () => {
     });
 
     it("says which modifier with no default was left out, and its contexts", () => {
-        expect(completeInput(noDefault, {})).toStrictEqual({
+        expect(completed(noDefault, {})).toStrictEqual({
             ok: false,
             reason: "missing-modifier",
             modifier: "theme",
@@ -194,7 +202,7 @@ describe("completeInput", () => {
     });
 
     it("says which context is not a string (Resolver 5.2)", () => {
-        expect(completeInput(tokens, { theme: true } as unknown as Input)).toStrictEqual({
+        expect(completed(tokens, { theme: true } as unknown as Input)).toStrictEqual({
             ok: false,
             reason: "not-a-string",
             modifier: "theme",
@@ -202,7 +210,7 @@ describe("completeInput", () => {
     });
 
     it("gives the first problem: a modifier it names before one it leaves out", () => {
-        expect(completeInput(noDefault, { mood: "calm" })).toMatchObject({
+        expect(completed(noDefault, { mood: "calm" })).toMatchObject({
             reason: "unknown-modifier",
         });
     });
@@ -227,8 +235,8 @@ describe("completeInput", () => {
             { inputs: [{}, { size: "large", theme: "dark" }] },
         );
         expect(swapped.diagnostics[0]).toMatchObject({ detail: { modifier: "theme" } });
-        expect(completeInput(swapped, {})).toMatchObject({ modifier: "theme" });
-        const complete = completeInput(swapped, { size: "large", theme: "dark" });
+        expect(completed(swapped, {})).toMatchObject({ modifier: "theme" });
+        const complete = completed(swapped, { size: "large", theme: "dark" });
         expect(complete.ok && Object.keys(complete.input)).toStrictEqual(
             Object.keys(swapped.permutation({ size: "large", theme: "dark" }).input),
         );
@@ -236,7 +244,7 @@ describe("completeInput", () => {
 
     it("checks nothing when the resolver declares no modifiers (Resolver 6.1)", () => {
         const single = readFromMemory({ files: { "tokens.json": files["base.json"] } });
-        expect(completeInput(single, { theme: "dark" })).toStrictEqual({ ok: true, input: {} });
+        expect(completed(single, { theme: "dark" })).toStrictEqual({ ok: true, input: {} });
         expect(single.permutation({ theme: "dark" })).toBe(single.permutations[0]);
     });
 });
@@ -305,16 +313,16 @@ describe("tokens.modifier", () => {
     });
 });
 
-describe("permutationLabel", () => {
+describe("inputLabel", () => {
     it("names each modifier and its context, in the order the input lists them", () => {
-        expect(permutationLabel({ density: "compact", theme: "dark" })).toBe(
+        expect(inputLabel({ density: "compact", theme: "dark" })).toBe(
             "density: compact, theme: dark",
         );
     });
 
     it("writes a permutation's input as its label, every modifier named", () => {
         const compact = tokens.permutation({ density: "compact" });
-        expect(permutationLabel(compact.input)).toBe(compact.label);
+        expect(inputLabel(compact.input)).toBe(compact.label);
         expect(compact.label).toBe("theme: light, density: compact");
     });
 });

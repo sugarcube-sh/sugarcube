@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type DesignTokens, defineGenerator, parentOf, readFromMemory } from "../../src/index.js";
+import { type DesignTokens, defineGenerator, readFromMemory, tokenPath } from "../../src/index.js";
 
 const color = (red: number) => ({ $value: { colorSpace: "srgb", components: [red, 0, 0] } });
 
@@ -24,7 +24,7 @@ describe("links", () => {
 
     it("reach a token from the group its path names", () => {
         for (const path of ["color.bg", "color.brand.500", "color.brand.$root"]) {
-            expect(base.group(parentOf(path) ?? "")?.children).toContain(base.token(path));
+            expect(base.group(tokenPath.parent(path) ?? "")?.children).toContain(base.token(path));
         }
     });
 
@@ -144,7 +144,7 @@ describe("the plain form", () => {
     it("writes the top level's children on the permutation, as their paths", () => {
         const written = plain(base);
         expect(written.children).toStrictEqual(["color", "gap"]);
-        expect(written.root).not.toHaveProperty("children");
+        expect(written.topLevel).not.toHaveProperty("children");
     });
 
     it("writes every permutation's tokens and groups the same way", () => {

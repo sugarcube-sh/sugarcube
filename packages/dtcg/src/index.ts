@@ -1039,8 +1039,11 @@ export interface Permutation {
      * const others = tokens.permutations.where((p) => !p.isDefault);
      */
     readonly isDefault: boolean;
-    /** What is written at the top level of the files. */
-    readonly root: TopLevel;
+    /**
+     * What the top of the files writes: its `$type`, `$description`, `$deprecated` and
+     * `$extensions`. Not a `$root` token, which stands for its group (Format 6.2).
+     */
+    readonly topLevel: TopLevel;
     /**
      * The tokens and groups at the top level of the files, in the order they are read: where a
      * tree starts, walked like a group's {@link Group.children | children}.
@@ -1077,6 +1080,15 @@ export interface Permutation {
      * dark.group("color")?.children
      */
     group(path: string): Group | undefined;
+    /**
+     * Whatever this permutation has at `path`: its token, else its group, else `undefined`. Each
+     * says which it is in `kind`.
+     *
+     * @example
+     * const here = dark.tokenOrGroup(path);
+     * if (here?.kind === "group") showGroup(here);
+     */
+    tokenOrGroup(path: string): Token | Group | undefined;
     /**
      * Every reference to `path` in this permutation, each with the token or group that writes it in
      * `from`; with `chained`, also every reference to each of those, however indirectly. A group's
@@ -1521,7 +1533,7 @@ export interface DesignTokens {
     readonly permutations: Permutations;
     /**
      * How the values were read. To read a value from the design tokens again, such as one inside
-     * `$extensions`, the same way, give these to `parseValue` or `extensionReader`.
+     * `$extensions`, the same way, give these to `parseValue` or `createExtensionReader`.
      */
     readonly parseOptions: Required<ParseOptions>;
     /**
@@ -1586,6 +1598,13 @@ export interface DesignTokens {
      */
     group(path: string): Group | undefined;
     /**
+     * The token or group at `path`, when the read has one permutation. As
+     * {@link Permutation.tokenOrGroup}.
+     *
+     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     */
+    tokenOrGroup(path: string): Token | Group | undefined;
+    /**
      * The tokens and groups that refer to `path`, when the read has one permutation. As
      * {@link Permutation.usedBy}. With several, ask each: whether anything uses it in any
      * permutation is `tokens.permutations.some((p) => p.usedBy(path).length > 0)`.
@@ -1620,12 +1639,12 @@ export interface DesignTokens {
      */
     readonly children: readonly (Token | Group)[];
     /**
-     * What the top level of the files writes, when the read has one permutation. As
-     * {@link Permutation.root}.
+     * What the top of the files writes, when the read has one permutation. As
+     * {@link Permutation.topLevel}.
      *
      * @throws {@link SeveralPermutationsError} when the read has several permutations.
      */
-    readonly root: TopLevel;
+    readonly topLevel: TopLevel;
     /**
      * A modifier that takes part, by its name, whatever its case (Resolver 5.1), with its contexts
      * and default.
@@ -1702,7 +1721,7 @@ export interface DesignTokens {
      * What changed since `before`, an earlier read, and in which permutations: tokens and groups
      * added, removed, renamed, or with different properties. A token is compared by what it says,
      * not what it resolves to, so changing one value is one change, not one for every token
-     * pointing at it. The value is compared with {@link sameValue}, the type only where the token
+     * pointing at it. The value is compared with {@link isEquivalentValue}, the type only where the token
      * writes `$type`, and the other properties exactly. A change that is the same in several
      * permutations, such as a value changed in a file they all read, is one entry listing them all.
      *
@@ -1854,7 +1873,8 @@ export interface Permutations extends ReadonlyArray<Permutation> {
      * whatever their case (Resolver 5.1); `undefined` when the resolver has no such
      * context or modifier, when the read built no such permutation, or when this list doesn't hold
      * it. What a tool asks to find a permutation again from an input it kept, such as one chosen
-     * before the files changed. For why there is none, see {@link completeInput}.
+     * before the files changed. For why there is none, ask {@link DesignTokens.permutation}, whose
+     * {@link PermutationError} says.
      *
      * @example
      * tokens.permutations.matching({ mode: "dark" })?.label;                          // "mode: dark"
@@ -1887,7 +1907,7 @@ export interface SeveralPermutationsDetail {
  * Why an input does not fit the resolver's modifiers (Resolver 5.2, 6.1): a modifier it doesn't
  * declare, a context that isn't a string or that the modifier doesn't declare, or a modifier with
  * no default left out. The read reports each as an `input-invalid` problem;
- * {@link completeInput} gives the first.
+ * {@link DesignTokens.permutation} throws a {@link PermutationError} with the first.
  */
 export type InputProblem = { readonly modifier: string } & (
     | {
@@ -2001,7 +2021,7 @@ export interface ExtensionValidator {
      * An {@link ExtensionError} is worded from `messages`; a {@link ValueError}, from reading a
      * value in the extension with `parseValue`, is reported as `invalid-value`; an
      * {@link IgnoredProperty} from the same, as an `unknown-property` warning. `options` are how
-     * the read reads values, to read the extension's the same way: give them to `extensionReader`
+     * the read reads values, to read the extension's the same way: give them to `createExtensionReader`
      * or `parseValue`.
      */
     validate?(
@@ -2106,7 +2126,7 @@ export interface Generator {
      * schema's output. A group whose extension is not valid gets no tokens added. The extension is
      * plain JSON, so whole-number keys inside it come first, in numeric order, whatever order the
      * file writes them in. `options` are how the read reads values, to read the extension's the
-     * same way: give them to `extensionReader` or `parseValue`.
+     * same way: give them to `createExtensionReader` or `parseValue`.
      */
     generate(
         group: {
@@ -2211,23 +2231,9 @@ export interface TokensInMemory {
 }
 export { filePath } from "./read/paths.js";
 
-export {
-    atOrWithin,
-    childPath,
-    forbiddenInName,
-    movedPath,
-    parentOf,
-    pathBelow,
-    withoutRoot,
-} from "./path.js";
-export { completeInput } from "./lookup/permutation.js";
-export { permutationLabel } from "./lookup/permutation-label.js";
+export { movedPath, tokenPath } from "./path.js";
+export { inputLabel } from "./lookup/permutation-label.js";
 export { everyPermutation } from "./lookup/every-permutation.js";
-
-/**
- * What {@link completeInput} gives: the full input, or the first problem with it.
- */
-export type CompleteInput = { ok: true; input: Input } | ({ ok: false } & InputProblem);
 
 /** A token or group whose path changed, such as after a rename. */
 export interface Move {
@@ -2354,7 +2360,7 @@ export interface GroupChange {
     readonly inherited?: Group["inherited"];
 }
 
-export { sameJson, sameValue } from "./values/same-value.js";
+export { isEqualJson, isEquivalentValue } from "./values/same-value.js";
 
 /** What is at a position in a file. */
 export type AtOffset =

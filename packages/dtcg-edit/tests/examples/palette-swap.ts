@@ -1,7 +1,7 @@
 // Switches a set of colors from one palette to another, such as every button color from blue to
 // violet. Each color keeps its step, so 500 stays 500, in every theme that sets it. The whole
 // switch is one undo step: if any part is refused, nothing changes.
-import { pathBelow, type Token, type JsonValue } from "@sugarcube-sh/dtcg";
+import { type Token, type JsonValue, tokenPath } from "@sugarcube-sh/dtcg";
 import { setValues, type Session, type ValueOptions } from "@sugarcube-sh/dtcg-edit";
 
 declare const session: Session;
@@ -12,7 +12,7 @@ const swap = [{ from: oldPalette, to: newPalette }];
 
 function swapped(t: Token): JsonValue | undefined {
     const whole = t.referenceAt();
-    if (whole?.path === undefined || pathBelow(whole.path, oldPalette) === undefined)
+    if (whole?.path === undefined || tokenPath.relative(oldPalette, whole.path) === undefined)
         return undefined;
     return whole.moved(swap);
 }

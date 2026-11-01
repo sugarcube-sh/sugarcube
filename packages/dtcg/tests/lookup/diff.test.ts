@@ -5,7 +5,7 @@ import {
     type Move,
     defineGenerator,
     readFromMemory,
-    sameValue,
+    isEquivalentValue,
 } from "../../src/index.js";
 
 const resolver = JSON.stringify({
@@ -600,38 +600,38 @@ const srgb = (r: number, g: number, b: number, extra: Partial<ColorValue> = {}):
     ...extra,
 });
 
-describe("sameValue", () => {
+describe("isEquivalentValue", () => {
     it("treats a hex fallback and components written to three places as the same color", () => {
         const fromHex = srgb(0.2196, 0.5176, 0.949, { hex: "#3884f2" });
-        expect(sameValue("color", fromHex, srgb(0.22, 0.518, 0.949))).toBe(true);
-        expect(sameValue("color", srgb(0.22, 0.518, 0.949), fromHex)).toBe(true);
+        expect(isEquivalentValue("color", fromHex, srgb(0.22, 0.518, 0.949))).toBe(true);
+        expect(isEquivalentValue("color", srgb(0.22, 0.518, 0.949), fromHex)).toBe(true);
     });
 
     it("tells colors apart beyond that rounding", () => {
-        expect(sameValue("color", srgb(0.22, 0.518, 0.949), srgb(0.221, 0.518, 0.949))).toBe(false);
-        expect(sameValue("color", srgb(0.2, 0.5, 0.9), srgb(0.2, 0.5, 0.9, { alpha: 0.5 }))).toBe(
+        expect(isEquivalentValue("color", srgb(0.22, 0.518, 0.949), srgb(0.221, 0.518, 0.949))).toBe(false);
+        expect(isEquivalentValue("color", srgb(0.2, 0.5, 0.9), srgb(0.2, 0.5, 0.9, { alpha: 0.5 }))).toBe(
             false,
         );
     });
 
     it("tells colors in different color spaces apart", () => {
         const p3: ColorValue = { colorSpace: "display-p3", components: [0.2, 0.5, 0.9], alpha: 1 };
-        expect(sameValue("color", srgb(0.2, 0.5, 0.9), p3)).toBe(false);
+        expect(isEquivalentValue("color", srgb(0.2, 0.5, 0.9), p3)).toBe(false);
     });
 
     it("treats `none` as equal only to `none`", () => {
         const none: ColorValue = { colorSpace: "oklch", components: [0.5, 0, "none"], alpha: 1 };
         const zero: ColorValue = { colorSpace: "oklch", components: [0.5, 0, 0], alpha: 1 };
-        expect(sameValue("color", none, structuredClone(none))).toBe(true);
-        expect(sameValue("color", none, zero)).toBe(false);
+        expect(isEquivalentValue("color", none, structuredClone(none))).toBe(true);
+        expect(isEquivalentValue("color", none, zero)).toBe(false);
     });
 
     it("tells lengths in different units apart", () => {
-        expect(sameValue("dimension", { value: 16, unit: "px" }, { value: 1, unit: "rem" })).toBe(
+        expect(isEquivalentValue("dimension", { value: 16, unit: "px" }, { value: 1, unit: "rem" })).toBe(
             false,
         );
         expect(
-            sameValue("dimension", { value: 0.1 + 0.2, unit: "rem" }, { value: 0.3, unit: "rem" }),
+            isEquivalentValue("dimension", { value: 0.1 + 0.2, unit: "rem" }, { value: 0.3, unit: "rem" }),
         ).toBe(true);
     });
 
@@ -644,35 +644,35 @@ describe("sameValue", () => {
             spread: { value: 0, unit: "px" as const },
             inset: false,
         };
-        expect(sameValue("shadow", [layer], [structuredClone(layer)])).toBe(true);
-        expect(sameValue("shadow", [layer], [{ ...layer, inset: true }])).toBe(false);
-        expect(sameValue("shadow", [layer], [layer, layer])).toBe(false);
+        expect(isEquivalentValue("shadow", [layer], [structuredClone(layer)])).toBe(true);
+        expect(isEquivalentValue("shadow", [layer], [{ ...layer, inset: true }])).toBe(false);
+        expect(isEquivalentValue("shadow", [layer], [layer, layer])).toBe(false);
     });
 
     it("compares references as references", () => {
         expect(
-            sameValue(
+            isEquivalentValue(
                 "dimension",
                 { syntax: "curly-brace", path: "space.sm" },
                 { syntax: "curly-brace", path: "space.sm" },
             ),
         ).toBe(true);
         expect(
-            sameValue(
+            isEquivalentValue(
                 "dimension",
                 { syntax: "curly-brace", path: "space.sm" },
                 { syntax: "curly-brace", path: "space.md" },
             ),
         ).toBe(false);
         expect(
-            sameValue(
+            isEquivalentValue(
                 "dimension",
                 { syntax: "curly-brace", path: "space.sm" },
                 { value: 4, unit: "px" },
             ),
         ).toBe(false);
         expect(
-            sameValue(
+            isEquivalentValue(
                 "dimension",
                 { syntax: "json-pointer", pointer: "#/space/sm/$value" },
                 { syntax: "json-pointer", pointer: "#/space/sm/$value" },
@@ -686,9 +686,9 @@ describe("sameValue", () => {
         const gap = tokens.permutation().token("space.gap");
         const body = tokens.permutation().token("typography.body");
         if (!sm || !gap || !body) throw new Error("missing token");
-        expect(sameValue(sm, structuredClone(sm))).toBe(true);
-        expect(sameValue(sm, gap)).toBe(false);
-        expect(sameValue(sm, body)).toBe(false);
-        expect(sameValue(sm, { ...sm, type: "number" } as typeof sm)).toBe(false);
+        expect(isEquivalentValue(sm, structuredClone(sm))).toBe(true);
+        expect(isEquivalentValue(sm, gap)).toBe(false);
+        expect(isEquivalentValue(sm, body)).toBe(false);
+        expect(isEquivalentValue(sm, { ...sm, type: "number" } as typeof sm)).toBe(false);
     });
 });

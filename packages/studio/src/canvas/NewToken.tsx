@@ -1,4 +1,4 @@
-import { type Group, type JsonValue, type TokenType, childPath } from "@sugarcube-sh/dtcg";
+import { type Group, type JsonValue, type TokenType, tokenPath } from "@sugarcube-sh/dtcg";
 import { tokenTypes } from "@sugarcube-sh/dtcg/values";
 import { useId, useState } from "react";
 import { canAddToken, newTokenEdit } from "../controllers/actions";
@@ -18,7 +18,7 @@ export function NewToken({ group }: { group: Group }) {
     const [text, setText] = useState("");
     const valueId = useId();
     const heading = useId();
-    const path = childPath(group.path, name);
+    const path = tokenPath.join(group.path, name);
 
     return (
         <form

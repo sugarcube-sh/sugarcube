@@ -1,8 +1,8 @@
 import { thrownMessages } from "../error-messages.js";
 import type {
-    CompleteInput,
     DesignTokens,
     Input,
+    InputProblem,
     Permutation,
     PermutationErrorDetail,
     ResolverModifier,
@@ -89,6 +89,8 @@ export function findPermutation(
         }
     );
 }
+
+type CompleteInput = { ok: true; input: Input } | ({ ok: false } & InputProblem);
 
 /**
  * An input with every modifier given, defaults filled in, and each name as the resolver writes

@@ -5,9 +5,9 @@ import type { Input, Permutation, ResolverContext, Scope } from "../index.js";
  * them, such as an input that names no permutation the read built.
  *
  * @example
- * permutationLabel({ mode: "dark", density: "comfy" }) // "mode: dark, density: comfy"
+ * inputLabel({ mode: "dark", density: "comfy" }) // "mode: dark, density: comfy"
  */
-export function permutationLabel(input: Input): string {
+export function inputLabel(input: Input): string {
     return Object.entries(input)
         .map(([modifier, context]) => `${modifier}: ${context}`)
         .join(", ");

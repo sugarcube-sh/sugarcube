@@ -1,25 +1,17 @@
 import { describe, expect, it } from "vitest";
-import {
-    atOrWithin,
-    childPath,
-    forbiddenInName,
-    movedPath,
-    parentOf,
-    pathBelow,
-    withoutRoot,
-} from "../src/index.js";
+import { movedPath, tokenPath } from "../src/index.js";
 
-describe("withoutRoot", () => {
+describe("tokenPath.withoutRoot", () => {
     it.for([
         { path: "color.accent.$root", expected: "color.accent" },
         { path: "color.brand", expected: "color.brand" },
         { path: "$root", expected: "$root" },
     ])("$path is $expected", ({ path, expected }) => {
-        expect(withoutRoot(path)).toBe(expected);
+        expect(tokenPath.withoutRoot(path)).toBe(expected);
     });
 });
 
-describe("pathBelow", () => {
+describe("tokenPath.relative", () => {
     it.for([
         { path: "color.brand.ink", group: "color", expected: "brand.ink" },
         { path: "color.brand.ink", group: "color.brand", expected: "ink" },
@@ -29,12 +21,12 @@ describe("pathBelow", () => {
         { path: "color", group: "color", expected: undefined },
         { path: "colors.ink", group: "color", expected: undefined },
         { path: "color", group: "color.brand", expected: undefined },
-    ])("$path below $group is $expected", ({ path, group, expected }) => {
-        expect(pathBelow(path, group)).toBe(expected);
+    ])("$path relative to $group is $expected", ({ path, group, expected }) => {
+        expect(tokenPath.relative(group, path)).toBe(expected);
     });
 });
 
-describe("atOrWithin", () => {
+describe("tokenPath.contains", () => {
     it.for([
         { path: "color.brand", group: "color.brand", expected: true },
         { path: "color.brand.500", group: "color.brand", expected: true },
@@ -43,12 +35,12 @@ describe("atOrWithin", () => {
         { path: "color.brandy", group: "color.brand", expected: false },
         { path: "color", group: "color.brand", expected: false },
         { path: "color.ink", group: "", expected: false },
-    ])("$path at or within $group is $expected", ({ path, group, expected }) => {
-        expect(atOrWithin(path, group)).toBe(expected);
+    ])("$group contains $path: $expected", ({ path, group, expected }) => {
+        expect(tokenPath.contains(group, path)).toBe(expected);
     });
 });
 
-describe("parentOf", () => {
+describe("tokenPath.parent", () => {
     it.for([
         { path: "color.brand.500", expected: "color.brand" },
         { path: "color.brand.$root", expected: "color.brand" },
@@ -56,11 +48,11 @@ describe("parentOf", () => {
         { path: "", expected: undefined },
         { path: ".x", expected: "" },
     ])("$path is inside $expected", ({ path, expected }) => {
-        expect(parentOf(path)).toBe(expected);
+        expect(tokenPath.parent(path)).toBe(expected);
     });
 });
 
-describe("childPath", () => {
+describe("tokenPath.join", () => {
     it.for([
         { parent: "color.brand", name: "500", expected: "color.brand.500" },
         { parent: "color", name: "$root", expected: "color.$root" },
@@ -68,19 +60,19 @@ describe("childPath", () => {
         { parent: undefined, name: "", expected: "" },
         { parent: "", name: "x", expected: ".x" },
     ])("$name inside $parent is $expected", ({ parent, name, expected }) => {
-        expect(childPath(parent, name)).toBe(expected);
+        expect(tokenPath.join(parent, name)).toBe(expected);
     });
 
-    it("is undone by parentOf", () => {
+    it("is undone by tokenPath.parent", () => {
         for (const path of ["color.brand.500", "color", ".x", ""]) {
-            const parent = parentOf(path);
+            const parent = tokenPath.parent(path);
             const name = parent === undefined ? path : path.slice(parent.length + 1);
-            expect(childPath(parent, name)).toBe(path);
+            expect(tokenPath.join(parent, name)).toBe(path);
         }
     });
 });
 
-describe("forbiddenInName", () => {
+describe("tokenPath.invalidCharacter", () => {
     it.for([
         { name: "a.b", expected: "." },
         { name: "{x", expected: "{" },
@@ -90,7 +82,7 @@ describe("forbiddenInName", () => {
         { name: "$root", expected: undefined },
         { name: "brand", expected: undefined },
     ])("$name gives $expected (Format 5.1.1)", ({ name, expected }) => {
-        expect(forbiddenInName(name)).toBe(expected);
+        expect(tokenPath.invalidCharacter(name)).toBe(expected);
     });
 });
 

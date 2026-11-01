@@ -14,7 +14,7 @@ import type {
     TopLevel,
     Written,
 } from "../index.js";
-import { withoutRoot } from "../path.js";
+import { tokenPath } from "../path.js";
 import { namedPath, referenceText } from "../values/references.js";
 import type { Building } from "./building.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
@@ -232,7 +232,7 @@ function buildPermutation(
         group.children = children;
         const rootToken = children.find(
             (child): child is Token =>
-                child.kind === "token" && withoutRoot(child.path) === written.path,
+                child.kind === "token" && tokenPath.withoutRoot(child.path) === written.path,
         );
         if (rootToken) group.rootToken = rootToken;
         if (extending) group.extends = extending;
@@ -256,7 +256,7 @@ function buildPermutation(
             label,
             sources,
             contexts,
-            root,
+            topLevel: root,
             children,
             tokens: tokensIn(children),
             groups: [...merged.groups.keys()].flatMap((path) => builtGroups.get(path) ?? []),

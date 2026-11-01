@@ -9,11 +9,11 @@ export {
 } from "./values/keywords.js";
 export { tokenTypes } from "./values/token-types.js";
 export { parseValue } from "./values/parse-value.js";
-export { asJsonPointer, isReference, readReference, referenceText } from "./values/references.js";
+export { toJsonPointer, parseReference, referenceText } from "./values/references.js";
 export {
     type ExtensionReader,
     type ExtensionResult,
-    extensionReader,
+    createExtensionReader,
 } from "./values/extension-reader.js";
 export { isJsonObject } from "./values/json.js";
 export { compositeParts } from "./values/composite-parts.js";

@@ -87,12 +87,12 @@ describe("the top level", () => {
         expect(base?.children[1]).toBe(tokens.permutation().token("gap"));
     });
 
-    it("keeps only what is written there in root, not its children", () => {
-        expect(base && "children" in base.root).toBe(false);
+    it("keeps only what is written there in topLevel, not its children", () => {
+        expect(base && "children" in base.topLevel).toBe(false);
     });
 
     it('has no path, so nothing reaches it by one: (…).permutation().group("") is the group named ""', () => {
-        expect(base && "path" in base.root).toBe(false);
+        expect(base && "path" in base.topLevel).toBe(false);
         expect(tokens.permutation().group("")).toBeUndefined();
     });
 
@@ -102,7 +102,7 @@ describe("the top level", () => {
 
     it("keeps a $type written at the top of the file", () => {
         const typed = oneFile({ $type: "number", gap: { $value: 2 } });
-        expect(typed.permutation().root.type).toBe("number");
+        expect(typed.permutation().topLevel.type).toBe("number");
     });
 });
 

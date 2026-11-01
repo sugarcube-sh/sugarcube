@@ -1,10 +1,4 @@
-import {
-    type DesignTokens,
-    type ReferenceInPermutations,
-    childPath,
-    forbiddenInName,
-    parentOf,
-} from "@sugarcube-sh/dtcg";
+import { type DesignTokens, type ReferenceInPermutations, tokenPath } from "@sugarcube-sh/dtcg";
 import { refused } from "./error-messages.js";
 import type { FileOp, OpResult } from "./index.js";
 import { copiesOf } from "./placement.js";
@@ -29,12 +23,12 @@ import type { Member } from "./file-text.js";
  */
 export function rename(tokens: DesignTokens, path: string, newName: string): OpResult {
     if (newName === "") return refused({ kind: "invalid-name", name: newName });
-    const character = forbiddenInName(newName);
+    const character = tokenPath.invalidCharacter(newName);
     if (character !== undefined) return refused({ kind: "invalid-name", name: newName, character });
 
     const copies = copiesOf(tokens, path);
     if ("refused" in copies) return copies;
-    const to = childPath(parentOf(path), newName);
+    const to = tokenPath.join(tokenPath.parent(path), newName);
     if (to === path) return { ops: [], alsoAffects: copies.alsoAffects, moved: [] };
     if (tokens.has(to)) return refused({ kind: "taken", path: to });
 

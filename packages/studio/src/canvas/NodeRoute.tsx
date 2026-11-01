@@ -1,4 +1,4 @@
-import { parentOf } from "@sugarcube-sh/dtcg";
+import { tokenPath } from "@sugarcube-sh/dtcg";
 import { useEffect, useMemo } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { hrefFor, pathFromPathname } from "../app/token-path";
@@ -34,7 +34,7 @@ function useFollowed(path: string | undefined) {
 
     useEffect(() => {
         if (path === undefined || now === path) return;
-        const parent = parentOf(path);
+        const parent = tokenPath.parent(path);
         const to = now ?? parent;
         navigate(to === undefined ? "/" : hrefFor(to), { replace: true });
     }, [navigate, now, path]);

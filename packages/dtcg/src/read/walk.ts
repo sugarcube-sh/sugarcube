@@ -1,4 +1,4 @@
-import { forbiddenInName } from "../path.js";
+import { tokenPath } from "../path.js";
 import type { Node } from "jsonc-parser";
 import type {
     Diagnostic,
@@ -10,7 +10,7 @@ import type {
     TokenType,
     WrittenReference,
 } from "../index.js";
-import { readReference } from "../values/references.js";
+import { parseReference } from "../values/references.js";
 import { isTokenType, tokenTypes } from "../values/token-types.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { type JsonFile, type Member, members, plainObject, plainValue, spanOf } from "./json.js";
@@ -194,7 +194,7 @@ export function walkSource(
                 json,
                 value,
                 authored,
-                reference: readReference(authored),
+                reference: parseReference(authored),
                 span: spanOf(json, node),
                 ...readPropertiesAt(path, entries),
             },
@@ -272,7 +272,7 @@ export function walkSource(
                 report("invalid-name", { name: key, character: "$" }, keyNode);
                 continue;
             }
-            const character = forbiddenInName(key);
+            const character = tokenPath.invalidCharacter(key);
             if (character) {
                 report("invalid-name", { name: key, character }, keyNode);
                 continue;
@@ -304,7 +304,7 @@ function readGroupReference(
     keyword: "$extends" | "$ref",
     raw: unknown,
 ): Pick<GroupReference, "reference" | "steps"> | undefined {
-    const reference = keyword === "$extends" ? readReference(raw) : pointerOf(raw);
+    const reference = keyword === "$extends" ? parseReference(raw) : pointerOf(raw);
     return reference && { reference, steps: stepsOf(reference) };
 }
 

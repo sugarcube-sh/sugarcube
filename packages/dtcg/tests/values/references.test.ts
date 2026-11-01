@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-    asJsonPointer,
-    isReference,
-    readReference,
-    referenceText,
-    parseValue,
-} from "../../src/values.js";
+import { isReference } from "../../src/index.js";
+import { parseReference, parseValue, referenceText, toJsonPointer } from "../../src/values.js";
 
 describe("isReference", () => {
     it("recognises the references a parser reads, in either syntax", () => {
@@ -44,13 +39,13 @@ describe("isReference", () => {
     });
 });
 
-describe("readReference", () => {
+describe("parseReference", () => {
     it("reads a reference as written in a file", () => {
-        expect(readReference("{color.brand}")).toStrictEqual({
+        expect(parseReference("{color.brand}")).toStrictEqual({
             syntax: "curly-brace",
             path: "color.brand",
         });
-        expect(readReference({ $ref: "#/color/brand" })).toStrictEqual({
+        expect(parseReference({ $ref: "#/color/brand" })).toStrictEqual({
             syntax: "json-pointer",
             pointer: "#/color/brand",
         });
@@ -59,12 +54,12 @@ describe("readReference", () => {
     it.for([16, "color.brand", "{}", { $ref: 1 }, { $ref: "#/a", other: 1 }, null])(
         "reads %j as no reference",
         (raw) => {
-            expect(readReference(raw)).toBeUndefined();
+            expect(parseReference(raw)).toBeUndefined();
         },
     );
 });
 
-describe("asJsonPointer", () => {
+describe("toJsonPointer", () => {
     it.for([
         { written: "{color.ink}", pointer: "#/color/ink/$value" },
         { written: "{a~b.c/d}", pointer: "#/a~0b/c~1d/$value" },
@@ -75,9 +70,9 @@ describe("asJsonPointer", () => {
         },
         { written: { $ref: "#/base" }, pointer: "#/base" },
     ])("writes $written as $pointer", ({ written, pointer }) => {
-        const reference = readReference(written);
+        const reference = parseReference(written);
         if (!reference) expect.unreachable("a reference");
-        expect(asJsonPointer(reference)).toStrictEqual({ $ref: pointer });
+        expect(toJsonPointer(reference)).toStrictEqual({ $ref: pointer });
     });
 });
 
@@ -89,8 +84,15 @@ describe("referenceText", () => {
             text: "#/color/ink/$value/components/0",
         },
     ])("gives $text", ({ written, text }) => {
-        const reference = readReference(written);
+        const reference = parseReference(written);
         if (!reference) expect.unreachable("a reference");
         expect(referenceText(reference)).toBe(text);
+    });
+});
+
+describe("the /values entry", () => {
+    it("leaves isReference to the root entry, where Token is", async () => {
+        const values = await import("../../src/values.js");
+        expect("isReference" in values).toBe(false);
     });
 });

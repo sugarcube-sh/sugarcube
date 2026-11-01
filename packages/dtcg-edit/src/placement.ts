@@ -12,7 +12,7 @@ import {
     type Source,
     type Span,
     type Token,
-    parentOf,
+    tokenPath,
 } from "@sugarcube-sh/dtcg";
 import { isJsonObject } from "@sugarcube-sh/dtcg/values";
 import { refused } from "./error-messages.js";
@@ -84,7 +84,7 @@ export function newPlace(
 }
 
 export function copiesOf(tokens: DesignTokens, path: string): Copies {
-    const found = lookUp(tokens, path, (perm) => perm.token(path) ?? perm.group(path));
+    const found = lookUp(tokens, path, (perm) => perm.tokenOrGroup(path));
     if ("refused" in found) return found;
     const places = tokens.writtenAt(path).map(({ span, jsonPath, written, readIn }) => ({
         span,
@@ -93,7 +93,7 @@ export function copiesOf(tokens: DesignTokens, path: string): Copies {
         readers: readIn.length,
     }));
     const alsoAffects = alsoIn(
-        tokens.permutations.where((perm) => (perm.token(path) ?? perm.group(path)) !== undefined),
+        tokens.permutations.where((perm) => perm.tokenOrGroup(path) !== undefined),
     );
     return { of: found.of, places, alsoAffects };
 }
@@ -269,7 +269,7 @@ function sameSpan(
 }
 
 function newSharedPlace(tokens: DesignTokens, path: string, place: string | undefined): NewPlace {
-    const parent = parentOf(path);
+    const parent = tokenPath.parent(path);
     if (parent !== undefined) {
         if (inAny(tokens, (perm) => perm.token(parent))) {
             return refused({ kind: "not-a-group", path: parent });
@@ -312,7 +312,7 @@ export function contextPlace(
         return { at: memberOf(tokens, winner), alsoAffects: alsoIn(there.winsIn, chosen) };
     }
 
-    const parent = parentOf(path);
+    const parent = tokenPath.parent(path);
     const group = parent === undefined ? undefined : perm.group(parent);
     const groupSpans = (group?.writtenAt ?? []).map((each) => tokens.spanOf(each));
     const into = overrideFile(
@@ -351,7 +351,7 @@ function newContextPlace(
     place: string | undefined,
 ): NewPlace {
     const { perm } = chosen;
-    const parent = parentOf(path);
+    const parent = tokenPath.parent(path);
     if (parent !== undefined && perm.token(parent)) {
         return refused({ kind: "not-a-group", path: parent });
     }

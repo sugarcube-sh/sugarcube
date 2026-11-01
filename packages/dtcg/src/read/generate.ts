@@ -1,6 +1,6 @@
 import { applying } from "./inherit.js";
 import type { Settings } from "./settings.js";
-import { childPath, forbiddenInName } from "../path.js";
+import { tokenPath } from "../path.js";
 import type { Node } from "jsonc-parser";
 import type {
     ExtensionError,
@@ -14,7 +14,7 @@ import type {
     StandardSchemaV1,
     ValueError,
 } from "../index.js";
-import { readReference } from "../values/references.js";
+import { parseReference } from "../values/references.js";
 import {
     type CheckedExtension,
     type ExtensionProblem,
@@ -133,7 +133,7 @@ export function fillGenerated(
                 extension: generator.extension,
             };
             for (const made of result.value) {
-                const character = forbiddenInName(made.name);
+                const character = tokenPath.invalidCharacter(made.name);
                 if (character) {
                     const detail = { name: made.name, character };
                     diagnostics.found(
@@ -145,7 +145,7 @@ export function fillGenerated(
                     );
                     continue;
                 }
-                const path = childPath(groupPath, made.name);
+                const path = tokenPath.join(groupPath, made.name);
                 if (added.has(path)) continue;
                 const written = writtenPlaces(merged, path);
                 if (written) {
@@ -207,7 +207,7 @@ function addedToken(
         json,
         value: node,
         authored: $value,
-        reference: readReference($value),
+        reference: parseReference($value),
         span: spanOf(json, node),
         source,
         generated,
