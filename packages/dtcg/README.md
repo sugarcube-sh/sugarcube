@@ -189,9 +189,11 @@ live.onRead((tokens, { file }) => console.log(`${file} saved`, tokens.diagnostic
 `watcher` is any file watcher with chokidar's `add` and `on`, such as chokidar itself, or the one
 your dev server already runs.
 
-## Read outside Node
+## Read in a browser, or anywhere without files
 
-Give `read` a way to fetch each file:
+In Node, `read` opens files from disk. Anywhere else, such as a browser, a worker or an edge
+function, give it `readText`: a function that gets a file's text. Return `undefined` for a file
+that isn't there, and throw when you couldn't get it at all.
 
 ```ts
 import { read } from "@sugarcube-sh/dtcg";
@@ -214,17 +216,18 @@ import { readFromMemory } from "@sugarcube-sh/dtcg";
 const tokens = readFromMemory({ files: { "tokens.resolver.json": "…", "color.json": "…", "dark.json": "…" } });
 ```
 
-## CSS
+## Write CSS
 
 ```ts
-import { cssBlocks, cssText, cssValue, cssVariable } from "@sugarcube-sh/dtcg/css";
+import { cssBlocks, cssCustomProperty, cssText, cssValue } from "@sugarcube-sh/dtcg/css";
 
 const text = tokens.permutation({ mode: "dark" }).token("color.text");
 
-cssVariable("color.text")               // "--color-text"
+cssCustomProperty("color.text")         // "--color-text"
 text && cssValue(text)                  // "rgb(38 99 235)"
 text && cssValue(text, {
-  replacement: (ref) => (ref.token ? { variable: cssVariable(ref.token.path) } : undefined),
+  replacement: (ref) =>
+    ref.token ? { customProperty: cssCustomProperty(ref.token.path) } : undefined,
 })                                      // "var(--color-blue)"
 ```
 
@@ -269,7 +272,7 @@ parseValue("color", "#e11d48", [])
 // { ok: false, errors: [{ message: "`#e11d48` is a hex string, and a color must be an object", … }] }
 ```
 
-## Your own extensions
+## Use your own extensions
 
 The spec leaves `$extensions` to tools. `read` takes two options for them.
 
@@ -322,20 +325,29 @@ const tokens = await read("tokens.resolver.json", { extensionValidators: [fluid]
 Ask them of `tokens` when there's one permutation (a token file, or a resolver with no
 modifiers), and of `tokens.permutation(input)` otherwise: with several, `tokens` throws a
 `SeveralPermutationsError` saying how to pick one. `usedBy`, `refersTo` and `referencedBy` take
-`{ chained: true }` to follow references through other tokens. `token`, `group`, `tokens`,
-`groups`, `children`, `root`, `usedBy` and `refersTo` are the ones `tokens` answers directly;
-`referencedBy` and `diagnosticsFor` on `tokens` cover every permutation (below).
+`{ chained: true }` to follow references through other tokens. `token`, `group`, `tokenOrGroup`,
+`tokens`, `groups`, `children`, `topLevel`, `usedBy` and `refersTo` are the ones `tokens` answers
+directly; `referencedBy` and `diagnosticsFor` on `tokens` cover every permutation (below).
 
 | | What it gives |
 | --- | --- |
-| `token(path)`, `group(path)` | One token or group |
-| `tokens`, `groups`, `children`, `root` | Every token and group, and what's at the top level |
-| `usedBy(path)` | The tokens and groups that reference a path |
-| `refersTo(path)` | The references a path's value writes, each with what it reaches |
-| `referencedBy(path)` | Every reference to a path, with the token or group that writes it |
+| `token(path)`, `group(path)`, `tokenOrGroup(path)` | One token, one group, or whichever is at the path |
+| `tokens`, `groups`, `children` | Every token, every group, and the tokens and groups at the top level |
+| `topLevel` | What the top of the files writes: its `$type`, `$description`, `$deprecated` and `$extensions` |
+| `refersTo(path)` | The references a path's value writes: what it points to |
+| `referencedBy(path)` | Every reference written to a path, each one, with where it is: what renaming it rewrites |
+| `usedBy(path)` | Each token or group that refers to a path, once: what depends on it |
 | `diagnosticsFor(path)` | The problems about one token or group |
 | `input`, `label`, `isDefault` | The input that built it, a label for people naming every modifier's context, and whether every modifier is at its default |
 | `contexts`, `sources` | The context it picks for each modifier, and every source it reads, in resolution order |
+
+The three about references, side by side:
+
+```ts
+dark.refersTo("color.text")      // the references color.text's value writes: to color.brand
+dark.referencedBy("color.red")   // each reference written to color.red, where it's written
+dark.usedBy("color.red")         // each token or group that refers to color.red, once: [color.brand]
+```
 
 ### What a read gives you
 
@@ -353,6 +365,7 @@ modifiers), and of `tokens.permutation(input)` otherwise: with several, `tokens`
 | `jsonPathOf(place)`, `jsonAt(file, jsonPath)` | Where a place or reference sits in its file's JSON, such as `["color", "text"]`, and what the file writes there, for a tool writing files |
 | `reread(changed)`, `rereadAll(files)`, `diff(before)` | New tokens after files changed, and what changed |
 | `toMemory()` | The entry and every file's text, to read the same tokens somewhere else |
+| `parseOptions` | How the read read values, such as whether it took hex strings: give it to `parseValue` to read another value, such as one inside `$extensions`, the same way |
 
 ### A token
 
@@ -393,31 +406,84 @@ list of permutations, with:
 | `PermutationError` | `tokens.permutation(input)` when no permutation fits the input; `detail` says why |
 | `SeveralPermutationsError` | A question of one permutation asked of `tokens` with several; `detail` has an example input |
 
-### Helpers
+### Working with token paths
+
+A token's path is its group names and its own name, joined with dots: `color.brand.500`. The spec
+has rules that are easy to get wrong by hand: a group can be named `""`, a `$root` token stands for
+its group, and `color.brandy` isn't inside `color.brand`. `tokenPath` follows them.
+
+```ts
+import { tokenPath } from "@sugarcube-sh/dtcg";
+
+tokenPath.parent("color.brand.500")                    // "color.brand"; undefined at the top level
+tokenPath.join("color.brand", "500")                   // "color.brand.500"
+tokenPath.relative("color", "color.brand.ink")         // "brand.ink"; undefined when it isn't inside
+tokenPath.contains("color.brand", "color.brand.500")   // true, and for "color.brand" itself
+tokenPath.withoutRoot("color.accent.$root")            // "color.accent", the name a $root token stands for
+tokenPath.invalidCharacter("brand.500")                // ".", which no name may hold; undefined for a valid name
+```
+
+### Writing files
+
+For a tool that writes token files, beside `tokens.jsonPathOf(place)` and `tokens.jsonAt(file, jsonPath)`:
 
 | Import from | | What it does |
 | --- | --- | --- |
-| `@sugarcube-sh/dtcg` | `completeInput(tokens, input)` | An input with every modifier given and its defaults filled in |
-| | `permutationLabel(input)` | An input written out for people, such as `mode: dark` |
-| | `isReference(value)` | Whether a value is a reference |
-| | `withoutRoot(path)` | The path a `$root` token stands for: its group's path |
-| `@sugarcube-sh/dtcg/node` | `findResolver(paths)` | Finds the resolver document among files and folders |
-| | `onFileChanged(watcher, listener)` | Calls `listener` for each file a watcher says was saved |
-| `@sugarcube-sh/dtcg/values` | `readReference(value)` | Which reference a value written in a file is, in either syntax |
-| | `writtenColor(color)` | A color ready to write into a file, rounded to four decimal places |
-| | `compositeParts` | The parts of each composite type, and each part's type |
-| | `tokenTypes`, `dimensionUnits`, `durationUnits`, `fontWeightKeywords`, `strokeStyleKeywords`, `lineCaps` | The spec's lists |
-| | `colorSpaces` | Each color space, with its components' ranges |
-| `@sugarcube-sh/dtcg/css` | `cssName(path)` | The name CSS knows a token path by, before escaping |
+| `@sugarcube-sh/dtcg` | `filePath(entry, file)` | Where a file the read names really is: `filePath("tokens/tokens.resolver.json", "dark.json")` is `"tokens/dark.json"` |
+| `@sugarcube-sh/dtcg/node` | `fileOnDisk(entry, file)` | The same, as an absolute path on disk |
+| `@sugarcube-sh/dtcg/values` | `parseReference(value)` | Which reference a value written in a file is, in either syntax, or `undefined` |
+| | `toJsonPointer(reference)` | A reference written as a JSON Pointer: `{color.ink}` is `{ "$ref": "#/color/ink/$value" }` |
+
+### Writing a generator or a validator
+
+| | What it does |
+| --- | --- |
+| `defineGenerator(…)`, `defineExtensionValidator(…)` | Make one, for `read`'s `generators` and `extensionValidators` |
+| `createExtensionReader()` (`/values`) | Collects the problems your extension's value has, each with where it is, and its result |
+| `isJsonObject(value)` (`/values`) | Whether a JSON value is an object, for reading an extension whose shape `dtcg` can't know |
+
+### Comparing
+
+| | What it does |
+| --- | --- |
+| `isEqualJson(a, b)` | Whether two JSON values are the same, whatever order their keys are in |
+| `isEquivalentValue(type, a, b)` | Whether two values of a type mean the same, written differently: components that agree once rounded, a color with or without its `hex` |
+
+### Labels and CSS names
+
+| Import from | | What it does |
+| --- | --- | --- |
+| `@sugarcube-sh/dtcg` | `inputLabel(input)` | An input written as a label, as permutations are labelled: `mode: dark, size: small` |
+| `@sugarcube-sh/dtcg/css` | `cssIdentifier(path)` | The identifier CSS builds names from: `color-brand-500`, before `--` or any prefix |
+| | `cssCustomProperty(path)` | The custom property for a path, ready for a stylesheet: `--color-brand-500` |
 | | `cssWriter(options)` | A writer with your own opinions: naming, such as a prefix, fallbacks, and which tokens to leave out. Pass it to `cssBlocks` |
+
+### The spec's lists
+
+From `@sugarcube-sh/dtcg/values`:
+
+| | What it is |
+| --- | --- |
+| `tokenTypes`, `dimensionUnits`, `durationUnits`, `fontWeightKeywords`, `strokeStyleKeywords`, `lineCaps` | Each list as the spec gives it |
+| `colorSpaces` | Each color space, with its components' ranges |
+| `compositeParts` | The parts of each composite type, and each part's type |
+
+### Finding and watching files
+
+From `@sugarcube-sh/dtcg/node`:
+
+| | What it does |
+| --- | --- |
+| `findResolver(paths)` | Finds the resolver document among files and folders |
+| `onFileChanged(watcher, listener)` | Calls `listener` for each file a watcher says was saved |
 
 ### What's where
 
 | Import from | For | Runs in |
 | --- | --- | --- |
-| `@sugarcube-sh/dtcg` | `read` with your own `readText`, `readFromMemory`, `everyPermutation`, the errors, the helpers, and every type | anywhere |
+| `@sugarcube-sh/dtcg` | `read` with your own `readText`, `readFromMemory`, `everyPermutation`, `tokenPath`, the errors, and every type | anywhere |
 | `@sugarcube-sh/dtcg/node` | `read` from disk, `liveTokens`, `findResolver` | Node |
-| `@sugarcube-sh/dtcg/css` | CSS variables, values and stylesheets | anywhere |
+| `@sugarcube-sh/dtcg/css` | CSS custom properties, values and stylesheets | anywhere |
 | `@sugarcube-sh/dtcg/values` | checking one value, and the spec's lists | anywhere |
 
 ## License
