@@ -309,7 +309,7 @@ describe("the modifiers that take part", () => {
     });
 });
 
-describe("inputLabel", () => {
+describe("toInputLabel", () => {
     it("names each modifier and its context, in the order the input lists them", () => {
         expect(toInputLabel({ density: "compact", theme: "dark" })).toBe(
             "density: compact, theme: dark",
@@ -389,7 +389,7 @@ describe("group.tokens", () => {
     });
 });
 
-describe("token.valueFrom", () => {
+describe("token.winningDefinition", () => {
     it("is the place whose value wins, the last it is written (Resolver 6.2)", () => {
         const darkTwo = dark.getToken("2");
         expect(darkTwo?.winningDefinition).toBe(darkTwo?.definitions.at(-1));

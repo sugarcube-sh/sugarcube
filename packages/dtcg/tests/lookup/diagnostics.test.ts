@@ -42,7 +42,7 @@ const darkMode = tokens.getPermutation({ mode: "dark" });
 
 const kinds = (path: string) => tokens.getDiagnostics(path).map(({ kind }) => kind);
 
-describe("tokens.diagnosticsFor", () => {
+describe("tokens.getDiagnostics", () => {
     it("gives a token's own problems", () => {
         expect(kinds("color.bad")).toStrictEqual(["invalid-value"]);
     });
@@ -82,7 +82,7 @@ describe("tokens.diagnosticsFor", () => {
     });
 });
 
-describe("permutation.diagnosticsFor", () => {
+describe("permutation.getDiagnostics", () => {
     const inPermutation = (permutation: Permutation, path: string) =>
         permutation.getDiagnostics(path).map(({ kind }) => kind);
 
@@ -183,7 +183,7 @@ describe("a problem in a value a token inherits", () => {
     });
 });
 
-describe("tokens.diagnosticsAt", () => {
+describe("getDiagnosticsAt", () => {
     const bad = tokens.getDiagnostics("color.bad")[0];
     const at = bad?.span;
 

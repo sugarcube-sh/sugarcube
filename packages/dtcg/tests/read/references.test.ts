@@ -177,7 +177,7 @@ describe("a reference in a value", () => {
     });
 });
 
-describe("referenceAt", () => {
+describe("getReferenceAt", () => {
     const focus = inLight("border.focus");
 
     it("is the reference written at a place in the value", () => {
@@ -196,7 +196,7 @@ describe("referenceAt", () => {
     });
 });
 
-describe("permutation.usedBy", () => {
+describe("permutation.getDependents", () => {
     const paths = (users: readonly { path: string }[]) => users.map(({ path }) => path);
 
     it("is every token that refers to the path", () => {
@@ -445,7 +445,7 @@ describe("permutation.getDependencies", () => {
 });
 
 describe("on the design tokens", () => {
-    it("referencesTo gives every reference to a path, each with the permutations it is in", () => {
+    it("getReferencesTo gives every reference to a path, each with the permutations it is in", () => {
         const reaching = tokens.getReferencesTo("color.red");
         expect(
             reaching.map(({ writtenInPaths, permutations }) => [
@@ -460,7 +460,7 @@ describe("on the design tokens", () => {
         expect(reaching[0] && written(reaching[0].span)).toBe('"{color.red}"');
     });
 
-    it("referencesTo a group's path covers its $extends and the tokens inside it", () => {
+    it("getReferencesTo a group's path covers its $extends and the tokens inside it", () => {
         const referring = oneFile({
             button: { $type: "number", pad: { $value: 1 } },
             primary: { $extends: "{button}" },
@@ -474,7 +474,7 @@ describe("on the design tokens", () => {
         ).toStrictEqual(["primary > button", "gap > button.pad"]);
     });
 
-    it("referencesTo a group's path gives its references in the order they are written", () => {
+    it("getReferencesTo a group's path gives its references in the order they are written", () => {
         const referring = oneFile({
             size: { $type: "number", small: { $value: 1 }, large: { $value: 2 } },
             a: { $type: "number", $value: "{size.small}" },
@@ -489,7 +489,7 @@ describe("on the design tokens", () => {
         ]);
     });
 
-    it("referencesTo lists a reference a group inherits through $extends once, with every token that has it", () => {
+    it("getReferencesTo lists a reference a group inherits through $extends once, with every token that has it", () => {
         const inherited = oneFile({
             base: { $type: "number", $value: 1 },
             color: { $type: "number", x: { $value: "{base}" } },

@@ -53,8 +53,8 @@ export interface CSSBlock extends CSSBlockInput {
  * the read's `PermutationError` for an input naming a permutation the tokens don't have.
  *
  * @example
- * const css = cssText(
- *     cssBlocks(tokens, [
+ * const css = toCSS(
+ *     getCSSBlocks(tokens, [
  *         { input: {}, selector: ":root" },
  *         { input: { mode: "dark" }, selector: '[data-mode="dark"]' },
  *         { input: { brand: "ocean" }, selector: '[data-brand="ocean"]' },
@@ -63,10 +63,10 @@ export interface CSSBlock extends CSSBlockInput {
  *
  * @example
  * // every combination listed, each block standing alone
- * cssBlocks(tokens, [
+ * getCSSBlocks(tokens, [
  *     { input: { mode: "light", brand: "house" }, selector: ":root" },
  *     { input: { mode: "dark", brand: "house" }, selector: '[data-mode="dark"]' },
- * ], { writer: cssWriter({ naming: { prefix: "ds" } }) });
+ * ], { writer: createCSSWriter({ naming: { prefix: "ds" } }) });
  */
 export function getCSSBlocks(
     tokens: DesignTokens,
@@ -197,7 +197,7 @@ function dependents(
 ): CSSDeclaration[] {
     const users = new Map<string, CSSDeclaration[]>();
     for (const line of all) {
-        for (const { path } of line.refersTo) {
+        for (const { path } of line.dependencies) {
             const found = users.get(path);
             if (found) found.push(line);
             else users.set(path, [line]);

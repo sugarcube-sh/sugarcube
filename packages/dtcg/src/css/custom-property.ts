@@ -24,7 +24,7 @@ export interface CSSNaming {
      * typography custom property's CSS property.
      *
      * @example
-     * { name: (path) => path.replaceAll(".", "_") } // "color.brand" → "--color_brand"
+     * { getName: (path) => path.replaceAll(".", "_") } // "color.brand" → "--color_brand"
      */
     getName?: (path: string) => string;
 }
@@ -32,7 +32,7 @@ export interface CSSNaming {
 /** A token's CSS custom property: its naming, and for typography the CSS property it is one of. */
 export interface CSSCustomPropertyOptions extends CSSNaming {
     /**
-     * The CSS property this custom property holds of a typography token, which {@link cssValue}
+     * The CSS property this custom property holds of a typography token, which {@link toCSSValue}
      * writes as one custom property per CSS property: `"font-size"` gives `--type-body-font-size`.
      */
     cssProperty?: string;
@@ -40,14 +40,14 @@ export interface CSSCustomPropertyOptions extends CSSNaming {
 
 /**
  * The name CSS knows a token path by, before any escaping: a final `$root` dropped (see
- * `tokenPath.withoutRoot`), each segment trimmed, spaces inside it made dashes, and the segments joined
+ * `tokenPath.removeRoot`), each segment trimmed, spaces inside it made dashes, and the segments joined
  * with dashes. {@link toCustomPropertyName} is this with `--` and any prefix, escaped for a stylesheet; a
  * class name made from it is written plainly in markup and escaped only in its selector.
  *
  * @example
- * cssIdentifier("type.body copy.size")  // "type-body-copy-size"
- * cssIdentifier("color.accent.$root")   // "color-accent"
- * cssIdentifier("space.1/2")            // "space-1/2", escaped only where it is written
+ * toCSSIdentifier("type.body copy.size")  // "type-body-copy-size"
+ * toCSSIdentifier("color.accent.$root")   // "color-accent"
+ * toCSSIdentifier("space.1/2")            // "space-1/2", escaped only where it is written
  */
 export function toCSSIdentifier(path: string): string {
     return named(path, {});
@@ -58,18 +58,18 @@ export function toCSSIdentifier(path: string): string {
  * (Format §6.10.3): a final `$root` dropped, as it names its group's own value, the names in the
  * path joined with dashes (or the `delimiter`), and anything a CSS name cannot hold escaped, so
  * the name always works in a browser. A typography token's custom properties are this name joined to each
- * CSS property {@link cssValue} gives it, such as `--type-body-font-size`. Different paths can
+ * CSS property {@link toCSSValue} gives it, such as `--type-body-font-size`. Different paths can
  * give the same name: `a.b-c` and `a-b.c` are both `--a-b-c`, and with `case: "kebab"`,
  * `fooBar` and `foo-bar` are too.
  *
  * @example
- * cssCustomProperty("color.brand")                                // "--color-brand"
- * cssCustomProperty("color.accent.$root")                         // "--color-accent"
- * cssCustomProperty("space.1/2")                                  // "--space-1\\/2"
- * cssCustomProperty("color.brand", { prefix: "ds" })              // "--ds-color-brand"
- * cssCustomProperty("color.brandPrimary", { case: "kebab" })      // "--color-brand-primary"
- * cssCustomProperty("color.brand", { delimiter: "_" })            // "--color_brand"
- * cssCustomProperty("type.body", { cssProperty: "font-size" })    // "--type-body-font-size"
+ * toCustomPropertyName("color.brand")                                // "--color-brand"
+ * toCustomPropertyName("color.accent.$root")                         // "--color-accent"
+ * toCustomPropertyName("space.1/2")                                  // "--space-1\\/2"
+ * toCustomPropertyName("color.brand", { prefix: "ds" })              // "--ds-color-brand"
+ * toCustomPropertyName("color.brandPrimary", { case: "kebab" })      // "--color-brand-primary"
+ * toCustomPropertyName("color.brand", { delimiter: "_" })            // "--color_brand"
+ * toCustomPropertyName("type.body", { cssProperty: "font-size" })    // "--type-body-font-size"
  */
 export function toCustomPropertyName(path: string, options: CSSCustomPropertyOptions = {}): string {
     return `--${escape(named(path, options))}`;

@@ -283,7 +283,7 @@ describe("paths in a resolver", () => {
         ]);
     });
 
-    it("gives back, through filePath, the path it asked for each file the design tokens name", async () => {
+    it("gives back, through getFilePath, the path it asked for each file the design tokens name", async () => {
         const asked: [string, string][] = [];
         await read("tokens/design.resolver.json", {
             readText: async (path, file) => {

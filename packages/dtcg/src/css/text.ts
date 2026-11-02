@@ -5,7 +5,7 @@ import type { CSSBlock } from "./blocks.js";
  * `@supports` alternatives after it, grouped by condition; `""` when none writes anything.
  *
  * @example
- * cssText(cssBlocks([{ declarations, selector: ":root" }]))
+ * toCSS(getCSSBlocks([{ declarations, selector: ":root" }]))
  */
 export function toCSS(blocks: readonly CSSBlock[]): string {
     const rules = blocks

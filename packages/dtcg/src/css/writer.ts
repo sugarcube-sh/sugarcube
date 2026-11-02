@@ -6,13 +6,13 @@ import { type CSSNaming, toCustomPropertyName } from "./custom-property.js";
 /** A value written as CSS, and the tokens it names with `var()`. */
 export interface CSSWritten {
     readonly css: string | TypographyCSS;
-    readonly refersTo: readonly Token[];
+    readonly dependencies: readonly Token[];
 }
 
 /**
  * Writes CSS that refers to tokens: each token placed in it is written as `var()`, or as its value
- * when the writer writes references as values or skips that token, and is recorded in `refersTo`.
- * A {@link CSSWritten} placed in it keeps its own `refersTo`. Typography, one value per CSS
+ * when the writer writes references as values or skips that token, and is recorded in `dependencies`.
+ * A {@link CSSWritten} placed in it keeps its own `dependencies`. Typography, one value per CSS
  * property, cannot be placed whole. A token the same in two permutations is one object and is
  * written once, so place tokens reached from the token being written, such as its references,
  * which are right in every permutation it is in; a token looked up in one permutation is that
@@ -42,8 +42,8 @@ export interface CSSWriterOptions {
      * in any value written with it. `undefined` means the token has no value to write.
      *
      * @example
-     * value: (token, { written, write }) =>
-     *     token.type === "gradient" && !token.referenceAt() ? write`linear-gradient(${written})` : written
+     * writeValue: (token, { written, write }) =>
+     *     token.type === "gradient" && !token.getReferenceAt() ? write`linear-gradient(${written})` : written
      */
     writeValue?: (
         token: Token,
@@ -51,12 +51,12 @@ export interface CSSWriterOptions {
     ) => CSSWritten | string | undefined;
     /**
      * What a token's declaration writes for browsers lacking a feature. The fallback is
-     * declared, and the value under `@supports` where the two differ. `writtenWith` writes the
+     * declared, and the value under `@supports` where the two differ. `writeWith` writes the
      * value with other {@link CSSValueOptions}, through `value` and references alike.
      *
      * @example
-     * fallback: (token, { writtenWith }) => {
-     *     const hex = writtenWith({ colors: "hex" });
+     * writeFallback: (token, { writeWith }) => {
+     *     const hex = writeWith({ colors: "hex" });
      *     return hex && { written: hex, unless: "(color: oklch(0 0 0))" };
      * }
      */
@@ -90,7 +90,7 @@ export interface CSSDeclaration {
     /** What to declare instead where a browser supports `condition`. */
     readonly supports?: readonly { readonly condition: string; readonly value: string }[];
     /** The tokens the value or its alternatives name with `var()`. */
-    readonly refersTo: readonly Token[];
+    readonly dependencies: readonly Token[];
 }
 
 /**
@@ -126,14 +126,14 @@ type Colors = NonNullable<CSSValueOptions["colors"]>;
  * per read.
  *
  * @example
- * const writer = cssWriter({ naming: { prefix: "ds" } });
- * for (const { name, value } of writer.declarations(tokens.permutation()).declarations) {
+ * const writer = createCSSWriter({ naming: { prefix: "ds" } });
+ * for (const { name, value } of writer.getDeclarations(tokens.getPermutation()).declarations) {
  *     row(`${name}: ${value};`);
  * }
  *
  * @example
  * // one token's value as a page would compute it
- * cssWriter({ references: "values" }).written(token)
+ * createCSSWriter({ references: "values" }).getValue(token)
  */
 export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
     const { naming, writeValue, writeFallback, skip, references = "custom-properties" } = options;
@@ -160,19 +160,19 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
     const refer = (
         target: Token,
         colors: Colors,
-        refersTo: Token[],
+        dependencies: Token[],
         cssProperty?: keyof TypographyCSS,
     ): Replacement | undefined => {
         const own = written(target, colors);
         if (!own) return undefined;
         if (!inlined(target)) {
-            refersTo.push(target);
+            dependencies.push(target);
             return {
                 customProperty: toCustomPropertyName(target.path, { ...naming, cssProperty }),
             };
         }
         if (typeof own.css !== "string") return undefined;
-        refersTo.push(...own.refersTo);
+        dependencies.push(...own.dependencies);
         return { css: own.css };
     };
 
@@ -183,37 +183,39 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
             const own = written(target, colors);
             if (own) return own;
         }
-        const refersTo: Token[] = [];
+        const dependencies: Token[] = [];
         const replaceReference = (ref: Reference, cssProperty?: keyof TypographyCSS) =>
-            ref.pointsToToken ? refer(ref.pointsToToken, colors, refersTo, cssProperty) : undefined;
+            ref.pointsToToken
+                ? refer(ref.pointsToToken, colors, dependencies, cssProperty)
+                : undefined;
         const css = toCSSValue(token, { replaceReference, colors });
-        return css === undefined ? undefined : { css, refersTo: unique(refersTo) };
+        return css === undefined ? undefined : { css, dependencies: unique(dependencies) };
     };
 
     const template =
         (colors: Colors): CSSTemplate =>
         (strings, ...parts) => {
-            const refersTo: Token[] = [];
+            const dependencies: Token[] = [];
             let css = strings[0] ?? "";
             parts.forEach((part, index) => {
-                css += placed(part, colors, refersTo) + (strings[index + 1] ?? "");
+                css += placed(part, colors, dependencies) + (strings[index + 1] ?? "");
             });
-            return { css, refersTo: unique(refersTo) };
+            return { css, dependencies: unique(dependencies) };
         };
 
     const placed = (
         part: CSSWritten | Token | string | number,
         colors: Colors,
-        refersTo: Token[],
+        dependencies: Token[],
     ): string => {
         if (typeof part === "string" || typeof part === "number") return String(part);
         if ("css" in part) {
             if (typeof part.css !== "string") throw new TypeError(thrownMessages.typographyPlaced);
-            refersTo.push(...part.refersTo);
+            dependencies.push(...part.dependencies);
             return part.css;
         }
         if (part.type === "typography") throw new TypeError(thrownMessages.typographyPlaced);
-        const answer = refer(part, colors, refersTo);
+        const answer = refer(part, colors, dependencies);
         if (answer)
             return "customProperty" in answer ? `var(${answer.customProperty})` : answer.css;
         const own = toCSSValue(part, { colors });
@@ -227,7 +229,9 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
             writeWith: ({ colors = "components" }) => written(token, colors),
         });
         const declared = fell?.written ?? own;
-        const refersTo = fell ? unique([...declared.refersTo, ...own.refersTo]) : own.refersTo;
+        const dependencies = fell
+            ? unique([...declared.dependencies, ...own.dependencies])
+            : own.dependencies;
         const line = (
             css: string,
             supported: string | undefined,
@@ -242,7 +246,7 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
                 supported !== css && {
                     supports: [{ condition: fell.unless, value: supported }],
                 }),
-            refersTo,
+            dependencies,
         });
         if (typeof declared.css === "string") {
             return [line(declared.css, typeof own.css === "string" ? own.css : undefined)];
@@ -288,7 +292,7 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
 }
 
 function answered(answer: CSSWritten | string | undefined): CSSWritten | undefined {
-    return typeof answer === "string" ? { css: answer, refersTo: [] } : answer;
+    return typeof answer === "string" ? { css: answer, dependencies: [] } : answer;
 }
 
 function unique(tokens: Token[]): Token[] {

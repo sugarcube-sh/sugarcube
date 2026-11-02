@@ -51,7 +51,7 @@ const modes = read({
     "dark.json": { color: { text: { $value: "{color.neutral.50}" } } },
 });
 
-describe("cssWriter", () => {
+describe("createCSSWriter", () => {
     describe("declarations", () => {
         it("gives every custom property a permutation declares, a reference as var()", () => {
             expect(lines(modes)).toStrictEqual([
@@ -70,9 +70,11 @@ describe("cssWriter", () => {
                 modes.getPermutation({ mode: "dark" }),
             );
             const text = declarations.find(({ name }) => name === "--color-text");
-            expect(text?.refersTo).toStrictEqual([tokenAt(modes, "color.neutral.50")]);
+            expect(text?.dependencies).toStrictEqual([tokenAt(modes, "color.neutral.50")]);
             expect(text?.token).toBe(tokenAt(modes, "color.text", { mode: "dark" }));
-            expect(declarations.find(({ name }) => name === "--gap")?.refersTo).toStrictEqual([]);
+            expect(declarations.find(({ name }) => name === "--gap")?.dependencies).toStrictEqual(
+                [],
+            );
         });
 
         it("names custom properties by its naming, in declarations and references alike", () => {
@@ -108,7 +110,7 @@ describe("cssWriter", () => {
                 ["--quote_letter-spacing", "letter-spacing", "var(--body_letter-spacing)"],
                 ["--quote_line-height", "line-height", "var(--body_line-height)"],
             ]);
-            expect(quote[0]?.refersTo).toStrictEqual([tokenAt(tokens, "body")]);
+            expect(quote[0]?.dependencies).toStrictEqual([tokenAt(tokens, "body")]);
         });
 
         it("gives the same declarations each time it is asked for a permutation", () => {
@@ -173,7 +175,7 @@ describe("cssWriter", () => {
             }).getDeclarations(mixed.getPermutation());
             const card = declarations.find(({ name }) => name === "--card");
             expect(card?.value).toBe("var(--gap) solid #000000");
-            expect(card?.refersTo).toStrictEqual([tokenAt(mixed, "gap")]);
+            expect(card?.dependencies).toStrictEqual([tokenAt(mixed, "gap")]);
         });
     });
 
@@ -183,9 +185,9 @@ describe("cssWriter", () => {
             const { declarations } = createCSSWriter({
                 writeValue: () => "clamp(4px, 1vw, 8px)",
             }).getDeclarations(tokens.getPermutation());
-            expect(declarations.map(({ value, refersTo }) => [value, refersTo])).toStrictEqual([
-                ["clamp(4px, 1vw, 8px)", []],
-            ]);
+            expect(
+                declarations.map(({ value, dependencies }) => [value, dependencies]),
+            ).toStrictEqual([["clamp(4px, 1vw, 8px)", []]]);
         });
 
         it("gives the hook the value as written, which it can keep or wrap with write", () => {
@@ -197,7 +199,7 @@ describe("cssWriter", () => {
             }).getDeclarations(modes.getPermutation());
             const text = declarations.find(({ name }) => name === "--color-text");
             expect(text?.value).toBe("color-mix(in oklch, var(--color-neutral-900) 80%, white)");
-            expect(text?.refersTo).toStrictEqual([tokenAt(modes, "color.neutral.900")]);
+            expect(text?.dependencies).toStrictEqual([tokenAt(modes, "color.neutral.900")]);
         });
 
         it("writes a token placed in write as var(), and records it", () => {
@@ -208,7 +210,7 @@ describe("cssWriter", () => {
             }).getDeclarations(modes.getPermutation());
             const text = declarations.find(({ name }) => name === "--color-text");
             expect(text?.value).toBe("var(--color-neutral-900) var(--gap) 2");
-            expect(text?.refersTo).toStrictEqual([tokenAt(modes, "color.neutral.900"), gap]);
+            expect(text?.dependencies).toStrictEqual([tokenAt(modes, "color.neutral.900"), gap]);
         });
 
         it("refuses a typography token placed in write, which is one custom property per CSS property", () => {
@@ -302,7 +304,7 @@ describe("cssWriter", () => {
             ]);
         });
 
-        it("writes the value another way with writtenWith, through the value hook and references alike", () => {
+        it("writes the value another way with writeWith, through the value hook and references alike", () => {
             const tokens = one({
                 hidden: p3,
                 edge: {
@@ -353,18 +355,18 @@ describe("cssWriter", () => {
             const writer = createCSSWriter({ references: "values" });
             expect(writer.getValue(tokenAt(modes, "color.text", { mode: "dark" }))).toStrictEqual({
                 css: "#fafafc",
-                refersTo: [],
+                dependencies: [],
             });
             expect(createCSSWriter().getValue(tokenAt(modes, "color.text"))).toStrictEqual({
                 css: "var(--color-neutral-900)",
-                refersTo: [tokenAt(modes, "color.neutral.900")],
+                dependencies: [tokenAt(modes, "color.neutral.900")],
             });
             expect(
                 createCSSWriter().getValue(tokenAt(one({ x: color("{nowhere}") }), "x")),
             ).toBeUndefined();
         });
 
-        it("agrees with cssValue when nothing is passed but references as values", () => {
+        it("agrees with toCSSValue when nothing is passed but references as values", () => {
             const tokens = one({
                 gap: { $type: "dimension", $value: px(8) },
                 space: { $type: "dimension", $value: "{gap}" },

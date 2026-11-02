@@ -18,13 +18,13 @@ import { sameList } from "../read/same-object.js";
  * `tokens.permutations` itself: it is a list, so `some`, `find` and `flatMap` work on it.
  *
  * @example
- * for (const { answer, permutations } of everyPermutation(tokens, (p) => p.token("color.text"))) {
- *   row(permutations.label, cssValue(answer));
+ * for (const { answer, permutations } of askEveryPermutation(tokens, (p) => p.getToken("color.text"))) {
+ *   row(permutations.label, toCSSValue(answer));
  * }
  *
  * @example
  * // the same in every permutation
- * everyPermutation(tokens, (p) => p.token("color.text")).length === 1
+ * askEveryPermutation(tokens, (p) => p.getToken("color.text")).length === 1
  */
 export function askEveryPermutation<Answer>(
     tokens: DesignTokens,

@@ -16,7 +16,7 @@ import { checkedInput, modifiersIn } from "../read/input.js";
  *
  * @example
  * try {
- *   tokens.permutation({ mode: "sepia" });
+ *   tokens.getPermutation({ mode: "sepia" });
  * } catch (error) {
  *   if (error instanceof PermutationError) error.detail // { reason: "unknown-context", … }
  * }
@@ -38,7 +38,7 @@ export class PermutationError extends Error {
  *
  * @example
  * try {
- *   tokens.token("color.text");
+ *   tokens.getToken("color.text");
  * } catch (error) {
  *   if (error instanceof SeveralPermutationsError) error.detail.example // { mode: "dark" }
  * }

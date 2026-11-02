@@ -28,7 +28,7 @@ const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
 const written = (span: Span) =>
     files[span.file as keyof typeof files].slice(span.offset, span.offset + span.length);
 
-describe("a token's writtenAt, across sources", () => {
+describe("a token's definitions, across sources", () => {
     it("lists every place its sources write it, in order, the one that wins last", () => {
         const light = tokens.getPermutation().getToken("bg");
         const dark = tokens.getPermutation({ mode: "dark" }).getToken("bg");

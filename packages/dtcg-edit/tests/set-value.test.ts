@@ -715,7 +715,7 @@ describe("setValue, at a place it is written", () => {
                 kind: "not-written-there",
                 path: "radius.md",
                 at: other,
-                reason: "`radius.md` isn't written at that place in `dark.json`; take the place from `writtenAt`",
+                reason: "`radius.md` isn't written at that place in `dark.json`; take the place from `getDefinitions`",
             },
         });
     });

@@ -18,7 +18,7 @@ import { propertyEdit } from "./property.js";
  * new override also writes what the token says itself: its own `$type`, `$description`,
  * `$deprecated` and `$extensions`, not those it takes from a group.
  *
- * With `at`, a place from `tokens.writtenAt(path)`, the value written at that place changes
+ * With `at`, a place from `tokens.getDefinitions(path)`, the value written at that place changes
  * instead, whichever contexts read it.
  *
  * With `part`, only that part of the value changes, such as a shadow's `["color"]`, and every
@@ -39,7 +39,7 @@ import { propertyEdit } from "./property.js";
  * @example
  * setValue(tokens, "color.danger", "{color.red.600}")
  * setValue(tokens, "color.danger", "{color.red.400}", { input: { mode: "dark" } })
- * const dark = tokens.writtenAt("color.danger").find(({ span }) => span.file === "dark.json");
+ * const dark = tokens.getDefinitions("color.danger").find(({ span }) => span.file === "dark.json");
  * if (dark) setValue(tokens, "color.danger", "{color.red.400}", { at: dark.span });
  * setValue(tokens, "shadow.raised", "{color.neutral.900}", { part: [1, "color"] })
  */

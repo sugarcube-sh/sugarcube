@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { toCSSIdentifier, toCustomPropertyName } from "../../src/css.js";
 
-describe("cssIdentifier", () => {
+describe("toCSSIdentifier", () => {
     it.for([
         { path: "color.brand", name: "color-brand" },
         { path: "color.accent.$root", name: "color-accent" },
@@ -13,7 +13,7 @@ describe("cssIdentifier", () => {
     });
 });
 
-describe("cssCustomProperty", () => {
+describe("toCustomPropertyName", () => {
     it.for([
         { path: "color.brand", name: "--color-brand" },
         { path: "color.accent.$root", name: "--color-accent" },

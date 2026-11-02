@@ -93,7 +93,7 @@ describe("the top level", () => {
         expect(base && "children" in base.topLevel).toBe(false);
     });
 
-    it('has no path, so nothing reaches it by one: (…).permutation().group("") is the group named ""', () => {
+    it('has no path, so nothing reaches it by one: (…).getPermutation().getGroup("") is the group named ""', () => {
         expect(base && "path" in base.topLevel).toBe(false);
         expect(tokens.getPermutation().getGroup("")).toBeUndefined();
     });

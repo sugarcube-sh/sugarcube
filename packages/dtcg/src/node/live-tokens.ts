@@ -56,7 +56,7 @@ export interface LiveTokens {
      * design tokens go to the listeners, and a failure to `onError`, as for a save.
      *
      * @example
-     * await live.readAgain();
+     * await live.reread();
      */
     reread(): Promise<void>;
     /**
@@ -84,7 +84,7 @@ export interface LiveTokens {
  * @param onDisk Where the design tokens are. Give a function to be asked again on every read.
  *
  * @example
- * const live = liveTokens({ entry: "tokens/tokens.resolver.json" }, { onError: console.error });
+ * const live = createLiveTokens({ entryFile: "tokens/tokens.resolver.json" }, { onError: console.error });
  * live.watch(watcher);
  * live.onRead((tokens, { file }) => console.log(`${file} saved`, tokens.diagnostics.length));
  */

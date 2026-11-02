@@ -24,7 +24,7 @@ const asVariables: CSSValueOptions = {
             : undefined,
 };
 
-describe("cssValue", () => {
+describe("toCSSValue", () => {
     it("writes a color read from a hex string as that string, however it is reached", () => {
         const at = read({
             plain: color("#e11d48"),

@@ -76,7 +76,7 @@ describe("toJsonPointer", () => {
     });
 });
 
-describe("referenceText", () => {
+describe("toReferenceTarget", () => {
     it.for([
         { written: "{color.ink}", text: "color.ink" },
         {

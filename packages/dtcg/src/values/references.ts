@@ -63,8 +63,8 @@ export function isReference(value: unknown): value is WrittenReference {
  * braces, or a JSON Pointer as written.
  *
  * @example
- * referenceText(parseReference("{color.ink}"))                // "color.ink"
- * referenceText(parseReference({ $ref: "#/color/ink/$value" })) // "#/color/ink/$value"
+ * toReferenceTarget(parseReference("{color.ink}"))                // "color.ink"
+ * toReferenceTarget(parseReference({ $ref: "#/color/ink/$value" })) // "#/color/ink/$value"
  */
 export function toReferenceTarget(reference: WrittenReference): string {
     return reference.syntax === "curly-brace" ? reference.path : reference.pointer;

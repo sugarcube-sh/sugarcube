@@ -43,15 +43,15 @@ import { read } from "@sugarcube-sh/dtcg/node";
 
 const tokens = await read("color.json");
 
-const text = tokens.token("color.text"); // undefined for a path that isn't there
-text?.type                              // "color"
-text?.value                             // { syntax: "curly-brace", path: "color.brand" }, as written
-text?.resolved                          // { colorSpace: "srgb", components: [0.8, 0.2, 0.2], alpha: 1 }
-text?.aliasChain.map((t) => t.path)     // ["color.text", "color.brand", "color.red"]
+const text = tokens.getToken("color.text"); // undefined for a path that isn't there
+text?.type                                  // "color"
+text?.value                                 // { syntax: "curly-brace", path: "color.brand" }, as written
+text?.resolved                              // { colorSpace: "srgb", components: [0.8, 0.2, 0.2], alpha: 1 }
+text?.aliasChain.map((t) => t.path)         // ["color.text", "color.brand", "color.red"]
 
-tokens.usedBy("color.red")              // [color.brand]
-tokens.refersTo("color.text")           // the reference its value writes, to color.brand
-tokens.group("color")?.tokens           // every token in the group, in the order the file writes them
+tokens.getDependents("color.red")           // [color.brand]: what uses it
+tokens.getDependencies("color.text")        // [color.brand]: what it uses
+tokens.getGroup("color")?.tokens            // every token in the group, in the order the file writes them
 ```
 
 `color.link` has a typo on purpose. A problem never stops a read: it goes in `tokens.diagnostics`,
@@ -65,7 +65,7 @@ for (const problem of tokens.diagnostics) {
 ```
 
 Every problem has a `kind` you can switch on, the facts its message was written from in `detail`,
-and a `docs` link that explains it.
+and a `docsUrl` link to a page that explains it.
 
 ## Add a resolver
 
@@ -95,35 +95,35 @@ Now `color.text` has two answers, so `tokens` can't give one:
 ```ts
 const tokens = await read("tokens.resolver.json");
 
-tokens.token("color.text")
-// SeveralPermutationsError: tokens.token() needs a permutation: this resolver has the modifier
-// `mode`. Pick one with tokens.permutation({ mode: "dark" }), or ask them all with
-// everyPermutation(tokens, …)
+tokens.getToken("color.text")
+// SeveralPermutationsError: tokens.getToken() needs a permutation: this resolver has the modifier
+// `mode`. Pick one with tokens.getPermutation({ mode: "dark" }), or ask them all with
+// askEveryPermutation(tokens, …)
 ```
 
 Pick a context for each modifier. The spec calls that an input, and the tokens it gives a
 permutation. You ask a permutation exactly what you'd ask a single file:
 
 ```ts
-const dark = tokens.permutation({ mode: "dark" });
+const dark = tokens.getPermutation({ mode: "dark" });
 
-dark.token("color.text")?.resolved      // blue
-dark.usedBy("color.red")                // [color.brand]
-dark.label                              // "mode: dark"
+dark.getToken("color.text")?.resolved       // blue
+dark.getDependents("color.red")             // [color.brand]
+dark.label                                  // "mode: dark"
 
-const light = tokens.permutation();     // no input: every modifier at its default
-light.token("color.text")?.resolved     // red
-light.label                             // "mode: light"
+const light = tokens.getPermutation();      // no input: every modifier at its default
+light.getToken("color.text")?.resolved      // red
+light.label                                 // "mode: light"
 ```
 
 What's about the files themselves, not one permutation, `tokens` still answers with a resolver:
-where a token is written (`tokens.writtenAt(path)`), every reference typed to it
-(`tokens.referencesTo(path)`), and whether a name is there at all (`tokens.has(path)`). So whether
+where a token is written (`tokens.getDefinitions(path)`), every reference typed to it
+(`tokens.getReferencesTo(path)`), and whether a name is there at all (`tokens.has(path)`). So whether
 anything uses a token, before you delete it, is a question for the files, and it counts a
 reference in a context the read didn't build:
 
 ```ts
-const used = tokens.referencesTo("color.red").length > 0;
+const used = tokens.getReferencesTo("color.red").length > 0;
 ```
 
 ## Ask every permutation at once
@@ -132,16 +132,16 @@ const used = tokens.referencesTo("color.red").length > 0;
 a token is missing from any permutation, is a plain `some`, `every` or `find`:
 
 ```ts
-const missingSomewhere = tokens.permutations.some((p) => p.token("color.text") === undefined);
+const missingSomewhere = tokens.permutations.some((p) => p.getToken("color.text") === undefined);
 ```
 
 To see permutations side by side, write the question you'd ask one permutation, and
-`everyPermutation` asks it of each. Permutations that give the same answer come back together:
+`askEveryPermutation` asks it of each. Permutations that give the same answer come back together:
 
 ```ts
-import { everyPermutation } from "@sugarcube-sh/dtcg";
+import { askEveryPermutation } from "@sugarcube-sh/dtcg";
 
-everyPermutation(tokens, (p) => p.token("color.text")?.resolved)
+askEveryPermutation(tokens, (p) => p.getToken("color.text")?.resolved)
 // [{ answer: red,  permutations: mode: light },
 //  { answer: blue, permutations: mode: dark }]
 ```
@@ -149,11 +149,11 @@ everyPermutation(tokens, (p) => p.token("color.text")?.resolved)
 That's a docs page, each token's value in each permutation:
 
 ```ts
-import { cssValue } from "@sugarcube-sh/dtcg/css";
+import { toCSSValue } from "@sugarcube-sh/dtcg/css";
 
-for (const path of tokens.tokenPaths()) {
-  for (const { answer, permutations } of everyPermutation(tokens, (p) => p.token(path))) {
-    row(path, permutations.label, cssValue(answer));
+for (const path of tokens.getTokenPaths()) {
+  for (const { answer, permutations } of askEveryPermutation(tokens, (p) => p.getToken(path))) {
+    row(path, permutations.label, toCSSValue(answer));
   }
 }
 // color.red    everywhere    rgb(204 51 51)
@@ -181,13 +181,13 @@ fixed.diagnostics.length                // 0
 fixed.diff(tokens)                      // [{ kind: "changed", path: "color.link", … }]
 ```
 
-In Node, `liveTokens` does this for you, for anything that runs for a while, such as a dev server,
-a watch command or an editor:
+In Node, `createLiveTokens` does this for you, for anything that runs for a while, such as a dev
+server, a watch command or an editor:
 
 ```ts
-import { liveTokens } from "@sugarcube-sh/dtcg/node";
+import { createLiveTokens } from "@sugarcube-sh/dtcg/node";
 
-const live = liveTokens({ entry: "tokens.resolver.json" }, { onError: console.error });
+const live = createLiveTokens({ entryFile: "tokens.resolver.json" }, { onError: console.error });
 live.watch(watcher);
 live.onRead((tokens, { file }) => console.log(`${file} saved`, tokens.diagnostics.length));
 ```
@@ -225,23 +225,23 @@ const tokens = readFromMemory({ files: { "tokens.resolver.json": "…", "color.j
 ## Write CSS
 
 ```ts
-import { cssBlocks, cssCustomProperty, cssText, cssValue } from "@sugarcube-sh/dtcg/css";
+import { getCSSBlocks, toCustomPropertyName, toCSS, toCSSValue } from "@sugarcube-sh/dtcg/css";
 
-const text = tokens.permutation({ mode: "dark" }).token("color.text");
+const text = tokens.getPermutation({ mode: "dark" }).getToken("color.text");
 
-cssCustomProperty("color.text")         // "--color-text"
-cssValue(text)                          // "rgb(51 102 204)"
-cssValue(text, {
-  replacement: (ref) =>
-    ref.token ? { customProperty: cssCustomProperty(ref.token.path) } : undefined,
-})                                      // "var(--color-blue)"
+toCustomPropertyName("color.text")          // "--color-text"
+toCSSValue(text)                            // "rgb(51 102 204)"
+toCSSValue(text, {
+  replaceReference: (ref) =>
+    ref.pointsToToken ? { customProperty: toCustomPropertyName(ref.pointsToToken.path) } : undefined,
+})                                          // "var(--color-blue)"
 ```
 
 A whole stylesheet, one block per input:
 
 ```ts
-cssText(
-  cssBlocks(tokens, [
+toCSS(
+  getCSSBlocks(tokens, [
     { input: {}, selector: ":root" },
     { input: { mode: "dark" }, selector: '[data-mode="dark"]' },
   ]),
@@ -317,8 +317,7 @@ const tokens = await read("tokens.resolver.json", { extensionValidators: [fluid]
 
 | Option | What it does |
 | --- | --- |
-| `inputs` | The permutations to build, as inputs. Leave it out to build the ones `permutations` asks for. |
-| `permutations` | `"all"`, every combination of contexts (the default), or `"each-context"`, each context with every other modifier at its default. |
+| `inputs` | Which permutations to build: a list of inputs, `"all"`, every combination of contexts (the default), or `"each-context"`, each context with every other modifier at its default. |
 | `permutationLimit` | The most combinations `"all"` builds before building `"each-context"` instead, with a warning. Default 32. |
 | `extensionValidators` | Checks for your own `$extensions`, made with `defineExtensionValidator`. |
 | `generators` | Tokens made from an extension on a group, made with `defineGenerator`. |
@@ -329,51 +328,51 @@ const tokens = await read("tokens.resolver.json", { extensionValidators: [fluid]
 ### Questions you ask a permutation
 
 Ask them of `tokens` when there's one permutation (a token file, or a resolver with no
-modifiers), and of `tokens.permutation(input)` otherwise: with several, `tokens` throws a
-`SeveralPermutationsError` saying how to pick one. `refersTo`, `referencesTo` and `usedBy` take
-`{ chained: true }` to follow references through other tokens. `token`, `group`, `tokenOrGroup`,
-`tokens`, `groups`, `children`, `topLevel`, `usedBy` and `refersTo` are the ones `tokens` answers
-directly. `referencesTo` and `diagnosticsFor` are asked of both: asked of a permutation, the
-answer is about that permutation; asked of `tokens`, about the whole read, each part with the
-permutations it holds in (below).
+modifiers), and of `tokens.getPermutation(input)` otherwise: with several, `tokens` throws a
+`SeveralPermutationsError` saying how to pick one. `getDependencies`, `getDependents` and
+`getReferencesTo` take `{ chained: true }` to follow references through other tokens. `getToken`,
+`getGroup`, `getTokenOrGroup`, `tokens`, `groups`, `children`, `topLevel`, `getDependencies` and
+`getDependents` are the ones `tokens` answers directly. `getReferencesTo` and `getDiagnostics` are
+asked of both: asked of a permutation, the answer is about that permutation; asked of `tokens`,
+about the whole read, each part with the permutations it holds in (below).
 
 | | What it gives |
 | --- | --- |
-| `token(path)`, `group(path)`, `tokenOrGroup(path)` | One token, one group, or whichever is at the path |
+| `getToken(path)`, `getGroup(path)`, `getTokenOrGroup(path)` | One token, one group, or whichever is at the path |
 | `tokens`, `groups`, `children` | Every token, every group, and the tokens and groups at the top level |
 | `topLevel` | What the top of the files writes: its `$type`, `$description`, `$deprecated` and `$extensions` |
-| `refersTo(path)` | The references a path's value writes: what it points to |
-| `referencesTo(path)` | Every reference written to a path, each with the token that writes it |
-| `usedBy(path)` | Each token or group that refers to a path, once: what depends on it |
-| `diagnosticsFor(path)` | The problems about one token or group |
+| `getDependencies(path)` | Each token or group a path's value refers to, once: what it depends on |
+| `getDependents(path)` | Each token or group that refers to a path, once: what depends on it |
+| `getReferencesTo(path)` | Every reference written to a path, each with the token that writes it |
+| `getDiagnostics(path)` | The problems about one token or group |
 | `input`, `label`, `isDefault` | The input that built it, a label for people naming every modifier's context, and whether every modifier is at its default |
 | `contexts`, `sources` | The context it picks for each modifier, and every source it reads, in resolution order |
 
-The three about references, side by side:
+About references, side by side. Dependencies and dependents are tokens, each once; references are
+each `{path}` or `$ref` written, where it's written:
 
 ```ts
-dark.refersTo("color.text")        // the references color.text's value writes: to color.blue
-dark.referencesTo("color.red")     // each reference written to color.red, with the token that writes it
-dark.usedBy("color.red")           // each token or group that refers to color.red, once: [color.brand]
-tokens.referencesTo("color.red")   // each place {color.red} is typed in the files, with the tokens that have it
+dark.getDependencies("color.text")          // [color.blue]: what color.text refers to
+dark.getDependents("color.red")             // [color.brand]: what refers to color.red
+dark.getToken("color.text")?.references     // the references color.text's value writes
+dark.getReferencesTo("color.red")           // each reference written to color.red, with the token that writes it
+tokens.getReferencesTo("color.red")         // each place {color.red} is typed in the files, with the tokens that have it
 ```
 
 ### What a read gives you
 
 | | What it is |
 | --- | --- |
-| `files`, `entry`, `text(file)` | Every file the read used, the one it started from, and a file's text exactly as read |
+| `files`, `entryFile`, `getText(file)` | Every file the read used, the one it started from, and a file's text exactly as read |
 | `resolver` | What the resolver document says about itself: its sets, and its modifiers with their contexts and defaults |
-| `permutations`, `permutation(input)` | Every permutation built, and one by its input. `permutation()` gives the default |
-| `tokenPaths()`, `groupPaths()`, `has(path)` | Every token and group path, and whether a path is there, in any permutation |
-| `writtenAt(path)` | Every place a token or group is written in the files, each with the permutations that read it and the ones its value wins in |
-| `referencesTo(path)` | Every reference to a path typed in the files, each place once, with the tokens that have it and the permutations it holds in: what renaming it rewrites, and whether anything uses it at all |
+| `permutations`, `getPermutation(input)` | Every permutation built, and one by its input. `getPermutation()` gives the default |
+| `getTokenPaths()`, `getGroupPaths()`, `has(path)` | Every token and group path, and whether a path is there, in any permutation |
+| `getDefinitions(path)` | Every place a token or group is written in the files, each with the permutations that read it and the ones its value wins in |
+| `getReferencesTo(path)` | Every reference to a path typed in the files, each place once, with the tokens that have it and the permutations it holds in: what renaming it rewrites, and whether anything uses it at all |
 | `sources` | Every source the resolver lists, once |
-| `diagnostics`, `diagnosticsFor(path)` | Every problem, or those about one token or group, each with the permutations it holds in |
-| `diagnosticsAt(place)`, `spanOf(place)` | The problems at a place in a file, and where something is written, for editors |
-| `jsonPathOf(place)`, `jsonAt(file, jsonPath)` | Where a place or reference sits in its file's JSON, such as `["color", "text"]`, and what the file writes there, for a tool writing files |
+| `diagnostics`, `getDiagnostics(path)` | Every problem, or those about one token or group, each with the permutations it holds in |
 | `reread(changed)`, `rereadAll(files)`, `diff(before)` | New tokens after files changed, and what changed |
-| `toMemory()` | The entry and every file's text, to read the same tokens somewhere else |
+| `toMemory()` | The entry file and every file's text, to read the same tokens somewhere else |
 | `parseOptions` | How the read read values, such as whether it took hex strings: give it to `parseValue` to read another value, such as one inside `$extensions`, the same way |
 
 ### A token
@@ -384,12 +383,12 @@ tokens.referencesTo("color.red")   // each place {color.red} is typed in the fil
 | `value`, `resolved` | Its value as written, with references kept, and its resolved value. `isReference(token.value)` (from `@sugarcube-sh/dtcg`) tells a reference from a value |
 | `invalid` | Set when its value couldn't be read |
 | `description`, `deprecated`, `extensions` | Its `$description`, `$deprecated` and `$extensions` |
-| `references`, `referenceAt(property)`, `aliasChain` | The references its value writes, and every token it passes through to resolve |
-| `valueFrom`, `writtenAt`, `authored` | Where its value comes from, every place it's written, and what that file wrote. `tokens.spanOf(place)` gives a place's position in the file, `tokens.jsonPathOf(place)` its path in the JSON |
+| `references`, `getReferenceAt(property)`, `aliasChain` | The references its value writes, and every token it passes through to resolve |
+| `winningDefinition`, `definitions`, `asWritten` | Where its value comes from, every place it's written, and what that file wrote. `getSpan(tokens, place)` gives a place's position in the file, `getJsonPath(tokens, place)` its path in the JSON |
 | `inherited`, `generated` | Set when it's there because of `$extends`, or a generator made it |
 | `parts` | Each part of a composite value, each shadow layer or gradient stop, with what it resolved to |
 
-### `everyPermutation(tokens, question)`
+### `askEveryPermutation(tokens, question)`
 
 Asks `question` of every permutation, and gives back each answer once, with the permutations it
 came from: `{ answer, permutations }`. Two answers are the same when they're the same value, or
@@ -406,13 +405,13 @@ list of permutations, with:
 | `label` | Which permutations it holds, for people, such as `mode: dark` or `everywhere` |
 | `inputs`, `scope` | Their inputs, and which permutations it holds by their contexts, for a tool that words them its own way |
 | `others` | Every permutation the read built that it doesn't hold, itself a list: none when it holds them all |
-| `where(test)`, `matching(input)` | The ones that pass a test, and the one an input picks |
+| `select(test)`, `findByInput(input)` | The ones that pass a test, as a list of their own, and the one an input picks |
 
 ### Errors
 
 | | Thrown by |
 | --- | --- |
-| `PermutationError` | `tokens.permutation(input)` when no permutation fits the input; `detail` says why |
+| `PermutationError` | `tokens.getPermutation(input)` when no permutation fits the input; `detail` says why |
 | `SeveralPermutationsError` | A question of one permutation asked of `tokens` with several; `detail` has an example input |
 
 ### Working with token paths
@@ -424,28 +423,39 @@ its group, and `color.brandy` isn't inside `color.brand`. `tokenPath` follows th
 ```ts
 import { tokenPath } from "@sugarcube-sh/dtcg";
 
-tokenPath.parent("color.brand.500")                    // "color.brand"; undefined at the top level
-tokenPath.join("color.brand", "500")                   // "color.brand.500"
-tokenPath.relative("color", "color.brand.ink")         // "brand.ink"; undefined when it isn't inside
-tokenPath.contains("color.brand", "color.brand.500")   // true, and for "color.brand" itself
-tokenPath.withoutRoot("color.accent.$root")            // "color.accent", the name a $root token stands for
-tokenPath.invalidCharacter("brand.500")                // ".", which no name may hold; undefined for a valid name
-tokenPath.afterMoves("color.brand.500", [{ from: "color.brand", to: "color.house" }])
-                                                       // "color.house.500", where it is after a rename
+tokenPath.getParent("color.brand.500")               // "color.brand"; undefined at the top level
+tokenPath.join("color.brand", "500")                  // "color.brand.500"
+tokenPath.relative("color", "color.brand.ink")        // "brand.ink"; undefined when it isn't inside
+tokenPath.contains("color.brand", "color.brand.500")  // true, and for "color.brand" itself
+tokenPath.removeRoot("color.accent.$root")            // "color.accent", the name a $root token stands for
+tokenPath.findInvalidCharacter("brand.500")           // ".", which no name may hold; undefined for a valid name
+tokenPath.applyMoves("color.brand.500", [{ from: "color.brand", to: "color.house" }])
+                                                      // "color.house.500", where it is after a rename
 ```
 
 When files changed because something was renamed, tell `diff` what moved, and it reports the
 token as renamed rather than removed and added: `after.diff(before, { moved })`. Each reference's
 `moved(moves)` gives how it's written after the rename.
 
+### Positions in the text, for editors
+
+From `@sugarcube-sh/dtcg/editor`, each asked of the read:
+
+| | What it gives |
+| --- | --- |
+| `getSpan(tokens, place)` | Where a place or reference is written: its file, and where it starts and ends, as TypeScript's `TextSpan` or an LSP `Range` |
+| `getJsonPath(tokens, place)` | The keys leading to it in its file, such as `["color", "text"]`, as jsonc-parser's `JSONPath` |
+| `getJsonAt(tokens, file, jsonPath)` | What the file writes at those keys, exactly as written |
+| `getDiagnosticsAt(tokens, place)` | The problems at a place in a file, or at a point, such as the cursor |
+
 ### Writing files
 
-For a tool that writes token files, beside `tokens.jsonPathOf(place)` and `tokens.jsonAt(file, jsonPath)`:
+For a tool that writes token files, beside `getJsonPath` and `getJsonAt` (`/editor`):
 
 | Import from | | What it does |
 | --- | --- | --- |
-| `@sugarcube-sh/dtcg` | `filePath(entry, file)` | Where a file the read names really is: `filePath("tokens/tokens.resolver.json", "dark.json")` is `"tokens/dark.json"` |
-| `@sugarcube-sh/dtcg/node` | `fileOnDisk(entry, file)` | The same, as an absolute path on disk |
+| `@sugarcube-sh/dtcg` | `getFilePath(entryFile, file)` | Where a file the read names really is: `getFilePath("tokens/tokens.resolver.json", "dark.json")` is `"tokens/dark.json"` |
+| `@sugarcube-sh/dtcg/node` | `getAbsoluteFilePath(entryFile, file)` | The same, as an absolute path on disk |
 | `@sugarcube-sh/dtcg/values` | `parseReference(value)` | Which reference a value written in a file is, in either syntax, or `undefined` |
 | | `toJsonPointer(reference)` | A reference written as a JSON Pointer: `{color.ink}` is `{ "$ref": "#/color/ink/$value" }` |
 
@@ -468,10 +478,10 @@ For a tool that writes token files, beside `tokens.jsonPathOf(place)` and `token
 
 | Import from | | What it does |
 | --- | --- | --- |
-| `@sugarcube-sh/dtcg` | `inputLabel(input)` | An input written as a label, as permutations are labelled: `mode: dark, size: small` |
-| `@sugarcube-sh/dtcg/css` | `cssIdentifier(path)` | The identifier CSS builds names from: `color-brand-500`, before `--` or any prefix |
-| | `cssCustomProperty(path)` | The custom property for a path, ready for a stylesheet: `--color-brand-500` |
-| | `cssWriter(options)` | A writer with your own opinions: naming, such as a prefix, fallbacks, and which tokens to leave out. Pass it to `cssBlocks` |
+| `@sugarcube-sh/dtcg` | `toInputLabel(input)` | An input written as a label, as permutations are labelled: `mode: dark, size: small` |
+| `@sugarcube-sh/dtcg/css` | `toCSSIdentifier(path)` | The identifier CSS builds names from: `color-brand-500`, before `--` or any prefix |
+| | `toCustomPropertyName(path)` | The custom property for a path, ready for a stylesheet: `--color-brand-500` |
+| | `createCSSWriter(options)` | A writer with your own opinions: naming, such as a prefix, fallbacks, and which tokens to leave out. Pass it to `getCSSBlocks` |
 
 ### The spec's lists
 
@@ -496,9 +506,10 @@ From `@sugarcube-sh/dtcg/node`:
 
 | Import from | For | Runs in |
 | --- | --- | --- |
-| `@sugarcube-sh/dtcg` | `read` with your own `readText`, `readFromMemory`, `everyPermutation`, `tokenPath`, the errors, and every type | anywhere |
-| `@sugarcube-sh/dtcg/node` | `read` from disk, `liveTokens`, `findResolver` | Node |
+| `@sugarcube-sh/dtcg` | `read` with your own `readText`, `readFromMemory`, `askEveryPermutation`, `tokenPath`, the errors, and every type | anywhere |
+| `@sugarcube-sh/dtcg/node` | `read` from disk, `createLiveTokens`, `findResolver` | Node |
 | `@sugarcube-sh/dtcg/css` | CSS custom properties, values and stylesheets | anywhere |
+| `@sugarcube-sh/dtcg/editor` | where things are in the text, for editors and tools that write files | anywhere |
 | `@sugarcube-sh/dtcg/values` | checking one value, and the spec's lists | anywhere |
 
 ## License

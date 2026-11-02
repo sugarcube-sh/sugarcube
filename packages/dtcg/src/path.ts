@@ -9,7 +9,7 @@ const FORBIDDEN = [".", "{", "}"] as const;
  * `color.brand`.
  *
  * @example
- * tokenPath.parent("color.brand.500")                  // "color.brand"
+ * tokenPath.getParent("color.brand.500")                  // "color.brand"
  * tokenPath.join("color.brand", "500")                 // "color.brand.500"
  * tokenPath.relative("color", "color.brand.ink")       // "brand.ink"
  * tokenPath.contains("color.brand", "color.brand.500") // true
@@ -20,9 +20,9 @@ export const tokenPath = {
      * files. A group may be named `""`, so `""` is that group's path, never the top level.
      *
      * @example
-     * tokenPath.parent("color.brand.500") // "color.brand"
-     * tokenPath.parent("color")           // undefined: at the top level
-     * tokenPath.parent(".x")              // "": inside the group named ""
+     * tokenPath.getParent("color.brand.500") // "color.brand"
+     * tokenPath.getParent("color")           // undefined: at the top level
+     * tokenPath.getParent(".x")              // "": inside the group named ""
      */
     getParent(path: string): string | undefined {
         const dot = path.lastIndexOf(".");
@@ -67,7 +67,7 @@ export const tokenPath = {
      * is returned as it is. For naming a token for people, such as a CSS custom property.
      *
      * @example
-     * tokenPath.withoutRoot("color.accent.$root") // "color.accent"
+     * tokenPath.removeRoot("color.accent.$root") // "color.accent"
      */
     removeRoot(path: string): string {
         return path.endsWith(".$root") ? path.slice(0, -".$root".length) : path;
@@ -77,8 +77,8 @@ export const tokenPath = {
      * when it can be one: a leading `$`, except `$root`, or a `.`, `{` or `}` anywhere.
      *
      * @example
-     * tokenPath.invalidCharacter("brand.500") // "."
-     * tokenPath.invalidCharacter("$root")     // undefined
+     * tokenPath.findInvalidCharacter("brand.500") // "."
+     * tokenPath.findInvalidCharacter("$root")     // undefined
      */
     findInvalidCharacter(name: string): "$" | (typeof FORBIDDEN)[number] | undefined {
         if (name.startsWith("$") && name !== "$root") return "$";
@@ -90,7 +90,7 @@ export const tokenPath = {
      * `tokens.diff` follows when told what moved.
      *
      * @example
-     * tokenPath.afterMoves("color.brand.500", [{ from: "color.brand", to: "color.house" }])
+     * tokenPath.applyMoves("color.brand.500", [{ from: "color.brand", to: "color.house" }])
      * // "color.house.500"
      */
     applyMoves(path: string, moved: readonly Move[]): string {

@@ -57,7 +57,7 @@ function written(block: CSSBlock | undefined): string[] {
     return block?.inRule.map(({ name, value }) => `${name}: ${value}`) ?? [];
 }
 
-describe("cssBlocks", () => {
+describe("getCSSBlocks", () => {
     it("writes a first block in full", () => {
         const [first] = getCSSBlocks(tokens, [root]);
         expect(written(first)).toStrictEqual([
@@ -198,7 +198,7 @@ describe("cssBlocks", () => {
     });
 });
 
-describe("cssBlocks, the modifiers a block's input names", () => {
+describe("getCSSBlocks, the modifiers a block's input names", () => {
     const brands = read({
         "tokens.resolver.json": {
             version: "2025.10",
@@ -337,7 +337,7 @@ describe("cssBlocks, the modifiers a block's input names", () => {
     });
 });
 
-describe("cssText", () => {
+describe("toCSS", () => {
     const blocks = getCSSBlocks(tokens, [
         root,
         {

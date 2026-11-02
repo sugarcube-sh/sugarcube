@@ -29,8 +29,8 @@ const tokens = readFromMemory({
     },
 });
 
-describe("permutation.usedBy", () => {
-    it("gives each token that refers to the path in this permutation once, in referencesTo's order", () => {
+describe("permutation.getDependents", () => {
+    it("gives each token that refers to the path in this permutation once, in getReferencesTo's order", () => {
         for (const permutation of tokens.permutations) {
             for (const chained of [false, true]) {
                 const references = permutation.getReferencesTo("color.red", { chained });

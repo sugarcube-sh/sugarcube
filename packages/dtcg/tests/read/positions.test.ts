@@ -21,7 +21,7 @@ const red = permutation.getToken("color.red");
 const at = (span: { offset: number; length: number }) =>
     text.slice(span.offset, span.offset + span.length);
 
-describe("tokens.spanOf", () => {
+describe("getSpan", () => {
     it("gives where a place is written in this read's text", () => {
         const place = red?.winningDefinition;
         if (!place) throw new Error("color.red is not read");
@@ -38,7 +38,7 @@ describe("tokens.spanOf", () => {
         expect(at(getSpan(tokens, reference))).toBe('"{color.red}"');
     });
 
-    it("agrees with the places tokens.writtenAt gives", () => {
+    it("agrees with the places tokens.getDefinitions gives", () => {
         const place = brand?.winningDefinition;
         if (!place) throw new Error("color.brand is not read");
         expect(tokens.getDefinitions("color.brand").map(({ span }) => span)).toStrictEqual([

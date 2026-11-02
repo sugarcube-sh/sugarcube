@@ -35,14 +35,14 @@ export function join(folder: string, path: string): string {
  * or as a URL, is that place already, and comes back as it is. A file nothing has read yet, such as
  * one an edit creates, is found the same way.
  *
- * @param entry The resolver or token file the design tokens were read from, as given to `read`.
+ * @param entryFile The resolver or token file the design tokens were read from, as given to `read`.
  * @param file A file as the design tokens name it, in `DesignTokens.files` or a `Span`.
  *
  * @example
- * filePath("tokens/tokens.resolver.json", "themes/dark.json") // "tokens/themes/dark.json"
- * filePath("tokens/tokens.resolver.json", "../shared/base.json") // "shared/base.json"
- * filePath("tokens/tokens.resolver.json", "/shared/brand.json") // "/shared/brand.json"
+ * getFilePath("tokens/tokens.resolver.json", "themes/dark.json") // "tokens/themes/dark.json"
+ * getFilePath("tokens/tokens.resolver.json", "../shared/base.json") // "shared/base.json"
+ * getFilePath("tokens/tokens.resolver.json", "/shared/brand.json") // "/shared/brand.json"
  */
-export function getFilePath(entry: string, file: string): string {
-    return join(folderOf(entry), file);
+export function getFilePath(entryFile: string, file: string): string {
+    return join(folderOf(entryFile), file);
 }

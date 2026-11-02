@@ -15,8 +15,8 @@ export type SugarcubeWriterOptions = CSSWriterOptions & { skip: (token: Token) =
  * falling back to its `hex`.
  *
  * @example
- * const writer = cssWriter(cssWriterOptions(tokens, config));
- * const { declarations } = writer.declarations(tokens.permutation());
+ * const writer = createCSSWriter(cssWriterOptions(tokens, config));
+ * const { declarations } = writer.getDeclarations(tokens.getPermutation());
  */
 export function cssWriterOptions(
     tokens: DesignTokens,

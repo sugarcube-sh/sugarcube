@@ -24,7 +24,7 @@ describe("design tokens read from disk", () => {
     });
 });
 
-describe("fileOnDisk", () => {
+describe("getAbsoluteFilePath", () => {
     it("is where each file the design tokens name was read from", async () => {
         const entry = join(folder, "tokens.resolver.json");
         const tokens = await read(entry);

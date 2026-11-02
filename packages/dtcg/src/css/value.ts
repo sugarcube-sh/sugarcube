@@ -35,8 +35,10 @@ export interface CSSValueOptions {
      *
      * @example
      * {
-     *     replacement: (ref, cssProperty) =>
-     *         ref.token ? { customProperty: cssCustomProperty(ref.token.path, { cssProperty }) } : undefined,
+     *     replaceReference: (ref, cssProperty) =>
+     *         ref.pointsToToken
+     *             ? { customProperty: toCustomPropertyName(ref.pointsToToken.path, { cssProperty }) }
+     *             : undefined,
      * }
      */
     replaceReference?: (
@@ -63,17 +65,17 @@ type TypographyToken = Extract<Token, { type: "typography" }>;
  * sRGB color as `rgb()`, its channels from 0 to 255 to two; its `hex` only when asked for. A color
  * read from a hex string, with `hexStringColors`, is written as that string. A gradient is written
  * as its stops, for any gradient function: `linear-gradient(${css})`. `undefined` for a token with
- * no resolved value, or for no token, so `cssValue(permutation.token(path))` needs no check first.
+ * no resolved value, or for no token, so `toCSSValue(permutation.getToken(path))` needs no check first.
  *
  * @example
- * cssValue(brand)                  // "rgb(225 29 72)"
- * cssValue(card)                   // "0px 2px 4px 0px rgb(0 0 0 / 0.2)"
- * if (token.type === "typography") cssValue(token)?.["font-size"]   // "1rem"
+ * toCSSValue(brand)                  // "rgb(225 29 72)"
+ * toCSSValue(card)                   // "0px 2px 4px 0px rgb(0 0 0 / 0.2)"
+ * if (token.type === "typography") toCSSValue(token)?.["font-size"]   // "1rem"
  *
  * @example
  * // a border part, for a swatch of its color
  * const border = token.parts;
- * if (border?.type === "border") swatch(cssValue(border.color));
+ * if (border?.type === "border") swatch(toCSSValue(border.color));
  */
 export function toCSSValue(
     of: TypographyToken | TypographyPart | undefined,

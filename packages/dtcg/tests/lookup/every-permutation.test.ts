@@ -6,7 +6,7 @@ const tokens = twoModifiers();
 const inputsOf = (groups: readonly { permutations: { inputs: readonly object[] } }[]) =>
     groups.map(({ permutations }) => permutations.inputs);
 
-describe("everyPermutation", () => {
+describe("askEveryPermutation", () => {
     it("asks every permutation, and gives each answer once with the permutations that gave it", () => {
         const groups = askEveryPermutation(tokens, (p) => p.getToken("gap")?.resolved);
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { tokenPath } from "../src/index.js";
 
-describe("tokenPath.withoutRoot", () => {
+describe("tokenPath.removeRoot", () => {
     it.for([
         { path: "color.accent.$root", expected: "color.accent" },
         { path: "color.brand", expected: "color.brand" },
@@ -72,7 +72,7 @@ describe("tokenPath.join", () => {
     });
 });
 
-describe("tokenPath.invalidCharacter", () => {
+describe("tokenPath.findInvalidCharacter", () => {
     it.for([
         { name: "a.b", expected: "." },
         { name: "{x", expected: "{" },
@@ -86,7 +86,7 @@ describe("tokenPath.invalidCharacter", () => {
     });
 });
 
-describe("tokenPath.afterMoves", () => {
+describe("tokenPath.applyMoves", () => {
     const moved = [
         { from: "color.brand", to: "color.house" },
         { from: "color.house.500", to: "color.house.550" },

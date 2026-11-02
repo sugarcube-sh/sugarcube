@@ -229,7 +229,7 @@ export type ValueOptions = PlaceOptions & {
 /** An edit at one place the token or group is written, rather than for a context. */
 export interface PlaceAt {
     /**
-     * A place the token or group is written, as `tokens.writtenAt(path)` gives it: what is written
+     * A place the token or group is written, as `tokens.getDefinitions(path)` gives it: what is written
      * there changes, in every permutation that reads it. No file is chosen and nothing is asked.
      */
     at: Pick<Span, "file" | "offset" | "length">;

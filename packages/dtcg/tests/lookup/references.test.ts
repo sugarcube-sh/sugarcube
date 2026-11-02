@@ -159,7 +159,7 @@ describe("a reference to nothing", () => {
     });
 });
 
-describe("referenceAt", () => {
+describe("getReferenceAt", () => {
     it("finds the reference written at a place in the value", () => {
         expect(referenceAt("border", ["width"])).toBe("thin");
         expect(referenceAt("fade", [1, "position"])).toBe("half");
