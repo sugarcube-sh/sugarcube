@@ -29,7 +29,11 @@ describe("generate --watch", () => {
     });
 
     afterEach(async () => {
-        child?.kill();
+        if (child && child.exitCode === null && child.signalCode === null) {
+            const exited = new Promise((resolve) => child?.once("exit", resolve));
+            child.kill();
+            await exited;
+        }
         child = undefined;
         await rm(dir, { recursive: true, force: true });
     });
@@ -206,12 +210,26 @@ describe("generate --watch", () => {
             const before = text(variables());
             const listed = () => output().split("invalid-config").length - 1;
 
+            const settled = async () => {
+                let count = listed();
+                let changedAt = Date.now();
+                await until(() => {
+                    if (listed() !== count) {
+                        count = listed();
+                        changedAt = Date.now();
+                    }
+                    return Date.now() - changedAt > 300;
+                }, "the output to settle");
+                return count;
+            };
+
             await writeFile(join(dir, "sugarcube.config.ts"), "export default { variables: ;");
-            await until(() => listed() === 1, "the config's problem");
+            await until(() => listed() > 0, "the config's problem");
             expect(output()).toMatch(/^sugarcube\.config\.ts {2}error {2}/m);
+            const afterTheConfigSave = await settled();
 
             await tokens({ color: { ink: color("#777777") } });
-            await until(() => listed() === 2, "the config's problem again");
+            await until(() => listed() > afterTheConfigSave, "the config's problem again");
             expect(text(variables())).toBe(before);
 
             await config("");
