@@ -5,7 +5,7 @@ import { type DesignTokens } from "@sugarcube-sh/dtcg";
 declare const before: DesignTokens;
 declare const after: DesignTokens;
 
-for (const change of after.diff(before)) {
+for (const change of after.getChangesSince(before)) {
     const where = change.permutations.label;
     if (change.kind === "changed") row(change.path, where, change.before.value, change.after.value);
     if (change.kind === "added") row(`+ ${change.path}`, where);

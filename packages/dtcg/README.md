@@ -172,13 +172,13 @@ labels out when `tokens.permutations.length === 1`.
 ## When files change
 
 `reread` takes the files that changed, with `null` for one that was deleted, and gives you new
-tokens. Files you don't pass are reused as they were. `diff` says what changed between two reads.
+tokens. Files you don't pass are reused as they were. `getChangesSince` says what changed since an earlier read.
 
 ```ts
 const fixed = tokens.reread({ "color.json": newText });
 
 fixed.diagnostics.length                // 0
-fixed.diff(tokens)                      // [{ kind: "changed", path: "color.link", … }]
+fixed.getChangesSince(tokens)           // [{ kind: "changed", path: "color.link", … }]
 ```
 
 In Node, `createLiveTokens` does this for you, for anything that runs for a while, such as a dev
@@ -373,7 +373,7 @@ tokens.getReferencesTo("color.red")         // each place {color.red} is typed i
 | `getReferencesTo(path)` | Every reference to a path typed in the files, each place once, with the tokens that have it and the permutations it holds in: what renaming it rewrites, and whether anything uses it at all |
 | `sources` | Every source the resolver lists, once |
 | `diagnostics`, `getDiagnostics(path)` | Every problem, or those about one token or group, each with the permutations it holds in |
-| `reread(changed)`, `rereadAll(files)`, `diff(before)` | New tokens after files changed, and what changed |
+| `reread(changed)`, `rereadAll(files)`, `getChangesSince(before)` | New tokens after files changed, and what changed |
 | `toMemory()` | The entry file and every file's text, to read the same tokens somewhere else |
 | `parseOptions` | How the read read values, such as whether it took hex strings: give it to `parseValue` to read another value, such as one inside `$extensions`, the same way |
 
@@ -435,8 +435,8 @@ tokenPath.applyMoves("color.brand.500", [{ from: "color.brand", to: "color.house
                                                       // "color.house.500", where it is after a rename
 ```
 
-When files changed because something was renamed, tell `diff` what moved, and it reports the
-token as renamed rather than removed and added: `after.diff(before, { moved })`. Each reference's
+When files changed because something was renamed, tell `getChangesSince` what moved, and it
+reports the token as renamed rather than removed and added: `after.getChangesSince(before, { moved })`. Each reference's
 `moved(moves)` gives how it's written after the rename.
 
 ### Positions in the text, for editors

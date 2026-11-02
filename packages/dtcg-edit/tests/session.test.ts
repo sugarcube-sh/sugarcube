@@ -93,7 +93,7 @@ describe("createSession", () => {
         session.do(rename(session.tokens, "color.brand.300", "350"));
 
         expect(session.changes()).toEqual(
-            session.tokens.diff(demo, {
+            session.tokens.getChangesSince(demo, {
                 moved: session.unsaved.steps.flatMap((step) => step.moved),
             }),
         );

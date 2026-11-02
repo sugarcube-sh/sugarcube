@@ -19,7 +19,7 @@ function inTheirOrder(permutations: Permutations): void {
 describe("every answer's permutations, with two modifiers and files that overlap", () => {
     it("come once each, in the design tokens' order", () => {
         const larger = twoModifierFiles["large.json"].replace('"$value":3', '"$value":4');
-        const changes = tokens.diff(twoModifiers({ "large.json": larger }));
+        const changes = tokens.getChangesSince(twoModifiers({ "large.json": larger }));
         const answers = [
             ...tokens
                 .getDefinitions("gap")

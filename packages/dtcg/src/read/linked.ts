@@ -301,7 +301,7 @@ class DesignTokensObject {
         return diagnosticsForIn(this.#self, path);
     }
 
-    diff(before: DesignTokens, options?: { moved?: Move[] }) {
+    getChangesSince(before: DesignTokens, options?: { moved?: Move[] }) {
         return diffIn(this.#self, before, options);
     }
 

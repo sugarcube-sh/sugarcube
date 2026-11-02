@@ -5,7 +5,7 @@ import { read } from "@sugarcube-sh/dtcg";
 const before = await read("tokens.resolver.json", { readText: fromGit("main") });
 const after = await read("tokens.resolver.json", { readText: fromGit("HEAD") });
 
-for (const change of after.diff(before)) {
+for (const change of after.getChangesSince(before)) {
     if (change.kind !== "changed" || !change.properties.includes("value")) continue;
     const users = after
         .getReferencesTo(change.path)

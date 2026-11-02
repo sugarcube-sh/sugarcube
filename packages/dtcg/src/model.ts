@@ -1736,9 +1736,9 @@ export interface DesignTokens {
      * has no match for is left out.
      *
      * @example
-     * for (const change of tokens.diff(before, { moved })) row(change.kind, change.path);
+     * for (const change of tokens.getChangesSince(before, { moved })) row(change.kind, change.path);
      */
-    diff(before: DesignTokens, options?: { moved?: readonly Move[] }): readonly Change[];
+    getChangesSince(before: DesignTokens, options?: { moved?: readonly Move[] }): readonly Change[];
     /**
      * The problems about the token or group at `path`, in every permutation, each with the
      * permutations it is in: its own, a missing reference it writes (reported once however many
@@ -2223,7 +2223,7 @@ export interface WrittenGroup extends Written {
  * is the extension's, on its group. One a group takes through `$extends` says so too (`inherited`).
  *
  * @example
- * for (const change of tokens.diff(before)) {
+ * for (const change of tokens.getChangesSince(before)) {
  *     row(change.kind, change.path, change.permutations.label);
  * }
  */

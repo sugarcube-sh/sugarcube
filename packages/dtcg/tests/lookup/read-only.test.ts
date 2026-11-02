@@ -75,7 +75,7 @@ function changesWhatTheReadGave(): void {
     // @ts-expect-error
     tokens.getTokenPaths().reverse();
     // @ts-expect-error
-    tokens.diff(tokens)[0]!.path = "color.other";
+    tokens.getChangesSince(tokens)[0]!.path = "color.other";
 }
 
 describe("the design tokens a read gives", () => {

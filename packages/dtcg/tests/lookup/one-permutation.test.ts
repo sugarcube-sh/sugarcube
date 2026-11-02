@@ -163,6 +163,11 @@ describe("the design tokens of a read with several permutations", () => {
         modes.getReferencesTo("color.red", { chained: true });
     });
 
+    it("say which way a comparison goes, with getChangesSince, not diff", () => {
+        expect("diff" in modes).toBe(false);
+        expect(modes.getChangesSince(modes)).toStrictEqual([]);
+    });
+
     it("keep answering what is about the files, not one permutation", () => {
         expect(() => modes.getTokenPaths()).not.toThrow();
         expect(() => modes.has("gap")).not.toThrow();

@@ -87,7 +87,7 @@ export const tokenPath = {
     /**
      * Where a token or group is after a list of {@link Move}s, such as a rename, made in order. A
      * group's move carries everything inside it; a path no move reaches stays as it is. What
-     * `tokens.diff` follows when told what moved.
+     * `tokens.getChangesSince` follows when told what moved.
      *
      * @example
      * tokenPath.applyMoves("color.brand.500", [{ from: "color.brand", to: "color.house" }])

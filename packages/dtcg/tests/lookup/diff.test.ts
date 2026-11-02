@@ -62,7 +62,7 @@ function changed(path: (string | number)[], value: unknown, from: object = base)
 }
 
 function brief(before: DesignTokens, after: DesignTokens, moved?: Move[]) {
-    return after.diff(before, moved && { moved }).map((change) => {
+    return after.getChangesSince(before, moved && { moved }).map((change) => {
         const shown: Record<string, unknown> = { kind: change.kind, path: change.path };
         if ("from" in change) shown.from = change.from;
         if ("properties" in change) shown.properties = change.properties;
@@ -71,9 +71,9 @@ function brief(before: DesignTokens, after: DesignTokens, moved?: Move[]) {
     });
 }
 
-describe("diff", () => {
+describe("getChangesSince", () => {
     it("gives nothing when nothing changed", () => {
-        expect(read().diff(read())).toEqual([]);
+        expect(read().getChangesSince(read())).toEqual([]);
     });
 
     it("gives a value changed in a file every permutation reads once, in each permutation it shows in", () => {
@@ -107,7 +107,7 @@ describe("diff", () => {
             base: changed(["space", "md"], px(9)),
             dark: changed(["space", "md"], px(11), dark),
         });
-        const changes = after.diff(read());
+        const changes = after.getChangesSince(read());
         expect(changes.map((change) => [change.path, change.permutations.inputs])).toEqual([
             ["space.md", [light]],
             ["space.md", [darkTheme]],
@@ -116,7 +116,7 @@ describe("diff", () => {
 
     it("gives what the file wrote for the token before and after, the same in every permutation", () => {
         const after = read({ base: changed(["space", "sm"], px(5)) });
-        const [change] = after.diff(read());
+        const [change] = after.getChangesSince(read());
         expect(change?.permutations.inputs).toStrictEqual([light, darkTheme]);
         expect(change?.kind === "changed" && [change.before, change.after]).toStrictEqual([
             { value: { value: 4, unit: "px" } },
@@ -128,7 +128,7 @@ describe("diff", () => {
         const after = read({
             base: changed(["space", "sm"], { ...px(4), $description: "Small", $deprecated: true }),
         });
-        const [change] = after.diff(read());
+        const [change] = after.getChangesSince(read());
         expect(change).toMatchObject({
             properties: ["description", "deprecated"],
             after: { value: { value: 4, unit: "px" }, description: "Small", deprecated: true },
@@ -137,7 +137,7 @@ describe("diff", () => {
 
     it("labels the permutations a change holds in", () => {
         const after = read({ dark: changed(["space", "md"], px(12), dark) });
-        const [change] = after.diff(read());
+        const [change] = after.getChangesSince(read());
         expect(change?.permutations.label).toBe("theme: dark");
     });
 
@@ -410,7 +410,7 @@ describe("diff", () => {
         const button = (primary: object) => ({
             button: { $type: "dimension", base: { pad: px(4) }, primary },
         });
-        const changes = read({ base: button({ $extends: "{button.base}" }) }).diff(
+        const changes = read({ base: button({ $extends: "{button.base}" }) }).getChangesSince(
             read({ base: button({}) }),
         );
         expect(changes.map((change) => [change.kind, change.path])).toEqual([
@@ -433,7 +433,7 @@ describe("diff", () => {
                     }),
                 },
             });
-        const changes = version("elsewhere").diff(version("nowhere"));
+        const changes = version("elsewhere").getChangesSince(version("nowhere"));
         expect(changes).toMatchObject([
             {
                 kind: "group-changed",
@@ -455,7 +455,7 @@ describe("diff", () => {
                     }),
                 },
             });
-        const changes = version("Base button").diff(version("Base"));
+        const changes = version("Base button").getChangesSince(version("Base"));
         expect(changes.map((change) => [change.kind, change.path])).toEqual([
             ["group-changed", "button"],
         ]);
@@ -471,7 +471,7 @@ describe("diff", () => {
                     }),
                 },
             });
-        expect(version("Two").diff(version("One"))).toMatchObject([
+        expect(version("Two").getChangesSince(version("One"))).toMatchObject([
             { kind: "top-level-changed", properties: ["description"] },
         ]);
     });
@@ -538,7 +538,7 @@ describe("diff", () => {
                 },
                 { generators: [steps] },
             );
-        const changes = scale(2).diff(scale(1));
+        const changes = scale(2).getChangesSince(scale(1));
         expect(changes.map((change) => [change.kind, change.path])).toEqual([
             ["group-changed", "space"],
             ["changed", "space.1"],
@@ -589,7 +589,7 @@ describe("diff", () => {
     it("compares values allowing for rounding", () => {
         const before = read();
         const after = read({ base: changed(["space", "sm"], px(4.0001)) });
-        expect(after.diff(before)).toEqual([]);
+        expect(after.getChangesSince(before)).toEqual([]);
     });
 });
 
