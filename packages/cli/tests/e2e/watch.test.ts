@@ -29,7 +29,11 @@ describe("generate --watch", () => {
     });
 
     afterEach(async () => {
-        child?.kill();
+        if (child && child.exitCode === null && child.signalCode === null) {
+            const exited = new Promise((resolve) => child?.once("exit", resolve));
+            child.kill();
+            await exited;
+        }
         child = undefined;
         await rm(dir, { recursive: true, force: true });
     });
