@@ -33,7 +33,7 @@ export interface SourceToken extends Properties {
     path: string;
     json: JsonFile;
     value: Node;
-    authored: unknown;
+    valueAsWritten: unknown;
     reference: WrittenReference | undefined;
     span: Span;
     extensionsAt?: ExtensionsAt;
@@ -187,14 +187,14 @@ export function walkSource(
     const visitToken = (node: Node, path: string, entries: readonly Member[], value: Node) => {
         const child = entries.find(({ key }) => !key.startsWith("$"));
         if (child) report("token-and-group", { reason: "child", child: child.key }, child.keyNode);
-        const authored = plainValue(value);
+        const valueAsWritten = plainValue(value);
         written.push({
             token: {
                 path,
                 json,
                 value,
-                authored,
-                reference: parseReference(authored),
+                valueAsWritten,
+                reference: parseReference(valueAsWritten),
                 span: spanOf(json, node),
                 ...readPropertiesAt(path, entries),
             },

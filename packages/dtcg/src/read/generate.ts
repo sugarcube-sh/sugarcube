@@ -210,7 +210,7 @@ function addedToken(
         path,
         json,
         value: node,
-        authored: $value,
+        valueAsWritten: $value,
         reference: parseReference($value),
         span: spanOf(json, node),
         source,

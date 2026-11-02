@@ -40,7 +40,7 @@ describe("tokenPath.contains", () => {
     });
 });
 
-describe("tokenPath.parent", () => {
+describe("tokenPath.getParent", () => {
     it.for([
         { path: "color.brand.500", expected: "color.brand" },
         { path: "color.brand.$root", expected: "color.brand" },
@@ -63,7 +63,7 @@ describe("tokenPath.join", () => {
         expect(tokenPath.join(parent, name)).toBe(expected);
     });
 
-    it("is undone by tokenPath.parent", () => {
+    it("is undone by tokenPath.getParent", () => {
         for (const path of ["color.brand.500", "color", ".x", ""]) {
             const parent = tokenPath.getParent(path);
             const name = parent === undefined ? path : path.slice(parent.length + 1);

@@ -2,7 +2,7 @@
 
 declare function askPerson(candidates: readonly string[]): Promise<string>;
 declare function showMessage(message: string): void;
-declare function showBroken(authored: unknown, problems: readonly { message: string }[]): void;
+declare function showBroken(asWritten: unknown, problems: readonly { message: string }[]): void;
 declare function openPullRequest(
     changes: { written: Record<string, string>; deleted: string[] },
     pr: { title: string; body: string },

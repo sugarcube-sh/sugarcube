@@ -126,8 +126,8 @@ function follow(resolving: Resolving, following: Following, located: LocatedRefe
     if (whole && (syntax.kind === "ofType" || element)) {
         return adjusted(substitute(resolving, token, ref, reached.path, expected, use, element));
     }
-    const { authored } = reached.token;
-    const stepped = whole ? { value: authored } : stepInto(authored, reached.inside);
+    const { valueAsWritten } = reached.token;
+    const stepped = whole ? { value: valueAsWritten } : stepInto(valueAsWritten, reached.inside);
     if (!stepped) return unreachable();
     const raw = stepped.value;
 

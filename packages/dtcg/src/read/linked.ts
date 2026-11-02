@@ -18,13 +18,18 @@ import type {
     Span,
     Token,
 } from "../model.js";
-import { diagnosticsForIn, diagnosticsIn } from "../lookup/diagnostics.js";
-import { diffIn } from "../lookup/diff.js";
+import { diagnosticsIn, permutationDiagnosticsIn } from "../lookup/diagnostics.js";
+import { changesSinceIn } from "../lookup/changes-since.js";
 import { partsOf } from "../lookup/parts.js";
 import { onlyPermutation, permutationIn } from "../lookup/permutation.js";
-import { dependenciesIn, referencedIn, referencesToIn, usedIn } from "../lookup/references.js";
-import { writtenAtIn } from "../lookup/written-at.js";
-import { spanOfReference } from "./reference.js";
+import {
+    dependenciesIn,
+    referencedIn,
+    referencesToIn,
+    dependentsIn,
+} from "../lookup/references.js";
+import { definitionsIn } from "../lookup/definitions.js";
+import { getReferenceSpan } from "./reference.js";
 import { samePlace } from "./same-object.js";
 
 export const NO_REFERENCES: readonly Reference[] = Object.freeze([]);
@@ -174,7 +179,7 @@ class PermutationObject {
     }
 
     getDependents(path: string, options?: ReferenceOptions): (Token | Group)[] {
-        return usedIn(this.#self, path, options);
+        return dependentsIn(this.#self, path, options);
     }
 
     getDependencies(path: string, options?: ReferenceOptions): (Token | Group)[] {
@@ -182,7 +187,7 @@ class PermutationObject {
     }
 
     getDiagnostics(path: string): Diagnostic[] {
-        return diagnosticsIn(this.#designTokens as DesignTokens, this.#self, path);
+        return permutationDiagnosticsIn(this.#designTokens as DesignTokens, this.#self, path);
     }
 
     toJSON() {
@@ -241,7 +246,7 @@ class DesignTokensObject {
     }
 
     getDefinitions(path: string) {
-        return writtenAtIn(this.#self, path);
+        return definitionsIn(this.#self, path);
     }
 
     getPermutation(input?: Input) {
@@ -298,11 +303,11 @@ class DesignTokensObject {
     }
 
     getDiagnostics(path: string) {
-        return diagnosticsForIn(this.#self, path);
+        return diagnosticsIn(this.#self, path);
     }
 
     getChangesSince(before: DesignTokens, options?: { moved?: Move[] }) {
-        return diffIn(this.#self, before, options);
+        return changesSinceIn(this.#self, before, options);
     }
 
     getText(file: string): string | undefined {
@@ -335,8 +340,8 @@ class DesignTokensObject {
         const moved = this.#kept.moved.get(of);
         if (moved) return moved;
         return "source" in of
-            ? DefinitionObject.spanOf(of as DefinitionObject)
-            : spanOfReference(of);
+            ? DefinitionObject.getSpan(of as DefinitionObject)
+            : getReferenceSpan(of);
     }
 
     has(path: string) {
@@ -417,7 +422,7 @@ class DefinitionObject {
         return this.#written as JsonValue;
     }
 
-    static spanOf(place: DefinitionObject): Span {
+    static getSpan(place: DefinitionObject): Span {
         return place.#span;
     }
 
@@ -462,7 +467,7 @@ export function placesIn(
         for (const each of before.get(path) ?? []) {
             if (each.source !== source || !writtenAlike(previous, each, text, span)) continue;
             if (previous.getText(span.file) !== text) DefinitionObject.foundIn(each, text, span);
-            if (!sameSpan(DefinitionObject.spanOf(each), span)) moved.set(each, span);
+            if (!sameSpan(DefinitionObject.getSpan(each), span)) moved.set(each, span);
             return each;
         }
         return undefined;
@@ -485,7 +490,8 @@ export function placesIn(
             checked.add(references);
             for (const [index, reference] of references.entries()) {
                 const span = spans[index];
-                if (span && !sameSpan(spanOfReference(reference), span)) moved.set(reference, span);
+                if (span && !sameSpan(getReferenceSpan(reference), span))
+                    moved.set(reference, span);
             }
         },
         moved,

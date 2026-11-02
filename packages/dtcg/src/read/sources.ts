@@ -79,7 +79,7 @@ export function expandSources(
     };
     const expand = (sources: ResolverNode[], route: RouteStep[]) =>
         expandList(expander, sources, route, []);
-    const items = resolver.order.map((item): ExpandedItem =>
+    const items = resolver.resolutionOrder.map((item): ExpandedItem =>
         item.kind === "set"
             ? { kind: "set", set: item.set, entries: expand(item.set.sources, [stepOf(item.set)]) }
             : {

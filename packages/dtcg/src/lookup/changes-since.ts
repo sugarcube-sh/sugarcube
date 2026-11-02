@@ -23,7 +23,7 @@ import { isReference, movedReference } from "../values/references.js";
 import { type Said, isEqualJson, saysTheSame } from "../values/same-value.js";
 import { findPermutation } from "./permutation.js";
 
-export function diffIn(
+export function changesSinceIn(
     after: DesignTokens,
     before: DesignTokens,
     options?: { moved?: Move[] },

@@ -37,7 +37,7 @@ export interface LiveTokens {
      * Rejects when that read failed.
      *
      * @example
-     * const tokens = await live.tokens();
+     * const tokens = await live.getTokens();
      */
     getTokens(): Promise<DesignTokens>;
     /**

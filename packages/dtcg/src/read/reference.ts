@@ -45,7 +45,7 @@ class ReferenceObject {
         return this.#written;
     }
 
-    static spanOf(reference: ReferenceObject): Span {
+    static getSpan(reference: ReferenceObject): Span {
         return reference.#span;
     }
 
@@ -54,7 +54,7 @@ class ReferenceObject {
     }
 
     across(
-        fromPaths: readonly string[],
+        writtenInPaths: readonly string[],
         permutations: Permutations,
         span: Span,
         jsonPath: () => JsonPath,
@@ -62,7 +62,7 @@ class ReferenceObject {
         return new ReferenceAcrossPermutations(
             this,
             this.#written,
-            fromPaths,
+            writtenInPaths,
             permutations,
             span,
             jsonPath,
@@ -89,14 +89,14 @@ class ReferenceAcrossPermutations {
     constructor(
         reference: ReferenceObject,
         written: WrittenReference,
-        fromPaths: readonly string[],
+        writtenInPaths: readonly string[],
         permutations: Permutations,
         span: Span,
         jsonPath: () => JsonPath,
         alone: boolean,
     ) {
         this.pointsToPath = reference.pointsToPath;
-        this.writtenInPaths = fromPaths;
+        this.writtenInPaths = writtenInPaths;
         this.pointsToProperty = reference.pointsToProperty;
         this.span = span;
         this.writtenInProperty = reference.writtenInProperty;
@@ -127,19 +127,19 @@ export function linkedReference(
     return new ReferenceObject(from, to, pointerAlone) as unknown as Reference;
 }
 
-export function spanOfReference(reference: Reference): Span {
-    return ReferenceObject.spanOf(reference as unknown as ReferenceObject);
+export function getReferenceSpan(reference: Reference): Span {
+    return ReferenceObject.getSpan(reference as unknown as ReferenceObject);
 }
 
 export function acrossPermutations(
     reference: Reference,
-    fromPaths: readonly string[],
+    writtenInPaths: readonly string[],
     permutations: Permutations,
     span: Span,
     jsonPath: () => JsonPath,
 ): ReferenceInPermutations {
     const across = (reference as unknown as ReferenceObject).across(
-        fromPaths,
+        writtenInPaths,
         permutations,
         span,
         jsonPath,

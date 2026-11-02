@@ -50,7 +50,7 @@ export function referencedIn(
     return [...found].sort((a, b) => (position.get(a) ?? 0) - (position.get(b) ?? 0));
 }
 
-export function usedIn(
+export function dependentsIn(
     permutation: Permutation,
     path: string,
     options?: ReferenceOptions,

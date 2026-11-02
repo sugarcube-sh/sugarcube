@@ -54,8 +54,8 @@ export function sameGroup(
     earlier: Group,
     written: MergedGroup,
     applies: Properties,
-    deprecatedFrom: string | undefined,
-    writtenAt: readonly Definition[],
+    deprecatedByGroup: string | undefined,
+    definitions: readonly Definition[],
     children: readonly (Token | Group)[],
     extending: Group | undefined,
 ): boolean {
@@ -63,9 +63,9 @@ export function sameGroup(
         earlier.extends === extending &&
         earlier.type === usableType(applies.type) &&
         earlier.deprecated === applies.deprecated &&
-        earlier.deprecatedByGroup === deprecatedFrom &&
+        earlier.deprecatedByGroup === deprecatedByGroup &&
         earlier.inherited?.from === written.inherited?.from &&
-        sameList(earlier.definitions, writtenAt) &&
+        sameList(earlier.definitions, definitions) &&
         sameList(earlier.children, children)
     );
 }

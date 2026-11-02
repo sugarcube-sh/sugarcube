@@ -1,11 +1,11 @@
 import type { DesignTokens, Diagnostic, Permutation, Span, Token } from "../model.js";
 import { getSpan } from "./editor.js";
 
-export function diagnosticsForIn(tokens: DesignTokens, path: string): Diagnostic[] {
+export function diagnosticsIn(tokens: DesignTokens, path: string): Diagnostic[] {
     return tokens.diagnostics.filter(concerning(tokens, path, tokens.permutations));
 }
 
-export function diagnosticsIn(
+export function permutationDiagnosticsIn(
     tokens: DesignTokens,
     permutation: Permutation,
     path: string,

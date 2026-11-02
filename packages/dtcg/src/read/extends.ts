@@ -154,7 +154,7 @@ function becomeToken(merged: Merged, group: Extending, input: Input, diagnostics
         path,
         json: extending.json,
         value: extending.node,
-        authored: { $ref: toReferenceTarget(extending.reference) },
+        valueAsWritten: { $ref: toReferenceTarget(extending.reference) },
         reference: extending.reference,
         span: extending.groupSpan,
         source: extending.source,

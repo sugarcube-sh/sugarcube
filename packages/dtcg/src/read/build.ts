@@ -18,7 +18,7 @@ import { tokenPath } from "../path.js";
 import { namedPath, toReferenceTarget } from "../values/references.js";
 import type { Building } from "./building.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
-import { applying, deprecatedFrom, inherited } from "./inherit.js";
+import { applying, deprecatedByGroupOf, inherited } from "./inherit.js";
 import {
     NO_EXTENSION_DEFINITIONS,
     NO_DEFINITIONS,
@@ -152,7 +152,7 @@ function buildPermutation(
             resolved: read.ok && "resolved" in value ? value.resolved : undefined,
             invalid: read.ok ? undefined : true,
             deprecated,
-            deprecatedByGroup: deprecatedFrom(merged, written, deprecated),
+            deprecatedByGroup: deprecatedByGroupOf(merged, written, deprecated),
             definitions: replaces
                 ? [...placed(replaces, path), places.at(sourceAt(source), span, path)]
                 : places.only(sourceAt(source), span, path),
@@ -207,17 +207,35 @@ function buildPermutation(
         const extending =
             written.extendsGroup === undefined ? undefined : groupAt(written.extendsGroup);
         const applies = applying(merged, written);
-        const from = deprecatedFrom(merged, written, applies.deprecated, applies.deprecatedAt);
-        const writtenAt = placed(written.declaredIn, path);
+        const deprecatedByGroup = deprecatedByGroupOf(
+            merged,
+            written,
+            applies.deprecated,
+            applies.deprecatedAt,
+        );
+        const definitions = placed(written.declaredIn, path);
         const kept = earlier.groups
             .get(path)
             ?.find((each) =>
-                sameGroup(each, written, applies, from, writtenAt, children, extending),
+                sameGroup(
+                    each,
+                    written,
+                    applies,
+                    deprecatedByGroup,
+                    definitions,
+                    children,
+                    extending,
+                ),
             );
         if (kept && written.extends) places.movedTo(kept.references, [written.extends.span]);
         const group =
             kept ??
-            newGroup(written, groupFields(written, applies, from, writtenAt), children, extending);
+            newGroup(
+                written,
+                groupFields(written, applies, deprecatedByGroup, definitions),
+                children,
+                extending,
+            );
         builtGroups.set(path, group);
         return group;
     };
@@ -448,7 +466,7 @@ function aimAt<Found extends Pending<Token>>(
     const { path } = reached;
     if (reached.kind === "token") return { occurrence, path, token: at(path) };
     if (reached.kind === "group") return { occurrence, path };
-    const pointsToProperty = stepInto(reached.token.authored, reached.inside)?.property;
+    const pointsToProperty = stepInto(reached.token.valueAsWritten, reached.inside)?.property;
     return { occurrence, path, pointsToProperty };
 }
 
@@ -479,13 +497,13 @@ function groupFields(
 
 function extensionPlaces(
     { extensionsAt, declaredIn }: MergedGroup,
-    writtenAt: readonly Definition[],
+    definitions: readonly Definition[],
 ): Readonly<Record<string, Definition>> {
     if (!extensionsAt) return NO_EXTENSION_DEFINITIONS;
     const places: Record<string, Definition> = {};
     for (const [key, { source }] of Object.entries(extensionsAt)) {
         declaredIn.forEach((each, index) => {
-            const place = writtenAt[index];
+            const place = definitions[index];
             if (each.source === source && place) places[key] = place;
         });
     }
@@ -523,7 +541,7 @@ function tokenFields(token: MergedToken, now: MadeFrom): Parameters<typeof linke
         asWritten: token.added
             ? undefined
             : {
-                  value: token.authored,
+                  value: token.valueAsWritten,
                   ...publicProperties({ type: token.type, deprecated: token.deprecated }),
               },
         generated: token.generated,

@@ -52,7 +52,7 @@ export interface CSSWriterOptions {
     /**
      * What a token's declaration writes for browsers lacking a feature. The fallback is
      * declared, and the value under `@supports` where the two differ. `writeWith` writes the
-     * value with other {@link CSSValueOptions}, through `value` and references alike.
+     * value with other {@link CSSValueOptions}, through `writeValue` and references alike.
      *
      * @example
      * writeFallback: (token, { writeWith }) => {
@@ -95,7 +95,7 @@ export interface CSSDeclaration {
 
 /**
  * A token that declares nothing, and why: `"skipped"` by the writer's `skip`, or `"no value"`,
- * since it has none or the writer's `value` answered `undefined`.
+ * since it has none or the writer's `writeValue` answered `undefined`.
  */
 export interface CSSNotWritten {
     readonly token: Token;

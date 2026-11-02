@@ -605,8 +605,8 @@ export interface TokenBase<T extends TokenType> {
      * Set when a {@link Generator} makes the token from an extension on the group at `from`,
      * whether a file writes the token or it was added. `from` is absent for an extension on the top
      * level of a file, and `extension` is where the extension sits in the group's `$extensions`, as
-     * the generator names it. An added token has no {@link TokenBase.asWritten | authored}, and its
-     * {@link TokenBase.definitions | place} is the extension.
+     * the generator names it. An added token has no {@link TokenBase.asWritten | asWritten}, and its
+     * {@link TokenBase.definitions | definitions} is the extension.
      */
     readonly generated?: {
         readonly from?: string;
@@ -624,7 +624,7 @@ export interface TokenBase<T extends TokenType> {
      *
      * @example
      * // a border written { "color": "{color.brand}", "width": "{border.thin}", "style": "solid" }
-     * border.references.map(({ property, path }) => [property, path])
+     * border.references.map(({ writtenInProperty, pointsToPath }) => [writtenInProperty, pointsToPath])
      * // [[["color"], "color.brand"], [["width"], "border.thin"]]
      */
     readonly references: readonly Reference[];
@@ -649,7 +649,7 @@ export interface TokenBase<T extends TokenType> {
      */
     readonly aliasChain: readonly Token[];
     /**
-     * The place whose value wins: the last of {@link TokenBase.definitions | writtenAt}, as a later
+     * The place whose value wins: the last of {@link TokenBase.definitions | definitions}, as a later
      * source replaces a token whole (Resolver 6.2).
      *
      * @example
@@ -1007,7 +1007,7 @@ export type SourceRef =
 export interface Permutation {
     /**
      * The input that names it: the context it picks for every modifier, defaults included, as
-     * `permutation(input)` takes it.
+     * `getPermutation(input)` takes it.
      */
     readonly input: Input;
     /**
@@ -1167,7 +1167,7 @@ export interface DiagnosticDetailByKind {
     /**
      * Something is both a token and a group: an object has a `$value` and also holds `child`; one
      * file declares a token where another declares a group (`here` says which this place is, and
-     * `related` where the other is); or an object's `$ref` points at a token, making it one, and it
+     * `relatedInformation` where the other is); or an object's `$ref` points at a token, making it one, and it
      * also holds tokens or groups.
      */
     "token-and-group":
@@ -1227,7 +1227,7 @@ export interface DiagnosticDetailByKind {
     /**
      * A file writes a token or group with a name a {@link Generator} makes. The generator owns
      * every name it makes, so the generated token is used and what the file writes there is not;
-     * `related` is the extension that makes it.
+     * `relatedInformation` is the extension that makes it.
      */
     "written-generated": {
         /** The name, such as `"space.2"`. */
@@ -1480,7 +1480,7 @@ export type DiagnosticOf<DetailByKind> = {
          * token a tool could take someone to, whatever the kind.
          *
          * @example
-         * const tokens = [diagnostic.path, ...(diagnostic.related ?? []).map((each) => each.path)];
+         * const tokens = [diagnostic.path, ...(diagnostic.relatedInformation ?? []).map((each) => each.path)];
          */
         readonly relatedInformation?: readonly {
             readonly message: string;
@@ -2152,7 +2152,7 @@ export interface ReadOptions extends ParseOptions {
  * Every file path in the results, in `DesignTokens.files` and every `Span`, is relative to the
  * entry's folder, with forward slashes, such as `"themes/dark.json"`; one written from the root or
  * as a URL stays as written. The entry itself is its file name. That name is passed as `file`, for
- * keeping each text by the name the results use, and {@link filePath} turns it back into `path`.
+ * keeping each text by the name the results use, and {@link getFilePath} turns it back into `path`.
  *
  * @example
  * const texts = new Map<string, string>();

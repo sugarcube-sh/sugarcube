@@ -43,7 +43,7 @@ function atGroup<K extends Inheritable>(
     return applies;
 }
 
-export function deprecatedFrom(
+export function deprecatedByGroupOf(
     merged: Merged,
     item: Pick<Settings, "deprecated"> & { path: string },
     inForce: Settings["deprecated"],

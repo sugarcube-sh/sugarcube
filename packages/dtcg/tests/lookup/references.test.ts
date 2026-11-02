@@ -70,7 +70,7 @@ const placed = ({ writtenInProperty, pointsToPath }: Reference) => ({
     pointsToPath,
 });
 const referencesOf = (path: string) => tokenAt(path).references.map(placed);
-const referenceAt = (path: string, property: (string | number)[]) =>
+const pointsToPathAt = (path: string, property: (string | number)[]) =>
     tokenAt(path).getReferenceAt(property)?.pointsToPath;
 
 describe("a token's references", () => {
@@ -161,38 +161,38 @@ describe("a reference to nothing", () => {
 
 describe("getReferenceAt", () => {
     it("finds the reference written at a place in the value", () => {
-        expect(referenceAt("border", ["width"])).toBe("thin");
-        expect(referenceAt("fade", [1, "position"])).toBe("half");
-        expect(referenceAt("mixed", ["components", 0])).toBe("blue");
+        expect(pointsToPathAt("border", ["width"])).toBe("thin");
+        expect(pointsToPathAt("fade", [1, "position"])).toBe("half");
+        expect(pointsToPathAt("mixed", ["components", 0])).toBe("blue");
     });
 
     it("finds a whole value written as a reference at the top of the value", () => {
-        expect(referenceAt("accent", [])).toBe("red");
+        expect(pointsToPathAt("accent", [])).toBe("red");
     });
 
     it("finds a reference standing for a whole item of a list", () => {
-        expect(referenceAt("layered", [0])).toBe("lone");
+        expect(pointsToPathAt("layered", [0])).toBe("lone");
     });
 
     it("finds nothing where the file wrote a value", () => {
-        expect(referenceAt("border", ["style"])).toBeUndefined();
-        expect(referenceAt("plain", [])).toBeUndefined();
+        expect(pointsToPathAt("border", ["style"])).toBeUndefined();
+        expect(pointsToPathAt("plain", [])).toBeUndefined();
     });
 
     it("finds nothing at a part when the reference is around it or inside it", () => {
-        expect(referenceAt("accent", ["components", 0])).toBeUndefined();
-        expect(referenceAt("mixed", [])).toBeUndefined();
+        expect(pointsToPathAt("accent", ["components", 0])).toBeUndefined();
+        expect(pointsToPathAt("mixed", [])).toBeUndefined();
     });
 
     it("finds nothing at a place the value does not have", () => {
-        expect(referenceAt("border", ["shade"])).toBeUndefined();
-        expect(referenceAt("layered", [5, "color"])).toBeUndefined();
-        expect(referenceAt("border", [0])).toBeUndefined();
-        expect(referenceAt("layered", ["length"])).toBeUndefined();
+        expect(pointsToPathAt("border", ["shade"])).toBeUndefined();
+        expect(pointsToPathAt("layered", [5, "color"])).toBeUndefined();
+        expect(pointsToPathAt("border", [0])).toBeUndefined();
+        expect(pointsToPathAt("layered", ["length"])).toBeUndefined();
     });
 
     it("finds nothing in a token whose value could not be read", () => {
-        expect(referenceAt("broken", [])).toBeUndefined();
+        expect(pointsToPathAt("broken", [])).toBeUndefined();
     });
 });
 
