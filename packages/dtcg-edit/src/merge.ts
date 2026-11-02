@@ -34,11 +34,7 @@ function foldedOp(earlier: PlaceOp, later: PlaceOp): PlaceOp | undefined {
 }
 
 function lastOverlapping(ops: readonly FileOp[], op: PlaceOp): number {
-    for (let at = ops.length - 1; at >= 0; at -= 1) {
-        const each = ops[at];
-        if (each && overlaps(each, op)) return at;
-    }
-    return -1;
+    return ops.findLastIndex((each) => overlaps(each, op));
 }
 
 function isPlaceOp(op: FileOp): op is PlaceOp {

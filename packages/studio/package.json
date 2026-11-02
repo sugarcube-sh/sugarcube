@@ -29,7 +29,7 @@
     }
   },
   "scripts": {
-    "build": "pkgroll --minify --clean-dist && pnpm run build:client && pnpm run build:page-script",
+    "build": "pkgroll --minify --clean-dist --target=node22.14 && pnpm run build:client && pnpm run build:page-script",
     "build:client": "vite build",
     "dev": "vite",
     "dev:dist": "pnpm run \"/^dev:(lib|client)$/\"",
