@@ -16,7 +16,7 @@ import { demoMessage, studioOn } from "./demo-message";
 const studio = () =>
     studioOn(
         demoMessage({
-            entry: "tokens.json",
+            entryFile: "tokens.json",
             files: {
                 "tokens.json": JSON.stringify({
                     space: { $type: "number", s: { $value: 4 }, m: { $value: 8 } },

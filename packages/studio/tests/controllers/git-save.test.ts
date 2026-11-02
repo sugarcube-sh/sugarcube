@@ -59,7 +59,9 @@ function onGitHub(files: Readonly<Record<string, string>>) {
 }
 
 function edited(...values: [path: string, value: string][]) {
-    const session = createSession(readFromMemory({ files: FILES, entry: "tokens.resolver.json" }));
+    const session = createSession(
+        readFromMemory({ files: FILES, entryFile: "tokens.resolver.json" }),
+    );
     for (const [path, value] of values) session.do(setValue(session.tokens, path, value, darkText));
     return { edits: session.unsaved, changes: session.changes() };
 }
@@ -217,7 +219,7 @@ describe("saving from studio to GitHub", () => {
         return createStudio(
             message,
             adapterFor,
-            gitSave({ host: github.host, entry: `tokens/${message.entry}` }),
+            gitSave({ host: github.host, entry: `tokens/${message.entryFile}` }),
         );
     }
 

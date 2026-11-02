@@ -255,7 +255,7 @@ describe("emitCSS", () => {
             "tokens.json": JSON.stringify({ ink: color("#111111") }),
         };
         const tokens = readFromMemory(
-            { files, entry: "tokens.resolver.json" },
+            { files, entryFile: "tokens.resolver.json" },
             readOptions(config),
         );
         const [first, second] = declare(tokens, config).entries;
@@ -286,7 +286,7 @@ describe("emitCSS", () => {
             "ocean.json": JSON.stringify({ brand: color("#0ea5e9") }),
         };
         const tokens = readFromMemory(
-            { files, entry: "tokens.resolver.json" },
+            { files, entryFile: "tokens.resolver.json" },
             readOptions(config),
         );
         const declared = declare(tokens, config);
@@ -319,7 +319,7 @@ describe("emitCSS", () => {
                 variables: { path: "variables.css", propagateDependents: true },
             });
             const declaredRenamed = declare(
-                readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(renamed)),
+                readFromMemory({ files, entryFile: "tokens.resolver.json" }, readOptions(renamed)),
                 renamed,
             );
             const emitted = emitCSS(declaredRenamed, renamed);
@@ -346,7 +346,7 @@ describe("emitCSS", () => {
             "tokens.json": JSON.stringify({ brand: color("#e11d48") }),
         };
         const tokens = readFromMemory(
-            { files, entry: "tokens.resolver.json" },
+            { files, entryFile: "tokens.resolver.json" },
             readOptions(config),
         );
         expect(built(tokens, config).diagnostics.map(({ message }) => message)).toStrictEqual([
@@ -367,7 +367,7 @@ describe("emitCSS", () => {
             "tokens.json": JSON.stringify({ brand: color("#e11d48") }),
         };
         const declared = declare(
-            readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(config)),
+            readFromMemory({ files, entryFile: "tokens.resolver.json" }, readOptions(config)),
             config,
         );
         expect(declared.entries).toStrictEqual([]);
@@ -396,7 +396,7 @@ describe("emitCSS", () => {
             "tokens.json": JSON.stringify({ brand: color("#e11d48") }),
         };
         const declared = declare(
-            readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(config)),
+            readFromMemory({ files, entryFile: "tokens.resolver.json" }, readOptions(config)),
             config,
         );
         expect(declared.diagnostics).toStrictEqual([]);

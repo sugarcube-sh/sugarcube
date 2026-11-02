@@ -44,7 +44,7 @@ const files: Record<string, string> = {
     "dark.json": JSON.stringify({ color: { brand: { $value: "{color.blue}" } } }),
 };
 
-const tokens = readFromMemory({ files, entry: "tokens.resolver.json" });
+const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
 const light = tokens.getPermutation({ mode: "light" });
 const dark = tokens.getPermutation({ mode: "dark" });
 const inLight = (path: string) => (light ? light.getToken(path) : undefined);
@@ -468,7 +468,9 @@ describe("on the design tokens", () => {
         });
         const reaching = referring.getReferencesTo("button");
         expect(
-            reaching.map(({ writtenInPaths, pointsToPath }) => `${writtenInPaths} > ${pointsToPath}`),
+            reaching.map(
+                ({ writtenInPaths, pointsToPath }) => `${writtenInPaths} > ${pointsToPath}`,
+            ),
         ).toStrictEqual(["primary > button", "gap > button.pad"]);
     });
 

@@ -185,7 +185,7 @@ export function createStudio(
             const previous = message;
             message = next;
             if (
-                next.entry !== previous.entry ||
+                next.entryFile !== previous.entryFile ||
                 next.adapter.name !== previous.adapter.name ||
                 !isEqualJson(next.adapter.settings, previous.adapter.settings)
             ) {
@@ -202,6 +202,6 @@ export function createStudio(
     };
 }
 
-function read({ files, entry }: StudioMessage, adapter: BuildAdapter): DesignTokens {
-    return readFromMemory({ files, entry }, adapter.read);
+function read({ files, entryFile }: StudioMessage, adapter: BuildAdapter): DesignTokens {
+    return readFromMemory({ files, entryFile }, adapter.read);
 }

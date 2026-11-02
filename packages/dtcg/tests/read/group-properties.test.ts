@@ -110,7 +110,7 @@ describe("where a group's extensions are written", () => {
         "b.json": JSON.stringify({ space: { $extensions: { "com.example": { steps: 2 } } } }),
         "dark.json": JSON.stringify({ space: { $extensions: { "com.example": { steps: 3 } } } }),
     };
-    const tokens = readFromMemory({ files, entry: "tokens.resolver.json" });
+    const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
     const filesOf = (path: string, input: Record<string, string> = {}) =>
         Object.fromEntries(
             Object.entries(

@@ -41,7 +41,7 @@ const files = {
     }),
 };
 
-const tokens = readFromMemory({ files, entry: "tokens.resolver.json" }, plain().read);
+const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" }, plain().read);
 const { value } = plain().write(tokens);
 const light = tokens.getPermutation();
 const dark = tokens.getPermutation({ mode: "dark" });
@@ -133,7 +133,7 @@ describe("groupPage", () => {
     it("offers a group's description and deprecation, except where it is only there through $extends", () => {
         const { state } = studioOn(
             demoMessage({
-                entry: "tokens.json",
+                entryFile: "tokens.json",
                 files: {
                     "tokens.json": JSON.stringify({
                         button: {
@@ -157,7 +157,7 @@ describe("groupPage", () => {
     it("says why a group lists no tokens: none at all, or only in the groups inside it", () => {
         const { state } = studioOn(
             demoMessage({
-                entry: "tokens.json",
+                entryFile: "tokens.json",
                 files: {
                     "tokens.json": JSON.stringify({
                         empty: { $type: "number" },

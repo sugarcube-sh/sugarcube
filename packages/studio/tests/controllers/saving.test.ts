@@ -164,7 +164,7 @@ describe("saving", () => {
     it("writes the edits into the files on disk through the host's save", async () => {
         const copy = demoCopy();
         remove = copy.remove;
-        const onDisk = { entry: copy.config.resolver, options: readOptions(copy.config) };
+        const onDisk = { entryFile: copy.config.resolver, options: readOptions(copy.config) };
         const studio = createStudio(demoMessage(), adapterFor, (edits) =>
             saveEdits(onDisk, JSON.parse(JSON.stringify(edits))),
         );

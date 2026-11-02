@@ -51,7 +51,7 @@ const read = (dark: unknown) =>
                 }),
                 "dark.json": JSON.stringify(dark),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         },
         { generators: [steps] },
     );
@@ -188,7 +188,7 @@ describe("a loop", () => {
             }),
             "dark.json": JSON.stringify({ other: { $type: "number", $value: 1 } }),
         },
-        entry: "tokens.resolver.json",
+        entryFile: "tokens.resolver.json",
     });
 
     it("of references links each permutation's tokens to its own", () => {
@@ -246,7 +246,7 @@ describe("what resolving a shared token finds", () => {
             }),
             "dark.json": JSON.stringify({ color: { red: { $value: rgb(0.5) } } }),
         },
-        entry: "tokens.resolver.json",
+        entryFile: "tokens.resolver.json",
     });
     const kinds = (path: string) =>
         found

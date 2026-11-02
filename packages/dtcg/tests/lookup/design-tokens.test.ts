@@ -51,7 +51,7 @@ const files = {
 };
 
 function readWith(inputs?: Input[]): DesignTokens {
-    return readFromMemory({ files, entry: "tokens.resolver.json" }, inputs && { inputs });
+    return readFromMemory({ files, entryFile: "tokens.resolver.json" }, inputs && { inputs });
 }
 
 const tokens = readWith();
@@ -70,7 +70,7 @@ const noDefault = readFromMemory({
             resolutionOrder: resolver.resolutionOrder.slice(0, 2),
         }),
     },
-    entry: "tokens.resolver.json",
+    entryFile: "tokens.resolver.json",
 });
 
 function thrown(run: () => unknown): PermutationError {

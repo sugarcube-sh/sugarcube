@@ -17,7 +17,7 @@ export function readOptions(config: InternalConfig): ReadOptions {
     return {
         ...(listed.length > 0
             ? { inputs: listed.map(({ input }) => input) }
-            : { permutations: "each-context" }),
+            : { inputs: "each-context" }),
         generators: [scaleGenerator],
         extensionValidators: [fluidValidator],
         hexStringColors: true,

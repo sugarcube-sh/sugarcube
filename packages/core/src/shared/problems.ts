@@ -8,7 +8,7 @@ type Colors = ReturnType<typeof color.createColors>;
 
 export interface Where {
     cwd: string;
-    entry: string;
+    entryFile: string;
     configFile?: string;
 }
 
@@ -94,8 +94,8 @@ function placedIn(problem: Reported, where: Where): Placed {
     return { problem, place: configFile ? relative(cwd, configFile) : "" };
 }
 
-function placeOf(span: Span, { cwd, entry }: Where): Pick<Placed, "place" | "location"> {
-    const file = relative(cwd, getFilePath(entry, span.file));
+function placeOf(span: Span, { cwd, entryFile }: Where): Pick<Placed, "place" | "location"> {
+    const file = relative(cwd, getFilePath(entryFile, span.file));
     const { line, column } = span.start;
     return { place: `${file}:${line}:${column}`, location: { file, line, column } };
 }

@@ -33,7 +33,7 @@ function read(
                     Object.entries(files).map(([file, json]) => [file, JSON.stringify(json)]),
                 ),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         },
         options,
     );

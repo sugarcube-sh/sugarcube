@@ -328,7 +328,7 @@ class DesignTokensObject {
     }
 
     toMemory() {
-        return { entry: this.#self.entryFile, files: { ...this.#kept.texts } };
+        return { entryFile: this.#self.entryFile, files: { ...this.#kept.texts } };
     }
 
     [SPAN_OF](of: Place | Reference): Span {

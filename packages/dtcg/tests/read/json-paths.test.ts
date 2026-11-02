@@ -41,7 +41,7 @@ const tokens = readFromMemory(
             }),
             "part.json": JSON.stringify({ inner: { deep: number(3) } }),
         },
-        entry: "tokens.resolver.json",
+        entryFile: "tokens.resolver.json",
     },
     { generators: [steps] },
 );

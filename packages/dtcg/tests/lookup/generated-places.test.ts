@@ -28,7 +28,7 @@ const tokens = readFromMemory(
                 g: { $type: "number", $extensions: { "com.example": { steps: 1 } } },
             }),
         },
-        entry: "tokens.resolver.json",
+        entryFile: "tokens.resolver.json",
     },
     { generators: [steps] },
 );

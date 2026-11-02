@@ -64,7 +64,7 @@ function studioOnFiles() {
     return createStudio(
         {
             adapter: { name: "plain", settings: {}, problems: [] },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
             files,
         },
         (sent) => plain(sent.name === "plain" ? sent.settings : {}),

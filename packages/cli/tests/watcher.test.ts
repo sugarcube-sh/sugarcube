@@ -52,7 +52,7 @@ async function until(done: () => boolean, what: string) {
 describe("startWatcher", () => {
     it("puts each read of a token save into the queue, with the design tokens read", async () => {
         const { resolver, configFile, tokens } = project();
-        const live = createLiveTokens({ entry: resolver }, { onError: () => {} });
+        const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
         await live.getTokens();
         const changes: Change[] = [];
         const watched: Watched = { markup: false };
@@ -81,7 +81,7 @@ describe("startWatcher", () => {
 
     it("watches markup where the config a change loaded says", async () => {
         const { folder, resolver, configFile } = project();
-        const live = createLiveTokens({ entry: resolver }, { onError: () => {} });
+        const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
         await live.getTokens();
         const changes: Change[] = [];
         const before: Watched = { content: [join(folder, "a/**/*.html")], markup: true };
@@ -112,7 +112,7 @@ describe("startWatcher", () => {
         const { folder, resolver, configFile } = project();
         const page = join(folder, "a/page.html");
         writeFileSync(page, "<p>0</p>");
-        const live = createLiveTokens({ entry: resolver }, { onError: () => {} });
+        const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
         await live.getTokens();
         const saves: string[] = [];
         const watched: Watched = { content: [join(folder, "a/**/*.html")], markup: true };
@@ -138,7 +138,7 @@ describe("startWatcher", () => {
 
     it("reports a config save whose last write landed while the watcher was dropping changes", async () => {
         const { resolver, configFile } = project();
-        const live = createLiveTokens({ entry: resolver }, { onError: () => {} });
+        const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
         await live.getTokens();
         const saves: string[] = [];
         const watched: Watched = { markup: false };

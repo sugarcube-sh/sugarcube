@@ -23,7 +23,7 @@ const files = {
     "brand.json": `{ "bg": ${color("#fafafa")} }`,
     "dark.json": `{ "bg": ${color("#111111")} }`,
 };
-const tokens = readFromMemory({ files, entry: "tokens.resolver.json" });
+const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
 
 const written = (span: Span) =>
     files[span.file as keyof typeof files].slice(span.offset, span.offset + span.length);
@@ -54,7 +54,7 @@ describe("a token's writtenAt, across sources", () => {
                 "base.json": `{ "brand": { "a": ${color("#000000")} } }`,
                 "brand.json": `{ "brand": { "b": ${color("#ffffff")} } }`,
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         const places = twice.getPermutation().getGroup("brand")?.definitions ?? [];
 
@@ -98,7 +98,7 @@ describe("a token's writtenAt, across sources", () => {
                     danger: { $extends: "{button}" },
                 }),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
 
         expect(extended.getPermutation().getToken("button.bg")?.definitions).toHaveLength(2);
@@ -137,9 +137,9 @@ describe("a token's writtenAt, across sources", () => {
 describe("readFromMemory", () => {
     it("takes an entry left undefined as no entry", () => {
         const loose = { "tokens.json": `{ "bg": ${color("#ffffff")} }` };
-        const entry: string | undefined = undefined;
+        const entryFile: string | undefined = undefined;
 
-        expect(readFromMemory({ files: loose, entry }).files).toStrictEqual(["tokens.json"]);
+        expect(readFromMemory({ files: loose, entryFile }).files).toStrictEqual(["tokens.json"]);
     });
 });
 
@@ -162,7 +162,7 @@ describe("a source written in the resolver", () => {
                 }),
                 "base.json": "{}",
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
 
         expect(inline.permutations[0]?.sources).toEqual([

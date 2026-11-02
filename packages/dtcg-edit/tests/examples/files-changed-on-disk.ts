@@ -9,7 +9,7 @@ declare const session: Session;
 declare const watcher: FileWatcher;
 
 const live = createLiveTokens(
-    { entry: "tokens.resolver.json" },
+    { entryFile: "tokens.resolver.json" },
     { onError: (error) => showMessage(String(error)) },
 );
 live.watch(watcher);

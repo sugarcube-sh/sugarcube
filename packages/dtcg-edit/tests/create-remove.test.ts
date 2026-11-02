@@ -136,7 +136,7 @@ describe("create, which file", () => {
     it("adds to design tokens of one token file, read without a resolver", () => {
         const tokens = readFromMemory({
             files: { "tokens.json": '{ "a": { "$type": "number", "$value": 1 } }' },
-            entry: "tokens.json",
+            entryFile: "tokens.json",
         });
 
         expect(opsOf(create(tokens, "b", { $type: "number", $value: 2 }))).toEqual([
@@ -290,7 +290,7 @@ describe("create, for every permutation", () => {
                 }),
                 ...extra,
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
     const glowInDark = { "dark.json": JSON.stringify({ color: { glow: { $value: "#ffcc00" } } }) };
     const darkFirst = { dark: [{ $ref: "./dark.json" }], light: [] };

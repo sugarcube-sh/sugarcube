@@ -36,7 +36,7 @@ const files = {
     "dark.json": JSON.stringify({ color: { blue: { $value: rgb(0.2) } } }),
 };
 
-const before = readFromMemory({ files, entry: "tokens.resolver.json" });
+const before = readFromMemory({ files, entryFile: "tokens.resolver.json" });
 const after = before.reread({
     "colors.json": JSON.stringify({
         color: { $type: "color", red: { $value: rgb(0.5) }, blue: { $value: rgb(0) } },
@@ -137,7 +137,7 @@ describe("a reread", () => {
                 "space.json": files["space.json"],
                 "broken.json": JSON.stringify({ gap: { $type: "number", $value: "{missing}" } }),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         const again = broken.reread({
             "space.json": JSON.stringify({ space: { $type: "number", sm: { $value: 2 } } }),
@@ -302,7 +302,7 @@ describe("a reread and a group in a file that didn't change", () => {
                 "a.json": a({ $deprecated: "Use gap" }),
                 "b.json": JSON.stringify({ outer: { mid: { inner: {} } } }),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         const second = first.reread({ "a.json": a({}) });
 

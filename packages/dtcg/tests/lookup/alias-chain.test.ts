@@ -37,7 +37,7 @@ const tokens = readFromMemory({
         }),
         "dark.json": JSON.stringify({ brand: color("{palette.rose}") }),
     },
-    entry: "tokens.resolver.json",
+    entryFile: "tokens.resolver.json",
 });
 
 const aliasChain = (path: string, input?: Input) =>

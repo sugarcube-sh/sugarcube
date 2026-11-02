@@ -10,7 +10,7 @@ import { applyToDisk } from "@sugarcube-sh/dtcg-edit/node";
 
 declare function sendToBrowser(sent: TokensInMemory): void;
 
-const onDisk: TokensOnDisk = { entry: "tokens/tokens.resolver.json" };
+const onDisk: TokensOnDisk = { entryFile: "tokens/tokens.resolver.json" };
 const live = createLiveTokens(onDisk, { onError: (error) => showMessage(String(error)) });
 let serving: DesignTokens | undefined;
 

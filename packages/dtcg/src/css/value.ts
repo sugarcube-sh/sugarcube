@@ -39,14 +39,18 @@ export interface CSSValueOptions {
      *         ref.token ? { customProperty: cssCustomProperty(ref.token.path, { cssProperty }) } : undefined,
      * }
      */
-    replacement?: (ref: Reference, cssProperty?: keyof TypographyCSS) => Replacement | undefined;
+    replaceReference?: (
+        ref: Reference,
+        cssProperty?: keyof TypographyCSS,
+    ) => Replacement | undefined;
     /**
-     * `"native"` writes every color from its components, in its own color space. `"hex"` writes
-     * every color that has a `hex` as that hex, with two more digits when it is not opaque, for a
-     * browser that cannot show its color space, and a color without a `hex` as `"native"` does.
-     * @default "native"
+     * `"components"` writes every color from its components, in its own color space. `"hex"`
+     * writes every color that has a `hex` as that hex, with two more digits when it is not opaque,
+     * for a browser that cannot show its color space, and a color without a `hex` from its
+     * components. The names are the keys a file writes a color with.
+     * @default "components"
      */
-    colors?: "native" | "hex";
+    colors?: "components" | "hex";
 }
 
 type TypographyToken = Extract<Token, { type: "typography" }>;
@@ -93,8 +97,8 @@ export function toCSSValue(
     return whole.type === "typography" ? typography(whole, options) : write(whole, options);
 }
 
-function replaced({ ref }: PartBase<unknown>, { replacement }: CSSValueOptions) {
-    return ref ? replacement?.(ref) : undefined;
+function replaced({ ref }: PartBase<unknown>, { replaceReference }: CSSValueOptions) {
+    return ref ? replaceReference?.(ref) : undefined;
 }
 
 function customProperty(part: PartBase<unknown>, options: CSSValueOptions): string | undefined {
@@ -113,7 +117,7 @@ function write(part: Exclude<Part, TypographyPart>, options: CSSValueOptions): s
     const each = (inner: Exclude<Part, TypographyPart>) => write(inner, options);
     switch (part.type) {
         case "color":
-            return writeColor(part.resolved, options.colors ?? "native");
+            return writeColor(part.resolved, options.colors ?? "components");
         case "dimension":
         case "duration":
             return `${part.resolved.value}${part.resolved.unit}`;
@@ -155,7 +159,7 @@ function stop({ color, position }: GradientStopPart, options: CSSValueOptions): 
 
 function typography(part: TypographyPart, options: CSSValueOptions): TypographyCSS {
     const each = (cssProperty: keyof TypographyCSS, value: Exclude<Part, TypographyPart>) => {
-        const answer = part.ref ? options.replacement?.(part.ref, cssProperty) : undefined;
+        const answer = part.ref ? options.replaceReference?.(part.ref, cssProperty) : undefined;
         return answer && "customProperty" in answer
             ? `var(${answer.customProperty})`
             : write(value, options);
@@ -204,7 +208,7 @@ function quoteFont(name: string): string {
     return bare ? name : `"${name.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
 
-function writeColor(color: ColorValue, colors: "native" | "hex"): string {
+function writeColor(color: ColorValue, colors: "components" | "hex"): string {
     const { colorSpace, components, alpha, hex } = color;
     const asRead = hexStringOf(color);
     if (asRead !== undefined) return asRead;

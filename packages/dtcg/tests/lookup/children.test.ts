@@ -134,7 +134,7 @@ describe("across files and themes", () => {
             }),
             "dark.json": JSON.stringify({ color: { glow: color(0.2), bg: color(0) } }),
         },
-        entry: "tokens.resolver.json",
+        entryFile: "tokens.resolver.json",
     });
 
     it("put what a later file adds to a group at the end of its children", () => {

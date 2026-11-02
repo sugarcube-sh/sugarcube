@@ -1,8 +1,8 @@
 import { type Reported, type Where, problemsText } from "@sugarcube-sh/core";
 import type { Built } from "./build.js";
 
-export function whereOf({ entry, configFile }: Built): Where {
-    return { cwd: process.cwd(), entry, configFile };
+export function whereOf({ entryFile, configFile }: Built): Where {
+    return { cwd: process.cwd(), entryFile, configFile };
 }
 
 export function printProblems(

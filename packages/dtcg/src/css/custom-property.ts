@@ -26,7 +26,7 @@ export interface CSSNaming {
      * @example
      * { name: (path) => path.replaceAll(".", "_") } // "color.brand" → "--color_brand"
      */
-    name?: (path: string) => string;
+    getName?: (path: string) => string;
 }
 
 /** A token's CSS custom property: its naming, and for typography the CSS property it is one of. */
@@ -77,16 +77,16 @@ export function toCustomPropertyName(path: string, options: CSSCustomPropertyOpt
 
 function named(
     path: string,
-    { prefix, case: casing, delimiter = "-", name, cssProperty }: CSSCustomPropertyOptions,
+    { prefix, case: casing, delimiter = "-", getName, cssProperty }: CSSCustomPropertyOptions,
 ): string {
-    let whole = name
-        ? name(tokenPath.removeRoot(path))
+    let whole = getName
+        ? getName(tokenPath.removeRoot(path))
         : tokenPath
               .removeRoot(path)
               .split(".")
               .map((segment) => words(segment, casing, delimiter))
               .join(delimiter);
-    if (!name && prefix) whole = `${prefix}${delimiter}${whole}`;
+    if (!getName && prefix) whole = `${prefix}${delimiter}${whole}`;
     return cssProperty ? `${whole}${delimiter}${cssProperty}` : whole;
 }
 

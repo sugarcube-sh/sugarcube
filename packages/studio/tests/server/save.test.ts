@@ -15,8 +15,8 @@ afterEach(() => remove());
 async function demo() {
     const copy = demoCopy();
     remove = copy.remove;
-    const onDisk = { entry: copy.config.resolver, options: readOptions(copy.config) };
-    const session = createSession(await read(onDisk.entry, onDisk.options));
+    const onDisk = { entryFile: copy.config.resolver, options: readOptions(copy.config) };
+    const session = createSession(await read(onDisk.entryFile, onDisk.options));
     session.do(setValue(session.tokens, "color.brand.500", lighter));
     return { ...copy, onDisk, edits: session.unsaved };
 }

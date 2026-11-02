@@ -25,9 +25,9 @@ export function cssWriterOptions(
     const { prefix, case: casing, delimiter, variableName, transforms } = config.variables;
     const skip = privateTokens();
     return {
-        naming: { prefix, case: casing, delimiter, name: variableName },
+        naming: { prefix, case: casing, delimiter, getName: variableName },
         skip,
-        value: (token, { written, write }) => {
+        writeValue: (token, { written, write }) => {
             if (token.type === "dimension") {
                 const fluid = readFluid(
                     token.extensions?.[SUGARCUBE_NAMESPACE],
@@ -41,9 +41,9 @@ export function cssWriterOptions(
                 : written;
         },
         ...(transforms.colorFallbackStrategy === "polyfill" && {
-            fallback: (token, { writtenWith }) => {
+            writeFallback: (token, { writeWith }) => {
                 const { spaces } = fallbacksIn(token, skip);
-                const hex = spaces.length > 0 ? writtenWith({ colors: "hex" }) : undefined;
+                const hex = spaces.length > 0 ? writeWith({ colors: "hex" }) : undefined;
                 return hex && { written: hex, unless: supportsCondition(spaces) };
             },
         }),

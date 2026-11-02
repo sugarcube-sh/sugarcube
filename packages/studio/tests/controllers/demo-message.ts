@@ -34,13 +34,13 @@ export function sugarcubeSent({
 }
 
 export function demoMessage(change: Partial<StudioMessage> = {}): StudioMessage {
-    return { adapter: sugarcubeSent(), entry: ENTRY, files: demoFiles(), ...change };
+    return { adapter: sugarcubeSent(), entryFile: ENTRY, files: demoFiles(), ...change };
 }
 
 export function plainMessage(settings: PlainSettings = {}): StudioMessage {
     return {
         adapter: { name: "plain", settings, problems: [] },
-        entry: PLAIN_ENTRY,
+        entryFile: PLAIN_ENTRY,
         files: plainFiles(),
     };
 }

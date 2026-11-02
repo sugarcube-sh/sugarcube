@@ -26,17 +26,19 @@ import type { Edits } from "./index.js";
  * }
  */
 export async function applyToDisk(
-    { entry, options }: TokensOnDisk,
+    { entryFile, options }: TokensOnDisk,
     edits: Edits,
 ): Promise<ReturnType<typeof changedFiles>> {
-    const changes = changedFiles(await read(entry, options), edits);
+    const changes = changedFiles(await read(entryFile, options), edits);
     if (changes.conflicts) return changes;
 
     const { written, deleted } = changes;
     await replaced(
-        Object.entries(written).map(([file, text]) => [getAbsoluteFilePath(entry, file), text]),
+        Object.entries(written).map(([file, text]) => [getAbsoluteFilePath(entryFile, file), text]),
     );
-    await Promise.all(deleted.map((file) => rm(getAbsoluteFilePath(entry, file), { force: true })));
+    await Promise.all(
+        deleted.map((file) => rm(getAbsoluteFilePath(entryFile, file), { force: true })),
+    );
     return changes;
 }
 

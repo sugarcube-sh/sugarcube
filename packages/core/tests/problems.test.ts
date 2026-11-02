@@ -5,7 +5,7 @@ import { type Where, problemCount, problemLines, problemsText } from "../src/sha
 
 const where: Where = {
     cwd: "/project",
-    entry: "/project/tokens/tokens.resolver.json",
+    entryFile: "/project/tokens/tokens.resolver.json",
     configFile: "/project/sugarcube.config.ts",
 };
 

@@ -4,8 +4,8 @@ import { read } from "@sugarcube-sh/dtcg/node";
 import { commit, rename } from "@sugarcube-sh/dtcg-edit";
 import { applyToDisk } from "@sugarcube-sh/dtcg-edit/node";
 
-const source = { entry: "tokens/tokens.resolver.json" };
-const tokens = await read(source.entry);
+const source = { entryFile: "tokens/tokens.resolver.json" };
+const tokens = await read(source.entryFile);
 const done = commit(tokens, rename(tokens, "color.brand", "primary"));
 if (done.tokens) await applyToDisk(source, { steps: [done] });
 else if (done.refused) showMessage(done.refused.reason);

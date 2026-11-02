@@ -25,7 +25,7 @@ describe("placeRows", () => {
     it("gives no label where there is no resolver, so nothing to tell apart", () => {
         const { tokens } = studioOn({
             adapter: { name: "plain", settings: {}, problems: [] },
-            entry: "tokens.json",
+            entryFile: "tokens.json",
             files: {
                 "tokens.json": JSON.stringify({
                     space: { $type: "dimension", s: { $value: { value: 4, unit: "px" } } },
@@ -185,7 +185,7 @@ describe("a recipe's step", () => {
     it("says it is made at the top of its file when no group holds the recipe", () => {
         const { state } = studioOn(
             demoMessage({
-                entry: "tokens.json",
+                entryFile: "tokens.json",
                 files: {
                     "tokens.json": JSON.stringify({
                         $extensions: {
@@ -249,7 +249,7 @@ describe("tokenPage", () => {
     it("offers no description or deprecation for a token only there through $extends", () => {
         const { state } = studioOn(
             demoMessage({
-                entry: "tokens.json",
+                entryFile: "tokens.json",
                 files: {
                     "tokens.json": JSON.stringify({
                         button: { $type: "number", pad: { $value: 4 } },

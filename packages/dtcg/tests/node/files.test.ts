@@ -9,8 +9,8 @@ const folder = join(import.meta.dirname, "../read/cases/every-combination/input"
 describe("design tokens read from disk", () => {
     it("name the entry by its file name, and give each file's text by their name for it", async () => {
         const tokens = await read(join(folder, "tokens.resolver.json"));
-        const { entry, files } = tokens.toMemory();
-        expect(entry).toBe("tokens.resolver.json");
+        const { entryFile, files } = tokens.toMemory();
+        expect(entryFile).toBe("tokens.resolver.json");
         expect(Object.keys(files)).toStrictEqual(tokens.files);
         for (const file of tokens.files) {
             expect(files[file]).toBe(readFileSync(join(folder, file), "utf8"));

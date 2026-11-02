@@ -10,7 +10,7 @@ function loaded(variables?: Parameters<typeof fillDefaults>[0]["variables"]) {
 
 describe("tokensOnDisk", () => {
     it("reads the config's resolver", () => {
-        expect(tokensOnDisk(loaded()).entry).toBe("tokens/tokens.resolver.json");
+        expect(tokensOnDisk(loaded()).entryFile).toBe("tokens/tokens.resolver.json");
     });
 
     it("reads it as sugarcube reads tokens, for the permutations the config lists", () => {

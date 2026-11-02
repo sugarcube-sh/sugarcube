@@ -82,7 +82,7 @@ export function designTokens(perGroup: number, { generated = 0 } = {}) {
         ...(generated && { "scale.json": written(scale) }),
     };
     return readFromMemory(
-        { files, entry: "tokens.resolver.json" },
+        { files, entryFile: "tokens.resolver.json" },
         { generators: generated ? [steps] : [] },
     );
 }

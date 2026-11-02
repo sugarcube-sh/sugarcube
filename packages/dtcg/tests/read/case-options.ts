@@ -12,7 +12,7 @@ import { createExtensionReader, parseValue } from "../../src/values.js";
 
 export type CaseOptions = Pick<
     ReadOptions,
-    "inputs" | "permutations" | "permutationLimit" | "hexStringColors" | "ignoreUnknownProperties"
+    "inputs" | "permutationLimit" | "hexStringColors" | "ignoreUnknownProperties"
 > & {
     generators?: (keyof typeof generators)[];
     extensionValidators?: (keyof typeof validators)[];

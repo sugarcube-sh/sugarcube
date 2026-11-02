@@ -542,7 +542,7 @@ describe("setValue, what it can't change", () => {
                             space: { $extensions: { "com.example": { steps: 1 } } },
                         }),
                     },
-                    entry: "tokens.resolver.json",
+                    entryFile: "tokens.resolver.json",
                 },
                 { generators: [steps] },
             );
@@ -725,7 +725,7 @@ describe("setValue, at a place it is written", () => {
         const text = demo.getText("dark.json") ?? "";
         const moved = readFromMemory({
             files: { ...demo.toMemory().files, "dark.json": `\n${text}` },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
 
         expect(
@@ -799,7 +799,7 @@ describe("setDescription", () => {
                 "base.json": "{}",
                 ...files,
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
     const accent = JSON.stringify({ accent: { glow: { $type: "number", $value: 1 } } });
 
@@ -872,7 +872,7 @@ describe("setDescription", () => {
                 "light.json": group,
                 "base.json": group,
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         expect(tokens.getDefinitions("accent").map(({ span }) => span.file)).toEqual([
             "light.json",
@@ -898,7 +898,7 @@ describe("setDescription", () => {
                 "base.json": JSON.stringify({ x: { y: { $type: "number", $value: 2 } } }),
                 "dark.json": JSON.stringify({ x: { $type: "number", $value: 1 } }),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         expect(opsOf(setDescription(tokens, "x", "Both.")).map(({ file }) => file)).toEqual([
             "base.json",
@@ -925,7 +925,7 @@ describe("setDescription", () => {
                         accent: { glow: { $type: "number", $value: 1 } },
                     }),
                 },
-                entry: "tokens.resolver.json",
+                entryFile: "tokens.resolver.json",
             });
             expect(opsOf(setDescription(tokens, "accent", "Only in dark."))).toMatchObject([
                 { kind: "add", file: "dark.json", jsonPath: ["accent", "$description"] },

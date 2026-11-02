@@ -152,13 +152,13 @@ describe("rebase", () => {
             });
         const opened = readFromMemory({
             files: { "tokens.resolver.json": inline(1) },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         const session = createSession(opened);
         session.do(setValue(session.tokens, "size.sm", 2));
         const fresh = readFromMemory({
             files: { "tokens.resolver.json": inline(3) },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
 
         expect(partsOf(session.rebase(fresh))).toEqual([

@@ -10,19 +10,19 @@ import { TokenPage } from "../../src/canvas/TokenPage";
 import { createStudio } from "../../src/controllers/studio";
 import { StudioContext } from "../../src/providers/studio-context";
 
-const entry = "tokens.resolver.json";
+const entryFile = "tokens.resolver.json";
 
 function sizeStudio() {
     const settings = fillDefaultsCore(
-        { resolver: entry },
+        { resolver: entryFile },
         { stylesDir: "src/styles", componentsDir: "src/components" },
     );
     return createStudio(
         {
             adapter: { name: "sugarcube", settings, problems: [] },
-            entry,
+            entryFile,
             files: {
-                [entry]: JSON.stringify({
+                [entryFile]: JSON.stringify({
                     version: "2025.10",
                     resolutionOrder: [
                         { type: "set", name: "base", sources: [{ $ref: "./size.json" }] },

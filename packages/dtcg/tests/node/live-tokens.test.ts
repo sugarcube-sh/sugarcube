@@ -90,8 +90,12 @@ const hexOf = (opened: DesignTokens) =>
 
 describe("design tokens kept current with their files", () => {
     it("reads at once, and reads again when a file it lists is saved", async () => {
-        const entry = await writtenEntry();
-        const { live: current, reads, save } = live({ entry, options: { hexStringColors: true } });
+        const entryFile = await writtenEntry();
+        const {
+            live: current,
+            reads,
+            save,
+        } = live({ entryFile, options: { hexStringColors: true } });
         const first = await current.getTokens();
         expect(first.files).toStrictEqual(["tokens.resolver.json", "base.json"]);
 
@@ -104,8 +108,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("keeps the text of each file it read with the design tokens", async () => {
-        const entry = await writtenEntry();
-        const { live: current } = live({ entry });
+        const entryFile = await writtenEntry();
+        const { live: current } = live({ entryFile });
         const first = await current.getTokens();
 
         expect(Object.keys(first.toMemory().files)).toStrictEqual(first.files);
@@ -115,8 +119,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("holds the text a save wrote, with the design tokens read from it", async () => {
-        const entry = await writtenEntry();
-        const { live: current, save } = live({ entry });
+        const entryFile = await writtenEntry();
+        const { live: current, save } = live({ entryFile });
         await current.getTokens();
 
         await tokens("base.json", { color: { ink: color("#222222") } });
@@ -130,8 +134,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("reads again when a file it lists is added or deleted", async () => {
-        const entry = await writtenEntry();
-        const { live: current, reads, watcher } = live({ entry });
+        const entryFile = await writtenEntry();
+        const { live: current, reads, watcher } = live({ entryFile });
         await current.getTokens();
 
         watcher.emit("unlink", disk("base.json"));
@@ -143,12 +147,12 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("collapses saves during a read into exactly one more read, the one listeners hear", async () => {
-        const entry = await writtenEntry();
+        const entryFile = await writtenEntry();
         const {
             live: current,
             reads,
             save,
-        } = live({ entry }, (read) => {
+        } = live({ entryFile }, (read) => {
             if (read !== 1) return;
             save("base.json");
             save("tokens.resolver.json");
@@ -165,14 +169,14 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("tells listeners of a read only when no read waiting to start has replaced it", async () => {
-        const entry = await writtenEntry();
+        const entryFile = await writtenEntry();
         let hexStringColors = false;
         const {
             live: current,
             reads,
             save,
         } = live(
-            () => ({ entry, options: { hexStringColors } }),
+            () => ({ entryFile, options: { hexStringColors } }),
             (read) => {
                 if (read !== 1) return;
                 hexStringColors = true;
@@ -191,13 +195,13 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("waits for a read waiting to start before answering with the design tokens", async () => {
-        const entry = await writtenEntry();
+        const entryFile = await writtenEntry();
         let answer: Promise<DesignTokens> | undefined;
         const {
             live: current,
             reads,
             save,
-        } = live({ entry }, (read) => {
+        } = live({ entryFile }, (read) => {
             if (read !== 1) return;
             save("base.json");
             answer = current.getTokens();
@@ -212,8 +216,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("reads again when a read caught a file half-saved and the watcher never says", async () => {
-        const entry = await writtenEntry();
-        const { live: current, reads, watcher } = live({ entry });
+        const entryFile = await writtenEntry();
+        const { live: current, reads, watcher } = live({ entryFile });
         await current.getTokens();
 
         const path = join(folder, "base.json");
@@ -235,8 +239,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("reads a file that is broken, and left so, only once", async () => {
-        const entry = await writtenEntry();
-        const { live: current, reads, save } = live({ entry });
+        const entryFile = await writtenEntry();
+        const { live: current, reads, save } = live({ entryFile });
         await current.getTokens();
 
         await writeFile(join(folder, "base.json"), "{");
@@ -249,12 +253,12 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("reads again when a file a read gains was saved during that read", async () => {
-        const entry = await writtenEntry();
+        const entryFile = await writtenEntry();
         const {
             live: current,
             reads,
             save,
-        } = live({ entry }, (read) => {
+        } = live({ entryFile }, (read) => {
             if (read === 1) save("more.json");
         });
         await current.getTokens();
@@ -269,8 +273,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("does not read again for a file the design tokens never listed", async () => {
-        const entry = await writtenEntry();
-        const { live: current, reads, save } = live({ entry });
+        const entryFile = await writtenEntry();
+        const { live: current, reads, save } = live({ entryFile });
         const first = await current.getTokens();
 
         save("more.json");
@@ -281,9 +285,9 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("does not read again for a file the design tokens no longer list", async () => {
-        const entry = await writtenEntry();
+        const entryFile = await writtenEntry();
         await resolver(["base.json", "more.json"]);
-        const { live: current, reads, save } = live({ entry });
+        const { live: current, reads, save } = live({ entryFile });
         await current.getTokens();
 
         await resolver(["base.json"]);
@@ -296,8 +300,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("names the saved file as the design tokens do, and times the read", async () => {
-        const entry = await writtenEntry();
-        const { live: current, reads, save } = live({ entry });
+        const entryFile = await writtenEntry();
+        const { live: current, reads, save } = live({ entryFile });
         await current.getTokens();
 
         save("base.json");
@@ -314,8 +318,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("matches a path the watcher gives with backslashes", async () => {
-        const entry = await writtenEntry();
-        const { live: current, reads, watcher } = live({ entry });
+        const entryFile = await writtenEntry();
+        const { live: current, reads, watcher } = live({ entryFile });
         await current.getTokens();
 
         watcher.emit("change", disk("base.json").replaceAll("/", "\\"));
@@ -325,8 +329,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("matches a path the watcher gives relative to the working directory", async () => {
-        const entry = await writtenEntry();
-        const { live: current, reads, watcher } = live({ entry });
+        const entryFile = await writtenEntry();
+        const { live: current, reads, watcher } = live({ entryFile });
         await current.getTokens();
 
         watcher.emit("change", relative(process.cwd(), join(folder, "base.json")));
@@ -336,13 +340,13 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("watches and matches a file named from the root", async () => {
-        const entry = await writtenEntry();
+        const entryFile = await writtenEntry();
         const elsewhere = await realpath(await mkdtemp(join(tmpdir(), "dtcg-live-outside-")));
         outside.push(elsewhere);
         const brand = join(elsewhere, "brand.json").replaceAll("\\", "/");
         await writeFile(brand, JSON.stringify({ brand: color("#333333") }));
         await resolver(["base.json", brand]);
-        const { live: current, reads, watcher, added } = live({ entry });
+        const { live: current, reads, watcher, added } = live({ entryFile });
         await current.getTokens();
 
         watcher.emit("change", brand);
@@ -353,14 +357,14 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("watches a file named relative to a folder above the entry's", async () => {
-        const entry = await writtenEntry();
+        const entryFile = await writtenEntry();
         const elsewhere = await realpath(await mkdtemp(join(tmpdir(), "dtcg-live-outside-")));
         outside.push(elsewhere);
         const brand = join(elsewhere, "brand.json");
         await writeFile(brand, JSON.stringify({ brand: color("#333333") }));
         const name = relative(folder, brand).replaceAll("\\", "/");
         await resolver(["base.json", name]);
-        const { live: current, reads, watcher, added } = live({ entry });
+        const { live: current, reads, watcher, added } = live({ entryFile });
         await current.getTokens();
 
         watcher.emit("change", brand.replaceAll("\\", "/"));
@@ -371,8 +375,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("adds the files it lists to the watcher at once, then each file a later read gains", async () => {
-        const entry = await writtenEntry();
-        const { live: current, added, save } = live({ entry });
+        const entryFile = await writtenEntry();
+        const { live: current, added, save } = live({ entryFile });
         await current.getTokens();
         const now = [...added];
 
@@ -385,8 +389,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("adds its files to a watcher given before the first read ends", async () => {
-        const entry = await writtenEntry();
-        const current = createLiveTokens({ entry }, { onError: () => {} });
+        const entryFile = await writtenEntry();
+        const current = createLiveTokens({ entryFile }, { onError: () => {} });
         const { watcher, added } = standIn();
         current.watch(watcher);
         await current.getTokens();
@@ -395,8 +399,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("reads an entry given relative to the working directory", async () => {
-        const entry = relative(process.cwd(), await writtenEntry());
-        const { live: current, reads, save, added } = live({ entry });
+        const entryFile = relative(process.cwd(), await writtenEntry());
+        const { live: current, reads, save, added } = live({ entryFile });
         await current.getTokens();
 
         save("base.json");
@@ -407,12 +411,12 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("asks the source again when told to read again", async () => {
-        const entry = await writtenEntry();
+        const entryFile = await writtenEntry();
         let hexStringColors = false;
         let asked = 0;
         const { live: current, reads } = live(() => {
             asked += 1;
-            return { entry, options: { hexStringColors } };
+            return { entryFile, options: { hexStringColors } };
         });
         expect((await current.getTokens()).diagnostics.map(({ kind }) => kind)).toContain(
             "hex-string-color",
@@ -428,8 +432,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("stops calling a listener once it unsubscribes", async () => {
-        const entry = await writtenEntry();
-        const { live: current, save } = live({ entry });
+        const entryFile = await writtenEntry();
+        const { live: current, save } = live({ entryFile });
         await current.getTokens();
         const seen: DesignTokens[] = [];
         const stop = current.onRead((read) => seen.push(read));
@@ -444,8 +448,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("gives what a listener throws to onError, and still calls the others", async () => {
-        const entry = await writtenEntry();
-        const { live: current, errors, reads, save } = live({ entry });
+        const entryFile = await writtenEntry();
+        const { live: current, errors, reads, save } = live({ entryFile });
         await current.getTokens();
         const broke = new Error("the listener broke");
         current.onRead(() => {
@@ -463,7 +467,7 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("gives a read that rejects to onError, with no unhandled rejection", async () => {
-        const entry = await writtenEntry();
+        const entryFile = await writtenEntry();
         const unhandled: unknown[] = [];
         const onUnhandled = (reason: unknown) => unhandled.push(reason);
         process.on("unhandledRejection", onUnhandled);
@@ -477,7 +481,7 @@ describe("design tokens kept current with their files", () => {
                 save,
             } = live(() => {
                 if (fail) throw failure;
-                return { entry };
+                return { entryFile };
             });
             await current.getTokens();
 

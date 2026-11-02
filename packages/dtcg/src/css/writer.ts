@@ -45,7 +45,7 @@ export interface CSSWriterOptions {
      * value: (token, { written, write }) =>
      *     token.type === "gradient" && !token.referenceAt() ? write`linear-gradient(${written})` : written
      */
-    value?: (
+    writeValue?: (
         token: Token,
         tools: { readonly written: CSSWritten; readonly write: CSSTemplate },
     ) => CSSWritten | string | undefined;
@@ -60,11 +60,11 @@ export interface CSSWriterOptions {
      *     return hex && { written: hex, unless: "(color: oklch(0 0 0))" };
      * }
      */
-    fallback?: (
+    writeFallback?: (
         token: Token,
         tools: {
             readonly written: CSSWritten;
-            writtenWith(options: Pick<CSSValueOptions, "colors">): CSSWritten | undefined;
+            writeWith(options: Pick<CSSValueOptions, "colors">): CSSWritten | undefined;
         },
     ) => CSSFallback | undefined;
     /**
@@ -136,7 +136,7 @@ type Colors = NonNullable<CSSValueOptions["colors"]>;
  * cssWriter({ references: "values" }).written(token)
  */
 export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
-    const { naming, value, fallback, skip, references = "custom-properties" } = options;
+    const { naming, writeValue, writeFallback, skip, references = "custom-properties" } = options;
     const skipped = (token: Token) => skip?.(token) ?? false;
     const inlined = (token: Token) => references === "values" || skipped(token);
 
@@ -150,8 +150,8 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
         if (mode.has(token)) return mode.get(token);
         const plain = asWritten(token, colors);
         const answer =
-            plain && value
-                ? answered(value(token, { written: plain, write: template(colors) }))
+            plain && writeValue
+                ? answered(writeValue(token, { written: plain, write: template(colors) }))
                 : plain;
         mode.set(token, answer);
         return answer;
@@ -184,9 +184,9 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
             if (own) return own;
         }
         const refersTo: Token[] = [];
-        const replacement = (ref: Reference, cssProperty?: keyof TypographyCSS) =>
+        const replaceReference = (ref: Reference, cssProperty?: keyof TypographyCSS) =>
             ref.pointsToToken ? refer(ref.pointsToToken, colors, refersTo, cssProperty) : undefined;
-        const css = toCSSValue(token, { replacement, colors });
+        const css = toCSSValue(token, { replaceReference, colors });
         return css === undefined ? undefined : { css, refersTo: unique(refersTo) };
     };
 
@@ -222,9 +222,9 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
     };
 
     const declare = (token: Token, own: CSSWritten): CSSDeclaration[] => {
-        const fell = fallback?.(token, {
+        const fell = writeFallback?.(token, {
             written: own,
-            writtenWith: ({ colors = "native" }) => written(token, colors),
+            writeWith: ({ colors = "components" }) => written(token, colors),
         });
         const declared = fell?.written ?? own;
         const refersTo = fell ? unique([...declared.refersTo, ...own.refersTo]) : own.refersTo;
@@ -270,7 +270,7 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
                     notWritten.push({ token, because: "skipped" });
                     continue;
                 }
-                const own = written(token, "native");
+                const own = written(token, "components");
                 if (!own) {
                     notWritten.push({ token, because: "no value" });
                     continue;
@@ -282,7 +282,7 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
             return declared;
         },
         getValue(token) {
-            return written(token, "native");
+            return written(token, "components");
         },
     };
 }

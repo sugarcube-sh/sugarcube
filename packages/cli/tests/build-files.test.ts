@@ -8,6 +8,6 @@ describe("buildFiles", () => {
         const built = await buildFiles({ "a.json": token("a"), "b.json": token("b") }, "b.json");
 
         expect(built.tokens.getTokenPaths()).toEqual(["b"]);
-        expect(built.entry).toBe("b.json");
+        expect(built.entryFile).toBe("b.json");
     });
 });

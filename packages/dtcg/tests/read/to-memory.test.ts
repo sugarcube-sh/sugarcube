@@ -23,7 +23,7 @@ const disk: Record<string, string> = {
 
 const fromDisk = async (path: string) => disk[path];
 
-describe("tokens.entry", () => {
+describe("tokens.entryFile", () => {
     it("is the file the read started from, by the name the design tokens give it", async () => {
         const tokens = await read("tokens/design.resolver.json", { readText: fromDisk });
         expect(tokens.entryFile).toBe("design.resolver.json");
@@ -46,7 +46,7 @@ describe("tokens.toMemory", () => {
     it("gives the entry and each file's text, by the name the design tokens give it", async () => {
         const tokens = await read("tokens/design.resolver.json", { readText: fromDisk });
         expect(tokens.toMemory()).toStrictEqual({
-            entry: "design.resolver.json",
+            entryFile: "design.resolver.json",
             files: {
                 "design.resolver.json": resolver,
                 "base.json": base,
@@ -58,7 +58,7 @@ describe("tokens.toMemory", () => {
     it("leaves out a file the read did not use", () => {
         const tokens = readFromMemory({
             files: { ...disk, "tokens/unused.json": dark },
-            entry: "tokens/design.resolver.json",
+            entryFile: "tokens/design.resolver.json",
         });
         expect(Object.keys(tokens.toMemory().files)).toStrictEqual([
             "design.resolver.json",

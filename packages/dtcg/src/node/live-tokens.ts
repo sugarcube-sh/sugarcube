@@ -5,7 +5,7 @@ import { read } from "./read.js";
 
 /** Design tokens on disk: their resolver or token file, and the options to read them with. */
 export interface TokensOnDisk {
-    entry: string;
+    entryFile: string;
     options?: ReadOptions;
 }
 
@@ -112,9 +112,11 @@ export function createLiveTokens(
         reading = true;
         savedDuringRead = new Set();
         try {
-            const { entry, options } = typeof onDisk === "function" ? onDisk() : onDisk;
-            const tokens = await read(entry, options);
-            names = new Map(tokens.files.map((file) => [getAbsoluteFilePath(entry, file), file]));
+            const { entryFile, options } = typeof onDisk === "function" ? onDisk() : onDisk;
+            const tokens = await read(entryFile, options);
+            names = new Map(
+                tokens.files.map((file) => [getAbsoluteFilePath(entryFile, file), file]),
+            );
             watchNewFiles();
             return tokens;
         } finally {

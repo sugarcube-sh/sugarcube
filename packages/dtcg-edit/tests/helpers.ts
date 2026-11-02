@@ -16,7 +16,7 @@ export const demo = readFromMemory({
     files: Object.fromEntries(
         readdirSync(folder).map((name) => [name, readFileSync(join(folder, name), "utf8")]),
     ),
-    entry: "tokens.resolver.json",
+    entryFile: "tokens.resolver.json",
 });
 
 export const at = (tokens: DesignTokens, file: string, jsonPath: JsonPath): JsonValue | undefined =>
@@ -49,7 +49,7 @@ export const resolver = (sources: object[], contexts: Record<string, object[]> =
     });
 
 export const opened = (files: Record<string, string>, options?: ReadOptions) =>
-    readFromMemory({ files, entry: "tokens.resolver.json" }, options);
+    readFromMemory({ files, entryFile: "tokens.resolver.json" }, options);
 
 export function changed(
     tokens: DesignTokens,

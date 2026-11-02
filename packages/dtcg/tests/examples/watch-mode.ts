@@ -5,7 +5,7 @@ import { type FileWatcher, createLiveTokens } from "@sugarcube-sh/dtcg/node";
 declare const watcher: FileWatcher;
 
 const live = createLiveTokens(
-    { entry: "tokens/tokens.resolver.json" },
+    { entryFile: "tokens/tokens.resolver.json" },
     { onError: (error) => showMessage(String(error)) },
 );
 live.watch(watcher);

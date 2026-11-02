@@ -46,7 +46,7 @@ describe("problemRows", () => {
                     "base.json": '{ "gap": ',
                 },
             },
-            { permutations: "each-context" },
+            { inputs: "each-context" },
         );
 
         const [row] = problemRows(read.diagnostics);

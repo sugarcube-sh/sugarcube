@@ -118,7 +118,7 @@ describe("what is set aside is a warning, and what cannot be read an error", () 
                     space: { $type: "number", one: { $value: 1 }, two: { $ref: "#space/one" } },
                 }),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         expect(tokens.diagnostics.map(({ kind, severity }) => [kind, severity])).toStrictEqual([
             ["malformed-pointer", "error"],
@@ -444,13 +444,26 @@ describe("each context on its own", () => {
     const built = (text: string) => {
         const tokens = readFromMemory(
             { files: { "tokens.resolver.json": text } },
-            { permutations: "each-context" },
+            { inputs: "each-context" },
         );
         return {
             inputs: tokens.permutations.inputs,
             diagnostics: tokens.diagnostics.map(({ kind, detail }) => ({ kind, detail })),
         };
     };
+
+    it('builds every combination for inputs: "all", the default, and takes no permutations option', () => {
+        const text = resolver({
+            theme: { contexts: { light: [], dark: [] }, default: "light" },
+            size: { contexts: { small: [], large: [] }, default: "small" },
+        });
+        const all = readFromMemory({ files: { "tokens.resolver.json": text } }, { inputs: "all" });
+        const unset = readFromMemory({ files: { "tokens.resolver.json": text } });
+        expect(all.permutations).toHaveLength(4);
+        expect(unset.permutations.inputs).toStrictEqual(all.permutations.inputs);
+        // @ts-expect-error which permutations to build is inputs
+        readFromMemory({ files: { "tokens.resolver.json": text } }, { permutations: "all" });
+    });
 
     it("builds the default, then each context with the other modifiers at their defaults", () => {
         expect(
@@ -587,7 +600,7 @@ describe("what counts as a resolver: its name, or a top-level resolutionOrder", 
                 }),
                 "other.resolver.json": "{}",
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         expect(tokens.diagnostics.map(({ detail }) => detail)).toContainEqual(
             expect.objectContaining({ rule: "resolver-as-source" }),
@@ -619,7 +632,7 @@ describe("readFromMemory", () => {
     it("reads several token files when an entry names the one to start from", () => {
         const tokens = readFromMemory({
             files: { "base.json": valid, "other.json": valid },
-            entry: "base.json",
+            entryFile: "base.json",
         });
         expect(tokens.files).toStrictEqual(["base.json"]);
     });
@@ -627,7 +640,7 @@ describe("readFromMemory", () => {
     it("finds an entry given with a folder among the files", () => {
         const tokens = readFromMemory({
             files: { "tokens/base.json": valid, "other.json": valid },
-            entry: "tokens/base.json",
+            entryFile: "tokens/base.json",
         });
         expect(tokens.files).toStrictEqual(["base.json"]);
         expect(tokens.diagnostics).toStrictEqual([]);
@@ -752,7 +765,7 @@ describe("what the design tokens hold", () => {
         const resolver = JSON.stringify({ version: "2025.10", resolutionOrder: [] });
         const tokens = readFromMemory({
             files: { "tokens.resolver.json": resolver },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         expect(Object.keys(tokens)).toStrictEqual([
             "files",
@@ -779,13 +792,13 @@ describe("tokens.text", () => {
     };
 
     it("is the text of each file the read used, by the name the design tokens give it", () => {
-        const tokens = readFromMemory({ files, entry: "tokens.resolver.json" });
+        const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
         expect(tokens.getText("base.json")).toBe(base);
         expect(tokens.getText("tokens.resolver.json")).toBe(files["tokens.resolver.json"]);
     });
 
     it("is undefined for a file the read did not use", () => {
-        const tokens = readFromMemory({ files, entry: "tokens.resolver.json" });
+        const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
         expect(tokens.getText("unread.json")).toBeUndefined();
         expect(tokens.getText("missing.json")).toBeUndefined();
     });
@@ -798,7 +811,7 @@ describe("tokens.text", () => {
     });
 
     it("is not written in the plain form", () => {
-        const tokens = readFromMemory({ files, entry: "tokens.resolver.json" });
+        const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
         expect(JSON.stringify(tokens)).not.toContain("\\n");
         expect(JSON.parse(JSON.stringify(tokens))).not.toHaveProperty("text");
     });
@@ -981,7 +994,7 @@ describe("the resolver part", () => {
         });
         const tokens = readFromMemory({
             files: { "tokens.resolver.json": resolver },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         expect(tokens.diagnostics).toMatchObject([
             {

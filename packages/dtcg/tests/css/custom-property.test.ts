@@ -28,11 +28,11 @@ describe("cssCustomProperty", () => {
 
     it("makes the name with a function instead, given the path without $root", () => {
         const seen: string[] = [];
-        const name = (path: string) => {
+        const getName = (path: string) => {
             seen.push(path);
             return path.replaceAll(".", "_");
         };
-        expect(toCustomPropertyName("color.accent.$root", { prefix: "ds", name })).toBe(
+        expect(toCustomPropertyName("color.accent.$root", { prefix: "ds", getName })).toBe(
             "--color_accent",
         );
         expect(seen).toStrictEqual(["color.accent"]);
@@ -94,12 +94,16 @@ describe("cssCustomProperty", () => {
     });
 
     it("joins a CSS property to a naming function's name with the delimiter", () => {
-        const name = (path: string) => path.replaceAll(".", "_");
-        expect(toCustomPropertyName("type.body", { name, cssProperty: "font-size" })).toBe(
+        const getName = (path: string) => path.replaceAll(".", "_");
+        expect(toCustomPropertyName("type.body", { getName, cssProperty: "font-size" })).toBe(
             "--type_body-font-size",
         );
         expect(
-            toCustomPropertyName("type.body", { name, delimiter: "_", cssProperty: "font-size" }),
+            toCustomPropertyName("type.body", {
+                getName,
+                delimiter: "_",
+                cssProperty: "font-size",
+            }),
         ).toBe("--type_body_font-size");
     });
 
@@ -119,10 +123,10 @@ describe("cssCustomProperty", () => {
     });
 
     it("escapes what a naming function returns too", () => {
-        expect(toCustomPropertyName("space.half", { name: () => "space/half" })).toBe(
+        expect(toCustomPropertyName("space.half", { getName: () => "space/half" })).toBe(
             "--space\\/half",
         );
-        expect(toCustomPropertyName("x", { name: () => "a\u0001b" })).toBe("--a\\1 b");
-        expect(toCustomPropertyName("x", { name: () => "a\u0000b" })).toBe("--a\uFFFDb");
+        expect(toCustomPropertyName("x", { getName: () => "a\u0001b" })).toBe("--a\\1 b");
+        expect(toCustomPropertyName("x", { getName: () => "a\u0000b" })).toBe("--a\uFFFDb");
     });
 });

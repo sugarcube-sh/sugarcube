@@ -23,7 +23,7 @@ const files: Record<string, string> = {
     "dark.json": JSON.stringify({ color: { bg: color(0.1) } }),
 };
 
-const tokens = readFromMemory({ files, entry: "tokens.resolver.json" });
+const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
 const light = tokens.getPermutation({ mode: "light" });
 const dark = tokens.getPermutation({ mode: "dark" });
 const mode = tokens.resolver?.modifiers[0];
@@ -93,7 +93,7 @@ describe("contexts", () => {
                     ],
                 }),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         const contexts = undecided.resolver?.modifiers[0]?.contexts ?? [];
         expect(contexts.map(({ isDefault }) => isDefault)).toStrictEqual([false, false]);
@@ -185,7 +185,7 @@ describe("on the design tokens", () => {
                 "base.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }),
                 "brand.json": JSON.stringify({ gap: { $type: "number", $value: 2 } }),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         const [base, brand] = overridden.getDefinitions("gap");
         expect(base?.permutations.label).toBe("everywhere");
@@ -223,7 +223,7 @@ describe("on the design tokens, a file several contexts list", () => {
             "base.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }),
             "night.json": JSON.stringify({ gap: { $type: "number", $value: 2 } }),
         },
-        entry: "tokens.resolver.json",
+        entryFile: "tokens.resolver.json",
     });
 
     it("writtenAt gives its place once, with the one source both contexts read it through", () => {
@@ -295,7 +295,7 @@ describe("on the design tokens, a file several contexts list", () => {
                 "base.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }),
                 "night.json": JSON.stringify({ gap: { $type: "number", $value: 2 } }),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         const throughDark = routes.getPermutation({ mode: "dark" }).getToken("gap");
         const throughDim = routes.getPermutation({ mode: "dim" }).getToken("gap");

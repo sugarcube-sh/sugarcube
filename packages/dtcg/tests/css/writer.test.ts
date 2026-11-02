@@ -181,7 +181,7 @@ describe("cssWriter", () => {
         it("writes what the hook returns instead, a string naming no tokens", () => {
             const tokens = one({ gap: { $type: "dimension", $value: px(8) } });
             const { declarations } = createCSSWriter({
-                value: () => "clamp(4px, 1vw, 8px)",
+                writeValue: () => "clamp(4px, 1vw, 8px)",
             }).getDeclarations(tokens.getPermutation());
             expect(declarations.map(({ value, refersTo }) => [value, refersTo])).toStrictEqual([
                 ["clamp(4px, 1vw, 8px)", []],
@@ -190,7 +190,7 @@ describe("cssWriter", () => {
 
         it("gives the hook the value as written, which it can keep or wrap with write", () => {
             const { declarations } = createCSSWriter({
-                value: (token, { written, write }) =>
+                writeValue: (token, { written, write }) =>
                     token.path === "color.text"
                         ? write`color-mix(in oklch, ${written} 80%, white)`
                         : written,
@@ -203,7 +203,7 @@ describe("cssWriter", () => {
         it("writes a token placed in write as var(), and records it", () => {
             const gap = tokenAt(modes, "gap");
             const { declarations } = createCSSWriter({
-                value: (token, { written, write }) =>
+                writeValue: (token, { written, write }) =>
                     token.path === "color.text" ? write`${written} ${gap} ${2}` : written,
             }).getDeclarations(modes.getPermutation());
             const text = declarations.find(({ name }) => name === "--color-text");
@@ -227,7 +227,7 @@ describe("cssWriter", () => {
             });
             const body = tokenAt(tokens, "body");
             const writer = createCSSWriter({
-                value: (token, { written, write }) =>
+                writeValue: (token, { written, write }) =>
                     token.path === "gap" ? write`${body}` : written,
             });
             expect(() => writer.getDeclarations(tokens.getPermutation())).toThrow(TypeError);
@@ -239,7 +239,7 @@ describe("cssWriter", () => {
                 space: { $type: "dimension", $value: "{gap}" },
             });
             const { declarations, notWritten } = createCSSWriter({
-                value: (token, { written }) => (token.path === "gap" ? undefined : written),
+                writeValue: (token, { written }) => (token.path === "gap" ? undefined : written),
             }).getDeclarations(tokens.getPermutation());
             expect(declarations.map(({ name, value }) => [name, value])).toStrictEqual([
                 ["--space", "8px"],
@@ -252,7 +252,7 @@ describe("cssWriter", () => {
         it("asks the hook once for a token the same in two permutations", () => {
             const asked: string[] = [];
             const writer = createCSSWriter({
-                value: (token, { written }) => {
+                writeValue: (token, { written }) => {
                     asked.push(token.path);
                     return written;
                 },
@@ -270,15 +270,15 @@ describe("cssWriter", () => {
     describe("fallback", () => {
         const p3 = color({ colorSpace: "display-p3", components: [1, 0, 0], hex: "#ff0000" });
         const condition = "(color: color(display-p3 1 1 1))";
-        const fallback: CSSWriterOptions["fallback"] = (token, { writtenWith }) => {
+        const writeFallback: CSSWriterOptions["writeFallback"] = (token, { writeWith }) => {
             if (token.type !== "color") return undefined;
-            const hex = writtenWith({ colors: "hex" });
+            const hex = writeWith({ colors: "hex" });
             return hex && { written: hex, unless: condition };
         };
 
         it("declares the fallback, and the value under @supports where it differs", () => {
             const tokens = one({ brand: p3, plain: color("#e11d48") });
-            const { declarations } = createCSSWriter({ fallback }).getDeclarations(
+            const { declarations } = createCSSWriter({ writeFallback }).getDeclarations(
                 tokens.getPermutation(),
             );
             expect(
@@ -293,7 +293,7 @@ describe("cssWriter", () => {
             const tokens = one({ hidden: p3, brand: color("{hidden}") });
             const { declarations } = createCSSWriter({
                 skip: (token) => token.path === "hidden",
-                fallback,
+                writeFallback,
             }).getDeclarations(tokens.getPermutation());
             expect(
                 declarations.map(({ name, value, supports }) => [name, value, supports]),
@@ -312,8 +312,8 @@ describe("cssWriter", () => {
             });
             const { declarations } = createCSSWriter({
                 skip: (token) => token.path === "hidden",
-                fallback: (token, { writtenWith }) => {
-                    const hex = writtenWith({ colors: "hex" });
+                writeFallback: (token, { writeWith }) => {
+                    const hex = writeWith({ colors: "hex" });
                     return hex && { written: hex, unless: condition };
                 },
             }).getDeclarations(tokens.getPermutation());
@@ -331,9 +331,9 @@ describe("cssWriter", () => {
                     $value: { color: "#000000", width: "{gap}", style: "solid" },
                 },
             });
-            const value: CSSWriterOptions["value"] = (token, { written }) =>
+            const writeValue: CSSWriterOptions["writeValue"] = (token, { written }) =>
                 token.path === "gap" ? "clamp(4px, 1vw, 8px)" : written;
-            expect(lines(tokens, { value, references: "values" })).toStrictEqual([
+            expect(lines(tokens, { writeValue, references: "values" })).toStrictEqual([
                 "--gap: clamp(4px, 1vw, 8px)",
                 "--space: clamp(4px, 1vw, 8px)",
                 "--edge: clamp(4px, 1vw, 8px) solid #000000",

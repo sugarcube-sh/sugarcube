@@ -1717,7 +1717,7 @@ export interface DesignTokens {
      * send(tokens.toMemory());
      * const same = readFromMemory(received, options);
      */
-    toMemory(): TokensInMemory & { readonly entry: string };
+    toMemory(): TokensInMemory & { readonly entryFile: string };
     /**
      * What changed since `before`, an earlier read, and in which permutations: tokens and groups
      * added, removed, renamed, or with different properties. A token is compared by what it says,
@@ -2112,21 +2112,21 @@ export { defineExtensionValidator } from "./read/validate-extensions.js";
  */
 export interface ReadOptions extends ParseOptions {
     /**
-     * The permutations to build. Modifiers left out take their default; an input that does not
-     * fit the resolver is reported and not built.
-     * @default the permutations `permutations` asks for
-     */
-    inputs?: readonly Input[];
-    /**
-     * Which permutations to build when `inputs` is left out: `"all"`, every combination of
-     * contexts, or `"each-context"`, each context on its own, with every other modifier at its
+     * Which permutations to build, by their inputs (Resolver 5: "any selection of context values
+     * passed to the tool"): these inputs, where modifiers left out take their default and an input
+     * that does not fit the resolver is reported and not built; `"all"`, every combination of
+     * contexts; or `"each-context"`, each context on its own, with every other modifier at its
      * default. An input must choose a context for each modifier with no default (Resolver 6.1),
-     * so each context is built once for every combination of those modifiers' contexts. When
-     * modifiers change different tokens (Resolver 2.1), every combination can be put together
-     * from `"each-context"`.
+     * so `"each-context"` builds each context once for every combination of those modifiers'
+     * contexts. When modifiers change different tokens (Resolver 2.1), every combination can be
+     * put together from `"each-context"`, as a stylesheet with one block per context does.
+     *
+     * @example
+     * read(file, { inputs: [{ mode: "dark" }] })  // just mode: dark
+     * read(file, { inputs: "each-context" })      // the default, then each context once
      * @default "all"
      */
-    permutations?: "all" | "each-context";
+    inputs?: readonly Input[] | "all" | "each-context";
     /**
      * The most combinations `"all"` builds. Above it, `"each-context"` is built instead, and a
      * `permutation-limit` warning says so. Each combination is built in full, so a read grows with
@@ -2185,7 +2185,7 @@ export interface TokensInMemory {
      * The file to start from.
      * @default the one resolver among the files, or else the only file
      */
-    readonly entry?: string | undefined;
+    readonly entryFile?: string | undefined;
 }
 export { getFilePath } from "./read/paths.js";
 

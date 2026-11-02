@@ -14,7 +14,7 @@ function studioOnFiles() {
     return createStudio(
         {
             adapter: { name: "plain", settings: {}, problems: [] },
-            entry: "tokens.json",
+            entryFile: "tokens.json",
             files: {
                 "tokens.json": JSON.stringify({
                     space: { $type: "number", s: { $value: 4 } },
@@ -136,7 +136,7 @@ describe("a question about which file to write in", () => {
         const studio = createStudio(
             {
                 adapter: { name: "plain", settings: {}, problems: [] },
-                entry: "tokens.resolver.json",
+                entryFile: "tokens.resolver.json",
                 files: {
                     "tokens.resolver.json": JSON.stringify({
                         version: "2025.10",

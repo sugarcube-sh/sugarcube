@@ -31,7 +31,7 @@ interface MarkupScan {
 export interface Built {
     tokens: DesignTokens;
     config: InternalConfig;
-    entry: string;
+    entryFile: string;
     configFile?: string;
     declared: Declarations;
     variables: CSSFileOutput;
@@ -44,14 +44,14 @@ export interface Built {
 
 interface Reading {
     tokens: DesignTokens;
-    entry: string;
+    entryFile: string;
     config: InternalConfig;
     configFile?: string;
 }
 
 export async function build(loaded: LoadedConfig, options: BuildOptions = {}): Promise<Built> {
     const onDisk = tokensOnDisk(loaded.config);
-    const tokens = await read(onDisk.entry, onDisk.options);
+    const tokens = await read(onDisk.entryFile, onDisk.options);
     return buildFrom(tokens, loaded, options);
 }
 
@@ -61,14 +61,14 @@ export function buildFrom(
     options: BuildOptions = {},
     previous?: Built,
 ): Promise<Built> {
-    const reading = { tokens, entry: config.resolver, config, configFile };
+    const reading = { tokens, entryFile: config.resolver, config, configFile };
     return fromReading(reading, options, previous);
 }
 
-export function buildFiles(texts: Record<string, string>, entry: string): Promise<Built> {
+export function buildFiles(texts: Record<string, string>, entryFile: string): Promise<Built> {
     const config = fillDefaults({});
-    const tokens = readFromMemory({ files: texts, entry }, readOptions(config));
-    return fromReading({ tokens, entry, config }, {});
+    const tokens = readFromMemory({ files: texts, entryFile }, readOptions(config));
+    return fromReading({ tokens, entryFile, config }, {});
 }
 
 export async function rescan(built: Built): Promise<Built> {
@@ -89,7 +89,7 @@ export function filesOf({ variables, utilities }: Built): CSSFileOutput {
 }
 
 async function fromReading(
-    { tokens, entry, config, configFile }: Reading,
+    { tokens, entryFile, config, configFile }: Reading,
     options: BuildOptions,
     previous?: Built,
 ): Promise<Built> {
@@ -104,7 +104,7 @@ async function fromReading(
     return {
         tokens,
         config,
-        entry,
+        entryFile,
         configFile,
         declared: made.declared,
         variables: finished(made.variables, config.variables.layer),

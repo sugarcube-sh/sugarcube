@@ -90,7 +90,7 @@ describe("cssBlocks", () => {
         );
         const ink = mixed.getPermutation().getToken("color.ink");
         const writer = createCSSWriter({
-            value: (token, { written: value, write }) =>
+            writeValue: (token, { written: value, write }) =>
                 token.path === "shade" && ink
                     ? write`color-mix(in oklch, ${ink} 50%, black)`
                     : value,
@@ -171,8 +171,8 @@ describe("cssBlocks", () => {
 
     describe("@supports", () => {
         const p3 = { colorSpace: "display-p3", components: [1, 0, 0], hex: "#ff0000" };
-        const fallback: CSSWriterOptions["fallback"] = (token, { writtenWith }) => {
-            const hex = token.type === "color" ? writtenWith({ colors: "hex" }) : undefined;
+        const writeFallback: CSSWriterOptions["writeFallback"] = (token, { writeWith }) => {
+            const hex = token.type === "color" ? writeWith({ colors: "hex" }) : undefined;
             return hex && { written: hex, unless: "(color: color(display-p3 1 1 1))" };
         };
         const wide = themed(
@@ -182,7 +182,7 @@ describe("cssBlocks", () => {
 
         it("writes a line again only under @supports when only what is supported changes", () => {
             const [first, later] = getCSSBlocks(wide, [root, dark], {
-                writer: createCSSWriter({ fallback }),
+                writer: createCSSWriter({ writeFallback }),
             });
             expect(first?.underSupports.map(({ name }) => name)).toStrictEqual(["--brand"]);
             expect(written(later)).toStrictEqual([]);

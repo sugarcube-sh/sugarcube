@@ -24,7 +24,7 @@ describe("studioMessage", () => {
 
         expect(Object.keys(message.files).sort()).toEqual([...tokens.files].sort());
         expect(message.files["dark.json"]).toBe(tokens.getText("dark.json"));
-        expect(message.entry).toBe("tokens.resolver.json");
+        expect(message.entryFile).toBe("tokens.resolver.json");
     });
 
     it("sends what a browser needs to read the same tokens", async () => {

@@ -122,7 +122,7 @@ describe.each(cases)("%s", (name) => {
 
     it("reads through readFromMemory", () => {
         const tokens = readFromMemory(
-            { files: inputFiles(input), entry: expected.entry },
+            { files: inputFiles(input), entryFile: expected.entry },
             readOptions(expected.options),
         );
         expect(observed(tokens, expected)).toStrictEqual(expected);
@@ -130,7 +130,7 @@ describe.each(cases)("%s", (name) => {
 
     it("names each problem's permutations among those that read its file", () => {
         const tokens = readFromMemory(
-            { files: inputFiles(input), entry: expected.entry },
+            { files: inputFiles(input), entryFile: expected.entry },
             readOptions(expected.options),
         );
         const reads = (permutation: Permutation, file: string) =>
@@ -149,7 +149,7 @@ describe.each(cases)("%s", (name) => {
 
     it("names a value's problem in exactly the permutations whose token takes that value", () => {
         const tokens = readFromMemory(
-            { files: inputFiles(input), entry: expected.entry },
+            { files: inputFiles(input), entryFile: expected.entry },
             readOptions(expected.options),
         );
         const inValue = (problem: DesignTokens["diagnostics"][number]) =>

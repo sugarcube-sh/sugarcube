@@ -5,7 +5,7 @@ import type { BuildAdapter } from "../../src/controllers/adapter";
 import { PLAIN_ENTRY, plainFiles } from "./plain-demo";
 
 function readWith(adapter: BuildAdapter) {
-    return readFromMemory({ files: plainFiles(), entry: PLAIN_ENTRY }, adapter.read);
+    return readFromMemory({ files: plainFiles(), entryFile: PLAIN_ENTRY }, adapter.read);
 }
 
 describe("plain", () => {
@@ -18,7 +18,7 @@ describe("plain", () => {
 
     it("reports what the read finds, as a build would", () => {
         const files = { ...plainFiles(), "dark.json": '{ "color": { "text": ' };
-        const tokens = readFromMemory({ files, entry: PLAIN_ENTRY }, plain().read);
+        const tokens = readFromMemory({ files, entryFile: PLAIN_ENTRY }, plain().read);
 
         expect(
             plain()

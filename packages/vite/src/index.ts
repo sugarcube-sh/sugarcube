@@ -100,7 +100,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
     const inTerminal = (shown: Reported[]) =>
         problemsText(shown, {
             cwd: process.cwd(),
-            entry: resolve(loaded.config.resolver),
+            entryFile: resolve(loaded.config.resolver),
             configFile: loaded.configFile,
         });
 

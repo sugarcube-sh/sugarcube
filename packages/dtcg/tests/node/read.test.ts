@@ -15,7 +15,7 @@ function inMemory() {
                 return [relative(folder, path).replaceAll("\\", "/"), readFileSync(path, "utf8")];
             }),
     );
-    return readFromMemory({ files, entry: "tokens.resolver.json" });
+    return readFromMemory({ files, entryFile: "tokens.resolver.json" });
 }
 
 describe("read from disk", () => {

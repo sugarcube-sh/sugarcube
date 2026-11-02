@@ -18,7 +18,7 @@ function read(json: Record<string, unknown>): (path: string) => Token {
 }
 
 const asVariables: CSSValueOptions = {
-    replacement: (ref, cssProperty) =>
+    replaceReference: (ref, cssProperty) =>
         ref.pointsToToken
             ? { customProperty: toCustomPropertyName(ref.pointsToToken.path, { cssProperty }) }
             : undefined,
@@ -74,6 +74,14 @@ describe("cssValue", () => {
         ]);
         expect(toCSSValue(at("stale"), { colors: "hex" })).toBe("#00ff00");
         expect(toCSSValue(at("faint"), { colors: "hex" })).toBe("#00000026");
+    });
+
+    it("writes a color from its components when asked, as it does by default", () => {
+        const at = read({
+            object: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
+        });
+        expect(toCSSValue(at("object"), { colors: "components" })).toBe("rgb(255 0 0)");
+        expect(toCSSValue(at("object"), { colors: "components" })).toBe(toCSSValue(at("object")));
     });
 
     it("writes a color object from its components without hexStringColors too", () => {
@@ -198,7 +206,7 @@ describe("cssValue", () => {
         expect(toCSSValue(at("brand"), asVariables)).toBe("var(--ink)");
         expect(
             toCSSValue(at("edge"), {
-                replacement: (ref) =>
+                replaceReference: (ref) =>
                     ref.pointsToPath === "hairline" ? { css: "thin" } : undefined,
             }),
         ).toBe("thin solid #111111");
@@ -364,7 +372,7 @@ describe("cssValue", () => {
         it("asking for each CSS property's custom property, so a caller's naming decides how it is joined", () => {
             const asked: (string | undefined)[] = [];
             const css = toCSSValue(at("quote"), {
-                replacement: (ref, cssProperty) => {
+                replaceReference: (ref, cssProperty) => {
                     asked.push(cssProperty);
                     return ref.pointsToToken
                         ? {

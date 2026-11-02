@@ -4,7 +4,7 @@ import { sugarcube } from "../../src/adapters/sugarcube";
 import { ENTRY, asSent, demoFiles } from "../controllers/demo-message";
 
 function readWith(files = demoFiles(), config = asSent()) {
-    return readFromMemory({ files, entry: ENTRY }, sugarcube(config).read);
+    return readFromMemory({ files, entryFile: ENTRY }, sugarcube(config).read);
 }
 
 describe("sugarcube", () => {
