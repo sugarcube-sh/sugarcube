@@ -44,7 +44,7 @@
     }
   },
   "scripts": {
-    "build": "pkgroll --minify --clean-dist",
+    "build": "pkgroll --minify --clean-dist --target=node22.14",
     "dev": "pkgroll --watch",
     "test": "vitest run",
     "bench": "vitest bench --no-watch --project unit",
@@ -58,6 +58,6 @@
     "pkgroll": "^2.28.1"
   },
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.14.0"
   }
 }

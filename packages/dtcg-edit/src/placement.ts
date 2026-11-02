@@ -7,7 +7,6 @@ import {
     PermutationError,
     type Permutations,
     type Definition,
-    type DefinitionInPermutations,
     type ResolverContext,
     type Source,
     type Span,
@@ -246,10 +245,9 @@ function lookUp(
 function sharedPlace(tokens: DesignTokens, path: string): Placement {
     const found = lookUp(tokens, path, (perm) => perm.getToken(path));
     if ("refused" in found) return found;
-    let shared: DefinitionInPermutations | undefined;
-    for (const place of tokens.getDefinitions(path)) {
-        if (place.sources.some(readByEveryContext)) shared = place;
-    }
+    const shared = tokens
+        .getDefinitions(path)
+        .findLast((place) => place.sources.some(readByEveryContext));
     if (!shared) return refused({ kind: "no-shared-value", path });
     return { at: shared, alsoAffects: alsoIn(shared.winsIn) };
 }

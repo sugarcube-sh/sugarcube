@@ -114,5 +114,5 @@ function sourceAsWritten(resolver: CheckedResolver, source: ResolverNode): Sourc
 }
 
 function inWrittenOrder<T extends { declared: Node }>(items: T[]): T[] {
-    return [...items].sort((a, b) => a.declared.offset - b.declared.offset);
+    return items.toSorted((a, b) => a.declared.offset - b.declared.offset);
 }

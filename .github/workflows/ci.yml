@@ -27,5 +27,21 @@ jobs:
       - run: pnpm --filter www build
       - run: pnpm run type-check
       - run: pnpm run lint
+  test:
+    name: Test on Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ["22.14.0", 24, 26]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+      - run: pnpm install
+      - run: pnpm run build
       - run: pnpm --filter @sugarcube-sh/studio exec playwright install --with-deps --only-shell chromium
       - run: pnpm run test

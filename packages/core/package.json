@@ -45,7 +45,7 @@
     "provenance": true
   },
   "scripts": {
-    "build": "pkgroll --minify --clean-dist",
+    "build": "pkgroll --minify --clean-dist --target=node22.14",
     "build:clean": "rm -rf dist && pkgroll --minify",
     "dev": "pkgroll --watch",
     "test": "vitest run",
@@ -69,6 +69,6 @@
     "vitest": "^4.1.11"
   },
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.14.0"
   }
 }
