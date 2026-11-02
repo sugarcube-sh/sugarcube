@@ -193,7 +193,7 @@ describe("writtenOf", () => {
         if (!written || written === "group") throw new Error("no color.surface");
         expect(
             written.map(({ token, file, permutations }) => [
-                token.authored?.value,
+                token.asWritten?.value,
                 file,
                 permutations.inputs,
             ]),

@@ -8,17 +8,18 @@ import type {
 } from "../index.js";
 import { permutationsOf } from "../read/permutations-of.js";
 import { jsonPathIn } from "./json-path.js";
+import { getSpan } from "./editor.js";
 
 export function writtenAtIn(tokens: DesignTokens, path: string): PlaceInPermutations[] {
     const found = new Map<Span, { sources: Source[]; readIn: Permutation[]; first: Place }>();
     for (const permutation of tokens.permutations) {
         const places = [
-            ...(permutation.token(path)?.writtenAt ?? []),
-            ...(permutation.group(path)?.writtenAt ?? []),
+            ...(permutation.getToken(path)?.definitions ?? []),
+            ...(permutation.getGroup(path)?.definitions ?? []),
         ];
         for (const place of places) {
             const { source } = place;
-            const span = tokens.spanOf(place);
+            const span = getSpan(tokens, place);
             const known = found.get(span);
             if (!known) {
                 found.set(span, { sources: [source], readIn: [permutation], first: place });
@@ -33,15 +34,15 @@ export function writtenAtIn(tokens: DesignTokens, path: string): PlaceInPermutat
         get jsonPath() {
             return jsonPathIn(tokens, span);
         },
-        get written() {
-            return first.written;
+        get asWritten() {
+            return first.asWritten;
         },
         sources,
-        readIn: permutationsOf(readIn, tokens.permutations),
+        permutations: permutationsOf(readIn, tokens.permutations),
         winsIn: permutationsOf(
             readIn.filter((permutation) => {
-                const winner = permutation.token(path)?.valueFrom;
-                return winner !== undefined && tokens.spanOf(winner) === span;
+                const winner = permutation.getToken(path)?.winningDefinition;
+                return winner !== undefined && getSpan(tokens, winner) === span;
             }),
             tokens.permutations,
         ),

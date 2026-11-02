@@ -8,9 +8,13 @@ declare let tokens: DesignTokens;
 const done = commit(tokens, deprecate(tokens, "color.old", "Use color.new instead"));
 if (done.tokens) tokens = done.tokens;
 
-for (const t of tokens.permutation().tokens) {
+for (const t of tokens.getPermutation().tokens) {
     if (!t.deprecated) continue;
-    const users = [...new Set(tokens.referencesTo(t.path).flatMap(({ fromPaths }) => fromPaths))];
+    const users = [
+        ...new Set(
+            tokens.getReferencesTo(t.path).flatMap(({ writtenInPaths: fromPaths }) => fromPaths),
+        ),
+    ];
     if (users.length) {
         comment(`${t.path} is deprecated (${t.deprecated}) but used by ${users.join(", ")}`);
     }

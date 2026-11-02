@@ -1,6 +1,7 @@
 import * as jsonc from "jsonc-parser";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineGenerator, readFromMemory } from "../../src/index.js";
+import { getJsonAt, getJsonPath } from "../../src/editor.js";
 
 const number = (value: unknown) => ({ $type: "number", $value: value });
 
@@ -44,10 +45,10 @@ const tokens = readFromMemory(
     },
     { generators: [steps] },
 );
-const read = tokens.permutation();
+const read = tokens.getPermutation();
 const placeOf = (path: string) => {
-    const place = read.token(path)?.valueFrom;
-    return place && tokens.jsonPathOf(place);
+    const place = read.getToken(path)?.winningDefinition;
+    return place && getJsonPath(tokens, place);
 };
 
 describe("where a place is in its file, as a JSON path", () => {
@@ -78,9 +79,9 @@ describe("where a place is in its file, as a JSON path", () => {
 
     it("is the group's member for a group, and none for the top of a file", () => {
         expect(
-            read.group("color")?.writtenAt.map((place) => tokens.jsonPathOf(place)),
+            read.getGroup("color")?.definitions.map((place) => getJsonPath(tokens, place)),
         ).toStrictEqual([["color"]]);
-        expect(read.topLevel.writtenAt.map((place) => tokens.jsonPathOf(place))).toStrictEqual([
+        expect(read.topLevel.definitions.map((place) => getJsonPath(tokens, place))).toStrictEqual([
             [],
             ["inner"],
             ["resolutionOrder", 0, "sources", 2],
@@ -88,7 +89,7 @@ describe("where a place is in its file, as a JSON path", () => {
     });
 
     it("is on each place the design tokens give for a path", () => {
-        expect(tokens.writtenAt("color.x").map(({ jsonPath }) => jsonPath)).toStrictEqual([
+        expect(tokens.getDefinitions("color.x").map(({ jsonPath }) => jsonPath)).toStrictEqual([
             ["color", "x"],
         ]);
     });
@@ -96,7 +97,7 @@ describe("where a place is in its file, as a JSON path", () => {
 
 describe("where a reference is in its file, as a JSON path", () => {
     const referencesOf = (path: string) =>
-        read.tokenOrGroup(path)?.references.map((reference) => tokens.jsonPathOf(reference));
+        read.getTokenOrGroup(path)?.references.map((reference) => getJsonPath(tokens, reference));
 
     it("is the value that writes it", () => {
         expect(referencesOf("color.x")).toStrictEqual([["color", "x", "$value"]]);
@@ -117,7 +118,9 @@ describe("where a reference is in its file, as a JSON path", () => {
 
     it("is on each reference the design tokens give for a path, an inherited one once, where it is written", () => {
         expect(
-            tokens.referencesTo("base").map(({ fromPaths, jsonPath }) => [fromPaths, jsonPath]),
+            tokens
+                .getReferencesTo("base")
+                .map(({ writtenInPaths: fromPaths, jsonPath }) => [fromPaths, jsonPath]),
         ).toStrictEqual([
             [
                 ["color.x", "b.x"],
@@ -135,10 +138,10 @@ describe("asking for a JSON path", () => {
         const other = readFromMemory({
             files: { "tokens.json": JSON.stringify({ gap: number(9) }) },
         });
-        const place = other.permutation().token("gap")?.valueFrom;
+        const place = other.getPermutation().getToken("gap")?.winningDefinition;
         const elsewhere = readFromMemory({ files: { "tokens.json": "{}" } });
 
-        expect(() => place && elsewhere.jsonPathOf(place)).toThrow(
+        expect(() => place && getJsonPath(elsewhere, place)).toThrow(
             "nothing is written at that place in `tokens.json` in this read",
         );
     });
@@ -154,10 +157,12 @@ describe("a JSON path after a reread", () => {
                 '"aaaa": { "$type": "number", "$value": 0 },\n  "base"',
             ),
         });
-        const kept = after.permutation().token("gap");
+        const kept = after.getPermutation().getToken("gap");
 
-        expect(kept?.valueFrom).toBe(before.permutation().token("gap")?.valueFrom);
-        expect(kept && after.jsonPathOf(kept.valueFrom)).toStrictEqual(["gap"]);
+        expect(kept?.winningDefinition).toBe(
+            before.getPermutation().getToken("gap")?.winningDefinition,
+        );
+        expect(kept && getJsonPath(after, kept.winningDefinition)).toStrictEqual(["gap"]);
     });
 });
 
@@ -167,32 +172,34 @@ describe("what a file writes at a JSON path", () => {
     });
 
     it("is the JSON written there, exactly as written", () => {
-        expect(tokens.jsonAt("tokens.json", ["color", "x"])).toStrictEqual({ $value: "{base}" });
-        expect(tokens.jsonAt("tokens.json", ["color", "x", "$value"])).toBe("{base}");
-        expect(tokens.jsonAt("tokens.json", [])).toMatchObject({ base: number(1) });
+        expect(getJsonAt(tokens, "tokens.json", ["color", "x"])).toStrictEqual({
+            $value: "{base}",
+        });
+        expect(getJsonAt(tokens, "tokens.json", ["color", "x", "$value"])).toBe("{base}");
+        expect(getJsonAt(tokens, "tokens.json", [])).toMatchObject({ base: number(1) });
     });
 
     it("is undefined where the file writes nothing, or the read has no such file", () => {
-        expect(tokens.jsonAt("tokens.json", ["color", "nope"])).toBeUndefined();
-        expect(tokens.jsonAt("nope.json", ["base"])).toBeUndefined();
+        expect(getJsonAt(tokens, "tokens.json", ["color", "nope"])).toBeUndefined();
+        expect(getJsonAt(tokens, "nope.json", ["base"])).toBeUndefined();
     });
 
     it("is the text this read holds, after a reread", () => {
         const before = readFromMemory({ files: { "t.json": JSON.stringify({ gap: number(1) }) } });
         const after = before.reread({ "t.json": JSON.stringify({ gap: number(2) }) });
 
-        expect(before.jsonAt("t.json", ["gap", "$value"])).toBe(1);
-        expect(after.jsonAt("t.json", ["gap", "$value"])).toBe(2);
+        expect(getJsonAt(before, "t.json", ["gap", "$value"])).toBe(1);
+        expect(getJsonAt(after, "t.json", ["gap", "$value"])).toBe(2);
     });
 
     it("reads a file's text once for both questions", () => {
         const small = readFromMemory({ files: { "t.json": JSON.stringify({ gap: number(1) }) } });
-        const place = small.permutation().token("gap")?.valueFrom;
+        const place = small.getPermutation().getToken("gap")?.winningDefinition;
         const parses = vi.spyOn(jsonc, "parseTree");
 
-        if (place) small.jsonPathOf(place);
-        small.jsonAt("t.json", ["gap"]);
-        small.jsonAt("t.json", ["gap", "$value"]);
+        if (place) getJsonPath(small, place);
+        getJsonAt(small, "t.json", ["gap"]);
+        getJsonAt(small, "t.json", ["gap", "$value"]);
 
         expect(parses).toHaveBeenCalledTimes(1);
     });

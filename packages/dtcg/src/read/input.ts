@@ -7,7 +7,7 @@ export interface Modifier {
 }
 
 export function modifiersIn(resolver: Resolver | undefined): Modifier[] {
-    return (resolver?.order ?? []).flatMap((item) => {
+    return (resolver?.resolutionOrder ?? []).flatMap((item) => {
         const modifier =
             "modifier" in item && resolver?.modifiers.find(({ name }) => name === item.modifier);
         if (!modifier) return [];

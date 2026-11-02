@@ -13,13 +13,13 @@
         {
           "path": "card.raised",
           "type": "number",
-          "authored": {
+          "asWritten": {
             "value": 1
           },
           "inherited": {
             "from": "surface"
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -42,13 +42,13 @@
         {
           "path": "card.raised",
           "type": "number",
-          "authored": {
+          "asWritten": {
             "value": 2
           },
           "inherited": {
             "from": "surface"
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 2,
               "span": {

@@ -63,7 +63,7 @@
         "file": "dark.json",
         "valueAfter": "\"scale\":"
       },
-      "related": [
+      "relatedInformation": [
         {
           "message": "declared as a token here",
           "span": {
@@ -90,7 +90,7 @@
         "file": "dark.json",
         "valueAfter": "\"radius\":"
       },
-      "related": [
+      "relatedInformation": [
         {
           "message": "declared as a group here",
           "span": {

@@ -13,7 +13,7 @@
         {
           "path": "button-primary.background",
           "type": "number",
-          "authored": {
+          "asWritten": {
             "value": 9
           }
         },
@@ -31,14 +31,14 @@
           "path": "alias",
           "type": "number",
           "description": "Same as base",
-          "authored": {
+          "asWritten": {
             "value": {
               "$ref": "#/base"
             },
             "type": "number"
           },
           "resolved": 4,
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -54,14 +54,14 @@
         {
           "path": "blue-red",
           "type": "number",
-          "authored": {
+          "asWritten": {
             "value": {
               "$ref": "#/blue/$value/components/0"
             },
             "type": "number"
           },
           "resolved": 0.2,
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {

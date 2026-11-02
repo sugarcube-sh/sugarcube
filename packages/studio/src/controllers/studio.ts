@@ -70,14 +70,14 @@ export function createStudio(
     let clashes: readonly Clash[] = [];
     let saving = false;
     let lastSave: Held<SaveShown> | undefined;
-    let state = built(session.tokens.permutation().input);
+    let state = built(session.tokens.getPermutation().input);
 
     function built(showing: Input): StudioState {
         const { tokens } = session;
         const written = adapter.write(tokens);
         return {
             tokens,
-            showing: tokens.permutations.matching(showing) ?? tokens.permutation(),
+            showing: tokens.permutations.findByInput(showing) ?? tokens.getPermutation(),
             value: written.value,
             formFor: (node, at) => adapter.formFor?.(tokens, node, at),
             css: written.css,
@@ -150,7 +150,7 @@ export function createStudio(
             listeners.clear();
         },
         show(input) {
-            publish({ ...state, showing: state.tokens.permutation(input) });
+            publish({ ...state, showing: state.tokens.getPermutation(input) });
         },
         do(result, options) {
             return session.do(result, options);
@@ -193,7 +193,10 @@ export function createStudio(
                 settled(session.rebase(read(next, adapter)));
                 return;
             }
-            if (!takeIn(next.files) && !isEqualJson(next.adapter.problems, previous.adapter.problems))
+            if (
+                !takeIn(next.files) &&
+                !isEqualJson(next.adapter.problems, previous.adapter.problems)
+            )
                 publish(built(state.showing.input));
         },
     };

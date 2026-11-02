@@ -29,7 +29,7 @@ describe("fileOnDisk", () => {
         const entry = join(folder, "tokens.resolver.json");
         const tokens = await read(entry);
         for (const file of tokens.files) {
-            expect(readFileSync(fileOnDisk(entry, file), "utf8")).toBe(tokens.text(file));
+            expect(readFileSync(fileOnDisk(entry, file), "utf8")).toBe(tokens.getText(file));
         }
     });
 

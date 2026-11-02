@@ -22,7 +22,7 @@
         {
           "path": "body",
           "value": ["Inter"],
-          "authored": {
+          "asWritten": {
             "value": "Inter",
             "type": "fontFamily"
           }
@@ -30,7 +30,7 @@
         {
           "path": "heavy",
           "value": 700,
-          "authored": {
+          "asWritten": {
             "value": "bold",
             "type": "fontWeight"
           }

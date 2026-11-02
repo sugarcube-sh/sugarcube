@@ -105,18 +105,18 @@ function tokenChange({ before, after }: Pair<Token>, moved: Move[]): Found | und
     return { kind: "changed", path, properties, ...sides };
 }
 
-function writtenToken({ authored, description, extensions }: Token): WrittenToken {
-    if (!authored) return {};
-    return { value: authored.value, ...writtenOf({ ...authored, description, extensions }) };
+function writtenToken({ asWritten, description, extensions }: Token): WrittenToken {
+    if (!asWritten) return {};
+    return { value: asWritten.value, ...writtenOf({ ...asWritten, description, extensions }) };
 }
 
 function writtenGroup(group: Group): WrittenGroup {
     const extended = extendedPath(group);
-    return { ...writtenOf(group.authored ?? {}), ...(extended && { extends: extended }) };
+    return { ...writtenOf(group.asWritten ?? {}), ...(extended && { extends: extended }) };
 }
 
 function extendedPath(group: Group): string | undefined {
-    return group.references[0]?.path;
+    return group.references[0]?.pointsToPath;
 }
 
 function writtenOf({ type, description, deprecated, extensions }: Written): Written {
@@ -142,7 +142,7 @@ function tokenDifferences(before: Token, after: Token, moved: Move[]): TokenProp
 function groupDifferences(before: Group, after: Group, moved: Move[]): GroupProperty[] {
     const extended = extendedPath(before);
     return differing({
-        ...sameWritten(before.authored ?? {}, after.authored ?? {}),
+        ...sameWritten(before.asWritten ?? {}, after.asWritten ?? {}),
         extends: (extended && tokenPath.afterMoves(extended, moved)) === extendedPath(after),
     });
 }
@@ -172,11 +172,11 @@ function differing<P extends string>(same: Record<P, boolean>): P[] {
 }
 
 function saidType(token: Token): string | undefined {
-    return token.authored ? token.authored.type : token.type;
+    return token.asWritten ? token.asWritten.type : token.type;
 }
 
 function saidDeprecation(token: Token): Token["deprecated"] {
-    return token.authored ? token.authored.deprecated : token.deprecated;
+    return token.asWritten ? token.asWritten.deprecated : token.deprecated;
 }
 
 class Changes {
@@ -208,12 +208,12 @@ class Changes {
 
 function saidAfterMoves(token: Token, moved: Move[]): Said {
     if (token.value !== undefined) return { value: forwarded(token.value, moved) };
-    if (!token.authored) return token;
-    let written: unknown = token.authored.value;
+    if (!token.asWritten) return token;
+    let written: unknown = token.asWritten.value;
     for (const reference of token.references) {
-        written = replacedAt(written, reference.property ?? [], reference.moved(moved));
+        written = replacedAt(written, reference.writtenInProperty ?? [], reference.moved(moved));
     }
-    return { authored: { value: written } };
+    return { asWritten: { value: written } };
 }
 
 function replacedAt(value: unknown, [step, ...rest]: JsonPath, by: JsonValue): unknown {

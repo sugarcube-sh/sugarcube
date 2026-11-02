@@ -9,11 +9,11 @@ declare const tokens: DesignTokens;
 declare const input: Input;
 declare function isPrivateToken(t: { path: string }): boolean;
 
-const border = tokens.permutation(input).token("border.card");
+const border = tokens.getPermutation(input).getToken("border.card");
 const css =
     border &&
     cssValue(border, {
-        replacement: ({ token }) =>
+        replacement: ({ pointsToToken: token }) =>
             token && !isPrivateToken(token)
                 ? { customProperty: cssCustomProperty(token.path) }
                 : undefined,

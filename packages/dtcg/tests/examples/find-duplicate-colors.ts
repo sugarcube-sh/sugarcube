@@ -4,9 +4,9 @@ import { isEquivalentValue, type DesignTokens, type Token } from "@sugarcube-sh/
 declare const tokens: DesignTokens;
 
 const colors = tokens
-    .permutation()
+    .getPermutation()
     .tokens.filter(
-        (t): t is Extract<Token, { type: "color" }> => t.type === "color" && !t.referenceAt(),
+        (t): t is Extract<Token, { type: "color" }> => t.type === "color" && !t.getReferenceAt(),
     );
 
 for (let i = 0; i < colors.length; i++) {

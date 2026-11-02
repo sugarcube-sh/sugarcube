@@ -35,7 +35,7 @@ export function fromTokenFile(path: string, json: JsonFile | undefined): Built {
                 contexts: [],
                 sources: [
                     {
-                        source: { file: path, sets: [], readBy: "everyone" },
+                        source: { file: path, sets: [], readBy: "every-context" },
                         pieces: [{ file: path, ...(json && { json, tree: json.root }) }],
                     },
                 ],
@@ -158,7 +158,7 @@ function listedSources(
             ...(loaded.pointer && { pointer: loaded.pointer }),
             ...(context && { modifier: context.modifier }),
             sets: route(first),
-            readBy: readBy.get(sourceKey(loaded)) ?? "everyone",
+            readBy: readBy.get(sourceKey(loaded)) ?? "every-context",
         };
         const made = { source, pieces };
         byContext.set(context, made);
@@ -194,14 +194,14 @@ function whoReadsEachSource(
     sources: Map<SourcePiece, LoadedSource>,
     contextOf: ContextOf,
 ): Map<string, Source["readBy"]> {
-    const readBy = new Map<string, "everyone" | ResolverContext[]>();
+    const readBy = new Map<string, "every-context" | ResolverContext[]>();
     const read = (entry: SourceEntry, context?: ResolverContext) => {
         const loaded = openedAs(entry, sources);
         if (!loaded) return;
         const key = sourceKey(loaded);
         const existing = readBy.get(key);
-        if (!context || existing === "everyone") {
-            readBy.set(key, "everyone");
+        if (!context || existing === "every-context") {
+            readBy.set(key, "every-context");
             return;
         }
         const list = existing ?? [];

@@ -26,19 +26,19 @@ const fromDisk = async (path: string) => disk[path];
 describe("tokens.entry", () => {
     it("is the file the read started from, by the name the design tokens give it", async () => {
         const tokens = await read("tokens/design.resolver.json", { readText: fromDisk });
-        expect(tokens.entry).toBe("design.resolver.json");
-        expect(tokens.text(tokens.entry)).toBe(resolver);
+        expect(tokens.entryFile).toBe("design.resolver.json");
+        expect(tokens.getText(tokens.entryFile)).toBe(resolver);
     });
 
     it("is the one file read without a resolver", () => {
-        expect(readFromMemory({ files: { "base.json": base } }).entry).toBe("base.json");
+        expect(readFromMemory({ files: { "base.json": base } }).entryFile).toBe("base.json");
     });
 
     it("is the resolver found among loose files", () => {
         const tokens = readFromMemory({
             files: { "base.json": base, "design.resolver.json": localResolver },
         });
-        expect(tokens.entry).toBe("design.resolver.json");
+        expect(tokens.entryFile).toBe("design.resolver.json");
     });
 });
 

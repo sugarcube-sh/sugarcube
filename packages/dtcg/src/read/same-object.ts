@@ -15,8 +15,8 @@ export interface MadeFrom {
     resolved: unknown;
     invalid: true | undefined;
     deprecated: boolean | string | undefined;
-    deprecatedFrom: string | undefined;
-    writtenAt: readonly Place[];
+    deprecatedByGroup: string | undefined;
+    definitions: readonly Place[];
 }
 
 export function sameToken(
@@ -26,8 +26,8 @@ export function sameToken(
     targets: readonly Target[],
 ): boolean {
     if (earlier.type !== now.type || earlier.deprecated !== now.deprecated) return false;
-    if (earlier.deprecatedFrom !== now.deprecatedFrom) return false;
-    if (!sameList(earlier.writtenAt, now.writtenAt)) return false;
+    if (earlier.deprecatedByGroup !== now.deprecatedByGroup) return false;
+    if (!sameList(earlier.definitions, now.definitions)) return false;
     if (earlier.generated?.from !== written.generated?.from) return false;
     if (earlier.generated?.extension !== written.generated?.extension) return false;
     if (earlier.inherited?.from !== written.inherited?.from) return false;
@@ -36,7 +36,8 @@ export function sameToken(
     let intoParts = false;
     for (const [index, { path, token, targetProperty }] of targets.entries()) {
         const reference = references[index];
-        if (!reference || reference.token !== token || reference.path !== path) return false;
+        if (!reference || reference.pointsToToken !== token || reference.pointsToPath !== path)
+            return false;
         if (targetProperty !== undefined) intoParts = true;
     }
     const resolved = !intoParts || isEqualJson(earlier.resolved, now.resolved);
@@ -62,9 +63,9 @@ export function sameGroup(
         earlier.extends === extending &&
         earlier.type === usableType(applies.type) &&
         earlier.deprecated === applies.deprecated &&
-        earlier.deprecatedFrom === deprecatedFrom &&
+        earlier.deprecatedByGroup === deprecatedFrom &&
         earlier.inherited?.from === written.inherited?.from &&
-        sameList(earlier.writtenAt, writtenAt) &&
+        sameList(earlier.definitions, writtenAt) &&
         sameList(earlier.children, children)
     );
 }
@@ -89,7 +90,7 @@ export function sameSource(was: Source, now: Source): boolean {
 }
 
 function sameReaders(was: Source["readBy"], now: Source["readBy"]): boolean {
-    if (was === "everyone" || now === "everyone") return was === now;
+    if (was === "every-context" || now === "every-context") return was === now;
     return sameList(was, now);
 }
 

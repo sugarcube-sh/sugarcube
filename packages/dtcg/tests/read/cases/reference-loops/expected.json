@@ -64,7 +64,7 @@
         "text": "\"{b}\""
       },
       "path": "a",
-      "related": [
+      "relatedInformation": [
         {
           "message": "part of the same loop",
           "span": {

@@ -8,7 +8,7 @@
     "description": "Resolver with metadata",
     "sets": [],
     "modifiers": [],
-    "order": []
+    "resolutionOrder": []
   },
   "diagnostics": [
     {

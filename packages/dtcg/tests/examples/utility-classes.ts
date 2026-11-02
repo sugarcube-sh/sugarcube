@@ -5,7 +5,7 @@ import { cssIdentifier, cssCustomProperty } from "@sugarcube-sh/dtcg/css";
 
 declare const tokens: DesignTokens;
 
-for (const t of tokens.permutation().group("space")?.tokens ?? []) {
+for (const t of tokens.getPermutation().getGroup("space")?.tokens ?? []) {
     if (t.type !== "dimension") continue;
     const suffix = cssIdentifier(t.path.slice("space.".length));
     row(`.p-${suffix} { padding: var(${cssCustomProperty(t.path)}); }`);

@@ -43,7 +43,7 @@
         }
       }
     ],
-    "order": [{ "modifier": "theme" }, { "modifier": "brand" }]
+    "resolutionOrder": [{ "modifier": "theme" }, { "modifier": "brand" }]
   },
   "diagnostics": [
     {

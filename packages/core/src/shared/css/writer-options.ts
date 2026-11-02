@@ -36,7 +36,7 @@ export function cssWriterOptions(
                 if (!fluid.ok) return undefined;
                 if (fluid.value) return clamp(fluid.value, transforms.fluid);
             }
-            return token.type === "gradient" && !token.referenceAt()
+            return token.type === "gradient" && !token.getReferenceAt()
                 ? write`linear-gradient(${written})`
                 : written;
         },
@@ -52,7 +52,7 @@ export function cssWriterOptions(
 
 function privateTokens(): (token: Token) => boolean {
     const privateFrom = new Map<Source, boolean>();
-    return ({ valueFrom: { source } }) => {
+    return ({ winningDefinition: { source } }) => {
         let found = privateFrom.get(source);
         if (found === undefined) {
             found = !emits(source);

@@ -14,7 +14,7 @@
     {
       "file": "tokens.json",
       "sets": [],
-      "readBy": "everyone"
+      "readBy": "every-context"
     }
   ]
 }

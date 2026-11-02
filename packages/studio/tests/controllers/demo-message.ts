@@ -62,7 +62,7 @@ export const configProblem: Reported = {
     kind: "invalid-config",
     severity: "error",
     message: "`variables.prefix` must be a string",
-    docs: "https://sugarcube.sh/errors/invalid-config",
+    docsUrl: "https://sugarcube.sh/errors/invalid-config",
     detail: {
         reason: "wrong-type",
         setting: "variables.prefix",

@@ -8,7 +8,7 @@
           "path": "red",
           "type": "color",
           "invalid": true,
-          "authored": {
+          "asWritten": {
             "value": {
               "colorSpace": "srgb",
               "components": [2, 0, 0]

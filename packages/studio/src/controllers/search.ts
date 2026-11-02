@@ -57,10 +57,10 @@ function found({ tokens, showing, value: asWritten }: StudioState, query: string
     const hits: Hit[] = [];
     if (!needle) return { query, hits, capped: false };
 
-    for (const path of tokens.tokenPaths()) {
+    for (const path of tokens.getTokenPaths()) {
         if (!path.toLowerCase().includes(needle)) continue;
         if (hits.length === MAX_HITS) return { query, hits, capped: true };
-        const token = showing.token(path);
+        const token = showing.getToken(path);
         const css = token && asWritten(token);
         const value = typeof css === "string" ? css : undefined;
         hits.push({ path, swatch: token?.type === "color" ? value : undefined, value });

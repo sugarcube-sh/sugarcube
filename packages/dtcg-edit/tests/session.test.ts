@@ -31,7 +31,9 @@ describe("createSession", () => {
             expect.objectContaining({ kind: "set", file: "color.json" }),
         ]);
         expect(session.unsaved).not.toHaveProperty("files");
-        expect(session.tokens.permutation().token("color.brand.500")?.authored?.value).toEqual(red);
+        expect(
+            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+        ).toEqual(red);
         expect(session.opened).toBe(demo);
     });
 

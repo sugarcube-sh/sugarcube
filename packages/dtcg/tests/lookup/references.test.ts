@@ -61,14 +61,17 @@ const json = {
 
 const tokens = readFromMemory({ files: { "tokens.json": JSON.stringify(json) } });
 const tokenAt = (path: string) => {
-    const found = tokens.permutation().token(path);
+    const found = tokens.getPermutation().getToken(path);
     if (!found) throw new Error(`no token ${path}`);
     return found;
 };
-const placed = ({ property, path }: Reference) => ({ ...(property && { property }), path });
+const placed = ({ writtenInProperty: property, pointsToPath: path }: Reference) => ({
+    ...(property && { property }),
+    path,
+});
 const referencesOf = (path: string) => tokenAt(path).references.map(placed);
 const referenceAt = (path: string, property: (string | number)[]) =>
-    tokenAt(path).referenceAt(property)?.path;
+    tokenAt(path).getReferenceAt(property)?.pointsToPath;
 
 describe("a token's references", () => {
     it("is empty for a value with no references", () => {
@@ -139,11 +142,15 @@ describe("a reference to nothing", () => {
         });
         expect(
             misspelt
-                .referencesTo("color.inc")
-                .map(({ fromPaths, path, syntax }) => ({ fromPaths, path, syntax })),
+                .getReferencesTo("color.inc")
+                .map(({ writtenInPaths, pointsToPath, asWritten }) => ({
+                    writtenInPaths,
+                    pointsToPath,
+                    syntax: asWritten.syntax,
+                })),
         ).toStrictEqual([
-            { fromPaths: ["text"], path: "color.inc", syntax: "json-pointer" },
-            { fromPaths: ["border"], path: "color.inc", syntax: "curly-brace" },
+            { writtenInPaths: ["text"], pointsToPath: "color.inc", syntax: "json-pointer" },
+            { writtenInPaths: ["border"], pointsToPath: "color.inc", syntax: "curly-brace" },
         ]);
     });
 });

@@ -16,12 +16,12 @@ describe("setValue, the shared value", () => {
             },
         ]);
         const after = committed(demo, result);
-        expect(after.permutation().token("color.text.brand")?.authored?.value).toBe(
+        expect(after.getPermutation().getToken("color.text.brand")?.asWritten?.value).toBe(
             "{color.brand.800}",
         );
-        expect(after.permutation({ mode: "dark" }).token("color.text.brand")?.authored?.value).toBe(
-            "{color.brand.300}",
-        );
+        expect(
+            after.getPermutation({ mode: "dark" }).getToken("color.text.brand")?.asWritten?.value,
+        ).toBe("{color.brand.300}");
     });
 
     it("says which contexts see the change", () => {
@@ -190,11 +190,11 @@ describe("setValue, for one context", () => {
             },
         ]);
         const after = committed(demo, result);
-        expect(after.permutation({ mode: "dark" }).token("radius.md")?.resolved).toEqual({
+        expect(after.getPermutation({ mode: "dark" }).getToken("radius.md")?.resolved).toEqual({
             value: 0.5,
             unit: "rem",
         });
-        expect(after.permutation().token("radius.md")?.resolved).toEqual({
+        expect(after.getPermutation().getToken("radius.md")?.resolved).toEqual({
             value: 0.25,
             unit: "rem",
         });
@@ -247,7 +247,9 @@ describe("setValue, for one context", () => {
                 value: { ...bg, $value: "#000000" },
             },
         ]);
-        expect(committed(tokens, result).permutation({ mode: "dark" }).token("bg")).toMatchObject({
+        expect(
+            committed(tokens, result).getPermutation({ mode: "dark" }).getToken("bg"),
+        ).toMatchObject({
             description: "The page.",
             deprecated: "Use surface.",
             extensions: { "com.example": { role: "page" } },
@@ -277,7 +279,8 @@ describe("setValue, for one context", () => {
             },
         ]);
         expect(
-            committed(tokens, result).permutation({ mode: "dark" }).token("old.bg")?.deprecated,
+            committed(tokens, result).getPermutation({ mode: "dark" }).getToken("old.bg")
+                ?.deprecated,
         ).toBe(true);
     });
 
@@ -622,7 +625,7 @@ describe("setValue, at a place it is written", () => {
             },
         });
     const placeIn = (tokens: DesignTokens, path: string, file: string) => {
-        const place = tokens.writtenAt(path).find(({ span }) => span.file === file);
+        const place = tokens.getDefinitions(path).find(({ span }) => span.file === file);
         if (!place) throw new Error(`${path} is not written in ${file}`);
         return place;
     };
@@ -719,7 +722,7 @@ describe("setValue, at a place it is written", () => {
 
     it("is refused for a place from an older read that no longer matches", () => {
         const before = placeIn(demo, "color.text.brand", "dark.json").span;
-        const text = demo.text("dark.json") ?? "";
+        const text = demo.getText("dark.json") ?? "";
         const moved = readFromMemory({
             files: { ...demo.toMemory().files, "dark.json": `\n${text}` },
             entry: "tokens.resolver.json",
@@ -756,7 +759,7 @@ describe("setValue, at a place it is written", () => {
             },
             { generators: [steps] },
         );
-        const [place] = tokens.writtenAt("space.1");
+        const [place] = tokens.getDefinitions("space.1");
 
         expect(place).toBeDefined();
         expect(setValue(tokens, "space.1", 4, { at: place!.span }).refused?.kind).toBe("generated");
@@ -770,9 +773,9 @@ describe("setValue, at a place it is written", () => {
                 danger: { $extends: "{button}" },
             }),
         });
-        const [place] = tokens.writtenAt("danger.bg");
+        const [place] = tokens.getDefinitions("danger.bg");
 
-        expect(place?.span).toEqual(tokens.writtenAt("button.bg")[0]?.span);
+        expect(place?.span).toEqual(tokens.getDefinitions("button.bg")[0]?.span);
         expect(setValue(tokens, "danger.bg", "#ff0000", { at: place!.span }).refused).toMatchObject(
             {
                 kind: "inherited",
@@ -871,7 +874,7 @@ describe("setDescription", () => {
             },
             entry: "tokens.resolver.json",
         });
-        expect(tokens.writtenAt("accent").map(({ span }) => span.file)).toEqual([
+        expect(tokens.getDefinitions("accent").map(({ span }) => span.file)).toEqual([
             "light.json",
             "base.json",
         ]);
@@ -979,7 +982,7 @@ describe("setDescription", () => {
         ]);
         const after = committed(tokens, result);
         for (const mode of ["light", "dark", "dim"]) {
-            expect(after.permutation({ mode }).token("bg")?.description).toBe("The page.");
+            expect(after.getPermutation({ mode }).getToken("bg")?.description).toBe("The page.");
         }
     });
 
@@ -1001,7 +1004,7 @@ describe("setDescription", () => {
     it("adds one to a token that has none", () => {
         const after = committed(demo, setDescription(demo, "color.brand.600", "Hover."));
 
-        expect(after.permutation().token("color.brand.600")?.description).toBe("Hover.");
+        expect(after.getPermutation().getToken("color.brand.600")?.description).toBe("Hover.");
     });
 
     it("changes a group's description where the group writes it", () => {
@@ -1037,7 +1040,7 @@ describe("setDescription", () => {
     it("removes one with null, and does nothing when there is none", () => {
         const after = committed(demo, setDescription(demo, "color.brand.500", null));
 
-        expect(after.permutation().token("color.brand.500")?.description).toBeUndefined();
+        expect(after.getPermutation().getToken("color.brand.500")?.description).toBeUndefined();
         expect(opsOf(setDescription(demo, "color.brand.600", null))).toEqual([]);
     });
 
@@ -1104,7 +1107,9 @@ describe("setValue, a part", () => {
     });
 
     it("changes the part at the place given", () => {
-        const dark = demo.writtenAt("shadow.raised").find(({ span }) => span.file === "dark.json")!;
+        const dark = demo
+            .getDefinitions("shadow.raised")
+            .find(({ span }) => span.file === "dark.json")!;
         const color = ["shadow", "raised", "$value", 0, "color"];
 
         expect(
@@ -1142,7 +1147,7 @@ describe("setValue, a part", () => {
         const after = committed(demo, setValue(demo, "shadow.sm", "red", { part: ["colour"] }));
 
         expect(at(after, "shadow.json", ["shadow", "sm", "$value", "colour"])).toBe("red");
-        expect(after.diagnosticsFor("shadow.sm").length).toBeGreaterThan(0);
+        expect(after.getDiagnostics("shadow.sm").length).toBeGreaterThan(0);
     });
 
     it("refuses a part of a value that is a reference", () => {

@@ -45,7 +45,7 @@
             "extension": ["com.example", "steps"]
           },
           "inherited": null,
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -71,7 +71,7 @@
         "file": "tokens.json",
         "valueAfter": "\"2\":"
       },
-      "related": [
+      "relatedInformation": [
         {
           "message": "made by this extension",
           "span": {

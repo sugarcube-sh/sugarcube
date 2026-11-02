@@ -55,8 +55,8 @@ function demo(): DesignTokens {
 
 describe("cssWriterOptions", () => {
     const tokens = demo();
-    const light = tokens.permutation();
-    const dark = tokens.permutation({ mode: "dark" });
+    const light = tokens.getPermutation();
+    const dark = tokens.getPermutation({ mode: "dark" });
 
     it("writes each token as the build does, fluid as clamp() and references as var()", () => {
         const writer = cssWriter(cssWriterOptions(tokens, config));
@@ -75,10 +75,10 @@ describe("cssWriterOptions", () => {
 
     it("answers one token with references as values, for a screen showing what the build writes", () => {
         const writer = cssWriter({ ...cssWriterOptions(tokens, config), references: "values" });
-        expect(writer.written(light.token("size.fluid.gutter")!)?.css).toBe(
+        expect(writer.written(light.getToken("size.fluid.gutter")!)?.css).toBe(
             "clamp(1rem, 0.6364rem + 1.8182vw, 2rem)",
         );
-        expect(writer.written(dark.token("color.text.default")!)?.css).toBe(
+        expect(writer.written(dark.getToken("color.text.default")!)?.css).toBe(
             "oklch(0.986 0.002 258)",
         );
     });

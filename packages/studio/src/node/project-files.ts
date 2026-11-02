@@ -12,7 +12,7 @@ export async function projectFiles(): ReturnType<typeof nodeFiles> {
 
 export function refuseEmpty(files: StudioFiles, cwd: string): void {
     const { config, tokens } = files.now();
-    if (tokens.tokenPaths().length > 0) return;
+    if (tokens.getTokenPaths().length > 0) return;
     const where = { cwd, entry: config.resolver };
     throw new Error(ErrorMessages.NOTHING_TO_BUILD(problemsText(tokens.diagnostics, where)));
 }

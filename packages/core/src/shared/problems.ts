@@ -68,7 +68,7 @@ export function problemLines(
         const available = width === undefined ? undefined : width - indent;
         const padding = " ".repeat(severityWidth - problem.severity.length);
         const head = `${place.padEnd(placeWidth)}  ${tint[problem.severity](problem.severity)}${padding}  `;
-        const related = (problem.related ?? []).map(
+        const related = (problem.relatedInformation ?? []).map(
             ({ message, span }) => `${placeOf(span, where).place}  ${colors.dim(message)}`,
         );
         return [...wrapped(words, colors, available), ...related].map(

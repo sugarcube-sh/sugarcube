@@ -77,7 +77,7 @@ function changedBy(tokens: DesignTokens, ops: readonly FileOp[]): FilesChanged {
 
     const written = Object.entries(changed)
         .flatMap(([file, text]): [string, string][] =>
-            text !== null && text !== tokens.text(file) ? [[file, text]] : [],
+            text !== null && text !== tokens.getText(file) ? [[file, text]] : [],
         )
         .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
     const deleted = Object.keys(changed).filter((file) => changed[file] === null);
@@ -105,13 +105,13 @@ export function applyStepsThatFit(
 function editedFiles(tokens: DesignTokens, steps: readonly EditStep[]) {
     let changed: Changed = {};
     const texts: Texts = {
-        of: (file) => (file in changed ? (changed[file] ?? undefined) : tokens.text(file)),
+        of: (file) => (file in changed ? (changed[file] ?? undefined) : tokens.getText(file)),
         set: (file, text) => {
             changed[file] = text;
         },
     };
     let drafts = new Map<string, Draft>();
-    const style = texts.of(tokens.entry) ?? "";
+    const style = texts.of(tokens.entryFile) ?? "";
     const written = (file: string) => {
         const draft = drafts.get(file);
         if (draft && draft.pending.length > 0) texts.set(file, spliced(draft.text, draft.pending));
@@ -149,7 +149,7 @@ function editedFiles(tokens: DesignTokens, steps: readonly EditStep[]) {
 }
 
 function unread(next: DesignTokens, ops: readonly FileOp[]): FileOp[] {
-    return ops.filter((op) => op.kind === "createFile" && next.text(op.file) === undefined);
+    return ops.filter((op) => op.kind === "createFile" && next.getText(op.file) === undefined);
 }
 
 /**

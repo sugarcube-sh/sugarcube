@@ -27,7 +27,7 @@
         "written": "group"
       },
       "span": { "file": "tokens.json", "valueAfter": "\"1\":" },
-      "related": [
+      "relatedInformation": [
         {
           "message": "made by this extension",
           "span": { "file": "tokens.json", "valueAfter": "\"steps\":" },

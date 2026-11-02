@@ -152,8 +152,8 @@ function buildPermutation(
             resolved: read.ok && "resolved" in value ? value.resolved : undefined,
             invalid: read.ok ? undefined : true,
             deprecated,
-            deprecatedFrom: deprecatedFrom(merged, written, deprecated),
-            writtenAt: replaces
+            deprecatedByGroup: deprecatedFrom(merged, written, deprecated),
+            definitions: replaces
                 ? [...placed(replaces, path), places.at(sourceAt(source), span, path)]
                 : places.only(sourceAt(source), span, path),
         };
@@ -331,7 +331,9 @@ function workingOut(
             span: frame.span,
             path: frame.path,
         }));
-        report("circular-reference", { chain }, first.path, first.span, { related });
+        report("circular-reference", { chain }, first.path, first.span, {
+            relatedInformation: related,
+        });
     };
 
     const followWhole = (token: MergedToken, whole: Occurrence): Whole => {
@@ -451,7 +453,7 @@ function aimAt<Found extends Pending<Token>>(
 }
 
 function publicTopLevel(top: MergedTopLevel, writtenAt: readonly Place[]): TopLevel {
-    return { ...publicProperties(top), writtenAt };
+    return { ...publicProperties(top), definitions: writtenAt };
 }
 
 function groupFields(
@@ -465,13 +467,13 @@ function groupFields(
     return {
         path,
         ...publicProperties(applies),
-        ...(markedBy !== undefined && { deprecatedFrom: markedBy }),
-        writtenAt,
-        extensionsWrittenAt: extensionPlaces(group, writtenAt),
+        ...(markedBy !== undefined && { deprecatedByGroup: markedBy }),
+        definitions: writtenAt,
+        extensionDefinitions: extensionPlaces(group, writtenAt),
         children: [],
         references: NO_REFERENCES,
         ...(from && { inherited: from }),
-        ...(Object.keys(authored).length > 0 && { authored }),
+        ...(Object.keys(authored).length > 0 && { asWritten: authored }),
     };
 }
 
@@ -510,15 +512,15 @@ function tokenFields(token: MergedToken, now: MadeFrom): Parameters<typeof linke
         path: token.path,
         type: now.type,
         references: NO_REFERENCES,
-        writtenAt: now.writtenAt,
+        definitions: now.definitions,
         value: now.value,
         resolved: now.resolved,
         invalid: now.invalid,
         description: token.description,
         deprecated: now.deprecated,
-        deprecatedFrom: now.deprecatedFrom,
+        deprecatedByGroup: now.deprecatedByGroup,
         extensions: token.extensions,
-        authored: token.added
+        asWritten: token.added
             ? undefined
             : {
                   value: token.authored,

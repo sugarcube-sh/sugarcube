@@ -85,21 +85,21 @@ describe("dtcg's Vite plugin", () => {
         await serve(plugin);
         const first = await plugin.api.tokens();
         expect(first.files).toEqual(["tokens.resolver.json", "base.json"]);
-        expect(first.text("base.json")).toContain("#111111");
+        expect(first.getText("base.json")).toContain("#111111");
 
         const reads: Array<{ tokens: DesignTokens; file?: string }> = [];
         plugin.api.onRead((read, { file }) => reads.push({ tokens: read, file }));
         await until(
             () =>
                 reads.some(({ tokens: read }) =>
-                    JSON.stringify(read.permutation().token("color.ink")).includes("#222"),
+                    JSON.stringify(read.getPermutation().getToken("color.ink")).includes("#222"),
                 ),
             "the save",
             () => tokens({ color: { ink: color("#222222") } }),
         );
 
         expect(reads.at(-1)?.file).toBe("base.json");
-        expect(reads.at(-1)?.tokens.text("base.json")).toContain("#222222");
+        expect(reads.at(-1)?.tokens.getText("base.json")).toContain("#222222");
     });
 
     it("logs a failure from before Vite's logger exists, once there is one", async () => {

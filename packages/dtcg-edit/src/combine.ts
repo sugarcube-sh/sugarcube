@@ -47,7 +47,7 @@ function carriedOn(
 function together(tokens: DesignTokens, last: DesignTokens, made: Made[]): OpResult {
     const affected = new Set(
         made.flatMap(({ alsoAffects }) =>
-            alsoAffects.map(({ input }) => tokens.permutation(input)),
+            alsoAffects.map(({ input }) => tokens.getPermutation(input)),
         ),
     );
     const left = made.flatMap(({ broken = [] }, index) => {
@@ -56,9 +56,9 @@ function together(tokens: DesignTokens, last: DesignTokens, made: Made[]): OpRes
     });
     return {
         ops: made.flatMap(({ ops }) => ops),
-        alsoAffects: tokens.permutations.where((each) => affected.has(each)),
+        alsoAffects: tokens.permutations.select((each) => affected.has(each)),
         broken: [...new Set(left)].filter((path) =>
-            last.diagnosticsFor(path).some(({ kind }) => kind === "missing-reference"),
+            last.getDiagnostics(path).some(({ kind }) => kind === "missing-reference"),
         ),
         moved: made.flatMap(({ moved }) => moved),
     };

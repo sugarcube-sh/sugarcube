@@ -42,8 +42,8 @@ const tokens = readFromMemory({
 
 const aliasChain = (path: string, input?: Input) =>
     tokens
-        .permutation(input)
-        .token(path)
+        .getPermutation(input)
+        .getToken(path)
         ?.aliasChain.map((each) => each.path);
 
 describe("a token's aliasChain", () => {
@@ -57,9 +57,9 @@ describe("a token's aliasChain", () => {
             "brand",
             "palette.rose",
         ]);
-        const dark = tokens.permutation({ theme: "dark" });
-        const text = dark.token("text");
-        expect(text?.aliasChain[1]).toBe(dark.token("brand"));
+        const dark = tokens.getPermutation({ theme: "dark" });
+        const text = dark.getToken("text");
+        expect(text?.aliasChain[1]).toBe(dark.getToken("brand"));
     });
 
     it("follows a pointer to a whole value, or to the token itself, as the read does", () => {

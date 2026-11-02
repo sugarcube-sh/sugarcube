@@ -3,6 +3,7 @@ import { refused } from "./error-messages.js";
 import type { FileOp, OpResult } from "./index.js";
 import { copiesOf } from "./placement.js";
 import type { Member } from "./file-text.js";
+import { getJsonAt } from "@sugarcube-sh/dtcg/editor";
 
 /**
  * Renames a token or group where each is written, and rewrites every reference to it or to
@@ -33,20 +34,20 @@ export function rename(tokens: DesignTokens, path: string, newName: string): OpR
     if (tokens.has(to)) return refused({ kind: "taken", path: to });
 
     const moved = [{ from: path, to }];
-    const keys = copies.places.map(({ span, jsonPath, written }): FileOp => ({
+    const keys = copies.places.map(({ span, jsonPath, asWritten: written }): FileOp => ({
         kind: "renameKey",
         file: span.file,
         jsonPath,
         name: newName,
         was: written,
     }));
-    const all = tokens.referencesTo(path);
+    const all = tokens.getReferencesTo(path);
     const references = all.filter(isWritten).flatMap((reference): FileOp[] => {
         const { span } = reference;
-        const was = tokens.jsonAt(span.file, reference.jsonPath);
+        const was = getJsonAt(tokens, span.file, reference.jsonPath);
         if (was === undefined) return [];
         const jsonPath = afterKeys(
-            { span, jsonPath: reference.jsonPath, written: was },
+            { span, jsonPath: reference.jsonPath, asWritten: was },
             copies.places,
             newName,
         );
@@ -54,7 +55,11 @@ export function rename(tokens: DesignTokens, path: string, newName: string): OpR
         return [{ kind: "set", file: span.file, jsonPath, value, was }];
     });
     const broken = [
-        ...new Set(all.filter((each) => !isWritten(each)).flatMap(({ fromPaths }) => fromPaths)),
+        ...new Set(
+            all
+                .filter((each) => !isWritten(each))
+                .flatMap(({ writtenInPaths: fromPaths }) => fromPaths),
+        ),
     ];
     return { ops: [...keys, ...references], alsoAffects: copies.alsoAffects, broken, moved };
 }
@@ -72,6 +77,6 @@ function afterKeys(member: Member, keys: Member[], name: string): Member["jsonPa
 }
 
 function isWritten(reference: ReferenceInPermutations): boolean {
-    const [writer] = reference.fromPaths;
-    return !reference.permutations.some((each) => writer && each.token(writer)?.generated);
+    const [writer] = reference.writtenInPaths;
+    return !reference.permutations.some((each) => writer && each.getToken(writer)?.generated);
 }

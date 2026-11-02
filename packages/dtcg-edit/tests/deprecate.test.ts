@@ -25,7 +25,7 @@ describe("deprecate", () => {
         const after = committed(demo, deprecate(demo, "color.text.default", true));
 
         for (const perm of after.permutations) {
-            expect(perm.token("color.text.default")?.deprecated).toBe(true);
+            expect(perm.getToken("color.text.default")?.deprecated).toBe(true);
         }
     });
 
@@ -47,7 +47,7 @@ describe("deprecate", () => {
         const marked = committed(demo, deprecate(demo, "color.brand.500", "Old."));
         const after = committed(marked, deprecate(marked, "color.brand.500", null));
 
-        expect(after.permutation().token("color.brand.500")?.deprecated).toBeUndefined();
+        expect(after.getPermutation().getToken("color.brand.500")?.deprecated).toBeUndefined();
         expect(opsOf(deprecate(demo, "color.brand.600", null))).toEqual([]);
     });
 
@@ -57,7 +57,9 @@ describe("deprecate", () => {
         expect(at(after, "color.json", ["color", "brand", "$deprecated"])).toBe(
             "Use color.accent.",
         );
-        expect(after.permutation().token("color.brand.500")?.deprecated).toBe("Use color.accent.");
+        expect(after.getPermutation().getToken("color.brand.500")?.deprecated).toBe(
+            "Use color.accent.",
+        );
     });
 
     it("changes a group's mark in the file that writes it, when the group is in several", () => {
@@ -92,7 +94,7 @@ describe("deprecate", () => {
         const tokens = opened(files);
         const after = committed(tokens, deprecate(tokens, "old.kept", false));
 
-        expect(after.permutation().token("old.kept")?.deprecated).toBe(false);
+        expect(after.getPermutation().getToken("old.kept")?.deprecated).toBe(false);
     });
 
     it("is refused for a path that is neither a token nor a group", () => {
@@ -140,16 +142,18 @@ describe("a group that extends another", () => {
         const after = committed(tokens, setDescription(tokens, "primary", "The main action."));
 
         expect(at(after, "base.json", ["primary", "$description"])).toBe("The main action.");
-        expect(after.permutation().group("primary")?.description).toBe("The main action.");
-        expect(after.permutation().group("button")?.description).toBe("The base for every button.");
+        expect(after.getPermutation().getGroup("primary")?.description).toBe("The main action.");
+        expect(after.getPermutation().getGroup("button")?.description).toBe(
+            "The base for every button.",
+        );
     });
 
     it("is given a deprecation of its own over the one it takes", () => {
         const after = committed(tokens, deprecate(tokens, "primary", false));
 
         expect(at(after, "base.json", ["primary", "$deprecated"])).toBe(false);
-        expect(after.permutation().group("primary")?.deprecated).toBe(false);
-        expect(after.permutation().group("button")?.deprecated).toBe("Use action.");
+        expect(after.getPermutation().getGroup("primary")?.deprecated).toBe(false);
+        expect(after.getPermutation().getGroup("button")?.deprecated).toBe("Use action.");
     });
 
     it("can't be changed where it is there only because of $extends", () => {

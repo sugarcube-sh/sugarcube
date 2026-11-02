@@ -18,7 +18,7 @@
           "name": "size"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     },
     {
       "file": "tokens.resolver.json",
@@ -28,7 +28,7 @@
           "name": "size"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     }
   ]
 }

@@ -25,12 +25,12 @@ const permutation = readFromMemory({
             },
         }),
     },
-}).permutation();
+}).getPermutation();
 
 describe("what a token works out from itself", () => {
     it("is the same each time it is read, as the read gives everything else", () => {
-        const text = permutation.token("color.text");
-        const lift = permutation.token("lift");
+        const text = permutation.getToken("color.text");
+        const lift = permutation.getToken("lift");
 
         expect(text?.aliasChain).toBe(text?.aliasChain);
         expect(lift?.parts).toBe(lift?.parts);
@@ -45,7 +45,7 @@ describe("what a token works out from itself", () => {
 
 describe("what a group works out from itself", () => {
     it("is the same each time it is read", () => {
-        const color = permutation.group("color");
+        const color = permutation.getGroup("color");
         expect(color?.childTokens).toBe(color?.childTokens);
         expect(color?.tokens).toBe(color?.tokens);
         expect(color?.tokens.map(({ path }) => path)).toStrictEqual([
@@ -58,9 +58,9 @@ describe("what a group works out from itself", () => {
 
 describe("working it out", () => {
     it("leaves nothing on the token or group that a tool sees", () => {
-        const text = permutation.token("color.text");
-        const lift = permutation.token("lift");
-        const color = permutation.group("color");
+        const text = permutation.getToken("color.text");
+        const lift = permutation.getToken("lift");
+        const color = permutation.getGroup("color");
         const before = [text, lift, color].map((each) => Object.keys(each ?? {}));
         void text?.aliasChain;
         void lift?.parts;

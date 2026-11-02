@@ -608,10 +608,12 @@ describe("isEquivalentValue", () => {
     });
 
     it("tells colors apart beyond that rounding", () => {
-        expect(isEquivalentValue("color", srgb(0.22, 0.518, 0.949), srgb(0.221, 0.518, 0.949))).toBe(false);
-        expect(isEquivalentValue("color", srgb(0.2, 0.5, 0.9), srgb(0.2, 0.5, 0.9, { alpha: 0.5 }))).toBe(
-            false,
-        );
+        expect(
+            isEquivalentValue("color", srgb(0.22, 0.518, 0.949), srgb(0.221, 0.518, 0.949)),
+        ).toBe(false);
+        expect(
+            isEquivalentValue("color", srgb(0.2, 0.5, 0.9), srgb(0.2, 0.5, 0.9, { alpha: 0.5 })),
+        ).toBe(false);
     });
 
     it("tells colors in different color spaces apart", () => {
@@ -627,11 +629,15 @@ describe("isEquivalentValue", () => {
     });
 
     it("tells lengths in different units apart", () => {
-        expect(isEquivalentValue("dimension", { value: 16, unit: "px" }, { value: 1, unit: "rem" })).toBe(
-            false,
-        );
         expect(
-            isEquivalentValue("dimension", { value: 0.1 + 0.2, unit: "rem" }, { value: 0.3, unit: "rem" }),
+            isEquivalentValue("dimension", { value: 16, unit: "px" }, { value: 1, unit: "rem" }),
+        ).toBe(false);
+        expect(
+            isEquivalentValue(
+                "dimension",
+                { value: 0.1 + 0.2, unit: "rem" },
+                { value: 0.3, unit: "rem" },
+            ),
         ).toBe(true);
     });
 
@@ -682,9 +688,9 @@ describe("isEquivalentValue", () => {
 
     it("compares two tokens by type and by the value they say, not where it leads", () => {
         const tokens = read();
-        const sm = tokens.permutation().token("space.sm");
-        const gap = tokens.permutation().token("space.gap");
-        const body = tokens.permutation().token("typography.body");
+        const sm = tokens.getPermutation().getToken("space.sm");
+        const gap = tokens.getPermutation().getToken("space.gap");
+        const body = tokens.getPermutation().getToken("typography.body");
         if (!sm || !gap || !body) throw new Error("missing token");
         expect(isEquivalentValue(sm, structuredClone(sm))).toBe(true);
         expect(isEquivalentValue(sm, gap)).toBe(false);

@@ -163,7 +163,7 @@ describe("read", () => {
         expect(readText.mock.calls).toStrictEqual([["tokens/base.json", "base.json"]]);
         expect(tokens.files).toStrictEqual(["base.json"]);
         expect(tokens.permutations[0]?.sources).toEqual([
-            { file: "base.json", sets: [], readBy: "everyone" },
+            { file: "base.json", sets: [], readBy: "every-context" },
         ]);
     });
 
@@ -572,7 +572,7 @@ describe("what counts as a resolver: its name, or a top-level resolutionOrder", 
 
     it("takes a file named .resolver.json as the resolver, so it can say what it lacks", () => {
         const tokens = readFromMemory({ files: { "x.resolver.json": "{}", "b.json": valid } });
-        expect(tokens.entry).toBe("x.resolver.json");
+        expect(tokens.entryFile).toBe("x.resolver.json");
         expect(tokens.diagnostics.map(({ kind }) => kind)).toContain("resolver-invalid");
     });
 
@@ -660,7 +660,7 @@ describe("readFromMemory", () => {
         const tokens = readFromMemory({ files: { "tokens.json": '{ "a": 1, "a": 2 }' } });
         expect(JSON.parse(JSON.stringify(tokens))).toMatchObject({
             files: ["tokens.json"],
-            sources: [{ file: "tokens.json", sets: [], readBy: "everyone" }],
+            sources: [{ file: "tokens.json", sets: [], readBy: "every-context" }],
             permutations: [{ sources: [0] }],
         });
     });
@@ -692,7 +692,7 @@ describe("a group referring to the whole document", () => {
         };
         const tokens = readFromMemory({ files });
         expect(tokens.diagnostics).toStrictEqual([]);
-        expect(tokens.permutation().token("g.x")?.inherited).toStrictEqual({ from: "" });
+        expect(tokens.getPermutation().getToken("g.x")?.inherited).toStrictEqual({ from: "" });
     });
     it('never reaches a token named "" through #, the whole document', () => {
         const files = {
@@ -701,7 +701,7 @@ describe("a group referring to the whole document", () => {
                 "t": { $type: "number", $value: { $ref: "#" } },
             }),
         };
-        expect(readFromMemory({ files }).permutation().token("t")?.resolved).toBeUndefined();
+        expect(readFromMemory({ files }).getPermutation().getToken("t")?.resolved).toBeUndefined();
     });
 });
 
@@ -756,7 +756,7 @@ describe("what the design tokens hold", () => {
         });
         expect(Object.keys(tokens)).toStrictEqual([
             "files",
-            "entry",
+            "entryFile",
             "resolver",
             "sources",
             "permutations",
@@ -780,21 +780,21 @@ describe("tokens.text", () => {
 
     it("is the text of each file the read used, by the name the design tokens give it", () => {
         const tokens = readFromMemory({ files, entry: "tokens.resolver.json" });
-        expect(tokens.text("base.json")).toBe(base);
-        expect(tokens.text("tokens.resolver.json")).toBe(files["tokens.resolver.json"]);
+        expect(tokens.getText("base.json")).toBe(base);
+        expect(tokens.getText("tokens.resolver.json")).toBe(files["tokens.resolver.json"]);
     });
 
     it("is undefined for a file the read did not use", () => {
         const tokens = readFromMemory({ files, entry: "tokens.resolver.json" });
-        expect(tokens.text("unread.json")).toBeUndefined();
-        expect(tokens.text("missing.json")).toBeUndefined();
+        expect(tokens.getText("unread.json")).toBeUndefined();
+        expect(tokens.getText("missing.json")).toBeUndefined();
     });
 
     it("is kept by read from disk too", async () => {
         const tokens = await read("tokens.resolver.json", {
             readText: async (path) => files[path as keyof typeof files],
         });
-        expect(tokens.text("base.json")).toBe(base);
+        expect(tokens.getText("base.json")).toBe(base);
     });
 
     it("is not written in the plain form", () => {
@@ -829,7 +829,7 @@ describe("the group a generator is given", () => {
             space: { $type: "dimension", fluid: { ...steps } },
         });
         expect(group).toStrictEqual({ path: "space.fluid", type: "dimension" });
-        expect(tokens.permutation().group("space.fluid")?.type).toBe("dimension");
+        expect(tokens.getPermutation().getGroup("space.fluid")?.type).toBe("dimension");
     });
 
     it("has its own type over the one around it", () => {
@@ -883,21 +883,21 @@ describe("tokens.reread", () => {
     const changed = () => tokens.reread({ "base.json": base("#00ff00") });
 
     it("reads a changed file's new text, and every other file as this one read it", () => {
-        expect(changed().permutation().token("brand")?.authored?.value).toBe("#00ff00");
-        expect(changed().text("base.json")).toBe(base("#00ff00"));
-        expect(changed().text("more.json")).toBe(more);
-        expect(changed().permutation().token("gap")).toBeDefined();
+        expect(changed().getPermutation().getToken("brand")?.asWritten?.value).toBe("#00ff00");
+        expect(changed().getText("base.json")).toBe(base("#00ff00"));
+        expect(changed().getText("more.json")).toBe(more);
+        expect(changed().getPermutation().getToken("gap")).toBeDefined();
     });
 
     it("reads with the same options", () => {
-        expect(changed().permutation().token("space.1")?.generated).toBeDefined();
+        expect(changed().getPermutation().getToken("space.1")?.generated).toBeDefined();
         expect(changed().diagnostics).toStrictEqual([]);
     });
 
     it("leaves out a file given as null, as if deleted", () => {
         const deleted = tokens.reread({ "more.json": null });
-        expect(deleted.text("more.json")).toBeUndefined();
-        expect(deleted.permutation().token("gap")).toBeUndefined();
+        expect(deleted.getText("more.json")).toBeUndefined();
+        expect(deleted.getPermutation().getToken("gap")).toBeUndefined();
         expect(deleted.diagnostics.map(({ kind }) => kind)).toStrictEqual(["file-not-found"]);
     });
 
@@ -905,15 +905,15 @@ describe("tokens.reread", () => {
         const single = readFromMemory({ files: { "tokens.json": more } });
         const added = single.reread({ "notes.json": "{}" });
         expect(added.files).toStrictEqual(["tokens.json"]);
-        expect(added.permutation().token("gap")).toBeDefined();
+        expect(added.getPermutation().getToken("gap")).toBeDefined();
     });
 
     it("leaves the design tokens it was asked of as they were", () => {
         changed();
         tokens.reread({ "more.json": null });
-        expect(tokens.permutation().token("brand")?.authored?.value).toBe("#ff0000");
-        expect(tokens.text("base.json")).toBe(base("#ff0000"));
-        expect(tokens.text("more.json")).toBe(more);
+        expect(tokens.getPermutation().getToken("brand")?.asWritten?.value).toBe("#ff0000");
+        expect(tokens.getText("base.json")).toBe(base("#ff0000"));
+        expect(tokens.getText("more.json")).toBe(more);
     });
 });
 

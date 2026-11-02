@@ -40,7 +40,7 @@
       }
     ],
     "modifiers": [],
-    "order": [
+    "resolutionOrder": [
       {
         "set": "base"
       }
@@ -70,7 +70,7 @@
           }
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     },
     {
       "file": "semantic.json",
@@ -79,7 +79,7 @@
           "name": "base"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     }
   ]
 }

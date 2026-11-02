@@ -31,7 +31,7 @@ describe("setExtension on a token", () => {
     });
 
     it("writes at a place it is given", () => {
-        const [place] = demo.writtenAt("size.fluid.gutter");
+        const [place] = demo.getDefinitions("size.fluid.gutter");
         if (!place) throw new Error("the demo writes size.fluid.gutter");
         const path = ["com.example", "fluid", "min"] as const;
 
@@ -231,11 +231,11 @@ describe("setExtension on a group", () => {
     it("keeps the group it extends as it was, and every other setting the group takes", () => {
         const after = committed(spread, setExtension(spread, "inset", ["com.example", "steps"], 3));
 
-        expect(after.permutation().group("inset")?.extensions).toEqual({
+        expect(after.getPermutation().getGroup("inset")?.extensions).toEqual({
             "com.example": { steps: 3, from: "b" },
             "org.other": { kept: true },
         });
-        expect(after.permutation().group("space")?.extensions?.["com.example"]).toEqual({
+        expect(after.getPermutation().getGroup("space")?.extensions?.["com.example"]).toEqual({
             steps: 2,
             from: "b",
         });
@@ -342,7 +342,7 @@ describe("setExtension on a group", () => {
     });
 
     it("writes at a place it is given", () => {
-        const a = spread.writtenAt("space").find(({ span }) => span.file === "a.json");
+        const a = spread.getDefinitions("space").find(({ span }) => span.file === "a.json");
         if (!a) throw new Error("a.json writes space");
 
         expect(

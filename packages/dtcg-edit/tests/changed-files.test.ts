@@ -5,7 +5,7 @@ import { asEdits, committed, demo, opsOf } from "./helpers.js";
 const half = { value: 0.5, unit: "rem" };
 const gradientSource = { $ref: "./gradient.json" };
 const sources = ["resolutionOrder", 0, "sources"];
-const listed = JSON.parse(demo.text("tokens.resolver.json") ?? "").resolutionOrder[0].sources;
+const listed = JSON.parse(demo.getText("tokens.resolver.json") ?? "").resolutionOrder[0].sources;
 
 const unnamed: FileOp = {
     kind: "remove",
@@ -39,7 +39,7 @@ describe("changedFiles", () => {
         const deleting: FileOp = {
             kind: "deleteFile",
             file: "gradient.json",
-            was: demo.text("gradient.json") ?? "",
+            was: demo.getText("gradient.json") ?? "",
         };
         const result = changedFiles(demo, asEdits([unnamed, deleting]));
         if (result.conflicts) throw new Error("conflicts");
@@ -65,7 +65,7 @@ describe("changedFiles", () => {
 
         expect(result.deleted).toStrictEqual([]);
         expect(Object.keys(result.written)).toStrictEqual(["tokens.resolver.json"]);
-        expect(result.tokens.text("gradient.json")).toBeUndefined();
+        expect(result.tokens.getText("gradient.json")).toBeUndefined();
     });
 
     it("writes a new file", () => {

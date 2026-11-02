@@ -53,7 +53,9 @@ describe("applyToDisk", () => {
         );
 
         if (!result.tokens) throw new Error(JSON.stringify(result));
-        expect(result.tokens.permutation().token("radius.md")?.authored?.value).toEqual(half);
+        expect(result.tokens.getPermutation().getToken("radius.md")?.asWritten?.value).toEqual(
+            half,
+        );
         expect(result.tokens.toMemory().files).toEqual(
             (await readFromDisk(entry)).toMemory().files,
         );
@@ -75,7 +77,7 @@ describe("applyToDisk", () => {
         const theirs = changed(demo, [
             ["radius.json", ["radius", "lg", "$value"], { value: 9, unit: "px" }],
         ]);
-        write("radius.json", theirs.text("radius.json") ?? "");
+        write("radius.json", theirs.getText("radius.json") ?? "");
 
         await applyToDisk({ entry }, asEdits(ops));
         const radius = JSON.parse(read("radius.json")).radius;

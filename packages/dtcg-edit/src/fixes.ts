@@ -5,6 +5,7 @@ import { fixTitles } from "./error-messages.js";
 import type { Fix, TextEdit } from "./index.js";
 import { inline, refString, removal, spliced } from "./json-text.js";
 import { nodeAt } from "./file-text.js";
+import { getDiagnosticsAt } from "@sugarcube-sh/dtcg/editor";
 
 /**
  * The changes that would mend a diagnostic of these design tokens, made from the facts the
@@ -31,7 +32,7 @@ function fixFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
 
     switch (diagnostic.kind) {
         case "duplicate-key": {
-            const earlier = diagnostic.related?.[0]?.span;
+            const earlier = diagnostic.relatedInformation?.[0]?.span;
             const edits = earlier && deletion(tokens, earlier.file, nodeAt(tokens, earlier));
             return (
                 edits && {
@@ -85,7 +86,10 @@ function fixFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
         case "missing-reference": {
             const { ref, similar } = diagnostic.detail;
             if (similar === undefined) return undefined;
-            const uses = [span, ...(diagnostic.related ?? []).map((related) => related.span)];
+            const uses = [
+                span,
+                ...(diagnostic.relatedInformation ?? []).map((related) => related.span),
+            ];
             const edits = uses.flatMap((use) => renamedReference(tokens, use, ref, similar));
             return edits.length > 0 ? guess(fixTitles.useSimilar(similar), edits) : undefined;
         }
@@ -148,11 +152,11 @@ function readsClean(tokens: DesignTokens, edits: readonly TextEdit[]): boolean {
     const [first] = edits;
     if (!first) return true;
     const { file } = first;
-    const after = tokens.reread({ [file]: spliced(tokens.text(file) ?? "", edits) });
+    const after = tokens.reread({ [file]: spliced(tokens.getText(file) ?? "", edits) });
     const start = Math.min(...edits.map(({ offset }) => offset));
     const grown = edits.reduce((acc, { length, text }) => acc + text.length - length, 0);
     const end = Math.max(...edits.map(({ offset, length }) => offset + length)) + grown;
-    return after.diagnosticsAt({ file, offset: start, length: end - start }).length === 0;
+    return getDiagnosticsAt(after, { file, offset: start, length: end - start }).length === 0;
 }
 
 function renamedReference(
@@ -176,7 +180,7 @@ function deletion(
     file: string,
     written: Node | undefined,
 ): TextEdit[] | undefined {
-    const text = tokens.text(file);
+    const text = tokens.getText(file);
     if (!written || text === undefined) return undefined;
     const edits = removal(text, written).map(({ offset, length, text: replaced }) => ({
         file,

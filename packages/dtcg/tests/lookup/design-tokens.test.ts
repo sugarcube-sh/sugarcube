@@ -55,10 +55,10 @@ function readWith(inputs?: Input[]): DesignTokens {
 }
 
 const tokens = readWith();
-const light = tokens.permutation();
-const dark = tokens.permutation({ theme: "dark" });
+const light = tokens.getPermutation();
+const dark = tokens.getPermutation({ theme: "dark" });
 const paths = (items: readonly { path: string }[] | undefined) => items?.map(({ path }) => path);
-const valueOf = (found: ReturnType<typeof light.token>) =>
+const valueOf = (found: ReturnType<typeof light.getToken>) =>
     found?.type === "dimension" ? found.resolved?.value : undefined;
 
 const noDefault = readFromMemory({
@@ -85,7 +85,7 @@ function thrown(run: () => unknown): PermutationError {
 
 describe("tokens.permutation", () => {
     it("is the permutation for a full input", () => {
-        expect(tokens.permutation({ theme: "dark", density: "compact" }).input).toStrictEqual({
+        expect(tokens.getPermutation({ theme: "dark", density: "compact" }).input).toStrictEqual({
             theme: "dark",
             density: "compact",
         });
@@ -97,7 +97,7 @@ describe("tokens.permutation", () => {
     });
 
     it("matches modifier and context names case-insensitively (Resolver 5.1)", () => {
-        expect(tokens.permutation({ Theme: "DARK" })).toBe(dark);
+        expect(tokens.getPermutation({ Theme: "DARK" })).toBe(dark);
     });
 
     it("is one of the permutations the read built", () => {
@@ -106,11 +106,11 @@ describe("tokens.permutation", () => {
 
     it("is the one permutation of a file read without a resolver", () => {
         const single = readFromMemory({ files: { "tokens.json": files["base.json"] } });
-        expect(single.permutation()).toBe(single.permutations[0]);
+        expect(single.getPermutation()).toBe(single.permutations[0]);
     });
 
     it("throws for a modifier the resolver does not declare, saying which", () => {
-        const error = thrown(() => tokens.permutation({ size: "large" }));
+        const error = thrown(() => tokens.getPermutation({ size: "large" }));
         expect(error.message).toBe("there is no modifier named `size`");
         expect(error.detail).toStrictEqual({
             reason: "unknown-modifier",
@@ -120,13 +120,13 @@ describe("tokens.permutation", () => {
     });
 
     it("throws for a context that is not a string (Resolver 5.2)", () => {
-        const error = thrown(() => tokens.permutation({ theme: 1 } as unknown as Input));
+        const error = thrown(() => tokens.getPermutation({ theme: 1 } as unknown as Input));
         expect(error.message).toBe("the input for the modifier `theme` must be a string");
         expect(error.detail).toStrictEqual({ reason: "not-a-string", modifier: "theme" });
     });
 
     it("throws for a context the modifier does not declare, saying which", () => {
-        const error = thrown(() => tokens.permutation({ theme: "sepia" }));
+        const error = thrown(() => tokens.getPermutation({ theme: "sepia" }));
         expect(error.message).toBe("`sepia` is not a context of the modifier `theme`");
         expect(error.detail).toStrictEqual({
             reason: "unknown-context",
@@ -137,7 +137,7 @@ describe("tokens.permutation", () => {
     });
 
     it("throws when a modifier with no default is left out, naming its contexts (Resolver 5)", () => {
-        const error = thrown(() => noDefault.permutation());
+        const error = thrown(() => noDefault.getPermutation());
         expect(error.message).toBe(
             "the input doesn't choose a context for the modifier `theme`, which has no default: choose `light` or `dark`",
         );
@@ -146,11 +146,11 @@ describe("tokens.permutation", () => {
             modifier: "theme",
             valid: ["light", "dark"],
         });
-        expect(noDefault.permutation({ theme: "dark" }).input).toStrictEqual({ theme: "dark" });
+        expect(noDefault.getPermutation({ theme: "dark" }).input).toStrictEqual({ theme: "dark" });
     });
 
     it("throws for a permutation the read did not build, naming it", () => {
-        const error = thrown(() => readWith([{ theme: "dark" }]).permutation());
+        const error = thrown(() => readWith([{ theme: "dark" }]).getPermutation());
         expect(error.message).toBe("`theme: light, density: comfy` was not built by this read");
         expect(error.detail).toStrictEqual({
             reason: "not-read",
@@ -161,7 +161,7 @@ describe("tokens.permutation", () => {
 
 function completed(from: DesignTokens, input: Input) {
     try {
-        return { ok: true as const, input: from.permutation(input).input };
+        return { ok: true as const, input: from.getPermutation(input).input };
     } catch (error) {
         if (error instanceof PermutationError) return { ok: false as const, ...error.detail };
         throw error;
@@ -238,14 +238,14 @@ describe("tokens.permutation, completing an input", () => {
         expect(completed(swapped, {})).toMatchObject({ modifier: "theme" });
         const complete = completed(swapped, { size: "large", theme: "dark" });
         expect(complete.ok && Object.keys(complete.input)).toStrictEqual(
-            Object.keys(swapped.permutation({ size: "large", theme: "dark" }).input),
+            Object.keys(swapped.getPermutation({ size: "large", theme: "dark" }).input),
         );
     });
 
     it("checks nothing when the resolver declares no modifiers (Resolver 6.1)", () => {
         const single = readFromMemory({ files: { "tokens.json": files["base.json"] } });
         expect(completed(single, { theme: "dark" })).toStrictEqual({ ok: true, input: {} });
-        expect(single.permutation({ theme: "dark" })).toBe(single.permutations[0]);
+        expect(single.getPermutation({ theme: "dark" })).toBe(single.permutations[0]);
     });
 });
 
@@ -271,7 +271,7 @@ describe("permutation.isDefault", () => {
 
 describe("tokens.tokenPaths", () => {
     it("lists every token in any permutation once, in the order the permutations list them", () => {
-        expect(tokens.tokenPaths()).toStrictEqual([
+        expect(tokens.getTokenPaths()).toStrictEqual([
             "px",
             "2",
             "1",
@@ -286,7 +286,7 @@ describe("tokens.tokenPaths", () => {
 
 describe("tokens.groupPaths", () => {
     it("lists every group in any permutation once, in the order the permutations list them", () => {
-        expect(tokens.groupPaths()).toStrictEqual(["space", "space.inset", "spacer"]);
+        expect(tokens.getGroupPaths()).toStrictEqual(["space", "space.inset", "spacer"]);
     });
 });
 
@@ -317,7 +317,7 @@ describe("inputLabel", () => {
     });
 
     it("writes a permutation's input as its label, every modifier named", () => {
-        const compact = tokens.permutation({ density: "compact" });
+        const compact = tokens.getPermutation({ density: "compact" });
         expect(inputLabel(compact.input)).toBe(compact.label);
         expect(compact.label).toBe("theme: light, density: compact");
     });
@@ -325,41 +325,41 @@ describe("inputLabel", () => {
 
 describe("permutation.token", () => {
     it("is the token at a path in that permutation", () => {
-        expect(valueOf(light.token("2"))).toBe(2);
-        expect(valueOf(dark.token("2"))).toBe(3);
-        expect(valueOf(tokens.permutation({ density: "compact" }).token("space.sm"))).toBe(2);
+        expect(valueOf(light.getToken("2"))).toBe(2);
+        expect(valueOf(dark.getToken("2"))).toBe(3);
+        expect(valueOf(tokens.getPermutation({ density: "compact" }).getToken("space.sm"))).toBe(2);
     });
 
     it("is the same object the permutation's tokens and its groups' children hold", () => {
-        const sm = light.token("space.sm");
+        const sm = light.getToken("space.sm");
         expect(light.tokens).toContain(sm);
-        expect(light.group("space")?.children).toContain(sm);
+        expect(light.getGroup("space")?.children).toContain(sm);
     });
 
     it("is undefined for a path that is not a token in that permutation", () => {
-        expect(light.token("glow")).toBeUndefined();
-        expect(light.token("space")).toBeUndefined();
-        expect(light.token("toString")).toBeUndefined();
-        expect(valueOf(dark.token("glow"))).toBe(4);
+        expect(light.getToken("glow")).toBeUndefined();
+        expect(light.getToken("space")).toBeUndefined();
+        expect(light.getToken("toString")).toBeUndefined();
+        expect(valueOf(dark.getToken("glow"))).toBe(4);
     });
 });
 
 describe("permutation.group", () => {
     it("is the group at a path in that permutation", () => {
-        expect(light.group("space.inset")?.path).toBe("space.inset");
-        expect(dark.group("space")?.type).toBe("dimension");
-        expect(light.groups).toContain(light.group("space"));
+        expect(light.getGroup("space.inset")?.path).toBe("space.inset");
+        expect(dark.getGroup("space")?.type).toBe("dimension");
+        expect(light.groups).toContain(light.getGroup("space"));
     });
 
     it("is undefined for a path that is a token, not a group", () => {
-        expect(light.group("space.sm")).toBeUndefined();
-        expect(light.group("constructor")).toBeUndefined();
+        expect(light.getGroup("space.sm")).toBeUndefined();
+        expect(light.getGroup("constructor")).toBeUndefined();
     });
 });
 
 describe("group.tokens", () => {
     it("lists a group's tokens and its subgroups' in file order, its $root included", () => {
-        expect(paths(light.group("space")?.tokens)).toStrictEqual([
+        expect(paths(light.getGroup("space")?.tokens)).toStrictEqual([
             "space.$root",
             "space.sm",
             "space.inset.lg",
@@ -367,7 +367,7 @@ describe("group.tokens", () => {
     });
 
     it("leaves out a sibling whose name only starts the same way", () => {
-        expect(paths(light.group("space")?.tokens)).not.toContain("spacer.x");
+        expect(paths(light.getGroup("space")?.tokens)).not.toContain("spacer.x");
     });
 
     it('is the group named "" own tokens, never the top level of the files (Format 5.1)', () => {
@@ -379,22 +379,22 @@ describe("group.tokens", () => {
                 }),
             },
         });
-        expect(paths(named.permutation().group("")?.tokens)).toStrictEqual([".x"]);
+        expect(paths(named.getPermutation().getGroup("")?.tokens)).toStrictEqual([".x"]);
     });
 
     it("lists the tokens of its own permutation", () => {
-        const compact = tokens.permutation({ density: "compact" });
-        expect(valueOf(compact.group("space")?.tokens[1])).toBe(2);
-        expect(compact.group("space")?.tokens[1]).toBe(compact.token("space.sm"));
+        const compact = tokens.getPermutation({ density: "compact" });
+        expect(valueOf(compact.getGroup("space")?.tokens[1])).toBe(2);
+        expect(compact.getGroup("space")?.tokens[1]).toBe(compact.getToken("space.sm"));
     });
 });
 
 describe("token.valueFrom", () => {
     it("is the place whose value wins, the last it is written (Resolver 6.2)", () => {
-        const darkTwo = dark.token("2");
-        expect(darkTwo?.valueFrom).toBe(darkTwo?.writtenAt.at(-1));
-        expect(darkTwo?.valueFrom.source.file).toBe("dark.json");
-        expect(light.token("2")?.valueFrom.source.file).toBe("base.json");
+        const darkTwo = dark.getToken("2");
+        expect(darkTwo?.winningDefinition).toBe(darkTwo?.definitions.at(-1));
+        expect(darkTwo?.winningDefinition.source.file).toBe("dark.json");
+        expect(light.getToken("2")?.winningDefinition.source.file).toBe("base.json");
     });
 });
 

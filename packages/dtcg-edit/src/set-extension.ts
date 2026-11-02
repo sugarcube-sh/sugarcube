@@ -103,7 +103,7 @@ function placeOf(
     place: string | undefined,
 ): Placed {
     const steps = path.split(".");
-    if (!tokens.permutations.some((perm) => perm.token(path))) {
+    if (!tokens.permutations.some((perm) => perm.getToken(path))) {
         const placed = extensionPlace(tokens, path, key, options, place);
         if (!("into" in placed)) return placed;
         const { into, inForce, alsoAffects } = placed;

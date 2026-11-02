@@ -10,4 +10,4 @@ function node(child: Token | Group): Node {
     return { path: child.path, token: false, children: child.children.map(node) };
 }
 
-export const tree = tokens.permutation().children.map(node);
+export const tree = tokens.getPermutation().children.map(node);

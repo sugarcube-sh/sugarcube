@@ -8,7 +8,7 @@ declare const picked: string;
 
 const theme = tokens.resolver?.modifiers.find(({ name }) => name === "theme");
 const known = theme?.contexts.some(({ name }) => name === picked);
-const current = known ? tokens.permutation({ theme: picked }) : tokens.permutation();
+const current = known ? tokens.getPermutation({ theme: picked }) : tokens.getPermutation();
 
 for (const t of current.tokens) {
     if (t.type === "color") row(t.path, cssValue(t));

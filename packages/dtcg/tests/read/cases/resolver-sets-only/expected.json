@@ -29,7 +29,7 @@
       }
     ],
     "modifiers": [],
-    "order": [
+    "resolutionOrder": [
       {
         "set": "base"
       }
@@ -51,7 +51,7 @@
           "name": "base"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     }
   ]
 }

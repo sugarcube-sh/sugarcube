@@ -29,14 +29,14 @@ describe("plain", () => {
 
     it("writes a token's value as dtcg writes it, leaving another tool's extensions alone", () => {
         const tokens = readWith(plain());
-        const gutter = tokens.permutation().token("size.fluid.gutter");
+        const gutter = tokens.getPermutation().getToken("size.fluid.gutter");
 
         expect(gutter && plain().write(tokens).value(gutter)).toBe("2rem");
     });
 
     it("writes a reference as the value it reaches in the theme asked about", () => {
         const tokens = readWith(plain());
-        const text = tokens.permutation({ mode: "dark" }).token("color.text.default");
+        const text = tokens.getPermutation({ mode: "dark" }).getToken("color.text.default");
 
         expect(text && plain().write(tokens).value(text)).toBe("oklch(0.986 0.002 258)");
     });

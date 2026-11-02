@@ -308,7 +308,7 @@ describe("emitCSS", () => {
             expect(diagnostics[0]).toMatchObject({
                 severity: "error",
                 detail: { modifiers: ["brand"] },
-                docs: "https://sugarcube.sh/errors/default-required",
+                docsUrl: "https://sugarcube.sh/errors/default-required",
                 message:
                     "the modifier `brand` has no default, so there is nothing to write on `:root`: give it a `default` in the resolver, or list the permutations to write in `variables.permutations`",
             });

@@ -159,7 +159,11 @@ export function fillGenerated(
                     ];
                     for (const span of written.spans) {
                         diagnostics.found(
-                            diagnostic("written-generated", detail, { span, path, related }),
+                            diagnostic("written-generated", detail, {
+                                span,
+                                path,
+                                relatedInformation: related,
+                            }),
                             input,
                         );
                     }

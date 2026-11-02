@@ -18,7 +18,7 @@
           "name": "base"
         }
       ],
-      "readBy": "everyone",
+      "readBy": "every-context",
       "extensions": {
         "com.example": {
           "layer": "outer"
@@ -32,7 +32,7 @@
           "name": "base"
         }
       ],
-      "readBy": "everyone",
+      "readBy": "every-context",
       "extensions": {
         "com.example": {
           "layer": "inner"

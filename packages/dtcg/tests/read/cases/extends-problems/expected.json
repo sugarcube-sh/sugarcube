@@ -95,7 +95,7 @@
         "text": "\"{groupB}\""
       },
       "path": "groupA",
-      "related": [
+      "relatedInformation": [
         {
           "message": "part of the same loop",
           "span": {
@@ -116,7 +116,7 @@
         "text": "\"{c2}\""
       },
       "path": "c1",
-      "related": [
+      "relatedInformation": [
         {
           "message": "part of the same loop",
           "span": {

@@ -55,7 +55,7 @@ export function resolverPart(
         ...(description !== undefined && { description }),
         sets: inWrittenOrder([...sets.values()]).map((set) => publicSet(resolver, set)),
         modifiers: inWrittenOrder(modifiers).map((each) => publicModifier(resolver, each)),
-        order: resolver.order.map((item) =>
+        resolutionOrder: resolver.order.map((item) =>
             item.kind === "set" ? { set: item.set.name } : { modifier: item.modifier.name },
         ),
     };

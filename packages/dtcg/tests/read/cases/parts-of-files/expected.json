@@ -7,7 +7,7 @@
         {
           "path": "brand",
           "type": "color",
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -20,10 +20,10 @@
         {
           "path": "size.sm",
           "type": "number",
-          "authored": {
+          "asWritten": {
             "value": 2
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 1,
               "span": {
@@ -37,7 +37,7 @@
         {
           "path": "space.md",
           "type": "number",
-          "writtenAt": [
+          "definitions": [
             {
               "source": 1,
               "span": {
@@ -51,7 +51,7 @@
       "groups": [
         {
           "path": "size",
-          "writtenAt": [
+          "definitions": [
             {
               "source": 1,
               "span": {
@@ -63,7 +63,7 @@
         },
         {
           "path": "space",
-          "writtenAt": [
+          "definitions": [
             {
               "source": 1,
               "span": {
@@ -87,7 +87,7 @@
         "text": "\"sm\"",
         "occurrence": 3
       },
-      "related": [
+      "relatedInformation": [
         {
           "message": "also written here",
           "span": {

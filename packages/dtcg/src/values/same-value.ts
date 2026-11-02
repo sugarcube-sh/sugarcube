@@ -25,7 +25,9 @@ export function isEquivalentValue<T extends TokenType>(
  * the type.
  */
 export function isEquivalentValue(a: Token, b: Token): boolean;
-export function isEquivalentValue(...values: [TokenType, unknown, unknown] | [Token, Token]): boolean {
+export function isEquivalentValue(
+    ...values: [TokenType, unknown, unknown] | [Token, Token]
+): boolean {
     if (values.length === 3) return alike(values[1], values[2], asValues);
     const [a, b] = values;
     return a.type === b.type && saysTheSame(a, b);
@@ -33,12 +35,12 @@ export function isEquivalentValue(...values: [TokenType, unknown, unknown] | [To
 
 export interface Said {
     value?: unknown;
-    authored?: { value: unknown } | undefined;
+    asWritten?: { value: unknown } | undefined;
 }
 
 export function saysTheSame(a: Said, b: Said): boolean {
     if (a.value === undefined || b.value === undefined) {
-        return a.value === b.value && isEqualJson(a.authored?.value, b.authored?.value);
+        return a.value === b.value && isEqualJson(a.asWritten?.value, b.asWritten?.value);
     }
     return alike(a.value, b.value, asValues);
 }

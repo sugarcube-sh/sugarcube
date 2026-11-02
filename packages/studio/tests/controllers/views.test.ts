@@ -43,8 +43,8 @@ const files = {
 
 const tokens = readFromMemory({ files, entry: "tokens.resolver.json" }, plain().read);
 const { value } = plain().write(tokens);
-const light = tokens.permutation();
-const dark = tokens.permutation({ mode: "dark" });
+const light = tokens.getPermutation();
+const dark = tokens.getPermutation({ mode: "dark" });
 
 describe("sidebarTree", () => {
     it("nests every group and token, in the order the files write them", () => {
@@ -91,25 +91,25 @@ describe("trail", () => {
 
 describe("groupView", () => {
     it("lists a group's groups and tokens", () => {
-        const view = groupView(light.group("color.text")!, value);
+        const view = groupView(light.getGroup("color.text")!, value);
 
         expect(view?.groups).toEqual([]);
         expect(view?.tokens.map((row) => row.name)).toEqual(["default"]);
     });
 
     it("shows what the file wrote and the value the adapter writes in the permutation shown", () => {
-        const inLight = groupView(light.group("color.text")!, value)?.tokens[0];
-        const inDark = groupView(dark.group("color.text")!, value)?.tokens[0];
+        const inLight = groupView(light.getGroup("color.text")!, value)?.tokens[0];
+        const inDark = groupView(dark.getGroup("color.text")!, value)?.tokens[0];
 
         expect(inLight?.written).toBe("{color.bg}");
-        expect(inLight?.css).toBe(value(light.token("color.bg")!));
-        expect(inDark?.css).toBe(value(dark.token("color.bg")!));
+        expect(inLight?.css).toBe(value(light.getToken("color.bg")!));
+        expect(inDark?.css).toBe(value(dark.getToken("color.bg")!));
         expect(inDark?.css).not.toBe(inLight?.css);
         expect(inDark?.css).not.toContain("var(");
     });
 
     it("counts the tokens under each group it lists", () => {
-        const view = groupView(dark.group("color")!, value);
+        const view = groupView(dark.getGroup("color")!, value);
 
         expect(view?.groups.map((row) => [row.name, row.count])).toEqual([
             ["text", 1],
@@ -123,11 +123,11 @@ describe("groupView", () => {
 describe("groupPage", () => {
     it("is the group's view with its recipe's form, when the adapter offers one", () => {
         const { state } = studioOn();
-        const page = groupPage(state, state.showing.group("size.step")!);
+        const page = groupPage(state, state.showing.getGroup("size.step")!);
 
         expect(page.form?.label).toBe("Scale");
         expect(page.tokens.map((row) => row.name)).toContain("-1");
-        expect(groupPage(state, state.showing.group("color")!).form).toBeUndefined();
+        expect(groupPage(state, state.showing.getGroup("color")!).form).toBeUndefined();
     });
 
     it("offers a group's description and deprecation, except where it is only there through $extends", () => {
@@ -145,8 +145,8 @@ describe("groupPage", () => {
                 },
             }),
         );
-        const primary = groupPage(state, state.showing.group("primary")!);
-        const icon = groupPage(state, state.showing.group("primary.icon")!);
+        const primary = groupPage(state, state.showing.getGroup("primary")!);
+        const icon = groupPage(state, state.showing.getGroup("primary.icon")!);
 
         expect(primary.description).toEqual({ text: "The base.", editable: true, from: "button" });
         expect(primary.deprecation).toEqual({ box: { checked: false, untick: null, message: "" } });
@@ -167,18 +167,18 @@ describe("groupPage", () => {
             }),
         );
 
-        expect(groupPage(state, state.showing.group("empty")!).noTokens).toBe("at-all");
-        expect(groupPage(state, state.showing.group("outer")!).noTokens).toBe("directly");
-        expect(groupPage(state, state.showing.group("outer.inner")!).noTokens).toBeUndefined();
+        expect(groupPage(state, state.showing.getGroup("empty")!).noTokens).toBe("at-all");
+        expect(groupPage(state, state.showing.getGroup("outer")!).noTokens).toBe("directly");
+        expect(groupPage(state, state.showing.getGroup("outer.inner")!).noTokens).toBeUndefined();
     });
 
     it("writes each token's CSS from the theme shown, whichever theme the group came from", () => {
         const studio = studioOn();
-        const lightGroup = studio.state.showing.group("color.text")!;
+        const lightGroup = studio.state.showing.getGroup("color.text")!;
         studio.show({ mode: "dark" });
         const { state } = studio;
         const [row] = groupPage(state, lightGroup).tokens;
-        const darkToken = state.showing.token(row!.path)!;
+        const darkToken = state.showing.getToken(row!.path)!;
 
         expect(row?.css).toBe(state.value(darkToken));
     });
@@ -186,10 +186,10 @@ describe("groupPage", () => {
 
 describe("tokenRow", () => {
     it("is the row a group lists for the token", () => {
-        const token = dark.token("color.text.default")!;
+        const token = dark.getToken("color.text.default")!;
 
         expect(tokenRow(token, "default", value)).toEqual(
-            groupView(dark.group("color.text")!, value).tokens[0],
+            groupView(dark.getGroup("color.text")!, value).tokens[0],
         );
     });
 });
@@ -212,7 +212,7 @@ describe("referable", () => {
             demoMessage({ files: { ...edited, "dark.json": JSON.stringify(darkJson) } }),
         ).state;
 
-        expect(showing.token("color.glow")).toBeUndefined();
+        expect(showing.getToken("color.glow")).toBeUndefined();
         expect(referable(demo, showing, "color", "color.text.default")).toContain("color.glow");
     });
 });

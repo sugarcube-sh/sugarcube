@@ -84,7 +84,7 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
                 const made = diagnostic("missing-reference", detail, {
                     span: first.span,
                     path: first.from,
-                    ...(related.length > 0 && { related }),
+                    ...(related.length > 0 && { relatedInformation: related }),
                 });
                 const found = diagnostics.found(made, input);
                 for (const each of others) diagnostics.also(found, each);

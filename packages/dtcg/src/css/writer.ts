@@ -176,14 +176,14 @@ export function cssWriter(options: CSSWriterOptions = {}): CSSWriter {
 
     const asWritten = (token: Token, colors: Colors): CSSWritten | undefined => {
         if (token.resolved === undefined) return undefined;
-        const target = token.referenceAt()?.token;
+        const target = token.getReferenceAt()?.pointsToToken;
         if (target && inlined(target)) {
             const own = written(target, colors);
             if (own) return own;
         }
         const refersTo: Token[] = [];
         const replacement = (ref: Reference, cssProperty?: keyof TypographyCSS) =>
-            ref.token ? refer(ref.token, colors, refersTo, cssProperty) : undefined;
+            ref.pointsToToken ? refer(ref.pointsToToken, colors, refersTo, cssProperty) : undefined;
         const css = cssValue(token, { replacement, colors });
         return css === undefined ? undefined : { css, refersTo: unique(refersTo) };
     };

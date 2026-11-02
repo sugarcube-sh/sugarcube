@@ -31,7 +31,7 @@ function value(message: string, place: ReturnType<typeof spanAt>): Reported {
         severity: "error",
         message,
         span: place,
-        docs: "",
+        docsUrl: "",
         permutations: themes("everywhere", { every: true }),
         detail: { jsonPath: ["$value"], type: "color", reason: "wrong-shape", value: "" },
     };
@@ -43,7 +43,7 @@ function missingReference(ref: string, place: ReturnType<typeof spanAt>): Report
         severity: "error",
         message: `\`${ref}\` does not exist`,
         span: place,
-        docs: "",
+        docsUrl: "",
         permutations: themes("everywhere", { every: true }),
         detail: { ref, from: [] },
     };
@@ -55,7 +55,7 @@ function ignored(place: ReturnType<typeof spanAt>): Reported {
         severity: "warning",
         message: "`paragraphSpacing` is ignored",
         span: place,
-        docs: "",
+        docsUrl: "",
         permutations: themes("everywhere", { every: true }),
         detail: { property: "paragraphSpacing", type: "typography", jsonPath: [] },
     };
@@ -71,7 +71,7 @@ const polyfill: Reported = {
     kind: "option-deprecated",
     severity: "warning",
     message: "`polyfill` is deprecated",
-    docs: "",
+    docsUrl: "",
     detail: { option: "polyfill" },
 };
 
@@ -150,8 +150,10 @@ describe("problemLines", () => {
             severity: "error",
             message: "this is a token here but a group in another file",
             span: spanAt("dark.json", 3, 12),
-            related: [{ message: "declared as a group here", span: spanAt("colors.json", 9, 17) }],
-            docs: "",
+            relatedInformation: [
+                { message: "declared as a group here", span: spanAt("colors.json", 9, 17) },
+            ],
+            docsUrl: "",
             permutations: themes("everywhere", { every: true }),
             detail: { reason: "declared", here: "token" },
         };

@@ -18,12 +18,11 @@ import type {
     Span,
     Token,
 } from "../index.js";
-import { diagnosticsAtIn, diagnosticsForIn, diagnosticsIn } from "../lookup/diagnostics.js";
+import { diagnosticsForIn, diagnosticsIn } from "../lookup/diagnostics.js";
 import { diffIn } from "../lookup/diff.js";
-import { jsonIn, jsonPathIn } from "../lookup/json-path.js";
 import { partsOf } from "../lookup/parts.js";
 import { onlyPermutation, permutationIn } from "../lookup/permutation.js";
-import { referencedIn, referencesToIn, refersToIn, usedIn } from "../lookup/references.js";
+import { dependenciesIn, referencedIn, referencesToIn, usedIn } from "../lookup/references.js";
 import { writtenAtIn } from "../lookup/written-at.js";
 import { spanOfReference } from "./reference.js";
 import { samePlace } from "./same-object.js";
@@ -34,7 +33,10 @@ export const NO_EXTENSION_PLACES: Readonly<Record<string, Place>> = Object.freez
 
 const NOT_YET = Symbol("not yet worked out");
 
-type TokenFields = Omit<Token, "kind" | "referenceAt" | "aliasChain" | "valueFrom" | "parts">;
+type TokenFields = Omit<
+    Token,
+    "kind" | "getReferenceAt" | "aliasChain" | "winningDefinition" | "parts"
+>;
 
 type GroupFields = Omit<Group, "kind" | "childTokens" | "tokens">;
 
@@ -47,22 +49,23 @@ class TokenObject {
         self.path = fields.path;
         self.type = fields.type;
         self.references = fields.references;
-        self.writtenAt = fields.writtenAt;
+        self.definitions = fields.definitions;
         if (fields.value !== undefined) self.value = fields.value;
         if (fields.resolved !== undefined) self.resolved = fields.resolved;
         if (fields.invalid) self.invalid = fields.invalid;
         if (fields.description !== undefined) self.description = fields.description;
         if (fields.deprecated !== undefined) self.deprecated = fields.deprecated;
-        if (fields.deprecatedFrom !== undefined) self.deprecatedFrom = fields.deprecatedFrom;
+        if (fields.deprecatedByGroup !== undefined)
+            self.deprecatedByGroup = fields.deprecatedByGroup;
         if (fields.extensions) self.extensions = fields.extensions;
-        if (fields.authored) self.authored = fields.authored;
+        if (fields.asWritten) self.asWritten = fields.asWritten;
         if (fields.generated) self.generated = fields.generated;
         if (fields.inherited) self.inherited = fields.inherited;
     }
 
-    referenceAt(property: JsonPath = []): Reference | undefined {
+    getReferenceAt(property: JsonPath = []): Reference | undefined {
         return (this as unknown as Token).references.find((each) =>
-            samePlace(each.property, property),
+            samePlace(each.writtenInProperty, property),
         );
     }
 
@@ -71,8 +74,8 @@ class TokenObject {
         return this.#aliasChain;
     }
 
-    get valueFrom(): Place {
-        const { writtenAt } = this as unknown as Token;
+    get winningDefinition(): Place {
+        const { definitions: writtenAt } = this as unknown as Token;
         return writtenAt[writtenAt.length - 1] as Place;
     }
 
@@ -120,7 +123,7 @@ function aliasChainOf(token: Token): Token[] {
     for (let current: Token | undefined = token; current;) {
         if (chain.includes(current)) break;
         chain.push(current);
-        current = current.referenceAt()?.token;
+        current = current.getReferenceAt()?.pointsToToken;
     }
     return chain;
 }
@@ -154,31 +157,31 @@ class PermutationObject {
         return this.#self.contexts.every((context) => context.isDefault);
     }
 
-    token(path: string): Token | undefined {
+    getToken(path: string): Token | undefined {
         return this.#tokens.get(path);
     }
 
-    group(path: string): Group | undefined {
+    getGroup(path: string): Group | undefined {
         return this.#groups.get(path);
     }
 
-    tokenOrGroup(path: string): Token | Group | undefined {
+    getTokenOrGroup(path: string): Token | Group | undefined {
         return this.#tokens.get(path) ?? this.#groups.get(path);
     }
 
-    referencesTo(path: string, options?: ReferenceOptions): Reference[] {
+    getReferencesTo(path: string, options?: ReferenceOptions): Reference[] {
         return referencedIn(this.#self, path, options);
     }
 
-    usedBy(path: string, options?: ReferenceOptions): (Token | Group)[] {
+    getDependents(path: string, options?: ReferenceOptions): (Token | Group)[] {
         return usedIn(this.#self, path, options);
     }
 
-    refersTo(path: string, options?: ReferenceOptions): Reference[] {
-        return refersToIn(this.#self, path, options);
+    getDependencies(path: string, options?: ReferenceOptions): (Token | Group)[] {
+        return dependenciesIn(this.#self, path, options);
     }
 
-    diagnosticsFor(path: string): Diagnostic[] {
+    getDiagnostics(path: string): Diagnostic[] {
         return diagnosticsIn(this.#designTokens as DesignTokens, this.#self, path);
     }
 
@@ -223,6 +226,8 @@ interface Kept {
 
 type DesignTokensFields = Omit<DesignTokens, keyof DesignTokensObject>;
 
+const SPAN_OF = Symbol.for("@sugarcube-sh/dtcg/span-of");
+
 class DesignTokensObject {
     readonly #kept: Kept;
 
@@ -231,32 +236,32 @@ class DesignTokensObject {
         this.#kept = kept;
     }
 
-    referencesTo(path: string) {
+    getReferencesTo(path: string) {
         return referencesToIn(this.#self, path);
     }
 
-    writtenAt(path: string) {
+    getDefinitions(path: string) {
         return writtenAtIn(this.#self, path);
     }
 
-    permutation(input?: Input) {
+    getPermutation(input?: Input) {
         return permutationIn(this.#self, input);
     }
 
-    token(path: string) {
-        return onlyPermutation(this.#self, "token()").token(path);
+    getToken(path: string) {
+        return onlyPermutation(this.#self, "getToken()").getToken(path);
     }
 
-    group(path: string) {
-        return onlyPermutation(this.#self, "group()").group(path);
+    getGroup(path: string) {
+        return onlyPermutation(this.#self, "getGroup()").getGroup(path);
     }
 
-    usedBy(path: string, options?: ReferenceOptions) {
-        return onlyPermutation(this.#self, "usedBy()").usedBy(path, options);
+    getDependents(path: string, options?: ReferenceOptions) {
+        return onlyPermutation(this.#self, "getDependents()").getDependents(path, options);
     }
 
-    refersTo(path: string, options?: ReferenceOptions) {
-        return onlyPermutation(this.#self, "refersTo()").refersTo(path, options);
+    getDependencies(path: string, options?: ReferenceOptions) {
+        return onlyPermutation(this.#self, "getDependencies()").getDependencies(path, options);
     }
 
     get tokens() {
@@ -275,15 +280,15 @@ class DesignTokensObject {
         return onlyPermutation(this.#self, "topLevel").topLevel;
     }
 
-    tokenOrGroup(path: string) {
-        return onlyPermutation(this.#self, "tokenOrGroup()").tokenOrGroup(path);
+    getTokenOrGroup(path: string) {
+        return onlyPermutation(this.#self, "getTokenOrGroup()").getTokenOrGroup(path);
     }
 
-    tokenPaths() {
+    getTokenPaths() {
         return pathsIn(this.#self, "tokens");
     }
 
-    groupPaths() {
+    getGroupPaths() {
         return pathsIn(this.#self, "groups");
     }
 
@@ -292,19 +297,15 @@ class DesignTokensObject {
         return { ...tokens, permutations: [...tokens.permutations] };
     }
 
-    diagnosticsFor(path: string) {
+    getDiagnostics(path: string) {
         return diagnosticsForIn(this.#self, path);
-    }
-
-    diagnosticsAt(place: Pick<Span, "file" | "offset" | "length">) {
-        return diagnosticsAtIn(this.#self, place);
     }
 
     diff(before: DesignTokens, options?: { moved?: Move[] }) {
         return diffIn(this.#self, before, options);
     }
 
-    text(file: string): string | undefined {
+    getText(file: string): string | undefined {
         return this.#kept.texts[file];
     }
 
@@ -327,25 +328,17 @@ class DesignTokensObject {
     }
 
     toMemory() {
-        return { entry: this.#self.entry, files: { ...this.#kept.texts } };
+        return { entry: this.#self.entryFile, files: { ...this.#kept.texts } };
     }
 
-    spanOf(of: Place | Reference): Span {
+    [SPAN_OF](of: Place | Reference): Span {
         const moved = this.#kept.moved.get(of);
         if (moved) return moved;
         return "source" in of ? PlaceObject.spanOf(of as PlaceObject) : spanOfReference(of);
     }
 
-    jsonPathOf(of: Place | Reference): JsonPath {
-        return jsonPathIn(this.#self, this.spanOf(of));
-    }
-
-    jsonAt(file: string, jsonPath: JsonPath) {
-        return jsonIn(this.#self, file, jsonPath);
-    }
-
     has(path: string) {
-        return this.#self.permutations.some((each) => each.tokenOrGroup(path) !== undefined);
+        return this.#self.permutations.some((each) => each.getTokenOrGroup(path) !== undefined);
     }
 
     get #self(): DesignTokens {
@@ -414,7 +407,7 @@ class PlaceObject {
         this.#textAt = span;
     }
 
-    get written(): JsonValue {
+    get asWritten(): JsonValue {
         if (this.#written === undefined) {
             this.#written = parse(textAt(this.#text, this.#textAt) ?? "null");
             this.#text = undefined;
@@ -466,7 +459,7 @@ export function placesIn(
         if (!previous || !before) return undefined;
         for (const each of before.get(path) ?? []) {
             if (each.source !== source || !writtenAlike(previous, each, text, span)) continue;
-            if (previous.text(span.file) !== text) PlaceObject.foundIn(each, text, span);
+            if (previous.getText(span.file) !== text) PlaceObject.foundIn(each, text, span);
             if (!sameSpan(PlaceObject.spanOf(each), span)) moved.set(each, span);
             return each;
         }
@@ -499,13 +492,13 @@ export function placesIn(
 
 function placesBy(tokens: DesignTokens): Map<string | undefined, PlaceObject[]> {
     const found = new Map<string | undefined, PlaceObject[]>();
-    const seen = new Set<{ readonly writtenAt: readonly Place[] }>();
-    const add = (path: string | undefined, each: { readonly writtenAt: readonly Place[] }) => {
+    const seen = new Set<{ readonly definitions: readonly Place[] }>();
+    const add = (path: string | undefined, each: { readonly definitions: readonly Place[] }) => {
         if (seen.has(each)) return;
         seen.add(each);
         const list = found.get(path) ?? [];
         found.set(path, list);
-        for (const place of each.writtenAt as PlaceObject[]) {
+        for (const place of each.definitions as PlaceObject[]) {
             if (!list.includes(place)) list.push(place);
         }
     };
@@ -523,8 +516,8 @@ function writtenAlike(
     text: string | undefined,
     span: Span,
 ): boolean {
-    const was = previous.spanOf(place);
-    const then = previous.text(was.file);
+    const was = spanIn(previous, place);
+    const then = previous.getText(was.file);
     if (then === text) return sameOffsets(was, span);
     return textAt(then, was) === textAt(text, span);
 }
@@ -565,4 +558,8 @@ function pathsIn(tokens: DesignTokens, kind: "tokens" | "groups"): string[] {
 
 function paths(items: readonly (Token | Group)[]): string[] {
     return items.map(({ path }) => path);
+}
+
+export function spanIn(tokens: DesignTokens, of: Place | Reference): Span {
+    return (tokens as unknown as { [SPAN_OF](of: Place | Reference): Span })[SPAN_OF](of);
 }

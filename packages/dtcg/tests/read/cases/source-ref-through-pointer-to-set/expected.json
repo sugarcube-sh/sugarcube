@@ -26,7 +26,7 @@
           }
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     },
     {
       "file": "blue.json",
@@ -43,7 +43,7 @@
           }
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     }
   ]
 }

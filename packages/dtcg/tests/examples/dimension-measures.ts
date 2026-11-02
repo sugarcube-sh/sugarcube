@@ -7,9 +7,9 @@ import { isJsonObject } from "@sugarcube-sh/dtcg/values";
 declare const tokens: DesignTokens;
 
 function declared(path: string): string | undefined {
-    const permutation = tokens.permutation();
+    const permutation = tokens.getPermutation();
     for (let at: string | undefined = path; at !== undefined; at = tokenPath.parent(at)) {
-        const found = permutation.tokenOrGroup(at);
+        const found = permutation.getTokenOrGroup(at);
         const setting = found?.extensions?.["com.example"];
         if (isJsonObject(setting) && typeof setting.measures === "string") return setting.measures;
     }
@@ -23,8 +23,8 @@ const measures: Record<string, string> = {
 };
 
 const usedAs = new Map<string, string>();
-for (const t of tokens.permutation().tokens) {
-    for (const { property = [], token: target } of t.references) {
+for (const t of tokens.getPermutation().tokens) {
+    for (const { writtenInProperty: property = [], pointsToToken: target } of t.references) {
         const measure = measures[`${t.type} ${property.join(".")}`];
         if (measure && target) usedAs.set(target.path, measure);
     }

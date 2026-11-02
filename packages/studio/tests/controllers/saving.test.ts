@@ -90,7 +90,7 @@ describe("saving", () => {
 
         await studio.save?.();
 
-        expect(studio.state.tokens.text("dark.json")).toBe(theirs);
+        expect(studio.state.tokens.getText("dark.json")).toBe(theirs);
         expect(studio.state.changes).toEqual([]);
         expect(studio.unsaved.steps).toEqual([]);
         expect(studio.state.clashes).toEqual([]);
@@ -117,7 +117,7 @@ describe("saving", () => {
         expect(studio.state.clashes[0]?.parts.map((part) => [part.yours, part.theirs])).toEqual([
             [{ $value: "{color.neutral.100}" }, { $value: "{color.neutral.200}" }],
         ]);
-        expect(studio.state.tokens.text("dark.json")).toBe(theirs);
+        expect(studio.state.tokens.getText("dark.json")).toBe(theirs);
     });
 
     it("keeps an edit made while the save was on its way as unsaved", async () => {

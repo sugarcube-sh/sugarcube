@@ -72,7 +72,7 @@ export function merge(
                 {
                     span: later,
                     path,
-                    related: earlier.map((span) => ({
+                    relatedInformation: earlier.map((span) => ({
                         message: relatedMessages.declaredAs(earlierIs),
                         span,
                         path,

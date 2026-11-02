@@ -10,7 +10,7 @@ import { isEqualJson } from "../values/same-value.js";
 import type { Building } from "./building.js";
 
 export type DiagnosticExtra = Partial<
-    Pick<Diagnostic, "message" | "span" | "path" | "related" | "tags">
+    Pick<Diagnostic, "message" | "span" | "path" | "relatedInformation" | "tags">
 >;
 
 export function diagnostic<K extends DiagnosticKind>(
@@ -24,7 +24,7 @@ export function diagnostic<K extends DiagnosticKind>(
         severity: typeof severity === "function" ? severity(detail) : severity,
         message: message(detail),
         ...extra,
-        docs: docsFor(kind, detail),
+        docsUrl: docsFor(kind, detail),
         detail,
     } as Diagnostic;
 }
@@ -66,7 +66,7 @@ export class Problems {
     inPermutations(permutations: Permutations): Diagnostic[] {
         for (const found of this.#all) {
             const inputs = this.#inputs.get(found) ?? [];
-            found.permutations = permutations.where(({ input }) => inputs.includes(input));
+            found.permutations = permutations.select(({ input }) => inputs.includes(input));
         }
         return this.#all;
     }
@@ -98,5 +98,5 @@ function permutationsWith(
 ): Permutations {
     const file = found.span?.file;
     if (file === undefined || file === entry) return permutations;
-    return permutations.where(({ sources }) => sources.some((each) => each.file === file));
+    return permutations.select(({ sources }) => sources.some((each) => each.file === file));
 }

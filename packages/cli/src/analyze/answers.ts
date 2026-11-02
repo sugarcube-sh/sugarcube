@@ -43,18 +43,18 @@ export function unused({ tokens, uses }: Analysis): Unused {
     const reached = new Set(used);
     for (const permutation of tokens.permutations) {
         for (const path of used) {
-            for (const { path: named } of permutation.refersTo(path, { chained: true })) {
-                if (named !== undefined) reached.add(named);
+            for (const { path: named } of permutation.getDependencies(path, { chained: true })) {
+                reached.add(named);
             }
         }
     }
-    const paths = tokens.tokenPaths();
+    const paths = tokens.getTokenPaths();
     return { unused: paths.filter((path) => !reached.has(path)).sort(), total: paths.length };
 }
 
 export function writtenOf(tokens: DesignTokens, path: string): Written[] | "group" | undefined {
-    const written = tokens.writtenAt(path).flatMap(({ span, winsIn }) => {
-        const token = winsIn[0]?.token(path);
+    const written = tokens.getDefinitions(path).flatMap(({ span, winsIn }) => {
+        const token = winsIn[0]?.getToken(path);
         return token ? [{ token, file: span.file, permutations: winsIn }] : [];
     });
     if (written.length > 0) return written;
@@ -68,12 +68,12 @@ interface Named {
 
 export function impact({ tokens, uses }: Analysis, path: string, written: Written[]): Impact {
     const byDependent = new Map<string, Named[]>();
-    const asked = everyPermutation(tokens, (p) => p.referencesTo(path, { chained: true }));
+    const asked = everyPermutation(tokens, (p) => p.getReferencesTo(path, { chained: true }));
     for (const { answer, permutations } of asked) {
         for (const reference of answer) {
-            const from = reference.from.path;
-            if (from === path || reference.path === undefined) continue;
-            const named = { path: reference.path, permutations };
+            const from = reference.writtenIn.path;
+            if (from === path || reference.pointsToPath === undefined) continue;
+            const named = { path: reference.pointsToPath, permutations };
             byDependent.set(from, [...(byDependent.get(from) ?? []), named]);
         }
     }
@@ -102,7 +102,7 @@ function dependent(tokens: DesignTokens, path: string, references: Named[]): Dep
     const namedIn = (permutations: Permutations) =>
         paths(references.filter((each) => permutations.some((p) => each.permutations.includes(p))));
     const places = tokens
-        .writtenAt(path)
+        .getDefinitions(path)
         .filter(({ winsIn }) => winsIn.length > 0)
         .map(({ sources, winsIn }) => ({ sources, named: namedIn(winsIn).join("\0") }));
     const base = new Set(
@@ -123,9 +123,9 @@ function dependent(tokens: DesignTokens, path: string, references: Named[]): Dep
 }
 
 function readByEveryone({ readBy }: Source): boolean {
-    return readBy === "everyone";
+    return readBy === "every-context";
 }
 
 function readersOf({ readBy }: Source): readonly ResolverContext[] {
-    return readBy === "everyone" ? [] : readBy;
+    return readBy === "every-context" ? [] : readBy;
 }

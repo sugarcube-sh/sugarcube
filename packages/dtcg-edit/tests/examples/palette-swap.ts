@@ -11,17 +11,20 @@ const newPalette = "color.violet";
 const swap = [{ from: oldPalette, to: newPalette }];
 
 function swapped(t: Token): JsonValue | undefined {
-    const whole = t.referenceAt();
-    if (whole?.path === undefined || tokenPath.relative(oldPalette, whole.path) === undefined)
+    const whole = t.getReferenceAt();
+    if (
+        whole?.pointsToPath === undefined ||
+        tokenPath.relative(oldPalette, whole.pointsToPath) === undefined
+    )
         return undefined;
     return whole.moved(swap);
 }
 
 const tokens = session.tokens;
 const changes: ({ path: string; value: JsonValue } & ValueOptions)[] = [];
-for (const t of tokens.permutation().group("color.button")?.tokens ?? []) {
-    for (const { span, winsIn } of tokens.writtenAt(t.path)) {
-        const there = winsIn[0]?.token(t.path);
+for (const t of tokens.getPermutation().getGroup("color.button")?.tokens ?? []) {
+    for (const { span, winsIn } of tokens.getDefinitions(t.path)) {
+        const there = winsIn[0]?.getToken(t.path);
         const value = there && swapped(there);
         if (value) changes.push({ path: t.path, value, at: span });
     }

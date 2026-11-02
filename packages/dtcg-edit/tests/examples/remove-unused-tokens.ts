@@ -5,7 +5,7 @@ import { combine, commit, remove } from "@sugarcube-sh/dtcg-edit";
 
 declare let tokens: DesignTokens;
 
-const unused = tokens.tokenPaths().filter((path) => tokens.referencesTo(path).length === 0);
+const unused = tokens.getTokenPaths().filter((path) => tokens.getReferencesTo(path).length === 0);
 const done = commit(
     tokens,
     combine(

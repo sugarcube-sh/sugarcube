@@ -144,7 +144,7 @@ function selectorText(selector: string | string[]): string {
 
 function configured(tokens: DesignTokens, input: Input): Permutation | undefined {
     try {
-        return tokens.permutation(input);
+        return tokens.getPermutation(input);
     } catch (error) {
         if (error instanceof PermutationError) return undefined;
         throw error;

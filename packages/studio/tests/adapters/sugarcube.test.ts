@@ -11,7 +11,7 @@ describe("sugarcube", () => {
     it("reads with sugarcube's rules, so a scale recipe makes its steps", () => {
         const tokens = readWith();
 
-        expect(tokens.tokenPaths().some((path) => path.startsWith("size.step."))).toBe(true);
+        expect(tokens.getTokenPaths().some((path) => path.startsWith("size.step."))).toBe(true);
     });
 
     it("reads with sugarcube's rules, so a fluid range it can't read is a problem", () => {
@@ -25,12 +25,12 @@ describe("sugarcube", () => {
         };
         expect(broken["size.json"]).not.toBe(files["size.json"]);
 
-        expect(readWith(broken).diagnosticsFor("size.fluid.gutter")).not.toEqual([]);
+        expect(readWith(broken).getDiagnostics("size.fluid.gutter")).not.toEqual([]);
     });
 
     it("writes a fluid token's value as the build does, as clamp()", () => {
         const tokens = readWith();
-        const gutter = tokens.permutation().token("size.fluid.gutter");
+        const gutter = tokens.getPermutation().getToken("size.fluid.gutter");
 
         expect(gutter && sugarcube(asSent()).write(tokens).value(gutter)).toBe(
             "clamp(1rem, 0.6364rem + 1.8182vw, 2rem)",
@@ -39,7 +39,7 @@ describe("sugarcube", () => {
 
     it("writes a reference as the value it reaches in the theme asked about", () => {
         const tokens = readWith();
-        const text = tokens.permutation({ mode: "dark" }).token("color.text.default");
+        const text = tokens.getPermutation({ mode: "dark" }).getToken("color.text.default");
 
         expect(text && sugarcube(asSent()).write(tokens).value(text)).toBe(
             "oklch(0.986 0.002 258)",

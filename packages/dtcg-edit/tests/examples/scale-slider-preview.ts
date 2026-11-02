@@ -8,12 +8,12 @@ declare const session: Session;
 declare function showPreview(tokens: DesignTokens): void;
 
 const tokens = session.tokens;
-const steps = (tokens.permutation().group("space")?.childTokens ?? []).flatMap(({ path }) =>
-    tokens.writtenAt(path).flatMap(({ span, winsIn }) => {
-        const there = winsIn[0]?.token(path);
+const steps = (tokens.getPermutation().getGroup("space")?.childTokens ?? []).flatMap(({ path }) =>
+    tokens.getDefinitions(path).flatMap(({ span, winsIn }) => {
+        const there = winsIn[0]?.getToken(path);
         return there?.type === "dimension" &&
             there.resolved &&
-            !there.referenceAt() &&
+            !there.getReferenceAt() &&
             !there.generated
             ? [{ path, at: span, size: there.resolved }]
             : [];

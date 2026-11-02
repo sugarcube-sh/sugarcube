@@ -7,13 +7,13 @@
         {
           "path": "color.accent.$root",
           "type": "color",
-          "authored": {
+          "asWritten": {
             "value": {
               "colorSpace": "srgb",
               "components": [0.867, 0, 0]
             }
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -33,14 +33,14 @@
               "note": true
             }
           },
-          "authored": {
+          "asWritten": {
             "value": {
               "colorSpace": "srgb",
               "components": [1, 0.133, 0.133]
             },
             "deprecated": "use the root accent"
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -53,10 +53,10 @@
         {
           "path": "opacity.half",
           "type": "number",
-          "authored": {
+          "asWritten": {
             "value": 0.5
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -69,14 +69,14 @@
         {
           "path": "space.sm",
           "type": "dimension",
-          "authored": {
+          "asWritten": {
             "value": {
               "value": 4,
               "unit": "px"
             },
             "type": "dimension"
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -97,7 +97,7 @@
               "tier": 1
             }
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -109,7 +109,7 @@
         },
         {
           "path": "color.accent",
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -121,7 +121,7 @@
         },
         {
           "path": "opacity",
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -133,7 +133,7 @@
         },
         {
           "path": "space",
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {

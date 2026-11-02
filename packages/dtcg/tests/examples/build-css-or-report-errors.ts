@@ -13,13 +13,13 @@ if (problems.length) {
         const where = d.span ? `${d.span.file}:${d.span.start.line}:${d.span.start.column}` : "";
         const frame = d.span
             ? codeFrame(
-                  tokens.text(d.span.file) ?? "",
+                  tokens.getText(d.span.file) ?? "",
                   d.span.start.line,
                   d.span.start.column,
                   d.span.length,
               )
             : "";
-        showMessage(`${where}  ${d.message}\n${frame}\n  see ${d.docs}`);
+        showMessage(`${where}  ${d.message}\n${frame}\n  see ${d.docsUrl}`);
     }
 } else {
     await emitCSS(tokens);

@@ -29,7 +29,7 @@ export function applyExtends(merged: Merged, input: Input, diagnostics: Problems
             const loop = chain.slice(chain.indexOf(group));
             const paths = [...loop.map(({ path }) => path), group.path];
             report("circular-reference", { chain: paths }, group, {
-                related: loop.slice(1).map((each) => ({
+                relatedInformation: loop.slice(1).map((each) => ({
                     message: relatedMessages.partOfTheLoop,
                     span: each.extends.span,
                     path: each.path,

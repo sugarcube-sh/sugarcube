@@ -20,7 +20,7 @@ export const demo = readFromMemory({
 });
 
 export const at = (tokens: DesignTokens, file: string, jsonPath: JsonPath): JsonValue | undefined =>
-    jsonPath.reduce((value, step) => value?.[step], JSON.parse(tokens.text(file) ?? "null"));
+    jsonPath.reduce((value, step) => value?.[step], JSON.parse(tokens.getText(file) ?? "null"));
 
 export function plainly(result: OpResult) {
     return result.ops ? { ...result, alsoAffects: result.alsoAffects.inputs } : result;
@@ -57,7 +57,7 @@ export function changed(
 ): DesignTokens {
     const texts: Record<string, string> = {};
     for (const [file, jsonPath, value] of changes) {
-        const text = texts[file] ?? tokens.text(file) ?? "";
+        const text = texts[file] ?? tokens.getText(file) ?? "";
         const edited =
             value === undefined ? removeAt(text, jsonPath) : setAt(text, jsonPath, value);
         if (edited === undefined) throw new Error("the test's own edit could not be made");

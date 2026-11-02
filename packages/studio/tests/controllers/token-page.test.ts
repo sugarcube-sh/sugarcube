@@ -61,10 +61,10 @@ describe("a token's own problems", () => {
 
         for (const path of ["color.border.brand", "border.focus"]) {
             expect(
-                problemRows(studio.state.tokens.diagnosticsFor(path)).map(({ kind }) => kind),
+                problemRows(studio.state.tokens.getDiagnostics(path)).map(({ kind }) => kind),
             ).toEqual(["missing-reference"]);
         }
-        expect(studio.state.tokens.diagnosticsFor("color.text.default")).toEqual([]);
+        expect(studio.state.tokens.getDiagnostics("color.text.default")).toEqual([]);
     });
 });
 
@@ -163,7 +163,7 @@ describe("a recipe's step", () => {
 
     it("says the group whose recipe makes it, by the name of that group's form", () => {
         const { state } = studioOn();
-        const step = state.showing.token("size.step.-1");
+        const step = state.showing.getToken("size.step.-1");
 
         expect(step && madeBy(step, state.showing, state.formFor)).toEqual({
             kind: "recipe",
@@ -174,7 +174,7 @@ describe("a recipe's step", () => {
 
     it("names no recipe when the adapter has no form for the group", () => {
         const { state } = studioOn();
-        const step = state.showing.token("size.step.-1");
+        const step = state.showing.getToken("size.step.-1");
 
         expect(step && madeBy(step, state.showing, () => undefined)).toEqual({
             kind: "group",
@@ -204,14 +204,14 @@ describe("a recipe's step", () => {
                 },
             }),
         );
-        const md = state.showing.token("md");
+        const md = state.showing.getToken("md");
 
         expect(md && madeBy(md, state.showing, state.formFor)).toEqual({ kind: "top-level" });
     });
 
     it("is nothing for a token a file writes", () => {
         const { state } = studioOn();
-        const gutter = state.showing.token("size.fluid.gutter");
+        const gutter = state.showing.getToken("size.fluid.gutter");
 
         expect(gutter && madeBy(gutter, state.showing, state.formFor)).toBeUndefined();
     });
@@ -220,7 +220,7 @@ describe("a recipe's step", () => {
 describe("tokenPage", () => {
     it("holds everything a written token's page draws, each row with its own form", () => {
         const { state } = studioOn();
-        const gutter = state.showing.token("size.fluid.gutter")!;
+        const gutter = state.showing.getToken("size.fluid.gutter")!;
         const page = tokenPage(state, gutter, []);
 
         expect(page.row.css).toBe("clamp(1rem, 0.6364rem + 1.8182vw, 2rem)");
@@ -235,7 +235,7 @@ describe("tokenPage", () => {
 
     it("gives a step no rows, its recipe's line and its range's form, read only", () => {
         const { state } = studioOn();
-        const page = tokenPage(state, state.showing.token("size.step.-1")!, []);
+        const page = tokenPage(state, state.showing.getToken("size.step.-1")!, []);
 
         expect(page.rows).toEqual([]);
         expect(page.actions).toBe(false);
@@ -258,7 +258,7 @@ describe("tokenPage", () => {
                 },
             }),
         );
-        const page = tokenPage(state, state.showing.token("primary.pad")!, []);
+        const page = tokenPage(state, state.showing.getToken("primary.pad")!, []);
 
         expect(page.description.editable).toBe(false);
         expect(page.deprecation.box).toBeUndefined();
@@ -266,7 +266,7 @@ describe("tokenPage", () => {
 
     it("gives an override row no form until it is written", () => {
         const { state } = studioOn();
-        const page = tokenPage(state, state.showing.token("size.fluid.gutter")!, ["mode: dark"]);
+        const page = tokenPage(state, state.showing.getToken("size.fluid.gutter")!, ["mode: dark"]);
         const adding = page.rows.find((row) => row.unwritten);
 
         expect(adding).toBeDefined();
@@ -276,7 +276,7 @@ describe("tokenPage", () => {
 
 describe("valueEdit", () => {
     const { state } = studioOn();
-    const [base, dark] = tokenPage(state, state.showing.token("color.text.default")!, []).rows;
+    const [base, dark] = tokenPage(state, state.showing.getToken("color.text.default")!, []).rows;
 
     it("writes the value at the row's place", () => {
         const edit = valueEdit(state.tokens, "color.text.default", base!, "{color.neutral.800}");

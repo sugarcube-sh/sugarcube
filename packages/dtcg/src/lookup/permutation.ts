@@ -10,7 +10,7 @@ import type {
 import { checkedInput, modifiersIn } from "../read/input.js";
 
 /**
- * Thrown by {@link DesignTokens.permutation} when there is no permutation for the input. The
+ * Thrown by {@link DesignTokens.getPermutation} when there is no permutation for the input. The
  * message says why in plain words; `detail` holds the facts it is worded from, for a tool to word
  * it itself.
  *
@@ -33,7 +33,7 @@ export class PermutationError extends Error {
 
 /**
  * Thrown by a question of one permutation asked of design tokens with several, such as
- * {@link DesignTokens.token}: which permutation it is for has to be said. The message says how to
+ * {@link DesignTokens.getToken}: which permutation it is for has to be said. The message says how to
  * pick one; `detail` holds the facts it is worded from.
  *
  * @example
@@ -82,7 +82,7 @@ export function findPermutation(
         return detail;
     }
     return (
-        tokens.permutations.matching(complete.input) ?? {
+        tokens.permutations.findByInput(complete.input) ?? {
             reason: "not-read",
             input: complete.input,
         }

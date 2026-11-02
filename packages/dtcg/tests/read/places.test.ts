@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type Span, readFromMemory } from "../../src/index.js";
+import { getSpan } from "../../src/editor.js";
 
 const color = (red: number) => ({ $value: { colorSpace: "srgb", components: [red, 0, 0] } });
 
@@ -23,8 +24,8 @@ const files: Record<string, string> = {
 };
 
 const tokens = readFromMemory({ files, entry: "tokens.resolver.json" });
-const light = tokens.permutation({ mode: "light" });
-const dark = tokens.permutation({ mode: "dark" });
+const light = tokens.getPermutation({ mode: "light" });
+const dark = tokens.getPermutation({ mode: "dark" });
 const mode = tokens.resolver?.modifiers[0];
 const [lightContext, darkContext] = mode?.contexts ?? [];
 
@@ -53,7 +54,7 @@ describe("sources", () => {
 
     it("say who reads them: everyone, or the contexts that do", () => {
         const [base, darkFile] = tokens.sources;
-        expect(base?.readBy).toBe("everyone");
+        expect(base?.readBy).toBe("every-context");
         expect(darkFile?.readBy).toStrictEqual([darkContext]);
     });
 
@@ -62,7 +63,7 @@ describe("sources", () => {
         const [only] = single.sources;
         expect(only?.file).toBe("tokens.json");
         expect(only?.sets).toStrictEqual([]);
-        expect(only?.readBy).toBe("everyone");
+        expect(only?.readBy).toBe("every-context");
     });
 });
 
@@ -106,28 +107,28 @@ describe("contexts", () => {
 
 describe("a token's writtenAt", () => {
     it("is where it is written, with the source that writes it", () => {
-        const [place, ...rest] = light.token("color.text")?.writtenAt ?? [];
+        const [place, ...rest] = light.getToken("color.text")?.definitions ?? [];
         expect(rest).toStrictEqual([]);
         expect(place?.source).toBe(tokens.sources[0]);
-        expect(place && written(tokens.spanOf(place))).toContain('"colorSpace"');
-        expect(place && tokens.spanOf(place).file).toBe("base.json");
+        expect(place && written(getSpan(tokens, place))).toContain('"colorSpace"');
+        expect(place && getSpan(tokens, place).file).toBe("base.json");
     });
 
     it("is every place a permutation's sources write it, the one that wins last", () => {
-        const places = dark.token("color.bg")?.writtenAt ?? [];
+        const places = dark.getToken("color.bg")?.definitions ?? [];
         expect(places.map(({ source }) => source.file)).toStrictEqual(["base.json", "dark.json"]);
     });
 
     it("is the same places in every permutation that reads the same files", () => {
-        const inLight = light.token("color.text")?.writtenAt;
-        const inDark = dark.token("color.text")?.writtenAt;
+        const inLight = light.getToken("color.text")?.definitions;
+        const inDark = dark.getToken("color.text")?.definitions;
         expect(inLight?.[0]).toBe(inDark?.[0]);
     });
 });
 
 describe("a group's writtenAt", () => {
     it("is every place a source declares it, in the order read", () => {
-        const places = dark.group("color")?.writtenAt ?? [];
+        const places = dark.getGroup("color")?.definitions ?? [];
         expect(places.map(({ source }) => source.file)).toStrictEqual(["base.json", "dark.json"]);
     });
 
@@ -140,11 +141,11 @@ describe("a group's writtenAt", () => {
                 }),
             },
         });
-        expect(inherited.permutation().group("primary.state")?.writtenAt).toStrictEqual([]);
+        expect(inherited.getPermutation().getGroup("primary.state")?.definitions).toStrictEqual([]);
     });
 
     it("of the top level is the top of each file that writes there", () => {
-        expect(dark?.topLevel.writtenAt.map(({ source }) => source.file)).toStrictEqual([
+        expect(dark?.topLevel.definitions.map(({ source }) => source.file)).toStrictEqual([
             "base.json",
             "dark.json",
         ]);
@@ -153,15 +154,17 @@ describe("a group's writtenAt", () => {
 
 describe("on the design tokens", () => {
     it("writtenAt gives every place a path is written, in any permutation, each once with where it is read", () => {
-        const places = tokens.writtenAt("color.bg");
-        expect(places.map(({ span, readIn }) => [span.file, readIn.inputs])).toStrictEqual([
+        const places = tokens.getDefinitions("color.bg");
+        expect(
+            places.map(({ span, permutations: readIn }) => [span.file, readIn.inputs]),
+        ).toStrictEqual([
             ["base.json", [{ mode: "light" }, { mode: "dark" }]],
             ["dark.json", [{ mode: "dark" }]],
         ]);
     });
 
     it("writtenAt gives where each place's value wins: the permutations whose token's value comes from it", () => {
-        const places = tokens.writtenAt("color.bg");
+        const places = tokens.getDefinitions("color.bg");
         expect(places.map(({ span, winsIn }) => [span.file, winsIn.inputs])).toStrictEqual([
             ["base.json", [{ mode: "light" }]],
             ["dark.json", [{ mode: "dark" }]],
@@ -184,14 +187,14 @@ describe("on the design tokens", () => {
             },
             entry: "tokens.resolver.json",
         });
-        const [base, brand] = overridden.writtenAt("gap");
-        expect(base?.readIn.label).toBe("everywhere");
+        const [base, brand] = overridden.getDefinitions("gap");
+        expect(base?.permutations.label).toBe("everywhere");
         expect(base?.winsIn.label).toBe("nowhere");
         expect(brand?.winsIn.label).toBe("everywhere");
     });
 
     it("writtenAt gives a group's places too, read but winning nowhere, as groups merge", () => {
-        const places = tokens.writtenAt("color");
+        const places = tokens.getDefinitions("color");
         expect(places.map(({ span }) => span.file)).toStrictEqual(["base.json", "dark.json"]);
         expect(places.map(({ winsIn }) => winsIn.length)).toStrictEqual([0, 0]);
     });
@@ -224,22 +227,24 @@ describe("on the design tokens, a file several contexts list", () => {
     });
 
     it("writtenAt gives its place once, with the one source both contexts read it through", () => {
-        const [, night, ...rest] = shared.writtenAt("gap");
+        const [, night, ...rest] = shared.getDefinitions("gap");
         expect(rest).toStrictEqual([]);
         expect(night?.span.file).toBe("night.json");
         expect(night?.sources.map(({ modifier }) => modifier?.name)).toStrictEqual(["mode"]);
-        expect(night?.readIn.inputs).toStrictEqual([{ mode: "dark" }, { mode: "dim" }]);
+        expect(night?.permutations.inputs).toStrictEqual([{ mode: "dark" }, { mode: "dim" }]);
     });
 
-    const inDark = shared.permutation({ mode: "dark" });
-    const inDim = shared.permutation({ mode: "dim" });
+    const inDark = shared.getPermutation({ mode: "dark" });
+    const inDim = shared.getPermutation({ mode: "dim" });
 
     it("is one place in every permutation that reads it", () => {
-        expect(inDim.token("gap")?.valueFrom).toBe(inDark.token("gap")?.valueFrom);
+        expect(inDim.getToken("gap")?.winningDefinition).toBe(
+            inDark.getToken("gap")?.winningDefinition,
+        );
     });
 
     it("gives the permutations that read it the same token, when nothing else differs", () => {
-        expect(inDim.token("gap")).toBe(inDark.token("gap"));
+        expect(inDim.getToken("gap")).toBe(inDark.getToken("gap"));
     });
 
     it("stays one token across a reread that changes another file", () => {
@@ -250,12 +255,12 @@ describe("on the design tokens, a file several contexts list", () => {
             }),
         });
 
-        expect(after.permutation({ mode: "dim" }).token("gap")).toBe(inDark.token("gap"));
-        expect(after.permutation({ mode: "dark" }).token("gap")).toBe(inDark.token("gap"));
+        expect(after.getPermutation({ mode: "dim" }).getToken("gap")).toBe(inDark.getToken("gap"));
+        expect(after.getPermutation({ mode: "dark" }).getToken("gap")).toBe(inDark.getToken("gap"));
     });
 
     it("says which modifier's contexts list it, the permutation saying which context", () => {
-        const source = inDim.token("gap")?.valueFrom.source;
+        const source = inDim.getToken("gap")?.winningDefinition.source;
 
         expect(source?.modifier?.name).toBe("mode");
         expect(inDim.contexts.find(({ modifier }) => modifier === source?.modifier)?.name).toBe(
@@ -292,14 +297,14 @@ describe("on the design tokens, a file several contexts list", () => {
             },
             entry: "tokens.resolver.json",
         });
-        const throughDark = routes.permutation({ mode: "dark" }).token("gap");
-        const throughDim = routes.permutation({ mode: "dim" }).token("gap");
+        const throughDark = routes.getPermutation({ mode: "dark" }).getToken("gap");
+        const throughDim = routes.getPermutation({ mode: "dim" }).getToken("gap");
 
-        expect(throughDark?.valueFrom).not.toBe(throughDim?.valueFrom);
-        expect(throughDark?.valueFrom.source.extensions).toStrictEqual({
+        expect(throughDark?.winningDefinition).not.toBe(throughDim?.winningDefinition);
+        expect(throughDark?.winningDefinition.source.extensions).toStrictEqual({
             "com.example": { hidden: true },
         });
-        expect(throughDim?.valueFrom.source.extensions).toBeUndefined();
+        expect(throughDim?.winningDefinition.source.extensions).toBeUndefined();
     });
 });
 
@@ -320,7 +325,9 @@ describe("the plain form", () => {
         const bg = plain.permutations[1].tokens.find(
             ({ path }: { path: string }) => path === "color.bg",
         );
-        expect(bg.writtenAt.map(({ source }: { source: number }) => source)).toStrictEqual([0, 1]);
+        expect(bg.definitions.map(({ source }: { source: number }) => source)).toStrictEqual([
+            0, 1,
+        ]);
         expect(bg).not.toHaveProperty("source");
         expect(bg).not.toHaveProperty("replaces");
     });
@@ -364,24 +371,27 @@ describe("what is written at a place", () => {
     });
 
     it("is the JSON the file writes there, exactly as written, for each place", () => {
-        const places = placed.writtenAt("red");
+        const places = placed.getDefinitions("red");
 
-        expect(places.map(({ span, written: json }) => [span.file, json])).toStrictEqual([
+        expect(places.map(({ span, asWritten: json }) => [span.file, json])).toStrictEqual([
             ["base.json", { $type: "color", $value: "#ff0000", $description: "Red." }],
             ["dark.json", { $type: "color", $value: "#990000" }],
         ]);
-        expect(placed.permutation().token("red")?.writtenAt[0]?.written).toStrictEqual(
-            places[0]?.written,
+        expect(placed.getPermutation().getToken("red")?.definitions[0]?.asWritten).toStrictEqual(
+            places[0]?.asWritten,
         );
     });
 
     it("is found at its place in a file read through a pointer", () => {
-        expect(placed.writtenAt("gap")[0]?.written).toStrictEqual({ $type: "number", $value: 4 });
+        expect(placed.getDefinitions("gap")[0]?.asWritten).toStrictEqual({
+            $type: "number",
+            $value: 4,
+        });
     });
 
     it("is the same value each time it is read", () => {
-        const [place] = placed.permutation().token("red")?.writtenAt ?? [];
+        const [place] = placed.getPermutation().getToken("red")?.definitions ?? [];
 
-        expect(place?.written).toBe(place?.written);
+        expect(place?.asWritten).toBe(place?.asWritten);
     });
 });

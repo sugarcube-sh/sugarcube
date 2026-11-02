@@ -8,7 +8,7 @@
           "path": "color.brand",
           "type": "color",
           "description": "The brand color",
-          "authored": {
+          "asWritten": {
             "value": {
               "colorSpace": "srgb",
               "components": [0.882, 0.114, 0.282],
@@ -21,7 +21,7 @@
             "alpha": 1,
             "hex": "#e11d48"
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -34,13 +34,13 @@
         {
           "path": "color.muted",
           "type": "color",
-          "authored": {
+          "asWritten": {
             "value": {
               "colorSpace": "srgb",
               "components": [0.5, 0.5, 0.5]
             }
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -62,7 +62,7 @@
             },
             "org.other": true
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -79,7 +79,7 @@
         {
           "path": "color.brand",
           "type": "color",
-          "authored": {
+          "asWritten": {
             "value": {
               "colorSpace": "oklch",
               "components": [0.7, 0.2, 20]
@@ -90,7 +90,7 @@
             "components": [0.7, 0.2, 20],
             "alpha": 1
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -119,13 +119,13 @@
         {
           "path": "color.muted",
           "type": "color",
-          "authored": {
+          "asWritten": {
             "value": {
               "colorSpace": "srgb",
               "components": [0.5, 0.5, 0.5]
             }
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -147,7 +147,7 @@
             },
             "org.other": true
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {

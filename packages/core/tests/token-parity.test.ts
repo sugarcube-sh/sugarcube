@@ -208,7 +208,7 @@ async function differences(each: Case): Promise<string[]> {
     for (const { input, tokens: oldTokens } of old.permutations) {
         let permutation;
         try {
-            permutation = tokens.permutation(input);
+            permutation = tokens.getPermutation(input);
         } catch (error) {
             if (!(error instanceof PermutationError)) throw error;
             found.push(`no permutation for ${JSON.stringify(input)}`);

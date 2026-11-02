@@ -19,7 +19,7 @@ export function gitSave({
                 throw error instanceof Error && error.cause !== undefined ? error.cause : error;
             },
         );
-        if (fetched.text(fetched.entry) === undefined)
+        if (fetched.getText(fetched.entryFile) === undefined)
             throw new UserFacingError(
                 ErrorMessages.ENTRY_NOT_THERE(entry, host.repository, host.branch),
             );

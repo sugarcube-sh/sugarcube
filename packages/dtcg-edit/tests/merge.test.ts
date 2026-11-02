@@ -18,14 +18,14 @@ describe("edits merged into one step", () => {
         session.undo();
         expect(session.tokens).toBe(demo);
         session.redo();
-        expect(session.tokens.permutation().token("color.brand.500")?.authored?.value).toEqual(
-            blue,
-        );
+        expect(
+            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+        ).toEqual(blue);
     });
 
     it("keeps one edit for a place set again and again: the first was, the last value", () => {
         const session = createSession(demo);
-        const was = demo.permutation().token("color.brand.500")?.authored?.value;
+        const was = demo.getPermutation().getToken("color.brand.500")?.asWritten?.value;
         session.do(setValue(session.tokens, "color.brand.500", red), { merge: brand });
         session.do(setValue(session.tokens, "color.brand.500", blue), { merge: brand });
 
@@ -155,7 +155,7 @@ describe("edits merged into one step", () => {
     it("never folds an edit past a later one to the value around it", () => {
         const session = createSession(demo);
         const field = "value shadow.sm";
-        const whole = demo.permutation().token("shadow.sm")?.authored?.value;
+        const whole = demo.getPermutation().getToken("shadow.sm")?.asWritten?.value;
         session.do(
             setValue(session.tokens, "shadow.sm", "{color.neutral.900}", { part: ["color"] }),
             { merge: field },
@@ -251,7 +251,9 @@ describe("what ends a step", () => {
         const session = twoSteps((each) => each.markSaved());
 
         expect(session.unsaved.steps).toHaveLength(1);
-        expect(session.opened.permutation().token("color.brand.500")?.authored?.value).toEqual(red);
+        expect(
+            session.opened.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+        ).toEqual(red);
     });
 
     it("a change on disk", () => {

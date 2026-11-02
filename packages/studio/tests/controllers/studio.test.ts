@@ -78,15 +78,15 @@ describe("createStudio", () => {
         const after = studio.state.tokens;
         expect(after).not.toBe(before);
         expect(studio.state.showing.label).toBe("mode: dark");
-        expect(studio.state.showing.token("color.text.default")?.value).toEqual({
+        expect(studio.state.showing.getToken("color.text.default")?.value).toEqual({
             syntax: "curly-brace",
             path: "color.neutral.100",
         });
-        expect(after.permutation({ mode: "dark" }).token("color.brand.500")).toBe(
-            before.permutation({ mode: "dark" }).token("color.brand.500"),
+        expect(after.getPermutation({ mode: "dark" }).getToken("color.brand.500")).toBe(
+            before.getPermutation({ mode: "dark" }).getToken("color.brand.500"),
         );
-        expect(after.permutation().token("color.text.default")).toBe(
-            before.permutation().token("color.text.default"),
+        expect(after.getPermutation().getToken("color.text.default")).toBe(
+            before.getPermutation().getToken("color.text.default"),
         );
     });
 
@@ -148,7 +148,7 @@ describe("createStudio", () => {
 
     it("asks the adapter for a token's value, so a fluid size is the clamp() the page gets", () => {
         const studio = studioOn();
-        const gutter = studio.state.showing.token("size.fluid.gutter");
+        const gutter = studio.state.showing.getToken("size.fluid.gutter");
 
         expect(gutter && studio.state.value(gutter)).toBe(
             "clamp(1rem, 0.6364rem + 1.8182vw, 2rem)",
@@ -163,7 +163,7 @@ describe("createStudio", () => {
 
         studio.receive(demoMessage({ adapter: { name: "plain", settings: {}, problems: [] } }));
 
-        const gutter = studio.state.showing.token("size.fluid.gutter");
+        const gutter = studio.state.showing.getToken("size.fluid.gutter");
         expect(gutter && studio.state.value(gutter)).toBe("2rem");
         expect(studio.state.css).not.toContain("[data-mode");
     });

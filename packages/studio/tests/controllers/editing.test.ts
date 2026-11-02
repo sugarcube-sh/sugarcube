@@ -16,7 +16,8 @@ describe("editing in studio", () => {
 
         expect(done.tokens).toBe(studio.state.tokens);
         expect(
-            studio.state.tokens.permutation({ mode: "dark" }).token("color.text.default")?.value,
+            studio.state.tokens.getPermutation({ mode: "dark" }).getToken("color.text.default")
+                ?.value,
         ).toEqual({ syntax: "curly-brace", path: "color.neutral.100" });
         expect(studio.state.css).toContain("--color-text-default: var(--color-neutral-100);");
         expect(studio.state.changes.map(({ kind, path }) => [kind, path])).toEqual([
@@ -80,7 +81,7 @@ describe("editing in studio", () => {
 
         studio.do(setValue(studio.state.tokens, "size.fluid.gutter", { value: 3, unit: "rem" }));
 
-        const gutter = studio.state.showing.token("size.fluid.gutter");
+        const gutter = studio.state.showing.getToken("size.fluid.gutter");
         expect(gutter && studio.state.value(gutter)).toBe("3rem");
         expect(studio.state.changes).toHaveLength(1);
     });

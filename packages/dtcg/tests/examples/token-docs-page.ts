@@ -4,12 +4,14 @@ import { read } from "@sugarcube-sh/dtcg/node";
 
 const tokens = await read("tokens/tokens.resolver.json");
 
-const light = tokens.permutation({ theme: "light" });
-const dark = tokens.permutation({ theme: "dark" });
+const light = tokens.getPermutation({ theme: "light" });
+const dark = tokens.getPermutation({ theme: "dark" });
 
-for (const path of tokens.tokenPaths()) {
-    const inLight = light.token(path);
-    const inDark = dark.token(path);
-    const users = new Set(tokens.referencesTo(path).flatMap(({ fromPaths }) => fromPaths));
+for (const path of tokens.getTokenPaths()) {
+    const inLight = light.getToken(path);
+    const inDark = dark.getToken(path);
+    const users = new Set(
+        tokens.getReferencesTo(path).flatMap(({ writtenInPaths: fromPaths }) => fromPaths),
+    );
     row(path, (inLight ?? inDark)?.type, inLight?.resolved, inDark?.resolved, [...users]);
 }

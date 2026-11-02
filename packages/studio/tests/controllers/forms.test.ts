@@ -14,10 +14,15 @@ describe("fieldName", () => {
 
 describe("settingEdit", () => {
     const { state } = studioOn();
-    const form = state.formFor(state.showing.group("size.step")!)!;
+    const form = state.formFor(state.showing.getGroup("size.step")!)!;
     const write = form.write!;
     const rem = { value: 1, unit: "rem" };
-    const field = (key: string, row?: string) => ({ path: "size.step", form: form.label, key, row });
+    const field = (key: string, row?: string) => ({
+        path: "size.step",
+        form: form.label,
+        key,
+        row,
+    });
 
     it("is the form's own write of the setting", () => {
         expect(settingEdit(field("base.min"), write, rem).result.ops).toEqual(

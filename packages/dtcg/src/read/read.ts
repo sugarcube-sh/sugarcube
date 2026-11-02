@@ -191,7 +191,7 @@ function toDesignTokens(
     return linkedDesignTokens(
         {
             files: loaded.files,
-            entry: loaded.entry,
+            entryFile: loaded.entry,
             ...(loaded.resolver && { resolver: loaded.resolver }),
             sources,
             permutations,

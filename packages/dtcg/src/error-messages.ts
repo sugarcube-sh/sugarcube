@@ -134,7 +134,7 @@ export const thrownMessages = {
             : inputWords(detail),
     severalPermutations: ({ asked, modifiers, example }: SeveralPermutationsDetail) => {
         const named = `${modifiers.length === 1 ? "the modifier" : "the modifiers"} ${listed(modifiers, "and")}`;
-        return `tokens.${asked} needs a permutation: this resolver has ${named}. Pick one with tokens.permutation(${inputText(example)}), or ask them all with everyPermutation(tokens, …)`;
+        return `tokens.${asked} needs a permutation: this resolver has ${named}. Pick one with tokens.getPermutation(${inputText(example)}), or ask them all with askEveryPermutation(tokens, …)`;
     },
     noResolver: (files: string[]) =>
         files.length === 0

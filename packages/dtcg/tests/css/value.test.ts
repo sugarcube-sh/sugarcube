@@ -11,7 +11,7 @@ function read(json: Record<string, unknown>): (path: string) => Token {
         { hexStringColors: true },
     );
     return (path) => {
-        const found = tokens.permutation().token(path);
+        const found = tokens.getPermutation().getToken(path);
         if (!found) throw new Error(`no token at ${path}`);
         return found;
     };
@@ -19,8 +19,8 @@ function read(json: Record<string, unknown>): (path: string) => Token {
 
 const asVariables: CSSValueOptions = {
     replacement: (ref, cssProperty) =>
-        ref.token
-            ? { customProperty: cssCustomProperty(ref.token.path, { cssProperty }) }
+        ref.pointsToToken
+            ? { customProperty: cssCustomProperty(ref.pointsToToken.path, { cssProperty }) }
             : undefined,
 };
 
@@ -84,7 +84,7 @@ describe("cssValue", () => {
                 }),
             },
         });
-        const exact = strict.permutation().token("exact");
+        const exact = strict.getPermutation().getToken("exact");
         expect(exact && cssValue(exact)).toBe("rgb(255 0 0)");
     });
 
@@ -157,9 +157,9 @@ describe("cssValue", () => {
     it("gives undefined for a token that isn't there, so a missing path needs no check first", () => {
         const at = readFromMemory({
             files: { "tokens.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }) },
-        }).permutation();
-        expect(cssValue(at.token("nope"))).toBeUndefined();
-        expect(cssValue(at.token("gap"))).toBe("1");
+        }).getPermutation();
+        expect(cssValue(at.getToken("nope"))).toBeUndefined();
+        expect(cssValue(at.getToken("gap"))).toBe("1");
     });
 
     it("writes the other simple types as CSS writes them", () => {
@@ -198,7 +198,8 @@ describe("cssValue", () => {
         expect(cssValue(at("brand"), asVariables)).toBe("var(--ink)");
         expect(
             cssValue(at("edge"), {
-                replacement: (ref) => (ref.path === "hairline" ? { css: "thin" } : undefined),
+                replacement: (ref) =>
+                    ref.pointsToPath === "hairline" ? { css: "thin" } : undefined,
             }),
         ).toBe("thin solid #111111");
     });
@@ -365,9 +366,9 @@ describe("cssValue", () => {
             const css = cssValue(at("quote"), {
                 replacement: (ref, cssProperty) => {
                     asked.push(cssProperty);
-                    return ref.token
+                    return ref.pointsToToken
                         ? {
-                              customProperty: cssCustomProperty(ref.token.path, {
+                              customProperty: cssCustomProperty(ref.pointsToToken.path, {
                                   delimiter: "_",
                                   cssProperty,
                               }),

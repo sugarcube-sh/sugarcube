@@ -66,7 +66,7 @@ const unusedCommand = new Command()
                 return;
             }
             if (answer.unused.length > 0) {
-                log.message(unusedLines(answer, built.tokens.tokenPaths()));
+                log.message(unusedLines(answer, built.tokens.getTokenPaths()));
             }
             outro(unusedSummary(answer, uses));
         } catch (error) {

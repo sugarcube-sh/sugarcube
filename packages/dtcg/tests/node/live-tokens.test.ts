@@ -85,7 +85,8 @@ function live(source: TokensOnDisk | (() => TokensOnDisk), whenReading?: (read: 
     return { live: current, errors, reads, watcher, added, save };
 }
 
-const hexOf = (opened: DesignTokens) => JSON.stringify(opened.permutation().token("color.ink"));
+const hexOf = (opened: DesignTokens) =>
+    JSON.stringify(opened.getPermutation().getToken("color.ink"));
 
 describe("design tokens kept current with their files", () => {
     it("reads at once, and reads again when a file it lists is saved", async () => {
@@ -108,7 +109,9 @@ describe("design tokens kept current with their files", () => {
         const first = await current.tokens();
 
         expect(Object.keys(first.toMemory().files)).toStrictEqual(first.files);
-        expect(first.text("base.json")).toBe(JSON.stringify({ color: { ink: color("#111111") } }));
+        expect(first.getText("base.json")).toBe(
+            JSON.stringify({ color: { ink: color("#111111") } }),
+        );
     });
 
     it("holds the text a save wrote, with the design tokens read from it", async () => {
@@ -121,7 +124,9 @@ describe("design tokens kept current with their files", () => {
         const next = await current.tokens();
 
         expect(hexOf(next)).toContain("#222222");
-        expect(next.text("base.json")).toBe(JSON.stringify({ color: { ink: color("#222222") } }));
+        expect(next.getText("base.json")).toBe(
+            JSON.stringify({ color: { ink: color("#222222") } }),
+        );
     });
 
     it("reads again when a file it lists is added or deleted", async () => {

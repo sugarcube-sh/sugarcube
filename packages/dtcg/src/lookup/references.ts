@@ -13,6 +13,7 @@ import { permutationsOf } from "../read/permutations-of.js";
 import { jsonPathIn } from "./json-path.js";
 import { acrossPermutations } from "../read/reference.js";
 import { samePlace } from "../read/same-object.js";
+import { getSpan } from "./editor.js";
 
 interface WrittenIn {
     position: Map<Reference, number>;
@@ -33,14 +34,14 @@ export function referencedIn(
             tokenPath.contains(each, named) ? references : [],
         );
     };
-    const first = reaching(path, permutation.token(path) !== undefined);
+    const first = reaching(path, permutation.getToken(path) !== undefined);
     const found = new Set<Reference>(first);
     const seen = new Set([path]);
     const waiting = chained ? [first] : [];
     for (const references of waiting) {
         for (const reference of references) {
             found.add(reference);
-            const { from } = reference;
+            const { writtenIn: from } = reference;
             if (seen.has(from.path)) continue;
             seen.add(from.path);
             waiting.push(reaching(from.path, from.kind === "token"));
@@ -54,34 +55,37 @@ export function usedIn(
     path: string,
     options?: ReferenceOptions,
 ): (Token | Group)[] {
-    return [...new Set(referencedIn(permutation, path, options).map(({ from }) => from))];
+    return [
+        ...new Set(referencedIn(permutation, path, options).map(({ writtenIn: from }) => from)),
+    ];
 }
 
 export function referencesToIn(tokens: DesignTokens, path: string): ReferenceInPermutations[] {
     return across(tokens, (permutation) => referencedIn(permutation, path));
 }
 
-export function refersToIn(
+export function dependenciesIn(
     permutation: Permutation,
     path: string,
     { chained = false }: ReferenceOptions = {},
-): Reference[] {
-    const start = permutation.tokenOrGroup(path);
+): (Token | Group)[] {
+    const start = permutation.getTokenOrGroup(path);
     if (!start) return [];
-    const found: Reference[] = [];
-    const seen = new Set<Token | Group>([start]);
+    const found = new Set<Token | Group>();
+    const followed = new Set<Token | Group>([start]);
     const waiting: (Token | Group)[] = [start];
     for (const each of waiting) {
-        for (const reference of each.references) {
-            found.push(reference);
+        for (const { pointsToPath } of each.references) {
             const next =
-                reference.path === undefined ? undefined : permutation.token(reference.path);
-            if (!chained || !next || seen.has(next)) continue;
-            seen.add(next);
+                pointsToPath === undefined ? undefined : permutation.getTokenOrGroup(pointsToPath);
+            if (!next) continue;
+            found.add(next);
+            if (!chained || followed.has(next)) continue;
+            followed.add(next);
             waiting.push(next);
         }
     }
-    return found;
+    return [...found];
 }
 
 function writtenIn(permutation: Permutation): WrittenIn {
@@ -93,10 +97,10 @@ function writtenIn(permutation: Permutation): WrittenIn {
         for (const each of items) {
             for (const reference of each.references) {
                 position.set(reference, position.size);
-                if (reference.path === undefined) continue;
-                const list = byPath.get(reference.path);
+                if (reference.pointsToPath === undefined) continue;
+                const list = byPath.get(reference.pointsToPath);
                 if (list) list.push(reference);
-                else byPath.set(reference.path, [reference]);
+                else byPath.set(reference.pointsToPath, [reference]);
             }
             if (each.kind === "group") visit(each.children);
         }
@@ -114,18 +118,18 @@ function across(
     const merged = new Map<Span, Merged[]>();
     for (const permutation of tokens.permutations) {
         for (const reference of inPermutation(permutation)) {
-            const span = tokens.spanOf(reference);
+            const span = getSpan(tokens, reference);
             let atSpan = merged.get(span);
             if (!atSpan) merged.set(span, (atSpan = []));
             let here = atSpan.find((each) =>
-                samePlace(each.reference.property, reference.property ?? []),
+                samePlace(each.reference.writtenInProperty, reference.writtenInProperty ?? []),
             );
             if (!here) {
                 here = { reference, writers: new Set(), heirs: new Set(), permutations: [] };
                 atSpan.push(here);
             }
             if (!here.permutations.includes(permutation)) here.permutations.push(permutation);
-            const { from } = reference;
+            const { writtenIn: from } = reference;
             (from.inherited ? here.heirs : here.writers).add(from.path);
         }
     }

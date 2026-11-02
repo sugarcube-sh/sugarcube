@@ -64,7 +64,7 @@ describe("nodeFiles", () => {
         change(path);
         await changed;
 
-        expect(files.now().tokens.text("dark.json")).toBe(edited);
+        expect(files.now().tokens.getText("dark.json")).toBe(edited);
     });
 
     it("stops telling a listener once it stops listening", async () => {

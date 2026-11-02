@@ -252,5 +252,5 @@ function movesIn(steps: readonly EditStep[]): Move[] {
 }
 
 function pathsIn(tokens: DesignTokens): Set<string> {
-    return new Set([...tokens.groupPaths(), ...tokens.tokenPaths()]);
+    return new Set([...tokens.getGroupPaths(), ...tokens.getTokenPaths()]);
 }

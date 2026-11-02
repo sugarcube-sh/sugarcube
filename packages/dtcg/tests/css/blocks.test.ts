@@ -88,7 +88,7 @@ describe("cssBlocks", () => {
             { ...palette, shade: color("#000000") },
             { color: { ink: { $value: "#eeeeee" } } },
         );
-        const ink = mixed.permutation().token("color.ink");
+        const ink = mixed.getPermutation().getToken("color.ink");
         const writer = cssWriter({
             value: (token, { written: value, write }) =>
                 token.path === "shade" && ink
@@ -105,7 +105,7 @@ describe("cssBlocks", () => {
         const writer = cssWriter();
         const [, later] = cssBlocks(tokens, [root, dark], { writer });
         expect(later?.declarations).toBe(
-            writer.declarations(tokens.permutation({ mode: "dark" })).declarations,
+            writer.declarations(tokens.getPermutation({ mode: "dark" })).declarations,
         );
     });
 
@@ -116,7 +116,8 @@ describe("cssBlocks", () => {
     });
 
     describe("which earlier blocks reach a later one", () => {
-        const inFull = cssWriter().declarations(tokens.permutation(dark.input)).declarations.length;
+        const inFull = cssWriter().declarations(tokens.getPermutation(dark.input)).declarations
+            .length;
         const reachedBy = (earlier: Partial<CSSBlockInput>, later: Partial<CSSBlockInput>) => {
             const [, block] = cssBlocks(tokens, [
                 { ...root, ...earlier },
@@ -230,8 +231,8 @@ describe("cssBlocks, the modifiers a block's input names", () => {
     const darkBlock = block({ mode: "dark" }, '[data-mode="dark"]');
 
     it("knows which modifier writes each token, from the context listing the file", () => {
-        const surface = brands.permutation({ mode: "dark" }).token("surface");
-        expect(surface?.writtenAt.map(({ source }) => source.modifier?.name)).toStrictEqual([
+        const surface = brands.getPermutation({ mode: "dark" }).getToken("surface");
+        expect(surface?.definitions.map(({ source }) => source.modifier?.name)).toStrictEqual([
             undefined,
             "mode",
         ]);

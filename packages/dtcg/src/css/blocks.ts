@@ -74,7 +74,7 @@ export function cssBlocks(
     { writer = cssWriter() }: { writer?: CSSWriter } = {},
 ): CSSBlock[] {
     const found = blocks.map((each) => {
-        const permutation = tokens.permutation(each.input);
+        const permutation = tokens.getPermutation(each.input);
         return {
             ...each,
             permutation,
@@ -139,7 +139,7 @@ function providedBy(
     const provided = new Map<ResolverModifier, Set<string>>();
     for (const { declarations } of blocks) {
         for (const { token } of declarations) {
-            for (const { source } of token.writtenAt) {
+            for (const { source } of token.definitions) {
                 const { modifier } = source;
                 if (!modifier) continue;
                 const paths = provided.get(modifier);
