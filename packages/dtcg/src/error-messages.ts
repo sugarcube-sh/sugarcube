@@ -10,7 +10,7 @@ import type {
     ResolverRule,
     SeveralPermutationsDetail,
 } from "./index.js";
-import { inputLabel } from "./lookup/permutation-label.js";
+import { toInputLabel } from "./lookup/permutation-label.js";
 import {
     didYouMean,
     ignoredMessage,
@@ -130,7 +130,7 @@ export const thrownMessages = {
         `nothing is written at that place in \`${file}\` in this read: it comes from a read of other text`,
     permutation: (detail: PermutationErrorDetail) =>
         detail.reason === "not-read"
-            ? `\`${inputLabel(detail.input)}\` was not built by this read`
+            ? `\`${toInputLabel(detail.input)}\` was not built by this read`
             : inputWords(detail),
     severalPermutations: ({ asked, modifiers, example }: SeveralPermutationsDetail) => {
         const named = `${modifiers.length === 1 ? "the modifier" : "the modifiers"} ${listed(modifiers, "and")}`;

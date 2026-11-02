@@ -15,7 +15,7 @@ import type {
     Written,
 } from "../index.js";
 import { tokenPath } from "../path.js";
-import { namedPath, referenceText } from "../values/references.js";
+import { namedPath, toReferenceTarget } from "../values/references.js";
 import type { Building } from "./building.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
 import { applying, deprecatedFrom, inherited } from "./inherit.js";
@@ -232,7 +232,7 @@ function buildPermutation(
         group.children = children;
         const rootToken = children.find(
             (child): child is Token =>
-                child.kind === "token" && tokenPath.withoutRoot(child.path) === written.path,
+                child.kind === "token" && tokenPath.removeRoot(child.path) === written.path,
         );
         if (rootToken) group.rootToken = rootToken;
         if (extending) group.extends = extending;
@@ -283,7 +283,7 @@ function workingOut(
     const notReached = (aim: Aim, from: string, span: Span) => {
         const { reference } = aim;
         if (reachOf(aim, merged).kind === "group") {
-            report("not-a-token", { ref: referenceText(reference) }, from, span);
+            report("not-a-token", { ref: toReferenceTarget(reference) }, from, span);
         } else missing.record(reference, from, span);
     };
 

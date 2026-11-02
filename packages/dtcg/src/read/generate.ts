@@ -133,7 +133,7 @@ export function fillGenerated(
                 extension: generator.extension,
             };
             for (const made of result.value) {
-                const character = tokenPath.invalidCharacter(made.name);
+                const character = tokenPath.findInvalidCharacter(made.name);
                 if (character) {
                     const detail = { name: made.name, character };
                     diagnostics.found(

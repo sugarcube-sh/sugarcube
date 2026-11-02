@@ -1,6 +1,6 @@
 import { relatedMessages } from "../error-messages.js";
 import type { Input, Span, WrittenReference } from "../index.js";
-import { movedReference, namedPath, referenceText } from "../values/references.js";
+import { movedReference, namedPath, toReferenceTarget } from "../values/references.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
 import { similarName } from "./similar.js";
 
@@ -40,7 +40,7 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
             const missing = new Map<string, Missing>();
             return {
                 record: (reference, from, span) => {
-                    const ref = referenceText(reference);
+                    const ref = toReferenceTarget(reference);
                     const entry = missing.get(ref) ?? {
                         reference,
                         first: { from, span },
@@ -109,5 +109,5 @@ function similarReference(
         [...paths.keys()].filter((path) => !from.includes(path)),
     );
     if (close === undefined) return undefined;
-    return referenceText(movedReference(reference, [{ from: named, to: close }]));
+    return toReferenceTarget(movedReference(reference, [{ from: named, to: close }]));
 }

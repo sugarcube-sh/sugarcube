@@ -1,7 +1,7 @@
 import type { DesignTokens, Input, Permutation, ResolverModifier, Token } from "../index.js";
 import { findByName } from "../read/input.js";
 import { stacksOn } from "./stacks-on.js";
-import { type CSSDeclaration, type CSSWriter, cssWriter } from "./writer.js";
+import { type CSSDeclaration, type CSSWriter, createCSSWriter } from "./writer.js";
 
 /** A block of custom properties: the theme it is for, its selector, and the at-rules around it. */
 export interface CSSBlockInput {
@@ -68,17 +68,17 @@ export interface CSSBlock extends CSSBlockInput {
  *     { input: { mode: "dark", brand: "house" }, selector: '[data-mode="dark"]' },
  * ], { writer: cssWriter({ naming: { prefix: "ds" } }) });
  */
-export function cssBlocks(
+export function getCSSBlocks(
     tokens: DesignTokens,
     blocks: readonly CSSBlockInput[],
-    { writer = cssWriter() }: { writer?: CSSWriter } = {},
+    { writer = createCSSWriter() }: { writer?: CSSWriter } = {},
 ): CSSBlock[] {
     const found = blocks.map((each) => {
         const permutation = tokens.getPermutation(each.input);
         return {
             ...each,
             permutation,
-            declarations: writer.declarations(permutation).declarations,
+            declarations: writer.getDeclarations(permutation).declarations,
         };
     });
     const provided = providedBy(found);

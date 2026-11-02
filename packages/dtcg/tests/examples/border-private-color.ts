@@ -3,7 +3,7 @@
 // custom property. A pointer into part of another token's value has no custom property of its own,
 // so it is written as its value too.
 import { type DesignTokens, type Input } from "@sugarcube-sh/dtcg";
-import { cssValue, cssCustomProperty } from "@sugarcube-sh/dtcg/css";
+import { toCSSValue, toCustomPropertyName } from "@sugarcube-sh/dtcg/css";
 
 declare const tokens: DesignTokens;
 declare const input: Input;
@@ -12,10 +12,10 @@ declare function isPrivateToken(t: { path: string }): boolean;
 const border = tokens.getPermutation(input).getToken("border.card");
 const css =
     border &&
-    cssValue(border, {
+    toCSSValue(border, {
         replacement: ({ pointsToToken: token }) =>
             token && !isPrivateToken(token)
-                ? { customProperty: cssCustomProperty(token.path) }
+                ? { customProperty: toCustomPropertyName(token.path) }
                 : undefined,
     });
 if (typeof css === "string") row(css);

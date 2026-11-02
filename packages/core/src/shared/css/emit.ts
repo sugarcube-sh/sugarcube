@@ -2,7 +2,7 @@ import type { InternalConfig } from "../../types/config.js";
 import type { Reported } from "../../types/diagnostics.js";
 import type { CSSFileOutput } from "../../types/generate.js";
 import { diagnostic } from "../diagnostics.js";
-import { cssBlocks, cssText } from "@sugarcube-sh/dtcg/css";
+import { getCSSBlocks, toCSS } from "@sugarcube-sh/dtcg/css";
 import type { Declarations, Entry } from "./declare.js";
 
 /**
@@ -34,8 +34,8 @@ export function emitCSS(
         else byFile.set(entry.path, [entry]);
     }
     const files = [...byFile].flatMap(([path, entries]) => {
-        const css = cssText(
-            cssBlocks(
+        const css = toCSS(
+            getCSSBlocks(
                 declared.tokens,
                 entries.map(({ selector, atRule, input }) => ({
                     input,

@@ -218,8 +218,14 @@ describe("what the root entry gives", () => {
             "toDTCG",
             "toDTCGProject",
             "toDTCGValue",
+            "everyPermutation",
+            "inputLabel",
+            "filePath",
         ]) {
             expect(gone in root).toBe(false);
+        }
+        for (const kept of ["askEveryPermutation", "toInputLabel", "getFilePath"]) {
+            expect(kept in root).toBe(true);
         }
     });
 });

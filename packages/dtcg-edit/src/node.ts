@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { type TokensOnDisk, fileOnDisk, read } from "@sugarcube-sh/dtcg/node";
+import { type TokensOnDisk, getAbsoluteFilePath, read } from "@sugarcube-sh/dtcg/node";
 import { changedFiles } from "./apply.js";
 import type { Edits } from "./index.js";
 
@@ -33,8 +33,10 @@ export async function applyToDisk(
     if (changes.conflicts) return changes;
 
     const { written, deleted } = changes;
-    await replaced(Object.entries(written).map(([file, text]) => [fileOnDisk(entry, file), text]));
-    await Promise.all(deleted.map((file) => rm(fileOnDisk(entry, file), { force: true })));
+    await replaced(
+        Object.entries(written).map(([file, text]) => [getAbsoluteFilePath(entry, file), text]),
+    );
+    await Promise.all(deleted.map((file) => rm(getAbsoluteFilePath(entry, file), { force: true })));
     return changes;
 }
 

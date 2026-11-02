@@ -7,7 +7,7 @@ describe("tokenPath.withoutRoot", () => {
         { path: "color.brand", expected: "color.brand" },
         { path: "$root", expected: "$root" },
     ])("$path is $expected", ({ path, expected }) => {
-        expect(tokenPath.withoutRoot(path)).toBe(expected);
+        expect(tokenPath.removeRoot(path)).toBe(expected);
     });
 });
 
@@ -48,7 +48,7 @@ describe("tokenPath.parent", () => {
         { path: "", expected: undefined },
         { path: ".x", expected: "" },
     ])("$path is inside $expected", ({ path, expected }) => {
-        expect(tokenPath.parent(path)).toBe(expected);
+        expect(tokenPath.getParent(path)).toBe(expected);
     });
 });
 
@@ -65,7 +65,7 @@ describe("tokenPath.join", () => {
 
     it("is undone by tokenPath.parent", () => {
         for (const path of ["color.brand.500", "color", ".x", ""]) {
-            const parent = tokenPath.parent(path);
+            const parent = tokenPath.getParent(path);
             const name = parent === undefined ? path : path.slice(parent.length + 1);
             expect(tokenPath.join(parent, name)).toBe(path);
         }
@@ -82,7 +82,7 @@ describe("tokenPath.invalidCharacter", () => {
         { name: "$root", expected: undefined },
         { name: "brand", expected: undefined },
     ])("$name gives $expected (Format 5.1.1)", ({ name, expected }) => {
-        expect(tokenPath.invalidCharacter(name)).toBe(expected);
+        expect(tokenPath.findInvalidCharacter(name)).toBe(expected);
     });
 });
 
@@ -99,12 +99,12 @@ describe("tokenPath.afterMoves", () => {
         { path: "color.branding", expected: "color.branding" },
         { path: "space.sm", expected: "space.sm" },
     ])("$path ends up at $expected", ({ path, expected }) => {
-        expect(tokenPath.afterMoves(path, moved)).toBe(expected);
+        expect(tokenPath.applyMoves(path, moved)).toBe(expected);
     });
 
     it('carries what is inside the group named "", and nothing at the top level', () => {
         const renamed = [{ from: "", to: "named" }];
-        expect(tokenPath.afterMoves(".x", renamed)).toBe("named.x");
-        expect(tokenPath.afterMoves("color", renamed)).toBe("color");
+        expect(tokenPath.applyMoves(".x", renamed)).toBe("named.x");
+        expect(tokenPath.applyMoves("color", renamed)).toBe("color");
     });
 });

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { type Permutation, type Permutations, everyPermutation } from "../../src/index.js";
+import { type Permutation, type Permutations, askEveryPermutation } from "../../src/index.js";
 import { twoModifierFiles, twoModifiers } from "./two-modifiers.js";
 import { getSpan } from "../../src/editor.js";
 
 const tokens = twoModifiers();
 
 function asked(question: (permutation: Permutation) => unknown): Permutations[] {
-    return everyPermutation(tokens, question).map(({ permutations }) => permutations);
+    return askEveryPermutation(tokens, question).map(({ permutations }) => permutations);
 }
 
 function inTheirOrder(permutations: Permutations): void {

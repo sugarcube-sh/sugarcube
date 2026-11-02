@@ -71,19 +71,19 @@ type TypographyToken = Extract<Token, { type: "typography" }>;
  * const border = token.parts;
  * if (border?.type === "border") swatch(cssValue(border.color));
  */
-export function cssValue(
+export function toCSSValue(
     of: TypographyToken | TypographyPart | undefined,
     options?: CSSValueOptions,
 ): TypographyCSS | undefined;
-export function cssValue(
+export function toCSSValue(
     of: Exclude<Token, TypographyToken> | Exclude<Part, TypographyPart> | undefined,
     options?: CSSValueOptions,
 ): string | undefined;
-export function cssValue(
+export function toCSSValue(
     of: Token | Part | undefined,
     options?: CSSValueOptions,
 ): string | TypographyCSS | undefined;
-export function cssValue(
+export function toCSSValue(
     of: Token | Part | undefined,
     options: CSSValueOptions = {},
 ): string | TypographyCSS | undefined {

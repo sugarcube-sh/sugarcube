@@ -8,7 +8,7 @@ import {
     tokensOnDisk,
     writeCSSFiles,
 } from "@sugarcube-sh/core";
-import { liveTokens } from "@sugarcube-sh/dtcg/node";
+import { createLiveTokens } from "@sugarcube-sh/dtcg/node";
 import { type BuildOptions, type Built, buildFrom, filesOf, rescan } from "../build.js";
 import { type ConfigFlags, loadConfig } from "../config.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
@@ -34,7 +34,7 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
         const message = error instanceof Error ? error.message : String(error);
         console.error(`${errorPrefix} ${message}`);
     };
-    const live = liveTokens(() => tokensOnDisk(loaded.config), { onError });
+    const live = createLiveTokens(() => tokensOnDisk(loaded.config), { onError });
 
     const written = async (built: Built, files: CSSFileOutput): Promise<boolean> => {
         const failed = printProblems([...fromConfig, ...built.diagnostics], whereOf(built), {
@@ -47,7 +47,7 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
     };
 
     const started = performance.now();
-    let last = await buildFrom(await live.tokens(), loaded, options);
+    let last = await buildFrom(await live.getTokens(), loaded, options);
     if (await written(last, filesOf(last))) {
         console.log(`${prefix} Generated in ${since(started)}ms`);
     }
@@ -61,7 +61,7 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
             fromConfig = configProblems(error);
             return last;
         }
-        await live.readAgain();
+        await live.reread();
         return undefined;
     };
 

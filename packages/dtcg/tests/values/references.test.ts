@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isReference } from "../../src/index.js";
-import { parseReference, parseValue, referenceText, toJsonPointer } from "../../src/values.js";
+import { parseReference, parseValue, toReferenceTarget, toJsonPointer } from "../../src/values.js";
 
 describe("isReference", () => {
     it("recognises the references a parser reads, in either syntax", () => {
@@ -86,7 +86,7 @@ describe("referenceText", () => {
     ])("gives $text", ({ written, text }) => {
         const reference = parseReference(written);
         if (!reference) expect.unreachable("a reference");
-        expect(referenceText(reference)).toBe(text);
+        expect(toReferenceTarget(reference)).toBe(text);
     });
 });
 

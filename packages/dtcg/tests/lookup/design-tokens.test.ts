@@ -3,7 +3,7 @@ import {
     type DesignTokens,
     type Input,
     PermutationError,
-    inputLabel,
+    toInputLabel,
     readFromMemory,
 } from "../../src/index.js";
 
@@ -311,14 +311,14 @@ describe("the modifiers that take part", () => {
 
 describe("inputLabel", () => {
     it("names each modifier and its context, in the order the input lists them", () => {
-        expect(inputLabel({ density: "compact", theme: "dark" })).toBe(
+        expect(toInputLabel({ density: "compact", theme: "dark" })).toBe(
             "density: compact, theme: dark",
         );
     });
 
     it("writes a permutation's input as its label, every modifier named", () => {
         const compact = tokens.getPermutation({ density: "compact" });
-        expect(inputLabel(compact.input)).toBe(compact.label);
+        expect(toInputLabel(compact.input)).toBe(compact.label);
         expect(compact.label).toBe("theme: light, density: compact");
     });
 });

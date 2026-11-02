@@ -52,7 +52,7 @@ function together(tokens: DesignTokens, last: DesignTokens, made: Made[]): OpRes
     );
     const left = made.flatMap(({ broken = [] }, index) => {
         const later = made.slice(index + 1).flatMap(({ moved }) => moved);
-        return broken.map((path) => tokenPath.afterMoves(path, later));
+        return broken.map((path) => tokenPath.applyMoves(path, later));
     });
     return {
         ops: made.flatMap(({ ops }) => ops),

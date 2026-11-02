@@ -274,7 +274,7 @@ function sameSpan(
 }
 
 function newSharedPlace(tokens: DesignTokens, path: string, place: string | undefined): NewPlace {
-    const parent = tokenPath.parent(path);
+    const parent = tokenPath.getParent(path);
     if (parent !== undefined) {
         if (inAny(tokens, (perm) => perm.getToken(parent))) {
             return refused({ kind: "not-a-group", path: parent });
@@ -317,7 +317,7 @@ export function contextPlace(
         return { at: memberOf(tokens, winner), alsoAffects: alsoIn(there.winsIn, chosen) };
     }
 
-    const parent = tokenPath.parent(path);
+    const parent = tokenPath.getParent(path);
     const group = parent === undefined ? undefined : perm.getGroup(parent);
     const groupSpans = (group?.definitions ?? []).map((each) => getSpan(tokens, each));
     const into = overrideFile(
@@ -356,7 +356,7 @@ function newContextPlace(
     place: string | undefined,
 ): NewPlace {
     const { perm } = chosen;
-    const parent = tokenPath.parent(path);
+    const parent = tokenPath.getParent(path);
     if (parent !== undefined && perm.getToken(parent)) {
         return refused({ kind: "not-a-group", path: parent });
     }

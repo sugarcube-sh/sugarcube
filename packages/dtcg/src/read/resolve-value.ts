@@ -8,7 +8,7 @@ import type {
     WrittenReference,
 } from "../index.js";
 import { isJsonObject } from "../values/json.js";
-import { referenceText } from "../values/references.js";
+import { toReferenceTarget } from "../values/references.js";
 import type { ReadAgain } from "../values/read-syntax.js";
 import type { Siblings } from "../values/syntax.js";
 import type { MergedToken, Merged } from "./merge.js";
@@ -149,7 +149,7 @@ function substitute(
     element: boolean,
 ): unknown {
     const { span } = use;
-    const shown = referenceText(reference);
+    const shown = toReferenceTarget(reference);
     const target = valueAt(path, token.path, span);
     if (target === undefined) {
         notReached({ reference, steps: stepsOf(reference) }, token.path, span);

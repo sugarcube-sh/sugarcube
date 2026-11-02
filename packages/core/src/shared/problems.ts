@@ -1,4 +1,4 @@
-import { type Span, filePath } from "@sugarcube-sh/dtcg";
+import { type Span, getFilePath } from "@sugarcube-sh/dtcg";
 import { relative } from "pathe";
 import color from "picocolors";
 import type { Reported } from "../types/diagnostics.js";
@@ -95,7 +95,7 @@ function placedIn(problem: Reported, where: Where): Placed {
 }
 
 function placeOf(span: Span, { cwd, entry }: Where): Pick<Placed, "place" | "location"> {
-    const file = relative(cwd, filePath(entry, span.file));
+    const file = relative(cwd, getFilePath(entry, span.file));
     const { line, column } = span.start;
     return { place: `${file}:${line}:${column}`, location: { file, line, column } };
 }

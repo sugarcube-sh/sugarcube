@@ -2187,11 +2187,11 @@ export interface TokensInMemory {
      */
     readonly entry?: string | undefined;
 }
-export { filePath } from "./read/paths.js";
+export { getFilePath } from "./read/paths.js";
 
 export { tokenPath } from "./path.js";
-export { inputLabel } from "./lookup/permutation-label.js";
-export { everyPermutation } from "./lookup/every-permutation.js";
+export { toInputLabel } from "./lookup/permutation-label.js";
+export { askEveryPermutation } from "./lookup/every-permutation.js";
 
 /** A token or group whose path changed, such as after a rename. */
 export interface Move {

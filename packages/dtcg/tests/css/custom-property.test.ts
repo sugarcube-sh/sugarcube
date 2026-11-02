@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cssIdentifier, cssCustomProperty } from "../../src/css.js";
+import { toCSSIdentifier, toCustomPropertyName } from "../../src/css.js";
 
 describe("cssIdentifier", () => {
     it.for([
@@ -9,7 +9,7 @@ describe("cssIdentifier", () => {
         { path: "type. body .size", name: "type-body-size" },
         { path: "space.1/2", name: "space-1/2" },
     ])("names $path as $name, unescaped", ({ path, name }) => {
-        expect(cssIdentifier(path)).toBe(name);
+        expect(toCSSIdentifier(path)).toBe(name);
     });
 });
 
@@ -19,11 +19,11 @@ describe("cssCustomProperty", () => {
         { path: "color.accent.$root", name: "--color-accent" },
         { path: "type.body copy.size", name: "--type-body-copy-size" },
     ])("names $path as $name", ({ path, name }) => {
-        expect(cssCustomProperty(path)).toBe(name);
+        expect(toCustomPropertyName(path)).toBe(name);
     });
 
     it("puts a prefix first", () => {
-        expect(cssCustomProperty("color.brand", { prefix: "ds" })).toBe("--ds-color-brand");
+        expect(toCustomPropertyName("color.brand", { prefix: "ds" })).toBe("--ds-color-brand");
     });
 
     it("makes the name with a function instead, given the path without $root", () => {
@@ -32,25 +32,27 @@ describe("cssCustomProperty", () => {
             seen.push(path);
             return path.replaceAll(".", "_");
         };
-        expect(cssCustomProperty("color.accent.$root", { prefix: "ds", name })).toBe(
+        expect(toCustomPropertyName("color.accent.$root", { prefix: "ds", name })).toBe(
             "--color_accent",
         );
         expect(seen).toStrictEqual(["color.accent"]);
     });
 
     it("joins every part with the delimiter: the prefix, the path's names and the words in them", () => {
-        expect(cssCustomProperty("color.brand", { delimiter: "_" })).toBe("--color_brand");
-        expect(cssCustomProperty("color.brand", { prefix: "ds", delimiter: "_" })).toBe(
+        expect(toCustomPropertyName("color.brand", { delimiter: "_" })).toBe("--color_brand");
+        expect(toCustomPropertyName("color.brand", { prefix: "ds", delimiter: "_" })).toBe(
             "--ds_color_brand",
         );
-        expect(cssCustomProperty("type.body copy.size", { delimiter: "_" })).toBe(
+        expect(toCustomPropertyName("type.body copy.size", { delimiter: "_" })).toBe(
             "--type_body_copy_size",
         );
-        expect(cssCustomProperty("color.accent.$root", { delimiter: "_" })).toBe("--color_accent");
+        expect(toCustomPropertyName("color.accent.$root", { delimiter: "_" })).toBe(
+            "--color_accent",
+        );
     });
 
     it("keeps what a name already holds, joining only the parts it splits", () => {
-        expect(cssCustomProperty("color.brand-primary", { delimiter: "_" })).toBe(
+        expect(toCustomPropertyName("color.brand-primary", { delimiter: "_" })).toBe(
             "--color_brand-primary",
         );
     });
@@ -64,13 +66,13 @@ describe("cssCustomProperty", () => {
     ])(
         "splits camelCase and PascalCase into lowercase words with case kebab: $path as $name",
         ({ path, name }) => {
-            expect(cssCustomProperty(path, { case: "kebab" })).toBe(name);
+            expect(toCustomPropertyName(path, { case: "kebab" })).toBe(name);
         },
     );
 
     it("joins kebab's words with the delimiter, and never changes the prefix's case", () => {
         expect(
-            cssCustomProperty("color.brandPrimary", {
+            toCustomPropertyName("color.brandPrimary", {
                 prefix: "DS",
                 case: "kebab",
                 delimiter: "_",
@@ -79,11 +81,11 @@ describe("cssCustomProperty", () => {
     });
 
     it("names one of a typography token's custom properties by its CSS property, joined like any part", () => {
-        expect(cssCustomProperty("type.body", { cssProperty: "font-size" })).toBe(
+        expect(toCustomPropertyName("type.body", { cssProperty: "font-size" })).toBe(
             "--type-body-font-size",
         );
         expect(
-            cssCustomProperty("type.bodyCopy", {
+            toCustomPropertyName("type.bodyCopy", {
                 case: "kebab",
                 delimiter: "_",
                 cssProperty: "font-size",
@@ -93,16 +95,16 @@ describe("cssCustomProperty", () => {
 
     it("joins a CSS property to a naming function's name with the delimiter", () => {
         const name = (path: string) => path.replaceAll(".", "_");
-        expect(cssCustomProperty("type.body", { name, cssProperty: "font-size" })).toBe(
+        expect(toCustomPropertyName("type.body", { name, cssProperty: "font-size" })).toBe(
             "--type_body-font-size",
         );
         expect(
-            cssCustomProperty("type.body", { name, delimiter: "_", cssProperty: "font-size" }),
+            toCustomPropertyName("type.body", { name, delimiter: "_", cssProperty: "font-size" }),
         ).toBe("--type_body_font-size");
     });
 
     it("escapes a delimiter a CSS name cannot hold", () => {
-        expect(cssCustomProperty("color.brand", { delimiter: "/" })).toBe("--color\\/brand");
+        expect(toCustomPropertyName("color.brand", { delimiter: "/" })).toBe("--color\\/brand");
     });
 
     it.for([
@@ -113,14 +115,14 @@ describe("cssCustomProperty", () => {
         { path: "tone.café", name: "--tone-café" },
         { path: "tone.a+b", name: "--tone-a\\+b" },
     ])("escapes what a CSS name cannot hold: $path as $name", ({ path, name }) => {
-        expect(cssCustomProperty(path)).toBe(name);
+        expect(toCustomPropertyName(path)).toBe(name);
     });
 
     it("escapes what a naming function returns too", () => {
-        expect(cssCustomProperty("space.half", { name: () => "space/half" })).toBe(
+        expect(toCustomPropertyName("space.half", { name: () => "space/half" })).toBe(
             "--space\\/half",
         );
-        expect(cssCustomProperty("x", { name: () => "a\u0001b" })).toBe("--a\\1 b");
-        expect(cssCustomProperty("x", { name: () => "a\u0000b" })).toBe("--a\uFFFDb");
+        expect(toCustomPropertyName("x", { name: () => "a\u0001b" })).toBe("--a\\1 b");
+        expect(toCustomPropertyName("x", { name: () => "a\u0000b" })).toBe("--a\uFFFDb");
     });
 });

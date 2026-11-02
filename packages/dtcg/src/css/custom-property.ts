@@ -41,7 +41,7 @@ export interface CSSCustomPropertyOptions extends CSSNaming {
 /**
  * The name CSS knows a token path by, before any escaping: a final `$root` dropped (see
  * `tokenPath.withoutRoot`), each segment trimmed, spaces inside it made dashes, and the segments joined
- * with dashes. {@link cssCustomProperty} is this with `--` and any prefix, escaped for a stylesheet; a
+ * with dashes. {@link toCustomPropertyName} is this with `--` and any prefix, escaped for a stylesheet; a
  * class name made from it is written plainly in markup and escaped only in its selector.
  *
  * @example
@@ -49,7 +49,7 @@ export interface CSSCustomPropertyOptions extends CSSNaming {
  * cssIdentifier("color.accent.$root")   // "color-accent"
  * cssIdentifier("space.1/2")            // "space-1/2", escaped only where it is written
  */
-export function cssIdentifier(path: string): string {
+export function toCSSIdentifier(path: string): string {
     return named(path, {});
 }
 
@@ -71,7 +71,7 @@ export function cssIdentifier(path: string): string {
  * cssCustomProperty("color.brand", { delimiter: "_" })            // "--color_brand"
  * cssCustomProperty("type.body", { cssProperty: "font-size" })    // "--type-body-font-size"
  */
-export function cssCustomProperty(path: string, options: CSSCustomPropertyOptions = {}): string {
+export function toCustomPropertyName(path: string, options: CSSCustomPropertyOptions = {}): string {
     return `--${escape(named(path, options))}`;
 }
 
@@ -80,9 +80,9 @@ function named(
     { prefix, case: casing, delimiter = "-", name, cssProperty }: CSSCustomPropertyOptions,
 ): string {
     let whole = name
-        ? name(tokenPath.withoutRoot(path))
+        ? name(tokenPath.removeRoot(path))
         : tokenPath
-              .withoutRoot(path)
+              .removeRoot(path)
               .split(".")
               .map((segment) => words(segment, casing, delimiter))
               .join(delimiter);

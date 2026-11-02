@@ -272,7 +272,7 @@ export function walkSource(
                 report("invalid-name", { name: key, character: "$" }, keyNode);
                 continue;
             }
-            const character = tokenPath.invalidCharacter(key);
+            const character = tokenPath.findInvalidCharacter(key);
             if (character) {
                 report("invalid-name", { name: key, character }, keyNode);
                 continue;

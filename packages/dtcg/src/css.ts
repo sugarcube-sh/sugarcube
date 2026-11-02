@@ -1,14 +1,14 @@
 export {
     type CSSNaming,
     type CSSCustomPropertyOptions,
-    cssIdentifier,
-    cssCustomProperty,
+    toCSSIdentifier,
+    toCustomPropertyName,
 } from "./css/custom-property.js";
 export {
     type CSSValueOptions,
     type Replacement,
     type TypographyCSS,
-    cssValue,
+    toCSSValue,
 } from "./css/value.js";
 export {
     type CSSDeclaration,
@@ -19,7 +19,7 @@ export {
     type CSSWriter,
     type CSSWriterOptions,
     type CSSWritten,
-    cssWriter,
+    createCSSWriter,
 } from "./css/writer.js";
-export { type CSSBlock, type CSSBlockInput, cssBlocks } from "./css/blocks.js";
-export { cssText } from "./css/text.js";
+export { type CSSBlock, type CSSBlockInput, getCSSBlocks } from "./css/blocks.js";
+export { toCSS } from "./css/text.js";

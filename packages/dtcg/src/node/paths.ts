@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { filePath } from "../read/paths.js";
+import { getFilePath } from "../read/paths.js";
 
 /**
  * Where a file the design tokens name is on disk, for design tokens read from `entry`: the
@@ -10,8 +10,8 @@ import { filePath } from "../read/paths.js";
  * // run in /work
  * fileOnDisk("tokens/tokens.resolver.json", "themes/dark.json") // "/work/tokens/themes/dark.json"
  */
-export function fileOnDisk(entry: string, file: string): string {
-    return diskPath(filePath(slashed(entry), file));
+export function getAbsoluteFilePath(entry: string, file: string): string {
+    return diskPath(getFilePath(slashed(entry), file));
 }
 
 export function diskPath(path: string): string {

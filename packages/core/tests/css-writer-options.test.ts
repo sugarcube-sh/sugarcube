@@ -1,5 +1,5 @@
 import { type DesignTokens, readFromMemory } from "@sugarcube-sh/dtcg";
-import { cssWriter } from "@sugarcube-sh/dtcg/css";
+import { createCSSWriter } from "@sugarcube-sh/dtcg/css";
 import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
 import { cssWriterOptions } from "../src/shared/css/writer-options.js";
@@ -59,10 +59,10 @@ describe("cssWriterOptions", () => {
     const dark = tokens.getPermutation({ mode: "dark" });
 
     it("writes each token as the build does, fluid as clamp() and references as var()", () => {
-        const writer = cssWriter(cssWriterOptions(tokens, config));
+        const writer = createCSSWriter(cssWriterOptions(tokens, config));
         const named = (permutation: typeof light) =>
             writer
-                .declarations(permutation)
+                .getDeclarations(permutation)
                 .declarations.map(({ name, value }) => `${name}: ${value}`);
         expect(named(light)).toStrictEqual([
             "--color-neutral-50: oklch(0.986 0.002 258)",
@@ -74,11 +74,14 @@ describe("cssWriterOptions", () => {
     });
 
     it("answers one token with references as values, for a screen showing what the build writes", () => {
-        const writer = cssWriter({ ...cssWriterOptions(tokens, config), references: "values" });
-        expect(writer.written(light.getToken("size.fluid.gutter")!)?.css).toBe(
+        const writer = createCSSWriter({
+            ...cssWriterOptions(tokens, config),
+            references: "values",
+        });
+        expect(writer.getValue(light.getToken("size.fluid.gutter")!)?.css).toBe(
             "clamp(1rem, 0.6364rem + 1.8182vw, 2rem)",
         );
-        expect(writer.written(dark.getToken("color.text.default")!)?.css).toBe(
+        expect(writer.getValue(dark.getToken("color.text.default")!)?.css).toBe(
             "oklch(0.986 0.002 258)",
         );
     });
@@ -87,8 +90,8 @@ describe("cssWriterOptions", () => {
         const named = fillDefaults({
             variables: { path: "variables.css", prefix: "ds", case: "kebab", delimiter: "_" },
         });
-        const writer = cssWriter(cssWriterOptions(tokens, named));
-        expect(writer.declarations(light).declarations.map(({ name }) => name)).toContain(
+        const writer = createCSSWriter(cssWriterOptions(tokens, named));
+        expect(writer.getDeclarations(light).declarations.map(({ name }) => name)).toContain(
             "--ds_color_text_default",
         );
     });

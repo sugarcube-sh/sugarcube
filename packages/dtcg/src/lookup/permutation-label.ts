@@ -7,7 +7,7 @@ import type { Input, Permutation, ResolverContext, Scope } from "../index.js";
  * @example
  * inputLabel({ mode: "dark", density: "comfy" }) // "mode: dark, density: comfy"
  */
-export function inputLabel(input: Input): string {
+export function toInputLabel(input: Input): string {
     return Object.entries(input)
         .map(([modifier, context]) => `${modifier}: ${context}`)
         .join(", ");

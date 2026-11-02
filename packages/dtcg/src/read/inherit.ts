@@ -23,7 +23,7 @@ export function applying(merged: Merged, group: MergedTopLevel | MergedGroup): S
 }
 
 function closest<K extends Inheritable>(path: string, merged: Merged, property: K): Settings[K] {
-    return atGroup(merged, property, tokenPath.parent(path));
+    return atGroup(merged, property, tokenPath.getParent(path));
 }
 
 function atGroup<K extends Inheritable>(
@@ -38,7 +38,7 @@ function atGroup<K extends Inheritable>(
     const each = merged.groups.get(group);
     const applies =
         (each && settingsOf(merged, each)[property]) ??
-        atGroup(merged, property, tokenPath.parent(group));
+        atGroup(merged, property, tokenPath.getParent(group));
     known.set(group, applies);
     return applies;
 }

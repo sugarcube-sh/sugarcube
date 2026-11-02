@@ -1,5 +1,5 @@
 import type { DesignTokens, Diagnostic, Span } from "@sugarcube-sh/dtcg";
-import { toJsonPointer, parseReference, referenceText } from "@sugarcube-sh/dtcg/values";
+import { toJsonPointer, parseReference, toReferenceTarget } from "@sugarcube-sh/dtcg/values";
 import { type Node, getNodeValue } from "jsonc-parser";
 import { fixTitles } from "./error-messages.js";
 import type { Fix, TextEdit } from "./index.js";
@@ -168,7 +168,7 @@ function renamedReference(
     const node = nodeAt(tokens, use);
     const reference = node && parseReference(getNodeValue(node));
     const text = node && refString(node);
-    if (!reference || !text || referenceText(reference) !== ref) return [];
+    if (!reference || !text || toReferenceTarget(reference) !== ref) return [];
     const renamed = reference.syntax === "curly-brace" ? `{${similar}}` : similar;
     return [
         { file: use.file, offset: text.offset, length: text.length, text: JSON.stringify(renamed) },

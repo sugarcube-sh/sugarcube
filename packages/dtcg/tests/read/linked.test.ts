@@ -24,7 +24,7 @@ describe("links", () => {
 
     it("reach a token from the group its path names", () => {
         for (const path of ["color.bg", "color.brand.500", "color.brand.$root"]) {
-            expect(base.getGroup(tokenPath.parent(path) ?? "")?.children).toContain(
+            expect(base.getGroup(tokenPath.getParent(path) ?? "")?.children).toContain(
                 base.getToken(path),
             );
         }

@@ -43,6 +43,6 @@ export function join(folder: string, path: string): string {
  * filePath("tokens/tokens.resolver.json", "../shared/base.json") // "shared/base.json"
  * filePath("tokens/tokens.resolver.json", "/shared/brand.json") // "/shared/brand.json"
  */
-export function filePath(entry: string, file: string): string {
+export function getFilePath(entry: string, file: string): string {
     return join(folderOf(entry), file);
 }

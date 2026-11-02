@@ -8,7 +8,7 @@ declare const tokens: DesignTokens;
 
 function declared(path: string): string | undefined {
     const permutation = tokens.getPermutation();
-    for (let at: string | undefined = path; at !== undefined; at = tokenPath.parent(at)) {
+    for (let at: string | undefined = path; at !== undefined; at = tokenPath.getParent(at)) {
         const found = permutation.getTokenOrGroup(at);
         const setting = found?.extensions?.["com.example"];
         if (isJsonObject(setting) && typeof setting.measures === "string") return setting.measures;

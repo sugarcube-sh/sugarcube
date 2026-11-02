@@ -1,4 +1,4 @@
-import { type Input, type PermutationErrorDetail, inputLabel } from "@sugarcube-sh/dtcg";
+import { type Input, type PermutationErrorDetail, toInputLabel } from "@sugarcube-sh/dtcg";
 import type { Conflict, FileOp, Refusal } from "./index.js";
 
 export const thrown = {
@@ -104,5 +104,5 @@ function conflictReason(op: FileOp, kind: Conflict["kind"]): string {
 }
 
 function named(input: Input): string {
-    return `\`${inputLabel(input)}\``;
+    return `\`${toInputLabel(input)}\``;
 }

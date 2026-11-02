@@ -34,7 +34,7 @@ function useFollowed(path: string | undefined) {
 
     useEffect(() => {
         if (path === undefined || now === path) return;
-        const parent = tokenPath.parent(path);
+        const parent = tokenPath.getParent(path);
         const to = now ?? parent;
         navigate(to === undefined ? "/" : hrefFor(to), { replace: true });
     }, [navigate, now, path]);

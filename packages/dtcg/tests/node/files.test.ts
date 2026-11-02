@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { readFromMemory } from "../../src/index.js";
-import { fileOnDisk, read } from "../../src/node.js";
+import { getAbsoluteFilePath, read } from "../../src/node.js";
 
 const folder = join(import.meta.dirname, "../read/cases/every-combination/input");
 
@@ -29,7 +29,9 @@ describe("fileOnDisk", () => {
         const entry = join(folder, "tokens.resolver.json");
         const tokens = await read(entry);
         for (const file of tokens.files) {
-            expect(readFileSync(fileOnDisk(entry, file), "utf8")).toBe(tokens.getText(file));
+            expect(readFileSync(getAbsoluteFilePath(entry, file), "utf8")).toBe(
+                tokens.getText(file),
+            );
         }
     });
 
@@ -51,11 +53,11 @@ describe("fileOnDisk", () => {
             expected: "/work/tokens/dark.json",
         },
     ])("puts $file, read from $entry, at $expected", ({ entry, file, expected }) => {
-        expect(fileOnDisk(entry, file)).toBe(expected);
+        expect(getAbsoluteFilePath(entry, file)).toBe(expected);
     });
 
     it("is absolute for an entry given relative to where the process runs", () => {
-        expect(fileOnDisk("tokens/tokens.resolver.json", "dark.json")).toBe(
+        expect(getAbsoluteFilePath("tokens/tokens.resolver.json", "dark.json")).toBe(
             join(process.cwd(), "tokens/dark.json").replaceAll("\\", "/"),
         );
     });

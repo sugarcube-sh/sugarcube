@@ -4,12 +4,12 @@ export {
     findResolver,
 } from "./node/find-resolver.js";
 export { read } from "./node/read.js";
-export { fileOnDisk } from "./node/paths.js";
+export { getAbsoluteFilePath } from "./node/paths.js";
 export { type FileStats, onFileChanged } from "./node/file-changed.js";
 export {
     type FileWatcher,
     type LiveTokens,
     type ReadEvent,
     type TokensOnDisk,
-    liveTokens,
+    createLiveTokens,
 } from "./node/live-tokens.js";

@@ -1,5 +1,5 @@
 import type { DiagnosticDetailByKind, DiagnosticKind, Input } from "../index.js";
-import { namedPath, referenceText } from "../values/references.js";
+import { namedPath, toReferenceTarget } from "../values/references.js";
 import { relatedMessages } from "../error-messages.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
 import { malformation } from "./malformed-pointer.js";
@@ -45,7 +45,7 @@ export function applyExtends(merged: Merged, input: Input, diagnostics: Problems
 
     const extend = (group: Extending, chain: Extending[]): void => {
         const { keyword, reference, steps } = group.extends;
-        const written = referenceText(reference);
+        const written = toReferenceTarget(reference);
         const direct = namedPath(reference);
         if (steps && direct === undefined) {
             report("circular-reference", { chain: [group.path], toTopLevel: true }, group);
@@ -143,7 +143,7 @@ function becomeToken(merged: Merged, group: Extending, input: Input, diagnostics
         diagnostics.found(
             diagnostic(
                 "token-and-group",
-                { reason: "ref", ref: referenceText(extending.reference) },
+                { reason: "ref", ref: toReferenceTarget(extending.reference) },
                 { span: extending.span, path },
             ),
             input,
@@ -154,7 +154,7 @@ function becomeToken(merged: Merged, group: Extending, input: Input, diagnostics
         path,
         json: extending.json,
         value: extending.node,
-        authored: { $ref: referenceText(extending.reference) },
+        authored: { $ref: toReferenceTarget(extending.reference) },
         reference: extending.reference,
         span: extending.groupSpan,
         source: extending.source,

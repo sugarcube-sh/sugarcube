@@ -3,19 +3,19 @@
 // ocean's at once. A block writes what differs from the blocks before it, and every variable
 // referring to that, so a theme set on any element gives the right values there.
 import { type DesignTokens } from "@sugarcube-sh/dtcg";
-import { cssBlocks, cssText, cssWriter } from "@sugarcube-sh/dtcg/css";
+import { getCSSBlocks, toCSS, createCSSWriter } from "@sugarcube-sh/dtcg/css";
 
 declare const tokens: DesignTokens;
 
-const css = cssText(
-    cssBlocks(
+const css = toCSS(
+    getCSSBlocks(
         tokens,
         [
             { input: {}, selector: ":root" },
             { input: { mode: "dark" }, selector: '[data-mode="dark"]' },
             { input: { brand: "ocean" }, selector: '[data-brand="ocean"]' },
         ],
-        { writer: cssWriter({ naming: { prefix: "ds" } }) },
+        { writer: createCSSWriter({ naming: { prefix: "ds" } }) },
     ),
 );
 row(css);

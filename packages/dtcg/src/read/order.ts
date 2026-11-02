@@ -5,7 +5,7 @@ export function inWrittenOrder(merged: Merged): void {
     const { tokens, groups, order } = merged;
     const children = new Map<string | undefined, string[]>();
     const place = (path: string) => {
-        const parent = tokenPath.parent(path);
+        const parent = tokenPath.getParent(path);
         const siblings = children.get(parent);
         if (siblings) siblings.push(path);
         else children.set(parent, [path]);

@@ -24,7 +24,7 @@ export const tokenPath = {
      * tokenPath.parent("color")           // undefined: at the top level
      * tokenPath.parent(".x")              // "": inside the group named ""
      */
-    parent(path: string): string | undefined {
+    getParent(path: string): string | undefined {
         const dot = path.lastIndexOf(".");
         return dot === -1 ? undefined : path.slice(0, dot);
     },
@@ -69,7 +69,7 @@ export const tokenPath = {
      * @example
      * tokenPath.withoutRoot("color.accent.$root") // "color.accent"
      */
-    withoutRoot(path: string): string {
+    removeRoot(path: string): string {
         return path.endsWith(".$root") ? path.slice(0, -".$root".length) : path;
     },
     /**
@@ -80,7 +80,7 @@ export const tokenPath = {
      * tokenPath.invalidCharacter("brand.500") // "."
      * tokenPath.invalidCharacter("$root")     // undefined
      */
-    invalidCharacter(name: string): "$" | (typeof FORBIDDEN)[number] | undefined {
+    findInvalidCharacter(name: string): "$" | (typeof FORBIDDEN)[number] | undefined {
         if (name.startsWith("$") && name !== "$root") return "$";
         return FORBIDDEN.find((each) => name.includes(each));
     },
@@ -93,7 +93,7 @@ export const tokenPath = {
      * tokenPath.afterMoves("color.brand.500", [{ from: "color.brand", to: "color.house" }])
      * // "color.house.500"
      */
-    afterMoves(path: string, moved: readonly Move[]): string {
+    applyMoves(path: string, moved: readonly Move[]): string {
         return moved.reduce((current, { from, to }) => {
             if (current === from) return to;
             const rest = tokenPath.relative(from, current);

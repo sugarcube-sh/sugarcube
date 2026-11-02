@@ -83,7 +83,7 @@ describe("dtcg's Vite plugin", () => {
         const entry = await project();
         const plugin = dtcg({ entry, options: { hexStringColors: true } });
         await serve(plugin);
-        const first = await plugin.api.tokens();
+        const first = await plugin.api.getTokens();
         expect(first.files).toEqual(["tokens.resolver.json", "base.json"]);
         expect(first.getText("base.json")).toContain("#111111");
 
@@ -107,7 +107,7 @@ describe("dtcg's Vite plugin", () => {
         const plugin = dtcg(() => {
             throw new Error("no source");
         });
-        await plugin.api.tokens().catch(() => undefined);
+        await plugin.api.getTokens().catch(() => undefined);
         const logged: string[] = [];
 
         await serve(plugin, logged);

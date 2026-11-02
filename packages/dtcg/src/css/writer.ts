@@ -1,7 +1,7 @@
 import { thrownMessages } from "../error-messages.js";
 import type { Permutation, Reference, Token } from "../index.js";
-import { type CSSValueOptions, type Replacement, type TypographyCSS, cssValue } from "./value.js";
-import { type CSSNaming, cssCustomProperty } from "./custom-property.js";
+import { type CSSValueOptions, type Replacement, type TypographyCSS, toCSSValue } from "./value.js";
+import { type CSSNaming, toCustomPropertyName } from "./custom-property.js";
 
 /** A value written as CSS, and the tokens it names with `var()`. */
 export interface CSSWritten {
@@ -111,9 +111,9 @@ export interface CSSDeclarations {
 /** Writes tokens as CSS custom properties, each token written once however often it is asked. */
 export interface CSSWriter {
     /** Every custom property a permutation declares, in its tokens' order. */
-    declarations(permutation: Permutation): CSSDeclarations;
+    getDeclarations(permutation: Permutation): CSSDeclarations;
     /** One token's value as this writer writes it, with the tokens it names; `undefined` when it has none. */
-    written(token: Token): CSSWritten | undefined;
+    getValue(token: Token): CSSWritten | undefined;
 }
 
 type Colors = NonNullable<CSSValueOptions["colors"]>;
@@ -135,7 +135,7 @@ type Colors = NonNullable<CSSValueOptions["colors"]>;
  * // one token's value as a page would compute it
  * cssWriter({ references: "values" }).written(token)
  */
-export function cssWriter(options: CSSWriterOptions = {}): CSSWriter {
+export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
     const { naming, value, fallback, skip, references = "custom-properties" } = options;
     const skipped = (token: Token) => skip?.(token) ?? false;
     const inlined = (token: Token) => references === "values" || skipped(token);
@@ -167,7 +167,9 @@ export function cssWriter(options: CSSWriterOptions = {}): CSSWriter {
         if (!own) return undefined;
         if (!inlined(target)) {
             refersTo.push(target);
-            return { customProperty: cssCustomProperty(target.path, { ...naming, cssProperty }) };
+            return {
+                customProperty: toCustomPropertyName(target.path, { ...naming, cssProperty }),
+            };
         }
         if (typeof own.css !== "string") return undefined;
         refersTo.push(...own.refersTo);
@@ -184,7 +186,7 @@ export function cssWriter(options: CSSWriterOptions = {}): CSSWriter {
         const refersTo: Token[] = [];
         const replacement = (ref: Reference, cssProperty?: keyof TypographyCSS) =>
             ref.pointsToToken ? refer(ref.pointsToToken, colors, refersTo, cssProperty) : undefined;
-        const css = cssValue(token, { replacement, colors });
+        const css = toCSSValue(token, { replacement, colors });
         return css === undefined ? undefined : { css, refersTo: unique(refersTo) };
     };
 
@@ -214,7 +216,7 @@ export function cssWriter(options: CSSWriterOptions = {}): CSSWriter {
         const answer = refer(part, colors, refersTo);
         if (answer)
             return "customProperty" in answer ? `var(${answer.customProperty})` : answer.css;
-        const own = cssValue(part, { colors });
+        const own = toCSSValue(part, { colors });
         if (typeof own !== "string") throw new TypeError(thrownMessages.typographyPlaced);
         return own;
     };
@@ -232,7 +234,7 @@ export function cssWriter(options: CSSWriterOptions = {}): CSSWriter {
             cssProperty?: keyof TypographyCSS,
         ): CSSDeclaration => ({
             token,
-            name: cssCustomProperty(token.path, { ...naming, cssProperty }),
+            name: toCustomPropertyName(token.path, { ...naming, cssProperty }),
             ...(cssProperty && { cssProperty }),
             value: css,
             ...(fell &&
@@ -258,7 +260,7 @@ export function cssWriter(options: CSSWriterOptions = {}): CSSWriter {
 
     const declaredIn = new Map<Permutation, CSSDeclarations>();
     return {
-        declarations(permutation) {
+        getDeclarations(permutation) {
             const kept = declaredIn.get(permutation);
             if (kept) return kept;
             const declarations: CSSDeclaration[] = [];
@@ -279,7 +281,7 @@ export function cssWriter(options: CSSWriterOptions = {}): CSSWriter {
             declaredIn.set(permutation, declared);
             return declared;
         },
-        written(token) {
+        getValue(token) {
             return written(token, "native");
         },
     };

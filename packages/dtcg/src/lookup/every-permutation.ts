@@ -26,7 +26,7 @@ import { sameList } from "../read/same-object.js";
  * // the same in every permutation
  * everyPermutation(tokens, (p) => p.token("color.text")).length === 1
  */
-export function everyPermutation<Answer>(
+export function askEveryPermutation<Answer>(
     tokens: DesignTokens,
     question: (permutation: Permutation) => Answer,
 ): readonly AnswerInPermutations<Answer>[] {

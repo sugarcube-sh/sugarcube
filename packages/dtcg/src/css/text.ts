@@ -7,7 +7,7 @@ import type { CSSBlock } from "./blocks.js";
  * @example
  * cssText(cssBlocks([{ declarations, selector: ":root" }]))
  */
-export function cssText(blocks: readonly CSSBlock[]): string {
+export function toCSS(blocks: readonly CSSBlock[]): string {
     const rules = blocks
         .filter(({ inRule, underSupports }) => inRule.length > 0 || underSupports.length > 0)
         .map(text);

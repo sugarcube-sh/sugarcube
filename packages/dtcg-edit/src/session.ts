@@ -195,7 +195,7 @@ function unmoved(ids: Ids, moved: readonly Move[]): Ids {
     const byId = new Map<string, string>();
     const byPath = new Map<string, string>();
     for (const [id, path] of ids.byId) {
-        const was = tokenPath.afterMoves(path, back);
+        const was = tokenPath.applyMoves(path, back);
         byId.set(id, was);
         byPath.set(was, id);
     }
@@ -223,7 +223,7 @@ function followed(
     };
     const from = ids?.byId ?? new Map([...paths].map((path) => [path, path]));
     for (const [id, path] of from) {
-        const now = tokenPath.afterMoves(path, moved);
+        const now = tokenPath.applyMoves(path, moved);
         if (paths.has(now)) set(id, now);
     }
     const taken = (id: string) => byId.has(id) || (known?.byId.has(id) ?? false);

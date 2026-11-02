@@ -62,8 +62,8 @@ function truncate(text: string, max: number): string {
 }
 
 function groupAndName(path: string): [group: string, name: string] {
-    const shown = tokenPath.withoutRoot(path);
-    const group = tokenPath.parent(shown);
+    const shown = tokenPath.removeRoot(path);
+    const group = tokenPath.getParent(shown);
     return group === undefined ? ["(root)", shown] : [group, shown.slice(group.length + 1)];
 }
 

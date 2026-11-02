@@ -87,7 +87,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
     const timed = debugging(process.env.DEBUG);
     let loaded = await loadInternalConfig();
     const reading = dtcg(() => tokensOnDisk(loaded.config));
-    let tokens = await reading.api.tokens();
+    let tokens = await reading.api.getTokens();
     let fromConfig: Reported[] = [];
     let tokenProblems: Reported[] = [];
     const problems = () => [...fromConfig, ...tokenProblems];
@@ -139,7 +139,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
                 report();
                 return;
             }
-            await reading.api.readAgain();
+            await reading.api.reread();
         },
         onError: unexpected,
     });

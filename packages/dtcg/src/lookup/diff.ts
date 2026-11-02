@@ -58,7 +58,7 @@ function matched<T extends Token | Group>(
 ): Pair<T>[] {
     const byPath = new Map<string, T>();
     for (const each of earlier) {
-        const path = tokenPath.afterMoves(each.path, moved);
+        const path = tokenPath.applyMoves(each.path, moved);
         if (path !== each.path || !byPath.has(path)) byPath.set(path, each);
     }
     const left = new Set(earlier);
@@ -143,7 +143,7 @@ function groupDifferences(before: Group, after: Group, moved: Move[]): GroupProp
     const extended = extendedPath(before);
     return differing({
         ...sameWritten(before.asWritten ?? {}, after.asWritten ?? {}),
-        extends: (extended && tokenPath.afterMoves(extended, moved)) === extendedPath(after),
+        extends: (extended && tokenPath.applyMoves(extended, moved)) === extendedPath(after),
     });
 }
 

@@ -3,7 +3,7 @@ import {
     type ReadOptions,
     defineExtensionValidator,
     defineGenerator,
-    filePath,
+    getFilePath,
     read,
     readFromMemory,
 } from "../../src/index.js";
@@ -292,19 +292,19 @@ describe("paths in a resolver", () => {
             },
         });
         expect(
-            asked.map(([, file]) => filePath("tokens/design.resolver.json", file)),
+            asked.map(([, file]) => getFilePath("tokens/design.resolver.json", file)),
         ).toStrictEqual(asked.map(([path]) => path));
     });
 
     it("finds a file by the entry's folder, a file nothing has read yet included", () => {
-        expect(filePath("tokens/tokens.resolver.json", "themes/new.json")).toBe(
+        expect(getFilePath("tokens/tokens.resolver.json", "themes/new.json")).toBe(
             "tokens/themes/new.json",
         );
-        expect(filePath("tokens.resolver.json", "dark.json")).toBe("dark.json");
+        expect(getFilePath("tokens.resolver.json", "dark.json")).toBe("dark.json");
     });
 
     it("leaves a file named from the root as written", () => {
-        expect(filePath("/project/tokens/tokens.resolver.json", "/shared/brand.json")).toBe(
+        expect(getFilePath("/project/tokens/tokens.resolver.json", "/shared/brand.json")).toBe(
             "/shared/brand.json",
         );
     });

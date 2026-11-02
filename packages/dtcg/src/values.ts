@@ -9,7 +9,7 @@ export {
 } from "./values/keywords.js";
 export { tokenTypes } from "./values/token-types.js";
 export { parseValue } from "./values/parse-value.js";
-export { toJsonPointer, parseReference, referenceText } from "./values/references.js";
+export { toJsonPointer, parseReference, toReferenceTarget } from "./values/references.js";
 export {
     type ExtensionReader,
     type ExtensionResult,
