@@ -140,8 +140,9 @@ import { read } from "@sugarcube-sh/dtcg/node";
 const tokens = await read("color.json");
 
 const text = tokens.getToken("color.text");
+if (!text) throw new Error("color.text isn't in color.json");
 
-text?.resolved   // { colorSpace: "srgb", components: [0.8, 0.2, 0.2], alpha: 1 }
+text.resolved   // { colorSpace: "srgb", components: [0.8, 0.2, 0.2], alpha: 1 }
 ```
 
 Things to notice:
@@ -150,16 +151,17 @@ Things to notice:
 - `resolved` is the token's real value. `color.text` points at `color.brand`, which points at
   `color.red`, so its value is red.
 - `alpha: 1` was added. The file didn't write an alpha, and 1 is what the standard says it means.
-- `getToken` gives `undefined` when there's no token at that path. That's why it's `text?.`.
+- `getToken` gives `undefined` when there's no token at that path, so check once that you got
+  one. After the check, TypeScript knows `text` is a token, and every line can use it plainly.
 
 ### Look closer at a token
 
 A token tells you more than its value:
 
 ```ts
-text?.type                            // "color"
-text?.value                           // { syntax: "curly-brace", path: "color.brand" }
-text?.aliasChain.map((t) => t.path)   // ["color.text", "color.brand", "color.red"]
+text.type                            // "color"
+text.value                           // { syntax: "curly-brace", path: "color.brand" }
+text.aliasChain.map((t) => t.path)   // ["color.text", "color.brand", "color.red"]
 ```
 
 - `type` is its `$type`. This file writes `"$type": "color"` on the group, so every token in it is
@@ -173,7 +175,7 @@ To check whether a value is a reference, use `isReference`:
 ```ts
 import { isReference } from "@sugarcube-sh/dtcg";
 
-isReference(text?.value)   // true
+isReference(text.value)   // true
 ```
 
 ### Find related tokens
@@ -229,12 +231,13 @@ Things to notice:
 Every problem has the same fields. Here's all of this one:
 
 ```ts
-const problem = tokens.diagnostics[0];
+const [problem] = tokens.diagnostics;
+if (!problem) throw new Error("expected the color.bleu mistake");
 
-problem?.kind      // "missing-reference"
-problem?.path      // "color.link"
-problem?.detail    // { ref: "color.bleu", from: ["color.link"], similar: "color.blue" }
-problem?.docsUrl   // "https://sugarcube.sh/errors/missing-reference"
+problem.kind      // "missing-reference"
+problem.path      // "color.link"
+problem.detail    // { ref: "color.bleu", from: ["color.link"], similar: "color.blue" }
+problem.docsUrl   // "https://sugarcube.sh/errors/missing-reference"
 ```
 
 - `kind` is a name for the kind of mistake. Check it in code, rather than the message, which might
@@ -276,10 +279,11 @@ and `dark`. When the mode is dark, it reads `dark.json` too:
 }
 
 // dark.json
-{ "color": { "text": { "$type": "color", "$value": "{color.blue}" } } }
+{ "color": { "text": { "$value": "{color.blue}" } } }
 ```
 
-`dark.json` changes one token: in dark, `color.text` is blue.
+`dark.json` changes one token: in dark, `color.text` is blue. It doesn't need to write
+`"$type": "color"`: the `color` group in `color.json` already makes every token in it a color.
 
 ### Read one theme
 
@@ -434,8 +438,10 @@ Each reference says where it's written:
 
 ```ts
 const [reference] = tokens.getReferencesTo("color.red");
-reference?.writtenInPaths   // ["color.brand"]
-reference?.asWritten        // { syntax: "curly-brace", path: "color.red" }
+if (!reference) throw new Error("expected color.brand's reference");
+
+reference.writtenInPaths   // ["color.brand"]
+reference.asWritten        // { syntax: "curly-brace", path: "color.red" }
 ```
 
 ## Write CSS
@@ -905,7 +911,7 @@ From `@sugarcube-sh/dtcg/node`:
 
 | | What it does |
 | --- | --- |
-| `findResolver(paths)` | Finds the resolver document among files and folders |
+| `findResolver(paths)` | Looks for the resolver document among files and folders: `{ kind: "one", path }`, `{ kind: "several", paths }`, or `{ kind: "none" }` |
 | `onFileChanged(watcher, listener)` | Calls `listener` for each file a watcher says was saved |
 
 ### What's where
