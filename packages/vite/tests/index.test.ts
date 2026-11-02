@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { writeFileSync } from "node:fs";
+import { realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { stripVTControlCharacters } from "node:util";
 import { type Logger, type ViteDevServer, build, createServer } from "vite";
 import { afterEach, describe, expect, it } from "vitest";
@@ -101,6 +101,13 @@ async function serve(): Promise<Served> {
         server: { port: 0 },
     });
     await watching;
+    await until(
+        () =>
+            ["sugarcube.config.ts", "tokens/tokens.resolver.json", "tokens/base.json"].every(
+                (file) => watched(server, file),
+            ),
+        "the config and token files to be watched",
+    );
     const send = server.ws.send.bind(server.ws) as (payload: any) => void;
     server.ws.send = ((payload: any) => {
         if (payload?.type === "error") overlays.push(payload.err.message);
@@ -111,6 +118,11 @@ async function serve(): Promise<Served> {
     const css = async (classes: string) => (await uno.uno.generate(classes)).css as string;
     served = { server, context, logged, overlays, css };
     return served;
+}
+
+function watched(server: ViteDevServer, file: string): boolean {
+    const path = join(realpathSync(folder), file);
+    return (server.watcher.getWatched()[dirname(path)] ?? []).includes(basename(path));
 }
 
 function reloaded(context: SugarcubePluginContext): Promise<void> {
