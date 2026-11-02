@@ -95,7 +95,7 @@
         }
       }
     ],
-    "order": [
+    "resolutionOrder": [
       {
         "modifier": "theme"
       },

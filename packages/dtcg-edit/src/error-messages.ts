@@ -1,4 +1,4 @@
-import { type Input, type PermutationErrorDetail, permutationLabel } from "@sugarcube-sh/dtcg";
+import { type Input, type PermutationErrorDetail, toInputLabel } from "@sugarcube-sh/dtcg";
 import type { Conflict, FileOp, Refusal } from "./index.js";
 
 export const thrown = {
@@ -57,7 +57,7 @@ const refusalReasons: {
     "no-shared-value": ({ path }) =>
         `no file every permutation reads writes \`${path}\`, only contexts do; change it for one context`,
     "not-written-there": ({ path, at }) =>
-        `\`${path}\` isn't written at that place in \`${at.file}\`; take the place from \`writtenAt\``,
+        `\`${path}\` isn't written at that place in \`${at.file}\`; take the place from \`getDefinitions\``,
     "part-in-reference": ({ path, part }) =>
         `\`${path}\` refers to another token on the way to \`${part.join(".")}\`, so that part isn't written there`,
     "no-such-part": ({ path, part }) => `\`${path}\` has no part \`${part.join(".")}\``,
@@ -104,5 +104,5 @@ function conflictReason(op: FileOp, kind: Conflict["kind"]): string {
 }
 
 function named(input: Input): string {
-    return `\`${permutationLabel(input)}\``;
+    return `\`${toInputLabel(input)}\``;
 }

@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 import { parseValue } from "../../src/values.js";
 
 function read(raw: unknown) {
-    const result = parseValue("cubicBezier", raw, ["$value"]);
+    const result = parseValue("cubicBezier", raw, { jsonPath: ["$value"] });
     if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
     return result.value;
 }
 
 function details(raw: unknown) {
-    const result = parseValue("cubicBezier", raw, ["$value"]);
+    const result = parseValue("cubicBezier", raw, { jsonPath: ["$value"] });
     if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
     return result.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
 }

@@ -2,7 +2,7 @@ import type { ParseOptions } from "@sugarcube-sh/dtcg";
 import {
     type ExtensionReader,
     type ExtensionResult,
-    extensionReader,
+    createExtensionReader,
     isJsonObject,
 } from "@sugarcube-sh/dtcg/values";
 import type {
@@ -19,7 +19,7 @@ export function readScaleRecipe(
     raw: unknown,
     options: ParseOptions,
 ): ExtensionResult<ScaleExtension, Messages> {
-    const reader = extensionReader<Messages>(options);
+    const reader = createExtensionReader<Messages>(options);
     if (!isJsonObject(raw)) {
         reader.report([], "not-an-object", { name: "scale" });
         return reader.result<ScaleExtension>(undefined);

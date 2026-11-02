@@ -15,8 +15,8 @@ export type SugarcubeWriterOptions = CSSWriterOptions & { skip: (token: Token) =
  * falling back to its `hex`.
  *
  * @example
- * const writer = cssWriter(cssWriterOptions(tokens, config));
- * const { declarations } = writer.declarations(tokens.permutation());
+ * const writer = createCSSWriter(cssWriterOptions(tokens, config));
+ * const { declarations } = writer.getDeclarations(tokens.getPermutation());
  */
 export function cssWriterOptions(
     tokens: DesignTokens,
@@ -25,9 +25,9 @@ export function cssWriterOptions(
     const { prefix, case: casing, delimiter, variableName, transforms } = config.variables;
     const skip = privateTokens();
     return {
-        naming: { prefix, case: casing, delimiter, name: variableName },
+        naming: { prefix, case: casing, delimiter, getName: variableName },
         skip,
-        value: (token, { written, write }) => {
+        writeValue: (token, { written, write }) => {
             if (token.type === "dimension") {
                 const fluid = readFluid(
                     token.extensions?.[SUGARCUBE_NAMESPACE],
@@ -36,14 +36,14 @@ export function cssWriterOptions(
                 if (!fluid.ok) return undefined;
                 if (fluid.value) return clamp(fluid.value, transforms.fluid);
             }
-            return token.type === "gradient" && !token.referenceAt()
+            return token.type === "gradient" && !token.getReferenceAt()
                 ? write`linear-gradient(${written})`
                 : written;
         },
         ...(transforms.colorFallbackStrategy === "polyfill" && {
-            fallback: (token, { writtenWith }) => {
+            writeFallback: (token, { writeWith }) => {
                 const { spaces } = fallbacksIn(token, skip);
-                const hex = spaces.length > 0 ? writtenWith({ colors: "hex" }) : undefined;
+                const hex = spaces.length > 0 ? writeWith({ colors: "hex" }) : undefined;
                 return hex && { written: hex, unless: supportsCondition(spaces) };
             },
         }),
@@ -52,7 +52,7 @@ export function cssWriterOptions(
 
 function privateTokens(): (token: Token) => boolean {
     const privateFrom = new Map<Source, boolean>();
-    return ({ valueFrom: { source } }) => {
+    return ({ winningDefinition: { source } }) => {
         let found = privateFrom.get(source);
         if (found === undefined) {
             found = !emits(source);

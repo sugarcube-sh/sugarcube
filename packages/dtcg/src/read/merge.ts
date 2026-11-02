@@ -1,6 +1,6 @@
 import { relatedMessages } from "../error-messages.js";
-import { atOrWithin } from "../path.js";
-import type { Input, Span } from "../index.js";
+import { tokenPath } from "../path.js";
+import type { Input, Span } from "../model.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
 import type { Inheritable } from "./inherit.js";
 import type { Settings } from "./settings.js";
@@ -72,7 +72,7 @@ export function merge(
                 {
                     span: later,
                     path,
-                    related: earlier.map((span) => ({
+                    relatedInformation: earlier.map((span) => ({
                         message: relatedMessages.declaredAs(earlierIs),
                         span,
                         path,
@@ -157,6 +157,8 @@ function mergeProperties(target: Properties, { extensions, ...rest }: Properties
 }
 
 export function removeGroup(merged: Merged, path: string): void {
-    for (const each of merged.groups.keys()) if (atOrWithin(each, path)) merged.groups.delete(each);
-    for (const each of merged.tokens.keys()) if (atOrWithin(each, path)) merged.tokens.delete(each);
+    for (const each of merged.groups.keys())
+        if (tokenPath.contains(path, each)) merged.groups.delete(each);
+    for (const each of merged.tokens.keys())
+        if (tokenPath.contains(path, each)) merged.tokens.delete(each);
 }

@@ -64,7 +64,7 @@ function studioOnFiles() {
     return createStudio(
         {
             adapter: { name: "plain", settings: {}, problems: [] },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
             files,
         },
         (sent) => plain(sent.name === "plain" ? sent.settings : {}),
@@ -73,7 +73,7 @@ function studioOnFiles() {
 
 function CurrentToken({ path }: { path: string }) {
     const showing = useStudioState((state) => state.showing);
-    return <TokenPage token={showing.token(path) as Token} shown />;
+    return <TokenPage token={showing.getToken(path) as Token} shown />;
 }
 
 function studioPage(path: string) {
@@ -102,14 +102,14 @@ describe("an override", () => {
         const written = screen.getByRole("spinbutton", { name: "mode: dark, amount" });
         await expect.element(written).toHaveValue(6);
         await expect.element(written).toHaveFocus();
-        expect(studio.state.tokens.text("dark.json")).toContain('"s"');
+        expect(studio.state.tokens.getText("dark.json")).toContain('"s"');
     });
 });
 
 describe("a new token", () => {
     it("is added once its field holds a whole value", async () => {
         const studio = studioOnFiles();
-        const group = studio.state.showing.group("space") as Group;
+        const group = studio.state.showing.getGroup("space") as Group;
         const screen = await render(
             <StudioContext.Provider value={studio}>
                 <NewToken group={group} />
@@ -125,7 +125,7 @@ describe("a new token", () => {
         await expect.element(add).toBeEnabled();
         await add.click();
 
-        expect(studio.state.showing.token("space.l")?.authored?.value).toEqual({
+        expect(studio.state.showing.getToken("space.l")?.asWritten?.value).toEqual({
             value: 12,
             unit: "px",
         });
@@ -139,7 +139,8 @@ describe("a composite", () => {
 
         await screen.getByRole("spinbutton", { name: "base, layer 1, blur, amount" }).fill("8");
 
-        const written = JSON.parse(studio.state.tokens.text("base.json") ?? "{}").shadow.sm.$value;
+        const written = JSON.parse(studio.state.tokens.getText("base.json") ?? "{}").shadow.sm
+            .$value;
         expect(written).toEqual({
             color: "#00000033",
             offsetX: { value: 0, unit: "px" },
@@ -156,8 +157,8 @@ describe("a composite", () => {
         await screen.getByRole("spinbutton", { name: "base, style, dash 1, amount" }).fill("6");
         await screen.getByRole("button", { name: "Add dash" }).click();
 
-        const style = JSON.parse(studio.state.tokens.text("base.json") ?? "{}").border.card.$value
-            .style;
+        const style = JSON.parse(studio.state.tokens.getText("base.json") ?? "{}").border.card
+            .$value.style;
         expect(style).toEqual({
             dashArray: [
                 { value: 6, unit: "px" },
@@ -184,7 +185,7 @@ describe("undo steps", () => {
         expect(studio.unsaved.steps).toHaveLength(2);
 
         studio.undo();
-        const written = JSON.parse(studio.state.tokens.text("base.json") ?? "{}").color.brand
+        const written = JSON.parse(studio.state.tokens.getText("base.json") ?? "{}").color.brand
             .$value;
         expect(written).toMatchObject({ colorSpace: "oklch", components: [0.624, 0.12, 258] });
     });
@@ -204,7 +205,7 @@ describe("undo steps", () => {
 
 describe("description and deprecation", () => {
     const written = (studio: ReturnType<typeof studioOnFiles>) =>
-        JSON.parse(studio.state.tokens.text("base.json") ?? "{}");
+        JSON.parse(studio.state.tokens.getText("base.json") ?? "{}");
 
     it("writes a description as you type, as one step, and removes it when emptied", async () => {
         const { studio, Page } = studioPage("space.s");
@@ -282,7 +283,7 @@ describe("what the page shows goes with what it is about", () => {
         const page = (path: string) => (
             <MemoryRouter>
                 <StudioContext.Provider value={studio}>
-                    <TokenPage token={studio.state.showing.token(path) as Token} shown />
+                    <TokenPage token={studio.state.showing.getToken(path) as Token} shown />
                 </StudioContext.Provider>
             </MemoryRouter>
         );

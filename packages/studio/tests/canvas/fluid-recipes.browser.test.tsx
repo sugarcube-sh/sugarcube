@@ -10,19 +10,19 @@ import { TokenPage } from "../../src/canvas/TokenPage";
 import { createStudio } from "../../src/controllers/studio";
 import { StudioContext } from "../../src/providers/studio-context";
 
-const entry = "tokens.resolver.json";
+const entryFile = "tokens.resolver.json";
 
 function sizeStudio() {
     const settings = fillDefaultsCore(
-        { resolver: entry },
+        { resolver: entryFile },
         { stylesDir: "src/styles", componentsDir: "src/components" },
     );
     return createStudio(
         {
             adapter: { name: "sugarcube", settings, problems: [] },
-            entry,
+            entryFile,
             files: {
-                [entry]: JSON.stringify({
+                [entryFile]: JSON.stringify({
                     version: "2025.10",
                     resolutionOrder: [
                         { type: "set", name: "base", sources: [{ $ref: "./size.json" }] },
@@ -36,7 +36,7 @@ function sizeStudio() {
 }
 
 function sizeJson(studio: ReturnType<typeof sizeStudio>) {
-    return JSON.parse(studio.state.tokens.text("size.json") ?? "null").size;
+    return JSON.parse(studio.state.tokens.getText("size.json") ?? "null").size;
 }
 
 function onPage(studio: ReturnType<typeof sizeStudio>, page: React.ReactNode) {
@@ -50,7 +50,7 @@ function onPage(studio: ReturnType<typeof sizeStudio>, page: React.ReactNode) {
 describe("a fluid token's page", () => {
     it("edits the range with dimension fields, and From reaches the file", async () => {
         const studio = sizeStudio();
-        const gutter = studio.state.showing.token("size.fluid.gutter") as Token;
+        const gutter = studio.state.showing.getToken("size.fluid.gutter") as Token;
         const screen = await onPage(studio, <TokenPage token={gutter} shown />);
 
         const from = screen.getByRole("spinbutton", { name: "base, Fluid, From, amount" });
@@ -70,7 +70,7 @@ describe("a fluid token's page", () => {
 describe("a token's Token side", () => {
     it("lists the tokens of its type, leaving out the token being edited", async () => {
         const studio = sizeStudio();
-        const gutter = studio.state.showing.token("size.fluid.gutter") as Token;
+        const gutter = studio.state.showing.getToken("size.fluid.gutter") as Token;
         const screen = await onPage(studio, <TokenPage token={gutter} shown />);
 
         await screen.getByRole("radio", { name: "Token" }).click();
@@ -86,7 +86,7 @@ describe("a token's Token side", () => {
 describe("a recipe's step page", () => {
     it("says which recipe makes it, links there, and shows its range without editing", async () => {
         const studio = sizeStudio();
-        const step = studio.state.showing.token("size.step.-1") as Token;
+        const step = studio.state.showing.getToken("size.step.-1") as Token;
         const screen = await onPage(studio, <TokenPage token={step} shown />);
 
         await expect.element(screen.getByText("Made by the scale on")).toBeInTheDocument();
@@ -101,7 +101,7 @@ describe("a recipe's step page", () => {
 describe("a recipe's group page", () => {
     it("edits the recipe, and the change reaches the file", async () => {
         const studio = sizeStudio();
-        const group = studio.state.showing.group("size.step") as Group;
+        const group = studio.state.showing.getGroup("size.step") as Group;
         const screen = await onPage(studio, <GroupPage group={group} shown />);
 
         const ratio = screen.getByRole("spinbutton", { name: "Scale, Ratio to" });

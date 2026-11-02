@@ -3,8 +3,8 @@ import type {
     JsonPointerReference,
     Move,
     WrittenReference,
-} from "../index.js";
-import { movedPath } from "../path.js";
+} from "../model.js";
+import { tokenPath } from "../path.js";
 import { encodePointer, refSteps } from "../read/pointer.js";
 import { pointerParts } from "../read/ref-meaning.js";
 import { isJsonObject } from "./json.js";
@@ -39,9 +39,9 @@ export function readJsonPointer(raw: unknown): JsonPointerReference | undefined 
  * else is not a reference, and gives `undefined`.
  *
  * @example
- * readReference("{color.brand}") // { syntax: "curly-brace", path: "color.brand" }
+ * parseReference("{color.brand}") // { syntax: "curly-brace", path: "color.brand" }
  */
-export function readReference(raw: unknown): WrittenReference | undefined {
+export function parseReference(raw: unknown): WrittenReference | undefined {
     return readCurlyBrace(raw) ?? readJsonPointer(raw);
 }
 
@@ -63,10 +63,10 @@ export function isReference(value: unknown): value is WrittenReference {
  * braces, or a JSON Pointer as written.
  *
  * @example
- * referenceText(readReference("{color.ink}"))                // "color.ink"
- * referenceText(readReference({ $ref: "#/color/ink/$value" })) // "#/color/ink/$value"
+ * toReferenceTarget(parseReference("{color.ink}"))                // "color.ink"
+ * toReferenceTarget(parseReference({ $ref: "#/color/ink/$value" })) // "#/color/ink/$value"
  */
-export function referenceText(reference: WrittenReference): string {
+export function toReferenceTarget(reference: WrittenReference): string {
     return reference.syntax === "curly-brace" ? reference.path : reference.pointer;
 }
 
@@ -87,9 +87,9 @@ export function namedPath(ref: WrittenReference): string | undefined {
  * is written.
  *
  * @example
- * asJsonPointer(readReference("{color.ink}")) // { $ref: "#/color/ink/$value" }
+ * toJsonPointer(parseReference("{color.ink}")) // { $ref: "#/color/ink/$value" }
  */
-export function asJsonPointer(reference: WrittenReference): { $ref: string } {
+export function toJsonPointer(reference: WrittenReference): { $ref: string } {
     if (reference.syntax === "json-pointer") return { $ref: reference.pointer };
     return { $ref: encodePointer([...reference.path.split("."), "$value"]) };
 }
@@ -97,13 +97,13 @@ export function asJsonPointer(reference: WrittenReference): { $ref: string } {
 export function movedReference<R extends WrittenReference>(ref: R, moved: readonly Move[]): R;
 export function movedReference(ref: WrittenReference, moved: readonly Move[]): WrittenReference {
     if (ref.syntax === "curly-brace") {
-        return { syntax: "curly-brace", path: movedPath(ref.path, moved) };
+        return { syntax: "curly-brace", path: tokenPath.applyMoves(ref.path, moved) };
     }
     const steps = refSteps(ref.pointer);
     if (!steps) return ref;
     const { path, inside } = pointerParts(steps);
     if (path === undefined) return ref;
-    const now = movedPath(path, moved);
+    const now = tokenPath.applyMoves(path, moved);
     if (now === path) return ref;
     const pointer = encodePointer([...now.split("."), ...(inside ? ["$value", ...inside] : [])]);
     return { syntax: "json-pointer", pointer };

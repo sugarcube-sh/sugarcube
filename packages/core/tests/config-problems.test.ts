@@ -140,7 +140,7 @@ it("words a problem from the facts it carries", async () => {
             kind: "invalid-config",
             severity: "error",
             message: "`variables.path` must be a string, not a number",
-            docs: "https://sugarcube.sh/errors/invalid-config",
+            docsUrl: "https://sugarcube.sh/errors/invalid-config",
             detail: {
                 reason: "wrong-type",
                 setting: "variables.path",

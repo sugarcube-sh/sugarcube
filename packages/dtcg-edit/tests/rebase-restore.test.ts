@@ -33,10 +33,12 @@ describe("rebase", () => {
         const fresh = changed(demo, [["color.json", ["color", "brand", "600", "$value"], blue]]);
 
         expect(session.rebase(fresh)).toEqual([]);
-        expect(session.tokens.permutation().token("color.brand.500")?.authored?.value).toEqual(red);
-        expect(session.tokens.permutation().token("color.brand.600")?.authored?.value).toEqual(
-            blue,
-        );
+        expect(
+            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+        ).toEqual(red);
+        expect(
+            session.tokens.getPermutation().getToken("color.brand.600")?.asWritten?.value,
+        ).toEqual(blue);
         expect(opsIn(session.unsaved)).toHaveLength(1);
         expect(session.changes().map((change) => change.path)).toEqual(["color.brand.500"]);
     });
@@ -49,8 +51,10 @@ describe("rebase", () => {
         ]);
 
         session.rebase(fresh);
-        expect(session.tokens.text("radius.json")).toBe(fresh.text("radius.json"));
-        expect(session.tokens.permutation().token("color.brand.500")?.authored?.value).toEqual(red);
+        expect(session.tokens.getText("radius.json")).toBe(fresh.getText("radius.json"));
+        expect(
+            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+        ).toEqual(red);
     });
 
     it("keeps your part and theirs when you each changed a different part of one value", () => {
@@ -148,13 +152,13 @@ describe("rebase", () => {
             });
         const opened = readFromMemory({
             files: { "tokens.resolver.json": inline(1) },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         const session = createSession(opened);
         session.do(setValue(session.tokens, "size.sm", 2));
         const fresh = readFromMemory({
             files: { "tokens.resolver.json": inline(3) },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
 
         expect(partsOf(session.rebase(fresh))).toEqual([
@@ -227,7 +231,7 @@ describe("rebase", () => {
         expect(session.unsaved.steps.map((step) => step.ops.map((op) => op.file))).toEqual([
             ["radius.json"],
         ]);
-        expect(session.tokens.permutation().token("radius.md")?.authored?.value).toEqual({
+        expect(session.tokens.getPermutation().getToken("radius.md")?.asWritten?.value).toEqual({
             value: 1,
             unit: "rem",
         });
@@ -386,7 +390,7 @@ describe("restore", () => {
                 theirs: expect.objectContaining({ $value: blue }),
             },
         ]);
-        expect(session.tokens.permutation().token("radius.md")?.authored?.value).toEqual({
+        expect(session.tokens.getPermutation().getToken("radius.md")?.asWritten?.value).toEqual({
             value: 1,
             unit: "rem",
         });

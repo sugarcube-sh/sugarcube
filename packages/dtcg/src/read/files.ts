@@ -1,4 +1,4 @@
-import type { Span } from "../index.js";
+import type { Span } from "../model.js";
 import { relatedMessages } from "../error-messages.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
 import { type JsonFile, type JsonProblem, type ParsedJson, parseJson, spanOf } from "./json.js";
@@ -86,9 +86,11 @@ function openOnce(
     if (problems.length > 0 || !root) return undefined;
 
     for (const { key, first, last } of parsed.duplicates) {
-        const related = [{ message: relatedMessages.alsoWrittenHere, span: spanOf(file, first) }];
+        const relatedInformation = [
+            { message: relatedMessages.alsoWrittenHere, span: spanOf(file, first) },
+        ];
         diagnostics.found(
-            diagnostic("duplicate-key", { key }, { span: spanOf(file, last), related }),
+            diagnostic("duplicate-key", { key }, { span: spanOf(file, last), relatedInformation }),
         );
     }
     return { path, root, lineStarts: parsed.lineStarts };

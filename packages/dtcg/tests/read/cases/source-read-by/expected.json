@@ -27,7 +27,7 @@
           "name": "base"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     },
     {
       "file": "shared.json",
@@ -36,7 +36,7 @@
           "name": "base"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     },
     {
       "file": "both.json",
@@ -68,7 +68,7 @@
     {
       "file": "shared.json",
       "sets": [],
-      "readBy": "everyone",
+      "readBy": "every-context",
       "modifier": "mode"
     }
   ]

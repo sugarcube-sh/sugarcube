@@ -34,13 +34,13 @@ export function sugarcubeSent({
 }
 
 export function demoMessage(change: Partial<StudioMessage> = {}): StudioMessage {
-    return { adapter: sugarcubeSent(), entry: ENTRY, files: demoFiles(), ...change };
+    return { adapter: sugarcubeSent(), entryFile: ENTRY, files: demoFiles(), ...change };
 }
 
 export function plainMessage(settings: PlainSettings = {}): StudioMessage {
     return {
         adapter: { name: "plain", settings, problems: [] },
-        entry: PLAIN_ENTRY,
+        entryFile: PLAIN_ENTRY,
         files: plainFiles(),
     };
 }
@@ -62,7 +62,7 @@ export const configProblem: Reported = {
     kind: "invalid-config",
     severity: "error",
     message: "`variables.prefix` must be a string",
-    docs: "https://sugarcube.sh/errors/invalid-config",
+    docsUrl: "https://sugarcube.sh/errors/invalid-config",
     detail: {
         reason: "wrong-type",
         setting: "variables.prefix",

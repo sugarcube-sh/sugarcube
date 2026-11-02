@@ -167,11 +167,48 @@ describe("emitCSS", () => {
         ).toBe(
             [
                 ":root {",
-                "    --ink: #333333;",
+                "    --ink: rgb(51 51 51);",
                 "    --text: var(--ink);",
                 "    --tint: rgb(51 255 255);",
-                "    --line: 1px solid #333333;",
-                "    --edge: 2px dashed #333333;",
+                "    --line: 1px solid rgb(51 51 51);",
+                "    --edge: 2px dashed rgb(51 51 51);",
+                "}",
+                "",
+            ].join("\n"),
+        );
+    });
+
+    it("writes a color written as a hex string as that string, and a color object from its components", () => {
+        const px = (value: number) => ({ value, unit: "px" });
+        expect(
+            cssFor({
+                "tokens.json": {
+                    brand: color("#E11D48"),
+                    scrim: color("#00000080"),
+                    converted: color({
+                        colorSpace: "srgb",
+                        components: [0.8824, 0.1137, 0.2824],
+                        hex: "#e11d48",
+                    }),
+                    lift: {
+                        $type: "shadow",
+                        $value: {
+                            color: "#00000033",
+                            offsetX: px(0),
+                            offsetY: px(1),
+                            blur: px(2),
+                            spread: px(0),
+                        },
+                    },
+                },
+            }),
+        ).toBe(
+            [
+                ":root {",
+                "    --brand: #E11D48;",
+                "    --scrim: #00000080;",
+                "    --converted: rgb(225.01 28.99 72.01);",
+                "    --lift: 0px 1px 2px 0px #00000033;",
                 "}",
                 "",
             ].join("\n"),
@@ -218,7 +255,7 @@ describe("emitCSS", () => {
             "tokens.json": JSON.stringify({ ink: color("#111111") }),
         };
         const tokens = readFromMemory(
-            { files, entry: "tokens.resolver.json" },
+            { files, entryFile: "tokens.resolver.json" },
             readOptions(config),
         );
         const [first, second] = declare(tokens, config).entries;
@@ -249,7 +286,7 @@ describe("emitCSS", () => {
             "ocean.json": JSON.stringify({ brand: color("#0ea5e9") }),
         };
         const tokens = readFromMemory(
-            { files, entry: "tokens.resolver.json" },
+            { files, entryFile: "tokens.resolver.json" },
             readOptions(config),
         );
         const declared = declare(tokens, config);
@@ -271,7 +308,7 @@ describe("emitCSS", () => {
             expect(diagnostics[0]).toMatchObject({
                 severity: "error",
                 detail: { modifiers: ["brand"] },
-                docs: "https://sugarcube.sh/errors/default-required",
+                docsUrl: "https://sugarcube.sh/errors/default-required",
                 message:
                     "the modifier `brand` has no default, so there is nothing to write on `:root`: give it a `default` in the resolver, or list the permutations to write in `variables.permutations`",
             });
@@ -282,7 +319,7 @@ describe("emitCSS", () => {
                 variables: { path: "variables.css", propagateDependents: true },
             });
             const declaredRenamed = declare(
-                readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(renamed)),
+                readFromMemory({ files, entryFile: "tokens.resolver.json" }, readOptions(renamed)),
                 renamed,
             );
             const emitted = emitCSS(declaredRenamed, renamed);
@@ -309,7 +346,7 @@ describe("emitCSS", () => {
             "tokens.json": JSON.stringify({ brand: color("#e11d48") }),
         };
         const tokens = readFromMemory(
-            { files, entry: "tokens.resolver.json" },
+            { files, entryFile: "tokens.resolver.json" },
             readOptions(config),
         );
         expect(built(tokens, config).diagnostics.map(({ message }) => message)).toStrictEqual([
@@ -330,7 +367,7 @@ describe("emitCSS", () => {
             "tokens.json": JSON.stringify({ brand: color("#e11d48") }),
         };
         const declared = declare(
-            readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(config)),
+            readFromMemory({ files, entryFile: "tokens.resolver.json" }, readOptions(config)),
             config,
         );
         expect(declared.entries).toStrictEqual([]);
@@ -359,7 +396,7 @@ describe("emitCSS", () => {
             "tokens.json": JSON.stringify({ brand: color("#e11d48") }),
         };
         const declared = declare(
-            readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(config)),
+            readFromMemory({ files, entryFile: "tokens.resolver.json" }, readOptions(config)),
             config,
         );
         expect(declared.diagnostics).toStrictEqual([]);

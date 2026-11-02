@@ -1,4 +1,4 @@
-import { forbiddenInName } from "../path.js";
+import { tokenPath } from "../path.js";
 import type { Node } from "jsonc-parser";
 import type {
     Diagnostic,
@@ -9,8 +9,8 @@ import type {
     JsonValue,
     TokenType,
     WrittenReference,
-} from "../index.js";
-import { readReference } from "../values/references.js";
+} from "../model.js";
+import { parseReference } from "../values/references.js";
 import { isTokenType, tokenTypes } from "../values/token-types.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { type JsonFile, type Member, members, plainObject, plainValue, spanOf } from "./json.js";
@@ -33,7 +33,7 @@ export interface SourceToken extends Properties {
     path: string;
     json: JsonFile;
     value: Node;
-    authored: unknown;
+    valueAsWritten: unknown;
     reference: WrittenReference | undefined;
     span: Span;
     extensionsAt?: ExtensionsAt;
@@ -187,14 +187,14 @@ export function walkSource(
     const visitToken = (node: Node, path: string, entries: readonly Member[], value: Node) => {
         const child = entries.find(({ key }) => !key.startsWith("$"));
         if (child) report("token-and-group", { reason: "child", child: child.key }, child.keyNode);
-        const authored = plainValue(value);
+        const valueAsWritten = plainValue(value);
         written.push({
             token: {
                 path,
                 json,
                 value,
-                authored,
-                reference: readReference(authored),
+                valueAsWritten,
+                reference: parseReference(valueAsWritten),
                 span: spanOf(json, node),
                 ...readPropertiesAt(path, entries),
             },
@@ -272,7 +272,7 @@ export function walkSource(
                 report("invalid-name", { name: key, character: "$" }, keyNode);
                 continue;
             }
-            const character = forbiddenInName(key);
+            const character = tokenPath.findInvalidCharacter(key);
             if (character) {
                 report("invalid-name", { name: key, character }, keyNode);
                 continue;
@@ -304,7 +304,7 @@ function readGroupReference(
     keyword: "$extends" | "$ref",
     raw: unknown,
 ): Pick<GroupReference, "reference" | "steps"> | undefined {
-    const reference = keyword === "$extends" ? readReference(raw) : pointerOf(raw);
+    const reference = keyword === "$extends" ? parseReference(raw) : pointerOf(raw);
     return reference && { reference, steps: stepsOf(reference) };
 }
 

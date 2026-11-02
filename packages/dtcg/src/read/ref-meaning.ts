@@ -1,4 +1,4 @@
-import type { JsonPath, WrittenReference } from "../index.js";
+import type { JsonPath, WrittenReference } from "../model.js";
 import { isJsonObject } from "../values/json.js";
 import type { Merged, MergedToken } from "./merge.js";
 import { arrayIndex } from "./json.js";

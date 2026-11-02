@@ -79,11 +79,11 @@ describe("create, which file", () => {
             { kind: "add", file: "dark.json", jsonPath: ["radius", "xl"], value },
         ]);
         const after = committed(demo, result);
-        expect(after.permutation({ mode: "dark" }).token("radius.xl")?.resolved).toEqual({
+        expect(after.getPermutation({ mode: "dark" }).getToken("radius.xl")?.resolved).toEqual({
             value: 1,
             unit: "rem",
         });
-        expect(after.permutation().token("radius.xl")).toBeUndefined();
+        expect(after.getPermutation().getToken("radius.xl")).toBeUndefined();
     });
 
     const split = {
@@ -136,7 +136,7 @@ describe("create, which file", () => {
     it("adds to design tokens of one token file, read without a resolver", () => {
         const tokens = readFromMemory({
             files: { "tokens.json": '{ "a": { "$type": "number", "$value": 1 } }' },
-            entry: "tokens.json",
+            entryFile: "tokens.json",
         });
 
         expect(opsOf(create(tokens, "b", { $type: "number", $value: 2 }))).toEqual([
@@ -290,7 +290,7 @@ describe("create, for every permutation", () => {
                 }),
                 ...extra,
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
     const glowInDark = { "dark.json": JSON.stringify({ color: { glow: { $value: "#ffcc00" } } }) };
     const darkFirst = { dark: [{ $ref: "./dark.json" }], light: [] };
@@ -345,7 +345,9 @@ describe("remove", () => {
                 demo.permutations.flatMap(({ tokens }) =>
                     tokens
                         .filter(({ references }) =>
-                            references.some(({ path }) => path === "color.brand.500"),
+                            references.some(
+                                ({ pointsToPath }) => pointsToPath === "color.brand.500",
+                            ),
                         )
                         .map(({ path }) => path),
                 ),
@@ -392,13 +394,13 @@ describe("remove", () => {
             "dark.json",
         ]);
         const after = committed(tokens, result);
-        expect(after.permutation().token("bg")).toBeUndefined();
-        expect(after.permutation({ mode: "dark" }).token("bg")).toBeUndefined();
+        expect(after.getPermutation().getToken("bg")).toBeUndefined();
+        expect(after.getPermutation({ mode: "dark" }).getToken("bg")).toBeUndefined();
     });
 
     it("takes out a group and everything under it, listing only what points in from outside", () => {
         const result = remove(demo, "color.brand");
-        const inside = (demo.permutation().group("color.brand")?.tokens ?? []).map(
+        const inside = (demo.getPermutation().getGroup("color.brand")?.tokens ?? []).map(
             ({ path }) => path,
         );
 
@@ -413,9 +415,9 @@ describe("remove", () => {
         const broken = result.ops ? (result.broken ?? []) : [];
         expect(broken.length).toBeGreaterThan(0);
         expect(broken.filter((path) => inside.includes(path))).toEqual([]);
-        expect(committed(demo, result).permutation().group("color.brand")?.tokens ?? []).toEqual(
-            [],
-        );
+        expect(
+            committed(demo, result).getPermutation().getGroup("color.brand")?.tokens ?? [],
+        ).toEqual([]);
     });
 
     it("leaves out of broken a token inside the group that refers to another inside it", () => {

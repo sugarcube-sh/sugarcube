@@ -8,7 +8,7 @@ import type {
     JsonPath,
     StandardSchemaV1,
     ValueError,
-} from "../index.js";
+} from "../model.js";
 import { isJsonObject } from "../values/json.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { type JsonFile, deepestNode, member, spanOf } from "./json.js";

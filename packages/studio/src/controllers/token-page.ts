@@ -3,7 +3,7 @@ import type {
     JsonPath,
     JsonValue,
     Permutation,
-    PlaceInPermutations,
+    DefinitionInPermutations,
     Span,
     Token,
 } from "@sugarcube-sh/dtcg";
@@ -27,9 +27,9 @@ export interface PlaceRow {
 }
 
 export function placeRows(tokens: DesignTokens, path: string): PlaceRow[] {
-    return tokens.writtenAt(path).map((place) => ({
+    return tokens.getDefinitions(path).map((place) => ({
         label: labelOf(place),
-        value: isJsonObject(place.written) ? place.written.$value : undefined,
+        value: isJsonObject(place.asWritten) ? place.asWritten.$value : undefined,
         at: place.span,
     }));
 }
@@ -69,7 +69,7 @@ export function valueView(
     path: string,
     adding: readonly string[],
 ): ValueView {
-    if (tokens.permutations.some((perm) => perm.token(path)?.generated)) {
+    if (tokens.permutations.some((perm) => perm.getToken(path)?.generated)) {
         return { rows: [], offers: [], actions: false };
     }
     const places = placeRows(tokens, path);
@@ -91,7 +91,8 @@ export function valueView(
         }
         const offer = offered.find((each) => each.label === label);
         if (!offer) return [];
-        const inForce = tokens.permutation(offer.input).token(path)?.valueFrom.written;
+        const inForce = tokens.getPermutation(offer.input).getToken(path)
+            ?.winningDefinition.asWritten;
         return [
             {
                 key,
@@ -122,7 +123,7 @@ export function madeBy(
     if (!token.generated) return undefined;
     const { from } = token.generated;
     if (from === undefined) return { kind: "top-level" };
-    const group = showing.group(from);
+    const group = showing.getGroup(from);
     const by = group && formFor(group)?.label.toLowerCase();
     return by === undefined ? { kind: "group", from } : { kind: "recipe", from, by };
 }
@@ -163,7 +164,7 @@ export function tokenPage(
         rows: view.rows.map((row) => pageRow(row, token, formFor)),
         offers: view.offers,
         actions: editable,
-        problems: problemRows(tokens.diagnosticsFor(token.path)),
+        problems: problemRows(tokens.getDiagnostics(token.path)),
         made: madeBy(token, showing, formFor),
         form: formFor(token),
         description: descriptionView(token, editable),
@@ -201,8 +202,8 @@ export function clashRows(tokens: DesignTokens, clashes: readonly Clash[]): Clas
     });
 }
 
-function labelOf({ sources, readIn }: PlaceInPermutations): string | undefined {
-    if (sources.some((source) => source.modifier)) return readIn.label;
+function labelOf({ sources, permutations }: DefinitionInPermutations): string | undefined {
+    if (sources.some((source) => source.modifier)) return permutations.label;
     return sources[0]?.sets[0]?.name;
 }
 

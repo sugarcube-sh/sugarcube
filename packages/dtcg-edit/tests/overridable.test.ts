@@ -21,7 +21,8 @@ describe("overridable", () => {
         );
 
         expect(
-            after.permutation({ mode: "dark" }).token("color.brand.500")?.valueFrom.source.file,
+            after.getPermutation({ mode: "dark" }).getToken("color.brand.500")?.winningDefinition
+                .source.file,
         ).toBe("dark.json");
         expect(overridable(after, "color.brand.500")).toEqual([]);
     });

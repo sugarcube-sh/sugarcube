@@ -31,7 +31,7 @@ describe("apply, set", () => {
         const after = applied(demo, [setBrand500(demo)]);
 
         expect(at(after, "color.json", brand500)).toEqual(red);
-        expect(after.permutation().token("color.brand.500")?.authored?.value).toEqual(red);
+        expect(after.getPermutation().getToken("color.brand.500")?.asWritten?.value).toEqual(red);
     });
 
     it("still applies after someone changed another token in the same file", () => {
@@ -94,7 +94,7 @@ describe("apply, add", () => {
         ]);
 
         expect(at(after, "space.json", ["color", "raw", "red", "$value"])).toEqual(red);
-        expect(after.permutation().token("color.raw.red")?.authored?.value).toEqual(red);
+        expect(after.getPermutation().getToken("color.raw.red")?.asWritten?.value).toEqual(red);
     });
 
     it("is a conflict when someone already made something different there", () => {
@@ -171,7 +171,7 @@ describe("apply, remove", () => {
         const after = applied(demo, [removeSm()]);
 
         expect(at(after, "radius.json", sm)).toBeUndefined();
-        expect(after.permutation().token("radius.sm")).toBeUndefined();
+        expect(after.getPermutation().getToken("radius.sm")).toBeUndefined();
     });
 
     it("does nothing when it is already gone", () => {
@@ -263,8 +263,8 @@ describe("apply, several edits", () => {
                 was: at(demo, "radius.json", jsonPath) as JsonValue,
             },
         ]);
-        const before = (demo.text("radius.json") ?? "").split("\n");
-        const lines = (after.text("radius.json") ?? "").split("\n");
+        const before = (demo.getText("radius.json") ?? "").split("\n");
+        const lines = (after.getText("radius.json") ?? "").split("\n");
 
         expect(lines.length).toBe(before.length);
         expect(lines.filter((line, i) => line !== before[i])).toEqual([
@@ -294,7 +294,7 @@ describe("apply, several edits", () => {
             value: 2,
             unit: "px",
         });
-        expect(after.permutation().token("radius.sm")).toBeUndefined();
+        expect(after.getPermutation().getToken("radius.sm")).toBeUndefined();
     });
 
     it("applies none when one is a conflict, and names every conflict", () => {
@@ -357,10 +357,10 @@ describe("apply, files", () => {
     it("creates a file, written in the design tokens' indent", () => {
         const after = applied(named, [created]);
 
-        expect(after.text("more.json")).toBe(
+        expect(after.getText("more.json")).toBe(
             '{\n  "b": {\n    "$type": "number",\n    "$value": 2\n  }\n}\n',
         );
-        expect(after.permutation().token("b")).toBeDefined();
+        expect(after.getPermutation().getToken("b")).toBeDefined();
     });
 
     it("does nothing when the file already holds the same, and is a conflict when it holds other", () => {
@@ -394,12 +394,12 @@ describe("apply, files", () => {
         const deleted: FileOp = {
             kind: "deleteFile",
             file: "more.json",
-            was: both.text("more.json") ?? "",
+            was: both.getText("more.json") ?? "",
         };
 
         const after = applied(both, [deleted]);
-        expect(after.text("more.json")).toBeUndefined();
-        expect(after.permutation().token("b")).toBeUndefined();
+        expect(after.getText("more.json")).toBeUndefined();
+        expect(after.getPermutation().getToken("b")).toBeUndefined();
         expect(applied(after, [deleted]).toMemory().files).toEqual(after.toMemory().files);
 
         const edited = { ...deleted, was: "{}" };
@@ -414,7 +414,7 @@ describe("commit", () => {
         const ops = [setBrand500(demo)];
         const done = commit(demo, {
             ops,
-            alsoAffects: demo.permutations.where(() => false),
+            alsoAffects: demo.permutations.select(() => false),
             moved: [],
         });
 
@@ -444,7 +444,7 @@ describe("commit", () => {
         expect(
             commit(theirs, {
                 ops: [op],
-                alsoAffects: demo.permutations.where(() => false),
+                alsoAffects: demo.permutations.select(() => false),
                 moved: [],
             }),
         ).toEqual({

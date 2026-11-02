@@ -1,7 +1,8 @@
-import { type DesignTokens, type JsonPath, forbiddenInName } from "@sugarcube-sh/dtcg";
+import { type DesignTokens, type JsonPath, tokenPath } from "@sugarcube-sh/dtcg";
 import { editedText } from "./apply.js";
 import type { Clash, ClashPart, EditStep, FileOp } from "./index.js";
 import { valueAt } from "./text-edits.js";
+import { getJsonAt } from "@sugarcube-sh/dtcg/editor";
 
 export function clashesOf(
     skipped: readonly EditStep[],
@@ -33,12 +34,12 @@ function partsOf(
         byMember.set(key, found);
     }
     return [...byMember].map(([key, { file, jsonPath, ops }]) => {
-        const forced = ops.reduce(force, mine.text(file) ?? "{}");
+        const forced = ops.reduce(force, mine.getText(file) ?? "{}");
         const part: Writable<ClashPart> = { file, jsonPath };
         const path = named.get(key);
         if (path !== undefined) part.path = path;
         const yours = forced === undefined ? undefined : valueAt(forced, jsonPath);
-        const now = theirs.jsonAt(file, jsonPath);
+        const now = getJsonAt(theirs, file, jsonPath);
         if (yours !== undefined) part.yours = yours;
         if (now !== undefined) part.theirs = now;
         return part;
@@ -54,7 +55,7 @@ type Writable<T> = { -readonly [K in keyof T]: T[K] };
 function editedMember(op: FileOp): JsonPath {
     if (!("jsonPath" in op)) return [];
     const end = op.jsonPath.findIndex(
-        (step) => typeof step === "string" && forbiddenInName(step) === "$",
+        (step) => typeof step === "string" && tokenPath.findInvalidCharacter(step) === "$",
     );
     return end === -1 ? op.jsonPath : op.jsonPath.slice(0, end);
 }
@@ -68,8 +69,8 @@ function force(text: string | undefined, op: FileOp): string | undefined {
 function pathsByMember(versions: DesignTokens[], files: Set<string>): Map<string, string> {
     const named = new Map<string, string>();
     for (const tokens of versions) {
-        for (const path of [...tokens.tokenPaths(), ...tokens.groupPaths()]) {
-            for (const { span, jsonPath } of tokens.writtenAt(path)) {
+        for (const path of [...tokens.getTokenPaths(), ...tokens.getGroupPaths()]) {
+            for (const { span, jsonPath } of tokens.getDefinitions(path)) {
                 if (!files.has(span.file)) continue;
                 const key = memberKey(span.file, jsonPath);
                 if (!named.has(key)) named.set(key, path);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cssValue } from "../../src/css.js";
-import { writtenColor } from "../../src/values.js";
+import { toCSSValue } from "@sugarcube-sh/dtcg/css";
+import { writtenColor } from "../../src/controllers/written-color";
 
 describe("writtenColor", () => {
     it("rounds every number to four decimal places", () => {
@@ -46,7 +46,7 @@ describe("writtenColor", () => {
         });
 
         expect(written.components).toEqual([0.9712, 0.0123, 258]);
-        expect(cssValue({ type: "color", resolved: { ...written, alpha: 1 } })).toBe(
+        expect(toCSSValue({ type: "color", resolved: { ...written, alpha: 1 } })).toBe(
             "oklch(0.9712 0.0123 258)",
         );
     });

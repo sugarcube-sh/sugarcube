@@ -1,4 +1,4 @@
-import { type DesignTokens, type JsonValue, sameJson } from "@sugarcube-sh/dtcg";
+import { type DesignTokens, type JsonValue, isEqualJson } from "@sugarcube-sh/dtcg";
 import { type Node, findNodeAtLocation, getNodeValue, parseTree } from "jsonc-parser";
 import { conflict } from "./error-messages.js";
 import type { Applied, Committed, Conflict, EditStep, Edits, FileOp, OpResult } from "./index.js";
@@ -77,7 +77,7 @@ function changedBy(tokens: DesignTokens, ops: readonly FileOp[]): FilesChanged {
 
     const written = Object.entries(changed)
         .flatMap(([file, text]): [string, string][] =>
-            text !== null && text !== tokens.text(file) ? [[file, text]] : [],
+            text !== null && text !== tokens.getText(file) ? [[file, text]] : [],
         )
         .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
     const deleted = Object.keys(changed).filter((file) => changed[file] === null);
@@ -105,13 +105,13 @@ export function applyStepsThatFit(
 function editedFiles(tokens: DesignTokens, steps: readonly EditStep[]) {
     let changed: Changed = {};
     const texts: Texts = {
-        of: (file) => (file in changed ? (changed[file] ?? undefined) : tokens.text(file)),
+        of: (file) => (file in changed ? (changed[file] ?? undefined) : tokens.getText(file)),
         set: (file, text) => {
             changed[file] = text;
         },
     };
     let drafts = new Map<string, Draft>();
-    const style = texts.of(tokens.entry) ?? "";
+    const style = texts.of(tokens.entryFile) ?? "";
     const written = (file: string) => {
         const draft = drafts.get(file);
         if (draft && draft.pending.length > 0) texts.set(file, spliced(draft.text, draft.pending));
@@ -149,7 +149,7 @@ function editedFiles(tokens: DesignTokens, steps: readonly EditStep[]) {
 }
 
 function unread(next: DesignTokens, ops: readonly FileOp[]): FileOp[] {
-    return ops.filter((op) => op.kind === "createFile" && next.text(op.file) === undefined);
+    return ops.filter((op) => op.kind === "createFile" && next.getText(op.file) === undefined);
 }
 
 /**
@@ -197,7 +197,7 @@ function fileEdit(texts: Texts, op: FileLevelOp, style: string): Conflict["kind"
         return undefined;
     }
     if (existing !== undefined)
-        return sameJson(valueAt(existing, []), op.value) ? undefined : "taken";
+        return isEqualJson(valueAt(existing, []), op.value) ? undefined : "taken";
     const eol = lineBreak(style);
     const written = JSON.stringify(op.value, null, indentUnit(style));
     texts.set(op.file, written.replaceAll("\n", eol) + eol);
@@ -224,22 +224,22 @@ function memberEdit(draft: Draft, op: MemberOp): Outcome {
     switch (op.kind) {
         case "set":
             if (!node) return { conflict: "gone" };
-            if (sameJson(current, op.value)) return undefined;
-            if (!sameJson(current, op.was)) return { conflict: "changed" };
+            if (isEqualJson(current, op.value)) return undefined;
+            if (!isEqualJson(current, op.was)) return { conflict: "changed" };
             return written("not-a-group");
         case "add":
-            if (node) return sameJson(current, op.value) ? undefined : { conflict: "taken" };
+            if (node) return isEqualJson(current, op.value) ? undefined : { conflict: "taken" };
             return written("not-a-group");
         case "remove":
             if (!node) return undefined;
-            if (!sameJson(current, op.was)) return { conflict: "changed" };
+            if (!isEqualJson(current, op.was)) return { conflict: "changed" };
             return written("not-a-group");
         case "renameKey": {
             if (!node) {
                 const renamed =
                     root && findNodeAtLocation(root, [...op.jsonPath.slice(0, -1), op.name]);
                 const there = renamed && (getNodeValue(renamed) as JsonValue);
-                return sameJson(there, op.was) ? undefined : { conflict: "gone" };
+                return isEqualJson(there, op.was) ? undefined : { conflict: "gone" };
             }
             return written("taken");
         }

@@ -5,7 +5,7 @@ import type {
     DiagnosticKind,
     JsonPath,
     ResolverProblem,
-} from "../index.js";
+} from "../model.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
 import { type JsonFile, member, members, spanOf } from "./json.js";
 import { malformedPointer } from "./malformed-pointer.js";
@@ -64,7 +64,7 @@ export interface CheckedResolver {
     description?: string;
     sets: Map<string, SetDefinition>;
     modifiers: Map<string, ModifierDefinition>;
-    order: ResolverItem[];
+    resolutionOrder: ResolverItem[];
 }
 
 type JsonType = "string" | "object" | "array";
@@ -126,7 +126,7 @@ export function checkResolver(file: JsonFile, diagnostics: Problems): CheckedRes
 
     const sets = readAll(reader, root, "sets", readSet);
     const modifiers = readAll(reader, root, "modifiers", readModifier);
-    const order = readOrder(reader, root, sets, modifiers);
+    const resolutionOrder = readResolutionOrder(reader, root, sets, modifiers);
     return {
         file,
         ...(isStringNode(version) && { version: version.value }),
@@ -134,7 +134,7 @@ export function checkResolver(file: JsonFile, diagnostics: Problems): CheckedRes
         ...(description && { description: description.value }),
         sets,
         modifiers,
-        order,
+        resolutionOrder,
     };
 }
 
@@ -341,7 +341,7 @@ function checkDefault(
     return withoutDefault;
 }
 
-function readOrder(
+function readResolutionOrder(
     reader: Reader,
     root: ResolverNode,
     sets: Map<string, SetDefinition>,

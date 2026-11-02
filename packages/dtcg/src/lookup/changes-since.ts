@@ -15,15 +15,15 @@ import type {
     Written,
     WrittenGroup,
     WrittenToken,
-} from "../index.js";
+} from "../model.js";
 import { permutationsOf } from "../read/permutations-of.js";
-import { movedPath } from "../path.js";
+import { tokenPath } from "../path.js";
 import { isJsonObject } from "../values/json.js";
 import { isReference, movedReference } from "../values/references.js";
-import { type Said, sameJson, saysTheSame } from "../values/same-value.js";
+import { type Said, isEqualJson, saysTheSame } from "../values/same-value.js";
 import { findPermutation } from "./permutation.js";
 
-export function diffIn(
+export function changesSinceIn(
     after: DesignTokens,
     before: DesignTokens,
     options?: { moved?: Move[] },
@@ -33,7 +33,7 @@ export function diffIn(
     for (const now of after.permutations) {
         const was = findPermutation(before, now.input);
         if ("reason" in was) continue;
-        changes.add(topLevelChange(was.root, now.root), now);
+        changes.add(topLevelChange(was.topLevel, now.topLevel), now);
         for (const pair of matched(was.groups, now.groups, moved)) {
             if (pair.before !== pair.after) changes.add(groupChange(pair, moved), now);
         }
@@ -58,7 +58,7 @@ function matched<T extends Token | Group>(
 ): Pair<T>[] {
     const byPath = new Map<string, T>();
     for (const each of earlier) {
-        const path = movedPath(each.path, moved);
+        const path = tokenPath.applyMoves(each.path, moved);
         if (path !== each.path || !byPath.has(path)) byPath.set(path, each);
     }
     const left = new Set(earlier);
@@ -105,18 +105,18 @@ function tokenChange({ before, after }: Pair<Token>, moved: Move[]): Found | und
     return { kind: "changed", path, properties, ...sides };
 }
 
-function writtenToken({ authored, description, extensions }: Token): WrittenToken {
-    if (!authored) return {};
-    return { value: authored.value, ...writtenOf({ ...authored, description, extensions }) };
+function writtenToken({ asWritten, description, extensions }: Token): WrittenToken {
+    if (!asWritten) return {};
+    return { value: asWritten.value, ...writtenOf({ ...asWritten, description, extensions }) };
 }
 
 function writtenGroup(group: Group): WrittenGroup {
     const extended = extendedPath(group);
-    return { ...writtenOf(group.authored ?? {}), ...(extended && { extends: extended }) };
+    return { ...writtenOf(group.asWritten ?? {}), ...(extended && { extends: extended }) };
 }
 
 function extendedPath(group: Group): string | undefined {
-    return group.references[0]?.path;
+    return group.references[0]?.pointsToPath;
 }
 
 function writtenOf({ type, description, deprecated, extensions }: Written): Written {
@@ -134,7 +134,7 @@ function tokenDifferences(before: Token, after: Token, moved: Move[]): TokenProp
         type: saidType(before) === saidType(after),
         description: before.description === after.description,
         deprecated: saidDeprecation(before) === saidDeprecation(after),
-        extensions: sameJson(before.extensions, after.extensions),
+        extensions: isEqualJson(before.extensions, after.extensions),
     };
     return differing(same);
 }
@@ -142,8 +142,8 @@ function tokenDifferences(before: Token, after: Token, moved: Move[]): TokenProp
 function groupDifferences(before: Group, after: Group, moved: Move[]): GroupProperty[] {
     const extended = extendedPath(before);
     return differing({
-        ...sameWritten(before.authored ?? {}, after.authored ?? {}),
-        extends: (extended && movedPath(extended, moved)) === extendedPath(after),
+        ...sameWritten(before.asWritten ?? {}, after.asWritten ?? {}),
+        extends: (extended && tokenPath.applyMoves(extended, moved)) === extendedPath(after),
     });
 }
 
@@ -163,7 +163,7 @@ function sameWritten(before: Written, after: Written): Record<TopLevelProperty, 
         type: before.type === after.type,
         description: before.description === after.description,
         deprecated: before.deprecated === after.deprecated,
-        extensions: sameJson(before.extensions, after.extensions),
+        extensions: isEqualJson(before.extensions, after.extensions),
     };
 }
 
@@ -172,11 +172,11 @@ function differing<P extends string>(same: Record<P, boolean>): P[] {
 }
 
 function saidType(token: Token): string | undefined {
-    return token.authored ? token.authored.type : token.type;
+    return token.asWritten ? token.asWritten.type : token.type;
 }
 
 function saidDeprecation(token: Token): Token["deprecated"] {
-    return token.authored ? token.authored.deprecated : token.deprecated;
+    return token.asWritten ? token.asWritten.deprecated : token.deprecated;
 }
 
 class Changes {
@@ -187,7 +187,7 @@ class Changes {
         if (!change) return;
         const key = `${change.kind} ${change.path ?? ""} ${"from" in change ? change.from : ""}`;
         const earlier = this.#byKey.get(key) ?? [];
-        const same = earlier.find((each) => sameJson(each.change, change));
+        const same = earlier.find((each) => isEqualJson(each.change, change));
         if (same) {
             same.permutations.push(permutation);
             return;
@@ -208,12 +208,12 @@ class Changes {
 
 function saidAfterMoves(token: Token, moved: Move[]): Said {
     if (token.value !== undefined) return { value: forwarded(token.value, moved) };
-    if (!token.authored) return token;
-    let written: unknown = token.authored.value;
+    if (!token.asWritten) return token;
+    let written: unknown = token.asWritten.value;
     for (const reference of token.references) {
-        written = replacedAt(written, reference.property ?? [], reference.moved(moved));
+        written = replacedAt(written, reference.writtenInProperty ?? [], reference.moved(moved));
     }
-    return { authored: { value: written } };
+    return { asWritten: { value: written } };
 }
 
 function replacedAt(value: unknown, [step, ...rest]: JsonPath, by: JsonValue): unknown {

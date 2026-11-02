@@ -8,11 +8,11 @@ import {
     defineExtensionValidator,
     defineGenerator,
 } from "../../src/index.js";
-import { extensionReader, parseValue } from "../../src/values.js";
+import { createExtensionReader, parseValue } from "../../src/values.js";
 
 export type CaseOptions = Pick<
     ReadOptions,
-    "inputs" | "permutations" | "permutationLimit" | "hexStringColors" | "ignoreUnknownProperties"
+    "inputs" | "permutationLimit" | "hexStringColors" | "ignoreUnknownProperties"
 > & {
     generators?: (keyof typeof generators)[];
     extensionValidators?: (keyof typeof validators)[];
@@ -69,11 +69,17 @@ const generators = {
                 color?: unknown;
             };
             if (size !== undefined) {
-                const parsed = parseValue("dimension", size, ["size"], { references: false });
+                const parsed = parseValue("dimension", size, {
+                    jsonPath: ["size"],
+                    references: false,
+                });
                 if (!parsed.ok) return parsed;
             }
             if (color !== undefined) {
-                const parsed = parseValue("color", color, ["color"], { references: false });
+                const parsed = parseValue("color", color, {
+                    jsonPath: ["color"],
+                    references: false,
+                });
                 if (!parsed.ok) return parsed;
             }
             return typeof count === "number"
@@ -95,7 +101,7 @@ const generators = {
     sized: defineGenerator({
         extension: ["com.example", "sized"],
         generate: (_group, extension, options) => {
-            const reader = extensionReader<Record<never, never>>(options);
+            const reader = createExtensionReader<Record<never, never>>(options);
             const size = reader.read("dimension", (extension as { size?: unknown }).size, ["size"]);
             return reader.result(
                 size && [{ name: "1", $value: { value: size.value, unit: size.unit } }],
@@ -128,7 +134,8 @@ const validators = {
         validate: (_token, extension, options) => {
             const { outline } = extension as { outline?: unknown };
             if (outline === undefined) return [{ jsonPath: [], reason: "no-outline" }];
-            const parsed = parseValue("dimension", outline, ["outline"], {
+            const parsed = parseValue("dimension", outline, {
+                jsonPath: ["outline"],
                 ...options,
                 references: false,
             });

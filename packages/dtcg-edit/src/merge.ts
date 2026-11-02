@@ -1,4 +1,4 @@
-import { type JsonPath, type JsonValue, sameJson } from "@sugarcube-sh/dtcg";
+import { type JsonPath, type JsonValue, isEqualJson } from "@sugarcube-sh/dtcg";
 import type { EditStep, FileOp } from "./index.js";
 
 type PlaceOp = Extract<FileOp, { kind: "set" | "add" | "remove" }>;
@@ -30,7 +30,7 @@ function foldedOp(earlier: PlaceOp, later: PlaceOp): PlaceOp | undefined {
     }
     const { value } = later;
     if (was === undefined) return { kind: "add", file, jsonPath, value };
-    return sameJson(was, value) ? undefined : { kind: "set", file, jsonPath, value, was };
+    return isEqualJson(was, value) ? undefined : { kind: "set", file, jsonPath, value, was };
 }
 
 function lastOverlapping(ops: readonly FileOp[], op: PlaceOp): number {

@@ -366,7 +366,7 @@ export default {
 
         expect(context.config.resolver).toContain("tokens.resolver.json");
         expect(context.tokens.files).toEqual(["tokens.resolver.json", "base.json"]);
-        expect(context.tokens.text("base.json")).toContain("#111111");
+        expect(context.tokens.getText("base.json")).toContain("#111111");
         expect(context.configProblems).toEqual([]);
     });
 
@@ -378,7 +378,7 @@ export default {
         await tokens({ color: { ink: color("#222222") } });
         await reload;
 
-        expect(context.tokens.text("base.json")).toContain("#222222");
+        expect(context.tokens.getText("base.json")).toContain("#222222");
         expect(await css("text-ink")).toContain("--color-ink: #222222");
     });
 });

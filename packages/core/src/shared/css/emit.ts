@@ -2,14 +2,14 @@ import type { InternalConfig } from "../../types/config.js";
 import type { Reported } from "../../types/diagnostics.js";
 import type { CSSFileOutput } from "../../types/generate.js";
 import { diagnostic } from "../diagnostics.js";
-import { cssBlocks, cssText } from "@sugarcube-sh/dtcg/css";
+import { getCSSBlocks, toCSS } from "@sugarcube-sh/dtcg/css";
 import type { Declarations, Entry } from "./declare.js";
 
 /**
  * Writes the design tokens' CSS variables, named from the config's `prefix` or `variableName`,
  * with every reference to a token that has its own variable written as `var()`. Each permutation
  * is a block under its selector, inside its `atRule` if it has one, in its own `path` or the
- * config's. What each block in a file writes is `dtcg/css`'s `cssBlocks`, each block for its
+ * config's. What each block in a file writes is `dtcg/css`'s `getCSSBlocks`, each block for its
  * `input` (a worked-out block, the contexts that set it apart), so themes stack on one element;
  * every variable referring to what a block writes is written again, unless `redeclareDependents`
  * is `false`, so a theme set on any element gives the right values. With
@@ -34,8 +34,8 @@ export function emitCSS(
         else byFile.set(entry.path, [entry]);
     }
     const files = [...byFile].flatMap(([path, entries]) => {
-        const css = cssText(
-            cssBlocks(
+        const css = toCSS(
+            getCSSBlocks(
                 declared.tokens,
                 entries.map(({ selector, atRule, input }) => ({
                     input,

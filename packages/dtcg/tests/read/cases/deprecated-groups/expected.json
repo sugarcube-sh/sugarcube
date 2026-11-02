@@ -7,21 +7,21 @@
         {
           "path": "top",
           "deprecated": true,
-          "authored": {
+          "asWritten": {
             "value": 1
           }
         },
         {
           "path": "old.a",
           "deprecated": "use new",
-          "authored": {
+          "asWritten": {
             "value": 2
           }
         },
         {
           "path": "old.b",
           "deprecated": "use new.b",
-          "authored": {
+          "asWritten": {
             "value": 3,
             "deprecated": "use new.b"
           }
@@ -29,14 +29,14 @@
         {
           "path": "old.kept.c",
           "deprecated": false,
-          "authored": {
+          "asWritten": {
             "value": 4
           }
         },
         {
           "path": "old.kept.d",
           "deprecated": true,
-          "authored": {
+          "asWritten": {
             "value": 5,
             "deprecated": true
           }

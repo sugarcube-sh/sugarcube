@@ -1,4 +1,4 @@
-import type { TokenType } from "../index.js";
+import type { TokenType } from "../model.js";
 import type { Syntax } from "./syntax.js";
 import { border } from "./border.js";
 import { color } from "./color.js";

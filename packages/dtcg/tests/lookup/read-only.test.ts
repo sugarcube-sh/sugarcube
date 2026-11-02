@@ -13,10 +13,10 @@ const tokens = readFromMemory({
         }),
     },
 });
-const permutation = tokens.permutation();
-const group = permutation.group("color")!;
-const brand = permutation.token("color.brand")!;
-const red = permutation.token("color.red")!;
+const permutation = tokens.getPermutation();
+const group = permutation.getGroup("color")!;
+const brand = permutation.getToken("color.brand")!;
+const red = permutation.getToken("color.red")!;
 const [source] = tokens.sources;
 
 function changesWhatTheReadGave(): void {
@@ -33,7 +33,7 @@ function changesWhatTheReadGave(): void {
     // @ts-expect-error
     group.tokens.pop();
     // @ts-expect-error
-    brand.writtenAt.push(brand.writtenAt[0]!);
+    brand.definitions.push(brand.definitions[0]!);
     // @ts-expect-error
     brand.references.length = 0;
     // @ts-expect-error
@@ -45,15 +45,15 @@ function changesWhatTheReadGave(): void {
     // @ts-expect-error
     tokens.permutations.scope.pop();
     // @ts-expect-error
-    tokens.resolver?.order.pop();
+    tokens.resolver?.resolutionOrder.pop();
     // @ts-expect-error
-    if (source!.readBy !== "everyone") source!.readBy.pop();
+    if (source!.readBy !== "every-context") source!.readBy.pop();
     // @ts-expect-error
-    brand.references[0]!.property!.push("color");
+    brand.references[0]!.writtenInProperty!.push("color");
     // @ts-expect-error nor can anything inside them be assigned
     brand.path = "color.other";
     // @ts-expect-error
-    brand.writtenAt[0]!.span.offset = 0;
+    brand.definitions[0]!.span.offset = 0;
     // @ts-expect-error
     brand.extensions!["com.example"] = {};
     if (red.type === "color" && red.resolved) {
@@ -69,20 +69,22 @@ function changesWhatTheReadGave(): void {
         if (found.kind === "missing-reference") found.detail.from.push("color.other");
     }
     // @ts-expect-error an answer is part of what the read gives, so it can't be changed either
-    tokens.usedBy("color.red").sort();
+    tokens.getDependents("color.red").sort();
     // @ts-expect-error
-    permutation.referencedBy("color.red").pop();
+    tokens.getReferencesTo("color.red").pop();
     // @ts-expect-error
-    tokens.tokenPaths().reverse();
+    tokens.getTokenPaths().reverse();
     // @ts-expect-error
-    tokens.diff(tokens)[0]!.path = "color.other";
+    tokens.getChangesSince(tokens)[0]!.path = "color.other";
 }
 
 describe("the design tokens a read gives", () => {
     it("are read-only, answers included, while a copy can be changed", () => {
         expect(changesWhatTheReadGave).toBeTypeOf("function");
         const sorted = [...permutation.tokens].sort((a, b) => a.path.localeCompare(b.path));
-        const users = [...tokens.usedBy("color.red")].sort((a, b) => a.path.localeCompare(b.path));
+        const users = [...tokens.getDependents("color.red")].sort((a, b) =>
+            a.path.localeCompare(b.path),
+        );
 
         expect(sorted.map(({ path }) => path)).toStrictEqual([
             "color.brand",

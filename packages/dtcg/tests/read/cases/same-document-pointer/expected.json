@@ -19,7 +19,7 @@
           "name": "base"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     }
   ]
 }

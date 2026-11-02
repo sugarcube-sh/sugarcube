@@ -44,7 +44,7 @@
     }
   },
   "scripts": {
-    "build": "pkgroll --minify",
+    "build": "pkgroll --minify --clean-dist",
     "dev": "pkgroll --watch",
     "test": "vitest run",
     "bench": "vitest bench --no-watch --project unit",

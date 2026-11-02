@@ -8,8 +8,9 @@ import type {
     ShadowLayerPart,
     Token,
     TypographyPart,
-} from "../index.js";
+} from "../model.js";
 import { colorDecimals, roundedTo } from "../values/decimals.js";
+import { hexStringOf } from "../values/hex-color.js";
 
 /** A typography value written as CSS: one value for each CSS property it sets, in this order. */
 export interface TypographyCSS {
@@ -20,32 +21,38 @@ export interface TypographyCSS {
     readonly "line-height": string;
 }
 
-/** What to write in place of a reference: a CSS variable, given by its name, or CSS of your own. */
-export type Replacement = { variable: string } | { css: string };
+/** What to write in place of a reference: a CSS custom property, given by its name, or CSS of your own. */
+export type Replacement = { customProperty: string } | { css: string };
 
 /** How a value is written as CSS: what stands for a reference, and how colors are written. */
 export interface CSSValueOptions {
     /**
-     * What to write for a reference, such as a variable for the token it refers to. Without an
+     * What to write for a reference, such as a custom property for the token it refers to. Without an
      * answer, the part is written from the value the reference resolved to. A gradient stop's
-     * position takes a variable only, as `clamp(0%, var(…) * 100%, 100%)`. A typography value
+     * position takes a custom property only, as `clamp(0%, var(…) * 100%, 100%)`. A typography value
      * that is itself a reference is asked once for each CSS property, with that `cssProperty`, and
-     * takes a variable only: the one holding that CSS property, such as `--body-font-size`.
+     * takes a custom property only: the one holding that CSS property, such as `--body-font-size`.
      *
      * @example
      * {
-     *     replacement: (ref, cssProperty) =>
-     *         ref.token ? { variable: cssVariable(ref.token.path, { cssProperty }) } : undefined,
+     *     replaceReference: (ref, cssProperty) =>
+     *         ref.pointsToToken
+     *             ? { customProperty: toCustomPropertyName(ref.pointsToToken.path, { cssProperty }) }
+     *             : undefined,
      * }
      */
-    replacement?: (ref: Reference, cssProperty?: keyof TypographyCSS) => Replacement | undefined;
+    replaceReference?: (
+        ref: Reference,
+        cssProperty?: keyof TypographyCSS,
+    ) => Replacement | undefined;
     /**
-     * `"hex"` writes every color that has a `hex` as that hex, with two more digits when it is
-     * not opaque, for a browser that cannot show its color space. A color without a `hex` is
-     * written as usual.
-     * @default "native"
+     * `"components"` writes every color from its components, in its own color space. `"hex"`
+     * writes every color that has a `hex` as that hex, with two more digits when it is not opaque,
+     * for a browser that cannot show its color space, and a color without a `hex` from its
+     * components. The names are the keys a file writes a color with.
+     * @default "components"
      */
-    colors?: "native" | "hex";
+    colors?: "components" | "hex";
 }
 
 type TypographyToken = Extract<Token, { type: "typography" }>;
@@ -54,53 +61,56 @@ type TypographyToken = Extract<Token, { type: "typography" }>;
  * A token's value, or a part of one, written as CSS: a string for every type but typography,
  * which sets five CSS properties and so gives an object with a value for each. Code holding a
  * token of any type checks its `type` first, as it would to show typography differently anyway.
- * A color is written in its own color space, and an sRGB color with a `hex` as that hex. A
- * gradient is written as its stops, for any gradient function: `linear-gradient(${css})`.
- * `undefined` for a token with no resolved value.
+ * A color is written from its components in its own color space, to four decimal places, and an
+ * sRGB color as `rgb()`, its channels from 0 to 255 to two; its `hex` only when asked for. A color
+ * read from a hex string, with `hexStringColors`, is written as that string. A gradient is written
+ * as its stops, for any gradient function: `linear-gradient(${css})`. `undefined` for a token with
+ * no resolved value, or for no token, so `toCSSValue(permutation.getToken(path))` needs no check first.
  *
  * @example
- * cssValue(brand)                  // "#e11d48"
- * cssValue(card)                   // "0px 2px 4px 0px #00000033"
- * if (token.type === "typography") cssValue(token)?.["font-size"]   // "1rem"
+ * toCSSValue(brand)                  // "rgb(225 29 72)"
+ * toCSSValue(card)                   // "0px 2px 4px 0px rgb(0 0 0 / 0.2)"
+ * if (token.type === "typography") toCSSValue(token)?.["font-size"]   // "1rem"
  *
  * @example
  * // a border part, for a swatch of its color
  * const border = token.parts;
- * if (border?.type === "border") swatch(cssValue(border.color));
+ * if (border?.type === "border") swatch(toCSSValue(border.color));
  */
-export function cssValue(
-    of: TypographyToken | TypographyPart,
+export function toCSSValue(
+    of: TypographyToken | TypographyPart | undefined,
     options?: CSSValueOptions,
 ): TypographyCSS | undefined;
-export function cssValue(
-    of: Exclude<Token, TypographyToken> | Exclude<Part, TypographyPart>,
+export function toCSSValue(
+    of: Exclude<Token, TypographyToken> | Exclude<Part, TypographyPart> | undefined,
     options?: CSSValueOptions,
 ): string | undefined;
-export function cssValue(
-    of: Token | Part,
+export function toCSSValue(
+    of: Token | Part | undefined,
     options?: CSSValueOptions,
 ): string | TypographyCSS | undefined;
-export function cssValue(
-    of: Token | Part,
+export function toCSSValue(
+    of: Token | Part | undefined,
     options: CSSValueOptions = {},
 ): string | TypographyCSS | undefined {
+    if (of === undefined) return undefined;
     const whole = "path" in of ? of.parts : of;
     if (!whole) return undefined;
     return whole.type === "typography" ? typography(whole, options) : write(whole, options);
 }
 
-function replaced({ ref }: PartBase<unknown>, { replacement }: CSSValueOptions) {
-    return ref ? replacement?.(ref) : undefined;
+function replaced({ ref }: PartBase<unknown>, { replaceReference }: CSSValueOptions) {
+    return ref ? replaceReference?.(ref) : undefined;
 }
 
-function variable(part: PartBase<unknown>, options: CSSValueOptions): string | undefined {
+function customProperty(part: PartBase<unknown>, options: CSSValueOptions): string | undefined {
     const answer = replaced(part, options);
-    return answer && "variable" in answer ? answer.variable : undefined;
+    return answer && "customProperty" in answer ? answer.customProperty : undefined;
 }
 
 function replacedCSS(part: PartBase<unknown>, options: CSSValueOptions): string | undefined {
     const answer = replaced(part, options);
-    return answer && ("variable" in answer ? `var(${answer.variable})` : answer.css);
+    return answer && ("customProperty" in answer ? `var(${answer.customProperty})` : answer.css);
 }
 
 function write(part: Exclude<Part, TypographyPart>, options: CSSValueOptions): string {
@@ -109,7 +119,7 @@ function write(part: Exclude<Part, TypographyPart>, options: CSSValueOptions): s
     const each = (inner: Exclude<Part, TypographyPart>) => write(inner, options);
     switch (part.type) {
         case "color":
-            return writeColor(part.resolved, options.colors ?? "native");
+            return writeColor(part.resolved, options.colors ?? "components");
         case "dimension":
         case "duration":
             return `${part.resolved.value}${part.resolved.unit}`;
@@ -142,7 +152,7 @@ function layer(part: ShadowLayerPart, options: CSSValueOptions): string {
 }
 
 function stop({ color, position }: GradientStopPart, options: CSSValueOptions): string {
-    const named = variable(position, options);
+    const named = customProperty(position, options);
     const where = named
         ? `clamp(0%, var(${named}) * 100%, 100%)`
         : `${roundedTo(position.resolved * 100, 4)}%`;
@@ -151,8 +161,10 @@ function stop({ color, position }: GradientStopPart, options: CSSValueOptions): 
 
 function typography(part: TypographyPart, options: CSSValueOptions): TypographyCSS {
     const each = (cssProperty: keyof TypographyCSS, value: Exclude<Part, TypographyPart>) => {
-        const answer = part.ref ? options.replacement?.(part.ref, cssProperty) : undefined;
-        return answer && "variable" in answer ? `var(${answer.variable})` : write(value, options);
+        const answer = part.ref ? options.replaceReference?.(part.ref, cssProperty) : undefined;
+        return answer && "customProperty" in answer
+            ? `var(${answer.customProperty})`
+            : write(value, options);
     };
     return {
         "font-family": each("font-family", part.fontFamily),
@@ -198,11 +210,11 @@ function quoteFont(name: string): string {
     return bare ? name : `"${name.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
 
-function writeColor(
-    { colorSpace, components, alpha, hex }: ColorValue,
-    colors: "native" | "hex",
-): string {
-    if (hex !== undefined && (colors === "hex" || colorSpace === "srgb")) return hexOf(hex, alpha);
+function writeColor(color: ColorValue, colors: "components" | "hex"): string {
+    const { colorSpace, components, alpha, hex } = color;
+    const asRead = hexStringOf(color);
+    if (asRead !== undefined) return asRead;
+    if (hex !== undefined && colors === "hex") return hexOf(hex, alpha);
     const [a, b, c] = components;
     const numbers = [a, b, c].map((each) => fixed(each)).join(" ");
     switch (colorSpace) {
@@ -233,7 +245,7 @@ function withAlpha(opened: string, alpha: number): string {
 }
 
 function channel(component: ColorComponent): string {
-    return component === "none" ? "none" : String(Math.round(component * 255));
+    return component === "none" ? "none" : String(roundedTo(component * 255, 2));
 }
 
 function percent(component: ColorComponent): string {

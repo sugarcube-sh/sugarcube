@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFromMemory } from "../../src/index.js";
+import { getSpan } from "../../src/editor.js";
 
 const rgb = (red: number) => ({ colorSpace: "srgb", components: [red, 0, 0] });
 
@@ -35,7 +36,7 @@ const files = {
     "dark.json": JSON.stringify({ color: { blue: { $value: rgb(0.2) } } }),
 };
 
-const before = readFromMemory({ files, entry: "tokens.resolver.json" });
+const before = readFromMemory({ files, entryFile: "tokens.resolver.json" });
 const after = before.reread({
     "colors.json": JSON.stringify({
         color: { $type: "color", red: { $value: rgb(0.5) }, blue: { $value: rgb(0) } },
@@ -45,12 +46,13 @@ const modes = ["light", "dark"] as const;
 const kept = (path: string) =>
     modes.every(
         (mode) =>
-            before.permutation({ mode }).token(path) === after.permutation({ mode }).token(path),
+            before.getPermutation({ mode }).getToken(path) ===
+            after.getPermutation({ mode }).getToken(path),
     );
 
 describe("a reread", () => {
     it("keeps every token in a file whose text did not change", () => {
-        expect(after.permutation().token("space.sm")).toBeDefined();
+        expect(after.getPermutation().getToken("space.sm")).toBeDefined();
         expect(kept("space.sm")).toBe(true);
         expect(kept("space.md")).toBe(true);
     });
@@ -62,17 +64,21 @@ describe("a reread", () => {
     it("makes a token whose value changed new, and every token that points at it", () => {
         expect(kept("color.red")).toBe(false);
         expect(kept("theme.text")).toBe(false);
-        expect(after.permutation().token("color.red")?.resolved).toMatchObject({
+        expect(after.getPermutation().getToken("color.red")?.resolved).toMatchObject({
             components: [0.5, 0, 0],
         });
-        expect(after.permutation().token("theme.text")?.references[0]?.token).toBe(
-            after.permutation().token("color.red"),
+        expect(after.getPermutation().getToken("theme.text")?.references[0]?.pointsToToken).toBe(
+            after.getPermutation().getToken("color.red"),
         );
     });
 
     it("keeps a group whose tokens are all kept, and makes new one that holds a new token", () => {
-        expect(after.permutation().group("space")).toBe(before.permutation().group("space"));
-        expect(after.permutation().group("theme")).not.toBe(before.permutation().group("theme"));
+        expect(after.getPermutation().getGroup("space")).toBe(
+            before.getPermutation().getGroup("space"),
+        );
+        expect(after.getPermutation().getGroup("theme")).not.toBe(
+            before.getPermutation().getGroup("theme"),
+        );
     });
 
     it("keeps the resolver and the sources of files that did not change", () => {
@@ -83,10 +89,10 @@ describe("a reread", () => {
     });
 
     it("gives a kept place where it is in the new read's text", () => {
-        const place = after.permutation().token("space.md")?.valueFrom;
+        const place = after.getPermutation().getToken("space.md")?.winningDefinition;
         if (!place) throw new Error("space.md is not read");
-        const span = after.spanOf(place);
-        const text = after.text("space.json") ?? "";
+        const span = getSpan(after, place);
+        const text = after.getText("space.json") ?? "";
         expect(JSON.parse(text.slice(span.offset, span.offset + span.length))).toStrictEqual({
             $value: 8,
         });
@@ -98,18 +104,20 @@ describe("a reread", () => {
                 color: { $type: "color", red: { $value: rgb(1) }, blue: { $value: rgb(0.5) } },
             }),
         });
-        expect(blue.permutation().token("color.red")).toBe(before.permutation().token("color.red"));
-        expect(blue.permutation().token("color.blue")).not.toBe(
-            before.permutation().token("color.blue"),
+        expect(blue.getPermutation().getToken("color.red")).toBe(
+            before.getPermutation().getToken("color.red"),
+        );
+        expect(blue.getPermutation().getToken("color.blue")).not.toBe(
+            before.getPermutation().getToken("color.blue"),
         );
     });
 
     it("leaves the read it started from as it was", () => {
-        expect(before.permutation().token("color.red")?.resolved).toMatchObject({
+        expect(before.getPermutation().getToken("color.red")?.resolved).toMatchObject({
             components: [1, 0, 0],
         });
-        expect(before.permutation().token("theme.text")?.references[0]?.token).toBe(
-            before.permutation().token("color.red"),
+        expect(before.getPermutation().getToken("theme.text")?.references[0]?.pointsToToken).toBe(
+            before.getPermutation().getToken("color.red"),
         );
     });
 
@@ -129,7 +137,7 @@ describe("a reread", () => {
                 "space.json": files["space.json"],
                 "broken.json": JSON.stringify({ gap: { $type: "number", $value: "{missing}" } }),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         const again = broken.reread({
             "space.json": JSON.stringify({ space: { $type: "number", sm: { $value: 2 } } }),
@@ -140,7 +148,9 @@ describe("a reread", () => {
             expect.objectContaining({ kind: "missing-reference" }),
         );
         expect(found(again)).toStrictEqual(found(broken));
-        expect(again.permutation().token("gap")).toBe(broken.permutation().token("gap"));
+        expect(again.getPermutation().getToken("gap")).toBe(
+            broken.getPermutation().getToken("gap"),
+        );
     });
 
     describe("in the file that changed", () => {
@@ -160,9 +170,10 @@ describe("a reread", () => {
         const first = readFromMemory({ files: { "sizes.json": sizes(1) } });
         const second = first.reread({ "sizes.json": sizes(10) });
         const third = second.reread({ "sizes.json": sizes(100) });
-        const token = (tokens: typeof first, path: string) => tokens.permutation().token(path);
+        const token = (tokens: typeof first, path: string) =>
+            tokens.getPermutation().getToken(path);
         const written = (tokens: typeof first, span: { offset: number; length: number }) =>
-            (tokens.text("sizes.json") ?? "").slice(span.offset, span.offset + span.length);
+            (tokens.getText("sizes.json") ?? "").slice(span.offset, span.offset + span.length);
 
         it("keeps a token below the edit, though it moved", () => {
             expect(token(second, "size.md")).toBe(token(first, "size.md"));
@@ -174,11 +185,15 @@ describe("a reread", () => {
             const md = token(second, "size.md");
             const gap = token(second, "size.gap");
             if (!md || !gap?.references[0]) throw new Error("size.md or size.gap is not read");
-            expect(JSON.parse(written(second, second.spanOf(md.valueFrom)))).toStrictEqual({
+            expect(
+                JSON.parse(written(second, getSpan(second, md.winningDefinition))),
+            ).toStrictEqual({
                 $value: 2,
             });
-            expect(written(second, second.spanOf(gap.references[0]))).toBe('"{size.md}"');
-            expect(second.spanOf(md.valueFrom)).not.toStrictEqual(first.spanOf(md.valueFrom));
+            expect(written(second, getSpan(second, gap.references[0]))).toBe('"{size.md}"');
+            expect(getSpan(second, md.winningDefinition)).not.toStrictEqual(
+                getSpan(first, md.winningDefinition),
+            );
         });
 
         it("keeps it through another reread", () => {
@@ -193,11 +208,11 @@ describe("a reread", () => {
             const again = once.reread({ "t.json": edited });
             const fresh = readFromMemory({ files: { "t.json": edited } });
             const spanOfB = (tokens: typeof first) => {
-                const place = tokens.permutation().token("b")?.valueFrom;
+                const place = tokens.getPermutation().getToken("b")?.winningDefinition;
                 if (!place) throw new Error("b is not read");
-                return tokens.spanOf(place);
+                return getSpan(tokens, place);
             };
-            expect(again.permutation().token("b")).toBe(once.permutation().token("b"));
+            expect(again.getPermutation().getToken("b")).toBe(once.getPermutation().getToken("b"));
             expect(spanOfB(again)).toStrictEqual(spanOfB(fresh));
         });
     });
@@ -210,7 +225,7 @@ describe("a reread", () => {
             ),
         });
         expect(renamed.resolver).not.toBe(before.resolver);
-        expect(renamed.permutation().input).toStrictEqual({ mode: "dark" });
+        expect(renamed.getPermutation().input).toStrictEqual({ mode: "dark" });
     });
 });
 
@@ -226,9 +241,11 @@ describe("a reread of every file", () => {
         const all = before.rereadAll({ ...files, "colors.json": colors });
 
         expect(all).not.toBe(before);
-        expect(all.permutation().token("space.sm")).toBe(before.permutation().token("space.sm"));
-        expect(all.permutation().token("color.red")?.resolved).toStrictEqual(
-            after.permutation().token("color.red")?.resolved,
+        expect(all.getPermutation().getToken("space.sm")).toBe(
+            before.getPermutation().getToken("space.sm"),
+        );
+        expect(all.getPermutation().getToken("color.red")?.resolved).toStrictEqual(
+            after.getPermutation().getToken("color.red")?.resolved,
         );
     });
 
@@ -236,7 +253,7 @@ describe("a reread of every file", () => {
         const { "dark.json": _dark, ...withoutDark } = files;
         const all = before.rereadAll(withoutDark);
 
-        expect(all.text("dark.json")).toBeUndefined();
+        expect(all.getText("dark.json")).toBeUndefined();
         expect(all.diagnostics.map(({ kind }) => kind)).toStrictEqual(
             before.reread({ "dark.json": null }).diagnostics.map(({ kind }) => kind),
         );
@@ -259,10 +276,12 @@ describe("a reread and where a deprecation comes from", () => {
         });
         const second = first.reread({ "tokens.json": marked({}) });
 
-        expect(first.permutation().token("outer.inner.n")?.deprecatedFrom).toBe("outer.inner");
-        expect(second.permutation().token("outer.inner.n")?.deprecated).toBe("Use gap");
-        expect(second.permutation().token("outer.inner.n")?.deprecatedFrom).toBe("outer");
-        expect(second.permutation().group("outer.inner")?.deprecatedFrom).toBe("outer");
+        expect(first.getPermutation().getToken("outer.inner.n")?.deprecatedByGroup).toBe(
+            "outer.inner",
+        );
+        expect(second.getPermutation().getToken("outer.inner.n")?.deprecated).toBe("Use gap");
+        expect(second.getPermutation().getToken("outer.inner.n")?.deprecatedByGroup).toBe("outer");
+        expect(second.getPermutation().getGroup("outer.inner")?.deprecatedByGroup).toBe("outer");
     });
 });
 
@@ -283,11 +302,15 @@ describe("a reread and a group in a file that didn't change", () => {
                 "a.json": a({ $deprecated: "Use gap" }),
                 "b.json": JSON.stringify({ outer: { mid: { inner: {} } } }),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
         const second = first.reread({ "a.json": a({}) });
 
-        expect(first.permutation().group("outer.mid.inner")?.deprecatedFrom).toBe("outer.mid");
-        expect(second.permutation().group("outer.mid.inner")?.deprecatedFrom).toBe("outer");
+        expect(first.getPermutation().getGroup("outer.mid.inner")?.deprecatedByGroup).toBe(
+            "outer.mid",
+        );
+        expect(second.getPermutation().getGroup("outer.mid.inner")?.deprecatedByGroup).toBe(
+            "outer",
+        );
     });
 });

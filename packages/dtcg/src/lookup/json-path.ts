@@ -7,7 +7,7 @@ import {
     parseTree,
 } from "jsonc-parser";
 import { thrownMessages } from "../error-messages.js";
-import type { DesignTokens, JsonPath, JsonValue, Span } from "../index.js";
+import type { DesignTokens, JsonPath, JsonValue, Span } from "../model.js";
 
 interface Parsed {
     trees: Map<string, Node | undefined>;
@@ -28,7 +28,7 @@ function parsedIn(tokens: DesignTokens): Parsed {
 function treeOf(tokens: DesignTokens, file: string): Node | undefined {
     const { trees } = parsedIn(tokens);
     if (!trees.has(file)) {
-        const text = tokens.text(file);
+        const text = tokens.getText(file);
         trees.set(file, text === undefined ? undefined : parseTree(text));
     }
     return trees.get(file);
@@ -55,6 +55,6 @@ export function jsonIn(
 ): JsonValue | undefined {
     const tree = treeOf(tokens, file);
     const node = tree && findNodeAtLocation(tree, [...jsonPath]);
-    const text = node && tokens.text(file)?.slice(node.offset, node.offset + node.length);
+    const text = node && tokens.getText(file)?.slice(node.offset, node.offset + node.length);
     return text === undefined ? undefined : (parse(text) as JsonValue);
 }

@@ -309,13 +309,13 @@ beforeAll(async () => {
         const sources = together.map((file) => ({
             $ref: `./${relative(dirname(together[0] ?? ""), file)}`,
         }));
-        const entry = join(dirname(together[0] ?? ""), "together.resolver.json");
+        const entryFile = join(dirname(together[0] ?? ""), "together.resolver.json");
         const resolver = JSON.stringify({
             version: "2025.10",
             resolutionOrder: [{ type: "set", name: "together", sources }],
         });
-        const withResolver = Object.fromEntries([...texts, [entry, resolver]]);
-        projects.set(together.join(" + "), readFromMemory({ files: withResolver, entry }));
+        const withResolver = Object.fromEntries([...texts, [entryFile, resolver]]);
+        projects.set(together.join(" + "), readFromMemory({ files: withResolver, entryFile }));
         for (const file of together) covered.add(file);
     }
     for (const file of files.filter(

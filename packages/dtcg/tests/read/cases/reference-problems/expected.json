@@ -178,7 +178,7 @@
         "text": "\"{color.brnad}\""
       },
       "path": "color.danger",
-      "related": [
+      "relatedInformation": [
         {
           "message": "also used here",
           "span": {

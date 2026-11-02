@@ -7,7 +7,7 @@ declare const config: { permutations: { input: Input; selector: string; atRule?:
 
 for (const entry of config.permutations) {
     try {
-        const p = tokens.permutation(entry.input);
+        const p = tokens.getPermutation(entry.input);
         row(entry.selector, p.label, p.tokens.length);
     } catch (error) {
         if (!(error instanceof PermutationError)) throw error;

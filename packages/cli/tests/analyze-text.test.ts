@@ -158,7 +158,7 @@ describe("impactHeading", () => {
                     ]),
                 ),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         });
     };
 

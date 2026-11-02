@@ -33,7 +33,7 @@ function read(
                     Object.entries(files).map(([file, json]) => [file, JSON.stringify(json)]),
                 ),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         },
         options,
     );
@@ -84,7 +84,9 @@ describe("a missing reference written in files only some permutations read", () 
         expect(missing).toHaveLength(1);
         expect(missing[0]?.detail).toStrictEqual({ ref: "nope", from: ["a", "b"] });
         expect(missing[0]?.span?.file).toBe("base.json");
-        expect(missing[0]?.related?.map(({ span }) => span.file)).toStrictEqual(["dark.json"]);
+        expect(missing[0]?.relatedInformation?.map(({ span }) => span.file)).toStrictEqual([
+            "dark.json",
+        ]);
     });
 
     it("holds in every permutation it is missing in", () => {

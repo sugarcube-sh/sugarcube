@@ -57,7 +57,7 @@ function asWritten(value: unknown): unknown {
 
 describe("each type's value, as the public types describe it", () => {
     it.for(tokenTypes)("%s reads back as itself, every part included", (type) => {
-        const read = parseValue(type, asWritten(everyPart[type]), [], { references: false });
+        const read = parseValue(type, asWritten(everyPart[type]), { references: false });
         expect(read).toStrictEqual({ ok: true, value: everyPart[type], ignored: [] });
     });
 });

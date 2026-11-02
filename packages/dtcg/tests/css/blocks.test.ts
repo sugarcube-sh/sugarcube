@@ -3,9 +3,9 @@ import {
     type CSSBlock,
     type CSSBlockInput,
     type CSSWriterOptions,
-    cssBlocks,
-    cssText,
-    cssWriter,
+    getCSSBlocks,
+    toCSS,
+    createCSSWriter,
 } from "../../src/css.js";
 import { type DesignTokens, PermutationError, readFromMemory } from "../../src/index.js";
 
@@ -57,9 +57,9 @@ function written(block: CSSBlock | undefined): string[] {
     return block?.inRule.map(({ name, value }) => `${name}: ${value}`) ?? [];
 }
 
-describe("cssBlocks", () => {
+describe("getCSSBlocks", () => {
     it("writes a first block in full", () => {
-        const [first] = cssBlocks(tokens, [root]);
+        const [first] = getCSSBlocks(tokens, [root]);
         expect(written(first)).toStrictEqual([
             "--color-ink: #111111",
             "--color-paper: #ffffff",
@@ -70,7 +70,7 @@ describe("cssBlocks", () => {
     });
 
     it("writes only what differs from an earlier block reaching it, then what refers to that, through every step", () => {
-        const [, later] = cssBlocks(tokens, [root, dark]);
+        const [, later] = getCSSBlocks(tokens, [root, dark]);
         expect(written(later)).toStrictEqual([
             "--color-ink: #eeeeee",
             "--color-text: var(--color-ink)",
@@ -79,7 +79,7 @@ describe("cssBlocks", () => {
     });
 
     it("writes only what differs when told not to write what refers to it again", () => {
-        const [, later] = cssBlocks(tokens, [root, { ...dark, redeclare: false }]);
+        const [, later] = getCSSBlocks(tokens, [root, { ...dark, redeclare: false }]);
         expect(written(later)).toStrictEqual(["--color-ink: #eeeeee"]);
     });
 
@@ -88,37 +88,38 @@ describe("cssBlocks", () => {
             { ...palette, shade: color("#000000") },
             { color: { ink: { $value: "#eeeeee" } } },
         );
-        const ink = mixed.permutation().token("color.ink");
-        const writer = cssWriter({
-            value: (token, { written: value, write }) =>
+        const ink = mixed.getPermutation().getToken("color.ink");
+        const writer = createCSSWriter({
+            writeValue: (token, { written: value, write }) =>
                 token.path === "shade" && ink
                     ? write`color-mix(in oklch, ${ink} 50%, black)`
                     : value,
         });
-        const [, later] = cssBlocks(mixed, [root, dark], { writer });
+        const [, later] = getCSSBlocks(mixed, [root, dark], { writer });
         expect(written(later)).toContain(
             "--shade: color-mix(in oklch, var(--color-ink) 50%, black)",
         );
     });
 
     it("gives each block the declarations of the theme its input names, from the writer", () => {
-        const writer = cssWriter();
-        const [, later] = cssBlocks(tokens, [root, dark], { writer });
+        const writer = createCSSWriter();
+        const [, later] = getCSSBlocks(tokens, [root, dark], { writer });
         expect(later?.declarations).toBe(
-            writer.declarations(tokens.permutation({ mode: "dark" })).declarations,
+            writer.getDeclarations(tokens.getPermutation({ mode: "dark" })).declarations,
         );
     });
 
     it("throws the read's PermutationError for an input naming a theme the tokens don't have", () => {
-        expect(() => cssBlocks(tokens, [{ input: { mode: "dim" }, selector: ".dim" }])).toThrow(
+        expect(() => getCSSBlocks(tokens, [{ input: { mode: "dim" }, selector: ".dim" }])).toThrow(
             PermutationError,
         );
     });
 
     describe("which earlier blocks reach a later one", () => {
-        const inFull = cssWriter().declarations(tokens.permutation(dark.input)).declarations.length;
+        const inFull = createCSSWriter().getDeclarations(tokens.getPermutation(dark.input))
+            .declarations.length;
         const reachedBy = (earlier: Partial<CSSBlockInput>, later: Partial<CSSBlockInput>) => {
-            const [, block] = cssBlocks(tokens, [
+            const [, block] = getCSSBlocks(tokens, [
                 { ...root, ...earlier },
                 { ...dark, selector: ".later", ...later },
             ]);
@@ -170,8 +171,8 @@ describe("cssBlocks", () => {
 
     describe("@supports", () => {
         const p3 = { colorSpace: "display-p3", components: [1, 0, 0], hex: "#ff0000" };
-        const fallback: CSSWriterOptions["fallback"] = (token, { writtenWith }) => {
-            const hex = token.type === "color" ? writtenWith({ colors: "hex" }) : undefined;
+        const writeFallback: CSSWriterOptions["writeFallback"] = (token, { writeWith }) => {
+            const hex = token.type === "color" ? writeWith({ colors: "hex" }) : undefined;
             return hex && { written: hex, unless: "(color: color(display-p3 1 1 1))" };
         };
         const wide = themed(
@@ -180,8 +181,8 @@ describe("cssBlocks", () => {
         );
 
         it("writes a line again only under @supports when only what is supported changes", () => {
-            const [first, later] = cssBlocks(wide, [root, dark], {
-                writer: cssWriter({ fallback }),
+            const [first, later] = getCSSBlocks(wide, [root, dark], {
+                writer: createCSSWriter({ writeFallback }),
             });
             expect(first?.underSupports.map(({ name }) => name)).toStrictEqual(["--brand"]);
             expect(written(later)).toStrictEqual([]);
@@ -197,7 +198,7 @@ describe("cssBlocks", () => {
     });
 });
 
-describe("cssBlocks, the modifiers a block's input names", () => {
+describe("getCSSBlocks, the modifiers a block's input names", () => {
     const brands = read({
         "tokens.resolver.json": {
             version: "2025.10",
@@ -230,8 +231,8 @@ describe("cssBlocks, the modifiers a block's input names", () => {
     const darkBlock = block({ mode: "dark" }, '[data-mode="dark"]');
 
     it("knows which modifier writes each token, from the context listing the file", () => {
-        const surface = brands.permutation({ mode: "dark" }).token("surface");
-        expect(surface?.writtenAt.map(({ source }) => source.modifier?.name)).toStrictEqual([
+        const surface = brands.getPermutation({ mode: "dark" }).getToken("surface");
+        expect(surface?.definitions.map(({ source }) => source.modifier?.name)).toStrictEqual([
             undefined,
             "mode",
         ]);
@@ -239,7 +240,7 @@ describe("cssBlocks, the modifiers a block's input names", () => {
 
     describe("a block whose input names some modifiers stacks with the others", () => {
         it("writes every token its modifiers provide a value for, even when it equals the default, when another block that might apply says otherwise, and what refers to it", () => {
-            const [, , brand] = cssBlocks(brands, [
+            const [, , brand] = getCSSBlocks(brands, [
                 rootBlock,
                 darkBlock,
                 block({ brand: "b" }, '[data-brand="b"]'),
@@ -251,7 +252,7 @@ describe("cssBlocks, the modifiers a block's input names", () => {
         });
 
         it("leaves out what its modifiers provide no value for, so the themes stack on one element", () => {
-            const [, , brand] = cssBlocks(brands, [
+            const [, , brand] = getCSSBlocks(brands, [
                 rootBlock,
                 darkBlock,
                 block({ brand: "b" }, '[data-brand="b"]'),
@@ -260,7 +261,7 @@ describe("cssBlocks, the modifiers a block's input names", () => {
         });
 
         it("writes the default's values for its modifier where another block changed them, so a light section in a dark page is light", () => {
-            const [, , lightBlock] = cssBlocks(brands, [
+            const [, , lightBlock] = getCSSBlocks(brands, [
                 rootBlock,
                 darkBlock,
                 block({ mode: "light" }, '[data-mode="light"]'),
@@ -273,7 +274,7 @@ describe("cssBlocks, the modifiers a block's input names", () => {
         });
 
         it("writes what a combined block's modifiers provide values for, so it wins over either alone", () => {
-            const [, , , both] = cssBlocks(brands, [
+            const [, , , both] = getCSSBlocks(brands, [
                 rootBlock,
                 darkBlock,
                 block({ brand: "b" }, '[data-brand="b"]'),
@@ -287,7 +288,7 @@ describe("cssBlocks, the modifiers a block's input names", () => {
         });
 
         it("matches its modifiers' names as inputs are matched, in any case", () => {
-            const [, , brand] = cssBlocks(brands, [
+            const [, , brand] = getCSSBlocks(brands, [
                 rootBlock,
                 darkBlock,
                 block({ Brand: "b" }, '[data-brand="b"]'),
@@ -301,7 +302,7 @@ describe("cssBlocks, the modifiers a block's input names", () => {
 
     describe("a block whose input names every modifier stands alone", () => {
         it("writes every value another block that might apply contradicts", () => {
-            const [, , brand] = cssBlocks(brands, [
+            const [, , brand] = getCSSBlocks(brands, [
                 block({ mode: "light", brand: "a" }, ":root"),
                 block({ mode: "dark", brand: "a" }, '[data-mode="dark"]'),
                 block({ mode: "light", brand: "b" }, '[data-brand="b"]'),
@@ -331,13 +332,13 @@ describe("cssBlocks, the modifiers a block's input names", () => {
             "base.json": { surface: color("#ffffff"), gap: { $type: "dimension", $value: px(8) } },
             "dark.json": { surface: color("#000000"), gap: { $type: "dimension", $value: px(8) } },
         });
-        const [, later] = cssBlocks(restating, [rootBlock, darkBlock]);
+        const [, later] = getCSSBlocks(restating, [rootBlock, darkBlock]);
         expect(written(later)).toStrictEqual(["--surface: #000000"]);
     });
 });
 
-describe("cssText", () => {
-    const blocks = cssBlocks(tokens, [
+describe("toCSS", () => {
+    const blocks = getCSSBlocks(tokens, [
         root,
         {
             ...dark,
@@ -347,7 +348,7 @@ describe("cssText", () => {
     ]);
 
     it("writes each block as a rule, nested in its at-rules", () => {
-        expect(cssText(blocks)).toBe(
+        expect(toCSS(blocks)).toBe(
             [
                 ":root {",
                 "    --color-ink: #111111;",
@@ -373,8 +374,8 @@ describe("cssText", () => {
     });
 
     it("leaves out a block that writes nothing, and writes nothing for no blocks", () => {
-        const css = cssText(cssBlocks(tokens, [root, { ...root, selector: ".same" }]));
+        const css = toCSS(getCSSBlocks(tokens, [root, { ...root, selector: ".same" }]));
         expect(css).not.toContain(".same");
-        expect(cssText(cssBlocks(tokens, []))).toBe("");
+        expect(toCSS(getCSSBlocks(tokens, []))).toBe("");
     });
 });

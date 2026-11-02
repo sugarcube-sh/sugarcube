@@ -1,6 +1,6 @@
 import { relatedMessages } from "../error-messages.js";
-import type { Input, Span, WrittenReference } from "../index.js";
-import { movedReference, namedPath, referenceText } from "../values/references.js";
+import type { Input, Span, WrittenReference } from "../model.js";
+import { movedReference, namedPath, toReferenceTarget } from "../values/references.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
 import { similarName } from "./similar.js";
 
@@ -40,7 +40,7 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
             const missing = new Map<string, Missing>();
             return {
                 record: (reference, from, span) => {
-                    const ref = referenceText(reference);
+                    const ref = toReferenceTarget(reference);
                     const entry = missing.get(ref) ?? {
                         reference,
                         first: { from, span },
@@ -68,7 +68,7 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
         },
         report: () => {
             for (const { ref, similar, first, uses, inputs } of across.values()) {
-                const related = uses
+                const relatedInformation = uses
                     .filter(({ span }) => span !== first.span)
                     .map((use) => ({
                         message: relatedMessages.alsoUsedHere,
@@ -84,7 +84,7 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
                 const made = diagnostic("missing-reference", detail, {
                     span: first.span,
                     path: first.from,
-                    ...(related.length > 0 && { related }),
+                    ...(relatedInformation.length > 0 && { relatedInformation }),
                 });
                 const found = diagnostics.found(made, input);
                 for (const each of others) diagnostics.also(found, each);
@@ -109,5 +109,5 @@ function similarReference(
         [...paths.keys()].filter((path) => !from.includes(path)),
     );
     if (close === undefined) return undefined;
-    return referenceText(movedReference(reference, [{ from: named, to: close }]));
+    return toReferenceTarget(movedReference(reference, [{ from: named, to: close }]));
 }

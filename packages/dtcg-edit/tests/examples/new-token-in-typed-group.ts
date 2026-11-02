@@ -4,7 +4,7 @@ import { create, commit } from "@sugarcube-sh/dtcg-edit";
 
 declare let tokens: DesignTokens;
 
-const colors = tokens.permutation().group("color");
+const colors = tokens.getPermutation().getGroup("color");
 if (!colors?.type) {
     showMessage("This group has no type; choose one");
 } else {

@@ -1,4 +1,4 @@
-import { type DesignTokens, atOrWithin } from "@sugarcube-sh/dtcg";
+import { type DesignTokens, tokenPath } from "@sugarcube-sh/dtcg";
 import type { FileOp, OpResult } from "./index.js";
 import { copiesOf } from "./placement.js";
 
@@ -18,15 +18,13 @@ export function remove(tokens: DesignTokens, path: string): OpResult {
     const copies = copiesOf(tokens, path);
     if ("refused" in copies) return copies;
 
-    const ops = copies.places.map(({ span, jsonPath, written }): FileOp => ({
+    const ops = copies.places.map(({ span, jsonPath, asWritten }): FileOp => ({
         kind: "remove",
         file: span.file,
         jsonPath,
-        was: written,
+        was: asWritten,
     }));
-    const users = tokens.permutations.flatMap((permutation) => permutation.usedBy(path));
-    const broken = [...new Set(users.map((user) => user.path))].filter(
-        (user) => !atOrWithin(user, path),
-    );
+    const users = tokens.getReferencesTo(path).flatMap(({ writtenInPaths }) => writtenInPaths);
+    const broken = [...new Set(users)].filter((user) => !tokenPath.contains(path, user));
     return { ops, alsoAffects: copies.alsoAffects, broken, moved: [] };
 }

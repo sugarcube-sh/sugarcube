@@ -40,7 +40,7 @@
           "name": "size"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     },
     {
       "file": "foundation/typography.json",
@@ -49,7 +49,7 @@
           "name": "typography"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     },
     {
       "file": "foundation/animation.json",
@@ -58,7 +58,7 @@
           "name": "animation"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     },
     {
       "file": "theme/light.json",

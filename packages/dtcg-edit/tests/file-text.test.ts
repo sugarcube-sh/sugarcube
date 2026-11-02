@@ -22,7 +22,7 @@ const tokens = () =>
             "base.json": '{ "n": { "$type": "number", "$value": 1, "$description": "One." } }',
             "dark.json": '{ "n": { "$type": "number", "$value": 2, "$description": "One." } }',
         },
-        entry: "tokens.resolver.json",
+        entryFile: "tokens.resolver.json",
     });
 
 const parses = () => vi.spyOn(jsonc, "parseTree");

@@ -13,7 +13,7 @@
             "from": "space",
             "extension": ["com.example", "steps"]
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -40,7 +40,7 @@
             "from": "space",
             "extension": ["com.example", "steps"]
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 1,
               "span": {

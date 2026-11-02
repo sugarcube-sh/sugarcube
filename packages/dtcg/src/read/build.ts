@@ -6,22 +6,22 @@ import type {
     Group,
     ParseResult,
     Permutation,
-    Place,
+    Definition,
     Source,
     Span,
     Token,
     TokenType,
     TopLevel,
     Written,
-} from "../index.js";
-import { withoutRoot } from "../path.js";
-import { namedPath, referenceText } from "../values/references.js";
+} from "../model.js";
+import { tokenPath } from "../path.js";
+import { namedPath, toReferenceTarget } from "../values/references.js";
 import type { Building } from "./building.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
-import { applying, deprecatedFrom, inherited } from "./inherit.js";
+import { applying, deprecatedByGroupOf, inherited } from "./inherit.js";
 import {
-    NO_EXTENSION_PLACES,
-    NO_PLACES,
+    NO_EXTENSION_DEFINITIONS,
+    NO_DEFINITIONS,
     NO_REFERENCES,
     type Places,
     linkedGroup,
@@ -110,9 +110,9 @@ function buildPermutation(
     const valueOf = workingOut(permutation, readValue, diagnostics, missing);
 
     const sourceAt = (index: number) => sources[index] as Source;
-    const placed = (written: WrittenAt[], path: string | undefined): readonly Place[] => {
+    const placed = (written: WrittenAt[], path: string | undefined): readonly Definition[] => {
         const [first, ...rest] = written;
-        if (!first) return NO_PLACES;
+        if (!first) return NO_DEFINITIONS;
         if (rest.length === 0) return places.only(sourceAt(first.source), first.span, path);
         return written.map(({ source, span }) => places.at(sourceAt(source), span, path));
     };
@@ -152,8 +152,8 @@ function buildPermutation(
             resolved: read.ok && "resolved" in value ? value.resolved : undefined,
             invalid: read.ok ? undefined : true,
             deprecated,
-            deprecatedFrom: deprecatedFrom(merged, written, deprecated),
-            writtenAt: replaces
+            deprecatedByGroup: deprecatedByGroupOf(merged, written, deprecated),
+            definitions: replaces
                 ? [...placed(replaces, path), places.at(sourceAt(source), span, path)]
                 : places.only(sourceAt(source), span, path),
         };
@@ -207,17 +207,35 @@ function buildPermutation(
         const extending =
             written.extendsGroup === undefined ? undefined : groupAt(written.extendsGroup);
         const applies = applying(merged, written);
-        const from = deprecatedFrom(merged, written, applies.deprecated, applies.deprecatedAt);
-        const writtenAt = placed(written.declaredIn, path);
+        const deprecatedByGroup = deprecatedByGroupOf(
+            merged,
+            written,
+            applies.deprecated,
+            applies.deprecatedAt,
+        );
+        const definitions = placed(written.declaredIn, path);
         const kept = earlier.groups
             .get(path)
             ?.find((each) =>
-                sameGroup(each, written, applies, from, writtenAt, children, extending),
+                sameGroup(
+                    each,
+                    written,
+                    applies,
+                    deprecatedByGroup,
+                    definitions,
+                    children,
+                    extending,
+                ),
             );
         if (kept && written.extends) places.movedTo(kept.references, [written.extends.span]);
         const group =
             kept ??
-            newGroup(written, groupFields(written, applies, from, writtenAt), children, extending);
+            newGroup(
+                written,
+                groupFields(written, applies, deprecatedByGroup, definitions),
+                children,
+                extending,
+            );
         builtGroups.set(path, group);
         return group;
     };
@@ -232,7 +250,7 @@ function buildPermutation(
         group.children = children;
         const rootToken = children.find(
             (child): child is Token =>
-                child.kind === "token" && withoutRoot(child.path) === written.path,
+                child.kind === "token" && tokenPath.removeRoot(child.path) === written.path,
         );
         if (rootToken) group.rootToken = rootToken;
         if (extending) group.extends = extending;
@@ -256,7 +274,7 @@ function buildPermutation(
             label,
             sources,
             contexts,
-            root,
+            topLevel: root,
             children,
             tokens: tokensIn(children),
             groups: [...merged.groups.keys()].flatMap((path) => builtGroups.get(path) ?? []),
@@ -283,7 +301,7 @@ function workingOut(
     const notReached = (aim: Aim, from: string, span: Span) => {
         const { reference } = aim;
         if (reachOf(aim, merged).kind === "group") {
-            report("not-a-token", { ref: referenceText(reference) }, from, span);
+            report("not-a-token", { ref: toReferenceTarget(reference) }, from, span);
         } else missing.record(reference, from, span);
     };
 
@@ -326,12 +344,14 @@ function workingOut(
         const [first, ...rest] = loop;
         if (!first) return;
         const chain = [...loop.map((frame) => frame.path), path];
-        const related = rest.map((frame) => ({
+        const relatedInformation = rest.map((frame) => ({
             message: relatedMessages.partOfTheLoop,
             span: frame.span,
             path: frame.path,
         }));
-        report("circular-reference", { chain }, first.path, first.span, { related });
+        report("circular-reference", { chain }, first.path, first.span, {
+            relatedInformation,
+        });
     };
 
     const followWhole = (token: MergedToken, whole: Occurrence): Whole => {
@@ -446,44 +466,44 @@ function aimAt<Found extends Pending<Token>>(
     const { path } = reached;
     if (reached.kind === "token") return { occurrence, path, token: at(path) };
     if (reached.kind === "group") return { occurrence, path };
-    const targetProperty = stepInto(reached.token.authored, reached.inside)?.property;
-    return { occurrence, path, targetProperty };
+    const pointsToProperty = stepInto(reached.token.valueAsWritten, reached.inside)?.property;
+    return { occurrence, path, pointsToProperty };
 }
 
-function publicTopLevel(top: MergedTopLevel, writtenAt: readonly Place[]): TopLevel {
-    return { ...publicProperties(top), writtenAt };
+function publicTopLevel(top: MergedTopLevel, definitions: readonly Definition[]): TopLevel {
+    return { ...publicProperties(top), definitions };
 }
 
 function groupFields(
     group: MergedGroup,
     applies: Properties,
     markedBy: string | undefined,
-    writtenAt: readonly Place[],
+    definitions: readonly Definition[],
 ): Parameters<typeof linkedGroup>[0] {
     const { path, inherited: from } = group;
-    const authored = publicProperties(group);
+    const asWritten = publicProperties(group);
     return {
         path,
         ...publicProperties(applies),
-        ...(markedBy !== undefined && { deprecatedFrom: markedBy }),
-        writtenAt,
-        extensionsWrittenAt: extensionPlaces(group, writtenAt),
+        ...(markedBy !== undefined && { deprecatedByGroup: markedBy }),
+        definitions,
+        extensionDefinitions: extensionPlaces(group, definitions),
         children: [],
         references: NO_REFERENCES,
         ...(from && { inherited: from }),
-        ...(Object.keys(authored).length > 0 && { authored }),
+        ...(Object.keys(asWritten).length > 0 && { asWritten }),
     };
 }
 
 function extensionPlaces(
     { extensionsAt, declaredIn }: MergedGroup,
-    writtenAt: readonly Place[],
-): Readonly<Record<string, Place>> {
-    if (!extensionsAt) return NO_EXTENSION_PLACES;
-    const places: Record<string, Place> = {};
+    definitions: readonly Definition[],
+): Readonly<Record<string, Definition>> {
+    if (!extensionsAt) return NO_EXTENSION_DEFINITIONS;
+    const places: Record<string, Definition> = {};
     for (const [key, { source }] of Object.entries(extensionsAt)) {
         declaredIn.forEach((each, index) => {
-            const place = writtenAt[index];
+            const place = definitions[index];
             if (each.source === source && place) places[key] = place;
         });
     }
@@ -510,18 +530,18 @@ function tokenFields(token: MergedToken, now: MadeFrom): Parameters<typeof linke
         path: token.path,
         type: now.type,
         references: NO_REFERENCES,
-        writtenAt: now.writtenAt,
+        definitions: now.definitions,
         value: now.value,
         resolved: now.resolved,
         invalid: now.invalid,
         description: token.description,
         deprecated: now.deprecated,
-        deprecatedFrom: now.deprecatedFrom,
+        deprecatedByGroup: now.deprecatedByGroup,
         extensions: token.extensions,
-        authored: token.added
+        asWritten: token.added
             ? undefined
             : {
-                  value: token.authored,
+                  value: token.valueAsWritten,
                   ...publicProperties({ type: token.type, deprecated: token.deprecated }),
               },
         generated: token.generated,

@@ -1,4 +1,4 @@
-import { type LiveTokens, type TokensOnDisk, liveTokens } from "@sugarcube-sh/dtcg/node";
+import { type LiveTokens, type TokensOnDisk, createLiveTokens } from "@sugarcube-sh/dtcg/node";
 import type { Logger, Plugin } from "vite";
 
 /**
@@ -26,13 +26,13 @@ export default function dtcg(onDisk: TokensOnDisk | (() => TokensOnDisk)): DtcgP
     const early: unknown[] = [];
     const log = (error: unknown) =>
         logger?.error(`[dtcg] ${error instanceof Error ? error.message : String(error)}`);
-    const live = liveTokens(onDisk, {
+    const live = createLiveTokens(onDisk, {
         onError: (error) => (logger ? log(error) : early.push(error)),
     });
 
     return {
         name: "dtcg",
-        api: { tokens: live.tokens, onRead: live.onRead, readAgain: live.readAgain },
+        api: { getTokens: live.getTokens, onRead: live.onRead, reread: live.reread },
         configResolved(config) {
             logger = config.logger;
             for (const error of early.splice(0)) log(error);

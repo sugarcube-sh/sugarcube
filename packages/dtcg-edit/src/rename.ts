@@ -1,14 +1,9 @@
-import {
-    type DesignTokens,
-    type ReferenceInPermutations,
-    childPath,
-    forbiddenInName,
-    parentOf,
-} from "@sugarcube-sh/dtcg";
+import { type DesignTokens, type ReferenceInPermutations, tokenPath } from "@sugarcube-sh/dtcg";
 import { refused } from "./error-messages.js";
 import type { FileOp, OpResult } from "./index.js";
 import { copiesOf } from "./placement.js";
 import type { Member } from "./file-text.js";
+import { getJsonAt } from "@sugarcube-sh/dtcg/editor";
 
 /**
  * Renames a token or group where each is written, and rewrites every reference to it or to
@@ -17,7 +12,7 @@ import type { Member } from "./file-text.js";
  * a reference, such as a `$description` mentioning `{color.brand}`, is left alone. References are
  * found in the permutations the read built, so a read limited by `inputs` can miss one written in
  * a file only another permutation reads. `moved` gives the path that changed, which a session's
- * ids and `tokens.diff` follow. A reference a generator makes is written in no file, so it is left
+ * ids and `tokens.getChangesSince` follow. A reference a generator makes is written in no file, so it is left
  * as it is, and its token is listed in `broken`.
  *
  * Refused, with the reason: a path that is neither a token nor a group, a name already taken or
@@ -29,37 +24,41 @@ import type { Member } from "./file-text.js";
  */
 export function rename(tokens: DesignTokens, path: string, newName: string): OpResult {
     if (newName === "") return refused({ kind: "invalid-name", name: newName });
-    const character = forbiddenInName(newName);
+    const character = tokenPath.findInvalidCharacter(newName);
     if (character !== undefined) return refused({ kind: "invalid-name", name: newName, character });
 
     const copies = copiesOf(tokens, path);
     if ("refused" in copies) return copies;
-    const to = childPath(parentOf(path), newName);
+    const to = tokenPath.join(tokenPath.getParent(path), newName);
     if (to === path) return { ops: [], alsoAffects: copies.alsoAffects, moved: [] };
     if (tokens.has(to)) return refused({ kind: "taken", path: to });
 
     const moved = [{ from: path, to }];
-    const keys = copies.places.map(({ span, jsonPath, written }): FileOp => ({
+    const keys = copies.places.map(({ span, jsonPath, asWritten }): FileOp => ({
         kind: "renameKey",
         file: span.file,
         jsonPath,
         name: newName,
-        was: written,
+        was: asWritten,
     }));
-    const all = tokens.referencedBy(path);
+    const all = tokens.getReferencesTo(path);
     const references = all.filter(isWritten).flatMap((reference): FileOp[] => {
         const { span } = reference;
-        const was = tokens.jsonAt(span.file, reference.jsonPath);
+        const was = getJsonAt(tokens, span.file, reference.jsonPath);
         if (was === undefined) return [];
         const jsonPath = afterKeys(
-            { span, jsonPath: reference.jsonPath, written: was },
+            { span, jsonPath: reference.jsonPath, asWritten: was },
             copies.places,
             newName,
         );
         const value = reference.moved(moved);
         return [{ kind: "set", file: span.file, jsonPath, value, was }];
     });
-    const broken = [...new Set(all.filter((each) => !isWritten(each)).map(({ from }) => from))];
+    const broken = [
+        ...new Set(
+            all.filter((each) => !isWritten(each)).flatMap(({ writtenInPaths }) => writtenInPaths),
+        ),
+    ];
     return { ops: [...keys, ...references], alsoAffects: copies.alsoAffects, broken, moved };
 }
 
@@ -76,5 +75,6 @@ function afterKeys(member: Member, keys: Member[], name: string): Member["jsonPa
 }
 
 function isWritten(reference: ReferenceInPermutations): boolean {
-    return !reference.permutations.some((each) => each.token(reference.from)?.generated);
+    const [writer] = reference.writtenInPaths;
+    return !reference.permutations.some((each) => writer && each.getToken(writer)?.generated);
 }

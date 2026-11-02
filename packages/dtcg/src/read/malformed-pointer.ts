@@ -1,4 +1,4 @@
-import type { DiagnosticDetailByKind } from "../index.js";
+import type { DiagnosticDetailByKind } from "../model.js";
 import type { Merged } from "./merge.js";
 import { type PointerReading, readPointerText } from "./pointer.js";
 import { reach } from "./ref-meaning.js";

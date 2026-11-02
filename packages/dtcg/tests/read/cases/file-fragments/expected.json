@@ -32,7 +32,7 @@
           "name": "parts"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     },
     {
       "file": "all.json",
@@ -42,7 +42,7 @@
           "name": "parts"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     },
     {
       "file": "all.json",
@@ -52,7 +52,7 @@
           "name": "parts"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     },
     {
       "file": "all.json",
@@ -61,7 +61,7 @@
           "name": "parts"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     }
   ]
 }

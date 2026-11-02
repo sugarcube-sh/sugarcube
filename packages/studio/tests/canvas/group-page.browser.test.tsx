@@ -14,7 +14,7 @@ function studioOnFiles() {
     return createStudio(
         {
             adapter: { name: "plain", settings: {}, problems: [] },
-            entry: "tokens.json",
+            entryFile: "tokens.json",
             files: {
                 "tokens.json": JSON.stringify({
                     space: { $type: "number", s: { $value: 4 } },
@@ -49,7 +49,7 @@ describe("a group's page", () => {
         await rename.getByRole("textbox", { name: "Name" }).fill("size");
         await rename.getByRole("button", { name: "Rename" }).click();
 
-        expect(studio.state.showing.group("size")).toBeDefined();
+        expect(studio.state.showing.getGroup("size")).toBeDefined();
         await expect.element(page.getByRole("heading", { name: "size", level: 1 })).toBeVisible();
     });
 
@@ -61,7 +61,7 @@ describe("a group's page", () => {
         await expect.element(page.getByText("Breaks")).toHaveTextContent("Breaks gap.");
         await page.getByRole("button", { name: "Remove anyway" }).click();
 
-        expect(studio.state.showing.group("space")).toBeUndefined();
+        expect(studio.state.showing.getGroup("space")).toBeUndefined();
     });
 
     it("adds a group inside it and goes to the new group's page", async () => {
@@ -72,7 +72,7 @@ describe("a group's page", () => {
         await group.getByRole("textbox", { name: "Name" }).fill("large");
         await group.getByRole("button", { name: "Add" }).click();
 
-        expect(studio.state.showing.group("space.large")).toBeDefined();
+        expect(studio.state.showing.getGroup("space.large")).toBeDefined();
         await expect
             .element(page.getByRole("heading", { name: "space.large", level: 1 }))
             .toBeVisible();
@@ -113,7 +113,7 @@ describe("the New token and New group forms", () => {
         const page = (path: string) => (
             <MemoryRouter>
                 <StudioContext.Provider value={studio}>
-                    <GroupPage group={studio.state.showing.group(path) as Group} shown />
+                    <GroupPage group={studio.state.showing.getGroup(path) as Group} shown />
                 </StudioContext.Provider>
             </MemoryRouter>
         );
@@ -136,7 +136,7 @@ describe("a question about which file to write in", () => {
         const studio = createStudio(
             {
                 adapter: { name: "plain", settings: {}, problems: [] },
-                entry: "tokens.resolver.json",
+                entryFile: "tokens.resolver.json",
                 files: {
                     "tokens.resolver.json": JSON.stringify({
                         version: "2025.10",
@@ -167,8 +167,8 @@ describe("a question about which file to write in", () => {
                     <GroupPage
                         group={
                             studio.state.tokens
-                                .permutation({ mode: "dark" })
-                                .group("accent") as Group
+                                .getPermutation({ mode: "dark" })
+                                .getGroup("accent") as Group
                         }
                         shown
                     />

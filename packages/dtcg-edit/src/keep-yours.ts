@@ -48,7 +48,7 @@ function opFor(
     { file, jsonPath, yours, theirs }: ClashPart & { theirs: JsonValue },
 ): FileOp {
     if (yours === undefined && jsonPath.length === 0) {
-        return { kind: "deleteFile", file, was: tokens.text(file) as string };
+        return { kind: "deleteFile", file, was: tokens.getText(file) as string };
     }
     if (yours === undefined) return { kind: "remove", file, jsonPath, was: theirs };
     return { kind: "set", file, jsonPath, value: yours, was: theirs };

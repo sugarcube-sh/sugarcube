@@ -9,8 +9,8 @@ import type {
     ResolverProblem,
     ResolverRule,
     SeveralPermutationsDetail,
-} from "./index.js";
-import { permutationLabel } from "./lookup/permutation-label.js";
+} from "./model.js";
+import { toInputLabel } from "./lookup/permutation-label.js";
 import {
     didYouMean,
     ignoredMessage,
@@ -130,11 +130,11 @@ export const thrownMessages = {
         `nothing is written at that place in \`${file}\` in this read: it comes from a read of other text`,
     permutation: (detail: PermutationErrorDetail) =>
         detail.reason === "not-read"
-            ? `\`${permutationLabel(detail.input)}\` was not built by this read`
+            ? `\`${toInputLabel(detail.input)}\` was not built by this read`
             : inputWords(detail),
     severalPermutations: ({ asked, modifiers, example }: SeveralPermutationsDetail) => {
         const named = `${modifiers.length === 1 ? "the modifier" : "the modifiers"} ${listed(modifiers, "and")}`;
-        return `tokens.${asked} needs a permutation: this resolver has ${named}. Pick one with tokens.permutation(${inputText(example)}), or ask them all with everyPermutation(tokens, …)`;
+        return `tokens.${asked} needs a permutation: this resolver has ${named}. Pick one with tokens.getPermutation(${inputText(example)}), or ask them all with askEveryPermutation(tokens, …)`;
     },
     noResolver: (files: string[]) =>
         files.length === 0

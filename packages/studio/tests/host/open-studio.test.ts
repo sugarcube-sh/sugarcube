@@ -57,7 +57,7 @@ describe("openStudio", () => {
             withFile("dark.json", dark.replace("{color.neutral.50}", "{color.neutral.100}")),
         );
 
-        expect(studio.state.tokens.text("dark.json")).toContain("{color.neutral.100}");
+        expect(studio.state.tokens.getText("dark.json")).toContain("{color.neutral.100}");
     });
 
     it("stops taking in messages once aborted", async () => {

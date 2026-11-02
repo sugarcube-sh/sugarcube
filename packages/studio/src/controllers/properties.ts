@@ -14,7 +14,7 @@ export function descriptionView(node: Token | Group, editable: boolean): Descrip
 }
 
 function takenFrom(group: Group): string | undefined {
-    const taken = group.authored?.description === undefined && group.description !== undefined;
+    const taken = group.asWritten?.description === undefined && group.description !== undefined;
     return taken ? group.extends?.path : undefined;
 }
 
@@ -35,7 +35,7 @@ export interface DeprecationView {
 }
 
 export function deprecationView(node: Token | Group, editable: boolean): DeprecationView {
-    const { deprecated, deprecatedFrom: by } = node;
+    const { deprecated, deprecatedByGroup: by } = node;
     const applies = deprecated !== undefined && deprecated !== false;
     const line = {
         ...(by !== undefined && { by }),
@@ -46,10 +46,10 @@ export function deprecationView(node: Token | Group, editable: boolean): Depreca
 }
 
 function boxFor(node: Token | Group, applies: boolean, message: string): DeprecationView["box"] {
-    if (node.authored?.deprecated !== undefined || !applies) {
+    if (node.asWritten?.deprecated !== undefined || !applies) {
         return { checked: applies, untick: null, message };
     }
-    const by = node.deprecatedFrom;
+    const by = node.deprecatedByGroup;
     if (node.kind === "group" && by !== undefined && extended(node).includes(by)) {
         return { checked: true, untick: false, message };
     }

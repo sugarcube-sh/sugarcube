@@ -1,13 +1,13 @@
-import type { Input, Permutation, ResolverContext, Scope } from "../index.js";
+import type { Input, Permutation, ResolverContext, Scope } from "../model.js";
 
 /**
  * An input written out for people: each modifier and its context, in the order the input lists
  * them, such as an input that names no permutation the read built.
  *
  * @example
- * permutationLabel({ mode: "dark", density: "comfy" }) // "mode: dark, density: comfy"
+ * toInputLabel({ mode: "dark", density: "comfy" }) // "mode: dark, density: comfy"
  */
-export function permutationLabel(input: Input): string {
+export function toInputLabel(input: Input): string {
     return Object.entries(input)
         .map(([modifier, context]) => `${modifier}: ${context}`)
         .join(", ");

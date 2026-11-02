@@ -119,7 +119,7 @@ describe("defineStudio", () => {
 
         await defineStudio(s.files, s.host);
 
-        expect(s.message().entry).toBe("tokens.resolver.json");
+        expect(s.message().entryFile).toBe("tokens.resolver.json");
         expect(s.message().files["dark.json"]).toBe(readFileSync(join(s.dir, "dark.json"), "utf8"));
         expect(sugarcubeSettings(s.message()).resolver).toBe(s.config.resolver);
         expect(s.message().adapter.problems).toEqual([configProblem]);

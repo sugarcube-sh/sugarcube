@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { type TokensOnDisk, fileOnDisk, read } from "@sugarcube-sh/dtcg/node";
+import { type TokensOnDisk, getAbsoluteFilePath, read } from "@sugarcube-sh/dtcg/node";
 import { changedFiles } from "./apply.js";
 import type { Edits } from "./index.js";
 
 /**
  * Applies edits to the files of design tokens on disk, given by their resolver or token file and
- * the options they are read with, as `liveTokens` takes them. Each file is read as it is now, so
+ * the options they are read with, as `createLiveTokens` takes them. Each file is read as it is now, so
  * changes made there in the meantime are kept; an edit that no longer applies, as {@link apply}
  * decides, is returned as a conflict, and so is an edit to a file the design tokens aren't read
  * from, such as `package.json`, or a new file nothing reads.
@@ -18,7 +18,7 @@ import type { Edits } from "./index.js";
  * the files written, each file written with its new text, and the files deleted.
  *
  * @example
- * const onDisk = { entry: "tokens/tokens.resolver.json", options };
+ * const onDisk = { entryFile: "tokens/tokens.resolver.json", options };
  * const saved = await applyToDisk(onDisk, session.unsaved);
  * if (saved.tokens) {
  *     session.markSaved();
@@ -26,15 +26,19 @@ import type { Edits } from "./index.js";
  * }
  */
 export async function applyToDisk(
-    { entry, options }: TokensOnDisk,
+    { entryFile, options }: TokensOnDisk,
     edits: Edits,
 ): Promise<ReturnType<typeof changedFiles>> {
-    const changes = changedFiles(await read(entry, options), edits);
+    const changes = changedFiles(await read(entryFile, options), edits);
     if (changes.conflicts) return changes;
 
     const { written, deleted } = changes;
-    await replaced(Object.entries(written).map(([file, text]) => [fileOnDisk(entry, file), text]));
-    await Promise.all(deleted.map((file) => rm(fileOnDisk(entry, file), { force: true })));
+    await replaced(
+        Object.entries(written).map(([file, text]) => [getAbsoluteFilePath(entryFile, file), text]),
+    );
+    await Promise.all(
+        deleted.map((file) => rm(getAbsoluteFilePath(entryFile, file), { force: true })),
+    );
     return changes;
 }
 

@@ -87,7 +87,7 @@ function madeByOldExpand(trees: TokenTree[]): Made[] {
 function madeByDtcg(tokens: DesignTokens): Made[] {
     return tokens.permutations.flatMap((permutation) =>
         permutation.tokens
-            .filter((token) => token.generated && !token.authored)
+            .filter((token) => token.generated && !token.asWritten)
             .map((token) => ({
                 path: token.path,
                 value: token.value,

@@ -5,9 +5,9 @@ import type { CSSBlock } from "./blocks.js";
  * `@supports` alternatives after it, grouped by condition; `""` when none writes anything.
  *
  * @example
- * cssText(cssBlocks([{ declarations, selector: ":root" }]))
+ * toCSS(getCSSBlocks([{ declarations, selector: ":root" }]))
  */
-export function cssText(blocks: readonly CSSBlock[]): string {
+export function toCSS(blocks: readonly CSSBlock[]): string {
     const rules = blocks
         .filter(({ inRule, underSupports }) => inRule.length > 0 || underSupports.length > 0)
         .map(text);

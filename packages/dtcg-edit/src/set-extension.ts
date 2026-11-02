@@ -30,7 +30,7 @@ import { asked, extensionPlace, ownProperties, placement } from "./placement.js"
  *
  * @example
  * setExtension(tokens, "space", ["com.example", "scale", "ratio"], 1.333)
- * const [place] = tokens.writtenAt("space.gutter");
+ * const [place] = tokens.getDefinitions("space.gutter");
  * if (place) {
  *   const min = { value: 1.5, unit: "rem" };
  *   setExtension(tokens, "space.gutter", ["com.example", "fluid", "min"], min, { at: place.span });
@@ -103,7 +103,7 @@ function placeOf(
     place: string | undefined,
 ): Placed {
     const steps = path.split(".");
-    if (!tokens.permutations.some((perm) => perm.token(path))) {
+    if (!tokens.permutations.some((perm) => perm.getToken(path))) {
         const placed = extensionPlace(tokens, path, key, options, place);
         if (!("into" in placed)) return placed;
         const { into, inForce, alsoAffects } = placed;

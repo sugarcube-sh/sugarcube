@@ -4,7 +4,7 @@ import { type DesignTokens } from "@sugarcube-sh/dtcg";
 
 declare const tokens: DesignTokens;
 
-for (const group of tokens.permutation().groups) {
+for (const group of tokens.getPermutation().groups) {
     if (group.extensions?.["com.example.scale"]) {
         row(group.path, "made by a generator");
         continue;

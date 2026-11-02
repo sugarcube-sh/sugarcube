@@ -10,7 +10,7 @@
         {
           "path": "space.2",
           "resolved": { "value": 2, "unit": "rem" },
-          "authored": null
+          "asWritten": null
         },
         { "path": "space.1" }
       ]
@@ -20,7 +20,7 @@
         {
           "path": "space.2",
           "resolved": { "value": 2, "unit": "rem" },
-          "authored": null
+          "asWritten": null
         },
         { "path": "space.1" }
       ]
@@ -36,7 +36,7 @@
         "written": "token"
       },
       "span": { "file": "base.json", "valueAfter": "\"2\":" },
-      "related": [
+      "relatedInformation": [
         {
           "message": "made by this extension",
           "span": { "file": "base.json", "valueAfter": "\"steps\":" },
@@ -54,7 +54,7 @@
         "written": "token"
       },
       "span": { "file": "roomy.json", "valueAfter": "\"2\":" },
-      "related": [
+      "relatedInformation": [
         {
           "message": "made by this extension",
           "span": { "file": "base.json", "valueAfter": "\"steps\":" },

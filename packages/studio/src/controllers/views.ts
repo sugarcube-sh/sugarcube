@@ -116,10 +116,10 @@ export function nodeAt(
     showing: Permutation,
     path: string,
 ): { node: Token | Group; shown: boolean } | undefined {
-    const here = showing.token(path) ?? showing.group(path);
+    const here = showing.getTokenOrGroup(path);
     if (here) return { node: here, shown: true };
     for (const permutation of tokens.permutations) {
-        const there = permutation.token(path) ?? permutation.group(path);
+        const there = permutation.getTokenOrGroup(path);
         if (there) return { node: there, shown: false };
     }
     return undefined;
@@ -152,7 +152,7 @@ export interface GroupPageView extends GroupView {
 export function groupPage(state: StudioState, group: Group): GroupPageView {
     const { showing, value, formFor } = state;
     const shownValue = (token: Token) => {
-        const here = showing.token(token.path);
+        const here = showing.getToken(token.path);
         return here && value(here);
     };
     const view = groupView(group, shownValue);
@@ -174,28 +174,32 @@ export function tokenRow(token: Token, name: string, value: BuildOutput["value"]
         path: token.path,
         name,
         type: token.type,
-        written: token.authored?.value,
+        written: token.asWritten?.value,
         css: value(token),
     };
 }
 
 export function problemRows(problems: readonly BuildProblem[]): ProblemRow[] {
-    return problems.map(({ span, severity, message, permutations, kind, path, related }) => {
-        const label = partialLabel(permutations);
-        const paths = [
-            ...new Set([path, ...(related ?? []).map((each) => each.path)].filter(isPath)),
-        ];
-        return {
-            ...(span && paths.length === 0
-                ? { place: `${span.file}:${span.start.line}:${span.start.column}` }
-                : {}),
-            severity,
-            message,
-            ...(label ? { inPermutations: label } : {}),
-            kind,
-            ...(paths.length > 0 ? { paths } : {}),
-        };
-    });
+    return problems.map(
+        ({ span, severity, message, permutations, kind, path, relatedInformation }) => {
+            const label = partialLabel(permutations);
+            const paths = [
+                ...new Set(
+                    [path, ...(relatedInformation ?? []).map((each) => each.path)].filter(isPath),
+                ),
+            ];
+            return {
+                ...(span && paths.length === 0
+                    ? { place: `${span.file}:${span.start.line}:${span.start.column}` }
+                    : {}),
+                severity,
+                message,
+                ...(label ? { inPermutations: label } : {}),
+                kind,
+                ...(paths.length > 0 ? { paths } : {}),
+            };
+        },
+    );
 }
 
 export function changeLines(changes: readonly Change[]): ChangeLine[] {
@@ -246,7 +250,7 @@ export function referable(
     type: TokenType,
     path: string | undefined,
 ): string[] {
-    return tokens.tokenPaths().filter((each) => {
+    return tokens.getTokenPaths().filter((each) => {
         if (each === path) return false;
         const node = nodeAt(tokens, showing, each)?.node;
         return node?.kind !== "group" && node?.type === type;

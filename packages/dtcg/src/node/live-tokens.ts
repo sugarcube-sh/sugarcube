@@ -1,17 +1,17 @@
-import type { DesignTokens, ReadOptions } from "../index.js";
+import type { DesignTokens, ReadOptions } from "../model.js";
 import { type FileStats, onFileChanged } from "./file-changed.js";
-import { diskPath, fileOnDisk } from "./paths.js";
+import { diskPath, getAbsoluteFilePath } from "./paths.js";
 import { read } from "./read.js";
 
 /** Design tokens on disk: their resolver or token file, and the options to read them with. */
 export interface TokensOnDisk {
-    entry: string;
+    entryFile: string;
     options?: ReadOptions;
 }
 
 /**
  * Why a read happened and how long it took: the file whose save led to it, by the design tokens'
- * name for it, as in `DesignTokens.files`, and none for {@link LiveTokens.readAgain}.
+ * name for it, as in `DesignTokens.files`, and none for {@link LiveTokens.reread}.
  */
 export interface ReadEvent {
     file?: string;
@@ -30,21 +30,21 @@ export interface FileWatcher {
     ): unknown;
 }
 
-/** Design tokens kept current with their files. Made by {@link liveTokens}. */
+/** Design tokens kept current with their files. Made by {@link createLiveTokens}. */
 export interface LiveTokens {
     /**
      * The design tokens as last read, once any read in progress or waiting to start has finished.
      * Rejects when that read failed.
      *
      * @example
-     * const tokens = await live.tokens();
+     * const tokens = await live.getTokens();
      */
-    tokens(): Promise<DesignTokens>;
+    getTokens(): Promise<DesignTokens>;
     /**
      * Calls `listener` with the design tokens of each read after the first, and the
      * {@link ReadEvent} that led to it. A read is not passed on when another is already waiting to
      * start, so a listener never builds on design tokens that a save or
-     * {@link LiveTokens.readAgain} has outdated. Returns a function that stops it.
+     * {@link LiveTokens.reread} has outdated. Returns a function that stops it.
      *
      * @example
      * const stop = live.onRead((tokens, { file }) => console.log(file, tokens.diagnostics));
@@ -56,15 +56,15 @@ export interface LiveTokens {
      * design tokens go to the listeners, and a failure to `onError`, as for a save.
      *
      * @example
-     * await live.readAgain();
+     * await live.reread();
      */
-    readAgain(): Promise<void>;
+    reread(): Promise<void>;
     /**
      * Adds the files the design tokens list to `watcher`, and each file a later read gains, and
      * reads again when one of them is saved, added or deleted. Files are never removed from it: an
      * event for a file the latest design tokens do not list is ignored. Its files are added once
      * the first read has finished, so a host waiting for its watcher to be ready awaits
-     * {@link LiveTokens.tokens} first.
+     * {@link LiveTokens.getTokens} first.
      *
      * @example
      * live.watch(chokidar.watch([], { ignoreInitial: true }));
@@ -84,11 +84,11 @@ export interface LiveTokens {
  * @param onDisk Where the design tokens are. Give a function to be asked again on every read.
  *
  * @example
- * const live = liveTokens({ entry: "tokens/tokens.resolver.json" }, { onError: console.error });
+ * const live = createLiveTokens({ entryFile: "tokens/tokens.resolver.json" }, { onError: console.error });
  * live.watch(watcher);
  * live.onRead((tokens, { file }) => console.log(`${file} saved`, tokens.diagnostics.length));
  */
-export function liveTokens(
+export function createLiveTokens(
     onDisk: TokensOnDisk | (() => TokensOnDisk),
     { onError }: { onError: (error: unknown) => void },
 ): LiveTokens {
@@ -112,9 +112,11 @@ export function liveTokens(
         reading = true;
         savedDuringRead = new Set();
         try {
-            const { entry, options } = typeof onDisk === "function" ? onDisk() : onDisk;
-            const tokens = await read(entry, options);
-            names = new Map(tokens.files.map((file) => [fileOnDisk(entry, file), file]));
+            const { entryFile, options } = typeof onDisk === "function" ? onDisk() : onDisk;
+            const tokens = await read(entryFile, options);
+            names = new Map(
+                tokens.files.map((file) => [getAbsoluteFilePath(entryFile, file), file]),
+            );
             watchNewFiles();
             return tokens;
         } finally {
@@ -164,12 +166,12 @@ export function liveTokens(
     };
 
     return {
-        tokens: () => latest,
+        getTokens: () => latest,
         onRead(listener) {
             listeners.add(listener);
             return () => listeners.delete(listener);
         },
-        readAgain: () =>
+        reread: () =>
             queueRead().then(
                 () => undefined,
                 () => undefined,

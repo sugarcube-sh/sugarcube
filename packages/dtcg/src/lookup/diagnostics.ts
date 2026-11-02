@@ -1,10 +1,11 @@
-import type { DesignTokens, Diagnostic, Permutation, Span, Token } from "../index.js";
+import type { DesignTokens, Diagnostic, Permutation, Span, Token } from "../model.js";
+import { getSpan } from "./editor.js";
 
-export function diagnosticsForIn(tokens: DesignTokens, path: string): Diagnostic[] {
+export function diagnosticsIn(tokens: DesignTokens, path: string): Diagnostic[] {
     return tokens.diagnostics.filter(concerning(tokens, path, tokens.permutations));
 }
 
-export function diagnosticsIn(
+export function permutationDiagnosticsIn(
     tokens: DesignTokens,
     permutation: Permutation,
     path: string,
@@ -21,7 +22,7 @@ function concerning(
     permutations: readonly Permutation[],
 ): (found: Diagnostic) => boolean {
     const taking = permutations.flatMap((each) => {
-        const token = each.token(path);
+        const token = each.getToken(path);
         return token ? [{ permutation: each, token }] : [];
     });
     return (found) =>
@@ -36,11 +37,11 @@ function inValueFrom(
     token: Token,
 ): boolean {
     if (span === undefined || path === undefined || path === token.path) return false;
-    const from = tokens.spanOf(token.valueFrom);
-    const other = permutation.token(path);
+    const from = getSpan(tokens, token.winningDefinition);
+    const other = permutation.getToken(path);
     return (
         other !== undefined &&
-        tokens.spanOf(other.valueFrom) === from &&
+        getSpan(tokens, other.winningDefinition) === from &&
         span.file === from.file &&
         from.offset <= span.offset &&
         span.offset + span.length <= from.offset + from.length

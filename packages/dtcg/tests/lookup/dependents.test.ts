@@ -29,38 +29,38 @@ const tokens = readFromMemory({
     },
 });
 
-describe("permutation.usedBy", () => {
-    it("gives each token that refers to the path in this permutation once, in referencedBy's order", () => {
+describe("permutation.getDependents", () => {
+    it("gives each token that refers to the path in this permutation once, in getReferencesTo's order", () => {
         for (const permutation of tokens.permutations) {
             for (const chained of [false, true]) {
-                const references = permutation.referencedBy("color.red", { chained });
-                expect(permutation.usedBy("color.red", { chained })).toStrictEqual([
-                    ...new Set(references.map(({ from }) => from)),
+                const references = permutation.getReferencesTo("color.red", { chained });
+                expect(permutation.getDependents("color.red", { chained })).toStrictEqual([
+                    ...new Set(references.map(({ writtenIn }) => writtenIn)),
                 ]);
             }
         }
-        const dark = tokens.permutation({ mode: "dark" });
+        const dark = tokens.getPermutation({ mode: "dark" });
         expect(
             dark
-                .usedBy("color.red")
+                .getDependents("color.red")
                 .map(({ path }) => path)
                 .sort(),
         ).toStrictEqual(["color.brand", "color.muted", "fade"]);
+        const fade = dark.getToken("fade");
         expect(
-            dark.referencedBy("color.red").filter(({ from }) => from.path === "fade"),
+            fade?.references.filter(({ pointsToPath }) => pointsToPath === "color.red"),
         ).toHaveLength(2);
+        expect(dark.getDependencies("fade")).toStrictEqual([dark.getToken("color.red")]);
     });
 
     it("with chained, also each token that refers to one of those, in the order they are written", () => {
-        const light = tokens.permutation();
-        expect(light.usedBy("color.red", { chained: true }).map(({ path }) => path)).toStrictEqual([
-            "color.brand",
-            "color.text",
-            "fade",
-        ]);
+        const light = tokens.getPermutation();
+        expect(
+            light.getDependents("color.red", { chained: true }).map(({ path }) => path),
+        ).toStrictEqual(["color.brand", "color.text", "fade"]);
     });
 
     it("is empty for a token nothing refers to", () => {
-        expect(tokens.permutation().usedBy("color.text")).toStrictEqual([]);
+        expect(tokens.getPermutation().getDependents("color.text")).toStrictEqual([]);
     });
 });

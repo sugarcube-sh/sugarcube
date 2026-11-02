@@ -1,10 +1,11 @@
 import type { DesignTokens, Diagnostic, Span } from "@sugarcube-sh/dtcg";
-import { asJsonPointer, readReference, referenceText } from "@sugarcube-sh/dtcg/values";
+import { toJsonPointer, parseReference, toReferenceTarget } from "@sugarcube-sh/dtcg/values";
 import { type Node, getNodeValue } from "jsonc-parser";
 import { fixTitles } from "./error-messages.js";
 import type { Fix, TextEdit } from "./index.js";
 import { inline, refString, removal, spliced } from "./json-text.js";
 import { nodeAt } from "./file-text.js";
+import { getDiagnosticsAt } from "@sugarcube-sh/dtcg/editor";
 
 /**
  * The changes that would mend a diagnostic of these design tokens, made from the facts the
@@ -31,7 +32,7 @@ function fixFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
 
     switch (diagnostic.kind) {
         case "duplicate-key": {
-            const earlier = diagnostic.related?.[0]?.span;
+            const earlier = diagnostic.relatedInformation?.[0]?.span;
             const edits = earlier && deletion(tokens, earlier.file, nodeAt(tokens, earlier));
             return (
                 edits && {
@@ -85,7 +86,10 @@ function fixFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
         case "missing-reference": {
             const { ref, similar } = diagnostic.detail;
             if (similar === undefined) return undefined;
-            const uses = [span, ...(diagnostic.related ?? []).map((related) => related.span)];
+            const uses = [
+                span,
+                ...(diagnostic.relatedInformation ?? []).map((related) => related.span),
+            ];
             const edits = uses.flatMap((use) => renamedReference(tokens, use, ref, similar));
             return edits.length > 0 ? guess(fixTitles.useSimilar(similar), edits) : undefined;
         }
@@ -120,11 +124,11 @@ function valueFix(
             return safe(fixTitles.fullHex(expanded), replacing(span, expanded));
         }
         case "curly-brace-not-allowed-here": {
-            const reference = readReference(detail.reference);
+            const reference = parseReference(detail.reference);
             if (written !== detail.reference || reference?.syntax !== "curly-brace") {
                 return undefined;
             }
-            const pointer = asJsonPointer(reference);
+            const pointer = toJsonPointer(reference);
             const change = { ...range(span), text: inline(pointer) };
             if (!readsClean(tokens, [change])) return undefined;
             return safe(fixTitles.referenceAsPointer(pointer.$ref), change);
@@ -148,11 +152,11 @@ function readsClean(tokens: DesignTokens, edits: readonly TextEdit[]): boolean {
     const [first] = edits;
     if (!first) return true;
     const { file } = first;
-    const after = tokens.reread({ [file]: spliced(tokens.text(file) ?? "", edits) });
+    const after = tokens.reread({ [file]: spliced(tokens.getText(file) ?? "", edits) });
     const start = Math.min(...edits.map(({ offset }) => offset));
     const grown = edits.reduce((acc, { length, text }) => acc + text.length - length, 0);
     const end = Math.max(...edits.map(({ offset, length }) => offset + length)) + grown;
-    return after.diagnosticsAt({ file, offset: start, length: end - start }).length === 0;
+    return getDiagnosticsAt(after, { file, offset: start, length: end - start }).length === 0;
 }
 
 function renamedReference(
@@ -162,9 +166,9 @@ function renamedReference(
     similar: string,
 ): TextEdit[] {
     const node = nodeAt(tokens, use);
-    const reference = node && readReference(getNodeValue(node));
+    const reference = node && parseReference(getNodeValue(node));
     const text = node && refString(node);
-    if (!reference || !text || referenceText(reference) !== ref) return [];
+    if (!reference || !text || toReferenceTarget(reference) !== ref) return [];
     const renamed = reference.syntax === "curly-brace" ? `{${similar}}` : similar;
     return [
         { file: use.file, offset: text.offset, length: text.length, text: JSON.stringify(renamed) },
@@ -176,7 +180,7 @@ function deletion(
     file: string,
     written: Node | undefined,
 ): TextEdit[] | undefined {
-    const text = tokens.text(file);
+    const text = tokens.getText(file);
     if (!written || text === undefined) return undefined;
     const edits = removal(text, written).map(({ offset, length, text: replaced }) => ({
         file,

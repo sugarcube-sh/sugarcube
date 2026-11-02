@@ -16,7 +16,7 @@ import { demoMessage, studioOn } from "./demo-message";
 const studio = () =>
     studioOn(
         demoMessage({
-            entry: "tokens.json",
+            entryFile: "tokens.json",
             files: {
                 "tokens.json": JSON.stringify({
                     space: { $type: "number", s: { $value: 4 }, m: { $value: 8 } },
@@ -86,7 +86,7 @@ describe("adding", () => {
 
     it("makes a token inside the group, leaving out a type the group gives", () => {
         const { state } = studio();
-        const space = state.showing.group("space")!;
+        const space = state.showing.getGroup("space")!;
 
         expect(
             newTokenEdit(state.tokens, space, "l", { type: "number", value: 16 }).result.ops,
@@ -112,23 +112,25 @@ describe("which pages offer the actions", () => {
     it("offers them on a group, except one only there through $extends", () => {
         const { state } = studio();
 
-        expect(groupPage(state, state.showing.group("space")!).actions).toBe(true);
-        expect(groupPage(state, state.showing.group("primary")!).actions).toBe(true);
-        expect(groupPage(state, state.showing.group("primary.icon")!).actions).toBe(false);
+        expect(groupPage(state, state.showing.getGroup("space")!).actions).toBe(true);
+        expect(groupPage(state, state.showing.getGroup("primary")!).actions).toBe(true);
+        expect(groupPage(state, state.showing.getGroup("primary.icon")!).actions).toBe(false);
     });
 
     it("offers them on a token, except one only there through $extends", () => {
         const { state } = studio();
 
-        expect(tokenPage(state, state.showing.token("space.s")!, []).actions).toBe(true);
-        expect(tokenPage(state, state.showing.token("primary.icon.size")!, []).actions).toBe(false);
+        expect(tokenPage(state, state.showing.getToken("space.s")!, []).actions).toBe(true);
+        expect(tokenPage(state, state.showing.getToken("primary.icon.size")!, []).actions).toBe(
+            false,
+        );
     });
 });
 
 describe("a value row's name", () => {
     it("is its label, or says it is an override not yet written", () => {
         const { state } = studioOn();
-        const token = state.showing.token("color.brand.500")!;
+        const token = state.showing.getToken("color.brand.500")!;
         const [base] = tokenPage(state, token, []).rows;
         const adding = tokenPage(state, token, ["mode: dark"]).rows.find((row) => row.unwritten);
 
@@ -141,7 +143,7 @@ describe("a value row's name", () => {
 
     it("names its field after the token where the row has no label", () => {
         const { state } = studio();
-        const [row] = tokenPage(state, state.showing.token("space.s")!, []).rows;
+        const [row] = tokenPage(state, state.showing.getToken("space.s")!, []).rows;
 
         expect([row?.name, row?.fieldLabel]).toEqual([undefined, "space.s"]);
     });
@@ -149,7 +151,7 @@ describe("a value row's name", () => {
 
 describe("newToken", () => {
     it("leaves the type out when it is the group's, so the token takes it from the group", () => {
-        const group = studioOn().state.tokens.permutation().group("color.text");
+        const group = studioOn().state.tokens.getPermutation().getGroup("color.text");
 
         expect(newToken({ type: "color", value: "{color.brand.500}" }, group)).toEqual({
             $value: "{color.brand.500}",
@@ -157,7 +159,7 @@ describe("newToken", () => {
     });
 
     it("writes the type when it isn't the group's", () => {
-        const group = studioOn().state.tokens.permutation().group("color.text");
+        const group = studioOn().state.tokens.getPermutation().getGroup("color.text");
 
         expect(newToken({ type: "dimension", value: { value: 1, unit: "rem" } }, group)).toEqual({
             $type: "dimension",

@@ -8,7 +8,7 @@ import type {
     TokenType,
     UnresolvedValueByType,
     ValueError,
-} from "../index.js";
+} from "../model.js";
 import { type DiagnosticExtra, type Problems } from "./diagnostics.js";
 import { ignoredDiagnostic, valueDiagnostic } from "./value-diagnostic.js";
 import {
@@ -58,7 +58,7 @@ export function createValueReader(diagnostics: Problems, options: ParseOptions):
 
     const read: Read = (token, type, input) => {
         const notes: Notes = { references: [], readAgain: [] };
-        const result = readToken(type, token.authored, ["$value"], options, notes);
+        const result = readToken(type, token.valueAsWritten, ["$value"], options, notes);
         const found = [
             ...result.ignored.map((each) => ignoredToDiagnostic(token, each)),
             ...(result.ok ? [] : result.errors.map((error) => toDiagnostic(token, error))),

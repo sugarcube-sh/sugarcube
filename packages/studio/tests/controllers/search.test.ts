@@ -29,7 +29,7 @@ describe("createSearch", () => {
         studio.show({ mode: "dark" });
 
         const dark = search.state.hits[0]?.swatch;
-        expect(dark).toBe(studio.state.value(studio.state.showing.token("color.brand.900")!));
+        expect(dark).toBe(studio.state.value(studio.state.showing.getToken("color.brand.900")!));
         expect(dark).not.toBe(light);
         expect(dark).not.toContain("var(");
     });

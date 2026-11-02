@@ -10,7 +10,7 @@ const file = (s: number, m: number) =>
     JSON.stringify({ space: { $type: "number", s: { $value: s }, m: { $value: m } } });
 const message = (text: string) => ({
     adapter: { name: "plain" as const, settings: {}, problems: [] },
-    entry: "tokens.json",
+    entryFile: "tokens.json",
     files: { "tokens.json": text },
 });
 

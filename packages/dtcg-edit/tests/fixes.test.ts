@@ -6,6 +6,7 @@ import { inputFiles, readOptions } from "../../dtcg/tests/read/case-options.js";
 import { textIn } from "../../dtcg/tests/read/on-disk.js";
 import { withSpans } from "../../dtcg/tests/read/positions.js";
 import { type Fix, fixesFor } from "../src/index.js";
+import { getDiagnosticsAt } from "@sugarcube-sh/dtcg/editor";
 
 const casesFolder = join(import.meta.dirname, "../../dtcg/tests/read/cases");
 const expectedFolder = join(import.meta.dirname, "fixes");
@@ -46,11 +47,13 @@ function offered(tokens: DesignTokens): Offered[] {
 function leftAfter(tokens: DesignTokens, { edits: [edit] }: Fix): string[] {
     if (!edit) throw new Error("a fix changes something");
     const { file, offset, length, text } = edit;
-    const before = tokens.text(file) ?? "";
+    const before = tokens.getText(file) ?? "";
     const after = tokens.reread({
         [file]: before.slice(0, offset) + text + before.slice(offset + length),
     });
-    return after.diagnosticsAt({ file, offset, length: text.length }).map(({ message }) => message);
+    return getDiagnosticsAt(after, { file, offset, length: text.length }).map(
+        ({ message }) => message,
+    );
 }
 
 async function readFiles(files: Record<string, string>): Promise<DesignTokens> {
@@ -152,7 +155,7 @@ describe("fixes that depend on other tokens", () => {
         });
         const missing = opened.diagnostics.find(({ kind }) => kind === "missing-reference");
         const [fix] = missing ? fixesFor(opened, missing) : [];
-        expect(missing?.related?.length).toBe(1);
+        expect(missing?.relatedInformation?.length).toBe(1);
         expect(fix?.edits.map(({ text }) => text)).toStrictEqual([
             '"#/color/ink/$value/components/0"',
         ]);

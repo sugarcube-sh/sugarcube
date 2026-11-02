@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { type Permutation, type Permutations, everyPermutation } from "../../src/index.js";
+import { type Permutation, type Permutations, askEveryPermutation } from "../../src/index.js";
 import { twoModifierFiles, twoModifiers } from "./two-modifiers.js";
+import { getSpan } from "../../src/editor.js";
 
 const tokens = twoModifiers();
 
 function asked(question: (permutation: Permutation) => unknown): Permutations[] {
-    return everyPermutation(tokens, question).map(({ permutations }) => permutations);
+    return askEveryPermutation(tokens, question).map(({ permutations }) => permutations);
 }
 
 function inTheirOrder(permutations: Permutations): void {
@@ -18,16 +19,20 @@ function inTheirOrder(permutations: Permutations): void {
 describe("every answer's permutations, with two modifiers and files that overlap", () => {
     it("come once each, in the design tokens' order", () => {
         const larger = twoModifierFiles["large.json"].replace('"$value":3', '"$value":4');
-        const changes = tokens.diff(twoModifiers({ "large.json": larger }));
+        const changes = tokens.getChangesSince(twoModifiers({ "large.json": larger }));
         const answers = [
-            ...tokens.writtenAt("gap").flatMap(({ readIn, winsIn }) => [readIn, winsIn]),
-            ...tokens.writtenAt("color.x").flatMap(({ readIn, winsIn }) => [readIn, winsIn]),
-            ...asked((p) => p.token("gap")?.resolved),
-            ...asked((p) => p.token("color.x")),
-            ...tokens.referencedBy("color.red").map(({ permutations }) => permutations),
-            ...asked((p) => p.refersTo("color.x")),
-            ...asked((p) => p.refersTo("fade")),
-            ...asked((p) => p.usedBy("color.red")),
+            ...tokens
+                .getDefinitions("gap")
+                .flatMap(({ permutations, winsIn }) => [permutations, winsIn]),
+            ...tokens
+                .getDefinitions("color.x")
+                .flatMap(({ permutations, winsIn }) => [permutations, winsIn]),
+            ...asked((p) => p.getToken("gap")?.resolved),
+            ...asked((p) => p.getToken("color.x")),
+            ...tokens.getReferencesTo("color.red").map(({ permutations }) => permutations),
+            ...asked((p) => p.getDependencies("color.x")),
+            ...asked((p) => p.getDependencies("fade")),
+            ...asked((p) => p.getDependents("color.red")),
             ...tokens.diagnostics.flatMap(({ permutations }) =>
                 permutations ? [permutations] : [],
             ),
@@ -47,12 +52,13 @@ describe("every answer's permutations, with two modifiers and files that overlap
             ...new Set(
                 tokens.permutations.flatMap(
                     (permutation) =>
-                        permutation.token("gap")?.writtenAt.map((place) => tokens.spanOf(place)) ??
-                        [],
+                        permutation
+                            .getToken("gap")
+                            ?.definitions.map((place) => getSpan(tokens, place)) ?? [],
                 ),
             ),
         ];
-        expect(tokens.writtenAt("gap").map(({ span }) => span)).toStrictEqual(firstMet);
+        expect(tokens.getDefinitions("gap").map(({ span }) => span)).toStrictEqual(firstMet);
         expect(new Set(firstMet.map(({ file }) => file))).toStrictEqual(
             new Set(["base.json", "dark.json", "large.json"]),
         );

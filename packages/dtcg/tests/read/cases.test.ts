@@ -5,6 +5,7 @@ import { type DesignTokens, type Permutation, read, readFromMemory } from "../..
 import { type CaseOptions, inputFiles, readOptions } from "./case-options.js";
 import { textIn } from "./on-disk.js";
 import { withSpans } from "./positions.js";
+import { getSpan } from "../../src/editor.js";
 
 interface Expected {
     entry: string;
@@ -16,7 +17,7 @@ interface Expected {
     permutations?: Partial<DesignTokens["permutations"][number]>[];
     diagnostics: Pick<
         DesignTokens["diagnostics"][number],
-        "kind" | "detail" | "span" | "related" | "path" | "permutations"
+        "kind" | "detail" | "span" | "relatedInformation" | "path" | "permutations"
     >[];
 }
 
@@ -44,11 +45,11 @@ function observed(found: DesignTokens, expected: Expected) {
             ),
         }),
         diagnostics: tokens.diagnostics.map(
-            ({ kind, detail, span, related, path, permutations }) => ({
+            ({ kind, detail, span, relatedInformation, path, permutations }) => ({
                 kind,
                 detail,
                 ...(span && { span }),
-                ...(related && { related }),
+                ...(relatedInformation && { relatedInformation }),
                 ...(path !== undefined && { path }),
                 ...(permutations.length > 0 &&
                     permutations.length < tokens.permutations.length && { permutations }),
@@ -57,7 +58,7 @@ function observed(found: DesignTokens, expected: Expected) {
     };
 }
 
-type Positioned = { writtenAt: { span?: unknown }[]; references: { span?: unknown }[] };
+type Positioned = { definitions: { span?: unknown }[]; references: { span?: unknown }[] };
 
 function placedIn(found: DesignTokens, permutation: Permutation, written: Permutation): void {
     const live = [...permutation.tokens, ...permutation.groups];
@@ -65,13 +66,13 @@ function placedIn(found: DesignTokens, permutation: Permutation, written: Permut
     live.forEach((each, index) => {
         const into = plain[index];
         if (!into) return;
-        each.writtenAt.forEach((place, at) => {
-            const json = into.writtenAt[at];
-            if (json) json.span = found.spanOf(place);
+        each.definitions.forEach((place, at) => {
+            const json = into.definitions[at];
+            if (json) json.span = getSpan(found, place);
         });
         each.references.forEach((reference, at) => {
             const json = into.references[at];
-            if (json) json.span = found.spanOf(reference);
+            if (json) json.span = getSpan(found, reference);
         });
     });
 }
@@ -121,7 +122,7 @@ describe.each(cases)("%s", (name) => {
 
     it("reads through readFromMemory", () => {
         const tokens = readFromMemory(
-            { files: inputFiles(input), entry: expected.entry },
+            { files: inputFiles(input), entryFile: expected.entry },
             readOptions(expected.options),
         );
         expect(observed(tokens, expected)).toStrictEqual(expected);
@@ -129,7 +130,7 @@ describe.each(cases)("%s", (name) => {
 
     it("names each problem's permutations among those that read its file", () => {
         const tokens = readFromMemory(
-            { files: inputFiles(input), entry: expected.entry },
+            { files: inputFiles(input), entryFile: expected.entry },
             readOptions(expected.options),
         );
         const reads = (permutation: Permutation, file: string) =>
@@ -138,7 +139,7 @@ describe.each(cases)("%s", (name) => {
             const file = problem.span?.file;
             if (file === undefined) return [];
             const fits =
-                file === tokens.entry
+                file === tokens.entryFile
                     ? problem.permutations.length === tokens.permutations.length
                     : problem.permutations.every((each) => reads(each, file));
             return fits ? [] : [`${problem.kind} in ${file}`];
@@ -148,7 +149,7 @@ describe.each(cases)("%s", (name) => {
 
     it("names a value's problem in exactly the permutations whose token takes that value", () => {
         const tokens = readFromMemory(
-            { files: inputFiles(input), entry: expected.entry },
+            { files: inputFiles(input), entryFile: expected.entry },
             readOptions(expected.options),
         );
         const inValue = (problem: DesignTokens["diagnostics"][number]) =>
@@ -160,10 +161,10 @@ describe.each(cases)("%s", (name) => {
         const misplaced = tokens.diagnostics.flatMap((problem) => {
             const { path, span } = problem;
             if (!inValue(problem) || path === undefined || span === undefined) return [];
-            if (!tokens.permutations.some((each) => each.token(path))) return [];
+            if (!tokens.permutations.some((each) => each.getToken(path))) return [];
             const takes = (permutation: Permutation) => {
-                const winner = permutation.token(path)?.valueFrom;
-                const from = winner && tokens.spanOf(winner);
+                const winner = permutation.getToken(path)?.winningDefinition;
+                const from = winner && getSpan(tokens, winner);
                 return (
                     from !== undefined &&
                     from.file === span.file &&

@@ -1,7 +1,7 @@
-import type { DesignTokens, Input, Permutation, ResolverModifier, Token } from "../index.js";
+import type { DesignTokens, Input, Permutation, ResolverModifier, Token } from "../model.js";
 import { findByName } from "../read/input.js";
 import { stacksOn } from "./stacks-on.js";
-import { type CSSDeclaration, type CSSWriter, cssWriter } from "./writer.js";
+import { type CSSDeclaration, type CSSWriter, createCSSWriter } from "./writer.js";
 
 /** A block of custom properties: the theme it is for, its selector, and the at-rules around it. */
 export interface CSSBlockInput {
@@ -44,7 +44,7 @@ export interface CSSBlock extends CSSBlockInput {
  * when a context of a modifier the block decides provides a value for its token (see
  * {@link CSSBlockInput.input}) and an earlier block that might also apply writes another value for
  * it. Then, unless the block says `redeclare: false`, every declaration referring to what it
- * writes, through every step, since a variable referring to another is worked out where it is
+ * writes, through every step, since a custom property referring to another is worked out where it is
  * declared. An earlier block surely applies when it applies to every element and every screen the
  * later one does: its selectors include `:root` or all of the later block's, and it has no
  * at-rules, the same ones, or a width query every screen the later one matches also matches. Any
@@ -53,8 +53,8 @@ export interface CSSBlock extends CSSBlockInput {
  * the read's `PermutationError` for an input naming a permutation the tokens don't have.
  *
  * @example
- * const css = cssText(
- *     cssBlocks(tokens, [
+ * const css = toCSS(
+ *     getCSSBlocks(tokens, [
  *         { input: {}, selector: ":root" },
  *         { input: { mode: "dark" }, selector: '[data-mode="dark"]' },
  *         { input: { brand: "ocean" }, selector: '[data-brand="ocean"]' },
@@ -63,22 +63,22 @@ export interface CSSBlock extends CSSBlockInput {
  *
  * @example
  * // every combination listed, each block standing alone
- * cssBlocks(tokens, [
+ * getCSSBlocks(tokens, [
  *     { input: { mode: "light", brand: "house" }, selector: ":root" },
  *     { input: { mode: "dark", brand: "house" }, selector: '[data-mode="dark"]' },
- * ], { writer: cssWriter({ naming: { prefix: "ds" } }) });
+ * ], { writer: createCSSWriter({ naming: { prefix: "ds" } }) });
  */
-export function cssBlocks(
+export function getCSSBlocks(
     tokens: DesignTokens,
     blocks: readonly CSSBlockInput[],
-    { writer = cssWriter() }: { writer?: CSSWriter } = {},
+    { writer = createCSSWriter() }: { writer?: CSSWriter } = {},
 ): CSSBlock[] {
     const found = blocks.map((each) => {
-        const permutation = tokens.permutation(each.input);
+        const permutation = tokens.getPermutation(each.input);
         return {
             ...each,
             permutation,
-            declarations: writer.declarations(permutation).declarations,
+            declarations: writer.getDeclarations(permutation).declarations,
         };
     });
     const provided = providedBy(found);
@@ -139,7 +139,7 @@ function providedBy(
     const provided = new Map<ResolverModifier, Set<string>>();
     for (const { declarations } of blocks) {
         for (const { token } of declarations) {
-            for (const { source } of token.writtenAt) {
+            for (const { source } of token.definitions) {
                 const { modifier } = source;
                 if (!modifier) continue;
                 const paths = provided.get(modifier);
@@ -197,7 +197,7 @@ function dependents(
 ): CSSDeclaration[] {
     const users = new Map<string, CSSDeclaration[]>();
     for (const line of all) {
-        for (const { path } of line.refersTo) {
+        for (const { path } of line.dependencies) {
             const found = users.get(path);
             if (found) found.push(line);
             else users.set(path, [line]);

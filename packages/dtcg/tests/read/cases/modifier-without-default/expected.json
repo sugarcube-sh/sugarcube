@@ -67,7 +67,7 @@
         }
       }
     ],
-    "order": [
+    "resolutionOrder": [
       {
         "modifier": "theme"
       }

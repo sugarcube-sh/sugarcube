@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defineGenerator, readFromMemory } from "../../src/index.js";
+import { getSpan } from "../../src/editor.js";
 
 const steps = defineGenerator({
     extension: ["com.example", "steps"],
@@ -27,32 +28,37 @@ const tokens = readFromMemory(
                 g: { $type: "number", $extensions: { "com.example": { steps: 1 } } },
             }),
         },
-        entry: "tokens.resolver.json",
+        entryFile: "tokens.resolver.json",
     },
     { generators: [steps] },
 );
 
 describe("generated tokens across permutations", () => {
     it("is written in one place, read in every permutation", () => {
-        const places = tokens.writtenAt("g.a");
-        expect(places.map(({ readIn }) => readIn.label)).toStrictEqual(["everywhere"]);
+        const places = tokens.getDefinitions("g.a");
+        expect(places.map(({ permutations }) => permutations.label)).toStrictEqual(["everywhere"]);
     });
 
     it("is one reference to what it references, in every permutation", () => {
-        const references = tokens.referencedBy("base");
+        const references = tokens.getReferencesTo("base");
         expect(
-            references.map(({ from, permutations }) => [from, permutations.label]),
-        ).toStrictEqual([["g.a", "everywhere"]]);
+            references.map(({ writtenInPaths, permutations }) => [
+                writtenInPaths,
+                permutations.label,
+            ]),
+        ).toStrictEqual([[["g.a"], "everywhere"]]);
     });
 
     it("has the same span in every permutation", () => {
         const [light, dark] = tokens.permutations;
-        const [inLight, inDark] = [light?.token("g.a"), dark?.token("g.a")];
+        const [inLight, inDark] = [light?.getToken("g.a"), dark?.getToken("g.a")];
         if (!inLight || !inDark) throw new Error("g.a is not generated in both");
-        expect(tokens.spanOf(inLight.valueFrom)).toBe(tokens.spanOf(inDark.valueFrom));
+        expect(getSpan(tokens, inLight.winningDefinition)).toBe(
+            getSpan(tokens, inDark.winningDefinition),
+        );
     });
 
-    it("are each a reference when a generator makes several from one setting", () => {
+    it("are one reference, with each token, when a generator makes several from one setting", () => {
         const two = defineGenerator({
             extension: ["com.example", "steps"],
             messages: {},
@@ -75,7 +81,9 @@ describe("generated tokens across permutations", () => {
             },
             { generators: [two] },
         );
-        expect(both.referencedBy("base").map(({ from }) => from)).toStrictEqual(["g.a", "g.b"]);
+        expect(
+            both.getReferencesTo("base").map(({ writtenInPaths }) => writtenInPaths),
+        ).toStrictEqual([["g.a", "g.b"]]);
     });
 });
 
@@ -100,7 +108,7 @@ describe("a name a generator gives", () => {
     );
 
     it("makes no token when the specification forbids the name", () => {
-        expect(badlyNamed.permutation().tokens.map(({ path }) => path)).toStrictEqual(["g.ok"]);
+        expect(badlyNamed.getPermutation().tokens.map(({ path }) => path)).toStrictEqual(["g.ok"]);
     });
 
     it("is reported at the generator's setting, about its group", () => {

@@ -171,7 +171,7 @@
         "text": "{ \"$ref\": \"#/loop/b/$value\" }"
       },
       "path": "loop.a",
-      "related": [
+      "relatedInformation": [
         {
           "message": "part of the same loop",
           "span": {

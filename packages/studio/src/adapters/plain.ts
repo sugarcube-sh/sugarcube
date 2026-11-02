@@ -1,9 +1,9 @@
 import {
     type CSSBlockInput,
     type CSSNaming,
-    cssBlocks,
-    cssText,
-    cssWriter,
+    getCSSBlocks,
+    toCSS,
+    createCSSWriter,
 } from "@sugarcube-sh/dtcg/css";
 import type { BuildAdapter } from "../controllers/adapter";
 
@@ -18,10 +18,10 @@ export function plain({ naming, blocks = DEFAULT_BLOCKS }: PlainSettings = {}): 
     return {
         read: {},
         write(tokens) {
-            const values = cssWriter({ naming, references: "values" });
+            const values = createCSSWriter({ naming, references: "values" });
             return {
-                value: (token) => values.written(token)?.css,
-                css: cssText(cssBlocks(tokens, blocks, { writer: cssWriter({ naming }) })),
+                value: (token) => values.getValue(token)?.css,
+                css: toCSS(getCSSBlocks(tokens, blocks, { writer: createCSSWriter({ naming }) })),
                 problems: tokens.diagnostics,
             };
         },

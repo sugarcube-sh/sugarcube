@@ -9,7 +9,7 @@ import type {
     Span,
     Token,
     WrittenReference,
-} from "../index.js";
+} from "../model.js";
 import { movedReference } from "../values/references.js";
 import type { Occurrence } from "./occurrence.js";
 import type { Target } from "./same-object.js";
@@ -19,36 +19,33 @@ export interface ReferenceTo extends Target {
 }
 
 class ReferenceObject {
-    declare readonly pointer?: string;
-    declare readonly targetProperty?: JsonPath | undefined;
-    readonly path: string | undefined;
-    readonly from: Token | Group;
-    readonly token: Token | undefined;
-    readonly property: JsonPath | undefined;
+    declare readonly pointsToProperty?: JsonPath | undefined;
+    readonly pointsToPath: string | undefined;
+    readonly writtenIn: Token | Group;
+    readonly pointsToToken: Token | undefined;
+    readonly writtenInProperty: JsonPath | undefined;
     readonly #written: WrittenReference;
     readonly #span: Span;
     readonly #pointerAlone: boolean;
 
     constructor(from: Token | Group, to: ReferenceTo, pointerAlone: boolean) {
-        const { occurrence, path, token, targetProperty } = to;
+        const { occurrence, path, token, pointsToProperty } = to;
         const { reference, span, property } = occurrence;
-        this.path = path;
-        this.from = from;
-        this.token = token;
-        this.property = property.length > 0 ? property : undefined;
-        if (reference.syntax === "json-pointer") {
-            Object.assign(this, { pointer: reference.pointer, targetProperty });
-        }
+        this.pointsToPath = path;
+        this.writtenIn = from;
+        this.pointsToToken = token;
+        this.writtenInProperty = property.length > 0 ? property : undefined;
+        if (reference.syntax === "json-pointer") Object.assign(this, { pointsToProperty });
         this.#written = reference;
         this.#span = span;
         this.#pointerAlone = pointerAlone;
     }
 
-    get syntax(): WrittenReference["syntax"] {
-        return this.#written.syntax;
+    get asWritten(): WrittenReference {
+        return this.#written;
     }
 
-    static spanOf(reference: ReferenceObject): Span {
+    static getSpan(reference: ReferenceObject): Span {
         return reference.#span;
     }
 
@@ -57,6 +54,7 @@ class ReferenceObject {
     }
 
     across(
+        writtenInPaths: readonly string[],
         permutations: Permutations,
         span: Span,
         jsonPath: () => JsonPath,
@@ -64,6 +62,7 @@ class ReferenceObject {
         return new ReferenceAcrossPermutations(
             this,
             this.#written,
+            writtenInPaths,
             permutations,
             span,
             jsonPath,
@@ -72,22 +71,16 @@ class ReferenceObject {
     }
 
     toJSON() {
-        const { syntax, path, property } = this;
-        const written = this.#written;
-        return written.syntax === "curly-brace"
-            ? { syntax, path, property }
-            : { syntax, pointer: written.pointer, property };
+        return { asWritten: this.#written, writtenInProperty: this.writtenInProperty };
     }
 }
 
 class ReferenceAcrossPermutations {
-    readonly syntax: WrittenReference["syntax"];
-    readonly path: string | undefined;
-    readonly pointer: string | undefined;
-    readonly from: string;
-    readonly targetProperty: JsonPath | undefined;
+    readonly pointsToPath: string | undefined;
+    readonly writtenInPaths: readonly string[];
+    readonly pointsToProperty: JsonPath | undefined;
     readonly span: Span;
-    readonly property: JsonPath | undefined;
+    readonly writtenInProperty: JsonPath | undefined;
     readonly permutations: Permutations;
     readonly #written: WrittenReference;
     readonly #jsonPath: () => JsonPath;
@@ -96,22 +89,25 @@ class ReferenceAcrossPermutations {
     constructor(
         reference: ReferenceObject,
         written: WrittenReference,
+        writtenInPaths: readonly string[],
         permutations: Permutations,
         span: Span,
         jsonPath: () => JsonPath,
         alone: boolean,
     ) {
-        this.syntax = written.syntax;
-        this.path = reference.path;
-        this.pointer = written.syntax === "json-pointer" ? written.pointer : undefined;
-        this.from = reference.from.path;
-        this.targetProperty = reference.targetProperty;
+        this.pointsToPath = reference.pointsToPath;
+        this.writtenInPaths = writtenInPaths;
+        this.pointsToProperty = reference.pointsToProperty;
         this.span = span;
-        this.property = reference.property;
+        this.writtenInProperty = reference.writtenInProperty;
         this.permutations = permutations;
         this.#written = written;
         this.#jsonPath = jsonPath;
         this.#pointerAlone = alone;
+    }
+
+    get asWritten(): WrittenReference {
+        return this.#written;
     }
 
     get jsonPath(): JsonPath {
@@ -131,17 +127,23 @@ export function linkedReference(
     return new ReferenceObject(from, to, pointerAlone) as unknown as Reference;
 }
 
-export function spanOfReference(reference: Reference): Span {
-    return ReferenceObject.spanOf(reference as unknown as ReferenceObject);
+export function getReferenceSpan(reference: Reference): Span {
+    return ReferenceObject.getSpan(reference as unknown as ReferenceObject);
 }
 
 export function acrossPermutations(
     reference: Reference,
+    writtenInPaths: readonly string[],
     permutations: Permutations,
     span: Span,
     jsonPath: () => JsonPath,
 ): ReferenceInPermutations {
-    const across = (reference as unknown as ReferenceObject).across(permutations, span, jsonPath);
+    const across = (reference as unknown as ReferenceObject).across(
+        writtenInPaths,
+        permutations,
+        span,
+        jsonPath,
+    );
     return across as unknown as ReferenceInPermutations;
 }
 

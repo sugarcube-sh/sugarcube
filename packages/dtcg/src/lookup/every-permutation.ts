@@ -1,4 +1,4 @@
-import type { AnswerInPermutations, DesignTokens, Permutation } from "../index.js";
+import type { AnswerInPermutations, DesignTokens, Permutation } from "../model.js";
 import { permutationsOf } from "../read/permutations-of.js";
 import { sameList } from "../read/same-object.js";
 
@@ -18,15 +18,15 @@ import { sameList } from "../read/same-object.js";
  * `tokens.permutations` itself: it is a list, so `some`, `find` and `flatMap` work on it.
  *
  * @example
- * for (const { answer, permutations } of everyPermutation(tokens, (p) => p.token("color.text"))) {
- *   row(permutations.label, answer && cssValue(answer));
+ * for (const { answer, permutations } of askEveryPermutation(tokens, (p) => p.getToken("color.text"))) {
+ *   row(permutations.label, toCSSValue(answer));
  * }
  *
  * @example
  * // the same in every permutation
- * everyPermutation(tokens, (p) => p.token("color.text")).length === 1
+ * askEveryPermutation(tokens, (p) => p.getToken("color.text")).length === 1
  */
-export function everyPermutation<Answer>(
+export function askEveryPermutation<Answer>(
     tokens: DesignTokens,
     question: (permutation: Permutation) => Answer,
 ): readonly AnswerInPermutations<Answer>[] {

@@ -85,7 +85,9 @@ describe("applying many edits to one file", () => {
                 }
                 const together = apply(tokens, ops);
                 if (together.conflicts) throw new Error(JSON.stringify(together.conflicts));
-                expect(together.tokens.text("tokens.json")).toBe(oneByOne.text("tokens.json"));
+                expect(together.tokens.getText("tokens.json")).toBe(
+                    oneByOne.getText("tokens.json"),
+                );
                 expect(together.tokens.diagnostics.map(({ kind }) => kind)).toStrictEqual([]);
             }
         }
@@ -107,7 +109,7 @@ describe("applying many edits to one file", () => {
             let oneByOne = tokens;
             const ops: FileOp[] = [];
             for (let step = 0; step < 2 + pick(3); step++) {
-                const paths = oneByOne.tokenPaths();
+                const paths = oneByOne.getTokenPaths();
                 const path = paths[pick(paths.length)];
                 if (path === undefined) break;
                 const choice = pick(3);
@@ -123,14 +125,14 @@ describe("applying many edits to one file", () => {
             }
             const together = apply(tokens, ops);
             if (together.conflicts) throw new Error(JSON.stringify(together.conflicts));
-            expect(together.tokens.text("t.json")).toBe(oneByOne.text("t.json"));
+            expect(together.tokens.getText("t.json")).toBe(oneByOne.getText("t.json"));
         }
     });
 
     it("removes every unused token of the demo in one step without breaking a file", () => {
         const unused = demo
-            .tokenPaths()
-            .filter((path) => demo.permutations.every((p) => p.usedBy(path).length === 0));
+            .getTokenPaths()
+            .filter((path) => demo.getReferencesTo(path).length === 0);
         const done = commit(
             demo,
             combine(
@@ -203,7 +205,7 @@ describe("applying many edits to one file", () => {
         ];
         const after = apply(tokens, ops);
         if (after.conflicts) throw new Error(JSON.stringify(after.conflicts));
-        expect(after.tokens.text("base.json")).toBeUndefined();
+        expect(after.tokens.getText("base.json")).toBeUndefined();
     });
 
     it("parses a file a few times, not once an edit", () => {

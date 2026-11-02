@@ -5,7 +5,7 @@ import { commit, setValue } from "@sugarcube-sh/dtcg-edit";
 
 declare let tokens: DesignTokens;
 
-const written = tokens.permutation().token("color.brand")?.authored?.value;
+const written = tokens.getPermutation().getToken("color.brand")?.asWritten?.value;
 if (written !== undefined) {
     const done = commit(tokens, setValue(tokens, "color.link", written));
     if (done.tokens) tokens = done.tokens;

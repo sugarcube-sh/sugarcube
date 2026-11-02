@@ -1,4 +1,4 @@
-import type { Input, Permutation, Permutations, Resolver, Scope } from "../index.js";
+import type { Input, Permutation, Permutations, Resolver, Scope } from "../model.js";
 import { scopeLabel, scopeOf } from "../lookup/permutation-label.js";
 import { checkedInput, modifiersIn } from "./input.js";
 
@@ -43,7 +43,7 @@ export function allPermutations(
 }
 
 export function permutationsOf(given: readonly Permutation[], all: Permutations): Permutations {
-    return listed(given, all, all.matching);
+    return listed(given, all, all.findByInput);
 }
 
 function listed(
@@ -74,13 +74,13 @@ function listed(
             },
         },
         toJSON: { value: inputs },
-        where: {
+        select: {
             value: (test: (permutation: Permutation) => boolean) => {
                 const kept = list.filter(test);
                 return kept.length === list.length ? permutations : listed(kept, all, matchingAll);
             },
         },
-        matching: {
+        findByInput: {
             value: (input: Input) => {
                 const found = matchingAll(input);
                 return found && held.has(found) ? found : undefined;

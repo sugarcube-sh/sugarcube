@@ -21,8 +21,8 @@ const tokens = oneFile({
     primary: { $extends: "{button}", gap: { $value: 2 } },
     secondary: { $extends: "{button}", $description: "Its own.", gap: { $value: 2 } },
 });
-const token = (path: string) => tokens.permutation().token(path)!;
-const group = (path: string) => tokens.permutation().group(path)!;
+const token = (path: string) => tokens.getPermutation().getToken(path)!;
+const group = (path: string) => tokens.getPermutation().getGroup(path)!;
 
 describe("a description", () => {
     it("is a token's own, editable", () => {

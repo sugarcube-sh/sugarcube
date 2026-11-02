@@ -12,7 +12,7 @@
         },
         {
           "path": "g.sub.x",
-          "authored": {
+          "asWritten": {
             "value": 1
           },
           "inherited": {

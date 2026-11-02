@@ -23,7 +23,7 @@
           }
         }
       ],
-      "readBy": "everyone",
+      "readBy": "every-context",
       "extensions": {
         "sh.sugarcube": {
           "emit": false
@@ -37,7 +37,7 @@
           "name": "semantic"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     }
   ]
 }

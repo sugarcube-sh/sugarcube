@@ -51,7 +51,7 @@ const read = (dark: unknown) =>
                 }),
                 "dark.json": JSON.stringify(dark),
             },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         },
         { generators: [steps] },
     );
@@ -60,20 +60,22 @@ const tokens = read({
     color: { red: { $value: rgb(0.5) } },
     size: { $deprecated: true },
 });
-const light = tokens.permutation({ mode: "light" });
-const dark = tokens.permutation({ mode: "dark" });
-const same = (path: string) => light.token(path) === dark.token(path);
+const light = tokens.getPermutation({ mode: "light" });
+const dark = tokens.getPermutation({ mode: "dark" });
+const same = (path: string) => light.getToken(path) === dark.getToken(path);
 
 describe("a token the same in two permutations", () => {
     it("is one object when it is written in the same place and points at nothing", () => {
-        expect(light.token("color.blue")).toBeDefined();
+        expect(light.getToken("color.blue")).toBeDefined();
         expect(same("color.blue")).toBe(true);
         expect(same("space.sm")).toBe(true);
     });
 
     it("is one object when everything it points at is", () => {
         expect(same("color.accent")).toBe(true);
-        expect(dark.token("color.accent")?.references[0]?.token).toBe(dark.token("color.blue"));
+        expect(dark.getToken("color.accent")?.references[0]?.pointsToToken).toBe(
+            dark.getToken("color.blue"),
+        );
     });
 
     it("is one object when a JSON Pointer reaches inside a value that is the same", () => {
@@ -81,7 +83,7 @@ describe("a token the same in two permutations", () => {
     });
 
     it("is one object when a generator hands back the same tokens for the same extension", () => {
-        expect(light.token("step.1")).toBeDefined();
+        expect(light.getToken("step.1")).toBeDefined();
         expect(same("step.1")).toBe(true);
         expect(same("step.2")).toBe(true);
     });
@@ -95,53 +97,59 @@ describe("a token that differs between permutations", () => {
     it("is two objects when it points at a token that is", () => {
         expect(same("color.brand")).toBe(false);
         expect(same("color.text")).toBe(false);
-        expect(dark.token("color.text")?.references[0]?.token).toBe(dark.token("color.brand"));
-        expect(light.token("color.text")?.references[0]?.token).toBe(light.token("color.brand"));
+        expect(dark.getToken("color.text")?.references[0]?.pointsToToken).toBe(
+            dark.getToken("color.brand"),
+        );
+        expect(light.getToken("color.text")?.references[0]?.pointsToToken).toBe(
+            light.getToken("color.brand"),
+        );
     });
 
     it("is two objects when a JSON Pointer reaches inside a value that differs", () => {
         expect(same("level.red")).toBe(false);
-        expect(light.token("level.red")?.resolved).toBe(1);
-        expect(dark.token("level.red")?.resolved).toBe(0.5);
+        expect(light.getToken("level.red")?.resolved).toBe(1);
+        expect(dark.getToken("level.red")?.resolved).toBe(0.5);
     });
 
     it("is two objects when what it takes from its group differs", () => {
-        expect(dark.token("size.sm")?.deprecated).toBe(true);
+        expect(dark.getToken("size.sm")?.deprecated).toBe(true);
         expect(same("size.sm")).toBe(false);
     });
 
     it("is two objects when a permutation writes its own extension for the generator", () => {
         const own = read({ step: { $extensions: { "com.example": { steps: 3 } } } });
-        const ownLight = own.permutation({ mode: "light" });
-        const ownDark = own.permutation({ mode: "dark" });
-        expect(ownDark.token("step.3")).toBeDefined();
-        expect(ownLight.token("step.1")).not.toBe(ownDark.token("step.1"));
+        const ownLight = own.getPermutation({ mode: "light" });
+        const ownDark = own.getPermutation({ mode: "dark" });
+        expect(ownDark.getToken("step.3")).toBeDefined();
+        expect(ownLight.getToken("step.1")).not.toBe(ownDark.getToken("step.1"));
     });
 });
 
 describe("a group the same in two permutations", () => {
     it("is one object when its own facts and every child are", () => {
-        expect(light.group("space")).toBe(dark.group("space"));
-        expect(light.group("step")).toBe(dark.group("step"));
+        expect(light.getGroup("space")).toBe(dark.getGroup("space"));
+        expect(light.getGroup("step")).toBe(dark.getGroup("step"));
     });
 
     it("is two objects when a child differs", () => {
-        expect(light.group("color")).not.toBe(dark.group("color"));
-        expect(dark.group("color")?.children).toContain(dark.token("color.blue"));
-        expect(light.group("color")?.children).toContain(light.token("color.blue"));
+        expect(light.getGroup("color")).not.toBe(dark.getGroup("color"));
+        expect(dark.getGroup("color")?.children).toContain(dark.getToken("color.blue"));
+        expect(light.getGroup("color")?.children).toContain(light.getToken("color.blue"));
     });
 
     it("is two objects when its own facts differ", () => {
-        expect(light.group("size")).not.toBe(dark.group("size"));
+        expect(light.getGroup("size")).not.toBe(dark.getGroup("size"));
     });
 });
 
 describe("each permutation's own answers about a shared token", () => {
     it("still name only that permutation's users", () => {
         const users = (permutation: Permutation) =>
-            permutation.usedBy("color.red").map(({ path }) => path);
+            permutation.getDependents("color.red").map(({ path }) => path);
         expect(users(light)).toStrictEqual(["color.brand", "level.red"]);
-        expect(dark.usedBy("color.red").every((user) => dark.token(user.path) === user)).toBe(true);
+        expect(
+            dark.getDependents("color.red").every((user) => dark.getToken(user.path) === user),
+        ).toBe(true);
     });
 
     it("still list every token in the order the files write them", () => {
@@ -180,14 +188,14 @@ describe("a loop", () => {
             }),
             "dark.json": JSON.stringify({ other: { $type: "number", $value: 1 } }),
         },
-        entry: "tokens.resolver.json",
+        entryFile: "tokens.resolver.json",
     });
 
     it("of references links each permutation's tokens to its own", () => {
         for (const permutation of looped.permutations) {
-            const [a, b] = [permutation.token("loop.a"), permutation.token("loop.b")];
-            expect(a?.references[0]?.token).toBe(b);
-            expect(b?.references[0]?.token).toBe(a);
+            const [a, b] = [permutation.getToken("loop.a"), permutation.getToken("loop.b")];
+            expect(a?.references[0]?.pointsToToken).toBe(b);
+            expect(b?.references[0]?.pointsToToken).toBe(a);
         }
     });
 
@@ -197,9 +205,9 @@ describe("a loop", () => {
             "x.a",
         ]);
         for (const permutation of looped.permutations) {
-            expect(permutation.group("x.a")?.extends).toBeUndefined();
-            expect(permutation.group("x")?.children).toContain(permutation.group("x.a"));
-            expect(permutation.group("y")?.children).toContain(permutation.group("y.b"));
+            expect(permutation.getGroup("x.a")?.extends).toBeUndefined();
+            expect(permutation.getGroup("x")?.children).toContain(permutation.getGroup("x.a"));
+            expect(permutation.getGroup("y")?.children).toContain(permutation.getGroup("y.b"));
         }
     });
 });
@@ -238,19 +246,19 @@ describe("what resolving a shared token finds", () => {
             }),
             "dark.json": JSON.stringify({ color: { red: { $value: rgb(0.5) } } }),
         },
-        entry: "tokens.resolver.json",
+        entryFile: "tokens.resolver.json",
     });
     const kinds = (path: string) =>
         found
-            .diagnosticsFor(path)
+            .getDiagnostics(path)
             .map(({ kind, permutations }) => `${kind} in ${permutations.label}`);
 
     it("is shared too, naming every permutation that shares the token", () => {
         const [inLight, inDark, inDim] = ["light", "dark", "dim"].map((mode) =>
-            found.permutation({ mode }),
+            found.getPermutation({ mode }),
         );
-        expect(inLight?.token("color.lost")).toBe(inDim?.token("color.lost"));
-        expect(inLight?.token("color.lost")).toBe(inDark?.token("color.lost"));
+        expect(inLight?.getToken("color.lost")).toBe(inDim?.getToken("color.lost"));
+        expect(inLight?.getToken("color.lost")).toBe(inDark?.getToken("color.lost"));
         expect(kinds("color.lost")).toStrictEqual(["missing-reference in everywhere"]);
         expect(kinds("color.grouped")).toStrictEqual(["not-a-token in everywhere"]);
         expect(kinds("color.edge")).toStrictEqual(["type-mismatch in everywhere"]);
@@ -258,7 +266,7 @@ describe("what resolving a shared token finds", () => {
 
     it("is the same as every permutation resolving it again would find", () => {
         for (const permutation of found.permutations) {
-            expect(permutation.diagnosticsFor("color.lost").map(({ kind }) => kind)).toStrictEqual([
+            expect(permutation.getDiagnostics("color.lost").map(({ kind }) => kind)).toStrictEqual([
                 "missing-reference",
             ]);
         }

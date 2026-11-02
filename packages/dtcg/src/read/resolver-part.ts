@@ -1,5 +1,5 @@
 import type { Node } from "jsonc-parser";
-import type { Resolver, ResolverModifier, ResolverSet, SourceRef } from "../index.js";
+import type { Resolver, ResolverModifier, ResolverSet, SourceRef } from "../model.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
 import { member, plainObject, spanOf } from "./json.js";
 import { folderOf } from "./paths.js";
@@ -20,13 +20,15 @@ export function resolverPart(
     setsUsed: SetsUsed,
     diagnostics: Problems,
 ): Resolver {
-    const named = resolver.order.flatMap((item) => (item.kind === "set" ? [item.set] : []));
+    const named = resolver.resolutionOrder.flatMap((item) =>
+        item.kind === "set" ? [item.set] : [],
+    );
     const sets = new Map(named.map((set) => [set.name, set]));
     for (const reached of setsUsed.reached) {
         const set = resolver.sets.get(reached);
         if (set && !sets.has(reached)) sets.set(reached, set);
     }
-    const modifiers = resolver.order.flatMap((item) =>
+    const modifiers = resolver.resolutionOrder.flatMap((item) =>
         item.kind === "modifier" ? [item.modifier] : [],
     );
 
@@ -55,7 +57,7 @@ export function resolverPart(
         ...(description !== undefined && { description }),
         sets: inWrittenOrder([...sets.values()]).map((set) => publicSet(resolver, set)),
         modifiers: inWrittenOrder(modifiers).map((each) => publicModifier(resolver, each)),
-        order: resolver.order.map((item) =>
+        resolutionOrder: resolver.resolutionOrder.map((item) =>
             item.kind === "set" ? { set: item.set.name } : { modifier: item.modifier.name },
         ),
     };

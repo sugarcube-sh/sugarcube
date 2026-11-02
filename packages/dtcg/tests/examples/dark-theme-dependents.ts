@@ -3,7 +3,7 @@
 import { type DesignTokens } from "@sugarcube-sh/dtcg";
 
 declare const tokens: DesignTokens;
-const dark = tokens.permutation({ theme: "dark" });
+const dark = tokens.getPermutation({ theme: "dark" });
 
-const restate = dark.usedBy("color.brand", { chained: true }).map(({ path }) => path);
+const restate = dark.getDependents("color.brand", { chained: true }).map(({ path }) => path);
 row(restate.join(", "));

@@ -34,7 +34,7 @@
     }
   },
   "scripts": {
-    "build": "pkgroll --minify",
+    "build": "pkgroll --minify --clean-dist",
     "dev": "pkgroll --watch",
     "test": "vitest run",
     "type-check": "tsc --noEmit && tsc --noEmit -p tests/tsconfig.json"

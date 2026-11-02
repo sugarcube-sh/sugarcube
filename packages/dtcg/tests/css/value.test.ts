@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type CSSValueOptions, cssValue, cssVariable } from "../../src/css.js";
+import { type CSSValueOptions, toCSSValue, toCustomPropertyName } from "../../src/css.js";
 import { type Token, readFromMemory } from "../../src/index.js";
 
 const px = (value: number) => ({ value, unit: "px" });
@@ -11,29 +11,89 @@ function read(json: Record<string, unknown>): (path: string) => Token {
         { hexStringColors: true },
     );
     return (path) => {
-        const found = tokens.permutation().token(path);
+        const found = tokens.getPermutation().getToken(path);
         if (!found) throw new Error(`no token at ${path}`);
         return found;
     };
 }
 
 const asVariables: CSSValueOptions = {
-    replacement: (ref, cssProperty) =>
-        ref.token ? { variable: cssVariable(ref.token.path, { cssProperty }) } : undefined,
+    replaceReference: (ref, cssProperty) =>
+        ref.pointsToToken
+            ? { customProperty: toCustomPropertyName(ref.pointsToToken.path, { cssProperty }) }
+            : undefined,
 };
 
-describe("cssValue", () => {
-    it("writes an sRGB color with a hex as that hex, eight digits when it has alpha", () => {
+describe("toCSSValue", () => {
+    it("writes a color read from a hex string as that string, however it is reached", () => {
         const at = read({
             plain: color("#e11d48"),
             scrim: color("#00000080"),
             loud: color("#0000FFCC"),
-            object: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
-            bare: color({ colorSpace: "srgb", components: [1, 0, 0] }),
+            alias: color("{loud}"),
+            start: { $type: "gradient", $value: [{ color: "#ffffff", position: 0 }] },
+            fade: { $type: "gradient", $value: ["{start}", { color: "{plain}", position: 1 }] },
         });
         expect(
-            ["plain", "scrim", "loud", "object", "bare"].map((path) => cssValue(at(path))),
-        ).toStrictEqual(["#e11d48", "#00000080", "#0000FFCC", "#ff0000", "rgb(255 0 0)"]);
+            ["plain", "scrim", "loud", "alias", "fade"].map((path) => toCSSValue(at(path))),
+        ).toStrictEqual([
+            "#e11d48",
+            "#00000080",
+            "#0000FFCC",
+            "#0000FFCC",
+            "#ffffff 0%, #e11d48 100%",
+        ]);
+        expect(toCSSValue(at("scrim"), { colors: "hex" })).toBe("#00000080");
+    });
+
+    it("writes an sRGB color object from its components, to four places, whatever its hex says", () => {
+        const at = read({
+            exact: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
+            converted: color({
+                colorSpace: "srgb",
+                components: [0.8824, 0.1137, 0.2824],
+                hex: "#e11d48",
+            }),
+            stale: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#00ff00" }),
+            grey: color({ colorSpace: "srgb", components: [0.5, 0.5, 0.5] }),
+            faint: color({
+                colorSpace: "srgb",
+                components: [0, 0, 0],
+                alpha: 0.15,
+                hex: "#000000",
+            }),
+        });
+        expect(
+            ["exact", "converted", "stale", "grey", "faint"].map((path) => toCSSValue(at(path))),
+        ).toStrictEqual([
+            "rgb(255 0 0)",
+            "rgb(225.01 28.99 72.01)",
+            "rgb(255 0 0)",
+            "rgb(127.5 127.5 127.5)",
+            "rgb(0 0 0 / 0.15)",
+        ]);
+        expect(toCSSValue(at("stale"), { colors: "hex" })).toBe("#00ff00");
+        expect(toCSSValue(at("faint"), { colors: "hex" })).toBe("#00000026");
+    });
+
+    it("writes a color from its components when asked, as it does by default", () => {
+        const at = read({
+            object: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
+        });
+        expect(toCSSValue(at("object"), { colors: "components" })).toBe("rgb(255 0 0)");
+        expect(toCSSValue(at("object"), { colors: "components" })).toBe(toCSSValue(at("object")));
+    });
+
+    it("writes a color object from its components without hexStringColors too", () => {
+        const strict = readFromMemory({
+            files: {
+                "tokens.json": JSON.stringify({
+                    exact: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
+                }),
+            },
+        });
+        const exact = strict.getPermutation().getToken("exact");
+        expect(exact && toCSSValue(exact)).toBe("rgb(255 0 0)");
     });
 
     it("writes every color space the DTCG Color module defines", () => {
@@ -71,7 +131,7 @@ describe("cssValue", () => {
         };
         const at = read(Object.fromEntries(Object.entries(written).map(([k, [t]]) => [k, t])));
         for (const [path, [, css]] of Object.entries(written)) {
-            expect(cssValue(at(path)), path).toBe(css);
+            expect(toCSSValue(at(path)), path).toBe(css);
         }
     });
 
@@ -95,11 +155,19 @@ describe("cssValue", () => {
             },
         });
         const hex = { colors: "hex" } as const;
-        expect(cssValue(at("oklch"), hex)).toBe("#ff00ffcc");
-        expect(cssValue(at("p3"), hex)).toBe("#1a1a1f");
-        expect(cssValue(at("none"), hex)).toBe("lab(50 20 -30)");
-        expect(cssValue(at("edge"), hex)).toBe("1px solid #aa3344");
-        expect(cssValue(at("oklch"))).toBe("oklch(0.7 0.3 328 / 0.8)");
+        expect(toCSSValue(at("oklch"), hex)).toBe("#ff00ffcc");
+        expect(toCSSValue(at("p3"), hex)).toBe("#1a1a1f");
+        expect(toCSSValue(at("none"), hex)).toBe("lab(50 20 -30)");
+        expect(toCSSValue(at("edge"), hex)).toBe("1px solid #aa3344");
+        expect(toCSSValue(at("oklch"))).toBe("oklch(0.7 0.3 328 / 0.8)");
+    });
+
+    it("gives undefined for a token that isn't there, so a missing path needs no check first", () => {
+        const at = readFromMemory({
+            files: { "tokens.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }) },
+        }).getPermutation();
+        expect(toCSSValue(at.getToken("nope"))).toBeUndefined();
+        expect(toCSSValue(at.getToken("gap"))).toBe("1");
     });
 
     it("writes the other simple types as CSS writes them", () => {
@@ -112,7 +180,7 @@ describe("cssValue", () => {
             solid: { $type: "strokeStyle", $value: "solid" },
         });
         expect(
-            ["size", "fast", "ease", "ratio", "bold", "solid"].map((p) => cssValue(at(p))),
+            ["size", "fast", "ease", "ratio", "bold", "solid"].map((p) => toCSSValue(at(p))),
         ).toStrictEqual([
             "1.5rem",
             "200ms",
@@ -133,12 +201,13 @@ describe("cssValue", () => {
             },
             brand: color("{ink}"),
         });
-        expect(cssValue(at("edge"))).toBe("1px solid #111111");
-        expect(cssValue(at("edge"), asVariables)).toBe("var(--hairline) solid var(--ink)");
-        expect(cssValue(at("brand"), asVariables)).toBe("var(--ink)");
+        expect(toCSSValue(at("edge"))).toBe("1px solid #111111");
+        expect(toCSSValue(at("edge"), asVariables)).toBe("var(--hairline) solid var(--ink)");
+        expect(toCSSValue(at("brand"), asVariables)).toBe("var(--ink)");
         expect(
-            cssValue(at("edge"), {
-                replacement: (ref) => (ref.path === "hairline" ? { css: "thin" } : undefined),
+            toCSSValue(at("edge"), {
+                replaceReference: (ref) =>
+                    ref.pointsToPath === "hairline" ? { css: "thin" } : undefined,
             }),
         ).toBe("thin solid #111111");
     });
@@ -155,9 +224,9 @@ describe("cssValue", () => {
                 components: [{ $ref: "#/deep/$value/components/0" }, 1, 1],
             }),
         });
-        expect(cssValue(at("edge"), asVariables)).toBe("2px dashed var(--deep)");
-        expect(cssValue(at("edge"))).toBe("2px dashed rgb(51 0 0)");
-        expect(cssValue(at("tint"), asVariables)).toBe("rgb(51 255 255)");
+        expect(toCSSValue(at("edge"), asVariables)).toBe("2px dashed var(--deep)");
+        expect(toCSSValue(at("edge"))).toBe("2px dashed rgb(51 0 0)");
+        expect(toCSSValue(at("tint"), asVariables)).toBe("rgb(51 255 255)");
     });
 
     it("writes a dash pattern as dashed, since CSS cannot draw one (Format 9.3.3)", () => {
@@ -172,8 +241,8 @@ describe("cssValue", () => {
                 },
             },
         });
-        expect(cssValue(at("dots"))).toBe("dashed");
-        expect(cssValue(at("edge"))).toBe("2px dashed #111111");
+        expect(toCSSValue(at("dots"))).toBe("dashed");
+        expect(toCSSValue(at("edge"))).toBe("2px dashed #111111");
     });
 
     it("writes a shadow's layers, a layer referring to a whole shadow token as its replacement", () => {
@@ -203,10 +272,10 @@ describe("cssValue", () => {
                 ],
             },
         });
-        expect(cssValue(at("stack"))).toBe(
+        expect(toCSSValue(at("stack"))).toBe(
             "0px 1px 2px 0px #000000, inset 0px 4px 8px 0px #000000",
         );
-        expect(cssValue(at("stack"), asVariables)).toBe(
+        expect(toCSSValue(at("stack"), asVariables)).toBe(
             "var(--lift), inset 0px 4px 8px 0px #000000",
         );
     });
@@ -227,8 +296,8 @@ describe("cssValue", () => {
                 $value: ["{start}", { color: "#e11d48", position: "{half}" }],
             },
         });
-        expect(cssValue(at("third"))).toBe("#ffffff 30%, #000000 57%");
-        expect(cssValue(at("fade"), asVariables)).toBe(
+        expect(toCSSValue(at("third"))).toBe("#ffffff 30%, #000000 57%");
+        expect(toCSSValue(at("fade"), asVariables)).toBe(
             "#ffffff 0%, #e11d48 clamp(0%, var(--half) * 100%, 100%)",
         );
     });
@@ -249,7 +318,7 @@ describe("cssValue", () => {
                 ],
             },
         });
-        expect(cssValue(at("stack"))).toBe(
+        expect(toCSSValue(at("stack"))).toBe(
             'Inter, -apple-system, "1Password", "inherit", "Say \\"hi\\"", "back\\\\slash", Sans-Serif, ui-monospace',
         );
     });
@@ -273,7 +342,7 @@ describe("cssValue", () => {
         it("in the order the properties are listed", () => {
             const body = at("body");
             if (body.type !== "typography") throw new Error("body is typography");
-            const css = cssValue(body, asVariables);
+            const css = toCSSValue(body, asVariables);
             expect(css).toStrictEqual({
                 "font-family": "Inter, sans-serif",
                 "font-size": "var(--hairline)",
@@ -290,8 +359,8 @@ describe("cssValue", () => {
             ]);
         });
 
-        it("each property a variable of its own when the whole value is a reference", () => {
-            expect(cssValue(at("quote"), asVariables)).toStrictEqual({
+        it("each property a custom property of its own when the whole value is a reference", () => {
+            expect(toCSSValue(at("quote"), asVariables)).toStrictEqual({
                 "font-family": "var(--body-font-family)",
                 "font-size": "var(--body-font-size)",
                 "font-weight": "var(--body-font-weight)",
@@ -300,13 +369,18 @@ describe("cssValue", () => {
             });
         });
 
-        it("asking for each CSS property's variable, so a caller's naming decides how it is joined", () => {
+        it("asking for each CSS property's custom property, so a caller's naming decides how it is joined", () => {
             const asked: (string | undefined)[] = [];
-            const css = cssValue(at("quote"), {
-                replacement: (ref, cssProperty) => {
+            const css = toCSSValue(at("quote"), {
+                replaceReference: (ref, cssProperty) => {
                     asked.push(cssProperty);
-                    return ref.token
-                        ? { variable: cssVariable(ref.token.path, { delimiter: "_", cssProperty }) }
+                    return ref.pointsToToken
+                        ? {
+                              customProperty: toCustomPropertyName(ref.pointsToToken.path, {
+                                  delimiter: "_",
+                                  cssProperty,
+                              }),
+                          }
                         : undefined;
                 },
             });
@@ -333,12 +407,12 @@ describe("cssValue", () => {
         });
         const border = at("edge").parts;
         if (border?.type !== "border") throw new Error("edge is a border");
-        expect(cssValue(border.color)).toBe("#e11d48");
-        expect(cssValue(border.width)).toBe("1px");
+        expect(toCSSValue(border.color)).toBe("#e11d48");
+        expect(toCSSValue(border.width)).toBe("1px");
     });
 
     it("gives nothing for a token with no resolved value", () => {
         const at = read({ lost: color("{missing}") });
-        expect(cssValue(at("lost"))).toBeUndefined();
+        expect(toCSSValue(at("lost"))).toBeUndefined();
     });
 });

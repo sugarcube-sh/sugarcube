@@ -71,7 +71,7 @@
         "span": { "file": "tokens.resolver.json", "valueAfter": "\"2025\":" }
       }
     ],
-    "order": [
+    "resolutionOrder": [
       { "set": "base" },
       { "modifier": "mode" },
       { "modifier": "2025" },

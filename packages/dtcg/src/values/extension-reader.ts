@@ -8,7 +8,7 @@ import type {
     TokenType,
     ValueByType,
     ValueError,
-} from "../index.js";
+} from "../model.js";
 import { parseValue } from "./parse-value.js";
 
 /**
@@ -21,7 +21,7 @@ export type ExtensionResult<V, M extends ExtensionMessages> =
 
 /**
  * Reads an extension's values and collects why it is not valid, for a {@link Generator} or an
- * {@link ExtensionValidator}. Made by {@link extensionReader}.
+ * {@link ExtensionValidator}. Made by {@link createExtensionReader}.
  */
 export interface ExtensionReader<M extends ExtensionMessages> {
     /**
@@ -58,7 +58,7 @@ export interface ExtensionReader<M extends ExtensionMessages> {
  * problem is collected, not only the first.
  *
  * @example
- * const reader = extensionReader<typeof messages>();
+ * const reader = createExtensionReader<typeof messages>();
  * if (!isJsonObject(range)) {
  *   reader.report([], "not-an-object");
  *   return reader.result(undefined);
@@ -69,14 +69,14 @@ export interface ExtensionReader<M extends ExtensionMessages> {
  *
  * @throws {TypeError} When `result` is given no value and nothing was reported.
  */
-export function extensionReader<M extends ExtensionMessages>(
+export function createExtensionReader<M extends ExtensionMessages>(
     options: ParseOptions = {},
 ): ExtensionReader<M> {
     const errors: (ExtensionError<M> | ValueError)[] = [];
     const ignored: IgnoredProperty[] = [];
     return {
         read: (type, raw, jsonPath) => {
-            const read = parseValue(type, raw, jsonPath, { ...options, references: false });
+            const read = parseValue(type, raw, { jsonPath, ...options, references: false });
             ignored.push(...read.ignored);
             if (read.ok) return read.value;
             errors.push(...read.errors);

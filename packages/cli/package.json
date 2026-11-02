@@ -44,7 +44,7 @@
     "provenance": true
   },
   "scripts": {
-    "build": "tsc --noEmit && pkgroll --minify",
+    "build": "tsc --noEmit && pkgroll --minify --clean-dist",
     "dev": "cross-env REGISTRY_URL=http://localhost:4321/r tsx src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest --exclude 'tests/e2e/**'",

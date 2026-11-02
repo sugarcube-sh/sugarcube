@@ -1,4 +1,4 @@
-import { type Change, filePath, read } from "@sugarcube-sh/dtcg";
+import { type Change, getFilePath, read } from "@sugarcube-sh/dtcg";
 import { changedFiles } from "@sugarcube-sh/dtcg-edit";
 import { ErrorMessages, UserFacingError } from "../error-messages";
 import type { GitHost } from "../git-hosts/git-host";
@@ -19,7 +19,7 @@ export function gitSave({
                 throw error instanceof Error && error.cause !== undefined ? error.cause : error;
             },
         );
-        if (fetched.text(fetched.entry) === undefined)
+        if (fetched.getText(fetched.entryFile) === undefined)
             throw new UserFacingError(
                 ErrorMessages.ENTRY_NOT_THERE(entry, host.repository, host.branch),
             );
@@ -30,11 +30,11 @@ export function gitSave({
             from,
             written: Object.fromEntries(
                 Object.entries(changed.written).map(([file, text]) => [
-                    filePath(entry, file),
+                    getFilePath(entry, file),
                     text,
                 ]),
             ),
-            deleted: changed.deleted.map((file) => filePath(entry, file)),
+            deleted: changed.deleted.map((file) => getFilePath(entry, file)),
             ...pullRequestText(changes),
         });
         return { pullRequest, files };

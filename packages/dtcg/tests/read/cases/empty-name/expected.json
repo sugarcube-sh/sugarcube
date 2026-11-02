@@ -17,7 +17,7 @@
         {
           "path": "",
           "type": "number",
-          "writtenAt": [
+          "definitions": [
             {
               "source": 0,
               "span": {

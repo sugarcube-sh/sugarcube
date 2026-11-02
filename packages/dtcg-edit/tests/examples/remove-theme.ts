@@ -6,8 +6,8 @@ import { applyToDisk } from "@sugarcube-sh/dtcg-edit/node";
 
 declare function confirm(question: string): Promise<boolean>;
 
-const source = { entry: "tokens/tokens.resolver.json" };
-const tokens = await read(source.entry);
+const source = { entryFile: "tokens/tokens.resolver.json" };
+const tokens = await read(source.entryFile);
 const deleteFiles = await confirm("Also delete the files only the dim theme uses?");
 const result = removeContext(tokens, "theme", "dim", { deleteFiles });
 if (result.ops) {

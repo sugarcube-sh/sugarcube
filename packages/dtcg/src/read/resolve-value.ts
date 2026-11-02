@@ -6,9 +6,9 @@ import type {
     Span,
     TokenType,
     WrittenReference,
-} from "../index.js";
+} from "../model.js";
 import { isJsonObject } from "../values/json.js";
-import { referenceText } from "../values/references.js";
+import { toReferenceTarget } from "../values/references.js";
 import type { ReadAgain } from "../values/read-syntax.js";
 import type { Siblings } from "../values/syntax.js";
 import type { MergedToken, Merged } from "./merge.js";
@@ -126,8 +126,8 @@ function follow(resolving: Resolving, following: Following, located: LocatedRefe
     if (whole && (syntax.kind === "ofType" || element)) {
         return adjusted(substitute(resolving, token, ref, reached.path, expected, use, element));
     }
-    const { authored } = reached.token;
-    const stepped = whole ? { value: authored } : stepInto(authored, reached.inside);
+    const { valueAsWritten } = reached.token;
+    const stepped = whole ? { value: valueAsWritten } : stepInto(valueAsWritten, reached.inside);
     if (!stepped) return unreachable();
     const raw = stepped.value;
 
@@ -149,7 +149,7 @@ function substitute(
     element: boolean,
 ): unknown {
     const { span } = use;
-    const shown = referenceText(reference);
+    const shown = toReferenceTarget(reference);
     const target = valueAt(path, token.path, span);
     if (target === undefined) {
         notReached({ reference, steps: stepsOf(reference) }, token.path, span);

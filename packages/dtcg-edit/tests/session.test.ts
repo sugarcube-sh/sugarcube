@@ -31,7 +31,9 @@ describe("createSession", () => {
             expect.objectContaining({ kind: "set", file: "color.json" }),
         ]);
         expect(session.unsaved).not.toHaveProperty("files");
-        expect(session.tokens.permutation().token("color.brand.500")?.authored?.value).toEqual(red);
+        expect(
+            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+        ).toEqual(red);
         expect(session.opened).toBe(demo);
     });
 
@@ -91,7 +93,7 @@ describe("createSession", () => {
         session.do(rename(session.tokens, "color.brand.300", "350"));
 
         expect(session.changes()).toEqual(
-            session.tokens.diff(demo, {
+            session.tokens.getChangesSince(demo, {
                 moved: session.unsaved.steps.flatMap((step) => step.moved),
             }),
         );

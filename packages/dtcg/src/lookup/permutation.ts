@@ -1,23 +1,22 @@
 import { thrownMessages } from "../error-messages.js";
 import type {
-    CompleteInput,
     DesignTokens,
     Input,
+    InputProblem,
     Permutation,
     PermutationErrorDetail,
-    ResolverModifier,
     SeveralPermutationsDetail,
-} from "../index.js";
-import { checkedInput, findByName, modifiersIn } from "../read/input.js";
+} from "../model.js";
+import { checkedInput, modifiersIn } from "../read/input.js";
 
 /**
- * Thrown by {@link DesignTokens.permutation} when there is no permutation for the input. The
+ * Thrown by {@link DesignTokens.getPermutation} when there is no permutation for the input. The
  * message says why in plain words; `detail` holds the facts it is worded from, for a tool to word
  * it itself.
  *
  * @example
  * try {
- *   tokens.permutation({ mode: "sepia" });
+ *   tokens.getPermutation({ mode: "sepia" });
  * } catch (error) {
  *   if (error instanceof PermutationError) error.detail // { reason: "unknown-context", … }
  * }
@@ -34,12 +33,12 @@ export class PermutationError extends Error {
 
 /**
  * Thrown by a question of one permutation asked of design tokens with several, such as
- * {@link DesignTokens.token}: which permutation it is for has to be said. The message says how to
+ * {@link DesignTokens.getToken}: which permutation it is for has to be said. The message says how to
  * pick one; `detail` holds the facts it is worded from.
  *
  * @example
  * try {
- *   tokens.token("color.text");
+ *   tokens.getToken("color.text");
  * } catch (error) {
  *   if (error instanceof SeveralPermutationsError) error.detail.example // { mode: "dark" }
  * }
@@ -83,12 +82,14 @@ export function findPermutation(
         return detail;
     }
     return (
-        tokens.permutations.matching(complete.input) ?? {
+        tokens.permutations.findByInput(complete.input) ?? {
             reason: "not-read",
             input: complete.input,
         }
     );
 }
+
+type CompleteInput = { ok: true; input: Input } | ({ ok: false } & InputProblem);
 
 /**
  * An input with every modifier given, defaults filled in, and each name as the resolver writes
@@ -101,8 +102,4 @@ export function findPermutation(
 export function completeInput(tokens: DesignTokens, input: Input): CompleteInput {
     const checked = checkedInput(modifiersIn(tokens.resolver), input);
     return checked.ok ? checked : { ok: false, ...checked.problems[0] };
-}
-
-export function modifierIn(tokens: DesignTokens, name: string): ResolverModifier | undefined {
-    return findByName(tokens.resolver?.modifiers ?? [], name, (each) => each.name);
 }

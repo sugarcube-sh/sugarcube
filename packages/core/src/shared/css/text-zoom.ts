@@ -13,7 +13,7 @@ export function textZoomWarnings(
     for (const permutation of permutations) {
         for (const each of permutation.tokens) {
             if (each.type !== "typography") continue;
-            const target = each.referenceAt(["fontSize"])?.token;
+            const target = each.getReferenceAt(["fontSize"])?.pointsToToken;
             const fluid = target && fluidRangeOf(target, options);
             if (!fluid) continue;
             const fails = checkWCAG({

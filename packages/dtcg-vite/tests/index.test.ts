@@ -80,26 +80,26 @@ async function until(done: () => boolean, what: string, step?: () => Promise<voi
 
 describe("dtcg's Vite plugin", () => {
     it("reads again when a file the design tokens list is saved on Vite's watcher, text and all", async () => {
-        const entry = await project();
-        const plugin = dtcg({ entry, options: { hexStringColors: true } });
+        const entryFile = await project();
+        const plugin = dtcg({ entryFile, options: { hexStringColors: true } });
         await serve(plugin);
-        const first = await plugin.api.tokens();
+        const first = await plugin.api.getTokens();
         expect(first.files).toEqual(["tokens.resolver.json", "base.json"]);
-        expect(first.text("base.json")).toContain("#111111");
+        expect(first.getText("base.json")).toContain("#111111");
 
         const reads: Array<{ tokens: DesignTokens; file?: string }> = [];
         plugin.api.onRead((read, { file }) => reads.push({ tokens: read, file }));
         await until(
             () =>
                 reads.some(({ tokens: read }) =>
-                    JSON.stringify(read.permutation().token("color.ink")).includes("#222"),
+                    JSON.stringify(read.getPermutation().getToken("color.ink")).includes("#222"),
                 ),
             "the save",
             () => tokens({ color: { ink: color("#222222") } }),
         );
 
         expect(reads.at(-1)?.file).toBe("base.json");
-        expect(reads.at(-1)?.tokens.text("base.json")).toContain("#222222");
+        expect(reads.at(-1)?.tokens.getText("base.json")).toContain("#222222");
     });
 
     it("logs a failure from before Vite's logger exists, once there is one", async () => {
@@ -107,7 +107,7 @@ describe("dtcg's Vite plugin", () => {
         const plugin = dtcg(() => {
             throw new Error("no source");
         });
-        await plugin.api.tokens().catch(() => undefined);
+        await plugin.api.getTokens().catch(() => undefined);
         const logged: string[] = [];
 
         await serve(plugin, logged);

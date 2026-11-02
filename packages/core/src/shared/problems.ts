@@ -1,4 +1,4 @@
-import { type Span, filePath } from "@sugarcube-sh/dtcg";
+import { type Span, getFilePath } from "@sugarcube-sh/dtcg";
 import { relative } from "pathe";
 import color from "picocolors";
 import type { Reported } from "../types/diagnostics.js";
@@ -8,7 +8,7 @@ type Colors = ReturnType<typeof color.createColors>;
 
 export interface Where {
     cwd: string;
-    entry: string;
+    entryFile: string;
     configFile?: string;
 }
 
@@ -68,7 +68,7 @@ export function problemLines(
         const available = width === undefined ? undefined : width - indent;
         const padding = " ".repeat(severityWidth - problem.severity.length);
         const head = `${place.padEnd(placeWidth)}  ${tint[problem.severity](problem.severity)}${padding}  `;
-        const related = (problem.related ?? []).map(
+        const related = (problem.relatedInformation ?? []).map(
             ({ message, span }) => `${placeOf(span, where).place}  ${colors.dim(message)}`,
         );
         return [...wrapped(words, colors, available), ...related].map(
@@ -94,8 +94,8 @@ function placedIn(problem: Reported, where: Where): Placed {
     return { problem, place: configFile ? relative(cwd, configFile) : "" };
 }
 
-function placeOf(span: Span, { cwd, entry }: Where): Pick<Placed, "place" | "location"> {
-    const file = relative(cwd, filePath(entry, span.file));
+function placeOf(span: Span, { cwd, entryFile }: Where): Pick<Placed, "place" | "location"> {
+    const file = relative(cwd, getFilePath(entryFile, span.file));
     const { line, column } = span.start;
     return { place: `${file}:${line}:${column}`, location: { file, line, column } };
 }

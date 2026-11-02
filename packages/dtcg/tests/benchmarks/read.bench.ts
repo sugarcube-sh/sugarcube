@@ -3,17 +3,17 @@ import { readFromMemory } from "../../src/index.js";
 import { extendsProject, permutationsProject, tokens } from "./fixtures.js";
 
 const project = permutationsProject(100);
-const entry = "tokens.resolver.json";
+const entryFile = "tokens.resolver.json";
 const oneFile = { "tokens.json": JSON.stringify(tokens(100)) };
 const extending = extendsProject(120, 20);
 
 describe("read, 300 tokens", () => {
     bench("24 combinations (4 × 3 × 2 contexts), every one", () => {
-        readFromMemory({ files: project, entry });
+        readFromMemory({ files: project, entryFile });
     });
 
     bench("the same, each context on its own (7)", () => {
-        readFromMemory({ files: project, entry }, { permutations: "each-context" });
+        readFromMemory({ files: project, entryFile }, { inputs: "each-context" });
     });
 
     bench("one token file, no resolver", () => {

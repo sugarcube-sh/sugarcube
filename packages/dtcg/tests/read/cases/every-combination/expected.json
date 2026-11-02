@@ -144,7 +144,7 @@
         }
       }
     ],
-    "order": [
+    "resolutionOrder": [
       {
         "set": "base"
       },
@@ -199,7 +199,7 @@
           "name": "base"
         }
       ],
-      "readBy": "everyone"
+      "readBy": "every-context"
     },
     {
       "file": "ocean.json",

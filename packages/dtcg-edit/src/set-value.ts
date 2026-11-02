@@ -1,5 +1,5 @@
 import type { DesignTokens, JsonPath, JsonValue } from "@sugarcube-sh/dtcg";
-import { isJsonObject, readReference } from "@sugarcube-sh/dtcg/values";
+import { isJsonObject, parseReference } from "@sugarcube-sh/dtcg/values";
 import { refused } from "./error-messages.js";
 import type { FileOp, OpResult, Refusal, ValueOptions } from "./index.js";
 import { asked, ownProperties, placement } from "./placement.js";
@@ -18,7 +18,7 @@ import { propertyEdit } from "./property.js";
  * new override also writes what the token says itself: its own `$type`, `$description`,
  * `$deprecated` and `$extensions`, not those it takes from a group.
  *
- * With `at`, a place from `tokens.writtenAt(path)`, the value written at that place changes
+ * With `at`, a place from `tokens.getDefinitions(path)`, the value written at that place changes
  * instead, whichever contexts read it.
  *
  * With `part`, only that part of the value changes, such as a shadow's `["color"]`, and every
@@ -26,9 +26,9 @@ import { propertyEdit } from "./property.js";
  * "Sub-values may be explicit values (e.g. `color` values) or references to other design tokens
  * that have the sub-value's type" (Format 9).
  *
- * The value is written exactly as given, keeping the file's own spelling; use `toDTCGValue`
- * from `@sugarcube-sh/dtcg` to write a value taken from the model. A value the read finds wrong,
- * such as a reference to a token not made yet, is still written, and the read reports it.
+ * The value is written exactly as given, as JSON, keeping the file's own spelling. A value the
+ * read finds wrong, such as a reference to a token not made yet, is still written, and the read
+ * reports it.
  *
  * Refused, with the reason: a token that doesn't exist, one a generator makes, one a group
  * inherits through `$extends`, an override for two contexts at once, a context with no whole
@@ -39,7 +39,7 @@ import { propertyEdit } from "./property.js";
  * @example
  * setValue(tokens, "color.danger", "{color.red.600}")
  * setValue(tokens, "color.danger", "{color.red.400}", { input: { mode: "dark" } })
- * const dark = tokens.writtenAt("color.danger").find(({ span }) => span.file === "dark.json");
+ * const dark = tokens.getDefinitions("color.danger").find(({ span }) => span.file === "dark.json");
  * if (dark) setValue(tokens, "color.danger", "{color.red.400}", { at: dark.span });
  * setValue(tokens, "shadow.raised", "{color.neutral.900}", { part: [1, "color"] })
  */
@@ -67,7 +67,7 @@ function setValueIn(
     const part = options.part ?? [];
     if ("at" in placed) {
         const { at, alsoAffects } = placed;
-        const whole = isJsonObject(at.written) ? at.written.$value : undefined;
+        const whole = isJsonObject(at.asWritten) ? at.asWritten.$value : undefined;
         const checked = withPart(path, whole, part, value);
         if ("refused" in checked) return checked;
         return { ops: opsAt(tokens, at, ["$value", ...part], value), alsoAffects, moved: [] };
@@ -94,7 +94,7 @@ function withPart(
     from = 0,
 ): { value: JsonValue } | { refused: Refusal } {
     if (from === part.length) return { value };
-    if (readReference(whole)) return refused({ kind: "part-in-reference", path, part });
+    if (parseReference(whole)) return refused({ kind: "part-in-reference", path, part });
     const step = part[from];
     if (
         Array.isArray(whole) &&

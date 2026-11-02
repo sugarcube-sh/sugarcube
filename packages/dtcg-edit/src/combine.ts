@@ -1,4 +1,4 @@
-import { type DesignTokens, movedPath } from "@sugarcube-sh/dtcg";
+import { type DesignTokens, tokenPath } from "@sugarcube-sh/dtcg";
 import { apply } from "./apply.js";
 import { thrown } from "./error-messages.js";
 import type { FileOp, OpResult, Operation } from "./index.js";
@@ -47,18 +47,18 @@ function carriedOn(
 function together(tokens: DesignTokens, last: DesignTokens, made: Made[]): OpResult {
     const affected = new Set(
         made.flatMap(({ alsoAffects }) =>
-            alsoAffects.map(({ input }) => tokens.permutation(input)),
+            alsoAffects.map(({ input }) => tokens.getPermutation(input)),
         ),
     );
     const left = made.flatMap(({ broken = [] }, index) => {
         const later = made.slice(index + 1).flatMap(({ moved }) => moved);
-        return broken.map((path) => movedPath(path, later));
+        return broken.map((path) => tokenPath.applyMoves(path, later));
     });
     return {
         ops: made.flatMap(({ ops }) => ops),
-        alsoAffects: tokens.permutations.where((each) => affected.has(each)),
+        alsoAffects: tokens.permutations.select((each) => affected.has(each)),
         broken: [...new Set(left)].filter((path) =>
-            last.diagnosticsFor(path).some(({ kind }) => kind === "missing-reference"),
+            last.getDiagnostics(path).some(({ kind }) => kind === "missing-reference"),
         ),
         moved: made.flatMap(({ moved }) => moved),
     };

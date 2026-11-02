@@ -1,10 +1,10 @@
-import type { DiagnosticDetailByKind, DiagnosticKind, Input } from "../index.js";
-import { namedPath, referenceText } from "../values/references.js";
+import type { DiagnosticDetailByKind, DiagnosticKind, Input } from "../model.js";
+import { namedPath, toReferenceTarget } from "../values/references.js";
 import { relatedMessages } from "../error-messages.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
 import { malformation } from "./malformed-pointer.js";
 import { type Merged, type MergedGroup, removeGroup } from "./merge.js";
-import { pathBelow, atOrWithin } from "../path.js";
+import { tokenPath } from "../path.js";
 import { reachOf, refObjectMeaning } from "./ref-meaning.js";
 
 type Extending = MergedGroup & { extends: NonNullable<MergedGroup["extends"]> };
@@ -29,7 +29,7 @@ export function applyExtends(merged: Merged, input: Input, diagnostics: Problems
             const loop = chain.slice(chain.indexOf(group));
             const paths = [...loop.map(({ path }) => path), group.path];
             report("circular-reference", { chain: paths }, group, {
-                related: loop.slice(1).map((each) => ({
+                relatedInformation: loop.slice(1).map((each) => ({
                     message: relatedMessages.partOfTheLoop,
                     span: each.extends.span,
                     path: each.path,
@@ -45,14 +45,14 @@ export function applyExtends(merged: Merged, input: Input, diagnostics: Problems
 
     const extend = (group: Extending, chain: Extending[]): void => {
         const { keyword, reference, steps } = group.extends;
-        const written = referenceText(reference);
+        const written = toReferenceTarget(reference);
         const direct = namedPath(reference);
         if (steps && direct === undefined) {
             report("circular-reference", { chain: [group.path], toTopLevel: true }, group);
             state.set(group.path, "in-a-loop");
             return;
         }
-        if (direct !== undefined && atOrWithin(group.path, direct)) {
+        if (direct !== undefined && tokenPath.contains(direct, group.path)) {
             report("circular-reference", { chain: [group.path, direct] }, group);
             state.set(group.path, "in-a-loop");
             return;
@@ -78,7 +78,7 @@ export function applyExtends(merged: Merged, input: Input, diagnostics: Problems
 
     const extendInside = (path: string, chain: Extending[]): void => {
         for (const each of Array.from(merged.groups.values())) {
-            if (atOrWithin(each.path, path) && isExtending(each)) visit(each, chain);
+            if (tokenPath.contains(path, each.path) && isExtending(each)) visit(each, chain);
         }
     };
 
@@ -94,7 +94,7 @@ function isExtending(group: MergedGroup): group is Extending {
 function inherit(merged: Merged, group: MergedGroup, from: string): void {
     group.takesFrom ??= from;
     const moved = (path: string) => {
-        const rest = pathBelow(path, from);
+        const rest = tokenPath.relative(from, path);
         return rest === undefined ? undefined : `${group.path}.${rest}`;
     };
     const underLocalToken = (path: string) => {
@@ -138,12 +138,12 @@ function inherit(merged: Merged, group: MergedGroup, from: string): void {
 
 function becomeToken(merged: Merged, group: Extending, input: Input, diagnostics: Problems): void {
     const { path, extends: extending, type, description, deprecated, extensions } = group;
-    const inside = (each: string) => pathBelow(each, path) !== undefined;
+    const inside = (each: string) => tokenPath.relative(path, each) !== undefined;
     if ([...merged.tokens.keys(), ...merged.groups.keys()].some(inside)) {
         diagnostics.found(
             diagnostic(
                 "token-and-group",
-                { reason: "ref", ref: referenceText(extending.reference) },
+                { reason: "ref", ref: toReferenceTarget(extending.reference) },
                 { span: extending.span, path },
             ),
             input,
@@ -154,7 +154,7 @@ function becomeToken(merged: Merged, group: Extending, input: Input, diagnostics
         path,
         json: extending.json,
         value: extending.node,
-        authored: { $ref: referenceText(extending.reference) },
+        valueAsWritten: { $ref: toReferenceTarget(extending.reference) },
         reference: extending.reference,
         span: extending.groupSpan,
         source: extending.source,

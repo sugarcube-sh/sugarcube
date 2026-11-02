@@ -2,7 +2,7 @@
   "name": "@sugarcube-sh/dtcg",
   "version": "0.0.0",
   "private": true,
-  "description": "Read, check and export DTCG design tokens",
+  "description": "Read and check DTCG design tokens",
   "keywords": [
     "design-system",
     "design-tokens",
@@ -45,10 +45,14 @@
     "./css": {
       "types": "./dist/css.d.ts",
       "default": "./dist/css.js"
+    },
+    "./editor": {
+      "types": "./dist/editor.d.ts",
+      "default": "./dist/editor.js"
     }
   },
   "scripts": {
-    "build": "pkgroll --minify",
+    "build": "pkgroll --minify --clean-dist",
     "dev": "pkgroll --watch",
     "test": "vitest run",
     "type-check": "tsc --noEmit -p tsconfig.anywhere.json && tsc --noEmit -p tsconfig.node.json",

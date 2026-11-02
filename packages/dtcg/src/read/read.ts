@@ -1,4 +1,4 @@
-import type { DesignTokens, Input, ReadOptions, ReadText, TokensInMemory } from "../index.js";
+import type { DesignTokens, Input, ReadOptions, ReadText, TokensInMemory } from "../model.js";
 import type { Answer, FileText, Request } from "./files.js";
 import { Problems, inReadingPermutations } from "./diagnostics.js";
 import { type Loaded, load } from "./load.js";
@@ -99,7 +99,7 @@ function fromMemory(
     const texts = new Map(
         Object.entries(memory.files).map(([path, text]) => [normalise(path), text]),
     );
-    const entry = normalise(memory.entry ?? entryAmong(texts));
+    const entry = normalise(memory.entryFile ?? entryAmong(texts));
     const folder = folderOf(entry);
     const run = load(fileName(entry), permutationOptions(options), previous?.resolver);
 
@@ -129,17 +129,16 @@ function entryAmong(texts: Map<string, string>): string {
     throw new TypeError(thrownMessages.noResolver(names));
 }
 
-function readingAgain(entry: string, options: ReadOptions) {
+function readingAgain(entryFile: string, options: ReadOptions) {
     return (files: Record<string, string>, previous: DesignTokens) =>
-        fromMemory({ files, entry }, options, previous);
+        fromMemory({ files, entryFile }, options, previous);
 }
 
 function permutationOptions({
-    inputs,
-    permutations = "all",
+    inputs = "all",
     permutationLimit = 32,
 }: ReadOptions): PermutationOptions {
-    return { ...(inputs && { inputs }), permutations, limit: permutationLimit };
+    return { inputs, limit: permutationLimit };
 }
 
 function toDesignTokens(
@@ -191,7 +190,7 @@ function toDesignTokens(
     return linkedDesignTokens(
         {
             files: loaded.files,
-            entry: loaded.entry,
+            entryFile: loaded.entry,
             ...(loaded.resolver && { resolver: loaded.resolver }),
             sources,
             permutations,

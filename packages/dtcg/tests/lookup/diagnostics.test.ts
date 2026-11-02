@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type Permutation, readFromMemory } from "../../src/index.js";
+import { getDiagnosticsAt } from "../../src/editor.js";
 
 const resolver = {
     version: "2025.10",
@@ -32,13 +33,16 @@ const files = {
     "base.json": base,
     "dark.json": dark,
 };
-const tokens = readFromMemory({ files, entry: "tokens.resolver.json" }, { hexStringColors: true });
-const light = tokens.permutation();
-const darkMode = tokens.permutation({ mode: "dark" });
+const tokens = readFromMemory(
+    { files, entryFile: "tokens.resolver.json" },
+    { hexStringColors: true },
+);
+const light = tokens.getPermutation();
+const darkMode = tokens.getPermutation({ mode: "dark" });
 
-const kinds = (path: string) => tokens.diagnosticsFor(path).map(({ kind }) => kind);
+const kinds = (path: string) => tokens.getDiagnostics(path).map(({ kind }) => kind);
 
-describe("tokens.diagnosticsFor", () => {
+describe("tokens.getDiagnostics", () => {
     it("gives a token's own problems", () => {
         expect(kinds("color.bad")).toStrictEqual(["invalid-value"]);
     });
@@ -61,7 +65,7 @@ describe("tokens.diagnosticsFor", () => {
     });
 
     it("gives each problem with the permutations it is in", () => {
-        const [problem] = tokens.diagnosticsFor("color.ok");
+        const [problem] = tokens.getDiagnostics("color.ok");
         expect(problem?.kind).toBe("invalid-value");
         expect(problem?.permutations?.label).toBe("mode: dark");
     });
@@ -74,21 +78,21 @@ describe("tokens.diagnosticsFor", () => {
     it("gives no token a file's problem", () => {
         const broken = readFromMemory({ files: { "tokens.json": '{ "a": ' } });
         expect(broken.diagnostics.length).toBeGreaterThan(0);
-        expect(broken.diagnosticsFor("a")).toStrictEqual([]);
+        expect(broken.getDiagnostics("a")).toStrictEqual([]);
     });
 });
 
-describe("permutation.diagnosticsFor", () => {
+describe("permutation.getDiagnostics", () => {
     const inPermutation = (permutation: Permutation, path: string) =>
-        permutation.diagnosticsFor(path).map(({ kind }) => kind);
+        permutation.getDiagnostics(path).map(({ kind }) => kind);
 
     it("gives the problems about the path in this permutation", () => {
         expect(inPermutation(darkMode, "color.ok")).toStrictEqual(["invalid-value"]);
-        expect(light.diagnosticsFor("color.ok")).toStrictEqual([]);
+        expect(light.getDiagnostics("color.ok")).toStrictEqual([]);
     });
 
     it("gives a problem in a value every permutation reads to each of them", () => {
-        expect(tokens.diagnosticsFor("color.bad")[0]?.permutations.label).toBe("everywhere");
+        expect(tokens.getDiagnostics("color.bad")[0]?.permutations.label).toBe("everywhere");
         expect(inPermutation(darkMode, "color.bad")).toStrictEqual(["invalid-value"]);
         expect(inPermutation(light, "color.bad")).toStrictEqual(["invalid-value"]);
     });
@@ -106,23 +110,23 @@ describe("a problem in a file only some permutations read", () => {
             "dark.json": JSON.stringify({ gap: { $type: "number", $value: 2, $unknwn: 1 } }),
             "base.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }),
         },
-        entry: "tokens.resolver.json",
+        entryFile: "tokens.resolver.json",
     });
 
     it("names the permutations that read the file", () => {
-        const [ignored] = walked.diagnosticsFor("gap");
+        const [ignored] = walked.getDiagnostics("gap");
         expect(ignored?.kind).toBe("unknown-property");
         expect(ignored?.permutations?.label).toBe("mode: dark");
     });
 
     it("is not given to the token in a permutation that does not read it", () => {
-        expect(walked.permutation().diagnosticsFor("gap")).toStrictEqual([]);
+        expect(walked.getPermutation().getDiagnostics("gap")).toStrictEqual([]);
     });
 
     it("names every permutation for a problem in the resolver, which every permutation is built from", () => {
         const resolverProblem = readFromMemory({
             files: { ...files, "tokens.resolver.json": JSON.stringify({ ...resolver, extra: 1 }) },
-            entry: "tokens.resolver.json",
+            entryFile: "tokens.resolver.json",
         }).diagnostics.find(({ span }) => span?.file === "tokens.resolver.json");
         expect(resolverProblem).toBeDefined();
         expect(resolverProblem?.permutations.label).toBe("everywhere");
@@ -130,7 +134,7 @@ describe("a problem in a file only some permutations read", () => {
 
     it("names none for a problem in a file no permutation the read built reads", () => {
         const lightOnly = readFromMemory(
-            { files: { ...files, "dark.json": '{ "color": ' }, entry: "tokens.resolver.json" },
+            { files: { ...files, "dark.json": '{ "color": ' }, entryFile: "tokens.resolver.json" },
             { inputs: [{}] },
         );
         const broken = lightOnly.diagnostics.find(({ span }) => span?.file === "dark.json");
@@ -141,7 +145,7 @@ describe("a problem in a file only some permutations read", () => {
 
     it("names every permutation the read built for a problem in no file", () => {
         const read = readFromMemory(
-            { files, entry: "tokens.resolver.json" },
+            { files, entryFile: "tokens.resolver.json" },
             { inputs: [{}, { shade: "deep" }] },
         );
         const unknown = read.diagnostics.find(({ span }) => span === undefined);
@@ -172,40 +176,42 @@ describe("a problem in a value a token inherits", () => {
 
     it("is given to the token that inherits the value too", () => {
         const [problem] = extended.diagnostics;
-        expect(extended.permutation().diagnosticsFor("button.primary.pad")).toStrictEqual([
+        expect(extended.getPermutation().getDiagnostics("button.primary.pad")).toStrictEqual([
             problem,
         ]);
-        expect(extended.diagnosticsFor("button.primary.pad")).toStrictEqual([problem]);
+        expect(extended.getDiagnostics("button.primary.pad")).toStrictEqual([problem]);
     });
 });
 
-describe("tokens.diagnosticsAt", () => {
-    const bad = tokens.diagnosticsFor("color.bad")[0];
+describe("getDiagnosticsAt", () => {
+    const bad = tokens.getDiagnostics("color.bad")[0];
     const at = bad?.span;
 
     it("gives the problems written at a place", () => {
         if (!at) throw new Error("the problem has a place");
-        expect(tokens.diagnosticsAt(at)).toStrictEqual([bad]);
+        expect(getDiagnosticsAt(tokens, at)).toStrictEqual([bad]);
     });
 
     it("gives the problems a place overlaps, a point inside one included", () => {
         if (!at) throw new Error("the problem has a place");
         expect(
-            tokens.diagnosticsAt({ file: at.file, offset: at.offset + 1, length: 0 }),
+            getDiagnosticsAt(tokens, { file: at.file, offset: at.offset + 1, length: 0 }),
         ).toStrictEqual([bad]);
         expect(
-            tokens
-                .diagnosticsAt({ file: at.file, offset: at.offset - 2, length: 3 })
-                .map(({ kind }) => kind),
+            getDiagnosticsAt(tokens, { file: at.file, offset: at.offset - 2, length: 3 }).map(
+                ({ kind }) => kind,
+            ),
         ).toContain("invalid-value");
     });
 
     it("gives none for a place in another file, or where nothing is wrong", () => {
         if (!at) throw new Error("the problem has a place");
         expect(
-            tokens.diagnosticsAt({ file: "dark.json", offset: at.offset, length: 1 }),
+            getDiagnosticsAt(tokens, { file: "dark.json", offset: at.offset, length: 1 }),
         ).not.toContain(bad);
-        expect(tokens.diagnosticsAt({ file: "base.json", offset: 0, length: 1 })).toStrictEqual([]);
+        expect(getDiagnosticsAt(tokens, { file: "base.json", offset: 0, length: 1 })).toStrictEqual(
+            [],
+        );
     });
 });
 

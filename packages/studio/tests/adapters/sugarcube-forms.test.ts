@@ -12,23 +12,23 @@ function demoStudio(files = demoFiles()) {
 }
 
 function json(studio: ReturnType<typeof demoStudio>, file: string): Record<string, JsonValue> {
-    return JSON.parse(studio.state.tokens.text(file) ?? "null");
+    return JSON.parse(studio.state.tokens.getText(file) ?? "null");
 }
 
 function token(studio: ReturnType<typeof demoStudio>, path: string): Token {
-    const found = studio.state.showing.token(path);
+    const found = studio.state.showing.getToken(path);
     if (!found) throw new Error(`the demo has no ${path}`);
     return found;
 }
 
 function group(studio: ReturnType<typeof demoStudio>, path: string): Group {
-    const found = studio.state.showing.group(path);
+    const found = studio.state.showing.getGroup(path);
     if (!found) throw new Error(`the demo has no group ${path}`);
     return found;
 }
 
 function formAt(studio: ReturnType<typeof demoStudio>, path: string): ExtensionForm | undefined {
-    const [place] = studio.state.tokens.writtenAt(path);
+    const [place] = studio.state.tokens.getDefinitions(path);
     return studio.state.formFor(token(studio, path), place?.span);
 }
 
@@ -76,7 +76,7 @@ describe("sugarcube's fluid form", () => {
 
         expect(studio.unsaved.steps).toHaveLength(1);
         const gutter = token(studio, "size.fluid.gutter");
-        expect(gutter.authored?.value).toEqual(rem(2.5));
+        expect(gutter.asWritten?.value).toEqual(rem(2.5));
         expect(gutter.extensions?.["sh.sugarcube"]).toMatchObject({ fluid: { max: rem(2.5) } });
     });
 

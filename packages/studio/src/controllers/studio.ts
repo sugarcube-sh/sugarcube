@@ -6,7 +6,7 @@ import {
     type Permutation,
     type Token,
     readFromMemory,
-    sameJson,
+    isEqualJson,
 } from "@sugarcube-sh/dtcg";
 import {
     type Clash,
@@ -70,14 +70,14 @@ export function createStudio(
     let clashes: readonly Clash[] = [];
     let saving = false;
     let lastSave: Held<SaveShown> | undefined;
-    let state = built(session.tokens.permutation().input);
+    let state = built(session.tokens.getPermutation().input);
 
     function built(showing: Input): StudioState {
         const { tokens } = session;
         const written = adapter.write(tokens);
         return {
             tokens,
-            showing: tokens.permutations.matching(showing) ?? tokens.permutation(),
+            showing: tokens.permutations.findByInput(showing) ?? tokens.getPermutation(),
             value: written.value,
             formFor: (node, at) => adapter.formFor?.(tokens, node, at),
             css: written.css,
@@ -150,7 +150,7 @@ export function createStudio(
             listeners.clear();
         },
         show(input) {
-            publish({ ...state, showing: state.tokens.permutation(input) });
+            publish({ ...state, showing: state.tokens.getPermutation(input) });
         },
         do(result, options) {
             return session.do(result, options);
@@ -185,20 +185,23 @@ export function createStudio(
             const previous = message;
             message = next;
             if (
-                next.entry !== previous.entry ||
+                next.entryFile !== previous.entryFile ||
                 next.adapter.name !== previous.adapter.name ||
-                !sameJson(next.adapter.settings, previous.adapter.settings)
+                !isEqualJson(next.adapter.settings, previous.adapter.settings)
             ) {
                 adapter = adapterFor(next.adapter);
                 settled(session.rebase(read(next, adapter)));
                 return;
             }
-            if (!takeIn(next.files) && !sameJson(next.adapter.problems, previous.adapter.problems))
+            if (
+                !takeIn(next.files) &&
+                !isEqualJson(next.adapter.problems, previous.adapter.problems)
+            )
                 publish(built(state.showing.input));
         },
     };
 }
 
-function read({ files, entry }: StudioMessage, adapter: BuildAdapter): DesignTokens {
-    return readFromMemory({ files, entry }, adapter.read);
+function read({ files, entryFile }: StudioMessage, adapter: BuildAdapter): DesignTokens {
+    return readFromMemory({ files, entryFile }, adapter.read);
 }

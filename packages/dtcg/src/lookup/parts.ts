@@ -1,4 +1,4 @@
-import type { JsonPath, Part, Token, TokenType } from "../index.js";
+import type { JsonPath, Part, Token, TokenType } from "../model.js";
 import { syntaxes } from "../values/syntaxes.js";
 import { isJsonObject } from "../values/json.js";
 import { type ArraySyntax, type Syntax, choiceOf, syntaxOf } from "../values/syntax.js";
@@ -88,7 +88,7 @@ function listParts(
 
 function placed(token: Token, property: JsonPath, part: Built): Built {
     if (property.length > 0) part.property = property;
-    const ref = token.referenceAt(property);
+    const ref = token.getReferenceAt(property);
     if (ref) part.ref = ref;
     return part;
 }

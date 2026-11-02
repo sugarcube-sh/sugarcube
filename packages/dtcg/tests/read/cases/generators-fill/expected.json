@@ -17,7 +17,7 @@
             "from": "space",
             "extension": ["com.example", "steps"]
           },
-          "authored": null
+          "asWritten": null
         },
         {
           "path": "space.2",
@@ -29,8 +29,8 @@
             "from": "space",
             "extension": ["com.example", "steps"]
           },
-          "authored": null,
-          "writtenAt": [
+          "asWritten": null,
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -55,8 +55,8 @@
             "from": "space",
             "extension": ["com.example", "steps"]
           },
-          "authored": null,
-          "writtenAt": [
+          "asWritten": null,
+          "definitions": [
             {
               "source": 0,
               "span": {
@@ -89,7 +89,7 @@
         "file": "tokens.json",
         "valueAfter": "\"2\":"
       },
-      "related": [
+      "relatedInformation": [
         {
           "message": "made by this extension",
           "span": {

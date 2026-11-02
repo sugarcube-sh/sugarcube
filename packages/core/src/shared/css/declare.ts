@@ -5,7 +5,7 @@ import {
     PermutationError,
     type Token,
 } from "@sugarcube-sh/dtcg";
-import { type CSSDeclarations, type CSSWriter, cssWriter } from "@sugarcube-sh/dtcg/css";
+import { type CSSDeclarations, type CSSWriter, createCSSWriter } from "@sugarcube-sh/dtcg/css";
 import type { Permutation as ConfigPermutation, InternalConfig } from "../../types/config.js";
 import type { Reported } from "../../types/diagnostics.js";
 import { type AboutToken, aboutToken, diagnostic, located } from "../diagnostics.js";
@@ -53,7 +53,7 @@ export function declare(tokens: DesignTokens, config: InternalConfig): Declarati
         ? [diagnostic("option-deprecated", { option: 'colorFallbackStrategy: "polyfill"' })]
         : [];
     const options = cssWriterOptions(tokens, config);
-    const writer = cssWriter(options);
+    const writer = createCSSWriter(options);
     const listed = config.variables.permutations ?? [];
     const required = listed.length === 0 ? defaultRequired(tokens) : undefined;
     if (required) {
@@ -67,7 +67,7 @@ export function declare(tokens: DesignTokens, config: InternalConfig): Declarati
 
     const toWrite = entries(tokens, config, listed, writer);
     const permutations = [...new Set(toWrite.map(({ permutation }) => permutation))];
-    const once = permutations.map((permutation) => writer.declarations(permutation));
+    const once = permutations.map((permutation) => writer.getDeclarations(permutation));
 
     return {
         tokens,
@@ -106,7 +106,7 @@ function entries(
                 selector: derivedSelector(input),
                 input,
                 path: config.variables.path,
-                declared: writer.declarations(permutation),
+                declared: writer.getDeclarations(permutation),
             };
         });
     }
@@ -120,7 +120,7 @@ function entries(
                 selector,
                 path: path ?? config.variables.path,
                 ...(atRule && { atRule }),
-                declared: writer.declarations(permutation),
+                declared: writer.getDeclarations(permutation),
             },
         ];
     });
@@ -144,7 +144,7 @@ function selectorText(selector: string | string[]): string {
 
 function configured(tokens: DesignTokens, input: Input): Permutation | undefined {
     try {
-        return tokens.permutation(input);
+        return tokens.getPermutation(input);
     } catch (error) {
         if (error instanceof PermutationError) return undefined;
         throw error;

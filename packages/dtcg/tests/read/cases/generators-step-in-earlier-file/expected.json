@@ -24,7 +24,7 @@
             "from": "space",
             "extension": ["com.example", "steps"]
           },
-          "writtenAt": [
+          "definitions": [
             {
               "source": 1,
               "span": {
@@ -50,7 +50,7 @@
         "file": "steps.json",
         "valueAfter": "\"1\":"
       },
-      "related": [
+      "relatedInformation": [
         {
           "message": "made by this extension",
           "span": {

@@ -54,7 +54,7 @@ export type StudioSave = (edits: Edits, changes: readonly Change[]) => Promise<S
 
 export type StudioMessage = {
     readonly adapter: SentAdapter;
-    readonly entry: string;
+    readonly entryFile: string;
     readonly files: Readonly<Record<string, string>>;
 };
 

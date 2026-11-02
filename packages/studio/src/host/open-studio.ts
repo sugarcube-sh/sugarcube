@@ -33,7 +33,7 @@ export async function openStudio(
     const studio = createStudio(first, adapterFor, save);
     const storage = sessionStorageOf();
     const restored = storage
-        ? keepUnsaved(studio, storage, `${STUDIO_STORAGE.unsaved}${first.entry}`)
+        ? keepUnsaved(studio, storage, `${STUDIO_STORAGE.unsaved}${first.entryFile}`)
         : Promise.resolve();
     void restored.then(() => signIn?.start(studio));
     const stop = shared.on("updated", (next) => studio.receive(next));

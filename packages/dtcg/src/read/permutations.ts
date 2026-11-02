@@ -1,4 +1,4 @@
-import type { Input, Resolver, ResolverContext, SetOnRoute, Source } from "../index.js";
+import type { Input, Resolver, ResolverContext, SetOnRoute, Source } from "../model.js";
 import { ownLabel } from "../lookup/permutation-label.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
 import { type Modifier, checkedInput, modifiersIn, withDefaults } from "./input.js";
@@ -21,8 +21,7 @@ export interface LoadedPermutation {
 type Built = Pick<Loaded, "permutations">;
 
 export interface PermutationOptions {
-    inputs?: readonly Readonly<Record<string, unknown>>[];
-    permutations: "all" | "each-context";
+    inputs: readonly Readonly<Record<string, unknown>>[] | "all" | "each-context";
     limit: number;
 }
 
@@ -35,7 +34,7 @@ export function fromTokenFile(path: string, json: JsonFile | undefined): Built {
                 contexts: [],
                 sources: [
                     {
-                        source: { file: path, sets: [], readBy: "everyone" },
+                        source: { file: path, sets: [], readBy: "every-context" },
                         pieces: [{ file: path, ...(json && { json, tree: json.root }) }],
                     },
                 ],
@@ -75,24 +74,21 @@ type ContextOf = (modifier: string, name: string | undefined) => ResolverContext
 
 function chooseInputs(
     modifiers: Modifier[],
-    { inputs, permutations, limit }: PermutationOptions,
+    { inputs, limit }: PermutationOptions,
     diagnostics: Problems,
 ): Input[] {
     if (modifiers.length === 0) return [{}];
-    if (inputs) {
-        const checked = inputs.flatMap((raw, index) => {
-            const found = checkedInput(modifiers, raw);
-            if (found.ok) return [found.input];
-            for (const problem of found.problems) {
-                diagnostics.found(diagnostic("input-invalid", { input: index, ...problem }));
-            }
-            return [];
-        });
-        return distinct(modifiers, checked);
-    }
-    return permutations === "each-context"
-        ? eachContext(modifiers)
-        : allWithinLimit(modifiers, limit, diagnostics);
+    if (inputs === "each-context") return eachContext(modifiers);
+    if (inputs === "all") return allWithinLimit(modifiers, limit, diagnostics);
+    const checked = inputs.flatMap((raw, index) => {
+        const found = checkedInput(modifiers, raw);
+        if (found.ok) return [found.input];
+        for (const problem of found.problems) {
+            diagnostics.found(diagnostic("input-invalid", { input: index, ...problem }));
+        }
+        return [];
+    });
+    return distinct(modifiers, checked);
 }
 
 function distinct(modifiers: Modifier[], inputs: Input[]): Input[] {
@@ -158,7 +154,7 @@ function listedSources(
             ...(loaded.pointer && { pointer: loaded.pointer }),
             ...(context && { modifier: context.modifier }),
             sets: route(first),
-            readBy: readBy.get(sourceKey(loaded)) ?? "everyone",
+            readBy: readBy.get(sourceKey(loaded)) ?? "every-context",
         };
         const made = { source, pieces };
         byContext.set(context, made);
@@ -194,14 +190,14 @@ function whoReadsEachSource(
     sources: Map<SourcePiece, LoadedSource>,
     contextOf: ContextOf,
 ): Map<string, Source["readBy"]> {
-    const readBy = new Map<string, "everyone" | ResolverContext[]>();
+    const readBy = new Map<string, "every-context" | ResolverContext[]>();
     const read = (entry: SourceEntry, context?: ResolverContext) => {
         const loaded = openedAs(entry, sources);
         if (!loaded) return;
         const key = sourceKey(loaded);
         const existing = readBy.get(key);
-        if (!context || existing === "everyone") {
-            readBy.set(key, "everyone");
+        if (!context || existing === "every-context") {
+            readBy.set(key, "every-context");
             return;
         }
         const list = existing ?? [];

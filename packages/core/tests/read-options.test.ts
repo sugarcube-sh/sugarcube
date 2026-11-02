@@ -30,7 +30,10 @@ function readWith(variables?: Parameters<typeof fillDefaults>[0]["variables"]) {
         resolver: "tokens.resolver.json",
         ...(variables && { variables }),
     });
-    const tokens = readFromMemory({ files, entry: "tokens.resolver.json" }, readOptions(config));
+    const tokens = readFromMemory(
+        { files, entryFile: "tokens.resolver.json" },
+        readOptions(config),
+    );
     return { tokens, inputs: tokens.permutations.map(({ input }) => input) };
 }
 

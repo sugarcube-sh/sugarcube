@@ -24,8 +24,8 @@
           "generated": {
             "extension": ["com.example", "steps"]
           },
-          "authored": null,
-          "writtenAt": [
+          "asWritten": null,
+          "definitions": [
             {
               "source": 0,
               "span": {

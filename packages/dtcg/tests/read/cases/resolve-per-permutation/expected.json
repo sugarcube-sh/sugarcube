@@ -21,8 +21,7 @@
           },
           "references": [
             {
-              "syntax": "curly-brace",
-              "path": "color.brand",
+              "asWritten": { "syntax": "curly-brace", "path": "color.brand" },
               "span": {
                 "file": "base.json",
                 "text": "\"{color.brand}\""
@@ -39,8 +38,7 @@
           },
           "references": [
             {
-              "syntax": "curly-brace",
-              "path": "color.brand",
+              "asWritten": { "syntax": "curly-brace", "path": "color.brand" },
               "span": {
                 "file": "base.json",
                 "text": "\"{color.brand}\"",
@@ -70,8 +68,7 @@
           },
           "references": [
             {
-              "syntax": "curly-brace",
-              "path": "color.brand",
+              "asWritten": { "syntax": "curly-brace", "path": "color.brand" },
               "span": {
                 "file": "base.json",
                 "text": "\"{color.brand}\""
@@ -89,8 +86,7 @@
           "resolved": null,
           "references": [
             {
-              "syntax": "curly-brace",
-              "path": "color.highlight",
+              "asWritten": { "syntax": "curly-brace", "path": "color.highlight" },
               "span": {
                 "file": "dark.json",
                 "text": "\"{color.highlight}\""

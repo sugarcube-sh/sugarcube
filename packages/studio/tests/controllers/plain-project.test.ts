@@ -13,7 +13,7 @@ describe("a plain DTCG project, with the plain adapter", () => {
 
     it("lists a group's tokens with the values the plain adapter writes", () => {
         const studio = studioOn(plainMessage());
-        const fluid = studio.state.showing.group("size.fluid");
+        const fluid = studio.state.showing.getGroup("size.fluid");
 
         const gutter = fluid && groupView(fluid, studio.state.value).tokens[0];
 
@@ -67,7 +67,7 @@ describe("a plain DTCG project, with the plain adapter", () => {
             ),
         );
 
-        const gutter = studio.state.showing.token("size.fluid.gutter");
+        const gutter = studio.state.showing.getToken("size.fluid.gutter");
         expect(gutter && studio.state.value(gutter)).toBe("3rem");
     });
 });

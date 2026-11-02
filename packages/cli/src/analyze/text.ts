@@ -1,5 +1,5 @@
 import { plural } from "@sugarcube-sh/core";
-import { parentOf, withoutRoot } from "@sugarcube-sh/dtcg";
+import { tokenPath } from "@sugarcube-sh/dtcg";
 import { extname } from "pathe";
 import color from "picocolors";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
@@ -62,8 +62,8 @@ function truncate(text: string, max: number): string {
 }
 
 function groupAndName(path: string): [group: string, name: string] {
-    const shown = withoutRoot(path);
-    const group = parentOf(shown);
+    const shown = tokenPath.removeRoot(path);
+    const group = tokenPath.getParent(shown);
     return group === undefined ? ["(root)", shown] : [group, shown.slice(group.length + 1)];
 }
 
@@ -123,8 +123,8 @@ export function impactHeading({ path, written }: Impact): string {
     const values = [
         ...new Set(
             written.flatMap(({ token }) => {
-                const authored = token.authored?.value;
-                return typeof authored === "string" ? [authored] : [];
+                const valueAsWritten = token.asWritten?.value;
+                return typeof valueAsWritten === "string" ? [valueAsWritten] : [];
             }),
         ),
     ];

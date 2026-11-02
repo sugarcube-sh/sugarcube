@@ -23,11 +23,11 @@ for (const d of tokens.diagnostics) {
         range: range(d.span),
         severity: severity[d.severity],
         code: d.kind,
-        codeDescription: { href: d.docs },
+        codeDescription: { href: d.docsUrl },
         source: "dtcg",
         message: d.message,
         tags: d.tags?.map((t) => tag[t]),
-        relatedInformation: d.related?.map((r) => ({
+        relatedInformation: d.relatedInformation?.map((r) => ({
             location: { uri: uri(r.span.file), range: range(r.span) },
             message: r.message,
         })),

@@ -3,4 +3,4 @@
 import { read } from "@sugarcube-sh/dtcg/node";
 
 const tokens = await read("tokens/tokens.resolver.json");
-row(tokens.files.length, tokens.text(tokens.entry)?.length, tokens.diagnostics.length);
+row(tokens.files.length, tokens.getText(tokens.entryFile)?.length, tokens.diagnostics.length);

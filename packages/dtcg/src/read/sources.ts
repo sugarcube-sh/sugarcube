@@ -1,6 +1,6 @@
 import type { Problems } from "./diagnostics.js";
 import type { Node } from "jsonc-parser";
-import type { JsonPath } from "../index.js";
+import type { JsonPath } from "../model.js";
 import { type Files, openFile, parseFile } from "./files.js";
 import { type JsonFile, member, members, spanOf } from "./json.js";
 import { malformedPointer } from "./malformed-pointer.js";
@@ -79,7 +79,7 @@ export function expandSources(
     };
     const expand = (sources: ResolverNode[], route: RouteStep[]) =>
         expandList(expander, sources, route, []);
-    const items = resolver.order.map((item): ExpandedItem =>
+    const items = resolver.resolutionOrder.map((item): ExpandedItem =>
         item.kind === "set"
             ? { kind: "set", set: item.set, entries: expand(item.set.sources, [stepOf(item.set)]) }
             : {
