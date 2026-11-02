@@ -93,39 +93,39 @@ export function fieldFor(type: TokenType | undefined, written: JsonValue): Field
 function literalField(type: FieldType, written: JsonValue): Field | undefined {
     switch (type) {
         case "dimension": {
-            const read = parseValue(type, written, [], { references: false });
+            const read = parseValue(type, written, { references: false });
             return read.ok
                 ? { kind: type, value: read.value.value, unit: read.value.unit }
                 : undefined;
         }
         case "duration": {
-            const read = parseValue(type, written, [], { references: false });
+            const read = parseValue(type, written, { references: false });
             return read.ok
                 ? { kind: type, value: read.value.value, unit: read.value.unit }
                 : undefined;
         }
         case "number": {
-            const read = parseValue(type, written, [], { references: false });
+            const read = parseValue(type, written, { references: false });
             return read.ok ? { kind: type, value: read.value } : undefined;
         }
         case "fontWeight": {
-            const read = parseValue(type, written, [], { references: false });
+            const read = parseValue(type, written, { references: false });
             if (!read.ok) return undefined;
             const keyword = weightKeywords.find((each) => each === written);
             return { kind: type, value: keyword ?? read.value };
         }
         case "fontFamily": {
-            const read = parseValue(type, written, [], { references: false });
+            const read = parseValue(type, written, { references: false });
             return read.ok
                 ? { kind: type, fonts: read.value, alone: typeof written === "string" }
                 : undefined;
         }
         case "cubicBezier": {
-            const read = parseValue(type, written, [], { references: false });
+            const read = parseValue(type, written, { references: false });
             return read.ok ? { kind: type, points: read.value } : undefined;
         }
         case "strokeStyle": {
-            const read = parseValue(type, written, [], { references: false });
+            const read = parseValue(type, written, { references: false });
             return read.ok && read.value.kind === "keyword"
                 ? { kind: type, keyword: read.value.keyword }
                 : undefined;

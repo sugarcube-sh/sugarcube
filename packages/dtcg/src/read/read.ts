@@ -138,9 +138,7 @@ function permutationOptions({
     inputs = "all",
     permutationLimit = 32,
 }: ReadOptions): PermutationOptions {
-    return typeof inputs === "string"
-        ? { permutations: inputs, limit: permutationLimit }
-        : { inputs, permutations: "all", limit: permutationLimit };
+    return { inputs, limit: permutationLimit };
 }
 
 function toDesignTokens(

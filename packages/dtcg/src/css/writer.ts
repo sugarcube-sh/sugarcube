@@ -112,8 +112,11 @@ export interface CSSDeclarations {
 export interface CSSWriter {
     /** Every custom property a permutation declares, in its tokens' order. */
     getDeclarations(permutation: Permutation): CSSDeclarations;
-    /** One token's value as this writer writes it, with the tokens it names; `undefined` when it has none. */
-    getValue(token: Token): CSSWritten | undefined;
+    /**
+     * One token's value as this writer writes it, with the tokens it names; `undefined` when it has
+     * none, or for no token, so `writer.getValue(permutation.getToken(path))` needs no check first.
+     */
+    getValue(token: Token | undefined): CSSWritten | undefined;
 }
 
 type Colors = NonNullable<CSSValueOptions["colors"]>;
@@ -286,7 +289,7 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
             return declared;
         },
         getValue(token) {
-            return written(token, "components");
+            return token && written(token, "components");
         },
     };
 }

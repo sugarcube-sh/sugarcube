@@ -76,7 +76,7 @@ export function createExtensionReader<M extends ExtensionMessages>(
     const ignored: IgnoredProperty[] = [];
     return {
         read: (type, raw, jsonPath) => {
-            const read = parseValue(type, raw, jsonPath, { ...options, references: false });
+            const read = parseValue(type, raw, { jsonPath, ...options, references: false });
             ignored.push(...read.ignored);
             if (read.ok) return read.value;
             errors.push(...read.errors);

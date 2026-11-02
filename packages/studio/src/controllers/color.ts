@@ -87,7 +87,7 @@ const inCuloriTerms = {
 export const spaceNames = Object.keys(colorSpaces) as ColorSpace[];
 
 export function colorField(written: JsonValue): ColorField | undefined {
-    const read = parseValue("color", written, [], { references: false, hexStringColors: true });
+    const read = parseValue("color", written, { references: false, hexStringColors: true });
     if (!read.ok) return undefined;
     if (typeof written === "string") {
         return { kind: "color", written, color: inCulori(spaceOf("srgb"), read.value) };

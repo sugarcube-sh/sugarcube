@@ -230,9 +230,7 @@ async function differences(each: Case): Promise<string[]> {
                 found.push(`${label} ${path}: not read`);
                 continue;
             }
-            const converted = parseValue(type, withHexAsColors(type, value), [], {
-                references: false,
-            });
+            const converted = parseValue(type, withHexAsColors(type, value), { references: false });
             if (!converted.ok) {
                 found.push(`${label} ${path}: ${JSON.stringify(value)} has no dtcg shape`);
             } else if (JSON.stringify(converted.value) !== JSON.stringify(token.resolved)) {

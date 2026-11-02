@@ -9,22 +9,29 @@ import type {
 import { type Notes, readToken } from "./read-syntax.js";
 import { valueError } from "./value-errors.js";
 
+/** How {@link parseValue} reads a value: where it sits, if anywhere, and how values are read. */
+export interface ParseValueOptions extends ParseOptions {
+    /** Where the value sits in its file, such as `["$value"]`. @default [] */
+    readonly jsonPath?: JsonPath;
+}
+
 /**
- * Reads one value of a type into its shape, or explains why it cannot. `jsonPath` is where the
- * value sits, and each problem's `jsonPath` starts with it. A reference to a whole token, written
- * `"{color.brand}"`, is read as a `CurlyBraceReference`; a JSON Pointer is read as a
- * `JsonPointerReference`, and may stand in place of the whole value or any part of it.
+ * Reads one value of a type into its shape, or explains why it cannot. `jsonPath`, when the value
+ * sits in a file, is where, such as `["$value"]`, and each problem's `jsonPath` starts with it; a
+ * value with no place, such as one typed into a form, leaves it out. A reference to a whole token,
+ * written `"{color.brand}"`, is read as a curly brace reference; a JSON Pointer may stand in place
+ * of the whole value or any part of it.
  *
  * @example
- * parseValue("color", { colorSpace: "srgb", components: [1, 0, 1] }, [])
+ * parseValue("color", { colorSpace: "srgb", components: [1, 0, 1] })
  * // { ok: true, value: { colorSpace: "srgb", components: [1, 0, 1], alpha: 1 }, ignored: [] }
  *
  * @example
- * parseValue("color", "{color.brand}", [])
+ * parseValue("color", "{color.brand}")
  * // { ok: true, value: { syntax: "curly-brace", path: "color.brand" }, ignored: [] }
  *
  * @example
- * parseValue("color", { colorSpace: "srgb", components: [1, 0, 1], name: "magenta" }, [], {
+ * parseValue("color", { colorSpace: "srgb", components: [1, 0, 1], name: "magenta" }, {
  *   ignoreUnknownProperties: true,
  * })
  * // read without `name`, which is in `ignored`:
@@ -34,8 +41,7 @@ import { valueError } from "./value-errors.js";
 export function parseValue<T extends TokenType>(
     type: T,
     raw: unknown,
-    jsonPath: JsonPath,
-    options?: ParseOptions & { references?: true },
+    options?: ParseValueOptions & { references?: true },
 ): ParseResult<UnresolvedValue<T>>;
 /**
  * Reads one value of a type given at run time, accepting only a literal value: a reference, in
@@ -43,20 +49,22 @@ export function parseValue<T extends TokenType>(
  * `"reference-not-allowed"`, at the place it is written.
  *
  * @example
- * const min = parseValue("dimension", recipe.min, ["min"], { references: false });
+ * const min = parseValue("dimension", recipe.min, { jsonPath: ["min"], references: false });
  * if (min.ok) min.value.unit // "px" | "rem": no reference to rule out
  */
 export function parseValue<T extends TokenType>(
     type: T,
     raw: unknown,
-    jsonPath: JsonPath,
-    options: ParseOptions & { references: false },
+    options: ParseValueOptions & { references: false },
 ): ParseResult<ValueByType[T]>;
 export function parseValue<T extends TokenType>(
     type: T,
     raw: unknown,
-    jsonPath: JsonPath,
-    { references = true, ...options }: ParseOptions & { references?: boolean } = {},
+    {
+        jsonPath = [],
+        references = true,
+        ...options
+    }: ParseValueOptions & { references?: boolean } = {},
 ): ParseResult<UnresolvedValue<T> | ValueByType[T]> {
     if (references) return readToken(type, raw, jsonPath, options);
 

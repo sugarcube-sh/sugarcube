@@ -1,10 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { parseValue } from "../../src/values.js";
 
+describe("a value with no place in a file", () => {
+    it("is read with no jsonPath, its problems at the top of the value", () => {
+        expect(parseValue("number", 2)).toStrictEqual({ ok: true, value: 2, ignored: [] });
+        const wrong = parseValue("number", "two");
+        expect(!wrong.ok && wrong.errors[0]?.jsonPath).toStrictEqual([]);
+    });
+
+    it("is read at the place given, when there is one", () => {
+        const wrong = parseValue("number", "two", { jsonPath: ["$value"] });
+        expect(!wrong.ok && wrong.errors[0]?.jsonPath).toStrictEqual(["$value"]);
+    });
+});
+
 describe("parseValue", () => {
     it("reads a value of the type it is given, references allowed", () => {
-        expect(parseValue("number", 1.5, [])).toStrictEqual({ ok: true, value: 1.5, ignored: [] });
-        expect(parseValue("number", "{ratio.golden}", [])).toStrictEqual({
+        expect(parseValue("number", 1.5)).toStrictEqual({ ok: true, value: 1.5, ignored: [] });
+        expect(parseValue("number", "{ratio.golden}")).toStrictEqual({
             ok: true,
             value: { syntax: "curly-brace", path: "ratio.golden" },
             ignored: [],
@@ -12,7 +25,7 @@ describe("parseValue", () => {
     });
 
     it("reports a value that does not fit the type, as that type's parser does", () => {
-        const read = parseValue("dimension", "16px", ["base"], { references: false });
+        const read = parseValue("dimension", "16px", { jsonPath: ["base"], references: false });
         expect(
             read.ok ? [] : read.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail })),
         ).toEqual([
@@ -34,7 +47,7 @@ describe("parseValue", () => {
         ["shadow", "shadow.raised"],
         ["cubicBezier", "easing.out"],
     ] as const)("suggests braces for a %s written as a path, %s", ([type, value]) => {
-        const read = parseValue(type, value, ["$value"]);
+        const read = parseValue(type, value, { jsonPath: ["$value"] });
         expect(read.ok ? [] : read.errors.map(({ detail }) => detail)).toEqual([
             { type, reason: "wrong-shape", value, reference: `{${value}}` },
         ]);
@@ -43,7 +56,7 @@ describe("parseValue", () => {
     it.for(["red", "1.5", "16 px", ".ink", "color.", "#color.ink", "{color.ink"])(
         "suggests nothing for %j, which does not read as a path",
         (value) => {
-            const read = parseValue("color", value, ["$value"]);
+            const read = parseValue("color", value, { jsonPath: ["$value"] });
             expect(read.ok ? [] : read.errors.map(({ detail }) => detail)).toEqual([
                 { type: "color", reason: "wrong-shape", value },
             ]);
@@ -52,7 +65,7 @@ describe("parseValue", () => {
 
     it("reads a literal value, when only literals are wanted", () => {
         expect(
-            parseValue("dimension", { value: 1, unit: "rem" }, [], { references: false }),
+            parseValue("dimension", { value: 1, unit: "rem" }, { references: false }),
         ).toStrictEqual({ ok: true, value: { value: 1, unit: "rem" }, ignored: [] });
     });
 
@@ -66,7 +79,7 @@ describe("parseValue", () => {
     ])(
         "refuses $written in place of a whole value, when only literals are wanted",
         ({ written, jsonPath: inside, reference }) => {
-            const read = parseValue("number", written, ["ratio"], { references: false });
+            const read = parseValue("number", written, { jsonPath: ["ratio"], references: false });
             expect(
                 read.ok ? [] : read.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail })),
             ).toEqual([
@@ -86,8 +99,7 @@ describe("parseValue", () => {
         const read = parseValue(
             "dimension",
             { value: { $ref: "#/size/base/$value/value" }, unit: "rem" },
-            ["base", "min"],
-            { references: false },
+            { jsonPath: ["base", "min"], references: false },
         );
         expect(
             read.ok ? [] : read.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail })),
@@ -111,7 +123,7 @@ describe("parseValue", () => {
             blur: { value: 2, unit: "px" },
             spread: { value: 0, unit: "px" },
         };
-        const read = parseValue("shadow", shadow, [], { references: false });
+        const read = parseValue("shadow", shadow, { references: false });
         expect(
             read.ok ? [] : read.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail })),
         ).toEqual([
@@ -128,7 +140,7 @@ describe("parseValue", () => {
 
     it("reads a hex string in place of a color inside a composite, with hexStringColors", () => {
         const stop = (color: string, position: number) => ({ color, position });
-        const result = parseValue("gradient", [stop("#000000", 0), stop("#ffffff80", 1)], [], {
+        const result = parseValue("gradient", [stop("#000000", 0), stop("#ffffff80", 1)], {
             hexStringColors: true,
             references: false,
         });

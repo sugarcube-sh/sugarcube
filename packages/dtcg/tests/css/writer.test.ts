@@ -344,6 +344,12 @@ describe("createCSSWriter", () => {
     });
 
     describe("written", () => {
+        it("gives undefined for a token that isn't there, as toCSSValue does", () => {
+            expect(
+                createCSSWriter().getValue(modes.getPermutation().getToken("nope")),
+            ).toBeUndefined();
+        });
+
         it("writes references as custom properties when asked by name, as it does by default", () => {
             const token = tokenAt(modes, "color.text");
             expect(

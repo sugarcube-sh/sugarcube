@@ -4,8 +4,8 @@ import { parseReference, parseValue, toReferenceTarget, toJsonPointer } from "..
 
 describe("isReference", () => {
     it("recognises the references a parser reads, in either syntax", () => {
-        const curly = parseValue("number", "{ratio.golden}", []);
-        const pointer = parseValue("number", { $ref: "#/ratio/golden/$value" }, []);
+        const curly = parseValue("number", "{ratio.golden}");
+        const pointer = parseValue("number", { $ref: "#/ratio/golden/$value" });
         expect(curly.ok && isReference(curly.value)).toBe(true);
         expect(pointer.ok && isReference(pointer.value)).toBe(true);
         expect(curly.ok && isReference(curly.value) && curly.value.syntax).toBe("curly-brace");
@@ -15,11 +15,10 @@ describe("isReference", () => {
     });
 
     it("recognises a pointer in place of part of a value", () => {
-        const dimension = parseValue(
-            "dimension",
-            { value: { $ref: "#/size/base/$value/value" }, unit: "rem" },
-            [],
-        );
+        const dimension = parseValue("dimension", {
+            value: { $ref: "#/size/base/$value/value" },
+            unit: "rem",
+        });
         if (!dimension.ok || isReference(dimension.value)) {
             expect.unreachable("a dimension with a pointer for its value");
         }

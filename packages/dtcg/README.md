@@ -225,17 +225,19 @@ const tokens = readFromMemory({ files: { "tokens.resolver.json": "…", "color.j
 ## Write CSS
 
 ```ts
-import { getCSSBlocks, toCustomPropertyName, toCSS, toCSSValue } from "@sugarcube-sh/dtcg/css";
+import { createCSSWriter, getCSSBlocks, toCustomPropertyName, toCSS, toCSSValue } from "@sugarcube-sh/dtcg/css";
 
 const text = tokens.getPermutation({ mode: "dark" }).getToken("color.text");
 
 toCustomPropertyName("color.text")          // "--color-text"
-toCSSValue(text)                            // "rgb(51 102 204)"
-toCSSValue(text, {
-  replaceReference: (ref) =>
-    ref.pointsToToken ? { customProperty: toCustomPropertyName(ref.pointsToToken.path) } : undefined,
-})                                          // "var(--color-blue)"
+toCSSValue(text)                            // "rgb(51 102 204)": its value, references followed
+createCSSWriter().getValue(text)?.css       // "var(--color-blue)": as a stylesheet writes it
 ```
+
+`toCSSValue` writes a value on its own. A writer writes it as it goes in a stylesheet, each
+reference as a `var()` to its token's custom property, named your way (`createCSSWriter({ naming:
+{ prefix: "ds" } })` gives `var(--ds-color-blue)`). For anything else, `toCSSValue`'s
+`replaceReference` says what to write in place of each reference.
 
 A whole stylesheet, one block per input:
 
@@ -271,10 +273,10 @@ To check a single value, with no files at all, such as a value someone types int
 ```ts
 import { parseValue } from "@sugarcube-sh/dtcg/values";
 
-parseValue("color", { colorSpace: "srgb", components: [1, 0, 1] }, [])
+parseValue("color", { colorSpace: "srgb", components: [1, 0, 1] })
 // { ok: true, value: { colorSpace: "srgb", components: [1, 0, 1], alpha: 1 }, ignored: [] }
 
-parseValue("color", "#e11d48", [])
+parseValue("color", "#e11d48")
 // { ok: false, errors: [{ message: "`#e11d48` is a hex string, and a color must be an object", … }] }
 ```
 

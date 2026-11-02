@@ -5,19 +5,19 @@ import { parseValue } from "../../src/values.js";
 const lenient: ParseOptions = { ignoreUnknownProperties: true };
 
 function read(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("gradient", raw, ["$value"], options);
+    const result = parseValue("gradient", raw, { jsonPath: ["$value"], ...options });
     if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
     return result.value;
 }
 
 function details(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("gradient", raw, ["$value"], options);
+    const result = parseValue("gradient", raw, { jsonPath: ["$value"], ...options });
     if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
     return result.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
 }
 
 function ignored(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("gradient", raw, ["$value"], options);
+    const result = parseValue("gradient", raw, { jsonPath: ["$value"], ...options });
     return result.ignored.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
 }
 

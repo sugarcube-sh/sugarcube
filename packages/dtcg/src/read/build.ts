@@ -20,8 +20,8 @@ import type { Building } from "./building.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
 import { applying, deprecatedFrom, inherited } from "./inherit.js";
 import {
-    NO_EXTENSION_PLACES,
-    NO_PLACES,
+    NO_EXTENSION_DEFINITIONS,
+    NO_DEFINITIONS,
     NO_REFERENCES,
     type Places,
     linkedGroup,
@@ -112,7 +112,7 @@ function buildPermutation(
     const sourceAt = (index: number) => sources[index] as Source;
     const placed = (written: WrittenAt[], path: string | undefined): readonly Definition[] => {
         const [first, ...rest] = written;
-        if (!first) return NO_PLACES;
+        if (!first) return NO_DEFINITIONS;
         if (rest.length === 0) return places.only(sourceAt(first.source), first.span, path);
         return written.map(({ source, span }) => places.at(sourceAt(source), span, path));
     };
@@ -481,7 +481,7 @@ function extensionPlaces(
     { extensionsAt, declaredIn }: MergedGroup,
     writtenAt: readonly Definition[],
 ): Readonly<Record<string, Definition>> {
-    if (!extensionsAt) return NO_EXTENSION_PLACES;
+    if (!extensionsAt) return NO_EXTENSION_DEFINITIONS;
     const places: Record<string, Definition> = {};
     for (const [key, { source }] of Object.entries(extensionsAt)) {
         declaredIn.forEach((each, index) => {

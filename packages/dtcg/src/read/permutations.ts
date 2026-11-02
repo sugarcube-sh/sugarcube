@@ -21,8 +21,7 @@ export interface LoadedPermutation {
 type Built = Pick<Loaded, "permutations">;
 
 export interface PermutationOptions {
-    inputs?: readonly Readonly<Record<string, unknown>>[];
-    permutations: "all" | "each-context";
+    inputs: readonly Readonly<Record<string, unknown>>[] | "all" | "each-context";
     limit: number;
 }
 
@@ -75,24 +74,21 @@ type ContextOf = (modifier: string, name: string | undefined) => ResolverContext
 
 function chooseInputs(
     modifiers: Modifier[],
-    { inputs, permutations, limit }: PermutationOptions,
+    { inputs, limit }: PermutationOptions,
     diagnostics: Problems,
 ): Input[] {
     if (modifiers.length === 0) return [{}];
-    if (inputs) {
-        const checked = inputs.flatMap((raw, index) => {
-            const found = checkedInput(modifiers, raw);
-            if (found.ok) return [found.input];
-            for (const problem of found.problems) {
-                diagnostics.found(diagnostic("input-invalid", { input: index, ...problem }));
-            }
-            return [];
-        });
-        return distinct(modifiers, checked);
-    }
-    return permutations === "each-context"
-        ? eachContext(modifiers)
-        : allWithinLimit(modifiers, limit, diagnostics);
+    if (inputs === "each-context") return eachContext(modifiers);
+    if (inputs === "all") return allWithinLimit(modifiers, limit, diagnostics);
+    const checked = inputs.flatMap((raw, index) => {
+        const found = checkedInput(modifiers, raw);
+        if (found.ok) return [found.input];
+        for (const problem of found.problems) {
+            diagnostics.found(diagnostic("input-invalid", { input: index, ...problem }));
+        }
+        return [];
+    });
+    return distinct(modifiers, checked);
 }
 
 function distinct(modifiers: Modifier[], inputs: Input[]): Input[] {

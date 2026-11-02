@@ -28,8 +28,8 @@ import { spanOfReference } from "./reference.js";
 import { samePlace } from "./same-object.js";
 
 export const NO_REFERENCES: readonly Reference[] = Object.freeze([]);
-export const NO_PLACES: readonly Definition[] = Object.freeze([]);
-export const NO_EXTENSION_PLACES: Readonly<Record<string, Definition>> = Object.freeze({});
+export const NO_DEFINITIONS: readonly Definition[] = Object.freeze([]);
+export const NO_EXTENSION_DEFINITIONS: Readonly<Record<string, Definition>> = Object.freeze({});
 
 const NOT_YET = Symbol("not yet worked out");
 
@@ -451,7 +451,7 @@ export function placesIn(
     const made = new Map<Span, DefinitionObject[]>();
     const moved = new Map<Definition | Reference, Span>();
     const checked = new Set<readonly Reference[]>();
-    const before = previous && placesBy(previous);
+    const before = previous && definitionsBy(previous);
     const kept = (
         source: Source,
         span: Span,
@@ -492,7 +492,7 @@ export function placesIn(
     };
 }
 
-function placesBy(tokens: DesignTokens): Map<string | undefined, DefinitionObject[]> {
+function definitionsBy(tokens: DesignTokens): Map<string | undefined, DefinitionObject[]> {
     const found = new Map<string | undefined, DefinitionObject[]>();
     const seen = new Set<{ readonly definitions: readonly Definition[] }>();
     const add = (

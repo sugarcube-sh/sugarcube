@@ -69,11 +69,17 @@ const generators = {
                 color?: unknown;
             };
             if (size !== undefined) {
-                const parsed = parseValue("dimension", size, ["size"], { references: false });
+                const parsed = parseValue("dimension", size, {
+                    jsonPath: ["size"],
+                    references: false,
+                });
                 if (!parsed.ok) return parsed;
             }
             if (color !== undefined) {
-                const parsed = parseValue("color", color, ["color"], { references: false });
+                const parsed = parseValue("color", color, {
+                    jsonPath: ["color"],
+                    references: false,
+                });
                 if (!parsed.ok) return parsed;
             }
             return typeof count === "number"
@@ -128,7 +134,8 @@ const validators = {
         validate: (_token, extension, options) => {
             const { outline } = extension as { outline?: unknown };
             if (outline === undefined) return [{ jsonPath: [], reason: "no-outline" }];
-            const parsed = parseValue("dimension", outline, ["outline"], {
+            const parsed = parseValue("dimension", outline, {
+                jsonPath: ["outline"],
                 ...options,
                 references: false,
             });
