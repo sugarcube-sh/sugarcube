@@ -29,14 +29,13 @@ class ReferenceObject {
     readonly #pointerAlone: boolean;
 
     constructor(from: Token | Group, to: ReferenceTo, pointerAlone: boolean) {
-        const { occurrence, path, token, targetProperty } = to;
+        const { occurrence, path, token, pointsToProperty } = to;
         const { reference, span, property } = occurrence;
         this.pointsToPath = path;
         this.writtenIn = from;
         this.pointsToToken = token;
         this.writtenInProperty = property.length > 0 ? property : undefined;
-        if (reference.syntax === "json-pointer")
-            Object.assign(this, { pointsToProperty: targetProperty });
+        if (reference.syntax === "json-pointer") Object.assign(this, { pointsToProperty });
         this.#written = reference;
         this.#span = span;
         this.#pointerAlone = pointerAlone;

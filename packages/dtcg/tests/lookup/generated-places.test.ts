@@ -36,16 +36,14 @@ const tokens = readFromMemory(
 describe("generated tokens across permutations", () => {
     it("is written in one place, read in every permutation", () => {
         const places = tokens.getDefinitions("g.a");
-        expect(places.map(({ permutations: readIn }) => readIn.label)).toStrictEqual([
-            "everywhere",
-        ]);
+        expect(places.map(({ permutations }) => permutations.label)).toStrictEqual(["everywhere"]);
     });
 
     it("is one reference to what it references, in every permutation", () => {
         const references = tokens.getReferencesTo("base");
         expect(
-            references.map(({ writtenInPaths: fromPaths, permutations }) => [
-                fromPaths,
+            references.map(({ writtenInPaths, permutations }) => [
+                writtenInPaths,
                 permutations.label,
             ]),
         ).toStrictEqual([[["g.a"], "everywhere"]]);
@@ -84,7 +82,7 @@ describe("generated tokens across permutations", () => {
             { generators: [two] },
         );
         expect(
-            both.getReferencesTo("base").map(({ writtenInPaths: fromPaths }) => fromPaths),
+            both.getReferencesTo("base").map(({ writtenInPaths }) => writtenInPaths),
         ).toStrictEqual([["g.a", "g.b"]]);
     });
 });

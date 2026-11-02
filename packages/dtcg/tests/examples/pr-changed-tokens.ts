@@ -9,7 +9,7 @@ for (const change of after.diff(before)) {
     if (change.kind !== "changed" || !change.properties.includes("value")) continue;
     const users = after
         .getReferencesTo(change.path)
-        .flatMap(({ writtenInPaths: fromPaths }) => fromPaths);
+        .flatMap(({ writtenInPaths }) => writtenInPaths);
     const dependents = new Set(users).size;
     comment(`${change.path} changed; ${dependents} tokens depend on it`);
 }

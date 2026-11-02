@@ -156,7 +156,7 @@ describe("on the design tokens", () => {
     it("writtenAt gives every place a path is written, in any permutation, each once with where it is read", () => {
         const places = tokens.getDefinitions("color.bg");
         expect(
-            places.map(({ span, permutations: readIn }) => [span.file, readIn.inputs]),
+            places.map(({ span, permutations }) => [span.file, permutations.inputs]),
         ).toStrictEqual([
             ["base.json", [{ mode: "light" }, { mode: "dark" }]],
             ["dark.json", [{ mode: "dark" }]],

@@ -202,8 +202,8 @@ export function clashRows(tokens: DesignTokens, clashes: readonly Clash[]): Clas
     });
 }
 
-function labelOf({ sources, permutations: readIn }: PlaceInPermutations): string | undefined {
-    if (sources.some((source) => source.modifier)) return readIn.label;
+function labelOf({ sources, permutations }: PlaceInPermutations): string | undefined {
+    if (sources.some((source) => source.modifier)) return permutations.label;
     return sources[0]?.sets[0]?.name;
 }
 

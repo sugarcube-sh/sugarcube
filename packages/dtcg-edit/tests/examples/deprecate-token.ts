@@ -11,9 +11,7 @@ if (done.tokens) tokens = done.tokens;
 for (const t of tokens.getPermutation().tokens) {
     if (!t.deprecated) continue;
     const users = [
-        ...new Set(
-            tokens.getReferencesTo(t.path).flatMap(({ writtenInPaths: fromPaths }) => fromPaths),
-        ),
+        ...new Set(tokens.getReferencesTo(t.path).flatMap(({ writtenInPaths }) => writtenInPaths)),
     ];
     if (users.length) {
         comment(`${t.path} is deprecated (${t.deprecated}) but used by ${users.join(", ")}`);

@@ -35,7 +35,7 @@ describe("permutation.usedBy", () => {
             for (const chained of [false, true]) {
                 const references = permutation.getReferencesTo("color.red", { chained });
                 expect(permutation.getDependents("color.red", { chained })).toStrictEqual([
-                    ...new Set(references.map(({ writtenIn: from }) => from)),
+                    ...new Set(references.map(({ writtenIn }) => writtenIn)),
                 ]);
             }
         }

@@ -326,13 +326,13 @@ function workingOut(
         const [first, ...rest] = loop;
         if (!first) return;
         const chain = [...loop.map((frame) => frame.path), path];
-        const related = rest.map((frame) => ({
+        const relatedInformation = rest.map((frame) => ({
             message: relatedMessages.partOfTheLoop,
             span: frame.span,
             path: frame.path,
         }));
         report("circular-reference", { chain }, first.path, first.span, {
-            relatedInformation: related,
+            relatedInformation,
         });
     };
 
@@ -448,32 +448,32 @@ function aimAt<Found extends Pending<Token>>(
     const { path } = reached;
     if (reached.kind === "token") return { occurrence, path, token: at(path) };
     if (reached.kind === "group") return { occurrence, path };
-    const targetProperty = stepInto(reached.token.authored, reached.inside)?.property;
-    return { occurrence, path, targetProperty };
+    const pointsToProperty = stepInto(reached.token.authored, reached.inside)?.property;
+    return { occurrence, path, pointsToProperty };
 }
 
-function publicTopLevel(top: MergedTopLevel, writtenAt: readonly Place[]): TopLevel {
-    return { ...publicProperties(top), definitions: writtenAt };
+function publicTopLevel(top: MergedTopLevel, definitions: readonly Place[]): TopLevel {
+    return { ...publicProperties(top), definitions };
 }
 
 function groupFields(
     group: MergedGroup,
     applies: Properties,
     markedBy: string | undefined,
-    writtenAt: readonly Place[],
+    definitions: readonly Place[],
 ): Parameters<typeof linkedGroup>[0] {
     const { path, inherited: from } = group;
-    const authored = publicProperties(group);
+    const asWritten = publicProperties(group);
     return {
         path,
         ...publicProperties(applies),
         ...(markedBy !== undefined && { deprecatedByGroup: markedBy }),
-        definitions: writtenAt,
-        extensionDefinitions: extensionPlaces(group, writtenAt),
+        definitions,
+        extensionDefinitions: extensionPlaces(group, definitions),
         children: [],
         references: NO_REFERENCES,
         ...(from && { inherited: from }),
-        ...(Object.keys(authored).length > 0 && { asWritten: authored }),
+        ...(Object.keys(asWritten).length > 0 && { asWritten }),
     };
 }
 

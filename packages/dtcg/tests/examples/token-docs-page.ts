@@ -11,7 +11,7 @@ for (const path of tokens.getTokenPaths()) {
     const inLight = light.getToken(path);
     const inDark = dark.getToken(path);
     const users = new Set(
-        tokens.getReferencesTo(path).flatMap(({ writtenInPaths: fromPaths }) => fromPaths),
+        tokens.getReferencesTo(path).flatMap(({ writtenInPaths }) => writtenInPaths),
     );
     row(path, (inLight ?? inDark)?.type, inLight?.resolved, inDark?.resolved, [...users]);
 }

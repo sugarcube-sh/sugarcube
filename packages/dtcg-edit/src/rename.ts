@@ -34,12 +34,12 @@ export function rename(tokens: DesignTokens, path: string, newName: string): OpR
     if (tokens.has(to)) return refused({ kind: "taken", path: to });
 
     const moved = [{ from: path, to }];
-    const keys = copies.places.map(({ span, jsonPath, asWritten: written }): FileOp => ({
+    const keys = copies.places.map(({ span, jsonPath, asWritten }): FileOp => ({
         kind: "renameKey",
         file: span.file,
         jsonPath,
         name: newName,
-        was: written,
+        was: asWritten,
     }));
     const all = tokens.getReferencesTo(path);
     const references = all.filter(isWritten).flatMap((reference): FileOp[] => {
@@ -56,9 +56,7 @@ export function rename(tokens: DesignTokens, path: string, newName: string): OpR
     });
     const broken = [
         ...new Set(
-            all
-                .filter((each) => !isWritten(each))
-                .flatMap(({ writtenInPaths: fromPaths }) => fromPaths),
+            all.filter((each) => !isWritten(each)).flatMap(({ writtenInPaths }) => writtenInPaths),
         ),
     ];
     return { ops: [...keys, ...references], alsoAffects: copies.alsoAffects, broken, moved };

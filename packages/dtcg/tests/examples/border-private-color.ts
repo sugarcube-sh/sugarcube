@@ -13,9 +13,9 @@ const border = tokens.getPermutation(input).getToken("border.card");
 const css =
     border &&
     toCSSValue(border, {
-        replacement: ({ pointsToToken: token }) =>
-            token && !isPrivateToken(token)
-                ? { customProperty: toCustomPropertyName(token.path) }
+        replacement: ({ pointsToToken }) =>
+            pointsToToken && !isPrivateToken(pointsToToken)
+                ? { customProperty: toCustomPropertyName(pointsToToken.path) }
                 : undefined,
     });
 if (typeof css === "string") row(css);

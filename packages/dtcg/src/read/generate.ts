@@ -150,7 +150,7 @@ export function fillGenerated(
                 const written = writtenPlaces(merged, path);
                 if (written) {
                     const detail = { path, ...from, written: written.kind };
-                    const related = [
+                    const relatedInformation = [
                         {
                             message: relatedMessages.madeByThisExtension,
                             span: spanOf(extension.json, extension.node),
@@ -162,7 +162,7 @@ export function fillGenerated(
                             diagnostic("written-generated", detail, {
                                 span,
                                 path,
-                                relatedInformation: related,
+                                relatedInformation,
                             }),
                             input,
                         );

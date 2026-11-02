@@ -6,7 +6,7 @@ import { isEqualJson } from "../values/same-value.js";
 export interface Target {
     path?: string | undefined;
     token?: Token | undefined;
-    targetProperty?: JsonPath | undefined;
+    pointsToProperty?: JsonPath | undefined;
 }
 
 export interface MadeFrom {
@@ -34,11 +34,11 @@ export function sameToken(
     const { references } = earlier;
     if (references.length !== targets.length) return false;
     let intoParts = false;
-    for (const [index, { path, token, targetProperty }] of targets.entries()) {
+    for (const [index, { path, token, pointsToProperty }] of targets.entries()) {
         const reference = references[index];
         if (!reference || reference.pointsToToken !== token || reference.pointsToPath !== path)
             return false;
-        if (targetProperty !== undefined) intoParts = true;
+        if (pointsToProperty !== undefined) intoParts = true;
     }
     const resolved = !intoParts || isEqualJson(earlier.resolved, now.resolved);
     if (!written.added) return resolved;

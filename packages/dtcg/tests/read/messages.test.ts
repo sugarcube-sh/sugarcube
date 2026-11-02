@@ -681,7 +681,7 @@ describe("diagnostic messages from read", () => {
     it("links invalid-value to the section for its reason", () => {
         const text = JSON.stringify({ space: { $type: "dimension", $value: "16px" } });
         const tokens = readFromMemory({ files: { "tokens.json": text } });
-        expect(tokens.diagnostics.map(({ docsUrl: docs }) => docs)).toStrictEqual([
+        expect(tokens.diagnostics.map(({ docsUrl }) => docsUrl)).toStrictEqual([
             "https://sugarcube.sh/errors/invalid-value#string-with-unit",
         ]);
     });

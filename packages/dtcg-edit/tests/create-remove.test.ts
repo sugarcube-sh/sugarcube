@@ -345,7 +345,9 @@ describe("remove", () => {
                 demo.permutations.flatMap(({ tokens }) =>
                     tokens
                         .filter(({ references }) =>
-                            references.some(({ pointsToPath: path }) => path === "color.brand.500"),
+                            references.some(
+                                ({ pointsToPath }) => pointsToPath === "color.brand.500",
+                            ),
                         )
                         .map(({ path }) => path),
                 ),

@@ -6,6 +6,6 @@ import { isJsonObject } from "@sugarcube-sh/dtcg/values";
 declare const tokens: DesignTokens;
 const path = "color.danger";
 
-for (const { span, asWritten: written, winsIn } of tokens.getDefinitions(path)) {
-    row(winsIn.label, isJsonObject(written) ? written.$value : undefined, span.file);
+for (const { span, asWritten, winsIn } of tokens.getDefinitions(path)) {
+    row(winsIn.label, isJsonObject(asWritten) ? asWritten.$value : undefined, span.file);
 }

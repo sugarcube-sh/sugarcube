@@ -68,7 +68,7 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
         },
         report: () => {
             for (const { ref, similar, first, uses, inputs } of across.values()) {
-                const related = uses
+                const relatedInformation = uses
                     .filter(({ span }) => span !== first.span)
                     .map((use) => ({
                         message: relatedMessages.alsoUsedHere,
@@ -84,7 +84,7 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
                 const made = diagnostic("missing-reference", detail, {
                     span: first.span,
                     path: first.from,
-                    ...(related.length > 0 && { relatedInformation: related }),
+                    ...(relatedInformation.length > 0 && { relatedInformation }),
                 });
                 const found = diagnostics.found(made, input);
                 for (const each of others) diagnostics.also(found, each);

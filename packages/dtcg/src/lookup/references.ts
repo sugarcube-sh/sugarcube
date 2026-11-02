@@ -15,19 +15,19 @@ import { acrossPermutations } from "../read/reference.js";
 import { samePlace } from "../read/same-object.js";
 import { getSpan } from "./editor.js";
 
-interface WrittenIn {
+interface ReferenceIndex {
     position: Map<Reference, number>;
     byPath: Map<string, Reference[]>;
 }
 
-const written = new WeakMap<Permutation, WrittenIn>();
+const written = new WeakMap<Permutation, ReferenceIndex>();
 
 export function referencedIn(
     permutation: Permutation,
     path: string,
     { chained = false }: ReferenceOptions = {},
 ): Reference[] {
-    const { position, byPath } = writtenIn(permutation);
+    const { position, byPath } = referenceIndex(permutation);
     const reaching = (each: string, isToken: boolean): Reference[] => {
         if (isToken) return byPath.get(each) ?? [];
         return [...byPath].flatMap(([named, references]) =>
@@ -41,10 +41,10 @@ export function referencedIn(
     for (const references of waiting) {
         for (const reference of references) {
             found.add(reference);
-            const { writtenIn: from } = reference;
-            if (seen.has(from.path)) continue;
-            seen.add(from.path);
-            waiting.push(reaching(from.path, from.kind === "token"));
+            const { writtenIn } = reference;
+            if (seen.has(writtenIn.path)) continue;
+            seen.add(writtenIn.path);
+            waiting.push(reaching(writtenIn.path, writtenIn.kind === "token"));
         }
     }
     return [...found].sort((a, b) => (position.get(a) ?? 0) - (position.get(b) ?? 0));
@@ -55,9 +55,7 @@ export function usedIn(
     path: string,
     options?: ReferenceOptions,
 ): (Token | Group)[] {
-    return [
-        ...new Set(referencedIn(permutation, path, options).map(({ writtenIn: from }) => from)),
-    ];
+    return [...new Set(referencedIn(permutation, path, options).map(({ writtenIn }) => writtenIn))];
 }
 
 export function referencesToIn(tokens: DesignTokens, path: string): ReferenceInPermutations[] {
@@ -88,7 +86,7 @@ export function dependenciesIn(
     return [...found];
 }
 
-function writtenIn(permutation: Permutation): WrittenIn {
+function referenceIndex(permutation: Permutation): ReferenceIndex {
     const cached = written.get(permutation);
     if (cached) return cached;
     const position = new Map<Reference, number>();
@@ -129,8 +127,8 @@ function across(
                 atSpan.push(here);
             }
             if (!here.permutations.includes(permutation)) here.permutations.push(permutation);
-            const { writtenIn: from } = reference;
-            (from.inherited ? here.heirs : here.writers).add(from.path);
+            const { writtenIn } = reference;
+            (writtenIn.inherited ? here.heirs : here.writers).add(writtenIn.path);
         }
     }
     return [...merged].flatMap(([span, here]) =>

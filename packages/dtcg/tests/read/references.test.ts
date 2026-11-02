@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-    type DesignTokens,
-    type Span,
-    isReference,
-    readFromMemory,
-} from "../../src/index.js";
+import { type DesignTokens, type Span, isReference, readFromMemory } from "../../src/index.js";
 import { getSpan } from "../../src/editor.js";
 
 const color = (red: number) => ({ $value: { colorSpace: "srgb", components: [red, 0, 0] } });
@@ -152,7 +147,9 @@ describe("a token's references", () => {
         });
         const line = invalid.getPermutation().getToken("line");
         expect(line?.invalid).toBe(true);
-        expect(line?.references.map(({ pointsToPath: path }) => path)).toStrictEqual(["color.ink"]);
+        expect(line?.references.map(({ pointsToPath }) => pointsToPath)).toStrictEqual([
+            "color.ink",
+        ]);
         expect(invalid.getPermutation().getDependents("color.ink")).toStrictEqual([line]);
     });
 });
@@ -242,17 +239,17 @@ describe("permutation.referencesTo", () => {
     it("is every reference to the path, each with the token that writes it", () => {
         const red = inLight("color.red");
         const reaching = light.getReferencesTo("color.red");
-        expect(reaching.map(({ writtenIn: from }) => from.path)).toStrictEqual([
+        expect(reaching.map(({ writtenIn }) => writtenIn.path)).toStrictEqual([
             "color.brand",
             "color.tint",
         ]);
-        expect(reaching.every(({ pointsToPath: path }) => path === red?.path)).toBe(true);
+        expect(reaching.every(({ pointsToPath }) => pointsToPath === red?.path)).toBe(true);
     });
 
     it("follows chained references when asked (Format 7.2.2), each once, in written order", () => {
         const chained = light.getReferencesTo("color.red", { chained: true });
         expect(
-            chained.map(({ writtenIn: from, pointsToPath: path }) => `${from.path} > ${path}`),
+            chained.map(({ writtenIn, pointsToPath }) => `${writtenIn.path} > ${pointsToPath}`),
         ).toStrictEqual([
             "color.brand > color.red",
             "color.text > color.brand",
@@ -263,7 +260,7 @@ describe("permutation.referencesTo", () => {
 
     it("is the permutation's own: in mode: dark, color.red's only reference is the tint's", () => {
         expect(
-            dark.getReferencesTo("color.red").map(({ writtenIn: from }) => from.path),
+            dark.getReferencesTo("color.red").map(({ writtenIn }) => writtenIn.path),
         ).toStrictEqual(["color.tint"]);
     });
 
@@ -273,7 +270,7 @@ describe("permutation.referencesTo", () => {
             b: { $type: "number", $value: "{a}" },
         });
         const chained = loop.getPermutation().getReferencesTo("a", { chained: true });
-        expect(chained.map(({ writtenIn: from }) => from.path)).toStrictEqual(["a", "b"]);
+        expect(chained.map(({ writtenIn }) => writtenIn.path)).toStrictEqual(["a", "b"]);
     });
 
     it("is empty when nothing references it", () => {
@@ -451,8 +448,8 @@ describe("on the design tokens", () => {
     it("referencesTo gives every reference to a path, each with the permutations it is in", () => {
         const reaching = tokens.getReferencesTo("color.red");
         expect(
-            reaching.map(({ writtenInPaths: fromPaths, permutations }) => [
-                fromPaths,
+            reaching.map(({ writtenInPaths, permutations }) => [
+                writtenInPaths,
                 permutations.inputs,
             ]),
         ).toStrictEqual([
@@ -471,9 +468,7 @@ describe("on the design tokens", () => {
         });
         const reaching = referring.getReferencesTo("button");
         expect(
-            reaching.map(
-                ({ writtenInPaths: fromPaths, pointsToPath: path }) => `${fromPaths} > ${path}`,
-            ),
+            reaching.map(({ writtenInPaths, pointsToPath }) => `${writtenInPaths} > ${pointsToPath}`),
         ).toStrictEqual(["primary > button", "gap > button.pad"]);
     });
 
@@ -485,7 +480,7 @@ describe("on the design tokens", () => {
             c: { $type: "number", $value: "{size.small}" },
         });
         const reaching = referring.getReferencesTo("size");
-        expect(reaching.map(({ writtenInPaths: fromPaths }) => `${fromPaths}`)).toStrictEqual([
+        expect(reaching.map(({ writtenInPaths }) => `${writtenInPaths}`)).toStrictEqual([
             "a",
             "b",
             "c",
@@ -500,7 +495,7 @@ describe("on the design tokens", () => {
             c: { $extends: "{b}" },
         });
         const reaching = inherited.getReferencesTo("base");
-        expect(reaching.map(({ writtenInPaths: fromPaths }) => fromPaths)).toStrictEqual([
+        expect(reaching.map(({ writtenInPaths }) => writtenInPaths)).toStrictEqual([
             ["color.x", "b.x", "c.x"],
         ]);
     });

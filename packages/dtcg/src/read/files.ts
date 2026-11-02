@@ -86,13 +86,11 @@ function openOnce(
     if (problems.length > 0 || !root) return undefined;
 
     for (const { key, first, last } of parsed.duplicates) {
-        const related = [{ message: relatedMessages.alsoWrittenHere, span: spanOf(file, first) }];
+        const relatedInformation = [
+            { message: relatedMessages.alsoWrittenHere, span: spanOf(file, first) },
+        ];
         diagnostics.found(
-            diagnostic(
-                "duplicate-key",
-                { key },
-                { span: spanOf(file, last), relatedInformation: related },
-            ),
+            diagnostic("duplicate-key", { key }, { span: spanOf(file, last), relatedInformation }),
         );
     }
     return { path, root, lineStarts: parsed.lineStarts };

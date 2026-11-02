@@ -75,8 +75,8 @@ class TokenObject {
     }
 
     get winningDefinition(): Place {
-        const { definitions: writtenAt } = this as unknown as Token;
-        return writtenAt[writtenAt.length - 1] as Place;
+        const { definitions } = this as unknown as Token;
+        return definitions[definitions.length - 1] as Place;
     }
 
     get parts(): Part | undefined {

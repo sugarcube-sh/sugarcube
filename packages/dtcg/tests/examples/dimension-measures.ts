@@ -24,8 +24,8 @@ const measures: Record<string, string> = {
 
 const usedAs = new Map<string, string>();
 for (const t of tokens.getPermutation().tokens) {
-    for (const { writtenInProperty: property = [], pointsToToken: target } of t.references) {
-        const measure = measures[`${t.type} ${property.join(".")}`];
+    for (const { writtenInProperty = [], pointsToToken: target } of t.references) {
+        const measure = measures[`${t.type} ${writtenInProperty.join(".")}`];
         if (measure && target) usedAs.set(target.path, measure);
     }
 }

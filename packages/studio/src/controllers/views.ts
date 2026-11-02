@@ -181,10 +181,12 @@ export function tokenRow(token: Token, name: string, value: BuildOutput["value"]
 
 export function problemRows(problems: readonly BuildProblem[]): ProblemRow[] {
     return problems.map(
-        ({ span, severity, message, permutations, kind, path, relatedInformation: related }) => {
+        ({ span, severity, message, permutations, kind, path, relatedInformation }) => {
             const label = partialLabel(permutations);
             const paths = [
-                ...new Set([path, ...(related ?? []).map((each) => each.path)].filter(isPath)),
+                ...new Set(
+                    [path, ...(relatedInformation ?? []).map((each) => each.path)].filter(isPath),
+                ),
             ];
             return {
                 ...(span && paths.length === 0
