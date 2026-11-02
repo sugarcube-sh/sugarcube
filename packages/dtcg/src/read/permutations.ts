@@ -1,4 +1,4 @@
-import type { Input, Resolver, ResolverContext, SetOnRoute, Source } from "../index.js";
+import type { Input, Resolver, ResolverContext, SetOnRoute, Source } from "../model.js";
 import { ownLabel } from "../lookup/permutation-label.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
 import { type Modifier, checkedInput, modifiersIn, withDefaults } from "./input.js";

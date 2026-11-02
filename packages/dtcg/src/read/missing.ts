@@ -1,5 +1,5 @@
 import { relatedMessages } from "../error-messages.js";
-import type { Input, Span, WrittenReference } from "../index.js";
+import type { Input, Span, WrittenReference } from "../model.js";
 import { movedReference, namedPath, toReferenceTarget } from "../values/references.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
 import { similarName } from "./similar.js";

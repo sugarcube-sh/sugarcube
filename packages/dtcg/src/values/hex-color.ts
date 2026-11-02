@@ -1,4 +1,4 @@
-import type { ColorValue } from "../index.js";
+import type { ColorValue } from "../model.js";
 import { colorDecimals, roundedTo } from "./decimals.js";
 import type { ValueErrorFacts } from "./value-errors.js";
 

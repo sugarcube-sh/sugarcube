@@ -1,5 +1,5 @@
 import { thrownMessages } from "../error-messages.js";
-import type { Permutation, Reference, Token } from "../index.js";
+import type { Permutation, Reference, Token } from "../model.js";
 import { type CSSValueOptions, type Replacement, type TypographyCSS, toCSSValue } from "./value.js";
 import { type CSSNaming, toCustomPropertyName } from "./custom-property.js";
 

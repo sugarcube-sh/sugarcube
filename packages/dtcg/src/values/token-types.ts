@@ -1,4 +1,4 @@
-import type { TokenType } from "../index.js";
+import type { TokenType } from "../model.js";
 
 /** Every token type the specification defines, in its order. */
 export const tokenTypes: readonly TokenType[] = [

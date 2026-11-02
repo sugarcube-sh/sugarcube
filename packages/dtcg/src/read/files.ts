@@ -1,4 +1,4 @@
-import type { Span } from "../index.js";
+import type { Span } from "../model.js";
 import { relatedMessages } from "../error-messages.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
 import { type JsonFile, type JsonProblem, type ParsedJson, parseJson, spanOf } from "./json.js";

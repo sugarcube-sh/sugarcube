@@ -5,7 +5,7 @@ import type {
     DiagnosticKind,
     JsonPath,
     ResolverProblem,
-} from "../index.js";
+} from "../model.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
 import { type JsonFile, member, members, spanOf } from "./json.js";
 import { malformedPointer } from "./malformed-pointer.js";

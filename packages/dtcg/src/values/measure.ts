@@ -1,6 +1,6 @@
 import { literal, no, object, ok, oneOf, wrongShape } from "./syntax.js";
 import { number } from "./number.js";
-import type { DimensionValue, DurationValue } from "../index.js";
+import type { DimensionValue, DurationValue } from "../model.js";
 
 /**
  * A number followed by a unit, such as `"16px"` or `"200ms"`: how earlier drafts of the spec wrote

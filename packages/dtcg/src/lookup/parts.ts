@@ -1,4 +1,4 @@
-import type { JsonPath, Part, Token, TokenType } from "../index.js";
+import type { JsonPath, Part, Token, TokenType } from "../model.js";
 import { syntaxes } from "../values/syntaxes.js";
 import { isJsonObject } from "../values/json.js";
 import { type ArraySyntax, type Syntax, choiceOf, syntaxOf } from "../values/syntax.js";

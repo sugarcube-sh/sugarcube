@@ -6,7 +6,7 @@ import type {
     Permutation,
     PermutationErrorDetail,
     SeveralPermutationsDetail,
-} from "../index.js";
+} from "../model.js";
 import { checkedInput, modifiersIn } from "../read/input.js";
 
 /**

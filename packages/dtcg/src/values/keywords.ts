@@ -1,4 +1,4 @@
-import type { StrokeStyleValue } from "../index.js";
+import type { StrokeStyleValue } from "../model.js";
 
 /** The spec's font weight keywords and the numbers they stand for, such as `bold: 700`. */
 export const fontWeightKeywords = {

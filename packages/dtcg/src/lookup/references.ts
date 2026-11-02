@@ -7,7 +7,7 @@ import type {
     ReferenceOptions,
     Span,
     Token,
-} from "../index.js";
+} from "../model.js";
 import { tokenPath } from "../path.js";
 import { permutationsOf } from "../read/permutations-of.js";
 import { jsonPathIn } from "./json-path.js";

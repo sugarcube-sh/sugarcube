@@ -6,14 +6,14 @@ import type {
     Group,
     ParseResult,
     Permutation,
-    Place,
+    Definition,
     Source,
     Span,
     Token,
     TokenType,
     TopLevel,
     Written,
-} from "../index.js";
+} from "../model.js";
 import { tokenPath } from "../path.js";
 import { namedPath, toReferenceTarget } from "../values/references.js";
 import type { Building } from "./building.js";
@@ -110,7 +110,7 @@ function buildPermutation(
     const valueOf = workingOut(permutation, readValue, diagnostics, missing);
 
     const sourceAt = (index: number) => sources[index] as Source;
-    const placed = (written: WrittenAt[], path: string | undefined): readonly Place[] => {
+    const placed = (written: WrittenAt[], path: string | undefined): readonly Definition[] => {
         const [first, ...rest] = written;
         if (!first) return NO_PLACES;
         if (rest.length === 0) return places.only(sourceAt(first.source), first.span, path);
@@ -452,7 +452,7 @@ function aimAt<Found extends Pending<Token>>(
     return { occurrence, path, pointsToProperty };
 }
 
-function publicTopLevel(top: MergedTopLevel, definitions: readonly Place[]): TopLevel {
+function publicTopLevel(top: MergedTopLevel, definitions: readonly Definition[]): TopLevel {
     return { ...publicProperties(top), definitions };
 }
 
@@ -460,7 +460,7 @@ function groupFields(
     group: MergedGroup,
     applies: Properties,
     markedBy: string | undefined,
-    definitions: readonly Place[],
+    definitions: readonly Definition[],
 ): Parameters<typeof linkedGroup>[0] {
     const { path, inherited: from } = group;
     const asWritten = publicProperties(group);
@@ -479,10 +479,10 @@ function groupFields(
 
 function extensionPlaces(
     { extensionsAt, declaredIn }: MergedGroup,
-    writtenAt: readonly Place[],
-): Readonly<Record<string, Place>> {
+    writtenAt: readonly Definition[],
+): Readonly<Record<string, Definition>> {
     if (!extensionsAt) return NO_EXTENSION_PLACES;
-    const places: Record<string, Place> = {};
+    const places: Record<string, Definition> = {};
     for (const [key, { source }] of Object.entries(extensionsAt)) {
         declaredIn.forEach((each, index) => {
             const place = writtenAt[index];

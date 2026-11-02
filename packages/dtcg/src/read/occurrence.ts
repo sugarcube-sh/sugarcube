@@ -1,4 +1,4 @@
-import type { JsonPath, Span } from "../index.js";
+import type { JsonPath, Span } from "../model.js";
 import type { ReferenceRead } from "../values/read-syntax.js";
 import { deepestNode, spanOf } from "./json.js";
 import type { MergedToken } from "./merge.js";

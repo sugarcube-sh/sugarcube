@@ -7,7 +7,7 @@ import type {
     JsonPath,
     TokenType,
     ValueError,
-} from "../index.js";
+} from "../model.js";
 import { fontWeightKeywords } from "./keywords.js";
 
 /** The facts each reason carries, beside `type` and `reason`. */

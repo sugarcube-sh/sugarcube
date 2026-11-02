@@ -1,4 +1,4 @@
-import type { Input, Permutation, ResolverContext, Scope } from "../index.js";
+import type { Input, Permutation, ResolverContext, Scope } from "../model.js";
 
 /**
  * An input written out for people: each modifier and its context, in the order the input lists

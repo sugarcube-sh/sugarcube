@@ -8,7 +8,7 @@ import type {
     TokenType,
     ValueByType,
     ValueError,
-} from "../index.js";
+} from "../model.js";
 import { parseValue } from "./parse-value.js";
 
 /**

@@ -5,7 +5,7 @@ import type {
     DiagnosticKind,
     Input,
     Permutations,
-} from "../index.js";
+} from "../model.js";
 import { isEqualJson } from "../values/same-value.js";
 import type { Building } from "./building.js";
 

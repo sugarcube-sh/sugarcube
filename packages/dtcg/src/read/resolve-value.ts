@@ -6,7 +6,7 @@ import type {
     Span,
     TokenType,
     WrittenReference,
-} from "../index.js";
+} from "../model.js";
 import { isJsonObject } from "../values/json.js";
 import { toReferenceTarget } from "../values/references.js";
 import type { ReadAgain } from "../values/read-syntax.js";

@@ -1,4 +1,4 @@
-import type { DesignTokens, Diagnostic, Permutation, Span, Token } from "../index.js";
+import type { DesignTokens, Diagnostic, Permutation, Span, Token } from "../model.js";
 import { getSpan } from "./editor.js";
 
 export function diagnosticsForIn(tokens: DesignTokens, path: string): Diagnostic[] {

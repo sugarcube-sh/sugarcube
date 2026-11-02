@@ -1,4 +1,4 @@
-import type { AnswerInPermutations, DesignTokens, Permutation } from "../index.js";
+import type { AnswerInPermutations, DesignTokens, Permutation } from "../model.js";
 import { permutationsOf } from "../read/permutations-of.js";
 import { sameList } from "../read/same-object.js";
 

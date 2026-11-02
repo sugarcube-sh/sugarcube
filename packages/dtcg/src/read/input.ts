@@ -1,4 +1,4 @@
-import type { Input, InputProblem, Resolver } from "../index.js";
+import type { Input, InputProblem, Resolver } from "../model.js";
 
 export interface Modifier {
     name: string;

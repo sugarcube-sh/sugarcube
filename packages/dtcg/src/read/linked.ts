@@ -9,7 +9,7 @@ import type {
     Move,
     Part,
     Permutation,
-    Place,
+    Definition,
     Reference,
     ReferenceOptions,
     ResolverContext,
@@ -17,7 +17,7 @@ import type {
     Source,
     Span,
     Token,
-} from "../index.js";
+} from "../model.js";
 import { diagnosticsForIn, diagnosticsIn } from "../lookup/diagnostics.js";
 import { diffIn } from "../lookup/diff.js";
 import { partsOf } from "../lookup/parts.js";
@@ -28,8 +28,8 @@ import { spanOfReference } from "./reference.js";
 import { samePlace } from "./same-object.js";
 
 export const NO_REFERENCES: readonly Reference[] = Object.freeze([]);
-export const NO_PLACES: readonly Place[] = Object.freeze([]);
-export const NO_EXTENSION_PLACES: Readonly<Record<string, Place>> = Object.freeze({});
+export const NO_PLACES: readonly Definition[] = Object.freeze([]);
+export const NO_EXTENSION_PLACES: Readonly<Record<string, Definition>> = Object.freeze({});
 
 const NOT_YET = Symbol("not yet worked out");
 
@@ -74,9 +74,9 @@ class TokenObject {
         return this.#aliasChain;
     }
 
-    get winningDefinition(): Place {
+    get winningDefinition(): Definition {
         const { definitions } = this as unknown as Token;
-        return definitions[definitions.length - 1] as Place;
+        return definitions[definitions.length - 1] as Definition;
     }
 
     get parts(): Part | undefined {
@@ -220,7 +220,7 @@ const contextShared = {
 
 interface Kept {
     texts: Readonly<Record<string, string>>;
-    moved: ReadonlyMap<Place | Reference, Span>;
+    moved: ReadonlyMap<Definition | Reference, Span>;
     readFiles(files: Record<string, string>, previous: DesignTokens): DesignTokens;
 }
 
@@ -331,10 +331,12 @@ class DesignTokensObject {
         return { entryFile: this.#self.entryFile, files: { ...this.#kept.texts } };
     }
 
-    [SPAN_OF](of: Place | Reference): Span {
+    [SPAN_OF](of: Definition | Reference): Span {
         const moved = this.#kept.moved.get(of);
         if (moved) return moved;
-        return "source" in of ? PlaceObject.spanOf(of as PlaceObject) : spanOfReference(of);
+        return "source" in of
+            ? DefinitionObject.spanOf(of as DefinitionObject)
+            : spanOfReference(of);
     }
 
     has(path: string) {
@@ -392,10 +394,10 @@ export function withPosition(fields: Source, position: number): Source {
     return new SourceObject(fields, position) as unknown as Source;
 }
 
-class PlaceObject {
+class DefinitionObject {
     readonly source: Source;
     readonly #span: Span;
-    #alone: Place[] | undefined;
+    #alone: Definition[] | undefined;
     #text: string | undefined;
     #textAt: Span;
     #written: JsonValue | undefined;
@@ -415,17 +417,17 @@ class PlaceObject {
         return this.#written as JsonValue;
     }
 
-    static spanOf(place: PlaceObject): Span {
+    static spanOf(place: DefinitionObject): Span {
         return place.#span;
     }
 
-    static foundIn(place: PlaceObject, text: string | undefined, span: Span): void {
+    static foundIn(place: DefinitionObject, text: string | undefined, span: Span): void {
         if (place.#written !== undefined) return;
         place.#text = text;
         place.#textAt = span;
     }
 
-    static alone(place: PlaceObject): Place[] {
+    static alone(place: DefinitionObject): Definition[] {
         place.#alone ??= [place];
         return place.#alone;
     }
@@ -436,18 +438,18 @@ class PlaceObject {
 }
 
 export interface Places {
-    at(source: Source, span: Span, path: string | undefined): Place;
-    only(source: Source, span: Span, path: string | undefined): Place[];
+    at(source: Source, span: Span, path: string | undefined): Definition;
+    only(source: Source, span: Span, path: string | undefined): Definition[];
     movedTo(references: readonly Reference[], spans: readonly Span[]): void;
-    readonly moved: ReadonlyMap<Place | Reference, Span>;
+    readonly moved: ReadonlyMap<Definition | Reference, Span>;
 }
 
 export function placesIn(
     texts: Readonly<Record<string, string>>,
     previous: DesignTokens | undefined,
 ): Places {
-    const made = new Map<Span, PlaceObject[]>();
-    const moved = new Map<Place | Reference, Span>();
+    const made = new Map<Span, DefinitionObject[]>();
+    const moved = new Map<Definition | Reference, Span>();
     const checked = new Set<readonly Reference[]>();
     const before = previous && placesBy(previous);
     const kept = (
@@ -459,25 +461,25 @@ export function placesIn(
         if (!previous || !before) return undefined;
         for (const each of before.get(path) ?? []) {
             if (each.source !== source || !writtenAlike(previous, each, text, span)) continue;
-            if (previous.getText(span.file) !== text) PlaceObject.foundIn(each, text, span);
-            if (!sameSpan(PlaceObject.spanOf(each), span)) moved.set(each, span);
+            if (previous.getText(span.file) !== text) DefinitionObject.foundIn(each, text, span);
+            if (!sameSpan(DefinitionObject.spanOf(each), span)) moved.set(each, span);
             return each;
         }
         return undefined;
     };
-    const at = (source: Source, span: Span, path: string | undefined): PlaceObject => {
+    const at = (source: Source, span: Span, path: string | undefined): DefinitionObject => {
         const atSpan = made.get(span);
         const found = atSpan?.find((each) => each.source === source);
         if (found) return found;
         const text = texts[span.file];
-        const place = kept(source, span, path, text) ?? new PlaceObject(source, span, text);
+        const place = kept(source, span, path, text) ?? new DefinitionObject(source, span, text);
         if (atSpan) atSpan.push(place);
         else made.set(span, [place]);
         return place;
     };
     return {
         at,
-        only: (source, span, path) => PlaceObject.alone(at(source, span, path)),
+        only: (source, span, path) => DefinitionObject.alone(at(source, span, path)),
         movedTo: (references, spans) => {
             if (!previous || checked.has(references)) return;
             checked.add(references);
@@ -490,15 +492,18 @@ export function placesIn(
     };
 }
 
-function placesBy(tokens: DesignTokens): Map<string | undefined, PlaceObject[]> {
-    const found = new Map<string | undefined, PlaceObject[]>();
-    const seen = new Set<{ readonly definitions: readonly Place[] }>();
-    const add = (path: string | undefined, each: { readonly definitions: readonly Place[] }) => {
+function placesBy(tokens: DesignTokens): Map<string | undefined, DefinitionObject[]> {
+    const found = new Map<string | undefined, DefinitionObject[]>();
+    const seen = new Set<{ readonly definitions: readonly Definition[] }>();
+    const add = (
+        path: string | undefined,
+        each: { readonly definitions: readonly Definition[] },
+    ) => {
         if (seen.has(each)) return;
         seen.add(each);
         const list = found.get(path) ?? [];
         found.set(path, list);
-        for (const place of each.definitions as PlaceObject[]) {
+        for (const place of each.definitions as DefinitionObject[]) {
             if (!list.includes(place)) list.push(place);
         }
     };
@@ -512,7 +517,7 @@ function placesBy(tokens: DesignTokens): Map<string | undefined, PlaceObject[]> 
 
 function writtenAlike(
     previous: DesignTokens,
-    place: Place,
+    place: Definition,
     text: string | undefined,
     span: Span,
 ): boolean {
@@ -560,6 +565,6 @@ function paths(items: readonly (Token | Group)[]): string[] {
     return items.map(({ path }) => path);
 }
 
-export function spanIn(tokens: DesignTokens, of: Place | Reference): Span {
-    return (tokens as unknown as { [SPAN_OF](of: Place | Reference): Span })[SPAN_OF](of);
+export function spanIn(tokens: DesignTokens, of: Definition | Reference): Span {
+    return (tokens as unknown as { [SPAN_OF](of: Definition | Reference): Span })[SPAN_OF](of);
 }

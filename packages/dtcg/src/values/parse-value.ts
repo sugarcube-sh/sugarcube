@@ -5,7 +5,7 @@ import type {
     TokenType,
     UnresolvedValue,
     ValueByType,
-} from "../index.js";
+} from "../model.js";
 import { type Notes, readToken } from "./read-syntax.js";
 import { valueError } from "./value-errors.js";
 

@@ -3,7 +3,7 @@ import type {
     JsonPointerReference,
     Move,
     WrittenReference,
-} from "../index.js";
+} from "../model.js";
 import { tokenPath } from "../path.js";
 import { encodePointer, refSteps } from "../read/pointer.js";
 import { pointerParts } from "../read/ref-meaning.js";

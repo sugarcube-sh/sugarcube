@@ -9,7 +9,7 @@ import type {
     IgnoredProperty,
     ParseOptions,
     ValueError,
-} from "../index.js";
+} from "../model.js";
 import {
     type CheckedExtension,
     type SchemaOutput,

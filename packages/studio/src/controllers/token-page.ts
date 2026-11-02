@@ -3,7 +3,7 @@ import type {
     JsonPath,
     JsonValue,
     Permutation,
-    PlaceInPermutations,
+    DefinitionInPermutations,
     Span,
     Token,
 } from "@sugarcube-sh/dtcg";
@@ -202,7 +202,7 @@ export function clashRows(tokens: DesignTokens, clashes: readonly Clash[]): Clas
     });
 }
 
-function labelOf({ sources, permutations }: PlaceInPermutations): string | undefined {
+function labelOf({ sources, permutations }: DefinitionInPermutations): string | undefined {
     if (sources.some((source) => source.modifier)) return permutations.label;
     return sources[0]?.sets[0]?.name;
 }

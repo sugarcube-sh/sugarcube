@@ -9,7 +9,7 @@ import type {
     Span,
     Token,
     WrittenReference,
-} from "../index.js";
+} from "../model.js";
 import { movedReference } from "../values/references.js";
 import type { Occurrence } from "./occurrence.js";
 import type { Target } from "./same-object.js";

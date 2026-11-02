@@ -1,4 +1,4 @@
-import type { ColorSpace } from "../index.js";
+import type { ColorSpace } from "../model.js";
 
 /** One channel of a color space: its name and range. */
 export interface ColorComponentRange {

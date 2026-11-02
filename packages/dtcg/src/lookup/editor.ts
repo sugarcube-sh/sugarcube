@@ -3,10 +3,10 @@ import type {
     DesignTokens,
     JsonPath,
     JsonValue,
-    Place,
+    Definition,
     Reference,
     Span,
-} from "../index.js";
+} from "../model.js";
 import { spanIn } from "../read/linked.js";
 import { diagnosticsAtIn } from "./diagnostics.js";
 import { jsonIn, jsonPathIn } from "./json-path.js";
@@ -21,7 +21,7 @@ import { jsonIn, jsonPathIn } from "./json-path.js";
  * const { file, offset } = getSpan(tokens, token.winningDefinition);
  * goTo(file, getSpan(tokens, token.references[0]).offset);
  */
-export function getSpan(tokens: DesignTokens, of: Place | Reference): Span {
+export function getSpan(tokens: DesignTokens, of: Definition | Reference): Span {
     return spanIn(tokens, of);
 }
 
@@ -40,7 +40,7 @@ export function getSpan(tokens: DesignTokens, of: Place | Reference): Span {
  * getJsonPath(tokens, text.winningDefinition)  // ["color", "text"]
  * getJsonPath(tokens, text.references[0])      // ["color", "text", "$value"]
  */
-export function getJsonPath(tokens: DesignTokens, of: Place | Reference): JsonPath {
+export function getJsonPath(tokens: DesignTokens, of: Definition | Reference): JsonPath {
     return jsonPathIn(tokens, spanIn(tokens, of));
 }
 

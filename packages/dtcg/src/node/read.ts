@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import type { DesignTokens, ReadOptions } from "../index.js";
+import type { DesignTokens, ReadOptions } from "../model.js";
 import { read as readAnywhere } from "../read/read.js";
 import { slashed } from "./paths.js";
 

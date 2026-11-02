@@ -8,7 +8,7 @@ import type {
     TokenType,
     UnresolvedValueByType,
     ValueError,
-} from "../index.js";
+} from "../model.js";
 import { type DiagnosticExtra, type Problems } from "./diagnostics.js";
 import { ignoredDiagnostic, valueDiagnostic } from "./value-diagnostic.js";
 import {

@@ -1,4 +1,4 @@
-import type { DesignTokens, Input, Permutation, ResolverModifier, Token } from "../index.js";
+import type { DesignTokens, Input, Permutation, ResolverModifier, Token } from "../model.js";
 import { findByName } from "../read/input.js";
 import { stacksOn } from "./stacks-on.js";
 import { type CSSDeclaration, type CSSWriter, createCSSWriter } from "./writer.js";

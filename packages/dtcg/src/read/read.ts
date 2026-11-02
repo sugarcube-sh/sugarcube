@@ -1,4 +1,4 @@
-import type { DesignTokens, Input, ReadOptions, ReadText, TokensInMemory } from "../index.js";
+import type { DesignTokens, Input, ReadOptions, ReadText, TokensInMemory } from "../model.js";
 import type { Answer, FileText, Request } from "./files.js";
 import { Problems, inReadingPermutations } from "./diagnostics.js";
 import { type Loaded, load } from "./load.js";

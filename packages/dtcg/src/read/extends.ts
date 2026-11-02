@@ -1,4 +1,4 @@
-import type { DiagnosticDetailByKind, DiagnosticKind, Input } from "../index.js";
+import type { DiagnosticDetailByKind, DiagnosticKind, Input } from "../model.js";
 import { namedPath, toReferenceTarget } from "../values/references.js";
 import { relatedMessages } from "../error-messages.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";

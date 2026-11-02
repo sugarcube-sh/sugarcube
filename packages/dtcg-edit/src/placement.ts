@@ -6,8 +6,8 @@ import {
     type Permutation,
     PermutationError,
     type Permutations,
-    type Place,
-    type PlaceInPermutations,
+    type Definition,
+    type DefinitionInPermutations,
     type ResolverContext,
     type Source,
     type Span,
@@ -162,7 +162,7 @@ export function extensionPlace(
         : sharedExtensionPlace(tokens, path, key, copies.places, place);
 }
 
-function extendedPlace(group: Group | undefined, key: string): Place | undefined {
+function extendedPlace(group: Group | undefined, key: string): Definition | undefined {
     for (let from = group?.extends; from; from = from.extends) {
         const place = from.extensionDefinitions[key];
         if (place) return place;
@@ -246,7 +246,7 @@ function lookUp(
 function sharedPlace(tokens: DesignTokens, path: string): Placement {
     const found = lookUp(tokens, path, (perm) => perm.getToken(path));
     if ("refused" in found) return found;
-    let shared: PlaceInPermutations | undefined;
+    let shared: DefinitionInPermutations | undefined;
     for (const place of tokens.getDefinitions(path)) {
         if (place.sources.some(readByEveryContext)) shared = place;
     }

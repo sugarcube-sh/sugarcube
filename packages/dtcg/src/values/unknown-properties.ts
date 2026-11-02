@@ -1,4 +1,4 @@
-import type { IgnoredProperty, JsonPath, ParseOptions, TokenType, ValueError } from "../index.js";
+import type { IgnoredProperty, JsonPath, ParseOptions, TokenType, ValueError } from "../model.js";
 import { ignoredProperty, valueError } from "./value-errors.js";
 
 export function unknownProperties(

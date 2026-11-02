@@ -1,4 +1,4 @@
-import type { Group, JsonPath, Place, Resolver, Source, Token, TokenType } from "../index.js";
+import type { Group, JsonPath, Definition, Resolver, Source, Token, TokenType } from "../model.js";
 import type { MergedGroup, MergedToken } from "./merge.js";
 import { type Properties, usableType } from "./walk.js";
 import { isEqualJson } from "../values/same-value.js";
@@ -16,7 +16,7 @@ export interface MadeFrom {
     invalid: true | undefined;
     deprecated: boolean | string | undefined;
     deprecatedByGroup: string | undefined;
-    definitions: readonly Place[];
+    definitions: readonly Definition[];
 }
 
 export function sameToken(
@@ -55,7 +55,7 @@ export function sameGroup(
     written: MergedGroup,
     applies: Properties,
     deprecatedFrom: string | undefined,
-    writtenAt: readonly Place[],
+    writtenAt: readonly Definition[],
     children: readonly (Token | Group)[],
     extending: Group | undefined,
 ): boolean {

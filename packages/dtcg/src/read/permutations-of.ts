@@ -1,4 +1,4 @@
-import type { Input, Permutation, Permutations, Resolver, Scope } from "../index.js";
+import type { Input, Permutation, Permutations, Resolver, Scope } from "../model.js";
 import { scopeLabel, scopeOf } from "../lookup/permutation-label.js";
 import { checkedInput, modifiersIn } from "./input.js";
 

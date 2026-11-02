@@ -1,5 +1,5 @@
 import type { Node } from "jsonc-parser";
-import type { DiagnosticDetailByKind } from "../index.js";
+import type { DiagnosticDetailByKind } from "../model.js";
 import { child } from "./json.js";
 
 export type Followed = { ok: true; node: Node } | { ok: false; step: number };

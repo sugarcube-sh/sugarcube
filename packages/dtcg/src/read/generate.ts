@@ -13,7 +13,7 @@ import type {
     Span,
     StandardSchemaV1,
     ValueError,
-} from "../index.js";
+} from "../model.js";
 import { parseReference } from "../values/references.js";
 import {
     type CheckedExtension,

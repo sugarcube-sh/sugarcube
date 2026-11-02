@@ -1,4 +1,4 @@
-import type { DesignTokens, JsonPath, Place, Span, JsonValue } from "@sugarcube-sh/dtcg";
+import type { DesignTokens, JsonPath, Definition, Span, JsonValue } from "@sugarcube-sh/dtcg";
 import type { FileOp } from "./index.js";
 import { type Node, findNodeAtOffset, parseTree } from "jsonc-parser";
 import { getJsonAt, getJsonPath, getSpan } from "@sugarcube-sh/dtcg/editor";
@@ -28,7 +28,7 @@ export function nodeAt(tokens: DesignTokens, { file, offset, length }: Span): No
     return node;
 }
 
-export function memberOf(tokens: DesignTokens, place: Place): Member {
+export function memberOf(tokens: DesignTokens, place: Definition): Member {
     return {
         span: getSpan(tokens, place),
         jsonPath: getJsonPath(tokens, place),

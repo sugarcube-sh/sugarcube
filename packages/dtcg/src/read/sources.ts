@@ -1,6 +1,6 @@
 import type { Problems } from "./diagnostics.js";
 import type { Node } from "jsonc-parser";
-import type { JsonPath } from "../index.js";
+import type { JsonPath } from "../model.js";
 import { type Files, openFile, parseFile } from "./files.js";
 import { type JsonFile, member, members, spanOf } from "./json.js";
 import { malformedPointer } from "./malformed-pointer.js";

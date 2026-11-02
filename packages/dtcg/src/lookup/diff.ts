@@ -15,7 +15,7 @@ import type {
     Written,
     WrittenGroup,
     WrittenToken,
-} from "../index.js";
+} from "../model.js";
 import { permutationsOf } from "../read/permutations-of.js";
 import { tokenPath } from "../path.js";
 import { isJsonObject } from "../values/json.js";

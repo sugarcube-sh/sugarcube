@@ -7,7 +7,7 @@ import {
     parseTree,
 } from "jsonc-parser";
 import { thrownMessages } from "../error-messages.js";
-import type { DesignTokens, JsonPath, JsonValue, Span } from "../index.js";
+import type { DesignTokens, JsonPath, JsonValue, Span } from "../model.js";
 
 interface Parsed {
     trees: Map<string, Node | undefined>;

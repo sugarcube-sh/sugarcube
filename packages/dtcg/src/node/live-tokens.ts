@@ -1,4 +1,4 @@
-import type { DesignTokens, ReadOptions } from "../index.js";
+import type { DesignTokens, ReadOptions } from "../model.js";
 import { type FileStats, onFileChanged } from "./file-changed.js";
 import { diskPath, getAbsoluteFilePath } from "./paths.js";
 import { read } from "./read.js";

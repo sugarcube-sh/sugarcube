@@ -8,7 +8,7 @@ import type {
     ShadowLayerPart,
     Token,
     TypographyPart,
-} from "../index.js";
+} from "../model.js";
 import { colorDecimals, roundedTo } from "../values/decimals.js";
 import { hexStringOf } from "../values/hex-color.js";
 

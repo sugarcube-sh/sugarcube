@@ -1,4 +1,4 @@
-import type { TokenType } from "../index.js";
+import type { TokenType } from "../model.js";
 import { border } from "./border.js";
 import { stop } from "./gradient.js";
 import { layer } from "./shadow.js";
