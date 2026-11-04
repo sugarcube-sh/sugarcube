@@ -1,7 +1,11 @@
 import type { StandardSchemaV1 } from "./standard-schema.js";
 import type { ValueErrorDetail, ValueErrorFacts } from "./values/value-errors.js";
 
-/** A color space defined by the DTCG Color module. */
+/**
+ * A color space the Color module defines, such as `"srgb"`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/color/#supported-color-spaces | Color 4.2, Supported color spaces}
+ */
 export type ColorSpace =
     | "srgb"
     | "srgb-linear"
@@ -18,57 +22,110 @@ export type ColorSpace =
     | "xyz-d65"
     | "xyz-d50";
 
-/** One channel of a color, or `"none"` when the channel does not apply.*/
+/**
+ * One component of a color, or `"none"`.
+ *
+ * `"none"` means the component doesn't apply, or isn't given.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/color/#the-none-keyword | Color 4.1.1, The none keyword}
+ */
 export type ColorComponent = number | "none";
 
 /**
- * A color, in the shape the DTCG Color module defines.
+ * A color, as the Color module writes it.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/color/#format | Color 4.1, Format}
  *
  * @example
- * { colorSpace: "srgb", components: [0.8824, 0.1137, 0.2824], alpha: 1, hex: "#e11d48" }
+ * // color.blue.500
+ * light.getToken("color.blue.500")!.value
+ * // => { colorSpace: "srgb", components: [0.2, 0.4, 0.8], alpha: 1 }
  */
 export interface ColorValue {
-    /** The color space the components are in. */
+    /** The color space the components are in, such as `"srgb"`. */
     readonly colorSpace: ColorSpace;
-    /** The three channels, in the order the color space defines. */
+    /**
+     * The three components, in the color space's order.
+     *
+     * For `"srgb"`, that's red, green and blue.
+     */
     readonly components: readonly [ColorComponent, ColorComponent, ColorComponent];
     /**
-     * Opacity, from 0 to 1.
+     * How opaque the color is, from 0 to 1.
+     *
      * @default 1
      */
     readonly alpha: number;
-    /** A six-digit hex fallback for tools that cannot use the color space. */
+    /**
+     * A six-digit hex fallback, such as `"#3366cc"`.
+     *
+     * It's for tools that can't use the color space.
+     */
     readonly hex?: string;
 }
 
-/** A length. */
+/**
+ * A length, such as `{ value: 16, unit: "px" }`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#dimension | Format 8.2, Dimension}
+ */
 export interface DimensionValue {
     readonly value: number;
     readonly unit: "px" | "rem";
 }
 
-/** A length of time. */
+/**
+ * A length of time, such as `{ value: 200, unit: "ms" }`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#duration | Format 8.5, Duration}
+ */
 export interface DurationValue {
     readonly value: number;
     readonly unit: "ms" | "s";
 }
 
 /**
- * The control points of a cubic Bézier easing curve: `[x1, y1, x2, y2]`, with both x values from 0
- * to 1.
+ * An easing curve's two control points, as `[x1, y1, x2, y2]`.
+ *
+ * Both x values are from 0 to 1.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#cubic-bezier | Format 8.6, Cubic Bézier}
  */
 export type CubicBezierValue = readonly [number, number, number, number];
 
-/** Font names in order of preference. A single name is a list of one. */
+/**
+ * Font names, the first choice first.
+ *
+ * A file can write one name as a string. It's read as a list of one.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#font-family | Format 8.3, Font family}
+ */
 export type FontFamilyValue = readonly string[];
 
-/** A font weight from 1 to 1000. Keywords such as `"bold"` are read as their numbers. */
+/**
+ * A font weight, from 1 to 1000.
+ *
+ * A keyword such as `"bold"` is read as its number, 700.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#font-weight | Format 8.4, Font weight}
+ */
 export type FontWeightValue = number;
 
-/** A plain number, such as a line-height multiplier or an opacity. */
+/**
+ * A plain number, such as a line height or an opacity.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#number | Format 8.7, Number}
+ */
 export type NumberValue = number;
 
-/** A line style: either a keyword, or a custom dash pattern. */
+/**
+ * A line style.
+ *
+ * `kind: "keyword"` is a keyword, such as `"dashed"`.
+ * `kind: "dash"` is your own pattern of dashes and gaps.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#stroke-style | Format 9.3, Stroke style}
+ */
 export type StrokeStyleValue =
     | {
           readonly kind: "keyword";
@@ -84,20 +141,24 @@ export type StrokeStyleValue =
       }
     | {
           readonly kind: "dash";
-          /** Alternating dash and gap lengths. */
+          /** The lengths of the dashes and gaps, one after the other. */
           readonly dashArray: readonly DimensionValue[];
           /** How the end of each dash is drawn. */
           readonly lineCap: "round" | "butt" | "square";
       };
 
-/** A border, made of a color, a width and a line style. */
+/**
+ * A border's color, width and line style.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#border | Format 9.4, Border}
+ */
 export interface BorderValue {
     readonly color: ColorValue;
     readonly width: DimensionValue;
     readonly style: StrokeStyleValue;
 }
 
-/** One shadow. A shadow token contains a list of these. */
+/** One shadow in a {@link ShadowValue}. */
 export interface ShadowLayer {
     readonly color: ColorValue;
     readonly offsetX: DimensionValue;
@@ -105,45 +166,70 @@ export interface ShadowLayer {
     readonly blur: DimensionValue;
     readonly spread: DimensionValue;
     /**
-     * Whether the shadow is drawn inside the element.
+     * Draws the shadow inside the element.
+     *
      * @default false
      */
     readonly inset: boolean;
 }
 
-/** A shadow: one or more layers. A single shadow is a list of one. */
+/**
+ * One or more shadows, drawn together.
+ *
+ * A file can write one shadow as an object. It's read as a list of one.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#shadow | Format 9.6, Shadow}
+ */
 export type ShadowValue = readonly ShadowLayer[];
 
 /** One color stop in a gradient. */
 export interface GradientStop {
     readonly color: ColorValue;
     /**
-     * Where the stop sits along the gradient, from 0 to 1. Values outside that range are clamped.
+     * Where the stop is along the gradient, from 0 to 1.
+     *
+     * A value outside that range is read as 0 or 1.
      */
     readonly position: number;
 }
 
-/** A gradient, as its color stops. */
+/**
+ * A gradient, as its color stops.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#gradient | Format 9.7, Gradient}
+ */
 export type GradientValue = readonly GradientStop[];
 
-/** A transition: how long, how late, and with what easing. */
+/**
+ * A transition's duration, delay and easing.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#transition | Format 9.5, Transition}
+ */
 export interface TransitionValue {
     readonly duration: DurationValue;
     readonly delay: DurationValue;
     readonly timingFunction: CubicBezierValue;
 }
 
-/** A complete typographic style. */
+/**
+ * The font, size, weight, spacing and line height of text.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#typography | Format 9.8, Typography}
+ */
 export interface TypographyValue {
     readonly fontFamily: FontFamilyValue;
     readonly fontSize: DimensionValue;
     readonly fontWeight: FontWeightValue;
     readonly letterSpacing: DimensionValue;
-    /** A multiple of the font size. */
+    /** A multiple of the font size, such as `1.5`. */
     readonly lineHeight: NumberValue;
 }
 
-/** The value shape for each token type. */
+/**
+ * Each token type's value.
+ *
+ * `ValueByType["dimension"]` is {@link DimensionValue}.
+ */
 export interface ValueByType {
     color: ColorValue;
     dimension: DimensionValue;
@@ -160,160 +246,188 @@ export interface ValueByType {
     typography: TypographyValue;
 }
 
-/** A token type defined by the DTCG Format module. */
+/**
+ * A token type the spec defines, such as `"color"`.
+ *
+ * {@link tokenTypes} lists them all.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#types | Format 8, Types}
+ */
 export type TokenType = keyof ValueByType;
 
 /**
- * A reference written in curly brace syntax (Format 7.1.1), `"{color.brand}"`: it stands for the
- * whole of the value of the token at `path`.
+ * A curly brace reference, such as `"{color.primary}"`.
+ *
+ * It stands for the whole value of the token at `path`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#curly-brace-syntax-token-references | Format 7.1.1, Curly brace syntax}
  *
  * @example
- * // "$value": "{color.brand}" is read as
- * { syntax: "curly-brace", path: "color.brand" }
+ * // button.background's value
+ * light.getToken("button.background")!.value
+ * // => { syntax: "curly-brace", path: "color.primary" }
  */
 export interface CurlyBraceReference {
     readonly syntax: "curly-brace";
-    /** The path of the token referred to. */
+    /** The path of the token it refers to, such as `"color.primary"`. */
     readonly path: string;
 }
 
 /**
- * A reference written in JSON Pointer syntax (Format 7.1.2), `{ "$ref": "#/…" }`. It can point at
- * a whole token or inside its value, such as at one component of a color (Format 7.3).
+ * A JSON Pointer reference, such as `{ "$ref": "#/color/blue/500/$value" }`.
+ *
+ * It can point at a whole token, or inside a value, such as at one color component.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#json-pointer-syntax-required-support | Format 7.1.2, JSON Pointer syntax} and
+ * {@link https://www.designtokens.org/TR/2025.10/format/#property-level-references | 7.3, Property-level references}
  *
  * @example
- * // "components": [{ "$ref": "#/color/blue/$value/components/0" }, 0.5, 0.5]
- * // reads the first component as
- * { syntax: "json-pointer", pointer: "#/color/blue/$value/components/0" }
+ * // The first component of color.blue.500
+ * parseReference({ $ref: "#/color/blue/500/$value/components/0" })
+ * // => { syntax: "json-pointer", pointer: "#/color/blue/500/$value/components/0" }
  */
 export interface JsonPointerReference {
     readonly syntax: "json-pointer";
-    /** The JSON Pointer, as written. */
+    /** The pointer as written, such as `"#/color/blue/500/$value"`. */
     readonly pointer: string;
 }
 
 /**
- * A reference as it stands in a value, in either syntax. {@link isReference} tells one from a
- * value.
+ * A reference in either syntax, as written.
+ *
+ * {@link isReference} tells one from a value.
  */
 export type WrittenReference = CurlyBraceReference | JsonPointerReference;
 
 /**
- * A reference a token or group writes, in the permutation that holds it: what is written, where,
- * and the token it references. Each is listed in its token's
- * {@link TokenBase.references | references} and its group's {@link Group.references | references}.
+ * A reference written in a token or group.
+ *
+ * A token lists its references in {@link TokenBase.references | references}, and so does a
+ * {@link Group.references | group}.
  *
  * @example
- * // in mode: dark, "text": { "$value": "{color.brand}" }
- * const [reference] = text.references;
- * reference.asWritten // { syntax: "curly-brace", path: "color.brand" }
- * reference.pointsToPath   // "color.brand"
- * reference.pointsToToken  // dark's color.brand
+ * // button.background's reference
+ * light.getToken("button.background")!.references[0]!.pointsToPath
+ * // => "color.primary"
  */
 export type Reference = ReferenceBase;
 
-/** What every {@link Reference} has, whatever its syntax. */
+/** What every {@link Reference} has. */
 export interface ReferenceBase {
-    /**
-     * The reference as it is written in the value, in its syntax, as {@link TokenBase.value}
-     * holds it: `{ syntax: "curly-brace", path }` or `{ syntax: "json-pointer", pointer }`.
-     */
+    /** The reference as written, such as `{ syntax: "curly-brace", path: "color.primary" }`. */
     readonly asWritten: WrittenReference;
     /**
-     * The path it names: a token's, or a group's for a group's `$extends`; for a JSON Pointer to a
-     * property within a value, the token holding it. Given even when nothing is at that path, so a
-     * reference to a missing token can be found and moved. Absent for a pointer that names no path,
-     * such as `#/` or one into another file.
+     * The path the reference names, such as `"color.primary"`.
+     *
+     * For a group's `$extends`, it's the group's path. For a JSON Pointer inside a value, it's the
+     * path of the token holding that value.
+     *
+     * It's there even when nothing has that path. It's absent for a pointer that names no path,
+     * such as `#/`.
      */
     readonly pointsToPath?: string;
-    /** The token or group that writes it. */
+    /**
+     * The token or group that has the reference.
+     *
+     * For a token from `$extends`, it's the token in the group that extends.
+     */
     readonly writtenIn: Token | Group;
     /**
-     * The token it references as a whole, in this permutation: curly braces target complete
-     * tokens only, a JSON Pointer any place (Format 7.1.2). `undefined` when it references none: a
-     * property within a value (see {@link ReferenceBase.pointsToProperty | pointsToProperty}; the
-     * token holding it is at `path`), a group, as a group's `$extends` does, or nothing at all.
+     * The token the reference points to, in this permutation.
+     *
+     * It's `undefined` when the reference points to part of a value, to a group, or to nothing.
      */
     readonly pointsToToken?: Token;
     /**
-     * For a property-level reference (Format 7.3), a JSON Pointer to a property within a token's
-     * value, the property it targets. Absent when it references the complete value (Format
-     * 7.4.2), as a curly brace reference always does.
+     * Where in the token's value a JSON Pointer points.
      *
-     * @example
-     * // { "$ref": "#/color/blue/$value/components/0" }
-     * reference.pointsToProperty // ["components", 0]
+     * For example, `["components", 0]`. It's absent when the reference points to the whole value.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#property-level-references | Format 7.3, Property-level references}
      */
     readonly pointsToProperty?: JsonPath;
     /**
-     * The property of {@link TokenBase.value | value} it is written as, which can differ from the
-     * file: a shadow written as one object is a list of one, so a reference in its `color` is at
-     * `[0, "color"]`. Absent for a reference written as the whole value, and for a group's
-     * `$extends`.
+     * Where in {@link TokenBase.value | value} the reference is.
+     *
+     * For example, `["components", 0]`. It's a path into the value as read, so a reference in a single
+     * shadow's `color` is at `[0, "color"]`. It's absent for a reference that is the whole value.
      */
     readonly writtenInProperty?: JsonPath;
     /**
-     * What to write where it is written (`getSpan` (`/editor`)) after a list of
-     * {@link Move}s, made in order, in the syntax it is written in: a JSON Pointer keeps its steps
-     * into the value. As it is written when no move reaches it.
+     * Rewrites the reference after some moves, such as a rename.
+     *
+     * It keeps the syntax it was written in. Paths move as {@link tokenPath.applyMoves} moves them.
+     *
+     * @param moves - The {@link Move}s, made in order, such as
+     * `[{ from: "color.primary", to: "color.accent" }]`.
      *
      * @example
-     * reference.moved([{ from: "color.brand", to: "color.house" }]) // "{color.house}"
+     * // After renaming color.primary
+     * reference.moved([{ from: "color.primary", to: "color.accent" }])
+     * // => "{color.accent}"
      */
     moved(moves: readonly Move[]): JsonValue;
 }
 
 /**
- * A reference, as {@link DesignTokens.getReferencesTo} gives it: written once at `span`, holding in
- * each of `permutations`. `writtenInPaths` are the paths of the tokens or groups that have it, as paths
- * since each can be a different object in each permutation: the one whose file writes it first,
- * then each that inherits it through `$extends`.
+ * A reference as {@link DesignTokens.getReferencesTo} gives it.
+ *
+ * It's written once, and can apply in several permutations.
  */
-export type ReferenceInPermutations = Omit<ReferenceBase, "from" | "token" | "moved"> & {
-    /** Where it is written, in this read's text. */
+export type ReferenceInPermutations = Omit<
+    ReferenceBase,
+    "writtenIn" | "pointsToToken" | "moved"
+> & {
+    /** Where the reference is written in its file. */
     readonly span: Span;
-    /** Where it is written in its file, as `getJsonPath` (`/editor`) gives it. */
+    /** The keys to where it's written, as `getJsonPath` gives them. */
     readonly jsonPath: JsonPath;
+    /**
+     * The paths of the tokens or groups that have it.
+     *
+     * The first is the one written in the file. The rest get it through `$extends`.
+     */
     readonly writtenInPaths: readonly string[];
+    /** The permutations the reference applies in. */
     readonly permutations: Permutations;
+    /** Rewrites the reference after some moves, as {@link ReferenceBase.moved} does. */
     moved(moves: readonly Move[]): JsonValue;
 };
 
-/**
- * One answer {@link askEveryPermutation} gives: what the question answered, and the permutations
- * that answered it.
- */
+/** One answer from {@link askEveryPermutation}, and the permutations that gave it. */
 export interface AnswerInPermutations<Answer> {
     readonly answer: Answer;
+    /** The permutations that gave the answer. */
     readonly permutations: Permutations;
 }
 
-/** How far a permutation's and the design tokens' reference questions look. */
+/** How far questions about references look. */
 export interface ReferenceOptions {
     /**
-     * Follow chained references (Format 7.2.2): those through other tokens, however indirectly.
-     * Each reference once, safe with loops.
+     * Follows references through other tokens too, however far.
+     *
+     * Each reference is listed once, even if references loop.
+     *
      * @default false
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#chained-references | Format 7.2.2, Chained references}
      */
     chained?: boolean;
 }
 
-/**
- * `V`, with a {@link JsonPointerReference} allowed in place of the whole of it or any part of it.
- */
+/** `V`, where the whole or any part can be a {@link JsonPointerReference}. */
 export type WithPointers<V> =
     | JsonPointerReference
     | (V extends object ? { [K in keyof V]: WithPointers<V[K]> } : V);
 
 /**
- * A value whose references have not been followed yet: a {@link CurlyBraceReference} to a token
- * holding one, or the value with a {@link JsonPointerReference} in place of any part.
+ * A value whose references aren't followed yet.
+ *
+ * The whole can be a {@link CurlyBraceReference}. The whole or any part can be a
+ * {@link JsonPointerReference}.
  */
 export type Unresolved<V> = CurlyBraceReference | WithPointers<V>;
 
-/**
- * A stroke style whose references have not been followed yet, where the specification allows them.
- */
+/** A stroke style whose references aren't followed yet. */
 export type UnresolvedStrokeStyle =
     | WrittenReference
     | Extract<StrokeStyleValue, { kind: "keyword" }>
@@ -324,10 +438,13 @@ export type UnresolvedStrokeStyle =
       };
 
 /**
- * Where the specification allows references in each type's value. A {@link CurlyBraceReference}
- * stands for a whole token, so it may take the place of the whole value, or of a part of a
- * composite that is a token type in its own right. A {@link JsonPointerReference} may take the
- * place of any part.
+ * Each token type's value, with references not followed yet.
+ *
+ * A curly brace reference can stand for the whole value. In a composite, it can also stand for a
+ * part that's a token type itself, such as a border's `color`. A JSON Pointer can stand for any
+ * part.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#composite-types | Format 9, Composite types}
  */
 export interface UnresolvedValueByType {
     color: Unresolved<ColorValue>;
@@ -386,10 +503,15 @@ export interface UnresolvedValueByType {
 }
 
 /**
- * A value of type `T` in its one agreed shape, with its references not yet followed: the type of
- * {@link TokenBase.value | Token.value}. {@link TokenBase.resolved | Token.resolved} is the same
- * value with them followed, and {@link TokenBase.asWritten | Token.asWritten} is how the file wrote
- * it.
+ * A value of type `T`, with its references not followed yet.
+ *
+ * It's the type of {@link TokenBase.value | Token.value}.
+ * {@link TokenBase.resolved | Token.resolved} has the references followed.
+ *
+ * @example
+ * // color.primary in dark
+ * dark.getToken("color.primary")!.value
+ * // => { syntax: "curly-brace", path: "color.blue.300" }
  */
 export type UnresolvedValue<T extends TokenType> = UnresolvedValueByType[T];
 
