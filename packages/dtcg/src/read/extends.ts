@@ -1,4 +1,4 @@
-import type { DiagnosticDetailByKind, DiagnosticKind, Input } from "../model.js";
+import type { Diagnostic, DiagnosticDetailByKind, DiagnosticKind, Input } from "../model.js";
 import { namedPath, toReferenceTarget } from "../values/references.js";
 import { relatedMessages } from "../error-messages.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
@@ -9,7 +9,12 @@ import { reachOf, refObjectMeaning } from "./ref-meaning.js";
 
 type Extending = MergedGroup & { extends: NonNullable<MergedGroup["extends"]> };
 
-export function applyExtends(merged: Merged, input: Input, diagnostics: Problems): void {
+export function applyExtends(
+    merged: Merged,
+    input: Input,
+    diagnostics: Problems,
+    reportMissingReference: (problem: Diagnostic) => void,
+): void {
     const state = new Map<string, "extending" | "done" | "in-a-loop">();
     const report = <K extends DiagnosticKind>(
         kind: K,
@@ -65,7 +70,13 @@ export function applyExtends(merged: Merged, input: Input, diagnostics: Problems
         if (malformed) {
             report("malformed-pointer", malformed, group);
         } else if (reached.kind === "nothing") {
-            report("missing-reference", { ref: written, from: [group.path] }, group);
+            reportMissingReference(
+                diagnostic(
+                    "missing-reference",
+                    { ref: written, from: [group.path] },
+                    { span: group.extends.span, path: group.path },
+                ),
+            );
         } else if (reached.kind === "group") {
             group.extendsGroup = reached.path;
             inherit(merged, group, reached.path);

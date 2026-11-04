@@ -105,8 +105,8 @@ function buildPermutation(
     permutation: NormalisedPermutation,
     { readValue, diagnostics, places, missing: missingAcross, earlier }: Context,
 ): Permutation {
-    const { input, label, contexts, sources, merged } = permutation;
-    const missing = missingAcross.in(input, merged.tokens);
+    const { input, label, contexts, sources, merged, unreadSources } = permutation;
+    const missing = missingAcross.in(input, merged.tokens, unreadSources);
     const valueOf = workingOut(permutation, readValue, diagnostics, missing);
 
     const sourceAt = (index: number) => sources[index] as Source;

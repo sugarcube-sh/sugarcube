@@ -2,6 +2,7 @@ import type { Diagnostic, Input, ResolverContext, Source } from "../model.js";
 import type { Problems } from "./diagnostics.js";
 import { applyExtends } from "./extends.js";
 import { type Merged, merge } from "./merge.js";
+import { missingReferencesReported } from "./missing.js";
 import { inWrittenOrder } from "./order.js";
 import type { ListedSource, LoadedPermutation } from "./permutations.js";
 import type { LoadedSource } from "./sources.js";
@@ -15,6 +16,7 @@ export interface NormalisedPermutation {
     contexts: ResolverContext[];
     sources: Source[];
     merged: Merged;
+    unreadSources: Source[];
 }
 
 export function normalisePermutations(
@@ -58,11 +60,19 @@ export function normalisePermutations(
         const walkedPieces = sources.flatMap((each, source) =>
             each.pieces.map((piece) => ({ contents: walk(piece, input), source })),
         );
+        const permutationSources = sources.map(publish);
+        const unread = new Set(
+            walkedPieces.filter(({ contents }) => !contents).map(({ source }) => source),
+        );
+        const unreadSources = permutationSources.filter((_, index) => unread.has(index));
         const merged = merge(walkedPieces, input, diagnostics);
-        applyExtends(merged, input, diagnostics);
+        const reportMissingReference = missingReferencesReported(unreadSources)
+            ? (problem: Diagnostic) => diagnostics.found(problem, input)
+            : () => {};
+        applyExtends(merged, input, diagnostics, reportMissingReference);
         generate(merged, input);
         inWrittenOrder(merged);
-        return { input, label, contexts, sources: sources.map(publish), merged };
+        return { input, label, contexts, sources: permutationSources, merged, unreadSources };
     });
     return { permutations: normalised, sources: readSources };
 }
