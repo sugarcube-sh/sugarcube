@@ -31,7 +31,7 @@ import {
 } from "./linked.js";
 import { malformation } from "./malformed-pointer.js";
 import type { Merged, MergedGroup, MergedToken, MergedTopLevel, WrittenAt } from "./merge.js";
-import { type MissingIn, type MissingReferences, missingReferences } from "./missing.js";
+import type { MissingIn, MissingReferences } from "./missing.js";
 import type { NormalisedPermutation } from "./normalise.js";
 import { type Occurrence, wholeReference } from "./occurrence.js";
 import type { LocatedReference, ValueReader } from "./parse-value.js";
@@ -87,18 +87,10 @@ function earlierIn(previous: DesignTokens | undefined): Earlier {
 
 export function buildPermutations(
     permutations: NormalisedPermutation[],
-    readValue: ValueReader,
-    diagnostics: Problems,
-    places: Places,
-    previous: DesignTokens | undefined,
+    { previous, ...rest }: Omit<Context, "earlier"> & { previous: DesignTokens | undefined },
 ): Permutation[] {
-    const missing = missingReferences(diagnostics);
-    const earlier = earlierIn(previous);
-    const built = permutations.map((permutation) =>
-        buildPermutation(permutation, { readValue, diagnostics, places, missing, earlier }),
-    );
-    missing.report();
-    return built;
+    const context = { ...rest, earlier: earlierIn(previous) };
+    return permutations.map((permutation) => buildPermutation(permutation, context));
 }
 
 function buildPermutation(

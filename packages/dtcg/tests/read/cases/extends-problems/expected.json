@@ -52,18 +52,6 @@
       }
     },
     {
-      "kind": "missing-reference",
-      "detail": {
-        "ref": "nothing.here",
-        "from": ["missing"]
-      },
-      "span": {
-        "file": "tokens.json",
-        "text": "\"{nothing.here}\""
-      },
-      "path": "missing"
-    },
-    {
       "kind": "not-a-group",
       "detail": {
         "ref": "token"
@@ -134,6 +122,18 @@
           "path": "c3"
         }
       ]
+    },
+    {
+      "kind": "missing-reference",
+      "detail": {
+        "ref": "nothing.here",
+        "from": ["missing"]
+      },
+      "span": {
+        "file": "tokens.json",
+        "text": "\"{nothing.here}\""
+      },
+      "path": "missing"
     }
   ]
 }

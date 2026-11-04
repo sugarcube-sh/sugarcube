@@ -30,10 +30,6 @@ export interface MissingIn {
 
 const MISSING_NOT_REPORTED: MissingIn = Object.freeze({ record: () => {}, close: () => {} });
 
-export function missingReferencesReported(unreadSources: readonly Source[]): boolean {
-    return unreadSources.length === 0;
-}
-
 export interface MissingReferences {
     in(
         input: Input,
@@ -47,7 +43,7 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
     const across = new Map<string, MissingAcross>();
     return {
         in: (input, paths, unreadSources) => {
-            if (!missingReferencesReported(unreadSources)) return MISSING_NOT_REPORTED;
+            if (unreadSources.length > 0) return MISSING_NOT_REPORTED;
             const missing = new Map<string, Missing>();
             return {
                 record: (reference, from, span) => {
