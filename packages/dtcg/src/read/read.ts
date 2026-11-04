@@ -8,6 +8,7 @@ import { validateExtensions } from "./validate-extensions.js";
 import type { Merged } from "./merge.js";
 import { createValueReader } from "./parse-value.js";
 import { buildPermutations } from "./build.js";
+import { missingReferences } from "./missing.js";
 import type { PermutationOptions } from "./permutations.js";
 import { fileName, folderOf, join, normalise } from "./paths.js";
 import { parseJson } from "./json.js";
@@ -167,9 +168,11 @@ function toDesignTokens(
         generating += performance.now() - started;
     };
     const normalising = performance.now();
+    const missing = missingReferences(found);
     const { permutations: normalised, sources } = normalisePermutations(
         loaded.permutations,
         found,
+        missing,
         generate,
         previous?.sources,
     );
@@ -177,7 +180,14 @@ function toDesignTokens(
     onStage?.("generate", generating);
     onStage?.("normalise", resolving - normalising - generating);
     const places = placesIn(loaded.texts, previous);
-    const resolved = buildPermutations(normalised, readValue, found, places, previous);
+    const resolved = buildPermutations(normalised, {
+        readValue,
+        diagnostics: found,
+        missing,
+        places,
+        previous,
+    });
+    missing.report();
     const permutations = allPermutations(resolved, loaded.resolver);
     onStage?.("resolve", performance.now() - resolving);
     validateExtensions(
