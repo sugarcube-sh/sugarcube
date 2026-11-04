@@ -3,70 +3,79 @@ import { findByName } from "../read/input.js";
 import { stacksOn } from "./stacks-on.js";
 import { type CSSDeclaration, type CSSWriter, createCSSWriter } from "./writer.js";
 
-/** A block of custom properties: the theme it is for, its selector, and the at-rules around it. */
+/** One block of custom properties, with its input and selector. */
 export interface CSSBlockInput {
     /**
-     * The input the block is for, such as `{ mode: "dark" }`: its declarations are that
-     * permutation's, and where its selector matches, the modifiers it names are set while the
-     * others are left to the blocks under it. It writes every token any context of those
-     * modifiers provides a value for (Resolver 2.1) whenever an earlier block that might also
-     * apply writes something else, so dark and a brand can apply to one element at once, and a
-     * `{ mode: "light" }` section inside a dark page is light. An input naming every modifier
-     * makes the block stand alone: it is the whole of its permutation.
+     * The input naming the block's permutation, such as `{ mode: "dark" }`.
+     *
+     * It overrides what earlier blocks write for its modifiers. So a `{ mode: "light" }` section
+     * inside a dark page is light.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#orthogonality | Resolver 2.1, Orthogonality}
      */
     readonly input: Input;
+    /** The selector, such as `'[data-mode="dark"]'`, or a list of them. */
     readonly selector: string | readonly string[];
-    /** Outermost first, such as `["@media (min-width: 640px)"]`. */
+    /**
+     * The at-rules around the block, outermost first.
+     *
+     * For example, `["@media (min-width: 640px)"]`.
+     */
     readonly atRules?: readonly string[];
     /**
-     * Whether the block writes again every declaration referring to something it changes, so an
-     * element anywhere under its selector gets the right values. `false` suits a block that can
-     * only match the root element, which nothing above it inherits from.
+     * Whether to write again what refers to the tokens this block changes.
+     *
+     * Leave it on, unless the block only matches the root element.
+     *
      * @default true
      */
     readonly redeclare?: boolean;
 }
 
-/** A block, with what it must write. */
+/** A block, with the custom properties it writes. */
 export interface CSSBlock extends CSSBlockInput {
-    /** Every declaration of the permutation its input names, as the writer gives them. */
+    /** Every custom property of the block's permutation. */
     readonly declarations: readonly CSSDeclaration[];
-    /** The declarations written in its rule. */
+    /** The custom properties the block writes in its rule. */
     readonly inRule: readonly CSSDeclaration[];
-    /** The declarations whose `supports` alternatives it writes, under `@supports`. */
+    /** The custom properties whose `@supports` alternatives the block writes. */
     readonly underSupports: readonly CSSDeclaration[];
 }
 
 /**
- * What each block must write, in order, each for the permutation its input names, with its
- * declarations from `writer` (a writer with no options when none is given). A declaration is
- * written when its value differs from the earlier blocks that surely apply wherever it does, or
- * when a context of a modifier the block decides provides a value for its token (see
- * {@link CSSBlockInput.input}) and an earlier block that might also apply writes another value for
- * it. Then, unless the block says `redeclare: false`, every declaration referring to what it
- * writes, through every step, since a custom property referring to another is worked out where it is
- * declared. An earlier block surely applies when it applies to every element and every screen the
- * later one does: its selectors include `:root` or all of the later block's, and it has no
- * at-rules, the same ones, or a width query every screen the later one matches also matches. Any
- * other earlier block might apply. When two blocks with equally specific selectors both apply,
- * the later one in the list wins, so blocks that stack are listed in the resolver's order. Throws
- * the read's `PermutationError` for an input naming a permutation the tokens don't have.
+ * Works out what each block of a stylesheet writes.
+ *
+ * Each block writes what differs from earlier blocks that always apply where it does.
+ *
+ * List blocks in the resolver's order. A later block wins over an equally specific earlier one.
+ *
+ * @param tokens - The tokens, as `read` gives them.
+ * @param blocks - Each block's input and selector, such as `{ input: {}, selector: ":root" }`.
+ * @param options - The writer to use, from {@link createCSSWriter}. Without one, it uses a writer
+ * with no settings.
+ * @throws {@link PermutationError} If a block's input names a permutation the tokens don't have.
+ *
+ * @see {@link https://github.com/sugarcube-sh/sugarcube/tree/main/packages/dtcg#write-a-stylesheet | Write a stylesheet, in the README}
  *
  * @example
- * const css = toCSS(
+ * // Light under :root, and only what changes in dark under [data-mode="dark"]
+ * toCSS(
  *     getCSSBlocks(tokens, [
  *         { input: {}, selector: ":root" },
  *         { input: { mode: "dark" }, selector: '[data-mode="dark"]' },
- *         { input: { brand: "ocean" }, selector: '[data-brand="ocean"]' },
  *     ]),
- * );
- *
- * @example
- * // every combination listed, each block standing alone
- * getCSSBlocks(tokens, [
- *     { input: { mode: "light", brand: "house" }, selector: ":root" },
- *     { input: { mode: "dark", brand: "house" }, selector: '[data-mode="dark"]' },
- * ], { writer: createCSSWriter({ naming: { prefix: "ds" } }) });
+ * )
+ * // =>
+ * // :root {
+ * //     --color-red: rgb(204 51 51);
+ * //     --color-blue: rgb(51 102 204);
+ * //     --color-brand: var(--color-red);
+ * //     --color-text: var(--color-brand);
+ * // }
+ * //
+ * // [data-mode="dark"] {
+ * //     --color-text: var(--color-blue);
+ * // }
  */
 export function getCSSBlocks(
     tokens: DesignTokens,

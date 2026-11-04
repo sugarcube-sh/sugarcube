@@ -1,11 +1,22 @@
 import type { CSSBlock } from "./blocks.js";
 
 /**
- * The blocks as a stylesheet: each that writes anything as a rule, inside its at-rules, with its
- * `@supports` alternatives after it, grouped by condition; `""` when none writes anything.
+ * Writes blocks as a stylesheet.
+ *
+ * A block with nothing to write is left out. If no block writes anything, it gives `""`.
+ *
+ * @param blocks - The blocks, from {@link getCSSBlocks}.
  *
  * @example
- * toCSS(getCSSBlocks([{ declarations, selector: ":root" }]))
+ * // The default permutation under :root
+ * toCSS(getCSSBlocks(tokens, [{ input: {}, selector: ":root" }]))
+ * // =>
+ * // :root {
+ * //     --color-red: rgb(204 51 51);
+ * //     --color-blue: rgb(51 102 204);
+ * //     --color-brand: var(--color-red);
+ * //     --color-text: var(--color-brand);
+ * // }
  */
 export function toCSS(blocks: readonly CSSBlock[]): string {
     const rules = blocks
