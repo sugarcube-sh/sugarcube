@@ -1,8 +1,8 @@
-export type ChangeQueue<Change extends { kind: string }> = ((change: Change) => void) & {
+type ChangeQueue<Change extends { kind: string }> = ((change: Change) => void) & {
     cancel: () => void;
 };
 
-export interface ChangeQueueCallbacks<Change> {
+interface ChangeQueueCallbacks<Change> {
     onChange: (change: Change) => Promise<void>;
     onError: (error: unknown) => void;
 }

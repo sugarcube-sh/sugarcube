@@ -15,7 +15,7 @@ export interface UtilityCSS {
     customProperties: string[];
 }
 
-export interface MadeCSS {
+interface MadeCSS {
     declared: Declarations;
     variables: CSSFileOutput;
     utilities?: UtilityCSS;

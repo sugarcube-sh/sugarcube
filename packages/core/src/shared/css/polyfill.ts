@@ -1,6 +1,6 @@
 import type { ColorSpace, Part, Reference, Token } from "@sugarcube-sh/dtcg";
 
-export interface Fallbacks {
+interface Fallbacks {
     spaces: ColorSpace[];
     missing: { token: Token; colorSpace: ColorSpace }[];
 }

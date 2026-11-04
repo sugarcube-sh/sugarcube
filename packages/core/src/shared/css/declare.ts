@@ -6,7 +6,7 @@ import {
     type Token,
 } from "@sugarcube-sh/dtcg";
 import { type CSSDeclarations, type CSSWriter, createCSSWriter } from "@sugarcube-sh/dtcg/css";
-import type { Permutation as ConfigPermutation, InternalConfig } from "../../types/config.js";
+import type { PermutationConfig, InternalConfig } from "../../types/config.js";
 import type { Reported } from "../../types/diagnostics.js";
 import { type AboutToken, aboutToken, diagnostic, located } from "../diagnostics.js";
 import { fallbacksIn } from "./polyfill.js";
@@ -93,7 +93,7 @@ export function declare(tokens: DesignTokens, config: InternalConfig): Declarati
 function entries(
     tokens: DesignTokens,
     config: InternalConfig,
-    listed: ConfigPermutation[],
+    listed: PermutationConfig[],
     writer: CSSWriter,
 ): Entry[] {
     if (listed.length === 0) {

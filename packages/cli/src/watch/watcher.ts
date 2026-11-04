@@ -7,7 +7,7 @@ import { type FSWatcher, watch as chokidarWatch } from "chokidar";
 import { normalize } from "pathe";
 import { IGNORED_DIR_NAMES, MARKUP_EXTENSIONS } from "../constants/markup.js";
 
-export type Change =
+export type WatchChange =
     | { kind: "config"; path: string }
     | { kind: "token"; tokens: DesignTokens; read: ReadEvent }
     | { kind: "markup"; path: string };
@@ -18,7 +18,7 @@ export interface Watched {
 }
 
 export type WatchCallbacks = {
-    onChange: (change: Change) => Promise<Watched>;
+    onChange: (change: WatchChange) => Promise<Watched>;
     onError: (error: unknown) => void;
     onWarning: (message: string) => void;
 };
@@ -27,7 +27,7 @@ export type WatcherHandle = {
     close: () => Promise<void>;
 };
 
-const IN_ORDER: Change["kind"][] = ["config", "token", "markup"];
+const IN_ORDER: WatchChange["kind"][] = ["config", "token", "markup"];
 
 // Mirrors scan-markup's MAX_FILES
 const WATCH_TARGET_LIMIT = 10_000;
@@ -110,7 +110,7 @@ export async function startWatcher(
         watched = next;
     };
 
-    const queue = createChangeQueue<Change>(IN_ORDER, {
+    const queue = createChangeQueue<WatchChange>(IN_ORDER, {
         onChange: async (change) => update(await callbacks.onChange(change)),
         onError: callbacks.onError,
     });

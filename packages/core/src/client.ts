@@ -3,120 +3,36 @@
  *
  * Use this in any non-Node context — browsers, web workers, edge functions:
  *
- *     import { groupByContext, assignCSSNames, generateCSSVariables }
- *         from "@sugarcube-sh/core/client";
+ *     import { cssFrom, readOptions } from "@sugarcube-sh/core/client";
  *
  * For Node contexts use the main `@sugarcube-sh/core` entry, which adds
  * file loaders, writers, and the Node-side `fillDefaults`.
  */
 
-export {
-    defineConfig,
-    fillDefaultsCore,
-    validateConfig,
-    validateInternalConfig,
-    validateSugarcubeConfig,
-} from "./shared/config.js";
-export type { DefaultDirs } from "./shared/config.js";
+export { defineConfig, fillDefaultsCore } from "./shared/config.js";
 export { ConfigError, configProblems } from "./shared/config-error.js";
-export type { ConfigIssue } from "./types/diagnostics.js";
-export { DEFAULT_CONFIG } from "./shared/constants/config.js";
-
-export { resolveTokens } from "./shared/resolve-tokens.js";
-export type { ResolveResult, ResolveErrors } from "./shared/resolve-tokens.js";
-export { groupByContext } from "./shared/pipeline/group-by-context.js";
-export { assignCSSNames } from "./shared/pipeline/assign-css-names.js";
-export { generateCSSVariables } from "./shared/generate-css-variables.js";
 
 export { readOptions } from "./shared/read-options.js";
-export type { ReadOptions } from "@sugarcube-sh/dtcg";
 export { declare } from "./shared/css/declare.js";
 export type { Declarations } from "./shared/css/declare.js";
-export { emitCSS } from "./shared/css/emit.js";
 export { utilityTokens } from "./shared/utilities/tokens.js";
-export { utilityRules } from "./shared/utilities/rules.js";
-export type { UtilityStart } from "./shared/utilities/rules.js";
 export { cssFrom } from "./shared/css-from.js";
 export { cssWriterOptions } from "./shared/css/writer-options.js";
-export type { MadeCSS, UtilityCSS } from "./shared/css-from.js";
+export type { UtilityCSS } from "./shared/css-from.js";
 export type { Reported } from "./types/diagnostics.js";
 
-export { formatCSSVarName } from "./shared/format-css-var-name.js";
-export { composeTrees } from "./shared/compose-trees.js";
-export type { ComposeError, Composed } from "./shared/compose-trees.js";
-export type { SourceOrder, SourceRef, TokenSources } from "./types/load.js";
-export { FONT_WEIGHT_ALIASES, STROKE_STYLE_KEYWORDS } from "./shared/constants/tokens.js";
-export { convertColorToString } from "./shared/color/color-conversion.js";
-export { isDTCGColorValue } from "./shared/color/color-validation.js";
-export type { DTCGColorSpace, DTCGColorValue } from "./types/dtcg-color.js";
-export type { Result } from "./types/result.js";
-export { createVariableNameResolver } from "./shared/resolve-variable-name.js";
 export { kebabCase } from "./shared/case.js";
-export { roundTo } from "./shared/round.js";
 
-export { calculateScale } from "./shared/scale/calculator.js";
-export type { GeneratedStep } from "./shared/scale/calculator.js";
-export type {
-    FluidExtension,
-    ScaleExtension,
-    ExponentialScaleConfig,
-    MultiplierScaleConfig,
-    SugarcubeExtensions,
-} from "./types/extensions.js";
-
-export { isResolvedToken, isScaleExtension } from "./shared/guards.js";
 export { SUGARCUBE_NAMESPACE } from "./shared/extensions.js";
 
 export type {
     InternalConfig,
     SugarcubeConfig,
     ColorFallbackStrategy,
-    FluidConfig,
-    Permutation,
-    VariablesConfig,
-    UtilitiesOutputConfig,
     UtilityClassesConfig,
-    StudioConfig,
     VariableNameFn,
 } from "./types/config.js";
-export type {
-    PipelineContext,
-    PipelineEvent,
-    PipelineWarning,
-    TokenPipelineSource,
-} from "./types/pipelines.js";
-export { createPipelineContext } from "./types/pipelines.js";
-export type { ResolvedToken, ResolvedTokens } from "./types/resolve.js";
-export type { TokenTree } from "./types/tokens.js";
-export type {
-    RenderableToken,
-    RenderableTokens,
-    NormalizedRenderableTokens,
-} from "./types/render.js";
 export type { CSSFileOutput } from "./types/generate.js";
-export type { userConfigSchema } from "./shared/schemas/config.js";
-
-export type {
-    NodeMetadata,
-    Token,
-    TokenGroup,
-    TokenType,
-    SimpleTokenType,
-    AlwaysDecomposedType,
-    StructuralCompositeType,
-    TokenValue,
-    RawTokenValue,
-    Dimension,
-    Duration,
-    FontFamily,
-    LineCap,
-    StrokeStyleKeyword,
-    ShadowObject,
-    GradientStop,
-    Reference,
-    TokenRef,
-    GroupRef,
-} from "./types/dtcg.js";
 
 export { problemCount, problemLines, problemsText } from "./shared/problems.js";
 export type { Where } from "./shared/problems.js";

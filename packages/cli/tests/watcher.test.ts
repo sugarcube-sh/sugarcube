@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { createLiveTokens } from "@sugarcube-sh/dtcg/node";
 import { afterEach, describe, expect, it } from "vitest";
 import {
-    type Change,
+    type WatchChange,
     type Watched,
     type WatcherHandle,
     startWatcher,
@@ -54,7 +54,7 @@ describe("startWatcher", () => {
         const { resolver, configFile, tokens } = project();
         const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
         await live.getTokens();
-        const changes: Change[] = [];
+        const changes: WatchChange[] = [];
         const watched: Watched = { markup: false };
         handles.push(
             await startWatcher(live, configFile, watched, {
@@ -83,7 +83,7 @@ describe("startWatcher", () => {
         const { folder, resolver, configFile } = project();
         const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
         await live.getTokens();
-        const changes: Change[] = [];
+        const changes: WatchChange[] = [];
         const before: Watched = { content: [join(folder, "a/**/*.html")], markup: true };
         const after: Watched = { content: [join(folder, "b/**/*.html")], markup: true };
         handles.push(

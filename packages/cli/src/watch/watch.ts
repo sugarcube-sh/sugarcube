@@ -14,7 +14,7 @@ import { type ConfigFlags, loadConfig } from "../config.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import { printProblems, whereOf } from "../problems.js";
 import { errorPrefix, logRegenerated, prefix, warnPrefix } from "./log.js";
-import { type Change, type Watched, startWatcher } from "./watcher.js";
+import { type WatchChange, type Watched, startWatcher } from "./watcher.js";
 
 export interface WatchFlags extends ConfigFlags {
     silent?: boolean;
@@ -65,7 +65,7 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
         return undefined;
     };
 
-    const rebuilt = (change: Change): Promise<Built | undefined> => {
+    const rebuilt = (change: WatchChange): Promise<Built | undefined> => {
         if (change.kind === "config") return configChanged();
         if (change.kind === "markup") return rescan(last);
         return buildFrom(change.tokens, loaded, options, last);
@@ -101,7 +101,7 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
     await new Promise(() => {});
 }
 
-function savedFile(change: Change, { configFile }: LoadedConfig): string {
+function savedFile(change: WatchChange, { configFile }: LoadedConfig): string {
     if (change.kind !== "token") return change.path;
     return change.read.file ?? configFile ?? "";
 }
