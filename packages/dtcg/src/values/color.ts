@@ -18,18 +18,18 @@ import {
 } from "./syntax.js";
 
 /**
- * A color written as a hex string, in any of the four forms CSS allows: `#rgb`, `#rgba`, `#rrggbb`
- * or `#rrggbbaa`. A hex string is an error unless `hexStringColors` is on, and then only with six or
- * eight digits. Recognising one lets the error say so: with the option off, how to write the color
- * as an object; with it on, the six or eight digits a short one stands for.
+ * A color written as a hex string, in any form CSS allows.
+ *
+ * Recognising it lets the error show how to write the color instead.
  */
 const HEX_STRING = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 const READABLE_HEX_STRING = /^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 /**
- * The `hex` fallback on a color object: six-digit CSS hex, such as `"#e11d48"`, as the Color module
- * requires. Either case, since CSS hex is not case-sensitive.
+ * The `hex` fallback on a color object, such as `"#e11d48"`.
+ *
+ * The Color module requires six digits. Upper or lower case is fine, as in CSS.
  */
 const SIX_DIGIT_HEX = /^#[0-9a-f]{6}$/i;
 

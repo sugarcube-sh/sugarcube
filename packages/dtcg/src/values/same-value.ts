@@ -4,15 +4,19 @@ import { isJsonObject } from "./json.js";
 const ROUNDING = 0.0005;
 
 /**
- * Whether two values of a type are the same, allowing for the rounding that different spellings
- * of one value produce: numbers that agree to three decimal places, such as color components
- * written to different precision, are equal, and a color's `hex` fallback is not compared. Colors
- * in different color spaces, and lengths or durations in different units, are different values:
- * to compare them, convert one first. References are compared as references, not followed.
+ * Checks whether two values of a type are the same value.
+ *
+ * Numbers within 0.0005 count as equal. Values in different units or color spaces aren't equal,
+ * such as `16px` and `1rem`. References aren't followed.
+ *
+ * @param type - The token type of both values, such as `"dimension"`.
+ * @param a - The first value, such as `{ value: 4, unit: "px" }`.
+ * @param b - The second value.
  *
  * @example
- * isEquivalentValue("dimension", { value: 0.1 + 0.2, unit: "rem" }, { value: 0.3, unit: "rem" }) // true
- * isEquivalentValue("dimension", { syntax: "curly-brace", path: "space.sm" }, { value: 4, unit: "px" }) // false
+ * // Two spellings of one dimension
+ * isEquivalentValue("dimension", { value: 0.1 + 0.2, unit: "rem" }, { value: 0.3, unit: "rem" })
+ * // => true
  */
 export function isEquivalentValue<T extends TokenType>(
     type: T,
@@ -20,9 +24,18 @@ export function isEquivalentValue<T extends TokenType>(
     b: UnresolvedValue<T>,
 ): boolean;
 /**
- * Whether two tokens have the same type and say the same value. References are compared as
- * references, not followed: to compare where two tokens end up, pass their `resolved` values with
- * the type.
+ * Checks whether two tokens have the same type and value.
+ *
+ * References aren't followed. To compare final values, pass each token's `resolved` value and the
+ * type.
+ *
+ * @param a - The first token, such as `tokens.getToken("color.text")`.
+ * @param b - The second token.
+ *
+ * @example
+ * // color.text differs between mode: light and mode: dark
+ * isEquivalentValue(light.getToken("color.text")!, dark.getToken("color.text")!)
+ * // => false
  */
 export function isEquivalentValue(a: Token, b: Token): boolean;
 export function isEquivalentValue(
@@ -46,12 +59,17 @@ export function saysTheSame(a: Said, b: Said): boolean {
 }
 
 /**
- * Whether two JSON values are the same: the same string, number, boolean or `null`, lists of the
- * same values in the same order, or objects with the same keys and values in any order. Unlike
- * {@link isEquivalentValue}, numbers must match exactly.
+ * Checks whether two JSON values are the same.
+ *
+ * Key order doesn't matter. List order does. Numbers must match exactly.
+ *
+ * @param a - The first value, such as `{ a: 1, b: [2] }`.
+ * @param b - The second value.
  *
  * @example
- * isEqualJson({ a: 1, b: [2] }, { b: [2], a: 1 }) // true
+ * // Key order doesn't matter
+ * isEqualJson({ a: 1, b: [2] }, { b: [2], a: 1 })
+ * // => true
  */
 export function isEqualJson(a: unknown, b: unknown): boolean {
     return alike(a, b, exactly);

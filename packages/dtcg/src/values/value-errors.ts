@@ -12,26 +12,32 @@ import { fontWeightKeywords } from "./keywords.js";
 
 /** The facts each reason carries, beside `type` and `reason`. */
 export interface ValueErrorFacts {
-    /** The value is not the JSON its type is written as, such as a number for a dimension. */
+    /** The wrong kind of JSON, such as a number for a dimension. */
     "wrong-shape": {
         readonly value: unknown;
-        /** A string that reads as a token's path, written as the reference it was probably meant as. */
+        /** The reference a plain-string token path was probably meant to be. */
         readonly reference?: string;
     };
     /** An object has a property its type does not define. */
     "unknown-property": { readonly property: string };
-    /** A `$ref` has other properties beside it: a JSON Pointer stands alone. */
+    /** A `$ref` has other properties beside it. A JSON Pointer must stand alone. */
     "pointer-not-alone": Record<never, never>;
     /** An object lacks a property its type needs. */
     "missing-property": { readonly property: string };
     /** A number is needed, and the value is not one. */
     "not-a-number": { readonly value: unknown };
-    /** A `"{token}"` reference is written inside a value, where only a JSON Pointer can be. */
+    /**
+     * A curly brace reference is inside a part, such as a dimension's `value`. Only a JSON Pointer
+     * can go there.
+     */
     "curly-brace-not-allowed-here": { readonly reference: string };
     /** A color is written as a hex string. Through `read`, this is `hex-string-color`. */
     "hex-string": {
         readonly value: string;
-        /** The color object it stands for, as it would be written: `alpha` only when the hex has alpha digits. */
+        /**
+         * The color object it stands for, as a file would write it. It has `alpha` only when the hex
+         * has alpha digits.
+         */
         readonly asObject: Omit<ColorValue, "alpha"> & { readonly alpha?: number };
     };
     /** A color's `colorSpace` is not one the Color module defines. */
@@ -40,16 +46,16 @@ export interface ValueErrorFacts {
     "not-three-components": { readonly value: unknown };
     /** A color component is neither a number nor `"none"`. */
     "component-not-a-number": { readonly value: unknown };
-    /** A color component is outside its channel's range, as `colorSpaces` gives it. */
+    /** A color component is outside its range, as `colorSpaces` gives it. */
     "component-out-of-range": {
         readonly value: number;
         readonly colorSpace: ColorSpace;
-        /** The channel's name, such as `"H"`. */
+        /** The component's name, such as `"H"`. */
         readonly component: string;
         readonly min: number;
-        /** Left out when the channel has no upper limit, which JSON cannot write as a number. */
+        /** The upper limit. It's left out when there's none, since JSON can't write infinity. */
         readonly max?: number;
-        /** Whether `max` itself is outside the range, as for a hue. */
+        /** Whether `max` itself is out of range, as for a hue. */
         readonly maxExclusive: boolean;
     };
     /** A color's `alpha` is outside 0 to 1. */
@@ -57,22 +63,25 @@ export interface ValueErrorFacts {
     /** A color's `hex` is not six hex digits after a `#`. */
     "hex-not-six-digits": {
         readonly value: unknown;
-        /** A three-digit hex, such as `#f0a`, written with six digits: `#ff00aa`. */
+        /** The same color in six digits, such as `#ff00aa` for `#f0a`. */
         readonly sixDigits?: string;
     };
     /**
-     * A hex string with three or four digits, read with `hexStringColors`, which takes six or
+     * A hex string with three or four digits. With `hexStringColors` on, a hex string needs six or
      * eight.
      */
     "short-hex-string": {
         readonly value: string;
-        /** The six or eight digits it stands for: `#f0a` is `#ff00aa`, `#f0a8` is `#ff00aa88`. */
+        /** The six or eight digits it stands for. `#f0a` is `#ff00aa`, and `#f0a8` is `#ff00aa88`. */
         readonly expanded: string;
     };
-    /** A dimension or duration is written as a string with its unit, such as `"16px"`. */
+    /** A dimension or duration is written as a string, such as `"16px"`. */
     "string-with-unit": {
         readonly value: string;
-        /** The object it stands for, `{ value: 16, unit: "px" }`, when its unit is one the type allows. */
+        /**
+         * The object it stands for, such as `{ value: 16, unit: "px" }`. It's there only when the
+         * type allows the unit.
+         */
         readonly asObject?: {
             readonly value: number;
             readonly unit: DimensionValue["unit"] | DurationValue["unit"];
@@ -105,7 +114,7 @@ export interface ValueErrorFacts {
     "not-a-boolean": { readonly value: unknown };
     /** A font weight number is outside 1 to 1000. */
     "font-weight-out-of-range": { readonly value: number };
-    /** A font weight string is not one of the keywords the spec defines. */
+    /** A font weight string isn't one of the spec's keywords. */
     "unknown-font-weight-keyword": { readonly value: string };
     /** A reference is written where only a literal value is accepted. */
     "reference-not-allowed": { readonly reference: string };
@@ -113,15 +122,21 @@ export interface ValueErrorFacts {
     "unit-not-allowed": { readonly unit: unknown; readonly allowed: readonly string[] };
 }
 
-/** Why a value could not be read, as a stable name to switch on, such as `"unit-not-allowed"`. */
+/**
+ * Why a value couldn't be read, as a name such as `"unit-not-allowed"`.
+ *
+ * Check this in your code, not the message. A message's wording can change.
+ */
 export type ValueErrorCode = keyof ValueErrorFacts;
 
 /**
- * Why a value could not be read, with the facts to word it: checking `reason` narrows to that
- * reason's facts. `type` is the type of the value that failed, which for a part of a composite,
- * such as a shadow's color, is the part's type.
+ * Why a value couldn't be read, with the facts behind its message.
+ *
+ * Check `reason`, and TypeScript knows which facts are there. For part of a composite, `type` is the
+ * part's type.
  *
  * @example
+ * // A dimension written in ems
  * { type: "dimension", reason: "unit-not-allowed", unit: "em", allowed: ["px", "rem"] }
  */
 export type ValueErrorDetail = {
