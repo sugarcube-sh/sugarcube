@@ -15,7 +15,7 @@ export type VariableNameFn = (path: string) => string;
  * A resolved token set and how to emit it as CSS.
  * Aligned with the DTCG resolver "permutation" concept - maps 1:1 to a resolver input.
  */
-export type Permutation = {
+export type PermutationConfig = {
     /**
      * Modifier name → context value. Missing modifiers use their DTCG defaults.
      * @example { theme: "dark" }
@@ -39,11 +39,6 @@ export type Permutation = {
 export type FluidConfig = {
     min: number;
     max: number;
-};
-
-export type TransformsConfig = {
-    fluid?: FluidConfig;
-    colorFallbackStrategy?: ColorFallbackStrategy;
 };
 
 export type UtilityClassesConfig = Record<string, PropertyUtilityConfig | PropertyUtilityConfig[]>;
@@ -109,7 +104,7 @@ export interface VariablesConfig {
      *   { input: { theme: "dark" }, selector: "[data-theme=\"dark\"]" },
      * ]
      */
-    permutations?: Permutation[];
+    permutations?: PermutationConfig[];
 
     /**
      * Writes again, in each theme's block, every variable that refers to something the theme
@@ -214,7 +209,7 @@ export interface InternalConfig {
             fluid: FluidConfig;
             colorFallbackStrategy: ColorFallbackStrategy;
         };
-        permutations?: Permutation[];
+        permutations?: PermutationConfig[];
         redeclareDependents?: boolean;
         propagateDependents?: boolean;
     };

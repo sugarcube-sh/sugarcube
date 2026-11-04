@@ -6,10 +6,6 @@ import type {
     UtilityEntry,
     UtilityWithoutClasses,
 } from "../../types/diagnostics.js";
-import type { FluidExtension } from "../../types/extensions.js";
-
-/** How many referring tokens a grouped "missing reference" message names before summarising the rest. */
-export const MISSING_REFERRER_CAP = 3;
 
 type Entry<K extends SugarcubeDiagnosticKind> = {
     severity: "error" | "warning";
@@ -155,148 +151,6 @@ function listed(items: string[], conjunction = "and"): string {
 }
 
 export const ErrorMessages = {
-    LOAD: {
-        NO_FILES_FOUND: (pattern: string) => `No files found matching pattern: ${pattern}.`,
-        INVALID_JSON: (path: string, message: string) => `Invalid JSON in file ${path}: ${message}`,
-        GLOB_ERROR: (pattern: string, error: string) =>
-            `Error resolving glob pattern ${pattern}: ${error}`,
-        NO_SOURCE_TEXT: (file: string) => `No text for ${file}.`,
-        POINTER_NOT_FOUND: (file: string, pointer: string, error: string) =>
-            `${file}#${pointer}: ${error}.`,
-    },
-    FLATTEN: {
-        INVALID_TOKEN_NAME: (name: string) =>
-            `Invalid token name "${name}": Token names cannot contain dots (.), curly braces ({,}), or other special characters`,
-        MISSING_DOLLAR_PREFIX: (path: string) =>
-            `Token at ${path} is using 'value' or 'type' without the required '$' prefix. Use '$value' and '$type' instead.`,
-        INVALID_TOKEN_NESTING: (path: string) =>
-            `Token at "${path}" has a $value but also contains child tokens or groups. Per the DTCG spec, an object with $value is definitively a token and cannot also be a group. Remove either the $value or the child properties.`,
-        COMPOSITE_TOKEN_MISSING_TYPE: (path: string) =>
-            `Composite token at '${path}' is missing the required "$type" property. Composite tokens (tokens with object values) must specify their type to define their structure.`,
-        TOKEN_MISSING_TYPE: (path: string) =>
-            `Token at '${path}' is missing "$type". Add "$type" to the token or its parent group.`,
-        CONFLICT_TOKEN_VS_GROUP: (path: string) =>
-            `Conflict at "${path}": token vs group. A token cannot be replaced by a group (or vice versa).`,
-        CONFLICT_INCOMPATIBLE_TYPES: (expected: string, received: string, path: string) =>
-            `Type conflict at "${path}": expected ${expected}, got ${received}`,
-    },
-    METADATA: {
-        COLLECTION_ERROR: (message: string) => `Error collecting metadata: ${message}`,
-        INVALID_EXTENSIONS: (path: string) =>
-            `Invalid extensions at ${path}: expected object, got ${typeof path}`,
-        INVALID_DESCRIPTION: (path: string) =>
-            `Invalid description at ${path}: expected string, got ${typeof path}`,
-    },
-    VALIDATE: {
-        MISSING_TYPE: (path: string) => `Token at '${path}' is missing the "$type" property`,
-        UNKNOWN_TOKEN_TYPE: (type: string, path: string) =>
-            `Unknown token type '${type}' at ${path}. Valid types are: color, dimension, fontFamily, fontWeight, duration, cubicBezier, strokeStyle, border, transition, shadow, gradient, typography`,
-        INVALID_COLOR: (value: unknown, path: string) =>
-            `Invalid color at ${path}: '${value}'. Color should be a valid hex value or DTCG color object`,
-        INVALID_DIMENSION: (value: unknown, path: string) =>
-            `Invalid dimension at '${path}': ${value}. Dimensions should have a numeric value and unit, like { "value": 16, "unit": "px" }`,
-        INVALID_DIMENSION_UNIT: (unit: unknown, path: string) =>
-            `Invalid unit at '${path}': '${unit}'. Unit must be either "px" or "rem"`,
-        INVALID_FONT_FAMILY: (value: unknown, path: string) =>
-            `Invalid font family at '${path}': ${value}. Should be a string or array of strings, like "Arial" or ["Arial", "sans-serif"]`,
-        INVALID_FONT_WEIGHT: (value: unknown, path: string) =>
-            `Invalid font weight at '${path}': ${value}. Should be a number between 1-1000 or a keyword like "thin", "light", "normal", "bold"`,
-        INVALID_DURATION: (value: unknown, path: string) =>
-            `Invalid duration at '${path}': ${value}. Should be like { "value": 300, "unit": "ms" }`,
-        INVALID_DURATION_UNIT: (unit: unknown, path: string) =>
-            `Invalid unit at ${path}: "${unit}". Unit must be "ms" or "s"`,
-        INVALID_CUBIC_BEZIER: (value: unknown, path: string) =>
-            `Invalid cubic bezier at ${path}: "${value}". Should be an array of 4 numbers between 0 and 1`,
-        INVALID_STROKE_STYLE: (value: unknown, path: string) =>
-            `Invalid stroke style at ${path}: "${value}". Should be "solid", "dashed", "dotted", etc.`,
-        INVALID_STROKE_LINE_CAP: (value: unknown, path: string) =>
-            `Invalid line cap at ${path}: "${value}". Should be one of: round, butt, square`,
-        INVALID_BORDER: (value: unknown, path: string) =>
-            `Invalid border at ${path}: "${value}". Should have color, width, and style properties`,
-        INVALID_SHADOW: (value: unknown, path: string) =>
-            `Invalid shadow at ${path}: "${value}". Should have color, offsetX, offsetY properties (blur and spread are optional)`,
-        INVALID_SHADOW_INSET: (value: unknown, path: string) =>
-            `Invalid inset value at ${path}: "${value}". Should be true or false`,
-        INVALID_TRANSITION: (value: unknown, path: string) =>
-            `Invalid transition at ${path}: "${value}". Should have duration, delay, and timingFunction properties`,
-        INVALID_GRADIENT: (value: unknown, path: string) =>
-            `Invalid gradient at ${path}: "${value}". Should be an array of color stops, each with a color and a numeric position`,
-        INVALID_TYPOGRAPHY: (value: unknown, path: string) =>
-            `Invalid typography at ${path}: "${value}". Should have fontFamily and fontSize (fontWeight, letterSpacing, and lineHeight are optional)`,
-        MISSING_REQUIRED_PROPERTY: (prop: string, path: string) =>
-            `Missing required property '${prop}' at ${path}`,
-        INVALID_NUMBER: (value: unknown, path: string) =>
-            `Invalid number at ${path}: "${value}". Expected a number value`,
-        INVALID_ARRAY: (value: unknown, path: string) =>
-            `Invalid array at ${path}: "${value}". Expected an array value`,
-        MISSING_FLUID_CONFIG: (path: string) =>
-            `Missing fluid configuration. Token at ${path} requires fluid viewport settings.`,
-        INVALID_FLUID_DIMENSION: (value: unknown, path: string) =>
-            `Invalid fluid dimension at ${path}: "${value}". Fluid dimensions should have min and max values, like { "min": { "value": 16, "unit": "px" }, "max": { "value": 24, "unit": "px" } }`,
-        REMOVED_FLUID_DIMENSION: (path: string, range: FluidExtension) =>
-            `$type "fluidDimension" at ${path} has been removed. Use $type "dimension" with the range in $extensions["sh.sugarcube"].fluid: ${JSON.stringify(
-                {
-                    $type: "dimension",
-                    $value: range.max,
-                    $extensions: { "sh.sugarcube": { fluid: range } },
-                },
-            )}`,
-
-        INVALID_VIEWPORT_CONFIG: (value: unknown, path: string) =>
-            `Invalid viewport configuration at ${path}: "${value}". Viewport config should have min and max dimension values`,
-
-        MISMATCHED_UNITS: (unit1: unknown, unit2: unknown, path: string) =>
-            `Mismatched units at ${path}: min uses '${unit1}', max uses '${unit2}'. Both values must use the same unit`,
-        INVALID_FLUID_VALUE_RANGE: (path: string) =>
-            `Invalid fluid value range at ${path}: min value must be less than max value`,
-        INVALID_TOKEN_TYPE: (expected: string, received: string, path: string) =>
-            `Invalid token type at ${path}: expected ${expected}, got ${received}`,
-        INVALID_TYPE: (expected: string, value: unknown, path: string) =>
-            `Expected ${expected}, received ${typeof value} at ${path}`,
-        INVALID_ENUM_VALUE: (enumValues: unknown[], value: unknown, path: string) =>
-            `Expected value to be one of [${enumValues.join(", ")}], but got ${String(
-                value,
-            )} at ${path}`,
-        SCALE_CONTAINS_REFERENCE: (path: string) =>
-            `Scale config at ${path} cannot contain references — recipes must use literal numbers and units.`,
-        SCALE_INVALID_RATIO: (value: unknown, path: string) =>
-            `Invalid exponential ratio at ${path}: '${value}'. Ratio must be greater than 1 (a ratio ≤ 1 produces a flat or inverted scale).`,
-        SCALE_EMPTY_MULTIPLIERS: (path: string) =>
-            `Multipliers at ${path} must be a non-empty record of step name → number.`,
-        SCALE_INVALID_PAIRS: (path: string) =>
-            `Invalid \`pairs\` at ${path}: must be the string "adjacent" or an array of pair names like ["sm-lg"].`,
-        SCALE_INVALID_PAIR_ENTRY: (value: unknown, path: string) =>
-            `Invalid pair entry at ${path}: ${String(value)}. Each pair must be a string in the form "<from>-<to>".`,
-        SCALE_PAIR_UNKNOWN_MULTIPLIER: (name: string, path: string) =>
-            `Pair at ${path} references unknown multiplier '${name}'. The name must match a key in the scale's \`multipliers\`.`,
-    },
-    RESOLVE: {
-        CIRCULAR_REFERENCE: (path: string, ref: string) =>
-            `Circular reference detected: ${path} -> ${ref}`,
-        REFERENCE_NOT_FOUND: (ref: string, path: string) =>
-            `Reference not found: ${ref} in ${path}. Does ${ref} exist?`,
-        TYPE_MISMATCH: (path: string) => `Type mismatch in ${path}`,
-        MISSING_REFERENCE: (ref: string, referrers: string[]) => {
-            const shown = referrers.slice(0, MISSING_REFERRER_CAP);
-            const remaining = referrers.length - shown.length;
-            const more = remaining > 0 ? ` (+${remaining} more)` : "";
-            const referencedBy =
-                shown.length > 0 ? ` Referenced by ${shown.join(", ")}${more}.` : "";
-            return `Token reference not found. ${ref} is referenced but not defined.${referencedBy} Check for a typo, or define ${ref}.`;
-        },
-    },
-    GENERATE: {
-        INVALID_CSS_VALUE: (key: string, value: unknown) =>
-            `Invalid CSS value for property '${key}': ${value}`,
-        INVALID_VARIABLE_NAME: (path: string, name: string) =>
-            `Invalid CSS variable name at '${path}': ${name}`,
-        INVALID_CSS_VALUE_TYPE: (valueType: string) =>
-            `CSS value must be a string or number, but received ${valueType}. This is a bug in sugarcube. Please report it at https://github.com/sugarcube-sh/sugarcube/issues`,
-    },
-    CONVERT: {
-        COLOR_CONVERSION_FAILED: (error: string) =>
-            `Failed to convert color: ${error}. This is a bug in sugarcube. Please report it at https://github.com/sugarcube-sh/sugarcube/issues`,
-    },
     CONFIG: {
         MULTIPLE_RESOLVERS_FOUND: (paths: string[]) =>
             `Several resolver files were found:\n${paths.map((f) => `  - ${f}`).join("\n")}\n\nName the one to use as \`resolver\` in sugarcube.config.ts.`,
@@ -316,52 +170,6 @@ export const ErrorMessages = {
             `Utility config for '${property}' has invalid source pattern '${source}'. Only patterns ending with '.*' are supported (e.g., 'color.*', 'font.weight.*').`,
     },
 
-    RESOLVER: {
-        FILE_NOT_FOUND: (path: string) =>
-            `Cannot read resolver file at "${path}". Please check the path and file permissions.`,
-        INVALID_JSON: (message: string) => `Invalid JSON in resolver file: ${message}`,
-        INVALID_REFERENCE: (ref: string) =>
-            `Invalid reference "${ref}". References must use format #/sets/<name> or #/modifiers/<name>.`,
-        INVALID_SOURCE_REFERENCE: (ref: string) =>
-            `Invalid source reference "${ref}". Sources can only reference sets (#/sets/<name>), not modifiers.`,
-        EXTENDING_ON_SET_REF: (ref: string, keys: string[]) =>
-            `Extending properties (${keys.map((k) => `"${k}"`).join(", ")}) cannot be combined with set reference "${ref}". A set ref expands to multiple sources, so there is no single merge target. Add the extra properties as a separate inline source in the same array instead.`,
-        UNDEFINED_SET: (name: string) =>
-            `Reference to undefined set "${name}". Define it in the "sets" section first.`,
-        UNDEFINED_MODIFIER: (name: string) =>
-            `Reference to undefined modifier "${name}". Define it in the "modifiers" section first.`,
-        CIRCULAR_REFERENCE: (ref: string) => `Circular reference detected at "${ref}".`,
-        EXTERNAL_FILE_NOT_FOUND: (path: string) => `Referenced file not found: ${path}`,
-        EXTERNAL_FILE_ERROR: (path: string, message: string) =>
-            `Failed to load "${path}": ${message}`,
-        INVALID_JSON_POINTER: (pointer: string, reason: string) =>
-            `Invalid JSON pointer "${pointer}": ${reason}`,
-        DUPLICATE_NAME: (name: string) => `Duplicate name "${name}" in resolutionOrder.`,
-        MODIFIER_NEEDS_CONTEXTS: "Modifier must have at least one context defined.",
-        MODIFIER_SINGLE_CONTEXT:
-            "Modifier has only one context. Consider using a set instead, or add more contexts.",
-        INVALID_DEFAULT: (name: string, contexts: string[]) =>
-            `Default context "${name}" is not defined. Valid contexts: ${contexts.join(", ")}`,
-        UNKNOWN_MODIFIER: (name: string) => `Unknown modifier "${name}".`,
-        INVALID_CONTEXT: (context: string, modifier: string, valid: string[]) =>
-            `Invalid context "${context}" for modifier "${modifier}". Valid contexts: ${valid.join(", ")}`,
-        MISSING_REQUIRED_INPUT: (name: string, contexts?: string[]) =>
-            contexts
-                ? `Modifier "${name}" has no default context. Either add "default": "${contexts[0]}" to the modifier definition, or use --input ${name}=${contexts[0]} to specify which context to use.`
-                : `Modifier "${name}" has no default context. Either add a "default" property to the modifier definition, or use --input ${name}=<context> to specify which context to use.`,
-        INVALID_INPUT_TYPE: (name: string) => `Input for modifier "${name}" must be a string.`,
-        MALFORMED_REFERENCE: (key: string, value: string) =>
-            `Malformed source reference: { "${key}": "${value}" }. Did you mean { "$ref": "${value}" }?`,
-        RESOLVER_AS_TOKEN_SOURCE: (path: string) =>
-            `File "${path}" is a resolver document, not a token file. Resolver documents (version: "2025.10") cannot be used as token sources. Did you mean to reference a specific token file instead?`,
-    },
-    PERMUTATIONS: {
-        UNKNOWN_MODIFIER: (modifierName: string, validModifiers: string[]) =>
-            `Permutation references unknown modifier "${modifierName}". Valid modifiers: ${validModifiers.join(", ")}`,
-        UNKNOWN_CONTEXT: (modifierName: string, contextName: string, validContexts: string[]) =>
-            `Permutation references unknown context "${contextName}" for modifier "${modifierName}". Valid contexts: ${validContexts.join(", ")}`,
-        EMPTY_SELECTOR: () => "Permutation selector cannot be empty",
-    },
     DIAGNOSTICS: diagnostics,
     FLUID_EXTENSION: {
         "not-an-object": ({ name }: { name: string }) => `\`${name}\` must be an object`,
@@ -382,20 +190,6 @@ export const ErrorMessages = {
             `${JSON.stringify(entry)} is not a pair: write it as two multiplier names joined by "-", such as "sm-lg"`,
         "unknown-multiplier": ({ name }: { name: string }) =>
             `\`${name}\` is not one of the recipe's multipliers`,
-    },
-    EXPAND_TREE: {
-        CIRCULAR_REFERENCE: (path: string, ref: string) =>
-            `Circular reference detected at "${path}": ${ref} references back to itself or a parent`,
-        INVALID_JSON_POINTER: (pointer: string, reason: string) =>
-            `Invalid JSON pointer "${pointer}": ${reason}`,
-        INVALID_REF_TARGET: (ref: string, path: string) =>
-            `Invalid reference target at "${path}": "${ref}" does not point to a valid token or group`,
-        CIRCULAR_EXTENDS: (path: string, chain: string[]) =>
-            `Circular $extends detected at "${path}": ${chain.join(" → ")}`,
-        EXTENDS_TARGET_NOT_FOUND: (path: string, target: string) =>
-            `$extends target not found at "${path}": "${target}" does not exist`,
-        INVALID_EXTENDS_TARGET: (path: string, target: string) =>
-            `Invalid $extends target at "${path}": "${target}" must reference a group, not a token`,
     },
 } as const;
 

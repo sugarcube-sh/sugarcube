@@ -1,5 +1,5 @@
 import type { InternalConfig } from "@sugarcube-sh/core/client";
-import type { Change } from "@sugarcube-sh/dtcg";
+import type { Change, TokensInMemory } from "@sugarcube-sh/dtcg";
 import type { Conflict, Edits } from "@sugarcube-sh/dtcg-edit";
 import type { PlainSettings } from "./adapters/plain";
 import type { BuildProblem } from "./controllers/adapter";
@@ -52,10 +52,9 @@ export type PullRequest = { readonly number: number; readonly url?: string | und
 
 export type StudioSave = (edits: Edits, changes: readonly Change[]) => Promise<SaveOutcome>;
 
-export type StudioMessage = {
-    readonly adapter: SentAdapter;
+export type StudioMessage = TokensInMemory & {
     readonly entryFile: string;
-    readonly files: Readonly<Record<string, string>>;
+    readonly adapter: SentAdapter;
 };
 
 export type SentAdapter =

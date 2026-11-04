@@ -6,7 +6,7 @@ import { type FluidRange, pixels, readFluid } from "../fluid.js";
 import { fallbacksIn, supportsCondition } from "./polyfill.js";
 import { calculateClamp, roundValue } from "./utopia.js";
 
-export type SugarcubeWriterOptions = CSSWriterOptions & { skip: (token: Token) => boolean };
+type SugarcubeWriterOptions = CSSWriterOptions & { skip: (token: Token) => boolean };
 
 /**
  * What sugarcube passes `dtcg/css`'s writer: the config's naming, its private tokens skipped, a

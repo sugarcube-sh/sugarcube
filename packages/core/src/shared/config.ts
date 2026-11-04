@@ -129,27 +129,6 @@ export function validateInternalConfig(config: unknown): InternalConfig {
     return internalResult.data;
 }
 
-/**
- * Validates a user configuration object against the schema and fills in defaults.
- *
- * Environment-agnostic. Pure — takes the default directories explicitly. For
- * Node callers that want `src/` detection, use `validateConfigWithDefaults`
- * from the Node entry (or pass `DEFAULT_DIRS` manually).
- *
- * @param config - The user configuration object to validate
- * @param dirs - Default directories to use when filling defaults
- * @returns The validated configuration with defaults filled in
- * @throws Error if the configuration is invalid
- */
-export function validateConfig(
-    config: Partial<SugarcubeConfig>,
-    dirs: DefaultDirs,
-): InternalConfig {
-    const userConfig = validateSugarcubeConfig(config);
-    const internalConfig = fillDefaultsCore(userConfig, dirs);
-    return validateInternalConfig(internalConfig);
-}
-
 type TypeIssue = Extract<ZodIssue, { code: "invalid_type" }>;
 type UnionIssue = Extract<ZodIssue, { code: "invalid_union" }>;
 

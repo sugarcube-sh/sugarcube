@@ -1,8 +1,10 @@
-import { defineGenerator } from "@sugarcube-sh/dtcg";
+import { type DimensionValue, defineGenerator } from "@sugarcube-sh/dtcg";
 import { SUGARCUBE_NAMESPACE } from "../extensions.js";
 import { calculateScale } from "./calculator.js";
 import { readScaleRecipe } from "./recipe.js";
 import { ErrorMessages } from "../constants/error-messages.js";
+
+const asWritten = ({ value, unit }: DimensionValue) => ({ value, unit });
 
 export const scaleGenerator = defineGenerator({
     extension: [SUGARCUBE_NAMESPACE, "scale"],
@@ -15,8 +17,10 @@ export const scaleGenerator = defineGenerator({
             value: calculateScale(recipe.value).map(({ name, min, max }) => ({
                 name,
                 $type: "dimension",
-                $value: max,
-                $extensions: { [SUGARCUBE_NAMESPACE]: { fluid: { min, max } } },
+                $value: asWritten(max),
+                $extensions: {
+                    [SUGARCUBE_NAMESPACE]: { fluid: { min: asWritten(min), max: asWritten(max) } },
+                },
             })),
         };
     },

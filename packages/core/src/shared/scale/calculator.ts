@@ -1,4 +1,4 @@
-import type { Dimension } from "../../types/dtcg.js";
+import type { DimensionValue } from "@sugarcube-sh/dtcg";
 import type {
     ExponentialScaleConfig,
     MultiplierScaleConfig,
@@ -6,10 +6,10 @@ import type {
 } from "../../types/extensions.js";
 import { roundTo } from "../round.js";
 
-export type GeneratedStep = {
+type GeneratedStep = {
     name: string;
-    min: Dimension;
-    max: Dimension;
+    min: DimensionValue;
+    max: DimensionValue;
 };
 
 export function calculateScale(config: ScaleExtension): GeneratedStep[] {

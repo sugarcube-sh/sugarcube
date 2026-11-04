@@ -1,13 +1,4 @@
-import type { Dimension } from "./dtcg.js";
-
-/**
- * Fluid extension configuration for dimension tokens.
- * Enables responsive scaling between viewport sizes.
- */
-export type FluidExtension = {
-    min: Dimension;
-    max: Dimension;
-};
+import type { DimensionValue } from "@sugarcube-sh/dtcg";
 
 /**
  * Recipe for generating a family of dimension tokens from a single
@@ -17,7 +8,7 @@ export type FluidExtension = {
 export type ScaleExtension = ExponentialScaleConfig | MultiplierScaleConfig;
 
 type BaseScaleConfig = {
-    base: { min: Dimension; max: Dimension };
+    base: { min: DimensionValue; max: DimensionValue };
 };
 
 export type ExponentialScaleConfig = BaseScaleConfig & {
@@ -36,15 +27,4 @@ export type MultiplierScaleConfig = BaseScaleConfig & {
      * - string[]: explicit list like ["sm-lg", "xs-xl"]; each name must exist in `multipliers`
      */
     pairs?: "adjacent" | string[];
-};
-
-/**
- * Sugarcube-specific extensions following DTCG $extensions spec.
- * Uses reverse domain notation per DTCG specification.
- */
-export type SugarcubeExtensions = {
-    "sh.sugarcube"?: {
-        fluid?: FluidExtension;
-        scale?: ScaleExtension;
-    };
 };
