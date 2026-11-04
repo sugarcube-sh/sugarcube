@@ -1,5 +1,5 @@
 import { relatedMessages } from "../error-messages.js";
-import type { Input, Span, WrittenReference } from "../model.js";
+import type { Input, Source, Span, WrittenReference } from "../model.js";
 import { movedReference, namedPath, toReferenceTarget } from "../values/references.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
 import { similarName } from "./similar.js";
@@ -28,15 +28,26 @@ export interface MissingIn {
     close(): void;
 }
 
+const MISSING_NOT_REPORTED: MissingIn = Object.freeze({ record: () => {}, close: () => {} });
+
+export function missingReferencesReported(unreadSources: readonly Source[]): boolean {
+    return unreadSources.length === 0;
+}
+
 export interface MissingReferences {
-    in(input: Input, paths: ReadonlyMap<string, unknown>): MissingIn;
+    in(
+        input: Input,
+        paths: ReadonlyMap<string, unknown>,
+        unreadSources: readonly Source[],
+    ): MissingIn;
     report(): void;
 }
 
 export function missingReferences(diagnostics: Problems): MissingReferences {
     const across = new Map<string, MissingAcross>();
     return {
-        in: (input, paths) => {
+        in: (input, paths, unreadSources) => {
+            if (!missingReferencesReported(unreadSources)) return MISSING_NOT_REPORTED;
             const missing = new Map<string, Missing>();
             return {
                 record: (reference, from, span) => {
