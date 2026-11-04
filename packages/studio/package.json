@@ -47,7 +47,7 @@
     "@sugarcube-sh/core": "workspace:*",
     "@sugarcube-sh/dtcg": "workspace:*",
     "@sugarcube-sh/dtcg-edit": "workspace:*",
-    "devframe": "^1.0.0"
+    "devframe": "^1.2.6"
   },
   "devDependencies": {
     "@sugarcube-sh/vite": "workspace:*",
