@@ -1,3 +1,4 @@
+import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import {
@@ -16,7 +17,7 @@ import type { DesignTokens } from "@sugarcube-sh/dtcg";
 import { onFileChanged } from "@sugarcube-sh/dtcg/node";
 import dtcg, { type ReadEvent } from "@sugarcube-sh/dtcg-vite";
 import UnoCSS from "@unocss/vite";
-import { type Logger, type Plugin, normalizePath } from "vite";
+import { type Logger, type Plugin, type UserConfig, normalizePath } from "vite";
 
 /** UnoCSS outputToCssLayers configuration */
 type OutputToCssLayersOptions =
@@ -43,6 +44,7 @@ interface UnoOptions {
 }
 
 interface UnoContext {
+    ready: Promise<unknown>;
     invalidate: () => void;
     reloadConfig: () => Promise<unknown>;
 }
@@ -85,38 +87,39 @@ const NO_UTILITIES: UtilityCSS = { rules: [], starts: [], safelist: [], customPr
 export default async function sugarcubePlugin(options: SugarcubePluginOptions = {}): Promise<any> {
     const { unoOptions = {} } = options;
     const timed = debugging(process.env.DEBUG);
-    let loaded = await loadInternalConfig();
-    const reading = dtcg(() => tokensOnDisk(loaded.config));
-    let tokens = await reading.api.getTokens();
+    let root!: string;
+    let loaded!: LoadedConfig;
+    let tokens!: DesignTokens;
+    const reading = dtcg(() => tokensOnDisk(loaded.config, root));
     let fromConfig: Reported[] = [];
     let tokenProblems: Reported[] = [];
-    const problems = () => [...fromConfig, ...tokenProblems];
+    const getProblems = () => [...fromConfig, ...tokenProblems];
     let good: Good = { css: "", utilities: NO_UTILITIES };
     let logger: Logger | undefined;
     const listeners = new Set<() => void>();
-    const unexpected = (error: unknown) =>
+    const logUnexpected = (error: unknown) =>
         logger?.error(`[sugarcube] ${error instanceof Error ? error.message : String(error)}`);
 
-    const inTerminal = (shown: Reported[]) =>
-        problemsText(shown, {
-            cwd: process.cwd(),
-            entryFile: resolve(loaded.config.resolver),
+    const toTerminalText = (problems: Reported[]) =>
+        problemsText(problems, {
+            cwd: root,
+            entryFile: tokensOnDisk(loaded.config, root).entryFile,
             configFile: loaded.configFile,
         });
 
     const report = () => {
-        const shown = problems();
-        if (shown.length === 0) return;
-        const text = inTerminal(shown);
-        if (failed(shown)) logger?.error(text);
+        const problems = getProblems();
+        if (problems.length === 0) return;
+        const text = toTerminalText(problems);
+        if (hasErrors(problems)) logger?.error(text);
         else logger?.warn(text);
     };
 
-    const accept = (next: DesignTokens): boolean => {
+    const makeCSSFrom = (next: DesignTokens): boolean => {
         tokens = next;
         const made = cssFrom(next, loaded.config);
         tokenProblems = made.diagnostics;
-        if (failed(problems())) return false;
+        if (hasErrors(getProblems())) return false;
         const utilities = made.utilities ?? NO_UTILITIES;
         const same = isDeepStrictEqual(
             [good.utilities.starts, good.utilities.safelist],
@@ -126,12 +129,10 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
         return !same;
     };
 
-    accept(tokens);
-
     const reloadConfig = createChangeQueue<{ kind: "config" }>(["config"], {
         onChange: async () => {
             try {
-                loaded = await loadInternalConfig();
+                loaded = await loadInternalConfig({}, { root });
                 fromConfig = [];
             } catch (error) {
                 if (!(error instanceof ConfigError)) throw error;
@@ -141,7 +142,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             }
             await reading.api.reread();
         },
-        onError: unexpected,
+        onError: logUnexpected,
     });
 
     const context: SugarcubePluginContext = {
@@ -180,13 +181,13 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
         .find((p) => p.name === "unocss:api")
         ?.api?.getContext();
 
-    const applied = async (next: DesignTokens, read: ReadEvent) => {
+    const applyRead = async (next: DesignTokens, read: ReadEvent) => {
         const started = performance.now();
-        const utilitiesChanged = accept(next);
+        const utilitiesChanged = makeCSSFrom(next);
         const css = performance.now() - started;
         report();
         let reloaded: number | undefined;
-        if (!failed(problems())) {
+        if (!hasErrors(getProblems())) {
             if (utilitiesChanged) {
                 const reloading = performance.now();
                 await unocss?.reloadConfig();
@@ -202,14 +203,23 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
         }
         for (const fn of listeners) fn();
     };
-    reading.api.onRead((next, read) => {
-        applied(next, read).catch(unexpected);
-    });
+    let started: Promise<void> | undefined;
+    const start = async (user: UserConfig) => {
+        root = realpathSync(resolve(user.root ?? "."));
+        loaded = await loadInternalConfig({}, { root });
+        makeCSSFrom(await reading.api.getTokens());
+        reading.api.onRead((next, read) => {
+            applyRead(next, read).catch(logUnexpected);
+        });
+        await unocss?.ready;
+        await unocss?.reloadConfig();
+    };
 
     const plugins: Plugin[] = [
         reading,
         {
-            name: "sugarcube:report",
+            name: "sugarcube",
+            config: (user) => (started ??= start(user)),
             configResolved(config) {
                 logger = config.logger;
                 if (config.command === "serve") report();
@@ -226,10 +236,10 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             name: "sugarcube:build",
             apply: "build",
             buildStart() {
-                const shown = problems();
-                if (shown.length === 0) return;
-                const text = inTerminal(shown);
-                if (failed(shown)) this.error(text);
+                const problems = getProblems();
+                if (problems.length === 0) return;
+                const text = toTerminalText(problems);
+                if (hasErrors(problems)) this.error(text);
                 this.warn(text);
             },
         } satisfies Plugin,
@@ -270,7 +280,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
     return plugins;
 }
 
-function failed(problems: Reported[]): boolean {
+function hasErrors(problems: Reported[]): boolean {
     return problems.some(({ severity }) => severity === "error");
 }
 

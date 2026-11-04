@@ -26,10 +26,6 @@
     "packages/vite": {
       "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
-    },
-    "packages/postcss": {
-      "entry": ["src/index.ts"],
-      "project": ["src/**/*.ts"]
     }
   }
 }
