@@ -44,9 +44,9 @@ type Overrides<T> = {
           : T[K];
 };
 
-function findConfigFile(): string | undefined {
+function findConfigFile(root = process.cwd()): string | undefined {
     return [".ts", ".js"]
-        .map((extension) => resolve(process.cwd(), `sugarcube.config${extension}`))
+        .map((extension) => resolve(root, `sugarcube.config${extension}`))
         .find((path) => existsSync(path));
 }
 
@@ -83,31 +83,35 @@ async function importConfigFile(configFile: string): Promise<unknown> {
 }
 
 /**
- * Loads `sugarcube.config.ts` or `.js` from the current folder, when there is one, validates it
+ * Loads `sugarcube.config.ts` or `.js` from the project's folder, when there is one, validates it
  * and fills in its defaults; finds the resolver when nothing names one; then puts `overrides` on
  * top and validates the result.
  *
  * @param overrides - Settings over the config's, such as a command's flags; a `resolver` here is
  * read without looking for one
+ * @param root - The project's folder, where the config file and the resolver are looked for and
+ * what the config's paths are relative to; `process.cwd()` unless a host such as Vite knows better
  * @returns The normalized config with defaults, and the config file it came from, if any
  * @throws ConfigError if the config is invalid, or if no resolver, or several, are found
  */
-export async function loadInternalConfig(overrides: ConfigOverrides = {}): Promise<LoadedConfig> {
-    const configFile = findConfigFile();
+export async function loadInternalConfig(
+    overrides: ConfigOverrides = {},
+    { root = process.cwd() }: { root?: string } = {},
+): Promise<LoadedConfig> {
+    const configFile = findConfigFile(root);
     const user = configFile ? validateSugarcubeConfig(await loadConfigFile(configFile)) : {};
-    const resolver = overrides.resolver ?? user.resolver ?? (await foundResolver());
+    const resolver = overrides.resolver ?? user.resolver ?? (await foundResolver(root));
     const filled = fillDefaults({ ...user, resolver });
     if (configFile) filled.content = resolveContentGlobs(filled.content, dirname(configFile));
     const config = validateInternalConfig(overridden(filled, overrides));
     return { config: { ...config, resolver }, configFile };
 }
 
-async function foundResolver(): Promise<string> {
-    const here = process.cwd();
-    const found = await findResolver(here);
-    if (found.kind === "one") return relative(here, found.path);
+async function foundResolver(root: string): Promise<string> {
+    const found = await findResolver(root);
+    if (found.kind === "one") return relative(root, found.path);
     if (found.kind === "several") {
-        const paths = found.paths.map((path) => relative(here, path));
+        const paths = found.paths.map((path) => relative(root, path));
         throw new ConfigError([{ reason: "several-resolvers", paths }]);
     }
     throw new ConfigError([{ reason: "no-resolver" }]);

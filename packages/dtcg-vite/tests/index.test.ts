@@ -102,6 +102,20 @@ describe("dtcg's Vite plugin", () => {
         expect(reads.at(-1)?.tokens.getText("base.json")).toContain("#222222");
     });
 
+    it("reads nothing until the design tokens are first asked for", async () => {
+        const entryFile = await project();
+        let asked = 0;
+        const plugin = dtcg(() => {
+            asked += 1;
+            return { entryFile };
+        });
+        expect(asked).toBe(0);
+
+        await plugin.api.getTokens();
+
+        expect(asked).toBeGreaterThan(0);
+    });
+
     it("logs a failure from before Vite's logger exists, once there is one", async () => {
         await project();
         const plugin = dtcg(() => {

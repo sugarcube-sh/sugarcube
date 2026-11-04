@@ -153,6 +153,21 @@ describe("sugarcube's Vite plugin", () => {
         expect(written).toContain(".text-ink{color:var(--color-ink);}");
     });
 
+    it("finds the config in Vite's root, when Vite is run from the folder above", async () => {
+        await project();
+        process.chdir(dirname(folder));
+        const { css } = await serve();
+
+        expect(await css("text-ink")).toContain(".text-ink{color:var(--color-ink);}");
+    });
+
+    it("does nothing when made: a tool that only loads the Vite config reads no sugarcube config", async () => {
+        folder = await mkdtemp(join(tmpdir(), "sugarcube-vite-empty-"));
+        process.chdir(folder);
+
+        await expect(sugarcube()).resolves.toBeDefined();
+    });
+
     it("serves the new value when a token is saved", async () => {
         await project();
         const { context, css } = await serve();
