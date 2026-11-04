@@ -29,12 +29,12 @@ export function isEquivalentValue<T extends TokenType>(
  * References aren't followed. To compare final values, pass each token's `resolved` value and the
  * type.
  *
- * @param a - The first token, such as `tokens.getToken("color.text")`.
+ * @param a - The first token, such as `light.getToken("color.primary")`.
  * @param b - The second token.
  *
  * @example
- * // color.text differs between mode: light and mode: dark
- * isEquivalentValue(light.getToken("color.text")!, dark.getToken("color.text")!)
+ * // color.primary differs between mode: light and mode: dark
+ * isEquivalentValue(light.getToken("color.primary")!, dark.getToken("color.primary")!)
  * // => false
  */
 export function isEquivalentValue(a: Token, b: Token): boolean;

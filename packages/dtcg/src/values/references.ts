@@ -10,7 +10,7 @@ import { pointerParts } from "../read/ref-meaning.js";
 import { isJsonObject } from "./json.js";
 
 /**
- * A curly brace reference, such as `"{color.brand}"`.
+ * A curly brace reference, such as `"{color.primary}"`.
  *
  * Anything but a brace counts as the path, since names can't contain braces.
  *
@@ -47,8 +47,8 @@ export function readJsonPointer(raw: unknown): JsonPointerReference | undefined 
  *
  * @example
  * // A curly brace reference
- * parseReference("{color.brand}")
- * // => { syntax: "curly-brace", path: "color.brand" }
+ * parseReference("{color.primary}")
+ * // => { syntax: "curly-brace", path: "color.primary" }
  */
 export function parseReference(raw: unknown): WrittenReference | undefined {
     return readCurlyBrace(raw) ?? readJsonPointer(raw);
@@ -63,8 +63,8 @@ export function parseReference(raw: unknown): WrittenReference | undefined {
  * @param value - A value dtcg has read, such as `token.value`.
  *
  * @example
- * // color.text is written "{color.brand}"
- * isReference(tokens.getToken("color.text")?.value)
+ * // button.background is written "{color.primary}"
+ * isReference(light.getToken("button.background")?.value)
  * // => true
  */
 export function isReference(value: unknown): value is WrittenReference {
@@ -83,8 +83,8 @@ export function isReference(value: unknown): value is WrittenReference {
  *
  * @example
  * // A curly brace reference
- * toReferenceTarget(parseReference("{color.ink}")!)
- * // => "color.ink"
+ * toReferenceTarget(parseReference("{color.primary}")!)
+ * // => "color.primary"
  */
 export function toReferenceTarget(reference: WrittenReference): string {
     return reference.syntax === "curly-brace" ? reference.path : reference.pointer;
@@ -114,8 +114,8 @@ export function namedPath(ref: WrittenReference): string | undefined {
  *
  * @example
  * // A curly brace reference
- * toJsonPointer(parseReference("{color.ink}")!)
- * // => { $ref: "#/color/ink/$value" }
+ * toJsonPointer(parseReference("{color.primary}")!)
+ * // => { $ref: "#/color/primary/$value" }
  */
 export function toJsonPointer(reference: WrittenReference): { $ref: string } {
     if (reference.syntax === "json-pointer") return { $ref: reference.pointer };

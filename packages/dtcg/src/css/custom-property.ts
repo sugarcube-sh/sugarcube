@@ -18,8 +18,8 @@ export interface CSSNaming {
     /**
      * The text between the parts of a name.
      *
-     * Dashes already in a name stay. With `"_"`, `color.brand-primary` becomes
-     * `--color_brand-primary`.
+     * Dashes already in a name stay. With `"_"`, `button.hover-background` becomes
+     * `--button_hover-background`.
      *
      * @default "-"
      */
@@ -32,8 +32,8 @@ export interface CSSNaming {
      *
      * @example
      * // Underscores between the names in the path
-     * toCustomPropertyName("color.brand", { getName: (path) => path.replaceAll(".", "_") })
-     * // => "--color_brand"
+     * toCustomPropertyName("color.primary", { getName: (path) => path.replaceAll(".", "_") })
+     * // => "--color_primary"
      */
     getName?: (path: string) => string;
 }
@@ -70,15 +70,15 @@ export function toCSSIdentifier(path: string): string {
  * The names in the path are joined with dashes, and a final `$root` is dropped. `a.b-c` and `a-b.c`
  * give the same name.
  *
- * @param path - A token path, such as `"color.brand"`.
+ * @param path - A token path, such as `"color.primary"`.
  * @param options - How to name it, such as `{ prefix: "ds" }`.
  *
  * @see {@link https://www.designtokens.org/TR/2025.10/format/#translation-tools | Format 6.10.3, Translation tools}
  *
  * @example
  * // A plain path
- * toCustomPropertyName("color.brand")
- * // => "--color-brand"
+ * toCustomPropertyName("color.primary")
+ * // => "--color-primary"
  *
  * @example
  * // A character CSS names can't hold is escaped

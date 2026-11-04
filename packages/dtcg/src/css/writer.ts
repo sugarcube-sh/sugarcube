@@ -146,12 +146,12 @@ export interface CSSWriter {
      *
      * It gives `undefined` for no token, or a token with no value.
      *
-     * @param token - A token, such as `permutation.getToken("color.text")`.
+     * @param token - A token, such as `permutation.getToken("button.background")`.
      *
      * @example
-     * // In mode: dark, color.text refers to color.blue
-     * createCSSWriter().getValue(dark.getToken("color.text"))?.css
-     * // => "var(--color-blue)"
+     * // button.background refers to color.primary
+     * createCSSWriter().getValue(light.getToken("button.background"))?.css
+     * // => "var(--color-primary)"
      */
     getValue(token: Token | undefined): CSSWritten | undefined;
 }
@@ -168,8 +168,8 @@ type Colors = NonNullable<CSSValueOptions["colors"]>;
  *
  * @example
  * // Put "ds" before every name
- * createCSSWriter({ naming: { prefix: "ds" } }).getValue(dark.getToken("color.text"))?.css
- * // => "var(--ds-color-blue)"
+ * createCSSWriter({ naming: { prefix: "ds" } }).getValue(light.getToken("button.background"))?.css
+ * // => "var(--ds-color-primary)"
  */
 export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
     const { naming, writeValue, writeFallback, skip, references = "custom-properties" } = options;

@@ -23,9 +23,15 @@ export interface CSSBlockInput {
      */
     readonly atRules?: readonly string[];
     /**
-     * Whether to write again what refers to the tokens this block changes.
+     * When this block gives a custom property a new value, it also writes again the custom
+     * properties that refer to it.
      *
-     * Leave it on, unless the block only matches the root element.
+     * Say a dark block changes `--color-primary`, and `:root` has
+     * `--button-background: var(--color-primary)`. The dark block must write `--button-background`
+     * again. Otherwise buttons in dark keep the light primary.
+     *
+     * If the block only ever matches `<html>`, such as `:root.dark`, you can turn this off.
+     * Everything is already on `<html>`, so nothing needs writing again.
      *
      * @default true
      */
@@ -45,7 +51,8 @@ export interface CSSBlock extends CSSBlockInput {
 /**
  * Works out what each block of a stylesheet writes.
  *
- * Each block writes what differs from earlier blocks that always apply where it does.
+ * A block leaves out what earlier blocks already set to the same value. So a dark block after
+ * `:root` only writes what's different in dark.
  *
  * List blocks in the resolver's order. A later block wins over an equally specific earlier one.
  *
@@ -67,14 +74,15 @@ export interface CSSBlock extends CSSBlockInput {
  * )
  * // =>
  * // :root {
- * //     --color-red: rgb(204 51 51);
- * //     --color-blue: rgb(51 102 204);
- * //     --color-brand: var(--color-red);
- * //     --color-text: var(--color-brand);
+ * //     --color-blue-500: rgb(51 102 204);
+ * //     --color-blue-300: rgb(102 153 255);
+ * //     --color-primary: var(--color-blue-500);
+ * //     --button-background: var(--color-primary);
  * // }
  * //
  * // [data-mode="dark"] {
- * //     --color-text: var(--color-blue);
+ * //     --color-primary: var(--color-blue-300);
+ * //     --button-background: var(--color-primary);
  * // }
  */
 export function getCSSBlocks(

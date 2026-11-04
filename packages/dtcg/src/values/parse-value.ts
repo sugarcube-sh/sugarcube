@@ -38,8 +38,8 @@ export interface ParseValueOptions extends ParseOptions {
  *
  * @example
  * // A reference is read, not followed
- * parseValue("color", "{color.brand}")
- * // => { ok: true, value: { syntax: "curly-brace", path: "color.brand" }, ignored: [] }
+ * parseValue("color", "{color.primary}")
+ * // => { ok: true, value: { syntax: "curly-brace", path: "color.primary" }, ignored: [] }
  */
 export function parseValue<T extends TokenType>(
     type: T,
@@ -58,7 +58,13 @@ export function parseValue<T extends TokenType>(
  * @example
  * // A recipe's minimum size, written as a reference
  * parseValue("dimension", "{space.sm}", { jsonPath: ["min"], references: false })
- * // => { ok: false, errors: [{ kind: "invalid-value", jsonPath: ["min"], detail: { reason: "reference-not-allowed", … }, … }], ignored: [] }
+ * // => {
+ * //   ok: false,
+ * //   errors: [
+ * //     { kind: "invalid-value", jsonPath: ["min"], detail: { reason: "reference-not-allowed", … } },
+ * //   ],
+ * //   ignored: [],
+ * // }
  */
 export function parseValue<T extends TokenType>(
     type: T,

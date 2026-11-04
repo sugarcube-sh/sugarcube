@@ -35,8 +35,8 @@ export interface ValueErrorFacts {
     "hex-string": {
         readonly value: string;
         /**
-         * The color object it stands for, as a file would write it. It has `alpha` only when the hex
-         * has alpha digits.
+         * The color object it stands for, as a file would write it. It has `alpha` only when the
+         * hex has alpha digits.
          */
         readonly asObject: Omit<ColorValue, "alpha"> & { readonly alpha?: number };
     };
@@ -132,8 +132,8 @@ export type ValueErrorCode = keyof ValueErrorFacts;
 /**
  * Why a value couldn't be read, with the facts behind its message.
  *
- * Check `reason`, and TypeScript knows which facts are there. For part of a composite, `type` is the
- * part's type.
+ * Check `reason`, and TypeScript knows which facts are there. For part of a composite, `type` is
+ * the part's type.
  *
  * @example
  * // A dimension written in ems

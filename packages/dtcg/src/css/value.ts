@@ -69,14 +69,14 @@ type TypographyToken = Extract<Token, { type: "typography" }>;
  * Typography gives an object, with one value for each CSS property. A gradient gives only its
  * stops, for inside `linear-gradient()`.
  *
- * @param of - A token, such as `permutation.getToken("color.text")`, or part of one, such as a
+ * @param of - A token, such as `permutation.getToken("color.primary")`, or part of one, such as a
  * border's `color`.
  * @param options - How to write references and colors.
  *
  * @example
- * // color.text in mode: dark
- * toCSSValue(dark.getToken("color.text"))
- * // => "rgb(51 102 204)"
+ * // color.primary in mode: dark
+ * toCSSValue(dark.getToken("color.primary"))
+ * // => "rgb(102 153 255)"
  */
 export function toCSSValue(
     of: TypographyToken | TypographyPart | undefined,

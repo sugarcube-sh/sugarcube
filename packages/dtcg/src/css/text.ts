@@ -12,10 +12,10 @@ import type { CSSBlock } from "./blocks.js";
  * toCSS(getCSSBlocks(tokens, [{ input: {}, selector: ":root" }]))
  * // =>
  * // :root {
- * //     --color-red: rgb(204 51 51);
- * //     --color-blue: rgb(51 102 204);
- * //     --color-brand: var(--color-red);
- * //     --color-text: var(--color-brand);
+ * //     --color-blue-500: rgb(51 102 204);
+ * //     --color-blue-300: rgb(102 153 255);
+ * //     --color-primary: var(--color-blue-500);
+ * //     --button-background: var(--color-primary);
  * // }
  */
 export function toCSS(blocks: readonly CSSBlock[]): string {

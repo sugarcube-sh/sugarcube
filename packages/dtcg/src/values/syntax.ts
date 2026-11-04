@@ -198,7 +198,7 @@ const PATH = /^[A-Za-z][^\s.{}#]*(\.[^\s.{}#]+)+$/;
 /**
  * A value of the wrong JSON shape.
  *
- * For a string such as `color.ink`, it suggests the reference `{color.ink}`.
+ * For a string such as `color.primary`, it suggests the reference `{color.primary}`.
  */
 export function wrongShape(value: unknown): Problem {
     return typeof value === "string" && PATH.test(value)
