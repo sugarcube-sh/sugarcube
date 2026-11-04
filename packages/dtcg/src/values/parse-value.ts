@@ -26,7 +26,7 @@ export interface ParseValueOptions extends ParseOptions {
  * If it can't, the result says why. A reference is read as written, not followed.
  *
  * @param type - The token type, such as `"color"`.
- * @param raw - The value as written, such as a token's `$value`, or something typed into a form.
+ * @param raw - The value as written, such as a token's `$value`.
  * @param options - Where the value is in its file, and how to read it.
  *
  * @see {@link https://www.designtokens.org/TR/2025.10/format/#types | Format 8, Types}

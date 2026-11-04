@@ -3,95 +3,142 @@ import type { Move } from "./model.js";
 const FORBIDDEN = [".", "{", "}"] as const;
 
 /**
- * A token's path is its groups' names and its own, joined with dots: `color.brand.500`. These
- * follow the spec's rules, which are easy to get wrong by hand: a group can be named `""` (Format
- * 5.1), a `$root` token stands for its group (Format 6.2), and `color.brandy` is not inside
- * `color.brand`.
+ * Reads and builds token paths.
+ *
+ * A path is the names of a token's groups and its own, joined with dots, such as `color.blue.500`.
+ * These follow the spec's rules. So `color.bluegrey` isn't inside `color.blue`, and a group can be
+ * named `""`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#path-construction | Format 6.7.2, Path Construction}
  *
  * @example
- * tokenPath.getParent("color.brand.500")                  // "color.brand"
- * tokenPath.join("color.brand", "500")                 // "color.brand.500"
- * tokenPath.relative("color", "color.brand.ink")       // "brand.ink"
- * tokenPath.contains("color.brand", "color.brand.500") // true
+ * // The group color.blue.500 is in
+ * tokenPath.getParent("color.blue.500")
+ * // => "color.blue"
  */
 export const tokenPath = {
     /**
-     * The group a token or group is directly inside, or `undefined` at the top level of the
-     * files. A group may be named `""`, so `""` is that group's path, never the top level.
+     * Gets the group a path is directly inside.
+     *
+     * At the top level, it gives `undefined`.
+     *
+     * @param path - The path, such as `"color.blue.500"`.
      *
      * @example
-     * tokenPath.getParent("color.brand.500") // "color.brand"
-     * tokenPath.getParent("color")           // undefined: at the top level
-     * tokenPath.getParent(".x")              // "": inside the group named ""
+     * // Inside color.blue
+     * tokenPath.getParent("color.blue.500")
+     * // => "color.blue"
+     *
+     * @example
+     * // Inside the group named ""
+     * tokenPath.getParent(".500")
+     * // => ""
      */
     getParent(path: string): string | undefined {
         const dot = path.lastIndexOf(".");
         return dot === -1 ? undefined : path.slice(0, dot);
     },
     /**
-     * The path of `name` inside `parent`, joined with a dot as the spec builds paths (Format
-     * 6.7.2). Leave `parent` out for the top level.
+     * Joins a group's path and a name into a path.
+     *
+     * @param parent - The group, such as `"color.blue"`, or `undefined` for the top level.
+     * @param name - The name, such as `"500"`.
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#path-construction | Format 6.7.2, Path Construction}
      *
      * @example
-     * tokenPath.join("color.brand", "500") // "color.brand.500"
-     * tokenPath.join(undefined, "color")   // "color"
+     * // A token in color.blue
+     * tokenPath.join("color.blue", "500")
+     * // => "color.blue.500"
      */
     join(parent: string | undefined, name: string): string {
         return parent === undefined ? name : `${parent}.${name}`;
     },
     /**
-     * The rest of `path` inside `group`, or `undefined` when it isn't inside: the group itself is
-     * not, and neither is a sibling whose name merely starts the same way.
+     * Gets the rest of a path inside a group.
+     *
+     * It gives `undefined` if the path isn't inside. The group's own path isn't inside it.
+     *
+     * @param group - The group, such as `"color"`.
+     * @param path - The path, such as `"color.blue.500"`.
      *
      * @example
-     * tokenPath.relative("color", "color.brand.ink") // "brand.ink"
-     * tokenPath.relative("color", "colors.ink")      // undefined
+     * // A token inside color
+     * tokenPath.relative("color", "color.blue.500")
+     * // => "blue.500"
+     *
+     * @example
+     * // A name that only starts the same
+     * tokenPath.relative("color.blue", "color.bluegrey.500")
+     * // => undefined
      */
     relative(group: string, path: string): string | undefined {
         return path.startsWith(`${group}.`) ? path.slice(group.length + 1) : undefined;
     },
     /**
-     * Whether `path` is `group` itself or anything within it (Format 6.3): what removing or moving
-     * the group takes with it.
+     * Checks whether a path is a group, or inside it.
+     *
+     * @param group - The group, such as `"color.blue"`.
+     * @param path - The path, such as `"color.blue.500"`.
      *
      * @example
-     * tokenPath.contains("color.brand", "color.brand.500") // true
-     * tokenPath.contains("color.brand", "color.brand")     // true
-     * tokenPath.contains("color.brand", "color.brandy")    // false
+     * // A token in the group
+     * tokenPath.contains("color.blue", "color.blue.500")
+     * // => true
+     *
+     * @example
+     * // The group itself counts
+     * tokenPath.contains("color.blue", "color.blue")
+     * // => true
      */
     contains(group: string, path: string): boolean {
         return path === group || tokenPath.relative(group, path) !== undefined;
     },
     /**
-     * The path a token stands for: a group's `$root` token gives its group's path, any other path
-     * is returned as it is. For naming a token for people, such as a CSS custom property.
+     * Removes `.$root` from the end of a path.
+     *
+     * So a group's `$root` token gives the group's path. Any other path comes back as it is.
+     *
+     * @param path - The path, such as `"color.blue.$root"`.
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#root-tokens-in-groups | Format 6.2, Root Tokens in Groups}
      *
      * @example
-     * tokenPath.removeRoot("color.accent.$root") // "color.accent"
+     * // The $root token of color.blue
+     * tokenPath.removeRoot("color.blue.$root")
+     * // => "color.blue"
      */
     removeRoot(path: string): string {
         return path.endsWith(".$root") ? path.slice(0, -".$root".length) : path;
     },
     /**
-     * The character that stops `name` being a token or group name (Format 5.1.1), or `undefined`
-     * when it can be one: a leading `$`, except `$root`, or a `.`, `{` or `}` anywhere.
+     * Finds the character that stops a name being valid.
+     *
+     * It gives `undefined` if the name is valid. A name can't start with `$`, unless it's `$root`.
+     * It can't have `.`, `{` or `}` anywhere.
+     *
+     * @param name - A token or group name, such as `"500"`.
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
      *
      * @example
-     * tokenPath.findInvalidCharacter("brand.500") // "."
-     * tokenPath.findInvalidCharacter("$root")     // undefined
+     * // A dot in a name
+     * tokenPath.findInvalidCharacter("blue.500")
+     * // => "."
      */
     findInvalidCharacter(name: string): "$" | (typeof FORBIDDEN)[number] | undefined {
         if (name.startsWith("$") && name !== "$root") return "$";
         return FORBIDDEN.find((each) => name.includes(each));
     },
     /**
-     * Where a token or group is after a list of {@link Move}s, such as a rename, made in order. A
-     * group's move carries everything inside it; a path no move reaches stays as it is. What
-     * `tokens.getChangesSince` follows when told what moved.
+     * Works out where a path is after some moves.
+     *
+     * Moves are made in order. Moving a group moves everything inside it.
+     *
+     * @param path - The path, such as `"color.blue.500"`.
+     * @param moved - The {@link Move}s, such as `[{ from: "color.blue", to: "color.azure" }]`.
      *
      * @example
-     * tokenPath.applyMoves("color.brand.500", [{ from: "color.brand", to: "color.house" }])
-     * // "color.house.500"
+     * // After renaming color.blue
+     * tokenPath.applyMoves("color.blue.500", [{ from: "color.blue", to: "color.azure" }])
+     * // => "color.azure.500"
      */
     applyMoves(path: string, moved: readonly Move[]): string {
         return moved.reduce((current, { from, to }) => {

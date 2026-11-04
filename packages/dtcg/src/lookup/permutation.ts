@@ -10,15 +10,26 @@ import type {
 import { checkedInput, modifiersIn } from "../read/input.js";
 
 /**
- * Thrown by {@link DesignTokens.getPermutation} when there is no permutation for the input. The
- * message says why in plain words; `detail` holds the facts it is worded from, for a tool to word
- * it itself.
+ * Thrown when an input names a permutation the tokens don't have.
+ *
+ * The message says why. `detail` has the facts in the message, for writing your own.
  *
  * @example
+ * // A context the resolver doesn't have
  * try {
- *   tokens.getPermutation({ mode: "sepia" });
+ *     tokens.getPermutation({ mode: "sepia" });
  * } catch (error) {
- *   if (error instanceof PermutationError) error.detail // { reason: "unknown-context", … }
+ *     if (error instanceof PermutationError) {
+ *         error.message;
+ *         // => "`sepia` is not a context of the modifier `mode`"
+ *         error.detail;
+ *         // => {
+ *         //     reason: "unknown-context",
+ *         //     modifier: "mode",
+ *         //     context: "sepia",
+ *         //     valid: ["light", "dark"],
+ *         // }
+ *     }
  * }
  */
 export class PermutationError extends Error {
@@ -32,15 +43,25 @@ export class PermutationError extends Error {
 }
 
 /**
- * Thrown by a question of one permutation asked of design tokens with several, such as
- * {@link DesignTokens.getToken}: which permutation it is for has to be said. The message says how to
- * pick one; `detail` holds the facts it is worded from.
+ * Thrown when a question needs one permutation, but there are several.
+ *
+ * Questions such as {@link DesignTokens.getToken} need one. Ask a permutation from
+ * {@link DesignTokens.getPermutation} instead. The message says how. `detail` has the facts in the
+ * message, for writing your own.
  *
  * @example
+ * // Tokens with light and dark
  * try {
- *   tokens.getToken("color.text");
+ *     tokens.getToken("color.primary");
  * } catch (error) {
- *   if (error instanceof SeveralPermutationsError) error.detail.example // { mode: "dark" }
+ *     if (error instanceof SeveralPermutationsError) {
+ *         error.message;
+ *         // => "tokens.getToken() needs a permutation: this resolver has the modifier `mode`.
+ *         // Pick one with tokens.getPermutation({ mode: \"dark\" }), or ask them all with
+ *         // askEveryPermutation(tokens, …)"
+ *         error.detail;
+ *         // => { asked: "getToken()", modifiers: ["mode"], example: { mode: "dark" } }
+ *     }
  * }
  */
 export class SeveralPermutationsError extends Error {
@@ -92,12 +113,18 @@ export function findPermutation(
 type CompleteInput = { ok: true; input: Input } | ({ ok: false } & InputProblem);
 
 /**
- * An input with every modifier given, defaults filled in, and each name as the resolver writes
- * it, or why there is none. Names match whatever their case, as the resolver spec asks.
+ * Fills in an input's defaults, and writes names the resolver's way.
+ *
+ * Names match whatever their case. If the input has a problem, it says what.
+ *
+ * @param tokens - Tokens from a read of the resolver the input is for.
+ * @param input - The input, such as `{ mode: "dark" }`.
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#case-sensitivity | Resolver 5.1, Case sensitivity}
  *
  * @example
- * completeInput(tokens, { Theme: "DARK" })   // { ok: true, input: { theme: "dark", density: "comfy" } }
- * completeInput(tokens, { theme: "sepia" })  // { ok: false, reason: "unknown-context", modifier: "theme", context: "sepia", valid: ["light", "dark"] }
+ * // Names in another case
+ * completeInput(tokens, { Mode: "DARK" })
+ * // => { ok: true, input: { mode: "dark" } }
  */
 export function completeInput(tokens: DesignTokens, input: Input): CompleteInput {
     const checked = checkedInput(modifiersIn(tokens.resolver), input);

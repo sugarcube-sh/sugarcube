@@ -73,8 +73,7 @@ export interface ExtensionReader<M extends ExtensionMessages> {
  *
  * TypeScript checks that each `report` names one of your messages, with the facts it needs.
  *
- * @param options - How values are read, such as `ignoreUnknownProperties`. A generator is given
- * the read's own, so it reads values the same way.
+ * @param options - How values are read, such as `ignoreUnknownProperties`.
  *
  * @example
  * // Read a fluid range, written { "min": …, "max": … }

@@ -132,7 +132,7 @@ export interface CSSDeclarations {
 /**
  * Writes tokens as CSS custom properties.
  *
- * It writes each token once, however often you ask.
+ * It writes each token once, however often you ask. So make a new one for each read.
  */
 export interface CSSWriter {
     /**
@@ -161,8 +161,7 @@ type Colors = NonNullable<CSSValueOptions["colors"]>;
 /**
  * Makes a CSS writer with your own settings.
  *
- * Pass it to {@link getCSSBlocks}. A writer remembers every token it has written, so make a new one
- * for each read.
+ * Pass it to {@link getCSSBlocks}.
  *
  * @param options - How to name, write and leave out tokens, such as `{ naming: { prefix: "ds" } }`.
  *

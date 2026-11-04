@@ -3,7 +3,7 @@ import type { Properties } from "./walk.js";
 
 export type Settings = Properties &
     Pick<MergedTopLevel, "extensionsAt"> & {
-        /** The group writing the `deprecated` these settings hold. */
+        /** The group these settings' `deprecated` comes from. */
         deprecatedAt?: string;
     };
 

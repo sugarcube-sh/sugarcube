@@ -3,24 +3,31 @@ import { type FileStats, onFileChanged } from "./file-changed.js";
 import { diskPath, getAbsoluteFilePath } from "./paths.js";
 import { read } from "./read.js";
 
-/** Design tokens on disk: their resolver or token file, and the options to read them with. */
+/** Where design tokens are on disk, and how to read them. */
 export interface TokensOnDisk {
+    /** The resolver or token file to start from, such as `"tokens/tokens.resolver.json"`. */
     entryFile: string;
+    /** How to read them, as for {@link read}. */
     options?: ReadOptions;
 }
 
-/**
- * Why a read happened and how long it took: the file whose save led to it, by the design tokens'
- * name for it, as in `DesignTokens.files`, and none for {@link LiveTokens.reread}.
- */
+/** What led to a read, and how long it took. */
 export interface ReadEvent {
+    /**
+     * The saved file that led to the read, such as `"dark.json"`.
+     *
+     * It's the name in `tokens.files`, not the full path on disk. There's none when
+     * {@link LiveTokens.reread} led to the read.
+     */
     file?: string;
+    /** How long the read took, in milliseconds. */
     ms: number;
 }
 
 /**
- * Something that watches files and says when one is saved, added or deleted, with its path. A
- * chokidar watcher and Vite's `server.watcher` are both one.
+ * Watches files, and says when one is saved, added or deleted.
+ *
+ * A chokidar watcher works, and so does Vite's `server.watcher`.
  */
 export interface FileWatcher {
     add(paths: string | readonly string[]): unknown;
@@ -30,63 +37,80 @@ export interface FileWatcher {
     ): unknown;
 }
 
-/** Design tokens kept current with their files. Made by {@link createLiveTokens}. */
+/**
+ * Design tokens kept up to date with their files.
+ *
+ * Make one with {@link createLiveTokens}.
+ */
 export interface LiveTokens {
     /**
-     * The design tokens as last read, once any read in progress or waiting to start has finished.
-     * Rejects when that read failed.
+     * Gets the tokens from the latest read.
+     *
+     * It waits for any read in progress or waiting, and rejects if that read failed.
      *
      * @example
+     * // After a save, wait for the new tokens
      * const tokens = await live.getTokens();
      */
     getTokens(): Promise<DesignTokens>;
     /**
-     * Calls `listener` with the design tokens of each read after the first, and the
-     * {@link ReadEvent} that led to it. A read is not passed on when another is already waiting to
-     * start, so a listener never builds on design tokens that a save or
-     * {@link LiveTokens.reread} has outdated. Returns a function that stops it.
+     * Calls `listener` after each read, with the new tokens.
+     *
+     * It isn't called for the first read, or for a read a newer save has already outdated.
+     *
+     * @param listener - Gets the tokens and the {@link ReadEvent}, such as
+     * `(tokens, { file }) => …`.
+     * @returns A function that stops the calls.
      *
      * @example
-     * const stop = live.onRead((tokens, { file }) => console.log(file, tokens.diagnostics));
+     * // Log each saved file
+     * const stop = live.onRead((tokens, { file }) => console.log(`${file} saved`));
      */
     onRead(listener: (tokens: DesignTokens, event: ReadEvent) => void): () => void;
     /**
-     * Reads the files again, asking where they are again when that was given as a function, such
-     * as after a config naming the entry has changed. Resolves once the read has finished: its
-     * design tokens go to the listeners, and a failure to `onError`, as for a save.
+     * Reads the files again.
+     *
+     * If you gave {@link createLiveTokens} a function, it's asked again where the files are. It
+     * never rejects. A failed read goes to `onError`.
      *
      * @example
+     * // After your config names a different entry file
      * await live.reread();
      */
     reread(): Promise<void>;
     /**
-     * Adds the files the design tokens list to `watcher`, and each file a later read gains, and
-     * reads again when one of them is saved, added or deleted. Files are never removed from it: an
-     * event for a file the latest design tokens do not list is ignored. Its files are added once
-     * the first read has finished, so a host waiting for its watcher to be ready awaits
-     * {@link LiveTokens.getTokens} first.
+     * Reads again when the tokens' files are saved, added or deleted.
+     *
+     * It adds the files to `watcher` once the first read is done. So if you wait for the watcher's
+     * `ready` event, await {@link LiveTokens.getTokens} first.
+     *
+     * @param watcher - The watcher to add the files to.
      *
      * @example
+     * // Watch with chokidar
      * live.watch(chokidar.watch([], { ignoreInitial: true }));
      */
     watch(watcher: FileWatcher): void;
 }
 
 /**
- * Reads design tokens from disk and keeps them current with their files, for a host that runs
- * for a while, such as a dev server, a watch command or an editor. It reads at once; once given a
- * watcher, it reads again when a file the design tokens list is saved, added or deleted. Saves
- * during a read lead to one more read, a file a read gains that was saved during it is read
- * again, and so is a save whose last write the watcher never reported ({@link onFileChanged}).
+ * Reads design tokens from disk, and again on each save.
  *
- * What a listener throws, and a read that fails, go to `onError`, never into the watcher's event.
+ * It reads straight away, and on each save once {@link LiveTokens.watch} gives it a watcher. Saves
+ * during a read lead to one more read.
  *
- * @param onDisk Where the design tokens are. Give a function to be asked again on every read.
+ * @param onDisk - Where the tokens are, such as `{ entryFile: "tokens/tokens.resolver.json" }`.
+ * Give a function to be asked again on every read.
+ * @param options - `onError` gets each failed read, and anything a listener throws.
  *
  * @example
- * const live = createLiveTokens({ entryFile: "tokens/tokens.resolver.json" }, { onError: console.error });
- * live.watch(watcher);
- * live.onRead((tokens, { file }) => console.log(`${file} saved`, tokens.diagnostics.length));
+ * // Read, watch, and log each save
+ * const live = createLiveTokens(
+ *     { entryFile: "tokens/tokens.resolver.json" },
+ *     { onError: console.error },
+ * );
+ * live.watch(chokidar.watch([], { ignoreInitial: true }));
+ * live.onRead((tokens, { file }) => console.log(`${file} saved`));
  */
 export function createLiveTokens(
     onDisk: TokensOnDisk | (() => TokensOnDisk),
