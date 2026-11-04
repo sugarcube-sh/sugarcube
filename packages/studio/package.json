@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@devframes/hub": "^1.0.0",
-    "@devframes/hub-ui": "^1.0.0",
+    "@devframes/hub-ui": "^1.2.6",
     "@devframes/vite": "^1.0.0",
     "@sugarcube-sh/core": "workspace:*",
     "@sugarcube-sh/dtcg": "workspace:*",
