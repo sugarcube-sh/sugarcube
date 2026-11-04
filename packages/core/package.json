@@ -57,6 +57,7 @@
     "type-check": "tsc --noEmit && tsc --noEmit -p tests/tsconfig.json"
   },
   "dependencies": {
+    "@sugarcube-sh/dtcg": "workspace:^",
     "jiti": "^2.7.0",
     "pathe": "^2.0.3",
     "picocolors": "1.1.1",
@@ -64,7 +65,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@sugarcube-sh/dtcg": "workspace:*",
     "pkgroll": "^2.28.1",
     "vitest": "^4.1.11"
   },

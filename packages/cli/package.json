@@ -59,6 +59,7 @@
     "@clack/core": "1.4.3",
     "@clack/prompts": "1.7.0",
     "@sugarcube-sh/core": "workspace:*",
+    "@sugarcube-sh/dtcg": "workspace:^",
     "@unocss/core": "^66.10.5",
     "chokidar": "^5.0.0",
     "commander": "12.1.0",
@@ -76,7 +77,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@sugarcube-sh/dtcg": "workspace:*",
     "cross-env": "7.0.3",
     "pkgroll": "^2.28.1",
     "tsx": "^4.23.13"
