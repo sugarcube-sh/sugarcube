@@ -41,7 +41,7 @@ export interface CSSNaming {
 /** How to name a token's custom property. */
 export interface CSSCustomPropertyOptions extends CSSNaming {
     /**
-     * For a typography token, the CSS property this custom property holds.
+     * For a typography token, the CSS property this custom property is for.
      *
      * It goes on the end of the name. `"font-size"` makes `--type-body-font-size` for `type.body`.
      */
@@ -81,7 +81,7 @@ export function toCSSIdentifier(path: string): string {
  * // => "--color-primary"
  *
  * @example
- * // A character CSS names can't hold is escaped
+ * // A character CSS names can't contain is escaped
  * toCustomPropertyName("space.1/2")
  * // => "--space-1\\/2"
  */

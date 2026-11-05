@@ -320,7 +320,7 @@ export interface ReferenceBase {
      * The path the reference names, such as `"color.primary"`.
      *
      * For a group's `$extends`, it's the group's path. For a JSON Pointer inside a value, it's the
-     * path of the token holding that value.
+     * path of that value's token.
      *
      * It's there even when nothing has that path. It's absent for a pointer that names no path,
      * such as `#/`.
@@ -1502,10 +1502,10 @@ export interface DiagnosticDetailByKind {
     /**
      * Something is both a token and a group.
      *
-     * `reason: "child"` means a token has a `$value` and also holds `child`.
-     * `reason: "declared"` means one file writes a token where another writes a group. `here` says
-     * which this one is.
-     * `reason: "ref"` means a `$ref` makes an object a token, and it also holds tokens or groups.
+     * `reason: "child"` means a token has a `$value`, and also has `child` inside it. `reason:
+     * "declared"` means one file writes a token where another writes a group. `here` says which
+     * this one is. `reason: "ref"` means a `$ref` makes an object a token, and it also has tokens
+     * or groups inside it.
      */
     "token-and-group":
         | { readonly reason: "child"; readonly child: string }
@@ -2123,115 +2123,108 @@ export interface DesignTokens {
 }
 
 /**
- * Which permutations a group holds, described by their contexts: parts joined by "or", each part
- * naming, for each modifier that narrows it, the contexts it keeps. A modifier a part leaves out may
- * be any of its contexts, unlike in an {@link Input}, where it is at its default (Resolver 6.1).
- * Every part matches only permutations in the group, among every combination the resolver's
- * modifiers make, built or not: so a group that is every permutation of a read that built only
- * some isn't `[{}]`, and a group of one permutation names every modifier. Modifiers come in the
- * order `resolutionOrder` names them, contexts as they are written.
+ * Which permutations are in a {@link Permutations}, by their contexts.
+ *
+ * A permutation is in it if any part matches. A modifier a part leaves out can be any of its
+ * contexts, unlike in an {@link Input}. `[{}]` is every combination, and `[]` is none.
  *
  * @example
- * [{ mode: ["dark", "dim"], contrast: ["high"] }]       // dark or dim, in high contrast
- * [{ brand: ["cbus", "hesta-super"] }, { inverted: ["on"] }]  // those brands, or inverted
- * [{}]                                                  // every combination
- * []                                                    // none
+ * // Only dark
+ * tokens.permutations.select((permutation) => permutation === dark).scope
+ * // => [{ mode: ["dark"] }]
  */
 export type Scope = readonly Readonly<Record<string, readonly string[]>>[];
 
 /**
- * Some of the design tokens' permutations, in their order: the ones an answer, a problem or the
- * design tokens themselves cover. A read-only list, so `find`, `map`, `includes` and `length` work
- * as on any array, with the inputs, the scope and a label beside it.
+ * Some of the design tokens' permutations, in order.
+ *
+ * It's an array, with `inputs`, `scope` and a `label` added.
  *
  * @example
- * for (const { writtenInPaths, permutations } of tokens.getReferencesTo("color.red")) {
- *   row(writtenInPaths, permutations.label);   // "mode: dark, sepia", or "everywhere"
- * }
+ * // Where dark.json's color.primary applies
+ * tokens.getDefinitions("color.primary")[1]!.permutations.label
+ * // => "mode: dark"
  */
 export interface Permutations extends ReadonlyArray<Permutation> {
     /** Each permutation's input, in the same order. */
     readonly inputs: readonly Input[];
-    /**
-     * Which permutations it holds, by their contexts, for a tool that words them its own way.
-     *
-     * @example
-     * const rest = tokens.permutations.select((each) => !group.includes(each));
-     * rest.scope; // what a tool could show as "except …"
-     */
+    /** Which permutations it holds, by their contexts, as a {@link Scope}. */
     readonly scope: Scope;
     /**
-     * Every permutation the read built that it doesn't hold, in their order: for "everywhere
-     * but …", and for whether it is every permutation the read built (none other). Not the same as
-     * a {@link Permutations.label | label} of `"everywhere"`, which is every combination the
-     * resolver's modifiers make: a read limited by `inputs`, or built `"each-context"`, can hold
-     * every permutation it built without holding every combination.
+     * The permutations the read built that aren't in this one.
      *
      * @example
-     * // say where a problem is only when it isn't everywhere the read looked
-     * const { permutations } = problem;
-     * const where = permutations.others.length === 0 ? "" : ` in ${permutations.label}`;
+     * // The permutations that aren't dark
+     * tokens.permutations.select((permutation) => permutation === dark).others.map((p) => p.label)
+     * // => ["mode: light"]
      */
     readonly others: Permutations;
     /**
-     * Its {@link Permutations.scope | scope} written out: each modifier and the contexts it keeps,
-     * such as `"mode: dark, dim, contrast: high"`, parts joined with `"; "`. A modifier left out may
-     * be any of its contexts, so `"mode: dark"` is every dark permutation; one permutation alone
-     * names every modifier, as its own {@link Permutation.label | label} does. Every combination is
-     * `"everywhere"`, none `"nowhere"`.
+     * A name for the permutations in it, such as `"mode: dark"`.
+     *
+     * All of them is `"everywhere"`, and none is `"nowhere"`.
+     *
+     * @example
+     * // Both light and dark
+     * tokens.permutations.label
+     * // => "everywhere"
      */
     readonly label: string;
     /**
-     * The permutations that pass `test`, in the same order, as permutations of their own: labelled
-     * against every permutation the read built, as an answer's are. Where `filter` gives a plain
-     * list, this keeps the label.
+     * Picks the permutations that pass `test`, and keeps the label.
+     *
+     * `filter` returns a plain array instead.
+     *
+     * @param test - Asked of each permutation, such as `(permutation) => permutation !== light`.
      *
      * @example
-     * const elsewhere = tokens.permutations.select((each) => each !== edited);
-     * elsewhere.label; // "mode: light"
+     * // Every permutation but light
+     * tokens.permutations.select((permutation) => permutation !== light).label
+     * // => "mode: dark"
      */
     select(test: (permutation: Permutation) => boolean): Permutations;
     /**
-     * The permutation in this list that an input names, found as {@link DesignTokens.getPermutation}
-     * finds it: modifiers left out take their default (Resolver 4.1.5.3), and names match
-     * whatever their case (Resolver 5.1); `undefined` when the resolver has no such
-     * context or modifier, when the read built no such permutation, or when this list doesn't hold
-     * it. What a tool asks to find a permutation again from an input it kept, such as one chosen
-     * before the files changed. For why there is none, ask {@link DesignTokens.getPermutation}, whose
-     * {@link PermutationError} says.
+     * Finds the permutation in this array that an input names.
+     *
+     * It returns `undefined` if there's none. To find out why, use
+     * {@link DesignTokens.getPermutation}, which throws a {@link PermutationError}.
+     *
+     * @param input - The input, such as `{ mode: "dark" }`.
      *
      * @example
-     * tokens.permutations.findByInput({ mode: "dark" })?.label;                          // "mode: dark"
-     * tokens.permutations.findByInput(kept.input) ?? tokens.getPermutation();               // the default if it went
-     * problem.permutations.findByInput({ mode: "dark" }) !== undefined;                   // found in mode: dark?
+     * // dark, found by its input
+     * tokens.permutations.findByInput({ mode: "dark" })?.label
+     * // => "mode: dark"
      */
     findByInput(input: Input): Permutation | undefined;
 }
 
 /**
- * Why {@link DesignTokens.getPermutation} found no permutation, with the facts its message is worded
- * from.
+ * Why {@link DesignTokens.getPermutation} found no permutation, with the facts behind its message.
+ *
+ * `"not-read"` means the input fits, but the read didn't build that permutation.
  */
 export type PermutationErrorDetail = InputProblem | { reason: "not-read"; input: Input };
 
-/**
- * Why a question of one permutation, such as {@link DesignTokens.getToken}, was asked of design
- * tokens with several, with the facts its message is worded from.
- */
+/** The facts behind a {@link SeveralPermutationsError}'s message. */
 export interface SeveralPermutationsDetail {
     /** What was asked, such as `"getToken()"` or `"tokens"`. */
     readonly asked: string;
     /** The resolver's modifiers. */
     readonly modifiers: readonly string[];
-    /** An input that picks a permutation, for the message to show. */
+    /** An input that picks a permutation, such as `{ mode: "dark" }`. */
     readonly example: Input;
 }
 
 /**
- * Why an input does not fit the resolver's modifiers (Resolver 5.2, 6.1): a modifier it doesn't
- * declare, a context that isn't a string or that the modifier doesn't declare, or a modifier with
- * no default left out. The read reports each as an `input-invalid` problem;
- * {@link DesignTokens.getPermutation} throws a {@link PermutationError} with the first.
+ * Why an input doesn't fit the resolver.
+ *
+ * `"unknown-modifier"` means the resolver has no such modifier.
+ * `"unknown-context"` means the modifier has no such context.
+ * `"missing-modifier"` means a modifier with no default is left out.
+ * `"not-a-string"` means a context isn't a string.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#input-validation | Resolver 6.1, Input validation}
  */
 export type InputProblem = { readonly modifier: string } & (
     | {
@@ -2255,59 +2248,62 @@ export type InputProblem = { readonly modifier: string } & (
 
 export type { ValueErrorCode, ValueErrorDetail, ValueErrorFacts } from "./values/value-errors.js";
 
-/** Why a single value could not be read. */
+/** Why one value couldn't be read. */
 export interface ValueError {
     kind: "invalid-value";
     /**
-     * Where the problem is: the `jsonPath` the value was read at, then the steps into it, such as
-     * `["$value", "color"]` in a shadow read at `["$value"]`.
+     * Where the problem is, such as `["unit"]`.
+     *
+     * It starts with the `jsonPath` the value was read at.
      */
     jsonPath: JsonPath;
     message: string;
-    /** Why, and the facts the message is worded from, so a tool can word it itself. */
+    /** Why, with the facts behind the message. */
     detail: ValueErrorDetail;
 }
 
 /**
- * A property a value's type does not define, such as `paragraphSpacing` in a typography value. It
- * is set aside, and the rest of the value is read without it.
+ * A property a value's type doesn't have, set aside, such as `paragraphSpacing`.
+ *
+ * The rest of the value is read without it.
  */
 export interface IgnoredProperty {
     kind: "unknown-property";
     /** Where the property is, such as `["$value", "paragraphSpacing"]`. */
     jsonPath: JsonPath;
     message: string;
-    /** The type of the value it is in, which for a part of a composite is the part's type. */
+    /** The type of the value it's in. For part of a composite, that's the part's type. */
     detail: { type: TokenType; property: string };
 }
 
 /**
- * The outcome of reading one value. `ignored` lists the properties set aside, whether or not the
- * rest of the value could be read: empty when there are none.
+ * The result of reading one value.
+ *
+ * `ignored` lists the properties set aside, whether or not the value could be read.
  */
 export type ParseResult<V> =
     | { ok: true; value: V; ignored: IgnoredProperty[] }
     | { ok: false; errors: ValueError[]; ignored: IgnoredProperty[] };
 
-/** How values are read, for {@link read} and the parsers alike. */
+/** How values are read. */
 export interface ParseOptions {
     /**
-     * Reads a color written as a hex string, such as `"#e11d48"` or `"#e11d4880"`, as the sRGB
-     * color it names, with the string kept as `hex`, and `dtcg/css` writes it as that string. Not
-     * DTCG 2025.10, which writes every color as an object. Off, a hex string is a
-     * `hex-string-color` error; on, one with three or four digits is an `invalid-value` giving the
-     * six or eight digits it stands for.
+     * Reads a hex string, such as `"#e11d48"`, as an sRGB color.
+     *
+     * The string is kept as `hex`, and CSS writes it as that string. DTCG 2025.10 doesn't allow it.
+     * Off, a hex string is a `hex-string-color` error.
+     *
      * @default false
      */
     hexStringColors?: boolean;
     /**
-     * Reads a value that has a property its type does not define, such as `paragraphSpacing` in a
-     * typography value, by setting that property aside: each is listed in
-     * {@link ParseResult | `ignored`}, which `read` reports as an `unknown-property` warning, and
-     * the rest of the value is read. Not DTCG 2025.10, which makes such a composite token invalid
-     * (Format 9.2). Off, the property is an `invalid-value` error, for colors, dimensions and
-     * durations as for composites. A `$ref` with other properties beside it is an error either way.
+     * Sets aside a property a value's type doesn't have, such as `paragraphSpacing`.
+     *
+     * The rest of the value is read, and `read` reports a warning. Off, it's an `invalid-value`
+     * error, as in DTCG 2025.10. A `$ref` with other properties is an error either way.
+     *
      * @default false
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#groups-versus-composite-tokens | Format 9.2, Groups versus composite tokens}
      */
     ignoreUnknownProperties?: boolean;
 }
@@ -2315,19 +2311,17 @@ export interface ParseOptions {
 export type { StandardSchemaV1, StandardTypedV1 } from "./standard-schema.js";
 
 /**
- * A check for your own `$extensions` key, on the tokens and groups it applies to. The data is kept
- * either way; this only adds errors, each reported as `extension-invalid`.
+ * Checks your own `$extensions` key.
  *
- * Give it a `schema` from any library that implements Standard Schema, such as Zod, Valibot or
- * ArkType: each issue is reported with the library's message. Or give it `validate` and
- * `messages`, to report problems with reasons and facts that a tool can word itself. With both, the
- * schema is checked first, and `validate` only sees an extension that passes it.
+ * Give it a Standard Schema, such as from Zod, or a `validate` function with `messages`. With both,
+ * `validate` only sees what passes the schema. Each problem is reported as `extension-invalid`.
  *
  * @example
+ * // fluid must be true or false
  * const fluid = defineExtensionValidator({
- *   key: "com.example",
- *   appliesTo: ["dimension"],
- *   schema: z.object({ fluid: z.boolean() }),
+ *     key: "com.example",
+ *     appliesTo: ["dimension"],
+ *     schema: z.object({ fluid: z.boolean() }),
  * });
  */
 export interface ExtensionValidator {
@@ -2337,15 +2331,17 @@ export interface ExtensionValidator {
     appliesTo: readonly (TokenType | "group")[];
     /** A schema the extension must pass. It must validate synchronously. */
     schema?: StandardSchemaV1;
-    /** The wording for each reason `validate` reports. */
+    /** The wording for each reason `validate` returns. */
     messages?: ExtensionMessages;
     /**
-     * Why the extension is not valid, if it is not. An error's `jsonPath` starts at the extension.
-     * An {@link ExtensionError} is worded from `messages`; a {@link ValueError}, from reading a
-     * value in the extension with `parseValue`, is reported as `invalid-value`; an
-     * {@link IgnoredProperty} from the same, as an `unknown-property` warning. `options` are how
-     * the read reads values, to read the extension's the same way: give them to `createExtensionReader`
-     * or `parseValue`.
+     * Returns why the extension isn't valid, or `[]`.
+     *
+     * An error's `jsonPath` starts at the extension.
+     *
+     * @param on - The token or group, by its path and type.
+     * @param extension - Your extension's data, or the schema's output if there's a `schema`.
+     * @param options - How the read reads values. Pass them to `createExtensionReader` or
+     * `parseValue` to read values the same way.
      */
     validate?(
         on: {
@@ -2359,46 +2355,47 @@ export interface ExtensionValidator {
     ): (ExtensionError | ValueError | IgnoredProperty)[];
 }
 
-/** A token a generator makes, written as it would be in a file, with its name in the group. */
+/** A token a generator makes, as a file would write it. */
 export interface GeneratedToken {
     /**
-     * Its name in the group, such as `"md"`. A name the specification forbids (Format 5.1.1), such
-     * as one with a `.`, makes no token and is reported as `invalid-name`.
+     * Its name in the group, such as `"md"`.
+     *
+     * A name the spec doesn't allow, such as one with a `.`, is reported as `invalid-name`. It
+     * makes no token.
      */
     name: string;
     /** @default the group's type */
     $type?: TokenType;
-    /**
-     * As a file would write it, such as `{ value: 1, unit: "rem" }` for a size: plain JSON, not a
-     * value read from a token, whose shape can differ (a stroke style written `"solid"` is read as
-     * `{ kind: "keyword", keyword: "solid" }`).
-     */
+    /** The value as a file would write it, such as `{ value: 1, unit: "rem" }`. */
     $value: JsonValue;
     $description?: string;
     $extensions?: Record<string, JsonValue>;
 }
 
 /**
- * The messages for an extension's own reasons, one per reason, each worded from that reason's
- * facts. `dtcg` words a {@link Diagnostic} of kind `extension-invalid` from it, as it words its own
- * kinds from its own table, in the same style: plain words, a lowercase start, no full stop, no
- * location.
+ * Your extension's messages, one for each reason.
+ *
+ * Each takes the reason's facts and returns the message. Write them as dtcg does. Start lowercase,
+ * and leave off the full stop and the place.
  *
  * @example
+ * // Two reasons
  * {
- *   "ratio-not-above-one": ({ ratio }: { ratio: number }) =>
- *     `a ratio of ${ratio} makes a flat or shrinking scale: it must be more than 1`,
- *   "no-multipliers": () => "`multipliers` must name at least one step",
+ *     "ratio-not-above-one": ({ ratio }: { ratio: number }) =>
+ *         `a ratio of ${ratio} makes a flat or shrinking scale`,
+ *     "no-multipliers": () => "`multipliers` must name at least one step",
  * }
  */
 export type ExtensionMessages = Record<string, (data: any) => string>;
 
 /**
- * Why an extension is not valid: where in it, a reason from its {@link ExtensionMessages}, and the
- * facts that reason is worded from. It carries no sentence: `dtcg` words it from the messages.
+ * A problem with your extension, by its reason.
+ *
+ * dtcg words it from your {@link ExtensionMessages}.
  *
  * @example
- * { jsonPath: ["ratio", "min"], reason: "ratio-not-above-one", data: { ratio: 1 } }
+ * // A ratio that's too small
+ * { jsonPath: ["ratio"], reason: "ratio-not-above-one", data: { ratio: 1 } }
  */
 export type ExtensionError<M extends ExtensionMessages = ExtensionMessages> = string extends keyof M
     ? {
@@ -2416,48 +2413,43 @@ export type ExtensionError<M extends ExtensionMessages = ExtensionMessages> = st
       }[keyof M & string];
 
 /**
- * Makes tokens from an extension on a group, such as the steps of a spacing scale. The extension
- * owns every token it makes: each is marked {@link TokenBase.generated | generated}, whether a file
- * writes it or not.
- * A token a file writes keeps its written value. A token no file writes is added, after the group's
- * files are merged and its `$extends` followed, and read like any written token, so references to
- * it resolve.
+ * Makes tokens from an extension on a group, such as the steps of a spacing scale.
+ *
+ * Each token it makes is marked {@link TokenBase.generated | generated}. If a file writes one too,
+ * the generated token is used, and the file's is a `written-generated` error.
  */
 export interface Generator {
     /**
-     * Where the extension sits in a group's `$extensions`. A group without it is left alone.
+     * Where the extension is in a group's `$extensions`, such as `["com.example", "steps"]`.
      *
-     * @example
-     * ["sh.sugarcube", "scale"]
+     * A group without it is left alone.
      */
     extension: readonly [string, ...string[]];
     /**
-     * A schema the extension must pass before `generate` sees it, from any library that implements
-     * Standard Schema. Each issue is reported as `extension-invalid` with the library's message,
-     * and `generate` is not called. It must validate synchronously.
+     * A schema the extension must pass before `generate` sees it.
+     *
+     * It must validate synchronously. If it fails, `generate` isn't called.
      */
     schema?: StandardSchemaV1;
-    /** The wording for each reason `generate` reports. */
+    /** The wording for each reason `generate` returns. */
     messages?: ExtensionMessages;
     /**
-     * The tokens an extension makes, in the order to list them, or why the extension is not valid.
-     * Tokens no file writes are listed at the end of the group. An error's `jsonPath` starts at the
-     * extension. An {@link ExtensionError} is reported as `extension-invalid`, worded from
-     * `messages`; a {@link ValueError}, from reading a value in the extension with `parseValue`, is
-     * reported as `invalid-value`, as it would be in a token, and each of its `ignored` properties
-     * as an `unknown-property` warning. With a `schema`, the extension is the
-     * schema's output. A group whose extension is not valid gets no tokens added. The extension is
-     * plain JSON, so whole-number keys inside it come first, in numeric order, whatever order the
-     * file writes them in. `options` are how the read reads values, to read the extension's the
-     * same way: give them to `createExtensionReader` or `parseValue`.
+     * Returns the tokens an extension makes, or why it isn't valid.
+     *
+     * An error's `jsonPath` starts at the extension. If it isn't valid, the group gets no tokens.
+     *
+     * @param group - The group, by its path and type.
+     * @param extension - Your extension's data, or the schema's output if there's a `schema`.
+     * @param options - How the read reads values. Pass them to `createExtensionReader` or
+     * `parseValue` to read values the same way.
      */
     generate(
         group: {
             /** Absent for the top level of a file. */
             path?: string;
             /**
-             * The type its tokens take, as {@link Group.type} gives it: its own, else the group it
-             * extends, else the group it is inside (Format 6.7.3). Absent when none declares one.
+             * The type its tokens take, as {@link Group.type} gives it. It's absent if there's
+             * none.
              */
             type?: TokenType;
         },
