@@ -51,10 +51,8 @@ export interface CSSBlock extends CSSBlockInput {
 /**
  * Works out what each block of a stylesheet writes.
  *
- * A block leaves out what earlier blocks already set to the same value. So a dark block after
- * `:root` only writes what's different in dark.
- *
- * List blocks in the resolver's order. A later block wins over an equally specific earlier one.
+ * A block leaves out what earlier blocks already set to the same value. List blocks in the
+ * resolver's order.
  *
  * @param tokens - The tokens, as `read` returns them.
  * @param blocks - Each block's input and selector, such as `{ input: {}, selector: ":root" }`.

@@ -20,8 +20,8 @@ export interface FindResolverOptions {
      *
      * If `"name"`, a file is a resolver when its name ends `.resolver.json`. No file is opened.
      *
-     * If `"content"`, a file is also a resolver when it has a top-level `resolutionOrder`. Every
-     * JSON file is opened, so give it your tokens folder, not a whole project.
+     * If `"content"`, a file with a top-level `resolutionOrder` is a resolver too. Every JSON file
+     * is opened, so search your tokens folder, not a whole project.
      *
      * @default "name"
      * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#file-extension | Resolver 3.2, File extension} and {@link https://www.designtokens.org/TR/2025.10/resolver/#resolution-order | 4.1.6, Resolution Order}

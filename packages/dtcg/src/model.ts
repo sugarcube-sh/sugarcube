@@ -320,10 +320,7 @@ export interface ReferenceBase {
      * The path the reference names, such as `"color.primary"`.
      *
      * For a group's `$extends`, it's the group's path. For a JSON Pointer inside a value, it's the
-     * path of that value's token.
-     *
-     * It's there even when nothing has that path. It's absent for a pointer that names no path,
-     * such as `#/`.
+     * path of that value's token. It's absent for a pointer that names no path, such as `#/`.
      */
     readonly pointsToPath?: string;
     /**
@@ -349,9 +346,8 @@ export interface ReferenceBase {
     /**
      * Where in {@link TokenBase.value | value} the reference is.
      *
-     * For example, `["components", 0]`. It's a path into the value as read, so a reference in a
-     * single shadow's `color` is at `[0, "color"]`. It's absent for a reference that is the whole
-     * value.
+     * For example, `["components", 0]`, or `[0, "color"]` in a single shadow, which is read as an
+     * array of one. It's absent for a reference that is the whole value.
      */
     readonly writtenInProperty?: JsonPath;
     /**
@@ -441,9 +437,8 @@ export type UnresolvedStrokeStyle =
 /**
  * Each token type's value, with references not followed yet.
  *
- * A curly brace reference can stand for the whole value. In a composite, it can also stand for a
- * part that's a token type itself, such as a border's `color`. A JSON Pointer can stand for any
- * part.
+ * A curly brace reference can stand for the whole value, or a part that's a token type itself,
+ * such as a border's `color`. A JSON Pointer can stand for any part.
  *
  * @see {@link https://www.designtokens.org/TR/2025.10/format/#composite-types | Format 9, Composite types}
  */
@@ -519,9 +514,8 @@ export type UnresolvedValue<T extends TokenType> = UnresolvedValueByType[T];
 /**
  * One part of a token's value.
  *
- * It can be the whole value, or a part of a composite. Shadow layers, gradient stops and the
- * lengths in a dash pattern are parts too. Check `type`, and TypeScript knows its `resolved` and
- * its own parts.
+ * It can be the whole value, or a part of it, such as a border's `color` or one shadow layer.
+ * Check `type`, and TypeScript knows its `resolved` and its own parts.
  *
  * @example
  * // button.background refers to color.primary
@@ -671,9 +665,8 @@ export type JsonPath = readonly (string | number)[];
 /**
  * A place in a file.
  *
- * It gives the place two ways. `offset` and `length` count characters from the start of the file.
- * `start` and `end` give the line and column. Lines and columns start at 1. Offsets, lengths and
- * columns count UTF-16 code units, as JavaScript strings do.
+ * `offset` and `length` count from the start of the file. `start` and `end` give the line and
+ * column, from 1. All of them count UTF-16 code units, as JavaScript strings do.
  */
 export interface Span {
     readonly file: string;
@@ -784,9 +777,8 @@ export interface TokenBase<T extends TokenType> {
     /**
      * Set when a {@link Generator} makes the token.
      *
-     * `from` is the group whose extension makes it. It's absent for an extension at the top of a
-     * file. `extension` is where the generator's settings are in the group's `$extensions`, such as
-     * `["com.example", "steps"]`.
+     * `from` is the group with the extension, absent at the top of a file. `extension` is where the
+     * generator's settings are in its `$extensions`, such as `["com.example", "steps"]`.
      */
     readonly generated?: {
         readonly from?: string;
@@ -914,9 +906,8 @@ export interface Group {
     /**
      * `true`, or a message saying what to use instead.
      *
-     * If the group doesn't write one, it comes from the group it extends, or else the group it's
-     * inside. It's absent when the group isn't deprecated, even if it writes
-     * `"$deprecated": false`.
+     * It can come from the group it extends, or the group it's inside. It's absent when the group
+     * isn't deprecated, even if it writes `"$deprecated": false`.
      */
     readonly deprecated?: true | string;
     /**
@@ -1040,8 +1031,8 @@ export interface TopLevel {
 /**
  * A place where a token or group is written.
  *
- * It has the source that writes it, and the JSON written there. A definition read by several
- * permutations is the same object in each. To find where it is in the file, use `getSpan`.
+ * A definition read by several permutations is the same object in each. To find where it is in
+ * the file, use `getSpan`.
  *
  * @example
  * // Where dark gets color.primary
@@ -1082,9 +1073,8 @@ export interface DefinitionInPermutations {
     /**
      * The permutations where this definition gives the token its value.
      *
-     * In each, it's the {@link TokenBase.winningDefinition | winningDefinition}. It's empty when a
-     * later file always replaces it. It's also empty for a group, since a group's definitions are
-     * combined, not replaced.
+     * It's empty when a later file always replaces it, and for a group, whose definitions are
+     * combined.
      *
      * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#ordering | Resolver 6.2, Ordering}
      *
@@ -1281,8 +1271,7 @@ export interface ResolverContext {
  * A source as the resolver writes it.
  *
  * It's a file, part of one, or a set. For example, `{ file: "dark.json" }`,
- * `{ file: "all.json", pointer: "#/dark" }` or `{ set: "base" }`. Tokens written in the resolver
- * have the resolver as their file.
+ * `{ file: "all.json", pointer: "#/dark" }` or `{ set: "base" }`.
  */
 export type SourceRef =
     | { readonly file: string; readonly pointer?: string }
@@ -1342,10 +1331,9 @@ export interface Permutation {
     /**
      * Every token, in the order written, including invalid ones.
      *
-     * When several files write tokens, a group's tokens stay together. If `dark.json` adds
-     * `color.accent`, it goes after the other `color` tokens, not at the end. And `dark.json`'s
-     * `color.primary` stays where `color.json` put it. Tokens from `$extends` or a
-     * {@link Generator} come last in their group.
+     * A group's tokens stay together, whichever file adds them, and a token a later file writes
+     * again keeps its place. Tokens from `$extends` or a {@link Generator} come last in their
+     * group.
      *
      * To find one by path, use {@link Permutation.getToken | getToken}.
      *
@@ -1504,10 +1492,10 @@ export interface DiagnosticDetailByKind {
     /**
      * Something is both a token and a group.
      *
-     * `reason: "child"` means a token has a `$value`, and also has `child` inside it. `reason:
-     * "declared"` means one file writes a token where another writes a group. `here` says which
-     * this one is. `reason: "ref"` means a `$ref` makes an object a token, and it also has tokens
-     * or groups inside it.
+     * `reason: "child"` means a token also has `child` inside it.
+     * `reason: "declared"` means one file writes a token where another writes a group. `here` says
+     * which this one is.
+     * `reason: "ref"` means a `$ref` makes an object a token, but it also has tokens or groups.
      */
     "token-and-group":
         | { readonly reason: "child"; readonly child: string }
@@ -2100,8 +2088,7 @@ export interface DesignTokens {
      * Finds what changed since an earlier read.
      *
      * A token is compared by what it says, not what it resolves to. So changing `color.blue.500` is
-     * one change, not one for every token that refers to it. To list a rename as `renamed`, pass
-     * the moves.
+     * one change, not one for every token that refers to it.
      *
      * @param before - An earlier read, such as the tokens before
      * {@link DesignTokens.reread | reread}.
@@ -2302,7 +2289,7 @@ export interface ParseOptions {
      * Sets aside a property a value's type doesn't have, such as `paragraphSpacing`.
      *
      * The rest of the value is read, and `read` reports a warning. Off, it's an `invalid-value`
-     * error, as in DTCG 2025.10. A `$ref` with other properties is an error either way.
+     * error. A `$ref` with other properties is an error either way.
      *
      * @default false
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#groups-versus-composite-tokens | Format 9.2, Groups versus composite tokens}

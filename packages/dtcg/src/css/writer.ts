@@ -14,9 +14,9 @@ export interface CSSWritten {
  *
  * Each token placed in it becomes a `var()`, and goes in `dependencies`.
  *
- * What you write is used in every permutation the token being written is in. So only place tokens
- * you reach from it, such as `token.getReferenceAt()?.pointsToToken`. A token from one
- * permutation's `getToken` can carry that permutation's value into the others.
+ * Only place tokens you reach from the token being written, such as
+ * `token.getReferenceAt()?.pointsToToken`. A token from one permutation's `getToken` would carry
+ * that permutation's value over into the others.
  *
  * @example
  * // Mix the token's value with white
