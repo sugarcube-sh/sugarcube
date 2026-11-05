@@ -1862,259 +1862,262 @@ export type DiagnosticOf<DetailByKind> = {
 }[keyof DetailByKind];
 
 /**
- * Design tokens as the DTCG specifications define them: every permutation, with every value in one
- * shape and every reference followed. The tokens and groups link down and across, never up: a
- * group's {@link Group.children | children} are the tokens and groups themselves, and a reference's
- * `pointsToToken` the token it reaches; what is around a token, its group and who refers to it, is asked of
- * its permutation by path. A token or group that is the same in two permutations, written in the
- * same places, taking the same settings from its groups and reaching the same tokens, is one object
- * in both, so `===` tells whether it differs between them. `JSON.stringify` writes their plain
- * form, with a path wherever one links to another, and leaves out what the rest says: a group's
- * `rootToken` and `extends`, `kind`, a reference's `writtenIn`, `pointsToPath`, `pointsToToken` and
- * `pointsToProperty`, and where places and references are, which `getSpan` (`/editor`) gives.
- * Nothing changes them after {@link read} returns them: everything in them is read-only and
- * shared, so make a new value rather than changing one.
+ * Design tokens, as {@link read} returns them, with every permutation.
+ *
+ * Everything in them is read-only. A token or group that's the same in two permutations is one
+ * object in both, so `===` tells whether it differs.
+ *
+ * @example
+ * // color.blue.500 is the same in light and dark
+ * light.getToken("color.blue.500") === dark.getToken("color.blue.500")
+ * // => true
  */
 export interface DesignTokens {
     /**
-     * Every file the read used, the entry first, in the order they were read. For watching and
-     * reloading. Paths are as described at {@link ReadText}.
+     * Every file the read used, the entry file first.
+     *
+     * Paths are relative to the entry file's folder, such as `"dark.json"`.
      */
     readonly files: readonly string[];
-    /**
-     * The file the read started from, a resolver or a token file, by the name
-     * {@link DesignTokens.files} gives it.
-     */
+    /** The file the read started from, such as `"tokens.resolver.json"`. */
     readonly entryFile: string;
-    /** What the resolver says about itself and how it is put together; absent with no resolver. */
+    /** The resolver, if the read started from one. */
     readonly resolver?: Resolver;
-    /**
-     * Every source the read used, each once, in the order the permutations first read them. A
-     * permutation's {@link Permutation.sources | sources} are among these, the same objects.
-     */
+    /** Every source the read used, each once. */
     readonly sources: readonly Source[];
     /**
-     * Every permutation the read built, in the resolver's order: modifiers as `resolutionOrder`
-     * lists them, the first changing slowest (for `"each-context"`, each modifier's contexts in
-     * turn), and each one's contexts as written, so the default permutation comes where its
-     * contexts are written, not necessarily first. The spec sets no
-     * order (Resolver 4.1.5.4); to find the default, ask {@link DesignTokens.getPermutation} with no
-     * input. Its label is `"everywhere"`.
+     * Every permutation the read built, in the resolver's order.
+     *
+     * The default isn't always first. To get it, use `getPermutation()`.
      */
     readonly permutations: Permutations;
     /**
-     * How the values were read. To read a value from the design tokens again, such as one inside
-     * `$extensions`, the same way, give these to `parseValue` or `createExtensionReader`.
+     * How the values were read.
+     *
+     * To read a value in `$extensions` the same way, pass these to `parseValue` or
+     * `createExtensionReader`.
      */
     readonly parseOptions: Required<ParseOptions>;
     /**
-     * Every error, warning and note, in the order the read found them; sort by `span` for file
-     * order. For those about one token or group,
-     * {@link DesignTokens.getDiagnostics | getDiagnostics}; for those at a place in a file,
-     * `getDiagnosticsAt` (`/editor`).
+     * Every problem the read found.
      *
-     * @example
-     * const errors = tokens.diagnostics.filter((d) => d.severity === "error");
+     * For one token or group, use {@link DesignTokens.getDiagnostics | getDiagnostics}. For a place
+     * in a file, use `getDiagnosticsAt`.
      */
     readonly diagnostics: readonly Diagnostic[];
     /**
-     * Every reference to `path` written in the files, each place once, with the permutations it
-     * holds in and the tokens that have it: what renaming `path` rewrites, and whether anything
-     * uses it at all, built or not. A group's path covers what is written to it, such as an
-     * `$extends`, and to everything inside it. To follow chained references, which go through each
-     * permutation's own tokens, ask a permutation ({@link Permutation.getReferencesTo}).
+     * Finds every reference to a token or group, in any file.
+     *
+     * Each is listed once, with the tokens that write it and the permutations it applies in. To
+     * follow chains of references, use {@link Permutation.getReferencesTo}.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
      *
      * @example
-     * for (const { span } of tokens.getReferencesTo("color.brand")) rewrite(span);
-     * const unused = tokens.getReferencesTo("color.legacy").length === 0;
+     * // Nothing refers to button.background
+     * tokens.getReferencesTo("button.background").length
+     * // => 0
      */
     getReferencesTo(path: string): readonly ReferenceInPermutations[];
     /**
-     * Every place the token or group at `path` is written, in any permutation, each span once with
-     * the sources and permutations that read it and the permutations whose value comes from it, in
-     * the order first met: where to edit it, and where a change to its value would show.
+     * Finds every place a token or group is written, in any permutation.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
      *
      * @example
-     * for (const { span } of tokens.getDefinitions("color.brand")) rename(span);
-     * for (const { span, winsIn } of tokens.getDefinitions("color.brand")) row(span.file, winsIn.label);
+     * // color.json and dark.json both write color.primary
+     * tokens.getDefinitions("color.primary").map((definition) => definition.span.file)
+     * // => ["color.json", "dark.json"]
      */
     getDefinitions(path: string): readonly DefinitionInPermutations[];
     /**
-     * The permutation for an input: modifiers left out take their default (Resolver 4.1.5.3), and
-     * names match whatever their case (Resolver 5.1). With no input, the default permutation.
+     * Gets the permutation for an input.
      *
-     * @throws {@link PermutationError} when there is none: the input names a modifier or context
-     * the resolver does not declare, leaves out a modifier that has no default (Resolver 6.1), or
-     * names a permutation the read did not build. Its `detail` says which.
+     * Without an input, it returns the default permutation.
+     *
+     * @param input - The input, such as `{ mode: "dark" }`.
+     * @throws {@link PermutationError} If no permutation the read built fits the input.
      *
      * @example
-     * const dark = tokens.getPermutation({ mode: "dark" });
+     * // The dark permutation
+     * tokens.getPermutation({ mode: "dark" }).label
+     * // => "mode: dark"
      */
     getPermutation(input?: Input): Permutation;
     /**
-     * The token at `path`, when the read has one permutation: a token file, or a resolver with no
-     * modifiers. As {@link Permutation.getToken}, of that permutation. With several, which one is
-     * meant has to be said: pick one with {@link DesignTokens.getPermutation}, or ask every one with
-     * {@link askEveryPermutation}.
+     * Gets the token at a path, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.getToken} for that permutation.
      *
-     * @example
-     * const tokens = await read("color.json");
-     * tokens.getToken("color.red")?.resolved
+     * @param path - The token's path, such as `"color.primary"`.
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     getToken(path: string): Token | undefined;
     /**
-     * The group at `path`, when the read has one permutation. As {@link Permutation.getGroup}.
+     * Gets the group at a path, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.getGroup} for that permutation.
+     *
+     * @param path - The group's path, such as `"color.blue"`.
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     getGroup(path: string): Group | undefined;
     /**
-     * The token or group at `path`, when the read has one permutation. As
-     * {@link Permutation.getTokenOrGroup}.
+     * Gets the token or group at a path, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.getTokenOrGroup} for that permutation.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     getTokenOrGroup(path: string): Token | Group | undefined;
     /**
-     * The tokens and groups that refer to `path`, when the read has one permutation. As
-     * {@link Permutation.getDependents}. Whether anything uses it in any permutation, or one the read
-     * didn't build, is whether {@link DesignTokens.getReferencesTo | getReferencesTo} gives any.
+     * Finds what refers to a token or group, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.getDependents} for that permutation. To check every permutation, use
+     * {@link DesignTokens.getReferencesTo | getReferencesTo}.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
+     * @param options - `{ chained: true }` to follow references through other tokens too.
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     getDependents(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
     /**
-     * The tokens and groups `path` refers to, when the read has one permutation. As
-     * {@link Permutation.getDependencies}.
+     * Finds what a token or group refers to, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.getDependencies} for that permutation.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
+     * @param options - `{ chained: true }` to follow references through other tokens too.
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     getDependencies(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
     /**
-     * Every token, when the read has one permutation. As {@link Permutation.tokens}.
+     * Every token, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.tokens} for that permutation.
+     *
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     readonly tokens: readonly Token[];
     /**
-     * Every group, when the read has one permutation. As {@link Permutation.groups}.
+     * Every group, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.groups} for that permutation.
+     *
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     readonly groups: readonly Group[];
     /**
-     * The tokens and groups at the top level, when the read has one permutation. As
-     * {@link Permutation.children}.
+     * The tokens and groups at the top of the files, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.children} for that permutation.
+     *
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     readonly children: readonly (Token | Group)[];
     /**
-     * What the top of the files writes, when the read has one permutation. As
-     * {@link Permutation.topLevel}.
+     * What the top of the files writes, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.topLevel} for that permutation.
+     *
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     readonly topLevel: TopLevel;
     /**
-     * Every token's path in any permutation, each once, in the order the permutations list them:
-     * a token only a later permutation has comes after the earlier ones' tokens.
+     * Gets every token's path, in any permutation, each once.
      *
      * @example
-     * for (const path of tokens.getTokenPaths()) row(path, dark.getToken(path)?.resolved);
+     * // Every token path
+     * tokens.getTokenPaths()
+     * // => ["color.blue.500", "color.blue.300", "color.primary", "button.background"]
      */
     getTokenPaths(): readonly string[];
-    /**
-     * Every group's path in any permutation, each once, in the order the permutations list them.
-     */
+    /** Gets every group's path, in any permutation, each once. */
     getGroupPaths(): readonly string[];
     /**
-     * Whether a token or group is at `path` in any permutation.
+     * Checks whether a token or group is at a path, in any permutation.
+     *
+     * @param path - The path, such as `"color.blue"`.
      *
      * @example
-     * if (tokens.has("color.danger")) refuse("taken");
+     * // color.blue is a group
+     * tokens.has("color.blue")
+     * // => true
      */
     has(path: string): boolean;
     /**
-     * The text of a file the read used, by the name {@link DesignTokens.files} gives it, exactly as
-     * read; `undefined` for a file it did not use. What an editor shows, and what a format-keeping
-     * edit changes.
+     * Gets a file's text, exactly as read.
      *
-     * @example
-     * const lines = tokens.getText("dark.json")?.split("\n");
+     * It returns `undefined` for a file the read didn't use.
+     *
+     * @param file - The file, such as `"dark.json"`.
      */
     getText(file: string): string | undefined;
     /**
-     * The design tokens after some files change, read as these were: from the same file, with the
-     * same options. `changed` gives each changed file's new text, a new file included, or `null`
-     * for a file deleted, by the names {@link DesignTokens.files} gives them; every other file is
-     * read as these read it. These design tokens are not changed. What an editor asks after
-     * changing the text.
+     * Reads the tokens again, after some files changed.
+     *
+     * It uses the same entry file and options. These tokens don't change.
+     *
+     * @param changed - Each changed file's new text, such as `{ "dark.json": text }`. Pass `null`
+     * for a deleted file.
      *
      * @example
-     * const next = tokens.reread({ "dark.json": edited });
-     * const without = tokens.reread({ "tokens.resolver.json": withoutDim, "dim.json": null });
+     * // dark.json now points color.primary at color.blue.500
+     * const next = tokens.reread({ "dark.json": text });
+     * next.getPermutation({ mode: "dark" }).getToken("color.primary")?.value
+     * // => { syntax: "curly-brace", path: "color.blue.500" }
      */
     reread(changed: Readonly<Record<string, string | null>>): DesignTokens;
     /**
-     * The design tokens read again from every file's text as it is now, from the same file and
-     * with the same options: `files` holds each file by the name {@link DesignTokens.files} gives
-     * it, and a file these read that `files` leaves out is read as deleted. These same design
-     * tokens when no file's text differs, so a tool sent every file after each change can tell
-     * that nothing did. What a host-fed editor asks; one that knows what it changed asks
-     * {@link DesignTokens.reread}.
+     * Reads the tokens again, from every file's text as it is now.
+     *
+     * A file you leave out is read as deleted. If no file changed, it returns these same tokens. If
+     * you know which files changed, use {@link DesignTokens.reread}.
+     *
+     * @param files - Every file's text, such as `tokens.toMemory().files`.
      *
      * @example
-     * const next = tokens.rereadAll(received.files);
-     * if (next !== tokens) show(next);
+     * // Nothing changed
+     * tokens.rereadAll(tokens.toMemory().files) === tokens
+     * // => true
      */
     rereadAll(files: Readonly<Record<string, string>>): DesignTokens;
     /**
-     * What to send to read these design tokens somewhere else, such as a browser or a worker: the
-     * entry and the text of every file read, a {@link TokensInMemory} as {@link readFromMemory}
-     * takes it. Read it there with the same options for the same design tokens; options can hold
-     * functions, so they are not part of it.
+     * Gets the entry file and every file's text, to read them somewhere else.
+     *
+     * Pass the result to {@link readFromMemory}, with the same options, to get the same tokens.
      *
      * @example
-     * send(tokens.toMemory());
-     * const same = readFromMemory(received, options);
+     * // Every file the read used
+     * Object.keys(tokens.toMemory().files)
+     * // => ["tokens.resolver.json", "color.json", "dark.json"]
      */
     toMemory(): TokensInMemory & { readonly entryFile: string };
     /**
-     * What changed since `before`, an earlier read, and in which permutations: tokens and groups
-     * added, removed, renamed, or with different properties. A token is compared by what it says,
-     * not what it resolves to, so changing one value is one change, not one for every token
-     * pointing at it. The value is compared with {@link isEquivalentValue}, the type only where the token
-     * writes `$type`, and the other properties exactly. A change that is the same in several
-     * permutations, such as a value changed in a file they all read, is one entry listing them all.
+     * Finds what changed since an earlier read.
      *
-     * Tokens a generator made are included, with `generated` set, so a tool can show the change to
-     * the extension on its group and fold its tokens under it. Tokens a group takes through
-     * `$extends` are included the same way, with `inherited` set.
+     * A token is compared by what it says, not what it resolves to. So changing `color.blue.500` is
+     * one change, not one for every token that refers to it. To list a rename as `renamed`, pass
+     * the moves.
      *
-     * Two reads alone cannot tell a rename from a removal and an addition. Pass the moves the edits
-     * made, in the order they were made, and those tokens are listed as `renamed`; references the
-     * moves rewrote are not changes, and a reference pointed somewhere else is.
-     *
-     * Each permutation is compared with the one its input names in `before`; a permutation `before`
-     * has no match for is left out.
+     * @param before - An earlier read, such as the tokens before
+     * {@link DesignTokens.reread | reread}.
+     * @param options - `moved`, the {@link Move}s the edits made, in order.
      *
      * @example
-     * for (const change of tokens.getChangesSince(before, { moved })) row(change.kind, change.path);
+     * // color.blue.500 has a new value in color.json
+     * tokens.reread({ "color.json": text }).getChangesSince(tokens).map((change) => change.path)
+     * // => ["color.blue.500"]
      */
     getChangesSince(before: DesignTokens, options?: { moved?: readonly Move[] }): readonly Change[];
     /**
-     * The problems about the token or group at `path`, in every permutation, each with the
-     * permutations it is in: its own, a missing reference it writes (reported once however many
-     * write it), a loop it is part of, a problem in a value it inherits (reported once, about the
-     * token that writes it).
+     * Finds the problems with a token or group, in every permutation.
      *
-     * @example
-     * for (const { message, permutations } of tokens.getDiagnostics("color.brand")) {
-     *   show(message, permutations?.label);
-     * }
+     * Each comes with the permutations it's in. The kinds are as for
+     * {@link Permutation.getDiagnostics}.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
      */
     getDiagnostics(path: string): readonly Diagnostic[];
 }
