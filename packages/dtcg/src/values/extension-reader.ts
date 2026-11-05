@@ -12,7 +12,7 @@ import type {
 import { parseValue } from "./parse-value.js";
 
 /**
- * What an {@link ExtensionReader} gives back at the end.
+ * What an {@link ExtensionReader} returns at the end.
  *
  * It's the value, or every problem found. Return it from `generate` or `validate`.
  */
@@ -30,8 +30,8 @@ export interface ExtensionReader<M extends ExtensionMessages> {
     /**
      * Reads one value of a type.
      *
-     * If it doesn't fit the type, or is a reference, it gives `undefined`. The problem goes in the
-     * result.
+     * If it doesn't fit the type, or is a reference, it returns `undefined`. The problem goes in
+     * the result.
      *
      * @param type - The token type to read it as, such as `"dimension"`.
      * @param raw - The value, as your extension writes it.
@@ -45,7 +45,7 @@ export interface ExtensionReader<M extends ExtensionMessages> {
     /**
      * Records one problem with your extension.
      *
-     * It gives back `undefined`, so a function reading one part can return it as that part's
+     * It returns `undefined`, so a function reading one part can return it as that part's
      * missing value.
      *
      * @param jsonPath - Where the problem is, inside your extension, such as `["min"]`.

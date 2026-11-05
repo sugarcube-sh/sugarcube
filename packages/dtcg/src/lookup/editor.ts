@@ -56,7 +56,7 @@ export function getJsonPath(
 /**
  * Gets the JSON written at some keys in a file.
  *
- * It's as written, so references aren't followed. It gives `undefined` if nothing is there.
+ * It's as written, so references aren't followed. It returns `undefined` if nothing is there.
  *
  * @param tokens - Tokens from a read that included the file.
  * @param file - The file, such as `"color.json"`.

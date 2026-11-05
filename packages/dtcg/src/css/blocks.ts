@@ -14,7 +14,7 @@ export interface CSSBlockInput {
      * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#orthogonality | Resolver 2.1, Orthogonality}
      */
     readonly input: Input;
-    /** The selector, such as `'[data-mode="dark"]'`, or a list of them. */
+    /** The selector, such as `'[data-mode="dark"]'`, or an array of them. */
     readonly selector: string | readonly string[];
     /**
      * The at-rules around the block, outermost first.
@@ -56,7 +56,7 @@ export interface CSSBlock extends CSSBlockInput {
  *
  * List blocks in the resolver's order. A later block wins over an equally specific earlier one.
  *
- * @param tokens - The tokens, as `read` gives them.
+ * @param tokens - The tokens, as `read` returns them.
  * @param blocks - Each block's input and selector, such as `{ input: {}, selector: ":root" }`.
  * @param options - The writer to use, from {@link createCSSWriter}. Without one, it uses a writer
  * with no settings.

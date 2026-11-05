@@ -27,7 +27,7 @@ export interface CSSNaming {
     /**
      * Makes each name your own way, in place of these settings.
      *
-     * It gets the path without a final `$root`, and gives the name without `--`. `prefix` and
+     * It gets the path without a final `$root`, and returns the name without `--`. `prefix` and
      * `case` aren't used.
      *
      * @example

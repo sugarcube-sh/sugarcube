@@ -42,7 +42,7 @@ export interface ValueErrorFacts {
     };
     /** A color's `colorSpace` is not one the Color module defines. */
     "unknown-color-space": { readonly value: unknown };
-    /** A color's `components` is not a list of three. */
+    /** A color's `components` is not an array of three. */
     "not-three-components": { readonly value: unknown };
     /** A color component is neither a number nor `"none"`. */
     "component-not-a-number": { readonly value: unknown };
@@ -91,7 +91,7 @@ export interface ValueErrorFacts {
     "not-four-numbers": { readonly count: number };
     /** A cubic Bézier's `x1` or `x2` is outside 0 to 1. */
     "x-out-of-range": { readonly value: number; readonly coordinate: "x1" | "x2" };
-    /** A list of font names is empty. */
+    /** An array of font names is empty. */
     "empty-font-list": Record<never, never>;
     /** A font name is not a string, or is empty. */
     "not-a-font-name": { readonly value: unknown };
@@ -100,13 +100,13 @@ export interface ValueErrorFacts {
         readonly value: string;
         readonly keywords: readonly string[];
     };
-    /** A stroke style's `dashArray` is not a list. */
+    /** A stroke style's `dashArray` is not an array. */
     "dash-array-not-a-list": { readonly value: unknown };
     /** A stroke style's `dashArray` is empty. */
     "empty-dash-array": Record<never, never>;
     /** A stroke style's `lineCap` is not one of the line caps. */
     "unknown-line-cap": { readonly value: unknown; readonly lineCaps: readonly string[] };
-    /** A list of shadows is empty. */
+    /** An array of shadows is empty. */
     "no-shadows": Record<never, never>;
     /** A gradient has no stops. */
     "no-gradient-stops": Record<never, never>;

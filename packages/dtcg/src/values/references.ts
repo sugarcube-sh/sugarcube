@@ -38,7 +38,7 @@ export function readJsonPointer(raw: unknown): JsonPointerReference | undefined 
 /**
  * Finds which reference a value is, as written in a file.
  *
- * It reads both syntaxes. Anything else gives `undefined`.
+ * It reads both syntaxes. For anything else, it returns `undefined`.
  *
  * @param raw - A value as written in a file, such as a token's `$value`.
  *

@@ -20,7 +20,7 @@ export const tokenPath = {
     /**
      * Gets the group a path is directly inside.
      *
-     * At the top level, it gives `undefined`.
+     * At the top level, it returns `undefined`.
      *
      * @param path - The path, such as `"color.blue.500"`.
      *
@@ -56,7 +56,7 @@ export const tokenPath = {
     /**
      * Gets the rest of a path inside a group.
      *
-     * It gives `undefined` if the path isn't inside. The group's own path isn't inside it.
+     * It returns `undefined` if the path isn't inside. The group's own path isn't inside it.
      *
      * @param group - The group, such as `"color"`.
      * @param path - The path, such as `"color.blue.500"`.
@@ -96,7 +96,8 @@ export const tokenPath = {
     /**
      * Removes `.$root` from the end of a path.
      *
-     * So a group's `$root` token gives the group's path. Any other path comes back as it is.
+     * So for a group's `$root` token, it returns the group's path. Any other path is returned as it
+     * is.
      *
      * @param path - The path, such as `"color.blue.$root"`.
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#root-tokens-in-groups | Format 6.2, Root Tokens in Groups}
@@ -112,8 +113,8 @@ export const tokenPath = {
     /**
      * Finds the character that stops a name being valid.
      *
-     * It gives `undefined` if the name is valid. A name can't start with `$`, unless it's `$root`.
-     * It can't have `.`, `{` or `}` anywhere.
+     * It returns `undefined` if the name is valid. A name can't start with `$`, unless it's
+     * `$root`. It can't have `.`, `{` or `}` anywhere.
      *
      * @param name - A token or group name, such as `"500"`.
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}

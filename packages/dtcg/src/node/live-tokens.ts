@@ -70,7 +70,7 @@ export interface LiveTokens {
     /**
      * Reads the files again.
      *
-     * If you gave {@link createLiveTokens} a function, it's asked again where the files are. It
+     * If you passed {@link createLiveTokens} a function, it's asked again where the files are. It
      * never rejects. A failed read goes to `onError`.
      *
      * @example
@@ -96,8 +96,8 @@ export interface LiveTokens {
 /**
  * Reads design tokens from disk, and again on each save.
  *
- * It reads straight away, and on each save once {@link LiveTokens.watch} gives it a watcher. Saves
- * during a read lead to one more read.
+ * It reads straight away, and on each save once you pass a watcher to {@link LiveTokens.watch}.
+ * Saves during a read lead to one more read.
  *
  * @param onDisk - Where the tokens are, such as `{ entryFile: "tokens/tokens.resolver.json" }`.
  * Give a function to be asked again on every read.

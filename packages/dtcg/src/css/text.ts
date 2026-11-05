@@ -3,7 +3,7 @@ import type { CSSBlock } from "./blocks.js";
 /**
  * Writes blocks as a stylesheet.
  *
- * A block with nothing to write is left out. If no block writes anything, it gives `""`.
+ * A block with nothing to write is left out. If no block writes anything, it returns `""`.
  *
  * @param blocks - The blocks, from {@link getCSSBlocks}.
  *

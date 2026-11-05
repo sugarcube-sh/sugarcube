@@ -96,7 +96,7 @@ export type CubicBezierValue = readonly [number, number, number, number];
 /**
  * Font names, the first choice first.
  *
- * A file can write one name as a string. It's read as a list of one.
+ * A file can write one name as a string. It's read as an array of one.
  *
  * @see {@link https://www.designtokens.org/TR/2025.10/format/#font-family | Format 8.3, Font family}
  */
@@ -176,7 +176,7 @@ export interface ShadowLayer {
 /**
  * One or more shadows, drawn together.
  *
- * A file can write one shadow as an object. It's read as a list of one.
+ * A file can write one shadow as an object. It's read as an array of one.
  *
  * @see {@link https://www.designtokens.org/TR/2025.10/format/#shadow | Format 9.6, Shadow}
  */
@@ -371,7 +371,7 @@ export interface ReferenceBase {
 }
 
 /**
- * A reference as {@link DesignTokens.getReferencesTo} gives it.
+ * A reference as {@link DesignTokens.getReferencesTo} returns it.
  *
  * It's written once, and can apply in several permutations.
  */
@@ -664,7 +664,7 @@ export type Input = Readonly<Record<string, string>>;
 /**
  * Keys into JSON, such as `["color", "primary", "$value"]`.
  *
- * Each step is a key, or an index into a list.
+ * Each step is a key, or an index into an array.
  */
 export type JsonPath = readonly (string | number)[];
 
@@ -811,8 +811,8 @@ export interface TokenBase<T extends TokenType> {
     /**
      * Gets the reference written at a place in the value.
      *
-     * Without `property`, it's the reference written as the whole value. It gives `undefined` if a
-     * value is written there.
+     * Without `property`, it's the reference written as the whole value. It returns `undefined` if
+     * a value is written there.
      *
      * @param property - Where in the value, such as `["color"]` for a border's color.
      *
@@ -1062,7 +1062,7 @@ export interface Definition {
 }
 
 /**
- * A definition as {@link DesignTokens.getDefinitions} gives it.
+ * A definition as {@link DesignTokens.getDefinitions} returns it.
  *
  * It's written once, and can be read in several permutations.
  */
@@ -1095,288 +1095,365 @@ export interface DefinitionInPermutations {
 }
 
 /**
- * One source of tokens, as the resolver lists it: a file, part of one, or tokens written in the
- * resolver. Keys written beside a source's `$ref` are part of that source, so a token written there
- * belongs to it, and its place is in the resolver. One object for each source the resolver lists,
- * per context that lists it (a set several contexts pull in gives one for each), shared by every
- * permutation that reads it: {@link DesignTokens.sources} lists each once.
+ * One source of tokens, such as `color.json`.
+ *
+ * It's a file, part of a file, or tokens written directly in the resolver. Each source is one
+ * object, shared by every permutation that reads it.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#sets | Resolver 4.1.4, Sets}
+ *
+ * @example
+ * // The sources dark reads
+ * dark.sources.map((source) => source.file)
+ * // => ["color.json", "dark.json"]
  */
 export interface Source {
-    /** The file its tokens are written in, or the resolver for tokens written there. */
+    /**
+     * The file the tokens are in, such as `"dark.json"`.
+     *
+     * For tokens written in the resolver, it's the resolver.
+     */
     readonly file: string;
     /**
-     * Set when the source is only part of the file, such as `"#/color"`. Tokens written in the
-     * resolver are part of it too, so theirs says where they sit, such as
-     * `"#/resolutionOrder/0/sources/1"`. Absent when the source is a whole file.
+     * The part of the file the source is, such as `"#/dark"` for `{ "$ref": "all.json#/dark" }`.
+     *
+     * It's absent when the source is a whole file. Tokens written in the resolver have one too,
+     * such as `"#/resolutionOrder/0/sources/1"`.
      */
     readonly pointer?: string;
-    /**
-     * The modifier whose contexts list it, when the resolver lists it under one, as
-     * {@link DesignTokens.resolver} holds it. The context is the permutation's: a file the contexts
-     * `dark` and `dim` both list the same way is one source, read through `dark` in the dark
-     * permutation and through `dim` in the dim one. "Did a context's own file write this?" is this.
-     *
-     * @example
-     * const source = dim.getToken("color.text")?.winningDefinition.source;
-     * source?.modifier?.name                                            // "mode"
-     * dim.contexts.find(({ modifier }) => modifier === source?.modifier) // the context dim
-     */
+    /** The modifier that lists the source (if one does). */
     readonly modifier?: ResolverModifier;
     /**
-     * Every set on the way to it, outermost first, each as it is in effect at that step. Empty
-     * when it is reached through none, or there is no resolver.
+     * The sets that lead to the source, outermost first.
      *
-     * @example
-     * source.sets // [{ name: "base" }, { name: "palette" }]: palette, which base names
+     * If `base` lists the set `palette`, and `palette` lists `colors.json`, then
+     * `colors.json`'s sets are `base`, then `palette`.
      */
     readonly sets: readonly SetOnRoute[];
     /**
-     * The source's own vendor data, passed through untouched: the `$extensions` written beside its
-     * `$ref`, or else those at the top of its file. A set's and a modifier's stay on them, in
-     * {@link DesignTokens.resolver}.
+     * The source's own `$extensions`.
+     *
+     * They come from one of two places, never both. If the resolver writes `$extensions` beside
+     * the source's `$ref`, it's those. If not, it's the ones at the top of the file.
+     *
+     * @example
+     * // dark.json starts { "$extensions": { "com.a": 1 }, … }
+     * // and the resolver lists { "$ref": "dark.json", "$extensions": { "com.b": 2 } }
+     * source.extensions
+     * // => { "com.b": 2 }
      */
     readonly extensions?: Readonly<Record<string, JsonValue>>;
     /**
-     * Who reads it: `"every-context"` when a set `resolutionOrder` names reaches it, otherwise each
-     * context whose permutations read it. Every context the resolver declares counts, including
-     * those whose permutations the read didn't build. For deciding which file an edit belongs in.
+     * The contexts that read the source.
      *
      * @example
-     * source.readBy // [the context mode: dark]
+     * // The base set in resolutionOrder lists color.json
+     * light.sources[0]!.readBy
+     * // => "every-context"
+     *
+     * @example
+     * // Only the dark context lists dark.json
+     * dark.sources[1]!.readBy
+     * // => [{ name: "dark", … }]
      */
     readonly readBy: "every-context" | readonly ResolverContext[];
 }
 
 /**
- * A set a source was reached through, as it is in effect at that step of the route: its name, which
- * finds its entry in {@link DesignTokens.resolver}, and its `$extensions`, those written beside the
- * `$ref` that named it there when there are any, as keys beside a `$ref` replace the target's
- * (Resolver 4.2.2), otherwise its own.
+ * A set that a source came through, such as `base` for `color.json`.
+ *
+ * Its `$extensions` come from one of two places, never both. If `$extensions` are written beside
+ * the `$ref` that names the set, it's those. If not, it's the set's own.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#sets | Resolver 4.1.4, Sets} and
+ * {@link https://www.designtokens.org/TR/2025.10/resolver/#extending | 4.2.2, Extending}
  *
  * @example
- * // base's sources: [{ "$ref": "#/sets/palette", "$extensions": { "sh.sugarcube": { "emit": false } } }]
- * { name: "palette", extensions: { "sh.sugarcube": { emit: false } } }
+ * // base lists { "$ref": "#/sets/palette", "$extensions": { "com.example": { "on": false } } }
+ * source.sets[1]
+ * // => { name: "palette", extensions: { "com.example": { on: false } } }
  */
 export interface SetOnRoute {
+    /** The set's name, as in {@link DesignTokens.resolver}. */
     readonly name: string;
     readonly extensions?: Readonly<Record<string, JsonValue>>;
 }
 
 /**
- * What the resolver says about itself and how it is put together (Resolver 4): its name and
- * description, the spec version it declares, and the sets and modifiers that take part, each as it
- * is in effect where `resolutionOrder` names it, with keys written beside that `$ref` applied
- * (Resolver 4.2.2), and where it is written. A set named inside another set with keys beside its
- * `$ref` is listed as it is defined; what those keys change is on each source's route
- * ({@link SetOnRoute}), since each such reference can change it differently.
- * A set or modifier `resolutionOrder` never reaches takes no part (Resolver 4.1.6): it is left out
- * here and reported as a hint. A set a source points inside of, such as `#/sets/palette/sources/0`,
- * is left out too, as it doesn't take part as a set, but isn't reported, as part of it is read.
+ * The resolver's sets, modifiers and order.
+ *
+ * A set or modifier that `resolutionOrder` never uses isn't here. It's reported as a hint.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#syntax | Resolver 4, Syntax}
  *
  * @example
- * tokens.resolver?.name                         // "Acme"
- * tokens.resolver?.modifiers.map(({ name }) => name) // ["mode", "density"]
+ * // The modifiers
+ * tokens.resolver?.modifiers.map((modifier) => modifier.name)
+ * // => ["mode"]
  */
 export interface Resolver {
-    /** The resolver, as {@link DesignTokens.files} names it. */
+    /** The resolver file, as {@link DesignTokens.files} names it. */
     readonly file: string;
     /** The spec version the resolver declares, such as `"2025.10"`. */
     readonly version?: string;
     readonly name?: string;
     readonly description?: string;
-    /** The sets that take part, in the order they are written. */
+    /** The sets `resolutionOrder` uses, in the order written. */
     readonly sets: readonly ResolverSet[];
-    /** The modifiers that take part, in the order they are written. */
+    /** The modifiers `resolutionOrder` uses, in the order written. */
     readonly modifiers: readonly ResolverModifier[];
-    /** `resolutionOrder`, each item by its name. */
+    /**
+     * `resolutionOrder`, with each item as its name, such as `{ set: "base" }`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#resolution-order | Resolver 4.1.6, Resolution Order}
+     */
     readonly resolutionOrder: readonly ({ readonly set: string } | { readonly modifier: string })[];
 }
 
-/** A set that takes part, as it is in effect. */
+/**
+ * A set that `resolutionOrder` uses, such as `base`.
+ *
+ * Keys written beside the `$ref` that names it replace its own. If `resolutionOrder` has
+ * `{ "$ref": "#/sets/palette", "description": "Core" }`, the `palette` set's description is
+ * `"Core"`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#sets | Resolver 4.1.4, Sets}
+ */
 export interface ResolverSet {
     readonly name: string;
     readonly description?: string;
-    /** The set's own `$extensions`, passed through untouched. */
+    /** The set's own `$extensions`, unchanged. */
     readonly extensions?: Readonly<Record<string, JsonValue>>;
-    /** Its sources, in order, as written. */
+    /** The set's sources, in order, as written. */
     readonly sources: readonly SourceRef[];
-    /** Where it is written: under `sets`, or inline in `resolutionOrder`. */
-    readonly span: Span;
-}
-
-/** A modifier that takes part, as it is in effect. */
-export interface ResolverModifier {
-    readonly name: string;
-    readonly description?: string;
-    /** The modifier's own `$extensions`, passed through untouched. */
-    readonly extensions?: Readonly<Record<string, JsonValue>>;
-    /** Its contexts, in the order they are written, each with its sources. */
-    readonly contexts: readonly ResolverContext[];
-    readonly default?: string;
-    /** Where it is written: under `modifiers`, or inline in `resolutionOrder`. */
-    readonly span: Span;
-}
-
-/** One context of a modifier: one of the values an input can choose for it (Resolver 4.1.5.1). */
-export interface ResolverContext {
-    readonly name: string;
-    /** The modifier it belongs to. */
-    readonly modifier: ResolverModifier;
-    /** Its sources, in order, as written. */
-    readonly sources: readonly SourceRef[];
-    /**
-     * Whether it is its modifier's `default` (Resolver 4.1.5.3). A modifier need not declare one,
-     * and then none of its contexts is.
-     */
-    readonly isDefault: boolean;
-    /** Where it is written. */
+    /** Where the set is written, under `sets` or in `resolutionOrder`. */
     readonly span: Span;
 }
 
 /**
- * A source as the resolver writes it: a file, or part of one, as {@link DesignTokens.files} names
- * it, or a set it names. Tokens written in the resolver are part of the resolver, with a pointer to
- * where they sit.
+ * A modifier that `resolutionOrder` uses, such as `mode`.
  *
- * @example
- * { file: "dark.json" }
- * { file: "all.json", pointer: "#/dark" }
- * { set: "palette" }
+ * As for a {@link ResolverSet}, keys written beside the `$ref` that names it replace its own.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#modifiers | Resolver 4.1.5, Modifiers}
+ */
+export interface ResolverModifier {
+    readonly name: string;
+    readonly description?: string;
+    /** The modifier's own `$extensions`, unchanged. */
+    readonly extensions?: Readonly<Record<string, JsonValue>>;
+    /** The modifier's contexts, in the order written. */
+    readonly contexts: readonly ResolverContext[];
+    /**
+     * The context used when an input leaves the modifier out, such as `"light"`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#default | Resolver 4.1.5.3, Default}
+     */
+    readonly default?: string;
+    /** Where the modifier is written, under `modifiers` or in `resolutionOrder`. */
+    readonly span: Span;
+}
+
+/**
+ * One of a modifier's contexts, such as `dark`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#contexts | Resolver 4.1.5.1, Contexts}
+ */
+export interface ResolverContext {
+    readonly name: string;
+    /** The modifier it belongs to. */
+    readonly modifier: ResolverModifier;
+    /** The context's sources, in order, as written. */
+    readonly sources: readonly SourceRef[];
+    /**
+     * `true` for its modifier's `default` context.
+     *
+     * A modifier doesn't have to have a default. Then none of its contexts is.
+     */
+    readonly isDefault: boolean;
+    /** Where the context is written. */
+    readonly span: Span;
+}
+
+/**
+ * A source as the resolver writes it.
+ *
+ * It's a file, part of one, or a set. For example, `{ file: "dark.json" }`,
+ * `{ file: "all.json", pointer: "#/dark" }` or `{ set: "base" }`. Tokens written in the resolver
+ * have the resolver as their file.
  */
 export type SourceRef =
     | { readonly file: string; readonly pointer?: string }
     | { readonly set: string };
 
-/** The tokens that result from one input. */
+/**
+ * The tokens for one input.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#permutation | Resolver 2.2, Permutation}
+ */
 export interface Permutation {
-    /**
-     * The input that names it: the context it picks for every modifier, defaults included, as
-     * `getPermutation(input)` takes it.
-     */
+    /** The permutation's input, with a context for every modifier. */
     readonly input: Input;
     /**
-     * Its input written out for people: every modifier and its context, in the order
-     * `resolutionOrder` names them, such as `"theme: dark, brand: house"`, the default permutation
-     * included. The same text as the {@link Permutations.label | label} of a list holding only
-     * this permutation, so a label always means the same permutations. Empty when there are no
-     * modifiers, as for a token file: there is nothing to name, and nothing to tell apart. For
-     * display only: functions take an {@link Input}, never a label.
+     * The permutation's name, such as `"mode: dark"`.
+     *
+     * It's `""` when there are no modifiers.
      */
     readonly label: string;
     /**
-     * Where the tokens come from, in the order they apply: a later source overrides an earlier one.
+     * The sources the tokens come from, in order.
+     *
+     * When two write the same token, the later one wins.
      */
     readonly sources: readonly Source[];
     /**
-     * The context it picks for each modifier, in the order `resolutionOrder` names them, as its
-     * {@link Permutation.label | label} lists them: what its {@link Permutation.input | input}
-     * chooses (Resolver 5), defaults filled in. Empty without modifiers.
+     * The context for each modifier, in the order `resolutionOrder` names them.
+     *
+     * Defaults are filled in. It's `""` when there are no modifiers.
      *
      * @example
-     * permutation.contexts.filter((context) => !context.isDefault) // what sets it apart
+     * // The contexts that aren't defaults
+     * dark.contexts.filter((context) => !context.isDefault).map((context) => context.name)
+     * // => ["dark"]
      */
     readonly contexts: readonly ResolverContext[];
     /**
-     * Whether every modifier is at its `default` (Resolver 4.1.5.3): the permutation an empty input
-     * names, since only a modifier with a default may be left out (Resolver 6.1). False for every
-     * permutation when a modifier has no default; true for the one permutation of a token file read
-     * without a resolver.
+     * `true` when every modifier is at its `default`.
      *
      * @example
-     * const others = tokens.permutations.select((p) => !p.isDefault);
+     * // light is the default
+     * light.isDefault
+     * // => true
      */
     readonly isDefault: boolean;
-    /**
-     * What the top of the files writes: its `$type`, `$description`, `$deprecated` and
-     * `$extensions`. Not a `$root` token, which stands for its group (Format 6.2).
-     */
+    /** What the top of the files writes, as a {@link TopLevel}. */
     readonly topLevel: TopLevel;
     /**
-     * The tokens and groups at the top level of the files, in the order they are read: where a
-     * tree starts, walked like a group's {@link Group.children | children}.
+     * The tokens and groups at the top of the files, in the order read.
      *
      * @example
-     * for (const child of permutation.children) show(child);
+     * // The top of the files
+     * dark.children.map((child) => child.path)
+     * // => ["color", "button"]
      */
     readonly children: readonly (Token | Group)[];
     /**
-     * Every token, in the order the files write them, invalid ones included. The files read as
-     * one: a group's tokens stay together where the group is first written, whichever file adds
-     * them, and a token a later file replaces keeps its place. Tokens a group inherits, or a
-     * {@link Generator} adds, come at the end of their group. To find one by path, use
-     * {@link Permutation.getToken | token}.
+     * Every token, in the order written, including invalid ones.
+     *
+     * When several files write tokens, a group's tokens stay together. If `dark.json` adds
+     * `color.accent`, it goes after the other `color` tokens, not at the end. And `dark.json`'s
+     * `color.primary` stays where `color.json` put it. Tokens from `$extends` or a
+     * {@link Generator} come last in their group.
+     *
+     * To find one by path, use {@link Permutation.getToken | getToken}.
+     *
+     * @example
+     * // Every token in dark
+     * dark.tokens.map((token) => token.path)
+     * // => ["color.blue.500", "color.blue.300", "color.primary", "button.background"]
      */
     readonly tokens: readonly Token[];
     /**
-     * Every group, in the same order as {@link Permutation.tokens | tokens}. To find one by path,
-     * use {@link Permutation.getGroup | group}.
+     * Every group, in the same order as {@link Permutation.tokens | tokens}.
+     *
+     * To find one by path, use {@link Permutation.getGroup | getGroup}.
      */
     readonly groups: readonly Group[];
     /**
-     * The token at `path`, or `undefined` when this permutation has none there: no token at all, a
-     * group, or one only another permutation has.
+     * Gets the token at a path.
+     *
+     * It returns `undefined` if there's none, or a group is there.
+     *
+     * @param path - The token's path, such as `"color.primary"`.
      *
      * @example
-     * dark.getToken("color.text")?.resolved
+     * // color.primary in dark
+     * dark.getToken("color.primary")?.value
+     * // => { syntax: "curly-brace", path: "color.blue.300" }
      */
     getToken(path: string): Token | undefined;
     /**
-     * The group at `path`, or `undefined` when this permutation has none there.
+     * Gets the group at a path.
+     *
+     * @param path - The group's path, such as `"color.blue"`.
      *
      * @example
-     * dark.getGroup("color")?.children
+     * // The tokens in color.blue
+     * dark.getGroup("color.blue")?.tokens.map((token) => token.path)
+     * // => ["color.blue.500", "color.blue.300"]
      */
     getGroup(path: string): Group | undefined;
     /**
-     * Whatever this permutation has at `path`: its token, else its group, else `undefined`. Each
-     * says which it is in `kind`.
+     * Gets the token or group at a path.
+     *
+     * Check `kind` to tell which.
+     *
+     * @param path - The path, such as `"color"`.
      *
      * @example
-     * const here = dark.getTokenOrGroup(path);
-     * if (here?.kind === "group") showGroup(here);
+     * // color is a group
+     * dark.getTokenOrGroup("color")?.kind
+     * // => "group"
      */
     getTokenOrGroup(path: string): Token | Group | undefined;
     /**
-     * Every reference to `path` in this permutation, each with the token or group that writes it in
-     * `writtenIn`; with `chained`, also every reference to each of those, however indirectly, each once,
-     * safe with loops. A group's path covers what is written to it, such as an `$extends`, and to
-     * everything inside it. {@link DesignTokens.getReferencesTo} asks the same of the whole read.
+     * Finds every reference to a token or group in this permutation.
+     *
+     * For a group, it also finds `$extends` to it, and references to anything inside it. For every
+     * permutation at once, use {@link DesignTokens.getReferencesTo}.
+     *
+     * @param path - The token or group, such as `"color.blue.300"`.
+     * @param options - `{ chained: true }` to follow references through other tokens too.
      *
      * @example
-     * dark.getReferencesTo("color.red").map(({ writtenIn }) => writtenIn.path) // ["color.brand"]
-     * dark.getReferencesTo("color.red", { chained: true })           // everything a change would reach
+     * // What refers to color.blue.300 in dark, directly or not
+     * dark
+     *     .getReferencesTo("color.blue.300", { chained: true })
+     *     .map((reference) => reference.writtenIn.path)
+     * // => ["color.primary", "button.background"]
      */
     getReferencesTo(path: string, options?: ReferenceOptions): readonly Reference[];
     /**
-     * Each token or group the token or group at `path` refers to in this permutation, once,
-     * however many references it writes to it: the mirror of {@link Permutation.getDependents}.
-     * With `chained`, also each one those refer to, however indirectly, safe with loops. For a
-     * property-level reference, the token holding the property; for a group, the group its
-     * `$extends` names. Empty for a path that isn't there. The references themselves are the
-     * token's or group's {@link TokenBase.references | references}.
+     * Finds the tokens and groups a token or group refers to.
+     *
+     * A JSON Pointer to part of a token, such as one color component, counts as that token. For a
+     * group, it's the group its `$extends` names. It's the reverse of
+     * {@link Permutation.getDependents}.
+     *
+     * @param path - The token or group, such as `"button.background"`.
+     * @param options - `{ chained: true }` to follow references through other tokens too.
      *
      * @example
-     * light.getDependencies("color.text").map(({ path }) => path)                   // ["color.brand"]
-     * light.getDependencies("color.text", { chained: true }).map(({ path }) => path) // ["color.brand", "color.red"]
+     * // What button.background needs in dark, directly or not
+     * dark.getDependencies("button.background", { chained: true }).map((token) => token.path)
+     * // => ["color.primary", "color.blue.300"]
      */
     getDependencies(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
     /**
-     * Each token or group that refers to `path` in this permutation, once, however many references
-     * it writes to it; with `chained`, also each one that refers to those, however indirectly. Wider
-     * than the spec's aliases (Format 3.8), tokens whose whole value is another: a composite with one
-     * part referring to it, or a group's `$extends`, uses it too.
+     * Finds the tokens and groups that refer to a token or group.
+     *
+     * That includes a border whose `color` refers to it, and a group that extends it.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
+     * @param options - `{ chained: true }` to follow references through other tokens too.
      *
      * @example
-     * dark.getDependents("color.red").map(({ path }) => path) // ["color.brand", "border.danger"]
+     * // What uses color.primary in dark
+     * dark.getDependents("color.primary").map((token) => token.path)
+     * // => ["button.background"]
      */
     getDependents(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
     /**
-     * The problems about the token or group at `path` in this permutation: its own, a missing
-     * reference it writes, a loop it is part of, a problem in a value it inherits. Those only
-     * another permutation has are left out.
+     * Finds the problems with a token or group in this permutation.
+     *
+     * That includes a missing reference it writes, a loop it's part of, and a problem in a token it
+     * gets through `$extends`.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
      *
      * @example
-     * for (const problem of dark.getDiagnostics("color.brand")) show(problem.message);
+     * // Show each problem with color.primary
+     * for (const problem of dark.getDiagnostics("color.primary")) console.log(problem.message);
      */
     getDiagnostics(path: string): readonly Diagnostic[];
 }

@@ -37,7 +37,7 @@ const RESOLUTION_ORDER = Buffer.from('"resolutionOrder"');
  * Finds the resolver in files and folders.
  *
  * It searches each folder and every folder inside it. It skips `node_modules`, `dist`, `build`,
- * `out` and folders starting with a dot. If there are several resolvers, it gives them all.
+ * `out` and folders starting with a dot. If there are several resolvers, it returns them all.
  *
  * @param paths - The files and folders to search, such as `"tokens"`.
  * @param options - How to tell a resolver, from {@link FindResolverOptions}.

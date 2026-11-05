@@ -49,7 +49,7 @@ export interface CSSWriterOptions {
      * Writes a token's value your own way.
      *
      * It gets the value as it would be written, and `write` for CSS that uses other tokens. What it
-     * gives is used everywhere the token's value is.
+     * returns is used everywhere the token's value is.
      *
      * @example
      * // Wrap a gradient's stops in linear-gradient()
@@ -116,7 +116,7 @@ export interface CSSDeclaration {
  * A token that declares nothing, and why.
  *
  * `"skipped"` means `skip` left it out.
- * `"no value"` means it has none, or `writeValue` gave `undefined`.
+ * `"no value"` means it has none, or `writeValue` returned `undefined`.
  */
 export interface CSSNotWritten {
     readonly token: Token;
@@ -144,7 +144,7 @@ export interface CSSWriter {
     /**
      * Gives one token's value as this writer writes it.
      *
-     * It gives `undefined` for no token, or a token with no value.
+     * It returns `undefined` for no token, or a token with no value.
      *
      * @param token - A token, such as `permutation.getToken("button.background")`.
      *

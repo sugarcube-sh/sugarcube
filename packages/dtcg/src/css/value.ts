@@ -33,7 +33,7 @@ export interface CSSValueOptions {
     /**
      * Writes a reference your own way, such as with `var()`.
      *
-     * Without it, or when it gives `undefined`, the value the reference resolves to is written.
+     * Without it, or when it returns `undefined`, the value the reference resolves to is written.
      *
      * @param ref - The reference, such as a token's `getReferenceAt()`.
      * @param cssProperty - For a typography reference, the CSS property being written, such as
@@ -66,8 +66,8 @@ type TypographyToken = Extract<Token, { type: "typography" }>;
 /**
  * Writes a token's value, or part of one, as CSS.
  *
- * Typography gives an object, with one value for each CSS property. A gradient gives only its
- * stops, for inside `linear-gradient()`.
+ * For typography, it returns an object, with one value for each CSS property. For a gradient, it
+ * returns only the stops, for inside `linear-gradient()`.
  *
  * @param of - A token, such as `permutation.getToken("color.primary")`, or part of one, such as a
  * border's `color`.
