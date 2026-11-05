@@ -134,6 +134,7 @@ function buildPermutation(
         const located = value.references;
         beingMade.add(path);
         const targets = targetsOf(located, targetAt);
+        reportDeprecated(path, targets);
         beingMade.delete(path);
         const { replaces, source, span } = written;
         const { read } = value;
@@ -157,6 +158,29 @@ function buildPermutation(
         const token = kept ?? newToken(written, now, located, reached);
         builtTokens.set(path, token);
         return token;
+    };
+
+    const reportDeprecated = (path: string, targets: readonly Aimed<Pending<Token>>[]) => {
+        for (const target of targets) {
+            const pointsTo =
+                target.token ??
+                (target.pointsToProperty && target.path !== undefined
+                    ? targetAt(target.path)
+                    : undefined);
+            if (pointsTo === undefined || pointsTo === BEING_MADE) continue;
+            const { deprecated } = pointsTo;
+            if (deprecated === undefined || deprecated === false) continue;
+            const ref = toReferenceTarget(target.occurrence.reference);
+            const detail = typeof deprecated === "string" ? { ref, reason: deprecated } : { ref };
+            diagnostics.found(
+                diagnostic("deprecated-reference", detail, {
+                    span: target.occurrence.span,
+                    path,
+                    tags: ["deprecated"],
+                }),
+                input,
+            );
+        }
     };
 
     const newToken = (
