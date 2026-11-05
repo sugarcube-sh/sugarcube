@@ -2460,133 +2460,131 @@ export interface Generator {
         | { ok: false; errors: (ExtensionError | ValueError)[]; ignored?: IgnoredProperty[] };
 }
 
-/**
- * How the design tokens are read: which permutations, the tools that make or check tokens, and how
- * values are read.
- */
+/** How to read design tokens. */
 export interface ReadOptions extends ParseOptions {
     /**
-     * Which permutations to build, by their inputs (Resolver 5: "any selection of context values
-     * passed to the tool"): these inputs, where modifiers left out take their default and an input
-     * that does not fit the resolver is reported and not built; `"all"`, every combination of
-     * contexts; or `"each-context"`, each context on its own, with every other modifier at its
-     * default. An input must choose a context for each modifier with no default (Resolver 6.1),
-     * so `"each-context"` builds each context once for every combination of those modifiers'
-     * contexts. When modifiers change different tokens (Resolver 2.1), every combination can be
-     * put together from `"each-context"`, as a stylesheet with one block per context does.
+     * Which permutations to build.
+     *
+     * `"all"` builds every combination of contexts. `"each-context"` builds each context once, with
+     * the other modifiers at their defaults. An array builds the permutations its inputs name. An
+     * input that doesn't fit the resolver is reported, and not built.
+     *
+     * @default "all"
      *
      * @example
-     * read(file, { inputs: [{ mode: "dark" }] })  // just mode: dark
-     * read(file, { inputs: "each-context" })      // the default, then each context once
-     * @default "all"
+     * // Only dark
+     * (await read("tokens.resolver.json", { inputs: [{ mode: "dark" }] })).permutations.label
+     * // => "mode: dark"
      */
     inputs?: readonly Input[] | "all" | "each-context";
     /**
-     * The most combinations `"all"` builds. Above it, `"each-context"` is built instead, and a
-     * `permutation-limit` warning says so. Each combination is built in full, so a read grows with
-     * them: at the default, a few hundred tokens still read inside a 16 ms frame.
+     * The most combinations `"all"` builds.
+     *
+     * Above it, `"each-context"` is built instead, with a `permutation-limit` warning.
+     *
      * @default 32
      */
     permutationLimit?: number;
-    /** Checks for your own `$extensions` keys, run in each permutation once types are known. */
+    /**
+     * Checks for your own `$extensions` keys, such as one from {@link defineExtensionValidator}.
+     */
     extensionValidators?: readonly ExtensionValidator[];
     /**
-     * Generators that add tokens from extensions on groups. Run in order, in
-     * each permutation, before values are read.
+     * Generators that add tokens from extensions on groups, such as one from
+     * {@link defineGenerator}.
+     *
+     * They run in order.
      */
     generators?: readonly Generator[];
-    /**
-     * Called as each stage of reading finishes, with how long it took. For progress and benchmarks.
-     */
+    /** Called as each stage of reading finishes, with how long it took in milliseconds. */
     onStage?: (stage: "load" | "generate" | "normalise" | "resolve", milliseconds: number) => void;
 }
 
 /**
- * Returns the text of a file, given its path.
+ * Returns a file's text, or `undefined` if it isn't there.
  *
- * It is asked for each file by the entry's folder, as you gave it, joined with the file's path
- * from there: reading `"tokens/tokens.resolver.json"` asks for `"tokens/dark.json"`. A path
- * that is absolute or a URL is passed as written. Give `undefined` for a file that is not there,
- * which is reported as not found; throw, or reject, for one that could not be fetched, which
- * rejects the read.
- *
- * Every file path in the results, in `DesignTokens.files` and every `Span`, is relative to the
- * entry's folder, with forward slashes, such as `"themes/dark.json"`; one written from the root or
- * as a URL stays as written. The entry itself is its file name. That name is passed as `file`, for
- * keeping each text by the name the results use, and {@link getFilePath} turns it back into `path`.
+ * `path` is where to fetch the file, such as `"tokens/dark.json"`. `file` is the name the results
+ * use, such as `"dark.json"`. If it throws, the read rejects.
  *
  * @example
+ * // Read from disk, and keep each file's text by its name
  * const texts = new Map<string, string>();
  * const tokens = await read("tokens/tokens.resolver.json", {
- *   readText: async (path, file) => {
- *     const text = await readFile(path, "utf8");
- *     texts.set(file, text); // "dark.json"
- *     return text;
- *   },
+ *     readText: async (path, file) => {
+ *         const text = await readFile(path, "utf8");
+ *         texts.set(file, text);
+ *         return text;
+ *     },
  * });
  */
 export type ReadText = (path: string, file: string) => Promise<string | undefined>;
 
 /**
- * Design tokens as text in memory: each file's text by its name, and the file to start from, as
- * {@link readFromMemory} takes them and {@link DesignTokens.toMemory} gives them.
+ * Design tokens as text, each file's by its name.
+ *
+ * {@link readFromMemory} takes it, and {@link DesignTokens.toMemory} returns it.
  */
 export interface TokensInMemory {
+    /** Each file's text by its name, such as `{ "color.json": text }`. */
     readonly files: Readonly<Record<string, string>>;
     /**
-     * The file to start from.
+     * The file to start from, such as `"tokens.resolver.json"`.
+     *
      * @default the one resolver among the files, or else the only file
      */
     readonly entryFile?: string | undefined;
 }
 
-/** A token or group whose path changed, such as after a rename. */
+/** A token or group's new path, such as `{ from: "color.blue", to: "color.azure" }`. */
 export interface Move {
     readonly from: string;
     readonly to: string;
 }
 
-/** A property a file can set on a token, named as the spec names it, without the `$`. */
+/** A property a file can set on a token, without its `$`, such as `"value"`. */
 export type TokenProperty = "value" | "type" | "description" | "deprecated" | "extensions";
 
-/**
- * A property a file can set on a group, named as {@link TokenProperty} names them: `extends` is
- * the group it takes tokens from, {@link Group.extends}.
- */
+/** A property a file can set on a group, without its `$`, such as `"extends"`. */
 export type GroupProperty = "type" | "description" | "deprecated" | "extensions" | "extends";
 
-/** A property a file can set on its top level. */
+/** A property a file can set at its top level, without its `$`, such as `"type"`. */
 export type TopLevelProperty = "type" | "description" | "deprecated" | "extensions";
 
 /**
- * What a file writes for a token: its value exactly as written, and the properties it writes
- * itself.
+ * What a file writes for a token.
+ *
+ * `value` is exactly as written, such as `"{color.blue.500}"`.
  */
 export interface WrittenToken extends Written {
     readonly value?: unknown;
 }
 
 /**
- * What a file writes for a group: the properties it writes itself, and the path its `$extends`
- * names.
+ * What a file writes for a group.
+ *
+ * `extends` is the path its `$extends` names, such as `"base"`.
  */
 export interface WrittenGroup extends Written {
     readonly extends?: string;
 }
 
 /**
- * One difference between two reads of the design tokens, in the permutations it holds in. `before`
- * and `after` are what the files wrote, the same in each of those permutations; for a token in one
- * of them, ask it: `dark.getToken(change.path)`. `changed`, `renamed`, `group-changed` and
- * `group-renamed` list the properties that differ; a rename with nothing else changed lists none.
- * Groups are reported on their own, empty ones included, and so are the tokens inside them. A token
- * a {@link Generator} makes says so (`generated`), with nothing written on either side: its change
- * is the extension's, on its group. One a group takes through `$extends` says so too (`inherited`).
+ * One difference between two reads, as {@link DesignTokens.getChangesSince} returns it.
+ *
+ * `before` and `after` are what the files wrote, and `properties` lists what differs. Check `kind`,
+ * and TypeScript knows the rest.
  *
  * @example
- * for (const change of tokens.getChangesSince(before)) {
- *     row(change.kind, change.path, change.permutations.label);
- * }
+ * // color.blue.500 has a new value
+ * change
+ * // => {
+ * //     kind: "changed",
+ * //     path: "color.blue.500",
+ * //     properties: ["value"],
+ * //     before: { value: { colorSpace: "srgb", components: [0.2, 0.4, 0.8] } },
+ * //     after: { value: { colorSpace: "srgb", components: [0.1, 0.4, 0.8] } },
+ * //     permutations: [light, dark],
+ * // }
  */
 export type Change =
     | ({
@@ -2649,8 +2647,9 @@ export type Change =
           readonly after: Written;
       };
 
-/** What every change to a token carries beside its sides. */
+/** What every change to a token has, as well as `before` and `after`. */
 export interface TokenChange {
+    /** The permutations the change is in. */
     readonly permutations: Permutations;
     /** Set when a {@link Generator} makes the token, as {@link TokenBase.generated}. */
     readonly generated?: Token["generated"];
@@ -2658,17 +2657,18 @@ export interface TokenChange {
     readonly inherited?: Token["inherited"];
 }
 
-/** What every change to a group carries beside its sides. */
+/** What every change to a group has, as well as `before` and `after`. */
 export interface GroupChange {
+    /** The permutations the change is in. */
     readonly permutations: Permutations;
     /** Set when the group is here only through `$extends`, as {@link Group.inherited}. */
     readonly inherited?: Group["inherited"];
 }
 
-/** A JSON object, such as a DTCG file's top level: every value in it is plain JSON. */
+/** A JSON object, such as a file's top level. */
 export type JsonObject = { readonly [key: string]: JsonValue };
 
-/** Any value that can be written in a DTCG file. */
+/** Any JSON value. */
 export type JsonValue =
     | string
     | number
