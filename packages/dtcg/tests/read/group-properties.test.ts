@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type DesignTokens, readFromMemory } from "../../src/index.js";
+import { type DesignTokens, type Group, type Token, readFromMemory } from "../../src/index.js";
 import { getSpan } from "../../src/editor.js";
 
 function oneFile(json: unknown): DesignTokens {
@@ -56,11 +56,19 @@ describe("what applies to a group, and what it writes itself", () => {
 
     it("takes its parent's deprecation, unless it writes false (Format 6.3.1)", () => {
         expect(tokens.getPermutation().getGroup("old")?.deprecated).toBe(true);
-        expect(tokens.getPermutation().getGroup("old.kept")?.deprecated).toBe(false);
+        expect(tokens.getPermutation().getGroup("old.kept")).not.toHaveProperty("deprecated");
         expect(tokens.getPermutation().getGroup("old.kept")?.asWritten).toStrictEqual({
             deprecated: false,
         });
-        expect(tokens.getPermutation().getToken("old.kept.one")?.deprecated).toBe(false);
+        expect(tokens.getPermutation().getToken("old.kept.one")).not.toHaveProperty("deprecated");
+    });
+
+    it("is never false, since false only undoes a group's deprecation (Format 5.2.4)", () => {
+        // @ts-expect-error a token or group is deprecated or it isn't: false is only ever written
+        const written: Token["deprecated"] = false;
+        // @ts-expect-error
+        const ofGroup: Group["deprecated"] = false;
+        expect([written, ofGroup]).toStrictEqual([false, false]);
     });
 });
 
@@ -165,7 +173,6 @@ describe("where a deprecation comes from", () => {
     it("names the group whose $deprecated applies to a token above it", () => {
         expect(token("old.a")?.deprecatedByGroup).toBe("old");
         expect(token("old.inner.c")?.deprecatedByGroup).toBe("old");
-        expect(token("old.kept.d")?.deprecatedByGroup).toBe("old.kept");
     });
 
     it("names the group whose $deprecated applies to a group, above it or through $extends", () => {
@@ -178,6 +185,7 @@ describe("where a deprecation comes from", () => {
         expect(token("old.b")?.deprecatedByGroup).toBeUndefined();
         expect(group("old")?.deprecatedByGroup).toBeUndefined();
         expect(group("old.kept")?.deprecatedByGroup).toBeUndefined();
+        expect(token("old.kept.d")?.deprecatedByGroup).toBeUndefined();
         expect(token("top")?.deprecatedByGroup).toBeUndefined();
         expect(
             oneFile({ n: { $type: "number", $value: 1 } })

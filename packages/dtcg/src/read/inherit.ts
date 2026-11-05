@@ -4,6 +4,8 @@ import { type Settings, settingsOf } from "./settings.js";
 
 export type Inheritable = "type" | "deprecated" | "deprecatedAt";
 
+export type Applying = Omit<Settings, "deprecated"> & { deprecated?: true | string };
+
 export function inherited<K extends Inheritable>(
     item: Pick<Settings, Inheritable> & { path: string },
     merged: Merged,
@@ -12,14 +14,26 @@ export function inherited<K extends Inheritable>(
     return item[property] ?? closest(item.path, merged, property);
 }
 
-export function applying(merged: Merged, group: MergedTopLevel | MergedGroup): Settings {
+export function deprecationOf(
+    item: Pick<Settings, Inheritable> & { path: string },
+    merged: Merged,
+): true | string | undefined {
+    return deprecationInForce(inherited(item, merged, "deprecated"));
+}
+
+export function applying(merged: Merged, group: MergedTopLevel | MergedGroup): Applying {
     const settings = settingsOf(merged, group);
-    if (!("path" in group)) return settings;
+    if (!("path" in group))
+        return { ...settings, deprecated: deprecationInForce(settings.deprecated) };
     return {
         ...settings,
         type: atGroup(merged, "type", group.path),
-        deprecated: atGroup(merged, "deprecated", group.path),
+        deprecated: deprecationInForce(atGroup(merged, "deprecated", group.path)),
     };
+}
+
+function deprecationInForce(deprecated: Settings["deprecated"]): true | string | undefined {
+    return deprecated === false ? undefined : deprecated;
 }
 
 function closest<K extends Inheritable>(path: string, merged: Merged, property: K): Settings[K] {

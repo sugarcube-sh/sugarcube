@@ -735,11 +735,12 @@ export interface TokenBase<T extends TokenType> {
     /**
      * `true`, or a message saying what to use instead.
      *
-     * It can come from the token's group.
+     * It can come from the token's group. It's absent when the token isn't deprecated, even if it
+     * writes `"$deprecated": false`.
      *
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#deprecated | Format 5.2.4, Deprecated}
      */
-    readonly deprecated?: boolean | string;
+    readonly deprecated?: true | string;
     /**
      * The group whose `$deprecated` applies to this token.
      *
@@ -914,9 +915,10 @@ export interface Group {
      * `true`, or a message saying what to use instead.
      *
      * If the group doesn't write one, it comes from the group it extends, or else the group it's
-     * inside.
+     * inside. It's absent when the group isn't deprecated, even if it writes
+     * `"$deprecated": false`.
      */
-    readonly deprecated?: boolean | string;
+    readonly deprecated?: true | string;
     /**
      * The group whose `$deprecated` applies to this one.
      *
