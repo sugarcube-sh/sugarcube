@@ -10,9 +10,11 @@ import { pointerParts } from "../read/ref-meaning.js";
 import { isJsonObject } from "./json.js";
 
 /**
- * A reference to a whole token: a token path between curly braces, such as `"{color.brand}"`.
- * Names cannot contain `{`, `}` or `.` (Format 5.1.1), so the path is anything but a brace, and is
- * split on `.` afterwards. Spaces and `$root` are allowed, as they are in names.
+ * A curly brace reference, such as `"{color.primary}"`.
+ *
+ * Anything but a brace counts as the path, since names can't contain braces.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
  */
 const CURLY_BRACE = /^\{([^{}]+)\}$/;
 
@@ -34,23 +36,36 @@ export function readJsonPointer(raw: unknown): JsonPointerReference | undefined 
 }
 
 /**
- * Which reference a value is, as written in a file: `"{color.brand}"` in curly brace syntax
- * (Format 7.1.1), `{ "$ref": "#/color/brand" }` in JSON Pointer syntax (Format 7.1.2). Anything
- * else is not a reference, and gives `undefined`.
+ * Finds which reference a value is, as written in a file.
+ *
+ * It reads both syntaxes. For anything else, it returns `undefined`.
+ *
+ * @param raw - A value as written in a file, such as a token's `$value`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#curly-brace-syntax-token-references | Format 7.1.1, Curly brace syntax} and
+ * {@link https://www.designtokens.org/TR/2025.10/format/#json-pointer-syntax-required-support | 7.1.2, JSON Pointer syntax}
  *
  * @example
- * parseReference("{color.brand}") // { syntax: "curly-brace", path: "color.brand" }
+ * // A curly brace reference
+ * parseReference("{color.primary}")
+ * // => { syntax: "curly-brace", path: "color.primary" }
  */
 export function parseReference(raw: unknown): WrittenReference | undefined {
     return readCurlyBrace(raw) ?? readJsonPointer(raw);
 }
 
 /**
- * Whether a value from the model is a reference, in either syntax, as a parser reads it: a
- * {@link WrittenReference}, or a token's {@link Reference}. Not for JSON as written in a file.
+ * Checks whether a value dtcg has read is a reference.
+ *
+ * For an entry in a token's `references`, check its `asWritten`. For JSON as written in a file,
+ * use {@link parseReference}.
+ *
+ * @param value - A value dtcg has read, such as `token.value`.
  *
  * @example
- * if (isReference(token.value)) token.value.syntax
+ * // button.background is written "{color.primary}"
+ * isReference(light.getToken("button.background")?.value)
+ * // => true
  */
 export function isReference(value: unknown): value is WrittenReference {
     if (!isJsonObject(value)) return false;
@@ -59,21 +74,28 @@ export function isReference(value: unknown): value is WrittenReference {
 }
 
 /**
- * A reference's text, as a problem's `ref` gives it: a curly brace reference's path, without the
- * braces, or a JSON Pointer as written.
+ * Gives the text a problem shows for a reference.
+ *
+ * For a curly brace reference, that's its path.
+ * For a JSON Pointer, it's the pointer as written.
+ *
+ * @param reference - A reference, such as one from {@link parseReference}.
  *
  * @example
- * toReferenceTarget(parseReference("{color.ink}"))                // "color.ink"
- * toReferenceTarget(parseReference({ $ref: "#/color/ink/$value" })) // "#/color/ink/$value"
+ * // A curly brace reference
+ * toReferenceTarget(parseReference("{color.primary}")!)
+ * // => "color.primary"
  */
 export function toReferenceTarget(reference: WrittenReference): string {
     return reference.syntax === "curly-brace" ? reference.path : reference.pointer;
 }
 
 /**
- * The token path a reference names: a curly brace's path, or for a pointer its steps before
- * `$value`, or all of them when it has none (Format Example 21). `undefined` for a pointer naming
- * none, such as `#/` or one into another file.
+ * Finds the token path a reference names.
+ *
+ * It's `undefined` for a JSON Pointer that names no token, such as `#/`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#example-json-pointer-references | Format Example 21, JSON Pointer references}
  */
 export function namedPath(ref: WrittenReference): string | undefined {
     if (ref.syntax === "curly-brace") return ref.path;
@@ -82,12 +104,18 @@ export function namedPath(ref: WrittenReference): string | undefined {
 }
 
 /**
- * A reference written as a JSON Pointer (Format 7.1.2), as it goes in a file: `"{color.ink}"` is
- * `{ "$ref": "#/color/ink/$value" }`, which the spec calls equivalent. A pointer is given as it
- * is written.
+ * Writes a reference as a JSON Pointer, for a file.
+ *
+ * A JSON Pointer comes back as it is.
+ *
+ * @param reference - A reference, such as one from {@link parseReference}.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#json-pointer-syntax-required-support | Format 7.1.2, JSON Pointer syntax}
  *
  * @example
- * toJsonPointer(parseReference("{color.ink}")) // { $ref: "#/color/ink/$value" }
+ * // A curly brace reference
+ * toJsonPointer(parseReference("{color.primary}")!)
+ * // => { $ref: "#/color/primary/$value" }
  */
 export function toJsonPointer(reference: WrittenReference): { $ref: string } {
     if (reference.syntax === "json-pointer") return { $ref: reference.pointer };

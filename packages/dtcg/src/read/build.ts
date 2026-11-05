@@ -18,7 +18,13 @@ import { tokenPath } from "../path.js";
 import { namedPath, toReferenceTarget } from "../values/references.js";
 import type { Building } from "./building.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
-import { applying, deprecatedByGroupOf, inherited } from "./inherit.js";
+import {
+    type Applying,
+    applying,
+    deprecatedByGroupOf,
+    deprecationOf,
+    inherited,
+} from "./inherit.js";
 import {
     NO_EXTENSION_DEFINITIONS,
     NO_DEFINITIONS,
@@ -134,10 +140,11 @@ function buildPermutation(
         const located = value.references;
         beingMade.add(path);
         const targets = targetsOf(located, targetAt);
+        reportDeprecated(path, targets);
         beingMade.delete(path);
         const { replaces, source, span } = written;
         const { read } = value;
-        const deprecated = inherited(written, merged, "deprecated");
+        const deprecated = deprecationOf(written, merged);
         const now: MadeFrom = {
             type: value.type,
             value: read.ok ? read.value : undefined,
@@ -157,6 +164,29 @@ function buildPermutation(
         const token = kept ?? newToken(written, now, located, reached);
         builtTokens.set(path, token);
         return token;
+    };
+
+    const reportDeprecated = (path: string, targets: readonly Aimed<Pending<Token>>[]) => {
+        for (const target of targets) {
+            const pointsTo =
+                target.token ??
+                (target.pointsToProperty && target.path !== undefined
+                    ? targetAt(target.path)
+                    : undefined);
+            if (pointsTo === undefined || pointsTo === BEING_MADE) continue;
+            const { deprecated } = pointsTo;
+            if (deprecated === undefined) continue;
+            const ref = toReferenceTarget(target.occurrence.reference);
+            const detail = typeof deprecated === "string" ? { ref, reason: deprecated } : { ref };
+            diagnostics.found(
+                diagnostic("deprecated-reference", detail, {
+                    span: target.occurrence.span,
+                    path,
+                    tags: ["deprecated"],
+                }),
+                input,
+            );
+        }
     };
 
     const newToken = (
@@ -468,7 +498,7 @@ function publicTopLevel(top: MergedTopLevel, definitions: readonly Definition[])
 
 function groupFields(
     group: MergedGroup,
-    applies: Properties,
+    applies: Applying,
     markedBy: string | undefined,
     definitions: readonly Definition[],
 ): Parameters<typeof linkedGroup>[0] {
@@ -502,12 +532,14 @@ function extensionPlaces(
     return Object.freeze(places);
 }
 
-function publicProperties({
+function publicProperties<Deprecated extends Properties["deprecated"]>({
     type: written,
     description,
     deprecated,
     extensions,
-}: Properties): Written {
+}: Omit<Properties, "deprecated"> & { deprecated?: Deprecated }): Omit<Written, "deprecated"> & {
+    deprecated?: Deprecated;
+} {
     const type = usableType(written);
     return {
         ...(type !== undefined && { type }),

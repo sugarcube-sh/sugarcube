@@ -1,11 +1,16 @@
 import type { Input, Permutation, ResolverContext, Scope } from "../model.js";
 
 /**
- * An input written out for people: each modifier and its context, in the order the input lists
- * them, such as an input that names no permutation the read built.
+ * Writes an input out for people.
+ *
+ * Each modifier and its context come in the order the input lists them.
+ *
+ * @param input - The input, such as `{ mode: "dark" }`.
  *
  * @example
- * toInputLabel({ mode: "dark", density: "comfy" }) // "mode: dark, density: comfy"
+ * // One modifier
+ * toInputLabel({ mode: "dark" })
+ * // => "mode: dark"
  */
 export function toInputLabel(input: Input): string {
     return Object.entries(input)

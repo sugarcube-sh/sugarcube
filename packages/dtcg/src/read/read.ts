@@ -20,29 +20,29 @@ import { allPermutations } from "./permutations-of.js";
 const { performance } = globalThis as unknown as { performance: { now(): number } };
 
 /**
- * Reads design tokens: the entry file, and every file it refers to.
+ * Reads design tokens, starting from an entry file.
  *
- * Files are fetched through `readText`, so this runs anywhere: a browser, a worker, Deno, Bun or
- * Node. `@sugarcube-sh/dtcg/node` provides a version that reads from disk.
+ * It gets each file with `readText`, so it runs anywhere. For Node, use `read` from
+ * `@sugarcube-sh/dtcg/node`.
  *
- * Never rejects because of what is, or is not, in the files. A file that is not there
- * (`readText` gives `undefined`) or cannot be understood is reported in
- * {@link DesignTokens.diagnostics}, and the rest is still read. A file that could not be fetched
- * (`readText` throws or rejects) rejects the read, naming the file, with the error as its `cause`:
- * a network or permission failure is not a deleted file.
+ * Problems in the files don't make it reject. They're listed in {@link DesignTokens.diagnostics}.
+ * It rejects only when `readText` throws.
  *
- * @param entry A resolver document or a token file. It is read as a resolver when its name ends
- * `.resolver.json` (Resolver 3.2) or its top level has `resolutionOrder` (Resolver 4.1), and as a
- * token file otherwise.
+ * @param entry - The resolver or token file, such as `"tokens.resolver.json"`. It's a resolver if
+ * its name ends `.resolver.json`, or it has a top-level `resolutionOrder`.
+ * @param options - The {@link ReadText | readText} that gets each file, and the other
+ * {@link ReadOptions}.
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#file-extension | Resolver 3.2, File extension}
  *
  * @example
+ * // Read over HTTP
  * const tokens = await read("tokens.resolver.json", {
- *   readText: async (path) => {
- *     const response = await fetch(path);
- *     if (response.status === 404) return undefined;
- *     if (!response.ok) throw new Error(`${response.status}`);
- *     return response.text();
- *   },
+ *     readText: async (path) => {
+ *         const response = await fetch(path);
+ *         if (response.status === 404) return undefined;
+ *         if (!response.ok) throw new Error(`${response.status}`);
+ *         return response.text();
+ *     },
  * });
  */
 export async function read(
@@ -76,16 +76,17 @@ async function fetchAll(files: Request, folder: string, readText: ReadText): Pro
 }
 
 /**
- * Reads design tokens from text already in memory.
+ * Reads design tokens from text you already have.
  *
- * The read starts from one entry, a resolver or a token file: the one given, or else the one
- * resolver among the files, told apart as {@link read} tells its entry, or else the only file. Several token files with no resolver among
- * them are not read together, since only a resolver says which files to read and in what order
- * (Resolver 4.1, 6); several resolvers need an entry to say which. Either is refused
- * with a `TypeError` naming the files.
+ * Without an `entryFile`, it starts from the one resolver, or else the only file. Otherwise it
+ * throws a `TypeError`.
+ *
+ * @param memory - Each file's text by name, such as `{ files: { "color.json": text } }`.
+ * @param options - How to read them, from {@link ReadOptions}.
  *
  * @example
- * const tokens = readFromMemory({ files: { "tokens.json": text } });
+ * // One token file
+ * const tokens = readFromMemory({ files: { "color.json": text } });
  */
 export function readFromMemory(memory: TokensInMemory, options: ReadOptions = {}): DesignTokens {
     return fromMemory(memory, options, undefined);

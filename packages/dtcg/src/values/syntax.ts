@@ -196,8 +196,9 @@ export function tuple(
 const PATH = /^[A-Za-z][^\s.{}#]*(\.[^\s.{}#]+)+$/;
 
 /**
- * A value of the wrong JSON shape. A string that reads as a token's path, such as `color.ink`, comes
- * with the reference it was probably meant as.
+ * A value of the wrong JSON shape.
+ *
+ * For a string such as `color.primary`, it suggests the reference `{color.primary}`.
  */
 export function wrongShape(value: unknown): Problem {
     return typeof value === "string" && PATH.test(value)

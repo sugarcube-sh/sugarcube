@@ -39,27 +39,31 @@ interface Extension {
 }
 
 /**
- * Defines a {@link Generator}, checking each error `generate` returns against its `messages`. With a
- * `schema`, `generate` receives the schema's output.
+ * Defines a {@link Generator}.
+ *
+ * TypeScript checks that each error `generate` returns has a message in `messages`. With a
+ * `schema`, `generate` gets the schema's output.
+ *
+ * @param generator - The generator, with its `extension`, `messages` and `generate`.
  *
  * @example
- * // { "space": { "$type": "dimension", "$extensions": { "com.example": { "steps": 4 } } } }
+ * // Makes space.1 to space.4 from { "steps": 4 } on the space group
  * const steps = defineGenerator({
- *   extension: ["com.example", "steps"],
- *   messages: {
- *     "not-a-count": ({ steps }: { steps: unknown }) =>
- *       `\`steps\` must be a whole number above 0, not ${JSON.stringify(steps)}`,
- *   },
- *   generate: (group, steps) =>
- *     typeof steps === "number"
- *       ? {
- *           ok: true,
- *           value: Array.from({ length: steps }, (_, i) => ({
- *             name: `${i + 1}`,
- *             $value: { value: i + 1, unit: "rem" },
- *           })),
- *         }
- *       : { ok: false, errors: [{ jsonPath: [], reason: "not-a-count", data: { steps } }] },
+ *     extension: ["com.example", "steps"],
+ *     messages: {
+ *         "not-a-count": ({ steps }: { steps: unknown }) =>
+ *             `\`steps\` must be a whole number above 0, not ${JSON.stringify(steps)}`,
+ *     },
+ *     generate: (group, steps) =>
+ *         typeof steps === "number"
+ *             ? {
+ *                   ok: true,
+ *                   value: Array.from({ length: steps }, (_, i) => ({
+ *                       name: `${i + 1}`,
+ *                       $value: { value: i + 1, unit: "rem" },
+ *                   })),
+ *               }
+ *             : { ok: false, errors: [{ jsonPath: [], reason: "not-a-count", data: { steps } }] },
  * });
  */
 export function defineGenerator<

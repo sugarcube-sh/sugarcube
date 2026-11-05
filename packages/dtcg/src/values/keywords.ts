@@ -1,6 +1,17 @@
 import type { StrokeStyleValue } from "../model.js";
 
-/** The spec's font weight keywords and the numbers they stand for, such as `bold: 700`. */
+/**
+ * The font weight keywords the spec defines, each with its number.
+ *
+ * Some keywords mean the same weight, such as `normal`, `regular` and `book` for 400.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#font-weight | Format 8.4, Font weight}
+ *
+ * @example
+ * // The number bold stands for
+ * fontWeightKeywords.bold
+ * // => 700
+ */
 export const fontWeightKeywords = {
     "thin": 100,
     "hairline": 100,
@@ -25,14 +36,27 @@ export const fontWeightKeywords = {
 /** A font weight keyword the spec defines, such as `"bold"`. */
 export type FontWeightKeyword = keyof typeof fontWeightKeywords;
 
-/** How the end of each dash in a stroke style is drawn. */
+/** How a stroke style's dash ends are drawn, such as `"round"`. */
 export type LineCap = Extract<StrokeStyleValue, { kind: "dash" }>["lineCap"];
 
-/** The spec's stroke style keywords: `solid`, `dashed`, `dotted`, … */
+/**
+ * The stroke style keywords the spec defines.
+ *
+ * They're `"solid"`, `"dashed"`, `"dotted"`, `"double"`, `"groove"`, `"ridge"`, `"outset"` and
+ * `"inset"`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#stroke-style | Format 9.3, Stroke style}
+ */
 export const strokeStyleKeywords: readonly Extract<
     StrokeStyleValue,
     { kind: "keyword" }
 >["keyword"][] = ["solid", "dashed", "dotted", "double", "groove", "ridge", "outset", "inset"];
 
-/** How the end of a dash can be drawn: `round`, `butt`, `square`. */
+/**
+ * Every way the end of a dash can be drawn.
+ *
+ * They're `"round"`, `"butt"` and `"square"`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#stroke-style | Format 9.3, Stroke style}
+ */
 export const lineCaps: readonly LineCap[] = ["round", "butt", "square"];

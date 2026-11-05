@@ -3,9 +3,9 @@ import { number } from "./number.js";
 import type { DimensionValue, DurationValue } from "../model.js";
 
 /**
- * A number followed by a unit, such as `"16px"` or `"200ms"`: how earlier drafts of the spec wrote
- * dimensions and durations. It is always an error. Recognising one lets the error say so, and give
- * the object it stands for when its unit is one the type allows.
+ * A number followed by a unit, such as `"16px"`.
+ *
+ * Earlier drafts of the spec wrote dimensions this way. Recognising it lets the error explain.
  */
 const STRING_WITH_UNIT = /^(-?(?:\d+(?:\.\d*)?|\.\d+))([a-z%]+)$/i;
 

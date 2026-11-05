@@ -12,7 +12,7 @@ import type {
 import { colorDecimals, roundedTo } from "../values/decimals.js";
 import { hexStringOf } from "../values/hex-color.js";
 
-/** A typography value written as CSS: one value for each CSS property it sets, in this order. */
+/** A typography value written as CSS, one value for each CSS property. */
 export interface TypographyCSS {
     readonly "font-family": string;
     readonly "font-size": string;
@@ -21,35 +21,41 @@ export interface TypographyCSS {
     readonly "line-height": string;
 }
 
-/** What to write in place of a reference: a CSS custom property, given by its name, or CSS of your own. */
+/**
+ * What to write for a reference.
+ *
+ * Either a custom property's name, or your own CSS.
+ */
 export type Replacement = { customProperty: string } | { css: string };
 
-/** How a value is written as CSS: what stands for a reference, and how colors are written. */
+/** How {@link toCSSValue} writes a value. */
 export interface CSSValueOptions {
     /**
-     * What to write for a reference, such as a custom property for the token it refers to. Without an
-     * answer, the part is written from the value the reference resolved to. A gradient stop's
-     * position takes a custom property only, as `clamp(0%, var(…) * 100%, 100%)`. A typography value
-     * that is itself a reference is asked once for each CSS property, with that `cssProperty`, and
-     * takes a custom property only: the one holding that CSS property, such as `--body-font-size`.
+     * Writes a reference your own way, such as with `var()`.
+     *
+     * Without it, or when it returns `undefined`, the value the reference resolves to is written.
+     *
+     * @param ref - The reference, such as a token's `getReferenceAt()`.
+     * @param cssProperty - For a typography reference, the CSS property being written, such as
+     * `"font-size"`.
      *
      * @example
-     * {
-     *     replaceReference: (ref, cssProperty) =>
-     *         ref.pointsToToken
-     *             ? { customProperty: toCustomPropertyName(ref.pointsToToken.path, { cssProperty }) }
-     *             : undefined,
-     * }
+     * // Write each reference to a token as var()
+     * replaceReference: (ref, cssProperty) =>
+     *     ref.pointsToToken && {
+     *         customProperty: toCustomPropertyName(ref.pointsToToken.path, { cssProperty }),
+     *     }
      */
     replaceReference?: (
         ref: Reference,
         cssProperty?: keyof TypographyCSS,
     ) => Replacement | undefined;
     /**
-     * `"components"` writes every color from its components, in its own color space. `"hex"`
-     * writes every color that has a `hex` as that hex, with two more digits when it is not opaque,
-     * for a browser that cannot show its color space, and a color without a `hex` from its
-     * components. The names are the keys a file writes a color with.
+     * How colors are written.
+     *
+     * `"components"` writes each color in its own color space.
+     * `"hex"` writes a color's `hex` fallback, if it has one, with alpha digits if it isn't opaque.
+     *
      * @default "components"
      */
     colors?: "components" | "hex";
@@ -58,24 +64,19 @@ export interface CSSValueOptions {
 type TypographyToken = Extract<Token, { type: "typography" }>;
 
 /**
- * A token's value, or a part of one, written as CSS: a string for every type but typography,
- * which sets five CSS properties and so gives an object with a value for each. Code holding a
- * token of any type checks its `type` first, as it would to show typography differently anyway.
- * A color is written from its components in its own color space, to four decimal places, and an
- * sRGB color as `rgb()`, its channels from 0 to 255 to two; its `hex` only when asked for. A color
- * read from a hex string, with `hexStringColors`, is written as that string. A gradient is written
- * as its stops, for any gradient function: `linear-gradient(${css})`. `undefined` for a token with
- * no resolved value, or for no token, so `toCSSValue(permutation.getToken(path))` needs no check first.
+ * Writes a token's value, or part of one, as CSS.
+ *
+ * For typography, it returns an object, with one value for each CSS property. For a gradient, it
+ * returns only the stops, for inside `linear-gradient()`.
+ *
+ * @param of - A token, such as `permutation.getToken("color.primary")`, or part of one, such as a
+ * border's `color`.
+ * @param options - How to write references and colors.
  *
  * @example
- * toCSSValue(brand)                  // "rgb(225 29 72)"
- * toCSSValue(card)                   // "0px 2px 4px 0px rgb(0 0 0 / 0.2)"
- * if (token.type === "typography") toCSSValue(token)?.["font-size"]   // "1rem"
- *
- * @example
- * // a border part, for a swatch of its color
- * const border = token.parts;
- * if (border?.type === "border") swatch(toCSSValue(border.color));
+ * // color.primary in mode: dark
+ * toCSSValue(dark.getToken("color.primary"))
+ * // => "rgb(102 153 255)"
  */
 export function toCSSValue(
     of: TypographyToken | TypographyPart | undefined,

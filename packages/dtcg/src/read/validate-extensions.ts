@@ -26,24 +26,28 @@ import type { NormalisedPermutation } from "./normalise.js";
 type Checked = Parameters<NonNullable<ExtensionValidator["validate"]>>[0];
 
 /**
- * Defines an {@link ExtensionValidator}, checking each error `validate` returns against its
- * `messages`. With a `schema`, `validate` receives the schema's output.
+ * Defines an {@link ExtensionValidator}.
+ *
+ * TypeScript checks that each error `validate` returns has a message in `messages`. With a
+ * `schema`, `validate` gets the schema's output.
+ *
+ * @param validator - The validator, with its `key`, `appliesTo`, `messages` and `validate`.
  *
  * @example
- * // { "space": { "$type": "dimension", "$value": …, "$extensions": { "com.example": { "fluid": true } } } }
+ * // Checks that a dimension's { "fluid": … } is true or false
  * const fluid = defineExtensionValidator({
- *   key: "com.example",
- *   appliesTo: ["dimension"],
- *   messages: {
- *     "not-a-boolean": ({ fluid }: { fluid: unknown }) =>
- *       `\`fluid\` must be true or false, not ${JSON.stringify(fluid)}`,
- *   },
- *   validate: (token, extension) => {
- *     const { fluid } = extension as { fluid?: unknown };
- *     return typeof fluid === "boolean"
- *       ? []
- *       : [{ jsonPath: ["fluid"], reason: "not-a-boolean", data: { fluid } }];
- *   },
+ *     key: "com.example",
+ *     appliesTo: ["dimension"],
+ *     messages: {
+ *         "not-a-boolean": ({ fluid }: { fluid: unknown }) =>
+ *             `\`fluid\` must be true or false, not ${JSON.stringify(fluid)}`,
+ *     },
+ *     validate: (token, extension) => {
+ *         const { fluid } = extension as { fluid?: unknown };
+ *         return typeof fluid === "boolean"
+ *             ? []
+ *             : [{ jsonPath: ["fluid"], reason: "not-a-boolean", data: { fluid } }];
+ *     },
  * });
  */
 export function defineExtensionValidator<

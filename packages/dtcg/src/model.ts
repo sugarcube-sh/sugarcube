@@ -1,7 +1,11 @@
 import type { StandardSchemaV1 } from "./standard-schema.js";
 import type { ValueErrorDetail, ValueErrorFacts } from "./values/value-errors.js";
 
-/** A color space defined by the DTCG Color module. */
+/**
+ * A color space the Color module defines, such as `"srgb"`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/color/#supported-color-spaces | Color 4.2, Supported color spaces}
+ */
 export type ColorSpace =
     | "srgb"
     | "srgb-linear"
@@ -18,57 +22,110 @@ export type ColorSpace =
     | "xyz-d65"
     | "xyz-d50";
 
-/** One channel of a color, or `"none"` when the channel does not apply.*/
+/**
+ * One component of a color, or `"none"`.
+ *
+ * `"none"` means the component doesn't apply, or isn't given.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/color/#the-none-keyword | Color 4.1.1, The none keyword}
+ */
 export type ColorComponent = number | "none";
 
 /**
- * A color, in the shape the DTCG Color module defines.
+ * A color, as the Color module writes it.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/color/#format | Color 4.1, Format}
  *
  * @example
- * { colorSpace: "srgb", components: [0.8824, 0.1137, 0.2824], alpha: 1, hex: "#e11d48" }
+ * // color.blue.500
+ * light.getToken("color.blue.500")!.value
+ * // => { colorSpace: "srgb", components: [0.2, 0.4, 0.8], alpha: 1 }
  */
 export interface ColorValue {
-    /** The color space the components are in. */
+    /** The color space the components are in, such as `"srgb"`. */
     readonly colorSpace: ColorSpace;
-    /** The three channels, in the order the color space defines. */
+    /**
+     * The three components, in the color space's order.
+     *
+     * For `"srgb"`, that's red, green and blue.
+     */
     readonly components: readonly [ColorComponent, ColorComponent, ColorComponent];
     /**
-     * Opacity, from 0 to 1.
+     * How opaque the color is, from 0 to 1.
+     *
      * @default 1
      */
     readonly alpha: number;
-    /** A six-digit hex fallback for tools that cannot use the color space. */
+    /**
+     * A six-digit hex fallback, such as `"#3366cc"`.
+     *
+     * It's for tools that can't use the color space.
+     */
     readonly hex?: string;
 }
 
-/** A length. */
+/**
+ * A length, such as `{ value: 16, unit: "px" }`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#dimension | Format 8.2, Dimension}
+ */
 export interface DimensionValue {
     readonly value: number;
     readonly unit: "px" | "rem";
 }
 
-/** A length of time. */
+/**
+ * A length of time, such as `{ value: 200, unit: "ms" }`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#duration | Format 8.5, Duration}
+ */
 export interface DurationValue {
     readonly value: number;
     readonly unit: "ms" | "s";
 }
 
 /**
- * The control points of a cubic Bézier easing curve: `[x1, y1, x2, y2]`, with both x values from 0
- * to 1.
+ * An easing curve's two control points, as `[x1, y1, x2, y2]`.
+ *
+ * Both x values are from 0 to 1.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#cubic-bezier | Format 8.6, Cubic Bézier}
  */
 export type CubicBezierValue = readonly [number, number, number, number];
 
-/** Font names in order of preference. A single name is a list of one. */
+/**
+ * Font names, the first choice first.
+ *
+ * A file can write one name as a string. It's read as an array of one.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#font-family | Format 8.3, Font family}
+ */
 export type FontFamilyValue = readonly string[];
 
-/** A font weight from 1 to 1000. Keywords such as `"bold"` are read as their numbers. */
+/**
+ * A font weight, from 1 to 1000.
+ *
+ * A keyword such as `"bold"` is read as its number, 700.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#font-weight | Format 8.4, Font weight}
+ */
 export type FontWeightValue = number;
 
-/** A plain number, such as a line-height multiplier or an opacity. */
+/**
+ * A plain number, such as a line height or an opacity.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#number | Format 8.7, Number}
+ */
 export type NumberValue = number;
 
-/** A line style: either a keyword, or a custom dash pattern. */
+/**
+ * A line style.
+ *
+ * `kind: "keyword"` is a keyword, such as `"dashed"`.
+ * `kind: "dash"` is your own pattern of dashes and gaps.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#stroke-style | Format 9.3, Stroke style}
+ */
 export type StrokeStyleValue =
     | {
           readonly kind: "keyword";
@@ -84,20 +141,24 @@ export type StrokeStyleValue =
       }
     | {
           readonly kind: "dash";
-          /** Alternating dash and gap lengths. */
+          /** The lengths of the dashes and gaps, one after the other. */
           readonly dashArray: readonly DimensionValue[];
           /** How the end of each dash is drawn. */
           readonly lineCap: "round" | "butt" | "square";
       };
 
-/** A border, made of a color, a width and a line style. */
+/**
+ * A border's color, width and line style.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#border | Format 9.4, Border}
+ */
 export interface BorderValue {
     readonly color: ColorValue;
     readonly width: DimensionValue;
     readonly style: StrokeStyleValue;
 }
 
-/** One shadow. A shadow token contains a list of these. */
+/** One shadow in a {@link ShadowValue}. */
 export interface ShadowLayer {
     readonly color: ColorValue;
     readonly offsetX: DimensionValue;
@@ -105,45 +166,70 @@ export interface ShadowLayer {
     readonly blur: DimensionValue;
     readonly spread: DimensionValue;
     /**
-     * Whether the shadow is drawn inside the element.
+     * Draws the shadow inside the element.
+     *
      * @default false
      */
     readonly inset: boolean;
 }
 
-/** A shadow: one or more layers. A single shadow is a list of one. */
+/**
+ * One or more shadows, drawn together.
+ *
+ * A file can write one shadow as an object. It's read as an array of one.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#shadow | Format 9.6, Shadow}
+ */
 export type ShadowValue = readonly ShadowLayer[];
 
 /** One color stop in a gradient. */
 export interface GradientStop {
     readonly color: ColorValue;
     /**
-     * Where the stop sits along the gradient, from 0 to 1. Values outside that range are clamped.
+     * Where the stop is along the gradient, from 0 to 1.
+     *
+     * A value outside that range is read as 0 or 1.
      */
     readonly position: number;
 }
 
-/** A gradient, as its color stops. */
+/**
+ * A gradient, as its color stops.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#gradient | Format 9.7, Gradient}
+ */
 export type GradientValue = readonly GradientStop[];
 
-/** A transition: how long, how late, and with what easing. */
+/**
+ * A transition's duration, delay and easing.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#transition | Format 9.5, Transition}
+ */
 export interface TransitionValue {
     readonly duration: DurationValue;
     readonly delay: DurationValue;
     readonly timingFunction: CubicBezierValue;
 }
 
-/** A complete typographic style. */
+/**
+ * The font, size, weight, spacing and line height of text.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#typography | Format 9.8, Typography}
+ */
 export interface TypographyValue {
     readonly fontFamily: FontFamilyValue;
     readonly fontSize: DimensionValue;
     readonly fontWeight: FontWeightValue;
     readonly letterSpacing: DimensionValue;
-    /** A multiple of the font size. */
+    /** A multiple of the font size, such as `1.5`. */
     readonly lineHeight: NumberValue;
 }
 
-/** The value shape for each token type. */
+/**
+ * Each token type's value.
+ *
+ * `ValueByType["dimension"]` is {@link DimensionValue}.
+ */
 export interface ValueByType {
     color: ColorValue;
     dimension: DimensionValue;
@@ -160,160 +246,185 @@ export interface ValueByType {
     typography: TypographyValue;
 }
 
-/** A token type defined by the DTCG Format module. */
+/**
+ * A token type the spec defines, such as `"color"`.
+ *
+ * {@link tokenTypes} lists them all.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#types | Format 8, Types}
+ */
 export type TokenType = keyof ValueByType;
 
 /**
- * A reference written in curly brace syntax (Format 7.1.1), `"{color.brand}"`: it stands for the
- * whole of the value of the token at `path`.
+ * A curly brace reference, such as `"{color.primary}"`.
+ *
+ * It stands for the whole value of the token at `path`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#curly-brace-syntax-token-references | Format 7.1.1, Curly brace syntax}
  *
  * @example
- * // "$value": "{color.brand}" is read as
- * { syntax: "curly-brace", path: "color.brand" }
+ * // button.background's value
+ * light.getToken("button.background")!.value
+ * // => { syntax: "curly-brace", path: "color.primary" }
  */
 export interface CurlyBraceReference {
     readonly syntax: "curly-brace";
-    /** The path of the token referred to. */
+    /** The path of the token it refers to, such as `"color.primary"`. */
     readonly path: string;
 }
 
 /**
- * A reference written in JSON Pointer syntax (Format 7.1.2), `{ "$ref": "#/…" }`. It can point at
- * a whole token or inside its value, such as at one component of a color (Format 7.3).
+ * A JSON Pointer reference, such as `{ "$ref": "#/color/blue/500/$value" }`.
+ *
+ * It can point at a whole token, or inside a value, such as at one color component.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#json-pointer-syntax-required-support | Format 7.1.2, JSON Pointer syntax} and
+ * {@link https://www.designtokens.org/TR/2025.10/format/#property-level-references | 7.3, Property-level references}
  *
  * @example
- * // "components": [{ "$ref": "#/color/blue/$value/components/0" }, 0.5, 0.5]
- * // reads the first component as
- * { syntax: "json-pointer", pointer: "#/color/blue/$value/components/0" }
+ * // The first component of color.blue.500
+ * parseReference({ $ref: "#/color/blue/500/$value/components/0" })
+ * // => { syntax: "json-pointer", pointer: "#/color/blue/500/$value/components/0" }
  */
 export interface JsonPointerReference {
     readonly syntax: "json-pointer";
-    /** The JSON Pointer, as written. */
+    /** The pointer as written, such as `"#/color/blue/500/$value"`. */
     readonly pointer: string;
 }
 
 /**
- * A reference as it stands in a value, in either syntax. {@link isReference} tells one from a
- * value.
+ * A reference in either syntax, as written.
+ *
+ * {@link isReference} tells one from a value.
  */
 export type WrittenReference = CurlyBraceReference | JsonPointerReference;
 
 /**
- * A reference a token or group writes, in the permutation that holds it: what is written, where,
- * and the token it references. Each is listed in its token's
- * {@link TokenBase.references | references} and its group's {@link Group.references | references}.
+ * A reference written in a token or group.
+ *
+ * A token lists its references in {@link TokenBase.references | references}, and so does a
+ * {@link Group.references | group}.
  *
  * @example
- * // in mode: dark, "text": { "$value": "{color.brand}" }
- * const [reference] = text.references;
- * reference.asWritten // { syntax: "curly-brace", path: "color.brand" }
- * reference.pointsToPath   // "color.brand"
- * reference.pointsToToken  // dark's color.brand
+ * // button.background's reference
+ * light.getToken("button.background")!.references[0]!.pointsToPath
+ * // => "color.primary"
  */
 export type Reference = ReferenceBase;
 
-/** What every {@link Reference} has, whatever its syntax. */
+/** What every {@link Reference} has. */
 export interface ReferenceBase {
-    /**
-     * The reference as it is written in the value, in its syntax, as {@link TokenBase.value}
-     * holds it: `{ syntax: "curly-brace", path }` or `{ syntax: "json-pointer", pointer }`.
-     */
+    /** The reference as written, such as `{ syntax: "curly-brace", path: "color.primary" }`. */
     readonly asWritten: WrittenReference;
     /**
-     * The path it names: a token's, or a group's for a group's `$extends`; for a JSON Pointer to a
-     * property within a value, the token holding it. Given even when nothing is at that path, so a
-     * reference to a missing token can be found and moved. Absent for a pointer that names no path,
-     * such as `#/` or one into another file.
+     * The path the reference names, such as `"color.primary"`.
+     *
+     * For a group's `$extends`, it's the group's path. For a JSON Pointer inside a value, it's the
+     * path of that value's token. It's absent for a pointer that names no path, such as `#/`.
      */
     readonly pointsToPath?: string;
-    /** The token or group that writes it. */
+    /**
+     * The token or group that has the reference.
+     *
+     * For a token from `$extends`, it's the token in the group that extends.
+     */
     readonly writtenIn: Token | Group;
     /**
-     * The token it references as a whole, in this permutation: curly braces target complete
-     * tokens only, a JSON Pointer any place (Format 7.1.2). `undefined` when it references none: a
-     * property within a value (see {@link ReferenceBase.pointsToProperty | pointsToProperty}; the
-     * token holding it is at `path`), a group, as a group's `$extends` does, or nothing at all.
+     * The token the reference points to, in this permutation.
+     *
+     * It's `undefined` when the reference points to part of a value, to a group, or to nothing.
      */
     readonly pointsToToken?: Token;
     /**
-     * For a property-level reference (Format 7.3), a JSON Pointer to a property within a token's
-     * value, the property it targets. Absent when it references the complete value (Format
-     * 7.4.2), as a curly brace reference always does.
+     * Where in the token's value a JSON Pointer points.
      *
-     * @example
-     * // { "$ref": "#/color/blue/$value/components/0" }
-     * reference.pointsToProperty // ["components", 0]
+     * For example, `["components", 0]`. It's absent when the reference points to the whole value.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#property-level-references | Format 7.3, Property-level references}
      */
     readonly pointsToProperty?: JsonPath;
     /**
-     * The property of {@link TokenBase.value | value} it is written as, which can differ from the
-     * file: a shadow written as one object is a list of one, so a reference in its `color` is at
-     * `[0, "color"]`. Absent for a reference written as the whole value, and for a group's
-     * `$extends`.
+     * Where in {@link TokenBase.value | value} the reference is.
+     *
+     * For example, `["components", 0]`, or `[0, "color"]` in a single shadow, which is read as an
+     * array of one. It's absent for a reference that is the whole value.
      */
     readonly writtenInProperty?: JsonPath;
     /**
-     * What to write where it is written (`getSpan` (`/editor`)) after a list of
-     * {@link Move}s, made in order, in the syntax it is written in: a JSON Pointer keeps its steps
-     * into the value. As it is written when no move reaches it.
+     * Rewrites the reference after some moves, such as a rename.
+     *
+     * It keeps the syntax it was written in. Paths move as {@link tokenPath.applyMoves} moves them.
+     *
+     * @param moves - The {@link Move}s, made in order, such as
+     * `[{ from: "color.primary", to: "color.accent" }]`.
      *
      * @example
-     * reference.moved([{ from: "color.brand", to: "color.house" }]) // "{color.house}"
+     * // After renaming color.primary
+     * reference.moved([{ from: "color.primary", to: "color.accent" }])
+     * // => "{color.accent}"
      */
     moved(moves: readonly Move[]): JsonValue;
 }
 
 /**
- * A reference, as {@link DesignTokens.getReferencesTo} gives it: written once at `span`, holding in
- * each of `permutations`. `writtenInPaths` are the paths of the tokens or groups that have it, as paths
- * since each can be a different object in each permutation: the one whose file writes it first,
- * then each that inherits it through `$extends`.
+ * A reference as {@link DesignTokens.getReferencesTo} returns it.
+ *
+ * It's written once, and can apply in several permutations.
  */
-export type ReferenceInPermutations = Omit<ReferenceBase, "from" | "token" | "moved"> & {
-    /** Where it is written, in this read's text. */
+export type ReferenceInPermutations = Omit<
+    ReferenceBase,
+    "writtenIn" | "pointsToToken" | "moved"
+> & {
+    /** Where the reference is written in its file. */
     readonly span: Span;
-    /** Where it is written in its file, as `getJsonPath` (`/editor`) gives it. */
+    /** The keys to where it's written, as `getJsonPath` gives them. */
     readonly jsonPath: JsonPath;
+    /**
+     * The paths of the tokens or groups that have it.
+     *
+     * The first is the one written in the file. The rest get it through `$extends`.
+     */
     readonly writtenInPaths: readonly string[];
+    /** The permutations the reference applies in. */
     readonly permutations: Permutations;
+    /** Rewrites the reference after some moves, as {@link ReferenceBase.moved} does. */
     moved(moves: readonly Move[]): JsonValue;
 };
 
-/**
- * One answer {@link askEveryPermutation} gives: what the question answered, and the permutations
- * that answered it.
- */
+/** One answer from {@link askEveryPermutation}, and the permutations that gave it. */
 export interface AnswerInPermutations<Answer> {
     readonly answer: Answer;
+    /** The permutations that gave the answer. */
     readonly permutations: Permutations;
 }
 
-/** How far a permutation's and the design tokens' reference questions look. */
+/** How far questions about references look. */
 export interface ReferenceOptions {
     /**
-     * Follow chained references (Format 7.2.2): those through other tokens, however indirectly.
-     * Each reference once, safe with loops.
+     * Follows references through other tokens too, however far.
+     *
+     * Each reference is listed once, even if references loop.
+     *
      * @default false
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#chained-references | Format 7.2.2, Chained references}
      */
     chained?: boolean;
 }
 
-/**
- * `V`, with a {@link JsonPointerReference} allowed in place of the whole of it or any part of it.
- */
+/** `V`, where the whole or any part can be a {@link JsonPointerReference}. */
 export type WithPointers<V> =
     | JsonPointerReference
     | (V extends object ? { [K in keyof V]: WithPointers<V[K]> } : V);
 
 /**
- * A value whose references have not been followed yet: a {@link CurlyBraceReference} to a token
- * holding one, or the value with a {@link JsonPointerReference} in place of any part.
+ * A value whose references aren't followed yet.
+ *
+ * The whole can be a {@link CurlyBraceReference}. The whole or any part can be a
+ * {@link JsonPointerReference}.
  */
 export type Unresolved<V> = CurlyBraceReference | WithPointers<V>;
 
-/**
- * A stroke style whose references have not been followed yet, where the specification allows them.
- */
+/** A stroke style whose references aren't followed yet. */
 export type UnresolvedStrokeStyle =
     | WrittenReference
     | Extract<StrokeStyleValue, { kind: "keyword" }>
@@ -324,10 +435,12 @@ export type UnresolvedStrokeStyle =
       };
 
 /**
- * Where the specification allows references in each type's value. A {@link CurlyBraceReference}
- * stands for a whole token, so it may take the place of the whole value, or of a part of a
- * composite that is a token type in its own right. A {@link JsonPointerReference} may take the
- * place of any part.
+ * Each token type's value, with references not followed yet.
+ *
+ * A curly brace reference can stand for the whole value, or a part that's a token type itself,
+ * such as a border's `color`. A JSON Pointer can stand for any part.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#composite-types | Format 9, Composite types}
  */
 export interface UnresolvedValueByType {
     color: Unresolved<ColorValue>;
@@ -386,21 +499,28 @@ export interface UnresolvedValueByType {
 }
 
 /**
- * A value of type `T` in its one agreed shape, with its references not yet followed: the type of
- * {@link TokenBase.value | Token.value}. {@link TokenBase.resolved | Token.resolved} is the same
- * value with them followed, and {@link TokenBase.asWritten | Token.asWritten} is how the file wrote
- * it.
+ * A value of type `T`, with its references not followed yet.
+ *
+ * It's the type of {@link TokenBase.value | Token.value}.
+ * {@link TokenBase.resolved | Token.resolved} has the references followed.
+ *
+ * @example
+ * // color.primary in dark
+ * dark.getToken("color.primary")!.value
+ * // => { syntax: "curly-brace", path: "color.blue.300" }
  */
 export type UnresolvedValue<T extends TokenType> = UnresolvedValueByType[T];
 
 /**
- * One part of a token's value: the whole value, a part of a composite, a shadow layer or gradient
- * stop, or a length in a dash pattern. Each is somewhere the spec lets a value or a reference to a
- * token stand. Checking `type` narrows `resolved` and the part's own parts.
+ * One part of a token's value.
+ *
+ * It can be the whole value, or a part of it, such as a border's `color` or one shadow layer.
+ * Check `type`, and TypeScript knows its `resolved` and its own parts.
  *
  * @example
- * const border = token.parts;
- * if (border?.type === "border") border.width.resolved   // { value: 1, unit: "px" }
+ * // button.background refers to color.primary
+ * dark.getToken("button.background")!.parts?.ref?.pointsToPath
+ * // => "color.primary"
  */
 export type Part =
     | { [T in SimplePartType]: SimplePart<T> }[SimplePartType]
@@ -411,7 +531,7 @@ export type Part =
     | GradientPart
     | TypographyPart;
 
-/** The types whose values have no parts of their own. */
+/** The token types whose values have no parts of their own. */
 export type SimplePartType =
     | "color"
     | "dimension"
@@ -421,28 +541,34 @@ export type SimplePartType =
     | "fontFamily"
     | "fontWeight";
 
-/** What every part has: where it is, what it resolved to, and the reference written there. */
+/** What every part has. */
 export interface PartBase<V> {
     /**
-     * The property of {@link TokenBase.value | value} it is, as a reference's
-     * {@link ReferenceBase.writtenInProperty | property} says; absent for the whole value.
+     * Where the part is in {@link TokenBase.value | value}, such as `["color"]`.
+     *
+     * It's absent for the whole value.
      */
     readonly property?: JsonPath;
+    /** The part's value, with references followed. */
     readonly resolved: V;
     /**
-     * The reference written at this place, if any. A pointer inside the part, such as at one
-     * component of a color, is not at it: what it reaches is in `resolved`.
+     * The reference written as this part, if there is one.
+     *
+     * A JSON Pointer inside the part, such as to one color component, doesn't count. Its value is
+     * in `resolved`.
      */
     readonly ref?: Reference;
 }
 
-/** A part with no parts of its own. */
+/** A part with no parts of its own, such as a color. */
 export interface SimplePart<T extends SimplePartType> extends PartBase<ValueByType[T]> {
     readonly type: T;
 }
 
 /**
- * A stroke style: a keyword, or a dash pattern with a part for each of its lengths. Checking
+ * A stroke style, as a part.
+ *
+ * A dash pattern has a part for each length in `dashArray`. A keyword doesn't, so
  * `"dashArray" in part` tells them apart.
  */
 export type StrokeStylePart =
@@ -454,7 +580,7 @@ export type StrokeStylePart =
           readonly dashArray: readonly SimplePart<"dimension">[];
       });
 
-/** A border, as its color, width and style. */
+/** A border, with a part for its color, width and style. */
 export interface BorderPart extends PartBase<BorderValue> {
     readonly type: "border";
     readonly color: SimplePart<"color">;
@@ -462,7 +588,7 @@ export interface BorderPart extends PartBase<BorderValue> {
     readonly style: StrokeStylePart;
 }
 
-/** A transition, as its duration, delay and timing function. */
+/** A transition, with a part for its duration, delay and easing. */
 export interface TransitionPart extends PartBase<TransitionValue> {
     readonly type: "transition";
     readonly duration: SimplePart<"duration">;
@@ -470,13 +596,21 @@ export interface TransitionPart extends PartBase<TransitionValue> {
     readonly timingFunction: SimplePart<"cubicBezier">;
 }
 
-/** A shadow, as its layers. A single shadow has one. */
+/**
+ * A shadow, with a part for each layer.
+ *
+ * A single shadow has one layer.
+ */
 export interface ShadowPart extends PartBase<ShadowValue> {
     readonly type: "shadow";
     readonly layers: readonly ShadowLayerPart[];
 }
 
-/** One layer of a shadow. Its `ref` is a reference to a shadow token standing for the layer. */
+/**
+ * One layer of a shadow.
+ *
+ * Its `ref` is a reference to a shadow token used as this layer.
+ */
 export interface ShadowLayerPart extends PartBase<ShadowLayer> {
     readonly color: SimplePart<"color">;
     readonly offsetX: SimplePart<"dimension">;
@@ -485,19 +619,23 @@ export interface ShadowLayerPart extends PartBase<ShadowLayer> {
     readonly spread: SimplePart<"dimension">;
 }
 
-/** A gradient, as its stops. */
+/** A gradient, with a part for each stop. */
 export interface GradientPart extends PartBase<GradientValue> {
     readonly type: "gradient";
     readonly stops: readonly GradientStopPart[];
 }
 
-/** One stop of a gradient. Its `ref` is a reference to a gradient token standing for the stop. */
+/**
+ * One stop of a gradient.
+ *
+ * Its `ref` is a reference to a gradient token used as this stop.
+ */
 export interface GradientStopPart extends PartBase<GradientStop> {
     readonly color: SimplePart<"color">;
     readonly position: SimplePart<"number">;
 }
 
-/** A typographic style, as its five parts. */
+/** A text style, with a part for each of its five values. */
 export interface TypographyPart extends PartBase<TypographyValue> {
     readonly type: "typography";
     readonly fontFamily: SimplePart<"fontFamily">;
@@ -508,23 +646,27 @@ export interface TypographyPart extends PartBase<TypographyValue> {
 }
 
 /**
- * A choice of context for each modifier, which is how every function names a permutation.
- * Modifiers left out take their default, and matching ignores case.
+ * A selection of contexts, such as `{ mode: "dark" }`.
  *
- * @example
- * { theme: "dark" }
- * { theme: "dark", brand: "ocean" }
+ * Each key is a modifier, and each value one of its contexts. A modifier left out takes its
+ * default. Names match whatever their case. Each input gives one {@link Permutation}.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#inputs | Resolver 5, Inputs}
  */
 export type Input = Readonly<Record<string, string>>;
 
-/** A path into a JSON document, one key or index per step. */
+/**
+ * Keys into JSON, such as `["color", "primary", "$value"]`.
+ *
+ * Each step is a key, or an index into an array.
+ */
 export type JsonPath = readonly (string | number)[];
 
 /**
- * A place in a file, for messages, editors and language servers: where it starts and how long it
- * is, and the line and column where it starts and ends. Lines and columns start at 1. Offsets,
- * lengths and columns count UTF-16 code units, as JavaScript strings do and as the Language Server
- * Protocol expects.
+ * A place in a file.
+ *
+ * `offset` and `length` count from the start of the file. `start` and `end` give the line and
+ * column, from 1. All of them count UTF-16 code units, as JavaScript strings do.
  */
 export interface Span {
     readonly file: string;
@@ -534,160 +676,202 @@ export interface Span {
     readonly end: { readonly line: number; readonly column: number };
 }
 
-/** What every token has, whatever its type. */
+/** What every token has. */
 export interface TokenBase<T extends TokenType> {
-    /** Tells a token from a group: an object with `$value` is a token (Format 6.1). */
+    /**
+     * Tells a token from a group.
+     *
+     * A JSON object with `$value` is a token.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#group-structure | Format 6.1, Group Structure}
+     */
     readonly kind: "token";
     /**
-     * Where the token sits in the tree, such as `"color.brand"`. A group's own `$root` token has
-     * the path `"color.brand.$root"`, the way the spec writes a reference to it.
+     * Where the token is, such as `"color.primary"`.
+     *
+     * A group's `$root` token has a path such as `"color.$root"`. That's how the spec writes a
+     * reference to it.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#root-tokens-in-groups | Format 6.2, Root Tokens in Groups}
      */
     readonly path: string;
     /**
-     * Its type: its own `$type`, else its group's (Format 6.7.3), else the type of the token its
-     * whole value references.
+     * The token's type, such as `"color"`.
+     *
+     * It's the token's own `$type`, or else its group's. Otherwise it's the type of the token its
+     * value refers to.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#type-inheritance | Format 6.7.3, Type Inheritance}
      */
     readonly type: T;
     /**
-     * The value, in one shape per type, with each reference kept as written
-     * ({@link WrittenReference}). Absent when the token is {@link TokenBase.invalid | invalid}.
+     * The value, with references as written.
+     *
+     * It's absent when the token is {@link TokenBase.invalid | invalid}.
      */
     readonly value?: UnresolvedValue<T>;
     /**
-     * The value with every reference followed. Absent when invalid or when a reference cannot be
-     * followed.
+     * The value, with every reference followed.
+     *
+     * It's absent when the token is invalid, or a reference can't be followed.
      */
     readonly resolved?: ValueByType[T];
     /**
-     * Set when the value could not be read. The reasons are in {@link DesignTokens.diagnostics},
-     * under this token's path.
+     * Set when the token's value couldn't be read.
+     *
+     * Why is in {@link DesignTokens.diagnostics}, under the token's path. A reference to a missing
+     * token doesn't make it invalid. Its `resolved` is just absent.
      */
     readonly invalid?: true;
-    /** Its `$description`, as the file writes it. */
+    /** The token's `$description`. */
     readonly description?: string;
-    /** `true`, or a message explaining what to use instead. */
-    readonly deprecated?: boolean | string;
     /**
-     * The group that writes the `$deprecated` in force, when the token doesn't write its own: the
-     * closest group above it with one of its own or through the group it extends (Format 6.3.1,
-     * 6.4). Absent when the token writes its own, when the top level of its file writes it, or when
-     * none applies.
+     * `true`, or a message saying what to use instead.
      *
-     * @example
-     * if (token.deprecated && token.deprecatedByGroup) say(`Deprecated by ${token.deprecatedByGroup}`);
+     * It can come from the token's group. It's absent when the token isn't deprecated, even if it
+     * writes `"$deprecated": false`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#deprecated | Format 5.2.4, Deprecated}
+     */
+    readonly deprecated?: true | string;
+    /**
+     * The group whose `$deprecated` applies to this token.
+     *
+     * It's the nearest group above with one, written itself or through `$extends`. It's absent when
+     * the token writes its own, when the top of its file writes one, or when there's none.
      */
     readonly deprecatedByGroup?: string;
     /**
-     * Vendor data from `$extensions`, passed through untouched. Plain JSON, so whole-number keys
-     * inside it come first, in numeric order, as in any JavaScript object.
+     * The token's `$extensions`, unchanged.
+     *
+     * Like any JavaScript object, it puts whole-number keys first.
      */
     readonly extensions?: Readonly<Record<string, JsonValue>>;
     /**
-     * Every place the permutation's sources write the token, in the order they are read, the one
-     * that wins last: a later source writes a token whole (Resolver 6.2). Usually one place. A
-     * token a {@link Generator} adds is at the extension that makes it, and one inherited through
-     * `$extends` where its value is written, in the group it comes from.
+     * Every place a file writes the token, in the order read.
+     *
+     * Usually there's one. When several files write it, the last one read wins. A token from
+     * `$extends` is written in the group it comes from. A token a {@link Generator} makes is
+     * written as the generator's settings in `$extensions`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#ordering | Resolver 6.2, Ordering}
      *
      * @example
-     * const winner = token.definitions.at(-1);
-     * winner?.source.modifier // the modifier whose context's own file writes it, if one does
+     * // In dark, color.json and dark.json both write color.primary
+     * dark.getToken("color.primary")!.definitions.map((d) => d.source.file)
+     * // => ["color.json", "dark.json"]
      */
     readonly definitions: readonly Definition[];
     /**
-     * What the file wrote for the properties a token can also take from elsewhere: its value
-     * exactly as written, and its `$type` and `$deprecated` when it writes them itself, rather than
-     * taking them from a group or, for the type, from the token it refers to. Its `$description`
-     * and `$extensions` are always its own, so they are on the token and not repeated here. Absent
-     * when no file writes the token: one a {@link Generator} added.
+     * What the file writes for the token's value, `$type` and `$deprecated`.
+     *
+     * `$type` and `$deprecated` are here only when the token writes them itself. It's absent for a
+     * token a {@link Generator} adds.
+     *
+     * @example
+     * // color.primary in dark writes its own $type
+     * dark.getToken("color.primary")!.asWritten
+     * // => { value: "{color.blue.300}", type: "color" }
      */
     readonly asWritten?: { readonly value: JsonValue } & Pick<Written, "type" | "deprecated">;
     /**
-     * Set when a {@link Generator} makes the token from an extension on the group at `from`,
-     * whether a file writes the token or it was added. `from` is absent for an extension on the top
-     * level of a file, and `extension` is where the extension sits in the group's `$extensions`, as
-     * the generator names it. An added token has no {@link TokenBase.asWritten | asWritten}, and its
-     * {@link TokenBase.definitions | definitions} is the extension.
+     * Set when a {@link Generator} makes the token.
+     *
+     * `from` is the group with the extension, absent at the top of a file. `extension` is where the
+     * generator's settings are in its `$extensions`, such as `["com.example", "steps"]`.
      */
     readonly generated?: {
         readonly from?: string;
         readonly extension: readonly [string, ...string[]];
     };
     /**
-     * Set when the token is here only because of `$extends`, or a `$ref` to another group, at
-     * `from`.
+     * Set when the token is here only through `$extends`.
+     *
+     * `from` is the group it comes from.
      */
     readonly inherited?: { readonly from: string };
     /**
-     * Each reference its value writes, in the order the value lists them, each with what it
-     * references. Kept for a value that can't be read as a whole, since they are written whatever
-     * else is wrong.
+     * Each reference in the token's value, in the order written.
+     *
+     * They're kept even when the value can't be read.
      *
      * @example
-     * // a border written { "color": "{color.brand}", "width": "{border.thin}", "style": "solid" }
-     * border.references.map(({ writtenInProperty, pointsToPath }) => [writtenInProperty, pointsToPath])
-     * // [[["color"], "color.brand"], [["width"], "border.thin"]]
+     * // button.background
+     * light.getToken("button.background")!.references.map((r) => r.pointsToPath)
+     * // => ["color.primary"]
      */
     readonly references: readonly Reference[];
     /**
-     * The reference written as one property of the value, as {@link ReferenceBase.writtenInProperty}
-     * places it, or as the whole value when none is given; `undefined` when a value is written
-     * there.
+     * Gets the reference written at a place in the value.
+     *
+     * Without `property`, it's the reference written as the whole value. It returns `undefined` if
+     * a value is written there.
+     *
+     * @param property - Where in the value, such as `["color"]` for a border's color.
      *
      * @example
-     * // a typography token written { "fontSize": "{size.xl}", … }
-     * heading.getReferenceAt(["fontSize"])?.pointsToToken // size.xl
-     * alias.getReferenceAt()?.pointsToToken                // the token its whole value references
+     * // button.background's whole value is a reference
+     * light.getToken("button.background")!.getReferenceAt()?.pointsToPath
+     * // => "color.primary"
      */
     getReferenceAt(property?: JsonPath): Reference | undefined;
     /**
-     * The token, then each token its whole value references in turn, ending at the one that holds a
-     * value: a curly brace reference, or a JSON Pointer to a complete value. A property-level
-     * reference isn't followed. Stops at a reference to no token and at a loop, without repeating.
+     * The token, then each token its value refers to, in turn.
+     *
+     * It ends at the token with an actual value. It only follows references to a whole value. It
+     * stops at a missing token or a loop.
      *
      * @example
-     * text.aliasChain.map(({ path }) => path) // ["color.text", "color.brand", "palette.red"]
+     * // button.background in dark
+     * dark.getToken("button.background")!.aliasChain.map((t) => t.path)
+     * // => ["button.background", "color.primary", "color.blue.300"]
      */
     readonly aliasChain: readonly Token[];
     /**
-     * The place whose value wins: the last of {@link TokenBase.definitions | definitions}, as a later
-     * source replaces a token whole (Resolver 6.2).
+     * Where this token's value comes from.
+     *
+     * When several files write the token, the last one read wins. This is that one, the last of
+     * {@link TokenBase.definitions | definitions}.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#ordering | Resolver 6.2, Ordering}
      *
      * @example
-     * text.winningDefinition.source.file     // "dark.json"
-     * text.winningDefinition.source.modifier // the modifier whose context's own file writes it, if one does
-     * goTo(text.winningDefinition.span)      // where in the file
+     * // In dark, color.primary comes from dark.json
+     * dark.getToken("color.primary")!.winningDefinition.source.file
+     * // => "dark.json"
      */
     readonly winningDefinition: Definition;
     /**
-     * Its value's parts: the whole value, each part of a composite, each shadow layer or gradient
-     * stop, and each length of a dash pattern, every one with where it sits, what it resolved to
-     * and the reference written there. `undefined` when its value can't be worked out. An emitter
-     * writes each type, and asks of each part's `ref` whether to write a reference to another
-     * token instead.
+     * The token's value, split into its parts.
+     *
+     * Each part has its value with references followed, and any reference written there. It's
+     * `undefined` when the token has no resolved value.
      *
      * @example
-     * // a border written { "color": "{color.ink}", "width": { "value": 1, "unit": "px" }, "style": "solid" }
-     * const border = token.parts;
-     * if (border?.type === "border") {
-     *   border.color.ref?.pointsToToken // color.ink
-     *   border.width.resolved   // { value: 1, unit: "px" }
-     * }
+     * // button.background refers to color.primary
+     * dark.getToken("button.background")!.parts?.ref?.pointsToPath
+     * // => "color.primary"
      */
     readonly parts: Part | undefined;
 }
 
 /**
- * A design token. Checking `type` narrows `value` and `resolved` to that type's shape.
+ * A design token.
+ *
+ * Check `type`, and TypeScript knows the shape of `value` and `resolved`.
  *
  * @example
- * if (token.type === "color") token.resolved?.colorSpace
+ * // A color token's color space
+ * const token = light.getToken("color.blue.500")!;
+ * if (token.type === "color") token.resolved?.colorSpace;
+ * // => "srgb"
  */
 export type Token = { [T in TokenType]: TokenBase<T> }[TokenType];
 
 /**
- * What a token or group writes itself, beside what applies to it: a group may take its `$type` and
- * `$deprecated` from the group it is inside (Format 6.7.3, 6.3.1), and all four from the group it
- * extends (6.4).
+ * What a token or group writes on itself.
+ *
+ * It leaves out what comes from its group, or from a group it extends.
  */
 export interface Written {
     readonly type?: TokenType;
@@ -698,101 +882,142 @@ export interface Written {
 
 /** A group of tokens. */
 export interface Group {
-    /** Tells a group from a token: an object without `$value` is a group (Format 6.1). */
+    /**
+     * Tells a group from a token.
+     *
+     * A JSON object without `$value` is a group.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#group-structure | Format 6.1, Group Structure}
+     */
     readonly kind: "group";
-    /** Where the group sits in the tree, such as `"color.brand"`. */
+    /** Where the group is, such as `"color.blue"`. */
     readonly path: string;
     /**
-     * The type its tokens take: its own, else the group it extends, else the group it is inside
-     * (Format 6.7.3).
+     * The type its tokens take, such as `"color"`.
+     *
+     * It's the group's own `$type`, or else the type of the group it extends. Otherwise it's the
+     * type of the group it's inside.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#type-inheritance | Format 6.7.3, Type Inheritance}
      */
     readonly type?: TokenType;
-    /** Its own, else the group it extends. */
+    /** The group's `$description`, or else the one of the group it extends. */
     readonly description?: string;
-    /** Its own, else the group it extends, else the group it is inside (Format 6.3.1). */
-    readonly deprecated?: boolean | string;
     /**
-     * The group that writes the `$deprecated` in force, when the group doesn't write its own: the
-     * group it extends, else the closest group above it (Format 6.3.1, 6.4). Absent when it writes
-     * its own, when the top level of its file writes it, or when none applies.
+     * `true`, or a message saying what to use instead.
+     *
+     * It can come from the group it extends, or the group it's inside. It's absent when the group
+     * isn't deprecated, even if it writes `"$deprecated": false`.
+     */
+    readonly deprecated?: true | string;
+    /**
+     * The group whose `$deprecated` applies to this one.
+     *
+     * It's the group it extends, or else the nearest group above. It's absent when the group writes
+     * its own, when the top of its file writes one, or when there's none.
      */
     readonly deprecatedByGroup?: string;
-    /** Its own, over those of the group it extends. */
+    /**
+     * The group's `$extensions`, and any from the group it extends.
+     *
+     * Where both have a key, the group's own wins.
+     */
     readonly extensions?: Readonly<Record<string, JsonValue>>;
     /**
-     * The group this one takes tokens from, through `$extends` or a `$ref` to another group
-     * (Format 6.4), when the reference reaches one. The reference itself is among its
-     * {@link Group.references | references}. The tokens it takes are marked
+     * The group this one extends, through `$extends`.
+     *
+     * It's absent if the reference doesn't reach a group. The reference is in
+     * {@link Group.references | references}. The tokens it brings are marked
      * {@link TokenBase.inherited | inherited}.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#extending-groups | Format 6.4, Extending Groups}
      */
     readonly extends?: Group;
     /**
-     * The reference it writes: its `$extends`, or a `$ref` to another group, which reaches a group
-     * and so no token. Empty when it writes neither.
+     * The group's `$extends`, as a reference.
+     *
+     * It's empty when the group doesn't extend another.
      */
     readonly references: readonly Reference[];
     /**
-     * Every place a source declares the group, in the order read. Groups can be spread across
-     * files, so there may be several, and a group only {@link Group.inherited | inherited} has
-     * none.
+     * Every place a file writes the group, in the order read.
+     *
+     * A group can be spread across files, so there can be several. A group that's only
+     * {@link Group.inherited | inherited} has none.
      */
     readonly definitions: readonly Definition[];
     /**
-     * The place, among {@link Group.definitions}, that writes each `$extensions` key the group writes
-     * itself. When several files write a key, it is the last one read, whose value for that key is
-     * used whole. A key the group takes from the group it extends is left out.
+     * Where each of the group's own `$extensions` keys is written.
      *
-     * @example
-     * getSpan(tokens, space.extensionDefinitions["com.example"]).file // "space.json"
+     * When several files write a key, it's the last one read. Its value for that key is used whole.
+     * Keys from a group it extends are left out.
      */
     readonly extensionDefinitions: Readonly<Record<string, Definition>>;
     /**
-     * Set when the group is here only because of `$extends`, or a `$ref` to another group, at
-     * `from`.
+     * Set when the group is here only through `$extends`.
+     *
+     * `from` is the group it comes from.
      */
     readonly inherited?: { readonly from: string };
     /**
-     * What the files write on the group itself, for every property it could also take from
-     * elsewhere: all four, since its `$type` and `$deprecated` can come from the group it is
-     * inside, and all four from the group it extends. Absent when they write none of it.
+     * The `$type`, `$description`, `$deprecated` and `$extensions` written on the group.
+     *
+     * It leaves out what comes from other groups. It's absent when the files write none of them.
+     *
+     * @example
+     * // The color group writes its own $type
+     * dark.getGroup("color")!.asWritten
+     * // => { type: "color" }
      */
     readonly asWritten?: Written;
     /**
-     * Its child tokens and nested groups (Format 6.1), together, in the order the files write
-     * them. What a later file adds comes after what the first one wrote, and tokens it takes
-     * through `$extends` or a {@link Generator} makes come at the end. Each says its
-     * {@link TokenBase.kind | kind}.
+     * The group's tokens and groups, one level down, in the order written.
+     *
+     * What a later file adds comes after. Tokens from `$extends` or a {@link Generator} come last.
+     * Each has a {@link TokenBase.kind | kind}.
      *
      * @example
-     * for (const child of dark.getGroup("color")?.children ?? []) show(child.path, child.kind);
+     * // The color group
+     * dark.getGroup("color")!.children.map((child) => child.path)
+     * // => ["color.blue", "color.primary"]
      */
     readonly children: readonly (Token | Group)[];
-    /** Its root token, the token named `$root` in it (Format 6.2), when it has one. */
+    /**
+     * The group's `$root` token, if it has one.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#root-tokens-in-groups | Format 6.2, Root Tokens in Groups}
+     */
     readonly rootToken?: Token;
     /**
-     * The tokens directly in it, its child tokens (Format 6.1), in the order
-     * {@link Group.children | children} gives them, its root token included.
+     * The tokens directly in the group, in the order of {@link Group.children | children}.
+     *
+     * It includes the `$root` token.
      *
      * @example
-     * dark.getGroup("space")?.childTokens.map(({ path }) => path) // ["space.1", "space.2"]
+     * // The color group
+     * dark.getGroup("color")!.childTokens.map((token) => token.path)
+     * // => ["color.primary"]
      */
     readonly childTokens: readonly Token[];
     /**
-     * Every token inside it, however deeply nested, in the order the files write them, its root
-     * token included. For only the tokens directly in it, see
+     * Every token in the group, however deep, in the order written.
+     *
+     * It includes the `$root` token. For only the tokens directly in it, use
      * {@link Group.childTokens | childTokens}.
      *
      * @example
-     * dark.getGroup("color")?.tokens.map(({ path }) => path)
+     * // The color group
+     * dark.getGroup("color")!.tokens.map((token) => token.path)
+     * // => ["color.blue.500", "color.blue.300", "color.primary"]
      */
     readonly tokens: readonly Token[];
 }
 
 /**
- * What is written at the top level of a permutation's files: `$type`, `$description`,
- * `$deprecated` and `$extensions`. What sits there is the permutation's
- * {@link Permutation.children | children}. It has no path, since a group may be named `""`
- * (Format 5.1) and so own the empty path.
+ * What the top of a permutation's files writes.
+ *
+ * That's `$type`, `$description`, `$deprecated` and `$extensions`. The tokens and groups there are
+ * the permutation's {@link Permutation.children | children}.
  */
 export interface TopLevel {
     readonly type?: TokenType;
@@ -804,384 +1029,484 @@ export interface TopLevel {
 }
 
 /**
- * A place a token or group is written: the source that writes it and what it writes there. The
- * same place is the same object in every permutation that reads its source. Where in the file it
- * is, which moves when the text above it changes, is asked of the read:
- * `getSpan` (`/editor`).
+ * A place where a token or group is written.
+ *
+ * A definition read by several permutations is the same object in each. To find where it is in
+ * the file, use `getSpan`.
+ *
+ * @example
+ * // Where dark gets color.primary
+ * dark.getToken("color.primary")!.winningDefinition.asWritten
+ * // => { $type: "color", $value: "{color.blue.300}" }
  */
 export interface Definition {
     /**
-     * The source that writes it: the file, or part of one, and the set or context it is read
-     * through.
+     * The source that writes it.
+     *
+     * That's the file, or part of one, and the set or context it's read through.
      */
     readonly source: Source;
     /**
-     * The JSON the file writes there, exactly as written: for a token, its whole object, `$value`,
-     * `$type` and the rest, before any reference is followed or anything is taken from a group.
+     * The JSON written there, exactly as written.
+     *
+     * For a token, that's its whole object, such as `{ "$value": "{color.blue.500}" }`.
      */
     readonly asWritten: JsonValue;
 }
 
 /**
- * A place, as {@link DesignTokens.getDefinitions} gives it: written once at `span`, read through each of
- * `sources`. A file several contexts list the same way is one source; listed with different
- * `$extensions` beside its `$ref`, or through different sets, it is a source for each.
+ * A definition as {@link DesignTokens.getDefinitions} returns it.
+ *
+ * It's written once, and can be read in several permutations.
  */
 export interface DefinitionInPermutations {
+    /** Where it's written in its file. */
     readonly span: Span;
-    /** Where it is written in its file, as `getJsonPath` (`/editor`) gives it. */
+    /** The keys to where it's written, as `getJsonPath` gives them. */
     readonly jsonPath: JsonPath;
-    /**
-     * The JSON the file writes at `span`, exactly as written, as {@link Definition.asWritten} gives it.
-     */
+    /** The JSON written there, exactly as written. */
     readonly asWritten: JsonValue;
+    /** The sources that read it. */
     readonly sources: readonly Source[];
     /** The permutations that read it. */
     readonly permutations: Permutations;
     /**
-     * The permutations whose token takes its value from here: those whose
-     * {@link TokenBase.winningDefinition | winningDefinition} it is, since "in case of a conflict, take the most
-     * recent occurrence" (Resolver 6.2). None for a token's place that a later source always
-     * replaces, and for a group's place, since a group is combined with the others, not replaced.
+     * The permutations where this definition gives the token its value.
+     *
+     * It's empty when a later file always replaces it, and for a group, whose definitions are
+     * combined.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#ordering | Resolver 6.2, Ordering}
      *
      * @example
-     * const overridden = tokens.getDefinitions("color.brand").filter((place) => place.winsIn.length === 0);
+     * // color.json's definition wins in light, dark.json's in dark
+     * tokens.getDefinitions("color.primary").map((d) => d.winsIn.label)
+     * // => ["mode: light", "mode: dark"]
      */
     readonly winsIn: Permutations;
 }
 
 /**
- * One source of tokens, as the resolver lists it: a file, part of one, or tokens written in the
- * resolver. Keys written beside a source's `$ref` are part of that source, so a token written there
- * belongs to it, and its place is in the resolver. One object for each source the resolver lists,
- * per context that lists it (a set several contexts pull in gives one for each), shared by every
- * permutation that reads it: {@link DesignTokens.sources} lists each once.
+ * One source of tokens, such as `color.json`.
+ *
+ * It's a file, part of a file, or tokens written directly in the resolver. Each source is one
+ * object, shared by every permutation that reads it.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#sets | Resolver 4.1.4, Sets}
+ *
+ * @example
+ * // The sources dark reads
+ * dark.sources.map((source) => source.file)
+ * // => ["color.json", "dark.json"]
  */
 export interface Source {
-    /** The file its tokens are written in, or the resolver for tokens written there. */
+    /**
+     * The file the tokens are in, such as `"dark.json"`.
+     *
+     * For tokens written in the resolver, it's the resolver.
+     */
     readonly file: string;
     /**
-     * Set when the source is only part of the file, such as `"#/color"`. Tokens written in the
-     * resolver are part of it too, so theirs says where they sit, such as
-     * `"#/resolutionOrder/0/sources/1"`. Absent when the source is a whole file.
+     * The part of the file the source is, such as `"#/dark"` for `{ "$ref": "all.json#/dark" }`.
+     *
+     * It's absent when the source is a whole file. Tokens written in the resolver have one too,
+     * such as `"#/resolutionOrder/0/sources/1"`.
      */
     readonly pointer?: string;
-    /**
-     * The modifier whose contexts list it, when the resolver lists it under one, as
-     * {@link DesignTokens.resolver} holds it. The context is the permutation's: a file the contexts
-     * `dark` and `dim` both list the same way is one source, read through `dark` in the dark
-     * permutation and through `dim` in the dim one. "Did a context's own file write this?" is this.
-     *
-     * @example
-     * const source = dim.getToken("color.text")?.winningDefinition.source;
-     * source?.modifier?.name                                            // "mode"
-     * dim.contexts.find(({ modifier }) => modifier === source?.modifier) // the context dim
-     */
+    /** The modifier that lists the source (if one does). */
     readonly modifier?: ResolverModifier;
     /**
-     * Every set on the way to it, outermost first, each as it is in effect at that step. Empty
-     * when it is reached through none, or there is no resolver.
+     * The sets that lead to the source, outermost first.
      *
-     * @example
-     * source.sets // [{ name: "base" }, { name: "palette" }]: palette, which base names
+     * If `base` lists the set `palette`, and `palette` lists `colors.json`, then
+     * `colors.json`'s sets are `base`, then `palette`.
      */
     readonly sets: readonly SetOnRoute[];
     /**
-     * The source's own vendor data, passed through untouched: the `$extensions` written beside its
-     * `$ref`, or else those at the top of its file. A set's and a modifier's stay on them, in
-     * {@link DesignTokens.resolver}.
+     * The source's own `$extensions`.
+     *
+     * They come from one of two places, never both. If the resolver writes `$extensions` beside
+     * the source's `$ref`, it's those. If not, it's the ones at the top of the file.
+     *
+     * @example
+     * // dark.json starts { "$extensions": { "com.a": 1 }, … }
+     * // and the resolver lists { "$ref": "dark.json", "$extensions": { "com.b": 2 } }
+     * source.extensions
+     * // => { "com.b": 2 }
      */
     readonly extensions?: Readonly<Record<string, JsonValue>>;
     /**
-     * Who reads it: `"every-context"` when a set `resolutionOrder` names reaches it, otherwise each
-     * context whose permutations read it. Every context the resolver declares counts, including
-     * those whose permutations the read didn't build. For deciding which file an edit belongs in.
+     * The contexts that read the source.
      *
      * @example
-     * source.readBy // [the context mode: dark]
+     * // The base set in resolutionOrder lists color.json
+     * light.sources[0]!.readBy
+     * // => "every-context"
+     *
+     * @example
+     * // Only the dark context lists dark.json
+     * dark.sources[1]!.readBy
+     * // => [{ name: "dark", … }]
      */
     readonly readBy: "every-context" | readonly ResolverContext[];
 }
 
 /**
- * A set a source was reached through, as it is in effect at that step of the route: its name, which
- * finds its entry in {@link DesignTokens.resolver}, and its `$extensions`, those written beside the
- * `$ref` that named it there when there are any, as keys beside a `$ref` replace the target's
- * (Resolver 4.2.2), otherwise its own.
+ * A set that a source came through, such as `base` for `color.json`.
+ *
+ * Its `$extensions` come from one of two places, never both. If `$extensions` are written beside
+ * the `$ref` that names the set, it's those. If not, it's the set's own.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#sets | Resolver 4.1.4, Sets} and
+ * {@link https://www.designtokens.org/TR/2025.10/resolver/#extending | 4.2.2, Extending}
  *
  * @example
- * // base's sources: [{ "$ref": "#/sets/palette", "$extensions": { "sh.sugarcube": { "emit": false } } }]
- * { name: "palette", extensions: { "sh.sugarcube": { emit: false } } }
+ * // base lists { "$ref": "#/sets/palette", "$extensions": { "com.example": { "on": false } } }
+ * source.sets[1]
+ * // => { name: "palette", extensions: { "com.example": { on: false } } }
  */
 export interface SetOnRoute {
+    /** The set's name, as in {@link DesignTokens.resolver}. */
     readonly name: string;
     readonly extensions?: Readonly<Record<string, JsonValue>>;
 }
 
 /**
- * What the resolver says about itself and how it is put together (Resolver 4): its name and
- * description, the spec version it declares, and the sets and modifiers that take part, each as it
- * is in effect where `resolutionOrder` names it, with keys written beside that `$ref` applied
- * (Resolver 4.2.2), and where it is written. A set named inside another set with keys beside its
- * `$ref` is listed as it is defined; what those keys change is on each source's route
- * ({@link SetOnRoute}), since each such reference can change it differently.
- * A set or modifier `resolutionOrder` never reaches takes no part (Resolver 4.1.6): it is left out
- * here and reported as a hint. A set a source points inside of, such as `#/sets/palette/sources/0`,
- * is left out too, as it doesn't take part as a set, but isn't reported, as part of it is read.
+ * The resolver's sets, modifiers and order.
+ *
+ * A set or modifier that `resolutionOrder` never uses isn't here. It's reported as a hint.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#syntax | Resolver 4, Syntax}
  *
  * @example
- * tokens.resolver?.name                         // "Acme"
- * tokens.resolver?.modifiers.map(({ name }) => name) // ["mode", "density"]
+ * // The modifiers
+ * tokens.resolver?.modifiers.map((modifier) => modifier.name)
+ * // => ["mode"]
  */
 export interface Resolver {
-    /** The resolver, as {@link DesignTokens.files} names it. */
+    /** The resolver file, as {@link DesignTokens.files} names it. */
     readonly file: string;
     /** The spec version the resolver declares, such as `"2025.10"`. */
     readonly version?: string;
     readonly name?: string;
     readonly description?: string;
-    /** The sets that take part, in the order they are written. */
+    /** The sets `resolutionOrder` uses, in the order written. */
     readonly sets: readonly ResolverSet[];
-    /** The modifiers that take part, in the order they are written. */
+    /** The modifiers `resolutionOrder` uses, in the order written. */
     readonly modifiers: readonly ResolverModifier[];
-    /** `resolutionOrder`, each item by its name. */
+    /**
+     * `resolutionOrder`, with each item as its name, such as `{ set: "base" }`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#resolution-order | Resolver 4.1.6, Resolution Order}
+     */
     readonly resolutionOrder: readonly ({ readonly set: string } | { readonly modifier: string })[];
 }
 
-/** A set that takes part, as it is in effect. */
+/**
+ * A set that `resolutionOrder` uses, such as `base`.
+ *
+ * Keys written beside the `$ref` that names it replace its own. If `resolutionOrder` has
+ * `{ "$ref": "#/sets/palette", "description": "Core" }`, the `palette` set's description is
+ * `"Core"`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#sets | Resolver 4.1.4, Sets}
+ */
 export interface ResolverSet {
     readonly name: string;
     readonly description?: string;
-    /** The set's own `$extensions`, passed through untouched. */
+    /** The set's own `$extensions`, unchanged. */
     readonly extensions?: Readonly<Record<string, JsonValue>>;
-    /** Its sources, in order, as written. */
+    /** The set's sources, in order, as written. */
     readonly sources: readonly SourceRef[];
-    /** Where it is written: under `sets`, or inline in `resolutionOrder`. */
-    readonly span: Span;
-}
-
-/** A modifier that takes part, as it is in effect. */
-export interface ResolverModifier {
-    readonly name: string;
-    readonly description?: string;
-    /** The modifier's own `$extensions`, passed through untouched. */
-    readonly extensions?: Readonly<Record<string, JsonValue>>;
-    /** Its contexts, in the order they are written, each with its sources. */
-    readonly contexts: readonly ResolverContext[];
-    readonly default?: string;
-    /** Where it is written: under `modifiers`, or inline in `resolutionOrder`. */
-    readonly span: Span;
-}
-
-/** One context of a modifier: one of the values an input can choose for it (Resolver 4.1.5.1). */
-export interface ResolverContext {
-    readonly name: string;
-    /** The modifier it belongs to. */
-    readonly modifier: ResolverModifier;
-    /** Its sources, in order, as written. */
-    readonly sources: readonly SourceRef[];
-    /**
-     * Whether it is its modifier's `default` (Resolver 4.1.5.3). A modifier need not declare one,
-     * and then none of its contexts is.
-     */
-    readonly isDefault: boolean;
-    /** Where it is written. */
+    /** Where the set is written, under `sets` or in `resolutionOrder`. */
     readonly span: Span;
 }
 
 /**
- * A source as the resolver writes it: a file, or part of one, as {@link DesignTokens.files} names
- * it, or a set it names. Tokens written in the resolver are part of the resolver, with a pointer to
- * where they sit.
+ * A modifier that `resolutionOrder` uses, such as `mode`.
  *
- * @example
- * { file: "dark.json" }
- * { file: "all.json", pointer: "#/dark" }
- * { set: "palette" }
+ * As for a {@link ResolverSet}, keys written beside the `$ref` that names it replace its own.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#modifiers | Resolver 4.1.5, Modifiers}
+ */
+export interface ResolverModifier {
+    readonly name: string;
+    readonly description?: string;
+    /** The modifier's own `$extensions`, unchanged. */
+    readonly extensions?: Readonly<Record<string, JsonValue>>;
+    /** The modifier's contexts, in the order written. */
+    readonly contexts: readonly ResolverContext[];
+    /**
+     * The context used when an input leaves the modifier out, such as `"light"`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#default | Resolver 4.1.5.3, Default}
+     */
+    readonly default?: string;
+    /** Where the modifier is written, under `modifiers` or in `resolutionOrder`. */
+    readonly span: Span;
+}
+
+/**
+ * One of a modifier's contexts, such as `dark`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#contexts | Resolver 4.1.5.1, Contexts}
+ */
+export interface ResolverContext {
+    readonly name: string;
+    /** The modifier it belongs to. */
+    readonly modifier: ResolverModifier;
+    /** The context's sources, in order, as written. */
+    readonly sources: readonly SourceRef[];
+    /**
+     * `true` for its modifier's `default` context.
+     *
+     * A modifier doesn't have to have a default. Then none of its contexts is.
+     */
+    readonly isDefault: boolean;
+    /** Where the context is written. */
+    readonly span: Span;
+}
+
+/**
+ * A source as the resolver writes it.
+ *
+ * It's a file, part of one, or a set. For example, `{ file: "dark.json" }`,
+ * `{ file: "all.json", pointer: "#/dark" }` or `{ set: "base" }`.
  */
 export type SourceRef =
     | { readonly file: string; readonly pointer?: string }
     | { readonly set: string };
 
-/** The tokens that result from one input. */
+/**
+ * The tokens for one input.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#permutation | Resolver 2.2, Permutation}
+ */
 export interface Permutation {
-    /**
-     * The input that names it: the context it picks for every modifier, defaults included, as
-     * `getPermutation(input)` takes it.
-     */
+    /** The permutation's input, with a context for every modifier. */
     readonly input: Input;
     /**
-     * Its input written out for people: every modifier and its context, in the order
-     * `resolutionOrder` names them, such as `"theme: dark, brand: house"`, the default permutation
-     * included. The same text as the {@link Permutations.label | label} of a list holding only
-     * this permutation, so a label always means the same permutations. Empty when there are no
-     * modifiers, as for a token file: there is nothing to name, and nothing to tell apart. For
-     * display only: functions take an {@link Input}, never a label.
+     * The permutation's name, such as `"mode: dark"`.
+     *
+     * It's `""` when there are no modifiers.
      */
     readonly label: string;
     /**
-     * Where the tokens come from, in the order they apply: a later source overrides an earlier one.
+     * The sources the tokens come from, in order.
+     *
+     * When two write the same token, the later one wins.
      */
     readonly sources: readonly Source[];
     /**
-     * The context it picks for each modifier, in the order `resolutionOrder` names them, as its
-     * {@link Permutation.label | label} lists them: what its {@link Permutation.input | input}
-     * chooses (Resolver 5), defaults filled in. Empty without modifiers.
+     * The context for each modifier, in the order `resolutionOrder` names them.
+     *
+     * Defaults are filled in. It's `""` when there are no modifiers.
      *
      * @example
-     * permutation.contexts.filter((context) => !context.isDefault) // what sets it apart
+     * // The contexts that aren't defaults
+     * dark.contexts.filter((context) => !context.isDefault).map((context) => context.name)
+     * // => ["dark"]
      */
     readonly contexts: readonly ResolverContext[];
     /**
-     * Whether every modifier is at its `default` (Resolver 4.1.5.3): the permutation an empty input
-     * names, since only a modifier with a default may be left out (Resolver 6.1). False for every
-     * permutation when a modifier has no default; true for the one permutation of a token file read
-     * without a resolver.
+     * `true` when every modifier is at its `default`.
      *
      * @example
-     * const others = tokens.permutations.select((p) => !p.isDefault);
+     * // light is the default
+     * light.isDefault
+     * // => true
      */
     readonly isDefault: boolean;
-    /**
-     * What the top of the files writes: its `$type`, `$description`, `$deprecated` and
-     * `$extensions`. Not a `$root` token, which stands for its group (Format 6.2).
-     */
+    /** What the top of the files writes, as a {@link TopLevel}. */
     readonly topLevel: TopLevel;
     /**
-     * The tokens and groups at the top level of the files, in the order they are read: where a
-     * tree starts, walked like a group's {@link Group.children | children}.
+     * The tokens and groups at the top of the files, in the order read.
      *
      * @example
-     * for (const child of permutation.children) show(child);
+     * // The top of the files
+     * dark.children.map((child) => child.path)
+     * // => ["color", "button"]
      */
     readonly children: readonly (Token | Group)[];
     /**
-     * Every token, in the order the files write them, invalid ones included. The files read as
-     * one: a group's tokens stay together where the group is first written, whichever file adds
-     * them, and a token a later file replaces keeps its place. Tokens a group inherits, or a
-     * {@link Generator} adds, come at the end of their group. To find one by path, use
-     * {@link Permutation.getToken | token}.
+     * Every token, in the order written, including invalid ones.
+     *
+     * A group's tokens stay together, whichever file adds them, and a token a later file writes
+     * again keeps its place. Tokens from `$extends` or a {@link Generator} come last in their
+     * group.
+     *
+     * To find one by path, use {@link Permutation.getToken | getToken}.
+     *
+     * @example
+     * // Every token in dark
+     * dark.tokens.map((token) => token.path)
+     * // => ["color.blue.500", "color.blue.300", "color.primary", "button.background"]
      */
     readonly tokens: readonly Token[];
     /**
-     * Every group, in the same order as {@link Permutation.tokens | tokens}. To find one by path,
-     * use {@link Permutation.getGroup | group}.
+     * Every group, in the same order as {@link Permutation.tokens | tokens}.
+     *
+     * To find one by path, use {@link Permutation.getGroup | getGroup}.
      */
     readonly groups: readonly Group[];
     /**
-     * The token at `path`, or `undefined` when this permutation has none there: no token at all, a
-     * group, or one only another permutation has.
+     * Gets the token at a path.
+     *
+     * It returns `undefined` if there's none, or a group is there.
+     *
+     * @param path - The token's path, such as `"color.primary"`.
      *
      * @example
-     * dark.getToken("color.text")?.resolved
+     * // color.primary in dark
+     * dark.getToken("color.primary")?.value
+     * // => { syntax: "curly-brace", path: "color.blue.300" }
      */
     getToken(path: string): Token | undefined;
     /**
-     * The group at `path`, or `undefined` when this permutation has none there.
+     * Gets the group at a path.
+     *
+     * @param path - The group's path, such as `"color.blue"`.
      *
      * @example
-     * dark.getGroup("color")?.children
+     * // The tokens in color.blue
+     * dark.getGroup("color.blue")?.tokens.map((token) => token.path)
+     * // => ["color.blue.500", "color.blue.300"]
      */
     getGroup(path: string): Group | undefined;
     /**
-     * Whatever this permutation has at `path`: its token, else its group, else `undefined`. Each
-     * says which it is in `kind`.
+     * Gets the token or group at a path.
+     *
+     * Check `kind` to tell which.
+     *
+     * @param path - The path, such as `"color"`.
      *
      * @example
-     * const here = dark.getTokenOrGroup(path);
-     * if (here?.kind === "group") showGroup(here);
+     * // color is a group
+     * dark.getTokenOrGroup("color")?.kind
+     * // => "group"
      */
     getTokenOrGroup(path: string): Token | Group | undefined;
     /**
-     * Every reference to `path` in this permutation, each with the token or group that writes it in
-     * `writtenIn`; with `chained`, also every reference to each of those, however indirectly, each once,
-     * safe with loops. A group's path covers what is written to it, such as an `$extends`, and to
-     * everything inside it. {@link DesignTokens.getReferencesTo} asks the same of the whole read.
+     * Finds every reference to a token or group in this permutation.
+     *
+     * For a group, it also finds `$extends` to it, and references to anything inside it. For every
+     * permutation at once, use {@link DesignTokens.getReferencesTo}.
+     *
+     * @param path - The token or group, such as `"color.blue.300"`.
+     * @param options - `{ chained: true }` to follow references through other tokens too.
      *
      * @example
-     * dark.getReferencesTo("color.red").map(({ writtenIn }) => writtenIn.path) // ["color.brand"]
-     * dark.getReferencesTo("color.red", { chained: true })           // everything a change would reach
+     * // What refers to color.blue.300 in dark, directly or not
+     * dark
+     *     .getReferencesTo("color.blue.300", { chained: true })
+     *     .map((reference) => reference.writtenIn.path)
+     * // => ["color.primary", "button.background"]
      */
     getReferencesTo(path: string, options?: ReferenceOptions): readonly Reference[];
     /**
-     * Each token or group the token or group at `path` refers to in this permutation, once,
-     * however many references it writes to it: the mirror of {@link Permutation.getDependents}.
-     * With `chained`, also each one those refer to, however indirectly, safe with loops. For a
-     * property-level reference, the token holding the property; for a group, the group its
-     * `$extends` names. Empty for a path that isn't there. The references themselves are the
-     * token's or group's {@link TokenBase.references | references}.
+     * Finds the tokens and groups a token or group refers to.
+     *
+     * A JSON Pointer to part of a token, such as one color component, counts as that token. For a
+     * group, it's the group its `$extends` names. It's the reverse of
+     * {@link Permutation.getDependents}.
+     *
+     * @param path - The token or group, such as `"button.background"`.
+     * @param options - `{ chained: true }` to follow references through other tokens too.
      *
      * @example
-     * light.getDependencies("color.text").map(({ path }) => path)                   // ["color.brand"]
-     * light.getDependencies("color.text", { chained: true }).map(({ path }) => path) // ["color.brand", "color.red"]
+     * // What button.background needs in dark, directly or not
+     * dark.getDependencies("button.background", { chained: true }).map((token) => token.path)
+     * // => ["color.primary", "color.blue.300"]
      */
     getDependencies(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
     /**
-     * Each token or group that refers to `path` in this permutation, once, however many references
-     * it writes to it; with `chained`, also each one that refers to those, however indirectly. Wider
-     * than the spec's aliases (Format 3.8), tokens whose whole value is another: a composite with one
-     * part referring to it, or a group's `$extends`, uses it too.
+     * Finds the tokens and groups that refer to a token or group.
+     *
+     * That includes a border whose `color` refers to it, and a group that extends it.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
+     * @param options - `{ chained: true }` to follow references through other tokens too.
      *
      * @example
-     * dark.getDependents("color.red").map(({ path }) => path) // ["color.brand", "border.danger"]
+     * // What uses color.primary in dark
+     * dark.getDependents("color.primary").map((token) => token.path)
+     * // => ["button.background"]
      */
     getDependents(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
     /**
-     * The problems about the token or group at `path` in this permutation: its own, a missing
-     * reference it writes, a loop it is part of, a problem in a value it inherits. Those only
-     * another permutation has are left out.
+     * Finds the problems with a token or group in this permutation.
+     *
+     * That includes a missing reference it writes, a loop it's part of, and a problem in a token it
+     * gets through `$extends`.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
      *
      * @example
-     * for (const problem of dark.getDiagnostics("color.brand")) show(problem.message);
+     * // Show each problem with color.primary
+     * for (const problem of dark.getDiagnostics("color.primary")) console.log(problem.message);
      */
     getDiagnostics(path: string): readonly Diagnostic[];
 }
 
 /**
- * The facts each kind of diagnostic carries, so a tool can word diagnostics itself without
- * parsing {@link Diagnostic.message}.
+ * The facts behind each kind of diagnostic's message.
+ *
+ * Use them to word a diagnostic yourself, instead of parsing its `message`.
  */
 export interface DiagnosticDetailByKind {
-    /** A file could not be fetched. */
+    /** A file isn't there, such as a `$ref` to `"gone.json"`. */
     "file-not-found": {
         readonly file: string;
-        /** The file that names it, when it is not the entry. */
+        /** The file that names it, such as the resolver. Absent for the entry file. */
         readonly referencedFrom?: string;
     };
     /**
-     * A file is not valid JSON (or, for a resolver, JSON with comments), or its top level is not an
-     * object.
+     * A file isn't valid JSON, or its top level isn't an object.
+     *
+     * A resolver may have comments, but a token file may not.
      */
     "invalid-json": { readonly reason: JsonErrorReason };
-    /** A key is written twice in one object. The last one is used. */
+    /**
+     * A key is written twice in one object, such as two `$value`s.
+     *
+     * A warning. The last one is used.
+     */
     "duplicate-key": { readonly key: string };
-    /** The resolver breaks a rule of the resolver specification. */
+    /**
+     * The resolver breaks a rule of the resolver spec, such as a `version` other than `"2025.10"`.
+     */
     "resolver-invalid": ResolverProblem;
-    /** An input does not fit the resolver's modifiers. */
+    /**
+     * An input in {@link ReadOptions.inputs} doesn't match the resolver.
+     */
     "input-invalid": {
-        /** Which input, as its index in {@link ReadOptions.inputs}. */
+        /** Which input, by its index in {@link ReadOptions.inputs}. */
         readonly input: number;
     } & InputProblem;
-    /** A token or group name uses a character the specification forbids. */
+    /**
+     * A name has a character the spec doesn't allow, such as the `.` in `"a.b"`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
+     */
     "invalid-name": { readonly name: string; readonly character: "." | "{" | "}" | "$" };
     /**
-     * Something is both a token and a group: an object has a `$value` and also holds `child`; one
-     * file declares a token where another declares a group (`here` says which this place is, and
-     * `relatedInformation` where the other is); or an object's `$ref` points at a token, making it one, and it
-     * also holds tokens or groups.
+     * Something is both a token and a group.
+     *
+     * `reason: "child"` means a token also has `child` inside it.
+     * `reason: "declared"` means one file writes a token where another writes a group. `here` says
+     * which this one is.
+     * `reason: "ref"` means a `$ref` makes an object a token, but it also has tokens or groups.
      */
     "token-and-group":
         | { readonly reason: "child"; readonly child: string }
         | { readonly reason: "declared"; readonly here: "token" | "group" }
         | { readonly reason: "ref"; readonly ref: string };
-    /** Something inside a group is neither a token nor a group: it is not an object. */
+    /** Something in a group isn't an object, such as `"x": "red"`. */
     "invalid-member": {
         readonly name: string;
         readonly found: "string" | "number" | "boolean" | "null" | "array";
     };
-    /**
-     * A property the specification defines, such as `$description`, holds the wrong kind of JSON.
-     */
+    /** A spec property has the wrong kind of JSON, such as `"$description": 5`. */
     "invalid-property": {
         readonly property:
             | "$type"
@@ -1190,51 +1515,62 @@ export interface DiagnosticDetailByKind {
             | "$extensions"
             | "$extends"
             | "$ref";
-        /** `"reference"`: a `"{group}"` reference, or a `{ "$ref": "#/…" }` pointer. */
-        readonly expected: "string" | "object" | "boolean-or-string" | "reference";
         /**
-         * For `$extends` written as a plain name, such as `base`, that name as a reference:
-         * `{base}`.
+         * The kind of JSON it needs.
+         *
+         * `"reference"` means a reference such as `"{base}"` or `{ "$ref": "#/base" }`.
          */
+        readonly expected: "string" | "object" | "boolean-or-string" | "reference";
+        /** For `"$extends": "base"`, the reference it should be, `"{base}"`. */
         readonly reference?: string;
     };
-    /** No type can be worked out for a token. */
+    /** A token has no type, and none can be worked out from its group or its reference. */
     "missing-type": Record<string, never>;
-    /** A `$type` is not one of the thirteen the specification defines (Format 8). */
+    /**
+     * A `$type` the spec doesn't define, such as `"colour"`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#types | Format 8, Types}
+     */
     "unknown-type": {
         readonly type: string;
-        /** A type with a similar name, when exactly one is close. */
+        /** A type with a similar name, such as `"color"`, if exactly one is close. */
         readonly similar?: TokenType;
     };
-    /** A value does not fit its type. */
+    /** A value doesn't fit its type, such as a dimension in `em`. */
     "invalid-value": {
-        /** Where in the token or group, such as `["$value", "unit"]`. */
+        /** Where in the token, such as `["$value", "unit"]`. */
         readonly jsonPath: JsonPath;
     } & ValueErrorDetail;
-    /** A color written as a hex string, which the 2025.10 Color module no longer allows. */
+    /**
+     * A color written as a hex string, such as `"#ff0000"`.
+     *
+     * The Color module needs a color object.
+     */
     "hex-string-color": ValueErrorFacts["hex-string"];
-    /** An `$extensions` entry fails a registered check, such as a {@link Generator}'s. */
+    /** An `$extensions` entry fails a check, such as a {@link Generator}'s. */
     "extension-invalid": {
         /** The `$extensions` key, such as `"com.example"`. */
         readonly key: string;
         /** Where in the token or group, such as `["$extensions", "com.example", "steps"]`. */
         readonly jsonPath: JsonPath;
-        /** Why, as the check named it. A Standard Schema's issues have none. */
+        /** Why, as the check names it. It's absent for a Standard Schema's problems. */
         readonly reason?: string;
         /** The facts the check's message is worded from. */
         readonly data?: unknown;
     };
     /**
-     * A file writes a token or group with a name a {@link Generator} makes. The generator owns
-     * every name it makes, so the generated token is used and what the file writes there is not;
-     * `relatedInformation` is the extension that makes it.
+     * A file writes a token that a {@link Generator} also makes, such as `space.1`.
+     *
+     * The generated token is used, and what the file writes is not.
      */
     "written-generated": {
-        /** The name, such as `"space.2"`. */
+        /** The token's path, such as `"space.1"`. */
         readonly path: string;
         /**
-         * The group it is made in, absent for the top level of a file. A group that extends
-         * another makes its tokens too, so this may not be the group that writes the extension.
+         * The group the token is made in, such as `"space"`.
+         *
+         * It's absent at the top of a file. It can be a group that extends the one with the
+         * extension.
          */
         readonly from?: string;
         /** The generator's extension, such as `["com.example", "steps"]`. */
@@ -1242,116 +1578,137 @@ export interface DiagnosticDetailByKind {
         /** What the file writes with that name. */
         readonly written: "token" | "group";
     };
-    /** A reference points at nothing: no token, or for `$extends`, no group. */
+    /** A reference names nothing, such as `{color.primry}`. */
     "missing-reference": {
-        /** The reference as written, without braces: a path such as `color.brnad`, or a pointer. */
+        /** The reference as written, without braces, such as `"color.primry"`, or a pointer. */
         readonly ref: string;
-        /**
-         * Every token or group that writes it, each as a reference's
-         * {@link ReferenceBase.writtenIn | from}.
-         */
+        /** The path of each token or group that writes the reference. */
         readonly from: readonly string[];
         /**
-         * `ref` written to a token with a similar path instead, when exactly one is close: a path,
-         * or for a pointer, the pointer to that token with the same steps into its value. Not given
-         * when the token a pointer names exists, as then a step inside its value is what is wrong.
+         * A path close to `ref`, such as `"color.primary"`, if exactly one is close.
+         *
+         * For a JSON Pointer, it's a pointer. It's absent when the pointer's token exists, but a
+         * step inside its value is wrong.
          */
         readonly similar?: string;
     };
-    /** `$extends`, or a `$ref` standing for a group, points at a token (Format 6.4.6). */
+    /**
+     * `$extends` names a token, such as `"$extends": "{base}"` when `base` is a token.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#error-conditions | Format 6.4.6, Error Conditions}
+     */
     "not-a-group": { readonly ref: string };
     /**
-     * A `$ref` is not a JSON Pointer (RFC 6901): it does not start with `/` after the `#`, or a `~`
-     * in it is not `~0` or `~1`.
+     * A `$ref` isn't a valid JSON Pointer, such as `"#color/x/$value"`.
+     *
+     * It must start `#/`, and a `~` must be `~0` or `~1`.
+     *
+     * @see {@link https://www.rfc-editor.org/rfc/rfc6901 | RFC 6901, JSON Pointer}
      */
     "malformed-pointer": {
         readonly ref: string;
         readonly reason: "no-leading-slash" | "bad-escape";
         /**
-         * The reference written correctly, when that reaches something, and always for a reference
-         * into another file, whose target is not read.
+         * The pointer written correctly, such as `"#/color/x/$value"`.
+         *
+         * It's there when the corrected pointer finds something, and always for a pointer into
+         * another file.
          */
         readonly corrected?: string;
     };
     /**
-     * A reference to a token points at a group (Format 6.2: `{color.accent}` names a group, not a
-     * token).
+     * A reference names a group, such as `{color.blue}`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#curly-brace-syntax-token-references | Format 7.1.1, Curly brace syntax}
      */
     "not-a-token": { readonly ref: string };
     /**
-     * A reference in a shadow or gradient list points at a token holding several layers or stops.
-     * A reference in such a list stands for one (Format 9.1, 9.6, 9.7).
+     * A reference in a shadow or gradient array names a token with several layers or stops.
+     *
+     * There, a reference stands for one layer or stop.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#array-aliasing-in-composite-types | Format 9.1, Array aliasing in composite types}
      */
     "reference-to-several": {
         readonly ref: string;
-        /** How many layers or stops the token holds. */
+        /** How many layers or stops the token has. */
         readonly count: number;
     };
     /**
-     * References that lead back to where they started; `toTopLevel` when the last refers to the
-     * whole document.
+     * References that loop back, such as `a` to `b` to `a`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#circular-references | Format 7.2.3, Circular References}
      */
     "circular-reference": {
+        /** The paths around the loop, such as `["a", "b", "a"]`. */
         readonly chain: readonly string[];
+        /** Set when the loop ends at a reference to the whole file. */
         readonly toTopLevel?: true;
     };
-    /** A reference points at a token of the wrong type. */
+    /** A reference names a token of the wrong type, such as a number where a color is needed. */
     "type-mismatch": {
         readonly ref: string;
         readonly expected: TokenType;
         readonly found: TokenType;
     };
-    /** A name starts or ends with a space: legal, but almost always a typo. */
+    /**
+     * A name starts or ends with a space, such as `"a "`.
+     *
+     * It's allowed, but usually a typo.
+     */
     "whitespace-in-name": { readonly name: string };
     /**
-     * An object has a key the specification does not define for it, so it is ignored: in a
-     * resolver, a `$` name on a token or group, or in a value, such as `paragraphSpacing` in a
-     * typography value. Your own data belongs in `$extensions`.
+     * A property the spec doesn't define, such as `$foo` on a token.
+     *
+     * It's ignored. In a value, such as `paragraphSpacing` in a typography value, it's only
+     * reported with `ignoreUnknownProperties` on. Otherwise it's an `invalid-value`.
      */
     "unknown-property":
         | {
               readonly property: string;
               readonly owner: "resolver" | "set" | "modifier" | "token" | "group";
-              /** A property it may have with a similar name, when exactly one is close. */
+              /**
+               * A property with a similar name, such as `"sets"` for `"sest"`, if exactly one is
+               * close.
+               */
               readonly similar?: string;
           }
         | {
               readonly property: string;
-              /**
-               * The type of the value it is in, which for a part of a composite is the part's type.
-               */
+              /** The type of the value it's in. For part of a composite, that's the part's type. */
               readonly type: TokenType;
-              /** Where in the token or group, such as `["$value", "paragraphSpacing"]`. */
+              /** Where in the token, such as `["$value", "paragraphSpacing"]`. */
               readonly jsonPath: JsonPath;
           };
     /**
-     * A member is almost certainly one of the specification's own properties written another way:
-     * without its `$`, in other capitals, or with a letter out (`value`, `$Value` or `$vlaue` for
-     * `$value`). It is read as that property, so the token is not lost or read as a group, and
-     * nothing that depends on it fails as well (Format 5, 6).
+     * A spec property written another way, such as `value` or `$Value` for `$value`.
+     *
+     * It's read as that property, so nothing else fails because of it.
      */
     "misspelt-property": {
         readonly written: string;
         readonly property: "$value" | "$type" | "$description" | "$deprecated" | "$extensions";
         readonly owner: "token" | "group";
     };
-    /** A reference points at a token marked `$deprecated`. */
+    /** A reference names a token marked `$deprecated`. */
     "deprecated-reference": { readonly ref: string; readonly reason?: string };
     /**
-     * A resolver has more combinations than `permutationLimit`, so `"each-context"` was built
-     * instead.
+     * A resolver has more combinations than `permutationLimit`.
+     *
+     * Then each context is built on its own instead, as with `"each-context"`.
      */
     "permutation-limit": {
         /** How many combinations the resolver's modifiers make. */
         readonly count: number;
+        /** The `permutationLimit`, such as `32`. */
         readonly limit: number;
         /** How many were built instead. */
         readonly built: number;
     };
     /**
-     * A set or modifier the resolver declares that `resolutionOrder` never reaches, so it takes no
-     * part (Resolver 4.1.6). A hint at where it is written, tagged `unnecessary` so an editor can
-     * fade it.
+     * A set or modifier that `resolutionOrder` never uses.
+     *
+     * It's a hint, tagged `unnecessary` so an editor can fade it.
      */
     "not-in-resolution-order": {
         readonly item: "set" | "modifier";
@@ -1360,8 +1717,7 @@ export interface DiagnosticDetailByKind {
 }
 
 /**
- * Why a file could not be read as JSON. `"comment"` is a comment in a token file, which is JSON
- * and so has none; a resolver may contain comments.
+ * Why a file isn't valid JSON, such as `"comma-expected"`.
  */
 export type JsonErrorReason =
     | "comment"
@@ -1382,7 +1738,7 @@ export type JsonErrorReason =
     | "invalid-escape-character"
     | "invalid-character";
 
-/** Which rule of the resolver specification a resolver breaks. */
+/** A rule of the resolver spec, such as `"version"`. */
 export type ResolverRule =
     | "version"
     | "missing-property"
@@ -1400,15 +1756,19 @@ export type ResolverRule =
     | "file-in-resolution-order";
 
 /**
- * A rule a resolver breaks, what it concerns and where. Checking `rule` narrows the rest.
+ * The rule a resolver breaks, and where.
+ *
+ * Check `rule`, and TypeScript knows the rest.
  *
  * @example
- * if (d.kind === "resolver-invalid" && d.detail.rule === "wrong-type") d.detail.expected
+ * // A version that isn't "2025.10"
+ * diagnostic.detail
+ * // => { rule: "version", name: "version", jsonPath: ["version"] }
  */
 export type ResolverProblem =
     | {
           readonly rule: Exclude<ResolverRule, "wrong-type">;
-          /** The property, set, modifier, pointer or file concerned. */
+          /** The property, set, modifier, pointer or file it's about. */
           readonly name: string;
           /** Where in the resolver, such as `["sets", "base", "sources"]`. */
           readonly jsonPath: JsonPath;
@@ -1422,36 +1782,37 @@ export type ResolverProblem =
       };
 
 /**
- * What a diagnostic is about, as a stable name to switch on. Each has a page at
- * {@link Diagnostic.docsUrl}.
+ * The name of a kind of diagnostic, such as `"missing-reference"`.
+ *
+ * Check this in your code, not the message. Each kind has a page at {@link Diagnostic.docsUrl}.
  */
 export type DiagnosticKind = keyof DiagnosticDetailByKind;
 
 /**
- * A problem or a note about the files. Reading carries on, so one read reports everything.
- * Checking `kind` narrows `detail` to that kind's facts.
+ * A problem with the files, or a note about them.
  *
- * The message says what is wrong in plain words and, where the reader knows, what would mend it
- * ("did you mean `color.ink`?"); `detail` holds the same facts. It names no tool's command or flag,
- * and holds no location: that is in `span`, for the tool to present as it likes. The changes that
- * would mend a problem are made by `@sugarcube-sh/dtcg-edit`.
+ * Reading carries on past a problem, so one read reports them all. Check `kind`, and TypeScript
+ * knows its `detail`. To fix one, see `@sugarcube-sh/dtcg-edit`.
  *
  * @example
- * if (d.kind === "missing-reference") d.detail.similar // "color.ink"
+ * // A typo in a reference
+ * if (diagnostic.kind === "missing-reference") diagnostic.detail.similar;
+ * // => "color.primary"
  */
 export type Diagnostic = DiagnosticOf<DiagnosticDetailByKind> & {
     readonly permutations: Permutations;
 };
 
 /**
- * A diagnostic with kinds of your own, in the same shape as {@link Diagnostic}, so a tool's own
- * checks can be reported in one list with the package's. Give it a map from each kind to the facts
- * it carries; checking `kind` narrows `detail`, as it does for {@link Diagnostic}. Choose kinds
- * that are not {@link DiagnosticKind | the package's}.
+ * A diagnostic with your own kinds.
+ *
+ * It has the same shape as {@link Diagnostic}, so your checks can be listed with dtcg's. Pass a map
+ * from each kind to its facts. Pick kinds dtcg doesn't use.
  *
  * @example
- * type Ours = DiagnosticOf<{ "selector-empty": { entry: number } }>;
- * const reported: (Diagnostic | Ours)[] = [...tokens.diagnostics, ...checkConfig(tokens)];
+ * // A config check, listed with the read's diagnostics
+ * type ConfigDiagnostic = DiagnosticOf<{ "selector-empty": { entry: number } }>;
+ * const all: (Diagnostic | ConfigDiagnostic)[] = [...tokens.diagnostics, ...checkConfig(tokens)];
  */
 export type DiagnosticOf<DetailByKind> = {
     [K in keyof DetailByKind]: {
@@ -1463,406 +1824,396 @@ export type DiagnosticOf<DetailByKind> = {
         /** The token or group it concerns. */
         readonly path?: string;
         /**
-         * The permutations that have it. Always given on the package's own {@link Diagnostic}s, as
-         * every answer gives them: each one that reads its file, every one for a problem in the
-         * resolver or in no file (labelled `"everywhere"`), and none for a file no permutation the
-         * read built reads (`"nowhere"`). A tool's own kinds may leave it out, for a problem that
-         * concerns no permutation, such as one in the tool's own configuration.
+         * The permutations that have the problem.
          *
-         * @example
-         * const { label } = diagnostic.permutations;
-         * show(label === "everywhere" ? diagnostic.message : `${diagnostic.message} in ${label}`);
+         * dtcg's own diagnostics always have it. A problem in the resolver applies `"everywhere"`.
+         * Your own kinds can leave it out.
          */
         readonly permutations?: Permutations;
         /**
-         * Other places involved, such as every token that uses a missing one: each with its own
-         * message, and the token or group written there, when one is. With {@link path}, every
-         * token a tool could take someone to, whatever the kind.
-         *
-         * @example
-         * const tokens = [diagnostic.path, ...(diagnostic.relatedInformation ?? []).map((each) => each.path)];
+         * Other places involved, each with its own message, such as where a duplicate key is also
+         * written.
          */
         readonly relatedInformation?: readonly {
             readonly message: string;
             readonly span: Span;
             readonly path?: string;
         }[];
-        /** How an editor may show it: struck through for a deprecated reference. */
+        /**
+         * How an editor can show it.
+         *
+         * `"unnecessary"` fades it, and `"deprecated"` strikes it through.
+         */
         readonly tags?: readonly ("deprecated" | "unnecessary")[];
-        /** A page explaining this kind of diagnostic. */
+        /** A page about this kind of diagnostic. */
         readonly docsUrl: string;
         readonly detail: DetailByKind[K];
     };
 }[keyof DetailByKind];
 
 /**
- * Design tokens as the DTCG specifications define them: every permutation, with every value in one
- * shape and every reference followed. The tokens and groups link down and across, never up: a
- * group's {@link Group.children | children} are the tokens and groups themselves, and a reference's
- * `pointsToToken` the token it reaches; what is around a token, its group and who refers to it, is asked of
- * its permutation by path. A token or group that is the same in two permutations, written in the
- * same places, taking the same settings from its groups and reaching the same tokens, is one object
- * in both, so `===` tells whether it differs between them. `JSON.stringify` writes their plain
- * form, with a path wherever one links to another, and leaves out what the rest says: a group's
- * `rootToken` and `extends`, `kind`, a reference's `writtenIn`, `pointsToPath`, `pointsToToken` and
- * `pointsToProperty`, and where places and references are, which `getSpan` (`/editor`) gives.
- * Nothing changes them after {@link read} returns them: everything in them is read-only and
- * shared, so make a new value rather than changing one.
+ * Design tokens, as {@link read} returns them, with every permutation.
+ *
+ * Everything in them is read-only. A token or group that's the same in two permutations is one
+ * object in both, so `===` tells whether it differs.
+ *
+ * @example
+ * // color.blue.500 is the same in light and dark
+ * light.getToken("color.blue.500") === dark.getToken("color.blue.500")
+ * // => true
  */
 export interface DesignTokens {
     /**
-     * Every file the read used, the entry first, in the order they were read. For watching and
-     * reloading. Paths are as described at {@link ReadText}.
+     * Every file the read used, the entry file first.
+     *
+     * Paths are relative to the entry file's folder, such as `"dark.json"`.
      */
     readonly files: readonly string[];
-    /**
-     * The file the read started from, a resolver or a token file, by the name
-     * {@link DesignTokens.files} gives it.
-     */
+    /** The file the read started from, such as `"tokens.resolver.json"`. */
     readonly entryFile: string;
-    /** What the resolver says about itself and how it is put together; absent with no resolver. */
+    /** The resolver, if the read started from one. */
     readonly resolver?: Resolver;
-    /**
-     * Every source the read used, each once, in the order the permutations first read them. A
-     * permutation's {@link Permutation.sources | sources} are among these, the same objects.
-     */
+    /** Every source the read used, each once. */
     readonly sources: readonly Source[];
     /**
-     * Every permutation the read built, in the resolver's order: modifiers as `resolutionOrder`
-     * lists them, the first changing slowest (for `"each-context"`, each modifier's contexts in
-     * turn), and each one's contexts as written, so the default permutation comes where its
-     * contexts are written, not necessarily first. The spec sets no
-     * order (Resolver 4.1.5.4); to find the default, ask {@link DesignTokens.getPermutation} with no
-     * input. Its label is `"everywhere"`.
+     * Every permutation the read built, in the resolver's order.
+     *
+     * The default isn't always first. To get it, use `getPermutation()`.
      */
     readonly permutations: Permutations;
     /**
-     * How the values were read. To read a value from the design tokens again, such as one inside
-     * `$extensions`, the same way, give these to `parseValue` or `createExtensionReader`.
+     * How the values were read.
+     *
+     * To read a value in `$extensions` the same way, pass these to `parseValue` or
+     * `createExtensionReader`.
      */
     readonly parseOptions: Required<ParseOptions>;
     /**
-     * Every error, warning and note, in the order the read found them; sort by `span` for file
-     * order. For those about one token or group,
-     * {@link DesignTokens.getDiagnostics | getDiagnostics}; for those at a place in a file,
-     * `getDiagnosticsAt` (`/editor`).
+     * Every problem the read found.
      *
-     * @example
-     * const errors = tokens.diagnostics.filter((d) => d.severity === "error");
+     * For one token or group, use {@link DesignTokens.getDiagnostics | getDiagnostics}. For a place
+     * in a file, use `getDiagnosticsAt`.
      */
     readonly diagnostics: readonly Diagnostic[];
     /**
-     * Every reference to `path` written in the files, each place once, with the permutations it
-     * holds in and the tokens that have it: what renaming `path` rewrites, and whether anything
-     * uses it at all, built or not. A group's path covers what is written to it, such as an
-     * `$extends`, and to everything inside it. To follow chained references, which go through each
-     * permutation's own tokens, ask a permutation ({@link Permutation.getReferencesTo}).
+     * Finds every reference to a token or group, in any file.
+     *
+     * Each is listed once, with the tokens that write it and the permutations it applies in. To
+     * follow chains of references, use {@link Permutation.getReferencesTo}.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
      *
      * @example
-     * for (const { span } of tokens.getReferencesTo("color.brand")) rewrite(span);
-     * const unused = tokens.getReferencesTo("color.legacy").length === 0;
+     * // Nothing refers to button.background
+     * tokens.getReferencesTo("button.background").length
+     * // => 0
      */
     getReferencesTo(path: string): readonly ReferenceInPermutations[];
     /**
-     * Every place the token or group at `path` is written, in any permutation, each span once with
-     * the sources and permutations that read it and the permutations whose value comes from it, in
-     * the order first met: where to edit it, and where a change to its value would show.
+     * Finds every place a token or group is written, in any permutation.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
      *
      * @example
-     * for (const { span } of tokens.getDefinitions("color.brand")) rename(span);
-     * for (const { span, winsIn } of tokens.getDefinitions("color.brand")) row(span.file, winsIn.label);
+     * // color.json and dark.json both write color.primary
+     * tokens.getDefinitions("color.primary").map((definition) => definition.span.file)
+     * // => ["color.json", "dark.json"]
      */
     getDefinitions(path: string): readonly DefinitionInPermutations[];
     /**
-     * The permutation for an input: modifiers left out take their default (Resolver 4.1.5.3), and
-     * names match whatever their case (Resolver 5.1). With no input, the default permutation.
+     * Gets the permutation for an input.
      *
-     * @throws {@link PermutationError} when there is none: the input names a modifier or context
-     * the resolver does not declare, leaves out a modifier that has no default (Resolver 6.1), or
-     * names a permutation the read did not build. Its `detail` says which.
+     * Without an input, it returns the default permutation.
+     *
+     * @param input - The input, such as `{ mode: "dark" }`.
+     * @throws {@link PermutationError} If no permutation the read built fits the input.
      *
      * @example
-     * const dark = tokens.getPermutation({ mode: "dark" });
+     * // The dark permutation
+     * tokens.getPermutation({ mode: "dark" }).label
+     * // => "mode: dark"
      */
     getPermutation(input?: Input): Permutation;
     /**
-     * The token at `path`, when the read has one permutation: a token file, or a resolver with no
-     * modifiers. As {@link Permutation.getToken}, of that permutation. With several, which one is
-     * meant has to be said: pick one with {@link DesignTokens.getPermutation}, or ask every one with
-     * {@link askEveryPermutation}.
+     * Gets the token at a path, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.getToken} for that permutation.
      *
-     * @example
-     * const tokens = await read("color.json");
-     * tokens.getToken("color.red")?.resolved
+     * @param path - The token's path, such as `"color.primary"`.
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     getToken(path: string): Token | undefined;
     /**
-     * The group at `path`, when the read has one permutation. As {@link Permutation.getGroup}.
+     * Gets the group at a path, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.getGroup} for that permutation.
+     *
+     * @param path - The group's path, such as `"color.blue"`.
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     getGroup(path: string): Group | undefined;
     /**
-     * The token or group at `path`, when the read has one permutation. As
-     * {@link Permutation.getTokenOrGroup}.
+     * Gets the token or group at a path, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.getTokenOrGroup} for that permutation.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     getTokenOrGroup(path: string): Token | Group | undefined;
     /**
-     * The tokens and groups that refer to `path`, when the read has one permutation. As
-     * {@link Permutation.getDependents}. Whether anything uses it in any permutation, or one the read
-     * didn't build, is whether {@link DesignTokens.getReferencesTo | getReferencesTo} gives any.
+     * Finds what refers to a token or group, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.getDependents} for that permutation. To check every permutation, use
+     * {@link DesignTokens.getReferencesTo | getReferencesTo}.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
+     * @param options - `{ chained: true }` to follow references through other tokens too.
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     getDependents(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
     /**
-     * The tokens and groups `path` refers to, when the read has one permutation. As
-     * {@link Permutation.getDependencies}.
+     * Finds what a token or group refers to, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.getDependencies} for that permutation.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
+     * @param options - `{ chained: true }` to follow references through other tokens too.
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     getDependencies(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
     /**
-     * Every token, when the read has one permutation. As {@link Permutation.tokens}.
+     * Every token, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.tokens} for that permutation.
+     *
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     readonly tokens: readonly Token[];
     /**
-     * Every group, when the read has one permutation. As {@link Permutation.groups}.
+     * Every group, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.groups} for that permutation.
+     *
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     readonly groups: readonly Group[];
     /**
-     * The tokens and groups at the top level, when the read has one permutation. As
-     * {@link Permutation.children}.
+     * The tokens and groups at the top of the files, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.children} for that permutation.
+     *
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     readonly children: readonly (Token | Group)[];
     /**
-     * What the top of the files writes, when the read has one permutation. As
-     * {@link Permutation.topLevel}.
+     * What the top of the files writes, when the read has one permutation.
      *
-     * @throws {@link SeveralPermutationsError} when the read has several permutations.
+     * It's {@link Permutation.topLevel} for that permutation.
+     *
+     * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     readonly topLevel: TopLevel;
     /**
-     * Every token's path in any permutation, each once, in the order the permutations list them:
-     * a token only a later permutation has comes after the earlier ones' tokens.
+     * Gets every token's path, in any permutation, each once.
      *
      * @example
-     * for (const path of tokens.getTokenPaths()) row(path, dark.getToken(path)?.resolved);
+     * // Every token path
+     * tokens.getTokenPaths()
+     * // => ["color.blue.500", "color.blue.300", "color.primary", "button.background"]
      */
     getTokenPaths(): readonly string[];
-    /**
-     * Every group's path in any permutation, each once, in the order the permutations list them.
-     */
+    /** Gets every group's path, in any permutation, each once. */
     getGroupPaths(): readonly string[];
     /**
-     * Whether a token or group is at `path` in any permutation.
+     * Checks whether a token or group is at a path, in any permutation.
+     *
+     * @param path - The path, such as `"color.blue"`.
      *
      * @example
-     * if (tokens.has("color.danger")) refuse("taken");
+     * // color.blue is a group
+     * tokens.has("color.blue")
+     * // => true
      */
     has(path: string): boolean;
     /**
-     * The text of a file the read used, by the name {@link DesignTokens.files} gives it, exactly as
-     * read; `undefined` for a file it did not use. What an editor shows, and what a format-keeping
-     * edit changes.
+     * Gets a file's text, exactly as read.
      *
-     * @example
-     * const lines = tokens.getText("dark.json")?.split("\n");
+     * It returns `undefined` for a file the read didn't use.
+     *
+     * @param file - The file, such as `"dark.json"`.
      */
     getText(file: string): string | undefined;
     /**
-     * The design tokens after some files change, read as these were: from the same file, with the
-     * same options. `changed` gives each changed file's new text, a new file included, or `null`
-     * for a file deleted, by the names {@link DesignTokens.files} gives them; every other file is
-     * read as these read it. These design tokens are not changed. What an editor asks after
-     * changing the text.
+     * Reads the tokens again, after some files changed.
+     *
+     * It uses the same entry file and options. These tokens don't change.
+     *
+     * @param changed - Each changed file's new text, such as `{ "dark.json": text }`. Pass `null`
+     * for a deleted file.
      *
      * @example
-     * const next = tokens.reread({ "dark.json": edited });
-     * const without = tokens.reread({ "tokens.resolver.json": withoutDim, "dim.json": null });
+     * // dark.json now points color.primary at color.blue.500
+     * const next = tokens.reread({ "dark.json": text });
+     * next.getPermutation({ mode: "dark" }).getToken("color.primary")?.value
+     * // => { syntax: "curly-brace", path: "color.blue.500" }
      */
     reread(changed: Readonly<Record<string, string | null>>): DesignTokens;
     /**
-     * The design tokens read again from every file's text as it is now, from the same file and
-     * with the same options: `files` holds each file by the name {@link DesignTokens.files} gives
-     * it, and a file these read that `files` leaves out is read as deleted. These same design
-     * tokens when no file's text differs, so a tool sent every file after each change can tell
-     * that nothing did. What a host-fed editor asks; one that knows what it changed asks
-     * {@link DesignTokens.reread}.
+     * Reads the tokens again, from every file's text as it is now.
+     *
+     * A file you leave out is read as deleted. If no file changed, it returns these same tokens. If
+     * you know which files changed, use {@link DesignTokens.reread}.
+     *
+     * @param files - Every file's text, such as `tokens.toMemory().files`.
      *
      * @example
-     * const next = tokens.rereadAll(received.files);
-     * if (next !== tokens) show(next);
+     * // Nothing changed
+     * tokens.rereadAll(tokens.toMemory().files) === tokens
+     * // => true
      */
     rereadAll(files: Readonly<Record<string, string>>): DesignTokens;
     /**
-     * What to send to read these design tokens somewhere else, such as a browser or a worker: the
-     * entry and the text of every file read, a {@link TokensInMemory} as {@link readFromMemory}
-     * takes it. Read it there with the same options for the same design tokens; options can hold
-     * functions, so they are not part of it.
+     * Gets the entry file and every file's text, to read them somewhere else.
+     *
+     * Pass the result to {@link readFromMemory}, with the same options, to get the same tokens.
      *
      * @example
-     * send(tokens.toMemory());
-     * const same = readFromMemory(received, options);
+     * // Every file the read used
+     * Object.keys(tokens.toMemory().files)
+     * // => ["tokens.resolver.json", "color.json", "dark.json"]
      */
     toMemory(): TokensInMemory & { readonly entryFile: string };
     /**
-     * What changed since `before`, an earlier read, and in which permutations: tokens and groups
-     * added, removed, renamed, or with different properties. A token is compared by what it says,
-     * not what it resolves to, so changing one value is one change, not one for every token
-     * pointing at it. The value is compared with {@link isEquivalentValue}, the type only where the token
-     * writes `$type`, and the other properties exactly. A change that is the same in several
-     * permutations, such as a value changed in a file they all read, is one entry listing them all.
+     * Finds what changed since an earlier read.
      *
-     * Tokens a generator made are included, with `generated` set, so a tool can show the change to
-     * the extension on its group and fold its tokens under it. Tokens a group takes through
-     * `$extends` are included the same way, with `inherited` set.
+     * A token is compared by what it says, not what it resolves to. So changing `color.blue.500` is
+     * one change, not one for every token that refers to it.
      *
-     * Two reads alone cannot tell a rename from a removal and an addition. Pass the moves the edits
-     * made, in the order they were made, and those tokens are listed as `renamed`; references the
-     * moves rewrote are not changes, and a reference pointed somewhere else is.
-     *
-     * Each permutation is compared with the one its input names in `before`; a permutation `before`
-     * has no match for is left out.
+     * @param before - An earlier read, such as the tokens before
+     * {@link DesignTokens.reread | reread}.
+     * @param options - `moved`, the {@link Move}s the edits made, in order.
      *
      * @example
-     * for (const change of tokens.getChangesSince(before, { moved })) row(change.kind, change.path);
+     * // color.blue.500 has a new value in color.json
+     * tokens.reread({ "color.json": text }).getChangesSince(tokens).map((change) => change.path)
+     * // => ["color.blue.500"]
      */
     getChangesSince(before: DesignTokens, options?: { moved?: readonly Move[] }): readonly Change[];
     /**
-     * The problems about the token or group at `path`, in every permutation, each with the
-     * permutations it is in: its own, a missing reference it writes (reported once however many
-     * write it), a loop it is part of, a problem in a value it inherits (reported once, about the
-     * token that writes it).
+     * Finds the problems with a token or group, in every permutation.
      *
-     * @example
-     * for (const { message, permutations } of tokens.getDiagnostics("color.brand")) {
-     *   show(message, permutations?.label);
-     * }
+     * Each comes with the permutations it's in. The kinds are as for
+     * {@link Permutation.getDiagnostics}.
+     *
+     * @param path - The token or group, such as `"color.primary"`.
      */
     getDiagnostics(path: string): readonly Diagnostic[];
 }
 
 /**
- * Which permutations a group holds, described by their contexts: parts joined by "or", each part
- * naming, for each modifier that narrows it, the contexts it keeps. A modifier a part leaves out may
- * be any of its contexts, unlike in an {@link Input}, where it is at its default (Resolver 6.1).
- * Every part matches only permutations in the group, among every combination the resolver's
- * modifiers make, built or not: so a group that is every permutation of a read that built only
- * some isn't `[{}]`, and a group of one permutation names every modifier. Modifiers come in the
- * order `resolutionOrder` names them, contexts as they are written.
+ * Which permutations are in a {@link Permutations}, by their contexts.
+ *
+ * A permutation is in it if any part matches. A modifier a part leaves out can be any of its
+ * contexts, unlike in an {@link Input}. `[{}]` is every combination, and `[]` is none.
  *
  * @example
- * [{ mode: ["dark", "dim"], contrast: ["high"] }]       // dark or dim, in high contrast
- * [{ brand: ["cbus", "hesta-super"] }, { inverted: ["on"] }]  // those brands, or inverted
- * [{}]                                                  // every combination
- * []                                                    // none
+ * // Only dark
+ * tokens.permutations.select((permutation) => permutation === dark).scope
+ * // => [{ mode: ["dark"] }]
  */
 export type Scope = readonly Readonly<Record<string, readonly string[]>>[];
 
 /**
- * Some of the design tokens' permutations, in their order: the ones an answer, a problem or the
- * design tokens themselves cover. A read-only list, so `find`, `map`, `includes` and `length` work
- * as on any array, with the inputs, the scope and a label beside it.
+ * Some of the design tokens' permutations, in order.
+ *
+ * It's an array, with `inputs`, `scope` and a `label` added.
  *
  * @example
- * for (const { writtenInPaths, permutations } of tokens.getReferencesTo("color.red")) {
- *   row(writtenInPaths, permutations.label);   // "mode: dark, sepia", or "everywhere"
- * }
+ * // Where dark.json's color.primary applies
+ * tokens.getDefinitions("color.primary")[1]!.permutations.label
+ * // => "mode: dark"
  */
 export interface Permutations extends ReadonlyArray<Permutation> {
     /** Each permutation's input, in the same order. */
     readonly inputs: readonly Input[];
-    /**
-     * Which permutations it holds, by their contexts, for a tool that words them its own way.
-     *
-     * @example
-     * const rest = tokens.permutations.select((each) => !group.includes(each));
-     * rest.scope; // what a tool could show as "except …"
-     */
+    /** Which permutations it holds, by their contexts, as a {@link Scope}. */
     readonly scope: Scope;
     /**
-     * Every permutation the read built that it doesn't hold, in their order: for "everywhere
-     * but …", and for whether it is every permutation the read built (none other). Not the same as
-     * a {@link Permutations.label | label} of `"everywhere"`, which is every combination the
-     * resolver's modifiers make: a read limited by `inputs`, or built `"each-context"`, can hold
-     * every permutation it built without holding every combination.
+     * The permutations the read built that aren't in this one.
      *
      * @example
-     * // say where a problem is only when it isn't everywhere the read looked
-     * const { permutations } = problem;
-     * const where = permutations.others.length === 0 ? "" : ` in ${permutations.label}`;
+     * // The permutations that aren't dark
+     * tokens.permutations.select((permutation) => permutation === dark).others.map((p) => p.label)
+     * // => ["mode: light"]
      */
     readonly others: Permutations;
     /**
-     * Its {@link Permutations.scope | scope} written out: each modifier and the contexts it keeps,
-     * such as `"mode: dark, dim, contrast: high"`, parts joined with `"; "`. A modifier left out may
-     * be any of its contexts, so `"mode: dark"` is every dark permutation; one permutation alone
-     * names every modifier, as its own {@link Permutation.label | label} does. Every combination is
-     * `"everywhere"`, none `"nowhere"`.
+     * A name for the permutations in it, such as `"mode: dark"`.
+     *
+     * All of them is `"everywhere"`, and none is `"nowhere"`.
+     *
+     * @example
+     * // Both light and dark
+     * tokens.permutations.label
+     * // => "everywhere"
      */
     readonly label: string;
     /**
-     * The permutations that pass `test`, in the same order, as permutations of their own: labelled
-     * against every permutation the read built, as an answer's are. Where `filter` gives a plain
-     * list, this keeps the label.
+     * Picks the permutations that pass `test`, and keeps the label.
+     *
+     * `filter` returns a plain array instead.
+     *
+     * @param test - Asked of each permutation, such as `(permutation) => permutation !== light`.
      *
      * @example
-     * const elsewhere = tokens.permutations.select((each) => each !== edited);
-     * elsewhere.label; // "mode: light"
+     * // Every permutation but light
+     * tokens.permutations.select((permutation) => permutation !== light).label
+     * // => "mode: dark"
      */
     select(test: (permutation: Permutation) => boolean): Permutations;
     /**
-     * The permutation in this list that an input names, found as {@link DesignTokens.getPermutation}
-     * finds it: modifiers left out take their default (Resolver 4.1.5.3), and names match
-     * whatever their case (Resolver 5.1); `undefined` when the resolver has no such
-     * context or modifier, when the read built no such permutation, or when this list doesn't hold
-     * it. What a tool asks to find a permutation again from an input it kept, such as one chosen
-     * before the files changed. For why there is none, ask {@link DesignTokens.getPermutation}, whose
-     * {@link PermutationError} says.
+     * Finds the permutation in this array that an input names.
+     *
+     * It returns `undefined` if there's none. To find out why, use
+     * {@link DesignTokens.getPermutation}, which throws a {@link PermutationError}.
+     *
+     * @param input - The input, such as `{ mode: "dark" }`.
      *
      * @example
-     * tokens.permutations.findByInput({ mode: "dark" })?.label;                          // "mode: dark"
-     * tokens.permutations.findByInput(kept.input) ?? tokens.getPermutation();               // the default if it went
-     * problem.permutations.findByInput({ mode: "dark" }) !== undefined;                   // found in mode: dark?
+     * // dark, found by its input
+     * tokens.permutations.findByInput({ mode: "dark" })?.label
+     * // => "mode: dark"
      */
     findByInput(input: Input): Permutation | undefined;
 }
 
 /**
- * Why {@link DesignTokens.getPermutation} found no permutation, with the facts its message is worded
- * from.
+ * Why {@link DesignTokens.getPermutation} found no permutation, with the facts behind its message.
+ *
+ * `"not-read"` means the input fits, but the read didn't build that permutation.
  */
 export type PermutationErrorDetail = InputProblem | { reason: "not-read"; input: Input };
 
-/**
- * Why a question of one permutation, such as {@link DesignTokens.getToken}, was asked of design
- * tokens with several, with the facts its message is worded from.
- */
+/** The facts behind a {@link SeveralPermutationsError}'s message. */
 export interface SeveralPermutationsDetail {
     /** What was asked, such as `"getToken()"` or `"tokens"`. */
     readonly asked: string;
     /** The resolver's modifiers. */
     readonly modifiers: readonly string[];
-    /** An input that picks a permutation, for the message to show. */
+    /** An input that picks a permutation, such as `{ mode: "dark" }`. */
     readonly example: Input;
 }
 
 /**
- * Why an input does not fit the resolver's modifiers (Resolver 5.2, 6.1): a modifier it doesn't
- * declare, a context that isn't a string or that the modifier doesn't declare, or a modifier with
- * no default left out. The read reports each as an `input-invalid` problem;
- * {@link DesignTokens.getPermutation} throws a {@link PermutationError} with the first.
+ * Why an input doesn't fit the resolver.
+ *
+ * `"unknown-modifier"` means the resolver has no such modifier.
+ * `"unknown-context"` means the modifier has no such context.
+ * `"missing-modifier"` means a modifier with no default is left out.
+ * `"not-a-string"` means a context isn't a string.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#input-validation | Resolver 6.1, Input validation}
  */
 export type InputProblem = { readonly modifier: string } & (
     | {
@@ -1886,59 +2237,62 @@ export type InputProblem = { readonly modifier: string } & (
 
 export type { ValueErrorCode, ValueErrorDetail, ValueErrorFacts } from "./values/value-errors.js";
 
-/** Why a single value could not be read. */
+/** Why one value couldn't be read. */
 export interface ValueError {
     kind: "invalid-value";
     /**
-     * Where the problem is: the `jsonPath` the value was read at, then the steps into it, such as
-     * `["$value", "color"]` in a shadow read at `["$value"]`.
+     * Where the problem is, such as `["unit"]`.
+     *
+     * It starts with the `jsonPath` the value was read at.
      */
     jsonPath: JsonPath;
     message: string;
-    /** Why, and the facts the message is worded from, so a tool can word it itself. */
+    /** Why, with the facts behind the message. */
     detail: ValueErrorDetail;
 }
 
 /**
- * A property a value's type does not define, such as `paragraphSpacing` in a typography value. It
- * is set aside, and the rest of the value is read without it.
+ * A property a value's type doesn't have, set aside, such as `paragraphSpacing`.
+ *
+ * The rest of the value is read without it.
  */
 export interface IgnoredProperty {
     kind: "unknown-property";
     /** Where the property is, such as `["$value", "paragraphSpacing"]`. */
     jsonPath: JsonPath;
     message: string;
-    /** The type of the value it is in, which for a part of a composite is the part's type. */
+    /** The type of the value it's in. For part of a composite, that's the part's type. */
     detail: { type: TokenType; property: string };
 }
 
 /**
- * The outcome of reading one value. `ignored` lists the properties set aside, whether or not the
- * rest of the value could be read: empty when there are none.
+ * The result of reading one value.
+ *
+ * `ignored` lists the properties set aside, whether or not the value could be read.
  */
 export type ParseResult<V> =
     | { ok: true; value: V; ignored: IgnoredProperty[] }
     | { ok: false; errors: ValueError[]; ignored: IgnoredProperty[] };
 
-/** How values are read, for {@link read} and the parsers alike. */
+/** How values are read. */
 export interface ParseOptions {
     /**
-     * Reads a color written as a hex string, such as `"#e11d48"` or `"#e11d4880"`, as the sRGB
-     * color it names, with the string kept as `hex`, and `dtcg/css` writes it as that string. Not
-     * DTCG 2025.10, which writes every color as an object. Off, a hex string is a
-     * `hex-string-color` error; on, one with three or four digits is an `invalid-value` giving the
-     * six or eight digits it stands for.
+     * Reads a hex string, such as `"#e11d48"`, as an sRGB color.
+     *
+     * The string is kept as `hex`, and CSS writes it as that string. DTCG 2025.10 doesn't allow it.
+     * Off, a hex string is a `hex-string-color` error.
+     *
      * @default false
      */
     hexStringColors?: boolean;
     /**
-     * Reads a value that has a property its type does not define, such as `paragraphSpacing` in a
-     * typography value, by setting that property aside: each is listed in
-     * {@link ParseResult | `ignored`}, which `read` reports as an `unknown-property` warning, and
-     * the rest of the value is read. Not DTCG 2025.10, which makes such a composite token invalid
-     * (Format 9.2). Off, the property is an `invalid-value` error, for colors, dimensions and
-     * durations as for composites. A `$ref` with other properties beside it is an error either way.
+     * Sets aside a property a value's type doesn't have, such as `paragraphSpacing`.
+     *
+     * The rest of the value is read, and `read` reports a warning. Off, it's an `invalid-value`
+     * error. A `$ref` with other properties is an error either way.
+     *
      * @default false
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#groups-versus-composite-tokens | Format 9.2, Groups versus composite tokens}
      */
     ignoreUnknownProperties?: boolean;
 }
@@ -1946,19 +2300,17 @@ export interface ParseOptions {
 export type { StandardSchemaV1, StandardTypedV1 } from "./standard-schema.js";
 
 /**
- * A check for your own `$extensions` key, on the tokens and groups it applies to. The data is kept
- * either way; this only adds errors, each reported as `extension-invalid`.
+ * Checks your own `$extensions` key.
  *
- * Give it a `schema` from any library that implements Standard Schema, such as Zod, Valibot or
- * ArkType: each issue is reported with the library's message. Or give it `validate` and
- * `messages`, to report problems with reasons and facts that a tool can word itself. With both, the
- * schema is checked first, and `validate` only sees an extension that passes it.
+ * Give it a Standard Schema, such as from Zod, or a `validate` function with `messages`. With both,
+ * `validate` only sees what passes the schema. Each problem is reported as `extension-invalid`.
  *
  * @example
+ * // fluid must be true or false
  * const fluid = defineExtensionValidator({
- *   key: "com.example",
- *   appliesTo: ["dimension"],
- *   schema: z.object({ fluid: z.boolean() }),
+ *     key: "com.example",
+ *     appliesTo: ["dimension"],
+ *     schema: z.object({ fluid: z.boolean() }),
  * });
  */
 export interface ExtensionValidator {
@@ -1968,15 +2320,17 @@ export interface ExtensionValidator {
     appliesTo: readonly (TokenType | "group")[];
     /** A schema the extension must pass. It must validate synchronously. */
     schema?: StandardSchemaV1;
-    /** The wording for each reason `validate` reports. */
+    /** The wording for each reason `validate` returns. */
     messages?: ExtensionMessages;
     /**
-     * Why the extension is not valid, if it is not. An error's `jsonPath` starts at the extension.
-     * An {@link ExtensionError} is worded from `messages`; a {@link ValueError}, from reading a
-     * value in the extension with `parseValue`, is reported as `invalid-value`; an
-     * {@link IgnoredProperty} from the same, as an `unknown-property` warning. `options` are how
-     * the read reads values, to read the extension's the same way: give them to `createExtensionReader`
-     * or `parseValue`.
+     * Returns why the extension isn't valid, or `[]`.
+     *
+     * An error's `jsonPath` starts at the extension.
+     *
+     * @param on - The token or group, by its path and type.
+     * @param extension - Your extension's data, or the schema's output if there's a `schema`.
+     * @param options - How the read reads values. Pass them to `createExtensionReader` or
+     * `parseValue` to read values the same way.
      */
     validate?(
         on: {
@@ -1990,46 +2344,47 @@ export interface ExtensionValidator {
     ): (ExtensionError | ValueError | IgnoredProperty)[];
 }
 
-/** A token a generator makes, written as it would be in a file, with its name in the group. */
+/** A token a generator makes, as a file would write it. */
 export interface GeneratedToken {
     /**
-     * Its name in the group, such as `"md"`. A name the specification forbids (Format 5.1.1), such
-     * as one with a `.`, makes no token and is reported as `invalid-name`.
+     * Its name in the group, such as `"md"`.
+     *
+     * A name the spec doesn't allow, such as one with a `.`, is reported as `invalid-name`. It
+     * makes no token.
      */
     name: string;
     /** @default the group's type */
     $type?: TokenType;
-    /**
-     * As a file would write it, such as `{ value: 1, unit: "rem" }` for a size: plain JSON, not a
-     * value read from a token, whose shape can differ (a stroke style written `"solid"` is read as
-     * `{ kind: "keyword", keyword: "solid" }`).
-     */
+    /** The value as a file would write it, such as `{ value: 1, unit: "rem" }`. */
     $value: JsonValue;
     $description?: string;
     $extensions?: Record<string, JsonValue>;
 }
 
 /**
- * The messages for an extension's own reasons, one per reason, each worded from that reason's
- * facts. `dtcg` words a {@link Diagnostic} of kind `extension-invalid` from it, as it words its own
- * kinds from its own table, in the same style: plain words, a lowercase start, no full stop, no
- * location.
+ * Your extension's messages, one for each reason.
+ *
+ * Each takes the reason's facts and returns the message. Write them as dtcg does. Start lowercase,
+ * and leave off the full stop and the place.
  *
  * @example
+ * // Two reasons
  * {
- *   "ratio-not-above-one": ({ ratio }: { ratio: number }) =>
- *     `a ratio of ${ratio} makes a flat or shrinking scale: it must be more than 1`,
- *   "no-multipliers": () => "`multipliers` must name at least one step",
+ *     "ratio-not-above-one": ({ ratio }: { ratio: number }) =>
+ *         `a ratio of ${ratio} makes a flat or shrinking scale`,
+ *     "no-multipliers": () => "`multipliers` must name at least one step",
  * }
  */
 export type ExtensionMessages = Record<string, (data: any) => string>;
 
 /**
- * Why an extension is not valid: where in it, a reason from its {@link ExtensionMessages}, and the
- * facts that reason is worded from. It carries no sentence: `dtcg` words it from the messages.
+ * A problem with your extension, by its reason.
+ *
+ * dtcg words it from your {@link ExtensionMessages}.
  *
  * @example
- * { jsonPath: ["ratio", "min"], reason: "ratio-not-above-one", data: { ratio: 1 } }
+ * // A ratio that's too small
+ * { jsonPath: ["ratio"], reason: "ratio-not-above-one", data: { ratio: 1 } }
  */
 export type ExtensionError<M extends ExtensionMessages = ExtensionMessages> = string extends keyof M
     ? {
@@ -2047,48 +2402,43 @@ export type ExtensionError<M extends ExtensionMessages = ExtensionMessages> = st
       }[keyof M & string];
 
 /**
- * Makes tokens from an extension on a group, such as the steps of a spacing scale. The extension
- * owns every token it makes: each is marked {@link TokenBase.generated | generated}, whether a file
- * writes it or not.
- * A token a file writes keeps its written value. A token no file writes is added, after the group's
- * files are merged and its `$extends` followed, and read like any written token, so references to
- * it resolve.
+ * Makes tokens from an extension on a group, such as the steps of a spacing scale.
+ *
+ * Each token it makes is marked {@link TokenBase.generated | generated}. If a file writes one too,
+ * the generated token is used, and the file's is a `written-generated` error.
  */
 export interface Generator {
     /**
-     * Where the extension sits in a group's `$extensions`. A group without it is left alone.
+     * Where the extension is in a group's `$extensions`, such as `["com.example", "steps"]`.
      *
-     * @example
-     * ["sh.sugarcube", "scale"]
+     * A group without it is left alone.
      */
     extension: readonly [string, ...string[]];
     /**
-     * A schema the extension must pass before `generate` sees it, from any library that implements
-     * Standard Schema. Each issue is reported as `extension-invalid` with the library's message,
-     * and `generate` is not called. It must validate synchronously.
+     * A schema the extension must pass before `generate` sees it.
+     *
+     * It must validate synchronously. If it fails, `generate` isn't called.
      */
     schema?: StandardSchemaV1;
-    /** The wording for each reason `generate` reports. */
+    /** The wording for each reason `generate` returns. */
     messages?: ExtensionMessages;
     /**
-     * The tokens an extension makes, in the order to list them, or why the extension is not valid.
-     * Tokens no file writes are listed at the end of the group. An error's `jsonPath` starts at the
-     * extension. An {@link ExtensionError} is reported as `extension-invalid`, worded from
-     * `messages`; a {@link ValueError}, from reading a value in the extension with `parseValue`, is
-     * reported as `invalid-value`, as it would be in a token, and each of its `ignored` properties
-     * as an `unknown-property` warning. With a `schema`, the extension is the
-     * schema's output. A group whose extension is not valid gets no tokens added. The extension is
-     * plain JSON, so whole-number keys inside it come first, in numeric order, whatever order the
-     * file writes them in. `options` are how the read reads values, to read the extension's the
-     * same way: give them to `createExtensionReader` or `parseValue`.
+     * Returns the tokens an extension makes, or why it isn't valid.
+     *
+     * An error's `jsonPath` starts at the extension. If it isn't valid, the group gets no tokens.
+     *
+     * @param group - The group, by its path and type.
+     * @param extension - Your extension's data, or the schema's output if there's a `schema`.
+     * @param options - How the read reads values. Pass them to `createExtensionReader` or
+     * `parseValue` to read values the same way.
      */
     generate(
         group: {
             /** Absent for the top level of a file. */
             path?: string;
             /**
-             * The type its tokens take, as {@link Group.type} gives it: its own, else the group it
-             * extends, else the group it is inside (Format 6.7.3). Absent when none declares one.
+             * The type its tokens take, as {@link Group.type} gives it. It's absent if there's
+             * none.
              */
             type?: TokenType;
         },
@@ -2099,133 +2449,131 @@ export interface Generator {
         | { ok: false; errors: (ExtensionError | ValueError)[]; ignored?: IgnoredProperty[] };
 }
 
-/**
- * How the design tokens are read: which permutations, the tools that make or check tokens, and how
- * values are read.
- */
+/** How to read design tokens. */
 export interface ReadOptions extends ParseOptions {
     /**
-     * Which permutations to build, by their inputs (Resolver 5: "any selection of context values
-     * passed to the tool"): these inputs, where modifiers left out take their default and an input
-     * that does not fit the resolver is reported and not built; `"all"`, every combination of
-     * contexts; or `"each-context"`, each context on its own, with every other modifier at its
-     * default. An input must choose a context for each modifier with no default (Resolver 6.1),
-     * so `"each-context"` builds each context once for every combination of those modifiers'
-     * contexts. When modifiers change different tokens (Resolver 2.1), every combination can be
-     * put together from `"each-context"`, as a stylesheet with one block per context does.
+     * Which permutations to build.
+     *
+     * `"all"` builds every combination of contexts. `"each-context"` builds each context once, with
+     * the other modifiers at their defaults. An array builds the permutations its inputs name. An
+     * input that doesn't fit the resolver is reported, and not built.
+     *
+     * @default "all"
      *
      * @example
-     * read(file, { inputs: [{ mode: "dark" }] })  // just mode: dark
-     * read(file, { inputs: "each-context" })      // the default, then each context once
-     * @default "all"
+     * // Only dark
+     * (await read("tokens.resolver.json", { inputs: [{ mode: "dark" }] })).permutations.label
+     * // => "mode: dark"
      */
     inputs?: readonly Input[] | "all" | "each-context";
     /**
-     * The most combinations `"all"` builds. Above it, `"each-context"` is built instead, and a
-     * `permutation-limit` warning says so. Each combination is built in full, so a read grows with
-     * them: at the default, a few hundred tokens still read inside a 16 ms frame.
+     * The most combinations `"all"` builds.
+     *
+     * Above it, `"each-context"` is built instead, with a `permutation-limit` warning.
+     *
      * @default 32
      */
     permutationLimit?: number;
-    /** Checks for your own `$extensions` keys, run in each permutation once types are known. */
+    /**
+     * Checks for your own `$extensions` keys, such as one from {@link defineExtensionValidator}.
+     */
     extensionValidators?: readonly ExtensionValidator[];
     /**
-     * Generators that add tokens from extensions on groups. Run in order, in
-     * each permutation, before values are read.
+     * Generators that add tokens from extensions on groups, such as one from
+     * {@link defineGenerator}.
+     *
+     * They run in order.
      */
     generators?: readonly Generator[];
-    /**
-     * Called as each stage of reading finishes, with how long it took. For progress and benchmarks.
-     */
+    /** Called as each stage of reading finishes, with how long it took in milliseconds. */
     onStage?: (stage: "load" | "generate" | "normalise" | "resolve", milliseconds: number) => void;
 }
 
 /**
- * Returns the text of a file, given its path.
+ * Returns a file's text, or `undefined` if it isn't there.
  *
- * It is asked for each file by the entry's folder, as you gave it, joined with the file's path
- * from there: reading `"tokens/tokens.resolver.json"` asks for `"tokens/dark.json"`. A path
- * that is absolute or a URL is passed as written. Give `undefined` for a file that is not there,
- * which is reported as not found; throw, or reject, for one that could not be fetched, which
- * rejects the read.
- *
- * Every file path in the results, in `DesignTokens.files` and every `Span`, is relative to the
- * entry's folder, with forward slashes, such as `"themes/dark.json"`; one written from the root or
- * as a URL stays as written. The entry itself is its file name. That name is passed as `file`, for
- * keeping each text by the name the results use, and {@link getFilePath} turns it back into `path`.
+ * `path` is where to fetch the file, such as `"tokens/dark.json"`. `file` is the name the results
+ * use, such as `"dark.json"`. If it throws, the read rejects.
  *
  * @example
+ * // Read from disk, and keep each file's text by its name
  * const texts = new Map<string, string>();
  * const tokens = await read("tokens/tokens.resolver.json", {
- *   readText: async (path, file) => {
- *     const text = await readFile(path, "utf8");
- *     texts.set(file, text); // "dark.json"
- *     return text;
- *   },
+ *     readText: async (path, file) => {
+ *         const text = await readFile(path, "utf8");
+ *         texts.set(file, text);
+ *         return text;
+ *     },
  * });
  */
 export type ReadText = (path: string, file: string) => Promise<string | undefined>;
 
 /**
- * Design tokens as text in memory: each file's text by its name, and the file to start from, as
- * {@link readFromMemory} takes them and {@link DesignTokens.toMemory} gives them.
+ * Design tokens as text, each file's by its name.
+ *
+ * {@link readFromMemory} takes it, and {@link DesignTokens.toMemory} returns it.
  */
 export interface TokensInMemory {
+    /** Each file's text by its name, such as `{ "color.json": text }`. */
     readonly files: Readonly<Record<string, string>>;
     /**
-     * The file to start from.
+     * The file to start from, such as `"tokens.resolver.json"`.
+     *
      * @default the one resolver among the files, or else the only file
      */
     readonly entryFile?: string | undefined;
 }
 
-/** A token or group whose path changed, such as after a rename. */
+/** A token or group's new path, such as `{ from: "color.blue", to: "color.azure" }`. */
 export interface Move {
     readonly from: string;
     readonly to: string;
 }
 
-/** A property a file can set on a token, named as the spec names it, without the `$`. */
+/** A property a file can set on a token, without its `$`, such as `"value"`. */
 export type TokenProperty = "value" | "type" | "description" | "deprecated" | "extensions";
 
-/**
- * A property a file can set on a group, named as {@link TokenProperty} names them: `extends` is
- * the group it takes tokens from, {@link Group.extends}.
- */
+/** A property a file can set on a group, without its `$`, such as `"extends"`. */
 export type GroupProperty = "type" | "description" | "deprecated" | "extensions" | "extends";
 
-/** A property a file can set on its top level. */
+/** A property a file can set at its top level, without its `$`, such as `"type"`. */
 export type TopLevelProperty = "type" | "description" | "deprecated" | "extensions";
 
 /**
- * What a file writes for a token: its value exactly as written, and the properties it writes
- * itself.
+ * What a file writes for a token.
+ *
+ * `value` is exactly as written, such as `"{color.blue.500}"`.
  */
 export interface WrittenToken extends Written {
     readonly value?: unknown;
 }
 
 /**
- * What a file writes for a group: the properties it writes itself, and the path its `$extends`
- * names.
+ * What a file writes for a group.
+ *
+ * `extends` is the path its `$extends` names, such as `"base"`.
  */
 export interface WrittenGroup extends Written {
     readonly extends?: string;
 }
 
 /**
- * One difference between two reads of the design tokens, in the permutations it holds in. `before`
- * and `after` are what the files wrote, the same in each of those permutations; for a token in one
- * of them, ask it: `dark.getToken(change.path)`. `changed`, `renamed`, `group-changed` and
- * `group-renamed` list the properties that differ; a rename with nothing else changed lists none.
- * Groups are reported on their own, empty ones included, and so are the tokens inside them. A token
- * a {@link Generator} makes says so (`generated`), with nothing written on either side: its change
- * is the extension's, on its group. One a group takes through `$extends` says so too (`inherited`).
+ * One difference between two reads, as {@link DesignTokens.getChangesSince} returns it.
+ *
+ * `before` and `after` are what the files wrote, and `properties` lists what differs. Check `kind`,
+ * and TypeScript knows the rest.
  *
  * @example
- * for (const change of tokens.getChangesSince(before)) {
- *     row(change.kind, change.path, change.permutations.label);
- * }
+ * // color.blue.500 has a new value
+ * change
+ * // => {
+ * //     kind: "changed",
+ * //     path: "color.blue.500",
+ * //     properties: ["value"],
+ * //     before: { value: { colorSpace: "srgb", components: [0.2, 0.4, 0.8] } },
+ * //     after: { value: { colorSpace: "srgb", components: [0.1, 0.4, 0.8] } },
+ * //     permutations: [light, dark],
+ * // }
  */
 export type Change =
     | ({
@@ -2288,8 +2636,9 @@ export type Change =
           readonly after: Written;
       };
 
-/** What every change to a token carries beside its sides. */
+/** What every change to a token has, as well as `before` and `after`. */
 export interface TokenChange {
+    /** The permutations the change is in. */
     readonly permutations: Permutations;
     /** Set when a {@link Generator} makes the token, as {@link TokenBase.generated}. */
     readonly generated?: Token["generated"];
@@ -2297,17 +2646,18 @@ export interface TokenChange {
     readonly inherited?: Token["inherited"];
 }
 
-/** What every change to a group carries beside its sides. */
+/** What every change to a group has, as well as `before` and `after`. */
 export interface GroupChange {
+    /** The permutations the change is in. */
     readonly permutations: Permutations;
     /** Set when the group is here only through `$extends`, as {@link Group.inherited}. */
     readonly inherited?: Group["inherited"];
 }
 
-/** A JSON object, such as a DTCG file's top level: every value in it is plain JSON. */
+/** A JSON object, such as a file's top level. */
 export type JsonObject = { readonly [key: string]: JsonValue };
 
-/** Any value that can be written in a DTCG file. */
+/** Any JSON value. */
 export type JsonValue =
     | string
     | number

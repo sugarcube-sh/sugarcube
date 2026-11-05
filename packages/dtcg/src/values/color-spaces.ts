@@ -1,29 +1,35 @@
 import type { ColorSpace } from "../model.js";
 
-/** One channel of a color space: its name and range. */
+/** One component of a color space, with the values it can take. */
 export interface ColorComponentRange {
     readonly name: string;
     readonly min: number;
     readonly max: number;
-    /** Whether `max` itself is outside the range, as for a hue, where 360 is 0 again. */
+    /**
+     * Whether `max` itself is out of range.
+     *
+     * It's `true` for a hue, where 360 is the same as 0.
+     */
     readonly maxExclusive?: boolean;
     /**
-     * For a channel the Color module leaves unbounded, the range it says the channel keeps to in
-     * practice, such as OKLCH chroma, which "in practice doesn't exceed 0.5": the range to give a
-     * slider. Absent for a bounded channel, whose own `min` and `max` serve.
+     * The range a component with no limit usually stays within.
+     *
+     * OKLCH chroma has no upper limit, but stays under 0.5 in practice.
      */
     readonly inPractice?: { readonly min: number; readonly max: number };
 }
 
 /**
- * Every color space the Color module defines, with the name and range of each channel, for
- * pickers and sliders. An unbounded channel has `max: Infinity` (and `min: -Infinity` where
- * it can go negative), and the range the Color module gives it in practice as `inPractice`.
+ * Every color space the Color module defines, with each component's range.
+ *
+ * A component with no limit has `max: Infinity`, and its usual range in `inPractice`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/color/#supported-color-spaces | Color 4.2, Supported color spaces}
  *
  * @example
- * const [, chroma] = colorSpaces.oklch;
- * chroma.max          // Infinity
- * chroma.inPractice   // { min: 0, max: 0.5 }
+ * // OKLCH chroma has no upper limit, but stays under 0.5 in practice
+ * colorSpaces.oklch[1]
+ * // => { name: "C", min: 0, max: Infinity, inPractice: { min: 0, max: 0.5 } }
  */
 export const colorSpaces: Readonly<
     Record<ColorSpace, readonly [ColorComponentRange, ColorComponentRange, ColorComponentRange]>

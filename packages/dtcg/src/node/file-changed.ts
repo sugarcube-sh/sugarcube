@@ -2,7 +2,11 @@ import { statSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import type { FileWatcher } from "./live-tokens.js";
 
-/** What a watcher knows of a file when it says the file changed: Node's `Stats` is one. */
+/**
+ * A saved file's size and modified time, from a watcher.
+ *
+ * Node's `Stats` has both.
+ */
 export interface FileStats {
     size: number;
     mtimeMs: number;
@@ -11,19 +15,17 @@ export interface FileStats {
 const WATCHER_DROPS_CHANGES_FOR_MS = 50;
 
 /**
- * Calls `listener` with each file `watcher` says was saved, and once more for a save whose last
- * write the watcher never reported. A save that empties a file and then fills it is reported at
- * the first write; chokidar, and Vite's watcher, which is chokidar, then drop every change to that
- * file for 50 ms. So after each change, once those 50 ms are over, the file is compared with what
- * the watcher saw (its size and modified time), and a file that has moved on is reported again.
- * For a watcher that gives no stats, such as Vite's, the file is looked at before `listener` is
- * called, so nothing `listener` reads can be newer than what is compared. Compares the file with
- * itself, never with the clock, since a file's modified time can lag the clock by a few
- * milliseconds.
+ * Calls `listener` each time `watcher` says a file was saved.
  *
- * @returns A function that stops the comparisons still waiting.
+ * chokidar can miss the end of a save. So 50 ms after each save, it checks the file again. If the
+ * file is different by then, it calls `listener` again.
+ *
+ * @param watcher - The watcher, such as `chokidar.watch(paths)`.
+ * @param listener - Gets the saved file's path.
+ * @returns A function that cancels the checks still waiting.
  *
  * @example
+ * // Rebuild on each save
  * const stop = onFileChanged(chokidar.watch(paths), (path) => rebuild(path));
  */
 export function onFileChanged(

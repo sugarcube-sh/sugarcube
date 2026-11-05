@@ -1,6 +1,10 @@
 import type { TokenType } from "../model.js";
 
-/** Every token type the specification defines, in its order. */
+/**
+ * Every token type the spec defines, in the spec's order.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#types | Format 8, Types} and {@link https://www.designtokens.org/TR/2025.10/format/#composite-types | 9, Composite types}
+ */
 export const tokenTypes: readonly TokenType[] = [
     "color",
     "dimension",

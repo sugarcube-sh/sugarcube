@@ -456,7 +456,12 @@ describe("on the design tokens", () => {
             [["color.brand"], [{ mode: "light" }]],
             [["color.tint"], [{ mode: "light" }, { mode: "dark" }]],
         ]);
-        expect(reaching[0]).not.toHaveProperty("token");
+        expect(reaching[0]).not.toHaveProperty("writtenIn");
+        expect(reaching[0]).not.toHaveProperty("pointsToToken");
+        // @ts-expect-error each permutation has its own token, so a reference in several has none
+        void reaching[0]?.writtenIn;
+        // @ts-expect-error each permutation has its own token, so a reference in several has none
+        void reaching[0]?.pointsToToken;
         expect(reaching[0] && written(reaching[0].span)).toBe('"{color.red}"');
     });
 

@@ -175,7 +175,7 @@ function saidType(token: Token): string | undefined {
     return token.asWritten ? token.asWritten.type : token.type;
 }
 
-function saidDeprecation(token: Token): Token["deprecated"] {
+function saidDeprecation(token: Token): Written["deprecated"] {
     return token.asWritten ? token.asWritten.deprecated : token.deprecated;
 }
 

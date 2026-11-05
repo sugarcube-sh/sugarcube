@@ -27,12 +27,16 @@ function partTypes<P extends Readonly<Record<string, Named>>>(composite: {
 }
 
 /**
- * The parts of each composite type, and the type of each part, in the spec's order. For shadow
- * and gradient, these are the parts of one layer or one stop. Every part is required except a
- * shadow's `inset`, which defaults to `false`.
+ * The parts of each composite type, and each part's type.
+ *
+ * A shadow's parts are one layer's. A gradient's are one stop's.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#composite-types | Format 9, Composite types}
  *
  * @example
- * compositeParts.border // { color: "color", width: "dimension", style: "strokeStyle" }
+ * // A border's parts
+ * compositeParts.border
+ * // => { color: "color", width: "dimension", style: "strokeStyle" }
  */
 export const compositeParts = {
     border: partTypes(border),

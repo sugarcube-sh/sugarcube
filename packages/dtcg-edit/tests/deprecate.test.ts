@@ -94,7 +94,8 @@ describe("deprecate", () => {
         const tokens = opened(files);
         const after = committed(tokens, deprecate(tokens, "old.kept", false));
 
-        expect(after.getPermutation().getToken("old.kept")?.deprecated).toBe(false);
+        expect(after.getPermutation().getToken("old.kept")).not.toHaveProperty("deprecated");
+        expect(after.getPermutation().getToken("old.kept")?.asWritten?.deprecated).toBe(false);
     });
 
     it("is refused for a path that is neither a token nor a group", () => {
@@ -152,7 +153,7 @@ describe("a group that extends another", () => {
         const after = committed(tokens, deprecate(tokens, "primary", false));
 
         expect(at(after, "base.json", ["primary", "$deprecated"])).toBe(false);
-        expect(after.getPermutation().getGroup("primary")?.deprecated).toBe(false);
+        expect(after.getPermutation().getGroup("primary")).not.toHaveProperty("deprecated");
         expect(after.getPermutation().getGroup("button")?.deprecated).toBe("Use action.");
     });
 

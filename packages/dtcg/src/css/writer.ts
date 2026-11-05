@@ -3,58 +3,73 @@ import type { Permutation, Reference, Token } from "../model.js";
 import { type CSSValueOptions, type Replacement, type TypographyCSS, toCSSValue } from "./value.js";
 import { type CSSNaming, toCustomPropertyName } from "./custom-property.js";
 
-/** A value written as CSS, and the tokens it names with `var()`. */
+/** A value written as CSS, with the tokens it uses. */
 export interface CSSWritten {
     readonly css: string | TypographyCSS;
     readonly dependencies: readonly Token[];
 }
 
 /**
- * Writes CSS that refers to tokens: each token placed in it is written as `var()`, or as its value
- * when the writer writes references as values or skips that token, and is recorded in `dependencies`.
- * A {@link CSSWritten} placed in it keeps its own `dependencies`. Typography, one value per CSS
- * property, cannot be placed whole. A token the same in two permutations is one object and is
- * written once, so place tokens reached from the token being written, such as its references,
- * which are right in every permutation it is in; a token looked up in one permutation is that
- * permutation's, which matters when references are written as values.
+ * Writes CSS that uses tokens.
+ *
+ * Each token placed in it becomes a `var()`, and goes in `dependencies`.
+ *
+ * Only place tokens you reach from the token being written, such as
+ * `token.getReferenceAt()?.pointsToToken`. A token from one permutation's `getToken` would carry
+ * that permutation's value over into the others.
  *
  * @example
- * write`color-mix(in oklch, ${written} 80%, ${white})`
+ * // Mix the token's value with white
+ * write`color-mix(in oklch, ${written} 80%, white)`
  */
 export type CSSTemplate = (
     strings: TemplateStringsArray,
     ...parts: readonly (CSSWritten | Token | string | number)[]
 ) => CSSWritten;
 
-/** The value a declaration writes for browsers that do not support the `@supports` condition `unless`. */
+/**
+ * What to declare for browsers that lack a feature.
+ *
+ * `unless` is the `@supports` condition for the feature, such as `"(color: oklch(0 0 0))"`.
+ */
 export interface CSSFallback {
     readonly written: CSSWritten;
     readonly unless: string;
 }
 
-/** The opinions a CSS writer takes; with none, it writes every token as `dtcg` does. */
+/**
+ * How a CSS writer writes tokens.
+ *
+ * With none, every token gets a custom property, and references are written as `var()`.
+ */
 export interface CSSWriterOptions {
     /** How each token's custom property is named. */
     naming?: CSSNaming;
     /**
-     * Writes a token's value another way. It gets the value as written, and `write` for writing CSS
-     * that refers to tokens. Its answer is the token's value everywhere: in its declaration, and
-     * in any value written with it. `undefined` means the token has no value to write.
+     * Writes a token's value your own way.
+     *
+     * It gets the value as it would be written, and `write` for CSS that uses other tokens. What it
+     * returns is used everywhere the token's value is.
      *
      * @example
+     * // Wrap a gradient's stops in linear-gradient()
      * writeValue: (token, { written, write }) =>
-     *     token.type === "gradient" && !token.getReferenceAt() ? write`linear-gradient(${written})` : written
+     *     token.type === "gradient" && !token.getReferenceAt()
+     *         ? write`linear-gradient(${written})`
+     *         : written
      */
     writeValue?: (
         token: Token,
         tools: { readonly written: CSSWritten; readonly write: CSSTemplate },
     ) => CSSWritten | string | undefined;
     /**
-     * What a token's declaration writes for browsers lacking a feature. The fallback is
-     * declared, and the value under `@supports` where the two differ. `writeWith` writes the
-     * value with other {@link CSSValueOptions}, through `writeValue` and references alike.
+     * Adds a fallback for browsers that lack a feature.
+     *
+     * The fallback is declared, and the usual value goes under `@supports`. `writeWith` writes the
+     * value with other color settings.
      *
      * @example
+     * // A hex fallback for browsers without oklch()
      * writeFallback: (token, { writeWith }) => {
      *     const hex = writeWith({ colors: "hex" });
      *     return hex && { written: hex, unless: "(color: oklch(0 0 0))" };
@@ -68,13 +83,17 @@ export interface CSSWriterOptions {
         },
     ) => CSSFallback | undefined;
     /**
-     * Leaves a token out: it gets no declaration, and a reference to it is written as its value,
-     * since a `var()` to a custom property never declared names nothing.
+     * Leaves a token out.
+     *
+     * It gets no custom property, and references to it are written as its value.
      */
     skip?: (token: Token) => boolean;
     /**
-     * `"values"` writes every reference as its target's value, as the writer writes it, rather
-     * than as `var()`: a token's value as a page would compute it, for showing one token alone.
+     * How references are written.
+     *
+     * `"custom-properties"` writes them as `var()`.
+     * `"values"` writes the value they point to, as a page would compute it.
+     *
      * @default "custom-properties"
      */
     references?: "custom-properties" | "values";
@@ -89,32 +108,50 @@ export interface CSSDeclaration {
     readonly value: string;
     /** What to declare instead where a browser supports `condition`. */
     readonly supports?: readonly { readonly condition: string; readonly value: string }[];
-    /** The tokens the value or its alternatives name with `var()`. */
+    /** The tokens its values refer to with `var()`. */
     readonly dependencies: readonly Token[];
 }
 
 /**
- * A token that declares nothing, and why: `"skipped"` by the writer's `skip`, or `"no value"`,
- * since it has none or the writer's `writeValue` answered `undefined`.
+ * A token that declares nothing, and why.
+ *
+ * `"skipped"` means `skip` left it out.
+ * `"no value"` means it has none, or `writeValue` returned `undefined`.
  */
 export interface CSSNotWritten {
     readonly token: Token;
     readonly because: "skipped" | "no value";
 }
 
-/** A permutation's declarations, and each of its tokens that declares nothing. */
+/** A permutation's custom properties, and the tokens that have none. */
 export interface CSSDeclarations {
     readonly declarations: readonly CSSDeclaration[];
     readonly notWritten: readonly CSSNotWritten[];
 }
 
-/** Writes tokens as CSS custom properties, each token written once however often it is asked. */
+/**
+ * Writes tokens as CSS custom properties.
+ *
+ * It writes each token once, however often you ask. So make a new one for each read.
+ */
 export interface CSSWriter {
-    /** Every custom property a permutation declares, in its tokens' order. */
+    /**
+     * Gives every custom property a permutation declares, in token order.
+     *
+     * @param permutation - A permutation, such as `tokens.getPermutation({ mode: "dark" })`.
+     */
     getDeclarations(permutation: Permutation): CSSDeclarations;
     /**
-     * One token's value as this writer writes it, with the tokens it names; `undefined` when it has
-     * none, or for no token, so `writer.getValue(permutation.getToken(path))` needs no check first.
+     * Gives one token's value as this writer writes it.
+     *
+     * It returns `undefined` for no token, or a token with no value.
+     *
+     * @param token - A token, such as `permutation.getToken("button.background")`.
+     *
+     * @example
+     * // button.background refers to color.primary
+     * createCSSWriter().getValue(light.getToken("button.background"))?.css
+     * // => "var(--color-primary)"
      */
     getValue(token: Token | undefined): CSSWritten | undefined;
 }
@@ -122,21 +159,16 @@ export interface CSSWriter {
 type Colors = NonNullable<CSSValueOptions["colors"]>;
 
 /**
- * A writer of CSS custom properties, taking a tool's opinions as options: how they are
- * named, how a value is written, what a declaration falls back to, which tokens are left out, and
- * whether references are written as `var()` or as values. A token the same in two permutations is
- * the same object, so it is written once. A writer keeps every token it has written, so make one
- * per read.
+ * Makes a CSS writer with your own settings.
+ *
+ * Pass it to {@link getCSSBlocks}.
+ *
+ * @param options - How to name, write and leave out tokens, such as `{ naming: { prefix: "ds" } }`.
  *
  * @example
- * const writer = createCSSWriter({ naming: { prefix: "ds" } });
- * for (const { name, value } of writer.getDeclarations(tokens.getPermutation()).declarations) {
- *     row(`${name}: ${value};`);
- * }
- *
- * @example
- * // one token's value as a page would compute it
- * createCSSWriter({ references: "values" }).getValue(token)
+ * // Put "ds" before every name
+ * createCSSWriter({ naming: { prefix: "ds" } }).getValue(light.getToken("button.background"))?.css
+ * // => "var(--ds-color-primary)"
  */
 export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
     const { naming, writeValue, writeFallback, skip, references = "custom-properties" } = options;

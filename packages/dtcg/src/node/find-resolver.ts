@@ -3,22 +3,28 @@ import { join, resolve } from "node:path";
 import { parseJson } from "../read/json.js";
 import { isResolver, isResolverName } from "../read/resolver.js";
 
-/** What {@link findResolver} found: one resolver, several, or none. */
+/**
+ * What {@link findResolver} found.
+ *
+ * It found one resolver, several or none, with the path of each.
+ */
 export type FoundResolver =
     | { kind: "one"; path: string }
     | { kind: "several"; paths: string[] }
     | { kind: "none" };
 
-/** How {@link findResolver} knows a resolver. */
+/** Options for {@link findResolver}. */
 export interface FindResolverOptions {
     /**
-     * How a file is known to be a resolver. `"name"`: its name ends `.resolver.json`, as
-     * Resolver 3.2 says resolver documents should be named; no file is opened, so the cost does
-     * not grow with other JSON in the folders. `"content"`: that, or a top-level
-     * `resolutionOrder` (Resolver 4.1), whatever the name, as `read` tells a resolver; every JSON
-     * file in the folders is read, so give it a folder you know holds design tokens, not a whole
-     * project.
+     * How to tell a file is a resolver.
+     *
+     * If `"name"`, a file is a resolver when its name ends `.resolver.json`. No file is opened.
+     *
+     * If `"content"`, a file with a top-level `resolutionOrder` is a resolver too. Every JSON file
+     * is opened, so search your tokens folder, not a whole project.
+     *
      * @default "name"
+     * @see {@link https://www.designtokens.org/TR/2025.10/resolver/#file-extension | Resolver 3.2, File extension} and {@link https://www.designtokens.org/TR/2025.10/resolver/#resolution-order | 4.1.6, Resolution Order}
      */
     by?: "name" | "content";
 }
@@ -28,19 +34,19 @@ const SKIPPED = new Set(["node_modules", "dist", "build", "out"]);
 const RESOLUTION_ORDER = Buffer.from('"resolutionOrder"');
 
 /**
- * Finds the resolver among files and folders: each file given is checked, and each folder is
- * searched with everything below it, leaving out `node_modules`, `dist`, `build`, `out` and
- * hidden folders, such as `.git` or `.next`. Several are given as several, never one chosen from
- * them. Each path is the folder given joined with the file's place inside it, so it can be read
- * as it is. A path that doesn't exist throws, as reading it would.
+ * Finds the resolver in files and folders.
+ *
+ * It searches each folder and every folder inside it. It skips `node_modules`, `dist`, `build`,
+ * `out` and folders starting with a dot. If there are several resolvers, it returns them all.
+ *
+ * @param paths - The files and folders to search, such as `"tokens"`.
+ * @param options - How to tell a resolver, from {@link FindResolverOptions}.
+ * @throws If a path doesn't exist.
  *
  * @example
- * const found = await findResolver(process.cwd());
- * if (found.kind === "one") await read(found.path);
- *
- * @example
- * // a folder of design tokens, whose resolver may be named anything
- * await findResolver("src/tokens", { by: "content" });
+ * // One resolver in the tokens folder
+ * await findResolver("tokens")
+ * // => { kind: "one", path: "tokens/tokens.resolver.json" }
  */
 export async function findResolver(
     paths: string | readonly string[],

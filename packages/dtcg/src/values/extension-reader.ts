@@ -12,22 +12,30 @@ import type {
 import { parseValue } from "./parse-value.js";
 
 /**
- * What {@link ExtensionReader.result} gives, and so what a `generate` or `validate` written with
- * one passes on: the value, or every problem, with the properties set aside either way.
+ * What an {@link ExtensionReader} returns at the end.
+ *
+ * It's the value, or every problem found. Return it from `generate` or `validate`.
  */
 export type ExtensionResult<V, M extends ExtensionMessages> =
     | { ok: true; value: V; ignored?: IgnoredProperty[] }
     | { ok: false; errors: (ExtensionError<M> | ValueError)[]; ignored?: IgnoredProperty[] };
 
 /**
- * Reads an extension's values and collects why it is not valid, for a {@link Generator} or an
- * {@link ExtensionValidator}. Made by {@link createExtensionReader}.
+ * Reads the values in your extension, and collects any problems.
+ *
+ * Use it in a {@link Generator} or an {@link ExtensionValidator}. Make one with
+ * {@link createExtensionReader}.
  */
 export interface ExtensionReader<M extends ExtensionMessages> {
     /**
-     * Reads one literal value of a type. A value that does not fit, or a reference, which `read`
-     * never resolves inside an extension, gives `undefined` and keeps the parser's error. A
-     * property the type does not define is set aside and kept for the result.
+     * Reads one value of a type.
+     *
+     * If it doesn't fit the type, or is a reference, it returns `undefined`. The problem goes in
+     * the result.
+     *
+     * @param type - The token type to read it as, such as `"dimension"`.
+     * @param raw - The value, as your extension writes it.
+     * @param jsonPath - Where it is inside your extension, such as `["min"]`.
      */
     read<T extends TokenType>(
         type: T,
@@ -35,9 +43,14 @@ export interface ExtensionReader<M extends ExtensionMessages> {
         jsonPath: JsonPath,
     ): ValueByType[T] | undefined;
     /**
-     * Records one reason the extension is not valid, with the facts its message takes, if any.
-     * `jsonPath` starts at the extension. Gives `undefined`, so a function reading one part can
-     * return it as that part's missing value.
+     * Records one problem with your extension.
+     *
+     * It returns `undefined`, so a function reading one part can return it as that part's
+     * missing value.
+     *
+     * @param jsonPath - Where the problem is, inside your extension, such as `["min"]`.
+     * @param reason - Which of your messages describes it, such as `"not-an-object"`.
+     * @param data - The facts that message needs, if any, such as `{ name: "min" }`.
      */
     report<R extends keyof M & string>(
         jsonPath: JsonPath,
@@ -45,20 +58,26 @@ export interface ExtensionReader<M extends ExtensionMessages> {
         ...data: Parameters<M[R]>
     ): undefined;
     /**
-     * The answer to return from `generate` or `validate`: the value when nothing was reported,
-     * otherwise every problem, in the order found, with the properties set aside either way. Give
-     * `undefined` when a problem left no value.
+     * Gives the answer to return from `generate` or `validate`.
+     *
+     * That's the value, or every problem reported.
+     *
+     * @param value - The value you read, or `undefined` if a problem left none.
+     * @throws {TypeError} If `value` is `undefined` and nothing was reported.
      */
     result<V>(value: V | undefined): ExtensionResult<V, M>;
 }
 
 /**
- * Makes an {@link ExtensionReader}, whose reasons and facts are checked against the type of the
- * messages table given to {@link defineGenerator} or {@link defineExtensionValidator}. Every
- * problem is collected, not only the first.
+ * Makes an {@link ExtensionReader}.
+ *
+ * TypeScript checks that each `report` names one of your messages, with the facts it needs.
+ *
+ * @param options - How values are read, such as `ignoreUnknownProperties`.
  *
  * @example
- * const reader = createExtensionReader<typeof messages>();
+ * // Read a fluid range, written { "min": …, "max": … }
+ * const reader = createExtensionReader<typeof messages>(options);
  * if (!isJsonObject(range)) {
  *   reader.report([], "not-an-object");
  *   return reader.result(undefined);
@@ -66,8 +85,6 @@ export interface ExtensionReader<M extends ExtensionMessages> {
  * const min = reader.read("dimension", range.min, ["min"]);
  * const max = reader.read("dimension", range.max, ["max"]);
  * return reader.result(min && max && { min, max });
- *
- * @throws {TypeError} When `result` is given no value and nothing was reported.
  */
 export function createExtensionReader<M extends ExtensionMessages>(
     options: ParseOptions = {},

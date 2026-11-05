@@ -36,7 +36,7 @@ export interface DeprecationView {
 
 export function deprecationView(node: Token | Group, editable: boolean): DeprecationView {
     const { deprecated, deprecatedByGroup: by } = node;
-    const applies = deprecated !== undefined && deprecated !== false;
+    const applies = deprecated !== undefined;
     const line = {
         ...(by !== undefined && { by }),
         ...(typeof deprecated === "string" && { message: deprecated }),

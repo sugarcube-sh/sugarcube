@@ -28,7 +28,6 @@
         },
         {
           "path": "old.kept.c",
-          "deprecated": false,
           "asWritten": {
             "value": 4
           }
@@ -48,8 +47,7 @@
           "deprecated": "use new"
         },
         {
-          "path": "old.kept",
-          "deprecated": false
+          "path": "old.kept"
         }
       ]
     }

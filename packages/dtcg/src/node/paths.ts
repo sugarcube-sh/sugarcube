@@ -2,13 +2,17 @@ import { resolve } from "node:path";
 import { getFilePath } from "../read/paths.js";
 
 /**
- * Where a file the design tokens name is on disk, for design tokens read from `entryFile`: the
- * file name joined to the entry's folder, as `read` reads it, made absolute, with `/` between
- * folders.
+ * Works out where a file the tokens name is on disk.
+ *
+ * It's {@link getFilePath}, made absolute, with `/` between folders even on Windows.
+ *
+ * @param entryFile - The file the tokens were read from, such as `"tokens/tokens.resolver.json"`.
+ * @param file - A file as the tokens name it, such as `"dark.json"`.
  *
  * @example
- * // run in /work
- * getAbsoluteFilePath("tokens/tokens.resolver.json", "themes/dark.json") // "/work/tokens/themes/dark.json"
+ * // Run in /work
+ * getAbsoluteFilePath("tokens/tokens.resolver.json", "dark.json")
+ * // => "/work/tokens/dark.json"
  */
 export function getAbsoluteFilePath(entryFile: string, file: string): string {
     return diskPath(getFilePath(slashed(entryFile), file));

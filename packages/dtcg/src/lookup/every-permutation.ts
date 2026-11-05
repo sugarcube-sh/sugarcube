@@ -3,28 +3,27 @@ import { permutationsOf } from "../read/permutations-of.js";
 import { sameList } from "../read/same-object.js";
 
 /**
- * Asks a question of every permutation, and gives each answer once, with the permutations that
- * gave it: for showing permutations side by side, such as a token's value in each, or which of
- * them agree.
+ * Asks every permutation the same question, and lists each different answer once.
  *
- * Two answers are the same when they are the same value (`===`), or lists of the same values in
- * the same order. A token or group the same in two permutations is one object in both, so asking
- * for it puts those permutations together; an answer built fresh each time, such as an object
- * made in the question, never matches another. Every permutation is in exactly one answer: one
- * without the token gives its own, usually `undefined`. Answers come in the order the
- * permutations first give them.
+ * Each answer comes with the permutations that gave it. Have `question` return a string or a
+ * number, so answers that match are listed together.
  *
- * For one answer across permutations, such as whether any permutation has a token, ask
- * `tokens.permutations` itself: it is a list, so `some`, `find` and `flatMap` work on it.
+ * @param tokens - The tokens to ask.
+ * @param question - Asked of each permutation, such as
+ * `(p) => toCSSValue(p.getToken("color.primary"))`.
  *
  * @example
- * for (const { answer, permutations } of askEveryPermutation(tokens, (p) => p.getToken("color.text"))) {
- *   row(permutations.label, toCSSValue(answer));
- * }
+ * // color.primary differs, so two answers
+ * askEveryPermutation(tokens, (p) => toCSSValue(p.getToken("color.primary")))
+ * // => [
+ * //     { answer: "rgb(51 102 204)", permutations: [light] },
+ * //     { answer: "rgb(102 153 255)", permutations: [dark] },
+ * // ]
  *
  * @example
- * // the same in every permutation
- * askEveryPermutation(tokens, (p) => p.getToken("color.text")).length === 1
+ * // color.blue.500 is the same in both, so one answer
+ * askEveryPermutation(tokens, (p) => toCSSValue(p.getToken("color.blue.500")))
+ * // => [{ answer: "rgb(51 102 204)", permutations: [light, dark] }]
  */
 export function askEveryPermutation<Answer>(
     tokens: DesignTokens,
