@@ -1459,50 +1459,64 @@ export interface Permutation {
 }
 
 /**
- * The facts each kind of diagnostic carries, so a tool can word diagnostics itself without
- * parsing {@link Diagnostic.message}.
+ * The facts behind each kind of diagnostic's message.
+ *
+ * Use them to word a diagnostic yourself, instead of parsing its `message`.
  */
 export interface DiagnosticDetailByKind {
-    /** A file could not be fetched. */
+    /** A file isn't there, such as a `$ref` to `"gone.json"`. */
     "file-not-found": {
         readonly file: string;
-        /** The file that names it, when it is not the entry. */
+        /** The file that names it, such as the resolver. Absent for the entry file. */
         readonly referencedFrom?: string;
     };
     /**
-     * A file is not valid JSON (or, for a resolver, JSON with comments), or its top level is not an
-     * object.
+     * A file isn't valid JSON, or its top level isn't an object.
+     *
+     * A resolver may have comments, but a token file may not.
      */
     "invalid-json": { readonly reason: JsonErrorReason };
-    /** A key is written twice in one object. The last one is used. */
+    /**
+     * A key is written twice in one object, such as two `$value`s.
+     *
+     * A warning. The last one is used.
+     */
     "duplicate-key": { readonly key: string };
-    /** The resolver breaks a rule of the resolver specification. */
+    /**
+     * The resolver breaks a rule of the resolver spec, such as a `version` other than `"2025.10"`.
+     */
     "resolver-invalid": ResolverProblem;
-    /** An input does not fit the resolver's modifiers. */
+    /**
+     * An input in {@link ReadOptions.inputs} doesn't match the resolver.
+     */
     "input-invalid": {
-        /** Which input, as its index in {@link ReadOptions.inputs}. */
+        /** Which input, by its index in {@link ReadOptions.inputs}. */
         readonly input: number;
     } & InputProblem;
-    /** A token or group name uses a character the specification forbids. */
+    /**
+     * A name has a character the spec doesn't allow, such as the `.` in `"a.b"`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
+     */
     "invalid-name": { readonly name: string; readonly character: "." | "{" | "}" | "$" };
     /**
-     * Something is both a token and a group: an object has a `$value` and also holds `child`; one
-     * file declares a token where another declares a group (`here` says which this place is, and
-     * `relatedInformation` where the other is); or an object's `$ref` points at a token, making it one, and it
-     * also holds tokens or groups.
+     * Something is both a token and a group.
+     *
+     * `reason: "child"` means a token has a `$value` and also holds `child`.
+     * `reason: "declared"` means one file writes a token where another writes a group. `here` says
+     * which this one is.
+     * `reason: "ref"` means a `$ref` makes an object a token, and it also holds tokens or groups.
      */
     "token-and-group":
         | { readonly reason: "child"; readonly child: string }
         | { readonly reason: "declared"; readonly here: "token" | "group" }
         | { readonly reason: "ref"; readonly ref: string };
-    /** Something inside a group is neither a token nor a group: it is not an object. */
+    /** Something in a group isn't an object, such as `"x": "red"`. */
     "invalid-member": {
         readonly name: string;
         readonly found: "string" | "number" | "boolean" | "null" | "array";
     };
-    /**
-     * A property the specification defines, such as `$description`, holds the wrong kind of JSON.
-     */
+    /** A spec property has the wrong kind of JSON, such as `"$description": 5`. */
     "invalid-property": {
         readonly property:
             | "$type"
@@ -1511,51 +1525,62 @@ export interface DiagnosticDetailByKind {
             | "$extensions"
             | "$extends"
             | "$ref";
-        /** `"reference"`: a `"{group}"` reference, or a `{ "$ref": "#/…" }` pointer. */
-        readonly expected: "string" | "object" | "boolean-or-string" | "reference";
         /**
-         * For `$extends` written as a plain name, such as `base`, that name as a reference:
-         * `{base}`.
+         * The kind of JSON it needs.
+         *
+         * `"reference"` means a reference such as `"{base}"` or `{ "$ref": "#/base" }`.
          */
+        readonly expected: "string" | "object" | "boolean-or-string" | "reference";
+        /** For `"$extends": "base"`, the reference it should be, `"{base}"`. */
         readonly reference?: string;
     };
-    /** No type can be worked out for a token. */
+    /** A token has no type, and none can be worked out from its group or its reference. */
     "missing-type": Record<string, never>;
-    /** A `$type` is not one of the thirteen the specification defines (Format 8). */
+    /**
+     * A `$type` the spec doesn't define, such as `"colour"`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#types | Format 8, Types}
+     */
     "unknown-type": {
         readonly type: string;
-        /** A type with a similar name, when exactly one is close. */
+        /** A type with a similar name, such as `"color"`, if exactly one is close. */
         readonly similar?: TokenType;
     };
-    /** A value does not fit its type. */
+    /** A value doesn't fit its type, such as a dimension in `em`. */
     "invalid-value": {
-        /** Where in the token or group, such as `["$value", "unit"]`. */
+        /** Where in the token, such as `["$value", "unit"]`. */
         readonly jsonPath: JsonPath;
     } & ValueErrorDetail;
-    /** A color written as a hex string, which the 2025.10 Color module no longer allows. */
+    /**
+     * A color written as a hex string, such as `"#ff0000"`.
+     *
+     * The Color module needs a color object.
+     */
     "hex-string-color": ValueErrorFacts["hex-string"];
-    /** An `$extensions` entry fails a registered check, such as a {@link Generator}'s. */
+    /** An `$extensions` entry fails a check, such as a {@link Generator}'s. */
     "extension-invalid": {
         /** The `$extensions` key, such as `"com.example"`. */
         readonly key: string;
         /** Where in the token or group, such as `["$extensions", "com.example", "steps"]`. */
         readonly jsonPath: JsonPath;
-        /** Why, as the check named it. A Standard Schema's issues have none. */
+        /** Why, as the check names it. It's absent for a Standard Schema's problems. */
         readonly reason?: string;
         /** The facts the check's message is worded from. */
         readonly data?: unknown;
     };
     /**
-     * A file writes a token or group with a name a {@link Generator} makes. The generator owns
-     * every name it makes, so the generated token is used and what the file writes there is not;
-     * `relatedInformation` is the extension that makes it.
+     * A file writes a token that a {@link Generator} also makes, such as `space.1`.
+     *
+     * The generated token is used, and what the file writes is not.
      */
     "written-generated": {
-        /** The name, such as `"space.2"`. */
+        /** The token's path, such as `"space.1"`. */
         readonly path: string;
         /**
-         * The group it is made in, absent for the top level of a file. A group that extends
-         * another makes its tokens too, so this may not be the group that writes the extension.
+         * The group the token is made in, such as `"space"`.
+         *
+         * It's absent at the top of a file. It can be a group that extends the one with the
+         * extension.
          */
         readonly from?: string;
         /** The generator's extension, such as `["com.example", "steps"]`. */
@@ -1563,116 +1588,137 @@ export interface DiagnosticDetailByKind {
         /** What the file writes with that name. */
         readonly written: "token" | "group";
     };
-    /** A reference points at nothing: no token, or for `$extends`, no group. */
+    /** A reference names nothing, such as `{color.primry}`. */
     "missing-reference": {
-        /** The reference as written, without braces: a path such as `color.brnad`, or a pointer. */
+        /** The reference as written, without braces, such as `"color.primry"`, or a pointer. */
         readonly ref: string;
-        /**
-         * Every token or group that writes it, each as a reference's
-         * {@link ReferenceBase.writtenIn | from}.
-         */
+        /** The path of each token or group that writes the reference. */
         readonly from: readonly string[];
         /**
-         * `ref` written to a token with a similar path instead, when exactly one is close: a path,
-         * or for a pointer, the pointer to that token with the same steps into its value. Not given
-         * when the token a pointer names exists, as then a step inside its value is what is wrong.
+         * A path close to `ref`, such as `"color.primary"`, if exactly one is close.
+         *
+         * For a JSON Pointer, it's a pointer. It's absent when the pointer's token exists, but a
+         * step inside its value is wrong.
          */
         readonly similar?: string;
     };
-    /** `$extends`, or a `$ref` standing for a group, points at a token (Format 6.4.6). */
+    /**
+     * `$extends` names a token, such as `"$extends": "{base}"` when `base` is a token.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#error-conditions | Format 6.4.6, Error Conditions}
+     */
     "not-a-group": { readonly ref: string };
     /**
-     * A `$ref` is not a JSON Pointer (RFC 6901): it does not start with `/` after the `#`, or a `~`
-     * in it is not `~0` or `~1`.
+     * A `$ref` isn't a valid JSON Pointer, such as `"#color/x/$value"`.
+     *
+     * It must start `#/`, and a `~` must be `~0` or `~1`.
+     *
+     * @see {@link https://www.rfc-editor.org/rfc/rfc6901 | RFC 6901, JSON Pointer}
      */
     "malformed-pointer": {
         readonly ref: string;
         readonly reason: "no-leading-slash" | "bad-escape";
         /**
-         * The reference written correctly, when that reaches something, and always for a reference
-         * into another file, whose target is not read.
+         * The pointer written correctly, such as `"#/color/x/$value"`.
+         *
+         * It's there when the corrected pointer finds something, and always for a pointer into
+         * another file.
          */
         readonly corrected?: string;
     };
     /**
-     * A reference to a token points at a group (Format 6.2: `{color.accent}` names a group, not a
-     * token).
+     * A reference names a group, such as `{color.blue}`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#curly-brace-syntax-token-references | Format 7.1.1, Curly brace syntax}
      */
     "not-a-token": { readonly ref: string };
     /**
-     * A reference in a shadow or gradient list points at a token holding several layers or stops.
-     * A reference in such a list stands for one (Format 9.1, 9.6, 9.7).
+     * A reference in a shadow or gradient array names a token with several layers or stops.
+     *
+     * There, a reference stands for one layer or stop.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#array-aliasing-in-composite-types | Format 9.1, Array aliasing in composite types}
      */
     "reference-to-several": {
         readonly ref: string;
-        /** How many layers or stops the token holds. */
+        /** How many layers or stops the token has. */
         readonly count: number;
     };
     /**
-     * References that lead back to where they started; `toTopLevel` when the last refers to the
-     * whole document.
+     * References that loop back, such as `a` to `b` to `a`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#circular-references | Format 7.2.3, Circular References}
      */
     "circular-reference": {
+        /** The paths around the loop, such as `["a", "b", "a"]`. */
         readonly chain: readonly string[];
+        /** Set when the loop ends at a reference to the whole file. */
         readonly toTopLevel?: true;
     };
-    /** A reference points at a token of the wrong type. */
+    /** A reference names a token of the wrong type, such as a number where a color is needed. */
     "type-mismatch": {
         readonly ref: string;
         readonly expected: TokenType;
         readonly found: TokenType;
     };
-    /** A name starts or ends with a space: legal, but almost always a typo. */
+    /**
+     * A name starts or ends with a space, such as `"a "`.
+     *
+     * It's allowed, but usually a typo.
+     */
     "whitespace-in-name": { readonly name: string };
     /**
-     * An object has a key the specification does not define for it, so it is ignored: in a
-     * resolver, a `$` name on a token or group, or in a value, such as `paragraphSpacing` in a
-     * typography value. Your own data belongs in `$extensions`.
+     * A property the spec doesn't define, such as `$foo` on a token.
+     *
+     * It's ignored. In a value, such as `paragraphSpacing` in a typography value, it's only
+     * reported with `ignoreUnknownProperties` on. Otherwise it's an `invalid-value`.
      */
     "unknown-property":
         | {
               readonly property: string;
               readonly owner: "resolver" | "set" | "modifier" | "token" | "group";
-              /** A property it may have with a similar name, when exactly one is close. */
+              /**
+               * A property with a similar name, such as `"sets"` for `"sest"`, if exactly one is
+               * close.
+               */
               readonly similar?: string;
           }
         | {
               readonly property: string;
-              /**
-               * The type of the value it is in, which for a part of a composite is the part's type.
-               */
+              /** The type of the value it's in. For part of a composite, that's the part's type. */
               readonly type: TokenType;
-              /** Where in the token or group, such as `["$value", "paragraphSpacing"]`. */
+              /** Where in the token, such as `["$value", "paragraphSpacing"]`. */
               readonly jsonPath: JsonPath;
           };
     /**
-     * A member is almost certainly one of the specification's own properties written another way:
-     * without its `$`, in other capitals, or with a letter out (`value`, `$Value` or `$vlaue` for
-     * `$value`). It is read as that property, so the token is not lost or read as a group, and
-     * nothing that depends on it fails as well (Format 5, 6).
+     * A spec property written another way, such as `value` or `$Value` for `$value`.
+     *
+     * It's read as that property, so nothing else fails because of it.
      */
     "misspelt-property": {
         readonly written: string;
         readonly property: "$value" | "$type" | "$description" | "$deprecated" | "$extensions";
         readonly owner: "token" | "group";
     };
-    /** A reference points at a token marked `$deprecated`. */
+    /** A reference names a token marked `$deprecated`. */
     "deprecated-reference": { readonly ref: string; readonly reason?: string };
     /**
-     * A resolver has more combinations than `permutationLimit`, so `"each-context"` was built
-     * instead.
+     * A resolver has more combinations than `permutationLimit`.
+     *
+     * Then each context is built on its own instead, as with `"each-context"`.
      */
     "permutation-limit": {
         /** How many combinations the resolver's modifiers make. */
         readonly count: number;
+        /** The `permutationLimit`, such as `32`. */
         readonly limit: number;
         /** How many were built instead. */
         readonly built: number;
     };
     /**
-     * A set or modifier the resolver declares that `resolutionOrder` never reaches, so it takes no
-     * part (Resolver 4.1.6). A hint at where it is written, tagged `unnecessary` so an editor can
-     * fade it.
+     * A set or modifier that `resolutionOrder` never uses.
+     *
+     * It's a hint, tagged `unnecessary` so an editor can fade it.
      */
     "not-in-resolution-order": {
         readonly item: "set" | "modifier";
@@ -1681,8 +1727,7 @@ export interface DiagnosticDetailByKind {
 }
 
 /**
- * Why a file could not be read as JSON. `"comment"` is a comment in a token file, which is JSON
- * and so has none; a resolver may contain comments.
+ * Why a file isn't valid JSON, such as `"comma-expected"`.
  */
 export type JsonErrorReason =
     | "comment"
@@ -1703,7 +1748,7 @@ export type JsonErrorReason =
     | "invalid-escape-character"
     | "invalid-character";
 
-/** Which rule of the resolver specification a resolver breaks. */
+/** A rule of the resolver spec, such as `"version"`. */
 export type ResolverRule =
     | "version"
     | "missing-property"
@@ -1721,15 +1766,19 @@ export type ResolverRule =
     | "file-in-resolution-order";
 
 /**
- * A rule a resolver breaks, what it concerns and where. Checking `rule` narrows the rest.
+ * The rule a resolver breaks, and where.
+ *
+ * Check `rule`, and TypeScript knows the rest.
  *
  * @example
- * if (d.kind === "resolver-invalid" && d.detail.rule === "wrong-type") d.detail.expected
+ * // A version that isn't "2025.10"
+ * diagnostic.detail
+ * // => { rule: "version", name: "version", jsonPath: ["version"] }
  */
 export type ResolverProblem =
     | {
           readonly rule: Exclude<ResolverRule, "wrong-type">;
-          /** The property, set, modifier, pointer or file concerned. */
+          /** The property, set, modifier, pointer or file it's about. */
           readonly name: string;
           /** Where in the resolver, such as `["sets", "base", "sources"]`. */
           readonly jsonPath: JsonPath;
@@ -1743,36 +1792,37 @@ export type ResolverProblem =
       };
 
 /**
- * What a diagnostic is about, as a stable name to switch on. Each has a page at
- * {@link Diagnostic.docsUrl}.
+ * The name of a kind of diagnostic, such as `"missing-reference"`.
+ *
+ * Check this in your code, not the message. Each kind has a page at {@link Diagnostic.docsUrl}.
  */
 export type DiagnosticKind = keyof DiagnosticDetailByKind;
 
 /**
- * A problem or a note about the files. Reading carries on, so one read reports everything.
- * Checking `kind` narrows `detail` to that kind's facts.
+ * A problem with the files, or a note about them.
  *
- * The message says what is wrong in plain words and, where the reader knows, what would mend it
- * ("did you mean `color.ink`?"); `detail` holds the same facts. It names no tool's command or flag,
- * and holds no location: that is in `span`, for the tool to present as it likes. The changes that
- * would mend a problem are made by `@sugarcube-sh/dtcg-edit`.
+ * Reading carries on past a problem, so one read reports them all. Check `kind`, and TypeScript
+ * knows its `detail`. To fix one, see `@sugarcube-sh/dtcg-edit`.
  *
  * @example
- * if (d.kind === "missing-reference") d.detail.similar // "color.ink"
+ * // A typo in a reference
+ * if (diagnostic.kind === "missing-reference") diagnostic.detail.similar;
+ * // => "color.primary"
  */
 export type Diagnostic = DiagnosticOf<DiagnosticDetailByKind> & {
     readonly permutations: Permutations;
 };
 
 /**
- * A diagnostic with kinds of your own, in the same shape as {@link Diagnostic}, so a tool's own
- * checks can be reported in one list with the package's. Give it a map from each kind to the facts
- * it carries; checking `kind` narrows `detail`, as it does for {@link Diagnostic}. Choose kinds
- * that are not {@link DiagnosticKind | the package's}.
+ * A diagnostic with your own kinds.
+ *
+ * It has the same shape as {@link Diagnostic}, so your checks can be listed with dtcg's. Pass a map
+ * from each kind to its facts. Pick kinds dtcg doesn't use.
  *
  * @example
- * type Ours = DiagnosticOf<{ "selector-empty": { entry: number } }>;
- * const reported: (Diagnostic | Ours)[] = [...tokens.diagnostics, ...checkConfig(tokens)];
+ * // A config check, listed with the read's diagnostics
+ * type ConfigDiagnostic = DiagnosticOf<{ "selector-empty": { entry: number } }>;
+ * const all: (Diagnostic | ConfigDiagnostic)[] = [...tokens.diagnostics, ...checkConfig(tokens)];
  */
 export type DiagnosticOf<DetailByKind> = {
     [K in keyof DetailByKind]: {
@@ -1784,33 +1834,28 @@ export type DiagnosticOf<DetailByKind> = {
         /** The token or group it concerns. */
         readonly path?: string;
         /**
-         * The permutations that have it. Always given on the package's own {@link Diagnostic}s, as
-         * every answer gives them: each one that reads its file, every one for a problem in the
-         * resolver or in no file (labelled `"everywhere"`), and none for a file no permutation the
-         * read built reads (`"nowhere"`). A tool's own kinds may leave it out, for a problem that
-         * concerns no permutation, such as one in the tool's own configuration.
+         * The permutations that have the problem.
          *
-         * @example
-         * const { label } = diagnostic.permutations;
-         * show(label === "everywhere" ? diagnostic.message : `${diagnostic.message} in ${label}`);
+         * dtcg's own diagnostics always have it. A problem in the resolver applies `"everywhere"`.
+         * Your own kinds can leave it out.
          */
         readonly permutations?: Permutations;
         /**
-         * Other places involved, such as every token that uses a missing one: each with its own
-         * message, and the token or group written there, when one is. With {@link path}, every
-         * token a tool could take someone to, whatever the kind.
-         *
-         * @example
-         * const tokens = [diagnostic.path, ...(diagnostic.relatedInformation ?? []).map((each) => each.path)];
+         * Other places involved, each with its own message, such as where a duplicate key is also
+         * written.
          */
         readonly relatedInformation?: readonly {
             readonly message: string;
             readonly span: Span;
             readonly path?: string;
         }[];
-        /** How an editor may show it: struck through for a deprecated reference. */
+        /**
+         * How an editor can show it.
+         *
+         * `"unnecessary"` fades it, and `"deprecated"` strikes it through.
+         */
         readonly tags?: readonly ("deprecated" | "unnecessary")[];
-        /** A page explaining this kind of diagnostic. */
+        /** A page about this kind of diagnostic. */
         readonly docsUrl: string;
         readonly detail: DetailByKind[K];
     };
