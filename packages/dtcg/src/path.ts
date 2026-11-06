@@ -129,6 +129,22 @@ export const tokenPath = {
         return FORBIDDEN.find((each) => name.includes(each));
     },
     /**
+     * Tells whether a token or group can have this name.
+     *
+     * A name can't be empty, and can't have a character {@link findInvalidCharacter} finds.
+     *
+     * @param name - A token or group name, such as `"500"`.
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
+     *
+     * @example
+     * // An empty name
+     * tokenPath.isValidName("")
+     * // => false
+     */
+    isValidName(name: string): boolean {
+        return name !== "" && tokenPath.findInvalidCharacter(name) === undefined;
+    },
+    /**
      * Works out where a path is after some moves.
      *
      * Moves are made in order. Moving a group moves everything inside it.

@@ -64,7 +64,8 @@ function fixFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
         }
         case "invalid-value":
             return valueFix(tokens, diagnostic.detail, span, nodeAt(tokens, span)?.value);
-        case "malformed-pointer": {
+        case "malformed-pointer":
+        case "not-a-value": {
             const { corrected } = diagnostic.detail;
             const node = nodeAt(tokens, span);
             const ref = node && refString(node);

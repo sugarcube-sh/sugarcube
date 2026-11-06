@@ -40,9 +40,10 @@ function createIn(
     if (options.after !== undefined) throw new Error("not implemented yet");
     const parent = tokenPath.getParent(path);
     const name = parent === undefined ? path : path.slice(parent.length + 1);
-    if (name === "") return refused({ kind: "invalid-name", name });
-    const character = tokenPath.findInvalidCharacter(name);
-    if (character) return refused({ kind: "invalid-name", name, character });
+    if (!tokenPath.isValidName(name)) {
+        const character = tokenPath.findInvalidCharacter(name);
+        return refused({ kind: "invalid-name", name, ...(character && { character }) });
+    }
     const placed = newPlace(tokens, path, options, place);
     if ("choose" in placed) {
         return asked(placed.choose, (file) => createIn(tokens, path, token, options, file));

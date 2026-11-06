@@ -18,7 +18,7 @@ const partialTypography = Array.from(
 );
 
 const problems: Record<string, string[]> = {
-    "core/resolver/complex": ["warning unknown-property"],
+    "core/resolver/complex": ["error unknown-property"],
     "every-value-form/native": [...partialTypography, "warning option-renamed"],
     "every-value-form/polyfill": ["warning option-deprecated"],
 };

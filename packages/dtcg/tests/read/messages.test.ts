@@ -52,6 +52,7 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { rule: "duplicate-name", name: "base", jsonPath: ["resolutionOrder", 1, "name"] },
         { rule: "no-contexts", name: "theme", jsonPath: ["modifiers", "theme", "contexts"] },
         { rule: "single-context", name: "theme", jsonPath: ["modifiers", "theme", "contexts"] },
+        { rule: "empty-resolution-order", name: "resolutionOrder", jsonPath: ["resolutionOrder"] },
         { rule: "invalid-default", name: "theme", jsonPath: ["modifiers", "theme", "default"] },
     ],
     "input-invalid": [
@@ -69,6 +70,7 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
     "invalid-name": [
         { name: "$brand", character: "$" },
         { name: "a.b", character: "." },
+        { name: "" },
     ],
     "token-and-group": [
         { reason: "child", child: "light" },
@@ -347,6 +349,8 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { ref: "all.json#color", reason: "no-leading-slash", corrected: "all.json#/color" },
     ],
     "not-a-token": [{ ref: "color.accent" }],
+    "not-a-value": [{ ref: "#/base", corrected: "#/base/$value" }],
+    "ref-and-value": [{}],
     "reference-to-several": [{ ref: "shadow.layered", count: 3 }],
     "circular-reference": [{ chain: ["color.a", "color.b", "color.a"] }],
     "type-mismatch": [{ ref: "space.md", expected: "color", found: "dimension" }],
@@ -479,7 +483,15 @@ describe("diagnostic messages that say what would mend the problem", () => {
         {
             found: { kind: "token-and-group", detail: { reason: "ref", ref: "#/base" } },
             message:
-                "this points at `#/base`, which is a token, so it is a token too, and a token cannot hold tokens or groups",
+                "this has a `$ref`, which makes it a token, and a token cannot hold tokens or groups; to extend a group, use `$extends`",
+        },
+        {
+            found: { kind: "invalid-name", detail: { name: "" } },
+            message: "a name can't be empty",
+        },
+        {
+            found: { kind: "not-a-value", detail: { ref: "#/base", corrected: "#/base/$value" } },
+            message: "`#/base` reaches a token, not its value; write it as `#/base/$value`",
         },
         {
             found: { kind: "unknown-type", detail: { type: "colour", similar: "color" } },
@@ -490,8 +502,7 @@ describe("diagnostic messages that say what would mend the problem", () => {
                 kind: "unknown-property",
                 detail: { property: "descripton", owner: "set", similar: "description" },
             },
-            message:
-                "`descripton` is not a property of a set, so it is ignored; did you mean `description`?",
+            message: "`descripton` is not a property of a set; did you mean `description`?",
         },
         {
             found: {
@@ -605,13 +616,33 @@ describe("the message for an input that leaves out a modifier with no default", 
 });
 
 describe("diagnostic messages for a token's or group's own properties", () => {
-    it("says a `$` name the specification does not define is ignored", () => {
+    it("says a `$` name the specification does not define is not a property", () => {
         const { message } = diagnosticMessages["unknown-property"];
         expect(message({ property: "$whatever", owner: "token" })).toBe(
-            "`$whatever` is not a property of a token, so it is ignored",
+            "`$whatever` is not a property of a token: put your own data in `$extensions`",
         );
         expect(message({ property: "$whatever", owner: "group" })).toBe(
-            "`$whatever` is not a property of a group, so it is ignored",
+            "`$whatever` is not a property of a group: put your own data in `$extensions`",
+        );
+        expect(message({ property: "owner", owner: "set" })).toBe(
+            "`owner` is not a property of a set: put your own data in `$extensions`",
+        );
+    });
+
+    it("says no more than that for a property the specification defines elsewhere", () => {
+        const { message } = diagnosticMessages["unknown-property"];
+        expect(message({ property: "$extends", owner: "token" })).toBe(
+            "`$extends` is not a property of a token",
+        );
+        expect(message({ property: "$value", owner: "group" })).toBe(
+            "`$value` is not a property of a group",
+        );
+    });
+
+    it("says no more than that at the top of a resolver, which has no `$extensions`", () => {
+        const { message } = diagnosticMessages["unknown-property"];
+        expect(message({ property: "owner", owner: "resolver" })).toBe(
+            "`owner` is not a property of the resolver",
         );
     });
 });

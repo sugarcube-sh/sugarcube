@@ -79,7 +79,7 @@ describe("positions", () => {
     });
 });
 
-describe("what is set aside is a warning, and what cannot be read an error", () => {
+describe("what breaks a rule of the spec is an error, and what is set aside a warning", () => {
     const severities = (text: string, options: ReadOptions = {}) =>
         readFromMemory({ files: { "tokens.json": text } }, options).diagnostics.map(
             ({ kind, severity, detail }) => [
@@ -89,20 +89,110 @@ describe("what is set aside is a warning, and what cannot be read an error", () 
             ],
         );
 
-    it("a key written twice, a description, deprecation or extensions of the wrong kind, and an unknown property in a value are warnings", () => {
+    it("a key written twice and an unknown property in a value are warnings", () => {
         const text = `{
             "a": { "$type": "number", "$value": 1 },
-            "a": { "$type": "number", "$value": 2, "$description": 5 },
-            "b": { "$type": "number", "$value": 1, "$deprecated": 1, "$extensions": [] },
+            "a": { "$type": "number", "$value": 2 },
             "c": { "$type": "dimension", "$value": { "value": 1, "unit": "px", "fluid": true } }
         }`;
         expect(severities(text, { ignoreUnknownProperties: true })).toStrictEqual([
             ["duplicate-key", "warning", ""],
-            ["invalid-property", "warning", "$description"],
-            ["invalid-property", "warning", "$deprecated"],
-            ["invalid-property", "warning", "$extensions"],
             ["unknown-property", "warning", "fluid"],
         ]);
+    });
+
+    it("a property the specification does not define on a token or a group is an error, and one at the top level is the file's own", () => {
+        const text = `{
+            "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+            "$themes": [],
+            "g": { "$note": "ours", "a": { "$type": "number", "$value": 1, "$figmaId": "12:34" } }
+        }`;
+        expect(severities(text)).toStrictEqual([
+            ["unknown-property", "error", "$note"],
+            ["unknown-property", "error", "$figmaId"],
+        ]);
+    });
+
+    it("$extends on a token is an error, since only a group extends", () => {
+        const text = `{
+            "b": { "c": { "$type": "number", "$value": 3 } },
+            "g": { "$type": "number", "$value": 1, "$extends": "{b}" },
+            "h": { "$type": "number", "$ref": "#/b/c/$value", "$extends": "{b}" }
+        }`;
+        expect(severities(text)).toStrictEqual([
+            ["unknown-property", "error", "$extends"],
+            ["unknown-property", "error", "$extends"],
+        ]);
+    });
+
+    it("$value or $ref at the top of a file is an error, since the top is never a token", () => {
+        const text = `{
+            "$type": "number",
+            "$value": 1,
+            "$ref": "#/a/$value",
+            "a": { "$value": 2 }
+        }`;
+        expect(severities(text)).toStrictEqual([
+            ["unknown-property", "error", "$value"],
+            ["unknown-property", "error", "$ref"],
+        ]);
+    });
+
+    it("$root inside a token is a member, which a token cannot hold", () => {
+        const text = `{ "a": { "$type": "number", "$value": 1, "$root": { "$value": 2 } } }`;
+        const tokens = readFromMemory({ files: { "tokens.json": text } });
+        expect(tokens.diagnostics.map(({ kind, detail }) => [kind, detail])).toStrictEqual([
+            ["token-and-group", { reason: "child", child: "$root" }],
+        ]);
+    });
+
+    it("a property the specification does not define on a resolver, a set or a modifier is an error", () => {
+        const tokens = readFromMemory({
+            files: {
+                "tokens.resolver.json": JSON.stringify({
+                    version: "2025.10",
+                    $schema: "https://www.designtokens.org/schemas/2025.10/resolver.json",
+                    $defs: {},
+                    owner: "design",
+                    sets: { base: { sources: [], colour: "red" } },
+                    modifiers: {
+                        mode: { contexts: { light: [], dark: [] }, default: "light", x: 1 },
+                    },
+                    resolutionOrder: [{ $ref: "#/sets/base" }, { $ref: "#/modifiers/mode" }],
+                }),
+            },
+            entryFile: "tokens.resolver.json",
+        });
+        expect(
+            tokens.diagnostics.map(({ kind, severity, detail }) => [
+                kind,
+                severity,
+                "property" in detail ? detail.property : "",
+            ]),
+        ).toStrictEqual([
+            ["unknown-property", "error", "owner"],
+            ["unknown-property", "error", "colour"],
+            ["unknown-property", "error", "x"],
+        ]);
+    });
+
+    it("a description, deprecation or extensions of the wrong kind is an error, and the token is still read", () => {
+        const text = `{
+            "a": { "$type": "number", "$value": 2, "$description": 5 },
+            "b": { "$type": "number", "$value": 1, "$deprecated": 1, "$extensions": [] },
+            "g": { "$description": 5, "$deprecated": {}, "$extensions": [], "c": { "$type": "number", "$value": 3 } }
+        }`;
+        expect(severities(text)).toStrictEqual([
+            ["invalid-property", "error", "$description"],
+            ["invalid-property", "error", "$deprecated"],
+            ["invalid-property", "error", "$extensions"],
+            ["invalid-property", "error", "$description"],
+            ["invalid-property", "error", "$deprecated"],
+            ["invalid-property", "error", "$extensions"],
+        ]);
+        const tokens = readFromMemory({ files: { "tokens.json": text } }).getPermutation();
+        expect(tokens.tokens.map(({ path }) => path)).toStrictEqual(["a", "b", "g.c"]);
+        expect(tokens.getToken("a")?.description).toBeUndefined();
     });
 
     it("a pointer without its slash is an error in a reference to another file, as in a token file", () => {
@@ -618,7 +708,10 @@ describe("readFromMemory", () => {
     });
 
     it("refuses several resolvers when no entry says which, naming them", () => {
-        const resolver = JSON.stringify({ version: "2025.10", resolutionOrder: [] });
+        const resolver = JSON.stringify({
+            version: "2025.10",
+            resolutionOrder: [{ type: "set", name: "base", sources: [] }],
+        });
         const reading = () =>
             readFromMemory({ files: { "a.resolver.json": resolver, "b.resolver.json": resolver } });
         expect(reading).toThrow(TypeError);
@@ -650,7 +743,8 @@ describe("readFromMemory", () => {
         const tokens = readFromMemory({
             files: {
                 "stray.json": "{ // not read\n }",
-                "design.resolver.json": '{ "version": "2025.10", "resolutionOrder": [] }',
+                "design.resolver.json":
+                    '{ "version": "2025.10", "resolutionOrder": [{ "type": "set", "name": "base", "sources": [] }] }',
             },
         });
         expect(tokens.files).toStrictEqual(["design.resolver.json"]);
@@ -681,7 +775,7 @@ describe("readFromMemory", () => {
 
 describe("a group referring to the whole document", () => {
     it("is circular, as the document holds the group, and names the top level", () => {
-        const files = { "tokens.json": JSON.stringify({ g: { $ref: "#" } }) };
+        const files = { "tokens.json": JSON.stringify({ g: { $extends: { $ref: "#" } } }) };
         const found = readFromMemory({ files }).diagnostics.map(({ kind, detail, message }) => ({
             kind,
             detail,
@@ -696,25 +790,30 @@ describe("a group referring to the whole document", () => {
         ]);
     });
 
-    it('is told apart from a group named "", which #/ reaches (RFC 6901)', () => {
-        const files = {
-            "tokens.json": JSON.stringify({
-                "": { $type: "number", x: { $value: 1 } },
-                "g": { $ref: "#/" },
-            }),
-        };
-        const tokens = readFromMemory({ files });
-        expect(tokens.diagnostics).toStrictEqual([]);
-        expect(tokens.getPermutation().getToken("g.x")?.inherited).toStrictEqual({ from: "" });
-    });
-    it('never reaches a token named "" through #, the whole document', () => {
+    it('never reaches a token named "", which is not a name, through #, the whole document', () => {
         const files = {
             "tokens.json": JSON.stringify({
                 "": { $type: "number", $value: 1 },
                 "t": { $type: "number", $value: { $ref: "#" } },
             }),
         };
-        expect(readFromMemory({ files }).getPermutation().getToken("t")?.resolved).toBeUndefined();
+        const tokens = readFromMemory({ files });
+        expect(tokens.diagnostics.map(({ kind }) => kind)).toContain("invalid-name");
+        expect(tokens.getPermutation().getToken("t")?.resolved).toBeUndefined();
+    });
+});
+
+describe("a $root token", () => {
+    it("can be written with $ref, as any token can", () => {
+        const files = {
+            "tokens.json": JSON.stringify({
+                a: { $type: "number", $value: 2 },
+                g: { $type: "number", $root: { $ref: "#/a/$value" } },
+            }),
+        };
+        const tokens = readFromMemory({ files });
+        expect(tokens.diagnostics).toStrictEqual([]);
+        expect(tokens.getPermutation().getToken("g.$root")?.resolved).toBe(2);
     });
 });
 
@@ -762,7 +861,10 @@ describe("labels", () => {
 
 describe("what the design tokens hold", () => {
     it("is the files and the entry, the resolver part, the sources, the permutations, how values were read and the problems", () => {
-        const resolver = JSON.stringify({ version: "2025.10", resolutionOrder: [] });
+        const resolver = JSON.stringify({
+            version: "2025.10",
+            resolutionOrder: [{ type: "set", name: "base", sources: [] }],
+        });
         const tokens = readFromMemory({
             files: { "tokens.resolver.json": resolver },
             entryFile: "tokens.resolver.json",
@@ -990,7 +1092,7 @@ describe("the resolver part", () => {
         const resolver = JSON.stringify({
             version: "2025.10",
             sets: { spare: { sources: [] } },
-            resolutionOrder: [],
+            resolutionOrder: [{ type: "set", name: "base", sources: [] }],
         });
         const tokens = readFromMemory({
             files: { "tokens.resolver.json": resolver },

@@ -16,6 +16,7 @@ import { type JsonFile, type Member, members, plainObject, plainValue, toSpan } 
 import { toPointerSteps } from "./ref-meaning.js";
 import { similarName } from "./similar.js";
 import type { LoadedSource } from "./sources.js";
+import { isTokenKey, OTHER_SPEC_KEYS, OWN_PROPERTIES, type OwnProperty } from "./spec-keys.js";
 
 export interface Properties {
     type?: TokenType | "unusable";
@@ -39,7 +40,6 @@ export interface SourceToken extends Properties {
 }
 
 export interface GroupReference {
-    keyword: "$extends" | "$ref";
     reference: WrittenReference;
     steps: string[] | undefined;
     json: JsonFile;
@@ -76,21 +76,9 @@ type Property = Exclude<
     "$extends" | "$ref"
 >;
 
-type OwnProperty = DiagnosticDetailByKind["misspelt-property"]["property"];
-
-const OWN_PROPERTIES: readonly OwnProperty[] = [
-    "$value",
-    "$type",
-    "$description",
-    "$deprecated",
-    "$extensions",
-];
-
 const OWN: ReadonlySet<string> = new Set(OWN_PROPERTIES);
 
 const WITHOUT_DOLLAR = new Map(OWN_PROPERTIES.map((property) => [property.slice(1), property]));
-
-const GROUP_KEYWORDS = new Set(["$extends", "$ref", "$root"]);
 
 const EXPECTED: Record<Property, DiagnosticDetailByKind["invalid-property"]["expected"]> = {
     $type: "string",
@@ -157,36 +145,36 @@ export function walkSource(
     };
 
     const readExtends = (node: Node, entries: readonly Member[]): GroupReference | undefined => {
-        let found: GroupReference | undefined;
-        for (const { key, value } of entries) {
-            if (key !== "$extends" && key !== "$ref") continue;
-            const read = readGroupReference(key, plainValue(value));
-            if (read === undefined) {
-                const expected = key === "$ref" ? "string" : "reference";
-                const reference = key === "$extends" ? asReference(value.value) : undefined;
-                report(
-                    "invalid-property",
-                    { property: key, expected, ...(reference !== undefined && { reference }) },
-                    value,
-                );
-                continue;
-            }
-            found = {
-                keyword: key,
-                ...read,
-                json,
-                node: value,
-                span: toSpan(json, value),
-                groupSpan: toSpan(json, node),
-            };
+        const value = entries.find(({ key }) => key === "$extends")?.value;
+        if (!value) return undefined;
+        const reference = parseReference(plainValue(value));
+        if (!reference) {
+            const suggested = asReference(value.value);
+            const detail = { property: "$extends", expected: "reference" } as const;
+            report(
+                "invalid-property",
+                { ...detail, ...(suggested && { reference: suggested }) },
+                value,
+            );
+            return undefined;
         }
-        return found;
+        return {
+            reference,
+            steps: toPointerSteps(reference),
+            json,
+            node: value,
+            span: toSpan(json, value),
+            groupSpan: toSpan(json, node),
+        };
     };
 
-    const visitToken = (node: Node, path: string, entries: readonly Member[], value: Node) => {
-        const child = entries.find(({ key }) => !key.startsWith("$"));
-        if (child) report("token-and-group", { reason: "child", child: child.key }, child.keyNode);
-        const valueAsWritten = plainValue(value);
+    const addToken = (
+        node: Node,
+        path: string,
+        entries: readonly Member[],
+        value: Node,
+        valueAsWritten: unknown,
+    ) => {
         written.push({
             token: {
                 path,
@@ -198,6 +186,24 @@ export function walkSource(
                 ...readPropertiesAndExtensions(path, entries),
             },
         });
+    };
+
+    const visitToken = (node: Node, path: string, entries: readonly Member[], value: Node) => {
+        const child = entries.find(({ key }) => isMemberName(key));
+        if (child) report("token-and-group", { reason: "child", child: child.key }, child.keyNode);
+        addToken(node, path, entries, value, plainValue(value));
+    };
+
+    const visitRefToken = (node: Node, path: string, entries: readonly Member[], ref: Node) => {
+        const pointer: unknown = ref.value;
+        if (typeof pointer !== "string") {
+            report("invalid-property", { property: "$ref", expected: "string" }, ref);
+            return;
+        }
+        if (entries.some(({ key }) => isMemberName(key))) {
+            report("token-and-group", { reason: "ref", ref: pointer }, ref, { path });
+        }
+        addToken(node, path, entries, ref, { $ref: pointer });
     };
 
     const visitGroup = (node: Node, segments: string[], entries: readonly Member[]) => {
@@ -217,7 +223,7 @@ export function walkSource(
     const intended = (entry: Member): OwnProperty | undefined => {
         const { key, value } = entry;
         if (isOwnProperty(key)) return key;
-        if (GROUP_KEYWORDS.has(key)) return undefined;
+        if (OTHER_SPEC_KEYS.has(key)) return undefined;
         if (key.startsWith("$")) return similarName(key, OWN_PROPERTIES);
         const property = WITHOUT_DOLLAR.get(key);
         return property !== undefined && !holdsToken(value) ? property : undefined;
@@ -236,7 +242,9 @@ export function walkSource(
             }
             return top && property === "$value" ? undefined : property;
         });
-        const owner = meant.includes("$value") ? "token" : "group";
+        const isToken =
+            !top && entries.some((entry, index) => isTokenKey(meant[index] ?? entry.key));
+        const owner = isToken ? "token" : "group";
         let renamed: Member[] | undefined;
         for (const [index, entry] of entries.entries()) {
             const property = meant[index];
@@ -245,13 +253,14 @@ export function walkSource(
                 report("misspelt-property", { written: key, property, owner }, keyNode, { path });
                 renamed ??= [...entries];
                 renamed[index] = { ...entry, key: property };
-            } else if (
-                property === undefined &&
-                key.startsWith("$") &&
-                !GROUP_KEYWORDS.has(key) &&
-                !top
-            ) {
+            } else if (isMisplaced(key, isToken, top)) {
                 report("unknown-property", { property: key, owner }, keyNode, { path });
+            } else if (property === undefined && key.startsWith("$") && !OTHER_SPEC_KEYS.has(key)) {
+                if (holdsToken(entry.value)) {
+                    report("invalid-name", { name: key, character: "$" }, keyNode, { path });
+                } else if (!top) {
+                    report("unknown-property", { property: key, owner }, keyNode, { path });
+                }
             }
         }
         return renamed ?? entries;
@@ -259,7 +268,7 @@ export function walkSource(
 
     const visitMembers = (segments: string[], entries: readonly Member[]) => {
         for (const { key, keyNode, value } of entries) {
-            if (key.startsWith("$") && key !== "$root") continue;
+            if (!isMemberName(key)) continue;
             const found = nonObjectKind(value);
             if (found) {
                 report("invalid-member", { name: key, found }, value);
@@ -267,19 +276,24 @@ export function walkSource(
             }
             const inside = asWritten([...segments, key].join("."), members(value), false);
             const tokenValue = inside.find((entry) => entry.key === "$value")?.value;
-            if (key === "$root" && !tokenValue) {
+            const ref = inside.find((entry) => entry.key === "$ref");
+            if (key === "$root" && !tokenValue && !ref) {
                 report("invalid-name", { name: key, character: "$" }, keyNode);
                 continue;
             }
-            const character = tokenPath.findInvalidCharacter(key);
-            if (character) {
-                report("invalid-name", { name: key, character }, keyNode);
+            if (!tokenPath.isValidName(key)) {
+                const character = tokenPath.findInvalidCharacter(key);
+                report("invalid-name", { name: key, ...(character && { character }) }, keyNode);
                 continue;
             }
             if (key !== key.trim()) report("whitespace-in-name", { name: key }, keyNode);
 
             const path = [...segments, key];
-            if (tokenValue) visitToken(value, path.join("."), inside, tokenValue);
+            const joined = path.join(".");
+            if (tokenValue) {
+                if (ref) report("ref-and-value", {}, ref.keyNode, { path: joined });
+                visitToken(value, joined, inside, tokenValue);
+            } else if (ref) visitRefToken(value, joined, inside, ref.value);
             else visitGroup(value, path, inside);
         }
     };
@@ -302,19 +316,6 @@ function nonObjectKind(node: Node): NonObjectKind | undefined {
     return node.type;
 }
 
-function readGroupReference(
-    keyword: "$extends" | "$ref",
-    raw: unknown,
-): Pick<GroupReference, "reference" | "steps"> | undefined {
-    const reference =
-        keyword === "$extends"
-            ? parseReference(raw)
-            : typeof raw === "string"
-              ? { syntax: "json-pointer" as const, pointer: raw }
-              : undefined;
-    return reference && { reference, steps: toPointerSteps(reference) };
-}
-
 function asReference(written: unknown): string | undefined {
     if (typeof written !== "string" || written === "" || /[{}#]/.test(written)) return undefined;
     return `{${written}}`;
@@ -328,7 +329,16 @@ function isOwnProperty(key: string): key is OwnProperty {
     return OWN.has(key);
 }
 
+function isMisplaced(key: string, isToken: boolean, top: boolean): boolean {
+    if (top) return isTokenKey(key);
+    return isToken && key === "$extends";
+}
+
+function isMemberName(key: string): boolean {
+    return !key.startsWith("$") || key === "$root";
+}
+
 function holdsToken(node: Node): boolean {
     if (node.type !== "object") return false;
-    return members(node).some(({ key, value }) => key === "$value" || holdsToken(value));
+    return members(node).some(({ key, value }) => isTokenKey(key) || holdsToken(value));
 }

@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 5.1.1: a name cannot start with $ or contain {, } or .; $root is a token name (6.2), so a $root with no $value is a group with a forbidden name. Other $ keys are ignored, as properties this reader does not know, with a warning. A space at either end is legal but warned about",
+  "spec": "Format 5.1.1: a name cannot start with $ or contain {, } or .; $root is a token name (6.2), so a $root with no $value is a group with a forbidden name, and $later, holding a token, is a name that starts with $. A space at either end is legal but warned about",
   "permutations": [
     {
       "tokens": [
@@ -20,10 +20,10 @@
   ],
   "diagnostics": [
     {
-      "kind": "unknown-property",
+      "kind": "invalid-name",
       "detail": {
-        "property": "$later",
-        "owner": "group"
+        "name": "$later",
+        "character": "$"
       },
       "span": {
         "file": "tokens.json",

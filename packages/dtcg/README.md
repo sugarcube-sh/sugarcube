@@ -220,8 +220,9 @@ for (const problem of tokens.diagnostics) {
 Things to notice:
 
 - "Diagnostics" is the usual name for problems found in code. Editors use it too.
-- `severity` is how serious it is. `"error"` means something can't be used. `"warning"` means it
-  can, but probably isn't what you meant. `"info"` and `"hint"` are things worth knowing.
+- `severity` is how serious it is. `"error"` means the file breaks a rule of DTCG. `"warning"`
+  means it doesn't, but probably isn't what you meant, or something was set aside. `"info"` and
+  `"hint"` are things worth knowing.
 - `span` says where the mistake is: the file, and the line and column it starts and ends at.
 - The other tokens are all fine. Only `color.link` has no value: `tokens.getToken("color.link")?.resolved`
   is `undefined`.
@@ -840,7 +841,8 @@ tokenPath.join("color.brand", "500")                  // "color.brand.500"
 tokenPath.relative("color", "color.brand.ink")        // "brand.ink"; undefined when it isn't inside
 tokenPath.contains("color.brand", "color.brand.500")  // true, and for "color.brand" itself
 tokenPath.removeRoot("color.accent.$root")            // "color.accent", the name a $root token stands for
-tokenPath.findInvalidCharacter("brand.500")           // ".", which no name may hold; undefined for a valid name
+tokenPath.findInvalidCharacter("brand.500")           // ".", which no name may hold; undefined when no character is wrong
+tokenPath.isValidName("")                             // false: a name can't be empty, or hold one of those characters
 tokenPath.applyMoves("color.brand.500", [{ from: "color.brand", to: "color.house" }])
                                                       // "color.house.500", where it is after a rename
 ```

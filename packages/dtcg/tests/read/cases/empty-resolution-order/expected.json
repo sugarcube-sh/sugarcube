@@ -1,0 +1,18 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.6: resolutionOrder is an array of sets and modifiers ordered to produce the final result of tokens, so an empty one is an error, as the group's schema has it (minItems 1)",
+  "diagnostics": [
+    {
+      "kind": "resolver-invalid",
+      "detail": {
+        "rule": "empty-resolution-order",
+        "name": "resolutionOrder",
+        "jsonPath": ["resolutionOrder"]
+      },
+      "span": {
+        "file": "tokens.resolver.json",
+        "text": "[]"
+      }
+    }
+  ]
+}

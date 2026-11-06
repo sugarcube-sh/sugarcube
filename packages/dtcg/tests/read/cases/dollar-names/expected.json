@@ -1,0 +1,75 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 5.1.1: token and group names MUST NOT begin with the $ character. A $ name holding a token (with $value or $ref), directly or in a group inside it, is a name, so an error, at any depth; a $ name holding anything else is a property the spec does not define",
+  "permutations": [
+    {
+      "tokens": [
+        {
+          "path": "group.kept"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "invalid-name",
+      "detail": {
+        "name": "$atTop",
+        "character": "$"
+      },
+      "span": {
+        "file": "tokens.json",
+        "text": "\"$atTop\""
+      },
+      "path": ""
+    },
+    {
+      "kind": "invalid-name",
+      "detail": {
+        "name": "$token",
+        "character": "$"
+      },
+      "span": {
+        "file": "tokens.json",
+        "text": "\"$token\""
+      },
+      "path": "group"
+    },
+    {
+      "kind": "invalid-name",
+      "detail": {
+        "name": "$group",
+        "character": "$"
+      },
+      "span": {
+        "file": "tokens.json",
+        "text": "\"$group\""
+      },
+      "path": "group"
+    },
+    {
+      "kind": "invalid-name",
+      "detail": {
+        "name": "$pointer",
+        "character": "$"
+      },
+      "span": {
+        "file": "tokens.json",
+        "text": "\"$pointer\""
+      },
+      "path": "group"
+    },
+    {
+      "kind": "unknown-property",
+      "detail": {
+        "property": "$note",
+        "owner": "group"
+      },
+      "span": {
+        "file": "tokens.json",
+        "text": "\"$note\""
+      },
+      "path": "group"
+    }
+  ]
+}

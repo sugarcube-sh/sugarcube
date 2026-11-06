@@ -299,20 +299,17 @@ describe("a group's $extends", () => {
         expect(reference && written(getSpan(tokens, reference))).toBe('"{button}"');
     });
 
-    it("is a JSON Pointer when written as one, $extends or a group's $ref", () => {
+    it("is a JSON Pointer when $extends writes one", () => {
         const pointed = oneFile({
             button: { $type: "number", pad: { $value: 1 } },
             primary: { $extends: { $ref: "#/button" } },
-            secondary: { $ref: "#/button" },
         });
-        for (const path of ["primary", "secondary"]) {
-            const [reference] = pointed.getPermutation().getGroup(path)?.references ?? [];
-            expect(reference?.asWritten.syntax).toBe("json-pointer");
-            expect(reference?.pointsToPath).toBe("button");
-            expect(pointed.getPermutation().getGroup(path)?.extends).toBe(
-                pointed.getPermutation().getGroup("button"),
-            );
-        }
+        const [reference] = pointed.getPermutation().getGroup("primary")?.references ?? [];
+        expect(reference?.asWritten.syntax).toBe("json-pointer");
+        expect(reference?.pointsToPath).toBe("button");
+        expect(pointed.getPermutation().getGroup("primary")?.extends).toBe(
+            pointed.getPermutation().getGroup("button"),
+        );
     });
 
     it("leaves a group that extends nothing without references", () => {
@@ -368,20 +365,25 @@ describe("moved", () => {
         );
     });
 
-    it("writes what stands at the reference's place: a group's $ref is the pointer alone", () => {
+    it("writes what stands at the reference's place: a token's $ref is the pointer alone", () => {
         const text = JSON.stringify({
             button: { $type: "number", pad: { $value: 1 } },
             primary: { $extends: "{button}" },
-            secondary: { $ref: "#/button" },
+            pad: { $type: "number", $ref: "#/button/pad/$value" },
+            inside: { $type: "number", $value: { $ref: "#/button/pad/$value" } },
         });
         const pointed = readFromMemory({ files: { "tokens.json": text } });
         const [extending] = pointed.getPermutation().getGroup("primary")?.references ?? [];
-        const [referring] = pointed.getPermutation().getGroup("secondary")?.references ?? [];
+        const [alone] = pointed.getPermutation().getToken("pad")?.references ?? [];
+        const [inside] = pointed.getPermutation().getToken("inside")?.references ?? [];
         expect(extending?.moved(moves("button", "control"))).toBe("{control}");
-        expect(referring?.moved(moves("button", "control"))).toBe("#/control");
-        expect(referring && written(getSpan(pointed, referring), { "tokens.json": text })).toBe(
-            '"#/button"',
+        expect(alone?.moved(moves("button", "control"))).toBe("#/control/pad/$value");
+        expect(alone && written(getSpan(pointed, alone), { "tokens.json": text })).toBe(
+            '"#/button/pad/$value"',
         );
+        expect(inside?.moved(moves("button", "control"))).toStrictEqual({
+            $ref: "#/control/pad/$value",
+        });
     });
 });
 

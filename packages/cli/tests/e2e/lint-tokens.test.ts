@@ -69,7 +69,7 @@ describe("lint, when the tokens have errors", () => {
     );
 
     it("says nothing about warnings in the tokens", { timeout: TEST_TIMEOUT }, async () => {
-        const warned = { color: { ink: { ...color(black), $figmaId: "123" } } };
+        const warned = { color: { "ink ": color(black) } };
         await writeFile(join(testDir, "tokens", "base.json"), JSON.stringify(warned));
 
         const { stdout, exitCode } = await run("lint");

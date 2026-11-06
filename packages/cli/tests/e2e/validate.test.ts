@@ -94,7 +94,7 @@ describe("validate command", () => {
         async () => {
             await write({
                 "tokens/tokens.resolver.json": oneSet("base.json"),
-                "tokens/base.json": { ink: { ...color(black), $description: 5 } },
+                "tokens/base.json": { "ink ": color(black) },
             });
 
             const result = await validate();

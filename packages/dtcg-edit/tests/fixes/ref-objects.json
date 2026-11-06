@@ -1,0 +1,24 @@
+{
+  "diagnostics": [
+    {
+      "kind": "not-a-value",
+      "span": {
+        "file": "tokens.json",
+        "text": "\"#/base\""
+      },
+      "fixes": [
+        {
+          "title": "write it as `#/base/$value`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#/base\"",
+              "replaceWith": "\"#/base/$value\""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

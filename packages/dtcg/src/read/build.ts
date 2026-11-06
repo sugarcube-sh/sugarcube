@@ -42,7 +42,7 @@ import type { NormalisedPermutation } from "./normalise.js";
 import { type Occurrence, wholeReference } from "./occurrence.js";
 import type { LocatedReference, ValueReader } from "./parse-value.js";
 import { type ReferenceTo, linkedReference } from "./reference.js";
-import { type Aim, followReference, stepInto } from "./ref-meaning.js";
+import { type Aim, followReference, stepInto, toValuePointer } from "./ref-meaning.js";
 import { type Resolving, UNRESOLVED, resolveValue } from "./resolve-value.js";
 import { type MadeFrom, sameGroup, sameToken } from "./same-object.js";
 import { type Properties, usableType } from "./walk.js";
@@ -201,8 +201,11 @@ function buildPermutation(
     ): Token => {
         const token: Building<Token> = linkedToken(tokenFields(written, now));
         if (located.length > 0) {
+            const pointerAlone = written.value.type === "string";
             const link = (targets: readonly Aimed<Token>[]) => {
-                token.references = targets.map((target) => linkedReference(token, target));
+                token.references = targets.map((target) =>
+                    linkedReference(token, target, { pointerAlone }),
+                );
             };
             if (reached) link(reached);
             else linkLater.push(() => link(aimEach(located, builtToken)));
@@ -282,14 +285,13 @@ function buildPermutation(
         if (rootToken) group.rootToken = rootToken;
         if (extending) group.extends = extending;
         if (written.extends) {
-            const { reference, steps, span, keyword } = written.extends;
+            const { reference, steps, span } = written.extends;
             const target = aimReference(
                 { reference, steps, span, property: [] },
                 merged,
                 builtToken,
             );
-            const pointerAlone = keyword === "$ref";
-            group.references = [linkedReference(group, target, { pointerAlone })];
+            group.references = [linkedReference(group, target)];
         }
         remember(earlier.groups, written.path, group);
         return group;
@@ -331,15 +333,18 @@ function workingOut(
 
     const notReached = (aim: Aim, from: string, span: Span) => {
         const { reference } = aim;
-        if (followReference(aim, merged).kind === "group") {
-            report("not-a-token", { ref: toReferenceTarget(reference) }, from, span);
+        const reached = followReference(aim, merged).kind;
+        const ref = toReferenceTarget(reference);
+        if (reached === "group") report("not-a-token", { ref }, from, span);
+        else if (reached === "stops-at-token") {
+            report("not-a-value", { ref, corrected: toValuePointer(ref) }, from, span);
         } else missing.record(reference, from, span);
     };
 
     const reportUnreachable = (aim: Aim, from: string, span: Span) => {
         const { reference } = aim;
         const malformed =
-            reference.syntax === "json-pointer" && malformation(reference.pointer, merged);
+            reference.syntax === "json-pointer" && malformation(reference.pointer, merged, "value");
         if (malformed) report("malformed-pointer", malformed, from, span);
         else notReached(aim, from, span);
     };
@@ -492,7 +497,7 @@ function aimReference<Found extends Pending<Token>>(
     if (reached.kind === "nothing") return { occurrence, path: namedPath(occurrence.reference) };
     const { path } = reached;
     if (reached.kind === "token") return { occurrence, path, token: at(path) };
-    if (reached.kind === "group") return { occurrence, path };
+    if (reached.kind === "group" || reached.kind === "stops-at-token") return { occurrence, path };
     const pointsToProperty = stepInto(reached.token.valueAsWritten, reached.inside)?.property;
     return { occurrence, path, pointsToProperty };
 }

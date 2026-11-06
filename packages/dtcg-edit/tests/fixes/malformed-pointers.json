@@ -4,46 +4,6 @@
       "kind": "malformed-pointer",
       "span": {
         "file": "tokens.json",
-        "text": "\"#color/ink\""
-      },
-      "fixes": [
-        {
-          "title": "write it as `#/color/ink`",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"#color/ink\"",
-              "replaceWith": "\"#/color/ink\""
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "kind": "malformed-pointer",
-      "span": {
-        "file": "tokens.json",
-        "text": "\"#g\""
-      },
-      "fixes": [
-        {
-          "title": "write it as `#/g`",
-          "safe": true,
-          "edits": [
-            {
-              "file": "tokens.json",
-              "text": "\"#g\"",
-              "replaceWith": "\"#/g\""
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "kind": "malformed-pointer",
-      "span": {
-        "file": "tokens.json",
         "text": "{ \"$ref\": \"#g\" }",
         "occurrence": 2
       },
@@ -77,6 +37,26 @@
               "file": "tokens.json",
               "text": "\"#color/ink/$value/colorSpace\"",
               "replaceWith": "\"#/color/ink/$value/colorSpace\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "malformed-pointer",
+      "span": {
+        "file": "tokens.json",
+        "text": "\"#color/ink\""
+      },
+      "fixes": [
+        {
+          "title": "write it as `#/color/ink/$value`",
+          "safe": true,
+          "edits": [
+            {
+              "file": "tokens.json",
+              "text": "\"#color/ink\"",
+              "replaceWith": "\"#/color/ink/$value\""
             }
           ]
         }

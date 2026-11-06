@@ -74,8 +74,8 @@ base.json:7:17  error  `pt` is not a unit a dimension can have: the units are `p
 1 error.
 
 ## unknown-dollar-name
-base.json:6:7  warning  `$figmaId` is not a property of a token, so it is ignored  unknown-property
-1 warning.
+base.json:6:7  error  `$figmaId` is not a property of a token: put your own data in `$extensions`  unknown-property
+1 error.
 
 ## value-in-capitals
 base.json:5:7  error  `$Value` is not a token property; did you mean `$value`?  misspelt-property

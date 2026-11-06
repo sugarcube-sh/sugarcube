@@ -86,6 +86,19 @@ describe("tokenPath.findInvalidCharacter", () => {
     });
 });
 
+describe("tokenPath.isValidName", () => {
+    it.for([
+        { name: "brand", expected: true },
+        { name: "$root", expected: true },
+        { name: "a b", expected: true },
+        { name: "", expected: false },
+        { name: "a.b", expected: false },
+        { name: "$x", expected: false },
+    ])("$name gives $expected (Format 5.1.1)", ({ name, expected }) => {
+        expect(tokenPath.isValidName(name)).toBe(expected);
+    });
+});
+
 describe("tokenPath.applyMoves", () => {
     const moved = [
         { from: "color.brand", to: "color.house" },

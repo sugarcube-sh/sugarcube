@@ -1,36 +1,28 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 5.1: a name is any JSON string, the empty string included. A group named \"\" is a group like any other, and its $type reaches only its own tokens, never the file's top level (6.7.3), so `loose` has no type (5.2.2)",
+  "spec": "Format 5.1.1 keeps names usable in references, and the group's schema has a name start with a character (its tokenOrGroupName pattern), so an empty name is an error, as a forbidden character is, and what it holds is not read; a $type there would not reach the file's top level anyway (6.7.3), so `loose` has no type (5.2.2)",
   "permutations": [
     {
       "tokens": [
-        {
-          "path": ".x",
-          "type": "number"
-        },
         {
           "path": "size",
           "type": "number"
         }
       ],
-      "groups": [
-        {
-          "path": "",
-          "type": "number",
-          "definitions": [
-            {
-              "source": 0,
-              "span": {
-                "file": "tokens.json",
-                "valueAfter": "\"\":"
-              }
-            }
-          ]
-        }
-      ]
+      "groups": []
     }
   ],
   "diagnostics": [
+    {
+      "kind": "invalid-name",
+      "detail": {
+        "name": ""
+      },
+      "span": {
+        "file": "tokens.json",
+        "text": "\"\""
+      }
+    },
     {
       "kind": "missing-type",
       "detail": {},

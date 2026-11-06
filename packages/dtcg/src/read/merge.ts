@@ -156,7 +156,7 @@ function mergeProperties(target: Properties, { extensions, ...rest }: Properties
     if (extensions) target.extensions = { ...target.extensions, ...extensions };
 }
 
-export function removeGroup(merged: Merged, path: string): void {
+function removeGroup(merged: Merged, path: string): void {
     for (const each of merged.groups.keys())
         if (tokenPath.contains(path, each)) merged.groups.delete(each);
     for (const each of merged.tokens.keys())

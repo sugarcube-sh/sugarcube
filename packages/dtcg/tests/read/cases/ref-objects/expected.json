@@ -1,158 +1,90 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 6.4.1: a $ref to a group is $extends written as JSON Schema. 6.6.2 (Example 21): a $ref to a token stands for that token; 7.1.2 (Example 32): a $ref into a token's value stands for that part, typed by the $type beside it. A token with no $type is typed when references are followed. A $ref reaches only this document (RFC 6901 as the Format module uses it). Resolved, a $ref to a token stands for that token's value, and one into a value for that part",
+  "spec": "Format 7.1.2: a $ref on a token stands in for $value, and its JSON Pointer has the explicit full path, into $value (Example 32, and 7.4.2's table); the group's schema: 'Use this instead of $value', 'Mutually exclusive with $value'. So an object with $ref is a token, typed by the $type beside it or, without one, by what it reaches; a pointer that stops at a token, or reaches a group, is an error, and a group is extended with $extends. A $ref reaches only this document (RFC 6901 as the Format module uses it)",
   "permutations": [
     {
       "tokens": [
-        {
-          "path": "button.background"
-        },
-        {
-          "path": "button.text"
-        },
-        {
-          "path": "button-primary.background",
-          "type": "number",
-          "asWritten": {
-            "value": 9
-          }
-        },
-        {
-          "path": "button-primary.text",
-          "type": "number",
-          "inherited": {
-            "from": "button"
-          }
-        },
-        {
-          "path": "base"
-        },
+        { "path": "button.background" },
+        { "path": "button.text" },
+        { "path": "base" },
         {
           "path": "alias",
           "type": "number",
           "description": "Same as base",
-          "asWritten": {
-            "value": {
-              "$ref": "#/base"
-            },
-            "type": "number"
-          },
+          "asWritten": { "value": { "$ref": "#/base/$value" }, "type": "number" },
           "resolved": 4,
           "definitions": [
-            {
-              "source": 0,
-              "span": {
-                "file": "tokens.json",
-                "valueAfter": "\"alias\":"
-              }
-            }
+            { "source": 0, "span": { "file": "tokens.json", "valueAfter": "\"alias\":" } }
           ]
         },
-        {
-          "path": "blue"
-        },
+        { "path": "blue" },
         {
           "path": "blue-red",
           "type": "number",
-          "asWritten": {
-            "value": {
-              "$ref": "#/blue/$value/components/0"
-            },
-            "type": "number"
-          },
-          "resolved": 0.2,
-          "definitions": [
-            {
-              "source": 0,
-              "span": {
-                "file": "tokens.json",
-                "valueAfter": "\"blue-red\":"
-              }
-            }
-          ]
+          "asWritten": { "value": { "$ref": "#/blue/$value/components/0" }, "type": "number" },
+          "resolved": 0.2
         },
         {
           "path": "untyped",
           "type": "number",
-          "value": {
-            "syntax": "json-pointer",
-            "pointer": "#/base"
-          },
+          "value": { "syntax": "json-pointer", "pointer": "#/base/$value" },
           "resolved": 4
         },
-        {
-          "path": "crowded",
-          "type": "number"
-        }
+        { "path": "stops-at-token" },
+        { "path": "points-at-group" },
+        { "path": "both", "type": "number", "resolved": 5 },
+        { "path": "nowhere" },
+        { "path": "elsewhere" }
       ],
-      "groups": [
-        {
-          "path": "button"
-        },
-        {
-          "path": "button-primary",
-          "type": "number"
-        },
-        {
-          "path": "nowhere"
-        },
-        {
-          "path": "elsewhere"
-        },
-        {
-          "path": "wrong-json"
-        }
-      ]
+      "groups": [{ "path": "button" }]
     }
   ],
   "diagnostics": [
     {
-      "kind": "invalid-property",
-      "detail": {
-        "property": "$ref",
-        "expected": "string"
-      },
-      "span": {
-        "file": "tokens.json",
-        "valueAfter": "\"$ref\":",
-        "occurrence": 7
-      }
+      "kind": "token-and-group",
+      "detail": { "reason": "ref", "ref": "#/button" },
+      "span": { "file": "tokens.json", "text": "\"#/button\"", "occurrence": 2 },
+      "path": "copies-a-group"
     },
     {
-      "kind": "token-and-group",
-      "detail": {
-        "reason": "ref",
-        "ref": "#/base"
-      },
-      "span": {
-        "file": "tokens.json",
-        "text": "\"#/base\"",
-        "occurrence": 3
-      },
-      "path": "crowded"
+      "kind": "ref-and-value",
+      "detail": {},
+      "span": { "file": "tokens.json", "text": "\"$ref\"", "occurrence": 7 },
+      "path": "both"
+    },
+    {
+      "kind": "invalid-property",
+      "detail": { "property": "$ref", "expected": "string" },
+      "span": { "file": "tokens.json", "valueAfter": "\"$ref\":", "occurrence": 10 }
+    },
+    {
+      "kind": "not-a-value",
+      "detail": { "ref": "#/base", "corrected": "#/base/$value" },
+      "span": { "file": "tokens.json", "text": "\"#/base\"" },
+      "path": "stops-at-token"
+    },
+    {
+      "kind": "not-a-token",
+      "detail": { "ref": "#/button" },
+      "span": { "file": "tokens.json", "text": "\"#/button\"" },
+      "path": "points-at-group"
+    },
+    {
+      "kind": "not-a-token",
+      "detail": { "ref": "#/button" },
+      "span": { "file": "tokens.json", "text": "\"#/button\"", "occurrence": 2 },
+      "path": "copies-a-group"
     },
     {
       "kind": "missing-reference",
-      "detail": {
-        "ref": "#/no/such/thing",
-        "from": ["nowhere"]
-      },
-      "span": {
-        "file": "tokens.json",
-        "text": "\"#/no/such/thing\""
-      },
+      "detail": { "ref": "#/no/such/thing", "from": ["nowhere"] },
+      "span": { "file": "tokens.json", "text": "\"#/no/such/thing\"" },
       "path": "nowhere"
     },
     {
       "kind": "missing-reference",
-      "detail": {
-        "ref": "other.json#/base",
-        "from": ["elsewhere"]
-      },
-      "span": {
-        "file": "tokens.json",
-        "text": "\"other.json#/base\""
-      },
+      "detail": { "ref": "other.json#/base/$value", "from": ["elsewhere"] },
+      "span": { "file": "tokens.json", "text": "\"other.json#/base/$value\"" },
       "path": "elsewhere"
     }
   ]

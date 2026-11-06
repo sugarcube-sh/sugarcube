@@ -123,14 +123,12 @@ describe("create, which file", () => {
         ]);
     });
 
-    it('makes a token inside the group named "" when asked for "", never at the top level', () => {
+    it('refuses ".y", since no group can be named "", and never makes it at the top level', () => {
         const tokens = opened({
             "tokens.resolver.json": resolver([{ $ref: "./a.json" }]),
             "a.json": JSON.stringify({ "": { $type: "number", x: { $value: 1 } } }),
         });
-        expect(opsOf(create(tokens, ".y", { $value: 2 }))).toEqual([
-            { kind: "add", file: "a.json", jsonPath: ["", "y"], value: { $value: 2 } },
-        ]);
+        expect(create(tokens, ".y", { $value: 2 })).toEqual(refusal("not-found", { path: "" }));
     });
 
     it("adds to design tokens of one token file, read without a resolver", () => {
@@ -230,7 +228,7 @@ describe("create, what it refuses", () => {
         }
     });
 
-    it("is refused for an empty name, which the spec leaves unclear", () => {
+    it("is refused for an empty name", () => {
         expect(create(demo, "color.", { group: true })).toEqual(
             refusal("invalid-name", { name: "" }),
         );

@@ -181,7 +181,7 @@ interface Expected {
 const expectedFailures: Expected[] = [
     {
         project: "packages/core/tests/__fixtures__/resolver/complex.resolver.json",
-        why: "carries $extensions at its root, which old sugarcube's parser keeps and core's parse-resolver test checks; the Resolver module defines $extensions on sets and modifiers only, so dtcg warns",
+        why: "carries $extensions at its root, which old sugarcube's parser kept; the Resolver module defines $extensions on sets and modifiers only (4.3), so it is a property the spec does not define",
         matches: (d) =>
             d.kind === "unknown-property" &&
             d.detail.property === "$extensions" &&
@@ -190,7 +190,7 @@ const expectedFailures: Expected[] = [
     },
     {
         project: "packages/core/tests/__fixtures__/resolver/circular-b.resolver.json",
-        why: "declares a set and an empty resolutionOrder, the target circular-a points at; nothing reaches the set, so it takes no part (Resolver 4.1.6) and is reported as a hint",
+        why: "declares a set the target circular-a points at, which its own resolutionOrder leaves out; nothing reaches the set, so it takes no part (Resolver 4.1.6) and is reported as a hint",
         matches: (d) => d.kind === "not-in-resolution-order" && d.detail.name === "b",
     },
     {
