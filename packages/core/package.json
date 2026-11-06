@@ -64,7 +64,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "pkgroll": "^2.28.1",
+    "pkgroll": "^2.29.0",
     "vitest": "^4.1.11"
   },
   "engines": {
