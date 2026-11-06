@@ -181,12 +181,12 @@ describe("where a deprecation comes from", () => {
         expect(token("primary.gap")?.deprecatedByGroup).toBe("button");
     });
 
-    it("names none for a mark of its own, one from the top level, or none at all", () => {
+    it('names none for a mark of its own or none at all, and "" for one from the top level', () => {
         expect(token("old.b")?.deprecatedByGroup).toBeUndefined();
         expect(group("old")?.deprecatedByGroup).toBeUndefined();
         expect(group("old.kept")?.deprecatedByGroup).toBeUndefined();
         expect(token("old.kept.d")?.deprecatedByGroup).toBeUndefined();
-        expect(token("top")?.deprecatedByGroup).toBeUndefined();
+        expect(token("top")?.deprecatedByGroup).toBe("");
         expect(
             oneFile({ n: { $type: "number", $value: 1 } })
                 .getPermutation()

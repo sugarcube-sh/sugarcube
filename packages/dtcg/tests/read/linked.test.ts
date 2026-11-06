@@ -143,10 +143,10 @@ describe("the plain form", () => {
         expect(written).not.toHaveProperty("kind");
     });
 
-    it("writes the top level's children on the permutation, as their paths", () => {
+    it("writes the top level's children on the permutation and on the top level, as their paths", () => {
         const written = plain(base);
         expect(written.children).toStrictEqual(["color", "gap"]);
-        expect(written.topLevel).not.toHaveProperty("children");
+        expect(written.topLevel.children).toStrictEqual(["color", "gap"]);
     });
 
     it("writes every permutation's tokens and groups the same way", () => {
@@ -154,7 +154,7 @@ describe("the plain form", () => {
         expect(written.permutations[0].tokens[0]).toStrictEqual(
             plain(tokens.getPermutation().getToken("color.bg")),
         );
-        expect(written.permutations[0].groups[0].children).toStrictEqual([
+        expect(written.permutations[0].groups[1].children).toStrictEqual([
             "color.bg",
             "color.brand",
         ]);

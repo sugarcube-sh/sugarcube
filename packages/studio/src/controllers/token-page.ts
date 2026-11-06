@@ -122,7 +122,7 @@ export function madeBy(
 ): MadeBy | undefined {
     if (!token.generated) return undefined;
     const { from } = token.generated;
-    if (from === undefined) return { kind: "top-level" };
+    if (from === "") return { kind: "top-level" };
     const group = showing.getGroup(from);
     const by = group && formFor(group)?.label.toLowerCase();
     return by === undefined ? { kind: "group", from } : { kind: "recipe", from, by };

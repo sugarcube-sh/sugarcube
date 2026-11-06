@@ -24,7 +24,7 @@ export function referenceIndex(permutation: Permutation): ReferenceIndex {
             if (each.kind === "group") visit(each.children);
         }
     };
-    visit(permutation.children);
+    visit([permutation.topLevel]);
     const built = { position, byPath };
     written.set(permutation, built);
     return built;

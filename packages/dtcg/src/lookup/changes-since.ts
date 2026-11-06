@@ -9,8 +9,6 @@ import type {
     Permutations,
     Token,
     TokenProperty,
-    TopLevel,
-    TopLevelProperty,
     Written,
     WrittenGroup,
     WrittenToken,
@@ -89,7 +87,10 @@ function writtenToken({ asWritten, description, extensions }: Token): WrittenTok
 
 function writtenGroup(group: Group): WrittenGroup {
     const extended = extendedPath(group);
-    return { ...pickWritten(group.asWritten ?? {}), ...(extended && { extends: extended }) };
+    return {
+        ...pickWritten(group.asWritten ?? {}),
+        ...(extended !== undefined && { extends: extended }),
+    };
 }
 
 function extendedPath(group: Group): string | undefined {
@@ -120,22 +121,16 @@ function groupDifferences(before: Group, after: Group, moved: Move[]): GroupProp
     const extended = extendedPath(before);
     return differing({
         ...sameWritten(before.asWritten ?? {}, after.asWritten ?? {}),
-        extends: (extended && tokenPath.applyMoves(extended, moved)) === extendedPath(after),
+        extends:
+            (extended === undefined ? undefined : tokenPath.applyMoves(extended, moved)) ===
+            extendedPath(after),
     });
 }
 
-export function topLevelChange(before: TopLevel, after: TopLevel): Found | undefined {
-    const properties = differing(sameWritten(before, after));
-    if (properties.length === 0) return undefined;
-    return {
-        kind: "top-level-changed",
-        properties,
-        before: pickWritten(before),
-        after: pickWritten(after),
-    };
-}
-
-function sameWritten(before: Written, after: Written): Record<TopLevelProperty, boolean> {
+function sameWritten(
+    before: Written,
+    after: Written,
+): Record<Exclude<GroupProperty, "extends">, boolean> {
     return {
         type: before.type === after.type,
         description: before.description === after.description,

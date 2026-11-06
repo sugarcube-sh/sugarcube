@@ -9,7 +9,7 @@
           "type": "number"
         }
       ],
-      "groups": []
+      "groups": [{ "path": "" }]
     }
   ],
   "diagnostics": [

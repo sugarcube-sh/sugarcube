@@ -50,9 +50,9 @@ export function toValuePointer(pointer: string): string {
 export function pointerParts(steps: string[]): { path?: string; inside?: string[] } {
     const valueStep = steps.indexOf("$value");
     const before = valueStep === -1 ? steps : steps.slice(0, valueStep);
-    const path = before.length === 0 ? undefined : before.join(".");
+    if (before.includes("")) return {};
     return {
-        ...(path !== undefined && { path }),
+        path: before.join("."),
         ...(valueStep !== -1 && { inside: steps.slice(valueStep + 1) }),
     };
 }

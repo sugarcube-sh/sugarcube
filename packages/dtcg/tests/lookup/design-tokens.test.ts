@@ -286,7 +286,7 @@ describe("tokens.tokenPaths", () => {
 
 describe("tokens.groupPaths", () => {
     it("lists every group in any permutation once, in the order the permutations list them", () => {
-        expect(tokens.getGroupPaths()).toStrictEqual(["space", "space.inset", "spacer"]);
+        expect(tokens.getGroupPaths()).toStrictEqual(["", "space", "space.inset", "spacer"]);
     });
 });
 

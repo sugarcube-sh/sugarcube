@@ -118,6 +118,8 @@ export type OpResult =
  * them, so a tool can show the reason or word its own from the facts.
  *
  * - `not-found`: no token or group at `path`.
+ * - `top-level`: the path is `""`, the top level of a file, which has no name to change and holds
+ *   everything in the file, so it can't be renamed or removed.
  * - `not-a-group`: `path` is a token, so nothing can be made inside it.
  * - `taken`: a token or group is already at `path`.
  * - `override-instead`: the token at `path` is shared, so `input` gets its own value by changing
@@ -125,7 +127,7 @@ export type OpResult =
  * - `invalid-name`: `name` can't be a name: `character` is the one the spec forbids (Format
  *   5.1.1). It's absent for an empty name.
  * - `generated`: a generator makes the token, from the extension at `extension` on the group at
- *   `from` (absent for the top level of a file).
+ *   `from` (`""` for the top level of a file).
  * - `inherited`: the token or group comes from the group at `from`, through `$extends`.
  * - `no-permutation`: there is no permutation for `input`; `why` says whether a modifier or
  *   context isn't declared, a context isn't a string, a modifier with no default was left out, or
@@ -149,11 +151,12 @@ export type OpResult =
  */
 export type Refusal = { reason: string } & (
     | { kind: "not-found"; path: string }
+    | { kind: "top-level" }
     | { kind: "not-a-group"; path: string }
     | { kind: "taken"; path: string }
     | { kind: "override-instead"; path: string; input: Input }
     | { kind: "invalid-name"; name: string; character?: "$" | "." | "{" | "}" }
-    | { kind: "generated"; path: string; from?: string; extension: readonly [string, ...string[]] }
+    | { kind: "generated"; path: string; from: string; extension: readonly [string, ...string[]] }
     | { kind: "inherited"; path: string; from: string }
     | {
           kind: "no-permutation";

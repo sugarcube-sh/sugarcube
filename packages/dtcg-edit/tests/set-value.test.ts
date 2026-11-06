@@ -553,7 +553,7 @@ describe("setValue, what it can't change", () => {
         }
     });
 
-    it("is refused for a token a generator makes at the top of a file, naming no group", () => {
+    it('is refused for a token a generator makes at the top of a file, naming the top level, ""', () => {
         const steps = defineGenerator({
             extension: ["com.example", "steps"],
             generate: () => ({ ok: true, value: [{ name: "one", $value: 1 }] }),
@@ -571,6 +571,7 @@ describe("setValue, what it can't change", () => {
             refused: {
                 kind: "generated",
                 path: "one",
+                from: "",
                 extension: ["com.example", "steps"],
                 reason: expect.stringContaining("at the top of its file"),
             },

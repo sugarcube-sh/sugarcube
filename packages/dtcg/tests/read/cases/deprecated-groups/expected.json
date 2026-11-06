@@ -42,6 +42,7 @@
         }
       ],
       "groups": [
+        { "path": "" },
         {
           "path": "old",
           "deprecated": "use new"

@@ -96,6 +96,7 @@
         }
       ],
       "groups": [
+        { "path": "" },
         {
           "path": "button",
           "extends": null

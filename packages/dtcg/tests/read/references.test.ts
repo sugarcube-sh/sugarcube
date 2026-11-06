@@ -299,6 +299,14 @@ describe("a group's $extends", () => {
         expect(reference && written(getSpan(tokens, reference))).toBe('"{button}"');
     });
 
+    it('is found for the top level\'s $extends, written in the group at ""', () => {
+        const top = oneFile({ $extends: "{base}", base: { $type: "number", pad: { $value: 1 } } });
+        const [reference, ...rest] = top.getReferencesTo("base");
+        expect(rest).toStrictEqual([]);
+        expect(reference?.writtenInPaths).toStrictEqual([""]);
+        expect(top.getPermutation().topLevel.references).toHaveLength(1);
+    });
+
     it("is a JSON Pointer when $extends writes one", () => {
         const pointed = oneFile({
             button: { $type: "number", pad: { $value: 1 } },

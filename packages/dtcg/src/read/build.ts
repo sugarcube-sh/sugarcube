@@ -11,7 +11,6 @@ import type {
     Span,
     Token,
     TokenType,
-    TopLevel,
     Written,
 } from "../model.js";
 import { tokenPath } from "../path.js";
@@ -36,7 +35,7 @@ import {
     allTokens,
 } from "./linked.js";
 import { malformation } from "./malformed-pointer.js";
-import type { Merged, MergedGroup, MergedToken, MergedTopLevel, WrittenAt } from "./merge.js";
+import type { Merged, MergedGroup, MergedToken, WrittenAt } from "./merge.js";
 import type { MissingIn, MissingReferences } from "./missing.js";
 import type { NormalisedPermutation } from "./normalise.js";
 import { type Occurrence, wholeReference } from "./occurrence.js";
@@ -108,13 +107,12 @@ function buildPermutation(
     const workOutValue = workingOut(permutation, readValue, diagnostics, missing);
 
     const getSource = (index: number) => sources[index] as Source;
-    const placed = (written: WrittenAt[], path: string | undefined): readonly Definition[] => {
+    const placed = (written: WrittenAt[], path: string): readonly Definition[] => {
         const [first, ...rest] = written;
         if (!first) return NO_DEFINITIONS;
         if (rest.length === 0) return places.only(getSource(first.source), first.span, path);
         return written.map(({ source, span }) => places.at(getSource(source), span, path));
     };
-    const root = publicTopLevel(merged.root, placed(merged.root.declaredIn, undefined));
 
     const builtTokens = new Map<string, Token>();
     const builtGroups = new Map<string, Group>();
@@ -215,7 +213,7 @@ function buildPermutation(
     };
 
     const buildChildren = <Found>(
-        parentPath: string | undefined,
+        parentPath: string,
         at: (path: string) => Found | undefined,
     ): Found[] => {
         const children: Found[] = [];
@@ -280,7 +278,7 @@ function buildPermutation(
         group.children = children;
         const rootToken = children.find(
             (child): child is Token =>
-                child.kind === "token" && tokenPath.removeRoot(child.path) === written.path,
+                child.kind === "token" && tokenPath.getName(child.path) === "$root",
         );
         if (rootToken) group.rootToken = rootToken;
         if (extending) group.extends = extending;
@@ -297,7 +295,7 @@ function buildPermutation(
         return group;
     };
 
-    const children = buildChildren(undefined, buildChild);
+    const topLevel = buildGroup("") as Group;
     for (const path of merged.groups.keys()) buildGroup(path);
     for (const link of linkLater) link();
     missing.close();
@@ -307,9 +305,9 @@ function buildPermutation(
             label,
             sources,
             contexts,
-            topLevel: root,
-            children,
-            tokens: allTokens(children),
+            topLevel,
+            children: topLevel.children,
+            tokens: allTokens(topLevel.children),
             groups: [...merged.groups.keys()].flatMap((path) => builtGroups.get(path) ?? []),
         },
         builtTokens,
@@ -500,10 +498,6 @@ function aimReference<Found extends Pending<Token>>(
     if (reached.kind === "group" || reached.kind === "stops-at-token") return { occurrence, path };
     const pointsToProperty = stepInto(reached.token.valueAsWritten, reached.inside)?.property;
     return { occurrence, path, pointsToProperty };
-}
-
-function publicTopLevel(top: MergedTopLevel, definitions: readonly Definition[]): TopLevel {
-    return { ...publicProperties(top), definitions };
 }
 
 function groupFields(

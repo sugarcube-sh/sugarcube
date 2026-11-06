@@ -335,7 +335,7 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             extension: ["sh.sugarcube", "scale"],
             written: "token",
         },
-        { path: "space.md", extension: ["sh.sugarcube", "scale"], written: "group" },
+        { path: "md", from: "", extension: ["sh.sugarcube", "scale"], written: "group" },
     ],
     "missing-reference": [
         { ref: "color.brnad", from: ["color.danger"] },
@@ -488,6 +488,19 @@ describe("diagnostic messages that say what would mend the problem", () => {
         {
             found: { kind: "invalid-name", detail: { name: "" } },
             message: "a name can't be empty",
+        },
+        {
+            found: {
+                kind: "written-generated",
+                detail: {
+                    path: "md",
+                    from: "",
+                    extension: ["sh.sugarcube", "scale"],
+                    written: "group",
+                },
+            },
+            message:
+                "`md` is made by `sh.sugarcube.scale` on the top level, so the group written here is not used; change the extension instead",
         },
         {
             found: { kind: "not-a-value", detail: { ref: "#/base", corrected: "#/base/$value" } },

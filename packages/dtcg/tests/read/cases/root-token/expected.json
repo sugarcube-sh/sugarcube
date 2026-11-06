@@ -20,6 +20,7 @@
         }
       ],
       "groups": [
+        { "path": "" },
         {
           "path": "size",
           "deprecated": "use space"

@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "P-017: with hexStringColors, a six- or eight-digit hex string is read as the sRGB color it names, with the string kept as hex and eight digits giving alpha, as a token's value or as a part, and the file's text kept in authored. Three or four digits are an invalid value, giving the six or eight digits they stand for",
+  "spec": "With hexStringColors, a six- or eight-digit hex string is read as the sRGB color it names, with the string kept as hex and eight digits giving alpha, as a token's value or as a part, and the file's text kept in authored. Three or four digits are an invalid value, giving the six or eight digits they stand for",
   "options": {
     "hexStringColors": true
   },

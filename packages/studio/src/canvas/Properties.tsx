@@ -51,7 +51,7 @@ export function DescriptionRow({ path, view }: { path: string; view: Description
                 ) : (
                     view.text
                 )}
-                {view.from && (
+                {view.from !== undefined && (
                     <>
                         {" "}
                         From <NavLink to={hrefFor(view.from)}>{view.from}</NavLink>

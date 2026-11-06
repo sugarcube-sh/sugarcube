@@ -160,6 +160,10 @@ export const relatedMessages = {
     madeByThisExtension: "made by this extension",
 };
 
+function pathWords(path: string): string {
+    return path === "" ? "the top level" : `\`${path}\``;
+}
+
 const ownerWords = {
     resolver: "the resolver",
     set: "a set",
@@ -249,7 +253,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "written-generated": {
         severity: "error",
         message: ({ path, from, extension, written }) => {
-            const where = from === undefined ? "at the top of its file" : `on \`${from}\``;
+            const where = `on ${pathWords(from)}`;
             const what = written === "token" ? "value" : "group";
             return `\`${path}\` is made by \`${extension.join(".")}\` ${where}, so the ${what} written here is not used; change the extension instead`;
         },
@@ -292,8 +296,8 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "circular-reference": {
         severity: "error",
-        message: ({ chain, toTopLevel }) =>
-            `these references lead back to where they started: ${[...chain, ...(toTopLevel ? ["the top level"] : [])].join(" → ")}`,
+        message: ({ chain }) =>
+            `these references lead back to where they started: ${chain.map(pathWords).join(", ")}`,
     },
     "type-mismatch": {
         severity: "error",

@@ -27,7 +27,7 @@ import {
 import { diagnostic, type Problems } from "./diagnostics.js";
 import { type JsonFile, toSpan } from "./json.js";
 import { relatedMessages } from "../error-messages.js";
-import { type Merged, type MergedToken, everyGroup } from "./merge.js";
+import type { Merged, MergedToken } from "./merge.js";
 import { usableType } from "./walk.js";
 
 interface Extension {
@@ -35,7 +35,7 @@ interface Extension {
     json: JsonFile;
     node: Node;
     source: number;
-    group?: string;
+    group: string;
 }
 
 /**
@@ -99,7 +99,7 @@ export function fillGenerated(
     const reported = new Reported();
     const reportedIgnored = new Reported();
 
-    for (const [groupPath, group] of everyGroup(merged)) {
+    for (const [groupPath, group] of merged.groups) {
         const settings = applying(merged, group);
         for (const generator of generators) {
             const extension = findGeneratorExtension(settings, generator.extension);
@@ -109,7 +109,7 @@ export function fillGenerated(
                 messages: generator.messages,
                 json: extension.json,
                 node: extension.node,
-                ...(groupPath !== undefined && { path: groupPath }),
+                path: groupPath,
             };
             const report = (problems: ExtensionProblem[], seen = reported) => {
                 if (!seen.first(generator, extension.node)) return;
@@ -123,7 +123,7 @@ export function fillGenerated(
             }
             const type = usableType(settings.type);
             const result = generator.generate(
-                { ...(groupPath !== undefined && { path: groupPath }), ...(type && { type }) },
+                { path: groupPath, ...(type && { type }) },
                 passed.value,
                 parseOptions,
             );
@@ -132,18 +132,15 @@ export function fillGenerated(
                 report(result.errors);
                 continue;
             }
-            const from = {
-                ...(groupPath !== undefined && { from: groupPath }),
-                extension: generator.extension,
-            };
+            const from = { from: groupPath, extension: generator.extension };
             for (const made of result.value) {
-                const character = tokenPath.findInvalidCharacter(made.name);
-                if (character) {
-                    const detail = { name: made.name, character };
+                const problem = tokenPath.findNameProblem(made.name);
+                if (problem) {
+                    const detail = { name: made.name, ...problem };
                     diagnostics.found(
                         diagnostic("invalid-name", detail, {
                             span: toSpan(extension.json, extension.node),
-                            ...(groupPath !== undefined && { path: groupPath }),
+                            path: groupPath,
                         }),
                         input,
                     );
@@ -158,7 +155,7 @@ export function fillGenerated(
                         {
                             message: relatedMessages.madeByThisExtension,
                             span: toSpan(extension.json, extension.node),
-                            ...(extension.group !== undefined && { path: extension.group }),
+                            path: extension.group,
                         },
                     ];
                     for (const span of written.spans) {
@@ -204,13 +201,13 @@ function findGeneratorExtension(
     const found = findExtension(settings.extensions, written, extension);
     if (!written || !found) return undefined;
     const { json, source, group } = written;
-    return { ...found, json, source, ...(group !== undefined && { group }) };
+    return { ...found, json, source, group };
 }
 
 function addedToken(
     path: string,
     { $type, $value, $description, $extensions }: GeneratedToken,
-    generated: { from?: string; extension: Generator["extension"] },
+    generated: { from: string; extension: Generator["extension"] },
     { json, node, source }: Extension,
 ): MergedToken {
     return {

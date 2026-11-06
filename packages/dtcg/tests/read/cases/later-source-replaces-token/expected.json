@@ -52,6 +52,7 @@
         }
       ],
       "groups": [
+        { "path": "" },
         {
           "path": "color",
           "type": "color",
@@ -137,6 +138,7 @@
         }
       ],
       "groups": [
+        { "path": "" },
         {
           "path": "color",
           "type": "color",

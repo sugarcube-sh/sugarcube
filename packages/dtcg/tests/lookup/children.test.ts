@@ -89,17 +89,25 @@ describe("the top level", () => {
         expect(base?.children[1]).toBe(tokens.getPermutation().getToken("gap"));
     });
 
-    it("keeps only what is written there in topLevel, not its children", () => {
-        expect(base && "children" in base.topLevel).toBe(false);
+    it('is the group at "", with the same children as the permutation', () => {
+        expect(base?.topLevel.kind).toBe("group");
+        expect(base?.topLevel.path).toBe("");
+        expect(base?.topLevel.children).toBe(base?.children);
     });
 
-    it('has no path, so nothing reaches it by one: (…).getPermutation().getGroup("") is the group named ""', () => {
-        expect(base && "path" in base.topLevel).toBe(false);
-        expect(tokens.getPermutation().getGroup("")).toBeUndefined();
+    it('is reached by its path: getGroup("") is the top level', () => {
+        expect(tokens.getPermutation().getGroup("")).toBe(base?.topLevel);
     });
 
-    it("is not among the permutation's groups", () => {
-        expect(base?.groups.map(({ path }) => path)).toStrictEqual(["color"]);
+    it("comes first among the permutation's groups", () => {
+        expect(base?.groups.map(({ path }) => path)).toStrictEqual(["", "color"]);
+    });
+
+    it("has a $root written at the top of the file as its root token, reached by {$root}", () => {
+        const rooted = oneFile({ $type: "number", $root: { $value: 1 }, a: { $value: "{$root}" } });
+        const top = rooted.getPermutation();
+        expect(top.topLevel.rootToken).toBe(top.getToken("$root"));
+        expect(top.getToken("a")?.resolved).toBe(1);
     });
 
     it("keeps a $type written at the top of the file", () => {
@@ -218,6 +226,6 @@ describe('a group named ""', () => {
 
     it("is not a name, so it isn't read, and the top level's children are the rest", () => {
         expect(paths(base?.children)).toStrictEqual(["size"]);
-        expect(tokens.getPermutation().getGroup("")).toBeUndefined();
+        expect(tokens.getPermutation().getGroup("")).toBe(base?.topLevel);
     });
 });

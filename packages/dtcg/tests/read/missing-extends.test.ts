@@ -25,6 +25,13 @@ const missing = (tokens: DesignTokens) =>
     tokens.diagnostics.filter(({ kind }) => kind === "missing-reference");
 
 describe("a group's $extends to a group that isn't there", () => {
+    it("is never told it meant the top level, which nothing can extend", () => {
+        const tokens = read({ g: { $extends: "{x}", a: { $type: "number", $value: 1 } } });
+        expect(missing(tokens).map(({ detail }) => detail)).toStrictEqual([
+            { ref: "x", from: ["g"] },
+        ]);
+    });
+
     it("is told the group it probably meant", () => {
         const tokens = read({
             color: { $type: "color", red: color(1) },

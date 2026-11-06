@@ -1,0 +1,12 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 6.4: $extends MUST NOT reference a token, at the top of a file as in any group",
+  "diagnostics": [
+    {
+      "kind": "not-a-group",
+      "detail": { "ref": "#/b" },
+      "span": { "file": "tokens.json", "text": "{ \"$ref\": \"#/b\" }" },
+      "path": ""
+    }
+  ]
+}

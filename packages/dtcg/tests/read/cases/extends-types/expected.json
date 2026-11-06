@@ -34,6 +34,7 @@
         }
       ],
       "groups": [
+        { "path": "" },
         {
           "path": "base"
         },

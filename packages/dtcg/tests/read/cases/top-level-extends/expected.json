@@ -1,0 +1,16 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 6.1: a group is a JSON object without $value, so the top of a file is one, and the group's schema gives it $extends. Format 6.4: a group MAY $extends another, copying in what it doesn't write itself, with its type. Extending a group inside it isn't circular (6.4.4's Example 16 is a group extending one it is inside)",
+  "permutations": [
+    {
+      "tokens": [
+        { "path": "base.gap" },
+        { "path": "base.pad" },
+        { "path": "pad", "resolved": 16 },
+        { "path": "gap", "type": "number", "resolved": 4, "inherited": { "from": "base" } }
+      ],
+      "groups": [{ "path": "", "type": "number" }, { "path": "base" }]
+    }
+  ],
+  "diagnostics": []
+}

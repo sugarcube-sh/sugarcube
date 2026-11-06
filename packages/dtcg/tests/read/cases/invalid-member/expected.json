@@ -9,6 +9,7 @@
         }
       ],
       "groups": [
+        { "path": "" },
         {
           "path": "size"
         }

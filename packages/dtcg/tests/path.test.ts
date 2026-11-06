@@ -16,8 +16,8 @@ describe("tokenPath.relative", () => {
         { path: "color.brand.ink", group: "color", expected: "brand.ink" },
         { path: "color.brand.ink", group: "color.brand", expected: "ink" },
         { path: "color.$root", group: "color", expected: "$root" },
-        { path: "color.ink", group: "", expected: undefined },
-        { path: ".x", group: "", expected: "x" },
+        { path: "color.ink", group: "", expected: "color.ink" },
+        { path: "", group: "", expected: undefined },
         { path: "color", group: "color", expected: undefined },
         { path: "colors.ink", group: "color", expected: undefined },
         { path: "color", group: "color.brand", expected: undefined },
@@ -31,10 +31,10 @@ describe("tokenPath.contains", () => {
         { path: "color.brand", group: "color.brand", expected: true },
         { path: "color.brand.500", group: "color.brand", expected: true },
         { path: "color.brand.500", group: "color", expected: true },
-        { path: ".x", group: "", expected: true },
+        { path: "color.ink", group: "", expected: true },
+        { path: "", group: "", expected: true },
         { path: "color.brandy", group: "color.brand", expected: false },
         { path: "color", group: "color.brand", expected: false },
-        { path: "color.ink", group: "", expected: false },
     ])("$group contains $path: $expected", ({ path, group, expected }) => {
         expect(tokenPath.contains(group, path)).toBe(expected);
     });
@@ -44,11 +44,21 @@ describe("tokenPath.getParent", () => {
     it.for([
         { path: "color.brand.500", expected: "color.brand" },
         { path: "color.brand.$root", expected: "color.brand" },
-        { path: "color", expected: undefined },
+        { path: "color", expected: "" },
         { path: "", expected: undefined },
-        { path: ".x", expected: "" },
     ])("$path is inside $expected", ({ path, expected }) => {
         expect(tokenPath.getParent(path)).toBe(expected);
+    });
+});
+
+describe("tokenPath.getName", () => {
+    it.for([
+        { path: "color.brand.500", expected: "500" },
+        { path: "color.brand.$root", expected: "$root" },
+        { path: "color", expected: "color" },
+        { path: "", expected: "" },
+    ])("$path is named $expected", ({ path, expected }) => {
+        expect(tokenPath.getName(path)).toBe(expected);
     });
 });
 
@@ -56,18 +66,16 @@ describe("tokenPath.join", () => {
     it.for([
         { parent: "color.brand", name: "500", expected: "color.brand.500" },
         { parent: "color", name: "$root", expected: "color.$root" },
-        { parent: undefined, name: "color", expected: "color" },
-        { parent: undefined, name: "", expected: "" },
-        { parent: "", name: "x", expected: ".x" },
+        { parent: "", name: "color", expected: "color" },
     ])("$name inside $parent is $expected", ({ parent, name, expected }) => {
         expect(tokenPath.join(parent, name)).toBe(expected);
     });
 
-    it("is undone by tokenPath.getParent", () => {
-        for (const path of ["color.brand.500", "color", ".x", ""]) {
+    it("is undone by tokenPath.getParent and tokenPath.getName", () => {
+        for (const path of ["color.brand.500", "color.brand", "color"]) {
             const parent = tokenPath.getParent(path);
-            const name = parent === undefined ? path : path.slice(parent.length + 1);
-            expect(tokenPath.join(parent, name)).toBe(path);
+            expect(parent).toBeDefined();
+            expect(tokenPath.join(parent ?? "", tokenPath.getName(path))).toBe(path);
         }
     });
 });
@@ -83,6 +91,19 @@ describe("tokenPath.findInvalidCharacter", () => {
         { name: "brand", expected: undefined },
     ])("$name gives $expected (Format 5.1.1)", ({ name, expected }) => {
         expect(tokenPath.findInvalidCharacter(name)).toBe(expected);
+    });
+});
+
+describe("tokenPath.findNameProblem", () => {
+    it.for([
+        { name: "brand", expected: undefined },
+        { name: "$root", expected: undefined },
+        { name: "", expected: {} },
+        { name: "a.b", expected: { character: "." } },
+        { name: "$x", expected: { character: "$" } },
+        { name: "{x}", expected: { character: "{" } },
+    ])("$name gives $expected (Format 5.1.1)", ({ name, expected }) => {
+        expect(tokenPath.findNameProblem(name)).toStrictEqual(expected);
     });
 });
 
@@ -113,11 +134,5 @@ describe("tokenPath.applyMoves", () => {
         { path: "space.sm", expected: "space.sm" },
     ])("$path ends up at $expected", ({ path, expected }) => {
         expect(tokenPath.applyMoves(path, moved)).toBe(expected);
-    });
-
-    it('carries what is inside the group named "", and nothing at the top level', () => {
-        const renamed = [{ from: "", to: "named" }];
-        expect(tokenPath.applyMoves(".x", renamed)).toBe("named.x");
-        expect(tokenPath.applyMoves("color", renamed)).toBe("color");
     });
 });

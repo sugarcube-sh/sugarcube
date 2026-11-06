@@ -30,7 +30,7 @@ export interface CheckedExtension {
     messages?: ExtensionMessages | undefined;
     json: JsonFile;
     node: Node;
-    path?: string | undefined;
+    path: string;
 }
 
 export function findExtension(

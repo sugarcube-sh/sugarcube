@@ -1,5 +1,6 @@
 import { type DesignTokens, tokenPath } from "@sugarcube-sh/dtcg";
 import type { FileOp, OpResult } from "./index.js";
+import { refused } from "./error-messages.js";
 import { copiesOf } from "./placement.js";
 
 /**
@@ -15,6 +16,7 @@ import { copiesOf } from "./placement.js";
  * if (result.broken?.length) warn(result.broken);
  */
 export function remove(tokens: DesignTokens, path: string): OpResult {
+    if (path === "") return refused({ kind: "top-level" });
     const copies = copiesOf(tokens, path);
     if ("refused" in copies) return copies;
 

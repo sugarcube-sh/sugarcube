@@ -53,20 +53,17 @@ export interface ExtensionsAt {
     node: Node;
 }
 
-export interface SourceTopLevel extends Properties {
+export interface SourceGroup extends Properties {
+    path: string;
     span: Span;
     extensionsAt?: ExtensionsAt;
-}
-
-export interface SourceGroup extends SourceTopLevel {
-    path: string;
     extends?: GroupReference;
 }
 
 export type SourceMember = { token: SourceToken } | { group: SourceGroup };
 
 export interface SourceContents {
-    root: SourceTopLevel;
+    root: SourceGroup;
     members: SourceMember[];
 }
 
@@ -103,15 +100,15 @@ export function walkSource(
         extra: Omit<DiagnosticExtra, "span"> = {},
     ) => diagnostics.push(diagnostic(kind, detail, { span: toSpan(json, node), ...extra }));
 
-    const readType = (path: string | undefined, node: Node, name: string) => {
+    const readType = (path: string, node: Node, name: string) => {
         if (isTokenType(name)) return name;
         const similar = similarName(name, tokenTypes);
         const detail = { type: name, ...(similar !== undefined && { similar }) };
-        report("unknown-type", detail, node, path === undefined ? {} : { path });
+        report("unknown-type", detail, node, { path });
         return "unusable";
     };
 
-    const readProperties = (path: string | undefined, entries: readonly Member[]): Properties => {
+    const readProperties = (path: string, entries: readonly Member[]): Properties => {
         const properties: Properties = {};
         for (const { key, value } of entries) {
             const raw: unknown = value.value;
@@ -134,7 +131,7 @@ export function walkSource(
         return properties;
     };
 
-    const readPropertiesAndExtensions = (path: string | undefined, entries: readonly Member[]) => {
+    const readPropertiesAndExtensions = (path: string, entries: readonly Member[]) => {
         const properties = readProperties(path, entries);
         const extensions = entries.find(({ key }) => key === "$extensions")?.value;
         return {
@@ -206,17 +203,18 @@ export function walkSource(
         addToken(node, path, entries, ref, { $ref: pointer });
     };
 
-    const visitGroup = (node: Node, segments: string[], entries: readonly Member[]) => {
-        const path = segments.join(".");
+    const readGroup = (node: Node, path: string, entries: readonly Member[]): SourceGroup => {
         const extending = readExtends(node, entries);
-        written.push({
-            group: {
-                path,
-                span: toSpan(json, node),
-                ...readPropertiesAndExtensions(path, entries),
-                ...(extending && { extends: extending }),
-            },
-        });
+        return {
+            path,
+            span: toSpan(json, node),
+            ...readPropertiesAndExtensions(path, entries),
+            ...(extending && { extends: extending }),
+        };
+    };
+
+    const visitGroup = (node: Node, segments: string[], entries: readonly Member[]) => {
+        written.push({ group: readGroup(node, segments.join("."), entries) });
         visitMembers(segments, entries);
     };
 
@@ -281,9 +279,9 @@ export function walkSource(
                 report("invalid-name", { name: key, character: "$" }, keyNode);
                 continue;
             }
-            if (!tokenPath.isValidName(key)) {
-                const character = tokenPath.findInvalidCharacter(key);
-                report("invalid-name", { name: key, ...(character && { character }) }, keyNode);
+            const problem = tokenPath.findNameProblem(key);
+            if (problem) {
+                report("invalid-name", { name: key, ...problem }, keyNode);
                 continue;
             }
             if (key !== key.trim()) report("whitespace-in-name", { name: key }, keyNode);
@@ -303,10 +301,7 @@ export function walkSource(
         members(tree).filter(({ key }) => !overridden.has(key)),
         true,
     );
-    const root = {
-        span: toSpan(json, tree),
-        ...readPropertiesAndExtensions(undefined, rootEntries),
-    };
+    const root = readGroup(tree, "", rootEntries);
     visitMembers([], rootEntries);
     return { root, members: written };
 }

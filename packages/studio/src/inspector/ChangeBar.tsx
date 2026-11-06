@@ -144,7 +144,7 @@ function Line({ line }: { line: ChangeLine }) {
     }
     return (
         <>
-            {line.path ? <code>{line.path}</code> : "Top level"} {doneWord[line.kind]}
+            {line.topLevel ? "Top level" : <code>{line.path}</code>} {doneWord[line.kind]}
             {theme}
         </>
     );

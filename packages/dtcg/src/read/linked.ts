@@ -22,13 +22,7 @@ import type {
     Token,
 } from "../model.js";
 import { concerning } from "../lookup/diagnostics.js";
-import {
-    Changes,
-    groupChange,
-    matched,
-    tokenChange,
-    topLevelChange,
-} from "../lookup/changes-since.js";
+import { Changes, groupChange, matched, tokenChange } from "../lookup/changes-since.js";
 import { SPAN_OF, getSpan } from "../lookup/editor.js";
 import { findJsonPath } from "../lookup/json-path.js";
 import { buildParts } from "../lookup/parts.js";
@@ -440,7 +434,6 @@ class DesignTokensObject {
         for (const now of this.#self.permutations) {
             const was = findPermutation(before, now.input);
             if ("reason" in was) continue;
-            changes.add(topLevelChange(was.topLevel, now.topLevel), now);
             for (const pair of matched(was.groups, now.groups, moved)) {
                 if (pair.before !== pair.after) changes.add(groupChange(pair, moved), now);
             }
@@ -584,8 +577,8 @@ class DefinitionObject {
 }
 
 export interface Places {
-    at(source: Source, span: Span, path: string | undefined): Definition;
-    only(source: Source, span: Span, path: string | undefined): Definition[];
+    at(source: Source, span: Span, path: string): Definition;
+    only(source: Source, span: Span, path: string): Definition[];
     movedTo(references: readonly Reference[], spans: readonly Span[]): void;
     readonly moved: ReadonlyMap<Definition | Reference, Span>;
 }
@@ -598,12 +591,7 @@ export function trackPlaces(
     const moved = new Map<Definition | Reference, Span>();
     const checked = new Set<readonly Reference[]>();
     const before = previous && indexDefinitions(previous);
-    const kept = (
-        source: Source,
-        span: Span,
-        path: string | undefined,
-        text: string | undefined,
-    ) => {
+    const kept = (source: Source, span: Span, path: string, text: string | undefined) => {
         if (!previous || !before) return undefined;
         for (const each of before.get(path) ?? []) {
             if (each.source !== source || !writtenAlike(previous, each, text, span)) continue;
@@ -613,7 +601,7 @@ export function trackPlaces(
         }
         return undefined;
     };
-    const at = (source: Source, span: Span, path: string | undefined): DefinitionObject => {
+    const at = (source: Source, span: Span, path: string): DefinitionObject => {
         const atSpan = made.get(span);
         const found = atSpan?.find((each) => each.source === source);
         if (found) return found;
@@ -639,13 +627,10 @@ export function trackPlaces(
     };
 }
 
-function indexDefinitions(tokens: DesignTokens): Map<string | undefined, DefinitionObject[]> {
-    const byPath = new Map<string | undefined, DefinitionObject[]>();
+function indexDefinitions(tokens: DesignTokens): Map<string, DefinitionObject[]> {
+    const byPath = new Map<string, DefinitionObject[]>();
     const seen = new Set<{ readonly definitions: readonly Definition[] }>();
-    const add = (
-        path: string | undefined,
-        each: { readonly definitions: readonly Definition[] },
-    ) => {
+    const add = (path: string, each: { readonly definitions: readonly Definition[] }) => {
         if (seen.has(each)) return;
         seen.add(each);
         const list = byPath.get(path) ?? [];
@@ -655,7 +640,6 @@ function indexDefinitions(tokens: DesignTokens): Map<string | undefined, Definit
         }
     };
     for (const permutation of tokens.permutations) {
-        add(undefined, permutation.topLevel);
         for (const token of permutation.tokens) add(token.path, token);
         for (const group of permutation.groups) add(group.path, group);
     }
