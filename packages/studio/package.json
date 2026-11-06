@@ -62,7 +62,7 @@
     "culori": "^4.0.2",
     "forges": "0.2.0",
     "lucide-react": "^1.41.0",
-    "pkgroll": "^2.28.1",
+    "pkgroll": "^2.29.0",
     "playwright": "^1.64.1",
     "radix-ui": "^1.6.7",
     "react": "^19.2.8",
