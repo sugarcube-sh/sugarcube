@@ -1,8 +1,8 @@
 import type { Node } from "jsonc-parser";
 import type { Resolver, ResolverModifier, ResolverSet, SourceRef } from "../model.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
-import { member, plainObject, spanOf } from "./json.js";
-import { folderOf } from "./paths.js";
+import { member, plainObject, toSpan } from "./json.js";
+import { getFolder } from "./paths.js";
 import { encodePointer } from "./pointer.js";
 import {
     type CheckedResolver,
@@ -39,7 +39,7 @@ export function resolverPart(
     ) => {
         for (const [name, { declared: node }] of declared) {
             if (used.has(name)) continue;
-            const span = spanOf(resolver.file, node);
+            const span = toSpan(resolver.file, node);
             const detail = { item, name };
             diagnostics.found(
                 diagnostic("not-in-resolution-order", detail, { span, tags: ["unnecessary"] }),
@@ -70,7 +70,7 @@ function publicSet(resolver: CheckedResolver, set: SetDefinition): ResolverSet {
         ...(set.description !== undefined && { description: set.description }),
         ...(extensions && { extensions }),
         sources: sourcesAsWritten(resolver, set.sources),
-        span: spanOf(resolver.file, set.declared),
+        span: toSpan(resolver.file, set.declared),
     };
 }
 
@@ -82,7 +82,7 @@ function publicModifier(resolver: CheckedResolver, modifier: ModifierDefinition)
         ...(extensions && { extensions }),
         contexts: [],
         ...(modifier.default !== undefined && { default: modifier.default }),
-        span: spanOf(resolver.file, modifier.declared),
+        span: toSpan(resolver.file, modifier.declared),
     });
     made.contexts = [...modifier.contexts].map(([context, { sources, declared }]) =>
         linkedContext({
@@ -90,7 +90,7 @@ function publicModifier(resolver: CheckedResolver, modifier: ModifierDefinition)
             modifier: made,
             sources: sourcesAsWritten(resolver, sources),
             isDefault: context === modifier.default,
-            span: spanOf(resolver.file, declared),
+            span: toSpan(resolver.file, declared),
         }),
     );
     return made;
@@ -105,7 +105,7 @@ function sourceAsWritten(resolver: CheckedResolver, source: ResolverNode): Sourc
     const ref = member(source.node, "$ref");
     if (!ref) return { file: file.path, pointer: encodePointer(source.jsonPath) };
     if (!isStringNode(ref)) return undefined;
-    const read = readSourceRef(folderOf(file.path), ref.value);
+    const read = readSourceRef(getFolder(file.path), ref.value);
     if (read.kind === "malformed") return undefined;
     if (read.kind === "file") return { file: read.path, ...fragmentPointer(read.steps) };
     const set = setNamed(read.steps);

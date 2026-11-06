@@ -24,7 +24,7 @@ export function ownLabel(contexts: ResolverContext[]): string {
 
 type Part = Record<string, string[]>;
 
-export function scopeOf(set: readonly Permutation[], all: readonly Permutation[]): Scope {
+export function workOutScope(set: readonly Permutation[], all: readonly Permutation[]): Scope {
     const [first] = set;
     if (!first) return [];
     const modifiers = first.contexts.map(({ modifier }) => modifier);
@@ -80,7 +80,7 @@ function merged(parts: Part[]): Part[] {
     const result = [...parts];
     for (let i = 0; i < result.length; i++) {
         for (let j = i + 1; j < result.length; j++) {
-            const joined = joinedOn(result[i], result[j]);
+            const joined = joinParts(result[i], result[j]);
             if (!joined) continue;
             result[i] = joined;
             result.splice(j, 1);
@@ -91,7 +91,7 @@ function merged(parts: Part[]): Part[] {
     return result;
 }
 
-function joinedOn(one: Part | undefined, other: Part | undefined): Part | undefined {
+function joinParts(one: Part | undefined, other: Part | undefined): Part | undefined {
     if (!one || !other) return undefined;
     const keys = Object.keys(one);
     if (!sameNames(keys, Object.keys(other))) return undefined;

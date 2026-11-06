@@ -18,9 +18,9 @@ import {
     type PropertySyntax,
     type Siblings,
     type Syntax,
-    choiceOf,
+    chooseByKind,
     ofType,
-    syntaxOf,
+    getSyntax,
     wrongShape,
 } from "./syntax.js";
 import { unknownProperties } from "./unknown-properties.js";
@@ -124,7 +124,7 @@ function readSyntax(syntax: Syntax, raw: unknown, where: Where, reading: Reading
             return literal.ok ? literal.value : fail(where, literal.problem, reading);
         }
         case "oneOf": {
-            const choice = choiceOf(syntax, raw);
+            const choice = chooseByKind(syntax, raw);
             if (typeof choice === "function") return fail(where, choice(raw), reading);
             if ("list" in choice) return readList(choice.list, choice.items, where, reading);
             return readSyntax(choice, raw, where, reading);
@@ -159,7 +159,7 @@ function readObject(syntax: ObjectSyntax, raw: unknown, where: Where, reading: R
             }
             continue;
         }
-        const partSyntax = syntaxFor(property, value, raw[name], there, reading);
+        const partSyntax = chooseSyntax(property, value, raw[name], there, reading);
         const part = read(partSyntax, raw[name], there, reading);
         if (part === FAILED) failed = true;
         else value[name] = part;
@@ -167,7 +167,7 @@ function readObject(syntax: ObjectSyntax, raw: unknown, where: Where, reading: R
     return failed ? FAILED : value;
 }
 
-function syntaxFor(
+function chooseSyntax(
     propertySyntax: PropertySyntax,
     siblings: Record<string, unknown>,
     raw: unknown,
@@ -186,7 +186,7 @@ function syntaxFor(
             owner,
         });
     }
-    return syntaxOf(propertySyntax, siblings);
+    return getSyntax(propertySyntax, siblings);
 }
 
 function readList(syntax: ArraySyntax, items: unknown[], where: Where, reading: Reading): unknown {

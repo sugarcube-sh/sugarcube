@@ -14,7 +14,7 @@ import type { Siblings } from "../values/syntax.js";
 import type { MergedToken, Merged } from "./merge.js";
 import { type Occurrence, occurrence } from "./occurrence.js";
 import type { LocatedReference, ValueReader } from "./parse-value.js";
-import { type Aim, reachOf, stepInto, stepsOf } from "./ref-meaning.js";
+import { type Aim, followReference, stepInto, toPointerSteps } from "./ref-meaning.js";
 
 export const UNRESOLVED = Symbol("unresolved");
 
@@ -24,7 +24,7 @@ export interface Resolving {
     readValue: ValueReader;
     merged: Merged;
     input: Input;
-    valueAt(path: string, from: string, span: Span): Target | undefined;
+    askForValue(path: string, from: string, span: Span): Target | undefined;
     report<K extends DiagnosticKind>(
         kind: K,
         detail: DiagnosticDetailByKind[K],
@@ -49,10 +49,10 @@ export function resolveValue(
     readAgain: ReadAgain[],
 ): unknown {
     const following = { token, seen: [], within: undefined };
-    return resolveIn(resolving, following, value, references, readAgain);
+    return resolveReferences(resolving, following, value, references, readAgain);
 }
 
-function resolveIn(
+function resolveReferences(
     resolving: Resolving,
     following: Following,
     value: unknown,
@@ -78,7 +78,7 @@ function resolveIn(
     const { token, within } = following;
     for (const again of readAgain) {
         const { jsonPath, owner, raw } = again;
-        const syntax = again.from(siblingsOf(again, followed));
+        const syntax = again.from(resolveSiblings(again, followed));
         const slot = { syntax, jsonPath, owner, element: false };
         const { result, notes } = readValue.readTarget(token, slot, raw, input);
         if (!result.ok) return UNRESOLVED;
@@ -86,7 +86,7 @@ function resolveIn(
             reference,
             occurrence: within ?? occurrence(token, reference),
         }));
-        const part = resolveIn(resolving, following, result.value, inner, notes.readAgain);
+        const part = resolveReferences(resolving, following, result.value, inner, notes.readAgain);
         if (part === UNRESOLVED) return UNRESOLVED;
         resolved = replaced(resolved, again.property, part);
     }
@@ -113,8 +113,8 @@ function follow(resolving: Resolving, following: Following, located: LocatedRefe
         report("circular-reference", { chain: [...seen, written] }, token.path, use.span);
         return UNRESOLVED;
     }
-    const aim = { reference: ref, steps: stepsOf(ref) };
-    const reached = reachOf(aim, merged);
+    const aim = { reference: ref, steps: toPointerSteps(ref) };
+    const reached = followReference(aim, merged);
     const unreachable = () => {
         if (within) notReached(aim, token.path, use.span);
         else reportUnreachable(aim, token.path, use.span);
@@ -136,11 +136,11 @@ function follow(resolving: Resolving, following: Following, located: LocatedRefe
     if (!result.ok) return UNRESOLVED;
     const inner = notes.references.map((reference) => ({ reference, occurrence: use }));
     const deeper = { token, seen: [...seen, written], within: use };
-    return resolveIn(resolving, deeper, result.value, inner, notes.readAgain);
+    return resolveReferences(resolving, deeper, result.value, inner, notes.readAgain);
 }
 
 function substitute(
-    { valueAt, report, notReached }: Resolving,
+    { askForValue, report, notReached }: Resolving,
     token: MergedToken,
     reference: WrittenReference,
     path: string,
@@ -150,9 +150,9 @@ function substitute(
 ): unknown {
     const { span } = use;
     const shown = toReferenceTarget(reference);
-    const target = valueAt(path, token.path, span);
+    const target = askForValue(path, token.path, span);
     if (target === undefined) {
-        notReached({ reference, steps: stepsOf(reference) }, token.path, span);
+        notReached({ reference, steps: toPointerSteps(reference) }, token.path, span);
         return UNRESOLVED;
     }
     if (target === "untyped" || !("resolved" in target)) return UNRESOLVED;
@@ -169,7 +169,7 @@ function substitute(
     return list[0];
 }
 
-function siblingsOf(again: ReadAgain, followed: [LocatedReference, unknown][]): Siblings {
+function resolveSiblings(again: ReadAgain, followed: [LocatedReference, unknown][]): Siblings {
     const parent = again.property.slice(0, -1);
     const siblings: Record<string, unknown> = { ...again.siblings };
     for (const [{ reference }, part] of followed) {

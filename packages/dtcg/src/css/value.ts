@@ -10,7 +10,7 @@ import type {
     TypographyPart,
 } from "../model.js";
 import { colorDecimals, roundedTo } from "../values/decimals.js";
-import { hexStringOf } from "../values/hex-color.js";
+import { getWrittenHex } from "../values/hex-color.js";
 
 /** A typography value written as CSS, one value for each CSS property. */
 export interface TypographyCSS {
@@ -213,9 +213,9 @@ function quoteFont(name: string): string {
 
 function writeColor(color: ColorValue, colors: "components" | "hex"): string {
     const { colorSpace, components, alpha, hex } = color;
-    const asRead = hexStringOf(color);
+    const asRead = getWrittenHex(color);
     if (asRead !== undefined) return asRead;
-    if (hex !== undefined && colors === "hex") return hexOf(hex, alpha);
+    if (hex !== undefined && colors === "hex") return addAlpha(hex, alpha);
     const [a, b, c] = components;
     const numbers = [a, b, c].map((each) => fixed(each)).join(" ");
     switch (colorSpace) {
@@ -257,7 +257,7 @@ function fixed(component: ColorComponent): string {
     return component === "none" ? "none" : String(roundedTo(component, colorDecimals));
 }
 
-function hexOf(hex: string, alpha: number): string {
+function addAlpha(hex: string, alpha: number): string {
     if (alpha === 1) return hex;
     const pair = Math.round(alpha * 255)
         .toString(16)

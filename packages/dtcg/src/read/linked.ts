@@ -1,5 +1,7 @@
 import { parse } from "jsonc-parser";
 import type {
+    Change,
+    DefinitionInPermutations,
     DesignTokens,
     Diagnostic,
     Group,
@@ -11,6 +13,7 @@ import type {
     Permutation,
     Definition,
     Reference,
+    ReferenceInPermutations,
     ReferenceOptions,
     ResolverContext,
     ResolverModifier,
@@ -18,23 +21,34 @@ import type {
     Span,
     Token,
 } from "../model.js";
-import { diagnosticsIn, permutationDiagnosticsIn } from "../lookup/diagnostics.js";
-import { changesSinceIn } from "../lookup/changes-since.js";
-import { partsOf } from "../lookup/parts.js";
-import { onlyPermutation, permutationIn } from "../lookup/permutation.js";
+import { concerning } from "../lookup/diagnostics.js";
 import {
-    dependenciesIn,
-    referencedIn,
-    referencesToIn,
-    dependentsIn,
-} from "../lookup/references.js";
-import { definitionsIn } from "../lookup/definitions.js";
-import { getReferenceSpan } from "./reference.js";
+    Changes,
+    groupChange,
+    matched,
+    tokenChange,
+    topLevelChange,
+} from "../lookup/changes-since.js";
+import { SPAN_OF, getSpan } from "../lookup/editor.js";
+import { findJsonPath } from "../lookup/json-path.js";
+import { buildParts } from "../lookup/parts.js";
+import { PermutationError, findPermutation, onlyPermutation } from "../lookup/permutation.js";
+import { referenceIndex } from "../lookup/references.js";
+import { tokenPath } from "../path.js";
+import { makePermutations } from "./make-permutations.js";
+import { getReferenceSpan, toReferenceInPermutations } from "./reference.js";
 import { samePlace } from "./same-object.js";
 
 export const NO_REFERENCES: readonly Reference[] = Object.freeze([]);
 export const NO_DEFINITIONS: readonly Definition[] = Object.freeze([]);
 export const NO_EXTENSION_DEFINITIONS: Readonly<Record<string, Definition>> = Object.freeze({});
+
+interface Merged {
+    reference: Reference;
+    writers: Set<string>;
+    heirs: Set<string>;
+    permutations: Permutation[];
+}
 
 const NOT_YET = Symbol("not yet worked out");
 
@@ -75,7 +89,7 @@ class TokenObject {
     }
 
     get aliasChain(): readonly Token[] {
-        this.#aliasChain ??= aliasChainOf(this as unknown as Token);
+        this.#aliasChain ??= followAliasChain(this as unknown as Token);
         return this.#aliasChain;
     }
 
@@ -85,7 +99,7 @@ class TokenObject {
     }
 
     get parts(): Part | undefined {
-        if (this.#parts === NOT_YET) this.#parts = partsOf(this as unknown as Token);
+        if (this.#parts === NOT_YET) this.#parts = buildParts(this as unknown as Token);
         return this.#parts;
     }
 }
@@ -107,7 +121,7 @@ class GroupObject {
     }
 
     get tokens(): readonly Token[] {
-        this.#tokens ??= tokensIn((this as unknown as Group).children);
+        this.#tokens ??= allTokens((this as unknown as Group).children);
         return this.#tokens;
     }
 
@@ -123,7 +137,7 @@ class GroupObject {
 }
 Object.defineProperty(GroupObject.prototype, "kind", { value: "group" });
 
-function aliasChainOf(token: Token): Token[] {
+function followAliasChain(token: Token): Token[] {
     const chain: Token[] = [];
     for (let current: Token | undefined = token; current;) {
         if (chain.includes(current)) break;
@@ -133,10 +147,10 @@ function aliasChainOf(token: Token): Token[] {
     return chain;
 }
 
-export function tokensIn(children: readonly (Token | Group)[], found: Token[] = []): Token[] {
+export function allTokens(children: readonly (Token | Group)[], found: Token[] = []): Token[] {
     for (const child of children) {
         if (child.kind === "token") found.push(child);
-        else tokensIn(child.children, found);
+        else allTokens(child.children, found);
     }
     return found;
 }
@@ -174,20 +188,61 @@ class PermutationObject {
         return this.#tokens.get(path) ?? this.#groups.get(path);
     }
 
-    getReferencesTo(path: string, options?: ReferenceOptions): Reference[] {
-        return referencedIn(this.#self, path, options);
+    getReferencesTo(path: string, { chained = false }: ReferenceOptions = {}): Reference[] {
+        const { position, byPath } = referenceIndex(this.#self);
+        const reaching = (each: string, isToken: boolean): Reference[] => {
+            if (isToken) return byPath.get(each) ?? [];
+            return [...byPath].flatMap(([named, references]) =>
+                tokenPath.contains(each, named) ? references : [],
+            );
+        };
+        const first = reaching(path, this.getToken(path) !== undefined);
+        const found = new Set<Reference>(first);
+        const seen = new Set([path]);
+        const waiting = chained ? [first] : [];
+        for (const references of waiting) {
+            for (const reference of references) {
+                found.add(reference);
+                const { writtenIn } = reference;
+                if (seen.has(writtenIn.path)) continue;
+                seen.add(writtenIn.path);
+                waiting.push(reaching(writtenIn.path, writtenIn.kind === "token"));
+            }
+        }
+        return [...found].sort((a, b) => (position.get(a) ?? 0) - (position.get(b) ?? 0));
     }
 
     getDependents(path: string, options?: ReferenceOptions): (Token | Group)[] {
-        return dependentsIn(this.#self, path, options);
+        return [...new Set(this.getReferencesTo(path, options).map(({ writtenIn }) => writtenIn))];
     }
 
-    getDependencies(path: string, options?: ReferenceOptions): (Token | Group)[] {
-        return dependenciesIn(this.#self, path, options);
+    getDependencies(path: string, { chained = false }: ReferenceOptions = {}): (Token | Group)[] {
+        const start = this.getTokenOrGroup(path);
+        if (!start) return [];
+        const found = new Set<Token | Group>();
+        const followed = new Set<Token | Group>([start]);
+        const waiting: (Token | Group)[] = [start];
+        for (const each of waiting) {
+            for (const { pointsToPath } of each.references) {
+                const next =
+                    pointsToPath === undefined ? undefined : this.getTokenOrGroup(pointsToPath);
+                if (!next) continue;
+                found.add(next);
+                if (!chained || followed.has(next)) continue;
+                followed.add(next);
+                waiting.push(next);
+            }
+        }
+        return [...found];
     }
 
     getDiagnostics(path: string): Diagnostic[] {
-        return permutationDiagnosticsIn(this.#designTokens as DesignTokens, this.#self, path);
+        const tokens = this.#designTokens as DesignTokens;
+        const permutation = this.#self;
+        const about = concerning(tokens, path, [permutation]);
+        return tokens.diagnostics.filter(
+            (found) => found.permutations.includes(permutation) && about(found),
+        );
     }
 
     toJSON() {
@@ -231,8 +286,6 @@ interface Kept {
 
 type DesignTokensFields = Omit<DesignTokens, keyof DesignTokensObject>;
 
-const SPAN_OF = Symbol.for("@sugarcube-sh/dtcg/span-of");
-
 class DesignTokensObject {
     readonly #kept: Kept;
 
@@ -241,16 +294,90 @@ class DesignTokensObject {
         this.#kept = kept;
     }
 
-    getReferencesTo(path: string) {
-        return referencesToIn(this.#self, path);
+    getReferencesTo(path: string): ReferenceInPermutations[] {
+        const tokens = this.#self;
+        const merged = new Map<Span, Merged[]>();
+        for (const permutation of tokens.permutations) {
+            for (const reference of permutation.getReferencesTo(path)) {
+                const span = getSpan(tokens, reference);
+                let atSpan = merged.get(span);
+                if (!atSpan) merged.set(span, (atSpan = []));
+                let here = atSpan.find((each) =>
+                    samePlace(each.reference.writtenInProperty, reference.writtenInProperty ?? []),
+                );
+                if (!here) {
+                    here = { reference, writers: new Set(), heirs: new Set(), permutations: [] };
+                    atSpan.push(here);
+                }
+                if (!here.permutations.includes(permutation)) here.permutations.push(permutation);
+                const { writtenIn } = reference;
+                (writtenIn.inherited ? here.heirs : here.writers).add(writtenIn.path);
+            }
+        }
+        return [...merged].flatMap(([span, here]) =>
+            here.map(({ reference, writers, heirs, permutations }) =>
+                toReferenceInPermutations(
+                    reference,
+                    [...new Set([...writers, ...heirs])],
+                    makePermutations(permutations, tokens.permutations),
+                    span,
+                    () => findJsonPath(tokens, span),
+                ),
+            ),
+        );
     }
 
-    getDefinitions(path: string) {
-        return definitionsIn(this.#self, path);
+    getDefinitions(path: string): DefinitionInPermutations[] {
+        const tokens = this.#self;
+        const found = new Map<
+            Span,
+            { sources: Source[]; permutations: Permutation[]; first: Definition }
+        >();
+        for (const permutation of tokens.permutations) {
+            const places = [
+                ...(permutation.getToken(path)?.definitions ?? []),
+                ...(permutation.getGroup(path)?.definitions ?? []),
+            ];
+            for (const place of places) {
+                const { source } = place;
+                const span = getSpan(tokens, place);
+                const known = found.get(span);
+                if (!known) {
+                    found.set(span, {
+                        sources: [source],
+                        permutations: [permutation],
+                        first: place,
+                    });
+                    continue;
+                }
+                if (!known.sources.includes(source)) known.sources.push(source);
+                known.permutations.push(permutation);
+            }
+        }
+        return [...found].map(([span, { sources, permutations, first }]) => ({
+            span,
+            get jsonPath() {
+                return findJsonPath(tokens, span);
+            },
+            get asWritten() {
+                return first.asWritten;
+            },
+            sources,
+            permutations: makePermutations(permutations, tokens.permutations),
+            winsIn: makePermutations(
+                permutations.filter((permutation) => {
+                    const winner = permutation.getToken(path)?.winningDefinition;
+                    return winner !== undefined && getSpan(tokens, winner) === span;
+                }),
+                tokens.permutations,
+            ),
+        }));
     }
 
-    getPermutation(input?: Input) {
-        return permutationIn(this.#self, input);
+    getPermutation(input: Input = {}) {
+        const found = findPermutation(this.#self, input);
+        if ("reason" in found) throw new PermutationError(found);
+        return found;
     }
 
     getToken(path: string) {
@@ -290,11 +417,11 @@ class DesignTokensObject {
     }
 
     getTokenPaths() {
-        return pathsIn(this.#self, "tokens");
+        return allPaths(this.#self, "tokens");
     }
 
     getGroupPaths() {
-        return pathsIn(this.#self, "groups");
+        return allPaths(this.#self, "groups");
     }
 
     toJSON() {
@@ -303,11 +430,25 @@ class DesignTokensObject {
     }
 
     getDiagnostics(path: string) {
-        return diagnosticsIn(this.#self, path);
+        const tokens = this.#self;
+        return tokens.diagnostics.filter(concerning(tokens, path, tokens.permutations));
     }
 
-    getChangesSince(before: DesignTokens, options?: { moved?: Move[] }) {
-        return changesSinceIn(this.#self, before, options);
+    getChangesSince(before: DesignTokens, options?: { moved?: Move[] }): Change[] {
+        const moved = options?.moved ?? [];
+        const changes = new Changes();
+        for (const now of this.#self.permutations) {
+            const was = findPermutation(before, now.input);
+            if ("reason" in was) continue;
+            changes.add(topLevelChange(was.topLevel, now.topLevel), now);
+            for (const pair of matched(was.groups, now.groups, moved)) {
+                if (pair.before !== pair.after) changes.add(groupChange(pair, moved), now);
+            }
+            for (const pair of matched(was.tokens, now.tokens, moved)) {
+                if (pair.before !== pair.after) changes.add(tokenChange(pair, moved), now);
+            }
+        }
+        return changes.list(this.#self.permutations);
     }
 
     getText(file: string): string | undefined {
@@ -416,7 +557,7 @@ class DefinitionObject {
 
     get asWritten(): JsonValue {
         if (this.#written === undefined) {
-            this.#written = parse(textAt(this.#text, this.#textAt) ?? "null");
+            this.#written = parse(sliceSpan(this.#text, this.#textAt) ?? "null");
             this.#text = undefined;
         }
         return this.#written as JsonValue;
@@ -449,14 +590,14 @@ export interface Places {
     readonly moved: ReadonlyMap<Definition | Reference, Span>;
 }
 
-export function placesIn(
+export function trackPlaces(
     texts: Readonly<Record<string, string>>,
     previous: DesignTokens | undefined,
 ): Places {
     const made = new Map<Span, DefinitionObject[]>();
     const moved = new Map<Definition | Reference, Span>();
     const checked = new Set<readonly Reference[]>();
-    const before = previous && definitionsBy(previous);
+    const before = previous && indexDefinitions(previous);
     const kept = (
         source: Source,
         span: Span,
@@ -498,8 +639,8 @@ export function placesIn(
     };
 }
 
-function definitionsBy(tokens: DesignTokens): Map<string | undefined, DefinitionObject[]> {
-    const found = new Map<string | undefined, DefinitionObject[]>();
+function indexDefinitions(tokens: DesignTokens): Map<string | undefined, DefinitionObject[]> {
+    const byPath = new Map<string | undefined, DefinitionObject[]>();
     const seen = new Set<{ readonly definitions: readonly Definition[] }>();
     const add = (
         path: string | undefined,
@@ -507,8 +648,8 @@ function definitionsBy(tokens: DesignTokens): Map<string | undefined, Definition
     ) => {
         if (seen.has(each)) return;
         seen.add(each);
-        const list = found.get(path) ?? [];
-        found.set(path, list);
+        const list = byPath.get(path) ?? [];
+        byPath.set(path, list);
         for (const place of each.definitions as DefinitionObject[]) {
             if (!list.includes(place)) list.push(place);
         }
@@ -518,7 +659,7 @@ function definitionsBy(tokens: DesignTokens): Map<string | undefined, Definition
         for (const token of permutation.tokens) add(token.path, token);
         for (const group of permutation.groups) add(group.path, group);
     }
-    return found;
+    return byPath;
 }
 
 function writtenAlike(
@@ -527,13 +668,13 @@ function writtenAlike(
     text: string | undefined,
     span: Span,
 ): boolean {
-    const was = spanIn(previous, place);
+    const was = getSpan(previous, place);
     const then = previous.getText(was.file);
     if (then === text) return sameOffsets(was, span);
-    return textAt(then, was) === textAt(text, span);
+    return sliceSpan(then, was) === sliceSpan(text, span);
 }
 
-function textAt(text: string | undefined, { offset, length }: Span): string | undefined {
+function sliceSpan(text: string | undefined, { offset, length }: Span): string | undefined {
     return text?.slice(offset, offset + length);
 }
 
@@ -559,7 +700,7 @@ export function linkedDesignTokens(fields: DesignTokensFields, kept: Kept): Desi
     return tokens;
 }
 
-function pathsIn(tokens: DesignTokens, kind: "tokens" | "groups"): string[] {
+function allPaths(tokens: DesignTokens, kind: "tokens" | "groups"): string[] {
     const found = new Set<string>();
     for (const permutation of tokens.permutations) {
         for (const { path } of permutation[kind]) found.add(path);
@@ -569,8 +710,4 @@ function pathsIn(tokens: DesignTokens, kind: "tokens" | "groups"): string[] {
 
 function paths(items: readonly (Token | Group)[]): string[] {
     return items.map(({ path }) => path);
-}
-
-export function spanIn(tokens: DesignTokens, of: Definition | Reference): Span {
-    return (tokens as unknown as { [SPAN_OF](of: Definition | Reference): Span })[SPAN_OF](of);
 }

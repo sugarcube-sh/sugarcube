@@ -17,7 +17,7 @@ import {
 import { checkResolver, isResolver } from "./resolver.js";
 import { resolverPart } from "./resolver-part.js";
 import { Problems } from "./diagnostics.js";
-import { expandSources, filesNamedBy, openSources, piecesOf } from "./sources.js";
+import { expandSources, allFiles, openSources, allPieces } from "./sources.js";
 import { sameResolver } from "./same-object.js";
 
 export interface Loaded {
@@ -41,7 +41,7 @@ export function* load(
     const root = parseFile(files, entry)?.root;
     const loaded = (built: Pick<Loaded, "resolver" | "permutations">): Loaded => ({
         files: files.used,
-        texts: textsOf(files.texts, files.used),
+        texts: pickUsedTexts(files.texts, files.used),
         entry,
         diagnostics: [...diagnostics.list],
         ...built,
@@ -55,8 +55,8 @@ export function* load(
 
     const resolver = checkResolver(file, diagnostics);
     const { items, setsUsed } = expandSources(resolver, diagnostics);
-    const pieces = piecesOf(items);
-    yield* fetchFiles(files, filesNamedBy(pieces));
+    const pieces = allPieces(items);
+    yield* fetchFiles(files, allFiles(pieces));
     const sources = openSources(files, resolver, pieces);
     const made = resolverPart(resolver, setsUsed, diagnostics);
     const part = previous && sameResolver(previous, made) ? previous : made;
@@ -66,7 +66,7 @@ export function* load(
     });
 }
 
-function textsOf(texts: Map<string, FileText>, used: string[]): Record<string, string> {
+function pickUsedTexts(texts: Map<string, FileText>, used: string[]): Record<string, string> {
     const kept: Record<string, string> = {};
     for (const path of used) {
         const text = texts.get(path);

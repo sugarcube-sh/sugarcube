@@ -1,28 +1,28 @@
 import type { Input, Permutation, Permutations, Resolver, Scope } from "../model.js";
-import { scopeLabel, scopeOf } from "../lookup/permutation-label.js";
-import { checkedInput, modifiersIn } from "./input.js";
+import { scopeLabel, workOutScope } from "../lookup/permutation-label.js";
+import { checkedInput, allModifiers } from "./input.js";
 
 interface Worded {
     scope: Scope;
     label?: string;
 }
 
-const wordedIn = new WeakMap<readonly Permutation[], Map<string, Worded>>();
+const wordings = new WeakMap<readonly Permutation[], Map<string, Worded>>();
 
-function wordedFor(
+function describePermutations(
     held: ReadonlySet<Permutation>,
     list: readonly Permutation[],
     all: readonly Permutation[],
 ): Worded {
-    let known = wordedIn.get(all);
+    let known = wordings.get(all);
     if (!known) {
         known = new Map();
-        wordedIn.set(all, known);
+        wordings.set(all, known);
     }
     const key = all.map((each) => (held.has(each) ? "1" : "0")).join("");
     let worded = known.get(key);
     if (!worded) {
-        worded = { scope: scopeOf(list, all) };
+        worded = { scope: workOutScope(list, all) };
         known.set(key, worded);
     }
     return worded;
@@ -34,7 +34,7 @@ export function allPermutations(
     built: readonly Permutation[],
     resolver: Resolver | undefined,
 ): Permutations {
-    const modifiers = modifiersIn(resolver);
+    const modifiers = allModifiers(resolver);
     return listed(built, built, (input) => {
         const checked = checkedInput(modifiers, input);
         if (!checked.ok) return undefined;
@@ -42,7 +42,7 @@ export function allPermutations(
     });
 }
 
-export function permutationsOf(given: readonly Permutation[], all: Permutations): Permutations {
+export function makePermutations(given: readonly Permutation[], all: Permutations): Permutations {
     return listed(given, all, all.findByInput);
 }
 
@@ -65,10 +65,10 @@ function listed(
                     matchingAll,
                 )),
         },
-        scope: { get: () => wordedFor(held, list, all).scope },
+        scope: { get: () => describePermutations(held, list, all).scope },
         label: {
             get: () => {
-                const worded = wordedFor(held, list, all);
+                const worded = describePermutations(held, list, all);
                 worded.label ??= scopeLabel(worded.scope);
                 return worded.label;
             },

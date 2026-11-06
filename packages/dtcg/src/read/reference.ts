@@ -53,13 +53,13 @@ class ReferenceObject {
         return writtenAfter(this.#written, moves, this.#pointerAlone);
     }
 
-    across(
+    toReferenceInPermutations(
         writtenInPaths: readonly string[],
         permutations: Permutations,
         span: Span,
         jsonPath: () => JsonPath,
-    ): ReferenceAcrossPermutations {
-        return new ReferenceAcrossPermutations(
+    ): ReferenceInPermutationsObject {
+        return new ReferenceInPermutationsObject(
             this,
             this.#written,
             writtenInPaths,
@@ -75,7 +75,7 @@ class ReferenceObject {
     }
 }
 
-class ReferenceAcrossPermutations {
+class ReferenceInPermutationsObject {
     readonly pointsToPath: string | undefined;
     readonly writtenInPaths: readonly string[];
     readonly pointsToProperty: JsonPath | undefined;
@@ -131,20 +131,20 @@ export function getReferenceSpan(reference: Reference): Span {
     return ReferenceObject.getSpan(reference as unknown as ReferenceObject);
 }
 
-export function acrossPermutations(
+export function toReferenceInPermutations(
     reference: Reference,
     writtenInPaths: readonly string[],
     permutations: Permutations,
     span: Span,
     jsonPath: () => JsonPath,
 ): ReferenceInPermutations {
-    const across = (reference as unknown as ReferenceObject).across(
+    const inPermutations = (reference as unknown as ReferenceObject).toReferenceInPermutations(
         writtenInPaths,
         permutations,
         span,
         jsonPath,
     );
-    return across as unknown as ReferenceInPermutations;
+    return inPermutations as unknown as ReferenceInPermutations;
 }
 
 function writtenAfter(

@@ -24,12 +24,12 @@ export function diagnostic<K extends DiagnosticKind>(
         severity: typeof severity === "function" ? severity(detail) : severity,
         message: message(detail),
         ...extra,
-        docsUrl: docsFor(kind, detail),
+        docsUrl: getDocsLink(kind, detail),
         detail,
     } as Diagnostic;
 }
 
-function docsFor<K extends DiagnosticKind>(kind: K, detail: DiagnosticDetailByKind[K]): string {
+function getDocsLink<K extends DiagnosticKind>(kind: K, detail: DiagnosticDetailByKind[K]): string {
     const page = `https://sugarcube.sh/errors/${kind}`;
     if (kind !== "invalid-value") return page;
     return `${page}#${(detail as DiagnosticDetailByKind["invalid-value"]).reason}`;
@@ -41,7 +41,8 @@ export class Problems {
     readonly #inputs = new Map<Diagnostic, Input[]>();
 
     found(problem: Diagnostic, input?: Input): Diagnostic {
-        const spot = spotOf(problem);
+        const { span } = problem;
+        const spot = span === undefined ? "" : `${span.file}:${span.offset}:${span.length}`;
         const here = this.#atSpot.get(spot);
         const kept = here?.find((each) => isEqualJson(each, problem)) ?? problem;
         if (kept === problem) {
@@ -64,9 +65,9 @@ export class Problems {
     }
 
     inPermutations(permutations: Permutations): Diagnostic[] {
-        for (const found of this.#all) {
-            const inputs = this.#inputs.get(found) ?? [];
-            found.permutations = permutations.select(({ input }) => inputs.includes(input));
+        for (const each of this.#all) {
+            const inputs = this.#inputs.get(each) ?? [];
+            each.permutations = permutations.select(({ input }) => inputs.includes(input));
         }
         return this.#all;
     }
@@ -76,22 +77,18 @@ export class Problems {
     }
 }
 
-function spotOf({ span }: Diagnostic): string {
-    return span === undefined ? "" : `${span.file}:${span.offset}:${span.length}`;
-}
-
-export function inReadingPermutations(
+export function addPermutations(
     diagnostics: Building<Diagnostic>[],
     permutations: Permutations,
     entry: string,
 ): Diagnostic[] {
-    for (const found of diagnostics) {
-        found.permutations ??= permutationsWith(found, permutations, entry);
+    for (const each of diagnostics) {
+        each.permutations ??= findPermutationsReading(each, permutations, entry);
     }
     return diagnostics;
 }
 
-function permutationsWith(
+function findPermutationsReading(
     found: Diagnostic,
     permutations: Permutations,
     entry: string,

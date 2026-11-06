@@ -95,9 +95,9 @@ function collectMembers(node: Node, duplicates: DuplicateKey[]): void {
         }
         byKey.set(key, { key, keyNode, value });
     }
-    const found = [...byKey.values()];
-    membersOf.set(node, found);
-    for (const { value } of found) collectMembers(value, duplicates);
+    const unique = [...byKey.values()];
+    membersOf.set(node, unique);
+    for (const { value } of unique) collectMembers(value, duplicates);
 }
 
 export function members(node: Node): readonly Member[] {
@@ -137,7 +137,7 @@ function findLineStarts(text: string): number[] {
 
 const spans = new WeakMap<object, Span>();
 
-export function spanOf(
+export function toSpan(
     { path, lineStarts }: Pick<JsonFile, "path" | "lineStarts">,
     node: { offset: number; length: number },
 ): Span {

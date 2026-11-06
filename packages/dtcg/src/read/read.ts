@@ -1,6 +1,6 @@
 import type { DesignTokens, Input, ReadOptions, ReadText, TokensInMemory } from "../model.js";
 import type { Answer, FileText, Request } from "./files.js";
-import { Problems, inReadingPermutations } from "./diagnostics.js";
+import { Problems, addPermutations } from "./diagnostics.js";
 import { type Loaded, load } from "./load.js";
 import { normalisePermutations } from "./normalise.js";
 import { fillGenerated } from "./generate.js";
@@ -10,12 +10,12 @@ import { createValueReader } from "./parse-value.js";
 import { buildPermutations } from "./build.js";
 import { missingReferences } from "./missing.js";
 import type { PermutationOptions } from "./permutations.js";
-import { fileName, folderOf, join, normalise } from "./paths.js";
+import { fileName, getFolder, join, normalise } from "./paths.js";
 import { parseJson } from "./json.js";
 import { isResolver } from "./resolver.js";
 import { thrownMessages } from "../error-messages.js";
-import { linkedDesignTokens, placesIn } from "./linked.js";
-import { allPermutations } from "./permutations-of.js";
+import { linkedDesignTokens, trackPlaces } from "./linked.js";
+import { allPermutations } from "./make-permutations.js";
 
 const { performance } = globalThis as unknown as { performance: { now(): number } };
 
@@ -53,7 +53,7 @@ export async function read(
     const run = load(fileName(entry), permutationOptions(options), undefined);
     let step = run.next();
     while (!step.done) {
-        step = run.next(await fetchAll(step.value, folderOf(entry), readText));
+        step = run.next(await fetchAll(step.value, getFolder(entry), readText));
     }
     options.onStage?.("load", performance.now() - started);
     return toDesignTokens(step.value, options, undefined);
@@ -102,7 +102,7 @@ function fromMemory(
         Object.entries(memory.files).map(([path, text]) => [normalise(path), text]),
     );
     const entry = normalise(memory.entryFile ?? entryAmong(texts));
-    const folder = folderOf(entry);
+    const folder = getFolder(entry);
     const run = load(fileName(entry), permutationOptions(options), previous?.resolver);
 
     let step = run.next();
@@ -155,24 +155,24 @@ function toDesignTokens(
         hexStringColors,
         ignoreUnknownProperties,
     } = options;
-    const found = new Problems();
+    const diagnostics = new Problems();
     const parseOptions = {
         hexStringColors: hexStringColors ?? false,
         ignoreUnknownProperties: ignoreUnknownProperties ?? false,
     };
-    const readValue = createValueReader(found, parseOptions);
+    const readValue = createValueReader(diagnostics, parseOptions);
     let generating = 0;
     const generate = (merged: Merged, input: Input) => {
         if (generators.length === 0) return;
         const started = performance.now();
-        fillGenerated(merged, generators, { input, parseOptions }, found);
+        fillGenerated(merged, generators, { input, parseOptions }, diagnostics);
         generating += performance.now() - started;
     };
     const normalising = performance.now();
-    const missing = missingReferences(found);
+    const missing = missingReferences(diagnostics);
     const { permutations: normalised, sources } = normalisePermutations(
         loaded.permutations,
-        found,
+        diagnostics,
         missing,
         generate,
         previous?.sources,
@@ -180,10 +180,10 @@ function toDesignTokens(
     const resolving = performance.now();
     onStage?.("generate", generating);
     onStage?.("normalise", resolving - normalising - generating);
-    const places = placesIn(loaded.texts, previous);
+    const places = trackPlaces(loaded.texts, previous);
     const resolved = buildPermutations(normalised, {
         readValue,
-        diagnostics: found,
+        diagnostics,
         missing,
         places,
         previous,
@@ -195,7 +195,7 @@ function toDesignTokens(
         normalised,
         permutations,
         { validators: extensionValidators, parseOptions },
-        found,
+        diagnostics,
     );
 
     return linkedDesignTokens(
@@ -207,8 +207,8 @@ function toDesignTokens(
             permutations,
             parseOptions,
             diagnostics: [
-                ...inReadingPermutations(loaded.diagnostics, permutations, loaded.entry),
-                ...found.inPermutations(permutations),
+                ...addPermutations(loaded.diagnostics, permutations, loaded.entry),
+                ...diagnostics.inPermutations(permutations),
             ],
         },
         {

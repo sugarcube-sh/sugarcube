@@ -1,6 +1,5 @@
 import type {
     Change,
-    DesignTokens,
     Group,
     GroupProperty,
     JsonPath,
@@ -16,33 +15,11 @@ import type {
     WrittenGroup,
     WrittenToken,
 } from "../model.js";
-import { permutationsOf } from "../read/permutations-of.js";
+import { makePermutations } from "../read/make-permutations.js";
 import { tokenPath } from "../path.js";
 import { isJsonObject } from "../values/json.js";
 import { isReference, movedReference } from "../values/references.js";
 import { type Said, isEqualJson, saysTheSame } from "../values/same-value.js";
-import { findPermutation } from "./permutation.js";
-
-export function changesSinceIn(
-    after: DesignTokens,
-    before: DesignTokens,
-    options?: { moved?: Move[] },
-): Change[] {
-    const moved = options?.moved ?? [];
-    const changes = new Changes();
-    for (const now of after.permutations) {
-        const was = findPermutation(before, now.input);
-        if ("reason" in was) continue;
-        changes.add(topLevelChange(was.topLevel, now.topLevel), now);
-        for (const pair of matched(was.groups, now.groups, moved)) {
-            if (pair.before !== pair.after) changes.add(groupChange(pair, moved), now);
-        }
-        for (const pair of matched(was.tokens, now.tokens, moved)) {
-            if (pair.before !== pair.after) changes.add(tokenChange(pair, moved), now);
-        }
-    }
-    return changes.list(after.permutations);
-}
 
 type Pair<T> =
     | { before: T; after: T }
@@ -51,7 +28,7 @@ type Pair<T> =
 
 type Found = Change extends infer C ? (C extends Change ? Omit<C, "permutations"> : never) : never;
 
-function matched<T extends Token | Group>(
+export function matched<T extends Token | Group>(
     earlier: readonly T[],
     later: readonly T[],
     moved: Move[],
@@ -71,7 +48,7 @@ function matched<T extends Token | Group>(
     return [...pairs, ...[...left].map((before) => ({ before, after: undefined }))];
 }
 
-function groupChange({ before, after }: Pair<Group>, moved: Move[]): Found | undefined {
+export function groupChange({ before, after }: Pair<Group>, moved: Move[]): Found | undefined {
     const inherited = (after ?? before)?.inherited;
     const marks = inherited ? { inherited } : {};
     if (!before)
@@ -89,7 +66,7 @@ function groupChange({ before, after }: Pair<Group>, moved: Move[]): Found | und
     return { kind: "group-changed", path, properties, ...sides };
 }
 
-function tokenChange({ before, after }: Pair<Token>, moved: Move[]): Found | undefined {
+export function tokenChange({ before, after }: Pair<Token>, moved: Move[]): Found | undefined {
     const { generated, inherited } = after ?? before ?? {};
     const marks = { ...(generated && { generated }), ...(inherited && { inherited }) };
     if (!before) return { kind: "added", path: after.path, after: writtenToken(after), ...marks };
@@ -107,19 +84,19 @@ function tokenChange({ before, after }: Pair<Token>, moved: Move[]): Found | und
 
 function writtenToken({ asWritten, description, extensions }: Token): WrittenToken {
     if (!asWritten) return {};
-    return { value: asWritten.value, ...writtenOf({ ...asWritten, description, extensions }) };
+    return { value: asWritten.value, ...pickWritten({ ...asWritten, description, extensions }) };
 }
 
 function writtenGroup(group: Group): WrittenGroup {
     const extended = extendedPath(group);
-    return { ...writtenOf(group.asWritten ?? {}), ...(extended && { extends: extended }) };
+    return { ...pickWritten(group.asWritten ?? {}), ...(extended && { extends: extended }) };
 }
 
 function extendedPath(group: Group): string | undefined {
     return group.references[0]?.pointsToPath;
 }
 
-function writtenOf({ type, description, deprecated, extensions }: Written): Written {
+function pickWritten({ type, description, deprecated, extensions }: Written): Written {
     return {
         ...(type !== undefined && { type }),
         ...(description !== undefined && { description }),
@@ -147,14 +124,14 @@ function groupDifferences(before: Group, after: Group, moved: Move[]): GroupProp
     });
 }
 
-function topLevelChange(before: TopLevel, after: TopLevel): Found | undefined {
+export function topLevelChange(before: TopLevel, after: TopLevel): Found | undefined {
     const properties = differing(sameWritten(before, after));
     if (properties.length === 0) return undefined;
     return {
         kind: "top-level-changed",
         properties,
-        before: writtenOf(before),
-        after: writtenOf(after),
+        before: pickWritten(before),
+        after: pickWritten(after),
     };
 }
 
@@ -179,7 +156,7 @@ function saidDeprecation(token: Token): Written["deprecated"] {
     return token.asWritten ? token.asWritten.deprecated : token.deprecated;
 }
 
-class Changes {
+export class Changes {
     readonly #found: { change: Found; permutations: Permutation[] }[] = [];
     readonly #byKey = new Map<string, { change: Found; permutations: Permutation[] }[]>();
 
@@ -201,7 +178,7 @@ class Changes {
     list(all: Permutations): Change[] {
         return this.#found.map(
             ({ change, permutations }) =>
-                ({ ...change, permutations: permutationsOf(permutations, all) }) as Change,
+                ({ ...change, permutations: makePermutations(permutations, all) }) as Change,
         );
     }
 }
@@ -211,18 +188,18 @@ function saidAfterMoves(token: Token, moved: Move[]): Said {
     if (!token.asWritten) return token;
     let written: unknown = token.asWritten.value;
     for (const reference of token.references) {
-        written = replacedAt(written, reference.writtenInProperty ?? [], reference.moved(moved));
+        written = replaceAtPath(written, reference.writtenInProperty ?? [], reference.moved(moved));
     }
     return { asWritten: { value: written } };
 }
 
-function replacedAt(value: unknown, [step, ...rest]: JsonPath, by: JsonValue): unknown {
+function replaceAtPath(value: unknown, [step, ...rest]: JsonPath, by: JsonValue): unknown {
     if (step === undefined) return by;
     if (Array.isArray(value)) {
-        return value.map((each, index) => (index === step ? replacedAt(each, rest, by) : each));
+        return value.map((each, index) => (index === step ? replaceAtPath(each, rest, by) : each));
     }
     if (!isJsonObject(value)) return value;
-    return { ...value, [step]: replacedAt(value[step], rest, by) };
+    return { ...value, [step]: replaceAtPath(value[step], rest, by) };
 }
 
 function forwarded(value: unknown, moved: Move[]): unknown {

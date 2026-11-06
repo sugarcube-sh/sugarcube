@@ -19,7 +19,7 @@ import {
     readSlot,
     readToken,
 } from "../values/read-syntax.js";
-import { deepestNode, spanOf } from "./json.js";
+import { deepestNode, toSpan } from "./json.js";
 import type { MergedToken } from "./merge.js";
 import { type Occurrence, occurrence } from "./occurrence.js";
 
@@ -59,11 +59,11 @@ export function createValueReader(diagnostics: Problems, options: ParseOptions):
     const read: Read = (token, type, input) => {
         const notes: Notes = { references: [], readAgain: [] };
         const result = readToken(type, token.valueAsWritten, ["$value"], options, notes);
-        const found = [
+        const toReport = [
             ...result.ignored.map((each) => ignoredToDiagnostic(token, each)),
             ...(result.ok ? [] : result.errors.map((error) => toDiagnostic(token, error))),
         ];
-        const kept = diagnostics.foundAll(found, input);
+        const kept = diagnostics.foundAll(toReport, input);
         const references = notes.references.map((reference) => ({
             reference,
             occurrence: occurrence(token, reference),
@@ -107,7 +107,7 @@ function ignoredToDiagnostic(token: MergedToken, ignored: IgnoredProperty): Diag
 function toDiagnostic(token: MergedToken, error: ValueError): Diagnostic {
     const { json, value, path } = token;
     const node = deepestNode(value, error.jsonPath.slice(1));
-    const span = spanOf(json, node);
+    const span = toSpan(json, node);
     const extra: DiagnosticExtra = { span, path };
     return valueDiagnostic(error.detail, error.jsonPath, node, extra);
 }

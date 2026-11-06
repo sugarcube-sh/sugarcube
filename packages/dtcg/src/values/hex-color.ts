@@ -18,7 +18,7 @@ export function hexStringColor(hex: string): ColorValue {
     return color;
 }
 
-export function hexStringOf(color: ColorValue): string | undefined {
+export function getWrittenHex(color: ColorValue): string | undefined {
     const written: unknown = (color as { [READ_FROM_HEX_STRING]?: unknown })[READ_FROM_HEX_STRING];
     return typeof written === "string" ? written : undefined;
 }

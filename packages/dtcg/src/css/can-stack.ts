@@ -26,7 +26,7 @@ function classify(atRule: string | undefined): WidthQuery {
     return { kind: "other", width: 0, unit: "" };
 }
 
-export function stacksOn(previous: string | undefined, current: string | undefined): boolean {
+export function canStack(previous: string | undefined, current: string | undefined): boolean {
     const prev = classify(previous);
     const cur = classify(current);
 

@@ -1,22 +1,7 @@
-import type { DesignTokens, Diagnostic, Permutation, Span, Token } from "../model.js";
+import type { DesignTokens, Diagnostic, Permutation, Token } from "../model.js";
 import { getSpan } from "./editor.js";
 
-export function diagnosticsIn(tokens: DesignTokens, path: string): Diagnostic[] {
-    return tokens.diagnostics.filter(concerning(tokens, path, tokens.permutations));
-}
-
-export function permutationDiagnosticsIn(
-    tokens: DesignTokens,
-    permutation: Permutation,
-    path: string,
-): Diagnostic[] {
-    const about = concerning(tokens, path, [permutation]);
-    return tokens.diagnostics.filter(
-        (found) => found.permutations.includes(permutation) && about(found),
-    );
-}
-
-function concerning(
+export function concerning(
     tokens: DesignTokens,
     path: string,
     permutations: readonly Permutation[],
@@ -27,10 +12,10 @@ function concerning(
     });
     return (found) =>
         isAbout(found, path) ||
-        taking.some(({ permutation, token }) => inValueFrom(tokens, found, permutation, token));
+        taking.some(({ permutation, token }) => isInValueFrom(tokens, found, permutation, token));
 }
 
-function inValueFrom(
+function isInValueFrom(
     tokens: DesignTokens,
     { span, path }: Diagnostic,
     permutation: Permutation,
@@ -45,20 +30,6 @@ function inValueFrom(
         span.file === from.file &&
         from.offset <= span.offset &&
         span.offset + span.length <= from.offset + from.length
-    );
-}
-
-export function diagnosticsAtIn(
-    tokens: DesignTokens,
-    { file, offset, length }: Pick<Span, "file" | "offset" | "length">,
-): Diagnostic[] {
-    const end = offset + length;
-    return tokens.diagnostics.filter(
-        ({ span }) =>
-            span !== undefined &&
-            span.file === file &&
-            span.offset <= end &&
-            offset <= span.offset + span.length,
     );
 }
 

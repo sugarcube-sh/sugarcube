@@ -6,7 +6,7 @@ import { malformation } from "./malformed-pointer.js";
 import type { MissingIn } from "./missing.js";
 import { type Merged, type MergedGroup, removeGroup } from "./merge.js";
 import { tokenPath } from "../path.js";
-import { reachOf, refObjectMeaning } from "./ref-meaning.js";
+import { followReference, refObjectMeaning } from "./ref-meaning.js";
 
 type Extending = MergedGroup & { extends: NonNullable<MergedGroup["extends"]> };
 
@@ -66,7 +66,7 @@ export function applyExtends(
         if (direct !== undefined) extendInside(direct, chain);
         if (state.get(group.path) === "in-a-loop") return;
 
-        const reached = reachOf(group.extends, merged);
+        const reached = followReference(group.extends, merged);
         const malformed = reached.kind === "nothing" && malformation(written, merged);
         if (malformed) {
             report("malformed-pointer", malformed, group);

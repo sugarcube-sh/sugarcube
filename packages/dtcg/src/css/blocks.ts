@@ -1,6 +1,6 @@
 import type { DesignTokens, Input, Permutation, ResolverModifier, Token } from "../model.js";
 import { findByName } from "../read/input.js";
-import { stacksOn } from "./stacks-on.js";
+import { canStack } from "./can-stack.js";
 import { type CSSDeclaration, type CSSWriter, createCSSWriter } from "./writer.js";
 
 /** One block of custom properties, with its input and selector. */
@@ -88,7 +88,7 @@ export function getCSSBlocks(
     blocks: readonly CSSBlockInput[],
     { writer = createCSSWriter() }: { writer?: CSSWriter } = {},
 ): CSSBlock[] {
-    const found = blocks.map((each) => {
+    const blocksWithDeclarations = blocks.map((each) => {
         const permutation = tokens.getPermutation(each.input);
         return {
             ...each,
@@ -96,9 +96,9 @@ export function getCSSBlocks(
             declarations: writer.getDeclarations(permutation).declarations,
         };
     });
-    const provided = providedBy(found);
+    const pathsByModifier = allPathsByModifier(blocksWithDeclarations);
     const made: CSSBlock[] = [];
-    for (const { permutation, ...block } of found) {
+    for (const { permutation, ...block } of blocksWithDeclarations) {
         const inEffect = new Map<string, CSSDeclaration>();
         const elsewhere = new Map<string, Set<string>>();
         for (const earlier of made) {
@@ -112,11 +112,11 @@ export function getCSSBlocks(
                 else elsewhere.set(name, new Set([value]));
             }
         }
-        const own = ownership(block.input, permutation, provided);
+        const own = ownership(block.input, permutation, pathsByModifier);
         const all = block.declarations;
         const changed = all.filter(
             (line) =>
-                changedFrom(inEffect.get(line.name), line) ||
+                hasChanged(inEffect.get(line.name), line) ||
                 (own(line.token) && disputed(elsewhere.get(line.name), line.value)),
         );
         const inRule =
@@ -145,31 +145,31 @@ function everyScreen(earlier: readonly string[], later: readonly string[]): bool
     if (earlier.length === later.length && earlier.every((each, index) => each === later[index])) {
         return true;
     }
-    return earlier.length === 1 && later.length === 1 && stacksOn(earlier[0], later[0]);
+    return earlier.length === 1 && later.length === 1 && canStack(earlier[0], later[0]);
 }
 
-function providedBy(
+function allPathsByModifier(
     blocks: readonly { declarations: readonly CSSDeclaration[] }[],
 ): Map<ResolverModifier, Set<string>> {
-    const provided = new Map<ResolverModifier, Set<string>>();
+    const pathsByModifier = new Map<ResolverModifier, Set<string>>();
     for (const { declarations } of blocks) {
         for (const { token } of declarations) {
             for (const { source } of token.definitions) {
                 const { modifier } = source;
                 if (!modifier) continue;
-                const paths = provided.get(modifier);
+                const paths = pathsByModifier.get(modifier);
                 if (paths) paths.add(token.path);
-                else provided.set(modifier, new Set([token.path]));
+                else pathsByModifier.set(modifier, new Set([token.path]));
             }
         }
     }
-    return provided;
+    return pathsByModifier;
 }
 
 function ownership(
     input: Input,
     permutation: Permutation,
-    provided: Map<ResolverModifier, Set<string>>,
+    pathsByModifier: Map<ResolverModifier, Set<string>>,
 ): (token: Token) => boolean {
     const named = Object.keys(input);
     const decided = permutation.contexts
@@ -177,7 +177,7 @@ function ownership(
         .filter(({ name }) => findByName(named, name, (each) => each) !== undefined);
     if (decided.length === permutation.contexts.length) return () => true;
     const paths = decided.flatMap((modifier) => {
-        const found = provided.get(modifier);
+        const found = pathsByModifier.get(modifier);
         return found ? [found] : [];
     });
     return ({ path }) => paths.some((each) => each.has(path));
@@ -189,7 +189,7 @@ function disputed(values: Set<string> | undefined, value: string): boolean {
     return false;
 }
 
-function changedFrom(earlier: CSSDeclaration | undefined, line: CSSDeclaration): boolean {
+function hasChanged(earlier: CSSDeclaration | undefined, line: CSSDeclaration): boolean {
     return earlier?.value !== line.value || (earlier.supports !== undefined && !line.supports);
 }
 

@@ -118,7 +118,7 @@ export function object<P extends Readonly<Record<string, PropertySyntax>>>(
     tag?: string,
 ): Omit<ObjectSyntax, "properties"> & { readonly properties: P } {
     const inOrder = Object.entries(properties);
-    const hasParts = inOrder.some(([, property]) => syntaxOf(property, {}).hasParts);
+    const hasParts = inOrder.some(([, property]) => getSyntax(property, {}).hasParts);
     return tag === undefined
         ? { kind: "object", properties, inOrder, hasParts }
         : { kind: "object", properties, inOrder, hasParts, tag };
@@ -220,13 +220,13 @@ export function no(problem: Problem): Literal {
 
 export type Choice = Syntax | Refusal | { list: ArraySyntax; items: unknown[] };
 
-export function choiceOf({ choices, array, other }: OneOfSyntax, json: unknown): Choice {
+export function chooseByKind({ choices, array, other }: OneOfSyntax, json: unknown): Choice {
     if (Array.isArray(json)) return array ? { list: array, items: json } : other;
     const kind = jsonKind(json);
     return (kind && choices[kind]) || other;
 }
 
-export function syntaxOf(property: PropertySyntax, siblings: Siblings): Syntax {
+export function getSyntax(property: PropertySyntax, siblings: Siblings): Syntax {
     if (property.kind === "default" || property.kind === "optional") return property.syntax;
     return property.kind === "dependent" ? property.from(siblings) : property;
 }

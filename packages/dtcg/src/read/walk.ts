@@ -5,7 +5,6 @@ import type {
     DiagnosticDetailByKind,
     DiagnosticKind,
     Span,
-    JsonPointerReference,
     JsonValue,
     TokenType,
     WrittenReference,
@@ -13,8 +12,8 @@ import type {
 import { parseReference } from "../values/references.js";
 import { isTokenType, tokenTypes } from "../values/token-types.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
-import { type JsonFile, type Member, members, plainObject, plainValue, spanOf } from "./json.js";
-import { stepsOf } from "./ref-meaning.js";
+import { type JsonFile, type Member, members, plainObject, plainValue, toSpan } from "./json.js";
+import { toPointerSteps } from "./ref-meaning.js";
 import { similarName } from "./similar.js";
 import type { LoadedSource } from "./sources.js";
 
@@ -114,7 +113,7 @@ export function walkSource(
         detail: DiagnosticDetailByKind[K],
         node: Node,
         extra: Omit<DiagnosticExtra, "span"> = {},
-    ) => diagnostics.push(diagnostic(kind, detail, { span: spanOf(json, node), ...extra }));
+    ) => diagnostics.push(diagnostic(kind, detail, { span: toSpan(json, node), ...extra }));
 
     const readType = (path: string | undefined, node: Node, name: string) => {
         if (isTokenType(name)) return name;
@@ -147,7 +146,7 @@ export function walkSource(
         return properties;
     };
 
-    const readPropertiesAt = (path: string | undefined, entries: readonly Member[]) => {
+    const readPropertiesAndExtensions = (path: string | undefined, entries: readonly Member[]) => {
         const properties = readProperties(path, entries);
         const extensions = entries.find(({ key }) => key === "$extensions")?.value;
         return {
@@ -177,8 +176,8 @@ export function walkSource(
                 ...read,
                 json,
                 node: value,
-                span: spanOf(json, value),
-                groupSpan: spanOf(json, node),
+                span: toSpan(json, value),
+                groupSpan: toSpan(json, node),
             };
         }
         return found;
@@ -195,8 +194,8 @@ export function walkSource(
                 value,
                 valueAsWritten,
                 reference: parseReference(valueAsWritten),
-                span: spanOf(json, node),
-                ...readPropertiesAt(path, entries),
+                span: toSpan(json, node),
+                ...readPropertiesAndExtensions(path, entries),
             },
         });
     };
@@ -207,8 +206,8 @@ export function walkSource(
         written.push({
             group: {
                 path,
-                span: spanOf(json, node),
-                ...readPropertiesAt(path, entries),
+                span: toSpan(json, node),
+                ...readPropertiesAndExtensions(path, entries),
                 ...(extending && { extends: extending }),
             },
         });
@@ -290,7 +289,10 @@ export function walkSource(
         members(tree).filter(({ key }) => !overridden.has(key)),
         true,
     );
-    const root = { span: spanOf(json, tree), ...readPropertiesAt(undefined, rootEntries) };
+    const root = {
+        span: toSpan(json, tree),
+        ...readPropertiesAndExtensions(undefined, rootEntries),
+    };
     visitMembers([], rootEntries);
     return { root, members: written };
 }
@@ -304,12 +306,13 @@ function readGroupReference(
     keyword: "$extends" | "$ref",
     raw: unknown,
 ): Pick<GroupReference, "reference" | "steps"> | undefined {
-    const reference = keyword === "$extends" ? parseReference(raw) : pointerOf(raw);
-    return reference && { reference, steps: stepsOf(reference) };
-}
-
-function pointerOf(raw: unknown): JsonPointerReference | undefined {
-    return typeof raw === "string" ? { syntax: "json-pointer", pointer: raw } : undefined;
+    const reference =
+        keyword === "$extends"
+            ? parseReference(raw)
+            : typeof raw === "string"
+              ? { syntax: "json-pointer" as const, pointer: raw }
+              : undefined;
+    return reference && { reference, steps: toPointerSteps(reference) };
 }
 
 function asReference(written: unknown): string | undefined {
