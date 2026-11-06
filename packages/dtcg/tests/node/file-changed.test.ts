@@ -40,7 +40,7 @@ describe("onFileChanged", () => {
         expect(paths).toStrictEqual([file]);
     });
 
-    it("reports a save once more when its last write came after the watcher looked", async () => {
+    it("reports a save once more when its last write came after the listener was called", async () => {
         const { watcher, paths } = heard();
 
         await writeFile(file, "");
@@ -64,7 +64,19 @@ describe("onFileChanged", () => {
         expect(paths).toStrictEqual([file, file]);
     });
 
-    it("reports a save once when nothing was written after the watcher looked", async () => {
+    it("reports a save once when it finished before the listener was called", async () => {
+        const { watcher, paths } = heard();
+
+        await writeFile(file, "");
+        const looked = await stat(file);
+        writeFileSync(file, '{ "a": 2 }');
+        watcher.emit("change", file, looked);
+        await pastTheWindow();
+
+        expect(paths).toStrictEqual([file]);
+    });
+
+    it("reports a save once when nothing was written after it", async () => {
         const { watcher, paths } = heard();
 
         watcher.emit("change", file, await stat(file));
@@ -73,16 +85,7 @@ describe("onFileChanged", () => {
         expect(paths).toStrictEqual([file]);
     });
 
-    it("looks at the file itself when the watcher gives no stats", async () => {
-        const { watcher, paths } = heard();
-
-        watcher.emit("change", file);
-        await pastTheWindow();
-
-        expect(paths).toStrictEqual([file]);
-    });
-
-    it("looks before the listener reads, when the watcher gives no stats", async () => {
+    it("looks at the file before the listener reads it", async () => {
         const watcher = new EventEmitter();
         const read: string[] = [];
         onFileChanged(watcher, (path) => {
