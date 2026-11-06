@@ -19,7 +19,6 @@ import {
     extensionDiagnostic,
 } from "./extension-check.js";
 import type { JsonFile } from "./json.js";
-import { everyGroup } from "./merge.js";
 import { findSettings } from "./settings.js";
 import type { NormalisedPermutation } from "./normalise.js";
 
@@ -97,20 +96,20 @@ export function validateExtensions(
                 messages: validator.messages,
                 json,
                 node,
-                ...(on.path !== undefined && { path: on.path }),
+                path: on.path,
             };
             for (const each of problems)
                 diagnostics.found(extensionDiagnostic(each, extension), input);
         };
 
-        for (const [path, group] of everyGroup(merged)) {
+        for (const [path, group] of merged.groups) {
             const settings = findSettings(merged, group);
             for (const validator of validators) {
                 if (!validator.appliesTo.includes("group")) continue;
                 const at = settings.extensionsAt?.[validator.key];
                 const found = findExtension(settings.extensions, at, [validator.key]);
                 if (!at || !found) continue;
-                const on: Checked = { ...(path !== undefined && { path }), type: "group" };
+                const on: Checked = { path, type: "group" };
                 check(validator, on, found.value, at.json, found.node);
             }
         }

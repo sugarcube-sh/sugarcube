@@ -1,0 +1,12 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 6.4.6: an unresolvable $extends is an error, at the top of a file as in any group; the group that writes it is the top level, path \"\"",
+  "diagnostics": [
+    {
+      "kind": "missing-reference",
+      "detail": { "ref": "nowhere", "from": [""] },
+      "span": { "file": "tokens.json", "text": "\"{nowhere}\"" },
+      "path": ""
+    }
+  ]
+}

@@ -1,6 +1,7 @@
+import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { rename, setValue } from "@sugarcube-sh/dtcg-edit";
 import { describe, expect, it } from "vitest";
-import { changeLines } from "../../src/controllers/views";
+import { changeLines, changeText } from "../../src/controllers/views";
 import { studioOn } from "./demo-message";
 
 describe("changeLines", () => {
@@ -41,6 +42,33 @@ describe("changeLines", () => {
                 path: "color.text.body",
                 inPermutations: "mode: dark",
             },
+        ]);
+    });
+});
+
+describe("changeText", () => {
+    it("words a change to the top level as the top level, and a group by its path", () => {
+        expect(changeText({ kind: "group-changed", path: "", topLevel: true })).toBe(
+            "Top level changed",
+        );
+        expect(changeText({ kind: "group-changed", path: "color" })).toBe("`color` changed");
+    });
+});
+
+describe("changeLines, at the top level", () => {
+    it('marks a change to the group at "" as the top level\'s', () => {
+        const version = (description: string) =>
+            readFromMemory({
+                files: {
+                    "tokens.json": JSON.stringify({
+                        $description: description,
+                        a: { $type: "number", $value: 1 },
+                    }),
+                },
+            });
+
+        expect(changeLines(version("Two").getChangesSince(version("One")))).toEqual([
+            { kind: "group-changed", path: "", topLevel: true },
         ]);
     });
 });

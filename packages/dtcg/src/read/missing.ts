@@ -113,7 +113,7 @@ function similarReference(
     if (named === undefined || paths.has(named)) return undefined;
     const close = similarName(
         named,
-        [...paths.keys()].filter((path) => !from.includes(path)),
+        [...paths.keys()].filter((path) => path !== "" && !from.includes(path)),
     );
     if (close === undefined) return undefined;
     return toReferenceTarget(movedReference(reference, [{ from: named, to: close }]));

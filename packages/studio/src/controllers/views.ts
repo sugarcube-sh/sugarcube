@@ -56,7 +56,8 @@ export interface ProblemRow {
 
 export interface ChangeLine {
     readonly kind: Change["kind"];
-    readonly path?: string;
+    readonly path: string;
+    readonly topLevel?: true;
     readonly from?: string;
     readonly inPermutations?: string;
 }
@@ -208,7 +209,8 @@ export function changeLines(changes: readonly Change[]): ChangeLine[] {
         return {
             kind: change.kind,
             ...("from" in change ? { from: change.from } : {}),
-            ...("path" in change ? { path: change.path } : {}),
+            path: change.path,
+            ...(change.path === "" && { topLevel: true as const }),
             ...(label ? { inPermutations: label } : {}),
         };
     });
@@ -219,7 +221,7 @@ export function changeText(line: ChangeLine): string {
     if (line.kind === "renamed" || line.kind === "group-renamed") {
         return `\`${line.from}\` renamed to \`${line.path}\`${theme}`;
     }
-    const what = line.path ? `\`${line.path}\`` : "Top level";
+    const what = line.topLevel ? "Top level" : `\`${line.path}\``;
     return `${what} ${doneWord[line.kind]}${theme}`;
 }
 
@@ -230,7 +232,6 @@ export const doneWord: Record<Exclude<ChangeLine["kind"], "renamed" | "group-ren
     "group-added": "added",
     "group-removed": "removed",
     "group-changed": "changed",
-    "top-level-changed": "changed",
 };
 
 function partialLabel(permutations: Permutations | undefined): string | undefined {

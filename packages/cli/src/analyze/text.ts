@@ -63,8 +63,8 @@ function truncate(text: string, max: number): string {
 
 function groupAndName(path: string): [group: string, name: string] {
     const shown = tokenPath.removeRoot(path);
-    const group = tokenPath.getParent(shown);
-    return group === undefined ? ["(root)", shown] : [group, shown.slice(group.length + 1)];
+    const group = tokenPath.getParent(shown) ?? "";
+    return group === "" ? ["(root)", shown] : [group, tokenPath.getName(shown)];
 }
 
 export function unusedLines({ unused }: Unused, tokens: Iterable<string>): string[] {

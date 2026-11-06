@@ -36,7 +36,7 @@
         { "path": "nowhere" },
         { "path": "elsewhere" }
       ],
-      "groups": [{ "path": "button" }]
+      "groups": [{ "path": "" }, { "path": "button" }]
     }
   ],
   "diagnostics": [

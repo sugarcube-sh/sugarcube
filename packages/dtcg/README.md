@@ -749,8 +749,8 @@ says which permutations it's true in.
 | | What it gives |
 | --- | --- |
 | `getToken(path)`, `getGroup(path)`, `getTokenOrGroup(path)` | One token, one group, or whichever is at the path |
-| `tokens`, `groups`, `children` | Every token, every group, and the tokens and groups at the top level |
-| `topLevel` | What the top of the files writes: its `$type`, `$description`, `$deprecated` and `$extensions` |
+| `tokens`, `groups`, `children` | Every token, every group (the top level first), and the tokens and groups at the top level |
+| `topLevel` | The top of the files, which is a group: the group at `""` |
 | `getDependencies(path)` | Each token or group a path's value refers to, once: what it depends on |
 | `getDependents(path)` | Each token or group that refers to a path, once: what depends on it |
 | `getReferencesTo(path)` | Every reference written to a path, each with the token that writes it |
@@ -830,18 +830,21 @@ order. A token that's the same in two permutations is the same object in both, s
 ### Working with token paths
 
 A token's path is its group names and its own name, joined with dots: `color.brand.500`. The spec
-has rules that are easy to get wrong by hand: a group can be named `""`, a `$root` token stands for
-its group, and `color.brandy` isn't inside `color.brand`. `tokenPath` follows them.
+has rules that are easy to get wrong by hand: the top of a file is a group, whose path is `""`, a
+`$root` token stands for its group, and `color.brandy` isn't inside `color.brand`. `tokenPath`
+follows them.
 
 ```ts
 import { tokenPath } from "@sugarcube-sh/dtcg";
 
-tokenPath.getParent("color.brand.500")               // "color.brand"; undefined at the top level
-tokenPath.join("color.brand", "500")                  // "color.brand.500"
+tokenPath.getParent("color.brand.500")               // "color.brand"; "" for a name at the top level
+tokenPath.getName("color.brand.500")                  // "500"
+tokenPath.join("color.brand", "500")                  // "color.brand.500"; join("", "color") is "color"
 tokenPath.relative("color", "color.brand.ink")        // "brand.ink"; undefined when it isn't inside
 tokenPath.contains("color.brand", "color.brand.500")  // true, and for "color.brand" itself
 tokenPath.removeRoot("color.accent.$root")            // "color.accent", the name a $root token stands for
 tokenPath.findInvalidCharacter("brand.500")           // ".", which no name may hold; undefined when no character is wrong
+tokenPath.findNameProblem("a.b")                      // { character: "." }; {} for an empty name; undefined when it's valid
 tokenPath.isValidName("")                             // false: a name can't be empty, or hold one of those characters
 tokenPath.applyMoves("color.brand.500", [{ from: "color.brand", to: "color.house" }])
                                                       // "color.house.500", where it is after a rename

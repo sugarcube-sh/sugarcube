@@ -12,6 +12,7 @@
         }
       ],
       "groups": [
+        { "path": "" },
         {
           "path": "space"
         },
@@ -32,6 +33,7 @@
         }
       ],
       "groups": [
+        { "path": "" },
         {
           "path": "space"
         },

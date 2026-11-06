@@ -14,7 +14,7 @@
           "generated": { "from": "space", "extension": ["com.example", "steps"] }
         }
       ],
-      "groups": [{ "path": "space" }]
+      "groups": [{ "path": "" }, { "path": "space" }]
     }
   ],
   "diagnostics": [

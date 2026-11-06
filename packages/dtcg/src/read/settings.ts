@@ -1,23 +1,23 @@
-import type { Merged, MergedGroup, MergedTopLevel } from "./merge.js";
+import type { Merged, MergedGroup } from "./merge.js";
 import type { Properties } from "./walk.js";
 
 export type Settings = Properties &
-    Pick<MergedTopLevel, "extensionsAt"> & {
+    Pick<MergedGroup, "extensionsAt"> & {
         /** The group these settings' `deprecated` comes from. */
         deprecatedAt?: string;
     };
 
-export function findSettings(merged: Merged, group: MergedTopLevel | MergedGroup): Settings {
+export function findSettings(merged: Merged, group: MergedGroup): Settings {
     const known = merged.settings;
     const kept = known.get(group);
     if (kept) return kept;
-    const visiting = new Set<MergedTopLevel>();
+    const visiting = new Set<MergedGroup>();
 
-    const of = (each: MergedTopLevel | MergedGroup): Settings => {
+    const of = (each: MergedGroup): Settings => {
         const found = known.get(each);
         if (found) return found;
         const own = written(each);
-        const takes = "takesFrom" in each ? each.takesFrom : undefined;
+        const takes = each.takesFrom;
         const source = takes === undefined ? undefined : merged.groups.get(takes);
         if (!source || visiting.has(source)) return own;
         visiting.add(each);
@@ -39,13 +39,13 @@ export function findSettings(merged: Merged, group: MergedTopLevel | MergedGroup
     return of(group);
 }
 
-function written(group: MergedTopLevel | MergedGroup): Settings {
+function written(group: MergedGroup): Settings {
     const { type, description, deprecated, extensions, extensionsAt } = group;
     return {
         ...(type !== undefined && { type }),
         ...(description !== undefined && { description }),
         ...(deprecated !== undefined && { deprecated }),
-        ...(deprecated !== undefined && "path" in group && { deprecatedAt: group.path }),
+        ...(deprecated !== undefined && { deprecatedAt: group.path }),
         ...(extensions && { extensions }),
         ...(extensionsAt && { extensionsAt }),
     };

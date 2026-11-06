@@ -461,7 +461,7 @@ describe("getChangesSince", () => {
         ]);
     });
 
-    it("gives the top of a file changing what it writes", () => {
+    it('gives the top of a file changing what it writes, as the group at ""', () => {
         const version = (description: string) =>
             readFromMemory({
                 files: {
@@ -472,8 +472,29 @@ describe("getChangesSince", () => {
                 },
             });
         expect(version("Two").getChangesSince(version("One"))).toMatchObject([
-            { kind: "top-level-changed", properties: ["description"] },
+            { kind: "group-changed", path: "", properties: ["description"] },
         ]);
+    });
+
+    it("gives the top of a file changing its type and what it extends", () => {
+        const version = (type: string, extended: string) =>
+            readFromMemory({
+                files: {
+                    "tokens.json": JSON.stringify({
+                        $type: type,
+                        $extends: `{${extended}}`,
+                        one: { x: { $type: "number", $value: 1 } },
+                        two: { y: { $type: "number", $value: 2 } },
+                    }),
+                },
+            });
+        expect(version("number", "two").getChangesSince(version("dimension", "one"))).toMatchObject(
+            [
+                { kind: "group-changed", path: "", properties: ["type", "extends"] },
+                { kind: "added", path: "y" },
+                { kind: "removed", path: "x" },
+            ],
+        );
     });
 
     it("gives a group's own type changing, and a token now writing the type itself", () => {

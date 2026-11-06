@@ -784,8 +784,8 @@ describe("a group referring to the whole document", () => {
         expect(found).toStrictEqual([
             {
                 kind: "circular-reference",
-                detail: { chain: ["g"], toTopLevel: true },
-                message: "these references lead back to where they started: g → the top level",
+                detail: { chain: ["g", ""] },
+                message: "these references lead back to where they started: `g`, the top level",
             },
         ]);
     });
@@ -967,9 +967,9 @@ describe("the group a generator is given", () => {
         expect(group).toStrictEqual({ path: "space.fluid" });
     });
 
-    it("has the type the top level of the file declares, and no path", () => {
+    it('has the type the top level of the file declares, and the top level\'s path, ""', () => {
         const { given: group } = groupOf({ $type: "number", ...steps });
-        expect(group).toStrictEqual({ type: "number" });
+        expect(group).toStrictEqual({ path: "", type: "number" });
     });
 });
 
@@ -1062,24 +1062,22 @@ describe("the top level of a file, to a generator or an extension check", () => 
         { generators: [steps], extensionValidators: [notes] },
     );
 
-    it('is handed with no path, so it can\'t be taken for a group named ""', () => {
-        expect(seen.generator).toStrictEqual({ type: "number" });
-        expect(seen.validator).toContainEqual({ type: "group" });
+    it('is handed the top level\'s path, ""', () => {
+        expect(seen.generator).toStrictEqual({ path: "", type: "number" });
+        expect(seen.validator).toContainEqual({ path: "", type: "group" });
     });
 
-    it("names no path in a problem with its $type", () => {
+    it('names the top level, "", in a problem with its $type', () => {
         const typo = readFromMemory({
             files: { "tokens.json": JSON.stringify({ $type: "colour", a: { $value: 1 } }) },
         });
         const problem = typo.diagnostics.find(({ kind }) => kind === "unknown-type");
-        expect(problem).toBeDefined();
-        expect(problem && "path" in problem).toBe(false);
+        expect(problem?.path).toBe("");
     });
 
-    it("names no path in a problem about it", () => {
+    it('names the top level, "", in a problem about it', () => {
         const problem = tokens.diagnostics.find(({ kind }) => kind === "extension-invalid");
-        expect(problem).toBeDefined();
-        expect(problem && "path" in problem).toBe(false);
+        expect(problem?.path).toBe("");
     });
 });
 

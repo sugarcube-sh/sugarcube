@@ -38,6 +38,7 @@
         }
       ],
       "groups": [
+        { "path": "" },
         {
           "path": "size"
         },

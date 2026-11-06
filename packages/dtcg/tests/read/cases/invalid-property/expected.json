@@ -10,6 +10,7 @@
         }
       ],
       "groups": [
+        { "path": "" },
         {
           "path": "size"
         }

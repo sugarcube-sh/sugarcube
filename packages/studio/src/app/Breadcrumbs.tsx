@@ -14,7 +14,7 @@ import { hrefFor } from "./token-path";
 
 export function Breadcrumbs() {
     const path = useSelectedPath();
-    if (!path) return null;
+    if (path === undefined) return null;
 
     const crumbs = trail(path);
     const current = crumbs.length - 1;

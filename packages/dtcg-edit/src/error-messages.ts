@@ -30,8 +30,9 @@ const refusalReasons: {
     [K in Refusal["kind"]]: (facts: Extract<RefusalFacts, { kind: K }>) => string;
 } = {
     "not-found": ({ path }) => `there is no token or group \`${path}\``,
+    "top-level": () => "the top level of a file has no name, and holds everything in the file",
     "generated": ({ path, from, extension }) => {
-        const where = from === undefined ? "at the top of its file" : `on \`${from}\``;
+        const where = from === "" ? "at the top of its file" : `on \`${from}\``;
         return `\`${path}\` is generated from \`${extension.join(".")}\` ${where}; change the extension instead`;
     },
     "not-a-group": ({ path }) => `\`${path}\` is a token, so nothing can be made inside it`,
@@ -40,7 +41,7 @@ const refusalReasons: {
         `\`${path}\` already exists for every context; to give ${named(input)} its own value, change it for that context`,
     "invalid-name": ({ name, character }) =>
         character === undefined
-            ? "a name can't be empty: no path reaches it"
+            ? "a name can't be empty"
             : `\`${name}\` can't be a name: ${character === "$" ? "a leading `$` marks a property" : `\`${character}\` is used by references`}`,
     "inherited": ({ path, from }) =>
         `\`${path}\` comes from \`${from}\` through \`$extends\`; change it there`,

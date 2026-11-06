@@ -737,8 +737,8 @@ export interface TokenBase<T extends TokenType> {
     /**
      * The group whose `$deprecated` applies to this token.
      *
-     * It's the nearest group above with one, written itself or through `$extends`. It's absent when
-     * the token writes its own, when the top of its file writes one, or when there's none.
+     * It's the nearest group above with one, written itself or through `$extends`; `""` when it's the
+     * top of the file. It's absent when the token writes its own, or when there's none.
      */
     readonly deprecatedByGroup?: string;
     /**
@@ -777,11 +777,11 @@ export interface TokenBase<T extends TokenType> {
     /**
      * Set when a {@link Generator} makes the token.
      *
-     * `from` is the group with the extension, absent at the top of a file. `extension` is where the
+     * `from` is the group with the extension, `""` at the top of a file. `extension` is where the
      * generator's settings are in its `$extensions`, such as `["com.example", "steps"]`.
      */
     readonly generated?: {
-        readonly from?: string;
+        readonly from: string;
         readonly extension: readonly [string, ...string[]];
     };
     /**
@@ -890,7 +890,7 @@ export interface Group {
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#group-structure | Format 6.1, Group Structure}
      */
     readonly kind: "group";
-    /** Where the group is, such as `"color.blue"`. */
+    /** Where the group is, such as `"color.blue"`; `""` for the top level of the files. */
     readonly path: string;
     /**
      * The type its tokens take, such as `"color"`.
@@ -913,8 +913,8 @@ export interface Group {
     /**
      * The group whose `$deprecated` applies to this one.
      *
-     * It's the group it extends, or else the nearest group above. It's absent when the group writes
-     * its own, when the top of its file writes one, or when there's none.
+     * It's the group it extends, or else the nearest group above; `""` when it's the top of the
+     * file. It's absent when the group writes its own, or when there's none.
      */
     readonly deprecatedByGroup?: string;
     /**
@@ -1011,21 +1011,6 @@ export interface Group {
      * // => ["color.blue.500", "color.blue.300", "color.primary"]
      */
     readonly tokens: readonly Token[];
-}
-
-/**
- * What the top of a permutation's files writes.
- *
- * That's `$type`, `$description`, `$deprecated` and `$extensions`. The tokens and groups there are
- * the permutation's {@link Permutation.children | children}.
- */
-export interface TopLevel {
-    readonly type?: TokenType;
-    readonly description?: string;
-    readonly deprecated?: boolean | string;
-    readonly extensions?: Readonly<Record<string, JsonValue>>;
-    /** The top of each file that writes something there. */
-    readonly definitions: readonly Definition[];
 }
 
 /**
@@ -1317,10 +1302,23 @@ export interface Permutation {
      * // => true
      */
     readonly isDefault: boolean;
-    /** What the top of the files writes, as a {@link TopLevel}. */
-    readonly topLevel: TopLevel;
     /**
-     * The tokens and groups at the top of the files, in the order read.
+     * The top level of the files: the group at `""`, which holds everything else.
+     *
+     * By the spec's own definition, the top of a file is a group, so it has every group property,
+     * `$extends` included.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#group-structure | Format 6.1, Group Structure}
+     *
+     * @example
+     * // The same group by path
+     * dark.topLevel === dark.getGroup("")
+     * // => true
+     */
+    readonly topLevel: Group;
+    /**
+     * The tokens and groups at the top of the files, in the order read: the same list as
+     * `topLevel.children`.
      *
      * @example
      * // The top of the files
@@ -1344,7 +1342,8 @@ export interface Permutation {
      */
     readonly tokens: readonly Token[];
     /**
-     * Every group, in the same order as {@link Permutation.tokens | tokens}.
+     * Every group, in the same order as {@link Permutation.tokens | tokens}, starting with the top
+     * level, the group at `""`.
      *
      * To find one by path, use {@link Permutation.getGroup | getGroup}.
      */
@@ -1365,7 +1364,7 @@ export interface Permutation {
     /**
      * Gets the group at a path.
      *
-     * @param path - The group's path, such as `"color.blue"`.
+     * @param path - The group's path, such as `"color.blue"`, or `""` for the top level.
      *
      * @example
      * // The tokens in color.blue
@@ -1572,12 +1571,11 @@ export interface DiagnosticDetailByKind {
         /** The token's path, such as `"space.1"`. */
         readonly path: string;
         /**
-         * The group the token is made in, such as `"space"`.
+         * The group the token is made in, such as `"space"`, or `""` at the top of a file.
          *
-         * It's absent at the top of a file. It can be a group that extends the one with the
-         * extension.
+         * It can be a group that extends the one with the extension.
          */
-        readonly from?: string;
+        readonly from: string;
         /** The generator's extension, such as `["com.example", "steps"]`. */
         readonly extension: readonly [string, ...string[]];
         /** What the file writes with that name. */
@@ -1663,10 +1661,11 @@ export interface DiagnosticDetailByKind {
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#circular-references | Format 7.2.3, Circular References}
      */
     "circular-reference": {
-        /** The paths around the loop, such as `["a", "b", "a"]`. */
+        /**
+         * The paths around the loop, such as `["a", "b", "a"]`. A reference to the whole file
+         * ends it at the top level, `""`.
+         */
         readonly chain: readonly string[];
-        /** Set when the loop ends at a reference to the whole file. */
-        readonly toTopLevel?: true;
     };
     /** A reference names a token of the wrong type, such as a number where a color is needed. */
     "type-mismatch": {
@@ -1972,7 +1971,7 @@ export interface DesignTokens {
      *
      * It's {@link Permutation.getGroup} for that permutation.
      *
-     * @param path - The group's path, such as `"color.blue"`.
+     * @param path - The group's path, such as `"color.blue"`, or `""` for the top level.
      * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
     getGroup(path: string): Group | undefined;
@@ -2031,13 +2030,13 @@ export interface DesignTokens {
      */
     readonly children: readonly (Token | Group)[];
     /**
-     * What the top of the files writes, when the read has one permutation.
+     * The top level of the files, the group at `""`, when the read has one permutation.
      *
      * It's {@link Permutation.topLevel} for that permutation.
      *
      * @throws {@link SeveralPermutationsError} If the read has several permutations.
      */
-    readonly topLevel: TopLevel;
+    readonly topLevel: Group;
     /**
      * Gets every token's path, in any permutation, each once.
      *
@@ -2047,7 +2046,9 @@ export interface DesignTokens {
      * // => ["color.blue.500", "color.blue.300", "color.primary", "button.background"]
      */
     getTokenPaths(): readonly string[];
-    /** Gets every group's path, in any permutation, each once. */
+    /**
+     * Gets every group's path, in any permutation, each once, starting with the top level's `""`.
+     */
     getGroupPaths(): readonly string[];
     /**
      * Checks whether a token or group is at a path, in any permutation.
@@ -2358,8 +2359,8 @@ export interface ExtensionValidator {
      */
     validate?(
         on: {
-            /** Absent for the top level of a file. */
-            path?: string;
+            /** Where it is, such as `"color.brand"`; `""` for the top level of a file. */
+            path: string;
             /** The token's type, or `"group"`. */
             type: TokenType | "group";
         },
@@ -2458,8 +2459,8 @@ export interface Generator {
      */
     generate(
         group: {
-            /** Absent for the top level of a file. */
-            path?: string;
+            /** Where it is, such as `"color.brand"`; `""` for the top level of a file. */
+            path: string;
             /**
              * The type its tokens take, as {@link Group.type} gives it. It's absent if there's
              * none.
@@ -2560,9 +2561,6 @@ export type TokenProperty = "value" | "type" | "description" | "deprecated" | "e
 /** A property a file can set on a group, without its `$`, such as `"extends"`. */
 export type GroupProperty = "type" | "description" | "deprecated" | "extensions" | "extends";
 
-/** A property a file can set at its top level, without its `$`, such as `"type"`. */
-export type TopLevelProperty = "type" | "description" | "deprecated" | "extensions";
-
 /**
  * What a file writes for a token.
  *
@@ -2649,16 +2647,7 @@ export type Change =
           readonly properties: readonly GroupProperty[];
           readonly before: WrittenGroup;
           readonly after: WrittenGroup;
-      } & GroupChange)
-    | {
-          readonly kind: "top-level-changed";
-          /** The top level has no path. */
-          readonly path?: undefined;
-          readonly permutations: Permutations;
-          readonly properties: readonly TopLevelProperty[];
-          readonly before: Written;
-          readonly after: Written;
-      };
+      } & GroupChange);
 
 /** What every change to a token has, as well as `before` and `after`. */
 export interface TokenChange {

@@ -19,6 +19,12 @@ function changedLines(before: DesignTokens, after: DesignTokens, file: string): 
 }
 
 describe("rename, on the demo", () => {
+    it('is refused for the top level, "", which has no name', () => {
+        expect(rename(demo, "", "everything")).toEqual({
+            refused: { kind: "top-level", reason: expect.any(String) },
+        });
+    });
+
     const result = rename(demo, "color.brand", "primary");
     const after = committed(demo, result);
 
@@ -192,6 +198,19 @@ describe("rename, references of every kind", () => {
         expect(after.getPermutation().getGroup("button.primary")?.extends?.path).toBe(
             "button.core",
         );
+        expect(after.diagnostics).toEqual([]);
+    });
+
+    it("rewrites the top level's $extends", () => {
+        const tokens = one({
+            $extends: "{base}",
+            base: { $type: "number", pad: { $value: 1 } },
+        });
+        const after = committed(tokens, rename(tokens, "base", "core"));
+
+        expect(at(after, "tokens.json", ["$extends"])).toBe("{core}");
+        expect(after.getPermutation().topLevel.extends?.path).toBe("core");
+        expect(after.getPermutation().getToken("pad")?.inherited).toStrictEqual({ from: "core" });
         expect(after.diagnostics).toEqual([]);
     });
 

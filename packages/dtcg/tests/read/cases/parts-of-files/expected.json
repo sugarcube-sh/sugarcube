@@ -49,6 +49,7 @@
         }
       ],
       "groups": [
+        { "path": "" },
         {
           "path": "size",
           "definitions": [

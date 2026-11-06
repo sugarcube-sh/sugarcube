@@ -50,14 +50,9 @@ export function applyExtends(
     };
 
     const extend = (group: Extending, chain: Extending[]): void => {
-        const { reference, steps } = group.extends;
+        const { reference } = group.extends;
         const written = toReferenceTarget(reference);
         const direct = namedPath(reference);
-        if (steps && direct === undefined) {
-            report("circular-reference", { chain: [group.path], toTopLevel: true }, group);
-            state.set(group.path, "in-a-loop");
-            return;
-        }
         if (direct !== undefined && tokenPath.contains(direct, group.path)) {
             report("circular-reference", { chain: [group.path, direct] }, group);
             state.set(group.path, "in-a-loop");
@@ -99,7 +94,7 @@ function inherit(merged: Merged, group: MergedGroup, from: string): void {
     group.takesFrom ??= from;
     const moved = (path: string) => {
         const rest = tokenPath.relative(from, path);
-        return rest === undefined ? undefined : `${group.path}.${rest}`;
+        return rest === undefined ? undefined : tokenPath.join(group.path, rest);
     };
     const underLocalToken = (path: string) => {
         for (

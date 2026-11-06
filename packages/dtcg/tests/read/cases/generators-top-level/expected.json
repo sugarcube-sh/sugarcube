@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 6.1, 6.3.2: a file's top level is an object without $value, so a group, and may hold $extensions; an extension there adds tokens at the top level, after the file's own tokens, generated from the empty path",
+  "spec": "Format 6.1, 6.3.2: a file's top level is an object without $value, so a group, and may hold $extensions; an extension there adds tokens at the top level, after the file's own tokens, generated from the top level, the group at \"\"",
   "options": {
     "generators": ["steps"]
   },
@@ -22,6 +22,7 @@
             "unit": "rem"
           },
           "generated": {
+            "from": "",
             "extension": ["com.example", "steps"]
           },
           "asWritten": null,
@@ -38,6 +39,7 @@
         {
           "path": "1",
           "generated": {
+            "from": "",
             "extension": ["com.example", "steps"]
           }
         }

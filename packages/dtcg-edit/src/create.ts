@@ -38,11 +38,9 @@ function createIn(
     place?: string,
 ): OpResult {
     if (options.after !== undefined) throw new Error("not implemented yet");
-    const parent = tokenPath.getParent(path);
-    const name = parent === undefined ? path : path.slice(parent.length + 1);
-    if (!tokenPath.isValidName(name)) {
-        const character = tokenPath.findInvalidCharacter(name);
-        return refused({ kind: "invalid-name", name, ...(character && { character }) });
+    for (const name of path.split(".")) {
+        const problem = tokenPath.findNameProblem(name);
+        if (problem) return refused({ kind: "invalid-name", name, ...problem });
     }
     const placed = newPlace(tokens, path, options, place);
     if ("choose" in placed) {

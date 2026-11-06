@@ -128,7 +128,7 @@ describe("create, which file", () => {
             "tokens.resolver.json": resolver([{ $ref: "./a.json" }]),
             "a.json": JSON.stringify({ "": { $type: "number", x: { $value: 1 } } }),
         });
-        expect(create(tokens, ".y", { $value: 2 })).toEqual(refusal("not-found", { path: "" }));
+        expect(create(tokens, ".y", { $value: 2 })).toEqual(refusal("invalid-name", { name: "" }));
     });
 
     it("adds to design tokens of one token file, read without a resolver", () => {
@@ -336,6 +336,10 @@ describe("create, for every permutation", () => {
 });
 
 describe("remove", () => {
+    it('is refused for the top level, "", which holds everything in its files', () => {
+        expect(remove(demo, "")).toEqual(refusal("top-level", {}));
+    });
+
     it("takes a token out, leaving its siblings in order, and lists what pointed at it", () => {
         const result = remove(demo, "color.brand.500");
         const pointing = [

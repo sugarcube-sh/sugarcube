@@ -66,7 +66,6 @@ export type {
     Token,
     TokenType,
     TokensInMemory,
-    TopLevel,
     TransitionValue,
     TypographyPart,
     TypographyValue,

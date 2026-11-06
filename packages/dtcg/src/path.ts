@@ -2,12 +2,14 @@ import type { Move } from "./model.js";
 
 const FORBIDDEN = [".", "{", "}"] as const;
 
+type InvalidCharacter = "$" | (typeof FORBIDDEN)[number];
+
 /**
  * Reads and builds token paths.
  *
  * A path is the names of a token's groups and its own, joined with dots, such as `color.blue.500`.
- * These follow the spec's rules. So `color.bluegrey` isn't inside `color.blue`, and a group can be
- * named `""`.
+ * These follow the spec's rules. So `color.bluegrey` isn't inside `color.blue`. The top level of a
+ * file is the group at `""`.
  *
  * @see {@link https://www.designtokens.org/TR/2025.10/format/#path-construction | Format 6.7.2, Path Construction}
  *
@@ -20,7 +22,8 @@ export const tokenPath = {
     /**
      * Gets the group a path is directly inside.
      *
-     * At the top level, it returns `undefined`.
+     * A name at the top of a file is inside the top level, whose path is `""`. The top level is
+     * inside nothing, so for `""` it returns `undefined`.
      *
      * @param path - The path, such as `"color.blue.500"`.
      *
@@ -30,18 +33,32 @@ export const tokenPath = {
      * // => "color.blue"
      *
      * @example
-     * // Inside the group named ""
-     * tokenPath.getParent(".500")
+     * // At the top of a file
+     * tokenPath.getParent("color")
      * // => ""
      */
     getParent(path: string): string | undefined {
+        if (path === "") return undefined;
         const dot = path.lastIndexOf(".");
-        return dot === -1 ? undefined : path.slice(0, dot);
+        return dot === -1 ? "" : path.slice(0, dot);
+    },
+    /**
+     * Gets the last name in a path.
+     *
+     * @param path - The path, such as `"color.blue.500"`.
+     *
+     * @example
+     * // The token's own name
+     * tokenPath.getName("color.blue.500")
+     * // => "500"
+     */
+    getName(path: string): string {
+        return path.slice(path.lastIndexOf(".") + 1);
     },
     /**
      * Joins a group's path and a name into a path.
      *
-     * @param parent - The group, such as `"color.blue"`, or `undefined` for the top level.
+     * @param parent - The group, such as `"color.blue"`, or `""` for the top level.
      * @param name - The name, such as `"500"`.
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#path-construction | Format 6.7.2, Path Construction}
      *
@@ -50,13 +67,14 @@ export const tokenPath = {
      * tokenPath.join("color.blue", "500")
      * // => "color.blue.500"
      */
-    join(parent: string | undefined, name: string): string {
-        return parent === undefined ? name : `${parent}.${name}`;
+    join(parent: string, name: string): string {
+        return parent === "" ? name : `${parent}.${name}`;
     },
     /**
      * Gets the rest of a path inside a group.
      *
-     * It returns `undefined` if the path isn't inside. The group's own path isn't inside it.
+     * It returns `undefined` if the path isn't inside. The group's own path isn't inside it. Every
+     * other path is inside the top level, `""`.
      *
      * @param group - The group, such as `"color"`.
      * @param path - The path, such as `"color.blue.500"`.
@@ -72,6 +90,7 @@ export const tokenPath = {
      * // => undefined
      */
     relative(group: string, path: string): string | undefined {
+        if (group === "") return path === "" ? undefined : path;
         return path.startsWith(`${group}.`) ? path.slice(group.length + 1) : undefined;
     },
     /**
@@ -124,14 +143,33 @@ export const tokenPath = {
      * tokenPath.findInvalidCharacter("blue.500")
      * // => "."
      */
-    findInvalidCharacter(name: string): "$" | (typeof FORBIDDEN)[number] | undefined {
+    findInvalidCharacter(name: string): InvalidCharacter | undefined {
         if (name.startsWith("$") && name !== "$root") return "$";
         return FORBIDDEN.find((each) => name.includes(each));
     },
     /**
+     * Finds what stops a name being valid, as the facts an `invalid-name` problem gives.
+     *
+     * It returns `undefined` if the name is valid. A name can't be empty, which gives `{}`, and
+     * can't have a character {@link findInvalidCharacter} finds, which gives that `character`.
+     *
+     * @param name - A token or group name, such as `"500"`.
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
+     *
+     * @example
+     * // A dot in a name
+     * tokenPath.findNameProblem("blue.500")
+     * // => { character: "." }
+     */
+    findNameProblem(name: string): { readonly character?: InvalidCharacter } | undefined {
+        if (name === "") return {};
+        const character = tokenPath.findInvalidCharacter(name);
+        return character === undefined ? undefined : { character };
+    },
+    /**
      * Tells whether a token or group can have this name.
      *
-     * A name can't be empty, and can't have a character {@link findInvalidCharacter} finds.
+     * It's `true` when {@link findNameProblem} finds nothing.
      *
      * @param name - A token or group name, such as `"500"`.
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
@@ -142,7 +180,7 @@ export const tokenPath = {
      * // => false
      */
     isValidName(name: string): boolean {
-        return name !== "" && tokenPath.findInvalidCharacter(name) === undefined;
+        return tokenPath.findNameProblem(name) === undefined;
     },
     /**
      * Works out where a path is after some moves.

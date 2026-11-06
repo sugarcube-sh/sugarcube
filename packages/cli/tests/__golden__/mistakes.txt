@@ -37,7 +37,7 @@ base.json:11:17  error  a color must be an object with `colorSpace` and `compone
 1 error.
 
 ## references-in-a-circle
-base.json:5:17  error  these references lead back to where they started: color.a → color.b → color.a  circular-reference
+base.json:5:17  error  these references lead back to where they started: `color.a`, `color.b`, `color.a`  circular-reference
                        base.json:8:17  part of the same loop
 1 error.
 
