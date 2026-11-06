@@ -370,18 +370,6 @@ describe("group.tokens", () => {
         expect(paths(light.getGroup("space")?.tokens)).not.toContain("spacer.x");
     });
 
-    it('is the group named "" own tokens, never the top level of the files (Format 5.1)', () => {
-        const named = readFromMemory({
-            files: {
-                "tokens.json": JSON.stringify({
-                    "": { $type: "number", x: { $value: 1 } },
-                    "top": { $type: "number", $value: 2 },
-                }),
-            },
-        });
-        expect(paths(named.getPermutation().getGroup("")?.tokens)).toStrictEqual([".x"]);
-    });
-
     it("lists the tokens of its own permutation", () => {
         const compact = tokens.getPermutation({ density: "compact" });
         expect(valueOf(compact.getGroup("space")?.tokens[1])).toBe(2);

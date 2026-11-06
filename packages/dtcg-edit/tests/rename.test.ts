@@ -195,20 +195,21 @@ describe("rename, references of every kind", () => {
         expect(after.diagnostics).toEqual([]);
     });
 
-    it("rewrites a group's $ref to another group", () => {
+    it("rewrites a token's $ref, which is the pointer alone", () => {
         const tokens = one({
             button: {
                 $type: "number",
                 base: { pad: { $value: 1 } },
-                primary: { $ref: "#/button/base" },
+                primary: { $ref: "#/button/base/pad/$value" },
             },
         });
         const after = committed(tokens, rename(tokens, "button.base", "core"));
 
-        expect(at(after, "tokens.json", ["button", "primary", "$ref"])).toBe("#/button/core");
-        expect(after.getPermutation().getGroup("button.primary")?.extends?.path).toBe(
-            "button.core",
+        expect(at(after, "tokens.json", ["button", "primary", "$ref"])).toBe(
+            "#/button/core/pad/$value",
         );
+        expect(after.getPermutation().getToken("button.primary")?.resolved).toBe(1);
+        expect(after.diagnostics).toEqual([]);
     });
 
     it("rewrites a reference written inside the group it renames", () => {

@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 9.2: 'adding additional sub-values ... make the composite token invalid', so by default a property a value's type does not define makes the token invalid (invalid-values). With ignoreUnknownProperties, which is not DTCG 2025.10, it is set aside with an unknown-property warning, as the resolver's are, and the rest of the value is read. A reference inside it is not followed: it is not part of the value. Each is reported once, at its key, and a pointer to a value holding one neither follows it nor reports it again",
+  "spec": "Format 9.2: 'adding additional sub-values ... make the composite token invalid', so by default a property a value's type does not define makes the token invalid (invalid-values). With ignoreUnknownProperties, which is not DTCG 2025.10, it is set aside with an unknown-property warning, and the rest of the value is read. A reference inside it is not followed: it is not part of the value. Each is reported once, at its key, and a pointer to a value holding one neither follows it nor reports it again",
   "options": {
     "ignoreUnknownProperties": true
   },

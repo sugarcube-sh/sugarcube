@@ -1484,18 +1484,23 @@ export interface DiagnosticDetailByKind {
         readonly input: number;
     } & InputProblem;
     /**
-     * A name has a character the spec doesn't allow, such as the `.` in `"a.b"`.
+     * A name the spec doesn't allow, such as `"a.b"`, or an empty one.
      *
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#character-restrictions | Format 5.1.1, Character restrictions}
      */
-    "invalid-name": { readonly name: string; readonly character: "." | "{" | "}" | "$" };
+    "invalid-name": {
+        readonly name: string;
+        /** The character the spec forbids there, such as `"."`. It's absent for an empty name. */
+        readonly character?: "." | "{" | "}" | "$";
+    };
     /**
      * Something is both a token and a group.
      *
      * `reason: "child"` means a token also has `child` inside it.
      * `reason: "declared"` means one file writes a token where another writes a group. `here` says
      * which this one is.
-     * `reason: "ref"` means a `$ref` makes an object a token, but it also has tokens or groups.
+     * `reason: "ref"` means a `$ref` makes an object a token, but it also has tokens or groups, as
+     * if it extended a group, which is `$extends`'s job.
      */
     "token-and-group":
         | { readonly reason: "child"; readonly child: string }
@@ -1622,6 +1627,24 @@ export interface DiagnosticDetailByKind {
      * @see {@link https://www.designtokens.org/TR/2025.10/format/#curly-brace-syntax-token-references | Format 7.1.1, Curly brace syntax}
      */
     "not-a-token": { readonly ref: string };
+    /**
+     * A `$ref` stops at a token instead of reaching into its value, such as `"#/base"`.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#json-pointer-syntax-required-support | Format 7.1.2, JSON Pointer syntax}
+     */
+    "not-a-value": {
+        readonly ref: string;
+        /** The pointer into the token's value, such as `"#/base/$value"`. */
+        readonly corrected: string;
+    };
+    /**
+     * A token has both `$ref` and `$value`.
+     *
+     * A `$ref` stands in for `$value`, so a token has one or the other. Its `$value` is read.
+     *
+     * @see {@link https://www.designtokens.org/TR/2025.10/format/#json-pointer-syntax-required-support | Format 7.1.2, JSON Pointer syntax}
+     */
+    "ref-and-value": Record<string, never>;
     /**
      * A reference in a shadow or gradient array names a token with several layers or stops.
      *
@@ -1752,6 +1775,7 @@ export type ResolverRule =
     | "unknown-item-type"
     | "no-contexts"
     | "single-context"
+    | "empty-resolution-order"
     | "invalid-default"
     | "file-in-resolution-order";
 

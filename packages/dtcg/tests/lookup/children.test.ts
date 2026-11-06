@@ -216,9 +216,8 @@ describe('a group named ""', () => {
     });
     const base = tokens.getPermutation();
 
-    it("is a child of the top level, and holds its own tokens, never the top level's (Format 5.1)", () => {
-        expect(paths(base?.children)).toStrictEqual(["", "size"]);
-        expect(paths(base?.groups.find(({ path }) => path === "")?.children)).toStrictEqual([".x"]);
-        expect(paths(tokens.getPermutation().getGroup("")?.children)).toStrictEqual([".x"]);
+    it("is not a name, so it isn't read, and the top level's children are the rest", () => {
+        expect(paths(base?.children)).toStrictEqual(["size"]);
+        expect(tokens.getPermutation().getGroup("")).toBeUndefined();
     });
 });

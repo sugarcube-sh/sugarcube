@@ -120,7 +120,7 @@ function follow(resolving: Resolving, following: Following, located: LocatedRefe
         else reportUnreachable(aim, token.path, use.span);
         return UNRESOLVED;
     };
-    if (reached.kind === "group" || reached.kind === "nothing") return unreachable();
+    if (reached.kind !== "token" && reached.kind !== "part") return unreachable();
 
     const whole = reached.kind === "token";
     if (whole && (syntax.kind === "ofType" || element)) {

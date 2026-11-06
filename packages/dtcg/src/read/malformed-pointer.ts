@@ -1,7 +1,7 @@
 import type { DiagnosticDetailByKind } from "../model.js";
 import type { Merged } from "./merge.js";
 import { type PointerReading, readPointerText } from "./pointer.js";
-import { reach } from "./ref-meaning.js";
+import { reach, toValuePointer } from "./ref-meaning.js";
 
 type Malformed = DiagnosticDetailByKind["malformed-pointer"];
 
@@ -13,10 +13,18 @@ export function malformedPointer(
     return { ref, reason: problem, ...(reaches && { corrected }) };
 }
 
-export function malformation(ref: string, merged: Merged): Malformed | undefined {
+export function malformation(
+    ref: string,
+    merged: Merged,
+    wanted: "value" | "group",
+): Malformed | undefined {
     if (!ref.startsWith("#")) return undefined;
     const read = readPointerText(ref);
     if (read.ok) return undefined;
-    const reaches = reach(read.correctedSteps, merged).kind !== "nothing";
-    return malformedPointer(ref, read, reaches);
+    const reached = reach(read.correctedSteps, merged).kind;
+    if (wanted === "group") return malformedPointer(ref, read, reached === "group");
+    if (reached !== "stops-at-token") {
+        return malformedPointer(ref, read, reached === "token" || reached === "part");
+    }
+    return malformedPointer(ref, { ...read, corrected: toValuePointer(read.corrected) }, true);
 }

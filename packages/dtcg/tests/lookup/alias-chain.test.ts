@@ -62,9 +62,8 @@ describe("a token's aliasChain", () => {
         expect(text?.aliasChain[1]).toBe(dark.getToken("brand"));
     });
 
-    it("follows a pointer to a whole value, or to the token itself, as the read does", () => {
+    it("follows a pointer to a whole value, as the read does", () => {
         expect(aliasChain("pointed")).toStrictEqual(["pointed", "brand", "palette.red"]);
-        expect(aliasChain("whole")).toStrictEqual(["whole", "brand", "palette.red"]);
     });
 
     it("is the token alone when its value is not a whole reference: a composite holding one, a property-level reference", () => {
@@ -73,8 +72,9 @@ describe("a token's aliasChain", () => {
         expect(aliasChain("part")).toStrictEqual(["part"]);
     });
 
-    it("stops at a reference to nothing, and at a loop, without repeating", () => {
+    it("stops at a reference to nothing, a pointer that stops at a token, and a loop, without repeating", () => {
         expect(aliasChain("gone")).toStrictEqual(["gone"]);
+        expect(aliasChain("whole")).toStrictEqual(["whole"]);
         expect(aliasChain("ring")).toStrictEqual(["ring", "loop"]);
     });
 });

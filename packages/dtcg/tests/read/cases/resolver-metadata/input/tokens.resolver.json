@@ -5,5 +5,5 @@
   "description": "Resolver with metadata",
   "version": "2025.10",
   "futureKey": true,
-  "resolutionOrder": []
+  "resolutionOrder": [{ "type": "set", "name": "base", "sources": [] }]
 }

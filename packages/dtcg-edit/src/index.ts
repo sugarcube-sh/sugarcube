@@ -123,7 +123,7 @@ export type OpResult =
  * - `override-instead`: the token at `path` is shared, so `input` gets its own value by changing
  *   it for that context ({@link setValue}), not by making it again.
  * - `invalid-name`: `name` can't be a name: `character` is the one the spec forbids (Format
- *   5.1.1). An empty name has none: the spec doesn't forbid it, but leaves it unclear.
+ *   5.1.1). It's absent for an empty name.
  * - `generated`: a generator makes the token, from the extension at `extension` on the group at
  *   `from` (absent for the top level of a file).
  * - `inherited`: the token or group comes from the group at `from`, through `$extends`.

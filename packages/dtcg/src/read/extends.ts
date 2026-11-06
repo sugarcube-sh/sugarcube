@@ -4,9 +4,9 @@ import { relatedMessages } from "../error-messages.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
 import { malformation } from "./malformed-pointer.js";
 import type { MissingIn } from "./missing.js";
-import { type Merged, type MergedGroup, removeGroup } from "./merge.js";
+import type { Merged, MergedGroup } from "./merge.js";
 import { tokenPath } from "../path.js";
-import { followReference, refObjectMeaning } from "./ref-meaning.js";
+import { followReference } from "./ref-meaning.js";
 
 type Extending = MergedGroup & { extends: NonNullable<MergedGroup["extends"]> };
 
@@ -50,7 +50,7 @@ export function applyExtends(
     };
 
     const extend = (group: Extending, chain: Extending[]): void => {
-        const { keyword, reference, steps } = group.extends;
+        const { reference, steps } = group.extends;
         const written = toReferenceTarget(reference);
         const direct = namedPath(reference);
         if (steps && direct === undefined) {
@@ -67,7 +67,7 @@ export function applyExtends(
         if (state.get(group.path) === "in-a-loop") return;
 
         const reached = followReference(group.extends, merged);
-        const malformed = reached.kind === "nothing" && malformation(written, merged);
+        const malformed = reached.kind === "nothing" && malformation(written, merged, "group");
         if (malformed) {
             report("malformed-pointer", malformed, group);
         } else if (reached.kind === "nothing") {
@@ -75,8 +75,6 @@ export function applyExtends(
         } else if (reached.kind === "group") {
             group.extendsGroup = reached.path;
             inherit(merged, group, reached.path);
-        } else if (keyword === "$ref" && refObjectMeaning(reached) === "token") {
-            becomeToken(merged, group, input, diagnostics);
         } else {
             report("not-a-group", { ref: written }, group);
         }
@@ -140,33 +138,4 @@ function inherit(merged: Merged, group: MergedGroup, from: string): void {
             merged.order.add(path);
         }
     }
-}
-
-function becomeToken(merged: Merged, group: Extending, input: Input, diagnostics: Problems): void {
-    const { path, extends: extending, type, description, deprecated, extensions } = group;
-    const inside = (each: string) => tokenPath.relative(path, each) !== undefined;
-    if ([...merged.tokens.keys(), ...merged.groups.keys()].some(inside)) {
-        diagnostics.found(
-            diagnostic(
-                "token-and-group",
-                { reason: "ref", ref: toReferenceTarget(extending.reference) },
-                { span: extending.span, path },
-            ),
-            input,
-        );
-    }
-    removeGroup(merged, path);
-    merged.tokens.set(path, {
-        path,
-        json: extending.json,
-        value: extending.node,
-        valueAsWritten: { $ref: toReferenceTarget(extending.reference) },
-        reference: extending.reference,
-        span: extending.groupSpan,
-        source: extending.source,
-        ...(type !== undefined && { type }),
-        ...(description !== undefined && { description }),
-        ...(deprecated !== undefined && { deprecated }),
-        ...(extensions && { extensions }),
-    });
 }

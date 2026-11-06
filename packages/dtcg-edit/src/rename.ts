@@ -23,9 +23,10 @@ import { getJsonAt } from "@sugarcube-sh/dtcg/editor";
  * session.do(rename(session.tokens, "color.brand", "primary"));
  */
 export function rename(tokens: DesignTokens, path: string, newName: string): OpResult {
-    if (newName === "") return refused({ kind: "invalid-name", name: newName });
-    const character = tokenPath.findInvalidCharacter(newName);
-    if (character !== undefined) return refused({ kind: "invalid-name", name: newName, character });
+    if (!tokenPath.isValidName(newName)) {
+        const character = tokenPath.findInvalidCharacter(newName);
+        return refused({ kind: "invalid-name", name: newName, ...(character && { character }) });
+    }
 
     const copies = copiesOf(tokens, path);
     if ("refused" in copies) return copies;

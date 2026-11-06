@@ -11,6 +11,7 @@ import type {
     SeveralPermutationsDetail,
 } from "./model.js";
 import { toInputLabel } from "./lookup/permutation-label.js";
+import { isSpecKey } from "./read/spec-keys.js";
 import {
     didYouMean,
     ignoredMessage,
@@ -116,6 +117,8 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
     "unknown-item-type": (name) =>
         `\`${name}\` is not a kind of item: an item in the resolution order is a "set" or a "modifier"`,
     "no-contexts": (name) => `the modifier \`${name}\` has no contexts`,
+    "empty-resolution-order": () =>
+        "`resolutionOrder` is empty: it needs at least one set or modifier",
     "single-context": (name) =>
         `the modifier \`${name}\` has only one context, which makes it a set`,
     "invalid-default": (name) =>
@@ -157,9 +160,6 @@ export const relatedMessages = {
     madeByThisExtension: "made by this extension",
 };
 
-const ignoredWhenInvalid: ReadonlySet<DiagnosticDetailByKind["invalid-property"]["property"]> =
-    new Set(["$description", "$deprecated", "$extensions"]);
-
 const ownerWords = {
     resolver: "the resolver",
     set: "a set",
@@ -192,10 +192,12 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "invalid-name": {
         severity: "error",
-        message: ({ name, character }) =>
-            character === "$"
+        message: ({ name, character }) => {
+            if (character === undefined) return "a name can't be empty";
+            return character === "$"
                 ? `the name \`${name}\` starts with \`$\`, which is kept for the specification's own properties`
-                : `the name \`${name}\` contains \`${character}\`, which a name cannot contain`,
+                : `the name \`${name}\` contains \`${character}\`, which a name cannot contain`;
+        },
     },
     "token-and-group": {
         severity: "error",
@@ -206,7 +208,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
                 case "declared":
                     return `this is a ${detail.here} here but a ${detail.here === "token" ? "group" : "token"} in another file`;
                 case "ref":
-                    return `this points at \`${detail.ref}\`, which is a token, so it is a token too, and a token cannot hold tokens or groups`;
+                    return `this has a \`$ref\`, which makes it a token, and a token cannot hold tokens or groups; to extend a group, use \`$extends\``;
             }
         },
     },
@@ -216,11 +218,9 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
             `\`${name}\` is ${foundWords[found]}, and a group holds only tokens and groups, which are objects`,
     },
     "invalid-property": {
-        severity: ({ property }) => (ignoredWhenInvalid.has(property) ? "warning" : "error"),
+        severity: "error",
         message: ({ property, expected, reference }) =>
-            ignoredWhenInvalid.has(property)
-                ? `\`${property}\` must be ${propertyWords[expected]}, so it is ignored`
-                : `\`${property}\` must be ${propertyWords[expected]}${didYouMean(reference)}`,
+            `\`${property}\` must be ${propertyWords[expected]}${didYouMean(reference)}`,
     },
     "missing-type": {
         severity: "error",
@@ -272,6 +272,15 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         severity: "error",
         message: ({ ref }) => `\`${ref}\` is a group, and a reference must name a token`,
     },
+    "not-a-value": {
+        severity: "error",
+        message: ({ ref, corrected }) =>
+            `\`${ref}\` reaches a token, not its value; write it as \`${corrected}\``,
+    },
+    "ref-and-value": {
+        severity: "error",
+        message: () => "a token has `$ref` or `$value`, not both, so its `$ref` is not read",
+    },
     "reference-to-several": {
         severity: "error",
         message: ({ ref, count }) =>
@@ -296,11 +305,15 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         message: ({ name }) => `the name \`${name}\` starts or ends with a space`,
     },
     "unknown-property": {
-        severity: "warning",
-        message: (detail) =>
-            "jsonPath" in detail
-                ? ignoredMessage(detail.type, detail.property)
-                : `\`${detail.property}\` is not a property of ${ownerWords[detail.owner]}, so it is ignored${didYouMean(detail.similar)}`,
+        severity: (detail) => ("jsonPath" in detail ? "warning" : "error"),
+        message: (detail) => {
+            if ("jsonPath" in detail) return ignoredMessage(detail.type, detail.property);
+            const { property, owner, similar } = detail;
+            const notAProperty = `\`${property}\` is not a property of ${ownerWords[owner]}`;
+            if (similar !== undefined) return `${notAProperty}${didYouMean(similar)}`;
+            if (owner === "resolver" || isSpecKey(property)) return notAProperty;
+            return `${notAProperty}: put your own data in \`$extensions\``;
+        },
     },
     "misspelt-property": {
         severity: "error",

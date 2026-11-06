@@ -1,4 +1,4 @@
 {
   "version": "1.0.0",
-  "resolutionOrder": []
+  "resolutionOrder": [{ "type": "set", "name": "base", "sources": [] }]
 }

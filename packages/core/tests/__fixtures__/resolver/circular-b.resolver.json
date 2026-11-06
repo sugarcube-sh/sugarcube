@@ -5,5 +5,5 @@
       "sources": [{ "$ref": "circular-a.resolver.json#/sets/a" }]
     }
   },
-  "resolutionOrder": []
+  "resolutionOrder": [{ "type": "set", "name": "base", "sources": [] }]
 }

@@ -8,6 +8,7 @@ export type Reached =
     | { kind: "group"; path: string }
     | { kind: "token"; path: string; token: MergedToken }
     | { kind: "part"; path: string; token: MergedToken; inside: string[] }
+    | { kind: "stops-at-token"; path: string }
     | { kind: "nothing" };
 
 export interface Aim {
@@ -33,12 +34,17 @@ export function reach(steps: string[] | undefined, merged: Merged): Reached {
     if (path === undefined) return { kind: "nothing" };
     const token = merged.tokens.get(path);
     if (token) {
-        return inside && inside.length > 0
+        if (!inside) return { kind: "stops-at-token", path };
+        return inside.length > 0
             ? { kind: "part", path, token, inside }
             : { kind: "token", path, token };
     }
     if (!inside && merged.groups.has(path)) return { kind: "group", path };
     return { kind: "nothing" };
+}
+
+export function toValuePointer(pointer: string): string {
+    return `${pointer}/$value`;
 }
 
 export function pointerParts(steps: string[]): { path?: string; inside?: string[] } {
@@ -49,11 +55,6 @@ export function pointerParts(steps: string[]): { path?: string; inside?: string[
         ...(path !== undefined && { path }),
         ...(valueStep !== -1 && { inside: steps.slice(valueStep + 1) }),
     };
-}
-
-export function refObjectMeaning(reached: Reached): "group" | "token" | "nothing" {
-    if (reached.kind === "token" || reached.kind === "part") return "token";
-    return reached.kind;
 }
 
 export function stepInto(

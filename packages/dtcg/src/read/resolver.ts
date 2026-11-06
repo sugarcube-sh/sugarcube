@@ -348,6 +348,16 @@ function readResolutionOrder(
     modifiers: Map<string, ModifierDefinition>,
 ): ResolverItem[] {
     const list = required(reader, root, "resolutionOrder", "array");
+    if (list?.children?.length === 0) {
+        reader.report(
+            {
+                rule: "empty-resolution-order",
+                name: "resolutionOrder",
+                jsonPath: ["resolutionOrder"],
+            },
+            list,
+        );
+    }
     const order: ResolverItem[] = [];
     const inlineNames = new Set<string>();
     const modifierNames = new Set<string>();

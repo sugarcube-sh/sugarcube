@@ -1,33 +1,7 @@
 {
   "entry": "tokens.json",
-  "spec": "RFC 6901 3 and Format 7.3: a JSON Pointer starts with / after the #, and in it ~ is written ~0 and / is written ~1. A pointer that breaks either is not a pointer, so it is reported as malformed rather than as reaching nothing (Format 7: tools MUST report invalid JSON Pointer syntax). The pointer written correctly is given only when that reaches something: in a value, as a token, and for a group",
+  "spec": "RFC 6901 3 and Format 7.3: a JSON Pointer starts with / after the #, and in it ~ is written ~0 and / is written ~1. A pointer that breaks either is not a pointer, so it is reported as malformed rather than as reaching nothing (Format 7: tools MUST report invalid JSON Pointer syntax). The pointer written correctly is given only when that reaches what the place takes: a value, or part of one, for a token, with /$value added when it stops at the token, and a group for $extends",
   "diagnostics": [
-    {
-      "kind": "malformed-pointer",
-      "detail": {
-        "ref": "#color/ink",
-        "reason": "no-leading-slash",
-        "corrected": "#/color/ink"
-      },
-      "span": {
-        "file": "tokens.json",
-        "text": "\"#color/ink\""
-      },
-      "path": "whole"
-    },
-    {
-      "kind": "malformed-pointer",
-      "detail": {
-        "ref": "#g",
-        "reason": "no-leading-slash",
-        "corrected": "#/g"
-      },
-      "span": {
-        "file": "tokens.json",
-        "text": "\"#g\""
-      },
-      "path": "grouped"
-    },
     {
       "kind": "malformed-pointer",
       "detail": {
@@ -58,6 +32,19 @@
     {
       "kind": "malformed-pointer",
       "detail": {
+        "ref": "#color/ink",
+        "reason": "no-leading-slash",
+        "corrected": "#/color/ink/$value"
+      },
+      "span": {
+        "file": "tokens.json",
+        "text": "\"#color/ink\""
+      },
+      "path": "whole"
+    },
+    {
+      "kind": "malformed-pointer",
+      "detail": {
         "ref": "#/a~b/$value",
         "reason": "bad-escape",
         "corrected": "#/a~0b/$value"
@@ -67,6 +54,18 @@
         "text": "{ \"$ref\": \"#/a~b/$value\" }"
       },
       "path": "tilde"
+    },
+    {
+      "kind": "malformed-pointer",
+      "detail": {
+        "ref": "#g",
+        "reason": "no-leading-slash"
+      },
+      "span": {
+        "file": "tokens.json",
+        "text": "\"#g\""
+      },
+      "path": "grouped"
     },
     {
       "kind": "malformed-pointer",

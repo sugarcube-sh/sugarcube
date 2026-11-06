@@ -95,7 +95,7 @@ export function toReferenceTarget(reference: WrittenReference): string {
  *
  * It's `undefined` for a JSON Pointer that names no token, such as `#/`.
  *
- * @see {@link https://www.designtokens.org/TR/2025.10/format/#example-json-pointer-references | Format Example 21, JSON Pointer references}
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#json-pointer-syntax-required-support | Format 7.1.2, JSON Pointer syntax}
  */
 export function namedPath(ref: WrittenReference): string | undefined {
     if (ref.syntax === "curly-brace") return ref.path;

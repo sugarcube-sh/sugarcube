@@ -1,14 +1,27 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "Resolver 4.1, 4.4 and 4.5: $schema, $defs, name and description are accepted. A key the spec does not define is ignored, as old sugarcube does, and reported as a warning at the key",
+  "spec": "Resolver 4.1, 4.4 and 4.5: $schema, $defs, name and description are accepted. A key the spec does not define is an error at the key, as the group's schema has it; old sugarcube ignored it",
   "resolver": {
     "file": "tokens.resolver.json",
     "version": "2025.10",
     "name": "Example",
     "description": "Resolver with metadata",
-    "sets": [],
+    "sets": [
+      {
+        "name": "base",
+        "sources": [],
+        "span": {
+          "file": "tokens.resolver.json",
+          "text": "{ \"type\": \"set\", \"name\": \"base\", \"sources\": [] }"
+        }
+      }
+    ],
     "modifiers": [],
-    "resolutionOrder": []
+    "resolutionOrder": [
+      {
+        "set": "base"
+      }
+    ]
   },
   "diagnostics": [
     {
