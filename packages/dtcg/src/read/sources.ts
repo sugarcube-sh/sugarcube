@@ -2,9 +2,9 @@ import type { Problems } from "./diagnostics.js";
 import type { Node } from "jsonc-parser";
 import type { JsonPath } from "../model.js";
 import { type Files, openFile, parseFile } from "./files.js";
-import { type JsonFile, member, members, spanOf } from "./json.js";
+import { type JsonFile, member, members, toSpan } from "./json.js";
 import { malformedPointer } from "./malformed-pointer.js";
-import { folderOf, join } from "./paths.js";
+import { getFolder, join } from "./paths.js";
 import { type PointerReading, encodePointer, follow, readPointerText } from "./pointer.js";
 import {
     type ModifierDefinition,
@@ -72,7 +72,7 @@ export function expandSources(
     const expander: Expander = {
         reader: createReader(resolver.file, diagnostics),
         root: resolver.file.root,
-        folder: folderOf(resolver.file.path),
+        folder: getFolder(resolver.file.path),
         sets: resolver.sets,
         expanded: new Map(),
         setsUsed,
@@ -81,7 +81,11 @@ export function expandSources(
         expandList(expander, sources, route, []);
     const items = resolver.resolutionOrder.map((item): ExpandedItem =>
         item.kind === "set"
-            ? { kind: "set", set: item.set, entries: expand(item.set.sources, [stepOf(item.set)]) }
+            ? {
+                  kind: "set",
+                  set: item.set,
+                  entries: expand(item.set.sources, [toRouteStep(item.set)]),
+              }
             : {
                   kind: "modifier",
                   modifier: item.modifier,
@@ -96,17 +100,17 @@ export function expandSources(
     return { items, setsUsed };
 }
 
-function entriesOf(items: ExpandedItem[]): SourceEntry[] {
+function allEntries(items: ExpandedItem[]): SourceEntry[] {
     return items.flatMap((item) =>
         item.kind === "set" ? item.entries : [...item.contexts.values()].flat(),
     );
 }
 
-export function piecesOf(items: ExpandedItem[]): SourcePiece[] {
-    return entriesOf(items).flatMap(({ pieces }) => pieces);
+export function allPieces(items: ExpandedItem[]): SourcePiece[] {
+    return allEntries(items).flatMap(({ pieces }) => pieces);
 }
 
-export function filesNamedBy(pieces: SourcePiece[]): string[] {
+export function allFiles(pieces: SourcePiece[]): string[] {
     return pieces.flatMap((piece) => (piece.kind === "file" ? [piece.path] : []));
 }
 
@@ -146,7 +150,7 @@ function openSource(files: Files, resolver: CheckedResolver, piece: SourcePiece)
 
     const json = openFile(files, path, "tokens", {
         file: resolver.file.path,
-        span: spanOf(resolver.file, piece.ref),
+        span: toSpan(resolver.file, piece.ref),
     });
     if (!json) return { file: path, ...pointer };
 
@@ -265,7 +269,7 @@ function followSource(
         const set = overriding.some((each) => keysBeside(each).length > 0)
             ? Object.assign({ ...target }, ...overriding.map((each) => readSetParts(reader, each)))
             : target;
-        return expandList(expander, set.sources, [...route, stepOf(set)], [...seen, ref]);
+        return expandList(expander, set.sources, [...route, toRouteStep(set)], [...seen, ref]);
     }
 
     const followed = follow(root, steps);
@@ -284,7 +288,7 @@ function followSource(
     return withOverrides(entries, overriding, route);
 }
 
-function stepOf({ name, extensions }: SetDefinition): RouteStep {
+function toRouteStep({ name, extensions }: SetDefinition): RouteStep {
     return { name, ...(extensions && { extensions }) };
 }
 

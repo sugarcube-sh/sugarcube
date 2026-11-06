@@ -7,7 +7,7 @@ export type Settings = Properties &
         deprecatedAt?: string;
     };
 
-export function settingsOf(merged: Merged, group: MergedTopLevel | MergedGroup): Settings {
+export function findSettings(merged: Merged, group: MergedTopLevel | MergedGroup): Settings {
     const known = merged.settings;
     const kept = known.get(group);
     if (kept) return kept;

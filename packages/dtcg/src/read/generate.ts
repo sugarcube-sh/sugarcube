@@ -21,11 +21,11 @@ import {
     type SchemaOutput,
     Reported,
     checkSchema,
-    extensionAt,
+    findExtension,
     extensionDiagnostic,
 } from "./extension-check.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
-import { type JsonFile, spanOf } from "./json.js";
+import { type JsonFile, toSpan } from "./json.js";
 import { relatedMessages } from "../error-messages.js";
 import { type Merged, type MergedToken, everyGroup } from "./merge.js";
 import { usableType } from "./walk.js";
@@ -102,7 +102,7 @@ export function fillGenerated(
     for (const [groupPath, group] of everyGroup(merged)) {
         const settings = applying(merged, group);
         for (const generator of generators) {
-            const extension = extensionOf(settings, generator.extension);
+            const extension = findGeneratorExtension(settings, generator.extension);
             if (!extension) continue;
             const checked: CheckedExtension = {
                 within: generator.extension,
@@ -142,7 +142,7 @@ export function fillGenerated(
                     const detail = { name: made.name, character };
                     diagnostics.found(
                         diagnostic("invalid-name", detail, {
-                            span: spanOf(extension.json, extension.node),
+                            span: toSpan(extension.json, extension.node),
                             ...(groupPath !== undefined && { path: groupPath }),
                         }),
                         input,
@@ -157,7 +157,7 @@ export function fillGenerated(
                     const relatedInformation = [
                         {
                             message: relatedMessages.madeByThisExtension,
-                            span: spanOf(extension.json, extension.node),
+                            span: toSpan(extension.json, extension.node),
                             ...(extension.group !== undefined && { path: extension.group }),
                         },
                     ];
@@ -196,9 +196,12 @@ function writtenPlaces(
     return undefined;
 }
 
-function extensionOf(settings: Settings, extension: Generator["extension"]): Extension | undefined {
+function findGeneratorExtension(
+    settings: Settings,
+    extension: Generator["extension"],
+): Extension | undefined {
     const written = settings.extensionsAt?.[extension[0]];
-    const found = extensionAt(settings.extensions, written, extension);
+    const found = findExtension(settings.extensions, written, extension);
     if (!written || !found) return undefined;
     const { json, source, group } = written;
     return { ...found, json, source, ...(group !== undefined && { group }) };
@@ -216,7 +219,7 @@ function addedToken(
         value: node,
         valueAsWritten: $value,
         reference: parseReference($value),
-        span: spanOf(json, node),
+        span: toSpan(json, node),
         source,
         generated,
         added: true,

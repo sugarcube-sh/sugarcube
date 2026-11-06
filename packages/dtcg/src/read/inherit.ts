@@ -1,6 +1,6 @@
 import { tokenPath } from "../path.js";
 import type { Merged, MergedGroup, MergedTopLevel } from "./merge.js";
-import { type Settings, settingsOf } from "./settings.js";
+import { type Settings, findSettings } from "./settings.js";
 
 export type Inheritable = "type" | "deprecated" | "deprecatedAt";
 
@@ -14,7 +14,7 @@ export function inherited<K extends Inheritable>(
     return item[property] ?? closest(item.path, merged, property);
 }
 
-export function deprecationOf(
+export function findDeprecation(
     item: Pick<Settings, Inheritable> & { path: string },
     merged: Merged,
 ): true | string | undefined {
@@ -22,13 +22,13 @@ export function deprecationOf(
 }
 
 export function applying(merged: Merged, group: MergedTopLevel | MergedGroup): Applying {
-    const settings = settingsOf(merged, group);
+    const settings = findSettings(merged, group);
     if (!("path" in group))
         return { ...settings, deprecated: deprecationInForce(settings.deprecated) };
     return {
         ...settings,
-        type: atGroup(merged, "type", group.path),
-        deprecated: deprecationInForce(atGroup(merged, "deprecated", group.path)),
+        type: findGroupDefault(merged, "type", group.path),
+        deprecated: deprecationInForce(findGroupDefault(merged, "deprecated", group.path)),
     };
 }
 
@@ -37,27 +37,27 @@ function deprecationInForce(deprecated: Settings["deprecated"]): true | string |
 }
 
 function closest<K extends Inheritable>(path: string, merged: Merged, property: K): Settings[K] {
-    return atGroup(merged, property, tokenPath.getParent(path));
+    return findGroupDefault(merged, property, tokenPath.getParent(path));
 }
 
-function atGroup<K extends Inheritable>(
+function findGroupDefault<K extends Inheritable>(
     merged: Merged,
     property: K,
     group: string | undefined,
 ): Settings[K] {
-    if (group === undefined) return settingsOf(merged, merged.root)[property];
+    if (group === undefined) return findSettings(merged, merged.root)[property];
     const known: Map<string, Settings[K]> = merged.inheritedAt[property];
     const found = known.get(group);
     if (found !== undefined || known.has(group)) return found;
     const each = merged.groups.get(group);
     const applies =
-        (each && settingsOf(merged, each)[property]) ??
-        atGroup(merged, property, tokenPath.getParent(group));
+        (each && findSettings(merged, each)[property]) ??
+        findGroupDefault(merged, property, tokenPath.getParent(group));
     known.set(group, applies);
     return applies;
 }
 
-export function deprecatedByGroupOf(
+export function findDeprecatingGroup(
     merged: Merged,
     item: Pick<Settings, "deprecated"> & { path: string },
     inForce: Settings["deprecated"],

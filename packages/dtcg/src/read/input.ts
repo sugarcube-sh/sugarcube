@@ -6,7 +6,7 @@ export interface Modifier {
     default: string | undefined;
 }
 
-export function modifiersIn(resolver: Resolver | undefined): Modifier[] {
+export function allModifiers(resolver: Resolver | undefined): Modifier[] {
     return (resolver?.resolutionOrder ?? []).flatMap((item) => {
         const modifier =
             "modifier" in item && resolver?.modifiers.find(({ name }) => name === item.modifier);

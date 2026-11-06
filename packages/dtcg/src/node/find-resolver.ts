@@ -53,7 +53,7 @@ export async function findResolver(
     { by = "name" }: FindResolverOptions = {},
 ): Promise<FoundResolver> {
     const keep = by === "name" ? isResolverName : isJson;
-    const files = (await Promise.all([paths].flat().map((path) => filesAt(path, keep)))).flat();
+    const files = (await Promise.all([paths].flat().map((path) => findFiles(path, keep)))).flat();
     const resolvers = by === "name" ? files : await withContent(files);
     const once = new Map<string, string>();
     for (const file of resolvers) {
@@ -67,7 +67,7 @@ export async function findResolver(
         : { kind: "several", paths: [first, ...rest] };
 }
 
-async function filesAt(path: string, keep: (file: string) => boolean): Promise<string[]> {
+async function findFiles(path: string, keep: (file: string) => boolean): Promise<string[]> {
     if (!(await stat(path)).isDirectory()) return keep(path) ? [path] : [];
     const found: string[] = [];
     const visit = async (folder: string): Promise<void> => {

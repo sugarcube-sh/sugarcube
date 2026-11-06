@@ -7,7 +7,7 @@ import type {
     ResolverProblem,
 } from "../model.js";
 import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
-import { type JsonFile, member, members, spanOf } from "./json.js";
+import { type JsonFile, member, members, toSpan } from "./json.js";
 import { malformedPointer } from "./malformed-pointer.js";
 import { readPointerText } from "./pointer.js";
 import { similarName } from "./similar.js";
@@ -146,7 +146,7 @@ export function resolverProblem(
 ): Diagnostic {
     return diagnostic("resolver-invalid", problem, {
         ...extra,
-        span: spanOf(file, node),
+        span: toSpan(file, node),
     });
 }
 
@@ -155,7 +155,7 @@ export function createReader(file: JsonFile, diagnostics: Problems): Reader {
         report: (problem, node, extra) =>
             diagnostics.found(resolverProblem(file, problem, node, extra)),
         diagnose: (kind, detail, node, extra = {}) => {
-            const span = spanOf(file, node);
+            const span = toSpan(file, node);
             diagnostics.found(diagnostic(kind, detail, { ...extra, span }));
         },
         expect: <T extends JsonType>(
@@ -173,7 +173,7 @@ export function createReader(file: JsonFile, diagnostics: Problems): Reader {
             for (const { key, keyNode } of members(owner.node)) {
                 if (known.includes(key)) continue;
                 const similar = similarName(key, known);
-                const span = spanOf(file, keyNode);
+                const span = toSpan(file, keyNode);
                 const detail = {
                     property: key,
                     owner: kind,
@@ -222,15 +222,15 @@ function readAll<T>(
     collection: "sets" | "modifiers",
     read: (reader: Reader, owner: ResolverNode, name: string) => T,
 ): Map<string, T> {
-    const found = new Map<string, T>();
+    const byName = new Map<string, T>();
     const map = optional(reader, root, collection, "object");
     for (const { key, value } of map ? members(map) : []) {
         const jsonPath = [collection, key];
         if (reader.expect(value, "object", key, jsonPath)) {
-            found.set(key, read(reader, { node: value, jsonPath }, key));
+            byName.set(key, read(reader, { node: value, jsonPath }, key));
         }
     }
-    return found;
+    return byName;
 }
 
 function readSources(reader: Reader, list: ResolverNode, label: string): ResolverNode[] {

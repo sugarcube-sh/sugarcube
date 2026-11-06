@@ -15,12 +15,12 @@ import {
     type SchemaOutput,
     Reported,
     checkSchema,
-    extensionAt,
+    findExtension,
     extensionDiagnostic,
 } from "./extension-check.js";
 import type { JsonFile } from "./json.js";
 import { everyGroup } from "./merge.js";
-import { settingsOf } from "./settings.js";
+import { findSettings } from "./settings.js";
 import type { NormalisedPermutation } from "./normalise.js";
 
 type Checked = Parameters<NonNullable<ExtensionValidator["validate"]>>[0];
@@ -104,11 +104,11 @@ export function validateExtensions(
         };
 
         for (const [path, group] of everyGroup(merged)) {
-            const settings = settingsOf(merged, group);
+            const settings = findSettings(merged, group);
             for (const validator of validators) {
                 if (!validator.appliesTo.includes("group")) continue;
                 const at = settings.extensionsAt?.[validator.key];
-                const found = extensionAt(settings.extensions, at, [validator.key]);
+                const found = findExtension(settings.extensions, at, [validator.key]);
                 if (!at || !found) continue;
                 const on: Checked = { ...(path !== undefined && { path }), type: "group" };
                 check(validator, on, found.value, at.json, found.node);
@@ -122,7 +122,7 @@ export function validateExtensions(
             if (!type || !at) continue;
             for (const validator of validators) {
                 if (!validator.appliesTo.includes(type)) continue;
-                const found = extensionAt(token.extensions, at, [validator.key]);
+                const found = findExtension(token.extensions, at, [validator.key]);
                 if (found)
                     check(validator, { path: token.path, type }, found.value, at.json, found.node);
             }

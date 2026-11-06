@@ -1,7 +1,7 @@
 import type { Input, Resolver, ResolverContext, SetOnRoute, Source } from "../model.js";
 import { ownLabel } from "../lookup/permutation-label.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
-import { type Modifier, checkedInput, modifiersIn, withDefaults } from "./input.js";
+import { type Modifier, checkedInput, allModifiers, withDefaults } from "./input.js";
 import { type JsonFile, plainObject } from "./json.js";
 import type { Loaded } from "./load.js";
 import type { ExpandedItem, LoadedSource, SourceEntry, SourcePiece } from "./sources.js";
@@ -50,27 +50,27 @@ export function fromResolver(
     options: PermutationOptions,
     diagnostics: Problems,
 ): Built {
-    const modifiers = modifiersIn(part);
+    const modifiers = allModifiers(part);
     const inputs = chooseInputs(modifiers, options, diagnostics);
-    const contextOf = (modifier: string, name: string | undefined) =>
+    const findContext = (modifier: string, name: string | undefined) =>
         part.modifiers
             .find((each) => each.name === modifier)
             ?.contexts.find((each) => each.name === name);
-    const listed = listedSources(items, sources, contextOf);
+    const listed = listedSources(items, sources, findContext);
     return {
         permutations: inputs.map((input) => {
-            const contexts = modifiers.flatMap(({ name }) => contextOf(name, input[name]) ?? []);
+            const contexts = modifiers.flatMap(({ name }) => findContext(name, input[name]) ?? []);
             return {
                 input,
                 label: ownLabel(contexts),
                 contexts,
-                sources: sourcesFor(items, listed, contextOf, input),
+                sources: chooseSources(items, listed, findContext, input),
             };
         }),
     };
 }
 
-type ContextOf = (modifier: string, name: string | undefined) => ResolverContext | undefined;
+type FindContext = (modifier: string, name: string | undefined) => ResolverContext | undefined;
 
 function chooseInputs(
     modifiers: Modifier[],
@@ -81,9 +81,9 @@ function chooseInputs(
     if (inputs === "each-context") return eachContext(modifiers);
     if (inputs === "all") return allWithinLimit(modifiers, limit, diagnostics);
     const checked = inputs.flatMap((raw, index) => {
-        const found = checkedInput(modifiers, raw);
-        if (found.ok) return [found.input];
-        for (const problem of found.problems) {
+        const result = checkedInput(modifiers, raw);
+        if (result.ok) return [result.input];
+        for (const problem of result.problems) {
             diagnostics.found(diagnostic("input-invalid", { input: index, ...problem }));
         }
         return [];
@@ -136,9 +136,9 @@ type Listed = (entry: SourceEntry, context?: ResolverContext) => ListedSource | 
 function listedSources(
     items: ExpandedItem[],
     sources: Map<SourcePiece, LoadedSource>,
-    contextOf: ContextOf,
+    findContext: FindContext,
 ): Listed {
-    const readBy = whoReadsEachSource(items, sources, contextOf);
+    const readBy = whoReadsEachSource(items, sources, findContext);
     const listed = new Map<SourceEntry, Map<ResolverContext | undefined, ListedSource>>();
     return (entry, context) => {
         const [first] = entry.pieces;
@@ -162,17 +162,17 @@ function listedSources(
     };
 }
 
-function sourcesFor(
+function chooseSources(
     items: ExpandedItem[],
     listed: Listed,
-    contextOf: ContextOf,
+    findContext: FindContext,
     input: Input,
 ): ListedSource[] {
     return items.flatMap((item) => {
         if (item.kind === "set") return item.entries.flatMap((entry) => listed(entry) ?? []);
         const name = input[item.modifier.name];
         if (name === undefined) return [];
-        const context = contextOf(item.modifier.name, name);
+        const context = findContext(item.modifier.name, name);
         const entries = item.contexts.get(name) ?? [];
         return entries.flatMap((entry) => listed(entry, context) ?? []);
     });
@@ -188,7 +188,7 @@ function route({ route: steps }: SourcePiece): SetOnRoute[] {
 function whoReadsEachSource(
     items: ExpandedItem[],
     sources: Map<SourcePiece, LoadedSource>,
-    contextOf: ContextOf,
+    findContext: FindContext,
 ): Map<string, Source["readBy"]> {
     const readBy = new Map<string, "every-context" | ResolverContext[]>();
     const read = (entry: SourceEntry, context?: ResolverContext) => {
@@ -210,7 +210,7 @@ function whoReadsEachSource(
             continue;
         }
         for (const [name, entries] of item.contexts) {
-            const context = contextOf(item.modifier.name, name);
+            const context = findContext(item.modifier.name, name);
             for (const entry of entries) read(entry, context);
         }
     }

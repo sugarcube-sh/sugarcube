@@ -1,7 +1,7 @@
 import type { Node } from "jsonc-parser";
 import type { Diagnostic, IgnoredProperty, JsonPath, ValueErrorDetail } from "../model.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
-import { type JsonFile, deepestNode, propertyKey, spanOf } from "./json.js";
+import { type JsonFile, deepestNode, propertyKey, toSpan } from "./json.js";
 
 export function valueDiagnostic(
     detail: ValueErrorDetail,
@@ -24,7 +24,10 @@ export function ignoredDiagnostic(
 ): Diagnostic {
     const { node, steps, json } = within;
     const shown = propertyKey(node, steps) ?? deepestNode(node, steps);
-    const span = spanOf(json, shown);
-    const found = { property: detail.property, type: detail.type, jsonPath };
-    return diagnostic("unknown-property", found, { ...extra, span });
+    const span = toSpan(json, shown);
+    return diagnostic(
+        "unknown-property",
+        { property: detail.property, type: detail.type, jsonPath },
+        { ...extra, span },
+    );
 }

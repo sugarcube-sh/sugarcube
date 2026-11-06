@@ -11,7 +11,7 @@ import type {
 } from "../model.js";
 import { isJsonObject } from "../values/json.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
-import { type JsonFile, deepestNode, member, spanOf } from "./json.js";
+import { type JsonFile, deepestNode, member, toSpan } from "./json.js";
 import { ignoredDiagnostic, valueDiagnostic } from "./value-diagnostic.js";
 import type { ExtensionsAt } from "./walk.js";
 
@@ -33,7 +33,7 @@ export interface CheckedExtension {
     path?: string | undefined;
 }
 
-export function extensionAt(
+export function findExtension(
     extensions: Readonly<Record<string, unknown>> | undefined,
     at: ExtensionsAt | undefined,
     [key, ...inside]: readonly [string, ...string[]],
@@ -100,7 +100,7 @@ export function extensionDiagnostic(
     }
     const found = deepestNode(node, problem.jsonPath);
     const extra: DiagnosticExtra = {
-        span: spanOf(json, found),
+        span: toSpan(json, found),
         ...(path !== undefined && { path }),
     };
     if ("kind" in problem) return valueDiagnostic(problem.detail, jsonPath, found, extra);

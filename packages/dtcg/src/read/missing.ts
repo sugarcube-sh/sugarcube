@@ -15,7 +15,7 @@ interface Missing {
     uses: Use[];
 }
 
-interface MissingAcross {
+interface MissingInInputs {
     ref: string;
     similar: string | undefined;
     first: Use;
@@ -40,7 +40,7 @@ export interface MissingReferences {
 }
 
 export function missingReferences(diagnostics: Problems): MissingReferences {
-    const across = new Map<string, MissingAcross>();
+    const mergedAcrossInputs = new Map<string, MissingInInputs>();
     return {
         in: (input, paths, unreadSources) => {
             if (unreadSources.length > 0) return MISSING_NOT_REPORTED;
@@ -58,13 +58,13 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
                 },
                 close: () => {
                     for (const [ref, { reference, first, uses }] of missing) {
-                        const similar = similarReference(reference, paths, fromOf(uses));
+                        const similar = similarReference(reference, paths, allFrom(uses));
                         const key = JSON.stringify([ref, similar]);
-                        let entry = across.get(key);
+                        let entry = mergedAcrossInputs.get(key);
                         if (entry) entry.inputs.push(input);
                         else {
                             entry = { ref, similar, first, uses: [], inputs: [input] };
-                            across.set(key, entry);
+                            mergedAcrossInputs.set(key, entry);
                         }
                         for (const use of uses)
                             if (!entry.uses.some(({ span }) => span === use.span))
@@ -74,7 +74,7 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
             };
         },
         report: () => {
-            for (const { ref, similar, first, uses, inputs } of across.values()) {
+            for (const { ref, similar, first, uses, inputs } of mergedAcrossInputs.values()) {
                 const relatedInformation = uses
                     .filter(({ span }) => span !== first.span)
                     .map((use) => ({
@@ -84,7 +84,7 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
                     }));
                 const detail = {
                     ref,
-                    from: fromOf(uses),
+                    from: allFrom(uses),
                     ...(similar !== undefined && { similar }),
                 };
                 const [input, ...others] = inputs;
@@ -93,14 +93,14 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
                     path: first.from,
                     ...(relatedInformation.length > 0 && { relatedInformation }),
                 });
-                const found = diagnostics.found(made, input);
-                for (const each of others) diagnostics.also(found, each);
+                const kept = diagnostics.found(made, input);
+                for (const each of others) diagnostics.also(kept, each);
             }
         },
     };
 }
 
-function fromOf(uses: readonly Use[]): string[] {
+function allFrom(uses: readonly Use[]): string[] {
     return [...new Set(uses.map(({ from }) => from))];
 }
 

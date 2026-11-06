@@ -7,7 +7,7 @@ import type {
     PermutationErrorDetail,
     SeveralPermutationsDetail,
 } from "../model.js";
-import { checkedInput, modifiersIn } from "../read/input.js";
+import { checkedInput, allModifiers } from "../read/input.js";
 
 /**
  * Thrown when an input names a permutation the tokens don't have.
@@ -83,14 +83,8 @@ export function onlyPermutation(tokens: DesignTokens, asked: string): Permutatio
             .filter((context) => !context.isDefault)
             .map((context) => [context.modifier.name, context.name]),
     );
-    const modifiers = modifiersIn(tokens.resolver).map(({ name }) => name);
+    const modifiers = allModifiers(tokens.resolver).map(({ name }) => name);
     throw new SeveralPermutationsError({ asked, modifiers, example });
-}
-
-export function permutationIn(tokens: DesignTokens, input: Input = {}): Permutation {
-    const found = findPermutation(tokens, input);
-    if ("reason" in found) throw new PermutationError(found);
-    return found;
 }
 
 export function findPermutation(
@@ -127,6 +121,6 @@ type CompleteInput = { ok: true; input: Input } | ({ ok: false } & InputProblem)
  * // => { ok: true, input: { mode: "dark" } }
  */
 export function completeInput(tokens: DesignTokens, input: Input): CompleteInput {
-    const checked = checkedInput(modifiersIn(tokens.resolver), input);
+    const checked = checkedInput(allModifiers(tokens.resolver), input);
     return checked.ok ? checked : { ok: false, ...checked.problems[0] };
 }

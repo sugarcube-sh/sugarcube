@@ -1,7 +1,7 @@
 import type { Span } from "../model.js";
 import { relatedMessages } from "../error-messages.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
-import { type JsonFile, type JsonProblem, type ParsedJson, parseJson, spanOf } from "./json.js";
+import { type JsonFile, type JsonProblem, type ParsedJson, parseJson, toSpan } from "./json.js";
 
 export type FileText = { text: string } | { missing: true };
 export type Request = string[];
@@ -80,17 +80,17 @@ function openOnce(
     ];
     for (const problem of problems.sort((a, b) => a.offset - b.offset)) {
         diagnostics.found(
-            diagnostic("invalid-json", { reason: problem.reason }, { span: spanOf(file, problem) }),
+            diagnostic("invalid-json", { reason: problem.reason }, { span: toSpan(file, problem) }),
         );
     }
     if (problems.length > 0 || !root) return undefined;
 
     for (const { key, first, last } of parsed.duplicates) {
         const relatedInformation = [
-            { message: relatedMessages.alsoWrittenHere, span: spanOf(file, first) },
+            { message: relatedMessages.alsoWrittenHere, span: toSpan(file, first) },
         ];
         diagnostics.found(
-            diagnostic("duplicate-key", { key }, { span: spanOf(file, last), relatedInformation }),
+            diagnostic("duplicate-key", { key }, { span: toSpan(file, last), relatedInformation }),
         );
     }
     return { path, root, lineStarts: parsed.lineStarts };

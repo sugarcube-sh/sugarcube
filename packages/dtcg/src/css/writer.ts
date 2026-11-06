@@ -175,12 +175,12 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
     const skipped = (token: Token) => skip?.(token) ?? false;
     const inlined = (token: Token) => references === "values" || skipped(token);
 
-    const writtenIn = new Map<Colors, Map<Token, CSSWritten | undefined>>();
+    const cache = new Map<Colors, Map<Token, CSSWritten | undefined>>();
     const written = (token: Token, colors: Colors): CSSWritten | undefined => {
-        let mode = writtenIn.get(colors);
+        let mode = cache.get(colors);
         if (!mode) {
             mode = new Map();
-            writtenIn.set(colors, mode);
+            cache.set(colors, mode);
         }
         if (mode.has(token)) return mode.get(token);
         const plain = asWritten(token, colors);

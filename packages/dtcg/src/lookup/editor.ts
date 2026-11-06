@@ -7,9 +7,10 @@ import type {
     Reference,
     Span,
 } from "../model.js";
-import { spanIn } from "../read/linked.js";
-import { diagnosticsAtIn } from "./diagnostics.js";
-import { jsonIn, jsonPathIn } from "./json-path.js";
+import { findNodeAtLocation, parse } from "jsonc-parser";
+import { findJsonPath, getTree } from "./json-path.js";
+
+export const SPAN_OF = Symbol.for("@sugarcube-sh/dtcg/span-of");
 
 /**
  * Finds where a definition or reference is written.
@@ -31,7 +32,9 @@ import { jsonIn, jsonPathIn } from "./json-path.js";
  * // }
  */
 export function getSpan(tokens: DesignTokens, definitionOrReference: Definition | Reference): Span {
-    return spanIn(tokens, definitionOrReference);
+    return (tokens as unknown as { [SPAN_OF](of: Definition | Reference): Span })[SPAN_OF](
+        definitionOrReference,
+    );
 }
 
 /**
@@ -50,7 +53,7 @@ export function getJsonPath(
     tokens: DesignTokens,
     definitionOrReference: Definition | Reference,
 ): JsonPath {
-    return jsonPathIn(tokens, spanIn(tokens, definitionOrReference));
+    return findJsonPath(tokens, getSpan(tokens, definitionOrReference));
 }
 
 /**
@@ -73,7 +76,10 @@ export function getJsonAt(
     file: string,
     jsonPath: JsonPath,
 ): JsonValue | undefined {
-    return jsonIn(tokens, file, jsonPath);
+    const tree = getTree(tokens, file);
+    const node = tree && findNodeAtLocation(tree, [...jsonPath]);
+    const text = node && tokens.getText(file)?.slice(node.offset, node.offset + node.length);
+    return text === undefined ? undefined : (parse(text) as JsonValue);
 }
 
 /**
@@ -91,7 +97,14 @@ export function getJsonAt(
  */
 export function getDiagnosticsAt(
     tokens: DesignTokens,
-    place: Pick<Span, "file" | "offset" | "length">,
+    { file, offset, length }: Pick<Span, "file" | "offset" | "length">,
 ): readonly Diagnostic[] {
-    return diagnosticsAtIn(tokens, place);
+    const end = offset + length;
+    return tokens.diagnostics.filter(
+        ({ span }) =>
+            span !== undefined &&
+            span.file === file &&
+            span.offset <= end &&
+            offset <= span.offset + span.length,
+    );
 }

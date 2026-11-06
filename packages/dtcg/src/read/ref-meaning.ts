@@ -15,11 +15,11 @@ export interface Aim {
     steps: string[] | undefined;
 }
 
-export function stepsOf(reference: WrittenReference): string[] | undefined {
+export function toPointerSteps(reference: WrittenReference): string[] | undefined {
     return reference.syntax === "json-pointer" ? refSteps(reference.pointer) : undefined;
 }
 
-export function reachOf({ reference, steps }: Aim, merged: Merged): Reached {
+export function followReference({ reference, steps }: Aim, merged: Merged): Reached {
     if (reference.syntax === "json-pointer") return reach(steps, merged);
     const { path } = reference;
     const token = merged.tokens.get(path);
@@ -42,12 +42,12 @@ export function reach(steps: string[] | undefined, merged: Merged): Reached {
 }
 
 export function pointerParts(steps: string[]): { path?: string; inside?: string[] } {
-    const valueAt = steps.indexOf("$value");
-    const before = valueAt === -1 ? steps : steps.slice(0, valueAt);
+    const valueStep = steps.indexOf("$value");
+    const before = valueStep === -1 ? steps : steps.slice(0, valueStep);
     const path = before.length === 0 ? undefined : before.join(".");
     return {
         ...(path !== undefined && { path }),
-        ...(valueAt !== -1 && { inside: steps.slice(valueAt + 1) }),
+        ...(valueStep !== -1 && { inside: steps.slice(valueStep + 1) }),
     };
 }
 

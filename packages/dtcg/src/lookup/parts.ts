@@ -1,16 +1,16 @@
 import type { JsonPath, Part, Token, TokenType } from "../model.js";
 import { syntaxes } from "../values/syntaxes.js";
 import { isJsonObject } from "../values/json.js";
-import { type ArraySyntax, type Syntax, choiceOf, syntaxOf } from "../values/syntax.js";
+import { type ArraySyntax, type Syntax, chooseByKind, getSyntax } from "../values/syntax.js";
 
-export function partsOf(token: Token): Part | undefined {
+export function buildParts(token: Token): Part | undefined {
     if (token.resolved === undefined) return undefined;
-    return partOf(token, token.type, token.resolved, []) as Part;
+    return buildPart(token, token.type, token.resolved, []) as Part;
 }
 
 type Built = Record<string, unknown>;
 
-function partOf(token: Token, type: TokenType, resolved: unknown, property: JsonPath): unknown {
+function buildPart(token: Token, type: TokenType, resolved: unknown, property: JsonPath): unknown {
     const part = placed(token, property, { type, resolved });
     addParts(token, part, syntaxes[type], resolved, property);
     return part;
@@ -29,14 +29,17 @@ function addParts(
             if (!isJsonObject(resolved)) return;
             if (syntax.tag !== undefined && resolved.kind !== syntax.tag) return;
             for (const [name, propertySyntax] of syntax.inOrder) {
-                const inner = syntaxOf(propertySyntax, resolved);
-                const found = partsAt(token, inner, resolved[name], [...property, name]);
+                const inner = getSyntax(propertySyntax, resolved);
+                const found = buildPartWithSyntax(token, inner, resolved[name], [
+                    ...property,
+                    name,
+                ]);
                 if (found !== undefined) part[name] = found;
             }
             return;
         }
         case "oneOf": {
-            const choice = choiceOf(syntax, resolved);
+            const choice = chooseByKind(syntax, resolved);
             if (typeof choice === "function") return;
             if (!("list" in choice)) addParts(token, part, choice, resolved, property);
             else if (choice.list.kind === "elements") {
@@ -50,15 +53,20 @@ function addParts(
     }
 }
 
-function partsAt(token: Token, syntax: Syntax, value: unknown, property: JsonPath): unknown {
+function buildPartWithSyntax(
+    token: Token,
+    syntax: Syntax,
+    value: unknown,
+    property: JsonPath,
+): unknown {
     if (!syntax.hasParts) return undefined;
-    if (syntax.kind === "ofType") return partOf(token, syntax.type, value, property);
+    if (syntax.kind === "ofType") return buildPart(token, syntax.type, value, property);
     if (syntax.kind !== "oneOf") return undefined;
-    const choice = choiceOf(syntax, value);
+    const choice = chooseByKind(syntax, value);
     if (typeof choice === "function") return undefined;
     return "list" in choice
         ? listParts(token, choice.list, choice.items, property)
-        : partsAt(token, choice, value, property);
+        : buildPartWithSyntax(token, choice, value, property);
 }
 
 function listParts(
@@ -77,11 +85,11 @@ function listParts(
             });
         case "list":
             return items.map((item, index) =>
-                partsAt(token, syntax.item, item, [...property, index]),
+                buildPartWithSyntax(token, syntax.item, item, [...property, index]),
             );
         case "tuple":
             return syntax.items.map((itemSyntax, index) =>
-                partsAt(token, itemSyntax, items[index], [...property, index]),
+                buildPartWithSyntax(token, itemSyntax, items[index], [...property, index]),
             );
     }
 }

@@ -38,7 +38,7 @@ export function onFileChanged(
         listener(path);
         const check = setTimeout(async () => {
             waiting.delete(check);
-            const now = await statsOf(path);
+            const now = await readStats(path);
             if (stopped) return;
             if (now && !(before && sameFile(before, now))) listener(path);
         }, WATCHER_DROPS_CHANGES_FOR_MS);
@@ -62,7 +62,7 @@ function statsNow(path: string): FileStats | undefined {
     }
 }
 
-function statsOf(path: string): Promise<FileStats | undefined> {
+function readStats(path: string): Promise<FileStats | undefined> {
     return stat(path).then(
         ({ size, mtimeMs }) => ({ size, mtimeMs }),
         () => undefined,

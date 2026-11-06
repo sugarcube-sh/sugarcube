@@ -4,7 +4,7 @@ export function isAbsolute(path: string): boolean {
     return path.startsWith("/") || schemeOrDrive.test(path);
 }
 
-export function folderOf(path: string): string {
+export function getFolder(path: string): string {
     const slash = path.lastIndexOf("/");
     return slash === -1 ? "" : path.slice(0, slash);
 }
@@ -44,5 +44,5 @@ export function join(folder: string, path: string): string {
  * // => "tokens/dark.json"
  */
 export function getFilePath(entryFile: string, file: string): string {
-    return join(folderOf(entryFile), file);
+    return join(getFolder(entryFile), file);
 }

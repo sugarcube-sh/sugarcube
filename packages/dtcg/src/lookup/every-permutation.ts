@@ -1,5 +1,5 @@
 import type { AnswerInPermutations, DesignTokens, Permutation } from "../model.js";
-import { permutationsOf } from "../read/permutations-of.js";
+import { makePermutations } from "../read/make-permutations.js";
 import { sameList } from "../read/same-object.js";
 
 /**
@@ -29,16 +29,16 @@ export function askEveryPermutation<Answer>(
     tokens: DesignTokens,
     question: (permutation: Permutation) => Answer,
 ): readonly AnswerInPermutations<Answer>[] {
-    const found: { answer: Answer; gave: Permutation[] }[] = [];
+    const answers: { answer: Answer; gave: Permutation[] }[] = [];
     for (const permutation of tokens.permutations) {
         const answer = question(permutation);
-        const same = found.find((each) => sameAnswer(each.answer, answer));
+        const same = answers.find((each) => sameAnswer(each.answer, answer));
         if (same) same.gave.push(permutation);
-        else found.push({ answer, gave: [permutation] });
+        else answers.push({ answer, gave: [permutation] });
     }
-    return found.map(({ answer, gave }) => ({
+    return answers.map(({ answer, gave }) => ({
         answer,
-        permutations: permutationsOf(gave, tokens.permutations),
+        permutations: makePermutations(gave, tokens.permutations),
     }));
 }
 
