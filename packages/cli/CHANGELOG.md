@@ -1,5 +1,30 @@
 # @sugarcube-sh/cli
 
+## 0.2.0
+
+### Minor Changes
+
+- 97dbf1f: `sugarcube analyze impact` now draws what a token reaches as a tree, and shows the markup file and line where a utility class uses it, counting each place. Files with the same name are told apart by their folder.
+- 77d7e99: `sugarcube analyze` now reads tokens the same way `generate` does. Token errors show with their file and line.
+- b150792: `generate` and `validate` now run on sugarcube's new engine.
+
+  When something's wrong with your tokens, both commands print one problem per line, each starting with the file, line and column, which most terminals and editors let you click. Where there's a likely fix the message suggests one ("did you mean `color.ink`?"), and a problem that only affects some of your themes says which ones.
+
+  `validate` now checks the same tokens `generate` would build, using your config; before, any problem in them came out as "No path specified".
+
+  A mistake in `sugarcube.config.ts` or in a flag is now reported as a config mistake rather than "An unexpected error occurred", and `lint` and `analyze` no longer call every config problem "No design tokens found".
+
+- 2a36a1c: `generate --watch` now rebuilds as soon as you save, keeps watching when a token file is broken (even at start), shows each problem with its file, line and column, picks up changes to `sugarcube.config.ts`, and watches token files you add to your resolver.
+
+### Patch Changes
+
+- 8bd8b47: Fixes a problem where an error in a token file that your resolver refers to by its full path showed the wrong location for that file.
+- 6705941: Fixes a problem where a mistake in `sugarcube.config.ts` was reported as "Invalid input" without saying which setting was wrong. Each mistake now gets its own line naming the setting and what it must be.
+- 1dd09f1: Error messages for common mistakes in token files, like a typo in `$value` or a reference missing its braces, now say what's wrong and, where they can, how to fix it.
+- Updated dependencies [b150792]
+- Updated dependencies [77d7e99]
+  - @sugarcube-sh/core@0.3.0
+
 ## 0.1.28
 
 ### Patch Changes
