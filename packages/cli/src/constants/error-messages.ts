@@ -86,9 +86,6 @@ export const ERROR_MESSAGES = {
 
     COMPONENTS_INVALID_FRAMEWORK: () => "Invalid framework. Must be one of: react, css-only.",
 
-    FILENAME_CONTAINS_PATH: (flagName: string, value: string) =>
-        `Invalid ${flagName} value: "${value}". Must be a filename, not a path.\n\nUse --variables-dir or --utilities-dir to specify the directory.`,
-
     LINT_NO_FILES_SCANNED: (cwd: string) =>
         `No stylesheets found, so nothing was linted.\n\n${noStylesheetsHelp(cwd, `Or name it for one run: ${color.cyan("sugarcube lint ../css")}\n\n`)}`,
 
