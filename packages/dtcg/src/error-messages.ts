@@ -129,6 +129,8 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
 
 export const thrownMessages = {
     couldNotFetch: (path: string) => `\`${path}\` could not be fetched`,
+    notInLastRead: (path: string) =>
+        `\`${path}\` wasn't part of the last read: pass its text to \`reread\`, or read again`,
     nothingWrittenThere: (file: string) =>
         `nothing is written at that place in \`${file}\` in this read: it comes from a read of other text`,
     permutation: (detail: PermutationErrorDetail) =>
@@ -309,11 +311,12 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         message: ({ name }) => `the name \`${name}\` starts or ends with a space`,
     },
     "unknown-property": {
-        severity: (detail) => ("jsonPath" in detail ? "warning" : "error"),
+        severity: (detail) => ("jsonPath" in detail || detail.ignored ? "warning" : "error"),
         message: (detail) => {
             if ("jsonPath" in detail) return ignoredMessage(detail.type, detail.property);
-            const { property, owner, similar } = detail;
+            const { property, owner, similar, ignored } = detail;
             const notAProperty = `\`${property}\` is not a property of ${ownerWords[owner]}`;
+            if (ignored) return `${notAProperty}, so it is ignored`;
             if (similar !== undefined) return `${notAProperty}${didYouMean(similar)}`;
             if (owner === "resolver" || isSpecKey(property)) return notAProperty;
             return `${notAProperty}: put your own data in \`$extensions\``;

@@ -1682,8 +1682,11 @@ export interface DiagnosticDetailByKind {
     /**
      * A property the spec doesn't define, such as `$foo` on a token.
      *
-     * It's ignored. In a value, such as `paragraphSpacing` in a typography value, it's only
-     * reported with `ignoreUnknownProperties` on. Otherwise it's an `invalid-value`.
+     * It's an error, except where it's set aside with a warning: a `$` property such as
+     * `$metadata` on the group a token file starts with, which design tools write there, and a
+     * property in a value, such as `paragraphSpacing` in a typography value, with
+     * `ignoreUnknownProperties` on. Without that option, a property in a value is an
+     * `invalid-value`.
      */
     "unknown-property":
         | {
@@ -1694,6 +1697,8 @@ export interface DiagnosticDetailByKind {
                * close.
                */
               readonly similar?: string;
+              /** Present when the property is set aside, so the tokens are read without it. */
+              readonly ignored?: true;
           }
         | {
               readonly property: string;
@@ -2072,10 +2077,14 @@ export interface DesignTokens {
     /**
      * Reads the tokens again, after some files changed.
      *
-     * It uses the same entry file and options. These tokens don't change.
+     * It uses the same entry file and options, and gives what a fresh read of the same files
+     * gives. These tokens don't change.
      *
      * @param changed - Each changed file's new text, such as `{ "dark.json": text }`. Pass `null`
      * for a deleted file.
+     *
+     * @throws `TypeError` If the tokens came from `read` and a changed file now points at a file
+     * that read never fetched. Pass that file's text too, or read again.
      *
      * @example
      * // dark.json now points color.primary at color.blue.500

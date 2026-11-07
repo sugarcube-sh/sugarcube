@@ -101,13 +101,14 @@ describe("what breaks a rule of the spec is an error, and what is set aside a wa
         ]);
     });
 
-    it("a property the specification does not define on a token or a group is an error, and one at the top level is the file's own", () => {
+    it("a property the specification does not define on a token or a group is an error, and a $ key at the start of a token file is set aside with a warning, $schema allowed", () => {
         const text = `{
             "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
             "$themes": [],
             "g": { "$note": "ours", "a": { "$type": "number", "$value": 1, "$figmaId": "12:34" } }
         }`;
         expect(severities(text)).toStrictEqual([
+            ["unknown-property", "warning", "$themes"],
             ["unknown-property", "error", "$note"],
             ["unknown-property", "error", "$figmaId"],
         ]);

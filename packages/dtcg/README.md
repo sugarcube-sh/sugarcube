@@ -611,6 +611,9 @@ fixed.diagnostics.length   // 0: the typo is fixed
 
 To say a file was deleted, pass `null` instead of its text.
 
+`reread` doesn't fetch files. So if your tokens came from `read` and a changed file now points at a
+file that read never fetched, pass that file's text too, or `read` again.
+
 ### See what changed
 
 Ask the new tokens what changed since the old ones, with `getChangesSince`:

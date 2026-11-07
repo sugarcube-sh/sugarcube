@@ -12,6 +12,7 @@ export default defineConfig({
         "packages/core/tests/__fixtures__/tokens/invalid-json.json",
         // Spec case inputs are exact bytes; offsets in expected.json depend on them.
         "packages/dtcg/tests/read/cases/*/input/**",
+        "packages/dtcg/tests/conformance/2025.10/**",
         "packages/cli/tests/__golden__/**",
         // Common mistakes, some not valid JSON; positions in the golden output depend on them.
         "packages/cli/tests/__fixtures__/mistakes/**",

@@ -32,6 +32,7 @@ import { tokenPath } from "../path.js";
 import { makePermutations } from "./make-permutations.js";
 import { getReferenceSpan, toReferenceInPermutations } from "./reference.js";
 import { samePlace } from "./same-object.js";
+import { type KnownFiles, knownInMemory, withChanges } from "./known-files.js";
 
 export const NO_REFERENCES: readonly Reference[] = Object.freeze([]);
 export const NO_DEFINITIONS: readonly Definition[] = Object.freeze([]);
@@ -275,7 +276,8 @@ const contextShared = {
 interface Kept {
     texts: Readonly<Record<string, string>>;
     moved: ReadonlyMap<Definition | Reference, Span>;
-    readFiles(files: Record<string, string>, previous: DesignTokens): DesignTokens;
+    known: KnownFiles;
+    readAgain(known: KnownFiles, previous: DesignTokens): DesignTokens;
 }
 
 type DesignTokensFields = Omit<DesignTokens, keyof DesignTokensObject>;
@@ -449,21 +451,17 @@ class DesignTokensObject {
     }
 
     reread(changed: Readonly<Record<string, string | null>>) {
-        const { texts, readFiles } = this.#kept;
-        const files: Record<string, string> = { ...texts };
-        for (const [file, text] of Object.entries(changed)) {
-            if (text === null) delete files[file];
-            else files[file] = text;
-        }
-        return readFiles(files, this.#self);
+        const { known, readAgain } = this.#kept;
+        return readAgain(withChanges(known, changed), this.#self);
     }
 
     rereadAll(files: Readonly<Record<string, string>>) {
-        const { texts, readFiles } = this.#kept;
+        const { texts, readAgain } = this.#kept;
         const unchanged =
             Object.keys(texts).every((file) => file in files) &&
             Object.entries(files).every(([file, text]) => texts[file] === text);
-        return unchanged ? this.#self : readFiles({ ...files }, this.#self);
+        if (unchanged) return this.#self;
+        return readAgain(knownInMemory(this.#self.entryFile, Object.entries(files)), this.#self);
     }
 
     toMemory() {
