@@ -11,6 +11,7 @@ import { buildPermutations } from "./build.js";
 import { missingReferences } from "./missing.js";
 import type { PermutationOptions } from "./permutations.js";
 import { fileName, getFolder, join, normalise } from "./paths.js";
+import { type KnownFiles, answerFrom, knownInMemory } from "./known-files.js";
 import { parseJson } from "./json.js";
 import { isResolver } from "./resolver.js";
 import { thrownMessages } from "../error-messages.js";
@@ -51,12 +52,16 @@ export async function read(
 ): Promise<DesignTokens> {
     const started = performance.now();
     const run = load(fileName(entry), permutationOptions(options), undefined);
+    const fetched = new Map<string, FileText>();
     let step = run.next();
     while (!step.done) {
-        step = run.next(await fetchAll(step.value, getFolder(entry), readText));
+        const answer = await fetchAll(step.value, getFolder(entry), readText);
+        for (const [path, text] of Object.entries(answer)) fetched.set(normalise(path), text);
+        step = run.next(answer);
     }
     options.onStage?.("load", performance.now() - started);
-    return toDesignTokens(step.value, options, undefined);
+    const known = { entryFile: fileName(entry), texts: fetched, hasEveryFile: false };
+    return toDesignTokens(step.value, options, undefined, known);
 }
 
 async function fetchAll(files: Request, folder: string, readText: ReadText): Promise<Answer> {
@@ -89,33 +94,24 @@ async function fetchAll(files: Request, folder: string, readText: ReadText): Pro
  * const tokens = readFromMemory({ files: { "color.json": text } });
  */
 export function readFromMemory(memory: TokensInMemory, options: ReadOptions = {}): DesignTokens {
-    return fromMemory(memory, options, undefined);
+    const texts = new Map(
+        Object.entries(memory.files).map(([path, text]) => [normalise(path), text]),
+    );
+    const entry = memory.entryFile ?? entryAmong(texts);
+    return readKnown(knownInMemory(entry, texts), options, undefined);
 }
 
-function fromMemory(
-    memory: TokensInMemory,
+function readKnown(
+    known: KnownFiles,
     options: ReadOptions,
     previous: DesignTokens | undefined,
 ): DesignTokens {
     const started = performance.now();
-    const texts = new Map(
-        Object.entries(memory.files).map(([path, text]) => [normalise(path), text]),
-    );
-    const entry = normalise(memory.entryFile ?? entryAmong(texts));
-    const folder = getFolder(entry);
-    const run = load(fileName(entry), permutationOptions(options), previous?.resolver);
-
+    const run = load(fileName(known.entryFile), permutationOptions(options), previous?.resolver);
     let step = run.next();
-    while (!step.done) {
-        const answer: Answer = {};
-        for (const path of step.value) {
-            const text = texts.get(join(folder, path));
-            answer[path] = text === undefined ? { missing: true } : { text };
-        }
-        step = run.next(answer);
-    }
+    while (!step.done) step = run.next(answerFrom(known, step.value));
     options.onStage?.("load", performance.now() - started);
-    return toDesignTokens(step.value, options, previous);
+    return toDesignTokens(step.value, options, previous, known);
 }
 
 function entryAmong(texts: Map<string, string>): string {
@@ -131,11 +127,6 @@ function entryAmong(texts: Map<string, string>): string {
     throw new TypeError(thrownMessages.noResolver(names));
 }
 
-function readingAgain(entryFile: string, options: ReadOptions) {
-    return (files: Record<string, string>, previous: DesignTokens) =>
-        fromMemory({ files, entryFile }, options, previous);
-}
-
 function permutationOptions({
     inputs = "all",
     permutationLimit = 32,
@@ -147,6 +138,7 @@ function toDesignTokens(
     loaded: Loaded,
     options: ReadOptions,
     previous: DesignTokens | undefined,
+    known: KnownFiles,
 ): DesignTokens {
     const {
         onStage,
@@ -214,7 +206,8 @@ function toDesignTokens(
         {
             texts: loaded.texts,
             moved: places.moved,
-            readFiles: readingAgain(loaded.entry, options),
+            known,
+            readAgain: (files, from) => readKnown(files, options, from),
         },
     );
 }

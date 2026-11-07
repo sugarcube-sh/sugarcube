@@ -652,6 +652,13 @@ describe("diagnostic messages for a token's or group's own properties", () => {
         );
     });
 
+    it("says a property set aside is ignored, and is a warning", () => {
+        const { message, severity } = diagnosticMessages["unknown-property"];
+        const detail = { property: "$metadata", owner: "group", ignored: true } as const;
+        expect(message(detail)).toBe("`$metadata` is not a property of a group, so it is ignored");
+        expect(typeof severity === "function" && severity(detail)).toBe("warning");
+    });
+
     it("says no more than that at the top of a resolver, which has no `$extensions`", () => {
         const { message } = diagnosticMessages["unknown-property"];
         expect(message({ property: "owner", owner: "resolver" })).toBe(

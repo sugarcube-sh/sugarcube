@@ -1,6 +1,6 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 5.2, 6.1 to 6.3, 6.7.2 and 6.7.3: tokens and groups, group properties, a $root token and its path, a type from the closest group with one, the top level included. $schema and other unknown $ keys at the top level are file metadata",
+  "spec": "Format 5.2, 6.1 to 6.3, 6.7.2 and 6.7.3: tokens and groups, group properties, a $root token and its path, a type from the closest group with one, the top level included. $schema at the top level names the file's JSON Schema, as the group's schema allows; any other unknown $ key there is set aside with a warning, since design tools write their own data about the file there",
   "permutations": [
     {
       "tokens": [
@@ -147,5 +147,19 @@
       ]
     }
   ],
-  "diagnostics": []
+  "diagnostics": [
+    {
+      "kind": "unknown-property",
+      "detail": {
+        "property": "$metadata",
+        "owner": "group",
+        "ignored": true
+      },
+      "span": {
+        "file": "tokens.json",
+        "text": "\"$metadata\""
+      },
+      "path": ""
+    }
+  ]
 }

@@ -258,6 +258,9 @@ export function walkSource(
                     report("invalid-name", { name: key, character: "$" }, keyNode, { path });
                 } else if (!top) {
                     report("unknown-property", { property: key, owner }, keyNode, { path });
+                } else if (key !== "$schema") {
+                    const detail = { property: key, owner, ignored: true } as const;
+                    report("unknown-property", detail, keyNode, { path });
                 }
             }
         }
