@@ -2,12 +2,7 @@ import { statSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import type { FileWatcher } from "./live-tokens.js";
 
-/**
- * A saved file's size and modified time, from a watcher.
- *
- * Node's `Stats` has both.
- */
-export interface FileStats {
+interface FileStats {
     size: number;
     mtimeMs: number;
 }
@@ -17,8 +12,8 @@ const WATCHER_DROPS_CHANGES_FOR_MS = 50;
 /**
  * Calls `listener` each time `watcher` says a file was saved.
  *
- * chokidar can miss the end of a save. So 50 ms after each save, it checks the file again. If the
- * file is different by then, it calls `listener` again.
+ * chokidar can miss the end of a save. So it looks at the file just before calling `listener`, and
+ * again 50 ms later. If the file is different by then, it calls `listener` again.
  *
  * @param watcher - The watcher, such as `chokidar.watch(paths)`.
  * @param listener - Gets the saved file's path.
@@ -34,7 +29,8 @@ export function onFileChanged(
 ): () => void {
     const waiting = new Set<ReturnType<typeof setTimeout>>();
     let stopped = false;
-    const reported = (path: string, before: FileStats | undefined) => {
+    const changed = (path: string) => {
+        const before = statsNow(path);
         listener(path);
         const check = setTimeout(async () => {
             waiting.delete(check);
@@ -44,7 +40,6 @@ export function onFileChanged(
         }, WATCHER_DROPS_CHANGES_FOR_MS);
         waiting.add(check);
     };
-    const changed = (path: string, seen?: FileStats) => reported(path, seen ?? statsNow(path));
     watcher.on("change", changed);
     return () => {
         stopped = true;

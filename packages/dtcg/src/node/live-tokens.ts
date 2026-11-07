@@ -1,5 +1,5 @@
 import type { DesignTokens, ReadOptions } from "../model.js";
-import { type FileStats, onFileChanged } from "./file-changed.js";
+import { onFileChanged } from "./file-changed.js";
 import { diskPath, getAbsoluteFilePath } from "./paths.js";
 import { read } from "./read.js";
 
@@ -31,10 +31,7 @@ export interface ReadEvent {
  */
 export interface FileWatcher {
     add(paths: string | readonly string[]): unknown;
-    on(
-        event: "change" | "add" | "unlink",
-        listener: (path: string, stats?: FileStats) => void,
-    ): unknown;
+    on(event: "change" | "add" | "unlink", listener: (path: string) => void): unknown;
 }
 
 /**
