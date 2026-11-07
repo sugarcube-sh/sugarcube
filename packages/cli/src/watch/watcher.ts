@@ -13,7 +13,7 @@ export type WatchChange =
     | { kind: "markup"; path: string };
 
 export interface Watched {
-    content?: string[];
+    content?: readonly string[];
     markup: boolean;
 }
 
@@ -44,7 +44,7 @@ function globBaseDir(glob: string): string {
 }
 
 // Derive the directories to watch for markup changes from `content` globs. (Chokidar v5 no longer expands globs)
-export function resolveMarkupWatchTargets(content: string[] | undefined): string[] {
+export function resolveMarkupWatchTargets(content: readonly string[] | undefined): string[] {
     if (!content || content.length === 0) return ["."];
     const dirs = content.filter((glob) => !glob.startsWith("!")).map(globBaseDir);
     return [...new Set(dirs)];
@@ -73,7 +73,7 @@ export async function startWatcher(
 ): Promise<WatcherHandle> {
     let watched = first;
 
-    const startMarkup = async (content: string[] | undefined): Promise<WatcherHandle> => {
+    const startMarkup = async (content: readonly string[] | undefined): Promise<WatcherHandle> => {
         const markup = chokidarWatch(resolveMarkupWatchTargets(content), {
             ...CHANGES_ONLY,
             ignored: ignoredMarkup,

@@ -129,6 +129,42 @@ describe("fillDefaults", () => {
         });
     });
 
+    it("gives a config nothing can change, all the way down", () => {
+        const config = fillDefaults(
+            minimalConfig({
+                variables: {
+                    permutations: [{ input: { theme: "dark" }, selector: [".dark"] }],
+                },
+                utilities: {
+                    classes: {
+                        color: [{ source: "color.*", directions: ["x"], safelist: ["red"] }],
+                    },
+                },
+                content: ["src/**/*.html"],
+                studio: { repository: "acme/site" },
+            }),
+        );
+        const changes = () => {
+            // @ts-expect-error
+            config.resolver = "other.resolver.json";
+            // @ts-expect-error
+            config.variables.path = "other.css";
+            // @ts-expect-error
+            config.variables.transforms.fluid.min = 100;
+            // @ts-expect-error
+            config.variables.permutations?.push({ input: {}, selector: ":root" });
+            // @ts-expect-error
+            config.variables.permutations![0]!.input.theme = "light";
+            // @ts-expect-error
+            config.utilities.classes!.color = { source: "space.*" };
+            // @ts-expect-error
+            config.content?.push("other/**");
+            // @ts-expect-error
+            config.studio!.repository = "acme/other";
+        };
+        expect(changes).toBeTypeOf("function");
+    });
+
     describe("top-level fields", () => {
         it("preserves resolver path unchanged", () => {
             const result = fillDefaults(

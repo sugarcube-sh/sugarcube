@@ -67,10 +67,10 @@ export const SUGARCUBE_API_PLUGIN_NAME = "sugarcube:api";
  * problems are not here: a plugin editing them finds those from its own version.
  */
 export interface SugarcubePluginContext {
-    config: LoadedConfig["config"];
-    configProblems: readonly Reported[];
-    tokens: DesignTokens;
-    onReload: (fn: () => void) => () => void;
+    readonly config: LoadedConfig["config"];
+    readonly configProblems: readonly Reported[];
+    readonly tokens: DesignTokens;
+    readonly onReload: (fn: () => void) => () => void;
 }
 
 interface Good {

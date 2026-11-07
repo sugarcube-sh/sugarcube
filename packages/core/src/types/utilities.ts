@@ -2,13 +2,13 @@ export type DirectionalVariant = "top" | "right" | "bottom" | "left" | "x" | "y"
 
 export type PropertyUtilityConfig = {
     /** Token path pattern (e.g., "space.*", "color.primary.*"). */
-    source: string;
+    readonly source: string;
     /** Directional variants for spacing properties. */
-    directions?: DirectionalVariant | DirectionalVariant[];
+    readonly directions?: DirectionalVariant | readonly DirectionalVariant[];
     /** Custom prefix for generated classes. */
-    prefix?: string;
+    readonly prefix?: string;
     /** Strip duplicate prefix (e.g., "text-text-quiet" → "text-quiet"). */
-    stripDuplicates?: boolean;
+    readonly stripDuplicates?: boolean;
     /**
      * Force-generate classes regardless of markup usage (non-JIT).
      * - omitted / `false` — on-demand only (default).
@@ -16,5 +16,5 @@ export type PropertyUtilityConfig = {
      * - `string[]` — emit only the listed `*`-slot values, reusing this
      *   entry's own `source` / `prefix` / `directions`.
      */
-    safelist?: boolean | string[];
+    readonly safelist?: boolean | readonly string[];
 };

@@ -13,7 +13,10 @@ export function isNoConfigError(error: unknown): boolean {
     );
 }
 
-function resolveContentGlobs(content: string[] | undefined, baseDir: string): string[] | undefined {
+function resolveContentGlobs(
+    content: readonly string[] | undefined,
+    baseDir: string,
+): string[] | undefined {
     if (!content) return content;
     return content.map((glob) =>
         glob.startsWith("!") ? `!${resolve(baseDir, glob.slice(1))}` : resolve(baseDir, glob),
@@ -25,7 +28,7 @@ function resolveContentGlobs(content: string[] | undefined, baseDir: string): st
  * always named: the config's own, or the one found in the project.
  */
 export type LoadedConfig = {
-    config: InternalConfig & { resolver: string };
+    config: InternalConfig & { readonly resolver: string };
     /** The config file it came from, when there is one. */
     configFile?: string;
 };
@@ -102,8 +105,10 @@ export async function loadInternalConfig(
     const user = configFile ? validateSugarcubeConfig(await loadConfigFile(configFile)) : {};
     const resolver = overrides.resolver ?? user.resolver ?? (await foundResolver(root));
     const filled = fillDefaults({ ...user, resolver });
-    if (configFile) filled.content = resolveContentGlobs(filled.content, dirname(configFile));
-    const config = validateInternalConfig(overridden(filled, overrides));
+    const content = configFile
+        ? resolveContentGlobs(filled.content, dirname(configFile))
+        : filled.content;
+    const config = validateInternalConfig(overridden({ ...filled, content }, overrides));
     return { config: { ...config, resolver }, configFile };
 }
 

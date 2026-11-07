@@ -40,9 +40,8 @@ export async function connectStudio(signal: AbortSignal): Promise<StudioConnecti
         ...(save && { save }),
         ...(signIn && { signIn }),
         message: {
-            value: () => shared.value() as unknown as StudioMessage | undefined,
-            on: (event, listener) =>
-                shared.on(event, (next) => listener(next as unknown as StudioMessage)),
+            value: () => shared.value() as StudioMessage | undefined,
+            on: (event, listener) => shared.on(event, (next) => listener(next as StudioMessage)),
         },
     };
 }

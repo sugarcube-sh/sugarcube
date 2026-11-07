@@ -168,6 +168,18 @@ describe("sugarcube's Vite plugin", () => {
         await expect(sugarcube()).resolves.toBeDefined();
     });
 
+    it("hands other plugins a config they can't change", () => {
+        const changes = (context: SugarcubePluginContext) => {
+            // @ts-expect-error
+            context.config = { ...context.config, resolver: "other.resolver.json" };
+            // @ts-expect-error
+            context.config.variables.path = "other.css";
+            // @ts-expect-error
+            context.config.content?.push("other/**");
+        };
+        expect(changes).toBeTypeOf("function");
+    });
+
     it("serves the new value when a token is saved", async () => {
         await project();
         const { context, css } = await serve();
