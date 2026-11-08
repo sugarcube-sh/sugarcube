@@ -1,0 +1,6 @@
+{
+  "color": {
+    "$extensions": { "org.other": false },
+    "muted": { "$value": { "colorSpace": "srgb", "components": [0.4, 0.4, 0.4] } }
+  }
+}

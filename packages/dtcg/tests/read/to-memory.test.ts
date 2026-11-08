@@ -40,6 +40,14 @@ describe("tokens.entryFile", () => {
         });
         expect(tokens.entryFile).toBe("design.resolver.json");
     });
+
+    it("takes an entry left undefined as no entry", () => {
+        const entryFile: string | undefined = undefined;
+
+        expect(readFromMemory({ files: { "base.json": base }, entryFile }).files).toStrictEqual([
+            "base.json",
+        ]);
+    });
 });
 
 describe("tokens.toMemory", () => {

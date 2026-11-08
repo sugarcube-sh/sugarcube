@@ -1,0 +1,13 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Format 5.2.4, Resolver 4.1.4 and contract 02: dark's file replaces color.blue with one marked $deprecated, so the reference to it is a warning only in mode: dark, and names that permutation",
+  "diagnostics": [
+    {
+      "kind": "deprecated-reference",
+      "detail": { "ref": "color.blue", "reason": "Not in dark" },
+      "span": { "file": "color.json", "text": "\"{color.blue}\"" },
+      "path": "color.primary",
+      "permutations": [{ "mode": "dark" }]
+    }
+  ]
+}

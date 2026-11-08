@@ -1,7 +1,24 @@
 {
   "entry": "tokens.json",
-  "spec": "an extension that is not valid is reported once, where it is written, as a value that cannot be read is, though the group and token that extend it carry it too",
+  "spec": "an extension that is not valid is reported once, where it is written, as a value that cannot be read is, though the group and token that extend it carry it too. Format 6.4: the group that extends base has its $extensions, but they are written only on base, so only base says where",
   "options": { "extensionValidators": ["fluid"] },
+  "permutations": [
+    {
+      "groups": [
+        { "path": "", "extensionDefinitions": {} },
+        {
+          "path": "base",
+          "extensions": { "com.example": { "fluid": "yes" } },
+          "extensionDefinitions": { "com.example": { "source": 0 } }
+        },
+        {
+          "path": "copy",
+          "extensions": { "com.example": { "fluid": "yes" } },
+          "extensionDefinitions": {}
+        }
+      ]
+    }
+  ],
   "diagnostics": [
     {
       "kind": "extension-invalid",

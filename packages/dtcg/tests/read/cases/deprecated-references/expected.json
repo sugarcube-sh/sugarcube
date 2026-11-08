@@ -1,0 +1,33 @@
+{
+  "entry": "tokens.json",
+  "spec": "Format 5.2.4: a token may be $deprecated, true or a reason. A reference to a deprecated token, an alias or a JSON Pointer into its value (7.1.2), is a warning at the reference with the reason the token gives, none for true. A token deprecated by its group counts (6.3.1), one that writes false does not; a reference to a token that is not deprecated, and a pointer into a deprecated token's own value, are not reported",
+  "diagnostics": [
+    {
+      "kind": "deprecated-reference",
+      "detail": { "ref": "color.old", "reason": "Use color.new" },
+      "span": { "file": "tokens.json", "text": "\"{color.old}\"" },
+      "path": "color.primary"
+    },
+    {
+      "kind": "deprecated-reference",
+      "detail": { "ref": "color.gone" },
+      "span": { "file": "tokens.json", "text": "\"{color.gone}\"" },
+      "path": "color.secondary"
+    },
+    {
+      "kind": "deprecated-reference",
+      "detail": { "ref": "color.legacy.blue", "reason": "Use color.new" },
+      "span": { "file": "tokens.json", "text": "\"{color.legacy.blue}\"" },
+      "path": "color.from-group"
+    },
+    {
+      "kind": "deprecated-reference",
+      "detail": { "ref": "#/color/gone/$value/components/0" },
+      "span": {
+        "file": "tokens.json",
+        "text": "{ \"$ref\": \"#/color/gone/$value/components/0\" }"
+      },
+      "path": "color.tint"
+    }
+  ]
+}

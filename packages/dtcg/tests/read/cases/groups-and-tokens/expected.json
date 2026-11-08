@@ -110,6 +110,8 @@
         },
         {
           "path": "color.accent",
+          "type": "color",
+          "asWritten": null,
           "definitions": [
             {
               "source": 0,
