@@ -14,16 +14,8 @@
             "sources": [],
             "span": {
               "file": "tokens.resolver.json",
-              "offset": 204,
-              "length": 2,
-              "start": {
-                "line": 7,
-                "column": 57
-              },
-              "end": {
-                "line": 7,
-                "column": 59
-              }
+              "text": "[]",
+              "occurrence": 3
             }
           },
           {
@@ -31,31 +23,14 @@
             "sources": [],
             "span": {
               "file": "tokens.resolver.json",
-              "offset": 218,
-              "length": 2,
-              "start": {
-                "line": 7,
-                "column": 71
-              },
-              "end": {
-                "line": 7,
-                "column": 73
-              }
+              "text": "[]",
+              "occurrence": 4
             }
           }
         ],
         "span": {
           "file": "tokens.resolver.json",
-          "offset": 56,
-          "length": 63,
-          "start": {
-            "line": 4,
-            "column": 14
-          },
-          "end": {
-            "line": 4,
-            "column": 77
-          }
+          "text": "{ \"contexts\": { \"light\": [], \"dark\": [] }, \"default\": \"light\" }"
         }
       }
     ],
@@ -75,16 +50,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 152,
-        "length": 72,
-        "start": {
-          "line": 7,
-          "column": 5
-        },
-        "end": {
-          "line": 7,
-          "column": 77
-        }
+        "text": "{ \"$ref\": \"#/modifiers/theme\", \"contexts\": { \"dim\": [], \"bright\": [] } }"
       }
     }
   ]

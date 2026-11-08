@@ -1,9 +1,8 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { execaCommand } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CLI_PATH, PLAIN_OUTPUT, TEST_TIMEOUT, createPackageJson } from "./helpers.js";
+import { cli, createPackageJson, PLAIN_OUTPUT, TEST_TIMEOUT } from "./helpers.js";
 
 const color = (value: unknown) => ({ $type: "color", $value: value });
 const black = { colorSpace: "srgb", components: [0, 0, 0] };
@@ -38,7 +37,7 @@ describe("validate command", () => {
     });
 
     function validate(args = "") {
-        return execaCommand(`node ${CLI_PATH} validate ${args}`.trim(), {
+        return cli(`validate ${args}`.trim(), {
             cwd: testDir,
             timeout: TEST_TIMEOUT,
             reject: false,
@@ -230,6 +229,96 @@ describe("validate command", () => {
 
             expect(result.exitCode).toBe(1);
             expect(result.stdout).toMatch(/^tokens\/a\.json:\d+:\d+  error  `inc` does not exist/m);
+        },
+    );
+
+    it(
+        "finds the one token file in a project folder with no resolver, past its other JSON files",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            await write({
+                "tsconfig.json": { compilerOptions: {} },
+                "node_modules/kit/tokens.json": { ink: color(black) },
+                ".cache/tokens.json": { ink: color(black) },
+                "tokens/colors.json": { ink: color(black), text: color("{inc}") },
+            });
+
+            const result = await validate(".");
+
+            expect(result.exitCode).toBe(1);
+            expect(result.stdout).not.toContain("Several token files");
+            expect(result.stdout).toMatch(
+                /^tokens\/colors\.json:\d+:\d+  error  `inc` does not exist/m,
+            );
+        },
+    );
+
+    it(
+        "checks a .tokens file, named or in a folder, as the spec recommends the extension",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            await write({
+                "tokens/brand.tokens": { ink: color(black), text: color("{inc}") },
+            });
+
+            for (const path of ["tokens/brand.tokens", "tokens"]) {
+                const result = await validate(path);
+
+                expect(result.exitCode).toBe(1);
+                expect(result.stdout).toMatch(
+                    /^tokens\/brand\.tokens:\d+:\d+  error  `inc` does not exist/m,
+                );
+            }
+        },
+    );
+
+    it(
+        "checks a folder whose only file is a scale recipe, with no $value in it",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            await write({
+                "tokens/space.json": {
+                    space: {
+                        $type: "dimension",
+                        $extensions: {
+                            "sh.sugarcube": {
+                                scale: {
+                                    mode: "multipliers",
+                                    base: {
+                                        min: { value: 0.875, unit: "rem" },
+                                        max: { value: 1, unit: "rem" },
+                                    },
+                                    multipliers: { sm: 1, md: 1.5 },
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+            const result = await validate("tokens");
+
+            expect(result.exitCode).toBe(0);
+            expect(result.stdout).toContain("All tokens valid ✨");
+        },
+    );
+
+    it(
+        "names the JSON files it passed over when none holds tokens",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            await write({
+                "tsconfig.json": { compilerOptions: {} },
+                "tokens/colors.json": { color: { ink: { value: "#000000" } } },
+            });
+
+            const result = await validate(".");
+
+            expect(result.exitCode).toBe(1);
+            expect(result.stdout).toContain("No token files found.");
+            expect(result.stdout).toContain("- package.json");
+            expect(result.stdout).toContain("- tokens/colors.json");
+            expect(result.stdout).toContain("- tsconfig.json");
         },
     );
 

@@ -17,6 +17,7 @@ export type UtilityWithoutClasses = UtilityEntry & { source: string } & UtilityW
 
 export type ConfigIssue =
     | { reason: "not-loaded"; file: string; cause: string }
+    | { reason: "deleted"; file: string }
     | { reason: "wrong-type"; setting: string; expected: string[]; received: string }
     | { reason: "missing"; setting: string; property: string }
     | { reason: "not-allowed"; setting: string; allowed: unknown[]; value: unknown }

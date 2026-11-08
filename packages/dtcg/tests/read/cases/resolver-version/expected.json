@@ -11,16 +11,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 15,
-        "length": 9,
-        "start": {
-          "line": 2,
-          "column": 14
-        },
-        "end": {
-          "line": 2,
-          "column": 23
-        }
+        "text": "\"2025.09\""
       }
     }
   ]

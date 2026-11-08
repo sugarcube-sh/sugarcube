@@ -222,6 +222,25 @@ describe("replacing leaves every other token's text as written", () => {
     });
 });
 
+describe("a file written with trailing commas keeps them", () => {
+    it("adds after a last member that has one, giving the new member one too", () => {
+        expect(setAt('{\n  "a": 1,\n}', ["b"], 2)).toBe('{\n  "a": 1,\n  "b": 2,\n}');
+        expect(setAt('{ "a": 1, }', ["b"], 2)).toBe('{ "a": 1, "b": 2, }');
+    });
+
+    it("removes the last member and leaves the one before it with its comma", () => {
+        const before = '{\n  "a": 1,\n  "b": 2,\n}';
+
+        expect(removeAt(before, ["b"])).toBe('{\n  "a": 1,\n}');
+        expect(removeAt('{ "a": 1, "b": 2, }', ["b"])).toBe('{ "a": 1, }');
+    });
+
+    it("leaves an empty group as {} when its only member goes, comma and all", () => {
+        expect(removeAt('{ "a": { "x": 1, } }', ["a", "x"])).toBe('{ "a": {} }');
+        expect(removeAt('{\n  "a": {\n    "x": 1,\n  }\n}', ["a", "x"])).toBe('{\n  "a": {}\n}');
+    });
+});
+
 describe("what setAt can't write", () => {
     it("says so when the path runs through a value that isn't a group", () => {
         expect(setAt(oneLineTokens, ["color", "brand", "$value", "hex"], "#fff")).toBeUndefined();

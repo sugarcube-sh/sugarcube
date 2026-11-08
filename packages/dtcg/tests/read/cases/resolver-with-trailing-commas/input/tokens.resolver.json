@@ -1,0 +1,7 @@
+{
+  "version": "2025.10",
+  "sets": { "base": { "sources": [], }, },
+  "resolutionOrder": [
+    { "$ref": "#/sets/base" }, // the only one
+  ],
+}

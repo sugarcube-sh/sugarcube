@@ -1,9 +1,8 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { execaCommand } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CLI_PATH, TEST_TIMEOUT, createPackageJson } from "./helpers.js";
+import { cli, createPackageJson, TEST_TIMEOUT } from "./helpers.js";
 
 /**
  * `analyze unused` claims a token is dead. `generate` decides what actually
@@ -66,7 +65,7 @@ describe("generate and analyze agree about what is used", () => {
     });
 
     const run = (args: string) =>
-        execaCommand(`node ${CLI_PATH} ${args}`, {
+        cli(`${args}`, {
             cwd: testDir,
             timeout: TEST_TIMEOUT,
             reject: false,

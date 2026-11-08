@@ -72,7 +72,7 @@ function openOnce(
     const file = { path, lineStarts: parsed.lineStarts };
     const { root, syntax } = parsed;
     const problems: JsonProblem[] = [
-        ...(kind === "tokens" ? parsed.comments : []),
+        ...(kind === "tokens" ? [...parsed.comments, ...parsed.trailingCommas] : []),
         ...(syntax ? [syntax] : []),
         ...(root && !syntax && root.type !== "object"
             ? [{ reason: "not-an-object" as const, offset: root.offset, length: root.length }]

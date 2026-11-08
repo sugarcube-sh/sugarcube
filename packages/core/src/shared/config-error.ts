@@ -27,5 +27,6 @@ export function configProblems(error: ConfigError): Reported[] {
 
 function standalone(issue: ConfigIssue): string {
     const text = configIssueText(issue);
-    return issue.reason === "not-loaded" ? `${issue.file} ${text}` : text;
+    const fileGoesFirst = issue.reason === "not-loaded" || issue.reason === "deleted";
+    return fileGoesFirst ? `${issue.file} ${text}` : text;
 }

@@ -16,10 +16,12 @@ const kits = join(repo, "apps/www/registry/tokens/starter-kits");
 
 const kitClasses = wwwConfig.utilities?.classes;
 ok(kitClasses, "the fluid kit's config lists utility classes");
-const classes: UtilityClassesConfig = {};
-for (const [property, entry] of Object.entries(kitClasses)) {
-    classes[property] = [entry].flat().map((each) => Object.assign({}, each, { safelist: true }));
-}
+const classes: UtilityClassesConfig = Object.fromEntries(
+    Object.entries(kitClasses).map(([property, entry]) => [
+        property,
+        [entry].flat().map((each) => Object.assign({}, each, { safelist: true })),
+    ]),
+);
 
 async function project(resolver: string) {
     const config = fillDefaults({

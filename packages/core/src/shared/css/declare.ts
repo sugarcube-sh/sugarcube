@@ -16,7 +16,7 @@ import { cssWriterOptions } from "./writer-options.js";
 export interface Entry {
     permutation: Permutation;
     input: Input;
-    selector: string | string[];
+    selector: string | readonly string[];
     atRule?: string;
     path: string;
     declared: CSSDeclarations;
@@ -93,7 +93,7 @@ export function declare(tokens: DesignTokens, config: InternalConfig): Declarati
 function entries(
     tokens: DesignTokens,
     config: InternalConfig,
-    listed: PermutationConfig[],
+    listed: readonly PermutationConfig[],
     writer: CSSWriter,
 ): Entry[] {
     if (listed.length === 0) {
@@ -138,7 +138,7 @@ function defaultsNotFirst(toWrite: Entry[]): Reported[] {
     });
 }
 
-function selectorText(selector: string | string[]): string {
+function selectorText(selector: string | readonly string[]): string {
     return typeof selector === "string" ? selector : selector.join(", ");
 }
 

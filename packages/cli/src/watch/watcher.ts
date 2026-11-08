@@ -1,10 +1,10 @@
 import type { Stats } from "node:fs";
 import { isDeepStrictEqual } from "node:util";
-import { createChangeQueue } from "@sugarcube-sh/core";
+import { createChangeQueue, isConfigFile } from "@sugarcube-sh/core";
 import type { DesignTokens } from "@sugarcube-sh/dtcg";
 import { type LiveTokens, type ReadEvent, onFileChanged } from "@sugarcube-sh/dtcg/node";
 import { type FSWatcher, watch as chokidarWatch } from "chokidar";
-import { normalize } from "pathe";
+import { resolve } from "pathe";
 import { IGNORED_DIR_NAMES, MARKUP_EXTENSIONS } from "../constants/markup.js";
 
 export type WatchChange =
@@ -13,7 +13,7 @@ export type WatchChange =
     | { kind: "markup"; path: string };
 
 export interface Watched {
-    content?: string[];
+    content?: readonly string[];
     markup: boolean;
 }
 
@@ -44,7 +44,7 @@ function globBaseDir(glob: string): string {
 }
 
 // Derive the directories to watch for markup changes from `content` globs. (Chokidar v5 no longer expands globs)
-export function resolveMarkupWatchTargets(content: string[] | undefined): string[] {
+export function resolveMarkupWatchTargets(content: readonly string[] | undefined): string[] {
     if (!content || content.length === 0) return ["."];
     const dirs = content.filter((glob) => !glob.startsWith("!")).map(globBaseDir);
     return [...new Set(dirs)];
@@ -57,23 +57,19 @@ export function ignoredMarkup(path: string, stats?: Stats): boolean {
     return stats?.isFile() === true && !MARKUP_EXTENSIONS.has(getExtension(path));
 }
 
-export function isConfigFile(path: string, configFile: string | undefined): boolean {
-    return configFile !== undefined && normalize(path) === configFile;
-}
-
 function ready(watcher: FSWatcher): Promise<void> {
-    return new Promise<void>((resolve) => watcher.once("ready", resolve));
+    return new Promise<void>((done) => watcher.once("ready", done));
 }
 
 export async function startWatcher(
     live: LiveTokens,
-    configFile: string | undefined,
+    root: string,
     first: Watched,
     callbacks: WatchCallbacks,
 ): Promise<WatcherHandle> {
     let watched = first;
 
-    const startMarkup = async (content: string[] | undefined): Promise<WatcherHandle> => {
+    const startMarkup = async (content: readonly string[] | undefined): Promise<WatcherHandle> => {
         const markup = chokidarWatch(resolveMarkupWatchTargets(content), {
             ...CHANGES_ONLY,
             ignored: ignoredMarkup,
@@ -115,27 +111,37 @@ export async function startWatcher(
         onError: callbacks.onError,
     });
 
-    const files = chokidarWatch(configFile === undefined ? [] : [configFile], CHANGES_ONLY);
-    const filesReady = ready(files);
-    const onFile = (path: string) => {
-        if (isConfigFile(path, configFile)) queue({ kind: "config", path });
-    };
-    const stopFileChecks = onFileChanged(files, onFile);
-    files.on("add", onFile);
-    files.on("unlink", onFile);
+    const folder = resolve(root);
+    const configs = chokidarWatch(folder, {
+        ...CHANGES_ONLY,
+        depth: 0,
+        ignored: (path) => resolve(path) !== folder && !isConfigFile(path, folder),
+    });
+    const configsReady = ready(configs);
+    const onConfig = (path: string) => queue({ kind: "config", path });
+    const stopConfigChecks = onFileChanged(configs, onConfig);
+    configs.on("add", onConfig);
+    configs.on("unlink", onConfig);
+    configs.on("error", callbacks.onError);
+
+    const files = chokidarWatch([], CHANGES_ONLY);
     files.on("error", callbacks.onError);
     live.watch(files);
     const stopReading = live.onRead((tokens, read) => queue({ kind: "token", tokens, read }));
     let markup = markupFor(watched);
 
-    await Promise.all([markup, filesReady]);
+    await Promise.all([markup, configsReady]);
 
     return {
         close: async () => {
             stopReading();
-            stopFileChecks();
+            stopConfigChecks();
             queue.cancel();
-            await Promise.all([files.close(), markup.then((watcher) => watcher?.close())]);
+            await Promise.all([
+                configs.close(),
+                files.close(),
+                markup.then((watcher) => watcher?.close()),
+            ]);
         },
     };
 }

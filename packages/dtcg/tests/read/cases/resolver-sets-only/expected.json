@@ -15,16 +15,7 @@
         ],
         "span": {
           "file": "tokens.resolver.json",
-          "offset": 46,
-          "length": 42,
-          "start": {
-            "line": 3,
-            "column": 21
-          },
-          "end": {
-            "line": 3,
-            "column": 63
-          }
+          "text": "{ \"sources\": [{ \"$ref\": \"tokens.json\" }] }"
         }
       }
     ],

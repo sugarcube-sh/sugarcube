@@ -19,7 +19,7 @@ function isMarkupFile(file: string): boolean {
     return MARKUP_EXTENSIONS.has(extname(file).slice(1).toLowerCase());
 }
 
-export async function getMarkupFiles(content?: string[]): Promise<string[]> {
+export async function getMarkupFiles(content?: readonly string[]): Promise<string[]> {
     const usingContent = content !== undefined && content.length > 0;
 
     const matched = await glob(usingContent ? content : [MARKUP_GLOB_PATTERN], {

@@ -1,0 +1,5 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 3.1: tools MAY support extensions such as JSONC or JSON5 so long as the document converts to normal JSON, so a resolver may have trailing commas, as it may have comments, unlike a token file",
+  "diagnostics": []
+}

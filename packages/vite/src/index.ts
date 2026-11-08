@@ -9,6 +9,7 @@ import {
     configProblems,
     createChangeQueue,
     cssFrom,
+    isConfigFile,
     loadInternalConfig,
     problemsText,
     tokensOnDisk,
@@ -17,7 +18,7 @@ import type { DesignTokens } from "@sugarcube-sh/dtcg";
 import { onFileChanged } from "@sugarcube-sh/dtcg/node";
 import dtcg, { type ReadEvent } from "@sugarcube-sh/dtcg-vite";
 import UnoCSS from "@unocss/vite";
-import { type Logger, type Plugin, type UserConfig, normalizePath } from "vite";
+import type { Logger, Plugin, UserConfig } from "vite";
 
 /** UnoCSS outputToCssLayers configuration */
 type OutputToCssLayersOptions =
@@ -67,10 +68,10 @@ export const SUGARCUBE_API_PLUGIN_NAME = "sugarcube:api";
  * problems are not here: a plugin editing them finds those from its own version.
  */
 export interface SugarcubePluginContext {
-    config: LoadedConfig["config"];
-    configProblems: readonly Reported[];
-    tokens: DesignTokens;
-    onReload: (fn: () => void) => () => void;
+    readonly config: LoadedConfig["config"];
+    readonly configProblems: readonly Reported[];
+    readonly tokens: DesignTokens;
+    readonly onReload: (fn: () => void) => () => void;
 }
 
 interface Good {
@@ -132,7 +133,7 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
     const reloadConfig = createChangeQueue<{ kind: "config" }>(["config"], {
         onChange: async () => {
             try {
-                loaded = await loadInternalConfig({}, { root });
+                loaded = await loadInternalConfig({}, { root, lastConfigFile: loaded.configFile });
                 fromConfig = [];
             } catch (error) {
                 if (!(error instanceof ConfigError)) throw error;
@@ -226,9 +227,12 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             },
             configureServer(dev) {
                 if (loaded.configFile) dev.watcher.add(loaded.configFile);
-                onFileChanged(dev.watcher, (file) => {
-                    if (isConfigFile(file, loaded)) reloadConfig({ kind: "config" });
-                });
+                const onConfig = (file: string) => {
+                    if (isConfigFile(file, root)) reloadConfig({ kind: "config" });
+                };
+                onFileChanged(dev.watcher, onConfig);
+                dev.watcher.on("add", onConfig);
+                dev.watcher.on("unlink", onConfig);
             },
         } satisfies Plugin,
 
@@ -303,10 +307,6 @@ function timing({ file, ms }: ReadEvent, { css, unocss, rest }: Spent) {
         ...(file === undefined ? [] : [`(${file})`]),
     ];
     return `[sugarcube] ${parts.join("  ")}`;
-}
-
-function isConfigFile(file: string, { configFile }: LoadedConfig): boolean {
-    return configFile !== undefined && normalizePath(file) === normalizePath(configFile);
 }
 
 export { defineConfig, kebabCase } from "@sugarcube-sh/core";

@@ -1,27 +1,37 @@
-import { execa } from "execa";
+import { x } from "tinyexec";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CLIError } from "../src/cli-error.js";
 import { ERROR_MESSAGES } from "../src/constants/error-messages.js";
 import { installDependencies } from "../src/installation/dependencies.js";
 
-vi.mock("execa", () => ({
-    execa: vi.fn(),
+vi.mock("tinyexec", () => ({
+    x: vi.fn(),
 }));
 
-const mockedExeca = vi.mocked(execa);
+const mockedRun = vi.mocked(x);
 
 describe("installDependencies error surfacing", () => {
     beforeEach(() => {
-        mockedExeca.mockReset();
+        mockedRun.mockReset();
+    });
+
+    it("runs the package manager in the target folder, failing when it fails", async () => {
+        mockedRun.mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 });
+
+        await installDependencies(["chokidar"], "/tmp/test", "pnpm", { devDependency: true });
+
+        expect(mockedRun).toHaveBeenCalledWith("pnpm", ["add", "-D", "chokidar"], {
+            nodeOptions: { cwd: "/tmp/test" },
+            throwOnError: true,
+        });
     });
 
     it("appends package-manager stderr to the generic failure message", async () => {
         const stderr = "ERR_PNPM_UNTRUSTED_PACKAGE Package chokidar@4.0.3 has no provenance";
-        const execaError = Object.assign(new Error("Command failed"), {
-            stderr,
-            shortMessage: "Command failed with exit code 1",
+        const failed = Object.assign(new Error("Command failed"), {
+            output: { stdout: "", stderr, exitCode: 1 },
         });
-        mockedExeca.mockRejectedValueOnce(execaError);
+        mockedRun.mockRejectedValueOnce(failed);
 
         const thrown = await captureError(() =>
             installDependencies(["chokidar"], "/tmp/test", "pnpm"),
@@ -31,14 +41,25 @@ describe("installDependencies error surfacing", () => {
         expect((thrown as CLIError).message).toBe(
             ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED("pnpm", stderr),
         );
-        expect((thrown as CLIError).cause).toBe(execaError);
+        expect((thrown as CLIError).cause).toBe(failed);
+    });
+
+    it("uses stdout when the package manager writes its error there, as pnpm does", async () => {
+        const stdout = "ERR_PNPM_FETCH_404  GET https://registry.npmjs.org/nope: Not Found - 404";
+        const failed = Object.assign(new Error("The command exited with a non-zero status (1)"), {
+            output: { stdout: ` ${stdout}\n`, stderr: "", exitCode: 1 },
+        });
+        mockedRun.mockRejectedValueOnce(failed);
+
+        const thrown = await captureError(() => installDependencies(["nope"], "/tmp/test", "pnpm"));
+
+        expect((thrown as CLIError).message).toBe(
+            ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED("pnpm", stdout),
+        );
     });
 
     it("falls back to error.message when stderr is empty", async () => {
-        const execaError = Object.assign(new Error("spawn pnpm ENOENT"), {
-            stderr: "",
-        });
-        mockedExeca.mockRejectedValueOnce(execaError);
+        mockedRun.mockRejectedValueOnce(new Error("spawn pnpm ENOENT"));
 
         const thrown = await captureError(() =>
             installDependencies(["anything"], "/tmp/test", "pnpm"),
@@ -50,8 +71,10 @@ describe("installDependencies error surfacing", () => {
     });
 
     it("returns the plain generic message when the error carries no usable text", async () => {
-        const execaError = Object.assign(new Error(""), { stderr: "   " });
-        mockedExeca.mockRejectedValueOnce(execaError);
+        const failed = Object.assign(new Error(""), {
+            output: { stdout: "", stderr: "   ", exitCode: 1 },
+        });
+        mockedRun.mockRejectedValueOnce(failed);
 
         const thrown = await captureError(() =>
             installDependencies(["anything"], "/tmp/test", "pnpm"),
@@ -62,7 +85,7 @@ describe("installDependencies error surfacing", () => {
 
     it("skips the install when dependency list is empty", async () => {
         await installDependencies([], "/tmp/test", "pnpm");
-        expect(mockedExeca).not.toHaveBeenCalled();
+        expect(mockedRun).not.toHaveBeenCalled();
     });
 });
 

@@ -104,6 +104,8 @@ export function configIssueText(issue: ConfigIssue): string {
     switch (issue.reason) {
         case "not-loaded":
             return `could not be loaded: ${issue.cause}`;
+        case "deleted":
+            return "was deleted; put it back, or restart to build without it";
         case "wrong-type":
             return `${subject} must be ${listed(issue.expected.map(aOrAn), "or")}, not ${aOrAn(issue.received)}`;
         case "missing":

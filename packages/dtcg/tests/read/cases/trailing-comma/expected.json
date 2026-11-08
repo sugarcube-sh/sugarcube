@@ -6,20 +6,12 @@
     {
       "kind": "invalid-json",
       "detail": {
-        "reason": "property-name-expected"
+        "reason": "trailing-comma"
       },
       "span": {
         "file": "tokens.json",
-        "offset": 53,
-        "length": 1,
-        "start": {
-          "line": 5,
-          "column": 3
-        },
-        "end": {
-          "line": 5,
-          "column": 4
-        }
+        "text": ",",
+        "occurrence": 2
       }
     }
   ]

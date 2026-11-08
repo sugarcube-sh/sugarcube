@@ -13,7 +13,12 @@
 export * from "./client.js";
 
 export { fillDefaults } from "./node/config/normalize.js";
-export { configFileExists, isNoConfigError, loadInternalConfig } from "./node/config/load.js";
+export {
+    configFileExists,
+    isConfigFile,
+    isNoConfigError,
+    loadInternalConfig,
+} from "./node/config/load.js";
 export type { ConfigOverrides, LoadedConfig } from "./node/config/load.js";
 export { tokensOnDisk } from "./node/tokens-on-disk.js";
 

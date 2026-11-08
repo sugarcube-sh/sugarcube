@@ -29,8 +29,10 @@ export function removal(text: string, value: Node): Splice[] {
     const members = container?.children;
     if (!container || !members) return [];
 
+    const comma = commaAfter(text, member);
+    const after = comma === undefined ? end(member) : comma + 1;
     const inside = { from: container.offset + 1, to: end(container) - 1 };
-    const rest = text.slice(inside.from, member.offset) + text.slice(end(member), inside.to);
+    const rest = text.slice(inside.from, member.offset) + text.slice(after, inside.to);
     if (members.length === 1 && rest.trim() === "") {
         return [{ offset: inside.from, length: inside.to - inside.from, text: "" }];
     }
@@ -38,13 +40,12 @@ export function removal(text: string, value: Node): Splice[] {
     const index = members.indexOf(member);
     const previous = members[index - 1];
     const next = members[index + 1];
-    const comma = commaAfter(text, member);
-    const after = comma === undefined ? end(member) : comma + 1;
     const start = lineStart(text, member.offset);
 
     if (onItsOwnLines(text, start, member.offset, after)) {
         const lines = { offset: start, length: nextLineStart(text, after) - start, text: "" };
-        const previousComma = previous && !next ? commaAfter(text, previous) : undefined;
+        const previousComma =
+            previous && !next && comma === undefined ? commaAfter(text, previous) : undefined;
         return previousComma === undefined
             ? [lines]
             : [lines, { offset: previousComma, length: 1, text: "" }];
@@ -97,7 +98,7 @@ export function insertion(text: string, container: Node, key: string, value: Jso
         : inline(value);
     const line = `${eol}${indent}${JSON.stringify(key)}: ${written}`;
     const comma = commaAfter(text, last);
-    if (comma !== undefined) return [{ offset: lineEnd(text, comma), length: 0, text: line }];
+    if (comma !== undefined) return [{ offset: lineEnd(text, comma), length: 0, text: `${line},` }];
     const at = lineEnd(text, lastEnd);
     if (at === lastEnd) return [{ offset: lastEnd, length: 0, text: `,${line}` }];
     return [

@@ -66,10 +66,12 @@ function project(options: Options = {}): Fixture {
     const resolver = join(folder, "tokens.resolver.json");
     writeFileSync(resolver, JSON.stringify({ version: "2025.10", resolutionOrder }));
 
-    const classes: UtilityClassesConfig = { color: { source: "color.*", prefix: "text" } };
-    if (options.spacing || options.safelist) {
-        classes.padding = { source: "space.*", prefix: "p", safelist: options.safelist };
-    }
+    const classes: UtilityClassesConfig = {
+        color: { source: "color.*", prefix: "text" },
+        ...((options.spacing || options.safelist) && {
+            padding: { source: "space.*", prefix: "p", safelist: options.safelist },
+        }),
+    };
     const config = fillDefaults({
         resolver,
         content: [join(folder, "src/**/*.html")],

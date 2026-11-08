@@ -168,6 +168,18 @@ describe("sugarcube's Vite plugin", () => {
         await expect(sugarcube()).resolves.toBeDefined();
     });
 
+    it("hands other plugins a config they can't change", () => {
+        const changes = (context: SugarcubePluginContext) => {
+            // @ts-expect-error
+            context.config = { ...context.config, resolver: "other.resolver.json" };
+            // @ts-expect-error
+            context.config.variables.path = "other.css";
+            // @ts-expect-error
+            context.config.content?.push("other/**");
+        };
+        expect(changes).toBeTypeOf("function");
+    });
+
     it("serves the new value when a token is saved", async () => {
         await project();
         const { context, css } = await serve();
@@ -257,6 +269,22 @@ describe("sugarcube's Vite plugin", () => {
         await config(`, prefix: "ds"`);
         await reload;
 
+        expect(await css("text-ink")).toContain(".text-ink{color:var(--ds-color-ink);}");
+    });
+
+    it("keeps the last config when the config is deleted, says so, and reads it again when it's back", async () => {
+        await project();
+        const { context, css, logged } = await serve();
+
+        await rm(join(folder, "sugarcube.config.ts"));
+        await until(() => context.configProblems.length > 0, "the config's problem");
+        expect(logged.join("\n")).toMatch(/^sugarcube\.config\.ts {2}error {2}.*deleted/m);
+        expect(await css("text-ink")).toContain("--color-ink: #111111");
+
+        const reload = reloaded(context);
+        await config(`, prefix: "ds"`);
+        await reload;
+        expect(context.configProblems).toEqual([]);
         expect(await css("text-ink")).toContain(".text-ink{color:var(--ds-color-ink);}");
     });
 

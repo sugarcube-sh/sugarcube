@@ -1,7 +1,7 @@
-import { readFile, readdir, stat } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { readFile } from "node:fs/promises";
 import { parseJson } from "../read/json.js";
 import { isResolver, isResolverName } from "../read/resolver.js";
+import { findFiles, isJson } from "./find-files.js";
 
 /**
  * What {@link findResolver} found.
@@ -29,8 +29,6 @@ export interface FindResolverOptions {
     by?: "name" | "content";
 }
 
-const SKIPPED = new Set(["node_modules", "dist", "build", "out"]);
-
 const RESOLUTION_ORDER = Buffer.from('"resolutionOrder"');
 
 /**
@@ -52,45 +50,12 @@ export async function findResolver(
     paths: string | readonly string[],
     { by = "name" }: FindResolverOptions = {},
 ): Promise<FoundResolver> {
-    const keep = by === "name" ? isResolverName : isJson;
-    const files = (await Promise.all([paths].flat().map((path) => findFiles(path, keep)))).flat();
-    const resolvers = by === "name" ? files : await withContent(files);
-    const once = new Map<string, string>();
-    for (const file of resolvers) {
-        const where = resolve(file);
-        if (!once.has(where)) once.set(where, file);
-    }
-    const [first, ...rest] = [...once.values()].sort();
+    const files = await findFiles(paths, by === "name" ? isResolverName : isJson);
+    const [first, ...rest] = by === "name" ? files : await withContent(files);
     if (first === undefined) return { kind: "none" };
     return rest.length === 0
         ? { kind: "one", path: first }
         : { kind: "several", paths: [first, ...rest] };
-}
-
-async function findFiles(path: string, keep: (file: string) => boolean): Promise<string[]> {
-    if (!(await stat(path)).isDirectory()) return keep(path) ? [path] : [];
-    const found: string[] = [];
-    const visit = async (folder: string): Promise<void> => {
-        const nested: Promise<void>[] = [];
-        for (const entry of await readdir(folder, { withFileTypes: true })) {
-            if (entry.isDirectory()) {
-                if (!skipped(entry.name)) nested.push(visit(join(folder, entry.name)));
-            } else if (keep(entry.name)) {
-                found.push(join(folder, entry.name));
-            }
-        }
-        await Promise.all(nested);
-    };
-    await visit(path);
-    return found;
-}
-
-function skipped(folder: string): boolean {
-    return folder.startsWith(".") || SKIPPED.has(folder);
-}
-
-function isJson(file: string): boolean {
-    return file.endsWith(".json");
 }
 
 async function withContent(files: string[]): Promise<string[]> {

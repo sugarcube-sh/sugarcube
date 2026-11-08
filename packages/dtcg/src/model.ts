@@ -1748,6 +1748,7 @@ export interface DiagnosticDetailByKind {
  */
 export type JsonErrorReason =
     | "comment"
+    | "trailing-comma"
     | "not-an-object"
     | "invalid-symbol"
     | "invalid-number-format"

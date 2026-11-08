@@ -76,8 +76,10 @@ export const ERROR_MESSAGES = {
     VALIDATE_PATH_NOT_FOUND: (path: string) =>
         `Path not found: ${path}\n\nPlease check that the specified path exists`,
 
-    VALIDATE_NO_TOKEN_FILES: () =>
-        "No token files found.\n\nPlease ensure the path contains .json token files",
+    VALIDATE_NO_TOKEN_FILES: (otherFiles: string[]) =>
+        otherFiles.length === 0
+            ? "No token files found.\n\nToken files end .json or .tokens."
+            : `No token files found. These JSON files use no DTCG property, such as $value or $type:\n${otherFiles.map((p) => `  - ${p}`).join("\n")}`,
 
     COMPONENTS_FRAMEWORK_REQUIRED: () =>
         `Framework is required when specifying components. Use --framework to specify a framework (react, css-only) or run without arguments for interactive mode.\n\nSee ${color.cyan(
@@ -85,9 +87,6 @@ export const ERROR_MESSAGES = {
         )} for more information.`,
 
     COMPONENTS_INVALID_FRAMEWORK: () => "Invalid framework. Must be one of: react, css-only.",
-
-    FILENAME_CONTAINS_PATH: (flagName: string, value: string) =>
-        `Invalid ${flagName} value: "${value}". Must be a filename, not a path.\n\nUse --variables-dir or --utilities-dir to specify the directory.`,
 
     LINT_NO_FILES_SCANNED: (cwd: string) =>
         `No stylesheets found, so nothing was linted.\n\n${noStylesheetsHelp(cwd, `Or name it for one run: ${color.cyan("sugarcube lint ../css")}\n\n`)}`,

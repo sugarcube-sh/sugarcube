@@ -10,32 +10,15 @@
       },
       "span": {
         "file": "tokens.json",
-        "offset": 65,
-        "length": 4,
-        "start": {
-          "line": 4,
-          "column": 5
-        },
-        "end": {
-          "line": 4,
-          "column": 9
-        }
+        "text": "\"sm\"",
+        "occurrence": 2
       },
       "relatedInformation": [
         {
           "message": "also written here",
           "span": {
             "file": "tokens.json",
-            "offset": 19,
-            "length": 4,
-            "start": {
-              "line": 3,
-              "column": 5
-            },
-            "end": {
-              "line": 3,
-              "column": 9
-            }
+            "text": "\"sm\""
           }
         }
       ]

@@ -11,16 +11,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 53,
-        "length": 32,
-        "start": {
-          "line": 4,
-          "column": 5
-        },
-        "end": {
-          "line": 4,
-          "column": 37
-        }
+        "text": "{ \"type\": \"set\", \"sources\": [] }"
       }
     },
     {
@@ -32,16 +23,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 91,
-        "length": 33,
-        "start": {
-          "line": 5,
-          "column": 5
-        },
-        "end": {
-          "line": 5,
-          "column": 38
-        }
+        "text": "{ \"name\": \"size\", \"sources\": [] }"
       }
     },
     {
@@ -53,16 +35,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 140,
-        "length": 7,
-        "start": {
-          "line": 6,
-          "column": 15
-        },
-        "end": {
-          "line": 6,
-          "column": 22
-        }
+        "text": "\"group\""
       }
     },
     {
@@ -74,16 +47,8 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 264,
-        "length": 6,
-        "start": {
-          "line": 8,
-          "column": 30
-        },
-        "end": {
-          "line": 8,
-          "column": 36
-        }
+        "text": "\"base\"",
+        "occurrence": 2
       }
     }
   ]

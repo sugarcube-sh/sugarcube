@@ -51,13 +51,13 @@ async function until(done: () => boolean, what: string) {
 
 describe("startWatcher", () => {
     it("puts each read of a token save into the queue, with the design tokens read", async () => {
-        const { resolver, configFile, tokens } = project();
+        const { folder, resolver, tokens } = project();
         const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
         await live.getTokens();
         const changes: WatchChange[] = [];
         const watched: Watched = { markup: false };
         handles.push(
-            await startWatcher(live, configFile, watched, {
+            await startWatcher(live, folder, watched, {
                 onChange: async (change) => {
                     changes.push(change);
                     return watched;
@@ -87,7 +87,7 @@ describe("startWatcher", () => {
         const before: Watched = { content: [join(folder, "a/**/*.html")], markup: true };
         const after: Watched = { content: [join(folder, "b/**/*.html")], markup: true };
         handles.push(
-            await startWatcher(live, configFile, before, {
+            await startWatcher(live, folder, before, {
                 onChange: async (change) => {
                     changes.push(change);
                     return change.kind === "config" ? after : before;
@@ -109,7 +109,7 @@ describe("startWatcher", () => {
     });
 
     it("reports a markup save whose last write landed while the watcher was dropping changes", async () => {
-        const { folder, resolver, configFile } = project();
+        const { folder, resolver } = project();
         const page = join(folder, "a/page.html");
         writeFileSync(page, "<p>0</p>");
         const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
@@ -117,7 +117,7 @@ describe("startWatcher", () => {
         const saves: string[] = [];
         const watched: Watched = { content: [join(folder, "a/**/*.html")], markup: true };
         handles.push(
-            await startWatcher(live, configFile, watched, {
+            await startWatcher(live, folder, watched, {
                 onChange: async (change) => {
                     if (change.kind !== "markup") return watched;
                     saves.push(change.path);
@@ -137,13 +137,13 @@ describe("startWatcher", () => {
     });
 
     it("reports a config save whose last write landed while the watcher was dropping changes", async () => {
-        const { resolver, configFile } = project();
+        const { folder, resolver, configFile } = project();
         const live = createLiveTokens({ entryFile: resolver }, { onError: () => {} });
         await live.getTokens();
         const saves: string[] = [];
         const watched: Watched = { markup: false };
         handles.push(
-            await startWatcher(live, configFile, watched, {
+            await startWatcher(live, folder, watched, {
                 onChange: async (change) => {
                     if (change.kind !== "config") return watched;
                     saves.push(change.path);

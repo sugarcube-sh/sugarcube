@@ -20,9 +20,9 @@ function where(text: string) {
 describe("positions", () => {
     it("counts columns in UTF-16 units, so a character outside the Basic Multilingual Plane is two", () => {
         expect(where('{ "🎨": 1, }')).toStrictEqual({
-            offset: 11,
-            start: { line: 1, column: 12 },
-            end: { line: 1, column: 13 },
+            offset: 9,
+            start: { line: 1, column: 10 },
+            end: { line: 1, column: 11 },
         });
     });
 
@@ -31,11 +31,11 @@ describe("positions", () => {
         ["\r\n", "a carriage return and line feed"],
         ["\r", "a carriage return alone"],
     ])("ends a line at %j, %s", ([newline]) => {
-        const text = `{${newline}  "a": 1,${newline}}`;
+        const text = `{${newline}  "a": 1${newline}  "b": 2${newline}}`;
         expect(where(text)).toStrictEqual({
-            offset: text.lastIndexOf("}"),
-            start: { line: 3, column: 1 },
-            end: { line: 3, column: 2 },
+            offset: text.indexOf('"b"'),
+            start: { line: 3, column: 3 },
+            end: { line: 3, column: 6 },
         });
     });
 
@@ -44,17 +44,17 @@ describe("positions", () => {
             readFromMemory({ files: { "tokens.json": `\uFEFF${valid}` } }).diagnostics,
         ).toStrictEqual([]);
         expect(where('\uFEFF{ "a": 1, }')).toStrictEqual({
-            offset: 11,
-            start: { line: 1, column: 12 },
-            end: { line: 1, column: 13 },
+            offset: 9,
+            start: { line: 1, column: 10 },
+            end: { line: 1, column: 11 },
         });
     });
 
     it("reports a comment and a syntax error in the same file, in file order", () => {
-        const tokens = readFromMemory({ files: { "tokens.json": '{ "a": 1, // note\n }' } });
+        const tokens = readFromMemory({ files: { "tokens.json": '{ "a": 1 // note\n "b": 2 }' } });
         expect(tokens.diagnostics.map(({ detail }) => detail)).toStrictEqual([
             { reason: "comment" },
-            { reason: "property-name-expected" },
+            { reason: "comma-expected" },
         ]);
     });
 
@@ -752,15 +752,22 @@ describe("readFromMemory", () => {
         expect(tokens.diagnostics).toStrictEqual([]);
     });
 
+    it("reports a comma after a comma once, as a missing value, not a trailing comma too", () => {
+        const tokens = readFromMemory({ files: { "tokens.json": '{ "a": [1,,] }' } });
+        expect(tokens.diagnostics.map(({ detail }) => detail)).toStrictEqual([
+            { reason: "value-expected" },
+        ]);
+    });
+
     it("reports a syntax error in a resolver, but not its comments", () => {
         const tokens = readFromMemory({
             files: {
                 "design.resolver.json":
-                    '{ // fine here\n "version": "2025.10", "resolutionOrder": [], }',
+                    '{ // fine here\n "version": "2025.10" "resolutionOrder": [] }',
             },
         });
         expect(tokens.diagnostics.map(({ kind, detail }) => ({ kind, detail }))).toStrictEqual([
-            { kind: "invalid-json", detail: { reason: "property-name-expected" } },
+            { kind: "invalid-json", detail: { reason: "comma-expected" } },
         ]);
     });
 

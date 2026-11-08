@@ -1,4 +1,4 @@
-import { type Node, parseTree, printParseErrorCode } from "jsonc-parser";
+import { type Node, createScanner, parseTree, printParseErrorCode } from "jsonc-parser";
 import type { JsonErrorReason, JsonValue, Span } from "../model.js";
 
 export interface JsonFile {
@@ -29,6 +29,7 @@ export interface ParsedJson {
     root: Node | undefined;
     lineStarts: number[];
     comments: JsonProblem[];
+    trailingCommas: JsonProblem[];
     syntax?: JsonProblem;
     duplicates: DuplicateKey[];
 }
@@ -61,18 +62,54 @@ export function parseJson(text: string): ParsedJson {
     const root = parseTree(source, errors, { disallowComments: true });
 
     const comments: JsonProblem[] = [];
+    const trailingCommas: JsonProblem[] = [];
     let syntax: JsonProblem | undefined;
+    const maybeTrailing = errors.some(({ error }) => TRAILING_COMMA_REASONS.has(reasonOf(error)));
+    const commaBefore = maybeTrailing ? trailingCommasIn(source) : new Map<number, number>();
     for (const { error, offset, length } of errors) {
-        const name = printParseErrorCode(error);
-        const reason = name === "<unknown ParseErrorCode>" ? "invalid-symbol" : reasons[name];
+        const reason = reasonOf(error);
+        const comma = TRAILING_COMMA_REASONS.has(reason) ? commaBefore.get(offset) : undefined;
         if (reason === "comment") comments.push({ reason, offset, length });
+        else if (comma !== undefined)
+            trailingCommas.push({ reason: "trailing-comma", offset: comma, length: 1 });
         else syntax ??= { reason, offset, length };
     }
     if (!root) syntax ??= { reason: "value-expected", offset: 0, length: 0 };
 
     const duplicates: DuplicateKey[] = [];
     if (root) collectMembers(root, duplicates);
-    return { root, lineStarts, comments, syntax, duplicates };
+    return { root, lineStarts, comments, trailingCommas, syntax, duplicates };
+}
+
+function reasonOf(error: number): JsonErrorReason {
+    const name = printParseErrorCode(error);
+    return name === "<unknown ParseErrorCode>" ? "invalid-symbol" : reasons[name];
+}
+
+const TRAILING_COMMA_REASONS: ReadonlySet<JsonErrorReason> = new Set([
+    "property-name-expected",
+    "value-expected",
+]);
+
+const OPEN_OR_SEPARATOR = new Set(["[", "{", ",", ":"]);
+
+function trailingCommasIn(source: string): Map<number, number> {
+    const commaBefore = new Map<number, number>();
+    const scanner = createScanner(source);
+    let last: { text: string; offset: number } | undefined;
+    let beforeLast: string | undefined;
+    while (scanner.getPosition() < source.length) {
+        scanner.scan();
+        const offset = scanner.getTokenOffset();
+        const text = source.slice(offset, offset + scanner.getTokenLength());
+        if (text.trim() === "" || text.startsWith("/")) continue;
+        const closes = text === "}" || text === "]";
+        const followsValue = beforeLast !== undefined && !OPEN_OR_SEPARATOR.has(beforeLast);
+        if (closes && last?.text === "," && followsValue) commaBefore.set(offset, last.offset);
+        beforeLast = last?.text;
+        last = { text, offset };
+    }
+    return commaBefore;
 }
 
 const membersOf = new WeakMap<Node, Member[]>();

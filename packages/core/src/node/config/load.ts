@@ -13,7 +13,10 @@ export function isNoConfigError(error: unknown): boolean {
     );
 }
 
-function resolveContentGlobs(content: string[] | undefined, baseDir: string): string[] | undefined {
+function resolveContentGlobs(
+    content: readonly string[] | undefined,
+    baseDir: string,
+): string[] | undefined {
     if (!content) return content;
     return content.map((glob) =>
         glob.startsWith("!") ? `!${resolve(baseDir, glob.slice(1))}` : resolve(baseDir, glob),
@@ -25,7 +28,7 @@ function resolveContentGlobs(content: string[] | undefined, baseDir: string): st
  * always named: the config's own, or the one found in the project.
  */
 export type LoadedConfig = {
-    config: InternalConfig & { resolver: string };
+    config: InternalConfig & { readonly resolver: string };
     /** The config file it came from, when there is one. */
     configFile?: string;
 };
@@ -44,10 +47,23 @@ type Overrides<T> = {
           : T[K];
 };
 
+function configFilesIn(root: string): string[] {
+    return [".ts", ".js"].map((extension) => resolve(root, `sugarcube.config${extension}`));
+}
+
 function findConfigFile(root = process.cwd()): string | undefined {
-    return [".ts", ".js"]
-        .map((extension) => resolve(root, `sugarcube.config${extension}`))
-        .find((path) => existsSync(path));
+    return configFilesIn(root).find((path) => existsSync(path));
+}
+
+/**
+ * Checks if a file is where sugarcube looks for its config: `sugarcube.config.ts` or `.js` in
+ * `root`.
+ *
+ * @param file - The file's path, such as one a watcher reports.
+ * @param root - The project's folder.
+ */
+export function isConfigFile(file: string, root: string): boolean {
+    return configFilesIn(root).includes(resolve(file));
 }
 
 /**
@@ -91,19 +107,27 @@ async function importConfigFile(configFile: string): Promise<unknown> {
  * read without looking for one
  * @param root - The project's folder, where the config file and the resolver are looked for and
  * what the config's paths are relative to; `process.cwd()` unless a host such as Vite knows better
+ * @param lastConfigFile - The config file a host loaded last, when it loads again; if no config
+ * file is there now, the load fails rather than giving the defaults
  * @returns The normalized config with defaults, and the config file it came from, if any
- * @throws ConfigError if the config is invalid, or if no resolver, or several, are found
+ * @throws ConfigError if the config is invalid or was deleted, or if no resolver, or several, are
+ * found
  */
 export async function loadInternalConfig(
     overrides: ConfigOverrides = {},
-    { root = process.cwd() }: { root?: string } = {},
+    { root = process.cwd(), lastConfigFile }: { root?: string; lastConfigFile?: string } = {},
 ): Promise<LoadedConfig> {
     const configFile = findConfigFile(root);
+    if (lastConfigFile !== undefined && configFile === undefined) {
+        throw new ConfigError([{ reason: "deleted", file: basename(lastConfigFile) }]);
+    }
     const user = configFile ? validateSugarcubeConfig(await loadConfigFile(configFile)) : {};
     const resolver = overrides.resolver ?? user.resolver ?? (await foundResolver(root));
     const filled = fillDefaults({ ...user, resolver });
-    if (configFile) filled.content = resolveContentGlobs(filled.content, dirname(configFile));
-    const config = validateInternalConfig(overridden(filled, overrides));
+    const content = configFile
+        ? resolveContentGlobs(filled.content, dirname(configFile))
+        : filled.content;
+    const config = validateInternalConfig(overridden({ ...filled, content }, overrides));
     return { config: { ...config, resolver }, configFile };
 }
 

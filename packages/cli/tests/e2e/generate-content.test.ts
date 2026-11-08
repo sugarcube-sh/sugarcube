@@ -2,9 +2,8 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { execaCommand } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CLI_PATH, TEST_TIMEOUT, createPackageJson, createTokens } from "./helpers.js";
+import { cli, createPackageJson, createTokens, TEST_TIMEOUT } from "./helpers.js";
 
 describe("generate command: content globs", () => {
     let testDir: string;
@@ -43,7 +42,7 @@ describe("generate command: content globs", () => {
         "generates utilities for classes used in templates above the working directory",
         { timeout: TEST_TIMEOUT },
         async () => {
-            const result = await execaCommand(`node ${CLI_PATH} generate`, {
+            const result = await cli(`generate`, {
                 cwd: assetsJs,
                 timeout: TEST_TIMEOUT,
                 reject: false,

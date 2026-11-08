@@ -50,7 +50,7 @@ base.json:5:17  error  `#fff` is not a six-digit hex color; did you mean `#fffff
 1 error.
 
 ## trailing-comma
-base.json:5:3  error  this is not valid JSON: a property name is missing  invalid-json
+base.json:4:35  error  a token file is JSON, which has no trailing commas  invalid-json
 1 error.
 
 ## two-tokens-one-variable

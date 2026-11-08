@@ -1,10 +1,9 @@
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { findResolver } from "@sugarcube-sh/dtcg/node";
+import { findResolver, findTokenFiles } from "@sugarcube-sh/dtcg/node";
 import { Command } from "commander";
-import { join, relative } from "pathe";
+import { relative } from "pathe";
 import color from "picocolors";
-import { glob } from "tinyglobby";
 import { type Built, build, buildFiles } from "../build.js";
 import { CLIError } from "../cli-error.js";
 import { loadConfig } from "../config.js";
@@ -46,10 +45,15 @@ async function builtFromPaths(paths: string[]): Promise<Built> {
     if (resolver.kind === "one") {
         return build(await loadConfig({ resolver: shown(resolver.path) }), { markup: false });
     }
-    const patterns = paths.map((path) => (path.endsWith(".json") ? path : join(path, "**/*.json")));
-    const files = (await glob(patterns, { absolute: true })).map(shown).sort();
+    const named = paths.filter((path) => !statSync(path).isDirectory());
+    const { tokenFiles, otherFiles } = await findTokenFiles(
+        paths.filter((path) => statSync(path).isDirectory()),
+    );
+    const files = [...new Set([...named, ...tokenFiles].map(shown))].sort();
     const [file, ...others] = files;
-    if (file === undefined) throw new CLIError(ERROR_MESSAGES.VALIDATE_NO_TOKEN_FILES());
+    if (file === undefined) {
+        throw new CLIError(ERROR_MESSAGES.VALIDATE_NO_TOKEN_FILES(otherFiles.map(shown)));
+    }
     if (others.length > 0) throw new CLIError(ERROR_MESSAGES.VALIDATE_NO_RESOLVER(files));
     return buildFiles({ [file]: await readFile(file, "utf-8") }, file);
 }

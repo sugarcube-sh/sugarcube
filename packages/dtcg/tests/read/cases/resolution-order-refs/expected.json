@@ -11,16 +11,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 104,
-        "length": 16,
-        "start": {
-          "line": 5,
-          "column": 15
-        },
-        "end": {
-          "line": 5,
-          "column": 31
-        }
+        "text": "\"#/sets/missing\""
       }
     },
     {
@@ -32,16 +23,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 138,
-        "length": 21,
-        "start": {
-          "line": 6,
-          "column": 15
-        },
-        "end": {
-          "line": 6,
-          "column": 36
-        }
+        "text": "\"#/modifiers/missing\""
       }
     },
     {
@@ -53,16 +35,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 177,
-        "length": 21,
-        "start": {
-          "line": 7,
-          "column": 15
-        },
-        "end": {
-          "line": 7,
-          "column": 36
-        }
+        "text": "\"#/resolutionOrder/0\""
       }
     },
     {
@@ -74,16 +47,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 216,
-        "length": 21,
-        "start": {
-          "line": 8,
-          "column": 15
-        },
-        "end": {
-          "line": 8,
-          "column": 36
-        }
+        "text": "\"#/sets/base/sources\""
       }
     },
     {
@@ -95,16 +59,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 255,
-        "length": 11,
-        "start": {
-          "line": 9,
-          "column": 15
-        },
-        "end": {
-          "line": 9,
-          "column": 26
-        }
+        "text": "\"base.json\""
       }
     },
     {

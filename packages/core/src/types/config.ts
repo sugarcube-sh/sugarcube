@@ -20,28 +20,30 @@ export type PermutationConfig = {
      * Modifier name → context value. Missing modifiers use their DTCG defaults.
      * @example { theme: "dark" }
      */
-    input: Record<string, string>;
+    readonly input: Readonly<Record<string, string>>;
     /**
      * Selector(s) wrapping this permutation's output. Arrays are comma-joined.
      * @example "[data-theme=\"dark\"]"
      * @example ["[data-color-mode=dark]", "[data-color-mode=auto]"]
      */
-    selector: string | string[];
+    readonly selector: string | readonly string[];
     /** e.g. `"@media (prefers-color-scheme: dark)"` */
-    atRule?: string;
+    readonly atRule?: string;
     /**
      * Write this permutation to its own file instead of the default variables path.
      * @example "dist/brand-one.css"
      */
-    path?: string;
+    readonly path?: string;
 };
 
 export type FluidConfig = {
-    min: number;
-    max: number;
+    readonly min: number;
+    readonly max: number;
 };
 
-export type UtilityClassesConfig = Record<string, PropertyUtilityConfig | PropertyUtilityConfig[]>;
+export type UtilityClassesConfig = Readonly<
+    Record<string, PropertyUtilityConfig | readonly PropertyUtilityConfig[]>
+>;
 
 export interface VariablesConfig {
     /**
@@ -145,11 +147,11 @@ export interface UtilitiesOutputConfig {
 }
 
 export type StudioConfig = {
-    repository?: string;
-    branch?: string;
-    app?: string;
-    save?: boolean;
-    signIn?: string;
+    readonly repository?: string;
+    readonly branch?: string;
+    readonly app?: string;
+    readonly save?: boolean;
+    readonly signIn?: string;
 };
 
 /**
@@ -196,34 +198,34 @@ export interface SugarcubeConfig {
 
 /** Normalized config with defaults applied. Used internally after processing {@link SugarcubeConfig}. */
 export interface InternalConfig {
-    resolver?: string;
+    readonly resolver?: string;
 
-    variables: {
-        path: string;
-        prefix?: string;
-        case?: "kebab";
-        delimiter?: string;
-        variableName?: VariableNameFn;
-        layer?: string;
-        transforms: {
-            fluid: FluidConfig;
-            colorFallbackStrategy: ColorFallbackStrategy;
+    readonly variables: {
+        readonly path: string;
+        readonly prefix?: string;
+        readonly case?: "kebab";
+        readonly delimiter?: string;
+        readonly variableName?: VariableNameFn;
+        readonly layer?: string;
+        readonly transforms: {
+            readonly fluid: FluidConfig;
+            readonly colorFallbackStrategy: ColorFallbackStrategy;
         };
-        permutations?: PermutationConfig[];
-        redeclareDependents?: boolean;
-        propagateDependents?: boolean;
+        readonly permutations?: readonly PermutationConfig[];
+        readonly redeclareDependents?: boolean;
+        readonly propagateDependents?: boolean;
     };
 
-    utilities: {
-        path: string;
-        layer?: string;
-        classes?: UtilityClassesConfig;
+    readonly utilities: {
+        readonly path: string;
+        readonly layer?: string;
+        readonly classes?: UtilityClassesConfig;
     };
 
     /** Resolved to absolute paths at load. */
-    content?: string[];
+    readonly content?: readonly string[];
 
-    components?: string;
-    cube?: string;
-    studio?: StudioConfig;
+    readonly components?: string;
+    readonly cube?: string;
+    readonly studio?: StudioConfig;
 }
