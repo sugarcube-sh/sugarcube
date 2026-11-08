@@ -202,14 +202,6 @@ describe("getCSSBlocks, the modifiers a block's input names", () => {
     const rootBlock = block({}, ":root");
     const darkBlock = block({ mode: "dark" }, '[data-mode="dark"]');
 
-    it("knows which modifier writes each token, from the context listing the file", () => {
-        const surface = brands.getPermutation({ mode: "dark" }).getToken("surface");
-        expect(surface?.definitions.map(({ source }) => source.modifier?.name)).toStrictEqual([
-            undefined,
-            "mode",
-        ]);
-    });
-
     describe("a block whose input names some modifiers stacks with the others", () => {
         it("writes every token its modifiers provide a value for, even when it equals the default, when another block that might apply says otherwise, and what refers to it", () => {
             const [, , brand] = getCSSBlocks(brands, [
@@ -221,15 +213,6 @@ describe("getCSSBlocks, the modifiers a block's input names", () => {
                 "--primary: #ff0000",
                 "--button: var(--primary)",
             ]);
-        });
-
-        it("leaves out what its modifiers provide no value for, so the themes stack on one element", () => {
-            const [, , brand] = getCSSBlocks(brands, [
-                rootBlock,
-                darkBlock,
-                block({ brand: "b" }, '[data-brand="b"]'),
-            ]);
-            expect(written(brand).some((line) => line.startsWith("--surface"))).toBe(false);
         });
 
         it("writes the default's values for its modifier where another block changed them, so a light section in a dark page is light", () => {

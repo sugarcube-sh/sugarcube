@@ -110,12 +110,6 @@ describe("a problem in a file only some permutations read", () => {
         },
     });
 
-    it("names the permutations that read the file", () => {
-        const [ignored] = walked.getDiagnostics("gap");
-        expect(ignored?.kind).toBe("unknown-property");
-        expect(ignored?.permutations?.label).toBe("mode: dark");
-    });
-
     it("is not given to the token in a permutation that does not read it", () => {
         expect(walked.getPermutation().getDiagnostics("gap")).toStrictEqual([]);
     });

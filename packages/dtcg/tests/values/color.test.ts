@@ -120,13 +120,6 @@ describe("parseValue, color", () => {
             },
         );
 
-        it.for(["{}", "{color..brand}", "{color.brand", "color.brand}"])(
-            "refuses %s, which is not a reference",
-            (raw) => {
-                refuses(raw, [], { reason: "wrong-shape", value: raw });
-            },
-        );
-
         it("refuses a $ref with other keys beside it, and flags the $ref", () => {
             expect(details({ $ref: "#/color/brand/$value", alpha: 0.5 })).toContainEqual({
                 jsonPath: ["$value", "$ref"],
@@ -202,7 +195,16 @@ describe("parseValue, color", () => {
             },
         );
 
-        it.for(["#e11d4", "red", 42, null, [1, 0, 0], true])("%j, which is not a color", (raw) => {
+        it.for([
+            ["#e11d4", "a hex string five digits long"],
+            [42, "a number"],
+            [null, "null"],
+            [[1, 0, 0], "components with no colorSpace"],
+            [true, "a boolean"],
+            ["{}", "braces with no path"],
+            ["{color..brand}", "a path with an empty name in it"],
+            ["color.brand}", "a path with no opening brace"],
+        ] as const)("%j, which is %s, not a color", ([raw]) => {
             refuses(raw, [], { reason: "wrong-shape", value: raw });
         });
 

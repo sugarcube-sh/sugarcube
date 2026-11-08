@@ -103,31 +103,10 @@ describe("design tokens kept current with their files", () => {
         const next = await current.getTokens();
 
         expect(hexOf(next)).toContain("#222222");
-        expect(reads.map(({ tokens: read }) => read)).toStrictEqual([next]);
-    });
-
-    it("keeps the text of each file it read with the design tokens", async () => {
-        const { current } = live();
-        const first = await current.getTokens();
-
-        expect(Object.keys(first.toMemory().files)).toStrictEqual(first.files);
-        expect(first.getText("base.json")).toBe(
-            JSON.stringify({ color: { ink: color("#111111") } }),
-        );
-    });
-
-    it("holds the text a save wrote, with the design tokens read from it", async () => {
-        const { current, save } = live();
-        await current.getTokens();
-
-        await tokens("base.json", { color: { ink: color("#222222") } });
-        save("base.json");
-        const next = await current.getTokens();
-
-        expect(hexOf(next)).toContain("#222222");
         expect(next.getText("base.json")).toBe(
             JSON.stringify({ color: { ink: color("#222222") } }),
         );
+        expect(reads.map(({ tokens: read }) => read)).toStrictEqual([next]);
     });
 
     it("reads again when a file it lists is added or deleted", async () => {

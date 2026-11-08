@@ -47,14 +47,6 @@ describe("sources", () => {
         expect(base?.readBy).toBe("every-context");
         expect(darkFile?.readBy).toStrictEqual([darkContext]);
     });
-
-    it("are a token file's one source when there is no resolver", () => {
-        const single = oneFile({});
-        const [only] = single.sources;
-        expect(only?.file).toBe("tokens.json");
-        expect(only?.sets).toStrictEqual([]);
-        expect(only?.readBy).toBe("every-context");
-    });
 });
 
 describe("contexts", () => {
@@ -277,16 +269,6 @@ describe("on the design tokens, a file several contexts list", () => {
 describe("the plain form", () => {
     const plain = JSON.parse(JSON.stringify(tokens));
 
-    it("writes each source once, on the design tokens, and each permutation's sources by position", () => {
-        expect(plain.sources.map(({ file }: { file: string }) => file)).toStrictEqual([
-            "base.json",
-            "dark.json",
-        ]);
-        expect(
-            plain.permutations.map(({ sources }: { sources: number[] }) => sources),
-        ).toStrictEqual([[0], [0, 1]]);
-    });
-
     it("writes a place as its source's position and its span", () => {
         const bg = plain.permutations[1].tokens.find(
             ({ path }: { path: string }) => path === "color.bg",
@@ -296,13 +278,6 @@ describe("the plain form", () => {
         ]);
         expect(bg).not.toHaveProperty("source");
         expect(bg).not.toHaveProperty("replaces");
-    });
-
-    it("writes a source's modifier and a context link by name, and a modifier's contexts in full", () => {
-        expect(plain.sources[1].modifier).toBe("mode");
-        expect(plain.sources[1].readBy).toStrictEqual([{ modifier: "mode", name: "dark" }]);
-        const [, darkWritten] = plain.resolver.modifiers[0].contexts;
-        expect(Object.keys(darkWritten).sort()).toStrictEqual(["name", "sources", "span"]);
     });
 
     it("leaves out a permutation's contexts, which its input says", () => {

@@ -165,6 +165,7 @@ describe("getReferenceAt", () => {
 
     it("finds a whole value written as a reference at the top of the value", () => {
         expect(pointsToPathAt("accent", [])).toBe("red");
+        expect(tokenAt("accent").getReferenceAt()?.pointsToPath).toBe("red");
     });
 
     it("finds a reference standing for a whole item of a list", () => {

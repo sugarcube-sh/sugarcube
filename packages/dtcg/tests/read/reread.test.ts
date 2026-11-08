@@ -99,12 +99,18 @@ describe("a reread", () => {
     });
 
     it("leaves the read it started from as it was", () => {
+        before.reread({ "dark.json": null });
+        expect(before.getPermutation().getToken("color.red")?.asWritten?.value).toStrictEqual(
+            rgb(1),
+        );
         expect(before.getPermutation().getToken("color.red")?.resolved).toMatchObject({
             components: [1, 0, 0],
         });
         expect(before.getPermutation().getToken("theme.text")?.references[0]?.pointsToToken).toBe(
             before.getPermutation().getToken("color.red"),
         );
+        expect(before.getText("colors.json")).toBe(files["colors.json"]);
+        expect(before.getText("dark.json")).toBe(files["dark.json"]);
     });
 
     it("still reports the problems in a file that did not change", () => {
@@ -282,5 +288,40 @@ describe("a reread and a group in a file that didn't change", () => {
         expect(second.getPermutation().getGroup("outer.mid.inner")?.deprecatedByGroup).toBe(
             "outer",
         );
+    });
+});
+
+describe("tokens.reread", () => {
+    const base = (colour: string) => JSON.stringify({ brand: { $type: "color", $value: colour } });
+    const more = JSON.stringify({ gap: { $type: "number", $value: 2 } });
+    const tokens = readFromMemory(
+        {
+            files: {
+                "tokens.resolver.json": oneSet("base.json", "more.json"),
+                "base.json": base("#ff0000"),
+                "more.json": more,
+            },
+        },
+        { hexStringColors: true },
+    );
+    const changed = () => tokens.reread({ "base.json": base("#00ff00") });
+
+    it("reads a changed file's new text, and every other file as this one read it", () => {
+        expect(changed().getText("base.json")).toBe(base("#00ff00"));
+        expect(changed().getText("more.json")).toBe(more);
+    });
+
+    it("leaves out a file given as null, as if deleted", () => {
+        const deleted = tokens.reread({ "more.json": null });
+        expect(deleted.getText("more.json")).toBeUndefined();
+        expect(deleted.getPermutation().getToken("gap")).toBeUndefined();
+        expect(deleted.diagnostics.map(({ kind }) => kind)).toStrictEqual(["file-not-found"]);
+    });
+
+    it("starts from the same file, whatever files are added", () => {
+        const single = readFromMemory({ files: { "tokens.json": more } });
+        const added = single.reread({ "notes.json": "{}" });
+        expect(added.files).toStrictEqual(["tokens.json"]);
+        expect(added.getPermutation().getToken("gap")).toBeDefined();
     });
 });

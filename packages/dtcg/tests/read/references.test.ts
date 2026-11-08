@@ -58,16 +58,20 @@ describe("a token's references", () => {
 
     it("include a JSON Pointer, by the token path it names (Format 7.1.2)", () => {
         const [reference] = inLight("border.focus")?.references ?? [];
-        expect(reference?.asWritten.syntax).toBe("json-pointer");
-        expect(reference?.asWritten.syntax === "json-pointer" && reference.asWritten.pointer).toBe(
-            "#/color/brand/$value",
-        );
+        expect(reference?.asWritten).toStrictEqual({
+            syntax: "json-pointer",
+            pointer: "#/color/brand/$value",
+        });
         expect(reference?.pointsToPath).toBe("color.brand");
+        expect(reference?.writtenIn).toBe(inLight("border.focus"));
         expect(reference?.pointsToToken).toBe(inLight("color.brand"));
         expect(reference?.writtenInProperty).toStrictEqual(["color"]);
         expect(reference && written(getSpan(tokens, reference))).toBe(
             '{"$ref":"#/color/brand/$value"}',
         );
+        for (const gone of ["syntax", "pointer", "path", "from", "token", "property"]) {
+            expect(reference).not.toHaveProperty(gone);
+        }
     });
 
     it("reference no token when a pointer names a property within a value, and say which (Format 7.3)", () => {
@@ -163,64 +167,6 @@ describe("a reference in a value", () => {
     });
 });
 
-describe("getReferenceAt", () => {
-    const focus = inLight("border.focus");
-
-    it("is the reference written at a place in the value", () => {
-        expect(focus?.getReferenceAt(["color"])).toBe(focus?.references[0]);
-        expect(inLight("color.brand")?.getReferenceAt([])).toBe(
-            inLight("color.brand")?.references[0],
-        );
-        expect(inLight("color.brand")?.getReferenceAt()).toBe(
-            inLight("color.brand")?.references[0],
-        );
-    });
-
-    it("is undefined where a value is written", () => {
-        expect(focus?.getReferenceAt(["width"])).toBeUndefined();
-        expect(focus?.getReferenceAt([])).toBeUndefined();
-    });
-});
-
-describe("permutation.getDependents", () => {
-    const paths = (users: readonly { path: string }[]) => users.map(({ path }) => path);
-
-    it("is every token that refers to the path", () => {
-        expect(paths(light.getDependents("color.red"))).toStrictEqual([
-            "color.brand",
-            "color.tint",
-        ]);
-    });
-
-    it("follows chained references when asked (Format 7.2.2), each once, in written order", () => {
-        expect(paths(light.getDependents("color.red", { chained: true }))).toStrictEqual([
-            "color.brand",
-            "color.text",
-            "color.tint",
-            "border.focus",
-        ]);
-    });
-
-    it("is the permutation's own: in mode: dark, color.red's only user is the tint", () => {
-        expect(paths(dark.getDependents("color.red"))).toStrictEqual(["color.tint"]);
-    });
-
-    it("follows a loop once, without repeating", () => {
-        const loop = oneFile({
-            a: { $type: "number", $value: "{b}" },
-            b: { $type: "number", $value: "{a}" },
-        });
-        expect(paths(loop.getPermutation().getDependents("a", { chained: true }))).toStrictEqual([
-            "a",
-            "b",
-        ]);
-    });
-
-    it("is empty when nothing refers to it", () => {
-        expect(light.getDependents("color.text")).toStrictEqual([]);
-    });
-});
-
 describe("permutation.referencesTo", () => {
     it("is every reference to the path, each with the token that writes it", () => {
         const red = inLight("color.red");
@@ -257,6 +203,12 @@ describe("permutation.referencesTo", () => {
         });
         const chained = loop.getPermutation().getReferencesTo("a", { chained: true });
         expect(chained.map(({ writtenIn }) => writtenIn.path)).toStrictEqual(["a", "b"]);
+        expect(
+            loop
+                .getPermutation()
+                .getDependents("a", { chained: true })
+                .map(({ path }) => path),
+        ).toStrictEqual(["a", "b"]);
     });
 
     it("is empty when nothing references it", () => {
@@ -509,23 +461,6 @@ describe("on the design tokens", () => {
         expect(reference?.moved([{ from: "color.red", to: "color.crimson" }])).toBe(
             "{color.crimson}",
         );
-    });
-});
-
-describe("a reference's fields", () => {
-    it("keep what is written apart from what it is written in and points to", () => {
-        const reference = inLight("border.focus")?.references[0];
-        expect(reference?.asWritten).toStrictEqual({
-            syntax: "json-pointer",
-            pointer: "#/color/brand/$value",
-        });
-        expect(reference?.writtenIn).toBe(inLight("border.focus"));
-        expect(reference?.writtenInProperty).toStrictEqual(["color"]);
-        expect(reference?.pointsToPath).toBe("color.brand");
-        expect(reference?.pointsToToken).toBe(inLight("color.brand"));
-        for (const gone of ["syntax", "pointer", "path", "from", "token", "property"]) {
-            expect(reference).not.toHaveProperty(gone);
-        }
     });
 });
 

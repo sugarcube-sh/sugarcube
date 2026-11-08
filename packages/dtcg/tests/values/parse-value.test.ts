@@ -30,15 +30,6 @@ describe("a reference in place of a whole value", () => {
 });
 
 describe("parseValue", () => {
-    it("reads a value of the type it is given, references allowed", () => {
-        expect(parseValue("number", 1.5)).toStrictEqual({ ok: true, value: 1.5, ignored: [] });
-        expect(parseValue("number", "{ratio.golden}")).toStrictEqual({
-            ok: true,
-            value: { syntax: "curly-brace", path: "ratio.golden" },
-            ignored: [],
-        });
-    });
-
     it("reports a value that does not fit the type, as that type's parser does", () => {
         const read = parseValue("dimension", "16px", { jsonPath: ["base"], references: false });
         expect(

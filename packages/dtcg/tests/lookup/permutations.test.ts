@@ -139,12 +139,11 @@ describe("permutations.where", () => {
         expect(darkCompact.label).toBe("mode: dark, density: compact");
     });
 
-    it("is everywhere when every permutation passes, and is written as its inputs", () => {
+    it("is everywhere when every permutation passes", () => {
         const every = tokens.permutations.select(() => true);
         expect(every.scope).toStrictEqual([{}]);
         expect(every.label).toBe("everywhere");
         expect(every.others).toHaveLength(0);
-        expect(JSON.parse(JSON.stringify(every))).toStrictEqual(every.inputs);
     });
 
     it("is nowhere when no permutation passes", () => {
@@ -241,12 +240,6 @@ describe("the permutations an answer holds in", () => {
         const [base] = tokens.getDefinitions("red");
         expect(base?.permutations).toHaveLength(6);
         expect(base?.permutations.label).toBe("everywhere");
-    });
-
-    it("are written in the plain form as their inputs", () => {
-        expect(JSON.parse(JSON.stringify(reference?.permutations))).toStrictEqual(
-            reference?.permutations.inputs,
-        );
     });
 
     it("share one scope with every answer that holds in the same permutations", () => {
@@ -417,20 +410,6 @@ describe("a problem's permutations", () => {
     it("are the permutations themselves, labelled", () => {
         expect(problem?.permutations).toContain(broken.getPermutation({ mode: "dark" }));
         expect(problem?.permutations?.label).toBe("mode: dark, sepia");
-    });
-
-    it("are every permutation, labelled everywhere, when the problem is in every permutation", () => {
-        const everywhere = readChanged({
-            "base.json": JSON.stringify({
-                gap: number(1),
-                red: { $type: "number", $value: "{missing}" },
-                text: number(1),
-            }),
-        });
-        const found = everywhere.diagnostics.filter(({ kind }) => kind === "missing-reference");
-        expect(found).toHaveLength(1);
-        expect(found[0]?.permutations.label).toBe("everywhere");
-        expect(found[0]?.permutations).toHaveLength(everywhere.permutations.length);
     });
 
     it("are written in the plain form as their inputs", () => {

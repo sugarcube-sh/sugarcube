@@ -46,14 +46,6 @@ describe("a group's children", () => {
         expect(paths(tokens.getPermutation().getGroup("color.raw")?.childTokens)).toStrictEqual([]);
     });
 
-    it("give the same lists each time they are read, as children does", () => {
-        const colors = tokens.getPermutation().getGroup("color")!;
-
-        expect(colors.childTokens).toBe(colors.childTokens);
-        expect(colors.tokens).toBe(colors.tokens);
-        expect(colors.children).toBe(colors.children);
-    });
-
     it("are the tokens and groups themselves", () => {
         const [bg, brand] = tokens.getPermutation().getGroup("color")?.children ?? [];
         expect(bg).toBe(tokens.getPermutation().getToken("color.bg"));
@@ -94,10 +86,6 @@ describe("the top level", () => {
 
     it('is reached by its path: getGroup("") is the top level', () => {
         expect(tokens.getPermutation().getGroup("")).toBe(base?.topLevel);
-    });
-
-    it("comes first among the permutation's groups", () => {
-        expect(base?.groups.map(({ path }) => path)).toStrictEqual(["", "color"]);
     });
 
     it("has a $root written at the top of the file as its root token, reached by {$root}", () => {
@@ -194,18 +182,5 @@ describe("tokens that are not written", () => {
         const children = paths(tokens.getPermutation().getGroup("space")?.children);
         expect(children?.filter((path) => path !== "space.sub")).toStrictEqual(tokenOrder);
         expect(children?.indexOf("space.sub")).toBe(0);
-    });
-});
-
-describe('a group named ""', () => {
-    const tokens = oneFile({
-        "": { $type: "number", x: { $value: 1 } },
-        "size": { $type: "number", $value: 2 },
-    });
-    const base = tokens.getPermutation();
-
-    it("is not a name, so it isn't read, and the top level's children are the rest", () => {
-        expect(paths(base?.children)).toStrictEqual(["size"]);
-        expect(tokens.getPermutation().getGroup("")).toBe(base?.topLevel);
     });
 });

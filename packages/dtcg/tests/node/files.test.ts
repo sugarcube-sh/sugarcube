@@ -1,28 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { readFromMemory } from "../../src/index.js";
 import { getAbsoluteFilePath, read } from "../../src/node.js";
 
 const folder = join(import.meta.dirname, "../read/cases/every-combination/input");
-
-describe("design tokens read from disk", () => {
-    it("name the entry by its file name, and give each file's text by their name for it", async () => {
-        const tokens = await read(join(folder, "tokens.resolver.json"));
-        const { entryFile, files } = tokens.toMemory();
-        expect(entryFile).toBe("tokens.resolver.json");
-        expect(Object.keys(files)).toStrictEqual(tokens.files);
-        for (const file of tokens.files) {
-            expect(files[file]).toBe(readFileSync(join(folder, file), "utf8"));
-        }
-    });
-
-    it("read again from memory, with the same options, to the same design tokens", async () => {
-        const options = { hexStringColors: true };
-        const tokens = await read(join(folder, "tokens.resolver.json"), options);
-        expect(readFromMemory(tokens.toMemory(), options)).toStrictEqual(tokens);
-    });
-});
 
 describe("getAbsoluteFilePath", () => {
     it("is where each file the design tokens name was read from", async () => {

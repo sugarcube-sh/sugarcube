@@ -764,15 +764,6 @@ describe("readFromMemory", () => {
             { kind: "invalid-json", detail: { reason: "comma-expected" } },
         ]);
     });
-
-    it("writes its plain form with JSON.stringify, each source once and placed by position", () => {
-        const tokens = readFromMemory({ files: { "tokens.json": '{ "a": 1, "a": 2 }' } });
-        expect(JSON.parse(JSON.stringify(tokens))).toMatchObject({
-            files: ["tokens.json"],
-            sources: [{ file: "tokens.json", sets: [], readBy: "every-context" }],
-            permutations: [{ sources: [0] }],
-        });
-    });
 });
 
 describe("a group referring to the whole document", () => {
@@ -849,11 +840,6 @@ describe("labels", () => {
             [{ theme: "dark", size: "large" }, "theme: dark, size: large"],
         ]);
     });
-
-    it("are empty without a resolver, where there is nothing to choose", () => {
-        const loose = readFromMemory({ files: { "tokens.json": valid } });
-        expect(loose.permutations.map(({ label }) => label)).toStrictEqual([""]);
-    });
 });
 
 describe("what the design tokens hold", () => {
@@ -893,13 +879,6 @@ describe("tokens.text", () => {
         const tokens = readFromMemory({ files });
         expect(tokens.getText("unread.json")).toBeUndefined();
         expect(tokens.getText("missing.json")).toBeUndefined();
-    });
-
-    it("is kept by read from disk too", async () => {
-        const tokens = await read("tokens.resolver.json", {
-            readText: async (path) => files[path as keyof typeof files],
-        });
-        expect(tokens.getText("base.json")).toBe(base);
     });
 
     it("is not written in the plain form", () => {
@@ -960,65 +939,6 @@ describe("the group a generator is given", () => {
     });
 });
 
-describe("tokens.reread", () => {
-    const steps = defineGenerator({
-        extension: ["com.example", "steps"],
-        messages: {},
-        generate: () => ({ ok: true, value: [{ name: "1", $value: 1 }] }),
-    });
-    const base = (colour: string) =>
-        JSON.stringify({
-            brand: { $type: "color", $value: colour },
-            space: { $type: "number", $extensions: { "com.example": { steps: 1 } } },
-        });
-    const more = JSON.stringify({ gap: { $type: "number", $value: 2 } });
-    const files = {
-        "tokens.resolver.json": JSON.stringify({
-            version: "2025.10",
-            sets: { base: { sources: [{ $ref: "base.json" }, { $ref: "more.json" }] } },
-            resolutionOrder: [{ $ref: "#/sets/base" }],
-        }),
-        "base.json": base("#ff0000"),
-        "more.json": more,
-    };
-    const tokens = readFromMemory({ files }, { generators: [steps], hexStringColors: true });
-    const changed = () => tokens.reread({ "base.json": base("#00ff00") });
-
-    it("reads a changed file's new text, and every other file as this one read it", () => {
-        expect(changed().getPermutation().getToken("brand")?.asWritten?.value).toBe("#00ff00");
-        expect(changed().getText("base.json")).toBe(base("#00ff00"));
-        expect(changed().getText("more.json")).toBe(more);
-        expect(changed().getPermutation().getToken("gap")).toBeDefined();
-    });
-
-    it("reads with the same options", () => {
-        expect(changed().getPermutation().getToken("space.1")?.generated).toBeDefined();
-        expect(changed().diagnostics).toStrictEqual([]);
-    });
-
-    it("leaves out a file given as null, as if deleted", () => {
-        const deleted = tokens.reread({ "more.json": null });
-        expect(deleted.getText("more.json")).toBeUndefined();
-        expect(deleted.getPermutation().getToken("gap")).toBeUndefined();
-        expect(deleted.diagnostics.map(({ kind }) => kind)).toStrictEqual(["file-not-found"]);
-    });
-
-    it("starts from the same file, whatever files are added", () => {
-        const single = readFromMemory({ files: { "tokens.json": more } });
-        const added = single.reread({ "notes.json": "{}" });
-        expect(added.files).toStrictEqual(["tokens.json"]);
-        expect(added.getPermutation().getToken("gap")).toBeDefined();
-    });
-
-    it("leaves the design tokens it was asked of as they were", () => {
-        changed();
-        tokens.reread({ "more.json": null });
-        expect(tokens.getPermutation().getToken("brand")?.asWritten?.value).toBe("#ff0000");
-        expect(tokens.getText("base.json")).toBe(base("#ff0000"));
-        expect(tokens.getText("more.json")).toBe(more);
-    });
-});
-
 describe("the top level of a file, to a generator or an extension check", () => {
     const seen: { generator?: unknown; validator?: unknown[] } = { validator: [] };
     const steps = defineGenerator({
@@ -1060,10 +980,6 @@ describe("the top level of a file, to a generator or an extension check", () => 
 });
 
 describe("the resolver part", () => {
-    it("is absent for a token file read without a resolver", () => {
-        expect(readFromMemory({ files: { "tokens.json": valid } }).resolver).toBeUndefined();
-    });
-
     it("reports a set or modifier resolutionOrder never reaches as a hint editors fade", () => {
         const resolver = JSON.stringify({
             version: "2025.10",

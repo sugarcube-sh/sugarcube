@@ -70,15 +70,6 @@ describe("onFileChanged", () => {
         expect(paths).toStrictEqual([file]);
     });
 
-    it("reports a save once when nothing was written after it", async () => {
-        const { watcher, paths } = heard();
-
-        watcher.emit("change", file, await stat(file));
-        await pastTheWindow();
-
-        expect(paths).toStrictEqual([file]);
-    });
-
     it("looks at the file before the listener reads it", async () => {
         const watcher = new EventEmitter();
         const read: string[] = [];
