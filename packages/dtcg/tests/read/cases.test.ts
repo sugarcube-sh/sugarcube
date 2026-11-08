@@ -1,8 +1,6 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { type DesignTokens, type Permutation, read, readFromMemory } from "../../src/index.js";
-import { type CaseOptions, inputFiles, readOptions } from "./case-options.js";
+import { type CaseOptions, loadCases, readOptions } from "./case-options.js";
 import { textIn } from "./on-disk.js";
 import { withSpans } from "./positions.js";
 import { getSpan } from "../../src/editor.js";
@@ -20,11 +18,6 @@ interface Expected {
         "kind" | "detail" | "span" | "relatedInformation" | "path" | "permutations"
     >[];
 }
-
-const casesFolder = join(import.meta.dirname, "cases");
-const cases = readdirSync(casesFolder, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name);
 
 function observed(found: DesignTokens, expected: Expected) {
     const tokens: DesignTokens = JSON.parse(JSON.stringify(found));
@@ -104,80 +97,70 @@ function picked<T extends { path: string }>(found: readonly T[], wanted: readonl
     });
 }
 
-describe.each(cases)("%s", (name) => {
-    const folder = join(casesFolder, name);
-    const input = join(folder, "input");
-    const expected = withSpans(
-        JSON.parse(readFileSync(join(folder, "expected.json"), "utf8")),
-        inputFiles(input),
-    ) as Expected;
+for (const { name, input, files, expected: written } of loadCases()) {
+    describe(name, () => {
+        const expected = withSpans(written, files) as Expected;
+        const fromMemory = () =>
+            readFromMemory({ files, entryFile: expected.entry }, readOptions(expected.options));
 
-    it("reads through read", async () => {
-        const tokens = await read(expected.entry, {
-            ...readOptions(expected.options),
-            readText: textIn(input),
+        it("reads through read", async () => {
+            const tokens = await read(expected.entry, {
+                ...readOptions(expected.options),
+                readText: textIn(input),
+            });
+            expect(observed(tokens, expected)).toStrictEqual(expected);
         });
-        expect(observed(tokens, expected)).toStrictEqual(expected);
-    });
 
-    it("reads through readFromMemory", () => {
-        const tokens = readFromMemory(
-            { files: inputFiles(input), entryFile: expected.entry },
-            readOptions(expected.options),
-        );
-        expect(observed(tokens, expected)).toStrictEqual(expected);
-    });
-
-    it("names each problem's permutations among those that read its file", () => {
-        const tokens = readFromMemory(
-            { files: inputFiles(input), entryFile: expected.entry },
-            readOptions(expected.options),
-        );
-        const reads = (permutation: Permutation, file: string) =>
-            permutation.sources.some((source) => source.file === file);
-        const misplaced = tokens.diagnostics.flatMap((problem) => {
-            const file = problem.span?.file;
-            if (file === undefined) return [];
-            const fits =
-                file === tokens.entryFile
-                    ? problem.permutations.length === tokens.permutations.length
-                    : problem.permutations.every((each) => reads(each, file));
-            return fits ? [] : [`${problem.kind} in ${file}`];
+        it("reads through readFromMemory", () => {
+            const tokens = fromMemory();
+            expect(observed(tokens, expected)).toStrictEqual(expected);
         });
-        expect(misplaced).toStrictEqual([]);
-    });
 
-    it("names a value's problem in exactly the permutations whose token takes that value", () => {
-        const tokens = readFromMemory(
-            { files: inputFiles(input), entryFile: expected.entry },
-            readOptions(expected.options),
-        );
-        const inValue = (problem: DesignTokens["diagnostics"][number]) =>
-            problem.kind === "invalid-value" ||
-            problem.kind === "hex-string-color" ||
-            (problem.kind === "unknown-property" &&
-                "jsonPath" in problem.detail &&
-                problem.detail.jsonPath[0] === "$value");
-        const misplaced = tokens.diagnostics.flatMap((problem) => {
-            const { path, span } = problem;
-            if (!inValue(problem) || path === undefined || span === undefined) return [];
-            if (!tokens.permutations.some((each) => each.getToken(path))) return [];
-            const takes = (permutation: Permutation) => {
-                const winner = permutation.getToken(path)?.winningDefinition;
-                const from = winner && getSpan(tokens, winner);
-                return (
-                    from !== undefined &&
-                    from.file === span.file &&
-                    from.offset <= span.offset &&
-                    span.offset + span.length <= from.offset + from.length
-                );
-            };
-            const named = problem.permutations ?? tokens.permutations;
-            const taking = tokens.permutations.filter(takes);
-            const exact =
-                named.length === taking.length && named.every((each) => taking.includes(each));
-            return exact ? [] : [`${problem.kind} at ${path}`];
+        it("names each problem's permutations among those that read its file", () => {
+            const tokens = fromMemory();
+            const reads = (permutation: Permutation, file: string) =>
+                permutation.sources.some((source) => source.file === file);
+            const misplaced = tokens.diagnostics.flatMap((problem) => {
+                const file = problem.span?.file;
+                if (file === undefined) return [];
+                const fits =
+                    file === tokens.entryFile
+                        ? problem.permutations.length === tokens.permutations.length
+                        : problem.permutations.every((each) => reads(each, file));
+                return fits ? [] : [`${problem.kind} in ${file}`];
+            });
+            expect(misplaced).toStrictEqual([]);
         });
-        expect(misplaced).toStrictEqual([]);
+
+        it("names a value's problem in exactly the permutations whose token takes that value", () => {
+            const tokens = fromMemory();
+            const inValue = (problem: DesignTokens["diagnostics"][number]) =>
+                problem.kind === "invalid-value" ||
+                problem.kind === "hex-string-color" ||
+                (problem.kind === "unknown-property" &&
+                    "jsonPath" in problem.detail &&
+                    problem.detail.jsonPath[0] === "$value");
+            const misplaced = tokens.diagnostics.flatMap((problem) => {
+                const { path, span } = problem;
+                if (!inValue(problem) || path === undefined || span === undefined) return [];
+                if (!tokens.permutations.some((each) => each.getToken(path))) return [];
+                const takes = (permutation: Permutation) => {
+                    const winner = permutation.getToken(path)?.winningDefinition;
+                    const from = winner && getSpan(tokens, winner);
+                    return (
+                        from !== undefined &&
+                        from.file === span.file &&
+                        from.offset <= span.offset &&
+                        span.offset + span.length <= from.offset + from.length
+                    );
+                };
+                const named = problem.permutations ?? tokens.permutations;
+                const taking = tokens.permutations.filter(takes);
+                const exact =
+                    named.length === taking.length && named.every((each) => taking.includes(each));
+                return exact ? [] : [`${problem.kind} at ${path}`];
+            });
+            expect(misplaced).toStrictEqual([]);
+        });
     });
-});
+}

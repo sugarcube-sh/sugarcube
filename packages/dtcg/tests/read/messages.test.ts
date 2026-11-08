@@ -6,8 +6,8 @@ import {
     type DiagnosticKind,
     type Generator,
     defineGenerator,
-    readFromMemory,
 } from "../../src/index.js";
+import { oneFile } from "../token-files.js";
 import { valueErrorMessages } from "../../src/values/value-errors.js";
 import { dimensionUnits, durationUnits, lineCaps, strokeStyleKeywords } from "../../src/values.js";
 
@@ -681,11 +681,10 @@ describe("diagnostic messages from read", () => {
     });
 
     function diagnostics(generator: Generator) {
-        const text = JSON.stringify({
-            space: { $type: "dimension", $extensions: { "com.example": { steps: "three" } } },
-        });
-        return readFromMemory({ files: { "tokens.json": text } }, { generators: [generator] })
-            .diagnostics;
+        return oneFile(
+            { space: { $type: "dimension", $extensions: { "com.example": { steps: "three" } } } },
+            { generators: [generator] },
+        ).diagnostics;
     }
 
     it("words extension-invalid from the generator's messages", () => {
@@ -730,8 +729,7 @@ describe("diagnostic messages from read", () => {
     });
 
     it("links invalid-value to the section for its reason", () => {
-        const text = JSON.stringify({ space: { $type: "dimension", $value: "16px" } });
-        const tokens = readFromMemory({ files: { "tokens.json": text } });
+        const tokens = oneFile({ space: { $type: "dimension", $value: "16px" } });
         expect(tokens.diagnostics.map(({ docsUrl }) => docsUrl)).toStrictEqual([
             "https://sugarcube.sh/errors/invalid-value#string-with-unit",
         ]);

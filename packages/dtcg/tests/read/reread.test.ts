@@ -1,26 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { readFromMemory } from "../../src/index.js";
 import { getSpan } from "../../src/editor.js";
+import { lightDark, oneSet } from "../token-files.js";
 
 const rgb = (red: number) => ({ colorSpace: "srgb", components: [red, 0, 0] });
 
 const files = {
-    "tokens.resolver.json": JSON.stringify({
-        version: "2025.10",
-        resolutionOrder: [
-            {
-                type: "set",
-                name: "base",
-                sources: [{ $ref: "colors.json" }, { $ref: "space.json" }, { $ref: "theme.json" }],
-            },
-            {
-                type: "modifier",
-                name: "mode",
-                default: "light",
-                contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-            },
-        ],
-    }),
+    "tokens.resolver.json": lightDark(["colors.json", "space.json", "theme.json"], ["dark.json"]),
     "colors.json": JSON.stringify({
         color: { $type: "color", red: { $value: rgb(1) }, blue: { $value: rgb(0) } },
     }),
@@ -36,7 +22,7 @@ const files = {
     "dark.json": JSON.stringify({ color: { blue: { $value: rgb(0.2) } } }),
 };
 
-const before = readFromMemory({ files, entryFile: "tokens.resolver.json" });
+const before = readFromMemory({ files });
 const after = before.reread({
     "colors.json": JSON.stringify({
         color: { $type: "color", red: { $value: rgb(0.5) }, blue: { $value: rgb(0) } },
@@ -124,20 +110,10 @@ describe("a reread", () => {
     it("still reports the problems in a file that did not change", () => {
         const broken = readFromMemory({
             files: {
-                "tokens.resolver.json": JSON.stringify({
-                    version: "2025.10",
-                    resolutionOrder: [
-                        {
-                            type: "set",
-                            name: "base",
-                            sources: [{ $ref: "space.json" }, { $ref: "broken.json" }],
-                        },
-                    ],
-                }),
+                "tokens.resolver.json": oneSet("space.json", "broken.json"),
                 "space.json": files["space.json"],
                 "broken.json": JSON.stringify({ gap: { $type: "number", $value: "{missing}" } }),
             },
-            entryFile: "tokens.resolver.json",
         });
         const again = broken.reread({
             "space.json": JSON.stringify({ space: { $type: "number", sm: { $value: 2 } } }),
@@ -286,12 +262,7 @@ describe("a reread and where a deprecation comes from", () => {
 });
 
 describe("a reread and a group in a file that didn't change", () => {
-    const resolver = JSON.stringify({
-        version: "2025.10",
-        resolutionOrder: [
-            { type: "set", name: "base", sources: [{ $ref: "a.json" }, { $ref: "b.json" }] },
-        ],
-    });
+    const resolver = oneSet("a.json", "b.json");
     const a = (mid: object) =>
         JSON.stringify({ outer: { $type: "number", $deprecated: "Use gap", mid } });
 
@@ -302,7 +273,6 @@ describe("a reread and a group in a file that didn't change", () => {
                 "a.json": a({ $deprecated: "Use gap" }),
                 "b.json": JSON.stringify({ outer: { mid: { inner: {} } } }),
             },
-            entryFile: "tokens.resolver.json",
         });
         const second = first.reread({ "a.json": a({}) });
 

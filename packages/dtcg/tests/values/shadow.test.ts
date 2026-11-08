@@ -1,25 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { ParseOptions } from "../../src/index.js";
-import { parseValue } from "../../src/values.js";
+import { lenient, parsing } from "./parsing.js";
 
-const lenient: ParseOptions = { ignoreUnknownProperties: true };
-
-function read(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("shadow", raw, { jsonPath: ["$value"], ...options });
-    if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
-    return result.value;
-}
-
-function details(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("shadow", raw, { jsonPath: ["$value"], ...options });
-    if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
-    return result.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
-
-function ignored(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("shadow", raw, { jsonPath: ["$value"], ...options });
-    return result.ignored.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
+const { read, details, ignored, refuses } = parsing("shadow");
 
 const rem = (value: number) => ({ value, unit: "rem" });
 const black = (alpha: number) => ({ colorSpace: "srgb", components: [0, 0, 0], alpha });
@@ -74,86 +56,48 @@ describe("parseValue, shadow", () => {
 
     describe("refuses", () => {
         it("a curly-brace reference as inset, where a JSON Pointer can stand", () => {
-            expect(details({ ...layer, inset: "{shadow.inset}" })).toStrictEqual([
-                {
-                    jsonPath: ["$value", "inset"],
-                    detail: {
-                        type: "shadow",
-                        reason: "curly-brace-not-allowed-here",
-                        reference: "{shadow.inset}",
-                    },
-                },
-            ]);
+            refuses({ ...layer, inset: "{shadow.inset}" }, ["inset"], {
+                reason: "curly-brace-not-allowed-here",
+                reference: "{shadow.inset}",
+            });
         });
 
         it("an empty list", () => {
-            expect(details([])).toStrictEqual([
-                { jsonPath: ["$value"], detail: { type: "shadow", reason: "no-shadows" } },
-            ]);
+            refuses([], [], { reason: "no-shadows" });
         });
 
         it.for(["0 1px 2px black", 1, null])("%j, which is not a shadow", (raw) => {
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value"],
-                    detail: { type: "shadow", reason: "wrong-shape", value: raw },
-                },
-            ]);
+            refuses(raw, [], { reason: "wrong-shape", value: raw });
         });
 
         it.for(["color", "offsetX", "offsetY", "blur", "spread"])("a shadow with no %s", (part) => {
             const raw: Record<string, unknown> = { ...layer };
             delete raw[part];
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value", part],
-                    detail: { type: "shadow", reason: "missing-property", property: part },
-                },
-            ]);
+            refuses(raw, [part], { reason: "missing-property", property: part });
         });
 
         it.for(["true", 1, null])("inset %j, which is not true or false", (inset) => {
-            expect(details({ ...layer, inset })).toStrictEqual([
-                {
-                    jsonPath: ["$value", "inset"],
-                    detail: { type: "shadow", reason: "not-a-boolean", value: inset },
-                },
-            ]);
+            refuses({ ...layer, inset }, ["inset"], { reason: "not-a-boolean", value: inset });
         });
 
         it("a bad part in the second shadow of a list, at its full path", () => {
-            expect(details([layer, { ...layer, blur: "4px" }])).toStrictEqual([
-                {
-                    jsonPath: ["$value", 1, "blur"],
-                    detail: {
-                        type: "dimension",
-                        reason: "string-with-unit",
-                        value: "4px",
-                        asObject: { value: 4, unit: "px" },
-                    },
-                },
-            ]);
+            refuses([layer, { ...layer, blur: "4px" }], [1, "blur"], {
+                type: "dimension",
+                reason: "string-with-unit",
+                value: "4px",
+                asObject: { value: 4, unit: "px" },
+            });
         });
 
         it("something in a list that is neither a shadow nor a reference", () => {
-            expect(details([layer, 42])).toStrictEqual([
-                {
-                    jsonPath: ["$value", 1],
-                    detail: { type: "shadow", reason: "wrong-shape", value: 42 },
-                },
-            ]);
+            refuses([layer, 42], [1], { reason: "wrong-shape", value: 42 });
         });
     });
 
     describe("a property its type does not define", () => {
         it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
             const raw = { ...layer, opacity: 0.5 };
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value", "opacity"],
-                    detail: { type: "shadow", reason: "unknown-property", property: "opacity" },
-                },
-            ]);
+            refuses(raw, ["opacity"], { reason: "unknown-property", property: "opacity" });
             expect(ignored(raw)).toStrictEqual([]);
         });
 

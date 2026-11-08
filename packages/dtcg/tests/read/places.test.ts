@@ -1,29 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { type Span, readFromMemory } from "../../src/index.js";
 import { getSpan } from "../../src/editor.js";
+import { lightDark, oneFile } from "../token-files.js";
 
 const color = (red: number) => ({ $value: { colorSpace: "srgb", components: [red, 0, 0] } });
 
 const files: Record<string, string> = {
-    "tokens.resolver.json": JSON.stringify({
-        version: "2025.10",
-        resolutionOrder: [
-            { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-            {
-                type: "modifier",
-                name: "mode",
-                default: "light",
-                contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-            },
-        ],
-    }),
+    "tokens.resolver.json": lightDark(["base.json"], ["dark.json"]),
     "base.json": JSON.stringify({
         color: { $type: "color", bg: color(1), text: color(0) },
     }),
     "dark.json": JSON.stringify({ color: { bg: color(0.1) } }),
 };
 
-const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
+const tokens = readFromMemory({ files });
 const light = tokens.getPermutation({ mode: "light" });
 const dark = tokens.getPermutation({ mode: "dark" });
 const mode = tokens.resolver?.modifiers[0];
@@ -59,7 +49,7 @@ describe("sources", () => {
     });
 
     it("are a token file's one source when there is no resolver", () => {
-        const single = readFromMemory({ files: { "tokens.json": JSON.stringify({}) } });
+        const single = oneFile({});
         const [only] = single.sources;
         expect(only?.file).toBe("tokens.json");
         expect(only?.sets).toStrictEqual([]);
@@ -93,7 +83,6 @@ describe("contexts", () => {
                     ],
                 }),
             },
-            entryFile: "tokens.resolver.json",
         });
         const contexts = undecided.resolver?.modifiers[0]?.contexts ?? [];
         expect(contexts.map(({ isDefault }) => isDefault)).toStrictEqual([false, false]);
@@ -133,13 +122,9 @@ describe("a group's definitions", () => {
     });
 
     it("is empty for a group that is only inherited", () => {
-        const inherited = readFromMemory({
-            files: {
-                "tokens.json": JSON.stringify({
-                    button: { $type: "number", state: { hover: { $value: 1 } } },
-                    primary: { $extends: "{button}" },
-                }),
-            },
+        const inherited = oneFile({
+            button: { $type: "number", state: { hover: { $value: 1 } } },
+            primary: { $extends: "{button}" },
         });
         expect(inherited.getPermutation().getGroup("primary.state")?.definitions).toStrictEqual([]);
     });
@@ -185,7 +170,6 @@ describe("on the design tokens", () => {
                 "base.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }),
                 "brand.json": JSON.stringify({ gap: { $type: "number", $value: 2 } }),
             },
-            entryFile: "tokens.resolver.json",
         });
         const [base, brand] = overridden.getDefinitions("gap");
         expect(base?.permutations.label).toBe("everywhere");
@@ -223,7 +207,6 @@ describe("on the design tokens, a file several contexts list", () => {
             "base.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }),
             "night.json": JSON.stringify({ gap: { $type: "number", $value: 2 } }),
         },
-        entryFile: "tokens.resolver.json",
     });
 
     it("getDefinitions gives its place once, with the one source both contexts read it through", () => {
@@ -271,31 +254,14 @@ describe("on the design tokens, a file several contexts list", () => {
     it("is a place for each route into the file that writes different extensions beside its $ref", () => {
         const routes = readFromMemory({
             files: {
-                "tokens.resolver.json": JSON.stringify({
-                    version: "2025.10",
-                    resolutionOrder: [
-                        { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-                        {
-                            type: "modifier",
-                            name: "mode",
-                            default: "light",
-                            contexts: {
-                                light: [],
-                                dark: [
-                                    {
-                                        $ref: "night.json",
-                                        $extensions: { "com.example": { hidden: true } },
-                                    },
-                                ],
-                                dim: [{ $ref: "night.json" }],
-                            },
-                        },
-                    ],
-                }),
+                "tokens.resolver.json": lightDark(
+                    ["base.json"],
+                    [{ $ref: "night.json", $extensions: { "com.example": { hidden: true } } }],
+                    { dim: ["night.json"] },
+                ),
                 "base.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }),
                 "night.json": JSON.stringify({ gap: { $type: "number", $value: 2 } }),
             },
-            entryFile: "tokens.resolver.json",
         });
         const throughDark = routes.getPermutation({ mode: "dark" }).getToken("gap");
         const throughDim = routes.getPermutation({ mode: "dim" }).getToken("gap");
@@ -347,22 +313,7 @@ describe("the plain form", () => {
 describe("what is written at a place", () => {
     const placed = readFromMemory({
         files: {
-            "tokens.resolver.json": JSON.stringify({
-                version: "2025.10",
-                resolutionOrder: [
-                    {
-                        type: "set",
-                        name: "base",
-                        sources: [{ $ref: "base.json" }, { $ref: "all.json#/tokens" }],
-                    },
-                    {
-                        type: "modifier",
-                        name: "mode",
-                        default: "light",
-                        contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                    },
-                ],
-            }),
+            "tokens.resolver.json": lightDark(["base.json", "all.json#/tokens"], ["dark.json"]),
             "base.json":
                 '{\n  "red": { "$type": "color", "$value": "#ff0000", "$description": "Red." }\n}',
             "dark.json": '{ "red": { "$type": "color", "$value": "#990000" } }',

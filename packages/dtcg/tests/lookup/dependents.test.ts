@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFromMemory } from "../../src/index.js";
+import { lightDark } from "../token-files.js";
 
 const red = { colorSpace: "srgb", components: [1, 0, 0] };
 const color = (value: unknown) => ({ $type: "color", $value: value });
@@ -7,18 +8,7 @@ const stop = (position: number) => ({ color: "{color.red}", position });
 
 const tokens = readFromMemory({
     files: {
-        "tokens.resolver.json": JSON.stringify({
-            version: "2025.10",
-            resolutionOrder: [
-                { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-                {
-                    type: "modifier",
-                    name: "mode",
-                    default: "light",
-                    contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                },
-            ],
-        }),
+        "tokens.resolver.json": lightDark(["base.json"], ["dark.json"]),
         "base.json": JSON.stringify({
             color: { red: color(red), brand: color("{color.red}"), text: color("{color.brand}") },
             fade: { $type: "gradient", $value: [stop(0), stop(1)] },

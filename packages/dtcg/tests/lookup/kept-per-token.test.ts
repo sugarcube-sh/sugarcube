@@ -1,29 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { readFromMemory } from "../../src/index.js";
+import { oneFile } from "../token-files.js";
 
 const red = { colorSpace: "srgb", components: [1, 0, 0] };
 const px = (value: number) => ({ value, unit: "px" });
 
-const permutation = readFromMemory({
-    files: {
-        "tokens.json": JSON.stringify({
-            color: {
-                $type: "color",
-                red: { $value: red },
-                brand: { $value: "{color.red}" },
-                text: { $value: "{color.brand}" },
-            },
-            lift: {
-                $type: "shadow",
-                $value: {
-                    color: "{color.red}",
-                    offsetX: px(0),
-                    offsetY: px(1),
-                    blur: px(2),
-                    spread: px(0),
-                },
-            },
-        }),
+const permutation = oneFile({
+    color: {
+        $type: "color",
+        red: { $value: red },
+        brand: { $value: "{color.red}" },
+        text: { $value: "{color.brand}" },
+    },
+    lift: {
+        $type: "shadow",
+        $value: {
+            color: "{color.red}",
+            offsetX: px(0),
+            offsetY: px(1),
+            blur: px(2),
+            spread: px(0),
+        },
     },
 }).getPermutation();
 

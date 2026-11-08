@@ -6,6 +6,7 @@ import {
     toInputLabel,
     readFromMemory,
 } from "../../src/index.js";
+import { thrownBy } from "./thrown.js";
 
 const px = (value: number) => ({ $value: { value, unit: "px" } });
 
@@ -51,7 +52,7 @@ const files = {
 };
 
 function readWith(inputs?: Input[]): DesignTokens {
-    return readFromMemory({ files, entryFile: "tokens.resolver.json" }, inputs && { inputs });
+    return readFromMemory({ files }, inputs && { inputs });
 }
 
 const tokens = readWith();
@@ -70,18 +71,7 @@ const noDefault = readFromMemory({
             resolutionOrder: resolver.resolutionOrder.slice(0, 2),
         }),
     },
-    entryFile: "tokens.resolver.json",
 });
-
-function thrown(run: () => unknown): PermutationError {
-    try {
-        run();
-    } catch (error) {
-        if (error instanceof PermutationError) return error;
-        throw error;
-    }
-    throw new Error("nothing was thrown");
-}
 
 describe("tokens.permutation", () => {
     it("is the permutation for a full input", () => {
@@ -110,7 +100,7 @@ describe("tokens.permutation", () => {
     });
 
     it("throws for a modifier the resolver does not declare, saying which", () => {
-        const error = thrown(() => tokens.getPermutation({ size: "large" }));
+        const error = thrownBy(PermutationError, () => tokens.getPermutation({ size: "large" }));
         expect(error.message).toBe("there is no modifier named `size`");
         expect(error.detail).toStrictEqual({
             reason: "unknown-modifier",
@@ -120,13 +110,15 @@ describe("tokens.permutation", () => {
     });
 
     it("throws for a context that is not a string (Resolver 5.2)", () => {
-        const error = thrown(() => tokens.getPermutation({ theme: 1 } as unknown as Input));
+        const error = thrownBy(PermutationError, () =>
+            tokens.getPermutation({ theme: 1 } as unknown as Input),
+        );
         expect(error.message).toBe("the input for the modifier `theme` must be a string");
         expect(error.detail).toStrictEqual({ reason: "not-a-string", modifier: "theme" });
     });
 
     it("throws for a context the modifier does not declare, saying which", () => {
-        const error = thrown(() => tokens.getPermutation({ theme: "sepia" }));
+        const error = thrownBy(PermutationError, () => tokens.getPermutation({ theme: "sepia" }));
         expect(error.message).toBe("`sepia` is not a context of the modifier `theme`");
         expect(error.detail).toStrictEqual({
             reason: "unknown-context",
@@ -137,7 +129,7 @@ describe("tokens.permutation", () => {
     });
 
     it("throws when a modifier with no default is left out, naming its contexts (Resolver 5)", () => {
-        const error = thrown(() => noDefault.getPermutation());
+        const error = thrownBy(PermutationError, () => noDefault.getPermutation());
         expect(error.message).toBe(
             "the input doesn't choose a context for the modifier `theme`, which has no default: choose `light` or `dark`",
         );
@@ -150,7 +142,9 @@ describe("tokens.permutation", () => {
     });
 
     it("throws for a permutation the read did not build, naming it", () => {
-        const error = thrown(() => readWith([{ theme: "dark" }]).getPermutation());
+        const error = thrownBy(PermutationError, () =>
+            readWith([{ theme: "dark" }]).getPermutation(),
+        );
         expect(error.message).toBe("`theme: light, density: comfy` was not built by this read");
         expect(error.detail).toStrictEqual({
             reason: "not-read",

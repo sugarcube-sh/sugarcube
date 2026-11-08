@@ -160,6 +160,29 @@ export function readOptions(caseOptions: CaseOptions = {}): ReadOptions {
     };
 }
 
+export interface Case {
+    name: string;
+    input: string;
+    files: Record<string, string>;
+    expected: { entry: string; options?: CaseOptions };
+}
+
+export function loadCases(): Case[] {
+    const casesFolder = join(import.meta.dirname, "cases");
+    return readdirSync(casesFolder, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map(({ name }) => {
+            const folder = join(casesFolder, name);
+            const input = join(folder, "input");
+            return {
+                name,
+                input,
+                files: inputFiles(input),
+                expected: JSON.parse(readFileSync(join(folder, "expected.json"), "utf8")),
+            };
+        });
+}
+
 export function inputFiles(folder: string): Record<string, string> {
     if (!existsSync(folder)) return {};
     return Object.fromEntries(

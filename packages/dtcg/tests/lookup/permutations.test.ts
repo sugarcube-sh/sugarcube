@@ -31,7 +31,11 @@ const files = {
 };
 
 function readWith(options?: ReadOptions): DesignTokens {
-    return readFromMemory({ files, entryFile: "tokens.resolver.json" }, options);
+    return readFromMemory({ files }, options);
+}
+
+function readChanged(changed: Record<string, string>): DesignTokens {
+    return readFromMemory({ files: { ...files, ...changed } });
 }
 
 const tokens = readWith();
@@ -60,15 +64,11 @@ describe("a permutation's label", () => {
 
     it("always names a modifier with no default, as every input must", () => {
         const { default: _, ...noDefault } = resolver.modifiers.mode;
-        const required = readFromMemory({
-            files: {
-                ...files,
-                "tokens.resolver.json": JSON.stringify({
-                    ...resolver,
-                    modifiers: { ...resolver.modifiers, mode: noDefault },
-                }),
-            },
-            entryFile: "tokens.resolver.json",
+        const required = readChanged({
+            "tokens.resolver.json": JSON.stringify({
+                ...resolver,
+                modifiers: { ...resolver.modifiers, mode: noDefault },
+            }),
         });
         expect(required.permutations.map(({ label }) => label)).toStrictEqual([
             "mode: light, density: comfy",
@@ -170,18 +170,14 @@ describe("permutations.matching", () => {
     });
 
     it("fills a default that isn't the modifier's first context", () => {
-        const compactFirst = readFromMemory({
-            files: {
-                ...files,
-                "tokens.resolver.json": JSON.stringify({
-                    ...resolver,
-                    modifiers: {
-                        ...resolver.modifiers,
-                        density: { ...resolver.modifiers.density, default: "compact" },
-                    },
-                }),
-            },
-            entryFile: "tokens.resolver.json",
+        const compactFirst = readChanged({
+            "tokens.resolver.json": JSON.stringify({
+                ...resolver,
+                modifiers: {
+                    ...resolver.modifiers,
+                    density: { ...resolver.modifiers.density, default: "compact" },
+                },
+            }),
         });
 
         expect(compactFirst.permutations.findByInput({ mode: "dark" })?.input).toStrictEqual({
@@ -275,13 +271,9 @@ describe("a label", () => {
     });
 
     it("names each modifier that narrows it, in the resolver's order", () => {
-        const glowing = readFromMemory({
-            files: {
-                ...files,
-                "dark.json": JSON.stringify({ glow: number(4) }),
-                "compact.json": JSON.stringify({ gap: { $type: "number", $value: "{glow}" } }),
-            },
-            entryFile: "tokens.resolver.json",
+        const glowing = readChanged({
+            "dark.json": JSON.stringify({ glow: number(4) }),
+            "compact.json": JSON.stringify({ gap: { $type: "number", $value: "{glow}" } }),
         });
         const problem = glowing.diagnostics.find(({ kind }) => kind === "missing-reference");
         expect(problem?.permutations).toHaveLength(1);
@@ -302,13 +294,9 @@ describe("a label", () => {
                 },
             },
         };
-        const crossed = readFromMemory({
-            files: {
-                ...files,
-                "tokens.resolver.json": JSON.stringify(both),
-                "shared.json": JSON.stringify({ gap: number(3) }),
-            },
-            entryFile: "tokens.resolver.json",
+        const crossed = readChanged({
+            "tokens.resolver.json": JSON.stringify(both),
+            "shared.json": JSON.stringify({ gap: number(3) }),
         });
         const shared = crossed
             .getDefinitions("gap")
@@ -399,7 +387,6 @@ describe("a scope", () => {
                 }),
                 "base.json": "{}",
             },
-            entryFile: "tokens.resolver.json",
         });
         const inputs: Record<string, string>[] = [
             {},
@@ -422,12 +409,8 @@ describe("a scope", () => {
 });
 
 describe("a problem's permutations", () => {
-    const broken = readFromMemory({
-        files: {
-            ...files,
-            "dark.json": JSON.stringify({ text: { $type: "number", $value: "{missing}" } }),
-        },
-        entryFile: "tokens.resolver.json",
+    const broken = readChanged({
+        "dark.json": JSON.stringify({ text: { $type: "number", $value: "{missing}" } }),
     });
     const problem = broken.diagnostics.find(({ kind }) => kind === "missing-reference");
 
@@ -437,16 +420,12 @@ describe("a problem's permutations", () => {
     });
 
     it("are every permutation, labelled everywhere, when the problem is in every permutation", () => {
-        const everywhere = readFromMemory({
-            files: {
-                ...files,
-                "base.json": JSON.stringify({
-                    gap: number(1),
-                    red: { $type: "number", $value: "{missing}" },
-                    text: number(1),
-                }),
-            },
-            entryFile: "tokens.resolver.json",
+        const everywhere = readChanged({
+            "base.json": JSON.stringify({
+                gap: number(1),
+                red: { $type: "number", $value: "{missing}" },
+                text: number(1),
+            }),
         });
         const found = everywhere.diagnostics.filter(({ kind }) => kind === "missing-reference");
         expect(found).toHaveLength(1);

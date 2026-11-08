@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { type DesignTokens, type Group, type Token, readFromMemory } from "../../src/index.js";
+import { type Group, type Token, readFromMemory } from "../../src/index.js";
 import { getSpan } from "../../src/editor.js";
-
-function oneFile(json: unknown): DesignTokens {
-    return readFromMemory({ files: { "tokens.json": JSON.stringify(json) } });
-}
+import { lightDark, oneFile } from "../token-files.js";
 
 describe("what applies to a group, and what it writes itself", () => {
     const tokens = oneFile({
@@ -95,18 +92,7 @@ describe("what a token writes itself", () => {
 
 describe("where a group's extensions are written", () => {
     const files: Record<string, string> = {
-        "tokens.resolver.json": JSON.stringify({
-            version: "2025.10",
-            resolutionOrder: [
-                { type: "set", name: "base", sources: [{ $ref: "a.json" }, { $ref: "b.json" }] },
-                {
-                    type: "modifier",
-                    name: "mode",
-                    default: "light",
-                    contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                },
-            ],
-        }),
+        "tokens.resolver.json": lightDark(["a.json", "b.json"], ["dark.json"]),
         "a.json": JSON.stringify({
             space: {
                 $type: "dimension",
@@ -118,7 +104,7 @@ describe("where a group's extensions are written", () => {
         "b.json": JSON.stringify({ space: { $extensions: { "com.example": { steps: 2 } } } }),
         "dark.json": JSON.stringify({ space: { $extensions: { "com.example": { steps: 3 } } } }),
     };
-    const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
+    const tokens = readFromMemory({ files });
     const filesOf = (path: string, input: Record<string, string> = {}) =>
         Object.fromEntries(
             Object.entries(

@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { type DesignTokens, type Span, readFromMemory } from "../../src/index.js";
+import { lightDark, oneFile } from "../token-files.js";
 
 const color = { colorSpace: "srgb", components: [0.2, 0.4, 0.8] };
-
-function oneFile(json: unknown): DesignTokens {
-    return readFromMemory({ files: { "tokens.json": JSON.stringify(json) } });
-}
 
 function deprecatedReferences(tokens: DesignTokens) {
     return tokens.diagnostics.filter(({ kind }) => kind === "deprecated-reference");
@@ -100,18 +97,7 @@ describe("a reference to a deprecated token", () => {
     it("is reported only in the permutations where the token is deprecated", () => {
         const tokens = readFromMemory({
             files: {
-                "tokens.resolver.json": JSON.stringify({
-                    version: "2025.10",
-                    resolutionOrder: [
-                        { type: "set", name: "base", sources: [{ $ref: "color.json" }] },
-                        {
-                            type: "modifier",
-                            name: "mode",
-                            default: "light",
-                            contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                        },
-                    ],
-                }),
+                "tokens.resolver.json": lightDark(["color.json"], ["dark.json"]),
                 "color.json": JSON.stringify({
                     color: {
                         $type: "color",

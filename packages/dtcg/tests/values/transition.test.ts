@@ -1,25 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { ParseOptions } from "../../src/index.js";
-import { parseValue } from "../../src/values.js";
+import { lenient, parsing } from "./parsing.js";
 
-const lenient: ParseOptions = { ignoreUnknownProperties: true };
-
-function read(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("transition", raw, { jsonPath: ["$value"], ...options });
-    if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
-    return result.value;
-}
-
-function details(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("transition", raw, { jsonPath: ["$value"], ...options });
-    if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
-    return result.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
-
-function ignored(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("transition", raw, { jsonPath: ["$value"], ...options });
-    return result.ignored.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
+const { read, details, ignored, refuses } = parsing("transition");
 
 const emphasis = {
     duration: { value: 200, unit: "ms" },
@@ -49,12 +31,7 @@ describe("parseValue, transition", () => {
 
     describe("refuses", () => {
         it.for(["200ms ease-in", null, [emphasis]])("%j, which is not a transition", (raw) => {
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value"],
-                    detail: { type: "transition", reason: "wrong-shape", value: raw },
-                },
-            ]);
+            refuses(raw, [], { reason: "wrong-shape", value: raw });
         });
 
         it.for(["duration", "delay", "timingFunction"])(
@@ -62,12 +39,7 @@ describe("parseValue, transition", () => {
             (part) => {
                 const raw: Record<string, unknown> = { ...emphasis };
                 delete raw[part];
-                expect(details(raw)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", part],
-                        detail: { type: "transition", reason: "missing-property", property: part },
-                    },
-                ]);
+                refuses(raw, [part], { reason: "missing-property", property: part });
             },
         );
 
@@ -104,16 +76,7 @@ describe("parseValue, transition", () => {
     describe("a property its type does not define", () => {
         it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
             const raw = { ...emphasis, property: "opacity" };
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value", "property"],
-                    detail: {
-                        type: "transition",
-                        reason: "unknown-property",
-                        property: "property",
-                    },
-                },
-            ]);
+            refuses(raw, ["property"], { reason: "unknown-property", property: "property" });
             expect(ignored(raw)).toStrictEqual([]);
         });
 

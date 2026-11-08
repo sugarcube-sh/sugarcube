@@ -1,24 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { type DesignTokens, readFromMemory } from "../../src/index.js";
+import { lightDark } from "../token-files.js";
 
 const color = (r: number) => ({ $value: { colorSpace: "srgb", components: [r, 0, 0] } });
 
 function read(tokens: unknown, modes = false): DesignTokens {
     const files: Record<string, string> = { "tokens.json": JSON.stringify(tokens) };
     if (!modes) return readFromMemory({ files });
-    files["tokens.resolver.json"] = JSON.stringify({
-        version: "2025.10",
-        resolutionOrder: [
-            { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
-            {
-                type: "modifier",
-                name: "mode",
-                default: "light",
-                contexts: { light: [], dark: [] },
-            },
-        ],
-    });
-    return readFromMemory({ files, entryFile: "tokens.resolver.json" });
+    files["tokens.resolver.json"] = lightDark(["tokens.json"], []);
+    return readFromMemory({ files });
 }
 
 const missing = (tokens: DesignTokens) =>

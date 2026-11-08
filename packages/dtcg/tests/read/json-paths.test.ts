@@ -1,6 +1,7 @@
 import * as jsonc from "jsonc-parser";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineGenerator, readFromMemory } from "../../src/index.js";
+import { oneFile, oneSet } from "../token-files.js";
 import { getJsonAt, getJsonPath } from "../../src/editor.js";
 
 const number = (value: unknown) => ({ $type: "number", $value: value });
@@ -14,19 +15,8 @@ const steps = defineGenerator({
 const tokens = readFromMemory(
     {
         files: {
-            "tokens.resolver.json": JSON.stringify({
-                version: "2025.10",
-                resolutionOrder: [
-                    {
-                        type: "set",
-                        name: "base",
-                        sources: [
-                            { $ref: "tokens.json" },
-                            { $ref: "part.json#/inner" },
-                            { written: number(5) },
-                        ],
-                    },
-                ],
+            "tokens.resolver.json": oneSet("tokens.json", "part.json#/inner", {
+                written: number(5),
             }),
             "tokens.json": JSON.stringify({
                 base: number(1),
@@ -41,7 +31,6 @@ const tokens = readFromMemory(
             }),
             "part.json": JSON.stringify({ inner: { deep: number(3) } }),
         },
-        entryFile: "tokens.resolver.json",
     },
     { generators: [steps] },
 );
@@ -135,9 +124,7 @@ describe("where a reference is in its file, as a JSON path", () => {
 
 describe("asking for a JSON path", () => {
     it("is refused for a place from a read of other text, which writes nothing there", () => {
-        const other = readFromMemory({
-            files: { "tokens.json": JSON.stringify({ gap: number(9) }) },
-        });
+        const other = oneFile({ gap: number(9) });
         const place = other.getPermutation().getToken("gap")?.winningDefinition;
         const elsewhere = readFromMemory({ files: { "tokens.json": "{}" } });
 

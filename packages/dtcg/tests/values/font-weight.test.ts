@@ -1,17 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { fontWeightKeywords, parseValue } from "../../src/values.js";
+import { fontWeightKeywords } from "../../src/values.js";
+import { parsing } from "./parsing.js";
 
-function read(raw: unknown) {
-    const result = parseValue("fontWeight", raw, { jsonPath: ["$value"] });
-    if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
-    return result.value;
-}
-
-function details(raw: unknown) {
-    const result = parseValue("fontWeight", raw, { jsonPath: ["$value"] });
-    if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
-    return result.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
+const { read, refuses } = parsing("fontWeight");
 
 describe("parseValue, fontWeight", () => {
     describe("reads", () => {
@@ -40,41 +31,18 @@ describe("parseValue, fontWeight", () => {
 
     describe("refuses", () => {
         it.for([0, 1001, -100])("%s, outside 1 to 1000", (weight) => {
-            expect(details(weight)).toStrictEqual([
-                {
-                    jsonPath: ["$value"],
-                    detail: {
-                        type: "fontWeight",
-                        reason: "font-weight-out-of-range",
-                        value: weight,
-                    },
-                },
-            ]);
+            refuses(weight, [], { reason: "font-weight-out-of-range", value: weight });
         });
 
         it.for(["Bold", "BOLD", "semibold", "700", "extra bold"])(
             "%j, which is not a keyword the spec defines, since keywords are case-sensitive",
             (raw) => {
-                expect(details(raw)).toStrictEqual([
-                    {
-                        jsonPath: ["$value"],
-                        detail: {
-                            type: "fontWeight",
-                            reason: "unknown-font-weight-keyword",
-                            value: raw,
-                        },
-                    },
-                ]);
+                refuses(raw, [], { reason: "unknown-font-weight-keyword", value: raw });
             },
         );
 
         it.for([null, true, [700], { weight: 700 }])("%j, which is not a weight", (raw) => {
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value"],
-                    detail: { type: "fontWeight", reason: "wrong-shape", value: raw },
-                },
-            ]);
+            refuses(raw, [], { reason: "wrong-shape", value: raw });
         });
     });
 });

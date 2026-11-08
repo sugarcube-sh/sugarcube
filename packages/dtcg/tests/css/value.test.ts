@@ -1,20 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { type CSSValueOptions, toCSSValue, toCustomPropertyName } from "../../src/css.js";
-import { type Token, readFromMemory } from "../../src/index.js";
-
-const px = (value: number) => ({ value, unit: "px" });
-const color = (value: unknown) => ({ $type: "color", $value: value });
+import type { Token } from "../../src/index.js";
+import { oneFile } from "../token-files.js";
+import { color, one, px, tokenAt } from "./css-tokens.js";
 
 function read(json: Record<string, unknown>): (path: string) => Token {
-    const tokens = readFromMemory(
-        { files: { "tokens.json": JSON.stringify(json) } },
-        { hexStringColors: true },
-    );
-    return (path) => {
-        const found = tokens.getPermutation().getToken(path);
-        if (!found) throw new Error(`no token at ${path}`);
-        return found;
-    };
+    const tokens = one(json);
+    return (path) => tokenAt(tokens, path);
 }
 
 const asVariables: CSSValueOptions = {
@@ -85,12 +77,8 @@ describe("toCSSValue", () => {
     });
 
     it("writes a color object from its components without hexStringColors too", () => {
-        const strict = readFromMemory({
-            files: {
-                "tokens.json": JSON.stringify({
-                    exact: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
-                }),
-            },
+        const strict = oneFile({
+            exact: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
         });
         const exact = strict.getPermutation().getToken("exact");
         expect(exact && toCSSValue(exact)).toBe("rgb(255 0 0)");
@@ -163,9 +151,7 @@ describe("toCSSValue", () => {
     });
 
     it("gives undefined for a token that isn't there, so a missing path needs no check first", () => {
-        const at = readFromMemory({
-            files: { "tokens.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }) },
-        }).getPermutation();
+        const at = oneFile({ gap: { $type: "number", $value: 1 } }).getPermutation();
         expect(toCSSValue(at.getToken("nope"))).toBeUndefined();
         expect(toCSSValue(at.getToken("gap"))).toBe("1");
     });

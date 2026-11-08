@@ -5,35 +5,24 @@ import {
     defineGenerator,
     readFromMemory,
 } from "../../src/index.js";
+import { type Source, lightDark } from "../token-files.js";
 
 const badType = { $type: "colour", x: { $value: 1 } };
 
 function read(
-    sources: { base: unknown[]; dark: unknown[] },
+    sources: { base: Source[]; dark: Source[] },
     files: Record<string, unknown> = {},
     options?: ReadOptions,
 ) {
     return readFromMemory(
         {
             files: {
-                "tokens.resolver.json": JSON.stringify({
-                    version: "2025.10",
-                    resolutionOrder: [
-                        { type: "set", name: "base", sources: sources.base },
-                        {
-                            type: "modifier",
-                            name: "mode",
-                            default: "light",
-                            contexts: { light: [], dark: sources.dark },
-                        },
-                    ],
-                }),
+                "tokens.resolver.json": lightDark(sources.base, sources.dark),
                 "base.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }),
                 ...Object.fromEntries(
                     Object.entries(files).map(([file, json]) => [file, JSON.stringify(json)]),
                 ),
             },
-            entryFile: "tokens.resolver.json",
         },
         options,
     );

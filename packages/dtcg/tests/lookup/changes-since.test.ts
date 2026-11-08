@@ -7,15 +7,9 @@ import {
     readFromMemory,
     isEquivalentValue,
 } from "../../src/index.js";
+import { lightDark, oneFile } from "../token-files.js";
 
-const resolver = JSON.stringify({
-    version: "2025.10",
-    sets: { base: { sources: [{ $ref: "base.json" }] } },
-    modifiers: {
-        theme: { contexts: { light: [], dark: [{ $ref: "dark.json" }] }, default: "light" },
-    },
-    resolutionOrder: [{ $ref: "#/sets/base" }, { $ref: "#/modifiers/theme" }],
-});
+const resolver = lightDark(["base.json"], ["dark.json"]);
 
 const px = (value: number) => ({ $value: { value, unit: "px" } });
 
@@ -37,8 +31,8 @@ const base = {
 
 const dark = { space: { md: px(10) } };
 
-const light = { theme: "light" };
-const darkTheme = { theme: "dark" };
+const light = { mode: "light" };
+const darkMode = { mode: "dark" };
 
 function read(edit: { base?: object; dark?: object; more?: Record<string, string> } = {}) {
     return readFromMemory({
@@ -83,7 +77,7 @@ describe("getChangesSince", () => {
                 kind: "changed",
                 path: "space.sm",
                 properties: ["value"],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
         ]);
     });
@@ -91,7 +85,7 @@ describe("getChangesSince", () => {
     it("gives a value changed in one context's file only in that context", () => {
         const after = read({ dark: changed(["space", "md"], px(12), dark) });
         expect(brief(read(), after)).toEqual([
-            { kind: "changed", path: "space.md", properties: ["value"], permutations: [darkTheme] },
+            { kind: "changed", path: "space.md", properties: ["value"], permutations: [darkMode] },
         ]);
     });
 
@@ -110,14 +104,14 @@ describe("getChangesSince", () => {
         const changes = after.getChangesSince(read());
         expect(changes.map((change) => [change.path, change.permutations.inputs])).toEqual([
             ["space.md", [light]],
-            ["space.md", [darkTheme]],
+            ["space.md", [darkMode]],
         ]);
     });
 
     it("gives what the file wrote for the token before and after, the same in every permutation", () => {
         const after = read({ base: changed(["space", "sm"], px(5)) });
         const [change] = after.getChangesSince(read());
-        expect(change?.permutations.inputs).toStrictEqual([light, darkTheme]);
+        expect(change?.permutations.inputs).toStrictEqual([light, darkMode]);
         expect(change?.kind === "changed" && [change.before, change.after]).toStrictEqual([
             { value: { value: 4, unit: "px" } },
             { value: { value: 5, unit: "px" } },
@@ -138,7 +132,7 @@ describe("getChangesSince", () => {
     it("labels the permutations a change holds in", () => {
         const after = read({ dark: changed(["space", "md"], px(12), dark) });
         const [change] = after.getChangesSince(read());
-        expect(change?.permutations.label).toBe("theme: dark");
+        expect(change?.permutations.label).toBe("mode: dark");
     });
 
     it("compares what a token says, not what it resolves to", () => {
@@ -153,7 +147,7 @@ describe("getChangesSince", () => {
                 kind: "changed",
                 path: "space.gap",
                 properties: ["value"],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
         ]);
     });
@@ -166,7 +160,7 @@ describe("getChangesSince", () => {
                 kind: "changed",
                 path: "space.sm",
                 properties: ["description"],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
             {
                 kind: "changed",
@@ -184,7 +178,7 @@ describe("getChangesSince", () => {
                 kind: "group-changed",
                 path: "space",
                 properties: ["deprecated"],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
         ]);
     });
@@ -198,7 +192,7 @@ describe("getChangesSince", () => {
                 kind: "changed",
                 path: "space.sm",
                 properties: ["value", "type"],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
         ]);
     });
@@ -209,9 +203,9 @@ describe("getChangesSince", () => {
             dark: changed(["glow"], { $type: "dimension", ...px(2) }, dark),
         });
         expect(brief(read(), after)).toEqual([
-            { kind: "added", path: "space.lg", permutations: [light, darkTheme] },
+            { kind: "added", path: "space.lg", permutations: [light, darkMode] },
             { kind: "removed", path: "space.md", permutations: [light] },
-            { kind: "added", path: "glow", permutations: [darkTheme] },
+            { kind: "added", path: "glow", permutations: [darkMode] },
         ]);
     });
 
@@ -234,7 +228,7 @@ describe("getChangesSince", () => {
                 path: "space.small",
                 from: "space.sm",
                 properties: [],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
         ]);
     });
@@ -253,7 +247,7 @@ describe("getChangesSince", () => {
                 path: "space.small",
                 from: "space.sm",
                 properties: [],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
         ]);
     });
@@ -262,7 +256,7 @@ describe("getChangesSince", () => {
         const { typography, ...rest } = base;
         const text = { $type: "dimension", size: { $value: "{type.body}" } };
         const renamed = read({ base: { ...rest, type: typography, text } });
-        const everywhere = [light, darkTheme];
+        const everywhere = [light, darkMode];
         expect(brief(read(), renamed, [{ from: "typography", to: "type" }])).toEqual([
             {
                 kind: "group-renamed",
@@ -297,7 +291,7 @@ describe("getChangesSince", () => {
                 path: "animation",
                 from: "motion",
                 properties: [],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
         ]);
     });
@@ -311,7 +305,7 @@ describe("getChangesSince", () => {
                 path: "space.small",
                 from: "space.sm",
                 properties: ["value"],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
         ]);
     });
@@ -329,9 +323,9 @@ describe("getChangesSince", () => {
                 path: "space.md",
                 from: "space.sm",
                 properties: [],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
-            { kind: "removed", path: "space.md", permutations: [light, darkTheme] },
+            { kind: "removed", path: "space.md", permutations: [light, darkMode] },
         ]);
     });
 
@@ -348,7 +342,7 @@ describe("getChangesSince", () => {
                 path: "space.tiny",
                 from: "space.sm",
                 properties: [],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
         ]);
     });
@@ -382,12 +376,12 @@ describe("getChangesSince", () => {
                 kind: "group-changed",
                 path: "space",
                 properties: ["description"],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
-            { kind: "group-added", path: "motion", permutations: [light, darkTheme] },
-            { kind: "group-removed", path: "typography", permutations: [light, darkTheme] },
-            { kind: "removed", path: "typography.body", permutations: [light, darkTheme] },
-            { kind: "removed", path: "typography.heading", permutations: [light, darkTheme] },
+            { kind: "group-added", path: "motion", permutations: [light, darkMode] },
+            { kind: "group-removed", path: "typography", permutations: [light, darkMode] },
+            { kind: "removed", path: "typography.body", permutations: [light, darkMode] },
+            { kind: "removed", path: "typography.heading", permutations: [light, darkMode] },
         ]);
     });
 
@@ -402,7 +396,7 @@ describe("getChangesSince", () => {
             path: "type",
             from: "typography",
             properties: ["description"],
-            permutations: [light, darkTheme],
+            permutations: [light, darkMode],
         });
     });
 
@@ -426,12 +420,8 @@ describe("getChangesSince", () => {
 
     it("gives a group's $extends changing as written, though it reaches no group", () => {
         const version = (extended: string) =>
-            readFromMemory({
-                files: {
-                    "tokens.json": JSON.stringify({
-                        card: { $extends: `{${extended}}`, gap: { $type: "number", $value: 1 } },
-                    }),
-                },
+            oneFile({
+                card: { $extends: `{${extended}}`, gap: { $type: "number", $value: 1 } },
             });
         const changes = version("elsewhere").getChangesSince(version("nowhere"));
         expect(changes).toMatchObject([
@@ -447,13 +437,9 @@ describe("getChangesSince", () => {
 
     it("leaves out a group whose setting changed only in the group it extends", () => {
         const version = (description: string) =>
-            readFromMemory({
-                files: {
-                    "tokens.json": JSON.stringify({
-                        button: { $type: "number", $description: description, pad: { $value: 1 } },
-                        primary: { $extends: "{button}" },
-                    }),
-                },
+            oneFile({
+                button: { $type: "number", $description: description, pad: { $value: 1 } },
+                primary: { $extends: "{button}" },
             });
         const changes = version("Base button").getChangesSince(version("Base"));
         expect(changes.map((change) => [change.kind, change.path])).toEqual([
@@ -463,13 +449,9 @@ describe("getChangesSince", () => {
 
     it('gives the top of a file changing what it writes, as the group at ""', () => {
         const version = (description: string) =>
-            readFromMemory({
-                files: {
-                    "tokens.json": JSON.stringify({
-                        $description: description,
-                        a: { $type: "number", $value: 1 },
-                    }),
-                },
+            oneFile({
+                $description: description,
+                a: { $type: "number", $value: 1 },
             });
         expect(version("Two").getChangesSince(version("One"))).toMatchObject([
             { kind: "group-changed", path: "", properties: ["description"] },
@@ -478,15 +460,11 @@ describe("getChangesSince", () => {
 
     it("gives the top of a file changing its type and what it extends", () => {
         const version = (type: string, extended: string) =>
-            readFromMemory({
-                files: {
-                    "tokens.json": JSON.stringify({
-                        $type: type,
-                        $extends: `{${extended}}`,
-                        one: { x: { $type: "number", $value: 1 } },
-                        two: { y: { $type: "number", $value: 2 } },
-                    }),
-                },
+            oneFile({
+                $type: type,
+                $extends: `{${extended}}`,
+                one: { x: { $type: "number", $value: 1 } },
+                two: { y: { $type: "number", $value: 2 } },
             });
         expect(version("number", "two").getChangesSince(version("dimension", "one"))).toMatchObject(
             [
@@ -506,23 +484,21 @@ describe("getChangesSince", () => {
                 kind: "group-changed",
                 path: "text",
                 properties: ["type"],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
             {
                 kind: "changed",
                 path: "text.size",
                 properties: ["type"],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
         ]);
     });
 
     it("leaves out a permutation only one read has", () => {
-        const more = JSON.parse(resolver);
-        more.modifiers.theme.contexts.dim = [];
         const after = readFromMemory({
             files: {
-                "tokens.resolver.json": JSON.stringify(more),
+                "tokens.resolver.json": lightDark(["base.json"], ["dark.json"], { dim: [] }),
                 "base.json": JSON.stringify(changed(["space", "sm"], px(5))),
                 "dark.json": JSON.stringify(dark),
             },
@@ -532,7 +508,7 @@ describe("getChangesSince", () => {
                 kind: "changed",
                 path: "space.sm",
                 properties: ["value"],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
         ]);
     });
@@ -546,15 +522,11 @@ describe("getChangesSince", () => {
             }),
         });
         const scale = (step: number) =>
-            readFromMemory(
+            oneFile(
                 {
-                    files: {
-                        "tokens.json": JSON.stringify({
-                            space: {
-                                $type: "number",
-                                $extensions: { "com.example": { steps: step } },
-                            },
-                        }),
+                    space: {
+                        $type: "number",
+                        $extensions: { "com.example": { steps: step } },
                     },
                 },
                 { generators: [steps] },
@@ -582,7 +554,7 @@ describe("getChangesSince", () => {
                 kind: "changed",
                 path: "space.sm",
                 properties: ["extensions"],
-                permutations: [light, darkTheme],
+                permutations: [light, darkMode],
             },
         ]);
     });

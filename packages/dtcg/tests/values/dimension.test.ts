@@ -1,25 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { ParseOptions } from "../../src/index.js";
-import { parseValue } from "../../src/values.js";
+import { lenient, parsing } from "./parsing.js";
 
-const lenient: ParseOptions = { ignoreUnknownProperties: true };
-
-function read(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("dimension", raw, { jsonPath: ["$value"], ...options });
-    if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
-    return result.value;
-}
-
-function details(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("dimension", raw, { jsonPath: ["$value"], ...options });
-    if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
-    return result.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
-
-function ignored(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("dimension", raw, { jsonPath: ["$value"], ...options });
-    return result.ignored.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
+const { read, ignored, refuses } = parsing("dimension");
 
 describe("parseValue, dimension", () => {
     describe("reads", () => {
@@ -71,107 +53,55 @@ describe("parseValue, dimension", () => {
             ["-4px", -4, "px"],
             [".5rem", 0.5, "rem"],
         ] as const)("the string %s, which earlier drafts allowed", ([raw, value, unit]) => {
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value"],
-                    detail: {
-                        type: "dimension",
-                        reason: "string-with-unit",
-                        value: raw,
-                        asObject: { value, unit },
-                    },
-                },
-            ]);
+            refuses(raw, [], { reason: "string-with-unit", value: raw, asObject: { value, unit } });
         });
 
         it("the string 1em, with no object to give, since a dimension cannot use em", () => {
-            expect(details("1em")).toStrictEqual([
-                {
-                    jsonPath: ["$value"],
-                    detail: { type: "dimension", reason: "string-with-unit", value: "1em" },
-                },
-            ]);
+            refuses("1em", [], { reason: "string-with-unit", value: "1em" });
         });
 
         it.for([16, "16", "wide", null, [16, "px"], true])(
             "%j, which is not a dimension",
             (raw) => {
-                expect(details(raw)).toStrictEqual([
-                    {
-                        jsonPath: ["$value"],
-                        detail: { type: "dimension", reason: "wrong-shape", value: raw },
-                    },
-                ]);
+                refuses(raw, [], { reason: "wrong-shape", value: raw });
             },
         );
 
         it.for(["em", "%", "vw", "PX", ""])(
             "the unit %j, which the spec does not allow",
             (unit) => {
-                expect(details({ value: 1, unit })).toStrictEqual([
-                    {
-                        jsonPath: ["$value", "unit"],
-                        detail: {
-                            type: "dimension",
-                            reason: "unit-not-allowed",
-                            unit,
-                            allowed: ["px", "rem"],
-                        },
-                    },
-                ]);
+                refuses({ value: 1, unit }, ["unit"], {
+                    reason: "unit-not-allowed",
+                    unit,
+                    allowed: ["px", "rem"],
+                });
             },
         );
 
         it("a unit left out, even when the value is 0, as spec 8.2.1 says", () => {
-            expect(details({ value: 0 })).toStrictEqual([
-                {
-                    jsonPath: ["$value", "unit"],
-                    detail: { type: "dimension", reason: "missing-property", property: "unit" },
-                },
-            ]);
+            refuses({ value: 0 }, ["unit"], { reason: "missing-property", property: "unit" });
         });
 
         it("a value left out", () => {
-            expect(details({ unit: "px" })).toStrictEqual([
-                {
-                    jsonPath: ["$value", "value"],
-                    detail: { type: "dimension", reason: "missing-property", property: "value" },
-                },
-            ]);
+            refuses({ unit: "px" }, ["value"], { reason: "missing-property", property: "value" });
         });
 
         it.for(["16", null])("the value %j, which is not a number", (value) => {
-            expect(details({ value, unit: "px" })).toStrictEqual([
-                {
-                    jsonPath: ["$value", "value"],
-                    detail: { type: "dimension", reason: "not-a-number", value },
-                },
-            ]);
+            refuses({ value, unit: "px" }, ["value"], { reason: "not-a-number", value });
         });
 
         it.for(["value", "unit"])("a curly-brace reference in place of %s", (part) => {
-            expect(details({ value: 16, unit: "px", [part]: "{space.small}" })).toStrictEqual([
-                {
-                    jsonPath: ["$value", part],
-                    detail: {
-                        type: "dimension",
-                        reason: "curly-brace-not-allowed-here",
-                        reference: "{space.small}",
-                    },
-                },
-            ]);
+            refuses({ value: 16, unit: "px", [part]: "{space.small}" }, [part], {
+                reason: "curly-brace-not-allowed-here",
+                reference: "{space.small}",
+            });
         });
     });
 
     describe("a property its type does not define", () => {
         it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
             const raw = { value: 16, unit: "px", fluid: true };
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value", "fluid"],
-                    detail: { type: "dimension", reason: "unknown-property", property: "fluid" },
-                },
-            ]);
+            refuses(raw, ["fluid"], { reason: "unknown-property", property: "fluid" });
             expect(ignored(raw)).toStrictEqual([]);
         });
 

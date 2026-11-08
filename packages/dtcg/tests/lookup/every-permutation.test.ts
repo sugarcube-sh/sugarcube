@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { askEveryPermutation, readFromMemory } from "../../src/index.js";
+import { askEveryPermutation } from "../../src/index.js";
+import { oneFile } from "../token-files.js";
 import { twoModifiers } from "./two-modifiers.js";
 
 const tokens = twoModifiers();
@@ -92,9 +93,7 @@ describe("askEveryPermutation", () => {
     });
 
     it("gives one answer for a token file, which has one permutation", () => {
-        const file = readFromMemory({
-            files: { "tokens.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }) },
-        });
+        const file = oneFile({ gap: { $type: "number", $value: 1 } });
 
         expect(askEveryPermutation(file, (p) => p.getToken("gap")?.resolved)).toStrictEqual([
             { answer: 1, permutations: file.permutations },

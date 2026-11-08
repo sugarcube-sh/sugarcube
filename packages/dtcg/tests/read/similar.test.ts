@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFromMemory } from "../../src/index.js";
+import { oneFile } from "../token-files.js";
 import { similarName } from "../../src/read/similar.js";
 
 const close: [string, string[], string][] = [
@@ -35,7 +35,7 @@ describe("a missing reference's similar name", () => {
                 line: { $value: "{color.lin}" },
             },
         };
-        const tokens = readFromMemory({ files: { "tokens.json": JSON.stringify(json) } });
+        const tokens = oneFile(json);
         const [found] = tokens.diagnostics;
         expect(found?.kind).toBe("missing-reference");
         expect(found?.detail).not.toHaveProperty("similar");
@@ -49,7 +49,7 @@ describe("a missing reference's similar name", () => {
             },
             uses: { $type, $value: { $ref } },
         };
-        const tokens = readFromMemory({ files: { "tokens.json": JSON.stringify(json) } });
+        const tokens = oneFile(json);
         return tokens.diagnostics.map(({ kind, detail }) => ({ kind, detail }));
     };
 

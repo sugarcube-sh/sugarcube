@@ -1,21 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { defineGenerator, readFromMemory, type Span } from "../../src/index.js";
 import { getSpan } from "../../src/editor.js";
+import { lightDark, oneFile, oneSet } from "../token-files.js";
 
 const color = (hex: string) => `{ "$type": "color", "$value": "${hex}" }`;
 
-const resolver = JSON.stringify({
-    version: "2025.10",
-    resolutionOrder: [
-        { type: "set", name: "base", sources: [{ $ref: "./base.json" }, { $ref: "./brand.json" }] },
-        {
-            type: "modifier",
-            name: "mode",
-            default: "light",
-            contexts: { light: [], dark: [{ $ref: "./dark.json" }] },
-        },
-    ],
-});
+const resolver = lightDark(["./base.json", "./brand.json"], ["./dark.json"]);
 
 const files = {
     "tokens.resolver.json": resolver,
@@ -23,7 +13,7 @@ const files = {
     "brand.json": `{ "bg": ${color("#fafafa")} }`,
     "dark.json": `{ "bg": ${color("#111111")} }`,
 };
-const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
+const tokens = readFromMemory({ files });
 
 const written = (span: Span) =>
     files[span.file as keyof typeof files].slice(span.offset, span.offset + span.length);
@@ -54,7 +44,6 @@ describe("a token's definitions, across sources", () => {
                 "base.json": `{ "brand": { "a": ${color("#000000")} } }`,
                 "brand.json": `{ "brand": { "b": ${color("#ffffff")} } }`,
             },
-            entryFile: "tokens.resolver.json",
         });
         const places = twice.getPermutation().getGroup("brand")?.definitions ?? [];
 
@@ -82,23 +71,13 @@ describe("a token's definitions, across sources", () => {
     it("is where an inherited token's value is written, not every place the group it comes from is", () => {
         const extended = readFromMemory({
             files: {
-                "tokens.resolver.json": JSON.stringify({
-                    version: "2025.10",
-                    resolutionOrder: [
-                        {
-                            type: "set",
-                            name: "base",
-                            sources: [{ $ref: "./a.json" }, { $ref: "./b.json" }],
-                        },
-                    ],
-                }),
+                "tokens.resolver.json": oneSet("./a.json", "./b.json"),
                 "a.json": JSON.stringify({ button: { $type: "color", bg: { $value: "#ffffff" } } }),
                 "b.json": JSON.stringify({
                     button: { bg: { $value: "#eeeeee" } },
                     danger: { $extends: "{button}" },
                 }),
             },
-            entryFile: "tokens.resolver.json",
         });
 
         expect(extended.getPermutation().getToken("button.bg")?.definitions).toHaveLength(2);
@@ -115,14 +94,8 @@ describe("a token's definitions, across sources", () => {
             extension: ["com.example", "steps"],
             generate: () => ({ ok: true, value: [{ name: "1", $value: 1 }] }),
         });
-        const generated = readFromMemory(
-            {
-                files: {
-                    "tokens.json": JSON.stringify({
-                        space: { $type: "number", $extensions: { "com.example": { steps: 1 } } },
-                    }),
-                },
-            },
+        const generated = oneFile(
+            { space: { $type: "number", $extensions: { "com.example": { steps: 1 } } } },
             { generators: [steps] },
         );
 
@@ -162,7 +135,6 @@ describe("a source written in the resolver", () => {
                 }),
                 "base.json": "{}",
             },
-            entryFile: "tokens.resolver.json",
         });
 
         expect(inline.permutations[0]?.sources).toEqual([

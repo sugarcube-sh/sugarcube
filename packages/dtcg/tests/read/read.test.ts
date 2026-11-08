@@ -7,6 +7,7 @@ import {
     read,
     readFromMemory,
 } from "../../src/index.js";
+import { oneFile, oneSet } from "../token-files.js";
 
 const valid = '{ "a": { "$type": "number", "$value": 1 } }';
 
@@ -162,7 +163,6 @@ describe("what breaks a rule of the spec is an error, and what is set aside a wa
                     resolutionOrder: [{ $ref: "#/sets/base" }, { $ref: "#/modifiers/mode" }],
                 }),
             },
-            entryFile: "tokens.resolver.json",
         });
         expect(
             tokens.diagnostics.map(({ kind, severity, detail }) => [
@@ -199,17 +199,11 @@ describe("what breaks a rule of the spec is an error, and what is set aside a wa
     it("a pointer without its slash is an error in a reference to another file, as in a token file", () => {
         const tokens = readFromMemory({
             files: {
-                "tokens.resolver.json": JSON.stringify({
-                    version: "2025.10",
-                    resolutionOrder: [
-                        { type: "set", name: "base", sources: [{ $ref: "all.json#space" }] },
-                    ],
-                }),
+                "tokens.resolver.json": oneSet("all.json#space"),
                 "all.json": JSON.stringify({
                     space: { $type: "number", one: { $value: 1 }, two: { $ref: "#space/one" } },
                 }),
             },
-            entryFile: "tokens.resolver.json",
         });
         expect(tokens.diagnostics.map(({ kind, severity }) => [kind, severity])).toStrictEqual([
             ["malformed-pointer", "error"],
@@ -783,12 +777,13 @@ describe("readFromMemory", () => {
 
 describe("a group referring to the whole document", () => {
     it("is circular, as the document holds the group, and names the top level", () => {
-        const files = { "tokens.json": JSON.stringify({ g: { $extends: { $ref: "#" } } }) };
-        const found = readFromMemory({ files }).diagnostics.map(({ kind, detail, message }) => ({
-            kind,
-            detail,
-            message,
-        }));
+        const found = oneFile({ g: { $extends: { $ref: "#" } } }).diagnostics.map(
+            ({ kind, detail, message }) => ({
+                kind,
+                detail,
+                message,
+            }),
+        );
         expect(found).toStrictEqual([
             {
                 kind: "circular-reference",
@@ -799,13 +794,10 @@ describe("a group referring to the whole document", () => {
     });
 
     it('never reaches a token named "", which is not a name, through #, the whole document', () => {
-        const files = {
-            "tokens.json": JSON.stringify({
-                "": { $type: "number", $value: 1 },
-                "t": { $type: "number", $value: { $ref: "#" } },
-            }),
-        };
-        const tokens = readFromMemory({ files });
+        const tokens = oneFile({
+            "": { $type: "number", $value: 1 },
+            "t": { $type: "number", $value: { $ref: "#" } },
+        });
         expect(tokens.diagnostics.map(({ kind }) => kind)).toContain("invalid-name");
         expect(tokens.getPermutation().getToken("t")?.resolved).toBeUndefined();
     });
@@ -813,13 +805,10 @@ describe("a group referring to the whole document", () => {
 
 describe("a $root token", () => {
     it("can be written with $ref, as any token can", () => {
-        const files = {
-            "tokens.json": JSON.stringify({
-                a: { $type: "number", $value: 2 },
-                g: { $type: "number", $root: { $ref: "#/a/$value" } },
-            }),
-        };
-        const tokens = readFromMemory({ files });
+        const tokens = oneFile({
+            a: { $type: "number", $value: 2 },
+            g: { $type: "number", $root: { $ref: "#/a/$value" } },
+        });
         expect(tokens.diagnostics).toStrictEqual([]);
         expect(tokens.getPermutation().getToken("g.$root")?.resolved).toBe(2);
     });
@@ -827,7 +816,7 @@ describe("a $root token", () => {
 
 describe("a member named like a property at the top of a file", () => {
     it("is not taken for `$value`, since the top of a file is never a token", () => {
-        const tokens = readFromMemory({ files: { "tokens.json": JSON.stringify({ value: "x" }) } });
+        const tokens = oneFile({ value: "x" });
         expect(tokens.diagnostics.map(({ kind }) => kind)).toStrictEqual(["invalid-member"]);
     });
 });
@@ -869,14 +858,7 @@ describe("labels", () => {
 
 describe("what the design tokens hold", () => {
     it("is the files and the entry, the resolver part, the sources, the permutations, how values were read and the problems", () => {
-        const resolver = JSON.stringify({
-            version: "2025.10",
-            resolutionOrder: [{ type: "set", name: "base", sources: [] }],
-        });
-        const tokens = readFromMemory({
-            files: { "tokens.resolver.json": resolver },
-            entryFile: "tokens.resolver.json",
-        });
+        const tokens = readFromMemory({ files: { "tokens.resolver.json": oneSet() } });
         expect(Object.keys(tokens)).toStrictEqual([
             "files",
             "entryFile",
@@ -902,13 +884,13 @@ describe("tokens.text", () => {
     };
 
     it("is the text of each file the read used, by the name the design tokens give it", () => {
-        const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
+        const tokens = readFromMemory({ files });
         expect(tokens.getText("base.json")).toBe(base);
         expect(tokens.getText("tokens.resolver.json")).toBe(files["tokens.resolver.json"]);
     });
 
     it("is undefined for a file the read did not use", () => {
-        const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
+        const tokens = readFromMemory({ files });
         expect(tokens.getText("unread.json")).toBeUndefined();
         expect(tokens.getText("missing.json")).toBeUndefined();
     });
@@ -921,7 +903,7 @@ describe("tokens.text", () => {
     });
 
     it("is not written in the plain form", () => {
-        const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
+        const tokens = readFromMemory({ files });
         expect(JSON.stringify(tokens)).not.toContain("\\n");
         expect(JSON.parse(JSON.stringify(tokens))).not.toHaveProperty("text");
     });
@@ -940,10 +922,7 @@ describe("the group a generator is given", () => {
     const steps = { $extensions: { "com.example": { steps: 1 } } };
     const groupOf = (json: Record<string, unknown>) => {
         given.length = 0;
-        const tokens = readFromMemory(
-            { files: { "tokens.json": JSON.stringify(json) } },
-            { generators: [recorder] },
-        );
+        const tokens = oneFile(json, { generators: [recorder] });
         return { given: given[0], tokens };
     };
 
@@ -1058,15 +1037,8 @@ describe("the top level of a file, to a generator or an extension check", () => 
             return [];
         },
     });
-    const tokens = readFromMemory(
-        {
-            files: {
-                "tokens.json": JSON.stringify({
-                    $type: "number",
-                    $extensions: { "com.example": { steps: 1, note: true } },
-                }),
-            },
-        },
+    const tokens = oneFile(
+        { $type: "number", $extensions: { "com.example": { steps: 1, note: true } } },
         { generators: [steps], extensionValidators: [notes] },
     );
 
@@ -1076,9 +1048,7 @@ describe("the top level of a file, to a generator or an extension check", () => 
     });
 
     it('names the top level, "", in a problem with its $type', () => {
-        const typo = readFromMemory({
-            files: { "tokens.json": JSON.stringify({ $type: "colour", a: { $value: 1 } }) },
-        });
+        const typo = oneFile({ $type: "colour", a: { $value: 1 } });
         const problem = typo.diagnostics.find(({ kind }) => kind === "unknown-type");
         expect(problem?.path).toBe("");
     });
@@ -1100,10 +1070,7 @@ describe("the resolver part", () => {
             sets: { spare: { sources: [] } },
             resolutionOrder: [{ type: "set", name: "base", sources: [] }],
         });
-        const tokens = readFromMemory({
-            files: { "tokens.resolver.json": resolver },
-            entryFile: "tokens.resolver.json",
-        });
+        const tokens = readFromMemory({ files: { "tokens.resolver.json": resolver } });
         expect(tokens.diagnostics).toMatchObject([
             {
                 kind: "not-in-resolution-order",

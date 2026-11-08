@@ -1,25 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { ParseOptions } from "../../src/index.js";
-import { parseValue } from "../../src/values.js";
+import { lenient, parsing } from "./parsing.js";
 
-const lenient: ParseOptions = { ignoreUnknownProperties: true };
-
-function read(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("border", raw, { jsonPath: ["$value"], ...options });
-    if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
-    return result.value;
-}
-
-function details(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("border", raw, { jsonPath: ["$value"], ...options });
-    if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
-    return result.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
-
-function ignored(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("border", raw, { jsonPath: ["$value"], ...options });
-    return result.ignored.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
+const { read, details, ignored, refuses } = parsing("border");
 
 const color = { colorSpace: "srgb", components: [0.218, 0.218, 0.218] };
 const width = { value: 3, unit: "px" };
@@ -87,12 +69,7 @@ describe("parseValue, border", () => {
         it.for(["1px solid red", 1, null, [color, width, "solid"]])(
             "%j, which is not a border",
             (raw) => {
-                expect(details(raw)).toStrictEqual([
-                    {
-                        jsonPath: ["$value"],
-                        detail: { type: "border", reason: "wrong-shape", value: raw },
-                    },
-                ]);
+                refuses(raw, [], { reason: "wrong-shape", value: raw });
             },
         );
 
@@ -101,12 +78,7 @@ describe("parseValue, border", () => {
             (part) => {
                 const raw: Record<string, unknown> = { color, width, style: "solid" };
                 delete raw[part];
-                expect(details(raw)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", part],
-                        detail: { type: "border", reason: "missing-property", property: part },
-                    },
-                ]);
+                refuses(raw, [part], { reason: "missing-property", property: part });
             },
         );
 
@@ -152,12 +124,7 @@ describe("parseValue, border", () => {
     describe("a property its type does not define", () => {
         it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
             const raw = { color, width, style: "solid", radius: width };
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value", "radius"],
-                    detail: { type: "border", reason: "unknown-property", property: "radius" },
-                },
-            ]);
+            refuses(raw, ["radius"], { reason: "unknown-property", property: "radius" });
             expect(ignored(raw)).toStrictEqual([]);
         });
 

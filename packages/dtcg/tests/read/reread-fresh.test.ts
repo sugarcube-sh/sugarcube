@@ -1,9 +1,8 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { type ReadOptions, read, readFromMemory } from "../../src/index.js";
-import { inputFiles, readOptions } from "./case-options.js";
+import { loadCases, readOptions } from "./case-options.js";
 import { suiteCases } from "../conformance/suite.js";
+import { oneSet } from "../token-files.js";
 
 interface Example {
     name: string;
@@ -12,18 +11,12 @@ interface Example {
     options: ReadOptions;
 }
 
-const casesFolder = join(import.meta.dirname, "cases");
-const ownCases: Example[] = readdirSync(casesFolder, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map(({ name }) => {
-        const expected = JSON.parse(readFileSync(join(casesFolder, name, "expected.json"), "utf8"));
-        return {
-            name,
-            files: inputFiles(join(casesFolder, name, "input")),
-            entryFile: expected.entry,
-            options: readOptions(expected.options),
-        };
-    });
+const ownCases: Example[] = loadCases().map(({ name, files, expected }) => ({
+    name,
+    files,
+    entryFile: expected.entry,
+    options: readOptions(expected.options),
+}));
 const validSuiteCases: Example[] = suiteCases
     .filter((each) => each.valid)
     .map(({ id, file, text }) => ({
@@ -48,10 +41,7 @@ describe("a reread gives what a fresh read gives", () => {
 });
 
 describe("a reread of tokens from read", () => {
-    const resolver = JSON.stringify({
-        version: "2025.10",
-        resolutionOrder: [{ type: "set", name: "base", sources: [{ $ref: "colors.json" }] }],
-    });
+    const resolver = oneSet("colors.json");
     const onDisk: Record<string, string> = {
         "tokens.resolver.json": resolver,
         "colors.json": JSON.stringify({ blue: { $type: "number", $value: 1 } }),

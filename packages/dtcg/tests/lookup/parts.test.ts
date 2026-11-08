@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { type Part, readFromMemory } from "../../src/index.js";
+import type { Part } from "../../src/index.js";
+import { oneFile } from "../token-files.js";
 
 const red = { colorSpace: "srgb", components: [1, 0, 0] };
 const redRead = { colorSpace: "srgb", components: [1, 0, 0], alpha: 1 };
@@ -68,7 +69,7 @@ const json = {
     broken: { $type: "dimension", $value: "4px" },
 };
 
-const tokens = readFromMemory({ files: { "tokens.json": JSON.stringify(json) } });
+const tokens = oneFile(json);
 const partsOfPath = (path: string) => {
     const found = tokens.getPermutation().getToken(path);
     if (!found) throw new Error(`no token ${path}`);

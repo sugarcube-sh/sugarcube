@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type Permutation, defineGenerator, readFromMemory } from "../../src/index.js";
+import { lightDark } from "../token-files.js";
 
 const rgb = (red: number) => ({ colorSpace: "srgb", components: [red, 0, 0] });
 
@@ -19,18 +20,7 @@ const read = (dark: unknown) =>
     readFromMemory(
         {
             files: {
-                "tokens.resolver.json": JSON.stringify({
-                    version: "2025.10",
-                    resolutionOrder: [
-                        { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-                        {
-                            type: "modifier",
-                            name: "mode",
-                            default: "light",
-                            contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                        },
-                    ],
-                }),
+                "tokens.resolver.json": lightDark(["base.json"], ["dark.json"]),
                 "base.json": JSON.stringify({
                     color: {
                         $type: "color",
@@ -51,7 +41,6 @@ const read = (dark: unknown) =>
                 }),
                 "dark.json": JSON.stringify(dark),
             },
-            entryFile: "tokens.resolver.json",
         },
         { generators: [steps] },
     );
@@ -169,18 +158,7 @@ describe("each permutation's own answers about a shared token", () => {
 describe("a loop", () => {
     const looped = readFromMemory({
         files: {
-            "tokens.resolver.json": JSON.stringify({
-                version: "2025.10",
-                resolutionOrder: [
-                    { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-                    {
-                        type: "modifier",
-                        name: "mode",
-                        default: "light",
-                        contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                    },
-                ],
-            }),
+            "tokens.resolver.json": lightDark(["base.json"], ["dark.json"]),
             "base.json": JSON.stringify({
                 loop: { $type: "number", a: { $value: "{loop.b}" }, b: { $value: "{loop.a}" } },
                 x: { a: { $extends: "{y}", $type: "number", n: { $value: 1 } } },
@@ -188,7 +166,6 @@ describe("a loop", () => {
             }),
             "dark.json": JSON.stringify({ other: { $type: "number", $value: 1 } }),
         },
-        entryFile: "tokens.resolver.json",
     });
 
     it("of references links each permutation's tokens to its own", () => {
@@ -215,18 +192,7 @@ describe("a loop", () => {
 describe("what resolving a shared token finds", () => {
     const found = readFromMemory({
         files: {
-            "tokens.resolver.json": JSON.stringify({
-                version: "2025.10",
-                resolutionOrder: [
-                    { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-                    {
-                        type: "modifier",
-                        name: "mode",
-                        default: "light",
-                        contexts: { light: [], dark: [{ $ref: "dark.json" }], dim: [] },
-                    },
-                ],
-            }),
+            "tokens.resolver.json": lightDark(["base.json"], ["dark.json"], { dim: [] }),
             "base.json": JSON.stringify({
                 color: {
                     $type: "color",
@@ -246,7 +212,6 @@ describe("what resolving a shared token finds", () => {
             }),
             "dark.json": JSON.stringify({ color: { red: { $value: rgb(0.5) } } }),
         },
-        entryFile: "tokens.resolver.json",
     });
     const kinds = (path: string) =>
         found

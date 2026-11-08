@@ -1,23 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { type DesignTokens, type Span, isReference, readFromMemory } from "../../src/index.js";
+import { type Span, isReference, readFromMemory } from "../../src/index.js";
 import { getSpan } from "../../src/editor.js";
+import { lightDark, oneFile } from "../token-files.js";
 
 const color = (red: number) => ({ $value: { colorSpace: "srgb", components: [red, 0, 0] } });
 const px = (value: number) => ({ value, unit: "px" });
 
 const files: Record<string, string> = {
-    "tokens.resolver.json": JSON.stringify({
-        version: "2025.10",
-        resolutionOrder: [
-            { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-            {
-                type: "modifier",
-                name: "mode",
-                default: "light",
-                contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-            },
-        ],
-    }),
+    "tokens.resolver.json": lightDark(["base.json"], ["dark.json"]),
     "base.json": JSON.stringify({
         color: {
             $type: "color",
@@ -44,7 +34,7 @@ const files: Record<string, string> = {
     "dark.json": JSON.stringify({ color: { brand: { $value: "{color.blue}" } } }),
 };
 
-const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
+const tokens = readFromMemory({ files });
 const light = tokens.getPermutation({ mode: "light" });
 const dark = tokens.getPermutation({ mode: "dark" });
 const inLight = (path: string) => (light ? light.getToken(path) : undefined);
@@ -52,10 +42,6 @@ const inDark = (path: string) => (dark ? dark.getToken(path) : undefined);
 
 function written(span: Span, from: Record<string, string> = files): string {
     return (from[span.file] ?? "").slice(span.offset, span.offset + span.length);
-}
-
-function oneFile(json: unknown): DesignTokens {
-    return readFromMemory({ files: { "tokens.json": JSON.stringify(json) } });
 }
 
 describe("a token's references", () => {
@@ -327,14 +313,10 @@ describe("a group's $extends", () => {
 });
 
 describe("a curly brace reference's path", () => {
-    const named = readFromMemory({
-        files: {
-            "tokens.json": JSON.stringify({
-                base: { $type: "color", red: color(1) },
-                extending: { $extends: "{base.red.$value}" },
-                aliasing: { $type: "color", $value: "{base.red.$value}" },
-            }),
-        },
+    const named = oneFile({
+        base: { $type: "color", red: color(1) },
+        extending: { $extends: "{base.red.$value}" },
+        aliasing: { $type: "color", $value: "{base.red.$value}" },
     });
     const found = (path: string) =>
         named.getDiagnostics(path).map(({ kind, detail }) => ({ kind, detail }));

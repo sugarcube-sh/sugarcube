@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { type Reference, type WrittenReference, readFromMemory } from "../../src/index.js";
+import type { Reference, WrittenReference } from "../../src/index.js";
+import { oneFile } from "../token-files.js";
 import { movedReference } from "../../src/values/references.js";
 
 const color = { colorSpace: "srgb", components: [1, 0, 0] };
@@ -59,7 +60,7 @@ const json = {
     broken: { $type: "dimension", $value: "4px" },
 };
 
-const tokens = readFromMemory({ files: { "tokens.json": JSON.stringify(json) } });
+const tokens = oneFile(json);
 const tokenAt = (path: string) => {
     const found = tokens.getPermutation().getToken(path);
     if (!found) throw new Error(`no token ${path}`);
@@ -136,13 +137,9 @@ describe("a token's references", () => {
 
 describe("a reference to nothing", () => {
     it("still names the path it points at, so it can be found and moved", () => {
-        const misspelt = readFromMemory({
-            files: {
-                "tokens.json": JSON.stringify({
-                    text: { $type: "color", $value: { $ref: "#/color/inc/$value" } },
-                    border: { $type: "color", $value: "{color.inc}" },
-                }),
-            },
+        const misspelt = oneFile({
+            text: { $type: "color", $value: { $ref: "#/color/inc/$value" } },
+            border: { $type: "color", $value: "{color.inc}" },
         });
         expect(
             misspelt

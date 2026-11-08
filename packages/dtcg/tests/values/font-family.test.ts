@@ -1,17 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { parseValue } from "../../src/values.js";
+import { parsing } from "./parsing.js";
 
-function read(raw: unknown) {
-    const result = parseValue("fontFamily", raw, { jsonPath: ["$value"] });
-    if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
-    return result.value;
-}
-
-function details(raw: unknown) {
-    const result = parseValue("fontFamily", raw, { jsonPath: ["$value"] });
-    if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
-    return result.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
+const { read, details, refuses } = parsing("fontFamily");
 
 describe("parseValue, fontFamily", () => {
     describe("reads", () => {
@@ -48,18 +38,11 @@ describe("parseValue, fontFamily", () => {
 
     describe("refuses", () => {
         it.for(["", "   "])("the empty name %j", (raw) => {
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value"],
-                    detail: { type: "fontFamily", reason: "not-a-font-name", value: raw },
-                },
-            ]);
+            refuses(raw, [], { reason: "not-a-font-name", value: raw });
         });
 
         it("an empty list", () => {
-            expect(details([])).toStrictEqual([
-                { jsonPath: ["$value"], detail: { type: "fontFamily", reason: "empty-font-list" } },
-            ]);
+            refuses([], [], { reason: "empty-font-list" });
         });
 
         it("a list with something other than a name in it", () => {
@@ -76,25 +59,14 @@ describe("parseValue, fontFamily", () => {
         });
 
         it("a curly-brace reference in place of one name, rather than reading it as a font's name", () => {
-            expect(details(["{font.brand}", "serif"])).toStrictEqual([
-                {
-                    jsonPath: ["$value", 0],
-                    detail: {
-                        type: "fontFamily",
-                        reason: "curly-brace-not-allowed-here",
-                        reference: "{font.brand}",
-                    },
-                },
-            ]);
+            refuses(["{font.brand}", "serif"], [0], {
+                reason: "curly-brace-not-allowed-here",
+                reference: "{font.brand}",
+            });
         });
 
         it.for([42, null, true, { name: "Arial" }])("%j, which is not a name or a list", (raw) => {
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value"],
-                    detail: { type: "fontFamily", reason: "wrong-shape", value: raw },
-                },
-            ]);
+            refuses(raw, [], { reason: "wrong-shape", value: raw });
         });
     });
 });

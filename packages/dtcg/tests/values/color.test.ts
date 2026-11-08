@@ -1,25 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { ParseOptions } from "../../src/index.js";
 import { parseValue } from "../../src/values.js";
+import { lenient, parsing } from "./parsing.js";
 
-const lenient: ParseOptions = { ignoreUnknownProperties: true };
-
-function read(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("color", raw, { jsonPath: ["$value"], ...options });
-    if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
-    return result.value;
-}
-
-function details(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("color", raw, { jsonPath: ["$value"], ...options });
-    if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
-    return result.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
-
-function ignored(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("color", raw, { jsonPath: ["$value"], ...options });
-    return result.ignored.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
+const { read, details, ignored, refuses } = parsing("color");
 
 const asObjects: Record<string, unknown> = {
     "#e11d48": { colorSpace: "srgb", components: [0.8824, 0.1137, 0.2824], hex: "#e11d48" },
@@ -155,12 +138,7 @@ describe("parseValue, color", () => {
         it.for(["{}", "{color..brand}", "{color.brand", "color.brand}"])(
             "refuses %s, which is not a reference",
             (raw) => {
-                expect(details(raw)).toStrictEqual([
-                    {
-                        jsonPath: ["$value"],
-                        detail: { type: "color", reason: "wrong-shape", value: raw },
-                    },
-                ]);
+                refuses(raw, [], { reason: "wrong-shape", value: raw });
             },
         );
 
@@ -173,12 +151,7 @@ describe("parseValue, color", () => {
 
         it("refuses a $ref beside a whole color, even with ignoreUnknownProperties, rather than set the pointer aside", () => {
             const raw = { $ref: "#/color/brand/$value", colorSpace: "srgb", components: [1, 0, 0] };
-            expect(details(raw, lenient)).toStrictEqual([
-                {
-                    jsonPath: ["$value", "$ref"],
-                    detail: { type: "color", reason: "pointer-not-alone" },
-                },
-            ]);
+            refuses(raw, ["$ref"], { reason: "pointer-not-alone" }, lenient);
             expect(ignored(raw, lenient)).toStrictEqual([]);
         });
 
@@ -186,32 +159,18 @@ describe("parseValue, color", () => {
             "refuses a curly-brace reference as the %s, where a JSON Pointer can stand",
             (part) => {
                 const raw = { colorSpace: "srgb", components: [1, 0, 0], [part]: "{color.part}" };
-                expect(details(raw)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", part],
-                        detail: {
-                            type: "color",
-                            reason: "curly-brace-not-allowed-here",
-                            reference: "{color.part}",
-                        },
-                    },
-                ]);
+                refuses(raw, [part], {
+                    reason: "curly-brace-not-allowed-here",
+                    reference: "{color.part}",
+                });
             },
         );
 
         it("refuses a curly-brace reference in place of a component", () => {
-            expect(
-                details({ colorSpace: "srgb", components: ["{color.red}", 0, 0] }),
-            ).toStrictEqual([
-                {
-                    jsonPath: ["$value", "components", 0],
-                    detail: {
-                        type: "color",
-                        reason: "curly-brace-not-allowed-here",
-                        reference: "{color.red}",
-                    },
-                },
-            ]);
+            refuses({ colorSpace: "srgb", components: ["{color.red}", 0, 0] }, ["components", 0], {
+                reason: "curly-brace-not-allowed-here",
+                reference: "{color.red}",
+            });
         });
     });
 
@@ -254,27 +213,12 @@ describe("parseValue, color", () => {
         it.for(["#e11d48", "#E11D48", "#00000080", "#fff", "#ffff"])(
             "the hex string %s, which the Color module no longer allows, giving the object it stands for",
             (raw) => {
-                expect(details(raw)).toStrictEqual([
-                    {
-                        jsonPath: ["$value"],
-                        detail: {
-                            type: "color",
-                            reason: "hex-string",
-                            value: raw,
-                            asObject: asObjects[raw],
-                        },
-                    },
-                ]);
+                refuses(raw, [], { reason: "hex-string", value: raw, asObject: asObjects[raw] });
             },
         );
 
         it.for(["#e11d4", "red", 42, null, [1, 0, 0], true])("%j, which is not a color", (raw) => {
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value"],
-                    detail: { type: "color", reason: "wrong-shape", value: raw },
-                },
-            ]);
+            refuses(raw, [], { reason: "wrong-shape", value: raw });
         });
 
         it("a color with no colorSpace or components", () => {
@@ -293,28 +237,20 @@ describe("parseValue, color", () => {
         it.for(["rgb", "sRGB"])(
             "the color space %s, which the spec does not define",
             (colorSpace) => {
-                expect(details({ colorSpace, components: [1, 0, 0] })).toStrictEqual([
-                    {
-                        jsonPath: ["$value", "colorSpace"],
-                        detail: { type: "color", reason: "unknown-color-space", value: colorSpace },
-                    },
-                ]);
+                refuses({ colorSpace, components: [1, 0, 0] }, ["colorSpace"], {
+                    reason: "unknown-color-space",
+                    value: colorSpace,
+                });
             },
         );
 
         it.for([[1, 0], [1, 0, 0, 1], "1 0 0"])(
             "components %j, which are not three",
             (components) => {
-                expect(details({ colorSpace: "srgb", components })).toStrictEqual([
-                    {
-                        jsonPath: ["$value", "components"],
-                        detail: {
-                            type: "color",
-                            reason: "not-three-components",
-                            value: components,
-                        },
-                    },
-                ]);
+                refuses({ colorSpace: "srgb", components }, ["components"], {
+                    reason: "not-three-components",
+                    value: components,
+                });
             },
         );
 
@@ -382,18 +318,12 @@ describe("parseValue, color", () => {
                 channel: { component: "L", min: 0, max: 100, maxExclusive: false },
             },
         ])("$name, which is out of range", ({ colorSpace, components, index, channel }) => {
-            expect(details({ colorSpace, components })).toStrictEqual([
-                {
-                    jsonPath: ["$value", "components", index],
-                    detail: {
-                        type: "color",
-                        reason: "component-out-of-range",
-                        value: components[index],
-                        colorSpace,
-                        ...channel,
-                    },
-                },
-            ]);
+            refuses({ colorSpace, components }, ["components", index], {
+                reason: "component-out-of-range",
+                value: components[index],
+                colorSpace,
+                ...channel,
+            });
         });
 
         it.for([
@@ -401,37 +331,28 @@ describe("parseValue, color", () => {
             { alpha: -0.1, reason: "alpha-out-of-range" },
             { alpha: "0.5", reason: "not-a-number" },
         ])("alpha $alpha", ({ alpha, reason }) => {
-            expect(details({ colorSpace: "srgb", components: [0, 0, 0], alpha })).toStrictEqual([
-                { jsonPath: ["$value", "alpha"], detail: { type: "color", reason, value: alpha } },
-            ]);
+            refuses({ colorSpace: "srgb", components: [0, 0, 0], alpha }, ["alpha"], {
+                reason,
+                value: alpha,
+            });
         });
 
         it.for(["#00000080", "ff0000", "#gg0000", 16711680])(
             "hex %j, which is not six-digit CSS hex",
             (hex) => {
-                expect(details({ colorSpace: "srgb", components: [1, 0, 0], hex })).toStrictEqual([
-                    {
-                        jsonPath: ["$value", "hex"],
-                        detail: { type: "color", reason: "hex-not-six-digits", value: hex },
-                    },
-                ]);
+                refuses({ colorSpace: "srgb", components: [1, 0, 0], hex }, ["hex"], {
+                    reason: "hex-not-six-digits",
+                    value: hex,
+                });
             },
         );
 
         it("a three-digit hex, giving it with six digits", () => {
-            expect(
-                details({ colorSpace: "srgb", components: [1, 0, 0], hex: "#F0a" }),
-            ).toStrictEqual([
-                {
-                    jsonPath: ["$value", "hex"],
-                    detail: {
-                        type: "color",
-                        reason: "hex-not-six-digits",
-                        value: "#F0a",
-                        sixDigits: "#FF00aa",
-                    },
-                },
-            ]);
+            refuses({ colorSpace: "srgb", components: [1, 0, 0], hex: "#F0a" }, ["hex"], {
+                reason: "hex-not-six-digits",
+                value: "#F0a",
+                sixDigits: "#FF00aa",
+            });
         });
 
         it("every problem in one go", () => {
@@ -466,12 +387,7 @@ describe("parseValue, color", () => {
     describe("a property its type does not define", () => {
         it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
             const raw = { colorSpace: "srgb", components: [1, 0, 0], opacity: 1 };
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value", "opacity"],
-                    detail: { type: "color", reason: "unknown-property", property: "opacity" },
-                },
-            ]);
+            refuses(raw, ["opacity"], { reason: "unknown-property", property: "opacity" });
             expect(ignored(raw)).toStrictEqual([]);
         });
 

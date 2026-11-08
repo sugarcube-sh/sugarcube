@@ -7,36 +7,8 @@ import {
     toCSS,
     createCSSWriter,
 } from "../../src/css.js";
-import { type DesignTokens, PermutationError, readFromMemory } from "../../src/index.js";
-
-const px = (value: number) => ({ value, unit: "px" });
-const color = (value: unknown) => ({ $type: "color", $value: value });
-
-function read(files: Record<string, unknown>): DesignTokens {
-    const texts = Object.fromEntries(
-        Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
-    );
-    return readFromMemory({ files: texts }, { hexStringColors: true });
-}
-
-function themed(base: Record<string, unknown>, dark: Record<string, unknown>): DesignTokens {
-    return read({
-        "tokens.resolver.json": {
-            version: "2025.10",
-            resolutionOrder: [
-                { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-                {
-                    type: "modifier",
-                    name: "mode",
-                    default: "light",
-                    contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                },
-            ],
-        },
-        "base.json": base,
-        "dark.json": dark,
-    });
-}
+import { PermutationError } from "../../src/index.js";
+import { color, px, read, themed } from "./css-tokens.js";
 
 const palette = {
     color: {
@@ -316,22 +288,10 @@ describe("getCSSBlocks, the modifiers a block's input names", () => {
     });
 
     it("still skips a value a theme restates that no other block disputes", () => {
-        const restating = read({
-            "tokens.resolver.json": {
-                version: "2025.10",
-                resolutionOrder: [
-                    { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-                    {
-                        type: "modifier",
-                        name: "mode",
-                        default: "light",
-                        contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                    },
-                ],
-            },
-            "base.json": { surface: color("#ffffff"), gap: { $type: "dimension", $value: px(8) } },
-            "dark.json": { surface: color("#000000"), gap: { $type: "dimension", $value: px(8) } },
-        });
+        const restating = themed(
+            { surface: color("#ffffff"), gap: { $type: "dimension", $value: px(8) } },
+            { surface: color("#000000"), gap: { $type: "dimension", $value: px(8) } },
+        );
         const [, later] = getCSSBlocks(restating, [rootBlock, darkBlock]);
         expect(written(later)).toStrictEqual(["--surface: #000000"]);
     });
