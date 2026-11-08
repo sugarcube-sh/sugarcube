@@ -28,6 +28,7 @@ type Entry<K extends DiagnosticKind> = {
 
 const jsonReasons: Record<JsonErrorReason, string> = {
     "comment": "a token file is JSON, which has no comments",
+    "trailing-comma": "a token file is JSON, which has no trailing commas",
     "not-an-object": "the top level of the file must be an object",
     "invalid-symbol": "this is not valid JSON: there is a character that cannot be here",
     "invalid-number-format": "this is not valid JSON: a number is not written correctly",
