@@ -9,16 +9,7 @@
       },
       "span": {
         "file": "tokens.json",
-        "offset": 4,
-        "length": 16,
-        "start": {
-          "line": 2,
-          "column": 3
-        },
-        "end": {
-          "line": 2,
-          "column": 19
-        }
+        "text": "// brand colours"
       }
     },
     {
@@ -28,16 +19,7 @@
       },
       "span": {
         "file": "tokens.json",
-        "offset": 63,
-        "length": 9,
-        "start": {
-          "line": 3,
-          "column": 43
-        },
-        "end": {
-          "line": 3,
-          "column": 52
-        }
+        "text": "/* end */"
       }
     }
   ]

@@ -12,16 +12,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 63,
-        "length": 25,
-        "start": {
-          "line": 4,
-          "column": 26
-        },
-        "end": {
-          "line": 4,
-          "column": 51
-        }
+        "text": "{ \"$ref\": \"tokens.json\" }"
       }
     },
     {
@@ -34,16 +25,8 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 119,
-        "length": 13,
-        "start": {
-          "line": 5,
-          "column": 28
-        },
-        "end": {
-          "line": 5,
-          "column": 41
-        }
+        "text": "\"tokens.json\"",
+        "occurrence": 2
       }
     },
     {
@@ -56,16 +39,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 208,
-        "length": 23,
-        "start": {
-          "line": 8,
-          "column": 51
-        },
-        "end": {
-          "line": 8,
-          "column": 74
-        }
+        "text": "{ \"$ref\": \"dark.json\" }"
       }
     },
     {
@@ -76,16 +50,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 105,
-        "length": 30,
-        "start": {
-          "line": 5,
-          "column": 14
-        },
-        "end": {
-          "line": 5,
-          "column": 44
-        }
+        "text": "{ \"sources\": [\"tokens.json\"] }"
       }
     },
     {
@@ -96,16 +61,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 171,
-        "length": 64,
-        "start": {
-          "line": 8,
-          "column": 14
-        },
-        "end": {
-          "line": 8,
-          "column": 78
-        }
+        "text": "{ \"contexts\": { \"light\": [], \"dark\": { \"$ref\": \"dark.json\" } } }"
       }
     }
   ]

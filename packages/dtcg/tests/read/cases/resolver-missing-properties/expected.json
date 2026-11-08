@@ -11,16 +11,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 46,
-        "length": 31,
-        "start": {
-          "line": 3,
-          "column": 21
-        },
-        "end": {
-          "line": 3,
-          "column": 52
-        }
+        "text": "{ \"description\": \"no sources\" }"
       }
     },
     {
@@ -52,16 +43,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 46,
-        "length": 31,
-        "start": {
-          "line": 3,
-          "column": 21
-        },
-        "end": {
-          "line": 3,
-          "column": 52
-        }
+        "text": "{ \"description\": \"no sources\" }"
       }
     }
   ]

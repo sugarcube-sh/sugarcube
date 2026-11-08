@@ -96,16 +96,7 @@
               "source": 0,
               "span": {
                 "file": "base.json",
-                "offset": 158,
-                "length": 144,
-                "start": {
-                  "line": 6,
-                  "column": 14
-                },
-                "end": {
-                  "line": 9,
-                  "column": 6
-                }
+                "valueAfter": "\"brand\":"
               }
             },
             {

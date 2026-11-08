@@ -9,16 +9,7 @@
       },
       "span": {
         "file": "tokens.json",
-        "offset": 4,
-        "length": 11,
-        "start": {
-          "line": 2,
-          "column": 3
-        },
-        "end": {
-          "line": 2,
-          "column": 14
-        }
+        "text": "// not here"
       }
     }
   ]

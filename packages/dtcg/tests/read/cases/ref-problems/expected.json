@@ -12,16 +12,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 304,
-        "length": 19,
-        "start": {
-          "line": 11,
-          "column": 19
-        },
-        "end": {
-          "line": 11,
-          "column": 38
-        }
+        "text": "\"#/modifiers/theme\""
       }
     },
     {
@@ -33,16 +24,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 74,
-        "length": 13,
-        "start": {
-          "line": 4,
-          "column": 37
-        },
-        "end": {
-          "line": 4,
-          "column": 50
-        }
+        "text": "\"#/sets/loop\""
       }
     },
     {
@@ -65,16 +47,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 145,
-        "length": 14,
-        "start": {
-          "line": 7,
-          "column": 19
-        },
-        "end": {
-          "line": 7,
-          "column": 33
-        }
+        "text": "\"missing.json\""
       }
     },
     {
@@ -86,16 +59,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 181,
-        "length": 19,
-        "start": {
-          "line": 8,
-          "column": 19
-        },
-        "end": {
-          "line": 8,
-          "column": 38
-        }
+        "text": "\"all.json#/nowhere\""
       }
     },
     {
@@ -108,16 +72,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 222,
-        "length": 17,
-        "start": {
-          "line": 9,
-          "column": 19
-        },
-        "end": {
-          "line": 9,
-          "column": 36
-        }
+        "text": "\"all.json#/count\""
       }
     },
     {
@@ -129,16 +84,7 @@
       },
       "span": {
         "file": "tokens.resolver.json",
-        "offset": 261,
-        "length": 21,
-        "start": {
-          "line": 10,
-          "column": 19
-        },
-        "end": {
-          "line": 10,
-          "column": 40
-        }
+        "text": "\"other.resolver.json\""
       }
     }
   ]

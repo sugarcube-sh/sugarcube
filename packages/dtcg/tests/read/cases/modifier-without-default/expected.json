@@ -18,16 +18,7 @@
             ],
             "span": {
               "file": "tokens.resolver.json",
-              "offset": 95,
-              "length": 68,
-              "start": {
-                "line": 6,
-                "column": 18
-              },
-              "end": {
-                "line": 10,
-                "column": 10
-              }
+              "valueAfter": "\"light\":"
             }
           },
           {
@@ -39,31 +30,13 @@
             ],
             "span": {
               "file": "tokens.resolver.json",
-              "offset": 181,
-              "length": 67,
-              "start": {
-                "line": 11,
-                "column": 17
-              },
-              "end": {
-                "line": 15,
-                "column": 10
-              }
+              "valueAfter": "\"dark\":"
             }
           }
         ],
         "span": {
           "file": "tokens.resolver.json",
-          "offset": 56,
-          "length": 206,
-          "start": {
-            "line": 4,
-            "column": 14
-          },
-          "end": {
-            "line": 17,
-            "column": 6
-          }
+          "valueAfter": "\"theme\":"
         }
       }
     ],

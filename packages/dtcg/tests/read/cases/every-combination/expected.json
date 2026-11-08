@@ -15,16 +15,7 @@
         ],
         "span": {
           "file": "tokens.resolver.json",
-          "offset": 50,
-          "length": 84,
-          "start": {
-            "line": 4,
-            "column": 13
-          },
-          "end": {
-            "line": 10,
-            "column": 6
-          }
+          "valueAfter": "\"base\":"
         }
       }
     ],
@@ -37,16 +28,7 @@
             "sources": [],
             "span": {
               "file": "tokens.resolver.json",
-              "offset": 209,
-              "length": 2,
-              "start": {
-                "line": 15,
-                "column": 18
-              },
-              "end": {
-                "line": 15,
-                "column": 20
-              }
+              "text": "[]"
             }
           },
           {
@@ -58,32 +40,14 @@
             ],
             "span": {
               "file": "tokens.resolver.json",
-              "offset": 229,
-              "length": 67,
-              "start": {
-                "line": 16,
-                "column": 17
-              },
-              "end": {
-                "line": 20,
-                "column": 10
-              }
+              "valueAfter": "\"dark\":"
             }
           }
         ],
         "default": "light",
         "span": {
           "file": "tokens.resolver.json",
-          "offset": 170,
-          "length": 166,
-          "start": {
-            "line": 13,
-            "column": 14
-          },
-          "end": {
-            "line": 23,
-            "column": 6
-          }
+          "valueAfter": "\"theme\":"
         }
       },
       {
@@ -94,16 +58,8 @@
             "sources": [],
             "span": {
               "file": "tokens.resolver.json",
-              "offset": 390,
-              "length": 2,
-              "start": {
-                "line": 26,
-                "column": 18
-              },
-              "end": {
-                "line": 26,
-                "column": 20
-              }
+              "text": "[]",
+              "occurrence": 2
             }
           },
           {
@@ -115,32 +71,14 @@
             ],
             "span": {
               "file": "tokens.resolver.json",
-              "offset": 411,
-              "length": 68,
-              "start": {
-                "line": 27,
-                "column": 18
-              },
-              "end": {
-                "line": 31,
-                "column": 10
-              }
+              "valueAfter": "\"ocean\":"
             }
           }
         ],
         "default": "house",
         "span": {
           "file": "tokens.resolver.json",
-          "offset": 351,
-          "length": 168,
-          "start": {
-            "line": 24,
-            "column": 14
-          },
-          "end": {
-            "line": 34,
-            "column": 6
-          }
+          "valueAfter": "\"brand\":"
         }
       }
     ],
