@@ -1,15 +1,8 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { execaCommand } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-    CLI_PATH,
-    PLAIN_OUTPUT,
-    TEST_TIMEOUT,
-    createPackageJson,
-    createTokens,
-} from "./helpers.js";
+import { cli, createPackageJson, createTokens, PLAIN_OUTPUT, TEST_TIMEOUT } from "./helpers.js";
 
 describe("lint command: content globs", () => {
     let testDir: string;
@@ -51,7 +44,7 @@ describe("lint command: content globs", () => {
                 'export default { resolver: "./design-tokens/tokens.resolver.json", variables: { prefix: 5 } };',
             );
 
-            const result = await execaCommand(`node ${CLI_PATH} lint`, {
+            const result = await cli(`lint`, {
                 cwd: assetsJs,
                 timeout: TEST_TIMEOUT,
                 reject: false,
@@ -68,7 +61,7 @@ describe("lint command: content globs", () => {
         "scans CSS reached via content and reports undeclared var() refs",
         { timeout: TEST_TIMEOUT },
         async () => {
-            const result = await execaCommand(`node ${CLI_PATH} lint --json`, {
+            const result = await cli(`lint --json`, {
                 cwd: assetsJs,
                 timeout: TEST_TIMEOUT,
                 reject: false,

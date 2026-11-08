@@ -2,15 +2,8 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { execaCommand } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-    CLI_PATH,
-    PLAIN_OUTPUT,
-    TEST_TIMEOUT,
-    createPackageJson,
-    createTokens,
-} from "./helpers.js";
+import { cli, createPackageJson, createTokens, PLAIN_OUTPUT, TEST_TIMEOUT } from "./helpers.js";
 
 describe("generate command", () => {
     let testDir: string;
@@ -51,7 +44,7 @@ describe("generate command", () => {
                 },
             });
 
-            const result = await execaCommand(`node ${CLI_PATH} generate --resolver ${resolver}`, {
+            const result = await cli(`generate --resolver ${resolver}`, {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
@@ -86,7 +79,7 @@ describe("generate command", () => {
                 },
             });
 
-            const result = await execaCommand(`node ${CLI_PATH} generate --resolver ${resolver}`, {
+            const result = await cli(`generate --resolver ${resolver}`, {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
@@ -112,7 +105,7 @@ describe("generate command", () => {
                 "export default { variables: { prefix: 5 } };",
             );
 
-            const result = await execaCommand(`node ${CLI_PATH} generate`, {
+            const result = await cli(`generate`, {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
@@ -136,10 +129,12 @@ describe("generate command", () => {
             await writeFile(join(tokensDir, "other.resolver.json"), resolver);
             await writeFile(join(testDir, "sugarcube.config.ts"), "export default {};");
 
-            const result = await execaCommand(
-                `node ${CLI_PATH} generate --resolver design-tokens/tokens.resolver.json`,
-                { cwd: testDir, timeout: TEST_TIMEOUT, reject: false, env: PLAIN_OUTPUT },
-            );
+            const result = await cli(`generate --resolver design-tokens/tokens.resolver.json`, {
+                cwd: testDir,
+                timeout: TEST_TIMEOUT,
+                reject: false,
+                env: PLAIN_OUTPUT,
+            });
 
             expect(result.exitCode).toBe(0);
             expect(existsSync(join(testDir, "styles/variables.gen.css"))).toBe(true);
@@ -152,7 +147,7 @@ describe("generate command", () => {
             timeout: TEST_TIMEOUT,
         },
         async () => {
-            const result = await execaCommand(`node ${CLI_PATH} generate --prefix ds`, {
+            const result = await cli(`generate --prefix ds`, {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
                 reject: false,
@@ -167,15 +162,12 @@ describe("generate command", () => {
     it("writes to styles/ when no src/ exists", { timeout: TEST_TIMEOUT }, async () => {
         const tokensDir = await createTokens(testDir);
 
-        const result = await execaCommand(
-            `node ${CLI_PATH} generate --resolver ${tokensDir}/tokens.resolver.json`,
-            {
-                cwd: testDir,
-                timeout: TEST_TIMEOUT,
-                reject: false,
-                env: PLAIN_OUTPUT,
-            },
-        );
+        const result = await cli(`generate --resolver ${tokensDir}/tokens.resolver.json`, {
+            cwd: testDir,
+            timeout: TEST_TIMEOUT,
+            reject: false,
+            env: PLAIN_OUTPUT,
+        });
 
         expect(result.exitCode).toBe(0);
         expect(existsSync(join(testDir, "styles/variables.gen.css"))).toBe(true);
@@ -186,15 +178,12 @@ describe("generate command", () => {
         await mkdir(join(testDir, "src"), { recursive: true });
         const tokensDir = await createTokens(join(testDir, "src"));
 
-        const result = await execaCommand(
-            `node ${CLI_PATH} generate --resolver ${tokensDir}/tokens.resolver.json`,
-            {
-                cwd: testDir,
-                timeout: TEST_TIMEOUT,
-                reject: false,
-                env: PLAIN_OUTPUT,
-            },
-        );
+        const result = await cli(`generate --resolver ${tokensDir}/tokens.resolver.json`, {
+            cwd: testDir,
+            timeout: TEST_TIMEOUT,
+            reject: false,
+            env: PLAIN_OUTPUT,
+        });
 
         expect(result.exitCode).toBe(0);
         expect(existsSync(join(testDir, "src/styles/variables.gen.css"))).toBe(true);
@@ -203,8 +192,8 @@ describe("generate command", () => {
     it("respects --variables flag", { timeout: TEST_TIMEOUT }, async () => {
         const tokensDir = await createTokens(testDir);
 
-        const result = await execaCommand(
-            `node ${CLI_PATH} generate --resolver ${tokensDir}/tokens.resolver.json --variables custom/css/tokens.css`,
+        const result = await cli(
+            `generate --resolver ${tokensDir}/tokens.resolver.json --variables custom/css/tokens.css`,
             {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,
@@ -244,8 +233,8 @@ describe("generate command", () => {
                 `export default { variables: { permutations: [{ input: {}, selector: ".from-config" }] } };`,
             );
 
-            const result = await execaCommand(
-                `node ${CLI_PATH} generate --resolver ${resolver} --input theme=dark --selector .dark`,
+            const result = await cli(
+                `generate --resolver ${resolver} --input theme=dark --selector .dark`,
                 { cwd: testDir, timeout: TEST_TIMEOUT, reject: false, env: PLAIN_OUTPUT },
             );
 
@@ -260,8 +249,8 @@ describe("generate command", () => {
     it("respects --prefix flag", { timeout: TEST_TIMEOUT }, async () => {
         const tokensDir = await createTokens(testDir);
 
-        const result = await execaCommand(
-            `node ${CLI_PATH} generate --resolver ${tokensDir}/tokens.resolver.json --prefix ds`,
+        const result = await cli(
+            `generate --resolver ${tokensDir}/tokens.resolver.json --prefix ds`,
             {
                 cwd: testDir,
                 timeout: TEST_TIMEOUT,

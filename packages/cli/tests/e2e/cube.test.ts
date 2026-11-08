@@ -2,9 +2,8 @@ import { existsSync } from "node:fs";
 import { mkdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { execaCommand } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CLI_PATH, TEST_TIMEOUT, createPackageJson } from "./helpers.js";
+import { cli, createPackageJson, TEST_TIMEOUT } from "./helpers.js";
 
 describe("cube command", () => {
     let testDir: string;
@@ -20,7 +19,7 @@ describe("cube command", () => {
     });
 
     it("writes CUBE files to styles/ when no src/ exists", { timeout: TEST_TIMEOUT }, async () => {
-        const result = await execaCommand(`node ${CLI_PATH} cube --force`, {
+        const result = await cli(`cube --force`, {
             cwd: testDir,
             timeout: TEST_TIMEOUT,
             reject: false,
@@ -34,7 +33,7 @@ describe("cube command", () => {
     it("writes CUBE files to src/styles/ when src/ exists", { timeout: TEST_TIMEOUT }, async () => {
         await mkdir(join(testDir, "src"), { recursive: true });
 
-        const result = await execaCommand(`node ${CLI_PATH} cube --force`, {
+        const result = await cli(`cube --force`, {
             cwd: testDir,
             timeout: TEST_TIMEOUT,
             reject: false,
@@ -46,7 +45,7 @@ describe("cube command", () => {
     });
 
     it("respects --output flag", { timeout: TEST_TIMEOUT }, async () => {
-        const result = await execaCommand(`node ${CLI_PATH} cube --force --output custom/css`, {
+        const result = await cli(`cube --force --output custom/css`, {
             cwd: testDir,
             timeout: TEST_TIMEOUT,
             reject: false,

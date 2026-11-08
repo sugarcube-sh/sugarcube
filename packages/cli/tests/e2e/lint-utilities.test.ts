@@ -1,9 +1,8 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { execaCommand } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CLI_PATH, PLAIN_OUTPUT, TEST_TIMEOUT, createPackageJson } from "./helpers.js";
+import { cli, createPackageJson, PLAIN_OUTPUT, TEST_TIMEOUT } from "./helpers.js";
 
 const rem = (value: number) => ({ $type: "dimension", $value: { value, unit: "rem" } });
 
@@ -52,7 +51,7 @@ describe("lint, with utility classes that set variables", () => {
     });
 
     const reported = async () => {
-        const { stdout } = await execaCommand(`node ${CLI_PATH} lint --json`, {
+        const { stdout } = await cli(`lint --json`, {
             cwd: testDir,
             timeout: TEST_TIMEOUT,
             reject: false,

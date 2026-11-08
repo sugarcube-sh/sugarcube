@@ -2,11 +2,10 @@ import { realpathSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { execaCommand } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ERROR_MESSAGES } from "../../src/constants/error-messages.js";
 import { strip } from "../../src/prompts/common.js";
-import { CLI_PATH, TEST_TIMEOUT, createPackageJson, createTokens } from "./helpers.js";
+import { cli, createPackageJson, createTokens, TEST_TIMEOUT } from "./helpers.js";
 
 const squash = (text: string) =>
     strip(text)
@@ -54,7 +53,7 @@ describe("analyze command: content globs", () => {
     };
 
     const run = (args: string) =>
-        execaCommand(`node ${CLI_PATH} ${args}`, {
+        cli(`${args}`, {
             cwd: assetsJs,
             timeout: TEST_TIMEOUT,
             reject: false,

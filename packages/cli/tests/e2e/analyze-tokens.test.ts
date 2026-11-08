@@ -1,9 +1,8 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { execaCommand } from "execa";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CLI_PATH, PLAIN_OUTPUT, TEST_TIMEOUT, createPackageJson } from "./helpers.js";
+import { cli, createPackageJson, PLAIN_OUTPUT, TEST_TIMEOUT } from "./helpers.js";
 
 const color = (value: unknown) => ({ $type: "color", $value: value });
 const black = { colorSpace: "srgb", components: [0, 0, 0] };
@@ -54,7 +53,7 @@ describe("analyze, reading tokens", () => {
     });
 
     const run = (args: string) =>
-        execaCommand(`node ${CLI_PATH} ${args}`, {
+        cli(`${args}`, {
             cwd: testDir,
             timeout: TEST_TIMEOUT,
             reject: false,

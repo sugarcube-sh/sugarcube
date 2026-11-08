@@ -1,4 +1,4 @@
-import { execa } from "execa";
+import { x } from "tinyexec";
 import { CLIError } from "../cli-error.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import type { PackageManager } from "../types/install.js";
@@ -31,20 +31,20 @@ export async function installDependencies(
     })();
 
     try {
-        await execa(packageManager, [command, ...devFlag, ...dependencies], {
-            cwd: targetDir,
+        await x(packageManager, [command, ...devFlag, ...dependencies], {
+            nodeOptions: { cwd: targetDir },
+            throwOnError: true,
         });
     } catch (error) {
-        const stderr = extractStderr(error);
         throw new CLIError(
-            ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED(packageManager, stderr),
+            ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED(packageManager, failureText(error)),
             error instanceof Error ? error : undefined,
         );
     }
 }
 
-function extractStderr(error: unknown): string | undefined {
+function failureText(error: unknown): string | undefined {
     if (!(error instanceof Error)) return undefined;
-    const stderr = (error as Error & { stderr?: string }).stderr;
-    return stderr?.trim() || error.message.trim() || undefined;
+    const output = (error as Error & { output?: { stdout?: string; stderr?: string } }).output;
+    return output?.stderr?.trim() || output?.stdout?.trim() || error.message.trim() || undefined;
 }
