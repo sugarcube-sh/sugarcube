@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseValue } from "../../src/values.js";
+import { parseValue, tokenTypes } from "../../src/values.js";
 
 describe("a value with no place in a file", () => {
     it("is read with no jsonPath, its problems at the top of the value", () => {
@@ -11,6 +11,21 @@ describe("a value with no place in a file", () => {
     it("is read at the place given, when there is one", () => {
         const wrong = parseValue("number", "two", { jsonPath: ["$value"] });
         expect(!wrong.ok && wrong.errors[0]?.jsonPath).toStrictEqual(["$value"]);
+    });
+});
+
+describe("a reference in place of a whole value", () => {
+    it.for(tokenTypes)("is read for a %s, in either syntax", (type) => {
+        expect(parseValue(type, "{brand.primary}")).toStrictEqual({
+            ok: true,
+            value: { syntax: "curly-brace", path: "brand.primary" },
+            ignored: [],
+        });
+        expect(parseValue(type, { $ref: "#/brand/primary/$value" })).toStrictEqual({
+            ok: true,
+            value: { syntax: "json-pointer", pointer: "#/brand/primary/$value" },
+            ignored: [],
+        });
     });
 });
 

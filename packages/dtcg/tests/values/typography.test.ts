@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { lenient, parsing } from "./parsing.js";
 
-const { read, details, ignored, refuses } = parsing("typography");
+const { read, ignored, reasons, refuses } = parsing("typography");
 
 const px = (value: number) => ({ value, unit: "px" });
 const heading = {
@@ -54,13 +54,6 @@ describe("parseValue, typography", () => {
                 lineHeight: { syntax: "json-pointer", pointer: "#/base/text/$value/lineHeight" },
             });
         });
-
-        it("reads a reference to a whole token in curly brace syntax", () => {
-            expect(read("{type.heading}")).toStrictEqual({
-                syntax: "curly-brace",
-                path: "type.heading",
-            });
-        });
     });
 
     describe("refuses", () => {
@@ -99,44 +92,16 @@ describe("parseValue, typography", () => {
         });
 
         it("each bad part, with its own parser's reason, at its full path", () => {
-            expect(
-                details({ ...heading, fontFamily: [], fontSize: "42px", fontWeight: "Bold" }),
-            ).toStrictEqual([
-                {
-                    jsonPath: ["$value", "fontFamily"],
-                    detail: { type: "fontFamily", reason: "empty-font-list" },
-                },
-                {
-                    jsonPath: ["$value", "fontSize"],
-                    detail: {
-                        type: "dimension",
-                        reason: "string-with-unit",
-                        value: "42px",
-                        asObject: { value: 42, unit: "px" },
-                    },
-                },
-                {
-                    jsonPath: ["$value", "fontWeight"],
-                    detail: {
-                        type: "fontWeight",
-                        reason: "unknown-font-weight-keyword",
-                        value: "Bold",
-                    },
-                },
+            const raw = { ...heading, fontFamily: [], fontSize: "42px", fontWeight: "Bold" };
+            expect(reasons(raw)).toStrictEqual([
+                [["$value", "fontFamily"], "fontFamily", "empty-font-list"],
+                [["$value", "fontSize"], "dimension", "string-with-unit"],
+                [["$value", "fontWeight"], "fontWeight", "unknown-font-weight-keyword"],
             ]);
         });
     });
 
     describe("a property its type does not define", () => {
-        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
-            const raw = { ...heading, paragraphSpacing: px(8) };
-            refuses(raw, ["paragraphSpacing"], {
-                reason: "unknown-property",
-                property: "paragraphSpacing",
-            });
-            expect(ignored(raw)).toStrictEqual([]);
-        });
-
         describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
             it.for(["paragraphSpacing", "fontStyle", "textTransform", "textDecoration"])(
                 "not %s, which spec 9.8 does not define: it is set aside and the rest read",

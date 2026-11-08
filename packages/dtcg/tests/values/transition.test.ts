@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { lenient, parsing } from "./parsing.js";
+import { parsing } from "./parsing.js";
 
-const { read, details, ignored, refuses } = parsing("transition");
+const { read, reasons, refuses } = parsing("transition");
 
 const emphasis = {
     duration: { value: 200, unit: "ms" },
@@ -18,13 +18,6 @@ describe("parseValue, transition", () => {
         it.for(["duration", "delay", "timingFunction"])("a reference in place of %s", (part) => {
             expect(read({ ...emphasis, [part]: `{motion.${part}}` })).toMatchObject({
                 [part]: { syntax: "curly-brace", path: `motion.${part}` },
-            });
-        });
-
-        it("reads a reference to a whole token in curly brace syntax", () => {
-            expect(read("{transition.emphasis}")).toStrictEqual({
-                syntax: "curly-brace",
-                path: "transition.emphasis",
             });
         });
     });
@@ -44,53 +37,15 @@ describe("parseValue, transition", () => {
         );
 
         it("each bad part, with its own parser's reason, at its full path", () => {
-            expect(
-                details({
-                    duration: "200ms",
-                    delay: { value: 0, unit: "ms" },
-                    timingFunction: [2, 0, 1, 1],
-                }),
-            ).toStrictEqual([
-                {
-                    jsonPath: ["$value", "duration"],
-                    detail: {
-                        type: "duration",
-                        reason: "string-with-unit",
-                        value: "200ms",
-                        asObject: { value: 200, unit: "ms" },
-                    },
-                },
-                {
-                    jsonPath: ["$value", "timingFunction", 0],
-                    detail: {
-                        type: "cubicBezier",
-                        reason: "x-out-of-range",
-                        value: 2,
-                        coordinate: "x1",
-                    },
-                },
+            const raw = {
+                duration: "200ms",
+                delay: { value: 0, unit: "ms" },
+                timingFunction: [2, 0, 1, 1],
+            };
+            expect(reasons(raw)).toStrictEqual([
+                [["$value", "duration"], "duration", "string-with-unit"],
+                [["$value", "timingFunction", 0], "cubicBezier", "x-out-of-range"],
             ]);
-        });
-    });
-
-    describe("a property its type does not define", () => {
-        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
-            const raw = { ...emphasis, property: "opacity" };
-            refuses(raw, ["property"], { reason: "unknown-property", property: "property" });
-            expect(ignored(raw)).toStrictEqual([]);
-        });
-
-        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
-            it("a part the spec does not define", () => {
-                const raw = { ...emphasis, property: "opacity" };
-                expect(read(raw, lenient)).toStrictEqual(read(emphasis, lenient));
-                expect(ignored(raw, lenient)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", "property"],
-                        detail: { type: "transition", property: "property" },
-                    },
-                ]);
-            });
         });
     });
 });

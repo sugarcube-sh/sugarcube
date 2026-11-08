@@ -47,13 +47,6 @@ describe("parseValue, strokeStyle", () => {
             });
         });
 
-        it("reads a reference to a whole token in curly brace syntax", () => {
-            expect(read("{border.style.focus}")).toStrictEqual({
-                syntax: "curly-brace",
-                path: "border.style.focus",
-            });
-        });
-
         it.for(["dashArray", "lineCap"])("reads a JSON Pointer in place of %s", (part) => {
             const raw = { dashArray: [px(4)], lineCap: "round", [part]: { $ref: "#/elsewhere" } };
             expect(read(raw)).toMatchObject({
@@ -160,28 +153,7 @@ describe("parseValue, strokeStyle", () => {
     });
 
     describe("a property its type does not define", () => {
-        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
-            const raw = { dashArray: [px(4)], lineCap: "round", dashOffset: px(1) };
-            refuses(raw, ["dashOffset"], { reason: "unknown-property", property: "dashOffset" });
-            expect(ignored(raw)).toStrictEqual([]);
-        });
-
         describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
-            it("a property the spec does not define", () => {
-                const raw = { dashArray: [px(4)], lineCap: "round", dashOffset: px(1) };
-                expect(read(raw, lenient)).toStrictEqual({
-                    kind: "dash",
-                    dashArray: [px(4)],
-                    lineCap: "round",
-                });
-                expect(ignored(raw, lenient)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", "dashOffset"],
-                        detail: { type: "strokeStyle", property: "dashOffset" },
-                    },
-                ]);
-            });
-
             it("a length's own property, at its full path", () => {
                 const raw = { dashArray: [{ ...px(4), fluid: true }], lineCap: "round" };
                 expect(read(raw, lenient)).toStrictEqual({

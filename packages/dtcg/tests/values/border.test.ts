@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { lenient, parsing } from "./parsing.js";
+import { parsing } from "./parsing.js";
 
-const { read, details, ignored, refuses } = parsing("border");
+const { read, reasons, refuses } = parsing("border");
 
 const color = { colorSpace: "srgb", components: [0.218, 0.218, 0.218] };
 const width = { value: 3, unit: "px" };
@@ -49,20 +49,6 @@ describe("parseValue, border", () => {
                 [part]: { syntax: "curly-brace", path: `border.${part}` },
             });
         });
-
-        it("reads a reference to a whole token in curly brace syntax", () => {
-            expect(read("{border.heavy}")).toStrictEqual({
-                syntax: "curly-brace",
-                path: "border.heavy",
-            });
-        });
-
-        it("reads a JSON Pointer as the whole value", () => {
-            expect(read({ $ref: "#/border/heavy/$value" })).toStrictEqual({
-                syntax: "json-pointer",
-                pointer: "#/border/heavy/$value",
-            });
-        });
     });
 
     describe("refuses", () => {
@@ -83,64 +69,16 @@ describe("parseValue, border", () => {
         );
 
         it("each bad part, with its own parser's reason, at its full path", () => {
-            expect(
-                details({
-                    color: "#ff0000",
-                    width: "1px",
-                    style: { dashArray: [{ value: 1, unit: "em" }], lineCap: "round" },
-                }),
-            ).toStrictEqual([
-                {
-                    jsonPath: ["$value", "color"],
-                    detail: {
-                        type: "color",
-                        reason: "hex-string",
-                        value: "#ff0000",
-                        asObject: { colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" },
-                    },
-                },
-                {
-                    jsonPath: ["$value", "width"],
-                    detail: {
-                        type: "dimension",
-                        reason: "string-with-unit",
-                        value: "1px",
-                        asObject: { value: 1, unit: "px" },
-                    },
-                },
-                {
-                    jsonPath: ["$value", "style", "dashArray", 0, "unit"],
-                    detail: {
-                        type: "dimension",
-                        reason: "unit-not-allowed",
-                        unit: "em",
-                        allowed: ["px", "rem"],
-                    },
-                },
+            const raw = {
+                color: "#ff0000",
+                width: "1px",
+                style: { dashArray: [{ value: 1, unit: "em" }], lineCap: "round" },
+            };
+            expect(reasons(raw)).toStrictEqual([
+                [["$value", "color"], "color", "hex-string"],
+                [["$value", "width"], "dimension", "string-with-unit"],
+                [["$value", "style", "dashArray", 0, "unit"], "dimension", "unit-not-allowed"],
             ]);
-        });
-    });
-
-    describe("a property its type does not define", () => {
-        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
-            const raw = { color, width, style: "solid", radius: width };
-            refuses(raw, ["radius"], { reason: "unknown-property", property: "radius" });
-            expect(ignored(raw)).toStrictEqual([]);
-        });
-
-        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
-            it("a part that spec 9.2 does not define", () => {
-                const raw = { color, width, style: "solid", radius: width };
-                expect(read(raw, lenient)).toStrictEqual(
-                    read({ color, width, style: "solid" }, lenient),
-                );
-                expect(ignored(raw, lenient)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", "radius"],
-                        detail: { type: "border", property: "radius" },
-                    },
-                ]);
-            });
         });
     });
 });

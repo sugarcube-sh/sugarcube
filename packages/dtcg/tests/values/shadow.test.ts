@@ -38,13 +38,6 @@ describe("parseValue, shadow", () => {
             ]);
         });
 
-        it("reads a reference to a whole token in curly brace syntax", () => {
-            expect(read("{shadow.card}")).toStrictEqual({
-                syntax: "curly-brace",
-                path: "shadow.card",
-            });
-        });
-
         it("reads a JSON Pointer in place of inset", () => {
             expect(
                 read({ ...layer, inset: { $ref: "#/shadow/inner/$value/inset" } }),
@@ -95,24 +88,7 @@ describe("parseValue, shadow", () => {
     });
 
     describe("a property its type does not define", () => {
-        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
-            const raw = { ...layer, opacity: 0.5 };
-            refuses(raw, ["opacity"], { reason: "unknown-property", property: "opacity" });
-            expect(ignored(raw)).toStrictEqual([]);
-        });
-
         describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
-            it("a part the spec does not define", () => {
-                const raw = { ...layer, opacity: 0.5 };
-                expect(read(raw, lenient)).toStrictEqual(read(layer, lenient));
-                expect(ignored(raw, lenient)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", "opacity"],
-                        detail: { type: "shadow", property: "opacity" },
-                    },
-                ]);
-            });
-
             it("a part's own property, in the second shadow of a list, at its full path", () => {
                 const raw = [layer, { ...layer, color: { ...layer.color, name: "ink" } }];
                 expect(read(raw, lenient)).toStrictEqual(read([layer, layer], lenient));

@@ -24,6 +24,14 @@ export function parsing<Type extends TokenType>(type: Type) {
         return parse(raw, options).ignored.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
     }
 
+    function reasons(raw: unknown, options?: ParseOptions) {
+        return details(raw, options).map(({ jsonPath, detail }) => [
+            jsonPath,
+            detail.type,
+            detail.reason,
+        ]);
+    }
+
     function refuses(
         raw: unknown,
         at: readonly (string | number)[],
@@ -35,5 +43,5 @@ export function parsing<Type extends TokenType>(type: Type) {
         ]);
     }
 
-    return { read, details, ignored, refuses };
+    return { read, details, ignored, reasons, refuses };
 }

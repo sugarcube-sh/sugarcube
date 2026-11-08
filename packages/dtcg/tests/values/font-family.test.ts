@@ -21,13 +21,6 @@ describe("parseValue, fontFamily", () => {
             expect(read("Arial, sans-serif")).toStrictEqual(["Arial, sans-serif"]);
         });
 
-        it("reads a reference to a whole token in curly brace syntax", () => {
-            expect(read("{font.serif}")).toStrictEqual({
-                syntax: "curly-brace",
-                path: "font.serif",
-            });
-        });
-
         it("reads a JSON Pointer in place of one name", () => {
             expect(read([{ $ref: "#/font/brand/$value/0" }, "sans-serif"])).toStrictEqual([
                 { syntax: "json-pointer", pointer: "#/font/brand/$value/0" },

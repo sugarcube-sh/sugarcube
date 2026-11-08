@@ -13,13 +13,6 @@ describe("parseValue, cubicBezier", () => {
             expect(read(curve)).toStrictEqual(curve);
         });
 
-        it("reads a reference to a whole token in curly brace syntax", () => {
-            expect(read("{easing.out}")).toStrictEqual({
-                syntax: "curly-brace",
-                path: "easing.out",
-            });
-        });
-
         it("reads a JSON Pointer in place of one number", () => {
             expect(read([0.5, 0, { $ref: "#/easing/in/$value/2" }, 1])).toStrictEqual([
                 0.5,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { lenient, parsing } from "./parsing.js";
+import { parsing } from "./parsing.js";
 
-const { read, ignored, refuses } = parsing("gradient");
+const { read, refuses } = parsing("gradient");
 
 const blue = { colorSpace: "srgb", components: [0, 0, 1] };
 const red = { colorSpace: "srgb", components: [1, 0, 0] };
@@ -69,13 +69,6 @@ describe("parseValue, gradient", () => {
                 ]);
             },
         );
-
-        it("reads a reference to a whole token in curly brace syntax", () => {
-            expect(read("{gradient.brand}")).toStrictEqual({
-                syntax: "curly-brace",
-                path: "gradient.brand",
-            });
-        });
     });
 
     describe("refuses", () => {
@@ -101,29 +94,6 @@ describe("parseValue, gradient", () => {
                 type: "number",
                 reason: "not-a-number",
                 value: "50%",
-            });
-        });
-    });
-
-    describe("a property its type does not define", () => {
-        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
-            const raw = [{ color: red, position: 0, midpoint: 0.5 }];
-            refuses(raw, [0, "midpoint"], { reason: "unknown-property", property: "midpoint" });
-            expect(ignored(raw)).toStrictEqual([]);
-        });
-
-        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
-            it("a part the spec does not define", () => {
-                const raw = [{ color: red, position: 0, midpoint: 0.5 }];
-                expect(read(raw, lenient)).toStrictEqual(
-                    read([{ color: red, position: 0 }], lenient),
-                );
-                expect(ignored(raw, lenient)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", 0, "midpoint"],
-                        detail: { type: "gradient", property: "midpoint" },
-                    },
-                ]);
             });
         });
     });

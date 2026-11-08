@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { lenient, parsing } from "./parsing.js";
+import { parsing } from "./parsing.js";
 
-const { read, ignored, refuses } = parsing("duration");
+const { read, refuses } = parsing("duration");
 
 describe("parseValue, duration", () => {
     describe("reads", () => {
@@ -11,13 +11,6 @@ describe("parseValue, duration", () => {
             { value: 0, unit: "ms" },
         ])("$value $unit", (duration) => {
             expect(read(duration)).toStrictEqual(duration);
-        });
-
-        it("reads a reference to a whole token in curly brace syntax", () => {
-            expect(read("{duration.fast}")).toStrictEqual({
-                syntax: "curly-brace",
-                path: "duration.fast",
-            });
         });
 
         it("reads a JSON Pointer in place of the value", () => {
@@ -54,27 +47,6 @@ describe("parseValue, duration", () => {
             refuses({ value: "200", unit: "ms" }, ["value"], {
                 reason: "not-a-number",
                 value: "200",
-            });
-        });
-    });
-
-    describe("a property its type does not define", () => {
-        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
-            const raw = { value: 200, unit: "ms", easing: "ease" };
-            refuses(raw, ["easing"], { reason: "unknown-property", property: "easing" });
-            expect(ignored(raw)).toStrictEqual([]);
-        });
-
-        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
-            it("a property the spec does not define", () => {
-                const raw = { value: 200, unit: "ms", easing: "ease" };
-                expect(read(raw, lenient)).toStrictEqual({ value: 200, unit: "ms" });
-                expect(ignored(raw, lenient)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", "easing"],
-                        detail: { type: "duration", property: "easing" },
-                    },
-                ]);
             });
         });
     });

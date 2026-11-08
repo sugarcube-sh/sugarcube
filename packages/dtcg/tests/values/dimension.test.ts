@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { lenient, parsing } from "./parsing.js";
+import { parsing } from "./parsing.js";
 
-const { read, ignored, refuses } = parsing("dimension");
+const { read, refuses } = parsing("dimension");
 
 describe("parseValue, dimension", () => {
     describe("reads", () => {
@@ -16,20 +16,6 @@ describe("parseValue, dimension", () => {
     });
 
     describe("references", () => {
-        it("reads a reference to a whole token in curly brace syntax", () => {
-            expect(read("{space.small}")).toStrictEqual({
-                syntax: "curly-brace",
-                path: "space.small",
-            });
-        });
-
-        it("reads a JSON Pointer as the whole value", () => {
-            expect(read({ $ref: "#/base/spacing/$value" })).toStrictEqual({
-                syntax: "json-pointer",
-                pointer: "#/base/spacing/$value",
-            });
-        });
-
         it("reads JSON Pointers in place of value and unit, as spec example 36 does", () => {
             expect(
                 read({ value: { $ref: "#/base/spacing/$value/value" }, unit: "rem" }),
@@ -94,27 +80,6 @@ describe("parseValue, dimension", () => {
             refuses({ value: 16, unit: "px", [part]: "{space.small}" }, [part], {
                 reason: "curly-brace-not-allowed-here",
                 reference: "{space.small}",
-            });
-        });
-    });
-
-    describe("a property its type does not define", () => {
-        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
-            const raw = { value: 16, unit: "px", fluid: true };
-            refuses(raw, ["fluid"], { reason: "unknown-property", property: "fluid" });
-            expect(ignored(raw)).toStrictEqual([]);
-        });
-
-        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
-            it("a property the spec does not define", () => {
-                const raw = { value: 16, unit: "px", fluid: true };
-                expect(read(raw, lenient)).toStrictEqual({ value: 16, unit: "px" });
-                expect(ignored(raw, lenient)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", "fluid"],
-                        detail: { type: "dimension", property: "fluid" },
-                    },
-                ]);
             });
         });
     });

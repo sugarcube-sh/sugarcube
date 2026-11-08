@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseValue } from "../../src/values.js";
 import { lenient, parsing } from "./parsing.js";
 
-const { read, details, ignored, refuses } = parsing("color");
+const { read, details, ignored, reasons, refuses } = parsing("color");
 
 const asObjects: Record<string, unknown> = {
     "#e11d48": { colorSpace: "srgb", components: [0.8824, 0.1137, 0.2824], hex: "#e11d48" },
@@ -81,21 +81,6 @@ describe("parseValue, color", () => {
     });
 
     describe("references", () => {
-        it.for([
-            { raw: "{color.brand}", alias: "color.brand" },
-            { raw: "{brand colors.primary}", alias: "brand colors.primary" },
-            { raw: "{color.accent.$root}", alias: "color.accent.$root" },
-        ])("reads $raw in curly brace syntax", ({ raw, alias }) => {
-            expect(read(raw)).toStrictEqual({ syntax: "curly-brace", path: alias });
-        });
-
-        it("reads a JSON Pointer as the whole value", () => {
-            expect(read({ $ref: "#/color/brand/$value" })).toStrictEqual({
-                syntax: "json-pointer",
-                pointer: "#/color/brand/$value",
-            });
-        });
-
         it("reads JSON Pointers in place of components, as spec example 35 does", () => {
             expect(
                 read({
@@ -356,54 +341,13 @@ describe("parseValue, color", () => {
         });
 
         it("every problem in one go", () => {
-            expect(
-                details({ colorSpace: "cmyk", components: [1, 0], alpha: 2, hex: "#fff" }),
-            ).toStrictEqual([
-                {
-                    jsonPath: ["$value", "colorSpace"],
-                    detail: { type: "color", reason: "unknown-color-space", value: "cmyk" },
-                },
-                {
-                    jsonPath: ["$value", "components"],
-                    detail: { type: "color", reason: "not-three-components", value: [1, 0] },
-                },
-                {
-                    jsonPath: ["$value", "alpha"],
-                    detail: { type: "color", reason: "alpha-out-of-range", value: 2 },
-                },
-                {
-                    jsonPath: ["$value", "hex"],
-                    detail: {
-                        type: "color",
-                        reason: "hex-not-six-digits",
-                        value: "#fff",
-                        sixDigits: "#ffffff",
-                    },
-                },
+            const raw = { colorSpace: "cmyk", components: [1, 0], alpha: 2, hex: "#fff" };
+            expect(reasons(raw)).toStrictEqual([
+                [["$value", "colorSpace"], "color", "unknown-color-space"],
+                [["$value", "components"], "color", "not-three-components"],
+                [["$value", "alpha"], "color", "alpha-out-of-range"],
+                [["$value", "hex"], "color", "hex-not-six-digits"],
             ]);
-        });
-    });
-
-    describe("a property its type does not define", () => {
-        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
-            const raw = { colorSpace: "srgb", components: [1, 0, 0], opacity: 1 };
-            refuses(raw, ["opacity"], { reason: "unknown-property", property: "opacity" });
-            expect(ignored(raw)).toStrictEqual([]);
-        });
-
-        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
-            it("a property the Color module does not define", () => {
-                const raw = { colorSpace: "srgb", components: [1, 0, 0], opacity: 1 };
-                expect(read(raw, lenient)).toStrictEqual(
-                    read({ colorSpace: "srgb", components: [1, 0, 0] }, lenient),
-                );
-                expect(ignored(raw, lenient)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", "opacity"],
-                        detail: { type: "color", property: "opacity" },
-                    },
-                ]);
-            });
         });
     });
 });

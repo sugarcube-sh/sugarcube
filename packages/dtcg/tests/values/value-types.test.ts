@@ -61,3 +61,57 @@ describe("each type's value, as the public types describe it", () => {
         expect(read).toStrictEqual({ ok: true, value: everyPart[type], ignored: [] });
     });
 });
+
+const objectTypes = [
+    "color",
+    "dimension",
+    "duration",
+    "strokeStyle",
+    "border",
+    "shadow",
+    "gradient",
+    "transition",
+    "typography",
+] as const;
+
+function withExtra(type: (typeof objectTypes)[number]) {
+    const written = asWritten(everyPart[type]) as
+        | Record<string, unknown>
+        | Record<string, unknown>[];
+    if (Array.isArray(written)) {
+        const [first, ...rest] = written;
+        return { raw: [{ ...first, extra: 1 }, ...rest], at: [0, "extra"] };
+    }
+    return { raw: { ...written, extra: 1 }, at: ["extra"] };
+}
+
+describe("a property its type does not define", () => {
+    it.for(objectTypes)(
+        "makes a %s invalid by default, as Format 9.2 says of a composite",
+        (type) => {
+            const { raw, at } = withExtra(type);
+            const read = parseValue(type, raw, { references: false });
+            expect(
+                read.ok ? [] : read.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail })),
+            ).toStrictEqual([
+                { jsonPath: at, detail: { type, reason: "unknown-property", property: "extra" } },
+            ]);
+            expect(read.ignored).toStrictEqual([]);
+        },
+    );
+
+    it.for(objectTypes)(
+        "is set aside in a %s with ignoreUnknownProperties, and the rest read",
+        (type) => {
+            const { raw, at } = withExtra(type);
+            const read = parseValue(type, raw, {
+                references: false,
+                ignoreUnknownProperties: true,
+            });
+            expect(read.ok && read.value).toStrictEqual(everyPart[type]);
+            expect(
+                read.ignored.map(({ jsonPath, detail }) => ({ jsonPath, detail })),
+            ).toStrictEqual([{ jsonPath: at, detail: { type, property: "extra" } }]);
+        },
+    );
+});
