@@ -234,6 +234,96 @@ describe("validate command", () => {
     );
 
     it(
+        "finds the one token file in a project folder with no resolver, past its other JSON files",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            await write({
+                "tsconfig.json": { compilerOptions: {} },
+                "node_modules/kit/tokens.json": { ink: color(black) },
+                ".cache/tokens.json": { ink: color(black) },
+                "tokens/colors.json": { ink: color(black), text: color("{inc}") },
+            });
+
+            const result = await validate(".");
+
+            expect(result.exitCode).toBe(1);
+            expect(result.stdout).not.toContain("Several token files");
+            expect(result.stdout).toMatch(
+                /^tokens\/colors\.json:\d+:\d+  error  `inc` does not exist/m,
+            );
+        },
+    );
+
+    it(
+        "checks a .tokens file, named or in a folder, as the spec recommends the extension",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            await write({
+                "tokens/brand.tokens": { ink: color(black), text: color("{inc}") },
+            });
+
+            for (const path of ["tokens/brand.tokens", "tokens"]) {
+                const result = await validate(path);
+
+                expect(result.exitCode).toBe(1);
+                expect(result.stdout).toMatch(
+                    /^tokens\/brand\.tokens:\d+:\d+  error  `inc` does not exist/m,
+                );
+            }
+        },
+    );
+
+    it(
+        "checks a folder whose only file is a scale recipe, with no $value in it",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            await write({
+                "tokens/space.json": {
+                    space: {
+                        $type: "dimension",
+                        $extensions: {
+                            "sh.sugarcube": {
+                                scale: {
+                                    mode: "multipliers",
+                                    base: {
+                                        min: { value: 0.875, unit: "rem" },
+                                        max: { value: 1, unit: "rem" },
+                                    },
+                                    multipliers: { sm: 1, md: 1.5 },
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+            const result = await validate("tokens");
+
+            expect(result.exitCode).toBe(0);
+            expect(result.stdout).toContain("All tokens valid ✨");
+        },
+    );
+
+    it(
+        "names the JSON files it passed over when none holds tokens",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            await write({
+                "tsconfig.json": { compilerOptions: {} },
+                "tokens/colors.json": { color: { ink: { value: "#000000" } } },
+            });
+
+            const result = await validate(".");
+
+            expect(result.exitCode).toBe(1);
+            expect(result.stdout).toContain("No token files found.");
+            expect(result.stdout).toContain("- package.json");
+            expect(result.stdout).toContain("- tokens/colors.json");
+            expect(result.stdout).toContain("- tsconfig.json");
+        },
+    );
+
+    it(
         "refuses several token files with no resolver, naming them",
         { timeout: TEST_TIMEOUT },
         async () => {

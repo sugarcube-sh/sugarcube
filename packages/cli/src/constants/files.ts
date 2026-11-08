@@ -1,1 +1,0 @@
-export const MAX_TOKEN_DETECTION_DEPTH = 20;

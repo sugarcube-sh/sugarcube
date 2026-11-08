@@ -920,6 +920,7 @@ From `@sugarcube-sh/dtcg/node`:
 | | What it does |
 | --- | --- |
 | `findResolver(paths)` | Looks for the resolver document among files and folders: `{ kind: "one", path }`, `{ kind: "several", paths }`, or `{ kind: "none" }` |
+| `findTokenFiles(paths)` | Looks for token files among files and folders: `{ tokenFiles, otherFiles }`, where a token file ends `.json` or `.tokens` and uses a property from the spec, such as `$value` or `$type` |
 | `onFileChanged(watcher, listener)` | Calls `listener` for each file a watcher says was saved |
 
 ### What's where
@@ -927,7 +928,7 @@ From `@sugarcube-sh/dtcg/node`:
 | Import from | For | Runs in |
 | --- | --- | --- |
 | `@sugarcube-sh/dtcg` | `read` with your own `readText`, `readFromMemory`, `askEveryPermutation`, `tokenPath`, the errors, and every type | anywhere |
-| `@sugarcube-sh/dtcg/node` | `read` from disk, `createLiveTokens`, `findResolver` | Node |
+| `@sugarcube-sh/dtcg/node` | `read` from disk, `createLiveTokens`, `findResolver`, `findTokenFiles` | Node |
 | `@sugarcube-sh/dtcg/css` | CSS custom properties, values and stylesheets | anywhere |
 | `@sugarcube-sh/dtcg/editor` | where things are in the text, for editors and tools that write files | anywhere |
 | `@sugarcube-sh/dtcg/values` | checking one value, and the spec's lists | anywhere |
