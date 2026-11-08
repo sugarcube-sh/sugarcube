@@ -65,7 +65,6 @@
     "commander": "12.1.0",
     "execa": "9.5.2",
     "fast-wrap-ansi": "0.2.2",
-    "get-tsconfig": "4.14.3",
     "is-unicode-supported": "2.1.0",
     "log-update": "6.1.0",
     "pathe": "^2.0.3",

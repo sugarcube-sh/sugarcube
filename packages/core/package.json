@@ -64,6 +64,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "4.1.11",
     "pkgroll": "^2.28.1",
     "vitest": "^4.1.11"
   },
