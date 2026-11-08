@@ -272,6 +272,22 @@ describe("sugarcube's Vite plugin", () => {
         expect(await css("text-ink")).toContain(".text-ink{color:var(--ds-color-ink);}");
     });
 
+    it("keeps the last config when the config is deleted, says so, and reads it again when it's back", async () => {
+        await project();
+        const { context, css, logged } = await serve();
+
+        await rm(join(folder, "sugarcube.config.ts"));
+        await until(() => context.configProblems.length > 0, "the config's problem");
+        expect(logged.join("\n")).toMatch(/^sugarcube\.config\.ts {2}error {2}.*deleted/m);
+        expect(await css("text-ink")).toContain("--color-ink: #111111");
+
+        const reload = reloaded(context);
+        await config(`, prefix: "ds"`);
+        await reload;
+        expect(context.configProblems).toEqual([]);
+        expect(await css("text-ink")).toContain(".text-ink{color:var(--ds-color-ink);}");
+    });
+
     it("shows a config that cannot be loaded until it loads, serving the last CSS", async () => {
         await project();
         const { context, css, logged, overlays } = await serve();

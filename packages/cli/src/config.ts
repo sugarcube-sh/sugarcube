@@ -17,8 +17,11 @@ export interface ConfigFlags {
     selector?: string;
 }
 
-export function loadConfig(flags: ConfigFlags = {}): Promise<LoadedConfig> {
-    return loadInternalConfig(overridesFrom(flags));
+export function loadConfig(
+    flags: ConfigFlags = {},
+    lastConfigFile?: string,
+): Promise<LoadedConfig> {
+    return loadInternalConfig(overridesFrom(flags), { lastConfigFile });
 }
 
 function overridesFrom(flags: ConfigFlags): ConfigOverrides {

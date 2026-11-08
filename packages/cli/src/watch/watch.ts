@@ -54,7 +54,7 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
 
     const configChanged = async (): Promise<Built | undefined> => {
         try {
-            loaded = await loadConfig(flags);
+            loaded = await loadConfig(flags, loaded.configFile);
             fromConfig = [];
         } catch (error) {
             if (!(error instanceof ConfigError)) throw error;
@@ -71,7 +71,7 @@ export async function watch(flags: WatchFlags, first: LoadedConfig): Promise<voi
         return buildFrom(change.tokens, loaded, options, last);
     };
 
-    const watcher = await startWatcher(live, loaded.configFile, watchedBy(last), {
+    const watcher = await startWatcher(live, process.cwd(), watchedBy(last), {
         onChange: async (change) => {
             const begun = performance.now() - (change.kind === "token" ? change.read.ms : 0);
             const next = await rebuilt(change);

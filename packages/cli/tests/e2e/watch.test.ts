@@ -203,6 +203,24 @@ describe("generate --watch", () => {
     );
 
     it(
+        "keeps the last config when the config is deleted, says so, and reads it again when it's back",
+        { timeout: TEST_TIMEOUT },
+        async () => {
+            const { output, until } = await ready();
+            const defaults = ["src/styles/variables.gen.css", "styles/variables.gen.css"];
+
+            await rm(join(dir, "sugarcube.config.ts"));
+            await until(() => output().includes("invalid-config"), "the config's problem");
+            expect(output()).toMatch(/^sugarcube\.config\.ts {2}error {2}.*deleted/m);
+            expect(defaults.filter((path) => existsSync(join(dir, path)))).toEqual([]);
+
+            await config(`, prefix: "ds"`);
+            await until(() => text(variables()).includes("--ds-color-ink"), "the config again");
+            expect(defaults.filter((path) => existsSync(join(dir, path)))).toEqual([]);
+        },
+    );
+
+    it(
         "lists a config that cannot be loaded on every save, and writes again once it loads",
         { timeout: TEST_TIMEOUT },
         async () => {
