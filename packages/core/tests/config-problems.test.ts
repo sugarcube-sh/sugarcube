@@ -7,6 +7,7 @@ import { validateSugarcubeConfig } from "../src/shared/config.js";
 import { number, object, oneOf, optional, string } from "../src/shared/checks.js";
 import type { ColorFallbackStrategy, FluidConfig } from "../src/types/config.js";
 import { ConfigError, configProblems } from "../src/shared/config-error.js";
+import { issuesIn, mistakesIn } from "./config-mistakes.js";
 
 let folder: string;
 
@@ -153,16 +154,6 @@ it("words a problem from the facts it carries", async () => {
     ]);
 });
 
-function problemsIn(config: unknown): string[] {
-    try {
-        validateSugarcubeConfig(config);
-    } catch (error) {
-        if (!(error instanceof ConfigError)) throw error;
-        return configProblems(error).map(({ message }) => message);
-    }
-    return [];
-}
-
 it.for([
     [{ varibles: { path: "x.css" } }, "`varibles` is not a setting"],
     [{ variables: { prefx: "ds" } }, "`variables.prefx` is not a setting"],
@@ -180,11 +171,11 @@ it.for([
         "`utilities.classes.color.prefx` is not a setting",
     ],
 ] as const)("refuses a setting it doesn't know: %j", ([config, message]) => {
-    expect(problemsIn(config)).toEqual([message]);
+    expect(mistakesIn(config)).toEqual([message]);
 });
 
 it("names every unknown setting, after the mistakes in the ones it knows", () => {
-    expect(problemsIn({ varibles: {}, content: "src", utilites: {} })).toEqual([
+    expect(mistakesIn({ varibles: {}, content: "src", utilites: {} })).toEqual([
         "`content` must be an array, not a string",
         "`varibles` is not a setting",
         "`utilites` is not a setting",
@@ -193,7 +184,7 @@ it("names every unknown setting, after the mistakes in the ones it knows", () =>
 
 it("takes any CSS property in utility classes and any modifier in an input", () => {
     expect(
-        problemsIn({
+        mistakesIn({
             utilities: {
                 classes: { "--accent": { source: "color.brand" }, "gap": { source: "space.*" } },
             },
@@ -205,16 +196,16 @@ it("takes any CSS property in utility classes and any modifier in an input", () 
 });
 
 it("still takes the old name of redeclareDependents, so its rename can be pointed out", () => {
-    expect(problemsIn({ variables: { propagateDependents: true } })).toEqual([]);
+    expect(mistakesIn({ variables: { propagateDependents: true } })).toEqual([]);
 });
 
 it("ignores a setting that is undefined, as if it were left out", () => {
-    expect(problemsIn({ resolver: undefined, variables: { prefix: undefined } })).toEqual([]);
+    expect(mistakesIn({ resolver: undefined, variables: { prefix: undefined } })).toEqual([]);
 });
 
 it("says a setting that must say something is empty", () => {
     expect(
-        problemsIn({
+        mistakesIn({
             variables: {
                 permutations: [
                     { input: {}, selector: "" },
@@ -231,7 +222,7 @@ it("says a setting that must say something is empty", () => {
 });
 
 it("says a list of selectors with nothing in it lists no selectors", () => {
-    expect(problemsIn({ variables: { permutations: [{ input: {}, selector: [] }] } })).toEqual([
+    expect(mistakesIn({ variables: { permutations: [{ input: {}, selector: [] }] } })).toEqual([
         "`variables.permutations.0.selector` lists no selectors",
     ]);
 });
@@ -250,12 +241,12 @@ it.for([
         '`studio.signIn` is a path on your site, such as "/api/sugarcube-studio", not "auth"',
     ],
 ] as const)("says how studio's %j is written, and what it was", ([studio, message]) => {
-    expect(problemsIn({ studio })).toEqual([message]);
+    expect(mistakesIn({ studio })).toEqual([message]);
 });
 
 it("says a source can have `*` only at the end, and what it was", () => {
     expect(
-        problemsIn({
+        mistakesIn({
             utilities: { classes: { margin: [{ source: "space.*" }, { source: "space*" }] } },
         }),
     ).toEqual([
@@ -264,20 +255,20 @@ it("says a source can have `*` only at the end, and what it was", () => {
 });
 
 it("says an empty source must name a group", () => {
-    expect(problemsIn({ utilities: { classes: { color: { source: "" } } } })).toEqual([
+    expect(mistakesIn({ utilities: { classes: { color: { source: "" } } } })).toEqual([
         '`utilities.classes.color.source` is empty: name the group its tokens come from, such as "color.*"',
     ]);
 });
 
 it("says variableName must be a function, like any setting of the wrong type", () => {
-    expect(problemsIn({ variables: { variableName: "kebab" } })).toEqual([
+    expect(mistakesIn({ variables: { variableName: "kebab" } })).toEqual([
         "`variables.variableName` must be a function, not a string",
     ]);
 });
 
 it("lists a choice's values when the value is not even the right type", () => {
     expect(
-        problemsIn({ variables: { case: 5, transforms: { colorFallbackStrategy: 1 } } }),
+        mistakesIn({ variables: { case: 5, transforms: { colorFallbackStrategy: 1 } } }),
     ).toEqual([
         '`variables.case` must be "kebab", not a number',
         '`variables.transforms.colorFallbackStrategy` must be "native" or "polyfill", not a number',
@@ -285,23 +276,13 @@ it("lists a choice's values when the value is not even the right type", () => {
 });
 
 it("says `an` before a setting that starts with a vowel", () => {
-    expect(problemsIn({ variables: { permutations: [{ selector: ":root" }] } })).toEqual([
+    expect(mistakesIn({ variables: { permutations: [{ selector: ":root" }] } })).toEqual([
         "`variables.permutations.0` needs an `input`",
     ]);
 });
 
 it("keeps an unknown setting as a fact", () => {
-    const thrown = (() => {
-        try {
-            validateSugarcubeConfig({ varibles: {} });
-        } catch (error) {
-            return error;
-        }
-    })();
-
-    expect(thrown instanceof ConfigError && thrown.issues).toEqual([
-        { reason: "unknown", setting: "varibles" },
-    ]);
+    expect(issuesIn({ varibles: {} })).toEqual([{ reason: "unknown", setting: "varibles" }]);
 });
 
 it("won't compile a check that disagrees with its setting's type", () => {

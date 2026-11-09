@@ -1,16 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { validateSugarcubeConfig } from "../src/shared/config.js";
-import { ConfigError, configProblems } from "../src/shared/config-error.js";
+import { mistakesIn } from "./config-mistakes.js";
 
-function issues(classes: unknown): string[] {
-    try {
-        validateSugarcubeConfig({ utilities: { classes } });
-        return [];
-    } catch (error) {
-        if (!(error instanceof ConfigError)) throw error;
-        return configProblems(error).map(({ message }) => message);
-    }
-}
+const issues = (classes: unknown): string[] => mistakesIn({ utilities: { classes } });
 
 describe("utility classes", () => {
     it("accepts a source ending in .*, and one with no wildcard", () => {

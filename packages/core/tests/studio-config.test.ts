@@ -1,17 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
 import { validateSugarcubeConfig } from "../src/shared/config.js";
-import { ConfigError, configProblems } from "../src/shared/config-error.js";
+import { mistakesIn } from "./config-mistakes.js";
 
-const issues = (studio: unknown): string[] => {
-    try {
-        validateSugarcubeConfig({ studio });
-        return [];
-    } catch (error) {
-        if (!(error instanceof ConfigError)) throw error;
-        return configProblems(error).map(({ message }) => message);
-    }
-};
+const issues = (studio: unknown): string[] => mistakesIn({ studio });
 
 describe("studio's settings", () => {
     it("are where the tokens live on GitHub, whether Save is on, and where sign-in is", () => {
