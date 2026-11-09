@@ -2,17 +2,14 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { type DesignTokens, type Diagnostic, type Span, read } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
-import { inputFiles, readOptions } from "../../dtcg/tests/read/case-options.js";
-import { textIn } from "../../dtcg/tests/read/on-disk.js";
+import { type Case, loadCases, readOptions } from "../../dtcg/tests/read/case-options.js";
 import { withSpans } from "../../dtcg/tests/read/positions.js";
 import { type Fix, fixesFor } from "../src/index.js";
 import { getDiagnosticsAt } from "@sugarcube-sh/dtcg/editor";
+import { read as readFromDisk } from "@sugarcube-sh/dtcg/node";
 
-const casesFolder = join(import.meta.dirname, "../../dtcg/tests/read/cases");
 const expectedFolder = join(import.meta.dirname, "fixes");
-const cases = readdirSync(casesFolder, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name);
+const cases = loadCases();
 
 interface Offered {
     kind: Diagnostic["kind"];
@@ -20,21 +17,15 @@ interface Offered {
     fixes: Fix[];
 }
 
-async function openCase(name: string): Promise<DesignTokens> {
-    const folder = join(casesFolder, name);
-    const { entry, options } = JSON.parse(readFileSync(join(folder, "expected.json"), "utf8"));
-    return read(entry, {
-        ...readOptions(options),
-        readText: textIn(join(folder, "input")),
-    });
+function openCase({ input, expected }: Case): Promise<DesignTokens> {
+    return readFromDisk(join(input, expected.entry), readOptions(expected.options));
 }
 
-function expectedFor(name: string): Offered[] {
+function expectedFor({ name, files }: Case): Offered[] {
     const file = join(expectedFolder, `${name}.json`);
     if (!existsSync(file)) return [];
     const written = JSON.parse(readFileSync(file, "utf8"));
-    const inputs = inputFiles(join(casesFolder, name, "input"));
-    return (withSpans(written, inputs) as { diagnostics: Offered[] }).diagnostics;
+    return (withSpans(written, files) as { diagnostics: Offered[] }).diagnostics;
 }
 
 function offered(tokens: DesignTokens): Offered[] {
@@ -64,13 +55,13 @@ async function readFiles(files: Record<string, string>): Promise<DesignTokens> {
     });
 }
 
-describe.each(cases)("%s", (name) => {
+describe.each(cases.map((each) => [each.name, each] as const))("%s", (_, each) => {
     it("offers the fixes expected for each diagnostic", async () => {
-        expect(offered(await openCase(name))).toStrictEqual(expectedFor(name));
+        expect(offered(await openCase(each))).toStrictEqual(expectedFor(each));
     });
 
     it("leaves each place a safe fix mends reading clean", async () => {
-        const opened = await openCase(name);
+        const opened = await openCase(each);
         const safe = offered(opened).flatMap(({ fixes }) => fixes.filter((fix) => fix.safe));
         for (const fix of safe) {
             expect(fix.edits).toHaveLength(1);
@@ -176,6 +167,7 @@ describe("fixes that depend on other tokens", () => {
 describe("expected fixes", () => {
     it("are kept only for cases that exist", () => {
         const kept = readdirSync(expectedFolder).map((file) => file.replace(/\.json$/, ""));
-        expect(kept.filter((name) => !cases.includes(name))).toStrictEqual([]);
+        const names = cases.map(({ name }) => name);
+        expect(kept.filter((name) => !names.includes(name))).toStrictEqual([]);
     });
 });

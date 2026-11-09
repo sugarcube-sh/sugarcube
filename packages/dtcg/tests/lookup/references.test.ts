@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { type Reference, type WrittenReference, readFromMemory } from "../../src/index.js";
-import { movedReference } from "../../src/values/references.js";
+import type { Reference } from "../../src/index.js";
+import { oneFile } from "../token-files.js";
 
 const color = { colorSpace: "srgb", components: [1, 0, 0] };
 const px = (value: number) => ({ value, unit: "px" });
@@ -59,7 +59,7 @@ const json = {
     broken: { $type: "dimension", $value: "4px" },
 };
 
-const tokens = readFromMemory({ files: { "tokens.json": JSON.stringify(json) } });
+const tokens = oneFile(json);
 const tokenAt = (path: string) => {
     const found = tokens.getPermutation().getToken(path);
     if (!found) throw new Error(`no token ${path}`);
@@ -136,13 +136,9 @@ describe("a token's references", () => {
 
 describe("a reference to nothing", () => {
     it("still names the path it points at, so it can be found and moved", () => {
-        const misspelt = readFromMemory({
-            files: {
-                "tokens.json": JSON.stringify({
-                    text: { $type: "color", $value: { $ref: "#/color/inc/$value" } },
-                    border: { $type: "color", $value: "{color.inc}" },
-                }),
-            },
+        const misspelt = oneFile({
+            text: { $type: "color", $value: { $ref: "#/color/inc/$value" } },
+            border: { $type: "color", $value: "{color.inc}" },
         });
         expect(
             misspelt
@@ -168,6 +164,7 @@ describe("getReferenceAt", () => {
 
     it("finds a whole value written as a reference at the top of the value", () => {
         expect(pointsToPathAt("accent", [])).toBe("red");
+        expect(tokenAt("accent").getReferenceAt()?.pointsToPath).toBe("red");
     });
 
     it("finds a reference standing for a whole item of a list", () => {
@@ -198,41 +195,27 @@ describe("getReferenceAt", () => {
 
 describe("the rule moved() follows", () => {
     const moved = [{ from: "color.brand", to: "color.primary" }];
+    const written = (ref: string) => (ref.startsWith("{") ? ref : { $ref: ref });
 
-    it.for<{ ref: WrittenReference; expected: WrittenReference }>([
-        {
-            ref: { syntax: "curly-brace", path: "color.brand" },
-            expected: { syntax: "curly-brace", path: "color.primary" },
-        },
-        {
-            ref: { syntax: "curly-brace", path: "color.brand.500" },
-            expected: { syntax: "curly-brace", path: "color.primary.500" },
-        },
-        {
-            ref: { syntax: "curly-brace", path: "color.branding" },
-            expected: { syntax: "curly-brace", path: "color.branding" },
-        },
-        {
-            ref: { syntax: "json-pointer", pointer: "#/color/brand/500" },
-            expected: { syntax: "json-pointer", pointer: "#/color/primary/500" },
-        },
-        {
-            ref: { syntax: "json-pointer", pointer: "#/color/brand/500/$value/components/0" },
-            expected: {
-                syntax: "json-pointer",
-                pointer: "#/color/primary/500/$value/components/0",
-            },
-        },
-        {
-            ref: { syntax: "json-pointer", pointer: "#/space/sm" },
-            expected: { syntax: "json-pointer", pointer: "#/space/sm" },
-        },
-        {
-            ref: { syntax: "json-pointer", pointer: "other.json#/color/brand" },
-            expected: { syntax: "json-pointer", pointer: "other.json#/color/brand" },
-        },
-    ])("moves $ref.path$ref.pointer", ({ ref, expected }) => {
-        expect(movedReference(ref, moved)).toStrictEqual(expected);
+    function writtenAs(ref: string): Reference {
+        const uses = oneFile({ uses: { $type: "number", $value: written(ref) } })
+            .getPermutation()
+            .getToken("uses");
+        const [reference] = uses?.references ?? [];
+        if (!reference) throw new Error(`no reference in ${ref}`);
+        return reference;
+    }
+
+    it.for([
+        ["{color.brand}", "{color.primary}"],
+        ["{color.brand.500}", "{color.primary.500}"],
+        ["{color.branding}", "{color.branding}"],
+        ["#/color/brand/500", "#/color/primary/500"],
+        ["#/color/brand/500/$value/components/0", "#/color/primary/500/$value/components/0"],
+        ["#/space/sm", "#/space/sm"],
+        ["other.json#/color/brand", "other.json#/color/brand"],
+    ] as const)("moves %s to %s", ([ref, expected]) => {
+        expect(writtenAs(ref).moved(moved)).toStrictEqual(written(expected));
     });
 
     it("follows moves made one after another", () => {
@@ -240,11 +223,6 @@ describe("the rule moved() follows", () => {
             { from: "color.brand", to: "color.house" },
             { from: "color.house.500", to: "color.house.550" },
         ];
-        expect(
-            movedReference({ syntax: "curly-brace", path: "color.brand.500" }, twice),
-        ).toStrictEqual({
-            syntax: "curly-brace",
-            path: "color.house.550",
-        });
+        expect(writtenAs("{color.brand.500}").moved(twice)).toBe("{color.house.550}");
     });
 });

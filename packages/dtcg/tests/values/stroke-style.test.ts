@@ -1,25 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { ParseOptions } from "../../src/index.js";
-import { lineCaps, strokeStyleKeywords, parseValue } from "../../src/values.js";
+import { lineCaps, strokeStyleKeywords } from "../../src/values.js";
+import { lenient, parsing } from "./parsing.js";
 
-const lenient: ParseOptions = { ignoreUnknownProperties: true };
-
-function read(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("strokeStyle", raw, { jsonPath: ["$value"], ...options });
-    if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
-    return result.value;
-}
-
-function details(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("strokeStyle", raw, { jsonPath: ["$value"], ...options });
-    if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
-    return result.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
-
-function ignored(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("strokeStyle", raw, { jsonPath: ["$value"], ...options });
-    return result.ignored.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
+const { read, details, ignored, refuses } = parsing("strokeStyle");
 
 const px = (value: number) => ({ value, unit: "px" });
 
@@ -64,13 +47,6 @@ describe("parseValue, strokeStyle", () => {
             });
         });
 
-        it("reads a reference to a whole token in curly brace syntax", () => {
-            expect(read("{border.style.focus}")).toStrictEqual({
-                syntax: "curly-brace",
-                path: "border.style.focus",
-            });
-        });
-
         it.for(["dashArray", "lineCap"])("reads a JSON Pointer in place of %s", (part) => {
             const raw = { dashArray: [px(4)], lineCap: "round", [part]: { $ref: "#/elsewhere" } };
             expect(read(raw)).toMatchObject({
@@ -86,43 +62,26 @@ describe("parseValue, strokeStyle", () => {
         ] as const)(
             "a curly-brace reference as the %s, where a JSON Pointer can stand",
             ([part, raw]) => {
-                expect(details(raw)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", part],
-                        detail: {
-                            type: "strokeStyle",
-                            reason: "curly-brace-not-allowed-here",
-                            reference: "{stroke.cap}",
-                        },
-                    },
-                ]);
+                refuses(raw, [part], {
+                    reason: "curly-brace-not-allowed-here",
+                    reference: "{stroke.cap}",
+                });
             },
         );
 
         it.for(["Solid", "none", "hidden", "wavy", ""])(
             "the string %j, which is not a keyword",
             (raw) => {
-                expect(details(raw)).toStrictEqual([
-                    {
-                        jsonPath: ["$value"],
-                        detail: {
-                            type: "strokeStyle",
-                            reason: "unknown-stroke-style-keyword",
-                            value: raw,
-                            keywords: strokeStyleKeywords,
-                        },
-                    },
-                ]);
+                refuses(raw, [], {
+                    reason: "unknown-stroke-style-keyword",
+                    value: raw,
+                    keywords: strokeStyleKeywords,
+                });
             },
         );
 
         it.for([42, null, true, ["solid"]])("%j, which is not a stroke style", (raw) => {
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value"],
-                    detail: { type: "strokeStyle", reason: "wrong-shape", value: raw },
-                },
-            ]);
+            refuses(raw, [], { reason: "wrong-shape", value: raw });
         });
 
         it("a dash pattern with neither part", () => {
@@ -147,21 +106,16 @@ describe("parseValue, strokeStyle", () => {
         });
 
         it("a dashArray that is not a list", () => {
-            expect(details({ dashArray: px(4), lineCap: "round" })).toStrictEqual([
-                {
-                    jsonPath: ["$value", "dashArray"],
-                    detail: { type: "strokeStyle", reason: "dash-array-not-a-list", value: px(4) },
-                },
-            ]);
+            refuses({ dashArray: px(4), lineCap: "round" }, ["dashArray"], {
+                reason: "dash-array-not-a-list",
+                value: px(4),
+            });
         });
 
         it("an empty dashArray", () => {
-            expect(details({ dashArray: [], lineCap: "round" })).toStrictEqual([
-                {
-                    jsonPath: ["$value", "dashArray"],
-                    detail: { type: "strokeStyle", reason: "empty-dash-array" },
-                },
-            ]);
+            refuses({ dashArray: [], lineCap: "round" }, ["dashArray"], {
+                reason: "empty-dash-array",
+            });
         });
 
         it("each bad length in a dashArray, where it is, with the dimension parser's own reason", () => {
@@ -190,52 +144,16 @@ describe("parseValue, strokeStyle", () => {
         });
 
         it.for(["Round", "flat", 1])("the line cap %j", (lineCap) => {
-            expect(details({ dashArray: [px(4)], lineCap })).toStrictEqual([
-                {
-                    jsonPath: ["$value", "lineCap"],
-                    detail: {
-                        type: "strokeStyle",
-                        reason: "unknown-line-cap",
-                        value: lineCap,
-                        lineCaps: lineCaps,
-                    },
-                },
-            ]);
+            refuses({ dashArray: [px(4)], lineCap }, ["lineCap"], {
+                reason: "unknown-line-cap",
+                value: lineCap,
+                lineCaps: lineCaps,
+            });
         });
     });
 
     describe("a property its type does not define", () => {
-        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
-            const raw = { dashArray: [px(4)], lineCap: "round", dashOffset: px(1) };
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value", "dashOffset"],
-                    detail: {
-                        type: "strokeStyle",
-                        reason: "unknown-property",
-                        property: "dashOffset",
-                    },
-                },
-            ]);
-            expect(ignored(raw)).toStrictEqual([]);
-        });
-
         describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
-            it("a property the spec does not define", () => {
-                const raw = { dashArray: [px(4)], lineCap: "round", dashOffset: px(1) };
-                expect(read(raw, lenient)).toStrictEqual({
-                    kind: "dash",
-                    dashArray: [px(4)],
-                    lineCap: "round",
-                });
-                expect(ignored(raw, lenient)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", "dashOffset"],
-                        detail: { type: "strokeStyle", property: "dashOffset" },
-                    },
-                ]);
-            });
-
             it("a length's own property, at its full path", () => {
                 const raw = { dashArray: [{ ...px(4), fluid: true }], lineCap: "round" };
                 expect(read(raw, lenient)).toStrictEqual({

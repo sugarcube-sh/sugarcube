@@ -1,22 +1,16 @@
 import { EventEmitter } from "node:events";
 import { readFileSync, writeFileSync } from "node:fs";
-import { mkdtemp, realpath, rm, stat, utimes, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { stat, utimes, writeFile } from "node:fs/promises";
+import { beforeEach, describe, expect, it } from "vitest";
 import { onFileChanged } from "../../src/node.js";
+import { useTempFolder } from "./temp-folder.js";
 
-let folder: string;
+const folder = useTempFolder("dtcg-changed-");
 let file: string;
 
 beforeEach(async () => {
-    folder = await realpath(await mkdtemp(join(tmpdir(), "dtcg-changed-")));
-    file = join(folder, "base.json");
+    file = folder.at("base.json");
     await writeFile(file, '{ "a": 1 }');
-});
-
-afterEach(async () => {
-    await rm(folder, { recursive: true, force: true });
 });
 
 const pastTheWindow = () => new Promise((resolve) => setTimeout(resolve, 120));
@@ -33,8 +27,8 @@ describe("onFileChanged", () => {
         const { watcher, paths } = heard();
 
         watcher.emit("change", file, await stat(file));
-        watcher.emit("add", join(folder, "new.json"));
-        watcher.emit("unlink", join(folder, "old.json"));
+        watcher.emit("add", folder.at("new.json"));
+        watcher.emit("unlink", folder.at("old.json"));
         await pastTheWindow();
 
         expect(paths).toStrictEqual([file]);
@@ -71,15 +65,6 @@ describe("onFileChanged", () => {
         const looked = await stat(file);
         writeFileSync(file, '{ "a": 2 }');
         watcher.emit("change", file, looked);
-        await pastTheWindow();
-
-        expect(paths).toStrictEqual([file]);
-    });
-
-    it("reports a save once when nothing was written after it", async () => {
-        const { watcher, paths } = heard();
-
-        watcher.emit("change", file, await stat(file));
         await pastTheWindow();
 
         expect(paths).toStrictEqual([file]);

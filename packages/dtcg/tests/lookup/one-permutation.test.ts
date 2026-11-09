@@ -1,58 +1,32 @@
 import { describe, expect, it } from "vitest";
 import { type DesignTokens, SeveralPermutationsError, readFromMemory } from "../../src/index.js";
+import { lightDark, oneFile, oneSet } from "../token-files.js";
+import { thrownBy } from "./thrown.js";
 import { twoModifiers } from "./two-modifiers.js";
 
 const number = (value: number) => ({ $type: "number", $value: value });
 
-const file = readFromMemory({
-    files: {
-        "tokens.json": JSON.stringify({
-            space: { sm: number(1), md: number(2) },
-            gap: number(3),
-        }),
-    },
+const file = oneFile({
+    space: { sm: number(1), md: number(2) },
+    gap: number(3),
 });
 
 const plainResolver = readFromMemory({
     files: {
-        "tokens.resolver.json": JSON.stringify({
-            version: "2025.10",
-            resolutionOrder: [{ type: "set", name: "base", sources: [{ $ref: "base.json" }] }],
-        }),
+        "tokens.resolver.json": oneSet("base.json"),
         "base.json": JSON.stringify({ gap: number(3) }),
     },
 });
 
 const oneMode = readFromMemory({
     files: {
-        "tokens.resolver.json": JSON.stringify({
-            version: "2025.10",
-            resolutionOrder: [
-                { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-                {
-                    type: "modifier",
-                    name: "mode",
-                    default: "light",
-                    contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                },
-            ],
-        }),
+        "tokens.resolver.json": lightDark(["base.json"], ["dark.json"]),
         "base.json": JSON.stringify({ gap: number(3) }),
         "dark.json": JSON.stringify({ gap: number(4) }),
     },
 });
 
 const modes = twoModifiers();
-
-function refusal(ask: () => unknown): SeveralPermutationsError {
-    try {
-        ask();
-    } catch (error) {
-        if (error instanceof SeveralPermutationsError) return error;
-        throw error;
-    }
-    throw new Error("expected a SeveralPermutationsError");
-}
 
 describe("the design tokens of a read with one permutation", () => {
     it("answer a token file's questions directly, as its one permutation does", () => {
@@ -91,7 +65,7 @@ describe("the design tokens of a read with one permutation", () => {
 
 describe("the design tokens of a read with several permutations", () => {
     it("refuse to answer for one, and say how to pick", () => {
-        const error = refusal(() => oneMode.getToken("gap"));
+        const error = thrownBy(SeveralPermutationsError, () => oneMode.getToken("gap"));
 
         expect(error.detail).toStrictEqual({
             asked: "getToken()",
@@ -117,12 +91,14 @@ describe("the design tokens of a read with several permutations", () => {
         ];
 
         for (const [asked, ask] of asks) {
-            expect(refusal(() => ask(modes)).detail).toMatchObject({ asked });
+            expect(thrownBy(SeveralPermutationsError, () => ask(modes)).detail).toMatchObject({
+                asked,
+            });
         }
     });
 
     it("name every modifier, and pick an example away from the defaults", () => {
-        const error = refusal(() => modes.getToken("gap"));
+        const error = thrownBy(SeveralPermutationsError, () => modes.getToken("gap"));
 
         expect(error.detail).toMatchObject({
             modifiers: ["mode", "size"],
@@ -151,9 +127,9 @@ describe("the design tokens of a read with several permutations", () => {
             },
         });
 
-        expect(refusal(() => contrast.getToken("gap")).message).toContain(
-            'tokens.getPermutation({ "high-contrast": "on" })',
-        );
+        expect(
+            thrownBy(SeveralPermutationsError, () => contrast.getToken("gap")).message,
+        ).toContain('tokens.getPermutation({ "high-contrast": "on" })');
     });
 
     it("have no copies of a permutation's questions that answer for every permutation", () => {
@@ -190,13 +166,9 @@ describe("a permutation's token or group at a path", () => {
 
 describe("what the top of the files writes", () => {
     it("is the permutation's topLevel, not a $root token", () => {
-        const topped = readFromMemory({
-            files: {
-                "tokens.json": JSON.stringify({
-                    $description: "Every token",
-                    gap: { $type: "number", $value: 1 },
-                }),
-            },
+        const topped = oneFile({
+            $description: "Every token",
+            gap: { $type: "number", $value: 1 },
         });
 
         expect(topped.getPermutation().topLevel.description).toBe("Every token");

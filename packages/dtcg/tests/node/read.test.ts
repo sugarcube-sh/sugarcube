@@ -27,6 +27,7 @@ describe("read from disk", () => {
             "dark.json",
             "ocean.json",
         ]);
+        expect(tokens.entryFile).toBe("tokens.resolver.json");
         expect(tokens).toStrictEqual(inMemory());
     });
 

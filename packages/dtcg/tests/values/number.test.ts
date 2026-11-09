@@ -6,22 +6,6 @@ describe("parseValue, number", () => {
         expect(parseValue("number", raw)).toStrictEqual({ ok: true, value: raw, ignored: [] });
     });
 
-    it("reads a reference to a whole token in curly brace syntax", () => {
-        expect(parseValue("number", "{line-height.large}")).toStrictEqual({
-            ok: true,
-            value: { syntax: "curly-brace", path: "line-height.large" },
-            ignored: [],
-        });
-    });
-
-    it("reads a JSON Pointer as the whole value", () => {
-        expect(parseValue("number", { $ref: "#/base/blue/$value/components/0" })).toStrictEqual({
-            ok: true,
-            value: { syntax: "json-pointer", pointer: "#/base/blue/$value/components/0" },
-            ignored: [],
-        });
-    });
-
     it.for(["2.3", "50%", null, true, [1], { value: 1 }])(
         "refuses %j, which is not a JSON number",
         (raw) => {

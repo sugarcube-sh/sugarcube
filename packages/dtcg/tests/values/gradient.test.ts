@@ -1,25 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { ParseOptions } from "../../src/index.js";
-import { parseValue } from "../../src/values.js";
+import { parsing } from "./parsing.js";
 
-const lenient: ParseOptions = { ignoreUnknownProperties: true };
-
-function read(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("gradient", raw, { jsonPath: ["$value"], ...options });
-    if (!result.ok) throw new Error(`expected a value, got ${JSON.stringify(result.errors)}`);
-    return result.value;
-}
-
-function details(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("gradient", raw, { jsonPath: ["$value"], ...options });
-    if (result.ok) throw new Error(`expected errors, got ${JSON.stringify(result.value)}`);
-    return result.errors.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
-
-function ignored(raw: unknown, options?: ParseOptions) {
-    const result = parseValue("gradient", raw, { jsonPath: ["$value"], ...options });
-    return result.ignored.map(({ jsonPath, detail }) => ({ jsonPath, detail }));
-}
+const { read, refuses } = parsing("gradient");
 
 const blue = { colorSpace: "srgb", components: [0, 0, 1] };
 const red = { colorSpace: "srgb", components: [1, 0, 0] };
@@ -87,79 +69,31 @@ describe("parseValue, gradient", () => {
                 ]);
             },
         );
-
-        it("reads a reference to a whole token in curly brace syntax", () => {
-            expect(read("{gradient.brand}")).toStrictEqual({
-                syntax: "curly-brace",
-                path: "gradient.brand",
-            });
-        });
     });
 
     describe("refuses", () => {
         it("an empty list", () => {
-            expect(details([])).toStrictEqual([
-                { jsonPath: ["$value"], detail: { type: "gradient", reason: "no-gradient-stops" } },
-            ]);
+            refuses([], [], { reason: "no-gradient-stops" });
         });
 
         it.for([{ color: red, position: 0 }, "linear-gradient(blue, red)", null])(
             "%j, which is not a list of stops, since spec 9.7 requires a list even for one stop",
             (raw) => {
-                expect(details(raw)).toStrictEqual([
-                    {
-                        jsonPath: ["$value"],
-                        detail: { type: "gradient", reason: "wrong-shape", value: raw },
-                    },
-                ]);
+                refuses(raw, [], { reason: "wrong-shape", value: raw });
             },
         );
 
         it.for(["color", "position"])("a stop with no %s", (part) => {
             const stop: Record<string, unknown> = { color: red, position: 0 };
             delete stop[part];
-            expect(details([stop])).toStrictEqual([
-                {
-                    jsonPath: ["$value", 0, part],
-                    detail: { type: "gradient", reason: "missing-property", property: part },
-                },
-            ]);
+            refuses([stop], [0, part], { reason: "missing-property", property: part });
         });
 
         it("a position that is not a number", () => {
-            expect(details([{ color: red, position: "50%" }])).toStrictEqual([
-                {
-                    jsonPath: ["$value", 0, "position"],
-                    detail: { type: "number", reason: "not-a-number", value: "50%" },
-                },
-            ]);
-        });
-    });
-
-    describe("a property its type does not define", () => {
-        it("makes the value invalid by default, as Format 9.2 says of a composite", () => {
-            const raw = [{ color: red, position: 0, midpoint: 0.5 }];
-            expect(details(raw)).toStrictEqual([
-                {
-                    jsonPath: ["$value", 0, "midpoint"],
-                    detail: { type: "gradient", reason: "unknown-property", property: "midpoint" },
-                },
-            ]);
-            expect(ignored(raw)).toStrictEqual([]);
-        });
-
-        describe("with ignoreUnknownProperties, is set aside and the rest read", () => {
-            it("a part the spec does not define", () => {
-                const raw = [{ color: red, position: 0, midpoint: 0.5 }];
-                expect(read(raw, lenient)).toStrictEqual(
-                    read([{ color: red, position: 0 }], lenient),
-                );
-                expect(ignored(raw, lenient)).toStrictEqual([
-                    {
-                        jsonPath: ["$value", 0, "midpoint"],
-                        detail: { type: "gradient", property: "midpoint" },
-                    },
-                ]);
+            refuses([{ color: red, position: "50%" }], [0, "position"], {
+                type: "number",
+                reason: "not-a-number",
+                value: "50%",
             });
         });
     });

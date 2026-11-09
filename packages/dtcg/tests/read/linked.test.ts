@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { type DesignTokens, defineGenerator, readFromMemory, tokenPath } from "../../src/index.js";
+import { defineGenerator, readFromMemory, tokenPath } from "../../src/index.js";
+import { lightDark, oneFile } from "../token-files.js";
 
 const color = (red: number) => ({ $value: { colorSpace: "srgb", components: [red, 0, 0] } });
-
-function oneFile(json: unknown): DesignTokens {
-    return readFromMemory({ files: { "tokens.json": JSON.stringify(json) } });
-}
 
 const plain = (value: unknown) => JSON.parse(JSON.stringify(value));
 
@@ -45,14 +42,8 @@ describe("links", () => {
             messages: {},
             generate: () => ({ ok: true, value: [{ name: "1", $value: 1 }] }),
         });
-        const generated = readFromMemory(
-            {
-                files: {
-                    "tokens.json": JSON.stringify({
-                        space: { $type: "number", $extensions: { "com.example": { steps: 1 } } },
-                    }),
-                },
-            },
+        const generated = oneFile(
+            { space: { $type: "number", $extensions: { "com.example": { steps: 1 } } } },
             { generators: [steps] },
         ).getPermutation();
         expect(generated.getGroup("space")?.children).toContain(generated.getToken("space.1"));
@@ -61,18 +52,7 @@ describe("links", () => {
     it("reach each permutation's own tokens from its own groups", () => {
         const themed = readFromMemory({
             files: {
-                "tokens.resolver.json": JSON.stringify({
-                    version: "2025.10",
-                    resolutionOrder: [
-                        { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-                        {
-                            type: "modifier",
-                            name: "mode",
-                            default: "light",
-                            contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                        },
-                    ],
-                }),
+                "tokens.resolver.json": lightDark(["base.json"], ["dark.json"]),
                 "base.json": JSON.stringify({ color: { $type: "color", bg: color(1) } }),
                 "dark.json": JSON.stringify({ color: { bg: color(0) } }),
             },

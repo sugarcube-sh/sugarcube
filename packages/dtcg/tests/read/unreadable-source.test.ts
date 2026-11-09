@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type DesignTokens, readFromMemory } from "../../src/index.js";
+import { lightDark } from "../token-files.js";
 
 const colors = JSON.stringify(
     {
@@ -24,49 +25,42 @@ const roles = JSON.stringify({
     },
 });
 
-function resolver(base: string[], dark: string[] = []) {
-    return JSON.stringify({
-        version: "2025.10",
-        resolutionOrder: [
-            { type: "set", name: "base", sources: base.map(($ref) => ({ $ref })) },
-            {
-                type: "modifier",
-                name: "mode",
-                default: "light",
-                contexts: { light: [], dark: dark.map(($ref) => ({ $ref })) },
-            },
-        ],
-    });
-}
-
 const kinds = (tokens: DesignTokens) => tokens.diagnostics.map(({ kind }) => kind);
 
 describe("a source that can't be read", () => {
-    it("is one problem: references into what it held are not reported as well", () => {
-        const tokens = readFromMemory({
-            files: {
-                "tokens.resolver.json": resolver(["colors.json", "roles.json"]),
+    it.for<[string, string[], Record<string, string>, string[]]>([
+        [
+            "is one problem: references into what it held are not reported as well",
+            ["colors.json", "roles.json"],
+            { "colors.json": cutShort, "roles.json": roles },
+            ["invalid-json"],
+        ],
+        [
+            "is one problem when the file isn't there at all",
+            ["colors.json", "roles.json"],
+            { "roles.json": roles },
+            ["file-not-found"],
+        ],
+        [
+            "quiets a group's $extends into what it held",
+            ["colors.json", "brand.json"],
+            {
                 "colors.json": cutShort,
-                "roles.json": roles,
+                "brand.json": JSON.stringify({ brand: { $extends: "{color}" } }),
             },
-        });
-        expect(kinds(tokens)).toStrictEqual(["invalid-json"]);
-    });
-
-    it("is one problem when the file isn't there at all", () => {
+            ["invalid-json"],
+        ],
+    ])("%s", ([, base, files, expected]) => {
         const tokens = readFromMemory({
-            files: {
-                "tokens.resolver.json": resolver(["colors.json", "roles.json"]),
-                "roles.json": roles,
-            },
+            files: { "tokens.resolver.json": lightDark(base, []), ...files },
         });
-        expect(kinds(tokens)).toStrictEqual(["file-not-found"]);
+        expect(kinds(tokens)).toStrictEqual(expected);
     });
 
     it("quiets only the permutations that read it: elsewhere a missing reference is reported", () => {
         const tokens = readFromMemory({
             files: {
-                "tokens.resolver.json": resolver(["roles.json"], ["colors.json"]),
+                "tokens.resolver.json": lightDark(["roles.json"], ["colors.json"]),
                 "colors.json": cutShort,
                 "roles.json": roles,
             },
@@ -82,21 +76,10 @@ describe("a source that can't be read", () => {
         ]);
     });
 
-    it("quiets a group's $extends into what it held", () => {
-        const tokens = readFromMemory({
-            files: {
-                "tokens.resolver.json": resolver(["colors.json", "brand.json"]),
-                "colors.json": cutShort,
-                "brand.json": JSON.stringify({ brand: { $extends: "{color}" } }),
-            },
-        });
-        expect(kinds(tokens)).toStrictEqual(["invalid-json"]);
-    });
-
     it("hides nothing once it reads: a reference that is really missing comes back, with what was meant", () => {
         const tokens = readFromMemory({
             files: {
-                "tokens.resolver.json": resolver(["colors.json", "roles.json"]),
+                "tokens.resolver.json": lightDark(["colors.json", "roles.json"], []),
                 "colors.json": colors,
                 "roles.json": roles,
             },

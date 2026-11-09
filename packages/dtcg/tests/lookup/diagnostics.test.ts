@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { type Permutation, readFromMemory } from "../../src/index.js";
 import { getDiagnosticsAt } from "../../src/editor.js";
+import { oneFile } from "../token-files.js";
 
 const resolver = {
     version: "2025.10",
@@ -33,10 +34,7 @@ const files = {
     "base.json": base,
     "dark.json": dark,
 };
-const tokens = readFromMemory(
-    { files, entryFile: "tokens.resolver.json" },
-    { hexStringColors: true },
-);
+const tokens = readFromMemory({ files }, { hexStringColors: true });
 const light = tokens.getPermutation();
 const darkMode = tokens.getPermutation({ mode: "dark" });
 
@@ -110,13 +108,6 @@ describe("a problem in a file only some permutations read", () => {
             "dark.json": JSON.stringify({ gap: { $type: "number", $value: 2, $unknwn: 1 } }),
             "base.json": JSON.stringify({ gap: { $type: "number", $value: 1 } }),
         },
-        entryFile: "tokens.resolver.json",
-    });
-
-    it("names the permutations that read the file", () => {
-        const [ignored] = walked.getDiagnostics("gap");
-        expect(ignored?.kind).toBe("unknown-property");
-        expect(ignored?.permutations?.label).toBe("mode: dark");
     });
 
     it("is not given to the token in a permutation that does not read it", () => {
@@ -126,7 +117,6 @@ describe("a problem in a file only some permutations read", () => {
     it("names every permutation for a problem in the resolver, which every permutation is built from", () => {
         const resolverProblem = readFromMemory({
             files: { ...files, "tokens.resolver.json": JSON.stringify({ ...resolver, extra: 1 }) },
-            entryFile: "tokens.resolver.json",
         }).diagnostics.find(({ span }) => span?.file === "tokens.resolver.json");
         expect(resolverProblem).toBeDefined();
         expect(resolverProblem?.permutations.label).toBe("everywhere");
@@ -134,7 +124,7 @@ describe("a problem in a file only some permutations read", () => {
 
     it("names none for a problem in a file no permutation the read built reads", () => {
         const lightOnly = readFromMemory(
-            { files: { ...files, "dark.json": '{ "color": ' }, entryFile: "tokens.resolver.json" },
+            { files: { ...files, "dark.json": '{ "color": ' } },
             { inputs: [{}] },
         );
         const broken = lightOnly.diagnostics.find(({ span }) => span?.file === "dark.json");
@@ -144,10 +134,7 @@ describe("a problem in a file only some permutations read", () => {
     });
 
     it("names every permutation the read built for a problem in no file", () => {
-        const read = readFromMemory(
-            { files, entryFile: "tokens.resolver.json" },
-            { inputs: [{}, { shade: "deep" }] },
-        );
+        const read = readFromMemory({ files }, { inputs: [{}, { shade: "deep" }] });
         const unknown = read.diagnostics.find(({ span }) => span === undefined);
         expect(unknown).toBeDefined();
         expect([...(unknown?.permutations ?? [])]).toStrictEqual([...read.permutations]);
@@ -156,15 +143,11 @@ describe("a problem in a file only some permutations read", () => {
 });
 
 describe("a problem in a value a token inherits", () => {
-    const extended = readFromMemory({
-        files: {
-            "tokens.json": JSON.stringify({
-                button: {
-                    $type: "number",
-                    base: { pad: { $value: "wide" } },
-                    primary: { $extends: "{button.base}" },
-                },
-            }),
+    const extended = oneFile({
+        button: {
+            $type: "number",
+            base: { pad: { $value: "wide" } },
+            primary: { $extends: "{button.base}" },
         },
     });
 

@@ -1,6 +1,6 @@
 {
   "version": "2025.10",
-  "sets": { "base": { "sources": [{ "$ref": "base.json" }] } },
+  "sets": { "base": { "sources": [{ "$ref": "base.json" }, { "$ref": "brand.json" }] } },
   "modifiers": {
     "theme": {
       "contexts": { "light": [], "dark": [{ "$ref": "dark.json" }] },

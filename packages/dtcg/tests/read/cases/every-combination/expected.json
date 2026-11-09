@@ -1,6 +1,6 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "Resolver 4.1.5.4, Example 5: two modifiers of two contexts make four combinations; with no inputs every one is built, the default first (contract 2, rule 2)",
+  "spec": "Resolver 4.1.5.4, Example 5: two modifiers of two contexts make four combinations; with no inputs every one is built, in the order the contexts are written, which here puts each default first (contract 2, rule 2)",
   "files": ["tokens.resolver.json", "base.json", "dark.json", "ocean.json"],
   "resolver": {
     "file": "tokens.resolver.json",

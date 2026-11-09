@@ -1,6 +1,7 @@
 import * as jsonc from "jsonc-parser";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineGenerator, readFromMemory } from "../../src/index.js";
+import { oneFile, oneSet } from "../token-files.js";
 import { getJsonAt, getJsonPath } from "../../src/editor.js";
 
 const number = (value: unknown) => ({ $type: "number", $value: value });
@@ -14,19 +15,8 @@ const steps = defineGenerator({
 const tokens = readFromMemory(
     {
         files: {
-            "tokens.resolver.json": JSON.stringify({
-                version: "2025.10",
-                resolutionOrder: [
-                    {
-                        type: "set",
-                        name: "base",
-                        sources: [
-                            { $ref: "tokens.json" },
-                            { $ref: "part.json#/inner" },
-                            { written: number(5) },
-                        ],
-                    },
-                ],
+            "tokens.resolver.json": oneSet("tokens.json", "part.json#/inner", {
+                written: number(5),
             }),
             "tokens.json": JSON.stringify({
                 base: number(1),
@@ -41,7 +31,6 @@ const tokens = readFromMemory(
             }),
             "part.json": JSON.stringify({ inner: { deep: number(3) } }),
         },
-        entryFile: "tokens.resolver.json",
     },
     { generators: [steps] },
 );
@@ -52,29 +41,32 @@ const placeOf = (path: string) => {
 };
 
 describe("where a place is in its file, as a JSON path", () => {
-    it("is the token's member", () => {
-        expect(placeOf("base")).toStrictEqual(["base"]);
-        expect(placeOf("color.x")).toStrictEqual(["color", "x"]);
-    });
-
-    it("is its $root member for a root token", () => {
-        expect(placeOf("color.$root")).toStrictEqual(["color", "$root"]);
-    });
-
-    it("is the member in the group it comes from, for a token a group inherits", () => {
-        expect(placeOf("b.x")).toStrictEqual(["color", "x"]);
-    });
-
-    it("is the extension that makes a generated token", () => {
-        expect(placeOf("g.a")).toStrictEqual(["g", "$extensions", "com.example", "steps"]);
-    });
-
-    it("starts at the top of the file, for a source that is part of one", () => {
-        expect(placeOf("deep")).toStrictEqual(["inner", "deep"]);
-    });
-
-    it("is in the resolver, for a token written there", () => {
-        expect(placeOf("written")).toStrictEqual(["resolutionOrder", 0, "sources", 2, "written"]);
+    it.for([
+        ["is the token's member", "base", ["base"]],
+        ["is the token's member, in a group", "color.x", ["color", "x"]],
+        ["is its $root member for a root token", "color.$root", ["color", "$root"]],
+        [
+            "is the member in the group it comes from, for a token a group inherits",
+            "b.x",
+            ["color", "x"],
+        ],
+        [
+            "is the extension that makes a generated token",
+            "g.a",
+            ["g", "$extensions", "com.example", "steps"],
+        ],
+        [
+            "starts at the top of the file, for a source that is part of one",
+            "deep",
+            ["inner", "deep"],
+        ],
+        [
+            "is in the resolver, for a token written there",
+            "written",
+            ["resolutionOrder", 0, "sources", 2, "written"],
+        ],
+    ] as const)("%s", ([, path, jsonPath]) => {
+        expect(placeOf(path)).toStrictEqual(jsonPath);
     });
 
     it("is the group's member for a group, and none for the top of a file", () => {
@@ -99,21 +91,18 @@ describe("where a reference is in its file, as a JSON path", () => {
     const referencesOf = (path: string) =>
         read.getTokenOrGroup(path)?.references.map((reference) => getJsonPath(tokens, reference));
 
-    it("is the value that writes it", () => {
-        expect(referencesOf("color.x")).toStrictEqual([["color", "x", "$value"]]);
-        expect(referencesOf("pointer")).toStrictEqual([["pointer", "$value"]]);
-    });
-
-    it("is the part that writes it, in a composite", () => {
-        expect(referencesOf("line")).toStrictEqual([["line", "$value", "color"]]);
-    });
-
-    it("is a group's $extends", () => {
-        expect(referencesOf("b")).toStrictEqual([["b", "$extends"]]);
-    });
-
-    it("is the extension that makes a generated token's reference", () => {
-        expect(referencesOf("g.a")).toStrictEqual([["g", "$extensions", "com.example", "steps"]]);
+    it.for([
+        ["is the value that writes it", "color.x", ["color", "x", "$value"]],
+        ["is the value that writes it, for a pointer", "pointer", ["pointer", "$value"]],
+        ["is the part that writes it, in a composite", "line", ["line", "$value", "color"]],
+        ["is a group's $extends", "b", ["b", "$extends"]],
+        [
+            "is the extension that makes a generated token's reference",
+            "g.a",
+            ["g", "$extensions", "com.example", "steps"],
+        ],
+    ] as const)("%s", ([, path, jsonPath]) => {
+        expect(referencesOf(path)).toStrictEqual([jsonPath]);
     });
 
     it("is on each reference the design tokens give for a path, an inherited one once, where it is written", () => {
@@ -135,9 +124,7 @@ describe("where a reference is in its file, as a JSON path", () => {
 
 describe("asking for a JSON path", () => {
     it("is refused for a place from a read of other text, which writes nothing there", () => {
-        const other = readFromMemory({
-            files: { "tokens.json": JSON.stringify({ gap: number(9) }) },
-        });
+        const other = oneFile({ gap: number(9) });
         const place = other.getPermutation().getToken("gap")?.winningDefinition;
         const elsewhere = readFromMemory({ files: { "tokens.json": "{}" } });
 

@@ -1,35 +1,17 @@
-import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { findTokenFiles } from "../../src/node.js";
+import { useTempFolder } from "./temp-folder.js";
 
-let folder: string;
-
-beforeEach(async () => {
-    folder = await realpath(await mkdtemp(join(tmpdir(), "dtcg-find-tokens-")));
-});
-
-afterEach(async () => {
-    await rm(folder, { recursive: true, force: true });
-});
+const folder = useTempFolder("dtcg-find-tokens-");
+const { at, files } = folder;
 
 const tokens = JSON.stringify({ space: { $type: "dimension", s: { $value: "4px" } } });
 const packageJson = '{ "name": "site", "type": "module" }';
 
-async function files(written: Record<string, string>): Promise<void> {
-    for (const [path, text] of Object.entries(written)) {
-        await mkdir(dirname(join(folder, path)), { recursive: true });
-        await writeFile(join(folder, path), text);
-    }
-}
-
-const at = (path: string) => join(folder, path);
-
 describe("findTokenFiles", () => {
     it("finds the token files, in order, however deep", async () => {
         await files({ "tokens/space.json": tokens, "tokens/a/color.json": tokens });
-        expect(await findTokenFiles(folder)).toStrictEqual({
+        expect(await findTokenFiles(folder.path)).toStrictEqual({
             tokenFiles: [at("tokens/a/color.json"), at("tokens/space.json")],
             otherFiles: [],
         });
@@ -45,7 +27,7 @@ describe("findTokenFiles", () => {
             "described.json": JSON.stringify({ old: { $deprecated: true, $description: "gone" } }),
             "extended.json": JSON.stringify({ dark: { $extends: "{light}" } }),
         });
-        expect((await findTokenFiles(folder)).tokenFiles).toStrictEqual([
+        expect((await findTokenFiles(folder.path)).tokenFiles).toStrictEqual([
             at("described.json"),
             at("extended.json"),
             at("groups.json"),
@@ -66,7 +48,7 @@ describe("findTokenFiles", () => {
             }),
             "tokens.json": tokens,
         });
-        expect(await findTokenFiles(folder)).toStrictEqual({
+        expect(await findTokenFiles(folder.path)).toStrictEqual({
             tokenFiles: [at("tokens.json")],
             otherFiles: [at("config.schema.json"), at("package.json"), at("tsconfig.json")],
         });
@@ -74,7 +56,7 @@ describe("findTokenFiles", () => {
 
     it("finds files ending .tokens, as the spec recommends", async () => {
         await files({ "brand.tokens": tokens, "space.tokens.json": tokens, "notes.txt": tokens });
-        expect((await findTokenFiles(folder)).tokenFiles).toStrictEqual([
+        expect((await findTokenFiles(folder.path)).tokenFiles).toStrictEqual([
             at("brand.tokens"),
             at("space.tokens.json"),
         ]);
@@ -82,7 +64,9 @@ describe("findTokenFiles", () => {
 
     it("still finds a token file it can't parse, so its read says why", async () => {
         await files({ "cut-short.json": '{ "s": { "$value": "4px" ' });
-        expect((await findTokenFiles(folder)).tokenFiles).toStrictEqual([at("cut-short.json")]);
+        expect((await findTokenFiles(folder.path)).tokenFiles).toStrictEqual([
+            at("cut-short.json"),
+        ]);
     });
 
     it("skips dependency, build and hidden folders", async () => {
@@ -94,7 +78,7 @@ describe("findTokenFiles", () => {
             ".cache/tokens.json": tokens,
             "tokens.json": tokens,
         });
-        expect(await findTokenFiles(folder)).toStrictEqual({
+        expect(await findTokenFiles(folder.path)).toStrictEqual({
             tokenFiles: [at("tokens.json")],
             otherFiles: [],
         });
@@ -110,7 +94,7 @@ describe("findTokenFiles", () => {
 
     it("counts a file once when it is given and also inside a folder given", async () => {
         await files({ "tokens/space.json": tokens });
-        const spelled = `${folder}/tokens/./space.json`;
+        const spelled = `${folder.path}/tokens/./space.json`;
         expect((await findTokenFiles([at("tokens"), spelled])).tokenFiles).toStrictEqual([
             at("tokens/space.json"),
         ]);

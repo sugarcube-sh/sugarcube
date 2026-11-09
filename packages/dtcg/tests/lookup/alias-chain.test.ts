@@ -1,25 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { type Input, readFromMemory } from "../../src/index.js";
+import { lightDark } from "../token-files.js";
 
 const color = (value: unknown) => ({ $type: "color", $value: value });
 const red = { colorSpace: "srgb", components: [1, 0, 0] };
 
-const resolver = {
-    version: "2025.10",
-    resolutionOrder: [
-        { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-        {
-            type: "modifier",
-            name: "theme",
-            default: "light",
-            contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-        },
-    ],
-};
-
 const tokens = readFromMemory({
     files: {
-        "tokens.resolver.json": JSON.stringify(resolver),
+        "tokens.resolver.json": lightDark(["base.json"], ["dark.json"]),
         "base.json": JSON.stringify({
             palette: { red: color(red), rose: color(red) },
             brand: color("{palette.red}"),
@@ -37,7 +25,6 @@ const tokens = readFromMemory({
         }),
         "dark.json": JSON.stringify({ brand: color("{palette.rose}") }),
     },
-    entryFile: "tokens.resolver.json",
 });
 
 const aliasChain = (path: string, input?: Input) =>
@@ -52,12 +39,12 @@ describe("a token's aliasChain", () => {
     });
 
     it("follows each permutation's own references", () => {
-        expect(aliasChain("text", { theme: "dark" })).toStrictEqual([
+        expect(aliasChain("text", { mode: "dark" })).toStrictEqual([
             "text",
             "brand",
             "palette.rose",
         ]);
-        const dark = tokens.getPermutation({ theme: "dark" });
+        const dark = tokens.getPermutation({ mode: "dark" });
         const text = dark.getToken("text");
         expect(text?.aliasChain[1]).toBe(dark.getToken("brand"));
     });

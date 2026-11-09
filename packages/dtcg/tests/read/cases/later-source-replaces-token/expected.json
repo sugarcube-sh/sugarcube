@@ -1,6 +1,37 @@
 {
   "entry": "tokens.resolver.json",
-  "spec": "Resolver 4.1.4 and 6.2, contract 02: a later source replaces a token whole, so dark's color.brand keeps nothing of light's: its value has no hex (Terrazzo keeps light's) and no description. The token keeps its place in the order. Groups merge: each property from the latest source that sets it, $extensions key by key, and every declaration listed",
+  "spec": "Resolver 4.1.4 and 6.2, contract 02: a later source replaces a token whole, so dark's color.brand keeps nothing of light's: its value has no hex (Terrazzo keeps light's) and no description. The token keeps its place in the order. Groups merge: each property from the latest source that sets it, $extensions key by key, and every declaration listed. Resolver 4.1.4: a set's sources are read in the order it lists them, so brand.json comes after base.json, replacing color.muted and the org.other extension; each extension key is written where the last source that writes it is",
+  "sources": [
+    {
+      "file": "base.json",
+      "sets": [
+        {
+          "name": "base"
+        }
+      ],
+      "readBy": "every-context"
+    },
+    {
+      "file": "brand.json",
+      "sets": [
+        {
+          "name": "base"
+        }
+      ],
+      "readBy": "every-context"
+    },
+    {
+      "file": "dark.json",
+      "sets": [],
+      "readBy": [
+        {
+          "modifier": "theme",
+          "name": "dark"
+        }
+      ],
+      "modifier": "theme"
+    }
+  ],
   "permutations": [
     {
       "tokens": [
@@ -37,7 +68,7 @@
           "asWritten": {
             "value": {
               "colorSpace": "srgb",
-              "components": [0.5, 0.5, 0.5]
+              "components": [0.4, 0.4, 0.4]
             }
           },
           "definitions": [
@@ -47,12 +78,19 @@
                 "file": "base.json",
                 "valueAfter": "\"muted\":"
               }
+            },
+            {
+              "source": 1,
+              "span": {
+                "file": "brand.json",
+                "valueAfter": "\"muted\":"
+              }
             }
           ]
         }
       ],
       "groups": [
-        { "path": "" },
+        { "path": "", "extensionDefinitions": {} },
         {
           "path": "color",
           "type": "color",
@@ -61,7 +99,7 @@
             "com.example": {
               "tier": 1
             },
-            "org.other": true
+            "org.other": false
           },
           "definitions": [
             {
@@ -70,8 +108,23 @@
                 "file": "base.json",
                 "valueAfter": "\"color\":"
               }
+            },
+            {
+              "source": 1,
+              "span": {
+                "file": "brand.json",
+                "valueAfter": "\"color\":"
+              }
             }
-          ]
+          ],
+          "extensionDefinitions": {
+            "com.example": {
+              "source": 0
+            },
+            "org.other": {
+              "source": 1
+            }
+          }
         }
       ]
     },
@@ -100,7 +153,7 @@
               }
             },
             {
-              "source": 1,
+              "source": 2,
               "span": {
                 "file": "dark.json",
                 "valueAfter": "\"brand\":"
@@ -114,7 +167,7 @@
           "asWritten": {
             "value": {
               "colorSpace": "srgb",
-              "components": [0.5, 0.5, 0.5]
+              "components": [0.4, 0.4, 0.4]
             }
           },
           "definitions": [
@@ -124,12 +177,19 @@
                 "file": "base.json",
                 "valueAfter": "\"muted\":"
               }
+            },
+            {
+              "source": 1,
+              "span": {
+                "file": "brand.json",
+                "valueAfter": "\"muted\":"
+              }
             }
           ]
         }
       ],
       "groups": [
-        { "path": "" },
+        { "path": "", "extensionDefinitions": {} },
         {
           "path": "color",
           "type": "color",
@@ -138,7 +198,7 @@
             "com.example": {
               "mode": "dark"
             },
-            "org.other": true
+            "org.other": false
           },
           "definitions": [
             {
@@ -151,11 +211,26 @@
             {
               "source": 1,
               "span": {
+                "file": "brand.json",
+                "valueAfter": "\"color\":"
+              }
+            },
+            {
+              "source": 2,
+              "span": {
                 "file": "dark.json",
                 "valueAfter": "\"color\":"
               }
             }
-          ]
+          ],
+          "extensionDefinitions": {
+            "com.example": {
+              "source": 2
+            },
+            "org.other": {
+              "source": 1
+            }
+          }
         }
       ]
     }

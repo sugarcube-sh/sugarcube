@@ -1,0 +1,7 @@
+{
+  "color": {
+    "$type": "color",
+    "blue": { "$value": { "colorSpace": "srgb", "components": [0.2, 0.4, 0.8] } },
+    "primary": { "$value": "{color.blue}" }
+  }
+}

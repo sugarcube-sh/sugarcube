@@ -1,10 +1,11 @@
 import { EventEmitter } from "node:events";
-import { mkdtemp, realpath, rm, stat, utimes, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { stat, utimes, writeFile } from "node:fs/promises";
+import { relative } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type DesignTokens } from "../../src/index.js";
 import { type ReadEvent, type TokensOnDisk, createLiveTokens } from "../../src/node.js";
+import { oneSet } from "../token-files.js";
+import { useTempFolder } from "./temp-folder.js";
 
 const afterRead = vi.hoisted(() => ({ once: undefined as (() => Promise<void>) | undefined }));
 
@@ -24,40 +25,25 @@ vi.mock("../../src/node/read.js", async (importOriginal) => {
 
 const color = (hex: string) => ({ $type: "color", $value: hex });
 
-let folder: string;
-const outside: string[] = [];
+const folder = useTempFolder("dtcg-live-");
+let entryFile: string;
 
-afterEach(async () => {
-    for (const each of [folder, ...outside.splice(0)]) {
-        await rm(each, { recursive: true, force: true });
-    }
-});
-
-async function writtenEntry(): Promise<string> {
-    folder = await realpath(await mkdtemp(join(tmpdir(), "dtcg-live-")));
+beforeEach(async () => {
     await tokens("base.json", { color: { ink: color("#111111") } });
     await tokens("more.json", { color: { paper: color("#eeeeee") } });
     await resolver(["base.json"]);
-    return join(folder, "tokens.resolver.json");
-}
+    entryFile = folder.at("tokens.resolver.json");
+});
 
 function tokens(file: string, json: unknown) {
-    return writeFile(join(folder, file), JSON.stringify(json));
+    return writeFile(folder.at(file), JSON.stringify(json));
 }
 
 function resolver(files: string[]) {
-    return writeFile(
-        join(folder, "tokens.resolver.json"),
-        JSON.stringify({
-            version: "2025.10",
-            resolutionOrder: [
-                { type: "set", name: "base", sources: files.map((file) => ({ $ref: file })) },
-            ],
-        }),
-    );
+    return writeFile(folder.at("tokens.resolver.json"), oneSet(...files));
 }
 
-const disk = (file: string) => join(folder, file).replaceAll("\\", "/");
+const disk = (file: string) => folder.at(file).replaceAll("\\", "/");
 
 function standIn() {
     const added: string[] = [];
@@ -70,7 +56,10 @@ function standIn() {
     return { watcher, added, save };
 }
 
-function live(source: TokensOnDisk | (() => TokensOnDisk), whenReading?: (read: number) => void) {
+function live(
+    source: TokensOnDisk | (() => TokensOnDisk) = { entryFile },
+    whenReading?: (read: number) => void,
+) {
     const errors: unknown[] = [];
     let started = 0;
     const asked = () => {
@@ -82,7 +71,7 @@ function live(source: TokensOnDisk | (() => TokensOnDisk), whenReading?: (read: 
     current.onRead((read, event) => reads.push({ tokens: read, event }));
     const { watcher, added, save } = standIn();
     current.watch(watcher);
-    return { live: current, errors, reads, watcher, added, save };
+    return { current, errors, reads, watcher, added, save };
 }
 
 const hexOf = (opened: DesignTokens) =>
@@ -90,38 +79,9 @@ const hexOf = (opened: DesignTokens) =>
 
 describe("design tokens kept current with their files", () => {
     it("reads at once, and reads again when a file it lists is saved", async () => {
-        const entryFile = await writtenEntry();
-        const {
-            live: current,
-            reads,
-            save,
-        } = live({ entryFile, options: { hexStringColors: true } });
+        const { current, reads, save } = live({ entryFile, options: { hexStringColors: true } });
         const first = await current.getTokens();
         expect(first.files).toStrictEqual(["tokens.resolver.json", "base.json"]);
-
-        await tokens("base.json", { color: { ink: color("#222222") } });
-        save("base.json");
-        const next = await current.getTokens();
-
-        expect(hexOf(next)).toContain("#222222");
-        expect(reads.map(({ tokens: read }) => read)).toStrictEqual([next]);
-    });
-
-    it("keeps the text of each file it read with the design tokens", async () => {
-        const entryFile = await writtenEntry();
-        const { live: current } = live({ entryFile });
-        const first = await current.getTokens();
-
-        expect(Object.keys(first.toMemory().files)).toStrictEqual(first.files);
-        expect(first.getText("base.json")).toBe(
-            JSON.stringify({ color: { ink: color("#111111") } }),
-        );
-    });
-
-    it("holds the text a save wrote, with the design tokens read from it", async () => {
-        const entryFile = await writtenEntry();
-        const { live: current, save } = live({ entryFile });
-        await current.getTokens();
 
         await tokens("base.json", { color: { ink: color("#222222") } });
         save("base.json");
@@ -131,11 +91,11 @@ describe("design tokens kept current with their files", () => {
         expect(next.getText("base.json")).toBe(
             JSON.stringify({ color: { ink: color("#222222") } }),
         );
+        expect(reads.map(({ tokens: read }) => read)).toStrictEqual([next]);
     });
 
     it("reads again when a file it lists is added or deleted", async () => {
-        const entryFile = await writtenEntry();
-        const { live: current, reads, watcher } = live({ entryFile });
+        const { current, reads, watcher } = live();
         await current.getTokens();
 
         watcher.emit("unlink", disk("base.json"));
@@ -147,12 +107,7 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("collapses saves during a read into exactly one more read, the one listeners hear", async () => {
-        const entryFile = await writtenEntry();
-        const {
-            live: current,
-            reads,
-            save,
-        } = live({ entryFile }, (read) => {
+        const { current, reads, save } = live({ entryFile }, (read) => {
             if (read !== 1) return;
             save("base.json");
             save("tokens.resolver.json");
@@ -169,13 +124,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("tells listeners of a read only when no read waiting to start has replaced it", async () => {
-        const entryFile = await writtenEntry();
         let hexStringColors = false;
-        const {
-            live: current,
-            reads,
-            save,
-        } = live(
+        const { current, reads, save } = live(
             () => ({ entryFile, options: { hexStringColors } }),
             (read) => {
                 if (read !== 1) return;
@@ -195,13 +145,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("waits for a read waiting to start before answering with the design tokens", async () => {
-        const entryFile = await writtenEntry();
         let answer: Promise<DesignTokens> | undefined;
-        const {
-            live: current,
-            reads,
-            save,
-        } = live({ entryFile }, (read) => {
+        const { current, reads, save } = live({ entryFile }, (read) => {
             if (read !== 1) return;
             save("base.json");
             answer = current.getTokens();
@@ -216,11 +161,10 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("reads again when a read caught a file half-saved and the watcher never says", async () => {
-        const entryFile = await writtenEntry();
-        const { live: current, reads, watcher } = live({ entryFile });
+        const { current, reads, watcher } = live();
         await current.getTokens();
 
-        const path = join(folder, "base.json");
+        const path = folder.at("base.json");
         await writeFile(path, "");
         const looked = await stat(path);
         afterRead.once = async () => {
@@ -239,11 +183,10 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("reads a file that is broken, and left so, only once", async () => {
-        const entryFile = await writtenEntry();
-        const { live: current, reads, save } = live({ entryFile });
+        const { current, reads, save } = live();
         await current.getTokens();
 
-        await writeFile(join(folder, "base.json"), "{");
+        await writeFile(folder.at("base.json"), "{");
         save("base.json");
 
         await vi.waitFor(() => expect(reads).toHaveLength(1));
@@ -253,12 +196,7 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("reads again when a file a read gains was saved during that read", async () => {
-        const entryFile = await writtenEntry();
-        const {
-            live: current,
-            reads,
-            save,
-        } = live({ entryFile }, (read) => {
+        const { current, reads, save } = live({ entryFile }, (read) => {
             if (read === 1) save("more.json");
         });
         await current.getTokens();
@@ -273,8 +211,7 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("does not read again for a file the design tokens never listed", async () => {
-        const entryFile = await writtenEntry();
-        const { live: current, reads, save } = live({ entryFile });
+        const { current, reads, save } = live();
         const first = await current.getTokens();
 
         save("more.json");
@@ -285,9 +222,8 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("does not read again for a file the design tokens no longer list", async () => {
-        const entryFile = await writtenEntry();
         await resolver(["base.json", "more.json"]);
-        const { live: current, reads, save } = live({ entryFile });
+        const { current, reads, save } = live();
         await current.getTokens();
 
         await resolver(["base.json"]);
@@ -300,8 +236,7 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("names the saved file as the design tokens do, and times the read", async () => {
-        const entryFile = await writtenEntry();
-        const { live: current, reads, save } = live({ entryFile });
+        const { current, reads, save } = live();
         await current.getTokens();
 
         save("base.json");
@@ -317,66 +252,52 @@ describe("design tokens kept current with their files", () => {
         expect(reads[1]?.event.ms).toBeGreaterThan(0);
     });
 
-    it("matches a path the watcher gives with backslashes", async () => {
-        const entryFile = await writtenEntry();
-        const { live: current, reads, watcher } = live({ entryFile });
+    it.for([
+        [
+            "matches a path the watcher gives with backslashes",
+            (file: string) => disk(file).replaceAll("/", "\\"),
+        ],
+        [
+            "matches a path the watcher gives relative to the working directory",
+            (file: string) => relative(process.cwd(), folder.at(file)),
+        ],
+    ] as const)("%s", async ([, given]) => {
+        const { current, reads, watcher } = live();
         await current.getTokens();
 
-        watcher.emit("change", disk("base.json").replaceAll("/", "\\"));
-        await current.getTokens();
-
-        expect(reads.map(({ event }) => event.file)).toStrictEqual(["base.json"]);
-    });
-
-    it("matches a path the watcher gives relative to the working directory", async () => {
-        const entryFile = await writtenEntry();
-        const { live: current, reads, watcher } = live({ entryFile });
-        await current.getTokens();
-
-        watcher.emit("change", relative(process.cwd(), join(folder, "base.json")));
+        watcher.emit("change", given("base.json"));
         await current.getTokens();
 
         expect(reads.map(({ event }) => event.file)).toStrictEqual(["base.json"]);
     });
 
-    it("watches and matches a file named from the root", async () => {
-        const entryFile = await writtenEntry();
-        const elsewhere = await realpath(await mkdtemp(join(tmpdir(), "dtcg-live-outside-")));
-        outside.push(elsewhere);
-        const brand = join(elsewhere, "brand.json").replaceAll("\\", "/");
-        await writeFile(brand, JSON.stringify({ brand: color("#333333") }));
-        await resolver(["base.json", brand]);
-        const { live: current, reads, watcher, added } = live({ entryFile });
-        await current.getTokens();
+    describe("with a file outside the entry's folder", () => {
+        const elsewhere = useTempFolder("dtcg-live-outside-");
 
-        watcher.emit("change", brand);
-        await current.getTokens();
+        it.for([
+            ["watches and matches a file named from the root", (brand: string) => brand],
+            [
+                "watches a file named relative to a folder above the entry's",
+                (brand: string) => relative(folder.path, brand).replaceAll("\\", "/"),
+            ],
+        ] as const)("%s", async ([, nameOf]) => {
+            const brand = elsewhere.at("brand.json").replaceAll("\\", "/");
+            await writeFile(brand, JSON.stringify({ brand: color("#333333") }));
+            const name = nameOf(brand);
+            await resolver(["base.json", name]);
+            const { current, reads, watcher, added } = live();
+            await current.getTokens();
 
-        expect(added).toContain(brand);
-        expect(reads.map(({ event }) => event.file)).toStrictEqual([brand]);
-    });
+            watcher.emit("change", brand);
+            await current.getTokens();
 
-    it("watches a file named relative to a folder above the entry's", async () => {
-        const entryFile = await writtenEntry();
-        const elsewhere = await realpath(await mkdtemp(join(tmpdir(), "dtcg-live-outside-")));
-        outside.push(elsewhere);
-        const brand = join(elsewhere, "brand.json");
-        await writeFile(brand, JSON.stringify({ brand: color("#333333") }));
-        const name = relative(folder, brand).replaceAll("\\", "/");
-        await resolver(["base.json", name]);
-        const { live: current, reads, watcher, added } = live({ entryFile });
-        await current.getTokens();
-
-        watcher.emit("change", brand.replaceAll("\\", "/"));
-        await current.getTokens();
-
-        expect(added).toContain(brand.replaceAll("\\", "/"));
-        expect(reads.map(({ event }) => event.file)).toStrictEqual([name]);
+            expect(added).toContain(brand);
+            expect(reads.map(({ event }) => event.file)).toStrictEqual([name]);
+        });
     });
 
     it("adds the files it lists to the watcher at once, then each file a later read gains", async () => {
-        const entryFile = await writtenEntry();
-        const { live: current, added, save } = live({ entryFile });
+        const { current, added, save } = live();
         await current.getTokens();
         const now = [...added];
 
@@ -389,7 +310,6 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("adds its files to a watcher given before the first read ends", async () => {
-        const entryFile = await writtenEntry();
         const current = createLiveTokens({ entryFile }, { onError: () => {} });
         const { watcher, added } = standIn();
         current.watch(watcher);
@@ -399,8 +319,9 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("reads an entry given relative to the working directory", async () => {
-        const entryFile = relative(process.cwd(), await writtenEntry());
-        const { live: current, reads, save, added } = live({ entryFile });
+        const { current, reads, save, added } = live({
+            entryFile: relative(process.cwd(), entryFile),
+        });
         await current.getTokens();
 
         save("base.json");
@@ -411,10 +332,9 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("asks the source again when told to read again", async () => {
-        const entryFile = await writtenEntry();
         let hexStringColors = false;
         let asked = 0;
-        const { live: current, reads } = live(() => {
+        const { current, reads } = live(() => {
             asked += 1;
             return { entryFile, options: { hexStringColors } };
         });
@@ -432,8 +352,7 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("stops calling a listener once it unsubscribes", async () => {
-        const entryFile = await writtenEntry();
-        const { live: current, save } = live({ entryFile });
+        const { current, save } = live();
         await current.getTokens();
         const seen: DesignTokens[] = [];
         const stop = current.onRead((read) => seen.push(read));
@@ -448,8 +367,7 @@ describe("design tokens kept current with their files", () => {
     });
 
     it("gives what a listener throws to onError, and still calls the others", async () => {
-        const entryFile = await writtenEntry();
-        const { live: current, errors, reads, save } = live({ entryFile });
+        const { current, errors, reads, save } = live();
         await current.getTokens();
         const broke = new Error("the listener broke");
         current.onRead(() => {
@@ -466,20 +384,23 @@ describe("design tokens kept current with their files", () => {
         expect(seen).toHaveLength(1);
     });
 
-    it("gives a read that rejects to onError, with no unhandled rejection", async () => {
-        const entryFile = await writtenEntry();
+    describe("when a read rejects", () => {
         const unhandled: unknown[] = [];
         const onUnhandled = (reason: unknown) => unhandled.push(reason);
-        process.on("unhandledRejection", onUnhandled);
-        try {
+
+        beforeEach(() => {
+            unhandled.length = 0;
+            process.on("unhandledRejection", onUnhandled);
+        });
+
+        afterEach(() => {
+            process.off("unhandledRejection", onUnhandled);
+        });
+
+        it("gives a read that rejects to onError, with no unhandled rejection", async () => {
             const failure = new Error("no source");
             let fail = false;
-            const {
-                live: current,
-                errors,
-                reads,
-                save,
-            } = live(() => {
+            const { current, errors, reads, save } = live(() => {
                 if (fail) throw failure;
                 return { entryFile };
             });
@@ -503,16 +424,9 @@ describe("design tokens kept current with their files", () => {
             save("base.json");
             await current.getTokens();
             expect(reads).toHaveLength(1);
-        } finally {
-            process.off("unhandledRejection", onUnhandled);
-        }
-    });
+        });
 
-    it("gives a first read that rejects to onError, with no unhandled rejection", async () => {
-        const unhandled: unknown[] = [];
-        const onUnhandled = (reason: unknown) => unhandled.push(reason);
-        process.on("unhandledRejection", onUnhandled);
-        try {
+        it("gives a first read that rejects to onError, with no unhandled rejection", async () => {
             const failure = new Error("no source");
             const errors: unknown[] = [];
             createLiveTokens(
@@ -525,8 +439,6 @@ describe("design tokens kept current with their files", () => {
 
             expect(errors).toStrictEqual([failure]);
             expect(unhandled).toStrictEqual([]);
-        } finally {
-            process.off("unhandledRejection", onUnhandled);
-        }
+        });
     });
 });

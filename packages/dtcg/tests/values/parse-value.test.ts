@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseValue } from "../../src/values.js";
+import { parseValue, tokenTypes } from "../../src/values.js";
 
 describe("a value with no place in a file", () => {
     it("is read with no jsonPath, its problems at the top of the value", () => {
@@ -14,16 +14,22 @@ describe("a value with no place in a file", () => {
     });
 });
 
-describe("parseValue", () => {
-    it("reads a value of the type it is given, references allowed", () => {
-        expect(parseValue("number", 1.5)).toStrictEqual({ ok: true, value: 1.5, ignored: [] });
-        expect(parseValue("number", "{ratio.golden}")).toStrictEqual({
+describe("a reference in place of a whole value", () => {
+    it.for(tokenTypes)("is read for a %s, in either syntax", (type) => {
+        expect(parseValue(type, "{brand.primary}")).toStrictEqual({
             ok: true,
-            value: { syntax: "curly-brace", path: "ratio.golden" },
+            value: { syntax: "curly-brace", path: "brand.primary" },
+            ignored: [],
+        });
+        expect(parseValue(type, { $ref: "#/brand/primary/$value" })).toStrictEqual({
+            ok: true,
+            value: { syntax: "json-pointer", pointer: "#/brand/primary/$value" },
             ignored: [],
         });
     });
+});
 
+describe("parseValue", () => {
     it("reports a value that does not fit the type, as that type's parser does", () => {
         const read = parseValue("dimension", "16px", { jsonPath: ["base"], references: false });
         expect(

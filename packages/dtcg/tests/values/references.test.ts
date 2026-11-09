@@ -50,6 +50,13 @@ describe("parseReference", () => {
         });
     });
 
+    it.for(["brand colors.primary", "color.accent.$root"])(
+        "keeps the path %s as written, spaces and $root included",
+        (path) => {
+            expect(parseReference(`{${path}}`)).toStrictEqual({ syntax: "curly-brace", path });
+        },
+    );
+
     it.for([16, "color.brand", "{}", { $ref: 1 }, { $ref: "#/a", other: 1 }, null])(
         "reads %j as no reference",
         (raw) => {

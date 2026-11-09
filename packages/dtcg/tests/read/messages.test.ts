@@ -1,17 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { diagnosticMessages } from "../../src/error-messages.js";
 import {
-    type Diagnostic,
     type DiagnosticDetailByKind,
     type DiagnosticKind,
     type Generator,
     defineGenerator,
-    readFromMemory,
 } from "../../src/index.js";
+import { oneFile } from "../token-files.js";
 import { valueErrorMessages } from "../../src/values/value-errors.js";
 import { dimensionUnits, durationUnits, lineCaps, strokeStyleKeywords } from "../../src/values.js";
 
-const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
+type Example<K extends DiagnosticKind> = DiagnosticDetailByKind[K] & { message?: string };
+
+const examples: { [K in DiagnosticKind]: Example<K>[] } = {
     "file-not-found": [
         { file: "dark.json" },
         { file: "dark.json", referencedFrom: "tokens.resolver.json" },
@@ -64,19 +65,52 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             context: "blue",
             valid: ["light", "dark"],
         },
-        { reason: "missing-modifier", input: 0, modifier: "theme", valid: ["light", "dark"] },
+        {
+            reason: "missing-modifier",
+            input: 0,
+            modifier: "theme",
+            valid: ["light", "dark"],
+            message:
+                "the input doesn't choose a context for the modifier `theme`, which has no default: choose `light` or `dark`",
+        },
+        {
+            reason: "missing-modifier",
+            input: 0,
+            modifier: "theme",
+            valid: ["light", "dark", "dim"],
+            message:
+                "the input doesn't choose a context for the modifier `theme`, which has no default: choose `light`, `dark` or `dim`",
+        },
         { reason: "not-a-string", input: 0, modifier: "beta" },
     ],
     "invalid-name": [
         { name: "$brand", character: "$" },
         { name: "a.b", character: "." },
-        { name: "" },
+        { name: "", message: "a name can't be empty" },
     ],
     "token-and-group": [
-        { reason: "child", child: "light" },
-        { reason: "declared", here: "token" },
-        { reason: "declared", here: "group" },
-        { reason: "ref", ref: "#/base" },
+        {
+            reason: "child",
+            child: "light",
+            message:
+                "`light` is inside a token (it has a `$value`), and a token cannot hold tokens or groups",
+        },
+        {
+            reason: "declared",
+            here: "token",
+            message: "this is a token here but a group in another file",
+        },
+        {
+            reason: "declared",
+            here: "group",
+            message: "this is a group here but a token in another file",
+        },
+        {
+            reason: "ref",
+            ref: "#/base",
+            message:
+                "this has a `$ref`, which makes it a token, and a token cannot hold tokens or groups; to extend a group, use `$extends`",
+        },
     ],
     "invalid-member": [
         { name: "brand", found: "string" },
@@ -87,10 +121,24 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { property: "$deprecated", expected: "boolean-or-string" },
         { property: "$extensions", expected: "object" },
         { property: "$extends", expected: "reference" },
-        { property: "$extends", expected: "reference", reference: "{base}" },
+        {
+            property: "$extends",
+            expected: "reference",
+            reference: "{base}",
+            message:
+                '`$extends` must be a reference, such as "{group}" or { "$ref": "#/group" }; did you mean `{base}`?',
+        },
     ],
     "missing-type": [{}],
-    "unknown-type": [{ type: "colour" }, { type: "colour", similar: "color" }, { type: "" }],
+    "unknown-type": [
+        { type: "colour" },
+        {
+            type: "colour",
+            similar: "color",
+            message: "`colour` is not a token type; did you mean `color`?",
+        },
+        { type: "" },
+    ],
     "invalid-value": [
         { jsonPath: ["$value"], type: "dimension", reason: "wrong-shape", value: 16 },
         {
@@ -99,6 +147,8 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             reason: "wrong-shape",
             value: "color.ink",
             reference: "{color.ink}",
+            message:
+                "a color must be an object with `colorSpace` and `components`, not the string `color.ink`; did you mean `{color.ink}`?",
         },
         { jsonPath: ["$value"], type: "shadow", reason: "wrong-shape", value: "0 1px 2px black" },
         { jsonPath: ["$value"], type: "typography", reason: "wrong-shape", value: [] },
@@ -199,6 +249,7 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             reason: "hex-not-six-digits",
             value: "#e1d",
             sixDigits: "#ee11dd",
+            message: "`#e1d` is not a six-digit hex color; did you mean `#ee11dd`?",
         },
         {
             jsonPath: ["$value", "hex"],
@@ -212,6 +263,15 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             reason: "short-hex-string",
             value: "#e1d",
             expanded: "#ee11dd",
+            message: "`#e1d` is not a six-digit hex color; did you mean `#ee11dd`?",
+        },
+        {
+            jsonPath: ["$value"],
+            type: "color",
+            reason: "short-hex-string",
+            value: "#e1d8",
+            expanded: "#ee11dd88",
+            message: "`#e1d8` is not an eight-digit hex color; did you mean `#ee11dd88`?",
         },
         {
             jsonPath: ["$value", "hex"],
@@ -225,12 +285,16 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             reason: "string-with-unit",
             value: "16px",
             asObject: { value: 16, unit: "px" },
+            message:
+                '`16px` is a string, and a dimension must be an object with a value and a unit, such as `{ "value": 16, "unit": "px" }`',
         },
         {
             jsonPath: ["$value"],
             type: "dimension",
             reason: "string-with-unit",
             value: "16em",
+            message:
+                "`16em` is a string, and a dimension must be an object with a value and a unit",
         },
         {
             jsonPath: ["$value"],
@@ -335,21 +399,59 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
             extension: ["sh.sugarcube", "scale"],
             written: "token",
         },
-        { path: "md", from: "", extension: ["sh.sugarcube", "scale"], written: "group" },
+        {
+            path: "md",
+            from: "",
+            extension: ["sh.sugarcube", "scale"],
+            written: "group",
+            message:
+                "`md` is made by `sh.sugarcube.scale` on the top level, so the group written here is not used; change the extension instead",
+        },
     ],
     "missing-reference": [
         { ref: "color.brnad", from: ["color.danger"] },
         { ref: "color.brnad", from: ["color.danger"], similar: "color.brand" },
+        {
+            ref: "color.inc",
+            from: ["color.muted"],
+            similar: "color.ink",
+            message: "`color.inc` does not exist; did you mean `color.ink`?",
+        },
+        {
+            ref: "#/color/inc/$value",
+            from: ["color.muted"],
+            similar: "#/color/ink/$value",
+            message: "`#/color/inc/$value` does not exist; did you mean `#/color/ink/$value`?",
+        },
     ],
     "not-a-group": [{ ref: "color.brand" }],
     "malformed-pointer": [
-        { ref: "#color/ink", reason: "no-leading-slash", corrected: "#/color/ink" },
+        {
+            ref: "#color/ink",
+            reason: "no-leading-slash",
+            corrected: "#/color/ink",
+            message:
+                "`#color/ink` is not a JSON Pointer, which starts with `#/`; write it as `#/color/ink`",
+        },
         { ref: "#missing/$value", reason: "no-leading-slash" },
         { ref: "#/a~b/$value", reason: "bad-escape", corrected: "#/a~0b/$value" },
+        {
+            ref: "#/a~b",
+            reason: "bad-escape",
+            corrected: "#/a~0b",
+            message:
+                "`#/a~b` is not a JSON Pointer: in one, `~` is written `~0` and `/` is written `~1`; write it as `#/a~0b`",
+        },
         { ref: "all.json#color", reason: "no-leading-slash", corrected: "all.json#/color" },
     ],
     "not-a-token": [{ ref: "color.accent" }],
-    "not-a-value": [{ ref: "#/base", corrected: "#/base/$value" }],
+    "not-a-value": [
+        {
+            ref: "#/base",
+            corrected: "#/base/$value",
+            message: "`#/base` reaches a token, not its value; write it as `#/base/$value`",
+        },
+    ],
     "ref-and-value": [{}],
     "reference-to-several": [{ ref: "shadow.layered", count: 3 }],
     "circular-reference": [{ chain: ["color.a", "color.b", "color.a"] }],
@@ -358,10 +460,45 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
     "unknown-property": [
         { property: "colour", owner: "resolver" },
         { property: "descripton", owner: "set" },
-        { property: "descripton", owner: "set", similar: "description" },
+        {
+            property: "descripton",
+            owner: "set",
+            similar: "description",
+            message: "`descripton` is not a property of a set; did you mean `description`?",
+        },
         { property: "defualt", owner: "modifier" },
-        { property: "$whatever", owner: "token" },
-        { property: "$whatever", owner: "group" },
+        {
+            property: "$whatever",
+            owner: "token",
+            message: "`$whatever` is not a property of a token: put your own data in `$extensions`",
+        },
+        {
+            property: "$whatever",
+            owner: "group",
+            message: "`$whatever` is not a property of a group: put your own data in `$extensions`",
+        },
+        {
+            property: "owner",
+            owner: "set",
+            message: "`owner` is not a property of a set: put your own data in `$extensions`",
+        },
+        {
+            property: "$extends",
+            owner: "token",
+            message: "`$extends` is not a property of a token",
+        },
+        { property: "$value", owner: "group", message: "`$value` is not a property of a group" },
+        {
+            property: "$metadata",
+            owner: "group",
+            ignored: true,
+            message: "`$metadata` is not a property of a group, so it is ignored",
+        },
+        {
+            property: "owner",
+            owner: "resolver",
+            message: "`owner` is not a property of the resolver",
+        },
         {
             property: "paragraphSpacing",
             type: "typography",
@@ -370,10 +507,37 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
         { property: "fluid", type: "dimension", jsonPath: ["$value", "width", "fluid"] },
     ],
     "misspelt-property": [
-        { written: "value", property: "$value", owner: "token" },
+        {
+            written: "value",
+            property: "$value",
+            owner: "token",
+            message: "`value` is not a token property; did you mean `$value`?",
+        },
         { written: "type", property: "$type", owner: "group" },
+        {
+            written: "$tpye",
+            property: "$type",
+            owner: "group",
+            message: "`$tpye` is not a group property; did you mean `$type`?",
+        },
     ],
-    "permutation-limit": [{ count: 16384, limit: 64, built: 15 }],
+    "permutation-limit": [
+        { count: 16384, limit: 64, built: 15 },
+        {
+            count: 64,
+            limit: 32,
+            built: 7,
+            message:
+                "the modifiers make 64 combinations, more than the limit of 32, so each context was built on its own instead: 7 permutations",
+        },
+        {
+            count: 64,
+            limit: 32,
+            built: 1,
+            message:
+                "the modifiers make 64 combinations, more than the limit of 32, so each context was built on its own instead: 1 permutation",
+        },
+    ],
     "not-in-resolution-order": [
         { item: "set", name: "palette" },
         { item: "modifier", name: "density" },
@@ -382,9 +546,10 @@ const examples: { [K in DiagnosticKind]: DiagnosticDetailByKind[K][] } = {
 };
 
 const messages = (Object.keys(examples) as DiagnosticKind[]).flatMap((kind) =>
-    examples[kind].map((detail) => ({
-        kind,
+    examples[kind].map(({ message: expected, ...detail }: Example<DiagnosticKind>) => ({
+        kind: "reason" in detail ? `${kind}, ${String(detail.reason)}` : kind,
         message: (diagnosticMessages[kind].message as (detail: unknown) => string)(detail),
+        expected,
     })),
 );
 
@@ -404,266 +569,18 @@ describe("diagnostic messages", () => {
         expect(message).not.toMatch(/\.$/);
         expect(message).not.toMatch(/(^|\s)(sugarcube|npx|pnpm|npm)\s|\s--?[a-z]/);
     });
-});
 
-describe("diagnostic messages that say what would mend the problem", () => {
-    const worded = (found: Pick<Diagnostic, "kind" | "detail">) =>
-        (diagnosticMessages[found.kind].message as (detail: unknown) => string)(found.detail);
-
-    it.for([
-        {
-            found: {
-                kind: "missing-reference",
-                detail: { ref: "color.inc", from: ["color.muted"], similar: "color.ink" },
-            },
-            message: "`color.inc` does not exist; did you mean `color.ink`?",
-        },
-        {
-            found: {
-                kind: "missing-reference",
-                detail: {
-                    ref: "#/color/inc/$value",
-                    from: ["color.muted"],
-                    similar: "#/color/ink/$value",
-                },
-            },
-            message: "`#/color/inc/$value` does not exist; did you mean `#/color/ink/$value`?",
-        },
-        {
-            found: {
-                kind: "misspelt-property",
-                detail: { written: "value", property: "$value", owner: "token" },
-            },
-            message: "`value` is not a token property; did you mean `$value`?",
-        },
-        {
-            found: {
-                kind: "misspelt-property",
-                detail: { written: "$tpye", property: "$type", owner: "group" },
-            },
-            message: "`$tpye` is not a group property; did you mean `$type`?",
-        },
-        {
-            found: {
-                kind: "invalid-value",
-                detail: {
-                    jsonPath: ["$value"],
-                    type: "color",
-                    reason: "wrong-shape",
-                    value: "color.ink",
-                    reference: "{color.ink}",
-                },
-            },
-            message:
-                "a color must be an object with `colorSpace` and `components`, not the string `color.ink`; did you mean `{color.ink}`?",
-        },
-        {
-            found: { kind: "permutation-limit", detail: { count: 64, limit: 32, built: 7 } },
-            message:
-                "the modifiers make 64 combinations, more than the limit of 32, so each context was built on its own instead: 7 permutations",
-        },
-        {
-            found: { kind: "permutation-limit", detail: { count: 64, limit: 32, built: 1 } },
-            message:
-                "the modifiers make 64 combinations, more than the limit of 32, so each context was built on its own instead: 1 permutation",
-        },
-        {
-            found: { kind: "token-and-group", detail: { reason: "child", child: "light" } },
-            message:
-                "`light` is inside a token (it has a `$value`), and a token cannot hold tokens or groups",
-        },
-        {
-            found: { kind: "token-and-group", detail: { reason: "declared", here: "token" } },
-            message: "this is a token here but a group in another file",
-        },
-        {
-            found: { kind: "token-and-group", detail: { reason: "declared", here: "group" } },
-            message: "this is a group here but a token in another file",
-        },
-        {
-            found: { kind: "token-and-group", detail: { reason: "ref", ref: "#/base" } },
-            message:
-                "this has a `$ref`, which makes it a token, and a token cannot hold tokens or groups; to extend a group, use `$extends`",
-        },
-        {
-            found: { kind: "invalid-name", detail: { name: "" } },
-            message: "a name can't be empty",
-        },
-        {
-            found: {
-                kind: "written-generated",
-                detail: {
-                    path: "md",
-                    from: "",
-                    extension: ["sh.sugarcube", "scale"],
-                    written: "group",
-                },
-            },
-            message:
-                "`md` is made by `sh.sugarcube.scale` on the top level, so the group written here is not used; change the extension instead",
-        },
-        {
-            found: { kind: "not-a-value", detail: { ref: "#/base", corrected: "#/base/$value" } },
-            message: "`#/base` reaches a token, not its value; write it as `#/base/$value`",
-        },
-        {
-            found: { kind: "unknown-type", detail: { type: "colour", similar: "color" } },
-            message: "`colour` is not a token type; did you mean `color`?",
-        },
-        {
-            found: {
-                kind: "unknown-property",
-                detail: { property: "descripton", owner: "set", similar: "description" },
-            },
-            message: "`descripton` is not a property of a set; did you mean `description`?",
-        },
-        {
-            found: {
-                kind: "malformed-pointer",
-                detail: { ref: "#color/ink", reason: "no-leading-slash", corrected: "#/color/ink" },
-            },
-            message:
-                "`#color/ink` is not a JSON Pointer, which starts with `#/`; write it as `#/color/ink`",
-        },
-        {
-            found: {
-                kind: "malformed-pointer",
-                detail: { ref: "#/a~b", reason: "bad-escape", corrected: "#/a~0b" },
-            },
-            message:
-                "`#/a~b` is not a JSON Pointer: in one, `~` is written `~0` and `/` is written `~1`; write it as `#/a~0b`",
-        },
-        {
-            found: {
-                kind: "invalid-value",
-                detail: {
-                    jsonPath: ["$value"],
-                    type: "dimension",
-                    reason: "string-with-unit",
-                    value: "16px",
-                    asObject: { value: 16, unit: "px" },
-                },
-            },
-            message:
-                '`16px` is a string, and a dimension must be an object with a value and a unit, such as `{ "value": 16, "unit": "px" }`',
-        },
-        {
-            found: {
-                kind: "invalid-value",
-                detail: {
-                    jsonPath: ["$value"],
-                    type: "dimension",
-                    reason: "string-with-unit",
-                    value: "16em",
-                },
-            },
-            message:
-                "`16em` is a string, and a dimension must be an object with a value and a unit",
-        },
-        {
-            found: {
-                kind: "invalid-value",
-                detail: {
-                    jsonPath: ["$value", "hex"],
-                    type: "color",
-                    reason: "hex-not-six-digits",
-                    value: "#e1d",
-                    sixDigits: "#ee11dd",
-                },
-            },
-            message: "`#e1d` is not a six-digit hex color; did you mean `#ee11dd`?",
-        },
-        {
-            found: {
-                kind: "invalid-value",
-                detail: {
-                    jsonPath: ["$value"],
-                    type: "color",
-                    reason: "short-hex-string",
-                    value: "#e1d",
-                    expanded: "#ee11dd",
-                },
-            },
-            message: "`#e1d` is not a six-digit hex color; did you mean `#ee11dd`?",
-        },
-        {
-            found: {
-                kind: "invalid-value",
-                detail: {
-                    jsonPath: ["$value"],
-                    type: "color",
-                    reason: "short-hex-string",
-                    value: "#e1d8",
-                    expanded: "#ee11dd88",
-                },
-            },
-            message: "`#e1d8` is not an eight-digit hex color; did you mean `#ee11dd88`?",
-        },
-        {
-            found: {
-                kind: "invalid-property",
-                detail: { property: "$extends", expected: "reference", reference: "{base}" },
-            },
-            message:
-                '`$extends` must be a reference, such as "{group}" or { "$ref": "#/group" }; did you mean `{base}`?',
-        },
-    ] satisfies { found: Pick<Diagnostic, "kind" | "detail">; message: string }[])(
-        "$message",
-        ({ found, message }) => {
-            expect(worded(found)).toBe(message);
+    it.for(messages.filter(({ expected }) => expected !== undefined))(
+        "words $kind exactly: $expected",
+        ({ message, expected }) => {
+            expect(message).toBe(expected);
         },
     );
-});
 
-describe("the message for an input that leaves out a modifier with no default", () => {
-    it("says the input doesn't choose a context for it, and names each context to choose", () => {
-        const { message } = diagnosticMessages["input-invalid"];
-        const missing = { reason: "missing-modifier", input: 0, modifier: "theme" } as const;
-        expect(message({ ...missing, valid: ["light", "dark"] })).toBe(
-            "the input doesn't choose a context for the modifier `theme`, which has no default: choose `light` or `dark`",
-        );
-        expect(message({ ...missing, valid: ["light", "dark", "dim"] })).toBe(
-            "the input doesn't choose a context for the modifier `theme`, which has no default: choose `light`, `dark` or `dim`",
-        );
-    });
-});
-
-describe("diagnostic messages for a token's or group's own properties", () => {
-    it("says a `$` name the specification does not define is not a property", () => {
-        const { message } = diagnosticMessages["unknown-property"];
-        expect(message({ property: "$whatever", owner: "token" })).toBe(
-            "`$whatever` is not a property of a token: put your own data in `$extensions`",
-        );
-        expect(message({ property: "$whatever", owner: "group" })).toBe(
-            "`$whatever` is not a property of a group: put your own data in `$extensions`",
-        );
-        expect(message({ property: "owner", owner: "set" })).toBe(
-            "`owner` is not a property of a set: put your own data in `$extensions`",
-        );
-    });
-
-    it("says no more than that for a property the specification defines elsewhere", () => {
-        const { message } = diagnosticMessages["unknown-property"];
-        expect(message({ property: "$extends", owner: "token" })).toBe(
-            "`$extends` is not a property of a token",
-        );
-        expect(message({ property: "$value", owner: "group" })).toBe(
-            "`$value` is not a property of a group",
-        );
-    });
-
-    it("says a property set aside is ignored, and is a warning", () => {
-        const { message, severity } = diagnosticMessages["unknown-property"];
+    it("makes a property set aside a warning", () => {
+        const { severity } = diagnosticMessages["unknown-property"];
         const detail = { property: "$metadata", owner: "group", ignored: true } as const;
-        expect(message(detail)).toBe("`$metadata` is not a property of a group, so it is ignored");
         expect(typeof severity === "function" && severity(detail)).toBe("warning");
-    });
-
-    it("says no more than that at the top of a resolver, which has no `$extensions`", () => {
-        const { message } = diagnosticMessages["unknown-property"];
-        expect(message({ property: "owner", owner: "resolver" })).toBe(
-            "`owner` is not a property of the resolver",
-        );
     });
 });
 
@@ -680,25 +597,22 @@ describe("diagnostic messages from read", () => {
         }),
     });
 
-    function diagnostics(generator: Generator) {
-        const text = JSON.stringify({
-            space: { $type: "dimension", $extensions: { "com.example": { steps: "three" } } },
-        });
-        return readFromMemory({ files: { "tokens.json": text } }, { generators: [generator] })
-            .diagnostics;
+    function messagesFrom(generator: Generator) {
+        return oneFile(
+            { space: { $type: "dimension", $extensions: { "com.example": { steps: "three" } } } },
+            { generators: [generator] },
+        ).diagnostics.map(({ message }) => message);
     }
 
     it("words extension-invalid from the generator's messages", () => {
-        expect(diagnostics(stepsGenerator).map(({ message }) => message)).toStrictEqual([
+        expect(messagesFrom(stepsGenerator)).toStrictEqual([
             '`steps` must be a whole number above 0, not "three"',
         ]);
     });
 
     it("falls back to its own wording for a reason the generator has no message for", () => {
         const unworded: Generator = { ...stepsGenerator, messages: {} };
-        expect(diagnostics(unworded).map(({ message }) => message)).toStrictEqual([
-            "the `com.example` extension is not valid",
-        ]);
+        expect(messagesFrom(unworded)).toStrictEqual(["the `com.example` extension is not valid"]);
     });
 
     it("falls back for a reason named like a property every object has", () => {
@@ -707,9 +621,7 @@ describe("diagnostic messages from read", () => {
             messages: {},
             generate: () => ({ ok: false, errors: [{ jsonPath: [], reason: "toString" }] }),
         };
-        expect(diagnostics(inherited).map(({ message }) => message)).toStrictEqual([
-            "the `com.example` extension is not valid",
-        ]);
+        expect(messagesFrom(inherited)).toStrictEqual(["the `com.example` extension is not valid"]);
     });
 
     it("words a schema's issue with the library's message", () => {
@@ -724,14 +636,11 @@ describe("diagnostic messages from read", () => {
             },
             generate: () => ({ ok: true, value: [] }),
         });
-        expect(diagnostics(counted).map(({ message }) => message)).toStrictEqual([
-            "Expected number, received string",
-        ]);
+        expect(messagesFrom(counted)).toStrictEqual(["Expected number, received string"]);
     });
 
     it("links invalid-value to the section for its reason", () => {
-        const text = JSON.stringify({ space: { $type: "dimension", $value: "16px" } });
-        const tokens = readFromMemory({ files: { "tokens.json": text } });
+        const tokens = oneFile({ space: { $type: "dimension", $value: "16px" } });
         expect(tokens.diagnostics.map(({ docsUrl }) => docsUrl)).toStrictEqual([
             "https://sugarcube.sh/errors/invalid-value#string-with-unit",
         ]);

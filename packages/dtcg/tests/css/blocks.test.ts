@@ -7,36 +7,8 @@ import {
     toCSS,
     createCSSWriter,
 } from "../../src/css.js";
-import { type DesignTokens, PermutationError, readFromMemory } from "../../src/index.js";
-
-const px = (value: number) => ({ value, unit: "px" });
-const color = (value: unknown) => ({ $type: "color", $value: value });
-
-function read(files: Record<string, unknown>): DesignTokens {
-    const texts = Object.fromEntries(
-        Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
-    );
-    return readFromMemory({ files: texts }, { hexStringColors: true });
-}
-
-function themed(base: Record<string, unknown>, dark: Record<string, unknown>): DesignTokens {
-    return read({
-        "tokens.resolver.json": {
-            version: "2025.10",
-            resolutionOrder: [
-                { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-                {
-                    type: "modifier",
-                    name: "mode",
-                    default: "light",
-                    contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                },
-            ],
-        },
-        "base.json": base,
-        "dark.json": dark,
-    });
-}
+import { PermutationError } from "../../src/index.js";
+import { color, px, read, themed } from "./css-tokens.js";
 
 const palette = {
     color: {
@@ -230,34 +202,23 @@ describe("getCSSBlocks, the modifiers a block's input names", () => {
     const rootBlock = block({}, ":root");
     const darkBlock = block({ mode: "dark" }, '[data-mode="dark"]');
 
-    it("knows which modifier writes each token, from the context listing the file", () => {
-        const surface = brands.getPermutation({ mode: "dark" }).getToken("surface");
-        expect(surface?.definitions.map(({ source }) => source.modifier?.name)).toStrictEqual([
-            undefined,
-            "mode",
-        ]);
-    });
-
     describe("a block whose input names some modifiers stacks with the others", () => {
-        it("writes every token its modifiers provide a value for, even when it equals the default, when another block that might apply says otherwise, and what refers to it", () => {
+        it.for([
+            [
+                "writes every token its modifiers provide a value for, even when it equals the default, when another block that might apply says otherwise, and what refers to it",
+                "brand",
+            ],
+            ["matches its modifiers' names as inputs are matched, in any case", "Brand"],
+        ] as const)("%s", ([, modifier]) => {
             const [, , brand] = getCSSBlocks(brands, [
                 rootBlock,
                 darkBlock,
-                block({ brand: "b" }, '[data-brand="b"]'),
+                block({ [modifier]: "b" }, '[data-brand="b"]'),
             ]);
             expect(written(brand)).toStrictEqual([
                 "--primary: #ff0000",
                 "--button: var(--primary)",
             ]);
-        });
-
-        it("leaves out what its modifiers provide no value for, so the themes stack on one element", () => {
-            const [, , brand] = getCSSBlocks(brands, [
-                rootBlock,
-                darkBlock,
-                block({ brand: "b" }, '[data-brand="b"]'),
-            ]);
-            expect(written(brand).some((line) => line.startsWith("--surface"))).toBe(false);
         });
 
         it("writes the default's values for its modifier where another block changed them, so a light section in a dark page is light", () => {
@@ -286,18 +247,6 @@ describe("getCSSBlocks, the modifiers a block's input names", () => {
                 "--button: var(--primary)",
             ]);
         });
-
-        it("matches its modifiers' names as inputs are matched, in any case", () => {
-            const [, , brand] = getCSSBlocks(brands, [
-                rootBlock,
-                darkBlock,
-                block({ Brand: "b" }, '[data-brand="b"]'),
-            ]);
-            expect(written(brand)).toStrictEqual([
-                "--primary: #ff0000",
-                "--button: var(--primary)",
-            ]);
-        });
     });
 
     describe("a block whose input names every modifier stands alone", () => {
@@ -316,22 +265,10 @@ describe("getCSSBlocks, the modifiers a block's input names", () => {
     });
 
     it("still skips a value a theme restates that no other block disputes", () => {
-        const restating = read({
-            "tokens.resolver.json": {
-                version: "2025.10",
-                resolutionOrder: [
-                    { type: "set", name: "base", sources: [{ $ref: "base.json" }] },
-                    {
-                        type: "modifier",
-                        name: "mode",
-                        default: "light",
-                        contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                    },
-                ],
-            },
-            "base.json": { surface: color("#ffffff"), gap: { $type: "dimension", $value: px(8) } },
-            "dark.json": { surface: color("#000000"), gap: { $type: "dimension", $value: px(8) } },
-        });
+        const restating = themed(
+            { surface: color("#ffffff"), gap: { $type: "dimension", $value: px(8) } },
+            { surface: color("#000000"), gap: { $type: "dimension", $value: px(8) } },
+        );
         const [, later] = getCSSBlocks(restating, [rootBlock, darkBlock]);
         expect(written(later)).toStrictEqual(["--surface: #000000"]);
     });

@@ -1,12 +1,13 @@
 {
   "entry": "tokens.json",
-  "spec": "Format 5.2.4 and 6.3.1: a group's $deprecated extends to every token inside unless a closer group or the token says otherwise; false undoes it. The top level counts as the outermost group. Groups report only their own, and a token's authored says whether it writes $deprecated itself",
+  "spec": "Format 5.2.4 and 6.3.1: a group's $deprecated extends to every token and group inside unless a closer group or the token says otherwise; false undoes it, so a group that writes false is not deprecated, and has false only as written. The top level counts as the outermost group. deprecatedByGroup names the group whose $deprecated applies, \"\" for the top level, and is absent for a mark of its own or none. Format 6.4: a group that extends another takes its type and deprecation, so the group it extends is the one deprecating it and its tokens. asWritten holds only what a token or group writes itself",
   "permutations": [
     {
       "tokens": [
         {
           "path": "top",
           "deprecated": true,
+          "deprecatedByGroup": "",
           "asWritten": {
             "value": 1
           }
@@ -14,6 +15,7 @@
         {
           "path": "old.a",
           "deprecated": "use new",
+          "deprecatedByGroup": "old",
           "asWritten": {
             "value": 2
           }
@@ -21,13 +23,24 @@
         {
           "path": "old.b",
           "deprecated": "use new.b",
+          "deprecatedByGroup": null,
           "asWritten": {
             "value": 3,
             "deprecated": "use new.b"
           }
         },
         {
+          "path": "old.inner.c",
+          "deprecated": "use new",
+          "deprecatedByGroup": "old",
+          "asWritten": {
+            "value": 6
+          }
+        },
+        {
           "path": "old.kept.c",
+          "deprecated": null,
+          "deprecatedByGroup": null,
           "asWritten": {
             "value": 4
           }
@@ -35,9 +48,40 @@
         {
           "path": "old.kept.d",
           "deprecated": true,
+          "deprecatedByGroup": null,
           "asWritten": {
             "value": 5,
             "deprecated": true
+          }
+        },
+        {
+          "path": "button.pad",
+          "deprecated": "Use control",
+          "deprecatedByGroup": "button",
+          "asWritten": {
+            "value": {
+              "value": 4,
+              "unit": "px"
+            }
+          }
+        },
+        {
+          "path": "primary.gap",
+          "deprecated": "Use control",
+          "deprecatedByGroup": "button",
+          "asWritten": {
+            "value": {
+              "value": 2,
+              "unit": "px"
+            }
+          }
+        },
+        {
+          "path": "primary.pad",
+          "deprecated": "Use control",
+          "deprecatedByGroup": "button",
+          "inherited": {
+            "from": "button"
           }
         }
       ],
@@ -45,10 +89,48 @@
         { "path": "" },
         {
           "path": "old",
-          "deprecated": "use new"
+          "deprecated": "use new",
+          "deprecatedByGroup": null
         },
         {
-          "path": "old.kept"
+          "path": "old.inner",
+          "deprecated": "use new",
+          "deprecatedByGroup": "old"
+        },
+        {
+          "path": "old.kept",
+          "deprecated": null,
+          "deprecatedByGroup": null,
+          "asWritten": {
+            "deprecated": false
+          }
+        },
+        {
+          "path": "button",
+          "type": "dimension",
+          "description": "Base button",
+          "deprecated": "Use control",
+          "deprecatedByGroup": null,
+          "asWritten": {
+            "type": "dimension",
+            "description": "Base button",
+            "deprecated": "Use control",
+            "extensions": {
+              "com.example": {
+                "a": 1
+              }
+            }
+          }
+        },
+        {
+          "path": "primary",
+          "type": "dimension",
+          "description": "Primary only",
+          "deprecated": "Use control",
+          "deprecatedByGroup": "button",
+          "asWritten": {
+            "description": "Primary only"
+          }
         }
       ]
     }

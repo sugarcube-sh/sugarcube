@@ -1,16 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { readFromMemory } from "../../src/index.js";
+import { oneFile } from "../token-files.js";
 
-const tokens = readFromMemory({
-    files: {
-        "tokens.json": JSON.stringify({
-            color: {
-                $type: "color",
-                red: { $value: { colorSpace: "srgb", components: [1, 0, 0] } },
-                brand: { $value: "{color.red}" },
-                broken: { $value: "{color.missing}" },
-            },
-        }),
+const tokens = oneFile({
+    color: {
+        $type: "color",
+        red: { $value: { colorSpace: "srgb", components: [1, 0, 0] } },
+        brand: { $value: "{color.red}" },
+        broken: { $value: "{color.missing}" },
     },
 });
 const permutation = tokens.getPermutation();

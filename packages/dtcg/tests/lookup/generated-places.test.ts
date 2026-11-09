@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { defineGenerator, readFromMemory } from "../../src/index.js";
 import { getSpan } from "../../src/editor.js";
+import { lightDark, oneFile } from "../token-files.js";
 
 const steps = defineGenerator({
     extension: ["com.example", "steps"],
@@ -11,24 +12,12 @@ const steps = defineGenerator({
 const tokens = readFromMemory(
     {
         files: {
-            "tokens.resolver.json": JSON.stringify({
-                version: "2025.10",
-                resolutionOrder: [
-                    { type: "set", name: "base", sources: [{ $ref: "tokens.json" }] },
-                    {
-                        type: "modifier",
-                        name: "mode",
-                        default: "light",
-                        contexts: { light: [], dark: [] },
-                    },
-                ],
-            }),
+            "tokens.resolver.json": lightDark(["tokens.json"], []),
             "tokens.json": JSON.stringify({
                 base: { $type: "number", $value: 1 },
                 g: { $type: "number", $extensions: { "com.example": { steps: 1 } } },
             }),
         },
-        entryFile: "tokens.resolver.json",
     },
     { generators: [steps] },
 );
@@ -70,14 +59,10 @@ describe("generated tokens across permutations", () => {
                 ],
             }),
         });
-        const both = readFromMemory(
+        const both = oneFile(
             {
-                files: {
-                    "tokens.json": JSON.stringify({
-                        base: { $type: "number", $value: 1 },
-                        g: { $type: "number", $extensions: { "com.example": { steps: 1 } } },
-                    }),
-                },
+                base: { $type: "number", $value: 1 },
+                g: { $type: "number", $extensions: { "com.example": { steps: 1 } } },
             },
             { generators: [two] },
         );
@@ -96,14 +81,8 @@ describe("a name a generator gives", () => {
             value: ["a.b", "$x", "c{d", "ok"].map((name) => ({ name, $value: 1 })),
         }),
     });
-    const badlyNamed = readFromMemory(
-        {
-            files: {
-                "tokens.json": JSON.stringify({
-                    g: { $type: "number", $extensions: { "com.example": { steps: 1 } } },
-                }),
-            },
-        },
+    const badlyNamed = oneFile(
+        { g: { $type: "number", $extensions: { "com.example": { steps: 1 } } } },
         { generators: [named] },
     );
 

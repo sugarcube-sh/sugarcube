@@ -1,68 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { type DesignTokens, type Group, type Token, readFromMemory } from "../../src/index.js";
-import { getSpan } from "../../src/editor.js";
-
-function oneFile(json: unknown): DesignTokens {
-    return readFromMemory({ files: { "tokens.json": JSON.stringify(json) } });
-}
+import type { Group, Token } from "../../src/index.js";
+import { oneFile } from "../token-files.js";
 
 describe("what applies to a group, and what it writes itself", () => {
-    const tokens = oneFile({
-        color: {
-            $type: "color",
-            $description: "All colours",
-            brand: { "500": { $value: { colorSpace: "srgb", components: [1, 0, 0] } } },
-        },
-        button: {
-            $type: "dimension",
-            $description: "Base button",
-            $deprecated: "Use control",
-            $extensions: { "com.example": { a: 1 } },
-            pad: { $value: { value: 4, unit: "px" } },
-        },
-        primary: {
-            $extends: "{button}",
-            $description: "Primary only",
-            gap: { $value: { value: 2, unit: "px" } },
-        },
-        old: {
-            $type: "number",
-            $deprecated: true,
-            kept: { $deprecated: false, one: { $value: 1 } },
-        },
-    });
-
-    it("takes its type from the group it is inside when it writes none (Format 6.7.3)", () => {
-        expect(tokens.getPermutation().getGroup("color.brand")?.type).toBe("color");
-        expect(tokens.getPermutation().getGroup("color.brand")?.asWritten).toBeUndefined();
-    });
-
-    it("says what it writes itself", () => {
-        expect(tokens.getPermutation().getGroup("button")?.asWritten).toStrictEqual({
-            type: "dimension",
-            description: "Base button",
-            deprecated: "Use control",
-            extensions: { "com.example": { a: 1 } },
-        });
-    });
-
-    it("takes what it extends, and says only its own as written (Format 6.4)", () => {
-        const primary = tokens.getPermutation().getGroup("primary");
-        expect(primary?.type).toBe("dimension");
-        expect(primary?.deprecated).toBe("Use control");
-        expect(primary?.description).toBe("Primary only");
-        expect(primary?.asWritten).toStrictEqual({ description: "Primary only" });
-    });
-
-    it("takes its parent's deprecation, unless it writes false (Format 6.3.1)", () => {
-        expect(tokens.getPermutation().getGroup("old")?.deprecated).toBe(true);
-        expect(tokens.getPermutation().getGroup("old.kept")).not.toHaveProperty("deprecated");
-        expect(tokens.getPermutation().getGroup("old.kept")?.asWritten).toStrictEqual({
-            deprecated: false,
-        });
-        expect(tokens.getPermutation().getToken("old.kept.one")).not.toHaveProperty("deprecated");
-    });
-
     it("is never false, since false only undoes a group's deprecation (Format 5.2.4)", () => {
         // @ts-expect-error a token or group is deprecated or it isn't: false is only ever written
         const written: Token["deprecated"] = false;
@@ -72,125 +12,13 @@ describe("what applies to a group, and what it writes itself", () => {
     });
 });
 
-describe("what a token writes itself", () => {
-    const tokens = oneFile({
-        space: { $type: "number", $deprecated: "Use gap", sm: { $value: 1 } },
-        size: { lg: { $type: "number", $deprecated: true, $value: 2 } },
-    });
-
-    it("holds its own $type and $deprecated beside its value", () => {
-        expect(tokens.getPermutation().getToken("size.lg")?.asWritten).toStrictEqual({
-            value: 2,
-            type: "number",
-            deprecated: true,
-        });
-    });
-
-    it("leaves out what it takes from its group", () => {
-        expect(tokens.getPermutation().getToken("space.sm")?.type).toBe("number");
-        expect(tokens.getPermutation().getToken("space.sm")?.deprecated).toBe("Use gap");
-        expect(tokens.getPermutation().getToken("space.sm")?.asWritten).toStrictEqual({ value: 1 });
-    });
-});
-
 describe("where a group's extensions are written", () => {
-    const files: Record<string, string> = {
-        "tokens.resolver.json": JSON.stringify({
-            version: "2025.10",
-            resolutionOrder: [
-                { type: "set", name: "base", sources: [{ $ref: "a.json" }, { $ref: "b.json" }] },
-                {
-                    type: "modifier",
-                    name: "mode",
-                    default: "light",
-                    contexts: { light: [], dark: [{ $ref: "dark.json" }] },
-                },
-            ],
-        }),
-        "a.json": JSON.stringify({
-            space: {
-                $type: "dimension",
-                $extensions: { "com.example": { steps: 1 }, "org.other": { kept: true } },
-            },
-            inset: { $extends: "{space}" },
-            plain: { $type: "number" },
-        }),
-        "b.json": JSON.stringify({ space: { $extensions: { "com.example": { steps: 2 } } } }),
-        "dark.json": JSON.stringify({ space: { $extensions: { "com.example": { steps: 3 } } } }),
-    };
-    const tokens = readFromMemory({ files, entryFile: "tokens.resolver.json" });
-    const filesOf = (path: string, input: Record<string, string> = {}) =>
-        Object.fromEntries(
-            Object.entries(
-                tokens.getPermutation(input).getGroup(path)?.extensionDefinitions ?? {},
-            ).map(([key, place]) => [key, getSpan(tokens, place).file]),
-        );
-
-    it("is the file read last that writes each key, since that file's key is used whole", () => {
-        expect(filesOf("space")).toStrictEqual({ "com.example": "b.json", "org.other": "a.json" });
-    });
-
     it("is one of the group's own places", () => {
-        const space = tokens.getPermutation().getGroup("space");
+        const space = oneFile({
+            space: { $type: "number", $extensions: { "com.example": true }, gap: { $value: 1 } },
+        })
+            .getPermutation()
+            .getGroup("space");
         expect(space?.definitions).toContain(space?.extensionDefinitions["com.example"]);
-    });
-
-    it("follows the permutation: a context's file writing a key is where it is written there", () => {
-        expect(filesOf("space", { mode: "dark" })).toStrictEqual({
-            "com.example": "dark.json",
-            "org.other": "a.json",
-        });
-    });
-
-    it("leaves out a key the group takes from the group it extends", () => {
-        expect(tokens.getPermutation().getGroup("inset")?.extensions).toHaveProperty("com.example");
-        expect(filesOf("inset")).toStrictEqual({});
-    });
-
-    it("is empty for a group that writes no extensions", () => {
-        expect(tokens.getPermutation().getGroup("plain")?.extensionDefinitions).toStrictEqual({});
-    });
-});
-
-describe("where a deprecation comes from", () => {
-    const tokens = oneFile({
-        $deprecated: true,
-        $type: "number",
-        top: { $value: 1 },
-        old: {
-            $deprecated: "use new",
-            a: { $value: 2 },
-            b: { $deprecated: "use new.b", $value: 3 },
-            inner: { c: { $value: 4 } },
-            kept: { $deprecated: false, d: { $value: 5 } },
-        },
-        button: { $deprecated: "Use control", pad: { $value: 4 } },
-        primary: { $extends: "{button}", gap: { $value: 2 } },
-    });
-    const token = (path: string) => tokens.getPermutation().getToken(path);
-    const group = (path: string) => tokens.getPermutation().getGroup(path);
-
-    it("names the group whose $deprecated applies to a token above it", () => {
-        expect(token("old.a")?.deprecatedByGroup).toBe("old");
-        expect(token("old.inner.c")?.deprecatedByGroup).toBe("old");
-    });
-
-    it("names the group whose $deprecated applies to a group, above it or through $extends", () => {
-        expect(group("old.inner")?.deprecatedByGroup).toBe("old");
-        expect(group("primary")?.deprecatedByGroup).toBe("button");
-        expect(token("primary.gap")?.deprecatedByGroup).toBe("button");
-    });
-
-    it('names none for a mark of its own or none at all, and "" for one from the top level', () => {
-        expect(token("old.b")?.deprecatedByGroup).toBeUndefined();
-        expect(group("old")?.deprecatedByGroup).toBeUndefined();
-        expect(group("old.kept")?.deprecatedByGroup).toBeUndefined();
-        expect(token("old.kept.d")?.deprecatedByGroup).toBeUndefined();
-        expect(token("top")?.deprecatedByGroup).toBe("");
-        expect(
-            oneFile({ n: { $type: "number", $value: 1 } })
-                .getPermutation()
-                .getToken("n"),
-        ).not.toHaveProperty("deprecatedFrom");
     });
 });

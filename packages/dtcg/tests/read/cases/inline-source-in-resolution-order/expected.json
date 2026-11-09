@@ -1,0 +1,46 @@
+{
+  "entry": "tokens.resolver.json",
+  "spec": "Resolver 4.1.4 and 4.1.6.1: a set written inline in resolutionOrder may list tokens written inline among its sources; such a source is part of the resolver, so its file is the resolver and a pointer says where its tokens sit",
+  "files": ["tokens.resolver.json", "base.json"],
+  "sources": [
+    {
+      "file": "base.json",
+      "sets": [
+        {
+          "name": "base"
+        }
+      ],
+      "readBy": "every-context"
+    },
+    {
+      "file": "tokens.resolver.json",
+      "pointer": "#/resolutionOrder/0/sources/1",
+      "sets": [
+        {
+          "name": "base"
+        }
+      ],
+      "readBy": "every-context"
+    }
+  ],
+  "permutations": [
+    {
+      "sources": [0, 1],
+      "tokens": [
+        {
+          "path": "gap",
+          "definitions": [
+            {
+              "source": 1,
+              "span": {
+                "file": "tokens.resolver.json",
+                "valueAfter": "\"gap\":"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}
