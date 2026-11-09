@@ -53,31 +53,36 @@ describe("a missing reference's similar name", () => {
         return tokens.diagnostics.map(({ kind, detail }) => ({ kind, detail }));
     };
 
-    it.for([
-        { $ref: "#/color/inc/$value", similar: "#/color/ink/$value" },
-        { $ref: "#/color/inc", similar: "#/color/ink" },
-    ])("is written as a pointer when the reference is one: $similar", ({ $ref, similar }) => {
-        expect(pointingAt($ref)).toStrictEqual([
-            { kind: "missing-reference", detail: { ref: $ref, from: ["uses"], similar } },
-        ]);
-    });
-
-    it("keeps a pointer's steps into the value", () => {
-        expect(pointingAt("#/color/inc/$value/components/0", "number")).toStrictEqual([
+    it.for<[string, string, string, string?]>([
+        [
+            "is written as a pointer when the reference is one: #/color/ink/$value",
+            "#/color/inc/$value",
+            "color",
+            "#/color/ink/$value",
+        ],
+        [
+            "is written as a pointer when the reference is one: #/color/ink",
+            "#/color/inc",
+            "color",
+            "#/color/ink",
+        ],
+        [
+            "keeps a pointer's steps into the value",
+            "#/color/inc/$value/components/0",
+            "number",
+            "#/color/ink/$value/components/0",
+        ],
+        [
+            "is not given when the token a pointer names exists and the step inside it does not",
+            "#/color/ink/$value/components/9",
+            "number",
+        ],
+    ])("%s", ([, $ref, $type, similar]) => {
+        expect(pointingAt($ref, $type)).toStrictEqual([
             {
                 kind: "missing-reference",
-                detail: {
-                    ref: "#/color/inc/$value/components/0",
-                    from: ["uses"],
-                    similar: "#/color/ink/$value/components/0",
-                },
+                detail: { ref: $ref, from: ["uses"], ...(similar && { similar }) },
             },
         ]);
-    });
-
-    it("is not given when the token a pointer names exists and the step inside it does not", () => {
-        const [found] = pointingAt("#/color/ink/$value/components/9", "number");
-        expect(found?.kind).toBe("missing-reference");
-        expect(found?.detail).not.toHaveProperty("similar");
     });
 });

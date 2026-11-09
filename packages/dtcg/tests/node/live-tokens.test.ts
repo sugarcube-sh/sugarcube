@@ -267,32 +267,38 @@ describe("design tokens kept current with their files", () => {
         expect(reads[1]?.event.ms).toBeGreaterThan(0);
     });
 
-    it("matches a path the watcher gives with backslashes", async () => {
+    it.for([
+        [
+            "matches a path the watcher gives with backslashes",
+            (file: string) => disk(file).replaceAll("/", "\\"),
+        ],
+        [
+            "matches a path the watcher gives relative to the working directory",
+            (file: string) => relative(process.cwd(), folder.at(file)),
+        ],
+    ] as const)("%s", async ([, given]) => {
         const { current, reads, watcher } = live();
         await current.getTokens();
 
-        watcher.emit("change", disk("base.json").replaceAll("/", "\\"));
+        watcher.emit("change", given("base.json"));
         await current.getTokens();
 
         expect(reads.map(({ event }) => event.file)).toStrictEqual(["base.json"]);
     });
 
-    it("matches a path the watcher gives relative to the working directory", async () => {
-        const { current, reads, watcher } = live();
-        await current.getTokens();
-
-        watcher.emit("change", relative(process.cwd(), folder.at("base.json")));
-        await current.getTokens();
-
-        expect(reads.map(({ event }) => event.file)).toStrictEqual(["base.json"]);
-    });
-
-    it("watches and matches a file named from the root", async () => {
+    it.for([
+        ["watches and matches a file named from the root", (brand: string) => brand],
+        [
+            "watches a file named relative to a folder above the entry's",
+            (brand: string) => relative(folder.path, brand).replaceAll("\\", "/"),
+        ],
+    ] as const)("%s", async ([, nameOf]) => {
         const elsewhere = await realpath(await mkdtemp(join(tmpdir(), "dtcg-live-outside-")));
         outside.push(elsewhere);
         const brand = join(elsewhere, "brand.json").replaceAll("\\", "/");
         await writeFile(brand, JSON.stringify({ brand: color("#333333") }));
-        await resolver(["base.json", brand]);
+        const name = nameOf(brand);
+        await resolver(["base.json", name]);
         const { current, reads, watcher, added } = live();
         await current.getTokens();
 
@@ -300,23 +306,6 @@ describe("design tokens kept current with their files", () => {
         await current.getTokens();
 
         expect(added).toContain(brand);
-        expect(reads.map(({ event }) => event.file)).toStrictEqual([brand]);
-    });
-
-    it("watches a file named relative to a folder above the entry's", async () => {
-        const elsewhere = await realpath(await mkdtemp(join(tmpdir(), "dtcg-live-outside-")));
-        outside.push(elsewhere);
-        const brand = join(elsewhere, "brand.json");
-        await writeFile(brand, JSON.stringify({ brand: color("#333333") }));
-        const name = relative(folder.path, brand).replaceAll("\\", "/");
-        await resolver(["base.json", name]);
-        const { current, reads, watcher, added } = live();
-        await current.getTokens();
-
-        watcher.emit("change", brand.replaceAll("\\", "/"));
-        await current.getTokens();
-
-        expect(added).toContain(brand.replaceAll("\\", "/"));
         expect(reads.map(({ event }) => event.file)).toStrictEqual([name]);
     });
 

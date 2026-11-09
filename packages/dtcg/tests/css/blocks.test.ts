@@ -203,11 +203,17 @@ describe("getCSSBlocks, the modifiers a block's input names", () => {
     const darkBlock = block({ mode: "dark" }, '[data-mode="dark"]');
 
     describe("a block whose input names some modifiers stacks with the others", () => {
-        it("writes every token its modifiers provide a value for, even when it equals the default, when another block that might apply says otherwise, and what refers to it", () => {
+        it.for([
+            [
+                "writes every token its modifiers provide a value for, even when it equals the default, when another block that might apply says otherwise, and what refers to it",
+                "brand",
+            ],
+            ["matches its modifiers' names as inputs are matched, in any case", "Brand"],
+        ] as const)("%s", ([, modifier]) => {
             const [, , brand] = getCSSBlocks(brands, [
                 rootBlock,
                 darkBlock,
-                block({ brand: "b" }, '[data-brand="b"]'),
+                block({ [modifier]: "b" }, '[data-brand="b"]'),
             ]);
             expect(written(brand)).toStrictEqual([
                 "--primary: #ff0000",
@@ -237,18 +243,6 @@ describe("getCSSBlocks, the modifiers a block's input names", () => {
             ]);
             expect(written(both)).toStrictEqual([
                 "--surface: #000000",
-                "--primary: #ff0000",
-                "--button: var(--primary)",
-            ]);
-        });
-
-        it("matches its modifiers' names as inputs are matched, in any case", () => {
-            const [, , brand] = getCSSBlocks(brands, [
-                rootBlock,
-                darkBlock,
-                block({ Brand: "b" }, '[data-brand="b"]'),
-            ]);
-            expect(written(brand)).toStrictEqual([
                 "--primary: #ff0000",
                 "--button: var(--primary)",
             ]);

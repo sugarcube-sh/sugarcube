@@ -3,6 +3,8 @@ import {
     type ColorValue,
     type DesignTokens,
     type Move,
+    type TokenType,
+    type UnresolvedValue,
     defineGenerator,
     readFromMemory,
     isEquivalentValue,
@@ -60,7 +62,7 @@ function brief(before: DesignTokens, after: DesignTokens, moved?: Move[]) {
         const shown: Record<string, unknown> = { kind: change.kind, path: change.path };
         if ("from" in change) shown.from = change.from;
         if ("properties" in change) shown.properties = change.properties;
-        shown.permutations = change.permutations.inputs;
+        shown.in = change.permutations.label;
         return shown;
     });
 }
@@ -73,26 +75,21 @@ describe("getChangesSince", () => {
     it("gives a value changed in a file every permutation reads once, in each permutation it shows in", () => {
         const after = read({ base: changed(["space", "sm"], px(5)) });
         expect(brief(read(), after)).toEqual([
-            {
-                kind: "changed",
-                path: "space.sm",
-                properties: ["value"],
-                permutations: [light, darkMode],
-            },
+            { kind: "changed", path: "space.sm", properties: ["value"], in: "everywhere" },
         ]);
     });
 
     it("gives a value changed in one context's file only in that context", () => {
         const after = read({ dark: changed(["space", "md"], px(12), dark) });
         expect(brief(read(), after)).toEqual([
-            { kind: "changed", path: "space.md", properties: ["value"], permutations: [darkMode] },
+            { kind: "changed", path: "space.md", properties: ["value"], in: "mode: dark" },
         ]);
     });
 
     it("leaves out a permutation where a later file still writes the token", () => {
         const after = read({ base: changed(["space", "md"], px(9)) });
         expect(brief(read(), after)).toEqual([
-            { kind: "changed", path: "space.md", properties: ["value"], permutations: [light] },
+            { kind: "changed", path: "space.md", properties: ["value"], in: "mode: light" },
         ]);
     });
 
@@ -102,9 +99,9 @@ describe("getChangesSince", () => {
             dark: changed(["space", "md"], px(11), dark),
         });
         const changes = after.getChangesSince(read());
-        expect(changes.map((change) => [change.path, change.permutations.inputs])).toEqual([
-            ["space.md", [light]],
-            ["space.md", [darkMode]],
+        expect(changes.map((change) => [change.path, change.permutations.label])).toEqual([
+            ["space.md", "mode: light"],
+            ["space.md", "mode: dark"],
         ]);
     });
 
@@ -129,12 +126,6 @@ describe("getChangesSince", () => {
         });
     });
 
-    it("labels the permutations a change holds in", () => {
-        const after = read({ dark: changed(["space", "md"], px(12), dark) });
-        const [change] = after.getChangesSince(read());
-        expect(change?.permutations.label).toBe("mode: dark");
-    });
-
     it("compares what a token says, not what it resolves to", () => {
         const after = read({ base: changed(["space", "sm"], px(5)) });
         expect(brief(read(), after).map((change) => change.path)).not.toContain("space.gap");
@@ -143,12 +134,7 @@ describe("getChangesSince", () => {
     it("gives a reference pointed somewhere else as a change", () => {
         const after = read({ base: changed(["space", "gap"], { $value: "{space.md}" }) });
         expect(brief(read(), after)).toEqual([
-            {
-                kind: "changed",
-                path: "space.gap",
-                properties: ["value"],
-                permutations: [light, darkMode],
-            },
+            { kind: "changed", path: "space.gap", properties: ["value"], in: "everywhere" },
         ]);
     });
 
@@ -156,30 +142,15 @@ describe("getChangesSince", () => {
         const described = changed(["space", "sm"], { ...px(4), $description: "Small" });
         const after = read({ base: changed(["space", "md", "$deprecated"], true, described) });
         expect(brief(read(), after)).toEqual([
-            {
-                kind: "changed",
-                path: "space.sm",
-                properties: ["description"],
-                permutations: [light, darkMode],
-            },
-            {
-                kind: "changed",
-                path: "space.md",
-                properties: ["deprecated"],
-                permutations: [light],
-            },
+            { kind: "changed", path: "space.sm", properties: ["description"], in: "everywhere" },
+            { kind: "changed", path: "space.md", properties: ["deprecated"], in: "mode: light" },
         ]);
     });
 
     it("gives a group deprecated as one change, not one for every token inside", () => {
         const after = read({ base: changed(["space", "$deprecated"], "Use size") });
         expect(brief(read(), after)).toEqual([
-            {
-                kind: "group-changed",
-                path: "space",
-                properties: ["deprecated"],
-                permutations: [light, darkMode],
-            },
+            { kind: "group-changed", path: "space", properties: ["deprecated"], in: "everywhere" },
         ]);
     });
 
@@ -188,12 +159,7 @@ describe("getChangesSince", () => {
             base: changed(["space", "sm"], { $type: "number", $value: 4 }),
         });
         expect(brief(read(), after)).toEqual([
-            {
-                kind: "changed",
-                path: "space.sm",
-                properties: ["value", "type"],
-                permutations: [light, darkMode],
-            },
+            { kind: "changed", path: "space.sm", properties: ["value", "type"], in: "everywhere" },
         ]);
     });
 
@@ -203,9 +169,9 @@ describe("getChangesSince", () => {
             dark: changed(["glow"], { $type: "dimension", ...px(2) }, dark),
         });
         expect(brief(read(), after)).toEqual([
-            { kind: "added", path: "space.lg", permutations: [light, darkMode] },
-            { kind: "removed", path: "space.md", permutations: [light] },
-            { kind: "added", path: "glow", permutations: [darkMode] },
+            { kind: "added", path: "space.lg", in: "everywhere" },
+            { kind: "removed", path: "space.md", in: "mode: light" },
+            { kind: "added", path: "glow", in: "mode: dark" },
         ]);
     });
 
@@ -228,7 +194,7 @@ describe("getChangesSince", () => {
                 path: "space.small",
                 from: "space.sm",
                 properties: [],
-                permutations: [light, darkMode],
+                in: "everywhere",
             },
         ]);
     });
@@ -247,7 +213,7 @@ describe("getChangesSince", () => {
                 path: "space.small",
                 from: "space.sm",
                 properties: [],
-                permutations: [light, darkMode],
+                in: "everywhere",
             },
         ]);
     });
@@ -256,28 +222,27 @@ describe("getChangesSince", () => {
         const { typography, ...rest } = base;
         const text = { $type: "dimension", size: { $value: "{type.body}" } };
         const renamed = read({ base: { ...rest, type: typography, text } });
-        const everywhere = [light, darkMode];
         expect(brief(read(), renamed, [{ from: "typography", to: "type" }])).toEqual([
             {
                 kind: "group-renamed",
                 path: "type",
                 from: "typography",
                 properties: [],
-                permutations: everywhere,
+                in: "everywhere",
             },
             {
                 kind: "renamed",
                 path: "type.body",
                 from: "typography.body",
                 properties: [],
-                permutations: everywhere,
+                in: "everywhere",
             },
             {
                 kind: "renamed",
                 path: "type.heading",
                 from: "typography.heading",
                 properties: [],
-                permutations: everywhere,
+                in: "everywhere",
             },
         ]);
     });
@@ -291,7 +256,7 @@ describe("getChangesSince", () => {
                 path: "animation",
                 from: "motion",
                 properties: [],
-                permutations: [light, darkMode],
+                in: "everywhere",
             },
         ]);
     });
@@ -305,7 +270,7 @@ describe("getChangesSince", () => {
                 path: "space.small",
                 from: "space.sm",
                 properties: ["value"],
-                permutations: [light, darkMode],
+                in: "everywhere",
             },
         ]);
     });
@@ -323,9 +288,9 @@ describe("getChangesSince", () => {
                 path: "space.md",
                 from: "space.sm",
                 properties: [],
-                permutations: [light, darkMode],
+                in: "everywhere",
             },
-            { kind: "removed", path: "space.md", permutations: [light, darkMode] },
+            { kind: "removed", path: "space.md", in: "everywhere" },
         ]);
     });
 
@@ -342,7 +307,7 @@ describe("getChangesSince", () => {
                 path: "space.tiny",
                 from: "space.sm",
                 properties: [],
-                permutations: [light, darkMode],
+                in: "everywhere",
             },
         ]);
     });
@@ -372,16 +337,11 @@ describe("getChangesSince", () => {
             }),
         });
         expect(brief(read(), after)).toEqual([
-            {
-                kind: "group-changed",
-                path: "space",
-                properties: ["description"],
-                permutations: [light, darkMode],
-            },
-            { kind: "group-added", path: "motion", permutations: [light, darkMode] },
-            { kind: "group-removed", path: "typography", permutations: [light, darkMode] },
-            { kind: "removed", path: "typography.body", permutations: [light, darkMode] },
-            { kind: "removed", path: "typography.heading", permutations: [light, darkMode] },
+            { kind: "group-changed", path: "space", properties: ["description"], in: "everywhere" },
+            { kind: "group-added", path: "motion", in: "everywhere" },
+            { kind: "group-removed", path: "typography", in: "everywhere" },
+            { kind: "removed", path: "typography.body", in: "everywhere" },
+            { kind: "removed", path: "typography.heading", in: "everywhere" },
         ]);
     });
 
@@ -396,7 +356,7 @@ describe("getChangesSince", () => {
             path: "type",
             from: "typography",
             properties: ["description"],
-            permutations: [light, darkMode],
+            in: "everywhere",
         });
     });
 
@@ -480,18 +440,8 @@ describe("getChangesSince", () => {
             base: changed(["text"], { size: { $type: "dimension", $value: "{typography.body}" } }),
         });
         expect(brief(read(), after)).toEqual([
-            {
-                kind: "group-changed",
-                path: "text",
-                properties: ["type"],
-                permutations: [light, darkMode],
-            },
-            {
-                kind: "changed",
-                path: "text.size",
-                properties: ["type"],
-                permutations: [light, darkMode],
-            },
+            { kind: "group-changed", path: "text", properties: ["type"], in: "everywhere" },
+            { kind: "changed", path: "text.size", properties: ["type"], in: "everywhere" },
         ]);
     });
 
@@ -504,12 +454,7 @@ describe("getChangesSince", () => {
             },
         });
         expect(brief(read(), after)).toEqual([
-            {
-                kind: "changed",
-                path: "space.sm",
-                properties: ["value"],
-                permutations: [light, darkMode],
-            },
+            { kind: "changed", path: "space.sm", properties: ["value"], in: "mode: light, dark" },
         ]);
     });
 
@@ -550,12 +495,7 @@ describe("getChangesSince", () => {
         const before = read({ base: changed(["space", "sm"], swatch("#000000")) });
         const after = read({ base: changed(["space", "sm"], swatch("#ffffff")) });
         expect(brief(before, after)).toEqual([
-            {
-                kind: "changed",
-                path: "space.sm",
-                properties: ["extensions"],
-                permutations: [light, darkMode],
-            },
+            { kind: "changed", path: "space.sm", properties: ["extensions"], in: "everywhere" },
         ]);
     });
 
@@ -593,90 +533,119 @@ const srgb = (r: number, g: number, b: number, extra: Partial<ColorValue> = {}):
     ...extra,
 });
 
+const fromHex = srgb(0.2196, 0.5176, 0.949, { hex: "#3884f2" });
+const p3: ColorValue = { colorSpace: "display-p3", components: [0.2, 0.5, 0.9], alpha: 1 };
+const none: ColorValue = { colorSpace: "oklch", components: [0.5, 0, "none"], alpha: 1 };
+const zero: ColorValue = { colorSpace: "oklch", components: [0.5, 0, 0], alpha: 1 };
+const layer = {
+    color: srgb(0, 0, 0, { alpha: 0.2 }),
+    offsetX: { value: 0, unit: "px" as const },
+    offsetY: { value: 1, unit: "px" as const },
+    blur: { value: 2, unit: "px" as const },
+    spread: { value: 0, unit: "px" as const },
+    inset: false,
+};
+const toSm = { syntax: "curly-brace" as const, path: "space.sm" };
+const pointerToSm = { syntax: "json-pointer" as const, pointer: "#/space/sm/$value" };
+
 describe("isEquivalentValue", () => {
-    it("treats a hex fallback and components written to three places as the same color", () => {
-        const fromHex = srgb(0.2196, 0.5176, 0.949, { hex: "#3884f2" });
-        expect(isEquivalentValue("color", fromHex, srgb(0.22, 0.518, 0.949))).toBe(true);
-        expect(isEquivalentValue("color", srgb(0.22, 0.518, 0.949), fromHex)).toBe(true);
-    });
-
-    it("tells colors apart beyond that rounding", () => {
-        expect(
-            isEquivalentValue("color", srgb(0.22, 0.518, 0.949), srgb(0.221, 0.518, 0.949)),
-        ).toBe(false);
-        expect(
-            isEquivalentValue("color", srgb(0.2, 0.5, 0.9), srgb(0.2, 0.5, 0.9, { alpha: 0.5 })),
-        ).toBe(false);
-    });
-
-    it("tells colors in different color spaces apart", () => {
-        const p3: ColorValue = { colorSpace: "display-p3", components: [0.2, 0.5, 0.9], alpha: 1 };
-        expect(isEquivalentValue("color", srgb(0.2, 0.5, 0.9), p3)).toBe(false);
-    });
-
-    it("treats `none` as equal only to `none`", () => {
-        const none: ColorValue = { colorSpace: "oklch", components: [0.5, 0, "none"], alpha: 1 };
-        const zero: ColorValue = { colorSpace: "oklch", components: [0.5, 0, 0], alpha: 1 };
-        expect(isEquivalentValue("color", none, structuredClone(none))).toBe(true);
-        expect(isEquivalentValue("color", none, zero)).toBe(false);
-    });
-
-    it("tells lengths in different units apart", () => {
-        expect(
-            isEquivalentValue("dimension", { value: 16, unit: "px" }, { value: 1, unit: "rem" }),
-        ).toBe(false);
-        expect(
-            isEquivalentValue(
-                "dimension",
-                { value: 0.1 + 0.2, unit: "rem" },
-                { value: 0.3, unit: "rem" },
-            ),
-        ).toBe(true);
-    });
-
-    it("compares composite values part by part", () => {
-        const layer = {
-            color: srgb(0, 0, 0, { alpha: 0.2 }),
-            offsetX: { value: 0, unit: "px" as const },
-            offsetY: { value: 1, unit: "px" as const },
-            blur: { value: 2, unit: "px" as const },
-            spread: { value: 0, unit: "px" as const },
-            inset: false,
-        };
-        expect(isEquivalentValue("shadow", [layer], [structuredClone(layer)])).toBe(true);
-        expect(isEquivalentValue("shadow", [layer], [{ ...layer, inset: true }])).toBe(false);
-        expect(isEquivalentValue("shadow", [layer], [layer, layer])).toBe(false);
-    });
-
-    it("compares references as references", () => {
-        expect(
-            isEquivalentValue(
-                "dimension",
-                { syntax: "curly-brace", path: "space.sm" },
-                { syntax: "curly-brace", path: "space.sm" },
-            ),
-        ).toBe(true);
-        expect(
-            isEquivalentValue(
-                "dimension",
-                { syntax: "curly-brace", path: "space.sm" },
-                { syntax: "curly-brace", path: "space.md" },
-            ),
-        ).toBe(false);
-        expect(
-            isEquivalentValue(
-                "dimension",
-                { syntax: "curly-brace", path: "space.sm" },
-                { value: 4, unit: "px" },
-            ),
-        ).toBe(false);
-        expect(
-            isEquivalentValue(
-                "dimension",
-                { syntax: "json-pointer", pointer: "#/space/sm/$value" },
-                { syntax: "json-pointer", pointer: "#/space/sm/$value" },
-            ),
-        ).toBe(true);
+    it.for([
+        [
+            "treats a hex fallback and components written to three places as the same color",
+            "color",
+            fromHex,
+            srgb(0.22, 0.518, 0.949),
+            true,
+        ],
+        [
+            "treats components written to three places and a hex fallback as the same color",
+            "color",
+            srgb(0.22, 0.518, 0.949),
+            fromHex,
+            true,
+        ],
+        [
+            "tells colors apart beyond that rounding",
+            "color",
+            srgb(0.22, 0.518, 0.949),
+            srgb(0.221, 0.518, 0.949),
+            false,
+        ],
+        [
+            "tells colors apart by alpha",
+            "color",
+            srgb(0.2, 0.5, 0.9),
+            srgb(0.2, 0.5, 0.9, { alpha: 0.5 }),
+            false,
+        ],
+        ["tells colors in different color spaces apart", "color", srgb(0.2, 0.5, 0.9), p3, false],
+        ["treats `none` as equal to `none`", "color", none, structuredClone(none), true],
+        ["treats `none` as not equal to 0", "color", none, zero, false],
+        [
+            "tells lengths in different units apart",
+            "dimension",
+            { value: 16, unit: "px" },
+            { value: 1, unit: "rem" },
+            false,
+        ],
+        [
+            "treats lengths in one unit as the same within rounding",
+            "dimension",
+            { value: 0.1 + 0.2, unit: "rem" },
+            { value: 0.3, unit: "rem" },
+            true,
+        ],
+        [
+            "compares composite values part by part: the same parts",
+            "shadow",
+            [layer],
+            [structuredClone(layer)],
+            true,
+        ],
+        [
+            "compares composite values part by part: one part different",
+            "shadow",
+            [layer],
+            [{ ...layer, inset: true }],
+            false,
+        ],
+        [
+            "compares composite values part by part: a layer more",
+            "shadow",
+            [layer],
+            [layer, layer],
+            false,
+        ],
+        ["compares references as references: the same path", "dimension", toSm, { ...toSm }, true],
+        [
+            "compares references as references: another path",
+            "dimension",
+            toSm,
+            { ...toSm, path: "space.md" },
+            false,
+        ],
+        [
+            "compares references as references: a reference and a value",
+            "dimension",
+            toSm,
+            { value: 4, unit: "px" },
+            false,
+        ],
+        [
+            "compares references as references: the same JSON Pointer",
+            "dimension",
+            pointerToSm,
+            { ...pointerToSm },
+            true,
+        ],
+    ] satisfies [
+        string,
+        TokenType,
+        UnresolvedValue<TokenType>,
+        UnresolvedValue<TokenType>,
+        boolean,
+    ][])("%s", ([, type, a, b, equal]) => {
+        expect(isEquivalentValue(type, a, b)).toBe(equal);
     });
 
     it("compares two tokens by type and by the value they say, not where it leads", () => {

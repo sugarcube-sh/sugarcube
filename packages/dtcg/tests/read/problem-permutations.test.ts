@@ -34,28 +34,27 @@ const labels = (tokens: DesignTokens) =>
         .map(({ permutations }) => permutations.label);
 
 describe("a problem in a source only some permutations read", () => {
-    it("names them when the source is written in the resolver", () => {
-        const tokens = read({ base: [{ $ref: "base.json" }], dark: [{ odd: badType }] });
-        expect(labels(tokens)).toStrictEqual(["mode: dark"]);
-    });
-
-    it("names them when the source is the only part of its file read", () => {
-        const tokens = read(
-            { base: [{ $ref: "base.json" }], dark: [{ $ref: "shared.json#/a" }] },
+    it.for<[string, Source[], Source[], Record<string, unknown>]>([
+        [
+            "names them when the source is written in the resolver",
+            [{ $ref: "base.json" }],
+            [{ odd: badType }],
+            {},
+        ],
+        [
+            "names them when the source is the only part of its file read",
+            [{ $ref: "base.json" }],
+            [{ $ref: "shared.json#/a" }],
             { "shared.json": { a: { odd: badType } } },
-        );
-        expect(labels(tokens)).toStrictEqual(["mode: dark"]);
-    });
-
-    it("names them when other permutations read another part of the file", () => {
-        const tokens = read(
-            {
-                base: [{ $ref: "base.json" }, { $ref: "shared.json#/b" }],
-                dark: [{ $ref: "shared.json#/a" }],
-            },
+        ],
+        [
+            "names them when other permutations read another part of the file",
+            [{ $ref: "base.json" }, { $ref: "shared.json#/b" }],
+            [{ $ref: "shared.json#/a" }],
             { "shared.json": { a: { odd: badType }, b: { more: { $type: "number", $value: 2 } } } },
-        );
-        expect(labels(tokens)).toStrictEqual(["mode: dark"]);
+        ],
+    ])("%s", ([, base, dark, files]) => {
+        expect(labels(read({ base, dark }, files))).toStrictEqual(["mode: dark"]);
     });
 });
 
