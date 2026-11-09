@@ -1,7 +1,8 @@
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { type DesignTokens, type Permutation, read, readFromMemory } from "../../src/index.js";
+import { type DesignTokens, type Permutation, readFromMemory } from "../../src/index.js";
+import { read } from "../../src/node.js";
 import { type CaseOptions, loadCases, readOptions } from "./case-options.js";
-import { textIn } from "./on-disk.js";
 import { withSpans } from "./positions.js";
 import { getSpan } from "../../src/editor.js";
 
@@ -104,10 +105,7 @@ for (const { name, input, files, expected: written } of loadCases()) {
             readFromMemory({ files, entryFile: expected.entry }, readOptions(expected.options));
 
         it("reads through read", async () => {
-            const tokens = await read(expected.entry, {
-                ...readOptions(expected.options),
-                readText: textIn(input),
-            });
+            const tokens = await read(join(input, expected.entry), readOptions(expected.options));
             expect(observed(tokens, expected)).toStrictEqual(expected);
         });
 

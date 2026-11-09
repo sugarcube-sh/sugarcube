@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
-import { type Diagnostic, type DesignTokens, read, readFromMemory } from "../../src/index.js";
-import { textIn } from "./on-disk.js";
+import { type Diagnostic, type DesignTokens, readFromMemory } from "../../src/index.js";
+import { read } from "../../src/node.js";
 
 const repo = join(import.meta.dirname, "../../../..");
 
@@ -298,9 +298,7 @@ beforeAll(async () => {
     const files = tokenFolders.flatMap(jsonFilesIn);
     const covered = new Set<string>();
     for (const entry of files.filter((file) => file.endsWith(".resolver.json"))) {
-        const tokens = await read(entry, {
-            readText: textIn(repo),
-        });
+        const tokens = await read(join(repo, entry));
         for (const file of tokens.files) covered.add(join(dirname(entry), file));
         projects.set(entry, tokens);
     }
