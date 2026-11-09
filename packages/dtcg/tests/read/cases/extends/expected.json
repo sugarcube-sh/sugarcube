@@ -106,6 +106,7 @@
         },
         {
           "path": "button-primary",
+          "extends": null,
           "type": "number",
           "description": "Buttons",
           "references": [

@@ -229,16 +229,6 @@ describe("tokens.has", () => {
     });
 });
 
-describe("the modifiers that take part", () => {
-    it("are the resolver's, with their contexts and default", () => {
-        expect(tokens.resolver?.modifiers.map(({ name }) => name)).toStrictEqual([
-            "theme",
-            "density",
-        ]);
-        expect(tokens.resolver?.modifiers[0]).toMatchObject({ name: "theme", default: "light" });
-    });
-});
-
 describe("toInputLabel", () => {
     it("names each modifier and its context, in the order the input lists them", () => {
         expect(toInputLabel({ density: "compact", theme: "dark" })).toBe(

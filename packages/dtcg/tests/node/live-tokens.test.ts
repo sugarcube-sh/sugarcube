@@ -1,10 +1,10 @@
 import { EventEmitter } from "node:events";
-import { mkdtemp, realpath, rm, stat, utimes, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { stat, utimes, writeFile } from "node:fs/promises";
+import { relative } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type DesignTokens } from "../../src/index.js";
 import { type ReadEvent, type TokensOnDisk, createLiveTokens } from "../../src/node.js";
+import { oneSet } from "../token-files.js";
 import { useTempFolder } from "./temp-folder.js";
 
 const afterRead = vi.hoisted(() => ({ once: undefined as (() => Promise<void>) | undefined }));
@@ -26,7 +26,6 @@ vi.mock("../../src/node/read.js", async (importOriginal) => {
 const color = (hex: string) => ({ $type: "color", $value: hex });
 
 const folder = useTempFolder("dtcg-live-");
-const outside: string[] = [];
 let entryFile: string;
 
 beforeEach(async () => {
@@ -36,26 +35,12 @@ beforeEach(async () => {
     entryFile = folder.at("tokens.resolver.json");
 });
 
-afterEach(async () => {
-    for (const each of outside.splice(0)) {
-        await rm(each, { recursive: true, force: true });
-    }
-});
-
 function tokens(file: string, json: unknown) {
     return writeFile(folder.at(file), JSON.stringify(json));
 }
 
 function resolver(files: string[]) {
-    return writeFile(
-        folder.at("tokens.resolver.json"),
-        JSON.stringify({
-            version: "2025.10",
-            resolutionOrder: [
-                { type: "set", name: "base", sources: files.map((file) => ({ $ref: file })) },
-            ],
-        }),
-    );
+    return writeFile(folder.at("tokens.resolver.json"), oneSet(...files));
 }
 
 const disk = (file: string) => folder.at(file).replaceAll("\\", "/");
@@ -286,27 +271,29 @@ describe("design tokens kept current with their files", () => {
         expect(reads.map(({ event }) => event.file)).toStrictEqual(["base.json"]);
     });
 
-    it.for([
-        ["watches and matches a file named from the root", (brand: string) => brand],
-        [
-            "watches a file named relative to a folder above the entry's",
-            (brand: string) => relative(folder.path, brand).replaceAll("\\", "/"),
-        ],
-    ] as const)("%s", async ([, nameOf]) => {
-        const elsewhere = await realpath(await mkdtemp(join(tmpdir(), "dtcg-live-outside-")));
-        outside.push(elsewhere);
-        const brand = join(elsewhere, "brand.json").replaceAll("\\", "/");
-        await writeFile(brand, JSON.stringify({ brand: color("#333333") }));
-        const name = nameOf(brand);
-        await resolver(["base.json", name]);
-        const { current, reads, watcher, added } = live();
-        await current.getTokens();
+    describe("with a file outside the entry's folder", () => {
+        const elsewhere = useTempFolder("dtcg-live-outside-");
 
-        watcher.emit("change", brand);
-        await current.getTokens();
+        it.for([
+            ["watches and matches a file named from the root", (brand: string) => brand],
+            [
+                "watches a file named relative to a folder above the entry's",
+                (brand: string) => relative(folder.path, brand).replaceAll("\\", "/"),
+            ],
+        ] as const)("%s", async ([, nameOf]) => {
+            const brand = elsewhere.at("brand.json").replaceAll("\\", "/");
+            await writeFile(brand, JSON.stringify({ brand: color("#333333") }));
+            const name = nameOf(brand);
+            await resolver(["base.json", name]);
+            const { current, reads, watcher, added } = live();
+            await current.getTokens();
 
-        expect(added).toContain(brand);
-        expect(reads.map(({ event }) => event.file)).toStrictEqual([name]);
+            watcher.emit("change", brand);
+            await current.getTokens();
+
+            expect(added).toContain(brand);
+            expect(reads.map(({ event }) => event.file)).toStrictEqual([name]);
+        });
     });
 
     it("adds the files it lists to the watcher at once, then each file a later read gains", async () => {
@@ -397,11 +384,20 @@ describe("design tokens kept current with their files", () => {
         expect(seen).toHaveLength(1);
     });
 
-    it("gives a read that rejects to onError, with no unhandled rejection", async () => {
+    describe("when a read rejects", () => {
         const unhandled: unknown[] = [];
         const onUnhandled = (reason: unknown) => unhandled.push(reason);
-        process.on("unhandledRejection", onUnhandled);
-        try {
+
+        beforeEach(() => {
+            unhandled.length = 0;
+            process.on("unhandledRejection", onUnhandled);
+        });
+
+        afterEach(() => {
+            process.off("unhandledRejection", onUnhandled);
+        });
+
+        it("gives a read that rejects to onError, with no unhandled rejection", async () => {
             const failure = new Error("no source");
             let fail = false;
             const { current, errors, reads, save } = live(() => {
@@ -428,16 +424,9 @@ describe("design tokens kept current with their files", () => {
             save("base.json");
             await current.getTokens();
             expect(reads).toHaveLength(1);
-        } finally {
-            process.off("unhandledRejection", onUnhandled);
-        }
-    });
+        });
 
-    it("gives a first read that rejects to onError, with no unhandled rejection", async () => {
-        const unhandled: unknown[] = [];
-        const onUnhandled = (reason: unknown) => unhandled.push(reason);
-        process.on("unhandledRejection", onUnhandled);
-        try {
+        it("gives a first read that rejects to onError, with no unhandled rejection", async () => {
             const failure = new Error("no source");
             const errors: unknown[] = [];
             createLiveTokens(
@@ -450,8 +439,6 @@ describe("design tokens kept current with their files", () => {
 
             expect(errors).toStrictEqual([failure]);
             expect(unhandled).toStrictEqual([]);
-        } finally {
-            process.off("unhandledRejection", onUnhandled);
-        }
+        });
     });
 });

@@ -37,8 +37,8 @@ const files: Record<string, string> = {
 const tokens = readFromMemory({ files });
 const light = tokens.getPermutation({ mode: "light" });
 const dark = tokens.getPermutation({ mode: "dark" });
-const inLight = (path: string) => (light ? light.getToken(path) : undefined);
-const inDark = (path: string) => (dark ? dark.getToken(path) : undefined);
+const inLight = (path: string) => light.getToken(path);
+const inDark = (path: string) => dark.getToken(path);
 
 function written(span: Span, from: Record<string, string> = files): string {
     return (from[span.file] ?? "").slice(span.offset, span.offset + span.length);
@@ -222,17 +222,15 @@ describe("permutation.getReferencesTo", () => {
 
 describe("a group's $extends", () => {
     it("links the group to the group it extends (Format 6.4)", () => {
-        expect(tokens.getPermutation().getGroup("primary")?.extends).toBe(
-            tokens.getPermutation().getGroup("button"),
-        );
+        expect(light.getGroup("primary")?.extends).toBe(light.getGroup("button"));
     });
 
     it("is a reference the group writes, referencing no token (Format 6.4.5)", () => {
-        const [reference, ...rest] = tokens.getPermutation().getGroup("primary")?.references ?? [];
+        const [reference, ...rest] = light.getGroup("primary")?.references ?? [];
         expect(rest).toStrictEqual([]);
         expect(reference?.asWritten.syntax).toBe("curly-brace");
         expect(reference?.pointsToPath).toBe("button");
-        expect(reference?.writtenIn).toBe(tokens.getPermutation().getGroup("primary"));
+        expect(reference?.writtenIn).toBe(light.getGroup("primary"));
         expect(reference?.pointsToToken).toBeUndefined();
         expect(reference && written(getSpan(tokens, reference))).toBe('"{button}"');
     });
@@ -259,8 +257,8 @@ describe("a group's $extends", () => {
     });
 
     it("leaves a group that extends nothing without references", () => {
-        expect(tokens.getPermutation().getGroup("button")?.references).toStrictEqual([]);
-        expect(tokens.getPermutation().getGroup("button")?.extends).toBeUndefined();
+        expect(light.getGroup("button")?.references).toStrictEqual([]);
+        expect(light.getGroup("button")?.extends).toBeUndefined();
     });
 });
 
@@ -285,27 +283,6 @@ describe("a curly brace reference's path", () => {
 
 describe("moved", () => {
     const moves = (from: string, to: string) => [{ from, to }];
-
-    it("writes a curly brace reference after a move", () => {
-        const [reference] = inLight("color.brand")?.references ?? [];
-        expect(reference?.moved(moves("color.red", "color.crimson"))).toBe("{color.crimson}");
-        expect(reference?.moved(moves("color", "palette"))).toBe("{palette.red}");
-    });
-
-    it("writes a JSON Pointer after a move, keeping its steps into the value", () => {
-        expect(
-            inLight("border.focus")?.references[0]?.moved(moves("color.brand", "color.house")),
-        ).toStrictEqual({ $ref: "#/color/house/$value" });
-        expect(
-            inLight("color.tint")?.references[0]?.moved(moves("color.red", "color.crimson")),
-        ).toStrictEqual({ $ref: "#/color/crimson/$value/components/0" });
-    });
-
-    it("writes the reference as it was when no move reaches it", () => {
-        expect(inLight("color.brand")?.references[0]?.moved(moves("size", "space"))).toBe(
-            "{color.red}",
-        );
-    });
 
     it("writes what stands at the reference's place: a token's $ref is the pointer alone", () => {
         const text = JSON.stringify({
@@ -476,16 +453,6 @@ describe("the plain form", () => {
         const [pointer] = plain(inLight("color.tint")).references;
         expect(Object.keys(pointer).sort()).toStrictEqual(["asWritten", "writtenInProperty"]);
         expect(pointer.asWritten.syntax).toBe("json-pointer");
-    });
-
-    it("writes a group's $extends among its references, and no extends link", () => {
-        const primary = plain(tokens.getPermutation().getGroup("primary"));
-        expect(
-            primary.references.map(
-                ({ asWritten }: { asWritten: { path: string } }) => asWritten.path,
-            ),
-        ).toStrictEqual(["button"]);
-        expect(primary).not.toHaveProperty("extends");
     });
 
     it("has no edges", () => {

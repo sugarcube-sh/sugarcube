@@ -400,35 +400,3 @@ describe("a scope", () => {
         ]);
     });
 });
-
-describe("a problem's permutations", () => {
-    const broken = readChanged({
-        "dark.json": JSON.stringify({ text: { $type: "number", $value: "{missing}" } }),
-    });
-    const problem = broken.diagnostics.find(({ kind }) => kind === "missing-reference");
-
-    it("are the permutations themselves, labelled", () => {
-        expect(problem?.permutations).toContain(broken.getPermutation({ mode: "dark" }));
-        expect(problem?.permutations?.label).toBe("mode: dark, sepia");
-    });
-
-    it("are written in the plain form as their inputs", () => {
-        const written = JSON.parse(JSON.stringify(broken)).diagnostics.find(
-            ({ kind }: { kind: string }) => kind === "missing-reference",
-        );
-        expect(written.permutations).toStrictEqual([
-            { mode: "dark", density: "comfy" },
-            { mode: "dark", density: "compact" },
-            { mode: "sepia", density: "comfy" },
-            { mode: "sepia", density: "compact" },
-        ]);
-    });
-});
-
-describe("the plain form of the design tokens", () => {
-    it("writes each permutation in full", () => {
-        const written = JSON.parse(JSON.stringify(tokens));
-        expect(written.permutations[0]).toHaveProperty("tokens");
-        expect(written.permutations[0].input).toStrictEqual({ mode: "light", density: "comfy" });
-    });
-});

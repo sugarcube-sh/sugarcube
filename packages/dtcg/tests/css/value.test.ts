@@ -64,16 +64,9 @@ describe("toCSSValue", () => {
             "rgb(127.5 127.5 127.5)",
             "rgb(0 0 0 / 0.15)",
         ]);
+        expect(toCSSValue(at("exact"), { colors: "components" })).toBe("rgb(255 0 0)");
         expect(toCSSValue(at("stale"), { colors: "hex" })).toBe("#00ff00");
         expect(toCSSValue(at("faint"), { colors: "hex" })).toBe("#00000026");
-    });
-
-    it("writes a color from its components when asked, as it does by default", () => {
-        const at = read({
-            object: color({ colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }),
-        });
-        expect(toCSSValue(at("object"), { colors: "components" })).toBe("rgb(255 0 0)");
-        expect(toCSSValue(at("object"), { colors: "components" })).toBe(toCSSValue(at("object")));
     });
 
     it("writes a color object from its components without hexStringColors too", () => {
@@ -326,56 +319,29 @@ describe("toCSSValue", () => {
         });
 
         it("in the order the properties are listed", () => {
-            const body = at("body");
-            if (body.type !== "typography") throw new Error("body is typography");
-            const css = toCSSValue(body, asVariables);
-            expect(css).toStrictEqual({
-                "font-family": "Inter, sans-serif",
-                "font-size": "var(--hairline)",
-                "font-weight": "400",
-                "letter-spacing": "0px",
-                "line-height": "0",
-            });
-            expect(Object.keys(css ?? {})).toStrictEqual([
-                "font-family",
-                "font-size",
-                "font-weight",
-                "letter-spacing",
-                "line-height",
+            expect(Object.entries(toCSSValue(at("body"), asVariables) ?? {})).toStrictEqual([
+                ["font-family", "Inter, sans-serif"],
+                ["font-size", "var(--hairline)"],
+                ["font-weight", "400"],
+                ["letter-spacing", "0px"],
+                ["line-height", "0"],
             ]);
         });
 
         it("each property a custom property of its own when the whole value is a reference", () => {
-            expect(toCSSValue(at("quote"), asVariables)).toStrictEqual({
+            const asked: (string | undefined)[] = [];
+            const css = toCSSValue(at("quote"), {
+                replaceReference: (ref, cssProperty) => {
+                    asked.push(cssProperty);
+                    return asVariables.replaceReference?.(ref, cssProperty);
+                },
+            });
+            expect(css).toStrictEqual({
                 "font-family": "var(--body-font-family)",
                 "font-size": "var(--body-font-size)",
                 "font-weight": "var(--body-font-weight)",
                 "letter-spacing": "var(--body-letter-spacing)",
                 "line-height": "var(--body-line-height)",
-            });
-        });
-
-        it("asking for each CSS property's custom property, so a caller's naming decides how it is joined", () => {
-            const asked: (string | undefined)[] = [];
-            const css = toCSSValue(at("quote"), {
-                replaceReference: (ref, cssProperty) => {
-                    asked.push(cssProperty);
-                    return ref.pointsToToken
-                        ? {
-                              customProperty: toCustomPropertyName(ref.pointsToToken.path, {
-                                  delimiter: "_",
-                                  cssProperty,
-                              }),
-                          }
-                        : undefined;
-                },
-            });
-            expect(css).toStrictEqual({
-                "font-family": "var(--body_font-family)",
-                "font-size": "var(--body_font-size)",
-                "font-weight": "var(--body_font-weight)",
-                "letter-spacing": "var(--body_letter-spacing)",
-                "line-height": "var(--body_line-height)",
             });
             expect(asked).toStrictEqual([
                 "font-family",

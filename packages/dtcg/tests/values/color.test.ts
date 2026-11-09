@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { parseValue } from "../../src/values.js";
 import { lenient, parsing } from "./parsing.js";
 
 const { read, details, ignored, reasons, refuses } = parsing("color");
@@ -47,11 +46,8 @@ describe("parseValue, color", () => {
         });
 
         it("keeps hex exactly as written, including case", () => {
-            expect(
-                read({ colorSpace: "srgb", components: [0, 0, 1], hex: "#0000FF" }),
-            ).toMatchObject({
-                hex: "#0000FF",
-            });
+            const blue = { colorSpace: "srgb", components: [0, 0, 1], hex: "#0000FF" };
+            expect(read(blue)).toMatchObject({ hex: "#0000FF" });
         });
 
         it("reads none as a component", () => {
@@ -64,13 +60,11 @@ describe("parseValue, color", () => {
             { name: "the lowest", components: [0, 0, 0] },
             { name: "the highest", components: [359.99, 100, 100] },
         ])("$name values in range", ({ components }) => {
-            expect(parseValue("color", { colorSpace: "hsl", components }).ok).toBe(true);
+            read({ colorSpace: "hsl", components });
         });
 
         it("reads unbounded channels at any size", () => {
-            expect(parseValue("color", { colorSpace: "lab", components: [50, -500, 500] }).ok).toBe(
-                true,
-            );
+            read({ colorSpace: "lab", components: [50, -500, 500] });
         });
 
         it.for([0, 1])("reads alpha %s, at the end of its range", (alpha) => {
@@ -162,13 +156,13 @@ describe("parseValue, color", () => {
         ] as const)(
             "reads %s as the sRGB color it names, exactly",
             ([raw, components, alpha, hex]) => {
-                expect(
-                    parseValue("color", raw, { jsonPath: ["$value"], ...options }),
-                ).toStrictEqual({
-                    ok: true,
-                    value: { colorSpace: "srgb", components, alpha, hex },
-                    ignored: [],
+                expect(read(raw, options)).toStrictEqual({
+                    colorSpace: "srgb",
+                    components,
+                    alpha,
+                    hex,
                 });
+                expect(ignored(raw, options)).toStrictEqual([]);
             },
         );
 
@@ -179,10 +173,7 @@ describe("parseValue, color", () => {
         ])(
             "refuses %s, which has too few digits, giving the %s it stands for",
             ([raw, expanded]) => {
-                const result = parseValue("color", raw, { jsonPath: ["$value"], ...options });
-                expect(result.ok ? [] : result.errors.map(({ detail }) => detail)).toStrictEqual([
-                    { type: "color", reason: "short-hex-string", value: raw, expanded },
-                ]);
+                refuses(raw, [], { reason: "short-hex-string", value: raw, expanded }, options);
             },
         );
     });

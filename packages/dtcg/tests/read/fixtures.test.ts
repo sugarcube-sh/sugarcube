@@ -26,151 +26,67 @@ const readTogether = [
     ],
 ];
 
-interface OldForm {
-    form: string;
-    inRepo: boolean;
-    matches: (d: Diagnostic) => boolean;
-}
+const kindIs =
+    (kind: Diagnostic["kind"]) =>
+    (d: Diagnostic): boolean =>
+        d.kind === kind;
 
-const oldForms: OldForm[] = [
-    {
-        form: "a hex-string colour",
-        inRepo: true,
-        matches: (d) => d.kind === "hex-string-color",
-    },
-    {
-        form: "a hex field that is not six digits",
-        inRepo: false,
-        matches: (d) => reason(d) === "hex-not-six-digits",
-    },
-    {
-        form: "a reference as part of a value",
-        inRepo: false,
-        matches: (d) => reason(d) === "curly-brace-not-allowed-here",
-    },
-    {
-        form: "an unknown property in a value",
-        inRepo: false,
-        matches: (d) => reason(d) === "unknown-property",
-    },
-    {
-        form: "an empty font name",
-        inRepo: false,
-        matches: (d) => reason(d) === "not-a-font-name",
-    },
-    {
-        form: "an empty font list",
-        inRepo: false,
-        matches: (d) => reason(d) === "empty-font-list",
-    },
-    {
-        form: "a string in a dashArray that is not a reference",
-        inRepo: false,
-        matches: (d) => d.kind === "invalid-value" && d.detail.jsonPath.includes("dashArray"),
-    },
-    {
-        form: "an empty dashArray",
-        inRepo: false,
-        matches: (d) => reason(d) === "empty-dash-array",
-    },
-    {
-        form: "an empty shadow list",
-        inRepo: false,
-        matches: (d) => reason(d) === "no-shadows",
-    },
-    {
-        form: "an empty gradient",
-        inRepo: false,
-        matches: (d) => reason(d) === "no-gradient-stops",
-    },
-    {
-        form: "typography without all five parts",
-        inRepo: true,
-        matches: (d) =>
-            d.kind === "invalid-value" &&
-            d.detail.type === "typography" &&
-            d.detail.reason === "missing-property",
-    },
-    {
-        form: "a key written twice",
-        inRepo: false,
-        matches: (d) => d.kind === "duplicate-key",
-    },
-    {
-        form: "a file named in resolutionOrder",
-        inRepo: false,
-        matches: (d) =>
-            d.kind === "resolver-invalid" && d.detail.rule === "file-in-resolution-order",
-    },
-    {
-        form: "$description, $deprecated or $extensions of the wrong JSON type",
-        inRepo: false,
-        matches: (d) =>
-            d.kind === "invalid-property" &&
-            ["$description", "$deprecated", "$extensions"].includes(d.detail.property),
-    },
-    {
-        form: "a $root holding tokens",
-        inRepo: false,
-        matches: (d) => d.kind === "invalid-name" && d.detail.name === "$root",
-    },
-    {
-        form: "$extends or $ref naming the group's own parent",
-        inRepo: false,
-        matches: (d) =>
-            d.kind === "circular-reference" &&
-            d.detail.chain.length === 2 &&
-            (d.detail.chain[0] ?? "").startsWith(`${d.detail.chain[1] ?? ""}.`),
-    },
-    {
-        form: "a reference to a token of another type",
-        inRepo: false,
-        matches: (d) => d.kind === "type-mismatch",
-    },
-    {
-        form: "a list as a group member",
-        inRepo: false,
-        matches: (d) => d.kind === "invalid-member" && d.detail.found === "array",
-    },
-    {
-        form: "$extends without braces, or a group $extends or $ref that is not a reference",
-        inRepo: false,
-        matches: (d) =>
-            d.kind === "invalid-property" && ["$extends", "$ref"].includes(d.detail.property),
-    },
-    {
-        form: "bad keys beside a $ref in resolutionOrder",
-        inRepo: false,
-        matches: (d) =>
-            d.kind === "resolver-invalid" &&
-            d.detail.jsonPath[0] === "resolutionOrder" &&
-            ["invalid-default", "wrong-type", "no-contexts"].includes(d.detail.rule),
-    },
-    {
-        form: "a source whose $ref is not a string",
-        inRepo: false,
-        matches: (d) =>
-            d.kind === "resolver-invalid" &&
-            d.detail.rule === "wrong-type" &&
-            d.detail.name === "$ref" &&
-            d.detail.jsonPath.includes("sources"),
-    },
-    {
-        form: "a token file whose top level is a list",
-        inRepo: false,
-        matches: (d) => d.kind === "invalid-json" && d.detail.reason === "not-an-object",
-    },
-    {
-        form: "a $ref that is not a JSON Pointer",
-        inRepo: false,
-        matches: (d) => d.kind === "malformed-pointer",
-    },
-    {
-        form: "a modifier listed twice in resolutionOrder",
-        inRepo: false,
-        matches: (d) => d.kind === "resolver-invalid" && d.detail.rule === "duplicate-name",
-    },
-];
+const reasonIs =
+    (expected: string) =>
+    (d: Diagnostic): boolean =>
+        reason(d) === expected;
+
+const ruleIs =
+    (rule: string) =>
+    (d: Diagnostic): boolean =>
+        d.kind === "resolver-invalid" && d.detail.rule === rule;
+
+const oldForms: Record<string, (d: Diagnostic) => boolean> = {
+    "a hex-string colour": kindIs("hex-string-color"),
+    "a hex field that is not six digits": reasonIs("hex-not-six-digits"),
+    "a reference as part of a value": reasonIs("curly-brace-not-allowed-here"),
+    "an unknown property in a value": reasonIs("unknown-property"),
+    "an empty font name": reasonIs("not-a-font-name"),
+    "an empty font list": reasonIs("empty-font-list"),
+    "a string in a dashArray that is not a reference": (d) =>
+        d.kind === "invalid-value" && d.detail.jsonPath.includes("dashArray"),
+    "an empty dashArray": reasonIs("empty-dash-array"),
+    "an empty shadow list": reasonIs("no-shadows"),
+    "an empty gradient": reasonIs("no-gradient-stops"),
+    "typography without all five parts": (d) =>
+        d.kind === "invalid-value" &&
+        d.detail.type === "typography" &&
+        d.detail.reason === "missing-property",
+    "a key written twice": kindIs("duplicate-key"),
+    "a file named in resolutionOrder": ruleIs("file-in-resolution-order"),
+    "$description, $deprecated or $extensions of the wrong JSON type": (d) =>
+        d.kind === "invalid-property" &&
+        ["$description", "$deprecated", "$extensions"].includes(d.detail.property),
+    "a $root holding tokens": (d) => d.kind === "invalid-name" && d.detail.name === "$root",
+    "$extends or $ref naming the group's own parent": (d) =>
+        d.kind === "circular-reference" &&
+        d.detail.chain.length === 2 &&
+        (d.detail.chain[0] ?? "").startsWith(`${d.detail.chain[1] ?? ""}.`),
+    "a reference to a token of another type": kindIs("type-mismatch"),
+    "a list as a group member": (d) => d.kind === "invalid-member" && d.detail.found === "array",
+    "$extends without braces, or a group $extends or $ref that is not a reference": (d) =>
+        d.kind === "invalid-property" && ["$extends", "$ref"].includes(d.detail.property),
+    "bad keys beside a $ref in resolutionOrder": (d) =>
+        d.kind === "resolver-invalid" &&
+        d.detail.jsonPath[0] === "resolutionOrder" &&
+        ["invalid-default", "wrong-type", "no-contexts"].includes(d.detail.rule),
+    "a source whose $ref is not a string": (d) =>
+        d.kind === "resolver-invalid" &&
+        d.detail.rule === "wrong-type" &&
+        d.detail.name === "$ref" &&
+        d.detail.jsonPath.includes("sources"),
+    "a token file whose top level is a list": (d) =>
+        d.kind === "invalid-json" && d.detail.reason === "not-an-object",
+    "a $ref that is not a JSON Pointer": kindIs("malformed-pointer"),
+    "a modifier listed twice in resolutionOrder": ruleIs("duplicate-name"),
+};
+
+const oldFormsInRepo = ["a hex-string colour", "typography without all five parts"];
 
 interface Expected {
     project: string;
@@ -333,7 +249,7 @@ describe("every token file and resolver in the repo", () => {
     it("fails only with forms old sugarcube accepted, or where a fixture is meant to", () => {
         const unexplained = [...projects].flatMap(([project, tokens]) =>
             tokens.diagnostics
-                .filter((d) => !oldForms.some((each) => each.matches(d)))
+                .filter((d) => !Object.values(oldForms).some((matches) => matches(d)))
                 .filter(
                     (d) =>
                         !expectedFailures.some(
@@ -356,10 +272,10 @@ describe("every token file and resolver in the repo", () => {
 
     it("finds in the repo exactly the forms old sugarcube accepted that are marked as there", () => {
         const all = [...projects.values()].flatMap((tokens) => tokens.diagnostics);
-        const found = oldForms.map(({ form, matches }) => ({
-            form,
-            inRepo: all.some(matches),
-        }));
-        expect(found).toStrictEqual(oldForms.map(({ form, inRepo }) => ({ form, inRepo })));
+        expect(
+            Object.entries(oldForms)
+                .filter(([, matches]) => all.some(matches))
+                .map(([form]) => form),
+        ).toStrictEqual(oldFormsInRepo);
     });
 });

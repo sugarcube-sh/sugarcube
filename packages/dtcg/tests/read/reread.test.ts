@@ -4,12 +4,14 @@ import { getSpan } from "../../src/editor.js";
 import { lightDark, oneSet } from "../token-files.js";
 
 const rgb = (red: number) => ({ colorSpace: "srgb", components: [red, 0, 0] });
+const colors = (red: number) =>
+    JSON.stringify({
+        color: { $type: "color", red: { $value: rgb(red) }, blue: { $value: rgb(0) } },
+    });
 
 const files = {
     "tokens.resolver.json": lightDark(["colors.json", "space.json", "theme.json"], ["dark.json"]),
-    "colors.json": JSON.stringify({
-        color: { $type: "color", red: { $value: rgb(1) }, blue: { $value: rgb(0) } },
-    }),
+    "colors.json": colors(1),
     "space.json": JSON.stringify({
         space: { $type: "number", sm: { $value: 4 }, md: { $value: 8 } },
     }),
@@ -17,17 +19,14 @@ const files = {
         theme: {
             text: { $type: "color", $value: "{color.red}" },
             gap: { $type: "number", $value: "{space.sm}" },
+            lost: { $type: "number", $value: "{missing}" },
         },
     }),
     "dark.json": JSON.stringify({ color: { blue: { $value: rgb(0.2) } } }),
 };
 
 const before = readFromMemory({ files });
-const after = before.reread({
-    "colors.json": JSON.stringify({
-        color: { $type: "color", red: { $value: rgb(0.5) }, blue: { $value: rgb(0) } },
-    }),
-});
+const after = before.reread({ "colors.json": colors(0.5) });
 const modes = ["light", "dark"] as const;
 const kept = (path: string) =>
     modes.every(
@@ -43,8 +42,16 @@ describe("a reread", () => {
         expect(kept("space.md")).toBe(true);
     });
 
-    it("keeps a token that points only at kept tokens", () => {
+    it("keeps a token that points only at kept tokens, or at one that isn't there, still reporting it", () => {
         expect(kept("theme.gap")).toBe(true);
+        expect(after.getPermutation().getToken("theme.lost")).toBeDefined();
+        expect(kept("theme.lost")).toBe(true);
+        const problems = (tokens: typeof before) =>
+            tokens.diagnostics.map(({ kind, span }) => ({ kind, span }));
+        expect(problems(before)).toContainEqual(
+            expect.objectContaining({ kind: "missing-reference" }),
+        );
+        expect(problems(after)).toStrictEqual(problems(before));
     });
 
     it("makes a token whose value changed new, and every token that points at it", () => {
@@ -84,20 +91,6 @@ describe("a reread", () => {
         });
     });
 
-    it("keeps a token above the edit in the file that changed", () => {
-        const blue = before.reread({
-            "colors.json": JSON.stringify({
-                color: { $type: "color", red: { $value: rgb(1) }, blue: { $value: rgb(0.5) } },
-            }),
-        });
-        expect(blue.getPermutation().getToken("color.red")).toBe(
-            before.getPermutation().getToken("color.red"),
-        );
-        expect(blue.getPermutation().getToken("color.blue")).not.toBe(
-            before.getPermutation().getToken("color.blue"),
-        );
-    });
-
     it("leaves the read it started from as it was", () => {
         before.reread({ "dark.json": null });
         expect(before.getPermutation().getToken("color.red")?.asWritten?.value).toStrictEqual(
@@ -113,34 +106,13 @@ describe("a reread", () => {
         expect(before.getText("dark.json")).toBe(files["dark.json"]);
     });
 
-    it("still reports the problems in a file that did not change", () => {
-        const broken = readFromMemory({
-            files: {
-                "tokens.resolver.json": oneSet("space.json", "broken.json"),
-                "space.json": files["space.json"],
-                "broken.json": JSON.stringify({ gap: { $type: "number", $value: "{missing}" } }),
-            },
-        });
-        const again = broken.reread({
-            "space.json": JSON.stringify({ space: { $type: "number", sm: { $value: 2 } } }),
-        });
-        const found = (tokens: typeof before) =>
-            tokens.diagnostics.map(({ kind, span }) => ({ kind, span }));
-        expect(found(broken)).toContainEqual(
-            expect.objectContaining({ kind: "missing-reference" }),
-        );
-        expect(found(again)).toStrictEqual(found(broken));
-        expect(again.getPermutation().getToken("gap")).toBe(
-            broken.getPermutation().getToken("gap"),
-        );
-    });
-
     describe("in the file that changed", () => {
         const sizes = (sm: number) =>
             JSON.stringify(
                 {
                     size: {
                         $type: "number",
+                        xs: { $value: 0 },
                         sm: { $value: sm },
                         md: { $value: 2 },
                         gap: { $value: "{size.md}" },
@@ -157,7 +129,8 @@ describe("a reread", () => {
         const written = (tokens: typeof first, span: { offset: number; length: number }) =>
             (tokens.getText("sizes.json") ?? "").slice(span.offset, span.offset + span.length);
 
-        it("keeps a token below the edit, though it moved", () => {
+        it("keeps a token above or below the edit, though it moved", () => {
+            expect(token(second, "size.xs")).toBe(token(first, "size.xs"));
             expect(token(second, "size.md")).toBe(token(first, "size.md"));
             expect(token(second, "size.gap")).toBe(token(first, "size.gap"));
             expect(token(second, "size.sm")).not.toBe(token(first, "size.sm"));
@@ -217,10 +190,7 @@ describe("a reread of every file", () => {
     });
 
     it("reads a changed file as a reread of that file does", () => {
-        const colors = JSON.stringify({
-            color: { $type: "color", red: { $value: rgb(0.5) }, blue: { $value: rgb(0) } },
-        });
-        const all = before.rereadAll({ ...files, "colors.json": colors });
+        const all = before.rereadAll({ ...files, "colors.json": colors(0.5) });
 
         expect(all).not.toBe(before);
         expect(all.getPermutation().getToken("space.sm")).toBe(

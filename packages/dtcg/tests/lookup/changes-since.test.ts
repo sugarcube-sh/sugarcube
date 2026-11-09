@@ -36,13 +36,12 @@ const dark = { space: { md: px(10) } };
 const light = { mode: "light" };
 const darkMode = { mode: "dark" };
 
-function read(edit: { base?: object; dark?: object; more?: Record<string, string> } = {}) {
+function read(edit: { base?: object; dark?: object; resolver?: string } = {}) {
     return readFromMemory({
         files: {
-            "tokens.resolver.json": resolver,
+            "tokens.resolver.json": edit.resolver ?? resolver,
             "base.json": JSON.stringify(edit.base ?? base),
             "dark.json": JSON.stringify(edit.dark ?? dark),
-            ...edit.more,
         },
     });
 }
@@ -56,6 +55,14 @@ function changed(path: (string | number)[], value: unknown, from: object = base)
     else at[last] = value;
     return copy;
 }
+
+const renamed = (from: string, path: string, properties: string[] = [], kind = "renamed") => ({
+    kind,
+    path,
+    from,
+    properties,
+    in: "everywhere",
+});
 
 function brief(before: DesignTokens, after: DesignTokens, moved?: Move[]) {
     return after.getChangesSince(before, moved && { moved }).map((change) => {
@@ -72,7 +79,7 @@ describe("getChangesSince", () => {
         expect(read().getChangesSince(read())).toEqual([]);
     });
 
-    it("gives a value changed in a file every permutation reads once, in each permutation it shows in", () => {
+    it("gives a value changed in a file every permutation reads once, in each permutation it shows in, and not the tokens that refer to it", () => {
         const after = read({ base: changed(["space", "sm"], px(5)) });
         expect(brief(read(), after)).toEqual([
             { kind: "changed", path: "space.sm", properties: ["value"], in: "everywhere" },
@@ -124,11 +131,6 @@ describe("getChangesSince", () => {
             properties: ["description", "deprecated"],
             after: { value: { value: 4, unit: "px" }, description: "Small", deprecated: true },
         });
-    });
-
-    it("compares what a token says, not what it resolves to", () => {
-        const after = read({ base: changed(["space", "sm"], px(5)) });
-        expect(brief(read(), after).map((change) => change.path)).not.toContain("space.gap");
     });
 
     it("gives a reference pointed somewhere else as a change", () => {
@@ -189,13 +191,7 @@ describe("getChangesSince", () => {
         const moved = changed(["space", "small"], px(4), changed(["space", "sm"], undefined));
         const after = read({ base: changed(["space", "gap"], { $value: "{space.small}" }, moved) });
         expect(brief(read(), after, [{ from: "space.sm", to: "space.small" }])).toEqual([
-            {
-                kind: "renamed",
-                path: "space.small",
-                from: "space.sm",
-                properties: [],
-                in: "everywhere",
-            },
+            renamed("space.sm", "space.small"),
         ]);
     });
 
@@ -204,46 +200,22 @@ describe("getChangesSince", () => {
             $value: { value: { $ref: `#/space/${name}/$value/value` }, unit: "furlong" },
         });
         const moved = changed(["space", "small"], px(4), changed(["space", "sm"], undefined));
-        const renamed = changed(["space", "gap"], { $value: "{space.small}" }, moved);
+        const rewritten = changed(["space", "gap"], { $value: "{space.small}" }, moved);
         const before = read({ base: changed(["space", "odd"], broken("sm")) });
-        const after = read({ base: changed(["space", "odd"], broken("small"), renamed) });
+        const after = read({ base: changed(["space", "odd"], broken("small"), rewritten) });
         expect(brief(before, after, [{ from: "space.sm", to: "space.small" }])).toEqual([
-            {
-                kind: "renamed",
-                path: "space.small",
-                from: "space.sm",
-                properties: [],
-                in: "everywhere",
-            },
+            renamed("space.sm", "space.small"),
         ]);
     });
 
     it("gives a group renamed, and one rename per token inside, and none for tokens pointing in", () => {
         const { typography, ...rest } = base;
         const text = { $type: "dimension", size: { $value: "{type.body}" } };
-        const renamed = read({ base: { ...rest, type: typography, text } });
-        expect(brief(read(), renamed, [{ from: "typography", to: "type" }])).toEqual([
-            {
-                kind: "group-renamed",
-                path: "type",
-                from: "typography",
-                properties: [],
-                in: "everywhere",
-            },
-            {
-                kind: "renamed",
-                path: "type.body",
-                from: "typography.body",
-                properties: [],
-                in: "everywhere",
-            },
-            {
-                kind: "renamed",
-                path: "type.heading",
-                from: "typography.heading",
-                properties: [],
-                in: "everywhere",
-            },
+        const after = read({ base: { ...rest, type: typography, text } });
+        expect(brief(read(), after, [{ from: "typography", to: "type" }])).toEqual([
+            renamed("typography", "type", [], "group-renamed"),
+            renamed("typography.body", "type.body"),
+            renamed("typography.heading", "type.heading"),
         ]);
     });
 
@@ -251,13 +223,7 @@ describe("getChangesSince", () => {
         const before = read({ base: { ...base, motion: {} } });
         const after = read({ base: { ...base, animation: {} } });
         expect(brief(before, after, [{ from: "motion", to: "animation" }])).toEqual([
-            {
-                kind: "group-renamed",
-                path: "animation",
-                from: "motion",
-                properties: [],
-                in: "everywhere",
-            },
+            renamed("motion", "animation", [], "group-renamed"),
         ]);
     });
 
@@ -265,13 +231,7 @@ describe("getChangesSince", () => {
         const moved = changed(["space", "small"], px(3), changed(["space", "sm"], undefined));
         const after = read({ base: changed(["space", "gap"], { $value: "{space.small}" }, moved) });
         expect(brief(read(), after, [{ from: "space.sm", to: "space.small" }])).toEqual([
-            {
-                kind: "renamed",
-                path: "space.small",
-                from: "space.sm",
-                properties: ["value"],
-                in: "everywhere",
-            },
+            renamed("space.sm", "space.small", ["value"]),
         ]);
     });
 
@@ -283,13 +243,7 @@ describe("getChangesSince", () => {
         });
         const before = read({ dark: {} });
         expect(brief(before, after, [{ from: "space.sm", to: "space.md" }])).toEqual([
-            {
-                kind: "renamed",
-                path: "space.md",
-                from: "space.sm",
-                properties: [],
-                in: "everywhere",
-            },
+            renamed("space.sm", "space.md"),
             { kind: "removed", path: "space.md", in: "everywhere" },
         ]);
     });
@@ -301,15 +255,7 @@ describe("getChangesSince", () => {
             { from: "space.sm", to: "space.small" },
             { from: "space.small", to: "space.tiny" },
         ];
-        expect(brief(read(), after, moves)).toEqual([
-            {
-                kind: "renamed",
-                path: "space.tiny",
-                from: "space.sm",
-                properties: [],
-                in: "everywhere",
-            },
-        ]);
+        expect(brief(read(), after, moves)).toEqual([renamed("space.sm", "space.tiny")]);
     });
 
     it("follows a move through a JSON Pointer reference", () => {
@@ -351,13 +297,9 @@ describe("getChangesSince", () => {
         const after = read({
             base: { ...rest, type: { ...typography, $description: "Sizes" }, text },
         });
-        expect(brief(read(), after, [{ from: "typography", to: "type" }])[0]).toEqual({
-            kind: "group-renamed",
-            path: "type",
-            from: "typography",
-            properties: ["description"],
-            in: "everywhere",
-        });
+        expect(brief(read(), after, [{ from: "typography", to: "type" }])[0]).toEqual(
+            renamed("typography", "type", ["description"], "group-renamed"),
+        );
     });
 
     it("gives a group starting to extend another, and the tokens it takes, marked as inherited", () => {
@@ -446,12 +388,9 @@ describe("getChangesSince", () => {
     });
 
     it("leaves out a permutation only one read has", () => {
-        const after = readFromMemory({
-            files: {
-                "tokens.resolver.json": lightDark(["base.json"], ["dark.json"], { dim: [] }),
-                "base.json": JSON.stringify(changed(["space", "sm"], px(5))),
-                "dark.json": JSON.stringify(dark),
-            },
+        const after = read({
+            resolver: lightDark(["base.json"], ["dark.json"], { dim: [] }),
+            base: changed(["space", "sm"], px(5)),
         });
         expect(brief(read(), after)).toEqual([
             { kind: "changed", path: "space.sm", properties: ["value"], in: "mode: light, dark" },

@@ -597,24 +597,22 @@ describe("diagnostic messages from read", () => {
         }),
     });
 
-    function diagnostics(generator: Generator) {
+    function messagesFrom(generator: Generator) {
         return oneFile(
             { space: { $type: "dimension", $extensions: { "com.example": { steps: "three" } } } },
             { generators: [generator] },
-        ).diagnostics;
+        ).diagnostics.map(({ message }) => message);
     }
 
     it("words extension-invalid from the generator's messages", () => {
-        expect(diagnostics(stepsGenerator).map(({ message }) => message)).toStrictEqual([
+        expect(messagesFrom(stepsGenerator)).toStrictEqual([
             '`steps` must be a whole number above 0, not "three"',
         ]);
     });
 
     it("falls back to its own wording for a reason the generator has no message for", () => {
         const unworded: Generator = { ...stepsGenerator, messages: {} };
-        expect(diagnostics(unworded).map(({ message }) => message)).toStrictEqual([
-            "the `com.example` extension is not valid",
-        ]);
+        expect(messagesFrom(unworded)).toStrictEqual(["the `com.example` extension is not valid"]);
     });
 
     it("falls back for a reason named like a property every object has", () => {
@@ -623,9 +621,7 @@ describe("diagnostic messages from read", () => {
             messages: {},
             generate: () => ({ ok: false, errors: [{ jsonPath: [], reason: "toString" }] }),
         };
-        expect(diagnostics(inherited).map(({ message }) => message)).toStrictEqual([
-            "the `com.example` extension is not valid",
-        ]);
+        expect(messagesFrom(inherited)).toStrictEqual(["the `com.example` extension is not valid"]);
     });
 
     it("words a schema's issue with the library's message", () => {
@@ -640,9 +636,7 @@ describe("diagnostic messages from read", () => {
             },
             generate: () => ({ ok: true, value: [] }),
         });
-        expect(diagnostics(counted).map(({ message }) => message)).toStrictEqual([
-            "Expected number, received string",
-        ]);
+        expect(messagesFrom(counted)).toStrictEqual(["Expected number, received string"]);
     });
 
     it("links invalid-value to the section for its reason", () => {
