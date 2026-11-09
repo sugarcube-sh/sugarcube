@@ -167,7 +167,7 @@ describe("a reference in a value", () => {
     });
 });
 
-describe("permutation.referencesTo", () => {
+describe("permutation.getReferencesTo", () => {
     it("is every reference to the path, each with the token that writes it", () => {
         const red = inLight("color.red");
         const reaching = light.getReferencesTo("color.red");

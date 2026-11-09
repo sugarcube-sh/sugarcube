@@ -112,7 +112,7 @@ describe("tokens.permutations", () => {
     });
 });
 
-describe("permutations.where", () => {
+describe("permutations.select", () => {
     it("gives the permutations that pass the test, labelled against every permutation", () => {
         const dark = tokens.permutations.select((each) => each.input.mode === "dark");
         expect(dark.inputs).toStrictEqual([
@@ -161,7 +161,7 @@ describe("permutations.where", () => {
     });
 });
 
-describe("permutations.matching", () => {
+describe("permutations.findByInput", () => {
     it("finds the permutation an input names, filling each modifier it leaves out with its default", () => {
         const dark = tokens.permutations.findByInput({ mode: "dark" });
 

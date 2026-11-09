@@ -811,7 +811,7 @@ describe("what the design tokens hold", () => {
     });
 });
 
-describe("tokens.text", () => {
+describe("tokens.getText", () => {
     const base = '{ "gap": { "$type": "number", "$value": 1 } }\n';
     const files = {
         "tokens.resolver.json": JSON.stringify({

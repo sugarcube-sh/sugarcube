@@ -75,7 +75,7 @@ const noDefault = readFromMemory({
     },
 });
 
-describe("tokens.permutation", () => {
+describe("tokens.getPermutation", () => {
     it("is the permutation for a full input", () => {
         expect(tokens.getPermutation({ theme: "dark", density: "compact" }).input).toStrictEqual({
             theme: "dark",
@@ -140,7 +140,7 @@ describe("tokens.permutation", () => {
     });
 });
 
-describe("tokens.permutation, completing an input", () => {
+describe("tokens.getPermutation, completing an input", () => {
     it("gives the first problem: a modifier it names before one it leaves out", () => {
         const error = thrownBy(PermutationError, () => noDefault.getPermutation({ mood: "calm" }));
         expect(error.detail).toMatchObject({ reason: "unknown-modifier" });
@@ -199,7 +199,7 @@ describe("permutation.isDefault", () => {
     });
 });
 
-describe("tokens.tokenPaths", () => {
+describe("tokens.getTokenPaths", () => {
     it("lists every token in any permutation once, in the order the permutations list them", () => {
         expect(tokens.getTokenPaths()).toStrictEqual([
             "px",
@@ -214,7 +214,7 @@ describe("tokens.tokenPaths", () => {
     });
 });
 
-describe("tokens.groupPaths", () => {
+describe("tokens.getGroupPaths", () => {
     it("lists every group in any permutation once, in the order the permutations list them", () => {
         expect(tokens.getGroupPaths()).toStrictEqual(["", "space", "space.inset", "spacer"]);
     });
@@ -253,7 +253,7 @@ describe("toInputLabel", () => {
     });
 });
 
-describe("permutation.token", () => {
+describe("permutation.getToken", () => {
     it("is the token at a path in that permutation", () => {
         expect(valueOf(light.getToken("2"))).toBe(2);
         expect(valueOf(dark.getToken("2"))).toBe(3);
@@ -274,7 +274,7 @@ describe("permutation.token", () => {
     });
 });
 
-describe("permutation.group", () => {
+describe("permutation.getGroup", () => {
     it("is the group at a path in that permutation", () => {
         expect(light.getGroup("space.inset")?.path).toBe("space.inset");
         expect(dark.getGroup("space")?.type).toBe("dimension");

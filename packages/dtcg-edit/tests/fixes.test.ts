@@ -3,10 +3,10 @@ import { join } from "node:path";
 import { type DesignTokens, type Diagnostic, type Span, read } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
 import { inputFiles, readOptions } from "../../dtcg/tests/read/case-options.js";
-import { textIn } from "../../dtcg/tests/read/on-disk.js";
 import { withSpans } from "../../dtcg/tests/read/positions.js";
 import { type Fix, fixesFor } from "../src/index.js";
 import { getDiagnosticsAt } from "@sugarcube-sh/dtcg/editor";
+import { read as readFromDisk } from "@sugarcube-sh/dtcg/node";
 
 const casesFolder = join(import.meta.dirname, "../../dtcg/tests/read/cases");
 const expectedFolder = join(import.meta.dirname, "fixes");
@@ -23,10 +23,7 @@ interface Offered {
 async function openCase(name: string): Promise<DesignTokens> {
     const folder = join(casesFolder, name);
     const { entry, options } = JSON.parse(readFileSync(join(folder, "expected.json"), "utf8"));
-    return read(entry, {
-        ...readOptions(options),
-        readText: textIn(join(folder, "input")),
-    });
+    return readFromDisk(join(folder, "input", entry), readOptions(options));
 }
 
 function expectedFor(name: string): Offered[] {
