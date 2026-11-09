@@ -1,13 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ErrorMessages } from "../src/shared/constants/error-messages.js";
-import { userConfigSchema } from "../src/shared/schemas/config.js";
+import { mistakesIn } from "./config-mistakes.js";
 
-function issues(classes: unknown) {
-    const result = userConfigSchema.safeParse({ utilities: { classes } });
-    return result.success ? [] : result.error.issues.map(({ message }) => message);
-}
+const issues = (classes: unknown): string[] => mistakesIn({ utilities: { classes } });
 
-describe("utility classes schema", () => {
+describe("utility classes", () => {
     it("accepts a source ending in .*, and one with no wildcard", () => {
         expect(
             issues({
@@ -20,7 +16,7 @@ describe("utility classes schema", () => {
 
     it("refuses a wildcard anywhere but the end, naming the property", () => {
         expect(issues({ color: { source: "color.*.bg", prefix: "text" } })).toStrictEqual([
-            ErrorMessages.UTILITIES.INVALID_SOURCE_PATTERN("color", "color.*.bg"),
+            '`utilities.classes.color.source` can have `*` only at the end, such as "color.*", not "color.*.bg"',
         ]);
         expect(
             issues({
@@ -29,12 +25,14 @@ describe("utility classes schema", () => {
                     { source: "space*", prefix: "m" },
                 ],
             }),
-        ).toStrictEqual([ErrorMessages.UTILITIES.INVALID_SOURCE_PATTERN("margin", "space*")]);
+        ).toStrictEqual([
+            '`utilities.classes.margin.1.source` can have `*` only at the end, such as "color.*", not "space*"',
+        ]);
     });
 
     it("refuses an empty source, naming the property", () => {
         expect(issues({ "background-color": { source: "", prefix: "bg" } })).toStrictEqual([
-            "Utility config for 'background-color' has an empty source. Name the group its tokens come from (e.g., 'color.*').",
+            '`utilities.classes.background-color.source` is empty: name the group its tokens come from, such as "color.*"',
         ]);
     });
 });

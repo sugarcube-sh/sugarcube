@@ -1,7 +1,7 @@
 import { CLIError } from "../cli-error.js";
 import { ERROR_MESSAGES } from "../constants/error-messages.js";
 import type { Framework, RegistryItemType } from "../types/registry.js";
-import { fileContentResponseSchema, registryIndexSchema } from "../types/schema.js";
+import { isFileContent, isRegistryIndex } from "./answers.js";
 
 const REGISTRY_URL = process.env.REGISTRY_URL ?? "https://sugarcube.sh/r";
 
@@ -41,12 +41,9 @@ async function fetchRegistry(url: string) {
 
 export async function getRegistryIndex() {
     const url = `${REGISTRY_URL}/index.json`;
-    const result = await fetchRegistry(url);
-    try {
-        return registryIndexSchema.parse(result);
-    } catch {
-        throw new CLIError(ERROR_MESSAGES.REGISTRY_INVALID_DATA(url));
-    }
+    const result: unknown = await fetchRegistry(url);
+    if (!isRegistryIndex(result)) throw new CLIError(ERROR_MESSAGES.REGISTRY_INVALID_DATA(url));
+    return result;
 }
 
 export async function getRegistryFiles({
@@ -77,18 +74,16 @@ export async function getRegistryFiles({
     const files = await Promise.all(
         selectedFiles.map(async (file) => {
             const url = `${REGISTRY_URL}/${file.path}.json`;
-            const result = await fetchRegistry(url);
-            try {
-                const parsed = fileContentResponseSchema.parse(result);
-                return {
-                    path: file.path,
-                    type: file.type,
-                    framework: "framework" in file ? file.framework : undefined,
-                    content: parsed.content,
-                };
-            } catch {
+            const result: unknown = await fetchRegistry(url);
+            if (!isFileContent(result)) {
                 throw new CLIError(ERROR_MESSAGES.REGISTRY_FILE_INVALID(file.path));
             }
+            return {
+                path: file.path,
+                type: file.type,
+                framework: "framework" in file ? file.framework : undefined,
+                content: result.content,
+            };
         }),
     );
 

@@ -232,7 +232,7 @@ describe("validateConfig — variables.variableName", () => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 variables: { variableName: value as any },
             }),
-        ).toThrow(/variableName must be a function/);
+        ).toThrow(/`variables.variableName` must be a function, not /);
     });
 });
 

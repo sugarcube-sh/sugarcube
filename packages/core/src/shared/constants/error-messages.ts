@@ -1,6 +1,6 @@
-import { ZodParsedType } from "zod";
 import type {
     ConfigIssue,
+    TypeName,
     SugarcubeDiagnosticDetailByKind,
     SugarcubeDiagnosticKind,
     UtilityEntry,
@@ -107,9 +107,9 @@ export function configIssueText(issue: ConfigIssue): string {
         case "deleted":
             return "was deleted; put it back, or restart to build without it";
         case "wrong-type":
-            return `${subject} must be ${listed(issue.expected.map(aOrAn), "or")}, not ${aOrAn(issue.received)}`;
+            return `${subject} must be ${expectedText(issue)}, not ${aOrAn(issue.received)}`;
         case "missing":
-            return `${subject} needs a ${quoted(issue.property)}`;
+            return `${subject} needs ${withArticle(quoted(issue.property))}`;
         case "not-allowed": {
             const allowed = listed(
                 issue.allowed.map((value) => JSON.stringify(value)),
@@ -117,8 +117,16 @@ export function configIssueText(issue: ConfigIssue): string {
             );
             return `${subject} must be ${allowed}, not ${JSON.stringify(issue.value)}`;
         }
-        case "invalid":
-            return issue.setting ? `${subject}: ${issue.message}` : issue.message;
+        case "unknown":
+            return `${subject} is not a setting`;
+        case "empty":
+            return `${subject} is empty`;
+        case "no-selectors":
+            return `${subject} lists no selectors`;
+        case "empty-source":
+            return `${subject} is empty: name the group its tokens come from, such as "color.*"`;
+        case "wrong-form":
+            return `${subject} ${FORMS[issue.form]}, not ${JSON.stringify(issue.value)}`;
         case "no-resolver":
             return ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER();
         case "several-resolvers":
@@ -128,12 +136,33 @@ export function configIssueText(issue: ConfigIssue): string {
     }
 }
 
-const TYPE_NAMES = new Set<string>(Object.values(ZodParsedType));
+const FORMS: Record<Extract<ConfigIssue, { reason: "wrong-form" }>["form"], string> = {
+    "repository": 'is written as "owner/name", such as "acme/site"',
+    "app": 'is the GitHub App\'s name as it appears in its address, such as "acme-studio" in github.com/apps/acme-studio',
+    "sign-in": 'is a path on your site, such as "/api/sugarcube-studio"',
+    "source": 'can have `*` only at the end, such as "color.*"',
+};
 
-function aOrAn(type: string): string {
-    if (type === "nan") return "NaN";
-    if (type === "null" || type === "undefined" || !TYPE_NAMES.has(type)) return type;
-    return `${/^[aeiou]/.test(type) ? "an" : "a"} ${type}`;
+function expectedText({
+    expected,
+    allowed,
+}: Extract<ConfigIssue, { reason: "wrong-type" }>): string {
+    if (allowed === undefined) return listed(expected.map(aOrAn), "or");
+    const values = listed(
+        allowed.map((value) => JSON.stringify(value)),
+        "or",
+    );
+    return expected.includes("array") ? `${values}, or an array of them` : values;
+}
+
+const NO_ARTICLE = new Set<TypeName>(["null", "undefined", "NaN"]);
+
+function aOrAn(type: TypeName): string {
+    return NO_ARTICLE.has(type) ? type : withArticle(type);
+}
+
+function withArticle(word: string): string {
+    return `${/^`?[aeiou]/i.test(word) ? "an" : "a"} ${word}`;
 }
 
 function entryName({ property, entry }: UtilityEntry): string {
@@ -158,18 +187,6 @@ export const ErrorMessages = {
             `Several resolver files were found:\n${paths.map((f) => `  - ${f}`).join("\n")}\n\nName the one to use as \`resolver\` in sugarcube.config.ts.`,
         NO_CONFIG_OR_RESOLVER: () =>
             "No design tokens found.\n\nRun @sugarcube-sh/cli init to set up your design tokens.\n\nStuck? https://sugarcube.sh/docs",
-        STUDIO_REPOSITORY: 'studio.repository is written as "owner/name", such as "acme/site".',
-        STUDIO_APP:
-            'studio.app is the GitHub App\'s name as it appears in its address, such as "acme-studio" in github.com/apps/acme-studio.',
-        STUDIO_SIGN_IN: 'studio.signIn is a path on your site, such as "/api/sugarcube-studio".',
-    },
-
-    UTILITIES: {
-        EMPTY_SOURCE: (property: string) =>
-            `Utility config for '${property}' has an empty source. Name the group its tokens come from (e.g., 'color.*').`,
-
-        INVALID_SOURCE_PATTERN: (property: string, source: string) =>
-            `Utility config for '${property}' has invalid source pattern '${source}'. Only patterns ending with '.*' are supported (e.g., 'color.*', 'font.weight.*').`,
     },
 
     DIAGNOSTICS: diagnostics,

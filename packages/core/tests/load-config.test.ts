@@ -216,11 +216,9 @@ describe("isNoConfigError", () => {
         expect(isNoConfigError(new ConfigError([{ reason: "no-resolver" }]))).toBe(true);
     });
 
-    it("goes by the reason, not the words", () => {
+    it("is false for an error that only has the same words", () => {
         const words = ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER();
-        const invalid = new ConfigError([{ reason: "invalid", setting: "", message: words }]);
 
-        expect(isNoConfigError(invalid)).toBe(false);
         expect(isNoConfigError(new Error(words))).toBe(false);
     });
 

@@ -1,9 +1,8 @@
-import type { ZodIssue } from "zod";
 import type { InternalConfig, SugarcubeConfig } from "../types/config.js";
 import type { ConfigIssue } from "../types/diagnostics.js";
 import { ConfigError } from "./config-error.js";
 import { DEFAULT_CONFIG } from "./constants/config.js";
-import { internalConfigSchema, userConfigSchema } from "./schemas/config.js";
+import { checkConfig } from "./check-config.js";
 
 // ============================================
 // defineConfig — type-inferred config helper
@@ -103,68 +102,14 @@ export function fillDefaultsCore(userConfig: SugarcubeConfig, dirs: DefaultDirs)
 // ============================================
 
 /**
- * Validates a user configuration object against the user schema.
+ * Checks a configuration object against the settings sugarcube knows.
  *
- * @param config - The user configuration object to validate
- * @returns The validated user configuration
- * @throws ConfigError if the configuration is invalid
+ * @param config - The configuration object to check
+ * @returns The same object, typed as a configuration
+ * @throws ConfigError with every mistake found, if there are any
  */
 export function validateSugarcubeConfig(config: unknown): SugarcubeConfig {
-    const userResult = userConfigSchema.safeParse(config);
-    if (!userResult.success) throw new ConfigError(userResult.error.issues.flatMap(issuesOf));
-    return userResult.data;
-}
-
-/**
- * Validates an internal configuration object against the internal schema.
- *
- * @param config - The internal configuration object to validate
- * @returns The validated internal configuration
- * @throws ConfigError if the configuration is invalid
- */
-export function validateInternalConfig(config: unknown): InternalConfig {
-    const internalResult = internalConfigSchema.safeParse(config);
-    if (!internalResult.success)
-        throw new ConfigError(internalResult.error.issues.flatMap(issuesOf));
-    return internalResult.data;
-}
-
-type TypeIssue = Extract<ZodIssue, { code: "invalid_type" }>;
-type UnionIssue = Extract<ZodIssue, { code: "invalid_union" }>;
-
-function issuesOf(issue: ZodIssue): ConfigIssue[] {
-    const setting = issue.path.join(".");
-    if (issue.code === "invalid_union") return unionIssues(issue, setting);
-    if (issue.code === "invalid_enum_value") {
-        return [{ reason: "not-allowed", setting, allowed: issue.options, value: issue.received }];
-    }
-    if (issue.code === "invalid_type")
-        return typeIssues(issue.path, [issue.expected], issue.received);
-    return [{ reason: "invalid", setting, message: issue.message }];
-}
-
-function typeIssues(
-    path: (string | number)[],
-    expected: string[],
-    received: string,
-): ConfigIssue[] {
-    const property = path.at(-1);
-    if (received === "undefined" && typeof property === "string") {
-        return [{ reason: "missing", setting: path.slice(0, -1).join("."), property }];
-    }
-    return [{ reason: "wrong-type", setting: path.join("."), expected, received }];
-}
-
-function unionIssues(issue: UnionIssue, setting: string): ConfigIssue[] {
-    const branches = issue.unionErrors.map(({ issues }) => issues);
-    const ownType = (issues: ZodIssue[]) =>
-        issues.find(
-            (each): each is TypeIssue =>
-                each.code === "invalid_type" && each.path.join(".") === setting,
-        );
-    const meant = branches.find((issues) => !ownType(issues));
-    if (meant) return meant.flatMap(issuesOf);
-    const types = branches.flatMap((issues) => ownType(issues) ?? []);
-    const received = types[0]?.received ?? "undefined";
-    return typeIssues(issue.path, [...new Set(types.map(({ expected }) => expected))], received);
+    const issues: ConfigIssue[] = [];
+    if (!checkConfig(config, "", issues)) throw new ConfigError(issues);
+    return config;
 }
