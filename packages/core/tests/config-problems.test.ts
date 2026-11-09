@@ -3,7 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { loadInternalConfig } from "../src/node/config/load.js";
-import { validateInternalConfig } from "../src/shared/config.js";
+import { validateSugarcubeConfig } from "../src/shared/config.js";
+import { number, object, oneOf, optional, string } from "../src/shared/checks.js";
+import type { ColorFallbackStrategy, FluidConfig } from "../src/types/config.js";
 import { ConfigError, configProblems } from "../src/shared/config-error.js";
 
 let folder: string;
@@ -106,17 +108,17 @@ it("says the config itself is the wrong thing when it is not an object", async (
 });
 
 it("says the config itself is missing when there is none to check", () => {
-    const missing = () => validateInternalConfig(undefined);
+    const missing = () => validateSugarcubeConfig(undefined);
 
     expect(missing).toThrow(ConfigError);
     expect(missing).toThrow("the config must be an object, not undefined");
 });
 
-it("writes the values a choice takes as they are, with no article", async () => {
+it("lists the values a choice takes, and that a list of them is allowed too", async () => {
     const { lines } = await problemsWith(entry('source: "color.*", directions: 3'));
 
     expect(lines).toEqual([
-        "`utilities.classes.color.directions` must be 'top' | 'right' | 'bottom' | 'left' | 'x' | 'y' | 'full' | 'all' or an array, not a number",
+        '`utilities.classes.color.directions` must be "top", "right", "bottom", "left", "x", "y", "full" or "all", or an array of them, not a number',
     ]);
 });
 
@@ -149,4 +151,170 @@ it("words a problem from the facts it carries", async () => {
             },
         },
     ]);
+});
+
+function problemsIn(config: unknown): string[] {
+    try {
+        validateSugarcubeConfig(config);
+    } catch (error) {
+        if (!(error instanceof ConfigError)) throw error;
+        return configProblems(error).map(({ message }) => message);
+    }
+    return [];
+}
+
+it.for([
+    [{ varibles: { path: "x.css" } }, "`varibles` is not a setting"],
+    [{ variables: { prefx: "ds" } }, "`variables.prefx` is not a setting"],
+    [{ studio: { respository: "acme/site" } }, "`studio.respository` is not a setting"],
+    [
+        { variables: { transforms: { fluid: { min: 320, max: 1200, unit: "px" } } } },
+        "`variables.transforms.fluid.unit` is not a setting",
+    ],
+    [
+        { variables: { permutations: [{ input: {}, selector: ":root", media: "print" }] } },
+        "`variables.permutations.0.media` is not a setting",
+    ],
+    [
+        { utilities: { classes: { color: { source: "color.*", prefx: "text" } } } },
+        "`utilities.classes.color.prefx` is not a setting",
+    ],
+] as const)("refuses a setting it doesn't know: %j", ([config, message]) => {
+    expect(problemsIn(config)).toEqual([message]);
+});
+
+it("names every unknown setting, after the mistakes in the ones it knows", () => {
+    expect(problemsIn({ varibles: {}, content: "src", utilites: {} })).toEqual([
+        "`content` must be an array, not a string",
+        "`varibles` is not a setting",
+        "`utilites` is not a setting",
+    ]);
+});
+
+it("takes any CSS property in utility classes and any modifier in an input", () => {
+    expect(
+        problemsIn({
+            utilities: {
+                classes: { "--accent": { source: "color.brand" }, "gap": { source: "space.*" } },
+            },
+            variables: {
+                permutations: [{ input: { mode: "dark", brand: "two" }, selector: ":root" }],
+            },
+        }),
+    ).toEqual([]);
+});
+
+it("still takes the old name of redeclareDependents, so its rename can be pointed out", () => {
+    expect(problemsIn({ variables: { propagateDependents: true } })).toEqual([]);
+});
+
+it("ignores a setting that is undefined, as if it were left out", () => {
+    expect(problemsIn({ resolver: undefined, variables: { prefix: undefined } })).toEqual([]);
+});
+
+it("says a setting that must say something is empty", () => {
+    expect(
+        problemsIn({
+            variables: {
+                permutations: [
+                    { input: {}, selector: "" },
+                    { input: {}, selector: [":root", ""] },
+                ],
+            },
+            studio: { branch: "" },
+        }),
+    ).toEqual([
+        "`variables.permutations.0.selector` is empty",
+        "`variables.permutations.1.selector.1` is empty",
+        "`studio.branch` is empty",
+    ]);
+});
+
+it("says a list of selectors with nothing in it lists no selectors", () => {
+    expect(problemsIn({ variables: { permutations: [{ input: {}, selector: [] }] } })).toEqual([
+        "`variables.permutations.0.selector` lists no selectors",
+    ]);
+});
+
+it.for([
+    [
+        { repository: "acme" },
+        '`studio.repository` is written as "owner/name", such as "acme/site", not "acme"',
+    ],
+    [
+        { app: "Acme Studio" },
+        '`studio.app` is the GitHub App\'s name as it appears in its address, such as "acme-studio" in github.com/apps/acme-studio, not "Acme Studio"',
+    ],
+    [
+        { signIn: "auth" },
+        '`studio.signIn` is a path on your site, such as "/api/sugarcube-studio", not "auth"',
+    ],
+] as const)("says how studio's %j is written, and what it was", ([studio, message]) => {
+    expect(problemsIn({ studio })).toEqual([message]);
+});
+
+it("says a source can have `*` only at the end, and what it was", () => {
+    expect(
+        problemsIn({
+            utilities: { classes: { margin: [{ source: "space.*" }, { source: "space*" }] } },
+        }),
+    ).toEqual([
+        '`utilities.classes.margin.1.source` can have `*` only at the end, such as "color.*", not "space*"',
+    ]);
+});
+
+it("says an empty source must name a group", () => {
+    expect(problemsIn({ utilities: { classes: { color: { source: "" } } } })).toEqual([
+        '`utilities.classes.color.source` is empty: name the group its tokens come from, such as "color.*"',
+    ]);
+});
+
+it("says variableName must be a function, like any setting of the wrong type", () => {
+    expect(problemsIn({ variables: { variableName: "kebab" } })).toEqual([
+        "`variables.variableName` must be a function, not a string",
+    ]);
+});
+
+it("lists a choice's values when the value is not even the right type", () => {
+    expect(
+        problemsIn({ variables: { case: 5, transforms: { colorFallbackStrategy: 1 } } }),
+    ).toEqual([
+        '`variables.case` must be "kebab", not a number',
+        '`variables.transforms.colorFallbackStrategy` must be "native" or "polyfill", not a number',
+    ]);
+});
+
+it("says `an` before a setting that starts with a vowel", () => {
+    expect(problemsIn({ variables: { permutations: [{ selector: ":root" }] } })).toEqual([
+        "`variables.permutations.0` needs an `input`",
+    ]);
+});
+
+it("keeps an unknown setting as a fact", () => {
+    const thrown = (() => {
+        try {
+            validateSugarcubeConfig({ varibles: {} });
+        } catch (error) {
+            return error;
+        }
+    })();
+
+    expect(thrown instanceof ConfigError && thrown.issues).toEqual([
+        { reason: "unknown", setting: "varibles" },
+    ]);
+});
+
+it("won't compile a check that disagrees with its setting's type", () => {
+    // @ts-expect-error
+    object<FluidConfig>({ min: string, max: number });
+    // @ts-expect-error
+    object<FluidConfig>({ min: number, max: optional(number) });
+    // @ts-expect-error
+    object<FluidConfig>({ min: number });
+    // @ts-expect-error
+    oneOf<ColorFallbackStrategy>({ native: true });
+    // @ts-expect-error
+    oneOf<ColorFallbackStrategy>({ native: true, polyfill: true, fast: true });
+
+    expect(object<FluidConfig>({ min: number, max: number })).toBeTypeOf("function");
 });

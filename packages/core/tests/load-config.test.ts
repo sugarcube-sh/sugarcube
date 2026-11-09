@@ -218,9 +218,7 @@ describe("isNoConfigError", () => {
 
     it("goes by the reason, not the words", () => {
         const words = ErrorMessages.CONFIG.NO_CONFIG_OR_RESOLVER();
-        const invalid = new ConfigError([{ reason: "invalid", setting: "", message: words }]);
 
-        expect(isNoConfigError(invalid)).toBe(false);
         expect(isNoConfigError(new Error(words))).toBe(false);
     });
 

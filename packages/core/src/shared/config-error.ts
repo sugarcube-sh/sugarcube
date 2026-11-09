@@ -11,13 +11,9 @@ export class ConfigError extends Error {
     override name = "ConfigError";
     readonly issues: ConfigIssue[];
 
-    constructor(issues: ConfigIssue[] | string, options?: ErrorOptions) {
-        const listed: ConfigIssue[] =
-            typeof issues === "string"
-                ? [{ reason: "invalid", setting: "", message: issues }]
-                : issues;
-        super(listed.map(standalone).join("\n"), options);
-        this.issues = listed;
+    constructor(issues: ConfigIssue[], options?: ErrorOptions) {
+        super(issues.map(standalone).join("\n"), options);
+        this.issues = issues;
     }
 }
 

@@ -3,7 +3,6 @@ import { resolve } from "node:path";
 import {
     type DefaultDirs,
     fillDefaultsCore,
-    validateInternalConfig,
     validateSugarcubeConfig,
 } from "../../shared/config.js";
 import type { InternalConfig, SugarcubeConfig } from "../../types/config.js";
@@ -41,14 +40,11 @@ export function fillDefaults(
 }
 
 /**
- * Validates a user configuration object against the schema and fills in defaults.
+ * Checks a user configuration object and fills in defaults.
  *
  * Node convenience wrapper that auto-detects default directories via the
- * filesystem. For pure/browser contexts, compose `validateSugarcubeConfig`,
- * `fillDefaultsCore`, and `validateInternalConfig` manually from the client entry.
+ * filesystem.
  */
 export function validateConfig(config: Partial<SugarcubeConfig>): InternalConfig {
-    const userConfig = validateSugarcubeConfig(config);
-    const internalConfig = fillDefaults(userConfig);
-    return validateInternalConfig(internalConfig);
+    return fillDefaults(validateSugarcubeConfig(config));
 }

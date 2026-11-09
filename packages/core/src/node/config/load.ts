@@ -1,7 +1,8 @@
 import { existsSync } from "node:fs";
 import { createJiti } from "jiti";
 import { basename, dirname, relative, resolve } from "pathe";
-import { validateInternalConfig, validateSugarcubeConfig } from "../../shared/config.js";
+import { isObject } from "../../shared/checks.js";
+import { validateSugarcubeConfig } from "../../shared/config.js";
 import { ConfigError } from "../../shared/config-error.js";
 import type { InternalConfig, SugarcubeConfig } from "../../types/config.js";
 import { findResolver } from "@sugarcube-sh/dtcg/node";
@@ -89,7 +90,7 @@ async function importConfigFile(configFile: string): Promise<unknown> {
         });
         const result = await jiti.import(configFile);
         if (result && typeof result === "object" && "default" in result) return result.default;
-        return isPlainObject(result) && Object.keys(result).length === 0 ? undefined : result;
+        return isObject(result) && Object.keys(result).length === 0 ? undefined : result;
     } catch (error) {
         const thrown = error instanceof Error ? error.message : String(error);
         const cause = thrown.replace(/\s+/g, " ").trim();
@@ -127,7 +128,8 @@ export async function loadInternalConfig(
     const content = configFile
         ? resolveContentGlobs(filled.content, dirname(configFile))
         : filled.content;
-    const config = validateInternalConfig(overridden({ ...filled, content }, overrides));
+    const config = overridden<InternalConfig>({ ...filled, content }, overrides);
+    validateSugarcubeConfig(config);
     return { config: { ...config, resolver }, configFile };
 }
 
@@ -141,15 +143,14 @@ async function foundResolver(root: string): Promise<string> {
     throw new ConfigError([{ reason: "no-resolver" }]);
 }
 
-function overridden(base: unknown, overrides: unknown): unknown {
-    if (overrides === undefined) return base;
-    if (!isPlainObject(base) || !isPlainObject(overrides)) return overrides;
-    const merged: Record<string, unknown> = { ...base };
-    for (const [key, value] of Object.entries(overrides))
-        merged[key] = overridden(base[key], value);
-    return merged;
+function overridden<T>(base: T, overrides: Overrides<T>): T {
+    return merged(base, overrides) as T;
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
+function merged(base: unknown, overrides: unknown): unknown {
+    if (overrides === undefined) return base;
+    if (!isObject(base) || !isObject(overrides)) return overrides;
+    const result: Record<string, unknown> = { ...base };
+    for (const [key, value] of Object.entries(overrides)) result[key] = merged(base[key], value);
+    return result;
 }
