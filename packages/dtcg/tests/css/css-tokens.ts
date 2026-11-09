@@ -1,5 +1,5 @@
 import { type DesignTokens, type Token, readFromMemory } from "../../src/index.js";
-import { lightDark } from "../token-files.js";
+import { lightDark, oneFile } from "../token-files.js";
 
 export const px = (value: number) => ({ value, unit: "px" });
 export const color = (value: unknown) => ({ $type: "color", $value: value });
@@ -12,7 +12,7 @@ export function read(files: Record<string, unknown>): DesignTokens {
 }
 
 export function one(json: Record<string, unknown>): DesignTokens {
-    return read({ "tokens.json": json });
+    return oneFile(json, { hexStringColors: true });
 }
 
 export function themed(base: Record<string, unknown>, dark: Record<string, unknown>): DesignTokens {

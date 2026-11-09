@@ -5,12 +5,12 @@ import {
     defineGenerator,
     readFromMemory,
 } from "../../src/index.js";
-import { type Source, lightDark } from "../token-files.js";
+import { type ResolverSource, lightDark } from "../token-files.js";
 
 const badType = { $type: "colour", x: { $value: 1 } };
 
 function read(
-    sources: { base: Source[]; dark: Source[] },
+    sources: { base: ResolverSource[]; dark: ResolverSource[] },
     files: Record<string, unknown> = {},
     options?: ReadOptions,
 ) {
@@ -34,7 +34,7 @@ const labels = (tokens: DesignTokens) =>
         .map(({ permutations }) => permutations.label);
 
 describe("a problem in a source only some permutations read", () => {
-    it.for<[string, Source[], Source[], Record<string, unknown>]>([
+    it.for<[string, ResolverSource[], ResolverSource[], Record<string, unknown>]>([
         [
             "names them when the source is written in the resolver",
             [{ $ref: "base.json" }],
