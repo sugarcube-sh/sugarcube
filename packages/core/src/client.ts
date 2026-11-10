@@ -1,7 +1,7 @@
 /**
  * Browser-safe entry point for @sugarcube-sh/core.
  *
- * Use this in any non-Node context — browsers, web workers, edge functions:
+ * Use this in any non-Node context, such as browsers, web workers and edge functions:
  *
  *     import { cssFrom, readOptions } from "@sugarcube-sh/core/client";
  *

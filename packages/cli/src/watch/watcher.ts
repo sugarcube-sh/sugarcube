@@ -84,7 +84,7 @@ export async function startWatcher(
         const watchedCount = countWatchedFiles(markup.getWatched());
         if (watchedCount > WATCH_TARGET_LIMIT) {
             callbacks.onWarning(
-                `Watching ${watchedCount} files for markup changes (limit: ${WATCH_TARGET_LIMIT}). This can make watch mode slow — set \`content\` in your config to narrow the directories that are scanned.`,
+                `Watching ${watchedCount} files for markup changes (limit: ${WATCH_TARGET_LIMIT}). This can make watch mode slow. Set \`content\` in your config to narrow the directories that are scanned.`,
             );
         }
         return {
