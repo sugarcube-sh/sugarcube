@@ -78,7 +78,7 @@ describe("a missing reference written in files only some permutations read", () 
     });
 
     it("holds in every permutation it is missing in", () => {
-        expect(missing[0]?.permutations.label).toBe("everywhere");
+        expect(missing[0]?.permutations.label).toBe("every permutation");
     });
 });
 
@@ -123,7 +123,7 @@ describe("a problem every permutation finds again for itself", () => {
     it("is one problem at its spot, naming every permutation", () => {
         const conflicts = both.diagnostics.filter(({ kind }) => kind === "token-and-group");
         expect(conflicts).toHaveLength(1);
-        expect(conflicts[0]?.permutations.label).toBe("everywhere");
+        expect(conflicts[0]?.permutations.label).toBe("every permutation");
     });
 
     it("is two problems at one spot when the permutations say different things there", () => {

@@ -9,7 +9,7 @@ const px = (value: number) => ({ value, unit: "px" });
 describe("parseValue, strokeStyle", () => {
     describe("reads", () => {
         it.for([...strokeStyleKeywords])("the keyword %s", (keyword) => {
-            expect(read(keyword)).toStrictEqual({ kind: "keyword", keyword });
+            expect(read(keyword)).toStrictEqual(keyword);
         });
 
         it("a dash pattern, as spec example 48 writes it", () => {
@@ -22,7 +22,6 @@ describe("parseValue, strokeStyle", () => {
                     lineCap: "round",
                 }),
             ).toStrictEqual({
-                kind: "dash",
                 dashArray: [
                     { value: 0.5, unit: "rem" },
                     { value: 0.25, unit: "rem" },
@@ -35,7 +34,6 @@ describe("parseValue, strokeStyle", () => {
             expect(
                 read({ dashArray: ["{dash-length-medium}", px(4)], lineCap: "butt" }),
             ).toStrictEqual({
-                kind: "dash",
                 dashArray: [{ syntax: "curly-brace", path: "dash-length-medium" }, px(4)],
                 lineCap: "butt",
             });
@@ -157,7 +155,6 @@ describe("parseValue, strokeStyle", () => {
             it("a length's own property, at its full path", () => {
                 const raw = { dashArray: [{ ...px(4), fluid: true }], lineCap: "round" };
                 expect(read(raw, lenient)).toStrictEqual({
-                    kind: "dash",
                     dashArray: [px(4)],
                     lineCap: "round",
                 });

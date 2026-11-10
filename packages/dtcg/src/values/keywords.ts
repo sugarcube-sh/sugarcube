@@ -1,4 +1,4 @@
-import type { StrokeStyleValue } from "../model.js";
+import type { StrokeStyleKeyword, StrokeStyleValue } from "../model.js";
 
 /**
  * The font weight keywords the spec defines, each with its number.
@@ -37,7 +37,7 @@ export const fontWeightKeywords = {
 export type FontWeightKeyword = keyof typeof fontWeightKeywords;
 
 /** How a stroke style's dash ends are drawn, such as `"round"`. */
-export type LineCap = Extract<StrokeStyleValue, { kind: "dash" }>["lineCap"];
+export type LineCap = Exclude<StrokeStyleValue, string>["lineCap"];
 
 /**
  * The stroke style keywords the spec defines.
@@ -47,10 +47,16 @@ export type LineCap = Extract<StrokeStyleValue, { kind: "dash" }>["lineCap"];
  *
  * @see {@link https://www.designtokens.org/TR/2025.10/format/#stroke-style | Format 9.3, Stroke style}
  */
-export const strokeStyleKeywords: readonly Extract<
-    StrokeStyleValue,
-    { kind: "keyword" }
->["keyword"][] = ["solid", "dashed", "dotted", "double", "groove", "ridge", "outset", "inset"];
+export const strokeStyleKeywords: readonly StrokeStyleKeyword[] = [
+    "solid",
+    "dashed",
+    "dotted",
+    "double",
+    "groove",
+    "ridge",
+    "outset",
+    "inset",
+];
 
 /**
  * Every way the end of a dash can be drawn.

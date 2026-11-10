@@ -25,7 +25,9 @@ const tokens = readFromMemory(
 describe("generated tokens across permutations", () => {
     it("is written in one place, read in every permutation", () => {
         const places = tokens.getDefinitions("g.a");
-        expect(places.map(({ permutations }) => permutations.label)).toStrictEqual(["everywhere"]);
+        expect(places.map(({ permutations }) => permutations.label)).toStrictEqual([
+            "every permutation",
+        ]);
     });
 
     it("is one reference to what it references, in every permutation", () => {
@@ -35,7 +37,7 @@ describe("generated tokens across permutations", () => {
                 writtenInPaths,
                 permutations.label,
             ]),
-        ).toStrictEqual([[["g.a"], "everywhere"]]);
+        ).toStrictEqual([[["g.a"], "every permutation"]]);
     });
 
     it("has the same span in every permutation", () => {

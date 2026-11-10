@@ -20,6 +20,8 @@ const files = {
             text: { $type: "color", $value: "{color.red}" },
             gap: { $type: "number", $value: "{space.sm}" },
             lost: { $type: "number", $value: "{missing}" },
+            tint: { $type: "number", $value: { $ref: "#/color/red/$value/components/0" } },
+            shade: { $type: "number", $value: { $ref: "#/color/blue/$value/components/0" } },
         },
     }),
     "dark.json": JSON.stringify({ color: { blue: { $value: rgb(0.2) } } }),
@@ -44,6 +46,7 @@ describe("a reread", () => {
 
     it("keeps a token that points only at kept tokens, or at one that isn't there, still reporting it", () => {
         expect(kept("theme.gap")).toBe(true);
+        expect(kept("theme.shade")).toBe(true);
         expect(after.getPermutation().getToken("theme.lost")).toBeDefined();
         expect(kept("theme.lost")).toBe(true);
         const problems = (tokens: typeof before) =>
@@ -57,6 +60,8 @@ describe("a reread", () => {
     it("makes a token whose value changed new, and every token that points at it", () => {
         expect(kept("color.red")).toBe(false);
         expect(kept("theme.text")).toBe(false);
+        expect(kept("theme.tint")).toBe(false);
+        expect(after.getPermutation().getToken("theme.tint")?.resolved).toBe(0.5);
         expect(after.getPermutation().getToken("color.red")?.resolved).toMatchObject({
             components: [0.5, 0, 0],
         });

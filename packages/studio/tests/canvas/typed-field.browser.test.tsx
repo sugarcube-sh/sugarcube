@@ -67,7 +67,7 @@ describe("a colour", () => {
     it("writes a component exactly as typed, and the hex the file has", async () => {
         const screen = await render(<Row type="color" start={brand} />);
 
-        await screen.getByRole("textbox", { name: "base, C" }).fill("0.0134567");
+        await screen.getByRole("textbox", { name: "base, Chroma" }).fill("0.0134567");
 
         await expect
             .element(screen.getByRole("status", { name: "written" }))
@@ -82,7 +82,7 @@ describe("a colour", () => {
     it("writes what a slider is moved to", async () => {
         const screen = await render(<Row type="color" start={brand} />);
 
-        await screen.getByRole("slider", { name: "base, L" }).fill("0.9");
+        await screen.getByRole("slider", { name: "base, Lightness" }).fill("0.9");
 
         await expect
             .element(screen.getByRole("status", { name: "written" }))
@@ -107,7 +107,7 @@ describe("a colour", () => {
     it("converts the colour you see when a box is left half typed", async () => {
         const screen = await render(<Row type="color" start={brand} />);
 
-        await screen.getByRole("textbox", { name: "base, C" }).fill("");
+        await screen.getByRole("textbox", { name: "base, Chroma" }).fill("");
         await screen.getByRole("combobox", { name: "base, colour space" }).selectOptions("oklab");
 
         await expect
@@ -120,7 +120,7 @@ describe("a colour", () => {
     it("writes none typed for a component", async () => {
         const screen = await render(<Row type="color" start={brand} />);
 
-        await screen.getByRole("textbox", { name: "base, H" }).fill("none");
+        await screen.getByRole("textbox", { name: "base, Hue" }).fill("none");
 
         await expect
             .element(screen.getByRole("status", { name: "written" }))

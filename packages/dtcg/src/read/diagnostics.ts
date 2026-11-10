@@ -93,7 +93,7 @@ function findPermutationsReading(
     permutations: Permutations,
     entry: string,
 ): Permutations {
-    const file = found.span?.file;
+    const file = found.kind === "file-not-found" ? found.detail.file : found.span?.file;
     if (file === undefined || file === entry) return permutations;
     return permutations.select(({ sources }) => sources.some((each) => each.file === file));
 }

@@ -57,6 +57,19 @@ describe("a source that can't be read", () => {
         expect(kinds(tokens)).toStrictEqual(expected);
     });
 
+    it("names only the permutations that would read it when the file isn't there", () => {
+        const tokens = readFromMemory({
+            files: {
+                "tokens.resolver.json": lightDark(["roles.json"], ["colors.json"]),
+                "roles.json": roles,
+            },
+        });
+        const notFound = tokens.diagnostics.filter(({ kind }) => kind === "file-not-found");
+        expect(notFound.map(({ permutations }) => permutations.label)).toStrictEqual([
+            "mode: dark",
+        ]);
+    });
+
     it("quiets only the permutations that read it: elsewhere a missing reference is reported", () => {
         const tokens = readFromMemory({
             files: {

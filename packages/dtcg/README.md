@@ -32,20 +32,20 @@ npm install @sugarcube-sh/dtcg
 **A docs page** listing every token's value in every theme:
 
 ```ts
-import { askEveryPermutation } from "@sugarcube-sh/dtcg";
+import { groupPermutationsBy } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { toCSSValue } from "@sugarcube-sh/dtcg/css";
 
 const tokens = await read("tokens.resolver.json");
 
 for (const path of tokens.getTokenPaths()) {
-  for (const { answer, permutations } of askEveryPermutation(tokens, (p) => p.getToken(path))) {
-    row(path, permutations.label, toCSSValue(answer));
+  for (const { result, permutations } of groupPermutationsBy(tokens, (p) => p.getToken(path))) {
+    row(path, permutations.label, toCSSValue(result));
   }
 }
-// color.red    everywhere    rgb(204 51 51)
-// color.text   mode: light   rgb(204 51 51)
-// color.text   mode: dark    rgb(51 102 204)
+// color.red    every permutation   rgb(204 51 51)
+// color.text   mode: light         rgb(204 51 51)
+// color.text   mode: dark          rgb(51 102 204)
 ```
 
 **A check in CI** that fails when a token file has a mistake:
@@ -317,8 +317,8 @@ on its own. It throws, and says what to do instead:
 ```ts
 tokens.getToken("color.text")
 // SeveralPermutationsError: tokens.getToken() needs a permutation: this resolver has the modifier
-// `mode`. Pick one with tokens.getPermutation({ mode: "dark" }), or ask them all with
-// askEveryPermutation(tokens, …)
+// `mode`. Pick one with tokens.getPermutation({ mode: "dark" }), or group them with
+// groupPermutationsBy(tokens, …)
 ```
 
 A token file has no modifiers, so it has only one permutation. That's why `tokens.getToken`
@@ -337,7 +337,15 @@ tokens.files                                 // ["tokens.resolver.json", "color.
 
 ### Pick a theme that isn't there
 
-Ask for a context the resolver doesn't have, and `getPermutation` throws a `PermutationError`:
+When the theme comes from a person, such as a theme picker, look it up with `findByInput`. It gives
+`undefined` for a context the resolver doesn't have, so you can fall back to the default:
+
+```ts
+const chosen = tokens.permutations.findByInput({ mode: "dim" }) ?? tokens.getPermutation();
+chosen.label   // "mode: light"
+```
+
+To find out what's wrong with the input, ask `getPermutation`, which throws a `PermutationError`:
 
 ```ts
 tokens.getPermutation({ mode: "dim" })
@@ -363,34 +371,40 @@ const missingSomewhere = tokens.permutations.some((p) => p.getToken("color.text"
 
 ### Compare them side by side
 
-Write the question you'd ask one theme, and `askEveryPermutation` asks it of each. Themes that give
-the same answer come back together:
+Write a function that gets what you want from one theme, and `groupPermutationsBy` runs it in each.
+Themes that give the same result come back in one group:
 
 ```ts
-import { askEveryPermutation } from "@sugarcube-sh/dtcg";
+import { groupPermutationsBy } from "@sugarcube-sh/dtcg";
 
-askEveryPermutation(tokens, (p) => p.getToken("color.text")?.resolved)
-// [{ answer: red,  permutations: mode: light },
-//  { answer: blue, permutations: mode: dark }]
+groupPermutationsBy(tokens, (p) => p.getToken("color.text")?.resolved)
+// [{ result: red,  permutations: mode: light },
+//  { result: blue, permutations: mode: dark }]
 
-askEveryPermutation(tokens, (p) => p.getToken("color.red")?.resolved)
-// [{ answer: red, permutations: everywhere }]
+groupPermutationsBy(tokens, (p) => p.getToken("color.red")?.resolved)
+// [{ result: red, permutations: every permutation }]
 ```
 
 Things to notice:
 
-- `color.red` is the same in both themes, so there's one answer, labelled `everywhere`.
+- `color.red` is the same in both themes, so there's one group, labelled `every permutation`.
 - `permutations` is a list too, with its own `label`.
+
+To see everything one theme changes, ask it for the tokens that differ from another:
+
+```ts
+dark.getTokensDifferentFrom(tokens.getPermutation()).map((token) => token.path)   // ["color.text"]
+```
 
 That's how the docs page at the top works. Here's all of its output for these files:
 
 ```text
-color.red    everywhere    rgb(204 51 51)
-color.blue   everywhere    rgb(51 102 204)
-color.brand  everywhere    rgb(204 51 51)
-color.text   mode: light   rgb(204 51 51)
-color.text   mode: dark    rgb(51 102 204)
-color.link   everywhere    undefined, since its reference names no token
+color.red    every permutation   rgb(204 51 51)
+color.blue   every permutation   rgb(51 102 204)
+color.brand  every permutation   rgb(204 51 51)
+color.text   mode: light         rgb(204 51 51)
+color.text   mode: dark          rgb(51 102 204)
+color.link   every permutation   undefined, since its reference names no token
 ```
 
 ### Labels with more than one modifier
@@ -756,6 +770,7 @@ says which permutations it's true in.
 | `topLevel` | The top of the files, which is a group: the group at `""` |
 | `getDependencies(path)` | Each token or group a path's value refers to, once: what it depends on |
 | `getDependents(path)` | Each token or group that refers to a path, once: what depends on it |
+| `getTokensDifferentFrom(other)` | The tokens whose resolved value differs from another permutation's: what this theme changes |
 | `getReferencesTo(path)` | Every reference written to a path, each with the token that writes it |
 | `getDiagnostics(path)` | The problems about one token or group |
 | `input`, `label`, `isDefault` | The input that built it, a label for people naming every modifier's context, and whether every modifier is at its default |
@@ -801,27 +816,27 @@ tokens.getReferencesTo("color.red")         // each place {color.red} is typed i
 | `inherited`, `generated` | Set when it's there because of `$extends`, or a generator made it |
 | `parts` | Each part of a composite value, each shadow layer or gradient stop, with what it resolved to |
 
-### `askEveryPermutation(tokens, question)`
+### `groupPermutationsBy(tokens, fn)`
 
-Asks `question` of every permutation. Each different answer comes back once, as
-`{ answer, permutations }`, with the permutations that gave it. If there's only one answer, it's
-the same everywhere.
+Runs `fn` once in every permutation, and groups the permutations that give the same result, as
+`Object.groupBy` groups items. Each group comes back as `{ result, permutations }`. If there's only
+one group, the result is the same in every permutation.
 
-Two answers count as the same when they're the same value, or lists of the same values in the same
+Two results count as the same when they're the same value, or lists of the same values in the same
 order. A token that's the same in two permutations is the same object in both, so
 `(p) => p.getToken(path)` groups them too.
 
 ### A list of permutations
 
-`tokens.permutations` is a list of permutations. So is the `permutations` on an answer from
-`askEveryPermutation`, on a problem, and on a change. Each is a normal read-only array, plus:
+`tokens.permutations` is a list of permutations. So is the `permutations` on a group from
+`groupPermutationsBy`, on a problem, and on a change. Each is a normal read-only array, plus:
 
 | | What it is |
 | --- | --- |
-| `label` | Which permutations it holds, for people, such as `mode: dark` or `everywhere` |
+| `label` | Which permutations it holds, for people, such as `mode: dark` or `every permutation` |
 | `inputs`, `scope` | Their inputs, and which contexts they cover, for writing your own label |
 | `others` | Every permutation the read built that it doesn't hold, itself a list: none when it holds them all |
-| `select(test)`, `findByInput(input)` | The ones that pass a test, as a list of their own, and the one an input picks |
+| `select(test)`, `findByInput(input)` | The ones that pass a test, as a list of their own, and the one an input picks, or `undefined` |
 
 ### Errors
 
@@ -927,7 +942,7 @@ From `@sugarcube-sh/dtcg/node`:
 
 | Import from | For | Runs in |
 | --- | --- | --- |
-| `@sugarcube-sh/dtcg` | `read` with your own `readText`, `readFromMemory`, `askEveryPermutation`, `tokenPath`, the errors, and every type | anywhere |
+| `@sugarcube-sh/dtcg` | `read` with your own `readText`, `readFromMemory`, `groupPermutationsBy`, `tokenPath`, the errors, and every type | anywhere |
 | `@sugarcube-sh/dtcg/node` | `read` from disk, `createLiveTokens`, `findResolver`, `findTokenFiles` | Node |
 | `@sugarcube-sh/dtcg/css` | CSS custom properties, values and stylesheets | anywhere |
 | `@sugarcube-sh/dtcg/editor` | where things are in the text, for editors and tools that write files | anywhere |

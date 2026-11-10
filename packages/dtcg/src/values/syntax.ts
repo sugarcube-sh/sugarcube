@@ -35,7 +35,6 @@ export interface ObjectSyntax {
     readonly kind: "object";
     readonly properties: Readonly<Record<string, PropertySyntax>>;
     readonly inOrder: readonly (readonly [string, PropertySyntax])[];
-    readonly tag?: string;
     readonly hasParts: boolean;
 }
 
@@ -115,13 +114,10 @@ export function ofType<T extends TokenType>(
 
 export function object<P extends Readonly<Record<string, PropertySyntax>>>(
     properties: P,
-    tag?: string,
 ): Omit<ObjectSyntax, "properties"> & { readonly properties: P } {
     const inOrder = Object.entries(properties);
     const hasParts = inOrder.some(([, property]) => getSyntax(property, {}).hasParts);
-    return tag === undefined
-        ? { kind: "object", properties, inOrder, hasParts }
-        : { kind: "object", properties, inOrder, hasParts, tag };
+    return { kind: "object", properties, inOrder, hasParts };
 }
 
 export function withDefault<S extends Syntax>(

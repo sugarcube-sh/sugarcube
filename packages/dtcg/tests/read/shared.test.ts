@@ -224,9 +224,9 @@ describe("what resolving a shared token finds", () => {
         );
         expect(inLight?.getToken("color.lost")).toBe(inDim?.getToken("color.lost"));
         expect(inLight?.getToken("color.lost")).toBe(inDark?.getToken("color.lost"));
-        expect(kinds("color.lost")).toStrictEqual(["missing-reference in everywhere"]);
-        expect(kinds("color.grouped")).toStrictEqual(["not-a-token in everywhere"]);
-        expect(kinds("color.edge")).toStrictEqual(["type-mismatch in everywhere"]);
+        expect(kinds("color.lost")).toStrictEqual(["missing-reference in every permutation"]);
+        expect(kinds("color.grouped")).toStrictEqual(["not-a-token in every permutation"]);
+        expect(kinds("color.edge")).toStrictEqual(["type-mismatch in every permutation"]);
     });
 
     it("is the same as every permutation resolving it again would find", () => {

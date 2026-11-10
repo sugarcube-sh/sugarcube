@@ -38,7 +38,16 @@
         "modifier": "theme",
         "context": "blue",
         "valid": ["light", "dark"]
-      }
+      },
+      "relatedInformation": [
+        {
+          "message": "the modifier is declared here",
+          "span": {
+            "file": "tokens.resolver.json",
+            "text": "{\n      \"type\": \"modifier\",\n      \"name\": \"theme\",\n      \"contexts\": {\n        \"light\": [],\n        \"dark\": []\n      }\n    }"
+          }
+        }
+      ]
     },
     {
       "kind": "input-invalid",
@@ -56,7 +65,16 @@
         "input": 0,
         "modifier": "size",
         "valid": ["default", "large"]
-      }
+      },
+      "relatedInformation": [
+        {
+          "message": "the modifier is declared here",
+          "span": {
+            "file": "tokens.resolver.json",
+            "text": "{\n      \"type\": \"modifier\",\n      \"name\": \"size\",\n      \"contexts\": {\n        \"default\": [],\n        \"large\": []\n      }\n    }"
+          }
+        }
+      ]
     },
     {
       "kind": "input-invalid",
@@ -64,7 +82,16 @@
         "reason": "not-a-string",
         "input": 1,
         "modifier": "beta"
-      }
+      },
+      "relatedInformation": [
+        {
+          "message": "the modifier is declared here",
+          "span": {
+            "file": "tokens.resolver.json",
+            "text": "{\n      \"type\": \"modifier\",\n      \"name\": \"beta\",\n      \"contexts\": {\n        \"false\": [],\n        \"true\": []\n      },\n      \"default\": \"false\"\n    }"
+          }
+        }
+      ]
     }
   ],
   "sources": []

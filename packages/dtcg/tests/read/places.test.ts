@@ -164,9 +164,9 @@ describe("on the design tokens", () => {
             },
         });
         const [base, brand] = overridden.getDefinitions("gap");
-        expect(base?.permutations.label).toBe("everywhere");
-        expect(base?.winsIn.label).toBe("nowhere");
-        expect(brand?.winsIn.label).toBe("everywhere");
+        expect(base?.permutations.label).toBe("every permutation");
+        expect(base?.winsIn.label).toBe("no permutation");
+        expect(brand?.winsIn.label).toBe("every permutation");
     });
 
     it("getDefinitions gives a group's places too, read but winning nowhere, as groups merge", () => {

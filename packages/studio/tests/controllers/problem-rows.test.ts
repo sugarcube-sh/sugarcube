@@ -51,7 +51,7 @@ describe("problemRows", () => {
 
         const [row] = problemRows(read.diagnostics);
 
-        expect(read.diagnostics[0]?.permutations.label).not.toBe("everywhere");
+        expect(read.diagnostics[0]?.permutations.label).not.toBe("every permutation");
         expect(row?.inPermutations).toBeUndefined();
     });
 

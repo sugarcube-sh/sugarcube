@@ -57,8 +57,8 @@ export class PermutationError extends Error {
  *     if (error instanceof SeveralPermutationsError) {
  *         error.message;
  *         // => "tokens.getToken() needs a permutation: this resolver has the modifier `mode`.
- *         // Pick one with tokens.getPermutation({ mode: \"dark\" }), or ask them all with
- *         // askEveryPermutation(tokens, …)"
+ *         // Pick one with tokens.getPermutation({ mode: \"dark\" }), or group them with
+ *         // groupPermutationsBy(tokens, …)"
  *         error.detail;
  *         // => { asked: "getToken()", modifiers: ["mode"], example: { mode: "dark" } }
  *     }

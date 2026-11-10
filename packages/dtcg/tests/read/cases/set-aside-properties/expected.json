@@ -39,10 +39,7 @@
               "value": 16,
               "unit": "px"
             },
-            "style": {
-              "kind": "keyword",
-              "keyword": "solid"
-            }
+            "style": "solid"
           },
           "invalid": null,
           "references": [
@@ -102,10 +99,7 @@
               "value": 4,
               "unit": "px"
             },
-            "style": {
-              "kind": "keyword",
-              "keyword": "solid"
-            }
+            "style": "solid"
           },
           "invalid": null,
           "references": [

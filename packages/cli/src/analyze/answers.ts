@@ -4,7 +4,7 @@ import {
     type ResolverContext,
     type Source,
     type Token,
-    askEveryPermutation,
+    groupPermutationsBy,
 } from "@sugarcube-sh/dtcg";
 import type { Use, Uses } from "./uses.js";
 
@@ -68,9 +68,9 @@ interface Named {
 
 export function impact({ tokens, uses }: Analysis, path: string, written: Written[]): Impact {
     const byDependent = new Map<string, Named[]>();
-    const asked = askEveryPermutation(tokens, (p) => p.getReferencesTo(path, { chained: true }));
-    for (const { answer, permutations } of asked) {
-        for (const reference of answer) {
+    const groups = groupPermutationsBy(tokens, (p) => p.getReferencesTo(path, { chained: true }));
+    for (const { result, permutations } of groups) {
+        for (const reference of result) {
             const from = reference.writtenIn.path;
             if (from === path || reference.pointsToPath === undefined) continue;
             const named = { path: reference.pointsToPath, permutations };

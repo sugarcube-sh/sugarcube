@@ -147,7 +147,7 @@ function readObject(syntax: ObjectSyntax, raw: unknown, where: Where, reading: R
         ...unknownProperties(raw, defines, owner, where.jsonPath, errors, options),
     );
 
-    const value: Record<string, unknown> = syntax.tag === undefined ? {} : { kind: syntax.tag };
+    const value: Record<string, unknown> = {};
     let failed = errors.length > before;
     for (const [name, property] of syntax.inOrder) {
         const there = inside(where, name);

@@ -1,4 +1,5 @@
 import type { Input, Resolver, ResolverContext, SetOnRoute, Source } from "../model.js";
+import { relatedMessages } from "../error-messages.js";
 import { ownLabel } from "../lookup/permutation-label.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
 import { type Modifier, checkedInput, allModifiers, withDefaults } from "./input.js";
@@ -84,7 +85,15 @@ function chooseInputs(
         const result = checkedInput(modifiers, raw);
         if (result.ok) return [result.input];
         for (const problem of result.problems) {
-            diagnostics.found(diagnostic("input-invalid", { input: index, ...problem }));
+            const span = modifiers.find(({ name }) => name === problem.modifier)?.span;
+            const declared = span && [{ message: relatedMessages.modifierDeclaredHere, span }];
+            diagnostics.found(
+                diagnostic(
+                    "input-invalid",
+                    { input: index, ...problem },
+                    { ...(declared && { relatedInformation: declared }) },
+                ),
+            );
         }
         return [];
     });

@@ -31,7 +31,7 @@
         "reason": "component-out-of-range",
         "value": 400,
         "colorSpace": "hsl",
-        "component": "H",
+        "component": "Hue",
         "min": 0,
         "max": 360,
         "maxExclusive": true

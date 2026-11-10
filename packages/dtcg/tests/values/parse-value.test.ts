@@ -14,6 +14,14 @@ describe("a value with no place in a file", () => {
     });
 });
 
+describe("a type that isn't a token type", () => {
+    it("throws, naming the type", () => {
+        expect(() => parseValue("colour" as "color", "#fff")).toThrow(
+            new TypeError("`colour` is not a token type; use one of `tokenTypes`"),
+        );
+    });
+});
+
 describe("a reference in place of a whole value", () => {
     it.for(tokenTypes)("is read for a %s, in either syntax", (type) => {
         expect(parseValue(type, "{brand.primary}")).toStrictEqual({

@@ -27,7 +27,6 @@ function addParts(
     switch (syntax.kind) {
         case "object": {
             if (!isJsonObject(resolved)) return;
-            if (syntax.tag !== undefined && resolved.kind !== syntax.tag) return;
             for (const [name, propertySyntax] of syntax.inOrder) {
                 const inner = getSyntax(propertySyntax, resolved);
                 const found = buildPartWithSyntax(token, inner, resolved[name], [

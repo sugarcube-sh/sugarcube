@@ -173,7 +173,7 @@ describe("undo steps", () => {
     it("makes typing in one box one step, and switching the colour space one of its own", async () => {
         const { studio, Page } = studioPage("color.brand");
         const screen = await render(<Page />);
-        const chroma = screen.getByRole("textbox", { name: "base, C" });
+        const chroma = screen.getByRole("textbox", { name: "base, Chroma" });
 
         await chroma.fill("0.1");
         await chroma.fill("0.12");

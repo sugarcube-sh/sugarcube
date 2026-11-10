@@ -73,7 +73,7 @@ describe("the design tokens of a read with several permutations", () => {
             example: { mode: "dark" },
         });
         expect(error.message).toBe(
-            'tokens.getToken() needs a permutation: this resolver has the modifier `mode`. Pick one with tokens.getPermutation({ mode: "dark" }), or ask them all with askEveryPermutation(tokens, …)',
+            'tokens.getToken() needs a permutation: this resolver has the modifier `mode`. Pick one with tokens.getPermutation({ mode: "dark" }), or group them with groupPermutationsBy(tokens, …)',
         );
     });
 
@@ -201,7 +201,7 @@ describe("what the root entry gives", () => {
         ]) {
             expect(gone in root).toBe(false);
         }
-        for (const kept of ["askEveryPermutation", "toInputLabel", "getFilePath"]) {
+        for (const kept of ["groupPermutationsBy", "toInputLabel", "getFilePath"]) {
             expect(kept in root).toBe(true);
         }
     });

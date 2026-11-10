@@ -170,11 +170,7 @@ function buildPermutation(
 
     const reportDeprecated = (path: string, targets: readonly Aimed<Pending<Token>>[]) => {
         for (const target of targets) {
-            const pointsTo =
-                target.token ??
-                (target.pointsToProperty && target.path !== undefined
-                    ? buildTarget(target.path)
-                    : undefined);
+            const pointsTo = target.token;
             if (pointsTo === undefined || pointsTo === BEING_MADE) continue;
             const { deprecated } = pointsTo;
             if (deprecated === undefined) continue;
@@ -497,7 +493,7 @@ function aimReference<Found extends Pending<Token>>(
     if (reached.kind === "token") return { occurrence, path, token: at(path) };
     if (reached.kind === "group" || reached.kind === "stops-at-token") return { occurrence, path };
     const pointsToProperty = stepInto(reached.token.valueAsWritten, reached.inside)?.property;
-    return { occurrence, path, pointsToProperty };
+    return { occurrence, path, token: at(path), pointsToProperty };
 }
 
 function groupFields(

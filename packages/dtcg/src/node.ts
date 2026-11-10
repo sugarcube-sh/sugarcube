@@ -1,4 +1,8 @@
-export { findResolver } from "./node/find-resolver.js";
+export {
+    type FindResolverOptions,
+    type FoundResolver,
+    findResolver,
+} from "./node/find-resolver.js";
 export { type FoundTokenFiles, findTokenFiles } from "./node/find-token-files.js";
 export { read } from "./node/read.js";
 export { getAbsoluteFilePath } from "./node/paths.js";

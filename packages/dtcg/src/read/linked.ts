@@ -27,6 +27,7 @@ import { SPAN_OF, getSpan } from "../lookup/editor.js";
 import { findJsonPath } from "../lookup/json-path.js";
 import { buildParts } from "../lookup/parts.js";
 import { PermutationError, findPermutation, onlyPermutation } from "../lookup/permutation.js";
+import { isEquivalentValue } from "../values/same-value.js";
 import { referenceIndex } from "../lookup/references.js";
 import { tokenPath } from "../path.js";
 import { makePermutations } from "./make-permutations.js";
@@ -137,7 +138,7 @@ function followAliasChain(token: Token): Token[] {
     for (let current: Token | undefined = token; current;) {
         if (chain.includes(current)) break;
         chain.push(current);
-        current = current.getReferenceAt()?.pointsToToken;
+        current = current.getReferenceAt()?.pointsToWholeToken;
     }
     return chain;
 }
@@ -229,6 +230,17 @@ class PermutationObject {
             }
         }
         return [...found];
+    }
+
+    getTokensDifferentFrom(other: Permutation): Token[] {
+        return this.#self.tokens.filter((token) => {
+            const there = other.getToken(token.path);
+            if (there === token) return false;
+            if (there === undefined || there.type !== token.type) return true;
+            if (token.resolved === undefined || there.resolved === undefined)
+                return token.resolved !== there.resolved;
+            return !isEquivalentValue(token.type, token.resolved, there.resolved);
+        });
     }
 
     getDiagnostics(path: string): Diagnostic[] {

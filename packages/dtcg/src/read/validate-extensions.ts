@@ -3,6 +3,7 @@ import type { Node } from "jsonc-parser";
 import type {
     ExtensionError,
     ExtensionMessages,
+    ExtensionResult,
     ExtensionValidator,
     Permutation,
     StandardSchemaV1,
@@ -60,7 +61,9 @@ export function defineExtensionValidator<
             on: Checked,
             extension: SchemaOutput<S>,
             options: ParseOptions,
-        ) => (ExtensionError<NoInfer<M>> | ValueError | IgnoredProperty)[];
+        ) =>
+            | (ExtensionError<NoInfer<M>> | ValueError | IgnoredProperty)[]
+            | ExtensionResult<unknown, NoInfer<M>>;
     },
 ): ExtensionValidator {
     return validator;
@@ -89,7 +92,7 @@ export function validateExtensions(
             if (!reported.first(validator, node)) return;
             const passed = checkSchema(validator.schema, value, validator.key);
             const problems = passed.ok
-                ? (validator.validate?.(on, passed.value, parseOptions) ?? [])
+                ? problemsIn(validator.validate?.(on, passed.value, parseOptions) ?? [])
                 : passed.problems;
             const extension: CheckedExtension = {
                 within: [validator.key],
@@ -127,4 +130,11 @@ export function validateExtensions(
             }
         }
     });
+}
+
+function problemsIn(
+    returned: NonNullable<ReturnType<NonNullable<ExtensionValidator["validate"]>>>,
+): (ExtensionError | ValueError | IgnoredProperty)[] {
+    if (Array.isArray(returned)) return returned;
+    return [...(returned.ignored ?? []), ...(returned.ok ? [] : returned.errors)];
 }

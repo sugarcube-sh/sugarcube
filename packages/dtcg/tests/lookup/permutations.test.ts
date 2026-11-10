@@ -95,14 +95,14 @@ describe("tokens.permutations", () => {
         ).toBe(named({ mode: "dark", density: "compact" }));
     });
 
-    it("is everywhere: one part that narrows nothing", () => {
+    it("is labelled every permutation: one part that narrows nothing", () => {
         expect(tokens.permutations.scope).toStrictEqual([{}]);
-        expect(tokens.permutations.label).toBe("everywhere");
+        expect(tokens.permutations.label).toBe("every permutation");
     });
 
     it("is every permutation, with none other", () => {
         expect(tokens.permutations.others).toHaveLength(0);
-        expect(tokens.permutations.others.label).toBe("nowhere");
+        expect(tokens.permutations.others.label).toBe("no permutation");
     });
 
     it("gives the inputs, in the same order", () => {
@@ -139,17 +139,17 @@ describe("permutations.select", () => {
         expect(darkCompact.label).toBe("mode: dark, density: compact");
     });
 
-    it("is everywhere when every permutation passes", () => {
+    it("is labelled every permutation when every permutation passes", () => {
         const every = tokens.permutations.select(() => true);
         expect(every.scope).toStrictEqual([{}]);
-        expect(every.label).toBe("everywhere");
+        expect(every.label).toBe("every permutation");
         expect(every.others).toHaveLength(0);
     });
 
-    it("is nowhere when no permutation passes", () => {
+    it("is labelled no permutation when no permutation passes", () => {
         const none = tokens.permutations.select(() => false);
         expect(none.scope).toStrictEqual([]);
-        expect(none.label).toBe("nowhere");
+        expect(none.label).toBe("no permutation");
         expect([...none.others]).toStrictEqual([...tokens.permutations]);
     });
 
@@ -236,10 +236,10 @@ describe("the permutations an answer holds in", () => {
         expect(compact?.permutations.label).toBe("density: compact");
     });
 
-    it("are everywhere when they are every permutation", () => {
+    it("are labelled every permutation when they are all of them", () => {
         const [base] = tokens.getDefinitions("red");
         expect(base?.permutations).toHaveLength(6);
-        expect(base?.permutations.label).toBe("everywhere");
+        expect(base?.permutations.label).toBe("every permutation");
     });
 
     it("share one scope with every answer that holds in the same permutations", () => {
@@ -302,7 +302,7 @@ describe("a label", () => {
         expect(shared?.permutations.label).toBe("density: compact; mode: dark");
     });
 
-    it("says which combinations the read built, rather than everywhere, when it built only some", () => {
+    it("says which combinations the read built, rather than every permutation, when it built only some", () => {
         expect(themed.permutations.scope).toStrictEqual([
             { density: ["comfy"] },
             { mode: ["light"] },
@@ -350,9 +350,9 @@ describe("a label", () => {
             expect(alone.label).toBe(dark.label);
         });
 
-        it("isn't everywhere, though it holds every permutation the read built", () => {
+        it("isn't labelled every permutation, though it holds every permutation the read built", () => {
             expect(some.permutations).toHaveLength(3);
-            expect(some.permutations.label).not.toBe("everywhere");
+            expect(some.permutations.label).not.toBe("every permutation");
             expect(some.permutations.scope).not.toStrictEqual([{}]);
             expect(some.permutations.others).toHaveLength(0);
         });

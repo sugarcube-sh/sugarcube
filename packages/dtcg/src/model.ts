@@ -119,28 +119,31 @@ export type FontWeightValue = number;
 export type NumberValue = number;
 
 /**
+ * A stroke style keyword the spec defines, such as `"dashed"`.
+ *
+ * @see {@link https://www.designtokens.org/TR/2025.10/format/#stroke-style | Format 9.3, Stroke style}
+ */
+export type StrokeStyleKeyword =
+    | "solid"
+    | "dashed"
+    | "dotted"
+    | "double"
+    | "groove"
+    | "ridge"
+    | "outset"
+    | "inset";
+
+/**
  * A line style.
  *
- * `kind: "keyword"` is a keyword, such as `"dashed"`.
- * `kind: "dash"` is your own pattern of dashes and gaps.
+ * It's a keyword, such as `"dashed"`, or your own pattern of dashes and gaps. `typeof` tells them
+ * apart.
  *
  * @see {@link https://www.designtokens.org/TR/2025.10/format/#stroke-style | Format 9.3, Stroke style}
  */
 export type StrokeStyleValue =
+    | StrokeStyleKeyword
     | {
-          readonly kind: "keyword";
-          readonly keyword:
-              | "solid"
-              | "dashed"
-              | "dotted"
-              | "double"
-              | "groove"
-              | "ridge"
-              | "outset"
-              | "inset";
-      }
-    | {
-          readonly kind: "dash";
           /** The lengths of the dashes and gaps, one after the other. */
           readonly dashArray: readonly DimensionValue[];
           /** How the end of each dash is drawn. */
@@ -332,9 +335,17 @@ export interface ReferenceBase {
     /**
      * The token the reference points to, in this permutation.
      *
-     * It's `undefined` when the reference points to part of a value, to a group, or to nothing.
+     * For a JSON Pointer into part of a value, it's the token that value is in. It's `undefined`
+     * for a group, or for nothing. For the whole token only, use
+     * {@link ReferenceBase.pointsToWholeToken | pointsToWholeToken}.
      */
     readonly pointsToToken?: Token;
+    /**
+     * The token the reference points to as a whole.
+     *
+     * It's `undefined` for a JSON Pointer into part of a token's value.
+     */
+    readonly pointsToWholeToken?: Token;
     /**
      * Where in the token's value a JSON Pointer points.
      *
@@ -391,10 +402,11 @@ export type ReferenceInPermutations = Omit<
     moved(moves: readonly Move[]): JsonValue;
 };
 
-/** One answer from {@link askEveryPermutation}, and the permutations that gave it. */
-export interface AnswerInPermutations<Answer> {
-    readonly answer: Answer;
-    /** The permutations that gave the answer. */
+/** One group from {@link groupPermutationsBy}. */
+export interface PermutationGroup<Result> {
+    /** What the function returned, such as `"rgb(51 102 204)"`. */
+    readonly result: Result;
+    /** The permutations where the function returned `result`. */
     readonly permutations: Permutations;
 }
 
@@ -427,9 +439,8 @@ export type Unresolved<V> = CurlyBraceReference | WithPointers<V>;
 /** A stroke style whose references aren't followed yet. */
 export type UnresolvedStrokeStyle =
     | WrittenReference
-    | Extract<StrokeStyleValue, { kind: "keyword" }>
+    | StrokeStyleKeyword
     | {
-          readonly kind: "dash";
           readonly dashArray: JsonPointerReference | readonly Unresolved<DimensionValue>[];
           readonly lineCap: JsonPointerReference | "round" | "butt" | "square";
       };
@@ -572,10 +583,10 @@ export interface SimplePart<T extends SimplePartType> extends PartBase<ValueByTy
  * `"dashArray" in part` tells them apart.
  */
 export type StrokeStylePart =
-    | (PartBase<Extract<StrokeStyleValue, { readonly kind: "keyword" }>> & {
+    | (PartBase<StrokeStyleKeyword> & {
           readonly type: "strokeStyle";
       })
-    | (PartBase<Extract<StrokeStyleValue, { readonly kind: "dash" }>> & {
+    | (PartBase<Exclude<StrokeStyleValue, string>> & {
           readonly type: "strokeStyle";
           readonly dashArray: readonly SimplePart<"dimension">[];
       });
@@ -1433,6 +1444,20 @@ export interface Permutation {
      */
     getDependents(path: string, options?: ReferenceOptions): readonly (Token | Group)[];
     /**
+     * Finds the tokens whose resolved value differs from another permutation's.
+     *
+     * A token that refers to a changed one is listed too, and so is one `other` doesn't have.
+     * Values are compared as {@link isEquivalentValue} compares them.
+     *
+     * @param other - The permutation to compare with, such as `light`.
+     *
+     * @example
+     * // What dark changes from light
+     * dark.getTokensDifferentFrom(light).map((token) => token.path)
+     * // => ["color.primary", "button.background"]
+     */
+    getTokensDifferentFrom(other: Permutation): readonly Token[];
+    /**
      * Finds the problems with a token or group in this permutation.
      *
      * That includes a missing reference it writes, a loop it's part of, and a problem in a token it
@@ -1477,6 +1502,8 @@ export interface DiagnosticDetailByKind {
     "resolver-invalid": ResolverProblem;
     /**
      * An input in {@link ReadOptions.inputs} doesn't match the resolver.
+     *
+     * It has no `span`. Its `relatedInformation` points at the modifier in the resolver.
      */
     "input-invalid": {
         /** Which input, by its index in {@link ReadOptions.inputs}. */
@@ -1855,7 +1882,8 @@ export type DiagnosticOf<DetailByKind> = {
         /**
          * The permutations that have the problem.
          *
-         * dtcg's own diagnostics always have it. A problem in the resolver applies `"everywhere"`.
+         * dtcg's own diagnostics always have it. A problem in the resolver applies in
+         * `"every permutation"`.
          * Your own kinds can leave it out.
          */
         readonly permutations?: Permutations;
@@ -2186,12 +2214,12 @@ export interface Permutations extends ReadonlyArray<Permutation> {
     /**
      * A name for the permutations in it, such as `"mode: dark"`.
      *
-     * All of them is `"everywhere"`, and none is `"nowhere"`.
+     * All of them is `"every permutation"`, and none is `"no permutation"`.
      *
      * @example
      * // Both light and dark
      * tokens.permutations.label
-     * // => "everywhere"
+     * // => "every permutation"
      */
     readonly label: string;
     /**
@@ -2229,6 +2257,17 @@ export interface Permutations extends ReadonlyArray<Permutation> {
  * `"not-read"` means the input fits, but the read didn't build that permutation.
  */
 export type PermutationErrorDetail = InputProblem | { reason: "not-read"; input: Input };
+
+/** Why `readFromMemory` couldn't pick a file to start from, with the facts behind its message. */
+export interface EntryFileErrorDetail {
+    /**
+     * - `"no-resolver"` for several token files and no resolver, or no files
+     * - `"several-resolvers"` for more than one resolver
+     */
+    readonly reason: "no-resolver" | "several-resolvers";
+    /** The files it couldn't pick from, such as `["base.json", "dark.json"]`. */
+    readonly files: readonly string[];
+}
 
 /** The facts behind a {@link SeveralPermutationsError}'s message. */
 export interface SeveralPermutationsDetail {
@@ -2360,7 +2399,8 @@ export interface ExtensionValidator {
     /**
      * Returns why the extension isn't valid, or `[]`.
      *
-     * An error's `jsonPath` starts at the extension.
+     * An error's `jsonPath` starts at the extension. With `createExtensionReader`, return the
+     * reader's `result` as it is.
      *
      * @param on - The token or group, by its path and type.
      * @param extension - Your extension's data, or the schema's output if there's a `schema`.
@@ -2376,7 +2416,7 @@ export interface ExtensionValidator {
         },
         extension: unknown,
         options: ParseOptions,
-    ): (ExtensionError | ValueError | IgnoredProperty)[];
+    ): (ExtensionError | ValueError | IgnoredProperty)[] | ExtensionResult<unknown>;
 }
 
 /** A token a generator makes, as a file would write it. */
@@ -2437,6 +2477,20 @@ export type ExtensionError<M extends ExtensionMessages = ExtensionMessages> = st
       }[keyof M & string];
 
 /**
+ * The value read from an extension, or every problem found.
+ *
+ * `ignored` lists the properties set aside, either way. Return it from `generate` or `validate`.
+ *
+ * @example
+ * // A fluid range with no max
+ * reader.result(undefined)
+ * // => { ok: false, errors: [{ jsonPath: ["max"], reason: "missing-property", data: { name: "max" } }] }
+ */
+export type ExtensionResult<V, M extends ExtensionMessages = ExtensionMessages> =
+    | { ok: true; value: V; ignored?: IgnoredProperty[] }
+    | { ok: false; errors: (ExtensionError<M> | ValueError)[]; ignored?: IgnoredProperty[] };
+
+/**
  * Makes tokens from an extension on a group, such as the steps of a spacing scale.
  *
  * Each token it makes is marked {@link TokenBase.generated | generated}. If a file writes one too,
@@ -2479,9 +2533,7 @@ export interface Generator {
         },
         extension: unknown,
         options: ParseOptions,
-    ):
-        | { ok: true; value: GeneratedToken[]; ignored?: IgnoredProperty[] }
-        | { ok: false; errors: (ExtensionError | ValueError)[]; ignored?: IgnoredProperty[] };
+    ): ExtensionResult<GeneratedToken[]>;
 }
 
 /** How to read design tokens. */

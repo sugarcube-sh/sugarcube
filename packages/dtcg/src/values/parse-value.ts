@@ -6,7 +6,9 @@ import type {
     UnresolvedValue,
     ValueByType,
 } from "../model.js";
+import { thrownMessages } from "../error-messages.js";
 import { type Notes, readToken } from "./read-syntax.js";
+import { isTokenType } from "./token-types.js";
 import { valueError } from "./value-errors.js";
 
 /** How {@link parseValue} reads a value. */
@@ -28,6 +30,7 @@ export interface ParseValueOptions extends ParseOptions {
  * @param type - The token type, such as `"color"`.
  * @param raw - The value as written, such as a token's `$value`.
  * @param options - Where the value is in its file, and how to read it.
+ * @throws {TypeError} If `type` isn't one of `tokenTypes`.
  *
  * @see {@link https://www.designtokens.org/TR/2025.10/format/#types | Format 8, Types}
  *
@@ -54,6 +57,7 @@ export function parseValue<T extends TokenType>(
  * @param type - The token type, such as `"dimension"`.
  * @param raw - The value as written, such as `{ "value": 16, "unit": "px" }`.
  * @param options - `references: false`, and where the value is in its file, if anywhere.
+ * @throws {TypeError} If `type` isn't one of `tokenTypes`.
  *
  * @example
  * // A recipe's minimum size, written as a reference
@@ -80,6 +84,7 @@ export function parseValue<T extends TokenType>(
         ...options
     }: ParseValueOptions & { references?: boolean } = {},
 ): ParseResult<UnresolvedValue<T> | ValueByType[T]> {
+    if (!isTokenType(type)) throw new TypeError(thrownMessages.notATokenType(type));
     if (references) return readToken(type, raw, jsonPath, options);
 
     const notes: Notes = { references: [], readAgain: [] };

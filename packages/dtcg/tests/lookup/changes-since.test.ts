@@ -61,7 +61,7 @@ const renamed = (from: string, path: string, properties: string[] = [], kind = "
     path,
     from,
     properties,
-    in: "everywhere",
+    in: "every permutation",
 });
 
 function brief(before: DesignTokens, after: DesignTokens, moved?: Move[]) {
@@ -82,7 +82,7 @@ describe("getChangesSince", () => {
     it("gives a value changed in a file every permutation reads once, in each permutation it shows in, and not the tokens that refer to it", () => {
         const after = read({ base: changed(["space", "sm"], px(5)) });
         expect(brief(read(), after)).toEqual([
-            { kind: "changed", path: "space.sm", properties: ["value"], in: "everywhere" },
+            { kind: "changed", path: "space.sm", properties: ["value"], in: "every permutation" },
         ]);
     });
 
@@ -136,7 +136,7 @@ describe("getChangesSince", () => {
     it("gives a reference pointed somewhere else as a change", () => {
         const after = read({ base: changed(["space", "gap"], { $value: "{space.md}" }) });
         expect(brief(read(), after)).toEqual([
-            { kind: "changed", path: "space.gap", properties: ["value"], in: "everywhere" },
+            { kind: "changed", path: "space.gap", properties: ["value"], in: "every permutation" },
         ]);
     });
 
@@ -144,7 +144,12 @@ describe("getChangesSince", () => {
         const described = changed(["space", "sm"], { ...px(4), $description: "Small" });
         const after = read({ base: changed(["space", "md", "$deprecated"], true, described) });
         expect(brief(read(), after)).toEqual([
-            { kind: "changed", path: "space.sm", properties: ["description"], in: "everywhere" },
+            {
+                kind: "changed",
+                path: "space.sm",
+                properties: ["description"],
+                in: "every permutation",
+            },
             { kind: "changed", path: "space.md", properties: ["deprecated"], in: "mode: light" },
         ]);
     });
@@ -152,7 +157,12 @@ describe("getChangesSince", () => {
     it("gives a group deprecated as one change, not one for every token inside", () => {
         const after = read({ base: changed(["space", "$deprecated"], "Use size") });
         expect(brief(read(), after)).toEqual([
-            { kind: "group-changed", path: "space", properties: ["deprecated"], in: "everywhere" },
+            {
+                kind: "group-changed",
+                path: "space",
+                properties: ["deprecated"],
+                in: "every permutation",
+            },
         ]);
     });
 
@@ -161,7 +171,12 @@ describe("getChangesSince", () => {
             base: changed(["space", "sm"], { $type: "number", $value: 4 }),
         });
         expect(brief(read(), after)).toEqual([
-            { kind: "changed", path: "space.sm", properties: ["value", "type"], in: "everywhere" },
+            {
+                kind: "changed",
+                path: "space.sm",
+                properties: ["value", "type"],
+                in: "every permutation",
+            },
         ]);
     });
 
@@ -171,7 +186,7 @@ describe("getChangesSince", () => {
             dark: changed(["glow"], { $type: "dimension", ...px(2) }, dark),
         });
         expect(brief(read(), after)).toEqual([
-            { kind: "added", path: "space.lg", in: "everywhere" },
+            { kind: "added", path: "space.lg", in: "every permutation" },
             { kind: "removed", path: "space.md", in: "mode: light" },
             { kind: "added", path: "glow", in: "mode: dark" },
         ]);
@@ -244,7 +259,7 @@ describe("getChangesSince", () => {
         const before = read({ dark: {} });
         expect(brief(before, after, [{ from: "space.sm", to: "space.md" }])).toEqual([
             renamed("space.sm", "space.md"),
-            { kind: "removed", path: "space.md", in: "everywhere" },
+            { kind: "removed", path: "space.md", in: "every permutation" },
         ]);
     });
 
@@ -283,11 +298,16 @@ describe("getChangesSince", () => {
             }),
         });
         expect(brief(read(), after)).toEqual([
-            { kind: "group-changed", path: "space", properties: ["description"], in: "everywhere" },
-            { kind: "group-added", path: "motion", in: "everywhere" },
-            { kind: "group-removed", path: "typography", in: "everywhere" },
-            { kind: "removed", path: "typography.body", in: "everywhere" },
-            { kind: "removed", path: "typography.heading", in: "everywhere" },
+            {
+                kind: "group-changed",
+                path: "space",
+                properties: ["description"],
+                in: "every permutation",
+            },
+            { kind: "group-added", path: "motion", in: "every permutation" },
+            { kind: "group-removed", path: "typography", in: "every permutation" },
+            { kind: "removed", path: "typography.body", in: "every permutation" },
+            { kind: "removed", path: "typography.heading", in: "every permutation" },
         ]);
     });
 
@@ -382,8 +402,8 @@ describe("getChangesSince", () => {
             base: changed(["text"], { size: { $type: "dimension", $value: "{typography.body}" } }),
         });
         expect(brief(read(), after)).toEqual([
-            { kind: "group-changed", path: "text", properties: ["type"], in: "everywhere" },
-            { kind: "changed", path: "text.size", properties: ["type"], in: "everywhere" },
+            { kind: "group-changed", path: "text", properties: ["type"], in: "every permutation" },
+            { kind: "changed", path: "text.size", properties: ["type"], in: "every permutation" },
         ]);
     });
 
@@ -434,7 +454,12 @@ describe("getChangesSince", () => {
         const before = read({ base: changed(["space", "sm"], swatch("#000000")) });
         const after = read({ base: changed(["space", "sm"], swatch("#ffffff")) });
         expect(brief(before, after)).toEqual([
-            { kind: "changed", path: "space.sm", properties: ["extensions"], in: "everywhere" },
+            {
+                kind: "changed",
+                path: "space.sm",
+                properties: ["extensions"],
+                in: "every permutation",
+            },
         ]);
     });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { askEveryPermutation } from "../../src/index.js";
+import { groupPermutationsBy } from "../../src/index.js";
 import { oneFile } from "../token-files.js";
 import { twoModifiers } from "./two-modifiers.js";
 
@@ -7,11 +7,11 @@ const tokens = twoModifiers();
 const inputsOf = (groups: readonly { permutations: { inputs: readonly object[] } }[]) =>
     groups.map(({ permutations }) => permutations.inputs);
 
-describe("askEveryPermutation", () => {
-    it("asks every permutation, and gives each answer once with the permutations that gave it", () => {
-        const groups = askEveryPermutation(tokens, (p) => p.getToken("gap")?.resolved);
+describe("groupPermutationsBy", () => {
+    it("runs the function in every permutation, and gives each result once with the permutations that gave it", () => {
+        const groups = groupPermutationsBy(tokens, (p) => p.getToken("gap")?.resolved);
 
-        expect(groups.map(({ answer }) => answer)).toStrictEqual([1, 3, 2]);
+        expect(groups.map(({ result }) => result)).toStrictEqual([1, 3, 2]);
         expect(inputsOf(groups)).toStrictEqual([
             [{ mode: "light", size: "small" }],
             [
@@ -23,8 +23,8 @@ describe("askEveryPermutation", () => {
     });
 
     it("puts a token together where it is the same object, and apart where it differs", () => {
-        const red = askEveryPermutation(tokens, (p) => p.getToken("color.red"));
-        const gap = askEveryPermutation(tokens, (p) => p.getToken("gap"));
+        const red = groupPermutationsBy(tokens, (p) => p.getToken("color.red"));
+        const gap = groupPermutationsBy(tokens, (p) => p.getToken("gap"));
 
         expect(red).toHaveLength(1);
         expect(red[0]?.permutations).toHaveLength(4);
@@ -32,11 +32,11 @@ describe("askEveryPermutation", () => {
     });
 
     it("puts lists together when they hold the same items in the same order", () => {
-        const groups = askEveryPermutation(tokens, (p) =>
+        const groups = groupPermutationsBy(tokens, (p) =>
             p.getDependents("color.red").map(({ path }) => path),
         );
 
-        expect(groups.map(({ answer }) => answer)).toStrictEqual([
+        expect(groups.map(({ result }) => result)).toStrictEqual([
             [],
             ["color.x"],
             ["color.x", "fade"],
@@ -48,10 +48,10 @@ describe("askEveryPermutation", () => {
     });
 
     it("keeps lists apart when their items differ, or come in another order", () => {
-        const order = askEveryPermutation(tokens, (p) =>
+        const order = groupPermutationsBy(tokens, (p) =>
             p.input.mode === "dark" ? ["a", "b"] : ["b", "a"],
         );
-        const length = askEveryPermutation(tokens, (p) =>
+        const length = groupPermutationsBy(tokens, (p) =>
             p.input.size === "large" ? [1, 2] : [1],
         );
 
@@ -59,32 +59,32 @@ describe("askEveryPermutation", () => {
         expect(length).toHaveLength(2);
     });
 
-    it("keeps apart answers that are equal but not the same object", () => {
-        const groups = askEveryPermutation(tokens, (p) => ({ size: p.input.size }));
+    it("keeps apart results that are equal but not the same object", () => {
+        const groups = groupPermutationsBy(tokens, (p) => ({ size: p.input.size }));
 
         expect(groups).toHaveLength(4);
     });
 
-    it("gives a permutation without the token its own answer, undefined", () => {
-        const groups = askEveryPermutation(tokens, (p) => p.getToken("fade"));
+    it("gives a permutation without the token its own result, undefined", () => {
+        const groups = groupPermutationsBy(tokens, (p) => p.getToken("fade"));
 
-        expect(groups.map(({ answer }) => answer === undefined)).toStrictEqual([true, false]);
+        expect(groups.map(({ result }) => result === undefined)).toStrictEqual([true, false]);
         expect(groups[0]?.permutations.inputs).toStrictEqual([
             { mode: "light", size: "small" },
             { mode: "light", size: "large" },
         ]);
     });
 
-    it("puts every permutation in exactly one answer", () => {
-        const groups = askEveryPermutation(tokens, (p) => p.getToken("gap")?.resolved);
+    it("puts every permutation in exactly one group", () => {
+        const groups = groupPermutationsBy(tokens, (p) => p.getToken("gap")?.resolved);
         const all = groups.flatMap(({ permutations }) => permutations);
 
         expect(all).toHaveLength(tokens.permutations.length);
         expect(new Set(all)).toStrictEqual(new Set(tokens.permutations));
     });
 
-    it("gives the permutations of each answer as a list that can say which they are", () => {
-        const [, large] = askEveryPermutation(tokens, (p) => p.getToken("gap")?.resolved);
+    it("gives the permutations of each group as a list that can say which they are", () => {
+        const [, large] = groupPermutationsBy(tokens, (p) => p.getToken("gap")?.resolved);
 
         expect(large?.permutations.scope).toStrictEqual([{ size: ["large"] }]);
         expect(large?.permutations.select((p) => p.input.mode === "dark").inputs).toStrictEqual([
@@ -92,17 +92,17 @@ describe("askEveryPermutation", () => {
         ]);
     });
 
-    it("gives one answer for a token file, which has one permutation", () => {
+    it("gives one group for a token file, which has one permutation", () => {
         const file = oneFile({ gap: { $type: "number", $value: 1 } });
 
-        expect(askEveryPermutation(file, (p) => p.getToken("gap")?.resolved)).toStrictEqual([
-            { answer: 1, permutations: file.permutations },
+        expect(groupPermutationsBy(file, (p) => p.getToken("gap")?.resolved)).toStrictEqual([
+            { result: 1, permutations: file.permutations },
         ]);
     });
 
-    it("asks each permutation once", () => {
+    it("runs the function once in each permutation", () => {
         let asked = 0;
-        askEveryPermutation(tokens, () => asked++);
+        groupPermutationsBy(tokens, () => asked++);
 
         expect(asked).toBe(4);
     });

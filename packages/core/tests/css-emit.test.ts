@@ -917,6 +917,41 @@ describe("emitCSS", () => {
             "dark.json": dark,
         });
 
+        it("for a color that points into part of another token, as that part's value is written", () => {
+            const frame = {
+                $type: "border",
+                $value: {
+                    color: p3([0.9, 0.2, 0.1], "#e63946").$value,
+                    width: px(1),
+                    style: "solid",
+                },
+            };
+            const edge = {
+                $type: "border",
+                $value: {
+                    color: { $ref: "#/frame/$value/color" },
+                    width: px(2),
+                    style: "solid",
+                },
+            };
+            expect(cssFor({ "tokens.json": { frame, edge } }, polyfill)).toBe(
+                [
+                    ":root {",
+                    "    --frame: 1px solid #e63946;",
+                    "    --edge: 2px solid #e63946;",
+                    "}",
+                    "",
+                    "@supports (color: color(display-p3 1 1 1)) {",
+                    "    :root {",
+                    "        --frame: 1px solid color(display-p3 0.9 0.2 0.1);",
+                    "        --edge: 2px solid color(display-p3 0.9 0.2 0.1);",
+                    "    }",
+                    "}",
+                    "",
+                ].join("\n"),
+            );
+        });
+
         it("grouping each color space's query, in the order first met", () => {
             expect(
                 cssFor(

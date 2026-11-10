@@ -1,9 +1,10 @@
-import type { Input, InputProblem, Resolver } from "../model.js";
+import type { Input, InputProblem, Resolver, Span } from "../model.js";
 
 export interface Modifier {
     name: string;
     contexts: string[];
     default: string | undefined;
+    span: Span;
 }
 
 export function allModifiers(resolver: Resolver | undefined): Modifier[] {
@@ -12,7 +13,7 @@ export function allModifiers(resolver: Resolver | undefined): Modifier[] {
             "modifier" in item && resolver?.modifiers.find(({ name }) => name === item.modifier);
         if (!modifier) return [];
         const contexts = modifier.contexts.map(({ name }) => name);
-        return [{ name: modifier.name, contexts, default: modifier.default }];
+        return [{ name: modifier.name, contexts, default: modifier.default, span: modifier.span }];
     });
 }
 
