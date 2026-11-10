@@ -388,12 +388,6 @@ class DesignTokensObject {
         return found;
     }
 
-    getPermutationsReading(file: string) {
-        const { permutations, entryFile } = this.#self;
-        if (file === entryFile) return permutations;
-        return permutations.select(({ sources }) => sources.some((source) => source.file === file));
-    }
-
     getToken(path: string) {
         return onlyPermutation(this.#self, "getToken()").getToken(path);
     }

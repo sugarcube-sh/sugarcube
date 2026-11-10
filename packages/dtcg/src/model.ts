@@ -687,18 +687,6 @@ export interface Span {
     readonly end: { readonly line: number; readonly column: number };
 }
 
-/**
- * The line a span starts on, as {@link getSourceLine} returns it.
- *
- * `line` and `column` count from 1, as a {@link Span}'s do.
- */
-export interface SourceLine {
-    readonly line: number;
-    readonly text: string;
-    readonly column: number;
-    readonly length: number;
-}
-
 /** What every token has. */
 export interface TokenBase<T extends TokenType> {
     /**
@@ -2018,17 +2006,6 @@ export interface DesignTokens {
      * // => "mode: dark"
      */
     getPermutation(input?: Input): Permutation;
-    /**
-     * Gets the permutations that read a file.
-     *
-     * @param file - The file, such as `"dark.json"`.
-     *
-     * @example
-     * // Only dark reads dark.json
-     * tokens.getPermutationsReading("dark.json").label
-     * // => "mode: dark"
-     */
-    getPermutationsReading(file: string): Permutations;
     /**
      * Gets the token at a path, when the read has one permutation.
      *
