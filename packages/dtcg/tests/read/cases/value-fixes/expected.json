@@ -9,6 +9,8 @@
         "type": "dimension",
         "reason": "string-with-unit",
         "value": "16px",
+        "unit": "px",
+        "allowed": ["px", "rem"],
         "asObject": { "value": 16, "unit": "px" }
       },
       "span": { "file": "tokens.json", "text": "\"16px\"" },
@@ -20,7 +22,9 @@
         "jsonPath": ["$value"],
         "type": "dimension",
         "reason": "string-with-unit",
-        "value": "16em"
+        "value": "16em",
+        "unit": "em",
+        "allowed": ["px", "rem"]
       },
       "span": { "file": "tokens.json", "text": "\"16em\"" },
       "path": "wide"
@@ -32,6 +36,8 @@
         "type": "duration",
         "reason": "string-with-unit",
         "value": "200ms",
+        "unit": "ms",
+        "allowed": ["ms", "s"],
         "asObject": { "value": 200, "unit": "ms" }
       },
       "span": { "file": "tokens.json", "text": "\"200ms\"" },
@@ -79,6 +85,8 @@
         "type": "dimension",
         "reason": "string-with-unit",
         "value": "0px",
+        "unit": "px",
+        "allowed": ["px", "rem"],
         "asObject": { "value": 0, "unit": "px" }
       },
       "span": { "file": "tokens.json", "text": "\"0px\"" },

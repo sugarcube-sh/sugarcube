@@ -29,6 +29,8 @@ describe("createExtensionReader", () => {
                 type: "dimension",
                 reason: "string-with-unit",
                 value: "16px",
+                unit: "px",
+                allowed: ["px", "rem"],
                 asObject: { value: 16, unit: "px" },
             },
         ]);

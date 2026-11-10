@@ -78,7 +78,7 @@ describe("validate command", () => {
 
             expect(result.exitCode).toBe(1);
             expect(result.stdout).toContain(
-                "tokens/base.json:15:15  error  `inc` does not exist; did you mean `ink`?  missing-reference",
+                "tokens/base.json:15:15  error  `inc` does not exist  did you mean `ink`?  missing-reference",
             );
             expect(result.stdout).toContain("1 error.");
             expect(result.stdout).not.toContain("All tokens valid");

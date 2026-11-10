@@ -39,11 +39,22 @@ describe("parseValue, dimension", () => {
             ["-4px", -4, "px"],
             [".5rem", 0.5, "rem"],
         ] as const)("the string %s, which earlier drafts allowed", ([raw, value, unit]) => {
-            refuses(raw, [], { reason: "string-with-unit", value: raw, asObject: { value, unit } });
+            refuses(raw, [], {
+                reason: "string-with-unit",
+                value: raw,
+                unit,
+                allowed: ["px", "rem"],
+                asObject: { value, unit },
+            });
         });
 
         it("the string 1em, with no object to give, since a dimension cannot use em", () => {
-            refuses("1em", [], { reason: "string-with-unit", value: "1em" });
+            refuses("1em", [], {
+                reason: "string-with-unit",
+                value: "1em",
+                unit: "em",
+                allowed: ["px", "rem"],
+            });
         });
 
         it.for([16, "16", "wide", null, [16, "px"], true])(

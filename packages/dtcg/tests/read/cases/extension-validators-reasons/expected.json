@@ -10,7 +10,7 @@
         "jsonPath": ["$extensions", "com.example"],
         "reason": "no-outline"
       },
-      "span": { "file": "tokens.json", "valueAfter": "\"com.example\":" },
+      "span": { "file": "tokens.json", "text": "\"com.example\"" },
       "path": "color.plain"
     },
     {
@@ -20,6 +20,8 @@
         "type": "dimension",
         "reason": "string-with-unit",
         "value": "2px",
+        "unit": "px",
+        "allowed": ["px", "rem"],
         "asObject": { "value": 2, "unit": "px" }
       },
       "span": { "file": "tokens.json", "text": "\"2px\"" },

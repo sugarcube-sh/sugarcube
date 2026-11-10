@@ -10,60 +10,56 @@ import type {
 type Entry<K extends SugarcubeDiagnosticKind> = {
     severity: "error" | "warning";
     message: (detail: SugarcubeDiagnosticDetailByKind[K]) => string;
+    help?: (detail: SugarcubeDiagnosticDetailByKind[K]) => string | undefined;
 };
 
 const diagnostics: { [K in SugarcubeDiagnosticKind]: Entry<K> } = {
     "default-required": {
         severity: "error",
-        message: ({ modifiers }) => {
-            const [noun, verb, pronoun] =
-                modifiers.length > 1 ? ["modifiers", "have", "them"] : ["modifier", "has", "it"];
-            return `the ${noun} ${listed(modifiers.map(quoted))} ${verb} no default, so there is nothing to write on \`:root\`: give ${pronoun} a \`default\` in the resolver, or list the permutations to write in \`variables.permutations\``;
-        },
+        message: ({ modifiers }) =>
+            `${listed(modifiers.map(quoted))} ${modifiers.length > 1 ? "have" : "has"} no default`,
     },
     "default-not-first": {
         severity: "warning",
-        message: ({ file, selector, after }) =>
-            `\`${selector}\` is written after \`${after}\` in \`${file}\`, so it overrides it wherever both apply: list the default permutation first in \`variables.permutations\``,
+        message: () => "the default isn't listed first",
     },
     "fluid-text-zoom": {
         severity: "warning",
-        message: ({ from, to }) =>
-            `this fluid size grows too fast to zoom to 200% on screens ${from}px to ${to}px wide (WCAG 1.4.4): bring \`min\` and \`max\` closer together`,
+        message: () => "won't zoom to 200%",
     },
     "option-renamed": {
         severity: "warning",
-        message: ({ from, to }) =>
-            `\`${from}\` is now \`${to}\`: rename it in your config; the old name stops working at 1.0`,
+        message: ({ from, to }) => `\`${from}\` is now \`${to}\``,
     },
     "option-deprecated": {
         severity: "warning",
         message: ({ option, property }) =>
-            `\`${option}\`${property ? ` in \`${property}\`` : ""} is deprecated and will be removed in a later release`,
+            `\`${option}\`${property ? ` in \`${property}\`` : ""} is deprecated`,
     },
     "fallback-missing": {
         severity: "warning",
-        message: ({ colorSpace }) =>
-            `this \`${colorSpace}\` color needs a \`hex\` to fall back to when \`colorFallbackStrategy\` is \`"polyfill"\`: add one, or use \`"native"\` if every browser you support has \`${colorSpace}\``,
+        message: () => "no `hex` fallback",
     },
     "same-variable-name": {
         severity: "error",
         message: ({ name, paths: [first, later] }) =>
-            `\`${first}\` and \`${later}\` both make \`${name}\`, so only \`${later}\`'s value is used: rename one`,
+            `\`${first}\` and \`${later}\` both make \`${name}\``,
     },
     "same-utility-class": {
         severity: "warning",
         message: ({ className, paths: [used, other] }) =>
-            `\`${className}\` could mean \`${used}\` or \`${other}\`, so it uses \`${used}\`: rename one, or change the entry's \`prefix\``,
+            `\`${className}\` could mean \`${used}\` or \`${other}\``,
     },
     "utility-without-classes": {
         severity: "warning",
         message: (detail) => `${entryName(detail)} makes no classes: ${reasonText(detail)}`,
+        help: (detail) =>
+            detail.reason === "wrong-type" ? `use ${listed(detail.takes, "or")} tokens` : undefined,
     },
     "safelist-without-token": {
         severity: "warning",
         message: (detail) =>
-            `\`${detail.part}\` in ${entryName(detail)}'s safelist matches no token, so no class is forced`,
+            `\`${detail.part}\` in ${entryName(detail)}'s safelist matches no token`,
     },
     "invalid-config": {
         severity: "error",
@@ -75,17 +71,20 @@ function reasonText(detail: UtilityWithoutClasses): string {
     const { property, source } = detail;
     switch (detail.reason) {
         case "no-tokens":
-            return `there are no tokens under \`${detail.group}\``;
+            return `no tokens under \`${detail.group}\``;
         case "no-type":
             return `DTCG has no ${property.replaceAll("-", " ")} type`;
         case "private":
-            return `the tokens under \`${source}\` are private, and a class needs a variable`;
+            return `the tokens under \`${source}\` are private`;
         case "wrong-type":
-            return `\`${source}\` has only ${listed(detail.found)} tokens, and it takes ${listed(detail.takes, "or")}`;
+            return `\`${source}\` has only ${listed(detail.found)} tokens`;
         case "typography":
-            return `\`${source}\` has only typography tokens, which a single-property class cannot use`;
-        case "answered-first":
-            return `every ${listed(detail.starts.map((start) => `\`${start}-…\``))} class is answered by ${listed(detail.by.map(entryName))} first; give one of them a \`prefix\``;
+            return `\`${source}\` has only typography tokens`;
+        case "answered-first": {
+            const by = detail.by.map(entryName);
+            const starts = listed(detail.starts.map((start) => `\`${start}-…\``));
+            return `${listed(by)} ${by.length > 1 ? "answer" : "answers"} every ${starts} class first`;
+        }
     }
 }
 
@@ -197,16 +196,20 @@ export const ErrorMessages = {
     SCALE_RECIPE: {
         "not-an-object": ({ name }: { name: string }) => `\`${name}\` must be an object`,
         "missing-property": ({ name }: { name: string }) => `the recipe needs \`${name}\``,
-        "unknown-mode": ({ mode }: { mode: unknown }) =>
-            `\`${typeof mode === "string" ? mode : JSON.stringify(mode)}\` is not a mode: use "exponential" or "multipliers"`,
+        "unknown-mode": ({ mode }: { mode: unknown }) => ({
+            message: `\`${typeof mode === "string" ? mode : JSON.stringify(mode)}\` is not a mode`,
+            help: 'use "exponential" or "multipliers"',
+        }),
         "ratio-not-above-one": ({ ratio }: { ratio: number }) =>
-            `a ratio of ${ratio} makes a flat or shrinking scale: it must be more than 1`,
+            `a ratio of ${ratio} must be more than 1`,
         "not-a-count": ({ name }: { name: string }) =>
             `\`${name}\` must be a whole number, 0 or more`,
-        "no-multipliers": () => '`multipliers` must name at least one step, such as { "sm": 0.5 }',
-        "invalid-pairs": () => '`pairs` must be "adjacent" or a list, such as ["sm-lg"]',
-        "invalid-pair": ({ entry }: { entry: unknown }) =>
-            `${JSON.stringify(entry)} is not a pair: write it as two multiplier names joined by "-", such as "sm-lg"`,
+        "no-multipliers": () => "`multipliers` is empty",
+        "invalid-pairs": () => '`pairs` must be "adjacent" or a list of pairs',
+        "invalid-pair": ({ entry }: { entry: unknown }) => ({
+            message: `${JSON.stringify(entry)} is not a pair`,
+            help: 'write two names joined by "-", such as "sm-lg"',
+        }),
         "unknown-multiplier": ({ name }: { name: string }) =>
             `\`${name}\` is not one of the recipe's multipliers`,
     },

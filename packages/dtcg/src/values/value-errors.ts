@@ -78,6 +78,10 @@ export interface ValueErrorFacts {
     /** A dimension or duration is written as a string, such as `"16px"`. */
     "string-with-unit": {
         readonly value: string;
+        /** The unit it's written with, such as `"px"`. */
+        readonly unit: string;
+        /** The units its type can have, such as `["px", "rem"]`. */
+        readonly allowed: readonly string[];
         /**
          * The object it stands for, such as `{ value: 16, unit: "px" }`. It's there only when the
          * type allows the unit.
@@ -145,21 +149,25 @@ export type ValueErrorDetail = {
 
 type DetailOf<R extends ValueErrorCode> = Extract<ValueErrorDetail, { reason: R }>;
 
-const typeWords: Record<TokenType, string> = {
-    color: "a color",
-    dimension: "a dimension",
-    duration: "a duration",
-    cubicBezier: "a cubic Bézier",
-    number: "a number",
-    fontFamily: "a font family",
-    fontWeight: "a font weight",
-    border: "a border",
-    transition: "a transition",
-    shadow: "a shadow",
-    gradient: "a gradient",
-    typography: "a typography value",
-    strokeStyle: "a stroke style",
+const typeNames: Record<TokenType, string> = {
+    color: "color",
+    dimension: "dimension",
+    duration: "duration",
+    cubicBezier: "cubic Bézier",
+    number: "number",
+    fontFamily: "font family",
+    fontWeight: "font weight",
+    border: "border",
+    transition: "transition",
+    shadow: "shadow",
+    gradient: "gradient",
+    typography: "typography",
+    strokeStyle: "stroke style",
 };
+
+function typeWords(type: TokenType): string {
+    return type === "typography" ? "a typography value" : `a ${typeNames[type]}`;
+}
 
 const shapes: Record<TokenType, string> = {
     color: "an object with `colorSpace` and `components`",
@@ -178,112 +186,130 @@ const shapes: Record<TokenType, string> = {
     strokeStyle: "a keyword, or an object with `dashArray` and `lineCap`",
 };
 
-function found(value: unknown): string {
-    if (typeof value === "string") {
-        return value === "" ? "an empty string" : `the string \`${value}\``;
-    }
-    if (typeof value === "number") return `the number \`${value}\``;
+function kindOf(value: unknown): string {
+    if (typeof value === "string") return "a string";
+    if (typeof value === "number") return "a number";
     if (Array.isArray(value)) return "a list";
     if (typeof value === "object" && value !== null) return "an object";
     return `\`${String(value)}\``;
 }
 
-export function didYouMean(similar: string | undefined): string {
-    return similar === undefined ? "" : `; did you mean \`${similar}\`?`;
+export function didYouMean(similar: string | undefined): string | undefined {
+    return similar === undefined ? undefined : `did you mean \`${similar}\`?`;
 }
 
-function suchAs(object: ValueErrorFacts["string-with-unit"]["asObject"]): string {
-    if (object === undefined) return "";
-    return `, such as \`{ "value": ${object.value}, "unit": ${JSON.stringify(object.unit)} }\``;
-}
-
-function written(value: unknown): string {
-    return typeof value === "string" && value !== "" ? `\`${value}\`` : found(value);
-}
-
-function listed(words: readonly string[]): string {
+function oneOf(words: readonly string[]): string {
     const quoted = words.map((word) => `\`${word}\``);
     return quoted.length < 2
         ? quoted.join("")
-        : `${quoted.slice(0, -1).join(", ")} and ${quoted.at(-1)}`;
+        : `${quoted.slice(0, -1).join(", ")} or ${quoted.at(-1)}`;
 }
 
 function range(min: number, max: number | undefined, maxExclusive: boolean): string {
-    if (max === undefined) return `${min} or more`;
-    return maxExclusive ? `from ${min} up to but not including ${max}` : `from ${min} to ${max}`;
+    if (max === undefined) return `use ${min} or more`;
+    return maxExclusive ? `use ${min} up to, not including, ${max}` : `use ${min} to ${max}`;
 }
 
-export const valueErrorMessages: {
-    [R in ValueErrorCode]: (detail: DetailOf<R>) => string;
-} = {
-    "wrong-shape": ({ type, value, reference }) =>
-        `${typeWords[type]} must be ${shapes[type]}, not ${found(value)}${didYouMean(reference)}`,
+function asWritten(object: { value: number; unit: string }): string {
+    return `write \`{ "value": ${object.value}, "unit": ${JSON.stringify(object.unit)} }\``;
+}
+
+type Words<R extends ValueErrorCode> = (detail: DetailOf<R>) => string;
+type Help<R extends ValueErrorCode> = (detail: DetailOf<R>) => string | undefined;
+
+export const valueErrorMessages: { [R in ValueErrorCode]: Words<R> } = {
+    "wrong-shape": ({ type, value }) => `${typeWords(type)} can't be ${kindOf(value)}`,
     "unknown-property": ({ type, property }) =>
-        `\`${property}\` is not a property of ${typeWords[type]}`,
-    "pointer-not-alone": ({ type }) => `\`$ref\` is not a property of ${typeWords[type]}`,
-    "missing-property": ({ type, property }) => `${typeWords[type]} needs \`${property}\``,
-    "not-a-number": ({ value }) => `a number is needed, not ${found(value)}`,
-    "curly-brace-not-allowed-here": ({ reference }) =>
-        `\`${reference}\` is a reference, which stands for a whole value and cannot be part of one`,
-    "hex-string": ({ value }) => `\`${value}\` is a hex string, and a color must be an object`,
+        `\`${property}\` is not a ${typeNames[type]} property`,
+    "pointer-not-alone": () => "`$ref` can't have other properties beside it",
+    "missing-property": ({ type, property }) => `${typeWords(type)} needs \`${property}\``,
+    "not-a-number": () => "not a number",
+    "curly-brace-not-allowed-here": ({ reference }) => `\`${reference}\` can't go inside a value`,
+    "hex-string": () => "a color can't be a hex string",
     "unknown-color-space": ({ value }) =>
-        `${written(value)} is not a color space the specification defines`,
+        typeof value === "string"
+            ? `\`${value}\` is not a color space`
+            : "`colorSpace` must be a string",
     "not-three-components": ({ value }) =>
-        Array.isArray(value)
-            ? `a color has three components, and this has ${value.length}`
-            : `a color's components are a list of three, not ${found(value)}`,
-    "component-not-a-number": ({ value }) =>
-        `a component is a number or \`none\`, not ${found(value)}`,
-    "component-out-of-range": ({ value, colorSpace, component, min, max, maxExclusive }) =>
-        `\`${value}\` is out of range for \`${component}\` in \`${colorSpace}\`, which is ${range(min, max, maxExclusive)}`,
-    "alpha-out-of-range": ({ value }) =>
-        `\`${value}\` is out of range for alpha, which is from 0 to 1`,
-    "hex-not-six-digits": ({ value, sixDigits }) =>
-        `${written(value)} is not a six-digit hex color${didYouMean(sixDigits)}`,
-    "short-hex-string": ({ value, expanded }) =>
-        `\`${value}\` is not ${expanded.length === 9 ? "an eight" : "a six"}-digit hex color${didYouMean(expanded)}`,
-    "string-with-unit": ({ type, value, asObject }) =>
-        `\`${value}\` is a string, and ${typeWords[type]} must be an object with a value and a unit${suchAs(asObject)}`,
-    "not-four-numbers": ({ count }) => `a cubic Bézier has four numbers, and this has ${count}`,
-    "x-out-of-range": ({ value, coordinate }) =>
-        `\`${value}\` is out of range for \`${coordinate}\`, which is from 0 to 1`,
-    "empty-font-list": () => "a list of font names needs at least one name",
+        Array.isArray(value) ? "a color needs three components" : "`components` must be a list",
+    "component-not-a-number": () => 'a component must be a number or `"none"`',
+    "component-out-of-range": ({ component }) => `\`${component}\` out of range`,
+    "alpha-out-of-range": () => "alpha out of range",
+    "hex-not-six-digits": () => "`hex` must have six digits",
+    "short-hex-string": ({ expanded }) =>
+        `a hex color needs ${expanded.length === 9 ? "eight" : "six"} digits`,
+    "string-with-unit": ({ type, unit, asObject }) =>
+        asObject === undefined
+            ? `\`${unit}\` is not a ${typeNames[type]} unit`
+            : `${typeWords(type)} can't be a string`,
+    "not-four-numbers": () => "a cubic Bézier needs four numbers",
+    "x-out-of-range": ({ coordinate }) => `\`${coordinate}\` out of range`,
+    "empty-font-list": () => "the font list is empty",
     "not-a-font-name": ({ value }) =>
         typeof value === "string" && value.trim() === ""
-            ? "a font name cannot be empty"
-            : `a font name is needed, not ${found(value)}`,
-    "unknown-stroke-style-keyword": ({ value, keywords }) =>
-        `\`${value}\` is not a stroke style keyword: the keywords are ${listed(keywords)}`,
-    "dash-array-not-a-list": ({ value }) =>
-        `a dash array is a list of lengths, not ${found(value)}`,
-    "empty-dash-array": () => "a dash array needs at least one length",
-    "unknown-line-cap": ({ value, lineCaps }) =>
-        `${written(value)} is not a line cap: the line caps are ${listed(lineCaps)}`,
-    "no-shadows": () => "a list of shadows needs at least one shadow",
-    "no-gradient-stops": () => "a gradient needs at least one stop",
-    "not-a-boolean": ({ value }) => `true or false is needed, not ${found(value)}`,
-    "font-weight-out-of-range": ({ value }) =>
-        `\`${value}\` is out of range for a font weight, which is from 1 to 1000`,
+            ? "a font name can't be empty"
+            : "a font name must be a string",
+    "unknown-stroke-style-keyword": ({ value }) => `\`${value}\` is not a stroke style`,
+    "dash-array-not-a-list": () => "`dashArray` must be a list",
+    "empty-dash-array": () => "`dashArray` is empty",
+    "unknown-line-cap": ({ value }) =>
+        typeof value === "string" ? `\`${value}\` is not a line cap` : "`lineCap` must be a string",
+    "no-shadows": () => "the shadow list is empty",
+    "no-gradient-stops": () => "the gradient has no stops",
+    "not-a-boolean": () => "not true or false",
+    "font-weight-out-of-range": () => "font weight out of range",
+    "unknown-font-weight-keyword": ({ value }) => `\`${value}\` is not a font weight`,
+    "reference-not-allowed": () => "a reference isn't allowed here",
+    "unit-not-allowed": ({ type, unit }) =>
+        typeof unit === "string"
+            ? `\`${unit}\` is not a ${typeNames[type]} unit`
+            : "`unit` must be a string",
+};
+
+export const valueErrorHelp: { [R in ValueErrorCode]?: Help<R> } = {
+    "wrong-shape": ({ type, reference }) => didYouMean(reference) ?? `write ${shapes[type]}`,
+    "component-out-of-range": ({ min, max, maxExclusive }) => range(min, max, maxExclusive),
+    "alpha-out-of-range": () => range(0, 1, false),
+    "hex-not-six-digits": ({ sixDigits }) =>
+        sixDigits === undefined ? undefined : `write \`${sixDigits}\``,
+    "short-hex-string": ({ expanded }) => `write \`${expanded}\``,
+    "string-with-unit": ({ allowed, asObject }) =>
+        asObject === undefined ? `use ${oneOf(allowed)}` : asWritten(asObject),
+    "x-out-of-range": () => range(0, 1, false),
+    "unknown-stroke-style-keyword": ({ keywords }) => `use ${oneOf(keywords)}`,
+    "unknown-line-cap": ({ lineCaps }) => `use ${oneOf(lineCaps)}`,
+    "font-weight-out-of-range": () => range(1, 1000, false),
     "unknown-font-weight-keyword": ({ value }) =>
         Object.hasOwn(fontWeightKeywords, value.toLowerCase())
-            ? `\`${value}\` is not a font weight keyword: keywords are lower case`
-            : `\`${value}\` is not a font weight keyword the specification defines`,
-    "reference-not-allowed": ({ reference }) =>
-        `\`${reference}\` is a reference, and this needs the value itself`,
-    "unit-not-allowed": ({ type, unit, allowed }) =>
-        `${written(unit)} is not a unit ${typeWords[type]} can have: the units are ${listed(allowed)}`,
+            ? `write \`${value.toLowerCase()}\``
+            : undefined,
+    "unit-not-allowed": ({ allowed }) => `use ${oneOf(allowed)}`,
 };
 
 export function valueErrorMessage(detail: ValueErrorDetail): string {
     return (valueErrorMessages[detail.reason] as (detail: ValueErrorDetail) => string)(detail);
 }
 
+export function valueErrorHelpText(detail: ValueErrorDetail): string | undefined {
+    const help = valueErrorHelp[detail.reason] as
+        | ((detail: ValueErrorDetail) => string | undefined)
+        | undefined;
+    return help?.(detail);
+}
+
 export function valueError(jsonPath: JsonPath, detail: ValueErrorDetail): ValueError {
-    return { kind: "invalid-value", jsonPath, message: valueErrorMessage(detail), detail };
+    const help = valueErrorHelpText(detail);
+    return {
+        kind: "invalid-value",
+        jsonPath,
+        message: valueErrorMessage(detail),
+        ...(help !== undefined && { help }),
+        detail,
+    };
 }
 
 export function ignoredMessage(type: TokenType, property: string): string {
-    return `\`${property}\` is not a property of ${typeWords[type]}, so it is ignored`;
+    return `\`${property}\` is not a ${typeNames[type]} property`;
 }
 
 export function ignoredProperty(

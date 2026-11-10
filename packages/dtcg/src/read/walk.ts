@@ -12,7 +12,15 @@ import type {
 import { parseReference } from "../values/references.js";
 import { isTokenType, tokenTypes } from "../values/token-types.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
-import { type JsonFile, type Member, members, plainObject, plainValue, toSpan } from "./json.js";
+import {
+    type JsonFile,
+    type Member,
+    members,
+    keyOf,
+    plainObject,
+    plainValue,
+    toSpan,
+} from "./json.js";
 import { toPointerSteps } from "./ref-meaning.js";
 import { similarName } from "./similar.js";
 import type { LoadedSource } from "./sources.js";
@@ -36,6 +44,7 @@ export interface SourceToken extends Properties {
     valueAsWritten: unknown;
     reference: WrittenReference | undefined;
     span: Span;
+    nameSpan: Span;
     extensionsAt?: ExtensionsAt;
 }
 
@@ -56,6 +65,7 @@ export interface ExtensionsAt {
 export interface SourceGroup extends Properties {
     path: string;
     span: Span;
+    nameSpan: Span;
     extensionsAt?: ExtensionsAt;
     extends?: GroupReference;
 }
@@ -180,6 +190,7 @@ export function walkSource(
                 valueAsWritten,
                 reference: parseReference(valueAsWritten),
                 span: toSpan(json, node),
+                nameSpan: toSpan(json, keyOf(node)),
                 ...readPropertiesAndExtensions(path, entries),
             },
         });
@@ -187,7 +198,10 @@ export function walkSource(
 
     const visitToken = (node: Node, path: string, entries: readonly Member[], value: Node) => {
         const child = entries.find(({ key }) => isMemberName(key));
-        if (child) report("token-and-group", { reason: "child", child: child.key }, child.keyNode);
+        if (child) {
+            const found = nonObjectKind(child.value) ?? "object";
+            report("token-and-group", { reason: "child", child: child.key, found }, child.keyNode);
+        }
         addToken(node, path, entries, value, plainValue(value));
     };
 
@@ -208,6 +222,7 @@ export function walkSource(
         return {
             path,
             span: toSpan(json, node),
+            nameSpan: toSpan(json, keyOf(node)),
             ...readPropertiesAndExtensions(path, entries),
             ...(extending && { extends: extending }),
         };

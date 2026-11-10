@@ -28,7 +28,13 @@ describe("parseValue, duration", () => {
             ["200ms", 200, "ms"],
             ["1.5s", 1.5, "s"],
         ] as const)("the string %s, which earlier drafts allowed", ([raw, value, unit]) => {
-            refuses(raw, [], { reason: "string-with-unit", value: raw, asObject: { value, unit } });
+            refuses(raw, [], {
+                reason: "string-with-unit",
+                value: raw,
+                unit,
+                allowed: ["ms", "s"],
+                asObject: { value, unit },
+            });
         });
 
         it.for([200, "fast", null])("%j, which is not a duration", (raw) => {

@@ -21,11 +21,13 @@ export function measure(units: readonly (DimensionValue["unit"] | DurationValue[
         other: (raw) => {
             const found = typeof raw === "string" ? STRING_WITH_UNIT.exec(raw) : null;
             if (!found) return wrongShape(raw);
-            const [value, digits, suffix] = found;
+            const [value, digits, suffix = ""] = found;
             const known = units.find((each) => each === suffix);
             return {
                 reason: "string-with-unit",
                 value,
+                unit: suffix,
+                allowed: units,
                 ...(known !== undefined && { asObject: { value: Number(digits), unit: known } }),
             };
         },

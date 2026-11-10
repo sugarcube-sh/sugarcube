@@ -10,7 +10,7 @@ import { isEqualJson } from "../values/same-value.js";
 import type { Building } from "./building.js";
 
 export type DiagnosticExtra = Partial<
-    Pick<Diagnostic, "message" | "span" | "path" | "relatedInformation" | "tags">
+    Pick<Diagnostic, "message" | "help" | "span" | "path" | "relatedInformation" | "tags">
 >;
 
 export function diagnostic<K extends DiagnosticKind>(
@@ -18,11 +18,13 @@ export function diagnostic<K extends DiagnosticKind>(
     detail: DiagnosticDetailByKind[K],
     extra: DiagnosticExtra = {},
 ): Diagnostic {
-    const { severity, message } = diagnosticMessages[kind];
+    const { severity, message, help } = diagnosticMessages[kind];
+    const fix = help?.(detail);
     return {
         kind,
         severity: typeof severity === "function" ? severity(detail) : severity,
         message: message(detail),
+        ...(fix !== undefined && { help: fix }),
         ...extra,
         docsUrl: getDocsLink(kind, detail),
         detail,

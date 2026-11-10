@@ -164,7 +164,8 @@
       "kind": "token-and-group",
       "detail": {
         "reason": "child",
-        "child": "value"
+        "child": "value",
+        "found": "object"
       },
       "span": {
         "file": "tokens.json",

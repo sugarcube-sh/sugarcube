@@ -97,8 +97,12 @@ describe("startWatcher", () => {
             }),
         );
 
-        writeFileSync(configFile, "export default { content: ['b/**/*.html'] };");
-        await until(() => changes.some(({ kind }) => kind === "config"), "the config change");
+        let configSaves = 0;
+        await until(() => {
+            const config = "export default { content: ['b/**/*.html'] };";
+            writeFileSync(configFile, config + "\n".repeat(configSaves++));
+            return changes.some(({ kind }) => kind === "config");
+        }, "the config change");
 
         const page = join(folder, "b/page.html");
         let saves = 0;

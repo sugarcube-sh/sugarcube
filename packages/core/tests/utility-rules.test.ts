@@ -537,7 +537,7 @@ describe("utilityRules' warning for a class two tokens make", () => {
             .diagnostics.filter(({ kind }) => kind === "same-utility-class")
             .map(({ kind, severity, path, message }) => [kind, severity, path, message]);
     const clash = (className: string, used: string, other: string) =>
-        `\`${className}\` could mean \`${used}\` or \`${other}\`, so it uses \`${used}\`: rename one, or change the entry's \`prefix\``;
+        `\`${className}\` could mean \`${used}\` or \`${other}\``;
 
     it("on the token not used, naming both, once however many directions make it", () => {
         const tokens = { color: { muted: color(), text: { muted: color() } } };
@@ -669,7 +669,7 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
     const messagesOf = ({ diagnostics }: ReturnType<typeof utilityRules>) =>
         diagnostics
             .filter(({ kind }) => kind === "utility-without-classes")
-            .map(({ message }) => message);
+            .map(({ message, help }) => (help === undefined ? message : [message, help]));
     const reported = (tokens: unknown, classes: UtilityClassesConfig) =>
         messagesOf(ruled(tokens, classes));
 
@@ -679,7 +679,7 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
                 { color: { ink: color() } },
                 { color: { source: "colour.*", prefix: "text" } },
             ),
-        ).toStrictEqual(["`color` makes no classes: there are no tokens under `colour`"]);
+        ).toStrictEqual(["`color` makes no classes: no tokens under `colour`"]);
     });
 
     it("not when there are no tokens at all, as when they could not be read", () => {
@@ -705,9 +705,7 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
         };
         expect(
             messagesOf(ruledFrom(files, { color: { source: "brand.*", prefix: "text" } })),
-        ).toStrictEqual([
-            "`color` makes no classes: the tokens under `brand.*` are private, and a class needs a variable",
-        ]);
+        ).toStrictEqual(["`color` makes no classes: the tokens under `brand.*` are private"]);
     });
 
     it("when none of its tokens is of a type the property takes", () => {
@@ -718,8 +716,11 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
                 "line-height": { source: "color.*", prefix: "leading" },
             }),
         ).toStrictEqual([
-            "`padding` makes no classes: `color.*` has only color tokens, and it takes dimension",
-            "`line-height` makes no classes: `color.*` has only color tokens, and it takes number or dimension",
+            ["`padding` makes no classes: `color.*` has only color tokens", "use dimension tokens"],
+            [
+                "`line-height` makes no classes: `color.*` has only color tokens",
+                "use number or dimension tokens",
+            ],
         ]);
     });
 
@@ -729,9 +730,7 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
                 { type: { body: typography } },
                 { "--font": { source: "type.*", prefix: "type" } },
             ),
-        ).toStrictEqual([
-            "`--font` makes no classes: `type.*` has only typography tokens, which a single-property class cannot use",
-        ]);
+        ).toStrictEqual(["`--font` makes no classes: `type.*` has only typography tokens"]);
     });
 
     it("for text-shadow, which no token type can be written as", () => {
@@ -750,7 +749,7 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
                 { "color": { source: "color.*" }, "background-color": { source: "color.*" } },
             ),
         ).toStrictEqual([
-            "`background-color` makes no classes: every `color-…` class is answered by `color` first; give one of them a `prefix`",
+            "`background-color` makes no classes: `color` answers every `color-…` class first",
         ]);
     });
 
@@ -768,7 +767,7 @@ describe("utilityRules' warning for an entry that makes no classes", () => {
                 },
             ),
         ).toStrictEqual([
-            "`margin`'s 2nd entry makes no classes: every `mb-…` and `mx-…` class is answered by `padding` and `--inline` first; give one of them a `prefix`",
+            "`margin`'s 2nd entry makes no classes: `padding` and `--inline` answer every `mb-…` and `mx-…` class first",
         ]);
     });
 
@@ -890,9 +889,7 @@ describe("utilityRules' warning for a safelisted class no token makes", () => {
             reported({
                 "background-color": { source: "color.*", prefix: "bg", safelist: ["primray"] },
             }),
-        ).toStrictEqual([
-            "`primray` in `background-color`'s safelist matches no token, so no class is forced",
-        ]);
+        ).toStrictEqual(["`primray` in `background-color`'s safelist matches no token"]);
     });
 
     it("as a warning about the config, carrying the entry and the part as facts", () => {
@@ -954,11 +951,7 @@ describe("utilityRules' warning that the direction full is deprecated", () => {
         expect(
             reported({ padding: { source: "space.*", prefix: "p", directions: ["full", "x"] } }),
         ).toStrictEqual([
-            [
-                "option-deprecated",
-                "warning",
-                '`directions: "full"` in `padding` is deprecated and will be removed in a later release',
-            ],
+            ["option-deprecated", "warning", '`directions: "full"` in `padding` is deprecated'],
         ]);
     });
 

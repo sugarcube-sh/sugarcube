@@ -63,13 +63,18 @@ describe("scale generator", () => {
         expect(md).toMatchObject({ resolved: rem(1.6875), generated: { from: "size" } });
         expect(md).not.toHaveProperty("authored");
         expect(
-            tokens.diagnostics.map(({ kind, path, message }) => ({ kind, path, message })),
+            tokens.diagnostics.map(({ kind, path, message, help }) => ({
+                kind,
+                path,
+                message,
+                help,
+            })),
         ).toEqual([
             {
                 kind: "written-generated",
                 path: "size.md",
-                message:
-                    "`size.md` is made by `sh.sugarcube.scale` on `size`, so the value written here is not used; change the extension instead",
+                message: "`size.md` is made by `sh.sugarcube.scale` on `size`",
+                help: undefined,
             },
         ]);
     });
@@ -129,6 +134,8 @@ describe("scale generator", () => {
                     type: "dimension",
                     reason: "string-with-unit",
                     value: "16px",
+                    unit: "px",
+                    allowed: ["px", "rem"],
                     asObject: { value: 16, unit: "px" },
                 },
             },

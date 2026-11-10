@@ -20,7 +20,8 @@
       "detail": { "key": "com.example", "jsonPath": ["$extensions", "com.example", "fluid"] },
       "span": {
         "file": "tokens.json",
-        "valueAfter": "\"gap\": { \"$value\": \"{space.md}\", \"$extensions\": { \"com.example\":"
+        "text": "\"com.example\"",
+        "occurrence": 4
       },
       "path": "gap"
     }

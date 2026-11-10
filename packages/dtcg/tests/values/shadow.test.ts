@@ -78,6 +78,8 @@ describe("parseValue, shadow", () => {
                 type: "dimension",
                 reason: "string-with-unit",
                 value: "4px",
+                unit: "px",
+                allowed: ["px", "rem"],
                 asObject: { value: 4, unit: "px" },
             });
         });
