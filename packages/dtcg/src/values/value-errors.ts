@@ -50,7 +50,7 @@ export interface ValueErrorFacts {
     "component-out-of-range": {
         readonly value: number;
         readonly colorSpace: ColorSpace;
-        /** The component's name, such as `"H"`. */
+        /** The component's name in `colorSpaces`, such as `"Hue"`. */
         readonly component: string;
         readonly min: number;
         /** The upper limit. It's left out when there's none, since JSON can't write infinity. */

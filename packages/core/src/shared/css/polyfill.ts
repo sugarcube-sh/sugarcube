@@ -15,7 +15,7 @@ export function fallbacksIn(from: Token, isPrivate: (each: Token) => boolean): F
         if (whole) visit(each, whole);
     };
     const followed = (ref: Reference | undefined): boolean => {
-        const target = ref?.pointsToToken;
+        const target = ref?.pointsToWholeToken;
         if (target && isPrivate(target)) walk(target);
         return target !== undefined;
     };

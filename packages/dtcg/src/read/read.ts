@@ -15,6 +15,7 @@ import { type KnownFiles, answerFrom, knownInMemory } from "./known-files.js";
 import { parseJson } from "./json.js";
 import { isResolver } from "./resolver.js";
 import { thrownMessages } from "../error-messages.js";
+import { EntryFileError } from "./entry-file-error.js";
 import { linkedDesignTokens, trackPlaces } from "./linked.js";
 import { allPermutations } from "./make-permutations.js";
 
@@ -83,11 +84,11 @@ async function fetchAll(files: Request, folder: string, readText: ReadText): Pro
 /**
  * Reads design tokens from text you already have.
  *
- * Without an `entryFile`, it starts from the one resolver, or else the only file. Otherwise it
- * throws a `TypeError`.
+ * Without an `entryFile`, it starts from the one resolver, or else the only file.
  *
  * @param memory - Each file's text by name, such as `{ files: { "color.json": text } }`.
  * @param options - How to read them, from {@link ReadOptions}.
+ * @throws {@link EntryFileError} If it can't tell which file to start from.
  *
  * @example
  * // One token file
@@ -123,8 +124,9 @@ function entryAmong(texts: Map<string, string>): string {
     );
     const [resolver] = resolvers;
     if (resolvers.length === 1 && resolver !== undefined) return resolver;
-    if (resolvers.length > 1) throw new TypeError(thrownMessages.severalResolvers(resolvers));
-    throw new TypeError(thrownMessages.noResolver(names));
+    if (resolvers.length > 1)
+        throw new EntryFileError({ reason: "several-resolvers", files: resolvers });
+    throw new EntryFileError({ reason: "no-resolver", files: names });
 }
 
 function permutationOptions({

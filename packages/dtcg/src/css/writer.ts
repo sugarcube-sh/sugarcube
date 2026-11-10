@@ -15,8 +15,8 @@ export interface CSSWritten {
  * Each token placed in it becomes a `var()`, and goes in `dependencies`.
  *
  * Only place tokens you reach from the token being written, such as
- * `token.getReferenceAt()?.pointsToToken`. A token from one permutation's `getToken` would carry
- * that permutation's value over into the others.
+ * `token.getReferenceAt()?.pointsToWholeToken`. A token from one permutation's `getToken` would
+ * carry that permutation's value over into the others.
  *
  * @example
  * // Mix the token's value with white
@@ -213,15 +213,15 @@ export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
 
     const asWritten = (token: Token, colors: Colors): CSSWritten | undefined => {
         if (token.resolved === undefined) return undefined;
-        const target = token.getReferenceAt()?.pointsToToken;
+        const target = token.getReferenceAt()?.pointsToWholeToken;
         if (target && inlined(target)) {
             const own = written(target, colors);
             if (own) return own;
         }
         const dependencies: Token[] = [];
         const replaceReference = (ref: Reference, cssProperty?: keyof TypographyCSS) =>
-            ref.pointsToToken
-                ? refer(ref.pointsToToken, colors, dependencies, cssProperty)
+            ref.pointsToWholeToken
+                ? refer(ref.pointsToWholeToken, colors, dependencies, cssProperty)
                 : undefined;
         const css = toCSSValue(token, { replaceReference, colors });
         return css === undefined ? undefined : { css, dependencies: unique(dependencies) };

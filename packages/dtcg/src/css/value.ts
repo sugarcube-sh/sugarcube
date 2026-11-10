@@ -40,10 +40,10 @@ export interface CSSValueOptions {
      * `"font-size"`.
      *
      * @example
-     * // Write each reference to a token as var()
+     * // Write each reference to a whole token as var()
      * replaceReference: (ref, cssProperty) =>
-     *     ref.pointsToToken && {
-     *         customProperty: toCustomPropertyName(ref.pointsToToken.path, { cssProperty }),
+     *     ref.pointsToWholeToken && {
+     *         customProperty: toCustomPropertyName(ref.pointsToWholeToken.path, { cssProperty }),
      *     }
      */
     replaceReference?: (
@@ -61,8 +61,6 @@ export interface CSSValueOptions {
     colors?: "components" | "hex";
 }
 
-type TypographyToken = Extract<Token, { type: "typography" }>;
-
 /**
  * Writes a token's value, or part of one, as CSS.
  *
@@ -79,11 +77,11 @@ type TypographyToken = Extract<Token, { type: "typography" }>;
  * // => "rgb(102 153 255)"
  */
 export function toCSSValue(
-    of: TypographyToken | TypographyPart | undefined,
+    of: Extract<Token, { type: "typography" }> | TypographyPart | undefined,
     options?: CSSValueOptions,
 ): TypographyCSS | undefined;
 export function toCSSValue(
-    of: Exclude<Token, TypographyToken> | Exclude<Part, TypographyPart> | undefined,
+    of: Exclude<Token, { type: "typography" }> | Exclude<Part, TypographyPart> | undefined,
     options?: CSSValueOptions,
 ): string | undefined;
 export function toCSSValue(
@@ -132,7 +130,7 @@ function write(part: Exclude<Part, TypographyPart>, options: CSSValueOptions): s
         case "fontFamily":
             return part.resolved.map(quoteFont).join(", ");
         case "strokeStyle":
-            return part.resolved.kind === "dash" ? "dashed" : part.resolved.keyword;
+            return typeof part.resolved === "string" ? part.resolved : "dashed";
         case "border":
             return [part.width, part.style, part.color].map(each).join(" ");
         case "transition":

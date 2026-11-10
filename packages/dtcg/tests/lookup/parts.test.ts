@@ -95,7 +95,7 @@ describe("token.parts", () => {
             resolved: {
                 color: redRead,
                 width: px(2),
-                style: { kind: "keyword", keyword: "solid" },
+                style: "solid",
             },
             color: {
                 type: "color",
@@ -107,7 +107,7 @@ describe("token.parts", () => {
             style: {
                 type: "strokeStyle",
                 property: ["style"],
-                resolved: { kind: "keyword", keyword: "solid" },
+                resolved: "solid",
             },
         });
     });

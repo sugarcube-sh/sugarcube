@@ -52,6 +52,7 @@ describe("a token's references", () => {
         expect(reference?.pointsToPath).toBe("color.red");
         expect(reference?.writtenIn).toBe(inLight("color.brand"));
         expect(reference?.pointsToToken).toBe(inLight("color.red"));
+        expect(reference?.pointsToWholeToken).toBe(inLight("color.red"));
         expect(reference?.writtenInProperty).toBeUndefined();
         expect(reference && written(getSpan(tokens, reference))).toBe('"{color.red}"');
     });
@@ -74,10 +75,11 @@ describe("a token's references", () => {
         }
     });
 
-    it("reference no token when a pointer names a property within a value, and say which (Format 7.3)", () => {
+    it("reference the token when a pointer names a property within its value, and say which (Format 7.3)", () => {
         const [reference] = inLight("color.tint")?.references ?? [];
         expect(reference?.pointsToPath).toBe("color.red");
-        expect(reference?.pointsToToken).toBeUndefined();
+        expect(reference?.pointsToToken).toBe(inLight("color.red"));
+        expect(reference?.pointsToWholeToken).toBeUndefined();
         expect(reference?.pointsToProperty).toStrictEqual(["components", 0]);
         expect(reference?.writtenInProperty).toStrictEqual(["components", 0]);
     });
@@ -232,6 +234,7 @@ describe("a group's $extends", () => {
         expect(reference?.pointsToPath).toBe("button");
         expect(reference?.writtenIn).toBe(light.getGroup("primary"));
         expect(reference?.pointsToToken).toBeUndefined();
+        expect(reference?.pointsToWholeToken).toBeUndefined();
         expect(reference && written(getSpan(tokens, reference))).toBe('"{button}"');
     });
 
@@ -379,6 +382,7 @@ describe("on the design tokens", () => {
         ]);
         expect(reaching[0]).not.toHaveProperty("writtenIn");
         expect(reaching[0]).not.toHaveProperty("pointsToToken");
+        expect(reaching[0]).not.toHaveProperty("pointsToWholeToken");
         // @ts-expect-error each permutation has its own token, so a reference in several has none
         void reaching[0]?.writtenIn;
         // @ts-expect-error each permutation has its own token, so a reference in several has none

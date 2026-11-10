@@ -50,6 +50,19 @@ describe("createCSSWriter", () => {
             );
         });
 
+        it("writes the value of a reference to part of a token, as var() can't name a part", () => {
+            const tokens = one({
+                border: {
+                    $type: "border",
+                    $value: { color: color("#000000").$value, width: px(2), style: "solid" },
+                },
+                outline: { $type: "dimension", $value: { $ref: "#/border/$value/width" } },
+            });
+            expect(lines(tokens)).toContain("--outline: 2px");
+            const outline = declare(tokens).declarations.find(({ name }) => name === "--outline");
+            expect(outline?.dependencies).toStrictEqual([]);
+        });
+
         it("says which tokens each declaration's value names with var()", () => {
             const { declarations } = declare(modes, {}, { mode: "dark" });
             const text = declarations.find(({ name }) => name === "--color-text");

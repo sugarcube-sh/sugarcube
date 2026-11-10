@@ -273,12 +273,12 @@ describe("spaceNames", () => {
 describe("channelsOf", () => {
     it("gives each channel a slider's range and step, from the spec's ranges", () => {
         expect(channelsOf("oklch")).toEqual([
-            { name: "L", min: 0, max: 1, step: 0.001 },
-            { name: "C", min: 0, max: 0.5, step: 0.001 },
-            { name: "H", min: 0, max: 359.9, step: 0.1 },
+            { name: "Lightness", min: 0, max: 1, step: 0.001 },
+            { name: "Chroma", min: 0, max: 0.5, step: 0.001 },
+            { name: "Hue", min: 0, max: 359.9, step: 0.1 },
         ]);
-        expect(channelsOf("hsl")[0]).toEqual({ name: "H", min: 0, max: 359.9, step: 0.1 });
-        expect(channelsOf("lab")[1]).toEqual({ name: "a", min: -160, max: 160, step: 0.1 });
+        expect(channelsOf("hsl")[0]).toEqual({ name: "Hue", min: 0, max: 359.9, step: 0.1 });
+        expect(channelsOf("lab")[1]).toEqual({ name: "A", min: -160, max: 160, step: 0.1 });
     });
 });
 

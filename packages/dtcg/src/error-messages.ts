@@ -2,6 +2,7 @@ import type {
     Diagnostic,
     DiagnosticDetailByKind,
     DiagnosticKind,
+    EntryFileErrorDetail,
     Input,
     JsonErrorReason,
     InputProblem,
@@ -140,19 +141,22 @@ export const thrownMessages = {
             : inputWords(detail),
     severalPermutations: ({ asked, modifiers, example }: SeveralPermutationsDetail) => {
         const named = `${modifiers.length === 1 ? "the modifier" : "the modifiers"} ${listed(modifiers, "and")}`;
-        return `tokens.${asked} needs a permutation: this resolver has ${named}. Pick one with tokens.getPermutation(${inputText(example)}), or ask them all with askEveryPermutation(tokens, …)`;
+        return `tokens.${asked} needs a permutation: this resolver has ${named}. Pick one with tokens.getPermutation(${inputText(example)}), or group them with groupPermutationsBy(tokens, …)`;
     },
-    noResolver: (files: string[]) =>
-        files.length === 0
+    entryFile: ({ reason, files }: EntryFileErrorDetail) => {
+        const named = files.map((file) => `\`${file}\``).join(", ");
+        if (reason === "several-resolvers")
+            return `${named} are all resolvers: name the entry to start from`;
+        return files.length === 0
             ? "no files were given to read"
-            : `${files.map((file) => `\`${file}\``).join(", ")} are token files with no resolver among them: a resolver says which files to read and in what order, so give one, or name the entry to start from`,
-    severalResolvers: (files: string[]) =>
-        `${files.map((file) => `\`${file}\``).join(", ")} are all resolvers: name the entry to start from`,
+            : `${named} are token files with no resolver among them: a resolver says which files to read and in what order, so give one, or name the entry to start from`;
+    },
     typographyPlaced:
         "a typography value is one value per CSS property, so write`…` cannot place it whole: place the CSS property's value you mean",
     asyncSchema: (key: string) =>
         `the schema for \`${key}\` returned a Promise: extension schemas must validate synchronously`,
     emptyResult: "an extension reader's result needs a value, or a problem reported first",
+    notATokenType: (type: string) => `\`${type}\` is not a token type; use one of \`tokenTypes\``,
 };
 
 export const relatedMessages = {
@@ -161,6 +165,7 @@ export const relatedMessages = {
     alsoUsedHere: "also used here",
     alsoWrittenHere: "also written here",
     madeByThisExtension: "made by this extension",
+    modifierDeclaredHere: "the modifier is declared here",
 };
 
 function pathWords(path: string): string {

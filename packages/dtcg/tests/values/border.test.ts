@@ -12,7 +12,7 @@ describe("parseValue, border", () => {
             expect(read({ color, width, style: "solid" })).toStrictEqual({
                 color: { ...color, alpha: 1 },
                 width,
-                style: { kind: "keyword", keyword: "solid" },
+                style: "solid",
             });
         });
 
@@ -33,7 +33,6 @@ describe("parseValue, border", () => {
                 color: { syntax: "curly-brace", path: "color.focusring" },
                 width: { value: 1, unit: "px" },
                 style: {
-                    kind: "dash",
                     dashArray: [
                         { value: 0.5, unit: "rem" },
                         { value: 0.25, unit: "rem" },

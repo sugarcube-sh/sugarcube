@@ -21,7 +21,7 @@ export function describe(token: Token): string {
         case "fontWeight":
             return String(token.resolved ?? "");
         case "strokeStyle":
-            return token.resolved?.kind === "keyword" ? token.resolved.keyword : "dash";
+            return typeof token.resolved === "string" ? token.resolved : "dash";
         case "border":
             return token.resolved ? `${token.resolved.width.value}px` : "";
         case "shadow":

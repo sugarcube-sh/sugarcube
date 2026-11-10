@@ -3,7 +3,7 @@ import { list, literal, no, object, ofType, ok, oneOf, refuse, wrongShape } from
 
 const keyword = literal((raw) => {
     const known = strokeStyleKeywords.find((each) => each === raw);
-    if (known !== undefined) return ok({ kind: "keyword", keyword: known });
+    if (known !== undefined) return ok(known);
     return typeof raw === "string"
         ? no({
               reason: "unknown-stroke-style-keyword",
@@ -27,6 +27,6 @@ const dashArray = oneOf({
 
 export const strokeStyle = oneOf({
     string: keyword,
-    object: object({ dashArray, lineCap }, "dash"),
+    object: object({ dashArray, lineCap }),
     other: wrongShape,
 });

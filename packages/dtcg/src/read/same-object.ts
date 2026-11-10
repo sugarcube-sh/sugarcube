@@ -33,17 +33,13 @@ export function sameToken(
     if (earlier.inherited?.from !== written.inherited?.from) return false;
     const { references } = earlier;
     if (references.length !== targets.length) return false;
-    let intoParts = false;
-    for (const [index, { path, token, pointsToProperty }] of targets.entries()) {
+    for (const [index, { path, token }] of targets.entries()) {
         const reference = references[index];
         if (!reference || reference.pointsToToken !== token || reference.pointsToPath !== path)
             return false;
-        if (pointsToProperty !== undefined) intoParts = true;
     }
-    const resolved = !intoParts || isEqualJson(earlier.resolved, now.resolved);
-    if (!written.added) return resolved;
+    if (!written.added) return true;
     return (
-        resolved &&
         isEqualJson(earlier.value, now.value) &&
         earlier.description === written.description &&
         isEqualJson(earlier.extensions, written.extensions)

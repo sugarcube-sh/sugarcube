@@ -23,6 +23,7 @@ class ReferenceObject {
     readonly pointsToPath: string | undefined;
     readonly writtenIn: Token | Group;
     readonly pointsToToken: Token | undefined;
+    readonly pointsToWholeToken: Token | undefined;
     readonly writtenInProperty: JsonPath | undefined;
     readonly #written: WrittenReference;
     readonly #span: Span;
@@ -34,6 +35,7 @@ class ReferenceObject {
         this.pointsToPath = path;
         this.writtenIn = from;
         this.pointsToToken = token;
+        this.pointsToWholeToken = pointsToProperty === undefined ? token : undefined;
         this.writtenInProperty = property.length > 0 ? property : undefined;
         if (reference.syntax === "json-pointer") Object.assign(this, { pointsToProperty });
         this.#written = reference;

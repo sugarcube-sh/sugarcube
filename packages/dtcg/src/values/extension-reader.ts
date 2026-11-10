@@ -2,6 +2,7 @@ import { thrownMessages } from "../error-messages.js";
 import type {
     ExtensionError,
     ExtensionMessages,
+    ExtensionResult,
     IgnoredProperty,
     JsonPath,
     ParseOptions,
@@ -10,15 +11,6 @@ import type {
     ValueError,
 } from "../model.js";
 import { parseValue } from "./parse-value.js";
-
-/**
- * What an {@link ExtensionReader} returns at the end.
- *
- * It's the value, or every problem found. Return it from `generate` or `validate`.
- */
-export type ExtensionResult<V, M extends ExtensionMessages> =
-    | { ok: true; value: V; ignored?: IgnoredProperty[] }
-    | { ok: false; errors: (ExtensionError<M> | ValueError)[]; ignored?: IgnoredProperty[] };
 
 /**
  * Reads the values in your extension, and collects any problems.

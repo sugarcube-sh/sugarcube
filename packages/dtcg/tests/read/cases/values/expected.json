@@ -37,10 +37,7 @@
         },
         {
           "path": "line",
-          "value": {
-            "kind": "keyword",
-            "keyword": "solid"
-          }
+          "value": "solid"
         },
         {
           "path": "card",

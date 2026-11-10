@@ -4,7 +4,11 @@ import {
     type Token,
     defineExtensionValidator,
 } from "@sugarcube-sh/dtcg";
-import { type ExtensionResult, createExtensionReader, isJsonObject } from "@sugarcube-sh/dtcg/values";
+import {
+    type ExtensionResult,
+    createExtensionReader,
+    isJsonObject,
+} from "@sugarcube-sh/dtcg/values";
 import { ErrorMessages } from "./constants/error-messages.js";
 import { SUGARCUBE_NAMESPACE } from "./extensions.js";
 
@@ -55,8 +59,5 @@ export const fluidValidator = defineExtensionValidator({
     key: SUGARCUBE_NAMESPACE,
     appliesTo: ["dimension"],
     messages: ErrorMessages.FLUID_EXTENSION,
-    validate: (_token, ours, options) => {
-        const read = readFluid(ours, options);
-        return [...(read.ignored ?? []), ...(read.ok ? [] : read.errors)];
-    },
+    validate: (_token, ours, options) => readFluid(ours, options),
 });

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { defineExtensionValidator } from "../../src/index.js";
 import { createExtensionReader, isJsonObject } from "../../src/values.js";
+import { oneFile } from "../token-files.js";
 
 const messages = {
     "missing-property": ({ name }: { name: string }) => `the range needs \`${name}\``,
@@ -104,6 +106,37 @@ describe("createExtensionReader", () => {
 
     it("throws when asked for a result with no value and nothing reported", () => {
         expect(() => createExtensionReader<typeof messages>().result(undefined)).toThrow(TypeError);
+    });
+});
+
+describe("a reader's result returned from validate", () => {
+    it("reports its errors, and the properties it set aside", () => {
+        const range = defineExtensionValidator({
+            key: "com.example",
+            appliesTo: ["dimension"],
+            messages,
+            validate: (_token, extension, options) => {
+                const reader = createExtensionReader<typeof messages>(options);
+                const { min, max } = extension as { min?: unknown; max?: unknown };
+                reader.read("dimension", min, ["min"]);
+                if (max === undefined) reader.report(["max"], "missing-property", { name: "max" });
+                return reader.result(extension);
+            },
+        });
+        const tokens = oneFile(
+            {
+                gap: {
+                    $type: "dimension",
+                    $value: { value: 1, unit: "rem" },
+                    $extensions: { "com.example": { min: { value: 1, unit: "rem", fluid: true } } },
+                },
+            },
+            { extensionValidators: [range], ignoreUnknownProperties: true },
+        );
+        expect(tokens.diagnostics.map(({ kind, message }) => [kind, message])).toStrictEqual([
+            ["unknown-property", expect.stringContaining("fluid")],
+            ["extension-invalid", "the range needs `max`"],
+        ]);
     });
 });
 

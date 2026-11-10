@@ -3,7 +3,7 @@ import type {
     DimensionValue,
     DurationValue,
     JsonValue,
-    StrokeStyleValue,
+    StrokeStyleKeyword,
     TokenType,
 } from "@sugarcube-sh/dtcg";
 import {
@@ -24,8 +24,6 @@ import {
     writtenWithParts,
 } from "./parts";
 import { numberIn } from "./typed-text";
-
-type StrokeStyleKeyword = Extract<StrokeStyleValue, { kind: "keyword" }>["keyword"];
 
 export type Field =
     | { readonly kind: "dimension"; readonly value: number; readonly unit: DimensionValue["unit"] }
@@ -126,8 +124,8 @@ function literalField(type: FieldType, written: JsonValue): Field | undefined {
         }
         case "strokeStyle": {
             const read = parseValue(type, written, { references: false });
-            return read.ok && read.value.kind === "keyword"
-                ? { kind: type, keyword: read.value.keyword }
+            return read.ok && typeof read.value === "string"
+                ? { kind: type, keyword: read.value }
                 : undefined;
         }
         case "color":

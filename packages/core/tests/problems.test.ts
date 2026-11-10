@@ -32,7 +32,7 @@ function value(message: string, place: ReturnType<typeof spanAt>): Reported {
         message,
         span: place,
         docsUrl: "",
-        permutations: themes("everywhere", { every: true }),
+        permutations: themes("every permutation", { every: true }),
         detail: { jsonPath: ["$value"], type: "color", reason: "wrong-shape", value: "" },
     };
 }
@@ -44,7 +44,7 @@ function missingReference(ref: string, place: ReturnType<typeof spanAt>): Report
         message: `\`${ref}\` does not exist`,
         span: place,
         docsUrl: "",
-        permutations: themes("everywhere", { every: true }),
+        permutations: themes("every permutation", { every: true }),
         detail: { ref, from: [] },
     };
 }
@@ -56,7 +56,7 @@ function ignored(place: ReturnType<typeof spanAt>): Reported {
         message: "`paragraphSpacing` is ignored",
         span: place,
         docsUrl: "",
-        permutations: themes("everywhere", { every: true }),
+        permutations: themes("every permutation", { every: true }),
         detail: { property: "paragraphSpacing", type: "typography", jsonPath: [] },
     };
 }
@@ -100,7 +100,7 @@ describe("problemLines", () => {
     });
 
     it("names no permutations when every one has the problem, or none does", () => {
-        const nowhere = { ...missing, permutations: themes("nowhere", { count: 0 }) };
+        const nowhere = { ...missing, permutations: themes("no permutation", { count: 0 }) };
         expect(problemLines([missing, nowhere], where, { colors: false })).toStrictEqual([
             "tokens/base.json:7:25  error  `color.inc` does not exist  missing-reference",
             "tokens/base.json:7:25  error  `color.inc` does not exist  missing-reference",
@@ -154,7 +154,7 @@ describe("problemLines", () => {
                 { message: "declared as a group here", span: spanAt("colors.json", 9, 17) },
             ],
             docsUrl: "",
-            permutations: themes("everywhere", { every: true }),
+            permutations: themes("every permutation", { every: true }),
             detail: { reason: "declared", here: "token" },
         };
         expect(problemLines([conflict], where, { colors: false })).toStrictEqual([

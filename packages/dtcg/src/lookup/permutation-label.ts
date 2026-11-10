@@ -57,10 +57,10 @@ function inWrittenOrder(part: Part, contexts: readonly ResolverContext[]): Part 
 }
 
 export function scopeLabel(scope: Scope): string {
-    if (scope.length === 0) return "nowhere";
+    if (scope.length === 0) return "no permutation";
     return scope
         .map((part) => {
-            if (Object.keys(part).length === 0) return "everywhere";
+            if (Object.keys(part).length === 0) return "every permutation";
             return partText(part);
         })
         .join("; ");

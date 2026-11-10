@@ -11,7 +11,7 @@ const color = {
 const dimension = { value: 2, unit: "rem" } satisfies ValueByType["dimension"];
 const duration = { value: 200, unit: "ms" } satisfies ValueByType["duration"];
 const cubicBezier: ValueByType["cubicBezier"] = [0.25, 0.1, 0.25, 1];
-const dashed: StrokeStyleValue = { kind: "dash", dashArray: [dimension], lineCap: "round" };
+const dashed: StrokeStyleValue = { dashArray: [dimension], lineCap: "round" };
 
 const everyPart: { [T in TokenType]: ValueByType[T] } = {
     color,
@@ -44,20 +44,9 @@ const everyPart: { [T in TokenType]: ValueByType[T] } = {
     },
 };
 
-function asWritten(value: unknown): unknown {
-    if (Array.isArray(value)) return value.map(asWritten);
-    if (typeof value !== "object" || value === null) return value;
-    const entries = Object.entries(value);
-    const keyword = entries.find(([key]) => key === "keyword");
-    if (keyword) return keyword[1];
-    return Object.fromEntries(
-        entries.filter(([key]) => key !== "kind").map(([key, part]) => [key, asWritten(part)]),
-    );
-}
-
 describe("each type's value, as the public types describe it", () => {
     it.for(tokenTypes)("%s reads back as itself, every part included", (type) => {
-        const read = parseValue(type, asWritten(everyPart[type]), { references: false });
+        const read = parseValue(type, everyPart[type], { references: false });
         expect(read).toStrictEqual({ ok: true, value: everyPart[type], ignored: [] });
     });
 });
@@ -75,9 +64,7 @@ const objectTypes = [
 ] as const;
 
 function withExtra(type: (typeof objectTypes)[number]) {
-    const written = asWritten(everyPart[type]) as
-        | Record<string, unknown>
-        | Record<string, unknown>[];
+    const written = everyPart[type] as Record<string, unknown> | Record<string, unknown>[];
     if (Array.isArray(written)) {
         const [first, ...rest] = written;
         return { raw: [{ ...first, extra: 1 }, ...rest], at: [0, "extra"] };

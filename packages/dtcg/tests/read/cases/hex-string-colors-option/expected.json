@@ -67,10 +67,7 @@
               "value": 1,
               "unit": "px"
             },
-            "style": {
-              "kind": "keyword",
-              "keyword": "solid"
-            }
+            "style": "solid"
           }
         },
         {

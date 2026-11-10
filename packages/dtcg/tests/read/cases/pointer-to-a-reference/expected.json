@@ -22,10 +22,7 @@
               "value": 2,
               "unit": "px"
             },
-            "style": {
-              "kind": "keyword",
-              "keyword": "solid"
-            }
+            "style": "solid"
           }
         },
         {

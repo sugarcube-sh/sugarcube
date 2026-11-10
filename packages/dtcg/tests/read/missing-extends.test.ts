@@ -46,7 +46,7 @@ describe("a group's $extends to a group that isn't there", () => {
     it("is one problem, held in every permutation that reads it", () => {
         const tokens = read({ brand: { $extends: "{nowhere}" } }, true);
         expect(missing(tokens).map(({ permutations }) => permutations.label)).toStrictEqual([
-            "everywhere",
+            "every permutation",
         ]);
     });
 

@@ -11,8 +11,12 @@ function read(json: Record<string, unknown>): (path: string) => Token {
 
 const asVariables: CSSValueOptions = {
     replaceReference: (ref, cssProperty) =>
-        ref.pointsToToken
-            ? { customProperty: toCustomPropertyName(ref.pointsToToken.path, { cssProperty }) }
+        ref.pointsToWholeToken
+            ? {
+                  customProperty: toCustomPropertyName(ref.pointsToWholeToken.path, {
+                      cssProperty,
+                  }),
+              }
             : undefined,
 };
 

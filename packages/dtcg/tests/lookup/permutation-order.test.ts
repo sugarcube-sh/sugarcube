@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { type Permutation, type Permutations, askEveryPermutation } from "../../src/index.js";
+import { type Permutation, type Permutations, groupPermutationsBy } from "../../src/index.js";
 import { twoModifierFiles, twoModifiers } from "./two-modifiers.js";
 import { getSpan } from "../../src/editor.js";
 
 const tokens = twoModifiers();
 
 function asked(question: (permutation: Permutation) => unknown): Permutations[] {
-    return askEveryPermutation(tokens, question).map(({ permutations }) => permutations);
+    return groupPermutationsBy(tokens, question).map(({ permutations }) => permutations);
 }
 
 function inTheirOrder(permutations: Permutations): void {
@@ -16,7 +16,7 @@ function inTheirOrder(permutations: Permutations): void {
     }
 }
 
-describe("every answer's permutations, with two modifiers and files that overlap", () => {
+describe("every group's permutations, with two modifiers and files that overlap", () => {
     it("come once each, in the design tokens' order", () => {
         const larger = twoModifierFiles["large.json"].replace('"$value":3', '"$value":4');
         const changes = tokens.getChangesSince(twoModifiers({ "large.json": larger }));

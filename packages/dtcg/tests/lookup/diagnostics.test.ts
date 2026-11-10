@@ -90,7 +90,7 @@ describe("permutation.getDiagnostics", () => {
     });
 
     it("gives a problem in a value every permutation reads to each of them", () => {
-        expect(tokens.getDiagnostics("color.bad")[0]?.permutations.label).toBe("everywhere");
+        expect(tokens.getDiagnostics("color.bad")[0]?.permutations.label).toBe("every permutation");
         expect(inPermutation(darkMode, "color.bad")).toStrictEqual(["invalid-value"]);
         expect(inPermutation(light, "color.bad")).toStrictEqual(["invalid-value"]);
     });
@@ -119,7 +119,7 @@ describe("a problem in a file only some permutations read", () => {
             files: { ...files, "tokens.resolver.json": JSON.stringify({ ...resolver, extra: 1 }) },
         }).diagnostics.find(({ span }) => span?.file === "tokens.resolver.json");
         expect(resolverProblem).toBeDefined();
-        expect(resolverProblem?.permutations.label).toBe("everywhere");
+        expect(resolverProblem?.permutations.label).toBe("every permutation");
     });
 
     it("names none for a problem in a file no permutation the read built reads", () => {
@@ -129,7 +129,7 @@ describe("a problem in a file only some permutations read", () => {
         );
         const broken = lightOnly.diagnostics.find(({ span }) => span?.file === "dark.json");
         expect(broken).toBeDefined();
-        expect(broken?.permutations.label).toBe("nowhere");
+        expect(broken?.permutations.label).toBe("no permutation");
         expect([...(broken?.permutations ?? [])]).toStrictEqual([]);
     });
 

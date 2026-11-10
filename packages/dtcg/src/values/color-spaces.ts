@@ -29,70 +29,70 @@ export interface ColorComponentRange {
  * @example
  * // OKLCH chroma has no upper limit, but stays under 0.5 in practice
  * colorSpaces.oklch[1]
- * // => { name: "C", min: 0, max: Infinity, inPractice: { min: 0, max: 0.5 } }
+ * // => { name: "Chroma", min: 0, max: Infinity, inPractice: { min: 0, max: 0.5 } }
  */
 export const colorSpaces: Readonly<
     Record<ColorSpace, readonly [ColorComponentRange, ColorComponentRange, ColorComponentRange]>
 > = {
     "srgb": [
-        { name: "R", min: 0, max: 1 },
-        { name: "G", min: 0, max: 1 },
-        { name: "B", min: 0, max: 1 },
+        { name: "Red", min: 0, max: 1 },
+        { name: "Green", min: 0, max: 1 },
+        { name: "Blue", min: 0, max: 1 },
     ],
     "srgb-linear": [
-        { name: "R", min: 0, max: 1 },
-        { name: "G", min: 0, max: 1 },
-        { name: "B", min: 0, max: 1 },
+        { name: "Red", min: 0, max: 1 },
+        { name: "Green", min: 0, max: 1 },
+        { name: "Blue", min: 0, max: 1 },
     ],
     "hsl": [
-        { name: "H", min: 0, max: 360, maxExclusive: true },
-        { name: "S", min: 0, max: 100 },
-        { name: "L", min: 0, max: 100 },
+        { name: "Hue", min: 0, max: 360, maxExclusive: true },
+        { name: "Saturation", min: 0, max: 100 },
+        { name: "Lightness", min: 0, max: 100 },
     ],
     "hwb": [
-        { name: "H", min: 0, max: 360, maxExclusive: true },
-        { name: "W", min: 0, max: 100 },
-        { name: "B", min: 0, max: 100 },
+        { name: "Hue", min: 0, max: 360, maxExclusive: true },
+        { name: "Whiteness", min: 0, max: 100 },
+        { name: "Blackness", min: 0, max: 100 },
     ],
     "lab": [
-        { name: "L", min: 0, max: 100 },
-        { name: "a", min: -Infinity, max: Infinity, inPractice: { min: -160, max: 160 } },
-        { name: "b", min: -Infinity, max: Infinity, inPractice: { min: -160, max: 160 } },
+        { name: "Lightness", min: 0, max: 100 },
+        { name: "A", min: -Infinity, max: Infinity, inPractice: { min: -160, max: 160 } },
+        { name: "B", min: -Infinity, max: Infinity, inPractice: { min: -160, max: 160 } },
     ],
     "lch": [
-        { name: "L", min: 0, max: 100 },
-        { name: "C", min: 0, max: Infinity, inPractice: { min: 0, max: 230 } },
-        { name: "H", min: 0, max: 360, maxExclusive: true },
+        { name: "Lightness", min: 0, max: 100 },
+        { name: "Chroma", min: 0, max: Infinity, inPractice: { min: 0, max: 230 } },
+        { name: "Hue", min: 0, max: 360, maxExclusive: true },
     ],
     "oklab": [
-        { name: "L", min: 0, max: 1 },
-        { name: "a", min: -Infinity, max: Infinity, inPractice: { min: -0.5, max: 0.5 } },
-        { name: "b", min: -Infinity, max: Infinity, inPractice: { min: -0.5, max: 0.5 } },
+        { name: "Lightness", min: 0, max: 1 },
+        { name: "A", min: -Infinity, max: Infinity, inPractice: { min: -0.5, max: 0.5 } },
+        { name: "B", min: -Infinity, max: Infinity, inPractice: { min: -0.5, max: 0.5 } },
     ],
     "oklch": [
-        { name: "L", min: 0, max: 1 },
-        { name: "C", min: 0, max: Infinity, inPractice: { min: 0, max: 0.5 } },
-        { name: "H", min: 0, max: 360, maxExclusive: true },
+        { name: "Lightness", min: 0, max: 1 },
+        { name: "Chroma", min: 0, max: Infinity, inPractice: { min: 0, max: 0.5 } },
+        { name: "Hue", min: 0, max: 360, maxExclusive: true },
     ],
     "display-p3": [
-        { name: "R", min: 0, max: 1 },
-        { name: "G", min: 0, max: 1 },
-        { name: "B", min: 0, max: 1 },
+        { name: "Red", min: 0, max: 1 },
+        { name: "Green", min: 0, max: 1 },
+        { name: "Blue", min: 0, max: 1 },
     ],
     "a98-rgb": [
-        { name: "R", min: 0, max: 1 },
-        { name: "G", min: 0, max: 1 },
-        { name: "B", min: 0, max: 1 },
+        { name: "Red", min: 0, max: 1 },
+        { name: "Green", min: 0, max: 1 },
+        { name: "Blue", min: 0, max: 1 },
     ],
     "prophoto-rgb": [
-        { name: "R", min: 0, max: 1 },
-        { name: "G", min: 0, max: 1 },
-        { name: "B", min: 0, max: 1 },
+        { name: "Red", min: 0, max: 1 },
+        { name: "Green", min: 0, max: 1 },
+        { name: "Blue", min: 0, max: 1 },
     ],
     "rec2020": [
-        { name: "R", min: 0, max: 1 },
-        { name: "G", min: 0, max: 1 },
-        { name: "B", min: 0, max: 1 },
+        { name: "Red", min: 0, max: 1 },
+        { name: "Green", min: 0, max: 1 },
+        { name: "Blue", min: 0, max: 1 },
     ],
     "xyz-d65": [
         { name: "X", min: 0, max: 1 },

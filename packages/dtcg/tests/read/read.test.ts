@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
     type DesignTokens,
+    EntryFileError,
     type ReadOptions,
     type ReadText,
     defineExtensionValidator,
@@ -652,13 +653,26 @@ describe("what counts as a resolver: its name, or a top-level resolutionOrder", 
     });
 });
 
+function thrownBy(reading: () => unknown): unknown {
+    try {
+        reading();
+    } catch (error) {
+        if (error instanceof EntryFileError) return error.detail;
+    }
+    return undefined;
+}
+
 describe("readFromMemory", () => {
     it("refuses several token files with no resolver among them, naming them", () => {
         const reading = () =>
             readFromMemory({ files: { "base.json": valid, "./themes/dark.json": valid } });
-        expect(reading).toThrow(TypeError);
+        expect(reading).toThrow(EntryFileError);
         expect(reading).toThrow(/`base\.json`.*`themes\/dark\.json`/);
         expect(reading).toThrow(/a resolver says which files to read and in what order/);
+        expect(thrownBy(reading)).toStrictEqual({
+            reason: "no-resolver",
+            files: ["base.json", "themes/dark.json"],
+        });
     });
 
     it("refuses several resolvers when no entry says which, naming them", () => {
@@ -668,12 +682,18 @@ describe("readFromMemory", () => {
         });
         const reading = () =>
             readFromMemory({ files: { "a.resolver.json": resolver, "b.resolver.json": resolver } });
-        expect(reading).toThrow(TypeError);
+        expect(reading).toThrow(EntryFileError);
         expect(reading).toThrow(/`a\.resolver\.json`.*`b\.resolver\.json`/);
+        expect(thrownBy(reading)).toStrictEqual({
+            reason: "several-resolvers",
+            files: ["a.resolver.json", "b.resolver.json"],
+        });
     });
 
     it("refuses to read no files at all", () => {
-        expect(() => readFromMemory({ files: {} })).toThrow(TypeError);
+        const reading = () => readFromMemory({ files: {} });
+        expect(reading).toThrow(EntryFileError);
+        expect(thrownBy(reading)).toStrictEqual({ reason: "no-resolver", files: [] });
     });
 
     it.for<[string, string]>([
