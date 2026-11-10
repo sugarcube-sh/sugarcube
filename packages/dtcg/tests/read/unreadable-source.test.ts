@@ -97,8 +97,8 @@ describe("a source that can't be read", () => {
                 "roles.json": roles,
             },
         });
-        expect(tokens.diagnostics.map(({ message }) => message)).toStrictEqual([
-            "`color.gren` does not exist; did you mean `color.green`?",
+        expect(tokens.diagnostics.map(({ message, help }) => [message, help])).toStrictEqual([
+            ["`color.gren` does not exist", "did you mean `color.green`?"],
         ]);
     });
 });

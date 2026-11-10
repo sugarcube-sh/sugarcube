@@ -12,10 +12,10 @@ import type {
     SeveralPermutationsDetail,
 } from "./model.js";
 import { toInputLabel } from "./lookup/permutation-label.js";
-import { isSpecKey } from "./read/spec-keys.js";
 import {
     didYouMean,
     ignoredMessage,
+    valueErrorHelpText,
     valueErrorMessage,
     valueErrorMessages,
 } from "./values/value-errors.js";
@@ -25,27 +25,28 @@ type Severity = Diagnostic["severity"];
 type Entry<K extends DiagnosticKind> = {
     severity: Severity | ((detail: DiagnosticDetailByKind[K]) => Severity);
     message: (detail: DiagnosticDetailByKind[K]) => string;
+    help?: (detail: DiagnosticDetailByKind[K]) => string | undefined;
 };
 
 const jsonReasons: Record<JsonErrorReason, string> = {
-    "comment": "a token file is JSON, which has no comments",
-    "trailing-comma": "a token file is JSON, which has no trailing commas",
-    "not-an-object": "the top level of the file must be an object",
-    "invalid-symbol": "this is not valid JSON: there is a character that cannot be here",
-    "invalid-number-format": "this is not valid JSON: a number is not written correctly",
-    "property-name-expected": "this is not valid JSON: a property name is missing",
-    "value-expected": "this is not valid JSON: a value is missing",
-    "colon-expected": "this is not valid JSON: a colon is missing",
-    "comma-expected": "this is not valid JSON: a comma is missing",
-    "close-brace-expected": "this is not valid JSON: a closing brace is missing",
-    "close-bracket-expected": "this is not valid JSON: a closing bracket is missing",
-    "end-of-file-expected": "this is not valid JSON: there is more after the end of the value",
-    "unexpected-end-of-comment": "this is not valid JSON: a comment is not closed",
-    "unexpected-end-of-string": "this is not valid JSON: a string is not closed",
-    "unexpected-end-of-number": "this is not valid JSON: a number is cut short",
-    "invalid-unicode": "this is not valid JSON: a \\u escape needs four hex digits",
-    "invalid-escape-character": "this is not valid JSON: an escape sequence is not valid",
-    "invalid-character": "this is not valid JSON: a string holds a character that must be escaped",
+    "comment": "comments aren't allowed",
+    "trailing-comma": "trailing commas aren't allowed",
+    "not-an-object": "the top level must be an object",
+    "invalid-symbol": "unexpected character",
+    "invalid-number-format": "invalid number",
+    "property-name-expected": "property name expected",
+    "value-expected": "value expected",
+    "colon-expected": "`:` expected",
+    "comma-expected": "`,` expected",
+    "close-brace-expected": "`}` expected",
+    "close-bracket-expected": "`]` expected",
+    "end-of-file-expected": "unexpected text after the end",
+    "unexpected-end-of-comment": "unclosed comment",
+    "unexpected-end-of-string": "unclosed string",
+    "unexpected-end-of-number": "number cut short",
+    "invalid-unicode": "`\\u` needs four hex digits",
+    "invalid-escape-character": "invalid escape",
+    "invalid-character": "character must be escaped",
 };
 
 const expectedWords: Record<Extract<ResolverProblem, { rule: "wrong-type" }>["expected"], string> =
@@ -55,37 +56,29 @@ const expectedWords: Record<Extract<ResolverProblem, { rule: "wrong-type" }>["ex
         array: "a list",
     };
 
-const foundWords: Record<DiagnosticDetailByKind["invalid-member"]["found"], string> = {
-    string: "a string",
-    number: "a number",
-    boolean: "true or false",
-    null: "null",
-    array: "a list",
-};
-
 const propertyWords: Record<DiagnosticDetailByKind["invalid-property"]["expected"], string> = {
     "string": "a string",
     "object": "an object",
     "boolean-or-string": "true, false or a string",
-    "reference": 'a reference, such as "{group}" or { "$ref": "#/group" }',
+    "reference": "a reference",
 };
 
-function noModifierNamed(name: string): string {
-    return `there is no modifier named \`${name}\``;
-}
-
-function inputWords(problem: InputProblem): string {
+function inputHeadline(problem: InputProblem): string {
     const { modifier } = problem;
     switch (problem.reason) {
         case "unknown-modifier":
-            return noModifierNamed(modifier);
+            return `no modifier named \`${modifier}\``;
         case "unknown-context":
-            return `\`${problem.context}\` is not a context of the modifier \`${modifier}\``;
+            return `\`${problem.context}\` is not a context of \`${modifier}\``;
         case "missing-modifier":
-            return `the input doesn't choose a context for the modifier \`${modifier}\`, which has no default: choose ${listed(problem.valid)}`;
+            return `no context chosen for \`${modifier}\``;
         case "not-a-string":
-            return `the input for the modifier \`${modifier}\` must be a string`;
+            return `the input for \`${modifier}\` must be a string`;
     }
+}
+
+function inputHelp(problem: InputProblem): string | undefined {
+    return problem.reason === "missing-modifier" ? `choose ${listed(problem.valid)}` : undefined;
 }
 
 function inputText(input: Input): string {
@@ -107,26 +100,20 @@ function listed(names: readonly string[], joiner: "or" | "and" = "or"): string {
 }
 
 const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) => string> = {
-    "version": () => 'the resolver\'s version must be "2025.10"',
+    "version": () => '`version` must be "2025.10"',
     "missing-property": (name) => `\`${name}\` is missing`,
-    "unknown-set": (name) => `there is no set named \`${name}\``,
-    "unknown-modifier": (name) => noModifierNamed(name),
-    "invalid-pointer": (name) => `\`${name}\` cannot be referred to from here`,
+    "unknown-set": (name) => `no set named \`${name}\``,
+    "unknown-modifier": (name) => `no modifier named \`${name}\``,
+    "invalid-pointer": (name) => `can't refer to \`${name}\` from here`,
     "circular-reference": (name) => `\`${name}\` leads back to itself`,
-    "resolver-as-source": (name) => `\`${name}\` is a resolver, and a source must hold tokens`,
-    "duplicate-name": (name) =>
-        `more than one set or modifier in the resolution order is named \`${name}\``,
-    "unknown-item-type": (name) =>
-        `\`${name}\` is not a kind of item: an item in the resolution order is a "set" or a "modifier"`,
-    "no-contexts": (name) => `the modifier \`${name}\` has no contexts`,
-    "empty-resolution-order": () =>
-        "`resolutionOrder` is empty: it needs at least one set or modifier",
-    "single-context": (name) =>
-        `the modifier \`${name}\` has only one context, which makes it a set`,
-    "invalid-default": (name) =>
-        `the default of the modifier \`${name}\` is not one of its contexts`,
-    "file-in-resolution-order": (name) =>
-        `\`${name}\` is a file, and an item in the resolution order is a set or a modifier`,
+    "resolver-as-source": (name) => `\`${name}\` is a resolver, not a token file`,
+    "duplicate-name": (name) => `duplicate name \`${name}\``,
+    "unknown-item-type": (name) => `\`${name}\` is not an item type`,
+    "no-contexts": (name) => `\`${name}\` has no contexts`,
+    "empty-resolution-order": () => "`resolutionOrder` is empty",
+    "single-context": (name) => `\`${name}\` has only one context`,
+    "invalid-default": (name) => `\`${name}\`'s default isn't one of its contexts`,
+    "file-in-resolution-order": (name) => `\`${name}\` is a file, not a set or modifier`,
 };
 
 export const thrownMessages = {
@@ -138,7 +125,7 @@ export const thrownMessages = {
     permutation: (detail: PermutationErrorDetail) =>
         detail.reason === "not-read"
             ? `\`${toInputLabel(detail.input)}\` was not built by this read`
-            : inputWords(detail),
+            : [inputHeadline(detail), inputHelp(detail)].filter(Boolean).join(": "),
     severalPermutations: ({ asked, modifiers, example }: SeveralPermutationsDetail) => {
         const named = `${modifiers.length === 1 ? "the modifier" : "the modifiers"} ${listed(modifiers, "and")}`;
         return `tokens.${asked} needs a permutation: this resolver has ${named}. Pick one with tokens.getPermutation(${inputText(example)}), or group them with groupPermutationsBy(tokens, …)`;
@@ -172,24 +159,27 @@ function pathWords(path: string): string {
     return path === "" ? "the top level" : `\`${path}\``;
 }
 
-const ownerWords = {
-    resolver: "the resolver",
-    set: "a set",
-    modifier: "a modifier",
-    token: "a token",
-    group: "a group",
+const ownerNames = {
+    resolver: "resolver",
+    set: "set",
+    modifier: "modifier",
+    token: "token",
+    group: "group",
 } as const;
+
+function filesWords(files: readonly string[]): string {
+    return listed(files, "and");
+}
 
 export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "file-not-found": {
         severity: "error",
-        message: ({ file }) => `the file \`${file}\` could not be read`,
+        message: ({ file }) => `can't read \`${file}\``,
     },
     "invalid-json": { severity: "error", message: ({ reason }) => jsonReasons[reason] },
     "duplicate-key": {
         severity: "warning",
-        message: ({ key }) =>
-            `\`${key}\` is written more than once in this object, and only the last is used`,
+        message: ({ key }) => `duplicate key \`${key}\``,
     },
     "resolver-invalid": {
         severity: "error",
@@ -197,18 +187,20 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
             detail.rule === "wrong-type"
                 ? `\`${detail.name}\` must be ${expectedWords[detail.expected]}`
                 : resolverRules[detail.rule](detail.name),
+        help: ({ rule }) => (rule === "unknown-item-type" ? 'use "set" or "modifier"' : undefined),
     },
     "input-invalid": {
         severity: "error",
-        message: inputWords,
+        message: inputHeadline,
+        help: inputHelp,
     },
     "invalid-name": {
         severity: "error",
-        message: ({ name, character }) => {
+        message: ({ character }) => {
             if (character === undefined) return "a name can't be empty";
             return character === "$"
-                ? `the name \`${name}\` starts with \`$\`, which is kept for the specification's own properties`
-                : `the name \`${name}\` contains \`${character}\`, which a name cannot contain`;
+                ? "a name can't start with `$`"
+                : `a name can't contain \`${character}\``;
         },
     },
     "token-and-group": {
@@ -216,38 +208,41 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         message: (detail) => {
             switch (detail.reason) {
                 case "child":
-                    return `\`${detail.child}\` is inside a token (it has a \`$value\`), and a token cannot hold tokens or groups`;
-                case "declared":
-                    return `this is a ${detail.here} here but a ${detail.here === "token" ? "group" : "token"} in another file`;
+                    return detail.found === "object"
+                        ? "a token can't contain other tokens"
+                        : `\`${detail.child}\` is not a token property`;
+                case "declared": {
+                    const other = detail.here === "token" ? "group" : "token";
+                    return `\`${detail.path}\` is a ${other} in ${filesWords(detail.otherFiles)}`;
+                }
                 case "ref":
-                    return `this has a \`$ref\`, which makes it a token, and a token cannot hold tokens or groups; to extend a group, use \`$extends\``;
+                    return "`$ref` doesn't extend a group";
             }
         },
     },
     "invalid-member": {
         severity: "error",
-        message: ({ name, found }) =>
-            `\`${name}\` is ${foundWords[found]}, and a group holds only tokens and groups, which are objects`,
+        message: ({ name }) => `\`${name}\` is not a token or group`,
     },
     "invalid-property": {
         severity: "error",
-        message: ({ property, expected, reference }) =>
-            `\`${property}\` must be ${propertyWords[expected]}${didYouMean(reference)}`,
+        message: ({ property, expected }) => `\`${property}\` must be ${propertyWords[expected]}`,
+        help: ({ reference }) => didYouMean(reference),
     },
     "missing-type": {
         severity: "error",
-        message: () => "no type can be worked out for this token",
+        message: () => "no `$type`",
     },
     "unknown-type": {
         severity: "error",
-        message: ({ type, similar }) =>
-            type === ""
-                ? "`$type` is empty, and a token needs a type"
-                : `\`${type}\` is not a token type${didYouMean(similar)}`,
+        message: ({ type }) =>
+            type === "" ? "`$type` is empty" : `\`${type}\` is not a token type`,
+        help: ({ similar }) => didYouMean(similar),
     },
     "invalid-value": {
         severity: "error",
         message: valueErrorMessage,
+        help: valueErrorHelpText,
     },
     "hex-string-color": {
         severity: "error",
@@ -256,92 +251,80 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "extension-invalid": {
         severity: "error",
-        message: ({ key }) => `the \`${key}\` extension is not valid`,
+        message: ({ key }) => `invalid \`${key}\` extension`,
     },
     "written-generated": {
         severity: "error",
-        message: ({ path, from, extension, written }) => {
-            const where = `on ${pathWords(from)}`;
-            const what = written === "token" ? "value" : "group";
-            return `\`${path}\` is made by \`${extension.join(".")}\` ${where}, so the ${what} written here is not used; change the extension instead`;
-        },
+        message: ({ path, from, extension }) =>
+            `\`${path}\` is made by \`${extension.join(".")}\` on ${pathWords(from)}`,
     },
     "missing-reference": {
         severity: "error",
-        message: ({ ref, similar }) => `\`${ref}\` does not exist${didYouMean(similar)}`,
+        message: ({ ref }) => `\`${ref}\` does not exist`,
+        help: ({ similar }) => didYouMean(similar),
     },
     "malformed-pointer": {
         severity: "error",
-        message: ({ ref, reason, corrected }) => {
-            const problem =
-                reason === "no-leading-slash"
-                    ? `\`${ref}\` is not a JSON Pointer, which starts with \`#/\``
-                    : `\`${ref}\` is not a JSON Pointer: in one, \`~\` is written \`~0\` and \`/\` is written \`~1\``;
-            return corrected === undefined ? problem : `${problem}; write it as \`${corrected}\``;
-        },
+        message: ({ ref, reason }) =>
+            reason === "no-leading-slash"
+                ? `\`${ref}\` is not a JSON Pointer`
+                : "`~` and `/` must be escaped",
+        help: ({ corrected }) => (corrected === undefined ? undefined : `write \`${corrected}\``),
     },
     "not-a-token": {
         severity: "error",
-        message: ({ ref }) => `\`${ref}\` is a group, and a reference must name a token`,
+        message: ({ ref }) => `\`${ref}\` is a group, not a token`,
     },
     "not-a-value": {
         severity: "error",
-        message: ({ ref, corrected }) =>
-            `\`${ref}\` reaches a token, not its value; write it as \`${corrected}\``,
+        message: () => "a `$ref` must point at a value",
+        help: ({ corrected }) => `write \`${corrected}\``,
     },
     "ref-and-value": {
         severity: "error",
-        message: () => "a token has `$ref` or `$value`, not both, so its `$ref` is not read",
+        message: () => "a token can't have both `$ref` and `$value`",
     },
     "reference-to-several": {
         severity: "error",
-        message: ({ ref, count }) =>
-            `\`${ref}\` holds ${count}, and a reference in a list stands for one`,
+        message: ({ ref }) => `\`${ref}\` is itself a list`,
     },
     "not-a-group": {
         severity: "error",
-        message: ({ ref }) => `\`${ref}\` is a token, and only a group can be extended`,
+        message: ({ ref }) => `\`${ref}\` is a token, not a group`,
     },
     "circular-reference": {
         severity: "error",
-        message: ({ chain }) =>
-            `these references lead back to where they started: ${chain.map(pathWords).join(", ")}`,
+        message: ({ chain }) => `circular reference through ${chain.map(pathWords).join(", ")}`,
     },
     "type-mismatch": {
         severity: "error",
-        message: ({ ref, expected, found }) =>
-            `\`${ref}\` is a ${found} token, where a ${expected} is needed`,
+        message: ({ ref, expected, found }) => `\`${ref}\` is a ${found}, not a ${expected}`,
     },
     "whitespace-in-name": {
         severity: "warning",
-        message: ({ name }) => `the name \`${name}\` starts or ends with a space`,
+        message: () => "a name can't start or end with a space",
     },
     "unknown-property": {
         severity: (detail) => ("jsonPath" in detail || detail.ignored ? "warning" : "error"),
         message: (detail) => {
             if ("jsonPath" in detail) return ignoredMessage(detail.type, detail.property);
-            const { property, owner, similar, ignored } = detail;
-            const notAProperty = `\`${property}\` is not a property of ${ownerWords[owner]}`;
-            if (ignored) return `${notAProperty}, so it is ignored`;
-            if (similar !== undefined) return `${notAProperty}${didYouMean(similar)}`;
-            if (owner === "resolver" || isSpecKey(property)) return notAProperty;
-            return `${notAProperty}: put your own data in \`$extensions\``;
+            return `\`${detail.property}\` is not a ${ownerNames[detail.owner]} property`;
         },
+        help: (detail) => ("jsonPath" in detail ? undefined : didYouMean(detail.similar)),
     },
     "misspelt-property": {
         severity: "error",
-        message: ({ written, property, owner }) =>
-            `\`${written}\` is not a ${owner} property; did you mean \`${property}\`?`,
+        message: ({ written, owner }) => `\`${written}\` is not a ${owner} property`,
+        help: ({ property }) => didYouMean(property),
     },
     "permutation-limit": {
         severity: "warning",
-        message: ({ count, limit, built }) =>
-            `the modifiers make ${count} combinations, more than the limit of ${limit}, so each context was built on its own instead: ${built} ${built === 1 ? "permutation" : "permutations"}`,
+        message: ({ count, limit }) =>
+            `too many combinations: ${count}, over the limit of ${limit}`,
     },
     "not-in-resolution-order": {
         severity: "hint",
-        message: ({ item, name }) =>
-            `the ${item} \`${name}\` is never read: nothing in \`resolutionOrder\` reaches it`,
+        message: ({ item, name }) => `the ${item} \`${name}\` is never used`,
     },
     "deprecated-reference": {
         severity: "warning",

@@ -22,7 +22,8 @@
       "kind": "token-and-group",
       "detail": {
         "reason": "child",
-        "child": "light"
+        "child": "light",
+        "found": "object"
       },
       "span": {
         "file": "tokens.json",

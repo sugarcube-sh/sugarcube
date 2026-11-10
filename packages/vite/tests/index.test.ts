@@ -214,7 +214,7 @@ describe("sugarcube's Vite plugin", () => {
         expect(await css("text-ink")).toContain("--color-ink: #111111");
         expect(await css("text-text")).not.toContain(".text-text");
         expect(logged.join("\n")).toContain(
-            "tokens/base.json:9:17  error  `color.inc` does not exist; did you mean `color.ink`?",
+            "tokens/base.json:9:17  error  `color.inc` does not exist  did you mean `color.ink`?",
         );
         expect(logged.join("\n")).toMatch(/\n1 error\.$/m);
         expect(overlays).toEqual([]);

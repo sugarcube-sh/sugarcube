@@ -8,7 +8,7 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Resolved aliases — replace with design tokens later */
+    /* Resolved aliases. Replace with design tokens later. */
     --sidebar: hsl(var(--sidebar-background));
     --sidebar-fg: hsl(var(--sidebar-foreground));
     --sidebar-primary-color: hsl(var(--sidebar-primary));

@@ -83,6 +83,13 @@ describe("problemLines", () => {
         ]);
     });
 
+    it("writes a problem's fix after its message, when it has one", () => {
+        const helped = { ...missing, help: "did you mean `color.ink`?" };
+        expect(problemLines([helped], where, { colors: false })).toStrictEqual([
+            "tokens/base.json:7:25  error  `color.inc` does not exist  did you mean `color.ink`?  missing-reference",
+        ]);
+    });
+
     it("sorts by file, then line and column, with the config's problems last", () => {
         const lines = problemLines([polyfill, darkOnly, missing, hex], where, { colors: false });
         expect(lines.map((line) => line.split(" ")[0])).toStrictEqual([
@@ -155,7 +162,12 @@ describe("problemLines", () => {
             ],
             docsUrl: "",
             permutations: themes("every permutation", { every: true }),
-            detail: { reason: "declared", here: "token" },
+            detail: {
+                reason: "declared",
+                here: "token",
+                path: "color.ink",
+                otherFiles: ["colors.json"],
+            },
         };
         expect(problemLines([conflict], where, { colors: false })).toStrictEqual([
             "tokens/dark.json:3:12  error  this is a token here but a group in another file  token-and-group",

@@ -4,10 +4,6 @@ import { ConfigError } from "./config-error.js";
 import { DEFAULT_CONFIG } from "./constants/config.js";
 import { checkConfig } from "./check-config.js";
 
-// ============================================
-// defineConfig — type-inferred config helper
-// ============================================
-
 /**
  * Define a sugarcube configuration with full type inference.
  *
@@ -25,10 +21,6 @@ import { checkConfig } from "./check-config.js";
 export function defineConfig(config: SugarcubeConfig): SugarcubeConfig {
     return config;
 }
-
-// ============================================
-// fillDefaultsCore — environment-agnostic defaults
-// ============================================
 
 /**
  * Default directories for path defaults. Callers in non-Node environments
@@ -96,10 +88,6 @@ export function fillDefaultsCore(userConfig: SugarcubeConfig, dirs: DefaultDirs)
 
     return internalConfig;
 }
-
-// ============================================
-// Validators
-// ============================================
 
 /**
  * Checks a configuration object against the settings sugarcube knows.

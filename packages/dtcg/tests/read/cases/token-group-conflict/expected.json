@@ -59,18 +59,22 @@
       "kind": "token-and-group",
       "detail": {
         "reason": "declared",
-        "here": "group"
+        "here": "group",
+        "path": "space.scale",
+        "otherFiles": [
+          "base.json"
+        ]
       },
       "span": {
         "file": "dark.json",
-        "valueAfter": "\"scale\":"
+        "text": "\"scale\""
       },
       "relatedInformation": [
         {
           "message": "declared as a token here",
           "span": {
             "file": "base.json",
-            "valueAfter": "\"scale\":"
+            "text": "\"scale\""
           },
           "path": "space.scale"
         }
@@ -86,18 +90,22 @@
       "kind": "token-and-group",
       "detail": {
         "reason": "declared",
-        "here": "token"
+        "here": "token",
+        "path": "radius",
+        "otherFiles": [
+          "base.json"
+        ]
       },
       "span": {
         "file": "dark.json",
-        "valueAfter": "\"radius\":"
+        "text": "\"radius\""
       },
       "relatedInformation": [
         {
           "message": "declared as a group here",
           "span": {
             "file": "base.json",
-            "valueAfter": "\"radius\":"
+            "text": "\"radius\""
           },
           "path": "radius"
         }

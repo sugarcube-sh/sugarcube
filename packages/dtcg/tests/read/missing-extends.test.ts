@@ -27,8 +27,8 @@ describe("a group's $extends to a group that isn't there", () => {
             color: { $type: "color", red: color(1) },
             brand: { $extends: "{colr}" },
         });
-        expect(missing(tokens).map(({ message }) => message)).toStrictEqual([
-            "`colr` does not exist; did you mean `color`?",
+        expect(missing(tokens).map(({ message, help }) => [message, help])).toStrictEqual([
+            ["`colr` does not exist", "did you mean `color`?"],
         ]);
     });
 

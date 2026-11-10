@@ -16,6 +16,7 @@ import type {
 export interface WrittenAt {
     source: number;
     span: Span;
+    nameSpan: Span;
 }
 
 export interface MergedToken extends SourceToken {
@@ -62,7 +63,12 @@ export function merge(
         diagnostics.found(
             diagnostic(
                 "token-and-group",
-                { reason: "declared", here: earlierIs === "token" ? "group" : "token" },
+                {
+                    reason: "declared",
+                    here: earlierIs === "token" ? "group" : "token",
+                    path,
+                    otherFiles: [...new Set(earlier.map(({ file }) => file))],
+                },
                 {
                     span: later,
                     path,
@@ -85,7 +91,7 @@ export function merge(
                 merged.order.add(group.path);
                 const token = merged.tokens.get(group.path);
                 if (token) {
-                    conflict(group.path, group.span, [token.span], "token");
+                    conflict(group.path, group.nameSpan, [token.nameSpan], "token");
                     merged.tokens.delete(group.path);
                 }
                 mergeGroup(merged.groups, group, source);
@@ -97,8 +103,8 @@ export function merge(
             if (group) {
                 conflict(
                     token.path,
-                    token.span,
-                    group.declaredIn.map(({ span }) => span),
+                    token.nameSpan,
+                    group.declaredIn.map(({ nameSpan }) => nameSpan),
                     "group",
                 );
                 removeGroup(merged, token.path);
@@ -106,7 +112,7 @@ export function merge(
             const earlier = merged.tokens.get(token.path);
             const replaces = earlier && [
                 ...(earlier.replaces ?? []),
-                { source: earlier.source, span: earlier.span },
+                { source: earlier.source, span: earlier.span, nameSpan: earlier.nameSpan },
             ];
             merged.tokens.set(token.path, { ...token, source, ...(replaces && { replaces }) });
         }
@@ -115,10 +121,10 @@ export function merge(
 }
 
 function mergeGroup(groups: Map<string, MergedGroup>, group: SourceGroup, source: number): void {
-    const { path, extends: extending, span, extensionsAt, ...properties } = group;
+    const { path, extends: extending, span, nameSpan, extensionsAt, ...properties } = group;
     const existing = groups.get(path) ?? { path, declaredIn: [] };
     mergeProperties(existing, properties);
-    existing.declaredIn.push({ source, span });
+    existing.declaredIn.push({ source, span, nameSpan });
     if (extensionsAt && properties.extensions) {
         const declared = { ...extensionsAt, source, group: path };
         const keys = Object.keys(properties.extensions).map((key) => [key, declared]);

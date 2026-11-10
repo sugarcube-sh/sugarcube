@@ -53,7 +53,7 @@ describe("generate command", () => {
 
             expect(result.exitCode).toBe(1);
             expect(result.stdout).toContain(
-                "tokens/base.json:8:17  error  `color.inc` does not exist; did you mean `color.ink`?  missing-reference",
+                "tokens/base.json:8:17  error  `color.inc` does not exist  did you mean `color.ink`?  missing-reference",
             );
             expect(result.stdout).toContain("1 error. No CSS was written.");
             expect(existsSync(join(testDir, "styles"))).toBe(false);
@@ -87,7 +87,9 @@ describe("generate command", () => {
             });
 
             expect(result.exitCode).toBe(0);
-            expect(result.stdout).toContain("warning  `paragraphSpacing` is not a property");
+            expect(result.stdout).toContain(
+                "warning  `paragraphSpacing` is not a typography property",
+            );
             expect(result.stdout).toContain("1 warning.");
             expect(existsSync(join(testDir, "styles/variables.gen.css"))).toBe(true);
         },

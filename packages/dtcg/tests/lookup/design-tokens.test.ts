@@ -101,19 +101,19 @@ describe("tokens.getPermutation", () => {
         [
             "throws for a modifier the resolver does not declare, saying which",
             () => tokens.getPermutation({ size: "large" }),
-            "there is no modifier named `size`",
+            "no modifier named `size`",
             { reason: "unknown-modifier", modifier: "size", valid: ["theme", "density"] },
         ],
         [
             "throws for a context that is not a string (Resolver 5.2)",
             () => tokens.getPermutation({ theme: 1 } as unknown as Input),
-            "the input for the modifier `theme` must be a string",
+            "the input for `theme` must be a string",
             { reason: "not-a-string", modifier: "theme" },
         ],
         [
             "throws for a context the modifier does not declare, saying which",
             () => tokens.getPermutation({ theme: "sepia" }),
-            "`sepia` is not a context of the modifier `theme`",
+            "`sepia` is not a context of `theme`",
             {
                 reason: "unknown-context",
                 modifier: "theme",
@@ -124,7 +124,7 @@ describe("tokens.getPermutation", () => {
         [
             "throws when a modifier with no default is left out, naming its contexts (Resolver 5)",
             () => noDefault.getPermutation(),
-            "the input doesn't choose a context for the modifier `theme`, which has no default: choose `light` or `dark`",
+            "no context chosen for `theme`: choose `light` or `dark`",
             { reason: "missing-modifier", modifier: "theme", valid: ["light", "dark"] },
         ],
         [

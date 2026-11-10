@@ -1529,8 +1529,20 @@ export interface DiagnosticDetailByKind {
      * if it extended a group, which is `$extends`'s job.
      */
     "token-and-group":
-        | { readonly reason: "child"; readonly child: string }
-        | { readonly reason: "declared"; readonly here: "token" | "group" }
+        | {
+              readonly reason: "child";
+              readonly child: string;
+              /** The kind of JSON in `child`, such as `"number"` for `"alpha": 0`. */
+              readonly found: "string" | "number" | "boolean" | "null" | "array" | "object";
+          }
+        | {
+              readonly reason: "declared";
+              readonly here: "token" | "group";
+              /** The token or group, such as `"color.blue"`. */
+              readonly path: string;
+              /** The files that write it the other way, such as `["base.json"]`. */
+              readonly otherFiles: readonly string[];
+          }
         | { readonly reason: "ref"; readonly ref: string };
     /** Something in a group isn't an object, such as `"x": "red"`. */
     "invalid-member": {
@@ -1874,7 +1886,10 @@ export type DiagnosticOf<DetailByKind> = {
     [K in keyof DetailByKind]: {
         readonly kind: K;
         readonly severity: "error" | "warning" | "info" | "hint";
+        /** What's wrong, in a few words, such as `` "`color.primry` does not exist" ``. */
         readonly message: string;
+        /** How to fix it, when there's a clear way, such as `` "did you mean `color.primary`?" ``. */
+        readonly help?: string;
         /** Where the problem is, when it is in a file. */
         readonly span?: Span;
         /** The token or group it concerns. */
@@ -2321,6 +2336,8 @@ export interface ValueError {
      */
     jsonPath: JsonPath;
     message: string;
+    /** How to fix it, when there's a clear way, such as `` "use `px` or `rem`" ``. */
+    help?: string;
     /** Why, with the facts behind the message. */
     detail: ValueErrorDetail;
 }
@@ -2439,8 +2456,9 @@ export interface GeneratedToken {
 /**
  * Your extension's messages, one for each reason.
  *
- * Each takes the reason's facts and returns the message. Write them as dtcg does. Start lowercase,
- * and leave off the full stop and the place.
+ * Each takes the reason's facts and returns the message. To add how to fix it, return
+ * `{ message, help }`. Write them as dtcg does. Start lowercase, and leave off the full stop and
+ * the place.
  *
  * @example
  * // Two reasons
@@ -2449,8 +2467,12 @@ export interface GeneratedToken {
  *         `a ratio of ${ratio} makes a flat or shrinking scale`,
  *     "no-multipliers": () => "`multipliers` must name at least one step",
  * }
+
  */
-export type ExtensionMessages = Record<string, (data: any) => string>;
+export type ExtensionMessages = Record<
+    string,
+    (data: any) => string | { readonly message: string; readonly help?: string }
+>;
 
 /**
  * A problem with your extension, by its reason.

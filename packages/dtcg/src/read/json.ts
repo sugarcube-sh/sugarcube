@@ -151,6 +151,11 @@ export function propertyKey(node: Node, steps: readonly (string | number)[]): No
     return members(current).find(({ key }) => key === name)?.keyNode;
 }
 
+export function keyOf(node: Node): Node {
+    const { parent } = node;
+    return parent?.type === "property" ? (parent.children?.[0] ?? node) : node;
+}
+
 export function member(node: Node, key: string): Node | undefined {
     return members(node).find((each) => each.key === key)?.value;
 }

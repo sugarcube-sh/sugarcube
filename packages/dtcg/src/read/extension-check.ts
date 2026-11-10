@@ -11,7 +11,7 @@ import type {
 } from "../model.js";
 import { isJsonObject } from "../values/json.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
-import { type JsonFile, deepestNode, member, toSpan } from "./json.js";
+import { type JsonFile, deepestNode, member, keyOf, toSpan } from "./json.js";
 import { ignoredDiagnostic, valueDiagnostic } from "./value-diagnostic.js";
 import type { ExtensionsAt } from "./walk.js";
 
@@ -99,8 +99,9 @@ export function extensionDiagnostic(
         return ignoredDiagnostic(problem, jsonPath, where, { ...(path !== undefined && { path }) });
     }
     const found = deepestNode(node, problem.jsonPath);
+    const shown = found.type === "object" || found.type === "array" ? keyOf(found) : found;
     const extra: DiagnosticExtra = {
-        span: toSpan(json, found),
+        span: toSpan(json, shown),
         ...(path !== undefined && { path }),
     };
     if ("kind" in problem) return valueDiagnostic(problem.detail, jsonPath, found, extra);
@@ -114,10 +115,10 @@ export function extensionDiagnostic(
         );
     }
     const { reason, data } = problem;
-    const worded = messages && Object.hasOwn(messages, reason) && messages[reason];
+    const worded = messages && Object.hasOwn(messages, reason) && messages[reason]?.(data);
     return diagnostic(
         "extension-invalid",
         { key, jsonPath, reason, ...(data !== undefined && { data }) },
-        { ...extra, ...(worded && { message: worded(data) }) },
+        { ...extra, ...(typeof worded === "string" ? { message: worded } : worded) },
     );
 }

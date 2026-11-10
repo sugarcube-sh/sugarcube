@@ -84,8 +84,8 @@ export const init = new Command()
                     pending: "Detect existing tokens",
                     start: "Detecting existing tokens...",
                     end: hasExistingTokens
-                        ? `Existing design tokens found at ${tokensDir} — using those!`
-                        : "No existing design tokens found — prompting for starter kit",
+                        ? `Existing design tokens found at ${tokensDir}. Using those!`
+                        : "No existing design tokens found. Prompting for starter kit",
                     while: async () => {},
                 },
             ];

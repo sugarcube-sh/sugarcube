@@ -150,7 +150,10 @@ describe("what breaks a rule of the spec is an error, and what is set aside a wa
         const text = `{ "a": { "$type": "number", "$value": 1, "$root": { "$value": 2 } } }`;
         const tokens = readFromMemory({ files: { "tokens.json": text } });
         expect(problems(tokens)).toStrictEqual([
-            { kind: "token-and-group", detail: { reason: "child", child: "$root" } },
+            {
+                kind: "token-and-group",
+                detail: { reason: "child", child: "$root", found: "object" },
+            },
         ]);
     });
 
@@ -753,7 +756,7 @@ describe("a group referring to the whole document", () => {
             {
                 kind: "circular-reference",
                 detail: { chain: ["g", ""] },
-                message: "these references lead back to where they started: `g`, the top level",
+                message: "circular reference through `g`, the top level",
             },
         ]);
     });

@@ -104,7 +104,7 @@ export function Search({ onClose }: { onClose: () => void }) {
                                         {hits.length}
                                         {capped ? "+" : ""} match{hits.length === 1 ? "" : "es"}
                                     </span>
-                                    <span>↑↓ move — ↵ open</span>
+                                    <span>↑↓ to move, ↵ to open</span>
                                 </div>
                             )}
                         </>

@@ -90,8 +90,8 @@ export interface VariablesConfig {
         fluid?: FluidConfig;
         /**
          * Colors outside sRGB:
-         * - `"native"` — CSS color functions as-is
-         * - `"polyfill"` — generate fallbacks for older browsers
+         * - `"native"`: CSS color functions as-is
+         * - `"polyfill"`: generate fallbacks for older browsers
          */
         colorFallbackStrategy?: ColorFallbackStrategy;
     };

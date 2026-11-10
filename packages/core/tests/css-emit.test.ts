@@ -4,6 +4,7 @@ import { fillDefaults } from "../src/node/config/normalize.js";
 import { declare } from "../src/shared/css/declare.js";
 import { emitCSS } from "../src/shared/css/emit.js";
 import type { InternalConfig } from "../src/types/config.js";
+import type { Reported } from "../src/types/diagnostics.js";
 import { readOptions } from "../src/shared/read-options.js";
 
 type Variables = Parameters<typeof fillDefaults>[0]["variables"];
@@ -309,8 +310,7 @@ describe("emitCSS", () => {
                 severity: "error",
                 detail: { modifiers: ["brand"] },
                 docsUrl: "https://sugarcube.sh/errors/default-required",
-                message:
-                    "the modifier `brand` has no default, so there is nothing to write on `:root`: give it a `default` in the resolver, or list the permutations to write in `variables.permutations`",
+                message: "`brand` has no default",
             });
         });
 
@@ -350,7 +350,7 @@ describe("emitCSS", () => {
             readOptions(config),
         );
         expect(built(tokens, config).diagnostics.map(({ message }) => message)).toStrictEqual([
-            "the modifiers `brand` and `size` have no default, so there is nothing to write on `:root`: give them a `default` in the resolver, or list the permutations to write in `variables.permutations`",
+            "`brand` and `size` have no default",
         ]);
     });
 
@@ -777,8 +777,7 @@ describe("emitCSS", () => {
                         selector: ":root",
                         after: '[data-mode="dark"]',
                     },
-                    message:
-                        '`:root` is written after `[data-mode="dark"]` in `variables.css`, so it overrides it wherever both apply: list the default permutation first in `variables.permutations`',
+                    message: "the default isn't listed first",
                 }),
             ]);
         });
@@ -876,13 +875,17 @@ describe("emitCSS", () => {
         });
 
         it("reading the old name, propagateDependents, with a warning naming the new one", () => {
-            const renamed =
-                "`propagateDependents` is now `redeclareDependents`: rename it in your config; the old name stops working at 1.0";
+            const renamed = "`propagateDependents` is now `redeclareDependents`";
             const off = emitted({ propagateDependents: false });
             expect(off.files[0]?.css).toContain('[data-theme="dark"] {\n    --brand: #0ea5e9;\n}');
             expect(
-                off.diagnostics.map(({ kind, severity, message }) => [kind, severity, message]),
-            ).toStrictEqual([["option-renamed", "warning", renamed]]);
+                off.diagnostics.map(({ kind, severity, message, help }) => [
+                    kind,
+                    severity,
+                    message,
+                    help,
+                ]),
+            ).toStrictEqual([["option-renamed", "warning", renamed, undefined]]);
             expect(emitted({ propagateDependents: true }).files[0]?.css).toBe(cssFor(files));
             expect(emitted({}).diagnostics).toStrictEqual([]);
         });
@@ -1086,7 +1089,7 @@ describe("emitCSS", () => {
                 [
                     "option-deprecated",
                     "warning",
-                    '`colorFallbackStrategy: "polyfill"` is deprecated and will be removed in a later release',
+                    '`colorFallbackStrategy: "polyfill"` is deprecated',
                 ],
             ]);
         });
@@ -1106,14 +1109,15 @@ describe("emitCSS", () => {
             expect(
                 diagnostics
                     .filter(({ kind }) => kind === "fallback-missing")
-                    .map(({ kind, severity, path, message }) => [kind, severity, path, message]),
+                    .map(({ kind, severity, path, message, help }) => [
+                        kind,
+                        severity,
+                        path,
+                        message,
+                        help,
+                    ]),
             ).toStrictEqual([
-                [
-                    "fallback-missing",
-                    "warning",
-                    "deep",
-                    'this `lab` color needs a `hex` to fall back to when `colorFallbackStrategy` is `"polyfill"`: add one, or use `"native"` if every browser you support has `lab`',
-                ],
+                ["fallback-missing", "warning", "deep", "no `hex` fallback", undefined],
             ]);
         });
 
@@ -1253,7 +1257,7 @@ describe("emitCSS", () => {
 
     describe("reports as an error two tokens that make the same variable name", () => {
         const clash = (first: string, later: string, name: string) =>
-            `\`${first}\` and \`${later}\` both make \`${name}\`, so only \`${later}\`'s value is used: rename one`;
+            `\`${first}\` and \`${later}\` both make \`${name}\``;
         const problems = (files: Record<string, unknown>, variables: Variables = {}) => {
             const config = fillDefaults({ variables: { path: "variables.css", ...variables } });
             const texts = Object.fromEntries(
@@ -1543,11 +1547,7 @@ describe("emitCSS", () => {
             expect(
                 diagnostics.map(({ kind, severity, message }) => [kind, severity, message]),
             ).toStrictEqual([
-                [
-                    "unknown-property",
-                    "warning",
-                    "`paragraphSpacing` is not a property of a typography value, so it is ignored",
-                ],
+                ["unknown-property", "warning", "`paragraphSpacing` is not a typography property"],
             ]);
         });
 
@@ -1797,10 +1797,17 @@ describe("emitCSS", () => {
                     lineHeight: 1.5,
                 },
             });
-            const zoom = (from: number, to: number) =>
-                `this fluid size grows too fast to zoom to 200% on screens ${from}px to ${to}px wide (WCAG 1.4.4): bring \`min\` and \`max\` closer together`;
-            const warnings = (diagnostics: { kind: string; path?: string; message: string }[]) =>
-                diagnostics.map(({ kind, path, message }) => [kind, path, message]);
+            const zoom = (from: number, to: number) => ({
+                detail: { from, to },
+                message: "won't zoom to 200%",
+                help: undefined,
+            });
+            const warnings = (diagnostics: readonly Reported[]) =>
+                diagnostics.map(({ kind, path, detail, message, help }) => [
+                    kind,
+                    path,
+                    { detail, message, help },
+                ]);
 
             it("on the fluid size a typography token uses, followed through references", () => {
                 const { diagnostics } = read({
@@ -1900,13 +1907,7 @@ describe("emitCSS", () => {
             );
             expect(
                 diagnostics.map(({ kind, path, message }) => [kind, path, message]),
-            ).toStrictEqual([
-                [
-                    "unknown-property",
-                    "step",
-                    "`clamp` is not a property of a dimension, so it is ignored",
-                ],
-            ]);
+            ).toStrictEqual([["unknown-property", "step", "`clamp` is not a dimension property"]]);
         });
 
         it("reading a fluid range as the design tokens' values were read", () => {
@@ -1941,7 +1942,7 @@ describe("emitCSS", () => {
                 ["extension-invalid", "word", "`fluid` must be an object"],
                 ["extension-invalid", "off", "`fluid` must be an object"],
                 ["extension-invalid", "half", "the fluid range needs `max`"],
-                ["invalid-value", "text", expect.stringContaining("16px")],
+                ["invalid-value", "text", "a dimension can't be a string"],
             ]);
         });
     });

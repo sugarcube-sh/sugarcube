@@ -25,7 +25,7 @@ import {
     extensionDiagnostic,
 } from "./extension-check.js";
 import { diagnostic, type Problems } from "./diagnostics.js";
-import { type JsonFile, toSpan } from "./json.js";
+import { type JsonFile, keyOf, toSpan } from "./json.js";
 import { relatedMessages } from "../error-messages.js";
 import type { Merged, MergedToken } from "./merge.js";
 import { usableType } from "./walk.js";
@@ -217,6 +217,7 @@ function addedToken(
         valueAsWritten: $value,
         reference: parseReference($value),
         span: toSpan(json, node),
+        nameSpan: toSpan(json, keyOf(node)),
         source,
         generated,
         added: true,

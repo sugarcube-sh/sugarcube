@@ -16,11 +16,13 @@ export function diagnostic<K extends SugarcubeDiagnosticKind>(
     kind: K,
     detail: SugarcubeDiagnosticDetailByKind[K],
 ): SugarcubeDiagnostic {
-    const { severity, message } = ErrorMessages.DIAGNOSTICS[kind];
+    const { severity, message, help } = ErrorMessages.DIAGNOSTICS[kind];
+    const fix = help?.(detail);
     return {
         kind,
         severity,
         message: message(detail),
+        ...(fix !== undefined && { help: fix }),
         docsUrl: diagnosticDocs(kind),
         detail,
     } as SugarcubeDiagnostic;
@@ -35,10 +37,11 @@ export function aboutToken<K extends SugarcubeDiagnosticKind>(
 }
 
 export function located(tokens: DesignTokens, found: readonly AboutToken[]): SugarcubeDiagnostic[] {
-    return found.map(({ token, problem: { kind, severity, message, docsUrl, detail } }) => ({
+    return found.map(({ token, problem: { kind, severity, message, help, docsUrl, detail } }) => ({
         kind,
         severity,
         message,
+        ...(help !== undefined && { help }),
         path: token.path,
         span: getSpan(tokens, token.winningDefinition),
         docsUrl,

@@ -130,7 +130,7 @@ describe("generate --watch", () => {
             await until(() => output().includes("No CSS was written."), "the problem");
 
             expect(output()).toContain(
-                "tokens/base.json:8:17  error  `color.inc` does not exist; did you mean `color.ink`?",
+                "tokens/base.json:8:17  error  `color.inc` does not exist  did you mean `color.ink`?",
             );
             expect(text(variables())).toBe(before);
 
