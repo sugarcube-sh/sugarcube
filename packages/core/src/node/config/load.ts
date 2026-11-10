@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { createJiti } from "jiti";
 import { basename, dirname, relative, resolve } from "pathe";
 import { isObject } from "../../shared/checks.js";
@@ -88,7 +89,11 @@ async function importConfigFile(configFile: string): Promise<unknown> {
             interopDefault: true,
             moduleCache: false,
         });
-        const result = await jiti.import(configFile);
+        const result = await jiti.evalModule(await readFile(configFile, "utf8"), {
+            filename: configFile,
+            async: true,
+            forceTranspile: true,
+        });
         if (result && typeof result === "object" && "default" in result) return result.default;
         return isObject(result) && Object.keys(result).length === 0 ? undefined : result;
     } catch (error) {

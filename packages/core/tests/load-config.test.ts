@@ -211,6 +211,57 @@ describe("loadInternalConfig", () => {
     });
 });
 
+describe("loadInternalConfig, after a .js config is edited", () => {
+    let tempDir: string;
+
+    beforeEach(async () => {
+        tempDir = await mkdtemp(join(tmpdir(), "sugarcube-test-"));
+        vi.spyOn(process, "cwd").mockReturnValue(tempDir);
+    });
+
+    afterEach(async () => {
+        vi.restoreAllMocks();
+        await rm(tempDir, { recursive: true, force: true });
+    });
+
+    const projects = [
+        {
+            name: "an ES module project",
+            type: "module",
+            config: (path: string) =>
+                `export default { resolver: "./tokens.resolver.json", variables: { path: "${path}" } };`,
+        },
+        {
+            name: "a CommonJS project",
+            type: "commonjs",
+            config: (path: string) =>
+                `module.exports = { resolver: "./tokens.resolver.json", variables: { path: "${path}" } };`,
+        },
+    ];
+
+    it.for(projects)("reads the edit in $name", async ({ type, config }) => {
+        await writeFile(join(tempDir, "package.json"), JSON.stringify({ type }));
+        const file = join(tempDir, "sugarcube.config.js");
+        await writeFile(file, config("before.css"));
+        expect((await loadInternalConfig()).config.variables.path).toBe("before.css");
+
+        await writeFile(file, config("after.css"));
+        expect((await loadInternalConfig()).config.variables.path).toBe("after.css");
+    });
+
+    it.for(projects)("reports a syntax error the edit made in $name", async ({ type, config }) => {
+        await writeFile(join(tempDir, "package.json"), JSON.stringify({ type }));
+        const file = join(tempDir, "sugarcube.config.js");
+        await writeFile(file, config("before.css"));
+        await loadInternalConfig();
+
+        await writeFile(file, config("after.css").slice(0, -4));
+        await expect(loadInternalConfig()).rejects.toMatchObject({
+            issues: [{ reason: "not-loaded", file: "sugarcube.config.js" }],
+        });
+    });
+});
+
 describe("isNoConfigError", () => {
     it("is true when no config and no resolver were found", () => {
         expect(isNoConfigError(new ConfigError([{ reason: "no-resolver" }]))).toBe(true);
