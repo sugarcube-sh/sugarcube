@@ -328,3 +328,34 @@ describe("a reread of a token that points at one written after it", () => {
         expect(keptOnReread("other")).toBe(false);
     });
 });
+
+describe("a reread where two tokens point into each other's parts", () => {
+    const border = (fields: Record<string, unknown>) => ({
+        color: { colorSpace: "srgb", components: [0, 0, 0] },
+        width: { value: 1, unit: "px" },
+        style: "solid",
+        ...fields,
+    });
+    const untypedFiles = {
+        "tokens.resolver.json": oneSet("x.json", "t.json"),
+        "x.json": JSON.stringify({
+            x: { $value: border({ color: { $ref: "#/t/$value/color" } }) },
+        }),
+        "t.json": JSON.stringify({
+            t: { $type: "border", $value: border({ width: { $ref: "#/x/$value/width" } }) },
+        }),
+    };
+    const first = readFromMemory({ files: untypedFiles });
+    const second = first.reread({
+        "x.json": JSON.stringify({
+            x: { $type: "border", $value: border({ color: { $ref: "#/t/$value/color" } }) },
+        }),
+    });
+
+    it("links a token to the one it points into once that token has a type", () => {
+        const t = second.getPermutation().getToken("t");
+        const x = second.getPermutation().getToken("x");
+        expect(x).toBeDefined();
+        expect(t?.references[0]?.pointsToToken).toBe(x);
+    });
+});
