@@ -28,6 +28,22 @@ export function nodeAt(tokens: DesignTokens, { file, offset, length }: Span): No
     return node;
 }
 
+export function tokenAround(
+    tokens: DesignTokens,
+    file: string,
+    offset: number,
+): { offset: number; length: number } | undefined {
+    const tree = treeOf(tokens, file);
+    for (let node = tree && findNodeAtOffset(tree, offset); node; node = node.parent) {
+        const [, value] = node.type === "property" ? (node.children ?? []) : [];
+        const keys = value?.type === "object" ? (value.children ?? []) : [];
+        if (keys.some((member) => ["$value", "$ref"].includes(member.children?.[0]?.value))) {
+            return { offset: node.offset, length: node.length };
+        }
+    }
+    return undefined;
+}
+
 export function memberOf(tokens: DesignTokens, place: Definition): Member {
     return {
         span: getSpan(tokens, place),

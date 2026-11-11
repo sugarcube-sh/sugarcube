@@ -156,6 +156,10 @@ export function keyOf(node: Node): Node {
     return parent?.type === "property" ? (parent.children?.[0] ?? node) : node;
 }
 
+export function markedNode(node: Node): Node {
+    return node.type === "object" || node.type === "array" ? keyOf(node) : node;
+}
+
 export function member(node: Node, key: string): Node | undefined {
     return members(node).find((each) => each.key === key)?.value;
 }
@@ -167,7 +171,7 @@ export function child(node: Node, step: string | number): Node | undefined {
     return arrayIndex.test(String(step)) ? node.children?.[Number(step)] : undefined;
 }
 
-function findLineStarts(text: string): number[] {
+export function findLineStarts(text: string): number[] {
     const starts = [0];
     for (let i = 0; i < text.length; i++) {
         const code = text.charCodeAt(i);

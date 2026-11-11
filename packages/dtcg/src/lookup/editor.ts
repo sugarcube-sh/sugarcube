@@ -8,7 +8,8 @@ import type {
     Span,
 } from "../model.js";
 import { findNodeAtLocation, parse } from "jsonc-parser";
-import { findJsonPath, getTree } from "./json-path.js";
+import { findJsonPath, findNode, getTree } from "./json-path.js";
+import { findLineStarts, keyOf, toSpan } from "../read/json.js";
 
 export const SPAN_OF = Symbol.for("@sugarcube-sh/dtcg/span-of");
 
@@ -35,6 +36,28 @@ export function getSpan(tokens: DesignTokens, definitionOrReference: Definition 
     return (tokens as unknown as { [SPAN_OF](of: Definition | Reference): Span })[SPAN_OF](
         definitionOrReference,
     );
+}
+
+/**
+ * Finds the name a definition is written under.
+ *
+ * {@link getSpan} covers the whole definition. This covers only its name, such as `"background"`.
+ *
+ * @param tokens - Tokens from the read that gave you the definition.
+ * @param definition - Such as `token.winningDefinition`.
+ * @throws An `Error` if it came from a read of different text.
+ *
+ * @example
+ * // The text of button.background's name
+ * const name = getNameSpan(tokens, light.getToken("button.background")!.winningDefinition);
+ * tokens.getText(name.file)?.slice(name.offset, name.offset + name.length)
+ * // => '"background"'
+ */
+export function getNameSpan(tokens: DesignTokens, definition: Definition): Span {
+    const span = getSpan(tokens, definition);
+    const name = keyOf(findNode(tokens, span));
+    const lineStarts = findLineStarts(tokens.getText(span.file) ?? "");
+    return toSpan({ path: span.file, lineStarts }, name);
 }
 
 /**

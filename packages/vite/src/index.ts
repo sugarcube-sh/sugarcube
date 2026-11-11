@@ -11,7 +11,7 @@ import {
     cssFrom,
     isConfigFile,
     loadInternalConfig,
-    problemsText,
+    problemBlocks,
     tokensOnDisk,
 } from "@sugarcube-sh/core";
 import type { DesignTokens } from "@sugarcube-sh/dtcg";
@@ -101,19 +101,19 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
     const logUnexpected = (error: unknown) =>
         logger?.error(`[sugarcube] ${error instanceof Error ? error.message : String(error)}`);
 
-    const toTerminalText = (problems: Reported[]) =>
-        problemsText(problems, {
+    const toTerminalBlocks = (problems: Reported[]) =>
+        problemBlocks(problems, {
             cwd: root,
             entryFile: tokensOnDisk(loaded.config, root).entryFile,
             configFile: loaded.configFile,
+            tokens,
         });
 
     const report = () => {
-        const problems = getProblems();
-        if (problems.length === 0) return;
-        const text = toTerminalText(problems);
-        if (hasErrors(problems)) logger?.error(text);
-        else logger?.warn(text);
+        for (const { severity, text } of toTerminalBlocks(getProblems())) {
+            if (severity === "error") logger?.error(text);
+            else logger?.warn(text);
+        }
     };
 
     const makeCSSFrom = (next: DesignTokens): boolean => {
@@ -242,7 +242,9 @@ export default async function sugarcubePlugin(options: SugarcubePluginOptions = 
             buildStart() {
                 const problems = getProblems();
                 if (problems.length === 0) return;
-                const text = toTerminalText(problems);
+                const text = toTerminalBlocks(problems)
+                    .map((block) => block.text)
+                    .join("\n\n");
                 if (hasErrors(problems)) this.error(text);
                 this.warn(text);
             },

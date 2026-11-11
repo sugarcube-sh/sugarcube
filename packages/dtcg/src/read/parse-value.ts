@@ -19,7 +19,7 @@ import {
     readSlot,
     readToken,
 } from "../values/read-syntax.js";
-import { deepestNode, toSpan } from "./json.js";
+import { deepestNode, markedNode, toSpan } from "./json.js";
 import type { MergedToken } from "./merge.js";
 import { type Occurrence, occurrence } from "./occurrence.js";
 
@@ -107,7 +107,7 @@ function ignoredToDiagnostic(token: MergedToken, ignored: IgnoredProperty): Diag
 function toDiagnostic(token: MergedToken, error: ValueError): Diagnostic {
     const { json, value, path } = token;
     const node = deepestNode(value, error.jsonPath.slice(1));
-    const span = toSpan(json, node);
+    const span = toSpan(json, markedNode(node));
     const extra: DiagnosticExtra = { span, path };
     return valueDiagnostic(error.detail, error.jsonPath, node, extra);
 }

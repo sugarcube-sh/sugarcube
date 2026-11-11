@@ -1,33 +1,32 @@
-import { type Span, getFilePath } from "@sugarcube-sh/dtcg";
+import { type DesignTokens, type Span, getFilePath, getSourceLine } from "@sugarcube-sh/dtcg";
 import { relative } from "pathe";
 import color from "picocolors";
 import type { Reported } from "../types/diagnostics.js";
 import { plural } from "./plural.js";
 
-type Colors = ReturnType<typeof color.createColors>;
-
 export interface Where {
     cwd: string;
     entryFile: string;
     configFile?: string;
+    tokens?: DesignTokens;
 }
 
 interface Placed {
     problem: Reported;
-    place: string;
     location?: { file: string; line: number; column: number };
 }
 
-interface Word {
+export interface ProblemBlock {
+    severity: Reported["severity"];
     text: string;
-    apart?: boolean;
-    dim?: boolean;
 }
 
 interface Look {
     colors?: boolean;
     width?: number;
 }
+
+const LINE_WIDTH = 100;
 
 export function problemsText(
     problems: readonly Reported[],
@@ -38,47 +37,58 @@ export function problemsText(
     const count = problemCount(problems);
     const failed = problems.some(({ severity }) => severity === "error");
     const last = failed && ending ? `${count} ${ending}` : count;
-    return [...problemLines(problems, where, look), "", last].join("\n");
+    const blocks = problemBlocks(problems, where, look).map(({ text }) => text);
+    return [...blocks, last].join("\n\n");
 }
 
-export function problemLines(
+export function problemBlocks(
     problems: readonly Reported[],
     where: Where,
     { colors: colored, width }: Look = {},
-): string[] {
+): ProblemBlock[] {
     const colors = colored === undefined ? color : color.createColors(colored);
-    const placed = problems.map((problem) => placedIn(problem, where)).sort(byPlace);
-    const placeWidth = Math.max(...placed.map(({ place }) => place.length));
-    const severityWidth = Math.max(...problems.map(({ severity }) => severity.length));
-    const indent = placeWidth + 2 + severityWidth + 2;
+    const files = where.tokens?.toMemory().files;
     const tint: Record<Reported["severity"], (text: string) => string> = {
         error: colors.red,
         warning: colors.yellow,
         info: colors.cyan,
         hint: colors.cyan,
     };
-    return placed.flatMap(({ problem, place }) => {
-        const held = problem.permutations;
-        const some = held && held.length > 0 && held.others.length > 0 ? held.label : undefined;
-        const words: Word[] = [
-            ...problem.message.split(" ").map((text) => ({ text })),
-            ...(problem.help ?? "")
-                .split(" ")
-                .filter(Boolean)
-                .map((text, index) => ({ text, apart: index === 0 })),
-            ...(some ? [{ text: `in ${some}`, apart: true, dim: true }] : []),
-            { text: problem.kind, apart: true, dim: true },
-        ];
-        const available = width === undefined ? undefined : width - indent;
-        const padding = " ".repeat(severityWidth - problem.severity.length);
-        const head = `${place.padEnd(placeWidth)}  ${tint[problem.severity](problem.severity)}${padding}  `;
-        const related = (problem.relatedInformation ?? []).map(
-            ({ message, span }) => `${placeOf(span, where).place}  ${colors.dim(message)}`,
-        );
-        return [...wrapped(words, colors, available), ...related].map(
-            (line, index) => (index === 0 ? head : " ".repeat(indent)) + line,
-        );
-    });
+    const placeText = (span: Span | undefined) => {
+        if (span) {
+            const { file, line, column } = locationOf(span, where);
+            return colors.cyan(file) + colors.yellow(`:${line}:${column}`);
+        }
+        const { cwd, configFile } = where;
+        return configFile ? colors.cyan(relative(cwd, configFile)) : "";
+    };
+    return problems
+        .map((problem) => ({
+            problem,
+            ...(problem.span && { location: locationOf(problem.span, where) }),
+        }))
+        .sort(byPlace)
+        .map(({ problem }: Placed) => {
+            const { span, severity, kind, help } = problem;
+            const place = placeText(span);
+            const heading = tint[severity](severity) + colors.gray(`[${kind}]`);
+            const permutations = permutationsNamed(problem, where.tokens);
+            const written = span && files?.[span.file];
+            const frame =
+                span && written !== undefined
+                    ? sourceLines(span, written, help, tint[severity], width)
+                    : helpLines(help);
+            const related = (problem.relatedInformation ?? []).map(
+                ({ message, span: at }) => `  ${placeText(at)}  ${message}`,
+            );
+            const text = [
+                place ? `${place}  ${heading}` : heading,
+                `  ${problem.message}${permutations ? ` in ${permutations}` : ""}`,
+                ...frame,
+                ...related,
+            ].join("\n");
+            return { severity, text };
+        });
 }
 
 export function problemCount(problems: readonly Reported[]): string {
@@ -91,43 +101,67 @@ export function problemCount(problems: readonly Reported[]): string {
     return `${counted.join(" and ")}.`;
 }
 
-function placedIn(problem: Reported, where: Where): Placed {
-    const { span } = problem;
-    if (span) return { problem, ...placeOf(span, where) };
-    const { cwd, configFile } = where;
-    return { problem, place: configFile ? relative(cwd, configFile) : "" };
+function permutationsNamed(
+    problem: Reported,
+    tokens: DesignTokens | undefined,
+): string | undefined {
+    const { permutations, span } = problem;
+    if (!permutations || permutations.length === 0) return undefined;
+    if (span && tokens) {
+        const reading = tokens.getPermutationsReading(span.file);
+        return permutations.label === reading.label ? undefined : permutations.label;
+    }
+    return permutations.others.length > 0 ? permutations.label : undefined;
 }
 
-function placeOf(span: Span, { cwd, entryFile }: Where): Pick<Placed, "place" | "location"> {
+function helpLines(help: string | undefined): string[] {
+    return help === undefined ? [] : [`  help: ${help}`];
+}
+
+function sourceLines(
+    span: Span,
+    text: string,
+    help: string | undefined,
+    tint: (text: string) => string,
+    width: number | undefined,
+): string[] {
+    const source = getSourceLine(span, text);
+    const number = String(source.line);
+    const gutter = `  ${number} | `;
+    const blank = `  ${" ".repeat(number.length)} | `;
+    const shown = visiblePart(source, (width ?? LINE_WIDTH) - gutter.length);
+    const indent = " ".repeat(shown.column - 1);
+    const carets = "^".repeat(shown.length);
+    const line = `${gutter}${shown.text}`;
+    const marker = `${blank}${indent}${tint(carets)}`;
+    if (help === undefined) return [line, marker];
+    const fits = width === undefined || `${blank}${indent}${carets} ${help}`.length <= width;
+    return fits ? [line, `${marker} ${help}`] : [line, marker, `${blank}${indent}${help}`];
+}
+
+function visiblePart(
+    source: { text: string; column: number; length: number },
+    room: number,
+): { text: string; column: number; length: number } {
+    const { text, column, length } = source;
+    if (text.length <= room) return source;
+    const start = Math.max(0, Math.min(column - 1 - Math.floor(room / 3), text.length - room));
+    const end = start + room;
+    let shown = text.slice(start, end);
+    if (start > 0) shown = `…${shown.slice(1)}`;
+    if (end < text.length) shown = `${shown.slice(0, -1)}…`;
+    const at = column - start;
+    return { text: shown, column: at, length: Math.max(1, Math.min(length, room - at)) };
+}
+
+function locationOf(span: Span, { cwd, entryFile }: Where) {
     const file = relative(cwd, getFilePath(entryFile, span.file));
     const { line, column } = span.start;
-    return { place: `${file}:${line}:${column}`, location: { file, line, column } };
+    return { file, line, column };
 }
 
 function byPlace({ location: a }: Placed, { location: b }: Placed): number {
     if (!a || !b) return Number(!a) - Number(!b);
     if (a.file !== b.file) return a.file < b.file ? -1 : 1;
     return a.line - b.line || a.column - b.column;
-}
-
-function wrapped(words: Word[], colors: Colors, available: number | undefined): string[] {
-    const lines: string[] = [];
-    let line = "";
-    let length = 0;
-    for (const { text, apart, dim } of words) {
-        let gap = length === 0 ? "" : apart ? "  " : " ";
-        if (
-            available !== undefined &&
-            length > 0 &&
-            length + gap.length + text.length > available
-        ) {
-            lines.push(line);
-            line = "";
-            length = 0;
-            gap = "";
-        }
-        line += gap + (dim ? colors.dim(text) : text);
-        length += gap.length + text.length;
-    }
-    return [...lines, line];
 }

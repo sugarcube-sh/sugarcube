@@ -407,7 +407,7 @@ function workingOut(
             const own = inherited(token, merged, "type");
             if (own === "unusable") return "untyped";
             if (own === undefined) {
-                report("missing-type", {}, token.path, token.span);
+                report("missing-type", {}, token.path, token.nameSpan);
                 return "untyped";
             }
             type = own;
@@ -421,7 +421,7 @@ function workingOut(
             if (followed.kind === "part") {
                 type ??= groupType(token);
                 if (type === undefined) {
-                    report("missing-type", {}, token.path, token.span);
+                    report("missing-type", {}, token.path, token.nameSpan);
                     return "untyped";
                 }
             } else {

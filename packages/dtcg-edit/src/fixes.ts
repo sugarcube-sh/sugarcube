@@ -4,7 +4,7 @@ import { type Node, getNodeValue } from "jsonc-parser";
 import { fixTitles } from "./error-messages.js";
 import type { Fix, TextEdit } from "./index.js";
 import { inline, refString, removal, spliced } from "./json-text.js";
-import { nodeAt } from "./file-text.js";
+import { nodeAt, tokenAround } from "./file-text.js";
 import { getDiagnosticsAt } from "@sugarcube-sh/dtcg/editor";
 
 /**
@@ -154,9 +154,12 @@ function readsClean(tokens: DesignTokens, edits: readonly TextEdit[]): boolean {
     if (!first) return true;
     const { file } = first;
     const after = tokens.reread({ [file]: spliced(tokens.getText(file) ?? "", edits) });
-    const start = Math.min(...edits.map(({ offset }) => offset));
+    const edited = Math.min(...edits.map(({ offset }) => offset));
+    const token = tokenAround(tokens, file, edited);
+    const start = Math.min(edited, token?.offset ?? edited);
     const grown = edits.reduce((acc, { length, text }) => acc + text.length - length, 0);
-    const end = Math.max(...edits.map(({ offset, length }) => offset + length)) + grown;
+    const editedEnd = Math.max(...edits.map(({ offset, length }) => offset + length));
+    const end = Math.max(editedEnd, token ? token.offset + token.length : editedEnd) + grown;
     return getDiagnosticsAt(after, { file, offset: start, length: end - start }).length === 0;
 }
 

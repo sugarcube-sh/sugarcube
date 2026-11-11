@@ -1,1 +1,1 @@
-export { getDiagnosticsAt, getJsonAt, getJsonPath, getSpan } from "./lookup/editor.js";
+export { getDiagnosticsAt, getJsonAt, getJsonPath, getNameSpan, getSpan } from "./lookup/editor.js";

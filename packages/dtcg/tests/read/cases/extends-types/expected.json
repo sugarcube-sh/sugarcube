@@ -89,10 +89,7 @@
     {
       "kind": "missing-type",
       "detail": {},
-      "span": {
-        "file": "tokens.json",
-        "valueAfter": "\"x\":"
-      },
+      "span": { "file": "tokens.json", "text": "\"x\"" },
       "path": "palette.x"
     }
   ]

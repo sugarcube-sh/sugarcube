@@ -74,10 +74,7 @@
         "reason": "missing-property",
         "property": "lineHeight"
       },
-      "span": {
-        "file": "tokens.json",
-        "valueAfter": "\"text\": {\n    \"$type\": \"typography\",\n    \"$value\":"
-      },
+      "span": { "file": "tokens.json", "text": "\"$value\"", "occurrence": 3 },
       "path": "text"
     },
     {

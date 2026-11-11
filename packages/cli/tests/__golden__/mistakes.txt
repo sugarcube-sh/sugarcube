@@ -1,94 +1,186 @@
 ## a-theme-turns-a-token-into-a-group
-dark.json:3:5  error  `color.ink` is a token in `base.json`  in theme: dark  token-and-group
-                      base.json:4:5  declared as a token here
+dark.json:3:5  error[token-and-group]
+  `color.ink` is a token in `base.json`
+  3 |     "ink": {
+    |     ^^^^^
+  base.json:4:5  declared as a token here
+
 1 error.
 
 ## colour-as-a-name
-base.json:5:17  error  a color can't be a string  write an object with `colorSpace` and `components`  invalid-value
+base.json:5:17  error[invalid-value]
+  a color can't be a string
+  5 |       "$value": "red"
+    |                 ^^^^^ write an object with `colorSpace` and `components`
+
 1 error.
 
 ## description-misspelt
-base.json:6:7  error  `$descripton` is not a token property  did you mean `$description`?  misspelt-property
+base.json:6:7  error[misspelt-property]
+  `$descripton` is not a token property
+  6 |       "$descripton": "body text"
+    |       ^^^^^^^^^^^^^ did you mean `$description`?
+
 1 error.
 
 ## dimension-as-a-string
-base.json:5:17  error  a dimension can't be a string  write `{ "value": 16, "unit": "px" }`  invalid-value
+base.json:5:17  error[invalid-value]
+  a dimension can't be a string
+  5 |       "$value": "16px"
+    |                 ^^^^^^ write `{ "value": 16, "unit": "px" }`
+
 1 error.
 
 ## key-written-twice
-base.json:5:5  warning  duplicate key `ink`  duplicate-key
-                        base.json:4:5  also written here
+base.json:5:5  warning[duplicate-key]
+  duplicate key `ink`
+  5 |     "ink": { "$value": "#111111" }
+    |     ^^^^^
+  base.json:4:5  also written here
+
 1 warning.
 
 ## no-type-anywhere
-base.json:3:11  error  no `$type`  missing-type
+base.json:3:5  error[missing-type]
+  no `$type`
+  3 |     "sm": {
+    |     ^^^^
+
 1 error.
 
 ## reference-misspelt
-base.json:11:17  error  `color.inc` does not exist  did you mean `color.ink`?  missing-reference
+base.json:11:17  error[missing-reference]
+  `color.inc` does not exist
+  11 |       "$value": "{color.inc}"
+     |                 ^^^^^^^^^^^^^ did you mean `color.ink`?
+
 1 error.
 
 ## reference-to-a-group
-base.json:11:17  error  `color` is a group, not a token  not-a-token
+base.json:11:17  error[not-a-token]
+  `color` is a group, not a token
+  11 |       "$value": "{color}"
+     |                 ^^^^^^^^^
+
 1 error.
 
 ## reference-without-braces
-base.json:11:17  error  a color can't be a string  did you mean `{color.ink}`?  invalid-value
+base.json:11:17  error[invalid-value]
+  a color can't be a string
+  11 |       "$value": "color.ink"
+     |                 ^^^^^^^^^^^ did you mean `{color.ink}`?
+
 1 error.
 
 ## references-in-a-circle
-base.json:5:17  error  circular reference through `color.a`, `color.b`, `color.a`  circular-reference
-                       base.json:8:17  part of the same loop
+base.json:5:17  error[circular-reference]
+  circular reference through `color.a`, `color.b`, `color.a`
+  5 |       "$value": "{color.b}"
+    |                 ^^^^^^^^^^^
+  base.json:8:17  part of the same loop
+
 1 error.
 
 ## resolver-names-a-missing-file
-tokens.resolver.json:12:19  error  can't read `colours.json`  file-not-found
+tokens.resolver.json:12:19  error[file-not-found]
+  can't read `colours.json`
+  12 |           "$ref": "colours.json"
+     |                   ^^^^^^^^^^^^^^
+
 1 error.
 
 ## three-digit-hex
-base.json:5:17  error  a hex color needs six digits  write `#ffffff`  invalid-value
+base.json:5:17  error[invalid-value]
+  a hex color needs six digits
+  5 |       "$value": "#fff"
+    |                 ^^^^^^ write `#ffffff`
+
 1 error.
 
 ## trailing-comma
-base.json:4:35  error  trailing commas aren't allowed  invalid-json
+base.json:4:35  error[invalid-json]
+  trailing commas aren't allowed
+  4 |     "ink": { "$value": "#000000" },
+    |                                   ^
+
 1 error.
 
 ## two-tokens-one-variable
-base.json:11:18  error  `color.brand-primary` and `color.brand.primary` both make `--color-brand-primary`  same-variable-name
+base.json:11:7  error[same-variable-name]
+  `color.brand-primary` and `color.brand.primary` both make `--color-brand-primary`
+  11 |       "primary": {
+     |       ^^^^^^^^^
+
 1 error.
 
 ## type-misspelt
-base.json:3:14  error  `colour` is not a token type  did you mean `color`?  unknown-type
+base.json:3:14  error[unknown-type]
+  `colour` is not a token type
+  3 |     "$type": "colour",
+    |              ^^^^^^^^ did you mean `color`?
+
 1 error.
 
 ## type-without-dollar
-base.json:3:5  error  `type` is not a group property  did you mean `$type`?  misspelt-property
+base.json:3:5  error[misspelt-property]
+  `type` is not a group property
+  3 |     "type": "color",
+    |     ^^^^^^ did you mean `$type`?
+
 1 error.
 
 ## typography-missing-a-property
-base.json:5:17  error  a typography value needs `lineHeight`  invalid-value
+base.json:5:7  error[invalid-value]
+  a typography value needs `lineHeight`
+  5 |       "$value": {
+    |       ^^^^^^^^
+
 1 error.
 
 ## unit-not-allowed
-base.json:7:17  error  `pt` is not a dimension unit  use `px` or `rem`  invalid-value
+base.json:7:17  error[invalid-value]
+  `pt` is not a dimension unit
+  7 |         "unit": "pt"
+    |                 ^^^^ use `px` or `rem`
+
 1 error.
 
 ## unknown-dollar-name
-base.json:6:7  error  `$figmaId` is not a token property  unknown-property
+base.json:6:7  error[unknown-property]
+  `$figmaId` is not a token property
+  6 |       "$figmaId": "123"
+    |       ^^^^^^^^^^
+
 1 error.
 
 ## value-in-capitals
-base.json:5:7  error  `$Value` is not a token property  did you mean `$value`?  misspelt-property
+base.json:5:7  error[misspelt-property]
+  `$Value` is not a token property
+  5 |       "$Value": {
+    |       ^^^^^^^^ did you mean `$value`?
+
 1 error.
 
 ## value-misspelt
-base.json:5:7  error  `$vlaue` is not a token property  did you mean `$value`?  misspelt-property
+base.json:5:7  error[misspelt-property]
+  `$vlaue` is not a token property
+  5 |       "$vlaue": {
+    |       ^^^^^^^^ did you mean `$value`?
+
 1 error.
 
 ## value-without-dollar
-base.json:5:7  error  `value` is not a token property  did you mean `$value`?  misspelt-property
+base.json:5:7  error[misspelt-property]
+  `value` is not a token property
+  5 |       "value": {
+    |       ^^^^^^^ did you mean `$value`?
+
 1 error.
 
 ## value-without-dollar-and-a-theme
-base.json:5:7  error  `value` is not a token property  did you mean `$value`?  misspelt-property
+base.json:5:7  error[misspelt-property]
+  `value` is not a token property
+  5 |       "value": {
+    |       ^^^^^^^ did you mean `$value`?
+
 1 error.
