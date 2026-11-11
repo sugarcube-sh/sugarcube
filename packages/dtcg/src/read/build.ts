@@ -4,6 +4,8 @@ import type {
     DiagnosticDetailByKind,
     DiagnosticKind,
     Group,
+    Input,
+    JsonPath,
     ParseResult,
     Permutation,
     Definition,
@@ -46,9 +48,26 @@ import { type Resolving, UNRESOLVED, resolveValue } from "./resolve-value.js";
 import { type MadeFrom, sameGroup, sameToken } from "./same-object.js";
 import { type Properties, usableType } from "./walk.js";
 
-interface Earlier {
+interface Context {
+    readValue: ValueReader;
+    diagnostics: Problems;
+    places: Places;
+    missing: MissingReferences;
+    reusable: ReusableIndex;
+}
+
+interface ReusableIndex {
     tokens: Map<string, Token[]>;
     groups: Map<string, Group[]>;
+}
+
+interface PermutationContext {
+    input: Input;
+    merged: Merged;
+    sources: readonly Source[];
+    places: Places;
+    diagnostics: Problems;
+    reusable: ReusableIndex;
 }
 
 interface Resolved {
@@ -58,243 +77,360 @@ interface Resolved {
     resolved?: unknown;
 }
 
-type WorkedOut = Resolved | "untyped";
+type ResolveResult = Resolved | "untyped";
 
-type Whole =
-    | { kind: "token"; path: string; value: WorkedOut | undefined }
+interface TokenStep {
+    path: string;
+    mergedToken: MergedToken;
+    resolved: Resolved;
+    targets: TargetLocation[];
+    waitsOnLaterToken: boolean;
+}
+
+type TargetLocation =
+    | { occurrence: Occurrence; isToken: true; path: string; pointsToProperty?: JsonPath }
+    | { occurrence: Occurrence; isToken: false; path: string | undefined };
+
+type ReferenceWithTarget = Omit<ReferenceTo, "token"> & { token?: Token | undefined };
+
+interface GroupBuildFields {
+    settings: Applying;
+    deprecatedByGroup: string | undefined;
+    definitions: readonly Definition[];
+    children: (Token | Group)[];
+    extending: Group | undefined;
+}
+
+interface NewToken {
+    token: Building<Token>;
+    step: TokenStep;
+}
+
+type AliasTarget =
+    | { kind: "token"; value: ResolveResult | undefined }
     | { kind: "part" }
     | { kind: "unreachable" };
 
-const WORKING_OUT = Symbol("working out its value");
+const RESOLVING = Symbol("resolving");
 
-const BEING_MADE = Symbol("being made");
-
-type Pending<T> = T | typeof BEING_MADE;
-
-type Aimed<Found> = Omit<ReferenceTo, "token"> & { token?: Found | undefined };
-
-interface Context {
-    readValue: ValueReader;
-    diagnostics: Problems;
-    places: Places;
-    missing: MissingReferences;
-    earlier: Earlier;
-}
-
-function indexLastRead(previous: DesignTokens | undefined): Earlier {
-    const earlier: Earlier = { tokens: new Map(), groups: new Map() };
-    for (const permutation of previous?.permutations ?? []) {
-        for (const token of permutation.tokens) remember(earlier.tokens, token.path, token);
-        for (const group of permutation.groups) remember(earlier.groups, group.path, group);
-    }
-    return earlier;
-}
+const NO_TARGETS: [] = [];
 
 export function buildPermutations(
     permutations: NormalisedPermutation[],
-    { previous, ...rest }: Omit<Context, "earlier"> & { previous: DesignTokens | undefined },
+    { previous, ...rest }: Omit<Context, "reusable"> & { previous: DesignTokens | undefined },
 ): Permutation[] {
-    const context = { ...rest, earlier: indexLastRead(previous) };
+    const context = { ...rest, reusable: indexReusable(previous) };
     return permutations.map((permutation) => buildPermutation(permutation, context));
 }
 
-function buildPermutation(
-    permutation: NormalisedPermutation,
-    { readValue, diagnostics, places, missing: missingAcross, earlier }: Context,
-): Permutation {
-    const { input, label, contexts, sources, merged, unreadSources } = permutation;
-    const missing = missingAcross.in(input, merged.tokens, unreadSources);
-    const workOutValue = workingOut(permutation, readValue, diagnostics, missing);
+function buildPermutation(permutation: NormalisedPermutation, context: Context): Permutation {
+    const { input, merged, sources, unreadSources } = permutation;
+    const { readValue, diagnostics, places, reusable } = context;
+    const missing = context.missing.in(input, merged.tokens, unreadSources);
+    const resolver = new ValueResolver(permutation, readValue, diagnostics, missing);
+    const shared = { input, merged, sources, places, diagnostics, reusable };
 
-    const getSource = (index: number) => sources[index] as Source;
-    const placed = (written: WrittenAt[], path: string): readonly Definition[] => {
-        const [first, ...rest] = written;
-        if (!first) return NO_DEFINITIONS;
-        if (rest.length === 0) return places.only(getSource(first.source), first.span, path);
-        return written.map(({ source, span }) => places.at(getSource(source), span, path));
-    };
+    const steps = orderTokenSteps(merged, resolver);
+    const tokens = buildTokens(steps, shared);
+    const groups = buildGroups(tokens, shared);
+    missing.close();
 
-    const builtTokens = new Map<string, Token>();
-    const builtGroups = new Map<string, Group>();
-    const beingMade = new Set<string>();
-    const linkLater: (() => void)[] = [];
-    const builtToken = (path: string) => builtTokens.get(path);
+    return toPermutation(permutation, tokens, groups);
+}
 
-    const aimEach = <Found extends Pending<Token>>(
-        located: LocatedReference[],
-        at: (path: string) => Found | undefined,
-    ): Aimed<Found>[] => located.map(({ occurrence }) => aimReference(occurrence, merged, at));
+function orderTokenSteps(merged: Merged, resolver: ValueResolver): TokenStep[] {
+    const steps: TokenStep[] = [];
+    const visits = new Map<string, "visiting" | "done">();
 
-    const buildTarget = (path: string): Pending<Token> | undefined =>
-        beingMade.has(path) ? BEING_MADE : buildToken(path);
+    const visit = (path: string) => {
+        if (visits.has(path)) return;
 
-    const buildToken = (path: string): Token | undefined => {
-        const done = builtTokens.get(path);
-        if (done) return done;
-        const written = merged.tokens.get(path);
-        if (!written) return undefined;
-        const value = workOutValue(written);
-        if (value === "untyped") return undefined;
-        const located = value.references;
-        beingMade.add(path);
-        const targets = aimEach(located, buildTarget);
-        reportDeprecated(path, targets);
-        beingMade.delete(path);
-        const { replaces, source, span } = written;
-        const { read } = value;
-        const deprecated = findDeprecation(written, merged);
-        const now: MadeFrom = {
-            type: value.type,
-            value: read.ok ? read.value : undefined,
-            resolved: read.ok && "resolved" in value ? value.resolved : undefined,
-            invalid: read.ok ? undefined : true,
-            deprecated,
-            deprecatedByGroup: findDeprecatingGroup(merged, written, deprecated),
-            definitions: replaces
-                ? [...placed(replaces, path), places.at(getSource(source), span, path)]
-                : places.only(getSource(source), span, path),
-        };
-        const reached = targets.every(isAimed) ? targets : undefined;
-        const kept =
-            reached &&
-            earlier.tokens.get(path)?.find((each) => sameToken(each, written, now, reached));
-        if (kept && reached)
-            places.movedTo(
-                kept.references,
-                reached.map(({ occurrence }) => occurrence.span),
-            );
-        const token = kept ?? newToken(written, now, located, reached);
-        builtTokens.set(path, token);
-        return token;
-    };
+        const mergedToken = merged.tokens.get(path);
+        if (!mergedToken) return;
 
-    const reportDeprecated = (path: string, targets: readonly Aimed<Pending<Token>>[]) => {
-        for (const target of targets) {
-            const pointsTo = target.token;
-            if (pointsTo === undefined || pointsTo === BEING_MADE) continue;
-            const { deprecated } = pointsTo;
-            if (deprecated === undefined) continue;
-            const ref = toReferenceTarget(target.occurrence.reference);
-            const detail = typeof deprecated === "string" ? { ref, reason: deprecated } : { ref };
-            diagnostics.found(
-                diagnostic("deprecated-reference", detail, {
-                    span: target.occurrence.span,
-                    path,
-                    tags: ["deprecated"],
-                }),
-                input,
-            );
+        visits.set(path, "visiting");
+        const resolved = resolver.resolve(mergedToken);
+        if (resolved === "untyped") {
+            visits.set(path, "done");
+            return;
         }
+
+        const targets = locateTargets(resolved.references, merged);
+        for (const target of targets) if (target.isToken) visit(target.path);
+        const waitsOnLaterToken = targets.some(
+            (target) => target.isToken && visits.get(target.path) === "visiting",
+        );
+        visits.set(path, "done");
+
+        steps.push({ path, mergedToken, resolved, targets, waitsOnLaterToken });
     };
 
-    const newToken = (
-        written: MergedToken,
-        now: MadeFrom,
-        located: LocatedReference[],
-        reached: readonly Aimed<Token>[] | undefined,
-    ): Token => {
-        const token: Building<Token> = linkedToken(tokenFields(written, now));
-        if (located.length > 0) {
-            const pointerAlone = written.value.type === "string";
-            const link = (targets: readonly Aimed<Token>[]) => {
-                token.references = targets.map((target) =>
-                    linkedReference(token, target, { pointerAlone }),
-                );
-            };
-            if (reached) link(reached);
-            else linkLater.push(() => link(aimEach(located, builtToken)));
+    for (const path of merged.tokens.keys()) visit(path);
+    return steps;
+}
+
+function locateTargets(references: LocatedReference[], merged: Merged): TargetLocation[] {
+    if (references.length === 0) return NO_TARGETS;
+    return references.map(({ occurrence }) => locateTarget(occurrence, merged));
+}
+
+function buildTokens(steps: TokenStep[], context: PermutationContext): Map<string, Token> {
+    const built = new Map<string, Token>();
+    const newTokens: NewToken[] = [];
+
+    for (const step of steps) {
+        const targets = attachTargets(step.targets, built);
+        reportDeprecated(step.path, targets, context);
+
+        const fields = getTokenBuildFields(step, context);
+        const reused = step.waitsOnLaterToken
+            ? undefined
+            : findReusableToken(step, fields, targets, context);
+
+        if (reused) {
+            const spans = targets.map(({ occurrence }) => occurrence.span);
+            context.places.movedTo(reused.references, spans);
+            built.set(step.path, reused);
+        } else {
+            const token = createToken(step.mergedToken, fields, context.reusable);
+            newTokens.push({ token, step });
+            built.set(step.path, token);
         }
-        remember(earlier.tokens, written.path, token);
-        return token;
+    }
+
+    for (const { token, step } of newTokens) linkReferences(token, step, built);
+    return built;
+}
+
+function attachTargets(
+    locations: readonly TargetLocation[],
+    built: ReadonlyMap<string, Token>,
+): ReferenceWithTarget[] {
+    if (locations.length === 0) return NO_TARGETS;
+    return locations.map((location) => {
+        const { occurrence, path } = location;
+        if (!location.isToken) return { occurrence, path };
+
+        const token = built.get(location.path);
+        const { pointsToProperty } = location;
+        if (pointsToProperty === undefined) return { occurrence, path, token };
+        return { occurrence, path, token, pointsToProperty };
+    });
+}
+
+function getTokenBuildFields(
+    { path, mergedToken, resolved }: TokenStep,
+    context: PermutationContext,
+): MadeFrom {
+    const deprecated = findDeprecation(mergedToken, context.merged);
+    const shared = {
+        type: resolved.type,
+        deprecated,
+        deprecatedByGroup: findDeprecatingGroup(context.merged, mergedToken, deprecated),
+        definitions: getTokenDefinitions(path, mergedToken, context),
     };
 
-    const buildChildren = <Found>(
-        parentPath: string,
-        at: (path: string) => Found | undefined,
-    ): Found[] => {
-        const children: Found[] = [];
-        for (const path of merged.children.get(parentPath) ?? []) {
-            const child = at(path);
-            if (child !== undefined) children.push(child);
-        }
-        return children;
-    };
-    const buildChild = (path: string) =>
-        merged.tokens.has(path) ? buildToken(path) : buildGroup(path);
+    const { read } = resolved;
+    if (!read.ok) return { ...shared, value: undefined, resolved: undefined, invalid: true };
+
+    const resolvedValue = "resolved" in resolved ? resolved.resolved : undefined;
+    return { ...shared, value: read.value, resolved: resolvedValue, invalid: undefined };
+}
+
+function getTokenDefinitions(
+    path: string,
+    { replaces, source, span }: MergedToken,
+    context: PermutationContext,
+): readonly Definition[] {
+    const { places, sources } = context;
+    if (!replaces) return places.only(sources[source] as Source, span, path);
+
+    const replaced = toDefinitions(replaces, path, context);
+    return [...replaced, places.at(sources[source] as Source, span, path)];
+}
+
+function toDefinitions(
+    locations: WrittenAt[],
+    path: string,
+    { places, sources }: PermutationContext,
+): readonly Definition[] {
+    const [first] = locations;
+    if (!first) return NO_DEFINITIONS;
+    if (locations.length === 1)
+        return places.only(sources[first.source] as Source, first.span, path);
+
+    return locations.map(({ source, span }) => places.at(sources[source] as Source, span, path));
+}
+
+function findReusableToken(
+    { path, mergedToken }: TokenStep,
+    fields: MadeFrom,
+    targets: readonly ReferenceWithTarget[],
+    { reusable }: PermutationContext,
+): Token | undefined {
+    const candidates = reusable.tokens.get(path);
+    return candidates?.find((token) => sameToken(token, mergedToken, fields, targets));
+}
+
+function createToken(
+    mergedToken: MergedToken,
+    fields: MadeFrom,
+    reusable: ReusableIndex,
+): Building<Token> {
+    const token: Building<Token> = linkedToken(toTokenFields(mergedToken, fields));
+    addToIndex(reusable.tokens, mergedToken.path, token);
+    return token;
+}
+
+function linkReferences(
+    token: Building<Token>,
+    { mergedToken, targets }: TokenStep,
+    built: ReadonlyMap<string, Token>,
+): void {
+    if (targets.length === 0) return;
+
+    const pointerAlone = mergedToken.value.type === "string";
+    token.references = attachTargets(targets, built).map((target) =>
+        linkedReference(token, target, { pointerAlone }),
+    );
+}
+
+function reportDeprecated(
+    path: string,
+    targets: readonly ReferenceWithTarget[],
+    { diagnostics, input }: PermutationContext,
+): void {
+    for (const { token, occurrence } of targets) {
+        if (token?.deprecated === undefined) continue;
+
+        const ref = toReferenceTarget(occurrence.reference);
+        const reason = token.deprecated;
+        const detail = typeof reason === "string" ? { ref, reason } : { ref };
+        const extra = { span: occurrence.span, path, tags: ["deprecated" as const] };
+        diagnostics.found(diagnostic("deprecated-reference", detail, extra), input);
+    }
+}
+
+function buildGroups(
+    tokens: ReadonlyMap<string, Token>,
+    context: PermutationContext,
+): Map<string, Group> {
+    const { merged } = context;
+    const built = new Map<string, Group>();
 
     const buildGroup = (path: string): Group | undefined => {
-        const done = builtGroups.get(path);
-        if (done) return done;
-        const written = merged.groups.get(path);
-        if (!written) return undefined;
-        const children = buildChildren(path, buildChild);
+        const cached = built.get(path);
+        if (cached) return cached;
+
+        const mergedGroup = merged.groups.get(path);
+        if (!mergedGroup) return undefined;
+
+        const children = listChildren(path, tokens, buildGroup, merged);
         const extending =
-            written.extendsGroup === undefined ? undefined : buildGroup(written.extendsGroup);
-        const applies = applying(merged, written);
-        const deprecatedByGroup = findDeprecatingGroup(
-            merged,
-            written,
-            applies.deprecated,
-            applies.deprecatedAt,
-        );
-        const definitions = placed(written.declaredIn, path);
-        const kept = earlier.groups
-            .get(path)
-            ?.find((each) =>
-                sameGroup(
-                    each,
-                    written,
-                    applies,
-                    deprecatedByGroup,
-                    definitions,
-                    children,
-                    extending,
-                ),
-            );
-        if (kept && written.extends) places.movedTo(kept.references, [written.extends.span]);
+            mergedGroup.extendsGroup === undefined
+                ? undefined
+                : buildGroup(mergedGroup.extendsGroup);
+        const fields = getGroupBuildFields(mergedGroup, children, extending, context);
         const group =
-            kept ??
-            newGroup(
-                written,
-                groupFields(written, applies, deprecatedByGroup, definitions),
-                children,
-                extending,
-            );
-        builtGroups.set(path, group);
+            findReusableGroup(mergedGroup, fields, context) ??
+            createGroup(mergedGroup, fields, tokens, context);
+
+        built.set(path, group);
         return group;
     };
 
-    const newGroup = (
-        written: MergedGroup,
-        fields: Parameters<typeof linkedGroup>[0],
-        children: (Token | Group)[],
-        extending: Group | undefined,
-    ): Group => {
-        const group: Building<Group> = linkedGroup(fields);
-        group.children = children;
-        const rootToken = children.find(
-            (child): child is Token =>
-                child.kind === "token" && tokenPath.getName(child.path) === "$root",
-        );
-        if (rootToken) group.rootToken = rootToken;
-        if (extending) group.extends = extending;
-        if (written.extends) {
-            const { reference, steps, span } = written.extends;
-            const target = aimReference(
-                { reference, steps, span, property: [] },
-                merged,
-                builtToken,
-            );
-            group.references = [linkedReference(group, target)];
-        }
-        remember(earlier.groups, written.path, group);
-        return group;
-    };
-
-    const topLevel = buildGroup("") as Group;
+    buildGroup("");
     for (const path of merged.groups.keys()) buildGroup(path);
-    for (const link of linkLater) link();
-    missing.close();
+    return built;
+}
+
+function listChildren(
+    parentPath: string,
+    tokens: ReadonlyMap<string, Token>,
+    buildGroup: (path: string) => Group | undefined,
+    merged: Merged,
+): (Token | Group)[] {
+    const children: (Token | Group)[] = [];
+    for (const path of merged.children.get(parentPath) ?? []) {
+        const child = merged.tokens.has(path) ? tokens.get(path) : buildGroup(path);
+        if (child !== undefined) children.push(child);
+    }
+    return children;
+}
+
+function findReusableGroup(
+    mergedGroup: MergedGroup,
+    { settings, deprecatedByGroup, definitions, children, extending }: GroupBuildFields,
+    context: PermutationContext,
+): Group | undefined {
+    const candidates = context.reusable.groups.get(mergedGroup.path);
+    const reused = candidates?.find((group) =>
+        sameGroup(
+            group,
+            mergedGroup,
+            settings,
+            deprecatedByGroup,
+            definitions,
+            children,
+            extending,
+        ),
+    );
+    if (!reused) return undefined;
+
+    if (mergedGroup.extends) context.places.movedTo(reused.references, [mergedGroup.extends.span]);
+    return reused;
+}
+
+function createGroup(
+    mergedGroup: MergedGroup,
+    { settings, deprecatedByGroup, definitions, children, extending }: GroupBuildFields,
+    tokens: ReadonlyMap<string, Token>,
+    context: PermutationContext,
+): Group {
+    const fields = toGroupFields(mergedGroup, settings, deprecatedByGroup, definitions);
+    const group: Building<Group> = linkedGroup(fields);
+    group.children = children;
+
+    const rootToken = findRootToken(children);
+    if (rootToken) group.rootToken = rootToken;
+    if (extending) group.extends = extending;
+    if (mergedGroup.extends) {
+        const { reference, steps, span } = mergedGroup.extends;
+        const occurrence = { reference, steps, span, property: [] };
+        const [target] = attachTargets([locateTarget(occurrence, context.merged)], tokens);
+        if (target) group.references = [linkedReference(group, target)];
+    }
+
+    addToIndex(context.reusable.groups, mergedGroup.path, group);
+    return group;
+}
+
+function getGroupBuildFields(
+    mergedGroup: MergedGroup,
+    children: (Token | Group)[],
+    extending: Group | undefined,
+    context: PermutationContext,
+): GroupBuildFields {
+    const { merged } = context;
+    const settings = applying(merged, mergedGroup);
+    const deprecatedByGroup = findDeprecatingGroup(
+        merged,
+        mergedGroup,
+        settings.deprecated,
+        settings.deprecatedAt,
+    );
+    const definitions = toDefinitions(mergedGroup.declaredIn, mergedGroup.path, context);
+    return { settings, deprecatedByGroup, definitions, children, extending };
+}
+
+function toPermutation(
+    { input, label, sources, contexts, merged }: NormalisedPermutation,
+    tokens: Map<string, Token>,
+    groups: Map<string, Group>,
+): Permutation {
+    const topLevel = groups.get("") as Group;
+    const groupsInOrder = [...merged.groups.keys()].flatMap((path) => groups.get(path) ?? []);
+
     return linkedPermutation(
         {
             input,
@@ -304,243 +440,313 @@ function buildPermutation(
             topLevel,
             children: topLevel.children,
             tokens: allTokens(topLevel.children),
-            groups: [...merged.groups.keys()].flatMap((path) => builtGroups.get(path) ?? []),
+            groups: groupsInOrder,
         },
-        builtTokens,
-        builtGroups,
+        tokens,
+        groups,
     );
 }
 
-function workingOut(
-    { input, merged }: NormalisedPermutation,
-    readValue: ValueReader,
-    diagnostics: Problems,
-    missing: MissingIn,
-): (token: MergedToken) => WorkedOut {
-    const report = <K extends DiagnosticKind>(
-        kind: K,
-        detail: DiagnosticDetailByKind[K],
-        path: string,
-        span: Span,
-        extra: Omit<DiagnosticExtra, "span" | "path"> = {},
-    ) => diagnostics.found(diagnostic(kind, detail, { span, path, ...extra }), input);
+class ValueResolver {
+    #input: Input;
+    #merged: Merged;
+    #readValue: ValueReader;
+    #diagnostics: Problems;
+    #missing: MissingIn;
+    #resolving: Resolving;
 
-    const notReached = (aim: Aim, from: string, span: Span) => {
-        const { reference } = aim;
-        const reached = followReference(aim, merged).kind;
-        const ref = toReferenceTarget(reference);
-        if (reached === "group") report("not-a-token", { ref }, from, span);
-        else if (reached === "stops-at-token") {
-            report("not-a-value", { ref, corrected: toValuePointer(ref) }, from, span);
-        } else missing.record(reference, from, span);
-    };
+    #results = new Map<string, ResolveResult | typeof RESOLVING>();
+    #resolveStack: { path: string; span: Span }[] = [];
 
-    const reportUnreachable = (aim: Aim, from: string, span: Span) => {
-        const { reference } = aim;
-        const malformed =
-            reference.syntax === "json-pointer" && malformation(reference.pointer, merged, "value");
-        if (malformed) report("malformed-pointer", malformed, from, span);
-        else notReached(aim, from, span);
-    };
+    constructor(
+        { input, merged }: NormalisedPermutation,
+        readValue: ValueReader,
+        diagnostics: Problems,
+        missing: MissingIn,
+    ) {
+        this.#input = input;
+        this.#merged = merged;
+        this.#readValue = readValue;
+        this.#diagnostics = diagnostics;
+        this.#missing = missing;
+        this.#resolving = {
+            readValue,
+            merged,
+            input,
+            askForValue: (path, from, span) => this.#resolveDependency(path, from, span),
+            report: (kind, detail, path, span) => this.#report(kind, detail, path, span),
+            notReached: (aim, from, span) => this.#reportUnresolved(aim, from, span),
+            reportUnreachable: (aim, from, span) => this.#reportUnreachable(aim, from, span),
+        };
+    }
 
-    const workedOut = new Map<string, WorkedOut | typeof WORKING_OUT>();
-    const asking: { path: string; span: Span }[] = [];
-
-    const askForValue = (path: string, from: string, span: Span): WorkedOut | undefined => {
-        const token = merged.tokens.get(path);
-        if (!token) return undefined;
-        asking.push({ path: from, span });
-        const value = workOutValue(token);
-        asking.pop();
-        return value;
-    };
-
-    const workOutValue = (token: MergedToken): WorkedOut => {
-        const { path } = token;
-        const known = workedOut.get(path);
-        if (known === WORKING_OUT) {
-            reportLoop(path);
+    resolve(token: MergedToken): ResolveResult {
+        const cached = this.#results.get(token.path);
+        if (cached === RESOLVING) {
+            this.#reportLoop(token.path);
             return "untyped";
         }
-        if (known) return known;
-        workedOut.set(path, WORKING_OUT);
-        const value = workOut(token);
-        workedOut.set(path, value);
-        return value;
-    };
+        if (cached) return cached;
 
-    const reportLoop = (path: string) => {
-        const loop = asking.slice(asking.findIndex((frame) => frame.path === path));
+        this.#results.set(token.path, RESOLVING);
+        const result = this.#resolveUncached(token);
+        this.#results.set(token.path, result);
+        return result;
+    }
+
+    #resolveUncached(token: MergedToken): ResolveResult {
+        const declaredType = this.#findDeclaredType(token);
+        if (declaredType === "untyped") return "untyped";
+
+        const alias = wholeReference(token);
+        if (alias) return this.#resolveAlias(token, alias, declaredType);
+
+        if (declaredType === undefined) return "untyped";
+        return this.#readAndResolve(token, declaredType);
+    }
+
+    #findDeclaredType(token: MergedToken): TokenType | "untyped" | undefined {
+        if (token.type === undefined && token.reference) return undefined;
+
+        const type = inherited(token, this.#merged, "type");
+        if (type === "unusable") return "untyped";
+        if (type === undefined) {
+            this.#report("missing-type", {}, token.path, token.nameSpan);
+            return "untyped";
+        }
+        return type;
+    }
+
+    #resolveAlias(
+        token: MergedToken,
+        alias: Occurrence,
+        declaredType: TokenType | undefined,
+    ): ResolveResult {
+        const target = this.#followAlias(token, alias);
+
+        if (target.kind === "unreachable") {
+            this.#reportUnreachable(alias, token.path, alias.span);
+            return this.#readWithFallbackType(token, declaredType);
+        }
+
+        if (target.kind === "part") {
+            const type = declaredType ?? this.#findGroupType(token);
+            if (type === undefined) {
+                this.#report("missing-type", {}, token.path, token.nameSpan);
+                return "untyped";
+            }
+            return this.#readAndResolve(token, type);
+        }
+
+        const targetValue = target.value;
+        if (targetValue === undefined || targetValue === "untyped") {
+            return this.#readWithFallbackType(token, declaredType);
+        }
+
+        const type = declaredType ?? targetValue.type;
+        if (!("resolved" in targetValue)) return this.#readWithoutResolving(token, type);
+        return this.#readAndResolve(token, type);
+    }
+
+    #followAlias(token: MergedToken, alias: Occurrence): AliasTarget {
+        const { reference } = alias;
+        if (reference.syntax === "curly-brace") {
+            const value = this.#resolveDependency(reference.path, token.path, alias.span);
+            if (value === undefined) return { kind: "unreachable" };
+            return { kind: "token", value };
+        }
+
+        const reached = followReference(alias, this.#merged);
+        if (reached.kind === "token") {
+            const value = this.#resolveDependency(reached.path, token.path, alias.span);
+            return { kind: "token", value };
+        }
+        if (reached.kind === "part") return { kind: "part" };
+        return { kind: "unreachable" };
+    }
+
+    #resolveDependency(path: string, from: string, span: Span): ResolveResult | undefined {
+        const token = this.#merged.tokens.get(path);
+        if (!token) return undefined;
+
+        this.#resolveStack.push({ path: from, span });
+        const result = this.resolve(token);
+        this.#resolveStack.pop();
+        return result;
+    }
+
+    #readAndResolve(token: MergedToken, type: TokenType): ResolveResult {
+        const {
+            result: read,
+            references,
+            readAgain,
+        } = this.#readValue.read(token, type, this.#input);
+        const unresolved = { type, read, references };
+        if (!read.ok) return unresolved;
+        if (references.length === 0) return { ...unresolved, resolved: read.value };
+
+        const value = resolveValue(this.#resolving, token, read.value, references, readAgain);
+        if (value === UNRESOLVED) return unresolved;
+        return { ...unresolved, resolved: value };
+    }
+
+    #readWithFallbackType(token: MergedToken, declaredType: TokenType | undefined): ResolveResult {
+        const type = declaredType ?? this.#findGroupType(token);
+        if (type === undefined) return "untyped";
+        return this.#readWithoutResolving(token, type);
+    }
+
+    #readWithoutResolving(token: MergedToken, type: TokenType): ResolveResult {
+        const { result: read, references } = this.#readValue.read(token, type, this.#input);
+        return { type, read, references };
+    }
+
+    #findGroupType(token: MergedToken): TokenType | undefined {
+        return usableType(inherited(token, this.#merged, "type"));
+    }
+
+    #reportLoop(path: string): void {
+        const start = this.#resolveStack.findIndex((frame) => frame.path === path);
+        const loop = this.#resolveStack.slice(start);
         const [first, ...rest] = loop;
         if (!first) return;
+
         const chain = [...loop.map((frame) => frame.path), path];
         const relatedInformation = rest.map((frame) => ({
             message: relatedMessages.partOfTheLoop,
             span: frame.span,
             path: frame.path,
         }));
-        report("circular-reference", { chain }, first.path, first.span, {
+        this.#report("circular-reference", { chain }, first.path, first.span, {
             relatedInformation,
         });
-    };
+    }
 
-    const followWhole = (token: MergedToken, whole: Occurrence): Whole => {
-        const { reference } = whole;
-        if (reference.syntax === "curly-brace") {
-            const { path } = reference;
-            const value = askForValue(path, token.path, whole.span);
-            return value === undefined ? { kind: "unreachable" } : { kind: "token", path, value };
-        }
-        const reached = followReference(whole, merged);
-        if (reached.kind === "token") {
-            const { path } = reached;
-            return { kind: "token", path, value: askForValue(path, token.path, whole.span) };
-        }
-        return reached.kind === "part" ? { kind: "part" } : { kind: "unreachable" };
-    };
+    #reportUnresolved(aim: Aim, from: string, span: Span): void {
+        const ref = toReferenceTarget(aim.reference);
+        const reached = followReference(aim, this.#merged).kind;
 
-    const workOut = (token: MergedToken): WorkedOut => {
-        const whole = wholeReference(token);
-
-        let type: TokenType | undefined;
-        if (token.type !== undefined || !token.reference) {
-            const own = inherited(token, merged, "type");
-            if (own === "unusable") return "untyped";
-            if (own === undefined) {
-                report("missing-type", {}, token.path, token.nameSpan);
-                return "untyped";
-            }
-            type = own;
+        if (reached === "group") {
+            this.#report("not-a-token", { ref }, from, span);
+            return;
         }
-        if (whole) {
-            const followed = followWhole(token, whole);
-            if (followed.kind === "unreachable") {
-                reportUnreachable(whole, token.path, whole.span);
-                return fallback(token, type);
-            }
-            if (followed.kind === "part") {
-                type ??= groupType(token);
-                if (type === undefined) {
-                    report("missing-type", {}, token.path, token.nameSpan);
-                    return "untyped";
-                }
-            } else {
-                const target = followed.value;
-                if (target === undefined || target === "untyped") return fallback(token, type);
-                if (!("resolved" in target)) return unresolved(token, type ?? target.type);
-                type ??= target.type;
+        if (reached === "stops-at-token") {
+            this.#report("not-a-value", { ref, corrected: toValuePointer(ref) }, from, span);
+            return;
+        }
+        this.#missing.record(aim.reference, from, span);
+    }
+
+    #reportUnreachable(aim: Aim, from: string, span: Span): void {
+        const { reference } = aim;
+        if (reference.syntax === "json-pointer") {
+            const malformed = malformation(reference.pointer, this.#merged, "value");
+            if (malformed) {
+                this.#report("malformed-pointer", malformed, from, span);
+                return;
             }
         }
-        if (type === undefined) return "untyped";
+        this.#reportUnresolved(aim, from, span);
+    }
 
-        const { result: read, references, readAgain } = readValue.read(token, type, input);
-        const base = { type, read, references };
-        if (!read.ok) return base;
-        if (references.length === 0) return { ...base, resolved: read.value };
-
-        const value = resolveValue(resolving, token, read.value, references, readAgain);
-        return value === UNRESOLVED ? base : { ...base, resolved: value };
-    };
-
-    const fallback = (token: MergedToken, type: TokenType | undefined): WorkedOut => {
-        const shown = type ?? groupType(token);
-        return shown === undefined ? "untyped" : unresolved(token, shown);
-    };
-
-    const groupType = (token: MergedToken): TokenType | undefined =>
-        usableType(inherited(token, merged, "type"));
-
-    const unresolved = (token: MergedToken, type: TokenType): WorkedOut => {
-        const { result: read, references } = readValue.read(token, type, input);
-        return { type, read, references };
-    };
-
-    const resolving: Resolving = {
-        readValue,
-        merged,
-        input,
-        askForValue,
-        report,
-        notReached,
-        reportUnreachable,
-    };
-
-    return workOutValue;
+    #report<K extends DiagnosticKind>(
+        kind: K,
+        detail: DiagnosticDetailByKind[K],
+        path: string,
+        span: Span,
+        extra: Omit<DiagnosticExtra, "span" | "path"> = {},
+    ): void {
+        this.#diagnostics.found(diagnostic(kind, detail, { span, path, ...extra }), this.#input);
+    }
 }
 
-function remember<T>(earlier: Map<string, T[]>, path: string, each: T): void {
-    const list = earlier.get(path);
-    if (!list) earlier.set(path, [each]);
-    else if (!list.includes(each)) list.push(each);
+function indexReusable(previous: DesignTokens | undefined): ReusableIndex {
+    const index: ReusableIndex = { tokens: new Map(), groups: new Map() };
+    for (const permutation of previous?.permutations ?? []) {
+        for (const token of permutation.tokens) addToIndex(index.tokens, token.path, token);
+        for (const group of permutation.groups) addToIndex(index.groups, group.path, group);
+    }
+    return index;
 }
 
-function isAimed(target: Aimed<Pending<Token>>): target is Aimed<Token> {
-    return target.token !== BEING_MADE;
+function addToIndex<T>(index: Map<string, T[]>, path: string, item: T): void {
+    const list = index.get(path);
+    if (!list) index.set(path, [item]);
+    else if (!list.includes(item)) list.push(item);
 }
 
-function aimReference<Found extends Pending<Token>>(
-    occurrence: Occurrence,
-    merged: Merged,
-    at: (path: string) => Found | undefined,
-): Aimed<Found> {
+function findRootToken(children: readonly (Token | Group)[]): Token | undefined {
+    return children.find(
+        (child): child is Token =>
+            child.kind === "token" && tokenPath.getName(child.path) === "$root",
+    );
+}
+
+function locateTarget(occurrence: Occurrence, merged: Merged): TargetLocation {
     const { reference } = occurrence;
     if (reference.syntax === "curly-brace") {
-        return { occurrence, path: reference.path, token: at(reference.path) };
+        return { occurrence, path: reference.path, isToken: true };
     }
+
     const reached = followReference(occurrence, merged);
-    if (reached.kind === "nothing") return { occurrence, path: namedPath(occurrence.reference) };
-    const { path } = reached;
-    if (reached.kind === "token") return { occurrence, path, token: at(path) };
-    if (reached.kind === "group" || reached.kind === "stops-at-token") return { occurrence, path };
+    if (reached.kind === "nothing") {
+        return { occurrence, path: namedPath(reference), isToken: false };
+    }
+    if (reached.kind === "token") return { occurrence, path: reached.path, isToken: true };
+    if (reached.kind === "group" || reached.kind === "stops-at-token") {
+        return { occurrence, path: reached.path, isToken: false };
+    }
+
     const pointsToProperty = stepInto(reached.token.valueAsWritten, reached.inside)?.property;
-    return { occurrence, path, token: at(path), pointsToProperty };
+    return { occurrence, path: reached.path, isToken: true, pointsToProperty };
 }
 
-function groupFields(
+function toGroupFields(
     group: MergedGroup,
-    applies: Applying,
-    markedBy: string | undefined,
+    settings: Applying,
+    deprecatedByGroup: string | undefined,
     definitions: readonly Definition[],
 ): Parameters<typeof linkedGroup>[0] {
-    const { path, inherited: from } = group;
-    const asWritten = publicProperties(group);
+    const { path, inherited: inheritedFrom } = group;
+    const own = pickPublicProperties(group);
     return {
         path,
-        ...publicProperties(applies),
-        ...(markedBy !== undefined && { deprecatedByGroup: markedBy }),
+        ...pickPublicProperties(settings),
+        ...(deprecatedByGroup !== undefined && { deprecatedByGroup }),
         definitions,
-        extensionDefinitions: extensionPlaces(group, definitions),
+        extensionDefinitions: getExtensionDefinitions(group, definitions),
         children: [],
         references: NO_REFERENCES,
-        ...(from && { inherited: from }),
-        ...(Object.keys(asWritten).length > 0 && { asWritten }),
+        ...(inheritedFrom && { inherited: inheritedFrom }),
+        ...(Object.keys(own).length > 0 && { asWritten: own }),
     };
 }
 
-function extensionPlaces(
+function getExtensionDefinitions(
     { extensionsAt, declaredIn }: MergedGroup,
     definitions: readonly Definition[],
 ): Readonly<Record<string, Definition>> {
     if (!extensionsAt) return NO_EXTENSION_DEFINITIONS;
-    const places: Record<string, Definition> = {};
+
+    const byKey: Record<string, Definition> = {};
     for (const [key, { source }] of Object.entries(extensionsAt)) {
-        declaredIn.forEach((each, index) => {
-            const place = definitions[index];
-            if (each.source === source && place) places[key] = place;
+        declaredIn.forEach((location, index) => {
+            const definition = definitions[index];
+            if (location.source === source && definition) byKey[key] = definition;
         });
     }
-    return Object.freeze(places);
+    return Object.freeze(byKey);
 }
 
-function publicProperties<Deprecated extends Properties["deprecated"]>({
-    type: written,
+function pickPublicProperties<Deprecated extends Properties["deprecated"]>({
+    type: declaredType,
     description,
     deprecated,
     extensions,
 }: Omit<Properties, "deprecated"> & { deprecated?: Deprecated }): Omit<Written, "deprecated"> & {
     deprecated?: Deprecated;
 } {
-    const type = usableType(written);
+    const type = usableType(declaredType);
     return {
         ...(type !== undefined && { type }),
         ...(description !== undefined && { description }),
@@ -549,25 +755,27 @@ function publicProperties<Deprecated extends Properties["deprecated"]>({
     };
 }
 
-function tokenFields(token: MergedToken, now: MadeFrom): Parameters<typeof linkedToken>[0] {
+function toTokenFields(token: MergedToken, fields: MadeFrom): Parameters<typeof linkedToken>[0] {
+    const asWritten = token.added
+        ? undefined
+        : {
+              value: token.valueAsWritten,
+              ...pickPublicProperties({ type: token.type, deprecated: token.deprecated }),
+          };
+
     return {
         path: token.path,
-        type: now.type,
+        type: fields.type,
         references: NO_REFERENCES,
-        definitions: now.definitions,
-        value: now.value,
-        resolved: now.resolved,
-        invalid: now.invalid,
+        definitions: fields.definitions,
+        value: fields.value,
+        resolved: fields.resolved,
+        invalid: fields.invalid,
         description: token.description,
-        deprecated: now.deprecated,
-        deprecatedByGroup: now.deprecatedByGroup,
+        deprecated: fields.deprecated,
+        deprecatedByGroup: fields.deprecatedByGroup,
         extensions: token.extensions,
-        asWritten: token.added
-            ? undefined
-            : {
-                  value: token.valueAsWritten,
-                  ...publicProperties({ type: token.type, deprecated: token.deprecated }),
-              },
+        asWritten,
         generated: token.generated,
         inherited: token.inherited,
     } as Parameters<typeof linkedToken>[0];
