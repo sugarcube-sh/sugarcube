@@ -158,6 +158,27 @@ export interface CSSWriter {
 
 type Colors = NonNullable<CSSValueOptions["colors"]>;
 
+type GetWriter = (colors: Colors) => ColorModeWriter;
+
+interface ReferenceCSS {
+    readonly replacement: Replacement;
+    readonly dependencies: readonly Token[];
+}
+
+interface PartCSS {
+    readonly css: string;
+    readonly dependencies: readonly Token[];
+}
+
+interface DeclarationFields {
+    readonly token: Token;
+    readonly name: string;
+    readonly cssProperty: keyof TypographyCSS | undefined;
+    readonly value: string;
+    readonly supports: CSSDeclaration["supports"];
+    readonly dependencies: readonly Token[];
+}
+
 /**
  * Makes a CSS writer with your own settings.
  *
@@ -171,165 +192,216 @@ type Colors = NonNullable<CSSValueOptions["colors"]>;
  * // => "var(--ds-color-primary)"
  */
 export function createCSSWriter(options: CSSWriterOptions = {}): CSSWriter {
-    const { naming, writeValue, writeFallback, skip, references = "custom-properties" } = options;
-    const skipped = (token: Token) => skip?.(token) ?? false;
-    const inlined = (token: Token) => references === "values" || skipped(token);
+    const writersByColors = new Map<Colors, ColorModeWriter>();
+    const getWriter: GetWriter = (colors) =>
+        getOrCompute(writersByColors, colors, () => new ColorModeWriter(colors, options));
+    const declarationsByPermutation = new Map<Permutation, CSSDeclarations>();
 
-    const cache = new Map<Colors, Map<Token, CSSWritten | undefined>>();
-    const written = (token: Token, colors: Colors): CSSWritten | undefined => {
-        let mode = cache.get(colors);
-        if (!mode) {
-            mode = new Map();
-            cache.set(colors, mode);
-        }
-        if (mode.has(token)) return mode.get(token);
-        const plain = asWritten(token, colors);
-        const answer =
-            plain && writeValue
-                ? answered(writeValue(token, { written: plain, write: template(colors) }))
-                : plain;
-        mode.set(token, answer);
-        return answer;
+    return {
+        getDeclarations: (permutation) =>
+            getOrCompute(declarationsByPermutation, permutation, () =>
+                declarePermutation(permutation, options, getWriter),
+            ),
+        getValue: (token) => (token ? getWriter("components").writeToken(token) : undefined),
     };
+}
 
-    const refer = (
-        target: Token,
-        colors: Colors,
-        dependencies: Token[],
-        cssProperty?: keyof TypographyCSS,
-    ): Replacement | undefined => {
-        const own = written(target, colors);
-        if (!own) return undefined;
-        if (!inlined(target)) {
-            dependencies.push(target);
-            return {
-                customProperty: toCustomPropertyName(target.path, { ...naming, cssProperty }),
-            };
+function declarePermutation(
+    permutation: Permutation,
+    options: CSSWriterOptions,
+    getWriter: GetWriter,
+): CSSDeclarations {
+    const writer = getWriter("components");
+    const declarations: CSSDeclaration[] = [];
+    const notWritten: CSSNotWritten[] = [];
+
+    for (const token of permutation.tokens) {
+        if (isSkipped(token, options)) {
+            notWritten.push({ token, because: "skipped" });
+            continue;
         }
-        if (typeof own.css !== "string") return undefined;
-        dependencies.push(...own.dependencies);
-        return { css: own.css };
-    };
 
-    const asWritten = (token: Token, colors: Colors): CSSWritten | undefined => {
+        const result = writer.writeToken(token);
+        if (!result) {
+            notWritten.push({ token, because: "no value" });
+            continue;
+        }
+
+        declarations.push(...declareToken(token, result, options, getWriter));
+    }
+
+    return { declarations, notWritten };
+}
+
+function declareToken(
+    token: Token,
+    result: CSSWritten,
+    options: CSSWriterOptions,
+    getWriter: GetWriter,
+): CSSDeclaration[] {
+    const fallback = options.writeFallback?.(token, {
+        written: result,
+        writeWith: ({ colors = "components" }) => getWriter(colors).writeToken(token),
+    });
+    const declared = fallback?.written ?? result;
+    const dependencies = fallback
+        ? unique([...declared.dependencies, ...result.dependencies])
+        : result.dependencies;
+    const originalByProperty = new Map(splitByProperty(result.css));
+
+    return splitByProperty(declared.css).map(([cssProperty, value]) => {
+        const original = originalByProperty.get(cssProperty);
+        const differs = fallback !== undefined && original !== undefined && original !== value;
+        const supports = differs ? [{ condition: fallback.unless, value: original }] : undefined;
+        const name = toCustomPropertyName(token.path, { ...options.naming, cssProperty });
+        return toDeclaration({ token, name, cssProperty, value, supports, dependencies });
+    });
+}
+
+function toDeclaration(fields: DeclarationFields): CSSDeclaration {
+    const { token, name, cssProperty, value, supports, dependencies } = fields;
+    return {
+        token,
+        name,
+        ...(cssProperty && { cssProperty }),
+        value,
+        ...(supports && { supports }),
+        dependencies,
+    };
+}
+
+class ColorModeWriter {
+    #colors: Colors;
+    #options: CSSWriterOptions;
+    #results = new Map<Token, CSSWritten | undefined>();
+
+    constructor(colors: Colors, options: CSSWriterOptions) {
+        this.#colors = colors;
+        this.#options = options;
+    }
+
+    writeToken(token: Token): CSSWritten | undefined {
+        return getOrCompute(this.#results, token, () => this.#writeTokenUncached(token));
+    }
+
+    #writeTokenUncached(token: Token): CSSWritten | undefined {
+        const defaultValue = this.#writeDefaultValue(token);
+        const { writeValue } = this.#options;
+        if (!defaultValue || !writeValue) return defaultValue;
+
+        const custom = writeValue(token, { written: defaultValue, write: this.#template });
+        return toCSSResult(custom);
+    }
+
+    #writeDefaultValue(token: Token): CSSWritten | undefined {
         if (token.resolved === undefined) return undefined;
-        const target = token.getReferenceAt()?.pointsToWholeToken;
-        if (target && inlined(target)) {
-            const own = written(target, colors);
-            if (own) return own;
-        }
-        const dependencies: Token[] = [];
-        const replaceReference = (ref: Reference, cssProperty?: keyof TypographyCSS) =>
-            ref.pointsToWholeToken
-                ? refer(ref.pointsToWholeToken, colors, dependencies, cssProperty)
-                : undefined;
-        const css = toCSSValue(token, { replaceReference, colors });
-        return css === undefined ? undefined : { css, dependencies: unique(dependencies) };
-    };
 
-    const template =
-        (colors: Colors): CSSTemplate =>
-        (strings, ...parts) => {
-            const dependencies: Token[] = [];
-            let css = strings[0] ?? "";
-            parts.forEach((part, index) => {
-                css += placed(part, colors, dependencies) + (strings[index + 1] ?? "");
-            });
-            return { css, dependencies: unique(dependencies) };
+        const aliasTarget = token.getReferenceAt()?.pointsToWholeToken;
+        if (aliasTarget && this.#isInlined(aliasTarget)) {
+            const aliased = this.writeToken(aliasTarget);
+            if (aliased) return aliased;
+        }
+
+        const dependencies: Token[] = [];
+        const replaceReference = (ref: Reference, cssProperty?: keyof TypographyCSS) => {
+            const target = ref.pointsToWholeToken;
+            if (!target) return undefined;
+
+            const written = this.#writeReference(target, cssProperty);
+            if (!written) return undefined;
+
+            dependencies.push(...written.dependencies);
+            return written.replacement;
         };
 
-    const placed = (
-        part: CSSWritten | Token | string | number,
-        colors: Colors,
-        dependencies: Token[],
-    ): string => {
-        if (typeof part === "string" || typeof part === "number") return String(part);
+        const css = toCSSValue(token, { replaceReference, colors: this.#colors });
+        if (css === undefined) return undefined;
+        return { css, dependencies: unique(dependencies) };
+    }
+
+    #writeReference(target: Token, cssProperty?: keyof TypographyCSS): ReferenceCSS | undefined {
+        const result = this.writeToken(target);
+        if (!result) return undefined;
+
+        if (!this.#isInlined(target)) {
+            const naming = { ...this.#options.naming, cssProperty };
+            const customProperty = toCustomPropertyName(target.path, naming);
+            return { replacement: { customProperty }, dependencies: [target] };
+        }
+
+        if (typeof result.css !== "string") return undefined;
+        return { replacement: { css: result.css }, dependencies: result.dependencies };
+    }
+
+    #template: CSSTemplate = (strings, ...parts) => {
+        const dependencies: Token[] = [];
+        let css = strings[0] ?? "";
+
+        parts.forEach((part, index) => {
+            const written = this.#writeTemplatePart(part);
+            css += written.css + (strings[index + 1] ?? "");
+            dependencies.push(...written.dependencies);
+        });
+
+        return { css, dependencies: unique(dependencies) };
+    };
+
+    #writeTemplatePart(part: CSSWritten | Token | string | number): PartCSS {
+        if (typeof part === "string" || typeof part === "number") {
+            return { css: String(part), dependencies: [] };
+        }
+
         if ("css" in part) {
             if (typeof part.css !== "string") throw new TypeError(thrownMessages.typographyPlaced);
-            dependencies.push(...part.dependencies);
-            return part.css;
+            return { css: part.css, dependencies: part.dependencies };
         }
+
         if (part.type === "typography") throw new TypeError(thrownMessages.typographyPlaced);
-        const answer = refer(part, colors, dependencies);
-        if (answer)
-            return "customProperty" in answer ? `var(${answer.customProperty})` : answer.css;
-        const own = toCSSValue(part, { colors });
-        if (typeof own !== "string") throw new TypeError(thrownMessages.typographyPlaced);
-        return own;
-    };
 
-    const declare = (token: Token, own: CSSWritten): CSSDeclaration[] => {
-        const fell = writeFallback?.(token, {
-            written: own,
-            writeWith: ({ colors = "components" }) => written(token, colors),
-        });
-        const declared = fell?.written ?? own;
-        const dependencies = fell
-            ? unique([...declared.dependencies, ...own.dependencies])
-            : own.dependencies;
-        const line = (
-            css: string,
-            supported: string | undefined,
-            cssProperty?: keyof TypographyCSS,
-        ): CSSDeclaration => ({
-            token,
-            name: toCustomPropertyName(token.path, { ...naming, cssProperty }),
-            ...(cssProperty && { cssProperty }),
-            value: css,
-            ...(fell &&
-                supported !== undefined &&
-                supported !== css && {
-                    supports: [{ condition: fell.unless, value: supported }],
-                }),
-            dependencies,
-        });
-        if (typeof declared.css === "string") {
-            return [line(declared.css, typeof own.css === "string" ? own.css : undefined)];
+        const reference = this.#writeReference(part);
+        if (reference) {
+            return { css: toCSSText(reference.replacement), dependencies: reference.dependencies };
         }
-        const ownCSS = own.css;
-        return (Object.entries(declared.css) as [keyof TypographyCSS, string][]).map(
-            ([cssProperty, each]) =>
-                line(
-                    each,
-                    typeof ownCSS === "string" ? undefined : ownCSS[cssProperty],
-                    cssProperty,
-                ),
-        );
-    };
 
-    const declaredIn = new Map<Permutation, CSSDeclarations>();
-    return {
-        getDeclarations(permutation) {
-            const kept = declaredIn.get(permutation);
-            if (kept) return kept;
-            const declarations: CSSDeclaration[] = [];
-            const notWritten: CSSNotWritten[] = [];
-            for (const token of permutation.tokens) {
-                if (skipped(token)) {
-                    notWritten.push({ token, because: "skipped" });
-                    continue;
-                }
-                const own = written(token, "components");
-                if (!own) {
-                    notWritten.push({ token, because: "no value" });
-                    continue;
-                }
-                declarations.push(...declare(token, own));
-            }
-            const declared = { declarations, notWritten };
-            declaredIn.set(permutation, declared);
-            return declared;
-        },
-        getValue(token) {
-            return token && written(token, "components");
-        },
-    };
+        const css = toCSSValue(part, { colors: this.#colors });
+        if (typeof css !== "string") throw new TypeError(thrownMessages.typographyPlaced);
+        return { css, dependencies: [] };
+    }
+
+    #isInlined(token: Token): boolean {
+        return this.#options.references === "values" || isSkipped(token, this.#options);
+    }
 }
 
-function answered(answer: CSSWritten | string | undefined): CSSWritten | undefined {
-    return typeof answer === "string" ? { css: answer, dependencies: [] } : answer;
+function isSkipped(token: Token, options: CSSWriterOptions): boolean {
+    return options.skip?.(token) ?? false;
 }
 
-function unique(tokens: Token[]): Token[] {
+function splitByProperty(
+    css: string | TypographyCSS,
+): [cssProperty: keyof TypographyCSS | undefined, value: string][] {
+    if (typeof css === "string") return [[undefined, css]];
+    return Object.entries(css) as [keyof TypographyCSS, string][];
+}
+
+function toCSSText(replacement: Replacement): string {
+    if ("customProperty" in replacement) return `var(${replacement.customProperty})`;
+    return replacement.css;
+}
+
+function toCSSResult(answer: CSSWritten | string | undefined): CSSWritten | undefined {
+    if (typeof answer === "string") return { css: answer, dependencies: [] };
+    return answer;
+}
+
+function getOrCompute<K, V>(cache: Map<K, V>, key: K, compute: () => V): V {
+    if (cache.has(key)) return cache.get(key) as V;
+
+    const value = compute();
+    cache.set(key, value);
+    return value;
+}
+
+function unique(tokens: readonly Token[]): readonly Token[] {
     return tokens.length < 2 ? tokens : [...new Set(tokens)];
 }

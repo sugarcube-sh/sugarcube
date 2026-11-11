@@ -44,7 +44,7 @@ import { type Occurrence, wholeReference } from "./occurrence.js";
 import type { LocatedReference, ValueReader } from "./parse-value.js";
 import { type ReferenceTo, linkedReference } from "./reference.js";
 import { type Aim, followReference, stepInto, toValuePointer } from "./ref-meaning.js";
-import { type Resolving, UNRESOLVED, resolveValue } from "./resolve-value.js";
+import { type ReferenceResolver, UNRESOLVED, resolveValue } from "./resolve-value.js";
 import { type MadeFrom, sameGroup, sameToken } from "./same-object.js";
 import { type Properties, usableType } from "./walk.js";
 
@@ -79,19 +79,17 @@ interface Resolved {
 
 type ResolveResult = Resolved | "untyped";
 
-interface TokenStep {
+interface TokenToBuild {
     path: string;
     mergedToken: MergedToken;
     resolved: Resolved;
-    targets: TargetLocation[];
+    targets: readonly TargetLocation[];
     waitsOnLaterToken: boolean;
 }
 
 type TargetLocation =
     | { occurrence: Occurrence; isToken: true; path: string; pointsToProperty?: JsonPath }
     | { occurrence: Occurrence; isToken: false; path: string | undefined };
-
-type ReferenceWithTarget = Omit<ReferenceTo, "token"> & { token?: Token | undefined };
 
 interface GroupBuildFields {
     settings: Applying;
@@ -103,7 +101,7 @@ interface GroupBuildFields {
 
 interface NewToken {
     token: Building<Token>;
-    step: TokenStep;
+    tokenToBuild: TokenToBuild;
 }
 
 type AliasTarget =
@@ -113,7 +111,7 @@ type AliasTarget =
 
 const RESOLVING = Symbol("resolving");
 
-const NO_TARGETS: [] = [];
+const NONE: readonly never[] = [];
 
 export function buildPermutations(
     permutations: NormalisedPermutation[],
@@ -130,16 +128,16 @@ function buildPermutation(permutation: NormalisedPermutation, context: Context):
     const resolver = new ValueResolver(permutation, readValue, diagnostics, missing);
     const shared = { input, merged, sources, places, diagnostics, reusable };
 
-    const steps = orderTokenSteps(merged, resolver);
-    const tokens = buildTokens(steps, shared);
+    const tokensToBuild = orderTokens(merged, resolver);
+    const tokens = buildTokens(tokensToBuild, shared);
     const groups = buildGroups(tokens, shared);
     missing.close();
 
     return toPermutation(permutation, tokens, groups);
 }
 
-function orderTokenSteps(merged: Merged, resolver: ValueResolver): TokenStep[] {
-    const steps: TokenStep[] = [];
+function orderTokens(merged: Merged, resolver: ValueResolver): TokenToBuild[] {
+    const tokensToBuild: TokenToBuild[] = [];
     const visits = new Map<string, "visiting" | "done">();
 
     const visit = (path: string) => {
@@ -162,51 +160,54 @@ function orderTokenSteps(merged: Merged, resolver: ValueResolver): TokenStep[] {
         );
         visits.set(path, "done");
 
-        steps.push({ path, mergedToken, resolved, targets, waitsOnLaterToken });
+        tokensToBuild.push({ path, mergedToken, resolved, targets, waitsOnLaterToken });
     };
 
     for (const path of merged.tokens.keys()) visit(path);
-    return steps;
+    return tokensToBuild;
 }
 
-function locateTargets(references: LocatedReference[], merged: Merged): TargetLocation[] {
-    if (references.length === 0) return NO_TARGETS;
+function locateTargets(references: LocatedReference[], merged: Merged): readonly TargetLocation[] {
+    if (references.length === 0) return NONE;
     return references.map(({ occurrence }) => locateTarget(occurrence, merged));
 }
 
-function buildTokens(steps: TokenStep[], context: PermutationContext): Map<string, Token> {
+function buildTokens(
+    tokensToBuild: TokenToBuild[],
+    context: PermutationContext,
+): Map<string, Token> {
     const built = new Map<string, Token>();
     const newTokens: NewToken[] = [];
 
-    for (const step of steps) {
-        const targets = attachTargets(step.targets, built);
-        reportDeprecated(step.path, targets, context);
+    for (const tokenToBuild of tokensToBuild) {
+        const targets = attachTargets(tokenToBuild.targets, built);
+        reportDeprecated(tokenToBuild.path, targets, context);
 
-        const fields = getTokenBuildFields(step, context);
-        const reused = step.waitsOnLaterToken
+        const fields = getTokenBuildFields(tokenToBuild, context);
+        const reused = tokenToBuild.waitsOnLaterToken
             ? undefined
-            : findReusableToken(step, fields, targets, context);
+            : findReusableToken(tokenToBuild, fields, targets, context);
 
         if (reused) {
             const spans = targets.map(({ occurrence }) => occurrence.span);
             context.places.movedTo(reused.references, spans);
-            built.set(step.path, reused);
+            built.set(tokenToBuild.path, reused);
         } else {
-            const token = createToken(step.mergedToken, fields, context.reusable);
-            newTokens.push({ token, step });
-            built.set(step.path, token);
+            const token = createToken(tokenToBuild.mergedToken, fields, context.reusable);
+            newTokens.push({ token, tokenToBuild });
+            built.set(tokenToBuild.path, token);
         }
     }
 
-    for (const { token, step } of newTokens) linkReferences(token, step, built);
+    for (const { token, tokenToBuild } of newTokens) linkReferences(token, tokenToBuild, built);
     return built;
 }
 
 function attachTargets(
     locations: readonly TargetLocation[],
     built: ReadonlyMap<string, Token>,
-): ReferenceWithTarget[] {
-    if (locations.length === 0) return NO_TARGETS;
+): readonly ReferenceTo[] {
+    if (locations.length === 0) return NONE;
     return locations.map((location) => {
         const { occurrence, path } = location;
         if (!location.isToken) return { occurrence, path };
@@ -219,7 +220,7 @@ function attachTargets(
 }
 
 function getTokenBuildFields(
-    { path, mergedToken, resolved }: TokenStep,
+    { path, mergedToken, resolved }: TokenToBuild,
     context: PermutationContext,
 ): MadeFrom {
     const deprecated = findDeprecation(mergedToken, context.merged);
@@ -263,9 +264,9 @@ function toDefinitions(
 }
 
 function findReusableToken(
-    { path, mergedToken }: TokenStep,
+    { path, mergedToken }: TokenToBuild,
     fields: MadeFrom,
-    targets: readonly ReferenceWithTarget[],
+    targets: readonly ReferenceTo[],
     { reusable }: PermutationContext,
 ): Token | undefined {
     const candidates = reusable.tokens.get(path);
@@ -284,7 +285,7 @@ function createToken(
 
 function linkReferences(
     token: Building<Token>,
-    { mergedToken, targets }: TokenStep,
+    { mergedToken, targets }: TokenToBuild,
     built: ReadonlyMap<string, Token>,
 ): void {
     if (targets.length === 0) return;
@@ -297,7 +298,7 @@ function linkReferences(
 
 function reportDeprecated(
     path: string,
-    targets: readonly ReferenceWithTarget[],
+    targets: readonly ReferenceTo[],
     { diagnostics, input }: PermutationContext,
 ): void {
     for (const { token, occurrence } of targets) {
@@ -447,13 +448,12 @@ function toPermutation(
     );
 }
 
-class ValueResolver {
-    #input: Input;
-    #merged: Merged;
-    #readValue: ValueReader;
+class ValueResolver implements ReferenceResolver {
+    readonly input: Input;
+    readonly merged: Merged;
+    readonly readValue: ValueReader;
     #diagnostics: Problems;
     #missing: MissingIn;
-    #resolving: Resolving;
 
     #results = new Map<string, ResolveResult | typeof RESOLVING>();
     #resolveStack: { path: string; span: Span }[] = [];
@@ -464,20 +464,11 @@ class ValueResolver {
         diagnostics: Problems,
         missing: MissingIn,
     ) {
-        this.#input = input;
-        this.#merged = merged;
-        this.#readValue = readValue;
+        this.input = input;
+        this.merged = merged;
+        this.readValue = readValue;
         this.#diagnostics = diagnostics;
         this.#missing = missing;
-        this.#resolving = {
-            readValue,
-            merged,
-            input,
-            askForValue: (path, from, span) => this.#resolveDependency(path, from, span),
-            report: (kind, detail, path, span) => this.#report(kind, detail, path, span),
-            notReached: (aim, from, span) => this.#reportUnresolved(aim, from, span),
-            reportUnreachable: (aim, from, span) => this.#reportUnreachable(aim, from, span),
-        };
     }
 
     resolve(token: MergedToken): ResolveResult {
@@ -508,10 +499,10 @@ class ValueResolver {
     #findDeclaredType(token: MergedToken): TokenType | "untyped" | undefined {
         if (token.type === undefined && token.reference) return undefined;
 
-        const type = inherited(token, this.#merged, "type");
+        const type = inherited(token, this.merged, "type");
         if (type === "unusable") return "untyped";
         if (type === undefined) {
-            this.#report("missing-type", {}, token.path, token.nameSpan);
+            this.report("missing-type", {}, token.path, token.nameSpan);
             return "untyped";
         }
         return type;
@@ -525,14 +516,14 @@ class ValueResolver {
         const target = this.#followAlias(token, alias);
 
         if (target.kind === "unreachable") {
-            this.#reportUnreachable(alias, token.path, alias.span);
+            this.reportUnreachable(alias, token.path, alias.span);
             return this.#readWithFallbackType(token, declaredType);
         }
 
         if (target.kind === "part") {
             const type = declaredType ?? this.#findGroupType(token);
             if (type === undefined) {
-                this.#report("missing-type", {}, token.path, token.nameSpan);
+                this.report("missing-type", {}, token.path, token.nameSpan);
                 return "untyped";
             }
             return this.#readAndResolve(token, type);
@@ -551,22 +542,22 @@ class ValueResolver {
     #followAlias(token: MergedToken, alias: Occurrence): AliasTarget {
         const { reference } = alias;
         if (reference.syntax === "curly-brace") {
-            const value = this.#resolveDependency(reference.path, token.path, alias.span);
+            const value = this.resolveDependency(reference.path, token.path, alias.span);
             if (value === undefined) return { kind: "unreachable" };
             return { kind: "token", value };
         }
 
-        const reached = followReference(alias, this.#merged);
+        const reached = followReference(alias, this.merged);
         if (reached.kind === "token") {
-            const value = this.#resolveDependency(reached.path, token.path, alias.span);
+            const value = this.resolveDependency(reached.path, token.path, alias.span);
             return { kind: "token", value };
         }
         if (reached.kind === "part") return { kind: "part" };
         return { kind: "unreachable" };
     }
 
-    #resolveDependency(path: string, from: string, span: Span): ResolveResult | undefined {
-        const token = this.#merged.tokens.get(path);
+    resolveDependency(path: string, from: string, span: Span): ResolveResult | undefined {
+        const token = this.merged.tokens.get(path);
         if (!token) return undefined;
 
         this.#resolveStack.push({ path: from, span });
@@ -580,12 +571,12 @@ class ValueResolver {
             result: read,
             references,
             readAgain,
-        } = this.#readValue.read(token, type, this.#input);
+        } = this.readValue.read(token, type, this.input);
         const unresolved = { type, read, references };
         if (!read.ok) return unresolved;
         if (references.length === 0) return { ...unresolved, resolved: read.value };
 
-        const value = resolveValue(this.#resolving, token, read.value, references, readAgain);
+        const value = resolveValue(this, token, read.value, references, readAgain);
         if (value === UNRESOLVED) return unresolved;
         return { ...unresolved, resolved: value };
     }
@@ -597,12 +588,12 @@ class ValueResolver {
     }
 
     #readWithoutResolving(token: MergedToken, type: TokenType): ResolveResult {
-        const { result: read, references } = this.#readValue.read(token, type, this.#input);
+        const { result: read, references } = this.readValue.read(token, type, this.input);
         return { type, read, references };
     }
 
     #findGroupType(token: MergedToken): TokenType | undefined {
-        return usableType(inherited(token, this.#merged, "type"));
+        return usableType(inherited(token, this.merged, "type"));
     }
 
     #reportLoop(path: string): void {
@@ -617,46 +608,46 @@ class ValueResolver {
             span: frame.span,
             path: frame.path,
         }));
-        this.#report("circular-reference", { chain }, first.path, first.span, {
+        this.report("circular-reference", { chain }, first.path, first.span, {
             relatedInformation,
         });
     }
 
-    #reportUnresolved(aim: Aim, from: string, span: Span): void {
+    reportUnresolved(aim: Aim, from: string, span: Span): void {
         const ref = toReferenceTarget(aim.reference);
-        const reached = followReference(aim, this.#merged).kind;
+        const reached = followReference(aim, this.merged).kind;
 
         if (reached === "group") {
-            this.#report("not-a-token", { ref }, from, span);
+            this.report("not-a-token", { ref }, from, span);
             return;
         }
         if (reached === "stops-at-token") {
-            this.#report("not-a-value", { ref, corrected: toValuePointer(ref) }, from, span);
+            this.report("not-a-value", { ref, corrected: toValuePointer(ref) }, from, span);
             return;
         }
         this.#missing.record(aim.reference, from, span);
     }
 
-    #reportUnreachable(aim: Aim, from: string, span: Span): void {
+    reportUnreachable(aim: Aim, from: string, span: Span): void {
         const { reference } = aim;
         if (reference.syntax === "json-pointer") {
-            const malformed = malformation(reference.pointer, this.#merged, "value");
+            const malformed = malformation(reference.pointer, this.merged, "value");
             if (malformed) {
-                this.#report("malformed-pointer", malformed, from, span);
+                this.report("malformed-pointer", malformed, from, span);
                 return;
             }
         }
-        this.#reportUnresolved(aim, from, span);
+        this.reportUnresolved(aim, from, span);
     }
 
-    #report<K extends DiagnosticKind>(
+    report<K extends DiagnosticKind>(
         kind: K,
         detail: DiagnosticDetailByKind[K],
         path: string,
         span: Span,
         extra: Omit<DiagnosticExtra, "span" | "path"> = {},
     ): void {
-        this.#diagnostics.found(diagnostic(kind, detail, { span, path, ...extra }), this.#input);
+        this.#diagnostics.found(diagnostic(kind, detail, { span, path, ...extra }), this.input);
     }
 }
 

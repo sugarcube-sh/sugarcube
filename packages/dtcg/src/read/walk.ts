@@ -121,8 +121,8 @@ export function walkSource(
 
     const walk = createFileWalk(json, diagnostics);
     const overridden = new Set(source.overriddenKeys);
-    const written = members(tree).filter(({ key }) => !overridden.has(key));
-    const entries = correctKeys(walk, "", written, "top");
+    const topEntries = members(tree).filter(({ key }) => !overridden.has(key));
+    const entries = correctKeys(walk, "", topEntries, "top");
 
     const root = readGroup(walk, tree, "", entries);
     walkMembers(walk, [], entries);
