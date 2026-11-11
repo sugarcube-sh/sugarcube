@@ -20,18 +20,18 @@ export const UNRESOLVED = Symbol("unresolved");
 
 export type Target = "untyped" | { type: TokenType; resolved?: unknown };
 
-export interface Resolving {
-    readValue: ValueReader;
-    merged: Merged;
-    input: Input;
-    askForValue(path: string, from: string, span: Span): Target | undefined;
+export interface ReferenceResolver {
+    readonly readValue: ValueReader;
+    readonly merged: Merged;
+    readonly input: Input;
+    resolveDependency(path: string, from: string, span: Span): Target | undefined;
     report<K extends DiagnosticKind>(
         kind: K,
         detail: DiagnosticDetailByKind[K],
         path: string,
         span: Span,
     ): void;
-    notReached(aim: Aim, from: string, span: Span): void;
+    reportUnresolved(aim: Aim, from: string, span: Span): void;
     reportUnreachable(aim: Aim, from: string, span: Span): void;
 }
 
@@ -42,18 +42,18 @@ interface Following {
 }
 
 export function resolveValue(
-    resolving: Resolving,
+    resolver: ReferenceResolver,
     token: MergedToken,
     value: unknown,
     references: LocatedReference[],
     readAgain: ReadAgain[],
 ): unknown {
     const following = { token, seen: [], within: undefined };
-    return resolveReferences(resolving, following, value, references, readAgain);
+    return resolveReferences(resolver, following, value, references, readAgain);
 }
 
 function resolveReferences(
-    resolving: Resolving,
+    resolver: ReferenceResolver,
     following: Following,
     value: unknown,
     references: LocatedReference[],
@@ -65,7 +65,7 @@ function resolveReferences(
     for (const located of references) {
         const { property } = located.reference;
         if (readAgain.some((each) => startsWith(property, each.property))) continue;
-        const part = follow(resolving, following, located);
+        const part = follow(resolver, following, located);
         if (part === UNRESOLVED) failed = true;
         else {
             followed.push([located, part]);
@@ -74,7 +74,7 @@ function resolveReferences(
     }
     if (failed) return UNRESOLVED;
 
-    const { readValue, input } = resolving;
+    const { readValue, input } = resolver;
     const { token, within } = following;
     for (const again of readAgain) {
         const { jsonPath, owner, raw } = again;
@@ -86,15 +86,19 @@ function resolveReferences(
             reference,
             occurrence: within ?? occurrence(token, reference),
         }));
-        const part = resolveReferences(resolving, following, result.value, inner, notes.readAgain);
+        const part = resolveReferences(resolver, following, result.value, inner, notes.readAgain);
         if (part === UNRESOLVED) return UNRESOLVED;
         resolved = replaced(resolved, again.property, part);
     }
     return resolved;
 }
 
-function follow(resolving: Resolving, following: Following, located: LocatedReference): unknown {
-    const { merged, readValue, input, report, notReached, reportUnreachable } = resolving;
+function follow(
+    resolver: ReferenceResolver,
+    following: Following,
+    located: LocatedReference,
+): unknown {
+    const { merged, readValue, input } = resolver;
     const { token, seen, within } = following;
     const { ref, syntax, owner, element, jsonPath } = located.reference;
     const use = within ?? located.occurrence;
@@ -105,26 +109,26 @@ function follow(resolving: Resolving, following: Following, located: LocatedRefe
             : part;
 
     if (ref.syntax === "curly-brace") {
-        return adjusted(substitute(resolving, token, ref, ref.path, expected, use, element));
+        return adjusted(substitute(resolver, token, ref, ref.path, expected, use, element));
     }
 
     const { pointer: written } = ref;
     if (seen.includes(written)) {
-        report("circular-reference", { chain: [...seen, written] }, token.path, use.span);
+        resolver.report("circular-reference", { chain: [...seen, written] }, token.path, use.span);
         return UNRESOLVED;
     }
     const aim = { reference: ref, steps: toPointerSteps(ref) };
     const reached = followReference(aim, merged);
     const unreachable = () => {
-        if (within) notReached(aim, token.path, use.span);
-        else reportUnreachable(aim, token.path, use.span);
+        if (within) resolver.reportUnresolved(aim, token.path, use.span);
+        else resolver.reportUnreachable(aim, token.path, use.span);
         return UNRESOLVED;
     };
     if (reached.kind !== "token" && reached.kind !== "part") return unreachable();
 
     const whole = reached.kind === "token";
     if (whole && (syntax.kind === "ofType" || element)) {
-        return adjusted(substitute(resolving, token, ref, reached.path, expected, use, element));
+        return adjusted(substitute(resolver, token, ref, reached.path, expected, use, element));
     }
     const { valueAsWritten } = reached.token;
     const stepped = whole ? { value: valueAsWritten } : stepInto(valueAsWritten, reached.inside);
@@ -136,11 +140,11 @@ function follow(resolving: Resolving, following: Following, located: LocatedRefe
     if (!result.ok) return UNRESOLVED;
     const inner = notes.references.map((reference) => ({ reference, occurrence: use }));
     const deeper = { token, seen: [...seen, written], within: use };
-    return resolveReferences(resolving, deeper, result.value, inner, notes.readAgain);
+    return resolveReferences(resolver, deeper, result.value, inner, notes.readAgain);
 }
 
 function substitute(
-    { askForValue, report, notReached }: Resolving,
+    resolver: ReferenceResolver,
     token: MergedToken,
     reference: WrittenReference,
     path: string,
@@ -150,20 +154,34 @@ function substitute(
 ): unknown {
     const { span } = use;
     const shown = toReferenceTarget(reference);
-    const target = askForValue(path, token.path, span);
+    const target = resolver.resolveDependency(path, token.path, span);
     if (target === undefined) {
-        notReached({ reference, steps: toPointerSteps(reference) }, token.path, span);
+        resolver.reportUnresolved(
+            { reference, steps: toPointerSteps(reference) },
+            token.path,
+            span,
+        );
         return UNRESOLVED;
     }
     if (target === "untyped" || !("resolved" in target)) return UNRESOLVED;
     if (target.type !== expected) {
-        report("type-mismatch", { ref: shown, expected, found: target.type }, token.path, span);
+        resolver.report(
+            "type-mismatch",
+            { ref: shown, expected, found: target.type },
+            token.path,
+            span,
+        );
         return UNRESOLVED;
     }
     if (!element) return target.resolved;
     const list = Array.isArray(target.resolved) ? target.resolved : [target.resolved];
     if (list.length !== 1) {
-        report("reference-to-several", { ref: shown, count: list.length }, token.path, span);
+        resolver.report(
+            "reference-to-several",
+            { ref: shown, count: list.length },
+            token.path,
+            span,
+        );
         return UNRESOLVED;
     }
     return list[0];

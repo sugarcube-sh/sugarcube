@@ -77,7 +77,23 @@ export interface SourceContents {
     members: SourceMember[];
 }
 
+interface FileWalk {
+    json: JsonFile;
+    members: SourceMember[];
+    report<K extends DiagnosticKind>(
+        kind: K,
+        detail: DiagnosticDetailByKind[K],
+        node: Node,
+        extra?: Omit<DiagnosticExtra, "span">,
+    ): void;
+}
+
+type Level = "top" | "member";
+
+type Owner = "token" | "group";
+
 type NonObjectKind = DiagnosticDetailByKind["invalid-member"]["found"];
+
 type Property = Exclude<
     DiagnosticDetailByKind["invalid-property"]["property"],
     "$extends" | "$ref"
@@ -85,7 +101,9 @@ type Property = Exclude<
 
 const OWN: ReadonlySet<string> = new Set(OWN_PROPERTIES);
 
-const WITHOUT_DOLLAR = new Map(OWN_PROPERTIES.map((property) => [property.slice(1), property]));
+const PROPERTY_BY_BARE_NAME = new Map(
+    OWN_PROPERTIES.map((property) => [property.slice(1), property]),
+);
 
 const EXPECTED: Record<Property, DiagnosticDetailByKind["invalid-property"]["expected"]> = {
     $type: "string",
@@ -101,235 +119,333 @@ export function walkSource(
     const { json, tree } = source;
     if (!json || !tree) return undefined;
 
-    const written: SourceMember[] = [];
+    const walk = createFileWalk(json, diagnostics);
     const overridden = new Set(source.overriddenKeys);
-    const report = <K extends DiagnosticKind>(
-        kind: K,
-        detail: DiagnosticDetailByKind[K],
-        node: Node,
-        extra: Omit<DiagnosticExtra, "span"> = {},
-    ) => diagnostics.push(diagnostic(kind, detail, { span: toSpan(json, node), ...extra }));
+    const topEntries = members(tree).filter(({ key }) => !overridden.has(key));
+    const entries = correctKeys(walk, "", topEntries, "top");
 
-    const readType = (path: string, node: Node, name: string) => {
-        if (isTokenType(name)) return name;
-        const similar = similarName(name, tokenTypes);
-        const detail = { type: name, ...(similar !== undefined && { similar }) };
-        report("unknown-type", detail, node, { path });
-        return "unusable";
-    };
-
-    const readProperties = (path: string, entries: readonly Member[]): Properties => {
-        const properties: Properties = {};
-        for (const { key, value } of entries) {
-            const raw: unknown = value.value;
-            if (key === "$type" && typeof raw === "string") {
-                properties.type = readType(path, value, raw);
-            } else if (key === "$description" && typeof raw === "string") {
-                properties.description = raw;
-            } else if (
-                key === "$deprecated" &&
-                (typeof raw === "string" || typeof raw === "boolean")
-            ) {
-                properties.deprecated = raw;
-            } else if (key === "$extensions" && value.type === "object") {
-                properties.extensions = plainObject(value);
-            } else if (isProperty(key)) {
-                report("invalid-property", { property: key, expected: EXPECTED[key] }, value);
-                if (key === "$type") properties.type = "unusable";
-            }
-        }
-        return properties;
-    };
-
-    const readPropertiesAndExtensions = (path: string, entries: readonly Member[]) => {
-        const properties = readProperties(path, entries);
-        const extensions = entries.find(({ key }) => key === "$extensions")?.value;
-        return {
-            ...properties,
-            ...(properties.extensions &&
-                extensions && { extensionsAt: { json, node: extensions } }),
-        };
-    };
-
-    const readExtends = (node: Node, entries: readonly Member[]): GroupReference | undefined => {
-        const value = entries.find(({ key }) => key === "$extends")?.value;
-        if (!value) return undefined;
-        const reference = parseReference(plainValue(value));
-        if (!reference) {
-            const suggested = asReference(value.value);
-            const detail = { property: "$extends", expected: "reference" } as const;
-            report(
-                "invalid-property",
-                { ...detail, ...(suggested && { reference: suggested }) },
-                value,
-            );
-            return undefined;
-        }
-        return {
-            reference,
-            steps: toPointerSteps(reference),
-            json,
-            node: value,
-            span: toSpan(json, value),
-            groupSpan: toSpan(json, node),
-        };
-    };
-
-    const addToken = (
-        node: Node,
-        path: string,
-        entries: readonly Member[],
-        value: Node,
-        valueAsWritten: unknown,
-    ) => {
-        written.push({
-            token: {
-                path,
-                json,
-                value,
-                valueAsWritten,
-                reference: parseReference(valueAsWritten),
-                span: toSpan(json, node),
-                nameSpan: toSpan(json, keyOf(node)),
-                ...readPropertiesAndExtensions(path, entries),
-            },
-        });
-    };
-
-    const visitToken = (node: Node, path: string, entries: readonly Member[], value: Node) => {
-        const child = entries.find(({ key }) => isMemberName(key));
-        if (child) {
-            const found = nonObjectKind(child.value) ?? "object";
-            report("token-and-group", { reason: "child", child: child.key, found }, child.keyNode);
-        }
-        addToken(node, path, entries, value, plainValue(value));
-    };
-
-    const visitRefToken = (node: Node, path: string, entries: readonly Member[], ref: Node) => {
-        const pointer: unknown = ref.value;
-        if (typeof pointer !== "string") {
-            report("invalid-property", { property: "$ref", expected: "string" }, ref);
-            return;
-        }
-        if (entries.some(({ key }) => isMemberName(key))) {
-            report("token-and-group", { reason: "ref", ref: pointer }, ref, { path });
-        }
-        addToken(node, path, entries, ref, { $ref: pointer });
-    };
-
-    const readGroup = (node: Node, path: string, entries: readonly Member[]): SourceGroup => {
-        const extending = readExtends(node, entries);
-        return {
-            path,
-            span: toSpan(json, node),
-            nameSpan: toSpan(json, keyOf(node)),
-            ...readPropertiesAndExtensions(path, entries),
-            ...(extending && { extends: extending }),
-        };
-    };
-
-    const visitGroup = (node: Node, segments: string[], entries: readonly Member[]) => {
-        written.push({ group: readGroup(node, segments.join("."), entries) });
-        visitMembers(segments, entries);
-    };
-
-    const intended = (entry: Member): OwnProperty | undefined => {
-        const { key, value } = entry;
-        if (isOwnProperty(key)) return key;
-        if (OTHER_SPEC_KEYS.has(key)) return undefined;
-        if (key.startsWith("$")) return similarName(key, OWN_PROPERTIES);
-        const property = WITHOUT_DOLLAR.get(key);
-        return property !== undefined && !holdsToken(value) ? property : undefined;
-    };
-
-    const asWritten = (
-        path: string,
-        entries: readonly Member[],
-        top: boolean,
-    ): readonly Member[] => {
-        const meant = entries.map((entry) => {
-            const property = intended(entry);
-            if (property === entry.key) return property;
-            if (property === undefined || entries.some(({ key }) => key === property)) {
-                return undefined;
-            }
-            return top && property === "$value" ? undefined : property;
-        });
-        const isToken =
-            !top && entries.some((entry, index) => isTokenKey(meant[index] ?? entry.key));
-        const owner = isToken ? "token" : "group";
-        let renamed: Member[] | undefined;
-        for (const [index, entry] of entries.entries()) {
-            const property = meant[index];
-            const { key, keyNode } = entry;
-            if (property !== undefined && property !== key) {
-                report("misspelt-property", { written: key, property, owner }, keyNode, { path });
-                renamed ??= [...entries];
-                renamed[index] = { ...entry, key: property };
-            } else if (isMisplaced(key, isToken, top)) {
-                report("unknown-property", { property: key, owner }, keyNode, { path });
-            } else if (property === undefined && key.startsWith("$") && !OTHER_SPEC_KEYS.has(key)) {
-                if (holdsToken(entry.value)) {
-                    report("invalid-name", { name: key, character: "$" }, keyNode, { path });
-                } else if (!top) {
-                    report("unknown-property", { property: key, owner }, keyNode, { path });
-                } else if (key !== "$schema") {
-                    const detail = { property: key, owner, ignored: true } as const;
-                    report("unknown-property", detail, keyNode, { path });
-                }
-            }
-        }
-        return renamed ?? entries;
-    };
-
-    const visitMembers = (segments: string[], entries: readonly Member[]) => {
-        for (const { key, keyNode, value } of entries) {
-            if (!isMemberName(key)) continue;
-            const found = nonObjectKind(value);
-            if (found) {
-                report("invalid-member", { name: key, found }, value);
-                continue;
-            }
-            const inside = asWritten([...segments, key].join("."), members(value), false);
-            const tokenValue = inside.find((entry) => entry.key === "$value")?.value;
-            const ref = inside.find((entry) => entry.key === "$ref");
-            if (key === "$root" && !tokenValue && !ref) {
-                report("invalid-name", { name: key, character: "$" }, keyNode);
-                continue;
-            }
-            const problem = tokenPath.findNameProblem(key);
-            if (problem) {
-                report("invalid-name", { name: key, ...problem }, keyNode);
-                continue;
-            }
-            if (key !== key.trim()) report("whitespace-in-name", { name: key }, keyNode);
-
-            const path = [...segments, key];
-            const joined = path.join(".");
-            if (tokenValue) {
-                if (ref) report("ref-and-value", {}, ref.keyNode, { path: joined });
-                visitToken(value, joined, inside, tokenValue);
-            } else if (ref) visitRefToken(value, joined, inside, ref.value);
-            else visitGroup(value, path, inside);
-        }
-    };
-
-    const rootEntries = asWritten(
-        "",
-        members(tree).filter(({ key }) => !overridden.has(key)),
-        true,
-    );
-    const root = readGroup(tree, "", rootEntries);
-    visitMembers([], rootEntries);
-    return { root, members: written };
+    const root = readGroup(walk, tree, "", entries);
+    walkMembers(walk, [], entries);
+    return { root, members: walk.members };
 }
 
-function nonObjectKind(node: Node): NonObjectKind | undefined {
+function createFileWalk(json: JsonFile, diagnostics: Diagnostic[]): FileWalk {
+    return {
+        json,
+        members: [],
+        report: (kind, detail, node, extra = {}) => {
+            diagnostics.push(diagnostic(kind, detail, { span: toSpan(json, node), ...extra }));
+        },
+    };
+}
+
+function walkMembers(walk: FileWalk, segments: string[], entries: readonly Member[]): void {
+    for (const entry of entries) walkMember(walk, segments, entry);
+}
+
+function walkMember(walk: FileWalk, segments: string[], { key, keyNode, value }: Member): void {
+    if (!isMemberName(key)) return;
+
+    const found = findNonObjectKind(value);
+    if (found) {
+        walk.report("invalid-member", { name: key, found }, value);
+        return;
+    }
+
+    const path = [...segments, key];
+    const joined = path.join(".");
+    const entries = correctKeys(walk, joined, members(value), "member");
+    const tokenValue = findEntry(entries, "$value")?.value;
+    const ref = findEntry(entries, "$ref");
+
+    const isToken = tokenValue !== undefined || ref !== undefined;
+    if (!checkMemberName(walk, key, keyNode, isToken)) return;
+
+    if (tokenValue) {
+        if (ref) walk.report("ref-and-value", {}, ref.keyNode, { path: joined });
+        walkValueToken(walk, value, joined, entries, tokenValue);
+        return;
+    }
+    if (ref) {
+        walkRefToken(walk, value, joined, entries, ref.value);
+        return;
+    }
+    walkGroup(walk, value, path, entries);
+}
+
+function checkMemberName(walk: FileWalk, key: string, keyNode: Node, isToken: boolean): boolean {
+    if (key === "$root" && !isToken) {
+        walk.report("invalid-name", { name: key, character: "$" }, keyNode);
+        return false;
+    }
+
+    const problem = tokenPath.findNameProblem(key);
+    if (problem) {
+        walk.report("invalid-name", { name: key, ...problem }, keyNode);
+        return false;
+    }
+
+    if (key !== key.trim()) walk.report("whitespace-in-name", { name: key }, keyNode);
+    return true;
+}
+
+function walkValueToken(
+    walk: FileWalk,
+    node: Node,
+    path: string,
+    entries: readonly Member[],
+    value: Node,
+): void {
+    const child = entries.find(({ key }) => isMemberName(key));
+    if (child) {
+        const found = findNonObjectKind(child.value) ?? "object";
+        const detail = { reason: "child", child: child.key, found } as const;
+        walk.report("token-and-group", detail, child.keyNode);
+    }
+
+    addToken(walk, node, path, entries, value, plainValue(value));
+}
+
+function walkRefToken(
+    walk: FileWalk,
+    node: Node,
+    path: string,
+    entries: readonly Member[],
+    ref: Node,
+): void {
+    const pointer: unknown = ref.value;
+    if (typeof pointer !== "string") {
+        walk.report("invalid-property", { property: "$ref", expected: "string" }, ref);
+        return;
+    }
+
+    if (entries.some(({ key }) => isMemberName(key))) {
+        walk.report("token-and-group", { reason: "ref", ref: pointer }, ref, { path });
+    }
+
+    addToken(walk, node, path, entries, ref, { $ref: pointer });
+}
+
+function addToken(
+    walk: FileWalk,
+    node: Node,
+    path: string,
+    entries: readonly Member[],
+    value: Node,
+    valueAsWritten: unknown,
+): void {
+    const { json } = walk;
+    const token: SourceToken = {
+        path,
+        json,
+        value,
+        valueAsWritten,
+        reference: parseReference(valueAsWritten),
+        span: toSpan(json, node),
+        nameSpan: toSpan(json, keyOf(node)),
+        ...readProperties(walk, path, entries),
+    };
+    walk.members.push({ token });
+}
+
+function walkGroup(walk: FileWalk, node: Node, segments: string[], entries: readonly Member[]) {
+    const group = readGroup(walk, node, segments.join("."), entries);
+    walk.members.push({ group });
+    walkMembers(walk, segments, entries);
+}
+
+function readGroup(
+    walk: FileWalk,
+    node: Node,
+    path: string,
+    entries: readonly Member[],
+): SourceGroup {
+    const { json } = walk;
+    const extending = readExtends(walk, node, entries);
+    return {
+        path,
+        span: toSpan(json, node),
+        nameSpan: toSpan(json, keyOf(node)),
+        ...readProperties(walk, path, entries),
+        ...(extending && { extends: extending }),
+    };
+}
+
+function readExtends(
+    walk: FileWalk,
+    groupNode: Node,
+    entries: readonly Member[],
+): GroupReference | undefined {
+    const value = findEntry(entries, "$extends")?.value;
+    if (!value) return undefined;
+
+    const reference = parseReference(plainValue(value));
+    if (!reference) {
+        reportInvalidExtends(walk, value);
+        return undefined;
+    }
+
+    const { json } = walk;
+    return {
+        reference,
+        steps: toPointerSteps(reference),
+        json,
+        node: value,
+        span: toSpan(json, value),
+        groupSpan: toSpan(json, groupNode),
+    };
+}
+
+function reportInvalidExtends(walk: FileWalk, value: Node): void {
+    const detail = { property: "$extends", expected: "reference" } as const;
+    const suggested = suggestReference(value.value);
+    if (suggested === undefined) {
+        walk.report("invalid-property", detail, value);
+        return;
+    }
+    walk.report("invalid-property", { ...detail, reference: suggested }, value);
+}
+
+function readProperties(
+    walk: FileWalk,
+    path: string,
+    entries: readonly Member[],
+): Properties & { extensionsAt?: ExtensionsAt } {
+    const properties: Properties & { extensionsAt?: ExtensionsAt } = {};
+    for (const { key, value } of entries) {
+        const raw: unknown = value.value;
+        if (key === "$type" && typeof raw === "string") {
+            properties.type = readType(walk, path, value, raw);
+        } else if (key === "$description" && typeof raw === "string") {
+            properties.description = raw;
+        } else if (key === "$deprecated" && (typeof raw === "string" || typeof raw === "boolean")) {
+            properties.deprecated = raw;
+        } else if (key === "$extensions" && value.type === "object") {
+            properties.extensions = plainObject(value);
+            properties.extensionsAt = { json: walk.json, node: value };
+        } else if (isProperty(key)) {
+            walk.report("invalid-property", { property: key, expected: EXPECTED[key] }, value);
+            if (key === "$type") properties.type = "unusable";
+        }
+    }
+    return properties;
+}
+
+function readType(walk: FileWalk, path: string, node: Node, name: string): TokenType | "unusable" {
+    if (isTokenType(name)) return name;
+
+    const similar = similarName(name, tokenTypes);
+    const detail = { type: name, ...(similar !== undefined && { similar }) };
+    walk.report("unknown-type", detail, node, { path });
+    return "unusable";
+}
+
+function correctKeys(
+    walk: FileWalk,
+    path: string,
+    entries: readonly Member[],
+    level: Level,
+): readonly Member[] {
+    const intendedKeys = entries.map((entry) => findIntendedKey(entry, entries, level));
+    const owner: Owner = isTokenObject(entries, intendedKeys, level) ? "token" : "group";
+
+    let corrected: Member[] | undefined;
+    for (const [index, entry] of entries.entries()) {
+        const intended = intendedKeys[index];
+        const { key, keyNode } = entry;
+
+        if (intended !== undefined && intended !== key) {
+            const detail = { written: key, property: intended, owner };
+            walk.report("misspelt-property", detail, keyNode, { path });
+            corrected ??= [...entries];
+            corrected[index] = { ...entry, key: intended };
+            continue;
+        }
+
+        reportKeyProblem(walk, path, entry, intended, owner, level);
+    }
+    return corrected ?? entries;
+}
+
+function findIntendedKey(
+    entry: Member,
+    entries: readonly Member[],
+    level: Level,
+): OwnProperty | undefined {
+    const property = guessIntendedProperty(entry);
+    if (property === entry.key) return property;
+    if (property === undefined) return undefined;
+
+    const alreadyWritten = entries.some(({ key }) => key === property);
+    if (alreadyWritten) return undefined;
+    if (level === "top" && property === "$value") return undefined;
+    return property;
+}
+
+function guessIntendedProperty({ key, value }: Member): OwnProperty | undefined {
+    if (isOwnProperty(key)) return key;
+    if (OTHER_SPEC_KEYS.has(key)) return undefined;
+    if (key.startsWith("$")) return similarName(key, OWN_PROPERTIES);
+
+    const property = PROPERTY_BY_BARE_NAME.get(key);
+    if (property === undefined || containsToken(value)) return undefined;
+    return property;
+}
+
+function isTokenObject(
+    entries: readonly Member[],
+    intendedKeys: readonly (OwnProperty | undefined)[],
+    level: Level,
+): boolean {
+    if (level === "top") return false;
+    return entries.some((entry, index) => isTokenKey(intendedKeys[index] ?? entry.key));
+}
+
+function reportKeyProblem(
+    walk: FileWalk,
+    path: string,
+    { key, keyNode, value }: Member,
+    intended: OwnProperty | undefined,
+    owner: Owner,
+    level: Level,
+): void {
+    if (isMisplaced(key, owner, level)) {
+        walk.report("unknown-property", { property: key, owner }, keyNode, { path });
+        return;
+    }
+
+    const isUnknownSpecKey = key.startsWith("$") && !OTHER_SPEC_KEYS.has(key);
+    if (intended !== undefined || !isUnknownSpecKey) return;
+
+    if (containsToken(value)) {
+        walk.report("invalid-name", { name: key, character: "$" }, keyNode, { path });
+        return;
+    }
+    if (level === "member") {
+        walk.report("unknown-property", { property: key, owner }, keyNode, { path });
+        return;
+    }
+    if (key === "$schema") return;
+
+    const detail = { property: key, owner, ignored: true } as const;
+    walk.report("unknown-property", detail, keyNode, { path });
+}
+
+function isMisplaced(key: string, owner: Owner, level: Level): boolean {
+    if (level === "top") return isTokenKey(key);
+    return owner === "token" && key === "$extends";
+}
+
+function findEntry(entries: readonly Member[], key: string): Member | undefined {
+    return entries.find((entry) => entry.key === key);
+}
+
+function findNonObjectKind(node: Node): NonObjectKind | undefined {
     if (node.type === "object" || node.type === "property") return undefined;
     return node.type;
 }
 
-function asReference(written: unknown): string | undefined {
+function suggestReference(written: unknown): string | undefined {
     if (typeof written !== "string" || written === "" || /[{}#]/.test(written)) return undefined;
     return `{${written}}`;
 }
@@ -342,16 +458,11 @@ function isOwnProperty(key: string): key is OwnProperty {
     return OWN.has(key);
 }
 
-function isMisplaced(key: string, isToken: boolean, top: boolean): boolean {
-    if (top) return isTokenKey(key);
-    return isToken && key === "$extends";
-}
-
 function isMemberName(key: string): boolean {
     return !key.startsWith("$") || key === "$root";
 }
 
-function holdsToken(node: Node): boolean {
+function containsToken(node: Node): boolean {
     if (node.type !== "object") return false;
-    return members(node).some(({ key, value }) => isTokenKey(key) || holdsToken(value));
+    return members(node).some(({ key, value }) => isTokenKey(key) || containsToken(value));
 }

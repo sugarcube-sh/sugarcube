@@ -300,3 +300,62 @@ describe("tokens.reread", () => {
         expect(added.getPermutation().getToken("gap")).toBeDefined();
     });
 });
+
+describe("a reread of a token that points at one written after it", () => {
+    const forwardFiles = {
+        "tokens.resolver.json": oneSet("size.json", "other.json"),
+        "size.json": JSON.stringify({
+            size: {
+                $type: "number",
+                alias: { $value: "{size.base}" },
+                part: { $value: { $ref: "#/size/base/$value" } },
+                base: { $value: 4 },
+            },
+        }),
+        "other.json": JSON.stringify({ other: { $type: "number", $value: 1 } }),
+    };
+    const first = readFromMemory({ files: forwardFiles });
+    const second = first.reread({
+        "other.json": JSON.stringify({ other: { $type: "number", $value: 2 } }),
+    });
+    const keptOnReread = (path: string) =>
+        first.getPermutation().getToken(path) === second.getPermutation().getToken(path);
+
+    it("keeps it when nothing it points at changed", () => {
+        expect(second.getPermutation().getToken("size.alias")).toBeDefined();
+        expect(keptOnReread("size.alias")).toBe(true);
+        expect(keptOnReread("size.part")).toBe(true);
+        expect(keptOnReread("other")).toBe(false);
+    });
+});
+
+describe("a reread where two tokens point into each other's parts", () => {
+    const border = (fields: Record<string, unknown>) => ({
+        color: { colorSpace: "srgb", components: [0, 0, 0] },
+        width: { value: 1, unit: "px" },
+        style: "solid",
+        ...fields,
+    });
+    const untypedFiles = {
+        "tokens.resolver.json": oneSet("x.json", "t.json"),
+        "x.json": JSON.stringify({
+            x: { $value: border({ color: { $ref: "#/t/$value/color" } }) },
+        }),
+        "t.json": JSON.stringify({
+            t: { $type: "border", $value: border({ width: { $ref: "#/x/$value/width" } }) },
+        }),
+    };
+    const first = readFromMemory({ files: untypedFiles });
+    const second = first.reread({
+        "x.json": JSON.stringify({
+            x: { $type: "border", $value: border({ color: { $ref: "#/t/$value/color" } }) },
+        }),
+    });
+
+    it("links a token to the one it points into once that token has a type", () => {
+        const t = second.getPermutation().getToken("t");
+        const x = second.getPermutation().getToken("x");
+        expect(x).toBeDefined();
+        expect(t?.references[0]?.pointsToToken).toBe(x);
+    });
+});
