@@ -26,10 +26,7 @@
     {
       "kind": "missing-type",
       "detail": {},
-      "span": {
-        "file": "tokens.json",
-        "valueAfter": "\"loose\":"
-      },
+      "span": { "file": "tokens.json", "text": "\"loose\"" },
       "path": "loose"
     }
   ]

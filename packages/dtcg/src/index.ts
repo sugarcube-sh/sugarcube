@@ -8,6 +8,7 @@ export { getFilePath } from "./read/paths.js";
 export { tokenPath } from "./path.js";
 export { toInputLabel } from "./lookup/permutation-label.js";
 export { groupPermutationsBy } from "./lookup/group-permutations.js";
+export { getSourceLine } from "./lookup/source-line.js";
 export { isEqualJson, isEquivalentValue } from "./values/same-value.js";
 export type { ValueErrorCode, ValueErrorDetail } from "./values/value-errors.js";
 
@@ -84,6 +85,7 @@ export type {
     SimplePart,
     Source,
     SourceRef,
+    SourceLine,
     Span,
     StandardSchemaV1,
     StrokeStyleKeyword,

@@ -35,10 +35,7 @@
     {
       "kind": "missing-type",
       "detail": {},
-      "span": {
-        "file": "tokens.json",
-        "valueAfter": "\"light\":"
-      },
+      "span": { "file": "tokens.json", "text": "\"light\"" },
       "path": "accent.light"
     }
   ]

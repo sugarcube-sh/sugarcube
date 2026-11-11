@@ -52,10 +52,7 @@
     {
       "kind": "missing-type",
       "detail": {},
-      "span": {
-        "file": "tokens.json",
-        "valueAfter": "\"sm\":"
-      },
+      "span": { "file": "tokens.json", "text": "\"sm\"" },
       "path": "size.sm"
     }
   ]

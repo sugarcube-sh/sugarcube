@@ -13,6 +13,7 @@ interface Served {
     server: ViteDevServer;
     context: SugarcubePluginContext;
     logged: string[];
+    warned: string[];
     overlays: string[];
     css: (classes: string) => Promise<string>;
 }
@@ -67,13 +68,16 @@ function config(variablesExtra: string) {
     );
 }
 
-function capturing(logged: string[]): Logger {
+function capturing(logged: string[], warned: string[] = []): Logger {
     const log = (message: string) => {
         logged.push(stripVTControlCharacters(message));
     };
     return {
         info: log,
-        warn: log,
+        warn: (message) => {
+            warned.push(stripVTControlCharacters(message));
+            log(message);
+        },
         warnOnce: log,
         error: log,
         clearScreen: () => {},
@@ -84,6 +88,7 @@ function capturing(logged: string[]): Logger {
 
 async function serve(): Promise<Served> {
     const logged: string[] = [];
+    const warned: string[] = [];
     const overlays: string[] = [];
     const plugins = (await sugarcube()) as Array<{ name: string; api?: any }>;
     let watching: Promise<void> = Promise.resolve();
@@ -96,7 +101,7 @@ async function serve(): Promise<Served> {
     const server = await createServer({
         root: folder,
         configFile: false,
-        customLogger: capturing(logged),
+        customLogger: capturing(logged, warned),
         plugins: [ready, ...plugins],
         server: { port: 0 },
     });
@@ -116,7 +121,7 @@ async function serve(): Promise<Served> {
     const context = plugins.find((p) => p.name === SUGARCUBE_API_PLUGIN_NAME)?.api.getContext();
     const uno = plugins.find((p) => p.name === "unocss:api")?.api.getContext();
     const css = async (classes: string) => (await uno.uno.generate(classes)).css as string;
-    served = { server, context, logged, overlays, css };
+    served = { server, context, logged, warned, overlays, css };
     return served;
 }
 
@@ -213,12 +218,37 @@ describe("sugarcube's Vite plugin", () => {
 
         expect(await css("text-ink")).toContain("--color-ink: #111111");
         expect(await css("text-text")).not.toContain(".text-text");
-        expect(logged.join("\n")).toContain(
-            "tokens/base.json:9:17  error  `color.inc` does not exist  did you mean `color.ink`?",
+        const problem = logged.find((each) => each.startsWith("tokens/base.json:9:17"));
+        expect(problem?.split("\n").slice(0, 2)).toStrictEqual([
+            "tokens/base.json:9:17  error[missing-reference]",
+            "  `color.inc` does not exist",
+        ]);
+        expect(problem).toContain("did you mean `color.ink`?");
+        expect(logged.some((each) => each.endsWith(" error.") || each.endsWith(" errors."))).toBe(
+            false,
         );
-        expect(logged.join("\n")).toMatch(/\n1 error\.$/m);
         expect(overlays).toEqual([]);
         expect(context.configProblems).toEqual([]);
+    });
+
+    it("prints each problem as its own error or warning", async () => {
+        await project();
+        const { context, logged, warned } = await serve();
+
+        const reload = reloaded(context);
+        await tokens({
+            color: {
+                ink: { ...color("#111111"), $deprecated: true },
+                text: color("{color.ink}"),
+                link: color("{color.inc}"),
+            },
+        });
+        await reload;
+
+        const deprecated = logged.filter((each) => each.includes("[deprecated-reference]"));
+        const missing = logged.filter((each) => each.includes("[missing-reference]"));
+        expect([deprecated.length, missing.length]).toStrictEqual([1, 1]);
+        expect(warned).toStrictEqual(deprecated);
     });
 
     it("serves the CSS again once the errors are fixed", async () => {
@@ -278,7 +308,9 @@ describe("sugarcube's Vite plugin", () => {
 
         await rm(join(folder, "sugarcube.config.ts"));
         await until(() => context.configProblems.length > 0, "the config's problem");
-        expect(logged.join("\n")).toMatch(/^sugarcube\.config\.ts {2}error {2}.*deleted/m);
+        expect(logged.join("\n")).toMatch(
+            /^sugarcube\.config\.ts {2}error\[invalid-config\]\n {2}.*deleted/m,
+        );
         expect(await css("text-ink")).toContain("--color-ink: #111111");
 
         const reload = reloaded(context);
@@ -296,7 +328,7 @@ describe("sugarcube's Vite plugin", () => {
         await save("sugarcube.config.ts", "export default { variables: ;");
         await until(() => configProblems().length > 0, "the config's problem");
 
-        expect(logged.join("\n")).toMatch(/^sugarcube\.config\.ts {2}error {2}/m);
+        expect(logged.join("\n")).toMatch(/^sugarcube\.config\.ts {2}error\[invalid-config\]/m);
         expect(context.configProblems.length).toBeGreaterThan(0);
         expect(context.configProblems.every(({ kind }) => kind === "invalid-config")).toBe(true);
 

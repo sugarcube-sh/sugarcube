@@ -130,8 +130,9 @@ describe("generate --watch", () => {
             await until(() => output().includes("No CSS was written."), "the problem");
 
             expect(output()).toContain(
-                "tokens/base.json:8:17  error  `color.inc` does not exist  did you mean `color.ink`?",
+                "tokens/base.json:8:17  error[missing-reference]\n  `color.inc` does not exist\n",
             );
+            expect(output()).toContain("did you mean `color.ink`?");
             expect(text(variables())).toBe(before);
 
             await tokens({ color: { ink: color("#333333") } });
@@ -211,7 +212,9 @@ describe("generate --watch", () => {
 
             await rm(join(dir, "sugarcube.config.ts"));
             await until(() => output().includes("invalid-config"), "the config's problem");
-            expect(output()).toMatch(/^sugarcube\.config\.ts {2}error {2}.*deleted/m);
+            expect(output()).toMatch(
+                /^sugarcube\.config\.ts {2}error\[invalid-config\]\n {2}.*deleted/m,
+            );
             expect(defaults.filter((path) => existsSync(join(dir, path)))).toEqual([]);
 
             await config(`, prefix: "ds"`);
@@ -243,7 +246,7 @@ describe("generate --watch", () => {
 
             await writeFile(join(dir, "sugarcube.config.ts"), "export default { variables: ;");
             await until(() => listed() > 0, "the config's problem");
-            expect(output()).toMatch(/^sugarcube\.config\.ts {2}error {2}/m);
+            expect(output()).toMatch(/^sugarcube\.config\.ts {2}error\[invalid-config\]/m);
             const afterTheConfigSave = await settled();
 
             await tokens({ color: { ink: color("#777777") } });

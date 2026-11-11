@@ -78,8 +78,9 @@ describe("validate command", () => {
 
             expect(result.exitCode).toBe(1);
             expect(result.stdout).toContain(
-                "tokens/base.json:15:15  error  `inc` does not exist  did you mean `ink`?  missing-reference",
+                "tokens/base.json:15:15  error[missing-reference]\n  `inc` does not exist\n",
             );
+            expect(result.stdout).toContain("did you mean `ink`?");
             expect(result.stdout).toContain("1 error.");
             expect(result.stdout).not.toContain("All tokens valid");
         },
@@ -150,7 +151,9 @@ describe("validate command", () => {
             const result = await validate("tokens");
 
             expect(result.exitCode).toBe(1);
-            expect(result.stdout).toContain("in theme: dark  missing-reference");
+            expect(result.stdout).toMatch(
+                /^tokens\/dark\.json:\d+:\d+  error\[missing-reference\]\n  `missing` does not exist$/m,
+            );
         },
     );
 
@@ -228,7 +231,9 @@ describe("validate command", () => {
             const result = await validate("tokens/a.json");
 
             expect(result.exitCode).toBe(1);
-            expect(result.stdout).toMatch(/^tokens\/a\.json:\d+:\d+  error  `inc` does not exist/m);
+            expect(result.stdout).toMatch(
+                /^tokens\/a\.json:\d+:\d+  error\[missing-reference\]\n  `inc` does not exist/m,
+            );
         },
     );
 
@@ -248,7 +253,7 @@ describe("validate command", () => {
             expect(result.exitCode).toBe(1);
             expect(result.stdout).not.toContain("Several token files");
             expect(result.stdout).toMatch(
-                /^tokens\/colors\.json:\d+:\d+  error  `inc` does not exist/m,
+                /^tokens\/colors\.json:\d+:\d+  error\[missing-reference\]\n  `inc` does not exist/m,
             );
         },
     );
@@ -266,7 +271,7 @@ describe("validate command", () => {
 
                 expect(result.exitCode).toBe(1);
                 expect(result.stdout).toMatch(
-                    /^tokens\/brand\.tokens:\d+:\d+  error  `inc` does not exist/m,
+                    /^tokens\/brand\.tokens:\d+:\d+  error\[missing-reference\]\n  `inc` does not exist/m,
                 );
             }
         },

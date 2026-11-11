@@ -34,5 +34,5 @@ export type {
 } from "./types/config.js";
 export type { CSSFileOutput } from "./types/generate.js";
 
-export { problemCount, problemLines, problemsText } from "./shared/problems.js";
+export { problemBlocks, problemsText } from "./shared/problems.js";
 export type { Where } from "./shared/problems.js";

@@ -18,10 +18,7 @@
     {
       "kind": "missing-type",
       "detail": {},
-      "span": {
-        "file": "dark.json",
-        "valueAfter": "\"md\":"
-      },
+      "span": { "file": "dark.json", "text": "\"md\"" },
       "path": "space.md",
       "permutations": [{ "theme": "dark" }]
     }

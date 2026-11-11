@@ -31,12 +31,15 @@ export function findJsonPath(tokens: DesignTokens, span: Span): JsonPath {
     const { paths } = getParseCache(tokens);
     const found = paths.get(span);
     if (found) return found;
-    const { file, offset, length } = span;
+    const path = getNodePath(findNode(tokens, span));
+    paths.set(span, path);
+    return path;
+}
+
+export function findNode(tokens: DesignTokens, { file, offset, length }: Span): Node {
     const tree = getTree(tokens, file);
     let node = tree && findNodeAtOffset(tree, offset);
     while (node && (node.offset !== offset || node.length !== length)) node = node.parent;
     if (!node) throw new Error(thrownMessages.nothingWrittenThere(file));
-    const path = getNodePath(node);
-    paths.set(span, path);
-    return path;
+    return node;
 }

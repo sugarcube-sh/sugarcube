@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { fillDefaults, problemCount, problemLines } from "@sugarcube-sh/core";
+import { fillDefaults, problemsText } from "@sugarcube-sh/core";
 import { expect, it } from "vitest";
 import { build } from "../src/build.js";
 import { whereOf } from "../src/problems.js";
@@ -13,8 +13,7 @@ async function shown(name: string): Promise<string> {
     const config = fillDefaults({ resolver, variables: { path: join(folder, "unwritten.css") } });
     const built = await build({ config: { ...config, resolver } }, { markup: false });
     const where = { ...whereOf(built), cwd: folder };
-    const lines = problemLines(built.diagnostics, where, { colors: false });
-    return [...lines, problemCount(built.diagnostics)].join("\n");
+    return problemsText(built.diagnostics, where, { colors: false });
 }
 
 it("shows what a person reads for each common mistake", async () => {
