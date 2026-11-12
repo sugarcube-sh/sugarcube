@@ -24,7 +24,6 @@ export interface MergedToken extends SourceToken {
     overridden?: SourceSpan[];
     inherited?: { from: string };
     generated?: { from: string; extension: readonly [string, ...string[]] };
-    isGenerated?: true;
 }
 
 export interface MergedGroup extends Properties {

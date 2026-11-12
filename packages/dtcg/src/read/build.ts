@@ -754,7 +754,7 @@ function toTokenFields(
     token: MergedToken,
     fields: TokenBuildFields,
 ): Parameters<typeof createTokenObject>[0] {
-    const original = token.isGenerated
+    const original = token.generated
         ? undefined
         : {
               value: token.originalValue,

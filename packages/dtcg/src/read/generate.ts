@@ -289,7 +289,6 @@ function createGeneratedToken(
         nameSpan: toSpan(json, getKeyNode(node)),
         source,
         generated,
-        isGenerated: true,
         ...($type !== undefined && { type: $type }),
         ...($description !== undefined && { description: $description }),
         ...($extensions && { extensions: $extensions }),
