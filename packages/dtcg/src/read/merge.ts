@@ -1,6 +1,6 @@
 import { relatedMessages } from "../error-messages.js";
 import { tokenPath } from "../path.js";
-import type { Input, Span } from "../model.js";
+import type { Diagnostic, Input, Span } from "../model.js";
 import { diagnostic, type DiagnosticCollector } from "./diagnostics.js";
 import type { Inheritable } from "./inherit.js";
 import type { Settings } from "./settings.js";
@@ -51,7 +51,23 @@ export function merge(
     input: Input,
     diagnostics: DiagnosticCollector,
 ): Merged {
-    const merged: Merged = {
+    const merged = createMerged();
+    for (const { contents, source } of pieces) {
+        if (!contents) continue;
+        mergeGroup(merged.groups, contents.root, source);
+        for (const member of contents.members) {
+            const conflict =
+                "group" in member
+                    ? mergeGroupMember(merged, member.group, source)
+                    : mergeToken(merged, member.token, source);
+            if (conflict) diagnostics.add(conflict, input);
+        }
+    }
+    return merged;
+}
+
+function createMerged(): Merged {
+    return {
         tokens: new Map(),
         groups: new Map([["", { path: "", locations: [] }]]),
         order: new Set([""]),
@@ -59,70 +75,58 @@ export function merge(
         settings: new Map(),
         inheritanceCache: { type: new Map(), deprecated: new Map(), deprecatedBy: new Map() },
     };
-    const reportConflict = (
-        path: string,
-        later: Span,
-        earlier: Span[],
-        earlierIs: "token" | "group",
-    ) =>
-        diagnostics.add(
-            diagnostic(
-                "token-and-group",
-                {
-                    reason: "declared",
-                    declaredAs: earlierIs === "token" ? "group" : "token",
-                    path,
-                    otherFiles: [...new Set(earlier.map(({ file }) => file))],
-                },
-                {
-                    span: later,
-                    path,
-                    relatedInformation: earlier.map((span) => ({
-                        message: relatedMessages.declaredAs(earlierIs),
-                        span,
-                        path,
-                    })),
-                },
-            ),
-            input,
-        );
+}
 
-    for (const { contents, source } of pieces) {
-        if (!contents) continue;
-        mergeGroup(merged.groups, contents.root, source);
-        for (const member of contents.members) {
-            if ("group" in member) {
-                const { group } = member;
-                merged.order.add(group.path);
-                const token = merged.tokens.get(group.path);
-                if (token) {
-                    reportConflict(group.path, group.nameSpan, [token.nameSpan], "token");
-                    merged.tokens.delete(group.path);
-                }
-                mergeGroup(merged.groups, group, source);
-                continue;
-            }
-            const { token } = member;
-            merged.order.add(token.path);
-            const group = merged.groups.get(token.path);
-            if (group) {
-                reportConflict(
-                    token.path,
-                    token.nameSpan,
-                    group.locations.map(({ nameSpan }) => nameSpan),
-                    "group",
-                );
-                removeGroup(merged, token.path);
-            }
-            const earlier = merged.tokens.get(token.path);
-            const overridden = earlier && [
-                ...(earlier.overridden ?? []),
-                { source: earlier.source, span: earlier.span, nameSpan: earlier.nameSpan },
-            ];
-            merged.tokens.set(token.path, { ...token, source, ...(overridden && { overridden }) });
-        }
-    }
-    return merged;
+function mergeGroupMember(
+    merged: Merged,
+    group: SourceGroup,
+    source: number,
+): Diagnostic | undefined {
+    merged.order.add(group.path);
+    const token = merged.tokens.get(group.path);
+    const conflict =
+        token && conflictDiagnostic(group.path, group.nameSpan, [token.nameSpan], "token");
+    if (token) merged.tokens.delete(group.path);
+
+    mergeGroup(merged.groups, group, source);
+    return conflict;
+}
+
+function mergeToken(merged: Merged, token: SourceToken, source: number): Diagnostic | undefined {
+    merged.order.add(token.path);
+    const group = merged.groups.get(token.path);
+    const earlierSpans = group?.locations.map(({ nameSpan }) => nameSpan);
+    const conflict =
+        earlierSpans && conflictDiagnostic(token.path, token.nameSpan, earlierSpans, "group");
+    if (group) removeGroup(merged, token.path);
+
+    const earlier = merged.tokens.get(token.path);
+    const overridden = earlier && [
+        ...(earlier.overridden ?? []),
+        { source: earlier.source, span: earlier.span, nameSpan: earlier.nameSpan },
+    ];
+    merged.tokens.set(token.path, { ...token, source, ...(overridden && { overridden }) });
+    return conflict;
+}
+
+function conflictDiagnostic(
+    path: string,
+    later: Span,
+    earlier: Span[],
+    earlierIs: "token" | "group",
+): Diagnostic {
+    const detail = {
+        reason: "declared" as const,
+        declaredAs: earlierIs === "token" ? ("group" as const) : ("token" as const),
+        path,
+        otherFiles: [...new Set(earlier.map(({ file }) => file))],
+    };
+    const relatedInformation = earlier.map((span) => ({
+        message: relatedMessages.declaredAs(earlierIs),
+        span,
+        path,
+    }));
+    return diagnostic("token-and-group", detail, { span: later, path, relatedInformation });
 }
 
 function mergeGroup(groups: Map<string, MergedGroup>, group: SourceGroup, source: number): void {
