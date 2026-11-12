@@ -1,19 +1,19 @@
 import { type Node, findNodeAtOffset, getNodePath, parseTree } from "jsonc-parser";
-import { thrownMessages } from "../error-messages.js";
+import { exceptionMessages } from "../error-messages.js";
 import type { DesignTokens, JsonPath, Span } from "../model.js";
 
-interface Parsed {
+interface ParseCache {
     trees: Map<string, Node | undefined>;
     paths: Map<Span, JsonPath>;
 }
 
-const parsed = new WeakMap<DesignTokens, Parsed>();
+const parseCaches = new WeakMap<DesignTokens, ParseCache>();
 
-function getParseCache(tokens: DesignTokens): Parsed {
-    let known = parsed.get(tokens);
+function getParseCache(tokens: DesignTokens): ParseCache {
+    let known = parseCaches.get(tokens);
     if (!known) {
         known = { trees: new Map(), paths: new Map() };
-        parsed.set(tokens, known);
+        parseCaches.set(tokens, known);
     }
     return known;
 }
@@ -40,6 +40,6 @@ export function findNode(tokens: DesignTokens, { file, offset, length }: Span): 
     const tree = getTree(tokens, file);
     let node = tree && findNodeAtOffset(tree, offset);
     while (node && (node.offset !== offset || node.length !== length)) node = node.parent;
-    if (!node) throw new Error(thrownMessages.nothingWrittenThere(file));
+    if (!node) throw new Error(exceptionMessages.noDefinitionAtLocation(file));
     return node;
 }

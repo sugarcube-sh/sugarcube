@@ -41,21 +41,21 @@ export function isEquivalentValue(a: Token, b: Token): boolean;
 export function isEquivalentValue(
     ...values: [TokenType, unknown, unknown] | [Token, Token]
 ): boolean {
-    if (values.length === 3) return alike(values[1], values[2], asValues);
+    if (values.length === 3) return deepEqual(values[1], values[2], valueRules);
     const [a, b] = values;
-    return a.type === b.type && saysTheSame(a, b);
+    return a.type === b.type && hasEquivalentValue(a, b);
 }
 
-export interface Said {
+export interface ComparableValue {
     value?: unknown;
     asWritten?: { value: unknown } | undefined;
 }
 
-export function saysTheSame(a: Said, b: Said): boolean {
+export function hasEquivalentValue(a: ComparableValue, b: ComparableValue): boolean {
     if (a.value === undefined || b.value === undefined) {
         return a.value === b.value && isEqualJson(a.asWritten?.value, b.asWritten?.value);
     }
-    return alike(a.value, b.value, asValues);
+    return deepEqual(a.value, b.value, valueRules);
 }
 
 /**
@@ -72,37 +72,37 @@ export function saysTheSame(a: Said, b: Said): boolean {
  * // => true
  */
 export function isEqualJson(a: unknown, b: unknown): boolean {
-    return alike(a, b, exactly);
+    return deepEqual(a, b, strictRules);
 }
 
-interface Rules {
+interface EqualityRules {
     numbers(a: number, b: number): boolean;
     keys(value: Record<string, unknown>): string[];
 }
 
-const exactly: Rules = {
+const strictRules: EqualityRules = {
     numbers: (a, b) => a === b,
     keys: (value) => Object.keys(value).filter((key) => value[key] !== undefined),
 };
 
-const asValues: Rules = {
+const valueRules: EqualityRules = {
     numbers: (a, b) => Math.abs(a - b) < ROUNDING + Number.EPSILON,
     keys: (value) => {
-        const keys = exactly.keys(value);
+        const keys = strictRules.keys(value);
         return "colorSpace" in value ? keys.filter((key) => key !== "hex") : keys;
     },
 };
 
-function alike(a: unknown, b: unknown, rules: Rules): boolean {
+function deepEqual(a: unknown, b: unknown, rules: EqualityRules): boolean {
     if (typeof a === "number" && typeof b === "number") return rules.numbers(a, b);
     if (Array.isArray(a) && Array.isArray(b)) {
-        return a.length === b.length && a.every((each, index) => alike(each, b[index], rules));
+        return a.length === b.length && a.every((each, index) => deepEqual(each, b[index], rules));
     }
     if (isJsonObject(a) && isJsonObject(b)) {
         const keys = rules.keys(a);
         return (
             keys.length === rules.keys(b).length &&
-            keys.every((key) => alike(a[key], b[key], rules))
+            keys.every((key) => deepEqual(a[key], b[key], rules))
         );
     }
     return a === b;

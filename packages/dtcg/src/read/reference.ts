@@ -10,11 +10,11 @@ import type {
     Token,
     WrittenReference,
 } from "../model.js";
-import { movedReference } from "../values/references.js";
+import { applyMovesToReference } from "../values/references.js";
 import type { Occurrence } from "./occurrence.js";
 import type { Target } from "./same-object.js";
 
-export interface ReferenceTo extends Target {
+export interface ReferenceWithTarget extends Target {
     occurrence: Occurrence;
 }
 
@@ -27,9 +27,9 @@ class ReferenceObject {
     readonly writtenInProperty: JsonPath | undefined;
     readonly #written: WrittenReference;
     readonly #span: Span;
-    readonly #pointerAlone: boolean;
+    readonly #isBarePointer: boolean;
 
-    constructor(from: Token | Group, to: ReferenceTo, pointerAlone: boolean) {
+    constructor(from: Token | Group, to: ReferenceWithTarget, isBarePointer: boolean) {
         const { occurrence, path, token, pointsToProperty } = to;
         const { reference, span, property } = occurrence;
         this.pointsToPath = path;
@@ -40,7 +40,7 @@ class ReferenceObject {
         if (reference.syntax === "json-pointer") Object.assign(this, { pointsToProperty });
         this.#written = reference;
         this.#span = span;
-        this.#pointerAlone = pointerAlone;
+        this.#isBarePointer = isBarePointer;
     }
 
     get asWritten(): WrittenReference {
@@ -52,7 +52,7 @@ class ReferenceObject {
     }
 
     moved(moves: readonly Move[]): JsonValue {
-        return writtenAfter(this.#written, moves, this.#pointerAlone);
+        return rewriteReference(this.#written, moves, this.#isBarePointer);
     }
 
     toReferenceInPermutations(
@@ -68,7 +68,7 @@ class ReferenceObject {
             permutations,
             span,
             jsonPath,
-            this.#pointerAlone,
+            this.#isBarePointer,
         );
     }
 
@@ -86,7 +86,7 @@ class ReferenceInPermutationsObject {
     readonly permutations: Permutations;
     readonly #written: WrittenReference;
     readonly #jsonPath: () => JsonPath;
-    readonly #pointerAlone: boolean;
+    readonly #isBarePointer: boolean;
 
     constructor(
         reference: ReferenceObject,
@@ -95,7 +95,7 @@ class ReferenceInPermutationsObject {
         permutations: Permutations,
         span: Span,
         jsonPath: () => JsonPath,
-        alone: boolean,
+        isBarePointer: boolean,
     ) {
         this.pointsToPath = reference.pointsToPath;
         this.writtenInPaths = writtenInPaths;
@@ -105,7 +105,7 @@ class ReferenceInPermutationsObject {
         this.permutations = permutations;
         this.#written = written;
         this.#jsonPath = jsonPath;
-        this.#pointerAlone = alone;
+        this.#isBarePointer = isBarePointer;
     }
 
     get asWritten(): WrittenReference {
@@ -117,13 +117,13 @@ class ReferenceInPermutationsObject {
     }
 
     moved(moves: readonly Move[]): JsonValue {
-        return writtenAfter(this.#written, moves, this.#pointerAlone);
+        return rewriteReference(this.#written, moves, this.#isBarePointer);
     }
 }
 
-export function linkedReference(
+export function createReference(
     from: Token | Group,
-    to: ReferenceTo,
+    to: ReferenceWithTarget,
     { pointerAlone = false } = {},
 ): Reference {
     return new ReferenceObject(from, to, pointerAlone) as unknown as Reference;
@@ -149,12 +149,12 @@ export function toReferenceInPermutations(
     return inPermutations as unknown as ReferenceInPermutations;
 }
 
-function writtenAfter(
+function rewriteReference(
     written: WrittenReference,
     moves: readonly Move[],
-    pointerAlone: boolean,
+    isBarePointer: boolean,
 ): JsonValue {
-    const now = movedReference(written, moves);
+    const now = applyMovesToReference(written, moves);
     if (now.syntax === "curly-brace") return `{${now.path}}`;
-    return pointerAlone ? now.pointer : { $ref: now.pointer };
+    return isBarePointer ? now.pointer : { $ref: now.pointer };
 }

@@ -1,5 +1,5 @@
-import { thrownMessages } from "../error-messages.js";
-import type { Answer, FileText, Request } from "./files.js";
+import { exceptionMessages } from "../error-messages.js";
+import type { FileResponse, FileText, FileRequest } from "./files.js";
 import { getFolder, join, normalise } from "./paths.js";
 
 export interface KnownFiles {
@@ -8,7 +8,7 @@ export interface KnownFiles {
     hasEveryFile: boolean;
 }
 
-export function knownInMemory(entryFile: string, files: Iterable<[string, string]>): KnownFiles {
+export function createKnownFiles(entryFile: string, files: Iterable<[string, string]>): KnownFiles {
     return {
         entryFile: normalise(entryFile),
         texts: new Map([...files].map(([path, text]) => [normalise(path), { text }])),
@@ -16,14 +16,14 @@ export function knownInMemory(entryFile: string, files: Iterable<[string, string
     };
 }
 
-export function answerFrom(known: KnownFiles, request: Request): Answer {
+export function respondFromKnownFiles(known: KnownFiles, request: FileRequest): FileResponse {
     const folder = getFolder(known.entryFile);
-    const answer: Answer = {};
+    const answer: FileResponse = {};
     for (const path of request) {
         const text = known.texts.get(join(folder, path));
         if (text) answer[path] = text;
         else if (known.hasEveryFile) answer[path] = { missing: true };
-        else throw new TypeError(thrownMessages.notInLastRead(path));
+        else throw new TypeError(exceptionMessages.notInLastRead(path));
     }
     return answer;
 }

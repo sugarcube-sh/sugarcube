@@ -1,34 +1,34 @@
 import type { DiagnosticDetailByKind, DiagnosticKind, Input } from "../model.js";
-import { namedPath, toReferenceTarget } from "../values/references.js";
+import { getReferencePath, toReferenceTarget } from "../values/references.js";
 import { relatedMessages } from "../error-messages.js";
-import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
-import { malformation } from "./malformed-pointer.js";
-import type { MissingIn } from "./missing.js";
+import { type DiagnosticExtra, diagnostic, type DiagnosticCollector } from "./diagnostics.js";
+import { checkMalformedPointer } from "./malformed-pointer.js";
+import type { MissingRecorder } from "./missing.js";
 import type { Merged, MergedGroup } from "./merge.js";
 import { tokenPath } from "../path.js";
 import { followReference } from "./ref-meaning.js";
 
-type Extending = MergedGroup & { extends: NonNullable<MergedGroup["extends"]> };
+type ExtendingGroup = MergedGroup & { extends: NonNullable<MergedGroup["extends"]> };
 
 export function applyExtends(
     merged: Merged,
     input: Input,
-    diagnostics: Problems,
-    missing: MissingIn,
+    diagnostics: DiagnosticCollector,
+    missing: MissingRecorder,
 ): void {
     const state = new Map<string, "extending" | "done" | "in-a-loop">();
     const report = <K extends DiagnosticKind>(
         kind: K,
         detail: DiagnosticDetailByKind[K],
-        group: Extending,
+        group: ExtendingGroup,
         extra: Omit<DiagnosticExtra, "span" | "path"> = {},
     ) =>
-        diagnostics.found(
+        diagnostics.add(
             diagnostic(kind, detail, { span: group.extends.span, path: group.path, ...extra }),
             input,
         );
 
-    const visit = (group: Extending, chain: Extending[]): void => {
+    const visit = (group: ExtendingGroup, chain: ExtendingGroup[]): void => {
         const status = state.get(group.path);
         if (status === "done" || status === "in-a-loop") return;
         if (status === "extending") {
@@ -49,20 +49,21 @@ export function applyExtends(
         if (state.get(group.path) === "extending") state.set(group.path, "done");
     };
 
-    const extend = (group: Extending, chain: Extending[]): void => {
+    const extend = (group: ExtendingGroup, chain: ExtendingGroup[]): void => {
         const { reference } = group.extends;
         const written = toReferenceTarget(reference);
-        const direct = namedPath(reference);
+        const direct = getReferencePath(reference);
         if (direct !== undefined && tokenPath.contains(direct, group.path)) {
             report("circular-reference", { chain: [group.path, direct] }, group);
             state.set(group.path, "in-a-loop");
             return;
         }
-        if (direct !== undefined) extendInside(direct, chain);
+        if (direct !== undefined) extendDescendants(direct, chain);
         if (state.get(group.path) === "in-a-loop") return;
 
         const reached = followReference(group.extends, merged);
-        const malformed = reached.kind === "nothing" && malformation(written, merged, "group");
+        const malformed =
+            reached.kind === "nothing" && checkMalformedPointer(written, merged, "group");
         if (malformed) {
             report("malformed-pointer", malformed, group);
         } else if (reached.kind === "nothing") {
@@ -75,7 +76,7 @@ export function applyExtends(
         }
     };
 
-    const extendInside = (path: string, chain: Extending[]): void => {
+    const extendDescendants = (path: string, chain: ExtendingGroup[]): void => {
         for (const each of Array.from(merged.groups.values())) {
             if (tokenPath.contains(path, each.path) && isExtending(each)) visit(each, chain);
         }
@@ -86,17 +87,17 @@ export function applyExtends(
     }
 }
 
-function isExtending(group: MergedGroup): group is Extending {
+function isExtending(group: MergedGroup): group is ExtendingGroup {
     return group.extends !== undefined;
 }
 
 function inherit(merged: Merged, group: MergedGroup, from: string): void {
-    group.takesFrom ??= from;
-    const moved = (path: string) => {
+    group.inheritsFrom ??= from;
+    const rebasePath = (path: string) => {
         const rest = tokenPath.relative(from, path);
         return rest === undefined ? undefined : tokenPath.join(group.path, rest);
     };
-    const underLocalToken = (path: string) => {
+    const isUnderToken = (path: string) => {
         for (
             let end = path.lastIndexOf(".");
             end > group.path.length;
@@ -107,27 +108,26 @@ function inherit(merged: Merged, group: MergedGroup, from: string): void {
         return false;
     };
 
-    for (const appeared of Array.from(merged.order)) {
-        const path = moved(appeared);
+    for (const originalPath of Array.from(merged.order)) {
+        const path = rebasePath(originalPath);
         if (path === undefined) continue;
-        const each = merged.groups.get(appeared);
-        const token = merged.tokens.get(appeared);
+        const each = merged.groups.get(originalPath);
+        const token = merged.tokens.get(originalPath);
         if (token) {
-            if (merged.tokens.has(path) || merged.groups.has(path) || underLocalToken(path))
-                continue;
-            const { replaces: _replaces, ...copied } = token;
+            if (merged.tokens.has(path) || merged.groups.has(path) || isUnderToken(path)) continue;
+            const { overridden: _replaces, ...copied } = token;
             merged.tokens.set(path, { ...copied, path, inherited: { from } });
             merged.order.add(path);
             continue;
         }
         if (!each) continue;
         const existing = merged.groups.get(path);
-        if (existing) existing.takesFrom ??= appeared;
-        else if (!merged.tokens.has(path) && !underLocalToken(path)) {
+        if (existing) existing.inheritsFrom ??= originalPath;
+        else if (!merged.tokens.has(path) && !isUnderToken(path)) {
             merged.groups.set(path, {
                 path,
-                declaredIn: [],
-                takesFrom: appeared,
+                locations: [],
+                inheritsFrom: originalPath,
                 inherited: { from },
             });
             merged.order.add(path);

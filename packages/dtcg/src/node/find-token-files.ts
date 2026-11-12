@@ -14,10 +14,10 @@ export interface FoundTokenFiles {
     readonly otherFiles: readonly string[];
 }
 
-const SHARED_WITH_JSON_SCHEMA = "$ref";
+const JSON_SCHEMA_REF_KEY = "$ref";
 
 const SPEC_PROPERTIES = [...OWN_PROPERTIES, ...OTHER_SPEC_KEYS]
-    .filter((key) => key !== SHARED_WITH_JSON_SCHEMA)
+    .filter((key) => key !== JSON_SCHEMA_REF_KEY)
     .map((key) => Buffer.from(JSON.stringify(key)));
 
 /**

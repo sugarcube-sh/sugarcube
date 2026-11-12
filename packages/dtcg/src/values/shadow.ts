@@ -1,7 +1,17 @@
-import { elements, literal, no, object, ofType, ok, oneOf, single, withDefault } from "./syntax.js";
+import {
+    elements,
+    literal,
+    err,
+    object,
+    ofType,
+    ok,
+    oneOf,
+    single,
+    withDefault,
+} from "./syntax.js";
 
 const inset = literal(
-    (raw) => (typeof raw === "boolean" ? ok(raw) : no({ reason: "not-a-boolean", value: raw })),
+    (raw) => (typeof raw === "boolean" ? ok(raw) : err({ reason: "not-a-boolean", value: raw })),
     "boolean",
 );
 

@@ -1,13 +1,13 @@
 import type { Diagnostic, Input, ResolverContext, Source } from "../model.js";
-import type { Problems } from "./diagnostics.js";
+import type { DiagnosticCollector } from "./diagnostics.js";
 import { applyExtends } from "./extends.js";
 import { type Merged, merge } from "./merge.js";
 import type { MissingReferences } from "./missing.js";
-import { inWrittenOrder } from "./order.js";
+import { sortByDocumentOrder } from "./order.js";
 import type { ListedSource, LoadedPermutation } from "./permutations.js";
 import type { LoadedSource } from "./sources.js";
 import { type SourceContents, walkSource } from "./walk.js";
-import { withPosition } from "./linked.js";
+import { createSource } from "./linked.js";
 import { sameSource } from "./same-object.js";
 
 export interface NormalisedPermutation {
@@ -21,7 +21,7 @@ export interface NormalisedPermutation {
 
 export function normalisePermutations(
     permutations: LoadedPermutation[],
-    diagnostics: Problems,
+    diagnostics: DiagnosticCollector,
     missing: MissingReferences,
     generate: (merged: Merged, input: Input) => void,
     previous: readonly Source[] | undefined,
@@ -33,16 +33,16 @@ export function normalisePermutations(
         if (!found) {
             const problems: Diagnostic[] = [];
             const contents = walkSource(loaded, problems);
-            found = { contents, problems: diagnostics.foundAll(problems) };
+            found = { contents, problems: diagnostics.addAll(problems) };
             walked.set(key, found);
         }
-        if (input) for (const each of found.problems) diagnostics.also(each, input);
+        if (input) for (const each of found.problems) diagnostics.addInput(each, input);
         return found.contents;
     };
-    const published = new Map<ListedSource, Source>();
+    const sourceCache = new Map<ListedSource, Source>();
     const readSources: Source[] = [];
-    const publish = (listed: ListedSource): Source => {
-        const found = published.get(listed);
+    const toSource = (listed: ListedSource): Source => {
+        const found = sourceCache.get(listed);
         if (found) return found;
         const { source, pieces } = listed;
         const extensions = pieces.map((each) => walk(each)?.root.extensions).find(Boolean);
@@ -50,10 +50,10 @@ export function normalisePermutations(
         let kept = readSources.find((each) => sameSource(each, made));
         if (!kept) {
             const was = previous?.[readSources.length];
-            kept = was && sameSource(was, made) ? was : withPosition(made, readSources.length);
+            kept = was && sameSource(was, made) ? was : createSource(made, readSources.length);
             readSources.push(kept);
         }
-        published.set(listed, kept);
+        sourceCache.set(listed, kept);
         return kept;
     };
 
@@ -61,17 +61,17 @@ export function normalisePermutations(
         const walkedPieces = sources.flatMap((each, source) =>
             each.pieces.map((piece) => ({ contents: walk(piece, input), source })),
         );
-        const permutationSources = sources.map(publish);
+        const permutationSources = sources.map(toSource);
         const unread = new Set(
             walkedPieces.filter(({ contents }) => !contents).map(({ source }) => source),
         );
         const unreadSources = permutationSources.filter((_, index) => unread.has(index));
         const merged = merge(walkedPieces, input, diagnostics);
-        const missingExtends = missing.in(input, merged.groups, unreadSources);
+        const missingExtends = missing.createRecorder(input, merged.groups, unreadSources);
         applyExtends(merged, input, diagnostics, missingExtends);
-        missingExtends.close();
+        missingExtends.flush();
         generate(merged, input);
-        inWrittenOrder(merged);
+        sortByDocumentOrder(merged);
         return { input, label, contexts, sources: permutationSources, merged, unreadSources };
     });
     return { permutations: normalised, sources: readSources };

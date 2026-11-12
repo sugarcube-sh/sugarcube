@@ -1,21 +1,23 @@
 import type { DesignTokens, Diagnostic, Permutation, Token } from "../model.js";
 import { getSpan } from "./editor.js";
 
-export function concerning(
+export function createDiagnosticFilter(
     tokens: DesignTokens,
     path: string,
     permutations: readonly Permutation[],
-): (found: Diagnostic) => boolean {
-    const taking = permutations.flatMap((each) => {
+): (diagnostic: Diagnostic) => boolean {
+    const tokensByPermutation = permutations.flatMap((each) => {
         const token = each.getToken(path);
         return token ? [{ permutation: each, token }] : [];
     });
-    return (found) =>
-        isAbout(found, path) ||
-        taking.some(({ permutation, token }) => isInValueFrom(tokens, found, permutation, token));
+    return (diagnostic) =>
+        mentionsPath(diagnostic, path) ||
+        tokensByPermutation.some(({ permutation, token }) =>
+            isInsideTokenValue(tokens, diagnostic, permutation, token),
+        );
 }
 
-function isInValueFrom(
+function isInsideTokenValue(
     tokens: DesignTokens,
     { span, path }: Diagnostic,
     permutation: Permutation,
@@ -33,9 +35,9 @@ function isInValueFrom(
     );
 }
 
-function isAbout(found: Diagnostic, path: string): boolean {
-    if (found.path === path) return true;
-    if (found.kind === "missing-reference") return found.detail.from.includes(path);
-    if (found.kind === "circular-reference") return found.detail.chain.includes(path);
+function mentionsPath(diagnostic: Diagnostic, path: string): boolean {
+    if (diagnostic.path === path) return true;
+    if (diagnostic.kind === "missing-reference") return diagnostic.detail.from.includes(path);
+    if (diagnostic.kind === "circular-reference") return diagnostic.detail.chain.includes(path);
     return false;
 }

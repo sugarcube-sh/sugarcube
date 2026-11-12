@@ -1,17 +1,17 @@
 import type { ColorSpace } from "../model.js";
 import { colorSpaces } from "./color-spaces.js";
-import { expandedHex, hexStringAsObject, hexStringColor } from "./hex-color.js";
+import { expandHex, hexToColorObject, parseHexColor } from "./hex-color.js";
 import {
     type Siblings,
     type Syntax,
     dependsOn,
     literal,
-    no,
+    err,
     object,
     ok,
     oneOf,
     optional,
-    refuse,
+    reject,
     tuple,
     withDefault,
     wrongShape,
@@ -35,19 +35,19 @@ const SIX_DIGIT_HEX = /^#[0-9a-f]{6}$/i;
 
 const hexString = literal((raw, options) => {
     if (typeof raw === "string" && options.hexStringColors && READABLE_HEX_STRING.test(raw)) {
-        return ok(hexStringColor(raw));
+        return ok(parseHexColor(raw));
     }
     if (typeof raw === "string" && HEX_STRING.test(raw)) {
         if (options.hexStringColors) {
-            return no({ reason: "short-hex-string", value: raw, expanded: expandedHex(raw) });
+            return err({ reason: "short-hex-string", value: raw, expanded: expandHex(raw) });
         }
-        return no({ reason: "hex-string", value: raw, asObject: hexStringAsObject(raw) });
+        return err({ reason: "hex-string", value: raw, asObject: hexToColorObject(raw) });
     }
-    return no(wrongShape(raw));
+    return err(wrongShape(raw));
 });
 
 const colorSpace = literal((raw) =>
-    isColorSpace(raw) ? ok(raw) : no({ reason: "unknown-color-space", value: raw }),
+    isColorSpace(raw) ? ok(raw) : err({ reason: "unknown-color-space", value: raw }),
 );
 
 function component(space: ColorSpace | undefined, index: 0 | 1 | 2) {
@@ -55,10 +55,10 @@ function component(space: ColorSpace | undefined, index: 0 | 1 | 2) {
     return literal((raw) => {
         if (raw === "none") return ok(raw);
         if (typeof raw !== "number" || !Number.isFinite(raw)) {
-            return no({ reason: "component-not-a-number", value: raw });
+            return err({ reason: "component-not-a-number", value: raw });
         }
         if (channel && space && !inRange(raw, channel.min, channel.max, channel.maxExclusive)) {
-            return no({
+            return err({
                 reason: "component-out-of-range",
                 value: raw,
                 colorSpace: space,
@@ -72,7 +72,7 @@ function component(space: ColorSpace | undefined, index: 0 | 1 | 2) {
     });
 }
 
-const notThree = refuse("not-three-components");
+const notThree = reject("not-three-components");
 
 function components(space: ColorSpace | undefined) {
     const items = [component(space, 0), component(space, 1), component(space, 2)];
@@ -81,9 +81,9 @@ function components(space: ColorSpace | undefined) {
 
 const alpha = literal((raw) => {
     if (typeof raw !== "number" || !Number.isFinite(raw)) {
-        return no({ reason: "not-a-number", value: raw });
+        return err({ reason: "not-a-number", value: raw });
     }
-    return inRange(raw, 0, 1) ? ok(raw) : no({ reason: "alpha-out-of-range", value: raw });
+    return inRange(raw, 0, 1) ? ok(raw) : err({ reason: "alpha-out-of-range", value: raw });
 });
 
 const THREE_DIGIT_HEX = /^#[0-9a-f]{3}$/i;
@@ -91,9 +91,9 @@ const THREE_DIGIT_HEX = /^#[0-9a-f]{3}$/i;
 const hex = literal((raw) => {
     if (typeof raw === "string" && SIX_DIGIT_HEX.test(raw)) return ok(raw);
     if (typeof raw !== "string" || !THREE_DIGIT_HEX.test(raw)) {
-        return no({ reason: "hex-not-six-digits", value: raw });
+        return err({ reason: "hex-not-six-digits", value: raw });
     }
-    return no({ reason: "hex-not-six-digits", value: raw, sixDigits: expandedHex(raw) });
+    return err({ reason: "hex-not-six-digits", value: raw, sixDigits: expandHex(raw) });
 });
 
 export const color = oneOf({

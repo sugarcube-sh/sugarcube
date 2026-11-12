@@ -165,11 +165,11 @@ const typeNames: Record<TokenType, string> = {
     strokeStyle: "stroke style",
 };
 
-function typeWords(type: TokenType): string {
+function formatType(type: TokenType): string {
     return type === "typography" ? "a typography value" : `a ${typeNames[type]}`;
 }
 
-const shapes: Record<TokenType, string> = {
+const expectedShapes: Record<TokenType, string> = {
     color: "an object with `colorSpace` and `components`",
     dimension: "an object with a value and a unit",
     duration: "an object with a value and a unit",
@@ -186,7 +186,7 @@ const shapes: Record<TokenType, string> = {
     strokeStyle: "a keyword, or an object with `dashArray` and `lineCap`",
 };
 
-function kindOf(value: unknown): string {
+function describeValue(value: unknown): string {
     if (typeof value === "string") return "a string";
     if (typeof value === "number") return "a number";
     if (Array.isArray(value)) return "a list";
@@ -198,31 +198,30 @@ export function didYouMean(similar: string | undefined): string | undefined {
     return similar === undefined ? undefined : `did you mean \`${similar}\`?`;
 }
 
-function oneOf(words: readonly string[]): string {
-    const quoted = words.map((word) => `\`${word}\``);
-    return quoted.length < 2
-        ? quoted.join("")
-        : `${quoted.slice(0, -1).join(", ")} or ${quoted.at(-1)}`;
+export function formatList(names: readonly string[], joiner: "or" | "and" = "or"): string {
+    const quoted = names.map((name) => `\`${name}\``);
+    const last = quoted.pop();
+    return quoted.length === 0 ? (last ?? "") : `${quoted.join(", ")} ${joiner} ${last}`;
 }
 
-function range(min: number, max: number | undefined, maxExclusive: boolean): string {
+function formatRange(min: number, max: number | undefined, maxExclusive: boolean): string {
     if (max === undefined) return `use ${min} or more`;
     return maxExclusive ? `use ${min} up to, not including, ${max}` : `use ${min} to ${max}`;
 }
 
-function asWritten(object: { value: number; unit: string }): string {
+function formatValueObject(object: { value: number; unit: string }): string {
     return `write \`{ "value": ${object.value}, "unit": ${JSON.stringify(object.unit)} }\``;
 }
 
-type Words<R extends ValueErrorCode> = (detail: DetailOf<R>) => string;
+type Message<R extends ValueErrorCode> = (detail: DetailOf<R>) => string;
 type Help<R extends ValueErrorCode> = (detail: DetailOf<R>) => string | undefined;
 
-export const valueErrorMessages: { [R in ValueErrorCode]: Words<R> } = {
-    "wrong-shape": ({ type, value }) => `${typeWords(type)} can't be ${kindOf(value)}`,
+export const valueErrorMessages: { [R in ValueErrorCode]: Message<R> } = {
+    "wrong-shape": ({ type, value }) => `${formatType(type)} can't be ${describeValue(value)}`,
     "unknown-property": ({ type, property }) =>
         `\`${property}\` is not a ${typeNames[type]} property`,
     "pointer-not-alone": () => "`$ref` can't have other properties beside it",
-    "missing-property": ({ type, property }) => `${typeWords(type)} needs \`${property}\``,
+    "missing-property": ({ type, property }) => `${formatType(type)} needs \`${property}\``,
     "not-a-number": () => "not a number",
     "curly-brace-not-allowed-here": ({ reference }) => `\`${reference}\` can't go inside a value`,
     "hex-string": () => "a color can't be a hex string",
@@ -241,7 +240,7 @@ export const valueErrorMessages: { [R in ValueErrorCode]: Words<R> } = {
     "string-with-unit": ({ type, unit, asObject }) =>
         asObject === undefined
             ? `\`${unit}\` is not a ${typeNames[type]} unit`
-            : `${typeWords(type)} can't be a string`,
+            : `${formatType(type)} can't be a string`,
     "not-four-numbers": () => "a cubic Bézier needs four numbers",
     "x-out-of-range": ({ coordinate }) => `\`${coordinate}\` out of range`,
     "empty-font-list": () => "the font list is empty",
@@ -267,23 +266,24 @@ export const valueErrorMessages: { [R in ValueErrorCode]: Words<R> } = {
 };
 
 export const valueErrorHelp: { [R in ValueErrorCode]?: Help<R> } = {
-    "wrong-shape": ({ type, reference }) => didYouMean(reference) ?? `write ${shapes[type]}`,
-    "component-out-of-range": ({ min, max, maxExclusive }) => range(min, max, maxExclusive),
-    "alpha-out-of-range": () => range(0, 1, false),
+    "wrong-shape": ({ type, reference }) =>
+        didYouMean(reference) ?? `write ${expectedShapes[type]}`,
+    "component-out-of-range": ({ min, max, maxExclusive }) => formatRange(min, max, maxExclusive),
+    "alpha-out-of-range": () => formatRange(0, 1, false),
     "hex-not-six-digits": ({ sixDigits }) =>
         sixDigits === undefined ? undefined : `write \`${sixDigits}\``,
     "short-hex-string": ({ expanded }) => `write \`${expanded}\``,
     "string-with-unit": ({ allowed, asObject }) =>
-        asObject === undefined ? `use ${oneOf(allowed)}` : asWritten(asObject),
-    "x-out-of-range": () => range(0, 1, false),
-    "unknown-stroke-style-keyword": ({ keywords }) => `use ${oneOf(keywords)}`,
-    "unknown-line-cap": ({ lineCaps }) => `use ${oneOf(lineCaps)}`,
-    "font-weight-out-of-range": () => range(1, 1000, false),
+        asObject === undefined ? `use ${formatList(allowed)}` : formatValueObject(asObject),
+    "x-out-of-range": () => formatRange(0, 1, false),
+    "unknown-stroke-style-keyword": ({ keywords }) => `use ${formatList(keywords)}`,
+    "unknown-line-cap": ({ lineCaps }) => `use ${formatList(lineCaps)}`,
+    "font-weight-out-of-range": () => formatRange(1, 1000, false),
     "unknown-font-weight-keyword": ({ value }) =>
         Object.hasOwn(fontWeightKeywords, value.toLowerCase())
             ? `write \`${value.toLowerCase()}\``
             : undefined,
-    "unit-not-allowed": ({ allowed }) => `use ${oneOf(allowed)}`,
+    "unit-not-allowed": ({ allowed }) => `use ${formatList(allowed)}`,
 };
 
 export function valueErrorMessage(detail: ValueErrorDetail): string {

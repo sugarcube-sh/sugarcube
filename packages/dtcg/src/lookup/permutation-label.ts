@@ -18,33 +18,37 @@ export function toInputLabel(input: Input): string {
         .join(", ");
 }
 
-export function ownLabel(contexts: ResolverContext[]): string {
-    return partText(Object.fromEntries(contexts.map((each) => [each.modifier.name, [each.name]])));
+export function formatContextsLabel(contexts: ResolverContext[]): string {
+    return formatPart(
+        Object.fromEntries(contexts.map((each) => [each.modifier.name, [each.name]])),
+    );
 }
 
 type Part = Record<string, string[]>;
 
-export function workOutScope(set: readonly Permutation[], all: readonly Permutation[]): Scope {
+export function computeScope(set: readonly Permutation[], all: readonly Permutation[]): Scope {
     const [first] = set;
     if (!first) return [];
     const modifiers = first.contexts.map(({ modifier }) => modifier);
-    const exact = (part: Part) => {
+    const isExactMatch = (part: Part) => {
         const combinations = modifiers.reduce(
             (count, { name, contexts }) => count * (part[name]?.length ?? contexts.length),
             1,
         );
         return set.filter((perm) => matches(part, perm)).length === combinations;
     };
-    const pinned = set.map((perm): Part => {
+    const singleParts = set.map((perm): Part => {
         const part: Part = {};
         for (const { modifier, name } of perm.contexts) part[modifier.name] = [name];
         return part;
     });
-    const widened = merged(merged(pinned).map((part) => widen(part, exact)));
-    return uncovered(widened, all).map((part) => inWrittenOrder(part, first.contexts));
+    const widened = mergeParts(mergeParts(singleParts).map((part) => widen(part, isExactMatch)));
+    return removeRedundantParts(widened, all).map((part) =>
+        sortByResolverOrder(part, first.contexts),
+    );
 }
 
-function inWrittenOrder(part: Part, contexts: readonly ResolverContext[]): Part {
+function sortByResolverOrder(part: Part, contexts: readonly ResolverContext[]): Part {
     const ordered: Part = {};
     for (const { modifier } of contexts) {
         const names = part[modifier.name];
@@ -61,12 +65,12 @@ export function scopeLabel(scope: Scope): string {
     return scope
         .map((part) => {
             if (Object.keys(part).length === 0) return "every permutation";
-            return partText(part);
+            return formatPart(part);
         })
         .join("; ");
 }
 
-function partText(part: Scope[number]): string {
+function formatPart(part: Scope[number]): string {
     return Object.entries(part)
         .map(([modifier, contexts]) => `${modifier}: ${contexts.join(", ")}`)
         .join(", ");
@@ -76,7 +80,7 @@ function matches(part: Scope[number], perm: Permutation): boolean {
     return perm.contexts.every(({ modifier, name }) => part[modifier.name]?.includes(name) ?? true);
 }
 
-function merged(parts: Part[]): Part[] {
+function mergeParts(parts: Part[]): Part[] {
     const result = [...parts];
     for (let i = 0; i < result.length; i++) {
         for (let j = i + 1; j < result.length; j++) {
@@ -105,7 +109,7 @@ function sameNames(one: readonly string[], other: readonly string[]): boolean {
     return one.length === other.length && one.every((name) => other.includes(name));
 }
 
-function uncovered(parts: Part[], all: readonly Permutation[]): Part[] {
+function removeRedundantParts(parts: Part[], all: readonly Permutation[]): Part[] {
     const kept = [...parts];
     for (let i = kept.length - 1; i >= 0; i--) {
         const part = kept[i];

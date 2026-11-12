@@ -1,4 +1,4 @@
-import { thrownMessages } from "../error-messages.js";
+import { exceptionMessages } from "../error-messages.js";
 import type {
     ExtensionError,
     ExtensionMessages,
@@ -97,10 +97,10 @@ export function createExtensionReader<M extends ExtensionMessages>(
             return undefined;
         },
         result: (value) => {
-            const setAside = ignored.length > 0 ? { ignored } : {};
-            if (errors.length > 0) return { ok: false, errors, ...setAside };
-            if (value === undefined) throw new TypeError(thrownMessages.emptyResult);
-            return { ok: true, value, ...setAside };
+            const ignoredField = ignored.length > 0 ? { ignored } : {};
+            if (errors.length > 0) return { ok: false, errors, ...ignoredField };
+            if (value === undefined) throw new TypeError(exceptionMessages.emptyResult);
+            return { ok: true, value, ...ignoredField };
         },
     };
 }

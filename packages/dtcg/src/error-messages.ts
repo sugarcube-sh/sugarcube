@@ -14,6 +14,7 @@ import type {
 import { toInputLabel } from "./lookup/permutation-label.js";
 import {
     didYouMean,
+    formatList,
     ignoredMessage,
     valueErrorHelpText,
     valueErrorMessage,
@@ -28,7 +29,7 @@ type Entry<K extends DiagnosticKind> = {
     help?: (detail: DiagnosticDetailByKind[K]) => string | undefined;
 };
 
-const jsonReasons: Record<JsonErrorReason, string> = {
+const jsonErrorMessages: Record<JsonErrorReason, string> = {
     "comment": "comments aren't allowed",
     "trailing-comma": "trailing commas aren't allowed",
     "not-an-object": "the top level must be an object",
@@ -49,14 +50,19 @@ const jsonReasons: Record<JsonErrorReason, string> = {
     "invalid-character": "character must be escaped",
 };
 
-const expectedWords: Record<Extract<ResolverProblem, { rule: "wrong-type" }>["expected"], string> =
-    {
-        string: "a string",
-        object: "an object",
-        array: "a list",
-    };
+const expectedTypeLabels: Record<
+    Extract<ResolverProblem, { rule: "wrong-type" }>["expected"],
+    string
+> = {
+    string: "a string",
+    object: "an object",
+    array: "a list",
+};
 
-const propertyWords: Record<DiagnosticDetailByKind["invalid-property"]["expected"], string> = {
+const expectedPropertyLabels: Record<
+    DiagnosticDetailByKind["invalid-property"]["expected"],
+    string
+> = {
     "string": "a string",
     "object": "an object",
     "boolean-or-string": "true, false or a string",
@@ -78,28 +84,27 @@ function inputHeadline(problem: InputProblem): string {
 }
 
 function inputHelp(problem: InputProblem): string | undefined {
-    return problem.reason === "missing-modifier" ? `choose ${listed(problem.valid)}` : undefined;
+    return problem.reason === "missing-modifier"
+        ? `choose ${formatList(problem.valid)}`
+        : undefined;
 }
 
-function inputText(input: Input): string {
+function formatInput(input: Input): string {
     const entries = Object.entries(input).map(
         ([name, context]) =>
-            `${plainName(name) ? name : JSON.stringify(name)}: ${JSON.stringify(context)}`,
+            `${isIdentifier(name) ? name : JSON.stringify(name)}: ${JSON.stringify(context)}`,
     );
     return `{ ${entries.join(", ")} }`;
 }
 
-function plainName(name: string): boolean {
+function isIdentifier(name: string): boolean {
     return /^[A-Za-z_$][\w$]*$/.test(name);
 }
 
-function listed(names: readonly string[], joiner: "or" | "and" = "or"): string {
-    const quoted = names.map((name) => `\`${name}\``);
-    const last = quoted.pop();
-    return quoted.length === 0 ? (last ?? "") : `${quoted.join(", ")} ${joiner} ${last}`;
-}
-
-const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) => string> = {
+const resolverRuleMessages: Record<
+    Exclude<ResolverRule, "wrong-type">,
+    (name: string) => string
+> = {
     "version": () => '`version` must be "2025.10"',
     "missing-property": (name) => `\`${name}\` is missing`,
     "unknown-set": (name) => `no set named \`${name}\``,
@@ -116,19 +121,19 @@ const resolverRules: Record<Exclude<ResolverRule, "wrong-type">, (name: string) 
     "file-in-resolution-order": (name) => `\`${name}\` is a file, not a set or modifier`,
 };
 
-export const thrownMessages = {
+export const exceptionMessages = {
     couldNotFetch: (path: string) => `\`${path}\` could not be fetched`,
     notInLastRead: (path: string) =>
         `\`${path}\` wasn't part of the last read: pass its text to \`reread\`, or read again`,
-    nothingWrittenThere: (file: string) =>
+    noDefinitionAtLocation: (file: string) =>
         `nothing is written at that place in \`${file}\` in this read: it comes from a read of other text`,
     permutation: (detail: PermutationErrorDetail) =>
         detail.reason === "not-read"
             ? `\`${toInputLabel(detail.input)}\` was not built by this read`
             : [inputHeadline(detail), inputHelp(detail)].filter(Boolean).join(": "),
     severalPermutations: ({ asked, modifiers, example }: SeveralPermutationsDetail) => {
-        const named = `${modifiers.length === 1 ? "the modifier" : "the modifiers"} ${listed(modifiers, "and")}`;
-        return `tokens.${asked} needs a permutation: this resolver has ${named}. Pick one with tokens.getPermutation(${inputText(example)}), or group them with groupPermutationsBy(tokens, …)`;
+        const named = `${modifiers.length === 1 ? "the modifier" : "the modifiers"} ${formatList(modifiers, "and")}`;
+        return `tokens.${asked} needs a permutation: this resolver has ${named}. Pick one with tokens.getPermutation(${formatInput(example)}), or group them with groupPermutationsBy(tokens, …)`;
     },
     entryFile: ({ reason, files }: EntryFileErrorDetail) => {
         const named = files.map((file) => `\`${file}\``).join(", ");
@@ -138,7 +143,7 @@ export const thrownMessages = {
             ? "no files were given to read"
             : `${named} are token files with no resolver among them: a resolver says which files to read and in what order, so give one, or name the entry to start from`;
     },
-    typographyPlaced:
+    typographyNotPlaceable:
         "a typography value is one value per CSS property, so write`…` cannot place it whole: place the CSS property's value you mean",
     asyncSchema: (key: string) =>
         `the schema for \`${key}\` returned a Promise: extension schemas must validate synchronously`,
@@ -155,7 +160,7 @@ export const relatedMessages = {
     modifierDeclaredHere: "the modifier is declared here",
 };
 
-function pathWords(path: string): string {
+function formatPath(path: string): string {
     return path === "" ? "the top level" : `\`${path}\``;
 }
 
@@ -167,8 +172,8 @@ const ownerNames = {
     group: "group",
 } as const;
 
-function filesWords(files: readonly string[]): string {
-    return listed(files, "and");
+function formatFiles(files: readonly string[]): string {
+    return formatList(files, "and");
 }
 
 export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
@@ -176,7 +181,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         severity: "error",
         message: ({ file }) => `can't read \`${file}\``,
     },
-    "invalid-json": { severity: "error", message: ({ reason }) => jsonReasons[reason] },
+    "invalid-json": { severity: "error", message: ({ reason }) => jsonErrorMessages[reason] },
     "duplicate-key": {
         severity: "warning",
         message: ({ key }) => `duplicate key \`${key}\``,
@@ -185,8 +190,8 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         severity: "error",
         message: (detail) =>
             detail.rule === "wrong-type"
-                ? `\`${detail.name}\` must be ${expectedWords[detail.expected]}`
-                : resolverRules[detail.rule](detail.name),
+                ? `\`${detail.name}\` must be ${expectedTypeLabels[detail.expected]}`
+                : resolverRuleMessages[detail.rule](detail.name),
         help: ({ rule }) => (rule === "unknown-item-type" ? 'use "set" or "modifier"' : undefined),
     },
     "input-invalid": {
@@ -213,7 +218,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
                         : `\`${detail.child}\` is not a token property`;
                 case "declared": {
                     const other = detail.here === "token" ? "group" : "token";
-                    return `\`${detail.path}\` is a ${other} in ${filesWords(detail.otherFiles)}`;
+                    return `\`${detail.path}\` is a ${other} in ${formatFiles(detail.otherFiles)}`;
                 }
                 case "ref":
                     return "`$ref` doesn't extend a group";
@@ -226,7 +231,8 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "invalid-property": {
         severity: "error",
-        message: ({ property, expected }) => `\`${property}\` must be ${propertyWords[expected]}`,
+        message: ({ property, expected }) =>
+            `\`${property}\` must be ${expectedPropertyLabels[expected]}`,
         help: ({ reference }) => didYouMean(reference),
     },
     "missing-type": {
@@ -256,7 +262,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "written-generated": {
         severity: "error",
         message: ({ path, from, extension }) =>
-            `\`${path}\` is made by \`${extension.join(".")}\` on ${pathWords(from)}`,
+            `\`${path}\` is made by \`${extension.join(".")}\` on ${formatPath(from)}`,
     },
     "missing-reference": {
         severity: "error",
@@ -294,7 +300,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "circular-reference": {
         severity: "error",
-        message: ({ chain }) => `circular reference through ${chain.map(pathWords).join(", ")}`,
+        message: ({ chain }) => `circular reference through ${chain.map(formatPath).join(", ")}`,
     },
     "type-mismatch": {
         severity: "error",

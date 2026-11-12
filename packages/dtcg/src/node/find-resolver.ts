@@ -51,21 +51,21 @@ export async function findResolver(
     { by = "name" }: FindResolverOptions = {},
 ): Promise<FoundResolver> {
     const files = await findFiles(paths, by === "name" ? isResolverName : isJson);
-    const [first, ...rest] = by === "name" ? files : await withContent(files);
+    const [first, ...rest] = by === "name" ? files : await filterResolverFiles(files);
     if (first === undefined) return { kind: "none" };
     return rest.length === 0
         ? { kind: "one", path: first }
         : { kind: "several", paths: [first, ...rest] };
 }
 
-async function withContent(files: string[]): Promise<string[]> {
+async function filterResolverFiles(files: string[]): Promise<string[]> {
     const kept = await Promise.all(
-        files.map(async (file) => isResolverName(file) || writesResolutionOrder(file)),
+        files.map(async (file) => isResolverName(file) || isResolverFile(file)),
     );
     return files.filter((_, index) => kept[index]);
 }
 
-async function writesResolutionOrder(file: string): Promise<boolean> {
+async function isResolverFile(file: string): Promise<boolean> {
     const bytes = await readFile(file);
     return (
         bytes.includes(RESOLUTION_ORDER) && isResolver(file, parseJson(bytes.toString("utf8")).root)

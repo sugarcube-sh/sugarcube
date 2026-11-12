@@ -21,11 +21,11 @@ import type { CSSBlock } from "./blocks.js";
 export function toCSS(blocks: readonly CSSBlock[]): string {
     const rules = blocks
         .filter(({ inRule, underSupports }) => inRule.length > 0 || underSupports.length > 0)
-        .map(text);
+        .map(blockToCSS);
     return rules.length === 0 ? "" : `${rules.join("\n\n")}\n`;
 }
 
-function text({ selector, atRules = [], inRule, underSupports }: CSSBlock): string {
+function blockToCSS({ selector, atRules = [], inRule, underSupports }: CSSBlock): string {
     const rule = (lines: readonly { name: string; value: string }[]) => {
         const written = lines.map(({ name, value }) => `    ${name}: ${value};`);
         return `${[selector].flat().join(",\n")} {\n${written.join("\n")}\n}`;

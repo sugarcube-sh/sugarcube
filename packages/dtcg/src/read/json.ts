@@ -65,7 +65,7 @@ export function parseJson(text: string): ParsedJson {
     const trailingCommas: JsonProblem[] = [];
     let syntax: JsonProblem | undefined;
     const maybeTrailing = errors.some(({ error }) => TRAILING_COMMA_REASONS.has(reasonOf(error)));
-    const commaBefore = maybeTrailing ? trailingCommasIn(source) : new Map<number, number>();
+    const commaBefore = maybeTrailing ? findTrailingCommas(source) : new Map<number, number>();
     for (const { error, offset, length } of errors) {
         const reason = reasonOf(error);
         const comma = TRAILING_COMMA_REASONS.has(reason) ? commaBefore.get(offset) : undefined;
@@ -93,7 +93,7 @@ const TRAILING_COMMA_REASONS: ReadonlySet<JsonErrorReason> = new Set([
 
 const OPEN_OR_SEPARATOR = new Set(["[", "{", ",", ":"]);
 
-function trailingCommasIn(source: string): Map<number, number> {
+function findTrailingCommas(source: string): Map<number, number> {
     const commaBefore = new Map<number, number>();
     const scanner = createScanner(source);
     let last: { text: string; offset: number } | undefined;
@@ -151,13 +151,13 @@ export function propertyKey(node: Node, steps: readonly (string | number)[]): No
     return members(current).find(({ key }) => key === name)?.keyNode;
 }
 
-export function keyOf(node: Node): Node {
+export function getKeyNode(node: Node): Node {
     const { parent } = node;
     return parent?.type === "property" ? (parent.children?.[0] ?? node) : node;
 }
 
 export function markedNode(node: Node): Node {
-    return node.type === "object" || node.type === "array" ? keyOf(node) : node;
+    return node.type === "object" || node.type === "array" ? getKeyNode(node) : node;
 }
 
 export function member(node: Node, key: string): Node | undefined {
@@ -212,13 +212,13 @@ function position(lineStarts: number[], offset: number): { line: number; column:
     return { line: low + 1, column: offset - (lineStarts[low] ?? 0) + 1 };
 }
 
-export function plainObject(node: Node): Record<string, JsonValue> {
-    return Object.fromEntries(members(node).map(({ key, value }) => [key, plainValue(value)]));
+export function toPlainObject(node: Node): Record<string, JsonValue> {
+    return Object.fromEntries(members(node).map(({ key, value }) => [key, toPlainValue(value)]));
 }
 
-export function plainValue(node: Node): JsonValue {
-    if (node.type === "object") return plainObject(node);
-    if (node.type === "array") return (node.children ?? []).map(plainValue);
+export function toPlainValue(node: Node): JsonValue {
+    if (node.type === "object") return toPlainObject(node);
+    if (node.type === "array") return (node.children ?? []).map(toPlainValue);
     return node.value;
 }
 

@@ -1,9 +1,9 @@
 import type { Input, Resolver, ResolverContext, SetOnRoute, Source } from "../model.js";
 import { relatedMessages } from "../error-messages.js";
-import { ownLabel } from "../lookup/permutation-label.js";
-import { diagnostic, type Problems } from "./diagnostics.js";
-import { type Modifier, checkedInput, allModifiers, withDefaults } from "./input.js";
-import { type JsonFile, plainObject } from "./json.js";
+import { formatContextsLabel } from "../lookup/permutation-label.js";
+import { diagnostic, type DiagnosticCollector } from "./diagnostics.js";
+import { type Modifier, checkInput, allModifiers, withDefaults } from "./input.js";
+import { type JsonFile, toPlainObject } from "./json.js";
 import type { Loaded } from "./load.js";
 import type { ExpandedItem, LoadedSource, SourceEntry, SourcePiece } from "./sources.js";
 
@@ -19,14 +19,14 @@ export interface LoadedPermutation {
     sources: ListedSource[];
 }
 
-type Built = Pick<Loaded, "permutations">;
+type LoadedPermutations = Pick<Loaded, "permutations">;
 
 export interface PermutationOptions {
     inputs: readonly Readonly<Record<string, unknown>>[] | "all" | "each-context";
     limit: number;
 }
 
-export function fromTokenFile(path: string, json: JsonFile | undefined): Built {
+export function fromTokenFile(path: string, json: JsonFile | undefined): LoadedPermutations {
     return {
         permutations: [
             {
@@ -49,23 +49,23 @@ export function fromResolver(
     items: ExpandedItem[],
     sources: Map<SourcePiece, LoadedSource>,
     options: PermutationOptions,
-    diagnostics: Problems,
-): Built {
+    diagnostics: DiagnosticCollector,
+): LoadedPermutations {
     const modifiers = allModifiers(part);
-    const inputs = chooseInputs(modifiers, options, diagnostics);
+    const inputs = selectInputs(modifiers, options, diagnostics);
     const findContext = (modifier: string, name: string | undefined) =>
         part.modifiers
             .find((each) => each.name === modifier)
             ?.contexts.find((each) => each.name === name);
-    const listed = listedSources(items, sources, findContext);
+    const listed = createSourceLookup(items, sources, findContext);
     return {
         permutations: inputs.map((input) => {
             const contexts = modifiers.flatMap(({ name }) => findContext(name, input[name]) ?? []);
             return {
                 input,
-                label: ownLabel(contexts),
+                label: formatContextsLabel(contexts),
                 contexts,
-                sources: chooseSources(items, listed, findContext, input),
+                sources: getSourcesForInput(items, listed, findContext, input),
             };
         }),
     };
@@ -73,21 +73,21 @@ export function fromResolver(
 
 type FindContext = (modifier: string, name: string | undefined) => ResolverContext | undefined;
 
-function chooseInputs(
+function selectInputs(
     modifiers: Modifier[],
     { inputs, limit }: PermutationOptions,
-    diagnostics: Problems,
+    diagnostics: DiagnosticCollector,
 ): Input[] {
     if (modifiers.length === 0) return [{}];
-    if (inputs === "each-context") return eachContext(modifiers);
-    if (inputs === "all") return allWithinLimit(modifiers, limit, diagnostics);
+    if (inputs === "each-context") return getSingleModifierVariations(modifiers);
+    if (inputs === "all") return getCombinationsWithinLimit(modifiers, limit, diagnostics);
     const checked = inputs.flatMap((raw, index) => {
-        const result = checkedInput(modifiers, raw);
+        const result = checkInput(modifiers, raw);
         if (result.ok) return [result.input];
         for (const problem of result.problems) {
             const span = modifiers.find(({ name }) => name === problem.modifier)?.span;
             const declared = span && [{ message: relatedMessages.modifierDeclaredHere, span }];
-            diagnostics.found(
+            diagnostics.add(
                 diagnostic(
                     "input-invalid",
                     { input: index, ...problem },
@@ -110,11 +110,15 @@ function distinct(modifiers: Modifier[], inputs: Input[]): Input[] {
     });
 }
 
-function allWithinLimit(modifiers: Modifier[], limit: number, diagnostics: Problems): Input[] {
+function getCombinationsWithinLimit(
+    modifiers: Modifier[],
+    limit: number,
+    diagnostics: DiagnosticCollector,
+): Input[] {
     const count = modifiers.reduce((product, { contexts }) => product * contexts.length, 1);
     if (count <= limit) return combinations(modifiers);
-    const built = eachContext(modifiers);
-    diagnostics.found(diagnostic("permutation-limit", { count, limit, built: built.length }));
+    const built = getSingleModifierVariations(modifiers);
+    diagnostics.add(diagnostic("permutation-limit", { count, limit, built: built.length }));
     return built;
 }
 
@@ -126,7 +130,7 @@ function combinations(modifiers: Modifier[]): Input[] {
     );
 }
 
-function eachContext(modifiers: Modifier[]): Input[] {
+function getSingleModifierVariations(modifiers: Modifier[]): Input[] {
     const chosen = combinations(
         modifiers.filter(({ default: fallback }) => fallback === undefined),
     );
@@ -140,18 +144,18 @@ function eachContext(modifiers: Modifier[]): Input[] {
     return distinct(modifiers, walked);
 }
 
-type Listed = (entry: SourceEntry, context?: ResolverContext) => ListedSource | undefined;
+type SourceLookup = (entry: SourceEntry, context?: ResolverContext) => ListedSource | undefined;
 
-function listedSources(
+function createSourceLookup(
     items: ExpandedItem[],
     sources: Map<SourcePiece, LoadedSource>,
     findContext: FindContext,
-): Listed {
-    const readBy = whoReadsEachSource(items, sources, findContext);
+): SourceLookup {
+    const readBy = getContextsBySource(items, sources, findContext);
     const listed = new Map<SourceEntry, Map<ResolverContext | undefined, ListedSource>>();
     return (entry, context) => {
         const [first] = entry.pieces;
-        const loaded = openedAs(entry, sources);
+        const loaded = getLoadedSource(entry, sources);
         if (!first || !loaded) return undefined;
         const pieces = entry.pieces.flatMap((piece) => sources.get(piece) ?? []);
         const byContext = listed.get(entry) ?? new Map<ResolverContext | undefined, ListedSource>();
@@ -171,9 +175,9 @@ function listedSources(
     };
 }
 
-function chooseSources(
+function getSourcesForInput(
     items: ExpandedItem[],
-    listed: Listed,
+    listed: SourceLookup,
     findContext: FindContext,
     input: Input,
 ): ListedSource[] {
@@ -190,18 +194,18 @@ function chooseSources(
 function route({ route: steps }: SourcePiece): SetOnRoute[] {
     return steps.map(({ name, extensions }) => ({
         name,
-        ...(extensions && { extensions: plainObject(extensions) }),
+        ...(extensions && { extensions: toPlainObject(extensions) }),
     }));
 }
 
-function whoReadsEachSource(
+function getContextsBySource(
     items: ExpandedItem[],
     sources: Map<SourcePiece, LoadedSource>,
     findContext: FindContext,
 ): Map<string, Source["readBy"]> {
     const readBy = new Map<string, "every-context" | ResolverContext[]>();
     const read = (entry: SourceEntry, context?: ResolverContext) => {
-        const loaded = openedAs(entry, sources);
+        const loaded = getLoadedSource(entry, sources);
         if (!loaded) return;
         const key = sourceKey(loaded);
         const existing = readBy.get(key);
@@ -226,7 +230,7 @@ function whoReadsEachSource(
     return readBy;
 }
 
-function openedAs(
+function getLoadedSource(
     { pieces: [first] }: SourceEntry,
     sources: Map<SourcePiece, LoadedSource>,
 ): LoadedSource | undefined {

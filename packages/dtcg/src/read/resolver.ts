@@ -6,10 +6,10 @@ import type {
     JsonPath,
     ResolverProblem,
 } from "../model.js";
-import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
+import { type DiagnosticExtra, diagnostic, type DiagnosticCollector } from "./diagnostics.js";
 import { type JsonFile, member, members, toSpan } from "./json.js";
 import { malformedPointer } from "./malformed-pointer.js";
-import { readPointerText } from "./pointer.js";
+import { parsePointerText } from "./pointer.js";
 import { similarName } from "./similar.js";
 
 const ROOT_KEYS = [
@@ -109,7 +109,7 @@ export function isResolverName(file: string): boolean {
     return file.endsWith(".resolver.json");
 }
 
-export function checkResolver(file: JsonFile, diagnostics: Problems): CheckedResolver {
+export function checkResolver(file: JsonFile, diagnostics: DiagnosticCollector): CheckedResolver {
     const reader = createReader(file, diagnostics);
     const root: ResolverNode = { node: file.root, jsonPath: [] };
 
@@ -150,13 +150,13 @@ export function resolverProblem(
     });
 }
 
-export function createReader(file: JsonFile, diagnostics: Problems): Reader {
+export function createReader(file: JsonFile, diagnostics: DiagnosticCollector): Reader {
     const reader: Reader = {
         report: (problem, node, extra) =>
-            diagnostics.found(resolverProblem(file, problem, node, extra)),
+            diagnostics.add(resolverProblem(file, problem, node, extra)),
         diagnose: (kind, detail, node, extra = {}) => {
             const span = toSpan(file, node);
-            diagnostics.found(diagnostic(kind, detail, { ...extra, span }));
+            diagnostics.add(diagnostic(kind, detail, { ...extra, span }));
         },
         expect: <T extends JsonType>(
             node: Node | undefined,
@@ -179,14 +179,14 @@ export function createReader(file: JsonFile, diagnostics: Problems): Reader {
                     owner: kind,
                     ...(similar !== undefined && { similar }),
                 };
-                diagnostics.found(diagnostic("unknown-property", detail, { span }));
+                diagnostics.add(diagnostic("unknown-property", detail, { span }));
             }
         },
     };
     return reader;
 }
 
-function present(reader: Reader, owner: ResolverNode, key: string): Node | undefined {
+function requireKey(reader: Reader, owner: ResolverNode, key: string): Node | undefined {
     const found = member(owner.node, key);
     if (!found)
         reader.report(
@@ -202,7 +202,7 @@ function required<T extends JsonType>(
     key: string,
     type: T,
 ): NodeOf<T> | undefined {
-    const found = present(reader, owner, key);
+    const found = requireKey(reader, owner, key);
     return reader.expect(found, type, key, [...owner.jsonPath, key]) ? found : undefined;
 }
 
@@ -263,10 +263,10 @@ function readSet(
     reader: Reader,
     owner: ResolverNode,
     name: string,
-    alsoKnown: readonly string[] = [],
+    extraKeys: readonly string[] = [],
 ): SetDefinition {
-    reader.checkKeys(owner, "set", [...SET_KEYS, ...alsoKnown]);
-    present(reader, owner, "sources");
+    reader.checkKeys(owner, "set", [...SET_KEYS, ...extraKeys]);
+    requireKey(reader, owner, "sources");
     return { name, sources: [], declared: owner.node, ...readSetParts(reader, owner) };
 }
 
@@ -309,10 +309,10 @@ function readModifier(
     reader: Reader,
     owner: ResolverNode,
     name: string,
-    alsoKnown: readonly string[] = [],
+    extraKeys: readonly string[] = [],
 ): ModifierDefinition {
-    reader.checkKeys(owner, "modifier", [...MODIFIER_KEYS, ...alsoKnown]);
-    present(reader, owner, "contexts");
+    reader.checkKeys(owner, "modifier", [...MODIFIER_KEYS, ...extraKeys]);
+    requireKey(reader, owner, "contexts");
     return checkDefault(reader, owner, {
         name,
         contexts: new Map(),
@@ -398,7 +398,7 @@ function readOrderRef(
         reader.report({ rule: "file-in-resolution-order", name: pointer, jsonPath }, ref);
         return undefined;
     }
-    const read = readPointerText(pointer);
+    const read = parsePointerText(pointer);
     if (!read.ok) {
         const [collection, name, ...rest] = read.correctedSteps;
         const reaches =

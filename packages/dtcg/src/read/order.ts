@@ -1,7 +1,7 @@
 import { tokenPath } from "../path.js";
 import type { Merged } from "./merge.js";
 
-export function inWrittenOrder(merged: Merged): void {
+export function sortByDocumentOrder(merged: Merged): void {
     const { tokens, groups, order } = merged;
     const children = new Map<string | undefined, string[]>();
     const place = (path: string) => {

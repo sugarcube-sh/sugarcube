@@ -16,9 +16,9 @@ import {
     type JsonFile,
     type Member,
     members,
-    keyOf,
-    plainObject,
-    plainValue,
+    getKeyNode,
+    toPlainObject,
+    toPlainValue,
     toSpan,
 } from "./json.js";
 import { toPointerSteps } from "./ref-meaning.js";
@@ -27,14 +27,14 @@ import type { LoadedSource } from "./sources.js";
 import { isTokenKey, OTHER_SPEC_KEYS, OWN_PROPERTIES, type OwnProperty } from "./spec-keys.js";
 
 export interface Properties {
-    type?: TokenType | "unusable";
+    type?: TokenType | "invalid";
     description?: string;
     deprecated?: boolean | string;
     extensions?: Record<string, JsonValue>;
 }
 
-export function usableType(type: TokenType | "unusable" | undefined): TokenType | undefined {
-    return type === "unusable" ? undefined : type;
+export function toValidType(type: TokenType | "invalid" | undefined): TokenType | undefined {
+    return type === "invalid" ? undefined : type;
 }
 
 export interface SourceToken extends Properties {
@@ -45,7 +45,7 @@ export interface SourceToken extends Properties {
     reference: WrittenReference | undefined;
     span: Span;
     nameSpan: Span;
-    extensionsAt?: ExtensionsAt;
+    extensionsLocation?: ExtensionsLocation;
 }
 
 export interface GroupReference {
@@ -57,7 +57,7 @@ export interface GroupReference {
     groupSpan: Span;
 }
 
-export interface ExtensionsAt {
+export interface ExtensionsLocation {
     json: JsonFile;
     node: Node;
 }
@@ -66,7 +66,7 @@ export interface SourceGroup extends Properties {
     path: string;
     span: Span;
     nameSpan: Span;
-    extensionsAt?: ExtensionsAt;
+    extensionsLocation?: ExtensionsLocation;
     extends?: GroupReference;
 }
 
@@ -203,7 +203,7 @@ function walkValueToken(
         walk.report("token-and-group", detail, child.keyNode);
     }
 
-    addToken(walk, node, path, entries, value, plainValue(value));
+    addToken(walk, node, path, entries, value, toPlainValue(value));
 }
 
 function walkRefToken(
@@ -242,7 +242,7 @@ function addToken(
         valueAsWritten,
         reference: parseReference(valueAsWritten),
         span: toSpan(json, node),
-        nameSpan: toSpan(json, keyOf(node)),
+        nameSpan: toSpan(json, getKeyNode(node)),
         ...readProperties(walk, path, entries),
     };
     walk.members.push({ token });
@@ -265,7 +265,7 @@ function readGroup(
     return {
         path,
         span: toSpan(json, node),
-        nameSpan: toSpan(json, keyOf(node)),
+        nameSpan: toSpan(json, getKeyNode(node)),
         ...readProperties(walk, path, entries),
         ...(extending && { extends: extending }),
     };
@@ -279,7 +279,7 @@ function readExtends(
     const value = findEntry(entries, "$extends")?.value;
     if (!value) return undefined;
 
-    const reference = parseReference(plainValue(value));
+    const reference = parseReference(toPlainValue(value));
     if (!reference) {
         reportInvalidExtends(walk, value);
         return undefined;
@@ -310,8 +310,8 @@ function readProperties(
     walk: FileWalk,
     path: string,
     entries: readonly Member[],
-): Properties & { extensionsAt?: ExtensionsAt } {
-    const properties: Properties & { extensionsAt?: ExtensionsAt } = {};
+): Properties & { extensionsLocation?: ExtensionsLocation } {
+    const properties: Properties & { extensionsLocation?: ExtensionsLocation } = {};
     for (const { key, value } of entries) {
         const raw: unknown = value.value;
         if (key === "$type" && typeof raw === "string") {
@@ -321,23 +321,23 @@ function readProperties(
         } else if (key === "$deprecated" && (typeof raw === "string" || typeof raw === "boolean")) {
             properties.deprecated = raw;
         } else if (key === "$extensions" && value.type === "object") {
-            properties.extensions = plainObject(value);
-            properties.extensionsAt = { json: walk.json, node: value };
+            properties.extensions = toPlainObject(value);
+            properties.extensionsLocation = { json: walk.json, node: value };
         } else if (isProperty(key)) {
             walk.report("invalid-property", { property: key, expected: EXPECTED[key] }, value);
-            if (key === "$type") properties.type = "unusable";
+            if (key === "$type") properties.type = "invalid";
         }
     }
     return properties;
 }
 
-function readType(walk: FileWalk, path: string, node: Node, name: string): TokenType | "unusable" {
+function readType(walk: FileWalk, path: string, node: Node, name: string): TokenType | "invalid" {
     if (isTokenType(name)) return name;
 
     const similar = similarName(name, tokenTypes);
     const detail = { type: name, ...(similar !== undefined && { similar }) };
     walk.report("unknown-type", detail, node, { path });
-    return "unusable";
+    return "invalid";
 }
 
 function correctKeys(

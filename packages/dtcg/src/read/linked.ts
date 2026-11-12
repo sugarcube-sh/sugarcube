@@ -21,19 +21,19 @@ import type {
     Span,
     Token,
 } from "../model.js";
-import { concerning } from "../lookup/diagnostics.js";
-import { Changes, groupChange, matched, tokenChange } from "../lookup/changes-since.js";
+import { createDiagnosticFilter } from "../lookup/diagnostics.js";
+import { Changes, diffGroup, pairByPath, diffToken } from "../lookup/changes-since.js";
 import { SPAN_OF, getSpan } from "../lookup/editor.js";
 import { findJsonPath } from "../lookup/json-path.js";
 import { buildParts } from "../lookup/parts.js";
-import { PermutationError, findPermutation, onlyPermutation } from "../lookup/permutation.js";
+import { PermutationError, findPermutation, getOnlyPermutation } from "../lookup/permutation.js";
 import { isEquivalentValue } from "../values/same-value.js";
 import { referenceIndex } from "../lookup/references.js";
 import { tokenPath } from "../path.js";
 import { makePermutations } from "./make-permutations.js";
 import { getReferenceSpan, toReferenceInPermutations } from "./reference.js";
-import { samePlace } from "./same-object.js";
-import { type KnownFiles, knownInMemory, withChanges } from "./known-files.js";
+import { samePropertyPath } from "./same-object.js";
+import { type KnownFiles, createKnownFiles, withChanges } from "./known-files.js";
 
 export const NO_REFERENCES: readonly Reference[] = Object.freeze([]);
 export const NO_DEFINITIONS: readonly Definition[] = Object.freeze([]);
@@ -41,12 +41,12 @@ export const NO_EXTENSION_DEFINITIONS: Readonly<Record<string, Definition>> = Ob
 
 interface Merged {
     reference: Reference;
-    writers: Set<string>;
-    heirs: Set<string>;
+    ownerPaths: Set<string>;
+    inheritedPaths: Set<string>;
     permutations: Permutation[];
 }
 
-const NOT_YET = Symbol("not yet worked out");
+const UNCOMPUTED = Symbol("not yet worked out");
 
 type TokenFields = Omit<
     Token,
@@ -57,7 +57,7 @@ type GroupFields = Omit<Group, "kind" | "childTokens" | "tokens">;
 
 class TokenObject {
     #aliasChain: readonly Token[] | undefined;
-    #parts: Part | undefined | typeof NOT_YET = NOT_YET;
+    #parts: Part | undefined | typeof UNCOMPUTED = UNCOMPUTED;
 
     constructor(fields: TokenFields) {
         const self = this as unknown as Record<string, unknown>;
@@ -80,7 +80,7 @@ class TokenObject {
 
     getReferenceAt(property: JsonPath = []): Reference | undefined {
         return (this as unknown as Token).references.find((each) =>
-            samePlace(each.writtenInProperty, property),
+            samePropertyPath(each.writtenInProperty, property),
         );
     }
 
@@ -95,7 +95,7 @@ class TokenObject {
     }
 
     get parts(): Part | undefined {
-        if (this.#parts === NOT_YET) this.#parts = buildParts(this as unknown as Token);
+        if (this.#parts === UNCOMPUTED) this.#parts = buildParts(this as unknown as Token);
         return this.#parts;
     }
 }
@@ -186,13 +186,13 @@ class PermutationObject {
 
     getReferencesTo(path: string, { chained = false }: ReferenceOptions = {}): Reference[] {
         const { position, byPath } = referenceIndex(this.#self);
-        const reaching = (each: string, isToken: boolean): Reference[] => {
+        const findReferences = (each: string, isToken: boolean): Reference[] => {
             if (isToken) return byPath.get(each) ?? [];
             return [...byPath].flatMap(([named, references]) =>
                 tokenPath.contains(each, named) ? references : [],
             );
         };
-        const first = reaching(path, this.getToken(path) !== undefined);
+        const first = findReferences(path, this.getToken(path) !== undefined);
         const found = new Set<Reference>(first);
         const seen = new Set([path]);
         const waiting = chained ? [first] : [];
@@ -202,7 +202,7 @@ class PermutationObject {
                 const { writtenIn } = reference;
                 if (seen.has(writtenIn.path)) continue;
                 seen.add(writtenIn.path);
-                waiting.push(reaching(writtenIn.path, writtenIn.kind === "token"));
+                waiting.push(findReferences(writtenIn.path, writtenIn.kind === "token"));
             }
         }
         return [...found].sort((a, b) => (position.get(a) ?? 0) - (position.get(b) ?? 0));
@@ -246,7 +246,7 @@ class PermutationObject {
     getDiagnostics(path: string): Diagnostic[] {
         const tokens = this.#designTokens as DesignTokens;
         const permutation = this.#self;
-        const about = concerning(tokens, path, [permutation]);
+        const about = createDiagnosticFilter(tokens, path, [permutation]);
         return tokens.diagnostics.filter(
             (found) => found.permutations.includes(permutation) && about(found),
         );
@@ -267,7 +267,7 @@ class PermutationObject {
         return this as unknown as Permutation;
     }
 
-    static belongsTo(permutation: PermutationObject, tokens: DesignTokens): void {
+    static setOwner(permutation: PermutationObject, tokens: DesignTokens): void {
         permutation.#designTokens = tokens;
     }
 }
@@ -285,21 +285,21 @@ const contextShared = {
     },
 };
 
-interface Kept {
+interface ReadState {
     texts: Readonly<Record<string, string>>;
     moved: ReadonlyMap<Definition | Reference, Span>;
     known: KnownFiles;
-    readAgain(known: KnownFiles, previous: DesignTokens): DesignTokens;
+    reread(known: KnownFiles, previous: DesignTokens): DesignTokens;
 }
 
 type DesignTokensFields = Omit<DesignTokens, keyof DesignTokensObject>;
 
 class DesignTokensObject {
-    readonly #kept: Kept;
+    readonly #state: ReadState;
 
-    constructor(fields: DesignTokensFields, kept: Kept) {
+    constructor(fields: DesignTokensFields, state: ReadState) {
         Object.assign(this, fields);
-        this.#kept = kept;
+        this.#state = state;
     }
 
     getReferencesTo(path: string): ReferenceInPermutations[] {
@@ -311,22 +311,30 @@ class DesignTokensObject {
                 let atSpan = merged.get(span);
                 if (!atSpan) merged.set(span, (atSpan = []));
                 let here = atSpan.find((each) =>
-                    samePlace(each.reference.writtenInProperty, reference.writtenInProperty ?? []),
+                    samePropertyPath(
+                        each.reference.writtenInProperty,
+                        reference.writtenInProperty ?? [],
+                    ),
                 );
                 if (!here) {
-                    here = { reference, writers: new Set(), heirs: new Set(), permutations: [] };
+                    here = {
+                        reference,
+                        ownerPaths: new Set(),
+                        inheritedPaths: new Set(),
+                        permutations: [],
+                    };
                     atSpan.push(here);
                 }
                 if (!here.permutations.includes(permutation)) here.permutations.push(permutation);
                 const { writtenIn } = reference;
-                (writtenIn.inherited ? here.heirs : here.writers).add(writtenIn.path);
+                (writtenIn.inherited ? here.inheritedPaths : here.ownerPaths).add(writtenIn.path);
             }
         }
         return [...merged].flatMap(([span, here]) =>
-            here.map(({ reference, writers, heirs, permutations }) =>
+            here.map(({ reference, ownerPaths, inheritedPaths, permutations }) =>
                 toReferenceInPermutations(
                     reference,
-                    [...new Set([...writers, ...heirs])],
+                    [...new Set([...ownerPaths, ...inheritedPaths])],
                     makePermutations(permutations, tokens.permutations),
                     span,
                     () => findJsonPath(tokens, span),
@@ -395,39 +403,39 @@ class DesignTokensObject {
     }
 
     getToken(path: string) {
-        return onlyPermutation(this.#self, "getToken()").getToken(path);
+        return getOnlyPermutation(this.#self, "getToken()").getToken(path);
     }
 
     getGroup(path: string) {
-        return onlyPermutation(this.#self, "getGroup()").getGroup(path);
+        return getOnlyPermutation(this.#self, "getGroup()").getGroup(path);
     }
 
     getDependents(path: string, options?: ReferenceOptions) {
-        return onlyPermutation(this.#self, "getDependents()").getDependents(path, options);
+        return getOnlyPermutation(this.#self, "getDependents()").getDependents(path, options);
     }
 
     getDependencies(path: string, options?: ReferenceOptions) {
-        return onlyPermutation(this.#self, "getDependencies()").getDependencies(path, options);
+        return getOnlyPermutation(this.#self, "getDependencies()").getDependencies(path, options);
     }
 
     get tokens() {
-        return onlyPermutation(this.#self, "tokens").tokens;
+        return getOnlyPermutation(this.#self, "tokens").tokens;
     }
 
     get groups() {
-        return onlyPermutation(this.#self, "groups").groups;
+        return getOnlyPermutation(this.#self, "groups").groups;
     }
 
     get children() {
-        return onlyPermutation(this.#self, "children").children;
+        return getOnlyPermutation(this.#self, "children").children;
     }
 
     get topLevel() {
-        return onlyPermutation(this.#self, "topLevel").topLevel;
+        return getOnlyPermutation(this.#self, "topLevel").topLevel;
     }
 
     getTokenOrGroup(path: string) {
-        return onlyPermutation(this.#self, "getTokenOrGroup()").getTokenOrGroup(path);
+        return getOnlyPermutation(this.#self, "getTokenOrGroup()").getTokenOrGroup(path);
     }
 
     getTokenPaths() {
@@ -445,7 +453,7 @@ class DesignTokensObject {
 
     getDiagnostics(path: string) {
         const tokens = this.#self;
-        return tokens.diagnostics.filter(concerning(tokens, path, tokens.permutations));
+        return tokens.diagnostics.filter(createDiagnosticFilter(tokens, path, tokens.permutations));
     }
 
     getChangesSince(before: DesignTokens, options?: { moved?: Move[] }): Change[] {
@@ -454,40 +462,40 @@ class DesignTokensObject {
         for (const now of this.#self.permutations) {
             const was = findPermutation(before, now.input);
             if ("reason" in was) continue;
-            for (const pair of matched(was.groups, now.groups, moved)) {
-                if (pair.before !== pair.after) changes.add(groupChange(pair, moved), now);
+            for (const pair of pairByPath(was.groups, now.groups, moved)) {
+                if (pair.before !== pair.after) changes.add(diffGroup(pair, moved), now);
             }
-            for (const pair of matched(was.tokens, now.tokens, moved)) {
-                if (pair.before !== pair.after) changes.add(tokenChange(pair, moved), now);
+            for (const pair of pairByPath(was.tokens, now.tokens, moved)) {
+                if (pair.before !== pair.after) changes.add(diffToken(pair, moved), now);
             }
         }
         return changes.list(this.#self.permutations);
     }
 
     getText(file: string): string | undefined {
-        return this.#kept.texts[file];
+        return this.#state.texts[file];
     }
 
     reread(changed: Readonly<Record<string, string | null>>) {
-        const { known, readAgain } = this.#kept;
-        return readAgain(withChanges(known, changed), this.#self);
+        const { known, reread } = this.#state;
+        return reread(withChanges(known, changed), this.#self);
     }
 
     rereadAll(files: Readonly<Record<string, string>>) {
-        const { texts, readAgain } = this.#kept;
+        const { texts, reread } = this.#state;
         const unchanged =
             Object.keys(texts).every((file) => file in files) &&
             Object.entries(files).every(([file, text]) => texts[file] === text);
         if (unchanged) return this.#self;
-        return readAgain(knownInMemory(this.#self.entryFile, Object.entries(files)), this.#self);
+        return reread(createKnownFiles(this.#self.entryFile, Object.entries(files)), this.#self);
     }
 
     toMemory() {
-        return { entryFile: this.#self.entryFile, files: { ...this.#kept.texts } };
+        return { entryFile: this.#self.entryFile, files: { ...this.#state.texts } };
     }
 
     [SPAN_OF](of: Definition | Reference): Span {
-        const moved = this.#kept.moved.get(of);
+        const moved = this.#state.moved.get(of);
         if (moved) return moved;
         return "source" in of
             ? DefinitionObject.getSpan(of as DefinitionObject)
@@ -503,15 +511,15 @@ class DesignTokensObject {
     }
 }
 
-export function linkedToken(fields: TokenFields): Token {
+export function createTokenObject(fields: TokenFields): Token {
     return new TokenObject(fields) as unknown as Token;
 }
 
-export function linkedGroup(fields: GroupFields): Group {
+export function createGroupObject(fields: GroupFields): Group {
     return new GroupObject(fields) as unknown as Group;
 }
 
-export function linkedPermutation(
+export function createPermutation(
     fields: PermutationFields,
     tokens: ReadonlyMap<string, Token>,
     groups: ReadonlyMap<string, Group>,
@@ -519,11 +527,11 @@ export function linkedPermutation(
     return new PermutationObject(fields, tokens, groups) as unknown as Permutation;
 }
 
-export function linkedModifier(fields: ResolverModifier): ResolverModifier {
+export function createModifier(fields: ResolverModifier): ResolverModifier {
     return Object.assign(Object.create(modifierShared), fields);
 }
 
-export function linkedContext(fields: ResolverContext): ResolverContext {
+export function createContext(fields: ResolverContext): ResolverContext {
     return Object.assign(Object.create(contextShared), fields);
 }
 
@@ -545,14 +553,14 @@ class SourceObject {
     }
 }
 
-export function withPosition(fields: Source, position: number): Source {
+export function createSource(fields: Source, position: number): Source {
     return new SourceObject(fields, position) as unknown as Source;
 }
 
 class DefinitionObject {
     readonly source: Source;
     readonly #span: Span;
-    #alone: Definition[] | undefined;
+    #asList: Definition[] | undefined;
     #text: string | undefined;
     #textAt: Span;
     #written: JsonValue | undefined;
@@ -576,15 +584,15 @@ class DefinitionObject {
         return place.#span;
     }
 
-    static foundIn(place: DefinitionObject, text: string | undefined, span: Span): void {
+    static setText(place: DefinitionObject, text: string | undefined, span: Span): void {
         if (place.#written !== undefined) return;
         place.#text = text;
         place.#textAt = span;
     }
 
-    static alone(place: DefinitionObject): Definition[] {
-        place.#alone ??= [place];
-        return place.#alone;
+    static asList(place: DefinitionObject): Definition[] {
+        place.#asList ??= [place];
+        return place.#asList;
     }
 
     toJSON() {
@@ -592,26 +600,26 @@ class DefinitionObject {
     }
 }
 
-export interface Places {
+export interface DefinitionTracker {
     at(source: Source, span: Span, path: string): Definition;
-    only(source: Source, span: Span, path: string): Definition[];
-    movedTo(references: readonly Reference[], spans: readonly Span[]): void;
+    getAsList(source: Source, span: Span, path: string): Definition[];
+    recordMoves(references: readonly Reference[], spans: readonly Span[]): void;
     readonly moved: ReadonlyMap<Definition | Reference, Span>;
 }
 
-export function trackPlaces(
+export function createDefinitionTracker(
     texts: Readonly<Record<string, string>>,
     previous: DesignTokens | undefined,
-): Places {
+): DefinitionTracker {
     const made = new Map<Span, DefinitionObject[]>();
     const moved = new Map<Definition | Reference, Span>();
     const checked = new Set<readonly Reference[]>();
     const before = previous && indexDefinitions(previous);
-    const kept = (source: Source, span: Span, path: string, text: string | undefined) => {
+    const findReusable = (source: Source, span: Span, path: string, text: string | undefined) => {
         if (!previous || !before) return undefined;
         for (const each of before.get(path) ?? []) {
-            if (each.source !== source || !writtenAlike(previous, each, text, span)) continue;
-            if (previous.getText(span.file) !== text) DefinitionObject.foundIn(each, text, span);
+            if (each.source !== source || !sameText(previous, each, text, span)) continue;
+            if (previous.getText(span.file) !== text) DefinitionObject.setText(each, text, span);
             if (!sameSpan(DefinitionObject.getSpan(each), span)) moved.set(each, span);
             return each;
         }
@@ -622,15 +630,16 @@ export function trackPlaces(
         const found = atSpan?.find((each) => each.source === source);
         if (found) return found;
         const text = texts[span.file];
-        const place = kept(source, span, path, text) ?? new DefinitionObject(source, span, text);
+        const place =
+            findReusable(source, span, path, text) ?? new DefinitionObject(source, span, text);
         if (atSpan) atSpan.push(place);
         else made.set(span, [place]);
         return place;
     };
     return {
         at,
-        only: (source, span, path) => DefinitionObject.alone(at(source, span, path)),
-        movedTo: (references, spans) => {
+        getAsList: (source, span, path) => DefinitionObject.asList(at(source, span, path)),
+        recordMoves: (references, spans) => {
             if (!previous || checked.has(references)) return;
             checked.add(references);
             for (const [index, reference] of references.entries()) {
@@ -662,7 +671,7 @@ function indexDefinitions(tokens: DesignTokens): Map<string, DefinitionObject[]>
     return byPath;
 }
 
-function writtenAlike(
+function sameText(
     previous: DesignTokens,
     place: Definition,
     text: string | undefined,
@@ -692,10 +701,10 @@ function sameOffsets(a: Span, b: Span): boolean {
     return a.file === b.file && a.offset === b.offset && a.length === b.length;
 }
 
-export function linkedDesignTokens(fields: DesignTokensFields, kept: Kept): DesignTokens {
-    const tokens = new DesignTokensObject(fields, kept) as unknown as DesignTokens;
+export function createDesignTokens(fields: DesignTokensFields, state: ReadState): DesignTokens {
+    const tokens = new DesignTokensObject(fields, state) as unknown as DesignTokens;
     for (const permutation of tokens.permutations) {
-        PermutationObject.belongsTo(permutation as unknown as PermutationObject, tokens);
+        PermutationObject.setOwner(permutation as unknown as PermutationObject, tokens);
     }
     return tokens;
 }

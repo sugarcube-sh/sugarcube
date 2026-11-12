@@ -1,13 +1,13 @@
-import { literal, no, ok, oneOf, tuple, wrongShape } from "./syntax.js";
+import { literal, err, ok, oneOf, tuple, wrongShape } from "./syntax.js";
 import { number } from "./number.js";
 
 function x(coordinate: "x1" | "x2") {
     return literal((raw) => {
         if (typeof raw !== "number" || !Number.isFinite(raw)) {
-            return no({ reason: "not-a-number", value: raw });
+            return err({ reason: "not-a-number", value: raw });
         }
         return raw < 0 || raw > 1
-            ? no({ reason: "x-out-of-range", value: raw, coordinate })
+            ? err({ reason: "x-out-of-range", value: raw, coordinate })
             : ok(raw);
     });
 }

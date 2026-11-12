@@ -1,4 +1,4 @@
-import { literal, no, object, ok, oneOf, wrongShape } from "./syntax.js";
+import { literal, err, object, ok, oneOf, wrongShape } from "./syntax.js";
 import { number } from "./number.js";
 import type { DimensionValue, DurationValue } from "../model.js";
 
@@ -13,7 +13,7 @@ export function measure(units: readonly (DimensionValue["unit"] | DurationValue[
     const unit = literal((raw) => {
         const known = units.find((each) => each === raw);
         return known === undefined
-            ? no({ reason: "unit-not-allowed", unit: raw, allowed: units })
+            ? err({ reason: "unit-not-allowed", unit: raw, allowed: units })
             : ok(known);
     });
     return oneOf({

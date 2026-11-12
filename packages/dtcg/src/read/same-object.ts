@@ -1,6 +1,6 @@
 import type { Group, JsonPath, Definition, Resolver, Source, Token, TokenType } from "../model.js";
 import type { MergedGroup, MergedToken } from "./merge.js";
-import { type Properties, usableType } from "./walk.js";
+import { type Properties, toValidType } from "./walk.js";
 import { isEqualJson } from "../values/same-value.js";
 
 export interface Target {
@@ -9,7 +9,7 @@ export interface Target {
     pointsToProperty?: JsonPath | undefined;
 }
 
-export interface MadeFrom {
+export interface TokenBuildFields {
     type: TokenType;
     value: unknown;
     resolved: unknown;
@@ -22,7 +22,7 @@ export interface MadeFrom {
 export function sameToken(
     earlier: Token,
     written: MergedToken,
-    now: MadeFrom,
+    now: TokenBuildFields,
     targets: readonly Target[],
 ): boolean {
     if (earlier.type !== now.type || earlier.deprecated !== now.deprecated) return false;
@@ -38,7 +38,7 @@ export function sameToken(
         if (!reference || reference.pointsToToken !== token || reference.pointsToPath !== path)
             return false;
     }
-    if (!written.added) return true;
+    if (!written.isGenerated) return true;
     return (
         isEqualJson(earlier.value, now.value) &&
         earlier.description === written.description &&
@@ -57,7 +57,7 @@ export function sameGroup(
 ): boolean {
     return (
         earlier.extends === extending &&
-        earlier.type === usableType(applies.type) &&
+        earlier.type === toValidType(applies.type) &&
         earlier.deprecated === applies.deprecated &&
         earlier.deprecatedByGroup === deprecatedByGroup &&
         earlier.inherited?.from === written.inherited?.from &&
@@ -79,17 +79,17 @@ export function sameSource(was: Source, now: Source): boolean {
         was.file === now.file &&
         was.pointer === now.pointer &&
         was.modifier === now.modifier &&
-        sameReaders(was.readBy, now.readBy) &&
+        sameContexts(was.readBy, now.readBy) &&
         isEqualJson(was.sets, now.sets) &&
         isEqualJson(was.extensions, now.extensions)
     );
 }
 
-function sameReaders(was: Source["readBy"], now: Source["readBy"]): boolean {
+function sameContexts(was: Source["readBy"], now: Source["readBy"]): boolean {
     if (was === "every-context" || now === "every-context") return was === now;
     return sameList(was, now);
 }
 
-export function samePlace(a: JsonPath | undefined, b: JsonPath): boolean {
+export function samePropertyPath(a: JsonPath | undefined, b: JsonPath): boolean {
     return a === undefined ? b.length === 0 : sameList(a, b);
 }

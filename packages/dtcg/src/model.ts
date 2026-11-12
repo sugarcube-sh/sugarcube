@@ -2442,13 +2442,13 @@ export interface ExtensionValidator {
      * An error's `jsonPath` starts at the extension. With `createExtensionReader`, return the
      * reader's `result` as it is.
      *
-     * @param on - The token or group, by its path and type.
+     * @param owner - The token or group, by its path and type.
      * @param extension - Your extension's data, or the schema's output if there's a `schema`.
      * @param options - How the read reads values. Pass them to `createExtensionReader` or
      * `parseValue` to read values the same way.
      */
     validate?(
-        on: {
+        owner: {
             /** Where it is, such as `"color.brand"`; `""` for the top level of a file. */
             path: string;
             /** The token's type, or `"group"`. */

@@ -9,12 +9,12 @@ import type {
 } from "../model.js";
 import { isJsonObject } from "../values/json.js";
 import { toReferenceTarget } from "../values/references.js";
-import type { ReadAgain } from "../values/read-syntax.js";
+import type { DeferredRead } from "../values/read-syntax.js";
 import type { Siblings } from "../values/syntax.js";
 import type { MergedToken, Merged } from "./merge.js";
 import { type Occurrence, occurrence } from "./occurrence.js";
 import type { LocatedReference, ValueReader } from "./parse-value.js";
-import { type Aim, followReference, stepInto, toPointerSteps } from "./ref-meaning.js";
+import { type ReferenceLookup, followReference, getAtPath, toPointerSteps } from "./ref-meaning.js";
 
 export const UNRESOLVED = Symbol("unresolved");
 
@@ -31,14 +31,14 @@ export interface ReferenceResolver {
         path: string,
         span: Span,
     ): void;
-    reportUnresolved(aim: Aim, from: string, span: Span): void;
-    reportUnreachable(aim: Aim, from: string, span: Span): void;
+    reportUnresolved(aim: ReferenceLookup, from: string, span: Span): void;
+    reportUnreachable(aim: ReferenceLookup, from: string, span: Span): void;
 }
 
-interface Following {
+interface ResolveState {
     token: MergedToken;
     seen: string[];
-    within: Occurrence | undefined;
+    origin: Occurrence | undefined;
 }
 
 export function resolveValue(
@@ -46,70 +46,76 @@ export function resolveValue(
     token: MergedToken,
     value: unknown,
     references: LocatedReference[],
-    readAgain: ReadAgain[],
+    deferredReads: DeferredRead[],
 ): unknown {
-    const following = { token, seen: [], within: undefined };
-    return resolveReferences(resolver, following, value, references, readAgain);
+    const following = { token, seen: [], origin: undefined };
+    return resolveReferences(resolver, following, value, references, deferredReads);
 }
 
 function resolveReferences(
     resolver: ReferenceResolver,
-    following: Following,
+    following: ResolveState,
     value: unknown,
     references: LocatedReference[],
-    readAgain: ReadAgain[],
+    deferredReads: DeferredRead[],
 ): unknown {
     const followed: [LocatedReference, unknown][] = [];
     let resolved = value;
     let failed = false;
     for (const located of references) {
         const { property } = located.reference;
-        if (readAgain.some((each) => startsWith(property, each.property))) continue;
-        const part = follow(resolver, following, located);
+        if (deferredReads.some((each) => startsWith(property, each.property))) continue;
+        const part = resolveReferenceValue(resolver, following, located);
         if (part === UNRESOLVED) failed = true;
         else {
             followed.push([located, part]);
-            resolved = replaced(resolved, property, part);
+            resolved = setAtPath(resolved, property, part);
         }
     }
     if (failed) return UNRESOLVED;
 
     const { readValue, input } = resolver;
-    const { token, within } = following;
-    for (const again of readAgain) {
-        const { jsonPath, owner, raw } = again;
+    const { token, origin } = following;
+    for (const again of deferredReads) {
+        const { jsonPath, tokenType, raw } = again;
         const syntax = again.from(resolveSiblings(again, followed));
-        const slot = { syntax, jsonPath, owner, element: false };
-        const { result, notes } = readValue.readTarget(token, slot, raw, input);
+        const slot = { syntax, jsonPath, tokenType, isElement: false };
+        const { result, notes } = readValue.readSlot(token, slot, raw, input);
         if (!result.ok) return UNRESOLVED;
         const inner = notes.references.map((reference) => ({
             reference,
-            occurrence: within ?? occurrence(token, reference),
+            occurrence: origin ?? occurrence(token, reference),
         }));
-        const part = resolveReferences(resolver, following, result.value, inner, notes.readAgain);
+        const part = resolveReferences(
+            resolver,
+            following,
+            result.value,
+            inner,
+            notes.deferredReads,
+        );
         if (part === UNRESOLVED) return UNRESOLVED;
-        resolved = replaced(resolved, again.property, part);
+        resolved = setAtPath(resolved, again.property, part);
     }
     return resolved;
 }
 
-function follow(
+function resolveReferenceValue(
     resolver: ReferenceResolver,
-    following: Following,
+    following: ResolveState,
     located: LocatedReference,
 ): unknown {
     const { merged, readValue, input } = resolver;
-    const { token, seen, within } = following;
-    const { ref, syntax, owner, element, jsonPath } = located.reference;
-    const use = within ?? located.occurrence;
-    const expected = syntax.kind === "ofType" ? syntax.type : owner;
+    const { token, seen, origin } = following;
+    const { ref, syntax, tokenType, isElement, jsonPath } = located.reference;
+    const use = origin ?? located.occurrence;
+    const expected = syntax.kind === "ofType" ? syntax.type : tokenType;
     const adjusted = (part: unknown) =>
         part !== UNRESOLVED && syntax.kind === "ofType" && syntax.adjust
             ? syntax.adjust(part)
             : part;
 
     if (ref.syntax === "curly-brace") {
-        return adjusted(substitute(resolver, token, ref, ref.path, expected, use, element));
+        return adjusted(substitute(resolver, token, ref, ref.path, expected, use, isElement));
     }
 
     const { pointer: written } = ref;
@@ -120,27 +126,27 @@ function follow(
     const aim = { reference: ref, steps: toPointerSteps(ref) };
     const reached = followReference(aim, merged);
     const unreachable = () => {
-        if (within) resolver.reportUnresolved(aim, token.path, use.span);
+        if (origin) resolver.reportUnresolved(aim, token.path, use.span);
         else resolver.reportUnreachable(aim, token.path, use.span);
         return UNRESOLVED;
     };
     if (reached.kind !== "token" && reached.kind !== "part") return unreachable();
 
     const whole = reached.kind === "token";
-    if (whole && (syntax.kind === "ofType" || element)) {
-        return adjusted(substitute(resolver, token, ref, reached.path, expected, use, element));
+    if (whole && (syntax.kind === "ofType" || isElement)) {
+        return adjusted(substitute(resolver, token, ref, reached.path, expected, use, isElement));
     }
     const { valueAsWritten } = reached.token;
-    const stepped = whole ? { value: valueAsWritten } : stepInto(valueAsWritten, reached.inside);
+    const stepped = whole ? { value: valueAsWritten } : getAtPath(valueAsWritten, reached.inside);
     if (!stepped) return unreachable();
     const raw = stepped.value;
 
-    const slot = { syntax, jsonPath, owner, element };
-    const { result, notes } = readValue.readTarget(token, slot, raw, input);
+    const slot = { syntax, jsonPath, tokenType, isElement };
+    const { result, notes } = readValue.readSlot(token, slot, raw, input);
     if (!result.ok) return UNRESOLVED;
     const inner = notes.references.map((reference) => ({ reference, occurrence: use }));
-    const deeper = { token, seen: [...seen, written], within: use };
-    return resolveReferences(resolver, deeper, result.value, inner, notes.readAgain);
+    const deeper = { token, seen: [...seen, written], origin: use };
+    return resolveReferences(resolver, deeper, result.value, inner, notes.deferredReads);
 }
 
 function substitute(
@@ -150,7 +156,7 @@ function substitute(
     path: string,
     expected: TokenType,
     use: Occurrence,
-    element: boolean,
+    isElement: boolean,
 ): unknown {
     const { span } = use;
     const shown = toReferenceTarget(reference);
@@ -173,7 +179,7 @@ function substitute(
         );
         return UNRESOLVED;
     }
-    if (!element) return target.resolved;
+    if (!isElement) return target.resolved;
     const list = Array.isArray(target.resolved) ? target.resolved : [target.resolved];
     if (list.length !== 1) {
         resolver.report(
@@ -187,7 +193,7 @@ function substitute(
     return list[0];
 }
 
-function resolveSiblings(again: ReadAgain, followed: [LocatedReference, unknown][]): Siblings {
+function resolveSiblings(again: DeferredRead, followed: [LocatedReference, unknown][]): Siblings {
     const parent = again.property.slice(0, -1);
     const siblings: Record<string, unknown> = { ...again.siblings };
     for (const [{ reference }, part] of followed) {
@@ -199,14 +205,14 @@ function resolveSiblings(again: ReadAgain, followed: [LocatedReference, unknown]
     return siblings;
 }
 
-function replaced(value: unknown, property: JsonPath, part: unknown): unknown {
+function setAtPath(value: unknown, property: JsonPath, part: unknown): unknown {
     const [step, ...rest] = property;
     if (step === undefined) return part;
     if (Array.isArray(value)) {
-        return value.map((item, index) => (index === step ? replaced(item, rest, part) : item));
+        return value.map((item, index) => (index === step ? setAtPath(item, rest, part) : item));
     }
     if (isJsonObject(value) && typeof step === "string") {
-        return { ...value, [step]: replaced(value[step], rest, part) };
+        return { ...value, [step]: setAtPath(value[step], rest, part) };
     }
     return value;
 }

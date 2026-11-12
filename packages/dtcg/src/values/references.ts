@@ -97,7 +97,7 @@ export function toReferenceTarget(reference: WrittenReference): string {
  *
  * @see {@link https://www.designtokens.org/TR/2025.10/format/#json-pointer-syntax-required-support | Format 7.1.2, JSON Pointer syntax}
  */
-export function namedPath(ref: WrittenReference): string | undefined {
+export function getReferencePath(ref: WrittenReference): string | undefined {
     if (ref.syntax === "curly-brace") return ref.path;
     const steps = refSteps(ref.pointer);
     return steps && pointerParts(steps).path;
@@ -122,8 +122,14 @@ export function toJsonPointer(reference: WrittenReference): { $ref: string } {
     return { $ref: encodePointer([...reference.path.split("."), "$value"]) };
 }
 
-export function movedReference<R extends WrittenReference>(ref: R, moved: readonly Move[]): R;
-export function movedReference(ref: WrittenReference, moved: readonly Move[]): WrittenReference {
+export function applyMovesToReference<R extends WrittenReference>(
+    ref: R,
+    moved: readonly Move[],
+): R;
+export function applyMovesToReference(
+    ref: WrittenReference,
+    moved: readonly Move[],
+): WrittenReference {
     if (ref.syntax === "curly-brace") {
         return { syntax: "curly-brace", path: tokenPath.applyMoves(ref.path, moved) };
     }

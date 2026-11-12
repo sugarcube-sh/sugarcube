@@ -1,4 +1,4 @@
-import { thrownMessages } from "../error-messages.js";
+import { exceptionMessages } from "../error-messages.js";
 import type { EntryFileErrorDetail } from "../model.js";
 
 /**
@@ -21,7 +21,7 @@ export class EntryFileError extends Error {
     readonly detail: EntryFileErrorDetail;
 
     constructor(detail: EntryFileErrorDetail) {
-        super(thrownMessages.entryFile(detail));
+        super(exceptionMessages.entryFile(detail));
         this.name = "EntryFileError";
         this.detail = detail;
     }

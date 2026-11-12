@@ -1,4 +1,4 @@
-import type { Problems } from "./diagnostics.js";
+import type { DiagnosticCollector } from "./diagnostics.js";
 import type { Node } from "jsonc-parser";
 import type {
     ExtensionError,
@@ -14,7 +14,7 @@ import type {
 import {
     type CheckedExtension,
     type SchemaOutput,
-    Reported,
+    ReportDeduper,
     checkSchema,
     findExtension,
     extensionDiagnostic,
@@ -23,7 +23,7 @@ import type { JsonFile } from "./json.js";
 import { findSettings } from "./settings.js";
 import type { NormalisedPermutation } from "./normalise.js";
 
-type Checked = Parameters<NonNullable<ExtensionValidator["validate"]>>[0];
+type ExtensionOwner = Parameters<NonNullable<ExtensionValidator["validate"]>>[0];
 
 /**
  * Defines an {@link ExtensionValidator}.
@@ -58,7 +58,7 @@ export function defineExtensionValidator<
         schema?: S;
         messages?: M;
         validate?: (
-            on: Checked,
+            owner: ExtensionOwner,
             extension: SchemaOutput<S>,
             options: ParseOptions,
         ) =>
@@ -76,51 +76,51 @@ export function validateExtensions(
         validators,
         parseOptions,
     }: { validators: readonly ExtensionValidator[]; parseOptions: ParseOptions },
-    diagnostics: Problems,
+    diagnostics: DiagnosticCollector,
 ): void {
     if (validators.length === 0) return;
 
     normalised.forEach(({ merged, input }, index) => {
-        const reported = new Reported();
+        const reported = new ReportDeduper();
         const check = (
             validator: ExtensionValidator,
-            on: Checked,
+            owner: ExtensionOwner,
             value: unknown,
             json: JsonFile,
             node: Node,
         ) => {
-            if (!reported.first(validator, node)) return;
+            if (!reported.isFirst(validator, node)) return;
             const passed = checkSchema(validator.schema, value, validator.key);
             const problems = passed.ok
-                ? problemsIn(validator.validate?.(on, passed.value, parseOptions) ?? [])
+                ? toProblems(validator.validate?.(owner, passed.value, parseOptions) ?? [])
                 : passed.problems;
             const extension: CheckedExtension = {
-                within: [validator.key],
+                keyPath: [validator.key],
                 messages: validator.messages,
                 json,
                 node,
-                path: on.path,
+                path: owner.path,
             };
             for (const each of problems)
-                diagnostics.found(extensionDiagnostic(each, extension), input);
+                diagnostics.add(extensionDiagnostic(each, extension), input);
         };
 
         for (const [path, group] of merged.groups) {
             const settings = findSettings(merged, group);
             for (const validator of validators) {
                 if (!validator.appliesTo.includes("group")) continue;
-                const at = settings.extensionsAt?.[validator.key];
+                const at = settings.extensionLocations?.[validator.key];
                 const found = findExtension(settings.extensions, at, [validator.key]);
                 if (!at || !found) continue;
-                const on: Checked = { path, type: "group" };
-                check(validator, on, found.value, at.json, found.node);
+                const owner: ExtensionOwner = { path, type: "group" };
+                check(validator, owner, found.value, at.json, found.node);
             }
         }
 
         const types = new Map(permutations[index]?.tokens.map(({ path, type }) => [path, type]));
         for (const token of merged.tokens.values()) {
             const type = types.get(token.path);
-            const at = token.extensionsAt;
+            const at = token.extensionsLocation;
             if (!type || !at) continue;
             for (const validator of validators) {
                 if (!validator.appliesTo.includes(type)) continue;
@@ -132,7 +132,7 @@ export function validateExtensions(
     });
 }
 
-function problemsIn(
+function toProblems(
     returned: NonNullable<ReturnType<NonNullable<ExtensionValidator["validate"]>>>,
 ): (ExtensionError | ValueError | IgnoredProperty)[] {
     if (Array.isArray(returned)) return returned;

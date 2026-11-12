@@ -1,27 +1,27 @@
 import type { DiagnosticDetailByKind } from "../model.js";
 import type { Merged } from "./merge.js";
-import { type PointerReading, readPointerText } from "./pointer.js";
-import { reach, toValuePointer } from "./ref-meaning.js";
+import { type PointerParseResult, parsePointerText } from "./pointer.js";
+import { lookupPointer, toValuePointer } from "./ref-meaning.js";
 
 type Malformed = DiagnosticDetailByKind["malformed-pointer"];
 
 export function malformedPointer(
     ref: string,
-    { problem, corrected }: Extract<PointerReading, { ok: false }>,
-    reaches: boolean,
+    { problem, corrected }: Extract<PointerParseResult, { ok: false }>,
+    resolves: boolean,
 ): Malformed {
-    return { ref, reason: problem, ...(reaches && { corrected }) };
+    return { ref, reason: problem, ...(resolves && { corrected }) };
 }
 
-export function malformation(
+export function checkMalformedPointer(
     ref: string,
     merged: Merged,
     wanted: "value" | "group",
 ): Malformed | undefined {
     if (!ref.startsWith("#")) return undefined;
-    const read = readPointerText(ref);
+    const read = parsePointerText(ref);
     if (read.ok) return undefined;
-    const reached = reach(read.correctedSteps, merged).kind;
+    const reached = lookupPointer(read.correctedSteps, merged).kind;
     if (wanted === "group") return malformedPointer(ref, read, reached === "group");
     if (reached !== "stops-at-token") {
         return malformedPointer(ref, read, reached === "token" || reached === "part");

@@ -2,9 +2,9 @@ import type { Merged, MergedGroup } from "./merge.js";
 import type { Properties } from "./walk.js";
 
 export type Settings = Properties &
-    Pick<MergedGroup, "extensionsAt"> & {
+    Pick<MergedGroup, "extensionLocations"> & {
         /** The group these settings' `deprecated` comes from. */
-        deprecatedAt?: string;
+        deprecatedBy?: string;
     };
 
 export function findSettings(merged: Merged, group: MergedGroup): Settings {
@@ -13,15 +13,15 @@ export function findSettings(merged: Merged, group: MergedGroup): Settings {
     if (kept) return kept;
     const visiting = new Set<MergedGroup>();
 
-    const of = (each: MergedGroup): Settings => {
+    const getSettings = (each: MergedGroup): Settings => {
         const found = known.get(each);
         if (found) return found;
-        const own = written(each);
-        const takes = each.takesFrom;
+        const own = getOwnSettings(each);
+        const takes = each.inheritsFrom;
         const source = takes === undefined ? undefined : merged.groups.get(takes);
         if (!source || visiting.has(source)) return own;
         visiting.add(each);
-        const from = of(source);
+        const from = getSettings(source);
         visiting.delete(each);
         const settings: Settings = {
             ...from,
@@ -29,24 +29,24 @@ export function findSettings(merged: Merged, group: MergedGroup): Settings {
             ...((from.extensions || own.extensions) && {
                 extensions: { ...from.extensions, ...own.extensions },
             }),
-            ...((from.extensionsAt || own.extensionsAt) && {
-                extensionsAt: { ...from.extensionsAt, ...own.extensionsAt },
+            ...((from.extensionLocations || own.extensionLocations) && {
+                extensionLocations: { ...from.extensionLocations, ...own.extensionLocations },
             }),
         };
         known.set(each, settings);
         return settings;
     };
-    return of(group);
+    return getSettings(group);
 }
 
-function written(group: MergedGroup): Settings {
-    const { type, description, deprecated, extensions, extensionsAt } = group;
+function getOwnSettings(group: MergedGroup): Settings {
+    const { type, description, deprecated, extensions, extensionLocations } = group;
     return {
         ...(type !== undefined && { type }),
         ...(description !== undefined && { description }),
         ...(deprecated !== undefined && { deprecated }),
-        ...(deprecated !== undefined && { deprecatedAt: group.path }),
+        ...(deprecated !== undefined && { deprecatedBy: group.path }),
         ...(extensions && { extensions }),
-        ...(extensionsAt && { extensionsAt }),
+        ...(extensionLocations && { extensionLocations }),
     };
 }

@@ -1,28 +1,28 @@
 import { lineCaps, strokeStyleKeywords } from "./keywords.js";
-import { list, literal, no, object, ofType, ok, oneOf, refuse, wrongShape } from "./syntax.js";
+import { list, literal, err, object, ofType, ok, oneOf, reject, wrongShape } from "./syntax.js";
 
 const keyword = literal((raw) => {
     const known = strokeStyleKeywords.find((each) => each === raw);
     if (known !== undefined) return ok(known);
     return typeof raw === "string"
-        ? no({
+        ? err({
               reason: "unknown-stroke-style-keyword",
               value: raw,
               keywords: strokeStyleKeywords,
           })
-        : no(wrongShape(raw));
+        : err(wrongShape(raw));
 });
 
 const lineCap = literal((raw) => {
     const known = lineCaps.find((each) => each === raw);
     return known === undefined
-        ? no({ reason: "unknown-line-cap", value: raw, lineCaps })
+        ? err({ reason: "unknown-line-cap", value: raw, lineCaps })
         : ok(known);
 });
 
 const dashArray = oneOf({
     array: list(ofType("dimension"), "empty-dash-array"),
-    other: refuse("dash-array-not-a-list"),
+    other: reject("dash-array-not-a-list"),
 });
 
 export const strokeStyle = oneOf({

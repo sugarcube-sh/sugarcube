@@ -6,11 +6,11 @@ import type { LiteralSyntax, OfTypeSyntax, WithDefault } from "./syntax.js";
 import { transition } from "./transition.js";
 import { typography } from "./typography.js";
 
-type Named =
+type PartSyntax =
     | (OfTypeSyntax & { readonly type: TokenType })
     | (WithDefault & { readonly syntax: LiteralSyntax & { readonly part: string } });
 
-function partTypes<P extends Readonly<Record<string, Named>>>(composite: {
+function partTypes<P extends Readonly<Record<string, PartSyntax>>>(composite: {
     readonly properties: P;
 }): {
     readonly [K in keyof P]: P[K] extends { kind: "ofType"; type: infer T }

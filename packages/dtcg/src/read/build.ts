@@ -16,42 +16,42 @@ import type {
     Written,
 } from "../model.js";
 import { tokenPath } from "../path.js";
-import { namedPath, toReferenceTarget } from "../values/references.js";
-import type { Building } from "./building.js";
-import { type DiagnosticExtra, diagnostic, type Problems } from "./diagnostics.js";
+import { getReferencePath, toReferenceTarget } from "../values/references.js";
+import type { Mutable } from "./building.js";
+import { type DiagnosticExtra, diagnostic, type DiagnosticCollector } from "./diagnostics.js";
 import {
-    type Applying,
-    applying,
+    type EffectiveSettings,
+    getEffectiveSettings,
     findDeprecatingGroup,
     findDeprecation,
-    inherited,
+    getInheritedProperty,
 } from "./inherit.js";
 import {
     NO_EXTENSION_DEFINITIONS,
     NO_DEFINITIONS,
     NO_REFERENCES,
-    type Places,
-    linkedGroup,
-    linkedPermutation,
-    linkedToken,
+    type DefinitionTracker,
+    createGroupObject,
+    createPermutation,
+    createTokenObject,
     allTokens,
 } from "./linked.js";
-import { malformation } from "./malformed-pointer.js";
-import type { Merged, MergedGroup, MergedToken, WrittenAt } from "./merge.js";
-import type { MissingIn, MissingReferences } from "./missing.js";
+import { checkMalformedPointer } from "./malformed-pointer.js";
+import type { Merged, MergedGroup, MergedToken, SourceSpan } from "./merge.js";
+import type { MissingRecorder, MissingReferences } from "./missing.js";
 import type { NormalisedPermutation } from "./normalise.js";
-import { type Occurrence, wholeReference } from "./occurrence.js";
+import { type Occurrence, createAliasOccurrence } from "./occurrence.js";
 import type { LocatedReference, ValueReader } from "./parse-value.js";
-import { type ReferenceTo, linkedReference } from "./reference.js";
-import { type Aim, followReference, stepInto, toValuePointer } from "./ref-meaning.js";
+import { type ReferenceWithTarget, createReference } from "./reference.js";
+import { type ReferenceLookup, followReference, getAtPath, toValuePointer } from "./ref-meaning.js";
 import { type ReferenceResolver, UNRESOLVED, resolveValue } from "./resolve-value.js";
-import { type MadeFrom, sameGroup, sameToken } from "./same-object.js";
-import { type Properties, usableType } from "./walk.js";
+import { type TokenBuildFields, sameGroup, sameToken } from "./same-object.js";
+import { type Properties, toValidType } from "./walk.js";
 
 interface Context {
     readValue: ValueReader;
-    diagnostics: Problems;
-    places: Places;
+    diagnostics: DiagnosticCollector;
+    places: DefinitionTracker;
     missing: MissingReferences;
     reusable: ReusableIndex;
 }
@@ -65,8 +65,8 @@ interface PermutationContext {
     input: Input;
     merged: Merged;
     sources: readonly Source[];
-    places: Places;
-    diagnostics: Problems;
+    places: DefinitionTracker;
+    diagnostics: DiagnosticCollector;
     reusable: ReusableIndex;
 }
 
@@ -92,7 +92,7 @@ type TargetLocation =
     | { occurrence: Occurrence; isToken: false; path: string | undefined };
 
 interface GroupBuildFields {
-    settings: Applying;
+    settings: EffectiveSettings;
     deprecatedByGroup: string | undefined;
     definitions: readonly Definition[];
     children: (Token | Group)[];
@@ -100,7 +100,7 @@ interface GroupBuildFields {
 }
 
 interface NewToken {
-    token: Building<Token>;
+    token: Mutable<Token>;
     tokenToBuild: TokenToBuild;
 }
 
@@ -124,14 +124,14 @@ export function buildPermutations(
 function buildPermutation(permutation: NormalisedPermutation, context: Context): Permutation {
     const { input, merged, sources, unreadSources } = permutation;
     const { readValue, diagnostics, places, reusable } = context;
-    const missing = context.missing.in(input, merged.tokens, unreadSources);
+    const missing = context.missing.createRecorder(input, merged.tokens, unreadSources);
     const resolver = new ValueResolver(permutation, readValue, diagnostics, missing);
     const shared = { input, merged, sources, places, diagnostics, reusable };
 
     const tokensToBuild = orderTokens(merged, resolver);
     const tokens = buildTokens(tokensToBuild, shared);
     const groups = buildGroups(tokens, shared);
-    missing.close();
+    missing.flush();
 
     return toPermutation(permutation, tokens, groups);
 }
@@ -190,7 +190,7 @@ function buildTokens(
 
         if (reused) {
             const spans = targets.map(({ occurrence }) => occurrence.span);
-            context.places.movedTo(reused.references, spans);
+            context.places.recordMoves(reused.references, spans);
             built.set(tokenToBuild.path, reused);
         } else {
             const token = createToken(tokenToBuild.mergedToken, fields, context.reusable);
@@ -206,7 +206,7 @@ function buildTokens(
 function attachTargets(
     locations: readonly TargetLocation[],
     built: ReadonlyMap<string, Token>,
-): readonly ReferenceTo[] {
+): readonly ReferenceWithTarget[] {
     if (locations.length === 0) return NONE;
     return locations.map((location) => {
         const { occurrence, path } = location;
@@ -222,7 +222,7 @@ function attachTargets(
 function getTokenBuildFields(
     { path, mergedToken, resolved }: TokenToBuild,
     context: PermutationContext,
-): MadeFrom {
+): TokenBuildFields {
     const deprecated = findDeprecation(mergedToken, context.merged);
     const shared = {
         type: resolved.type,
@@ -240,33 +240,33 @@ function getTokenBuildFields(
 
 function getTokenDefinitions(
     path: string,
-    { replaces, source, span }: MergedToken,
+    { overridden, source, span }: MergedToken,
     context: PermutationContext,
 ): readonly Definition[] {
     const { places, sources } = context;
-    if (!replaces) return places.only(sources[source] as Source, span, path);
+    if (!overridden) return places.getAsList(sources[source] as Source, span, path);
 
-    const replaced = toDefinitions(replaces, path, context);
+    const replaced = toDefinitions(overridden, path, context);
     return [...replaced, places.at(sources[source] as Source, span, path)];
 }
 
 function toDefinitions(
-    locations: WrittenAt[],
+    locations: SourceSpan[],
     path: string,
     { places, sources }: PermutationContext,
 ): readonly Definition[] {
     const [first] = locations;
     if (!first) return NO_DEFINITIONS;
     if (locations.length === 1)
-        return places.only(sources[first.source] as Source, first.span, path);
+        return places.getAsList(sources[first.source] as Source, first.span, path);
 
     return locations.map(({ source, span }) => places.at(sources[source] as Source, span, path));
 }
 
 function findReusableToken(
     { path, mergedToken }: TokenToBuild,
-    fields: MadeFrom,
-    targets: readonly ReferenceTo[],
+    fields: TokenBuildFields,
+    targets: readonly ReferenceWithTarget[],
     { reusable }: PermutationContext,
 ): Token | undefined {
     const candidates = reusable.tokens.get(path);
@@ -275,16 +275,16 @@ function findReusableToken(
 
 function createToken(
     mergedToken: MergedToken,
-    fields: MadeFrom,
+    fields: TokenBuildFields,
     reusable: ReusableIndex,
-): Building<Token> {
-    const token: Building<Token> = linkedToken(toTokenFields(mergedToken, fields));
+): Mutable<Token> {
+    const token: Mutable<Token> = createTokenObject(toTokenFields(mergedToken, fields));
     addToIndex(reusable.tokens, mergedToken.path, token);
     return token;
 }
 
 function linkReferences(
-    token: Building<Token>,
+    token: Mutable<Token>,
     { mergedToken, targets }: TokenToBuild,
     built: ReadonlyMap<string, Token>,
 ): void {
@@ -292,13 +292,13 @@ function linkReferences(
 
     const pointerAlone = mergedToken.value.type === "string";
     token.references = attachTargets(targets, built).map((target) =>
-        linkedReference(token, target, { pointerAlone }),
+        createReference(token, target, { pointerAlone }),
     );
 }
 
 function reportDeprecated(
     path: string,
-    targets: readonly ReferenceTo[],
+    targets: readonly ReferenceWithTarget[],
     { diagnostics, input }: PermutationContext,
 ): void {
     for (const { token, occurrence } of targets) {
@@ -308,7 +308,7 @@ function reportDeprecated(
         const reason = token.deprecated;
         const detail = typeof reason === "string" ? { ref, reason } : { ref };
         const extra = { span: occurrence.span, path, tags: ["deprecated" as const] };
-        diagnostics.found(diagnostic("deprecated-reference", detail, extra), input);
+        diagnostics.add(diagnostic("deprecated-reference", detail, extra), input);
     }
 }
 
@@ -378,7 +378,8 @@ function findReusableGroup(
     );
     if (!reused) return undefined;
 
-    if (mergedGroup.extends) context.places.movedTo(reused.references, [mergedGroup.extends.span]);
+    if (mergedGroup.extends)
+        context.places.recordMoves(reused.references, [mergedGroup.extends.span]);
     return reused;
 }
 
@@ -389,7 +390,7 @@ function createGroup(
     context: PermutationContext,
 ): Group {
     const fields = toGroupFields(mergedGroup, settings, deprecatedByGroup, definitions);
-    const group: Building<Group> = linkedGroup(fields);
+    const group: Mutable<Group> = createGroupObject(fields);
     group.children = children;
 
     const rootToken = findRootToken(children);
@@ -399,7 +400,7 @@ function createGroup(
         const { reference, steps, span } = mergedGroup.extends;
         const occurrence = { reference, steps, span, property: [] };
         const [target] = attachTargets([locateTarget(occurrence, context.merged)], tokens);
-        if (target) group.references = [linkedReference(group, target)];
+        if (target) group.references = [createReference(group, target)];
     }
 
     addToIndex(context.reusable.groups, mergedGroup.path, group);
@@ -413,14 +414,14 @@ function getGroupBuildFields(
     context: PermutationContext,
 ): GroupBuildFields {
     const { merged } = context;
-    const settings = applying(merged, mergedGroup);
+    const settings = getEffectiveSettings(merged, mergedGroup);
     const deprecatedByGroup = findDeprecatingGroup(
         merged,
         mergedGroup,
         settings.deprecated,
-        settings.deprecatedAt,
+        settings.deprecatedBy,
     );
-    const definitions = toDefinitions(mergedGroup.declaredIn, mergedGroup.path, context);
+    const definitions = toDefinitions(mergedGroup.locations, mergedGroup.path, context);
     return { settings, deprecatedByGroup, definitions, children, extending };
 }
 
@@ -432,7 +433,7 @@ function toPermutation(
     const topLevel = groups.get("") as Group;
     const groupsInOrder = [...merged.groups.keys()].flatMap((path) => groups.get(path) ?? []);
 
-    return linkedPermutation(
+    return createPermutation(
         {
             input,
             label,
@@ -452,8 +453,8 @@ class ValueResolver implements ReferenceResolver {
     readonly input: Input;
     readonly merged: Merged;
     readonly readValue: ValueReader;
-    #diagnostics: Problems;
-    #missing: MissingIn;
+    #diagnostics: DiagnosticCollector;
+    #missing: MissingRecorder;
 
     #results = new Map<string, ResolveResult | typeof RESOLVING>();
     #resolveStack: { path: string; span: Span }[] = [];
@@ -461,8 +462,8 @@ class ValueResolver implements ReferenceResolver {
     constructor(
         { input, merged }: NormalisedPermutation,
         readValue: ValueReader,
-        diagnostics: Problems,
-        missing: MissingIn,
+        diagnostics: DiagnosticCollector,
+        missing: MissingRecorder,
     ) {
         this.input = input;
         this.merged = merged;
@@ -489,7 +490,7 @@ class ValueResolver implements ReferenceResolver {
         const declaredType = this.#findDeclaredType(token);
         if (declaredType === "untyped") return "untyped";
 
-        const alias = wholeReference(token);
+        const alias = createAliasOccurrence(token);
         if (alias) return this.#resolveAlias(token, alias, declaredType);
 
         if (declaredType === undefined) return "untyped";
@@ -499,8 +500,8 @@ class ValueResolver implements ReferenceResolver {
     #findDeclaredType(token: MergedToken): TokenType | "untyped" | undefined {
         if (token.type === undefined && token.reference) return undefined;
 
-        const type = inherited(token, this.merged, "type");
-        if (type === "unusable") return "untyped";
+        const type = getInheritedProperty(token, this.merged, "type");
+        if (type === "invalid") return "untyped";
         if (type === undefined) {
             this.report("missing-type", {}, token.path, token.nameSpan);
             return "untyped";
@@ -570,13 +571,13 @@ class ValueResolver implements ReferenceResolver {
         const {
             result: read,
             references,
-            readAgain,
+            deferredReads,
         } = this.readValue.read(token, type, this.input);
         const unresolved = { type, read, references };
         if (!read.ok) return unresolved;
         if (references.length === 0) return { ...unresolved, resolved: read.value };
 
-        const value = resolveValue(this, token, read.value, references, readAgain);
+        const value = resolveValue(this, token, read.value, references, deferredReads);
         if (value === UNRESOLVED) return unresolved;
         return { ...unresolved, resolved: value };
     }
@@ -593,7 +594,7 @@ class ValueResolver implements ReferenceResolver {
     }
 
     #findGroupType(token: MergedToken): TokenType | undefined {
-        return usableType(inherited(token, this.merged, "type"));
+        return toValidType(getInheritedProperty(token, this.merged, "type"));
     }
 
     #reportLoop(path: string): void {
@@ -613,7 +614,7 @@ class ValueResolver implements ReferenceResolver {
         });
     }
 
-    reportUnresolved(aim: Aim, from: string, span: Span): void {
+    reportUnresolved(aim: ReferenceLookup, from: string, span: Span): void {
         const ref = toReferenceTarget(aim.reference);
         const reached = followReference(aim, this.merged).kind;
 
@@ -628,10 +629,10 @@ class ValueResolver implements ReferenceResolver {
         this.#missing.record(aim.reference, from, span);
     }
 
-    reportUnreachable(aim: Aim, from: string, span: Span): void {
+    reportUnreachable(aim: ReferenceLookup, from: string, span: Span): void {
         const { reference } = aim;
         if (reference.syntax === "json-pointer") {
-            const malformed = malformation(reference.pointer, this.merged, "value");
+            const malformed = checkMalformedPointer(reference.pointer, this.merged, "value");
             if (malformed) {
                 this.report("malformed-pointer", malformed, from, span);
                 return;
@@ -647,7 +648,7 @@ class ValueResolver implements ReferenceResolver {
         span: Span,
         extra: Omit<DiagnosticExtra, "span" | "path"> = {},
     ): void {
-        this.#diagnostics.found(diagnostic(kind, detail, { span, path, ...extra }), this.input);
+        this.#diagnostics.add(diagnostic(kind, detail, { span, path, ...extra }), this.input);
     }
 }
 
@@ -681,23 +682,23 @@ function locateTarget(occurrence: Occurrence, merged: Merged): TargetLocation {
 
     const reached = followReference(occurrence, merged);
     if (reached.kind === "nothing") {
-        return { occurrence, path: namedPath(reference), isToken: false };
+        return { occurrence, path: getReferencePath(reference), isToken: false };
     }
     if (reached.kind === "token") return { occurrence, path: reached.path, isToken: true };
     if (reached.kind === "group" || reached.kind === "stops-at-token") {
         return { occurrence, path: reached.path, isToken: false };
     }
 
-    const pointsToProperty = stepInto(reached.token.valueAsWritten, reached.inside)?.property;
+    const pointsToProperty = getAtPath(reached.token.valueAsWritten, reached.inside)?.property;
     return { occurrence, path: reached.path, isToken: true, pointsToProperty };
 }
 
 function toGroupFields(
     group: MergedGroup,
-    settings: Applying,
+    settings: EffectiveSettings,
     deprecatedByGroup: string | undefined,
     definitions: readonly Definition[],
-): Parameters<typeof linkedGroup>[0] {
+): Parameters<typeof createGroupObject>[0] {
     const { path, inherited: inheritedFrom } = group;
     const own = pickPublicProperties(group);
     return {
@@ -714,14 +715,14 @@ function toGroupFields(
 }
 
 function getExtensionDefinitions(
-    { extensionsAt, declaredIn }: MergedGroup,
+    { extensionLocations, locations }: MergedGroup,
     definitions: readonly Definition[],
 ): Readonly<Record<string, Definition>> {
-    if (!extensionsAt) return NO_EXTENSION_DEFINITIONS;
+    if (!extensionLocations) return NO_EXTENSION_DEFINITIONS;
 
     const byKey: Record<string, Definition> = {};
-    for (const [key, { source }] of Object.entries(extensionsAt)) {
-        declaredIn.forEach((location, index) => {
+    for (const [key, { source }] of Object.entries(extensionLocations)) {
+        locations.forEach((location, index) => {
             const definition = definitions[index];
             if (location.source === source && definition) byKey[key] = definition;
         });
@@ -737,7 +738,7 @@ function pickPublicProperties<Deprecated extends Properties["deprecated"]>({
 }: Omit<Properties, "deprecated"> & { deprecated?: Deprecated }): Omit<Written, "deprecated"> & {
     deprecated?: Deprecated;
 } {
-    const type = usableType(declaredType);
+    const type = toValidType(declaredType);
     return {
         ...(type !== undefined && { type }),
         ...(description !== undefined && { description }),
@@ -746,8 +747,11 @@ function pickPublicProperties<Deprecated extends Properties["deprecated"]>({
     };
 }
 
-function toTokenFields(token: MergedToken, fields: MadeFrom): Parameters<typeof linkedToken>[0] {
-    const asWritten = token.added
+function toTokenFields(
+    token: MergedToken,
+    fields: TokenBuildFields,
+): Parameters<typeof createTokenObject>[0] {
+    const asWritten = token.isGenerated
         ? undefined
         : {
               value: token.valueAsWritten,
@@ -769,5 +773,5 @@ function toTokenFields(token: MergedToken, fields: MadeFrom): Parameters<typeof 
         asWritten,
         generated: token.generated,
         inherited: token.inherited,
-    } as Parameters<typeof linkedToken>[0];
+    } as Parameters<typeof createTokenObject>[0];
 }
