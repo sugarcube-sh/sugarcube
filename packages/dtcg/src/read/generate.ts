@@ -3,6 +3,7 @@ import type { Settings } from "./settings.js";
 import { tokenPath } from "../path.js";
 import type { Node } from "jsonc-parser";
 import type {
+    DiagnosticDetailByKind,
     ExtensionError,
     ExtensionMessages,
     GeneratedToken,
@@ -92,91 +93,156 @@ export function defineGenerator<
 export function runGenerators(
     merged: Merged,
     generators: readonly Generator[],
-    { input, parseOptions }: { input: Input; parseOptions: ParseOptions },
+    options: { input: Input; parseOptions: ParseOptions },
     diagnostics: DiagnosticCollector,
 ): void {
-    const added = new Map<string, MergedToken>();
-    const reported = new ReportDeduper();
-    const reportedIgnored = new ReportDeduper();
-
-    for (const [groupPath, group] of merged.groups) {
+    const run = new GeneratorRun(merged, options, diagnostics);
+    for (const [path, group] of merged.groups) {
         const settings = getEffectiveSettings(merged, group);
-        for (const generator of generators) {
-            const extension = findGeneratorExtension(settings, generator.extension);
-            if (!extension) continue;
-            const checked: CheckedExtension = {
-                keyPath: generator.extension,
-                messages: generator.messages,
-                json: extension.json,
-                node: extension.node,
-                path: groupPath,
-            };
-            const report = (problems: ExtensionProblem[], seen = reported) => {
-                if (!seen.isFirst(generator, extension.node)) return;
-                for (const each of problems)
-                    diagnostics.add(extensionDiagnostic(each, checked), input);
-            };
-            const passed = checkSchema(generator.schema, extension.value, generator.extension[0]);
-            if (!passed.ok) {
-                report(passed.problems);
-                continue;
-            }
-            const type = toValidType(settings.type);
-            const result = generator.generate(
-                { path: groupPath, ...(type && { type }) },
-                passed.value,
-                parseOptions,
-            );
-            if (result.ignored) report(result.ignored, reportedIgnored);
-            if (!result.ok) {
-                report(result.errors);
-                continue;
-            }
-            const from = { from: groupPath, extension: generator.extension };
-            for (const generated of result.value) {
-                const problem = tokenPath.findNameProblem(generated.name);
-                if (problem) {
-                    const detail = { name: generated.name, ...problem };
-                    diagnostics.add(
-                        diagnostic("invalid-name", detail, {
-                            span: toSpan(extension.json, extension.node),
-                            path: groupPath,
-                        }),
-                        input,
-                    );
-                    continue;
-                }
-                const path = tokenPath.join(groupPath, generated.name);
-                if (added.has(path)) continue;
-                const existing = findExistingSpans(merged, path);
-                if (existing) {
-                    const detail = { path, ...from, declaredAs: existing.kind };
-                    const relatedInformation = [
-                        {
-                            message: relatedMessages.madeByThisExtension,
-                            span: toSpan(extension.json, extension.node),
-                            path: extension.group,
-                        },
-                    ];
-                    for (const span of existing.spans) {
-                        diagnostics.add(
-                            diagnostic("overridden-by-generator", detail, {
-                                span,
-                                path,
-                                relatedInformation,
-                            }),
-                            input,
-                        );
-                    }
-                    merged.order.delete(path);
-                }
-                added.set(path, createGeneratedToken(path, generated, from, extension));
-            }
+        for (const generator of generators) run.runGenerator(generator, path, settings);
+    }
+    run.addTokens();
+}
+
+interface GeneratorCall {
+    generator: Generator;
+    group: string;
+    settings: Settings;
+    extension: Extension;
+}
+
+class GeneratorRun {
+    readonly #merged: Merged;
+    readonly #input: Input;
+    readonly #parseOptions: ParseOptions;
+    readonly #diagnostics: DiagnosticCollector;
+    readonly #made = new Map<string, MergedToken>();
+    readonly #reported = new ReportDeduper();
+    readonly #reportedIgnored = new ReportDeduper();
+
+    constructor(
+        merged: Merged,
+        { input, parseOptions }: { input: Input; parseOptions: ParseOptions },
+        diagnostics: DiagnosticCollector,
+    ) {
+        this.#merged = merged;
+        this.#input = input;
+        this.#parseOptions = parseOptions;
+        this.#diagnostics = diagnostics;
+    }
+
+    runGenerator(generator: Generator, group: string, settings: Settings): void {
+        const extension = findGeneratorExtension(settings, generator.extension);
+        if (!extension) return;
+
+        const call = { generator, group, settings, extension };
+        const generated = this.#generate(call);
+        if (!generated) return;
+
+        for (const each of generated) this.#addGeneratedToken(call, each);
+    }
+
+    addTokens(): void {
+        for (const token of this.#made.values()) {
+            this.#merged.tokens.set(token.path, token);
+            this.#merged.order.add(token.path);
         }
     }
-    for (const token of added.values()) {
-        merged.tokens.set(token.path, token);
-        merged.order.add(token.path);
+
+    #generate(call: GeneratorCall): GeneratedToken[] | undefined {
+        const { generator, group, settings, extension } = call;
+        const passed = checkSchema(generator.schema, extension.value, generator.extension[0]);
+        if (!passed.ok) {
+            this.#reportProblems(call, passed.problems, this.#reported);
+            return undefined;
+        }
+
+        const type = toValidType(settings.type);
+        const owner = { path: group, ...(type && { type }) };
+        const result = generator.generate(owner, passed.value, this.#parseOptions);
+        if (result.ignored) this.#reportProblems(call, result.ignored, this.#reportedIgnored);
+        if (!result.ok) {
+            this.#reportProblems(call, result.errors, this.#reported);
+            return undefined;
+        }
+        return result.value;
+    }
+
+    #addGeneratedToken(call: GeneratorCall, generated: GeneratedToken): void {
+        const { generator, group, extension } = call;
+        const problem = tokenPath.findNameProblem(generated.name);
+        if (problem) {
+            this.#reportInvalidName(call, { name: generated.name, ...problem });
+            return;
+        }
+
+        const path = tokenPath.join(group, generated.name);
+        if (this.#made.has(path)) return;
+
+        const from = { from: group, extension: generator.extension };
+        const existing = findExistingSpans(this.#merged, path);
+        if (existing) {
+            this.#reportOverridden(call, path, existing);
+            this.#merged.order.delete(path);
+        }
+        this.#made.set(path, createGeneratedToken(path, generated, from, extension));
+    }
+
+    #reportProblems(
+        { generator, group, extension }: GeneratorCall,
+        problems: ExtensionProblem[],
+        reported: ReportDeduper,
+    ): void {
+        if (!reported.isFirst(generator, extension.node)) return;
+        const checked: CheckedExtension = {
+            keyPath: generator.extension,
+            messages: generator.messages,
+            json: extension.json,
+            node: extension.node,
+            path: group,
+        };
+        for (const each of problems) {
+            this.#diagnostics.add(extensionDiagnostic(each, checked), this.#input);
+        }
+    }
+
+    #reportInvalidName(
+        { group, extension }: GeneratorCall,
+        detail: DiagnosticDetailByKind["invalid-name"],
+    ): void {
+        const span = toSpan(extension.json, extension.node);
+        this.#diagnostics.add(
+            diagnostic("invalid-name", detail, { span, path: group }),
+            this.#input,
+        );
+    }
+
+    #reportOverridden(
+        { generator, group, extension }: GeneratorCall,
+        path: string,
+        existing: { kind: "token" | "group"; spans: Span[] },
+    ): void {
+        const detail = {
+            path,
+            from: group,
+            extension: generator.extension,
+            declaredAs: existing.kind,
+        };
+        const relatedInformation = [
+            {
+                message: relatedMessages.madeByThisExtension,
+                span: toSpan(extension.json, extension.node),
+                path: extension.group,
+            },
+        ];
+        for (const span of existing.spans) {
+            const report = diagnostic("overridden-by-generator", detail, {
+                span,
+                path,
+                relatedInformation,
+            });
+            this.#diagnostics.add(report, this.#input);
+        }
     }
 }
 
