@@ -80,6 +80,7 @@ export interface SourceContents {
 interface FileWalk {
     json: JsonFile;
     members: SourceMember[];
+    problems: Diagnostic[];
     report<K extends DiagnosticKind>(
         kind: K,
         detail: DiagnosticDetailByKind[K],
@@ -112,29 +113,33 @@ const EXPECTED: Record<Property, DiagnosticDetailByKind["invalid-property"]["exp
     $extensions: "object",
 };
 
-export function walkSource(
-    source: LoadedSource,
-    diagnostics: Diagnostic[],
-): SourceContents | undefined {
-    const { json, tree } = source;
-    if (!json || !tree) return undefined;
+export interface WalkResult {
+    contents?: SourceContents;
+    problems: Diagnostic[];
+}
 
-    const walk = createFileWalk(json, diagnostics);
+export function walkSource(source: LoadedSource): WalkResult {
+    const { json, tree } = source;
+    if (!json || !tree) return { problems: [] };
+
+    const walk = createFileWalk(json);
     const overridden = new Set(source.overriddenKeys);
     const topEntries = members(tree).filter(({ key }) => !overridden.has(key));
     const entries = correctKeys(walk, "", topEntries, "top");
 
     const root = readGroup(walk, tree, "", entries);
     walkMembers(walk, [], entries);
-    return { root, members: walk.members };
+    return { contents: { root, members: walk.members }, problems: walk.problems };
 }
 
-function createFileWalk(json: JsonFile, diagnostics: Diagnostic[]): FileWalk {
+function createFileWalk(json: JsonFile): FileWalk {
+    const problems: Diagnostic[] = [];
     return {
         json,
         members: [],
+        problems,
         report: (kind, detail, node, extra = {}) => {
-            diagnostics.push(diagnostic(kind, detail, { span: toSpan(json, node), ...extra }));
+            problems.push(diagnostic(kind, detail, { span: toSpan(json, node), ...extra }));
         },
     };
 }
