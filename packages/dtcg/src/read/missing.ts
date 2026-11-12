@@ -21,7 +21,7 @@ interface Missing {
 
 interface MissingInInputs {
     ref: string;
-    similar: string | undefined;
+    suggestion: string | undefined;
     first: Use;
     uses: Use[];
     inputs: [Input, ...Input[]];
@@ -62,12 +62,12 @@ export function missingReferences(diagnostics: DiagnosticCollector): MissingRefe
                 },
                 flush: () => {
                     for (const [ref, { reference, first, uses }] of missing) {
-                        const similar = similarReference(reference, paths, getUniquePaths(uses));
-                        const key = JSON.stringify([ref, similar]);
+                        const suggestion = similarReference(reference, paths, getUniquePaths(uses));
+                        const key = JSON.stringify([ref, suggestion]);
                         let entry = mergedAcrossInputs.get(key);
                         if (entry) entry.inputs.push(input);
                         else {
-                            entry = { ref, similar, first, uses: [], inputs: [input] };
+                            entry = { ref, suggestion, first, uses: [], inputs: [input] };
                             mergedAcrossInputs.set(key, entry);
                         }
                         for (const use of uses)
@@ -78,7 +78,7 @@ export function missingReferences(diagnostics: DiagnosticCollector): MissingRefe
             };
         },
         report: () => {
-            for (const { ref, similar, first, uses, inputs } of mergedAcrossInputs.values()) {
+            for (const { ref, suggestion, first, uses, inputs } of mergedAcrossInputs.values()) {
                 const relatedInformation = uses
                     .filter(({ span }) => span !== first.span)
                     .map((use) => ({
@@ -89,16 +89,16 @@ export function missingReferences(diagnostics: DiagnosticCollector): MissingRefe
                 const detail = {
                     ref,
                     from: getUniquePaths(uses),
-                    ...(similar !== undefined && { similar }),
+                    ...(suggestion !== undefined && { suggestion }),
                 };
                 const [input, ...others] = inputs;
-                const made = diagnostic("missing-reference", detail, {
+                const report = diagnostic("missing-reference", detail, {
                     span: first.span,
                     path: first.from,
                     ...(relatedInformation.length > 0 && { relatedInformation }),
                 });
-                const kept = diagnostics.add(made, input);
-                for (const each of others) diagnostics.addInput(kept, each);
+                const stored = diagnostics.add(report, input);
+                for (const each of others) diagnostics.addInput(stored, each);
             }
         },
     };

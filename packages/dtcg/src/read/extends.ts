@@ -51,7 +51,7 @@ export function applyExtends(
 
     const extend = (group: ExtendingGroup, chain: ExtendingGroup[]): void => {
         const { reference } = group.extends;
-        const written = toReferenceTarget(reference);
+        const ref = toReferenceTarget(reference);
         const direct = getReferencePath(reference);
         if (direct !== undefined && tokenPath.contains(direct, group.path)) {
             report("circular-reference", { chain: [group.path, direct] }, group);
@@ -61,18 +61,17 @@ export function applyExtends(
         if (direct !== undefined) extendDescendants(direct, chain);
         if (state.get(group.path) === "in-a-loop") return;
 
-        const reached = followReference(group.extends, merged);
-        const malformed =
-            reached.kind === "nothing" && checkMalformedPointer(written, merged, "group");
+        const target = followReference(group.extends, merged);
+        const malformed = target.kind === "nothing" && checkMalformedPointer(ref, merged, "group");
         if (malformed) {
             report("malformed-pointer", malformed, group);
-        } else if (reached.kind === "nothing") {
+        } else if (target.kind === "nothing") {
             missing.record(reference, group.path, group.extends.span);
-        } else if (reached.kind === "group") {
-            group.extendsGroup = reached.path;
-            inherit(merged, group, reached.path);
+        } else if (target.kind === "group") {
+            group.extendsGroup = target.path;
+            inherit(merged, group, target.path);
         } else {
-            report("not-a-group", { ref: written }, group);
+            report("not-a-group", { ref }, group);
         }
     };
 

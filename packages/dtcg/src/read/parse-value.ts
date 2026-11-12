@@ -61,17 +61,17 @@ export function createValueReader(
 
     const read: Read = (token, type, input) => {
         const notes: ReadCollector = { references: [], deferredReads: [] };
-        const result = readToken(type, token.valueAsWritten, ["$value"], options, notes);
+        const result = readToken(type, token.originalValue, ["$value"], options, notes);
         const toReport = [
             ...result.ignored.map((each) => ignoredToDiagnostic(token, each)),
             ...(result.ok ? [] : result.errors.map((error) => toDiagnostic(token, error))),
         ];
-        const kept = diagnostics.addAll(toReport, input);
+        const stored = diagnostics.addAll(toReport, input);
         const references = notes.references.map((reference) => ({
             reference,
             occurrence: occurrence(token, reference),
         }));
-        return { result, references, deferredReads: notes.deferredReads, diagnostics: kept };
+        return { result, references, deferredReads: notes.deferredReads, diagnostics: stored };
     };
 
     return {

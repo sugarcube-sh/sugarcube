@@ -108,7 +108,7 @@ describe("setExtension on a token", () => {
                 },
             ],
             alsoAffects: [],
-            moved: [],
+            moves: [],
         });
     });
 
@@ -156,7 +156,7 @@ describe("setExtension on a group", () => {
                 },
             ],
             alsoAffects: [{ mode: "light" }, { mode: "dark" }],
-            moved: [],
+            moves: [],
         });
         const after = at(committed(demo, result), "size.json", [
             ...step,
@@ -321,7 +321,7 @@ describe("setExtension on a group", () => {
                 },
             ],
             alsoAffects: [],
-            moved: [],
+            moves: [],
         });
     });
 

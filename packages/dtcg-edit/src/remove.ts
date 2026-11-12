@@ -28,5 +28,5 @@ export function remove(tokens: DesignTokens, path: string): OpResult {
     }));
     const users = tokens.getReferencesTo(path).flatMap(({ ownerPaths }) => ownerPaths);
     const broken = [...new Set(users)].filter((user) => !tokenPath.contains(path, user));
-    return { ops, alsoAffects: copies.alsoAffects, broken, moved: [] };
+    return { ops, alsoAffects: copies.alsoAffects, broken, moves: [] };
 }

@@ -272,7 +272,7 @@ describe("rebase", () => {
         ]);
 
         expect(session.rebase(fresh)).toEqual([]);
-        expect(session.unsaved.steps.flatMap((step) => step.moved)).toEqual([
+        expect(session.unsaved.steps.flatMap((step) => step.moves)).toEqual([
             { from: "radius.md", to: "radius.medium" },
             { from: "radius.medium", to: "radius.mid" },
         ]);
@@ -423,8 +423,8 @@ describe("restore", () => {
 
         session.restore({
             steps: [
-                { ops: [fits, stale], moved: [] },
-                { ops: [later], moved: [] },
+                { ops: [fits, stale], moves: [] },
+                { ops: [later], moves: [] },
             ],
         });
 
@@ -435,7 +435,7 @@ describe("restore", () => {
             value: 2,
             unit: "rem",
         });
-        expect(session.unsaved.steps).toEqual([{ ops: [later], moved: [] }]);
+        expect(session.unsaved.steps).toEqual([{ ops: [later], moves: [] }]);
     });
 
     it("puts back a step whole or not at all after a reload", () => {
@@ -458,7 +458,7 @@ describe("restore", () => {
 
         const session = createSession(elsewhere);
         session.restore(before.unsaved);
-        expect(session.unsaved.steps.flatMap((step) => step.moved)).toEqual([
+        expect(session.unsaved.steps.flatMap((step) => step.moves)).toEqual([
             { from: "radius.sm", to: "radius.small" },
         ]);
     });

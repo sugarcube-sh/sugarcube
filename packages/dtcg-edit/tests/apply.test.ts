@@ -415,10 +415,10 @@ describe("commit", () => {
         const done = commit(demo, {
             ops,
             alsoAffects: demo.permutations.select(() => false),
-            moved: [],
+            moves: [],
         });
 
-        expect(done).toEqual({ tokens: expect.anything(), ops, moved: [] });
+        expect(done).toEqual({ tokens: expect.anything(), ops, moves: [] });
         if (!done.tokens) throw new Error("not committed");
         expect(at(done.tokens, "color.json", brand500)).toEqual(red);
     });
@@ -445,7 +445,7 @@ describe("commit", () => {
             commit(theirs, {
                 ops: [op],
                 alsoAffects: demo.permutations.select(() => false),
-                moved: [],
+                moves: [],
             }),
         ).toEqual({
             conflicts: [{ op, kind: "changed", reason: expect.any(String) }],

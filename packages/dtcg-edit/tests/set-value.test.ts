@@ -72,7 +72,7 @@ describe("setValue, the shared value", () => {
                 },
             ],
             alsoAffects: [],
-            moved: [],
+            moves: [],
         });
     });
 
@@ -646,7 +646,7 @@ describe("setValue, at a place it is written", () => {
                 },
             ],
             alsoAffects: place.winningPermutations.inputs,
-            moved: [],
+            moves: [],
         });
         expect(place.winningPermutations.inputs).toEqual([{ mode: "dark" }]);
     });
@@ -704,7 +704,7 @@ describe("setValue, at a place it is written", () => {
                 },
             ],
             alsoAffects: [],
-            moved: [],
+            moves: [],
         });
     });
 
@@ -1034,7 +1034,7 @@ describe("setDescription", () => {
                 },
             ],
             alsoAffects: [],
-            moved: [],
+            moves: [],
         });
     });
 

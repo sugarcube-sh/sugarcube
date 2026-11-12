@@ -243,7 +243,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         severity: "error",
         message: ({ type }) =>
             type === "" ? "`$type` is empty" : `\`${type}\` is not a token type`,
-        help: ({ similar }) => didYouMean(similar),
+        help: ({ suggestion }) => didYouMean(suggestion),
     },
     "invalid-value": {
         severity: "error",
@@ -267,7 +267,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "missing-reference": {
         severity: "error",
         message: ({ ref }) => `\`${ref}\` does not exist`,
-        help: ({ similar }) => didYouMean(similar),
+        help: ({ suggestion }) => didYouMean(suggestion),
     },
     "malformed-pointer": {
         severity: "error",
@@ -317,7 +317,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
             if ("jsonPath" in detail) return ignoredMessage(detail.type, detail.property);
             return `\`${detail.property}\` is not a ${ownerNames[detail.owner]} property`;
         },
-        help: (detail) => ("jsonPath" in detail ? undefined : didYouMean(detail.similar)),
+        help: (detail) => ("jsonPath" in detail ? undefined : didYouMean(detail.suggestion)),
     },
     "misspelt-property": {
         severity: "error",

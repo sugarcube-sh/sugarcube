@@ -1592,7 +1592,7 @@ export interface DiagnosticDetailByKind {
     "unknown-type": {
         readonly type: string;
         /** A type with a similar name, such as `"color"`, if exactly one is close. */
-        readonly similar?: TokenType;
+        readonly suggestion?: TokenType;
     };
     /** A value doesn't fit its type, such as a dimension in `em`. */
     "invalid-value": {
@@ -1647,7 +1647,7 @@ export interface DiagnosticDetailByKind {
          * For a JSON Pointer, it's a pointer. It's absent when the pointer's token exists, but a
          * step inside its value is wrong.
          */
-        readonly similar?: string;
+        readonly suggestion?: string;
     };
     /**
      * `$extends` names a token, such as `"$extends": "{base}"` when `base` is a token.
@@ -1750,7 +1750,7 @@ export interface DiagnosticDetailByKind {
                * A property with a similar name, such as `"sets"` for `"sest"`, if exactly one is
                * close.
                */
-              readonly similar?: string;
+              readonly suggestion?: string;
               /** Present when the property is set aside, so the tokens are read without it. */
               readonly ignored?: true;
           }

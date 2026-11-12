@@ -90,8 +90,8 @@ export function parseValue<T extends TokenType>(
     const notes: ReadCollector = { references: [], deferredReads: [] };
     const read = readToken(type, raw, jsonPath, options, notes);
     if (!read.ok || notes.references.length === 0) return read;
-    const errors = notes.references.map(({ ref, jsonPath: written }) =>
-        valueError(written, {
+    const errors = notes.references.map(({ ref, jsonPath: referenceJsonPath }) =>
+        valueError(referenceJsonPath, {
             type,
             reason: "reference-not-allowed",
             reference: ref.syntax === "curly-brace" ? `{${ref.path}}` : ref.pointer,

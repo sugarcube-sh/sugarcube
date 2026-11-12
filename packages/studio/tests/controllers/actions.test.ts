@@ -42,10 +42,10 @@ describe("renaming", () => {
         const { state } = studio();
 
         expect(renameEdit(state.tokens, "space", "size").result).toMatchObject({
-            moved: [{ from: "space", to: "size" }],
+            moves: [{ from: "space", to: "size" }],
         });
         expect(renameEdit(state.tokens, "space.s", "sm").result).toMatchObject({
-            moved: [{ from: "space.s", to: "space.sm" }],
+            moves: [{ from: "space.s", to: "space.sm" }],
         });
     });
 });

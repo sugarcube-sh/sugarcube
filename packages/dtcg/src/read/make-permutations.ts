@@ -76,10 +76,10 @@ function createPermutations(
         toJSON: { value: inputs },
         select: {
             value: (test: (permutation: Permutation) => boolean) => {
-                const kept = list.filter(test);
-                return kept.length === list.length
+                const selected = list.filter(test);
+                return selected.length === list.length
                     ? permutations
-                    : createPermutations(kept, all, matchingAll);
+                    : createPermutations(selected, all, matchingAll);
             },
         },
         findByInput: {

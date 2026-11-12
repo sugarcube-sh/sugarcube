@@ -14,7 +14,7 @@ export function propertyEdit(
     if ("refused" in copies) return copies;
     if (copies.of === "token") {
         const ops = copies.places.flatMap((at) => opsAt(tokens, at, [key], value));
-        return { ops, alsoAffects: copies.alsoAffects, moved: [] };
+        return { ops, alsoAffects: copies.alsoAffects, moves: [] };
     }
     const placed = propertyPlace(tokens, path, key, copies.places, place);
     if ("choose" in placed) {
@@ -22,5 +22,5 @@ export function propertyEdit(
     }
     if ("refused" in placed) return placed;
     const ops = opsAt(tokens, placed.at, [key], value);
-    return { ops, alsoAffects: placed.alsoAffects, moved: [] };
+    return { ops, alsoAffects: placed.alsoAffects, moves: [] };
 }

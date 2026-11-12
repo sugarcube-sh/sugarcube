@@ -197,8 +197,8 @@ function describeValue(value: unknown): string {
     return `\`${String(value)}\``;
 }
 
-export function didYouMean(similar: string | undefined): string | undefined {
-    return similar === undefined ? undefined : `did you mean \`${similar}\`?`;
+export function didYouMean(suggestion: string | undefined): string | undefined {
+    return suggestion === undefined ? undefined : `did you mean \`${suggestion}\`?`;
 }
 
 export function formatList(names: readonly string[], joiner: "or" | "and" = "or"): string {

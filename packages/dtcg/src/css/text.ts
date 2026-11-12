@@ -35,8 +35,8 @@ function blockToCSS({
     supportsDeclarations,
 }: CSSBlock): string {
     const rule = (lines: readonly { name: string; value: string }[]) => {
-        const written = lines.map(({ name, value }) => `    ${name}: ${value};`);
-        return `${[selector].flat().join(",\n")} {\n${written.join("\n")}\n}`;
+        const formatted = lines.map(({ name, value }) => `    ${name}: ${value};`);
+        return `${[selector].flat().join(",\n")} {\n${formatted.join("\n")}\n}`;
     };
     const conditions = new Map<string, { name: string; value: string }[]>();
     for (const { name, supports = [] } of supportsDeclarations) {

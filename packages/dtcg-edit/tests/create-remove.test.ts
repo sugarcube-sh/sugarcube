@@ -368,7 +368,7 @@ describe("remove", () => {
             ],
             alsoAffects: [{ mode: "light" }, { mode: "dark" }],
             broken: pointing,
-            moved: [],
+            moves: [],
         });
         const after = committed(demo, result);
         const brand = Object.keys(at(demo, "color.json", ["color", "brand"]) as object);

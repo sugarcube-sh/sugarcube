@@ -172,12 +172,12 @@ export function createReader(file: JsonFile, diagnostics: DiagnosticCollector): 
         checkKeys: (owner, kind, known) => {
             for (const { key, keyNode } of members(owner.node)) {
                 if (known.includes(key)) continue;
-                const similar = similarName(key, known);
+                const suggestion = similarName(key, known);
                 const span = toSpan(file, keyNode);
                 const detail = {
                     property: key,
                     owner: kind,
-                    ...(similar !== undefined && { similar }),
+                    ...(suggestion !== undefined && { suggestion }),
                 };
                 diagnostics.add(diagnostic("unknown-property", detail, { span }));
             }
@@ -327,14 +327,14 @@ function checkDefault(
     modifier: ModifierDefinition,
 ): ModifierDefinition {
     if (modifier.default === undefined || modifier.contexts.has(modifier.default)) return modifier;
-    const written = member(owner.node, "default");
+    const defaultNode = member(owner.node, "default");
     reader.report(
         {
             rule: "invalid-default",
             name: modifier.name,
-            jsonPath: written ? [...owner.jsonPath, "default"] : owner.jsonPath,
+            jsonPath: defaultNode ? [...owner.jsonPath, "default"] : owner.jsonPath,
         },
-        written ?? owner.node,
+        defaultNode ?? owner.node,
     );
     const withoutDefault = { ...modifier };
     delete withoutDefault.default;

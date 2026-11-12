@@ -185,7 +185,7 @@ export type ClashRow = { readonly clash: Clash; readonly keepable: boolean } & (
 export function clashRows(tokens: DesignTokens, clashes: readonly Clash[]): ClashRow[] {
     return clashes.map((clash) => {
         const { keepable } = clash;
-        const [move] = clash.step.moved;
+        const [move] = clash.step.moves;
         if (move) return { clash, keepable, kind: "renamed", from: move.from, to: move.to };
         const [part] = clash.parts;
         const path = part?.path ?? part?.file ?? "";

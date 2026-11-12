@@ -21,10 +21,10 @@ export function checkMalformedPointer(
     if (!ref.startsWith("#")) return undefined;
     const read = parsePointerText(ref);
     if (read.ok) return undefined;
-    const reached = lookupPointer(read.correctedSteps, merged).kind;
-    if (wanted === "group") return malformedPointer(ref, read, reached === "group");
-    if (reached !== "stops-at-token") {
-        return malformedPointer(ref, read, reached === "token" || reached === "part");
+    const targetKind = lookupPointer(read.correctedSteps, merged).kind;
+    if (wanted === "group") return malformedPointer(ref, read, targetKind === "group");
+    if (targetKind !== "stops-at-token") {
+        return malformedPointer(ref, read, targetKind === "token" || targetKind === "part");
     }
     return malformedPointer(ref, { ...read, corrected: toValuePointer(read.corrected) }, true);
 }

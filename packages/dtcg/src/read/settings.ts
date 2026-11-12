@@ -9,8 +9,8 @@ export type Settings = Properties &
 
 export function findSettings(merged: Merged, group: MergedGroup): Settings {
     const known = merged.settings;
-    const kept = known.get(group);
-    if (kept) return kept;
+    const cached = known.get(group);
+    if (cached) return cached;
     const visiting = new Set<MergedGroup>();
 
     const getSettings = (each: MergedGroup): Settings => {

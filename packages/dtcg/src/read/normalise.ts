@@ -46,15 +46,18 @@ export function normalisePermutations(
         if (found) return found;
         const { source, pieces } = listed;
         const extensions = pieces.map((each) => walk(each)?.root.extensions).find(Boolean);
-        const made = { ...source, ...(extensions && { extensions }) };
-        let kept = readSources.find((each) => sameSource(each, made));
-        if (!kept) {
+        const candidate = { ...source, ...(extensions && { extensions }) };
+        let shared = readSources.find((each) => sameSource(each, candidate));
+        if (!shared) {
             const was = previous?.[readSources.length];
-            kept = was && sameSource(was, made) ? was : createSource(made, readSources.length);
-            readSources.push(kept);
+            shared =
+                was && sameSource(was, candidate)
+                    ? was
+                    : createSource(candidate, readSources.length);
+            readSources.push(shared);
         }
-        sourceCache.set(listed, kept);
-        return kept;
+        sourceCache.set(listed, shared);
+        return shared;
     };
 
     const normalised = permutations.map(({ input, label, contexts, sources }) => {

@@ -142,7 +142,7 @@ const examples: { [K in DiagnosticKind]: Example<K>[] } = {
         { type: "colour" },
         {
             type: "colour",
-            similar: "color",
+            suggestion: "color",
             message: "`colour` is not a token type",
             help: "did you mean `color`?",
         },
@@ -427,18 +427,18 @@ const examples: { [K in DiagnosticKind]: Example<K>[] } = {
     ],
     "missing-reference": [
         { ref: "color.brnad", from: ["color.danger"] },
-        { ref: "color.brnad", from: ["color.danger"], similar: "color.brand" },
+        { ref: "color.brnad", from: ["color.danger"], suggestion: "color.brand" },
         {
             ref: "color.inc",
             from: ["color.muted"],
-            similar: "color.ink",
+            suggestion: "color.ink",
             message: "`color.inc` does not exist",
             help: "did you mean `color.ink`?",
         },
         {
             ref: "#/color/inc/$value",
             from: ["color.muted"],
-            similar: "#/color/ink/$value",
+            suggestion: "#/color/ink/$value",
         },
     ],
     "not-a-group": [{ ref: "color.brand" }],
@@ -481,7 +481,7 @@ const examples: { [K in DiagnosticKind]: Example<K>[] } = {
         {
             property: "descripton",
             owner: "set",
-            similar: "description",
+            suggestion: "description",
             message: "`descripton` is not a set property",
             help: "did you mean `description`?",
         },

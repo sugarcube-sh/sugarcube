@@ -192,8 +192,8 @@ describe("applyToDisk", () => {
             { entryFile },
             {
                 steps: [
-                    { ops: opsOf(setValue(demo, "radius.md", half)), moved: [] },
-                    { ops: [stale], moved: [] },
+                    { ops: opsOf(setValue(demo, "radius.md", half)), moves: [] },
+                    { ops: [stale], moves: [] },
                 ],
             },
         );

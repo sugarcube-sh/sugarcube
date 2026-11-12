@@ -35,7 +35,7 @@ export function keepYours(tokens: DesignTokens, clash: Clash): OpResult {
             tokens,
             parts.map((part) => part.file),
         ),
-        moved: [],
+        moves: [],
     };
 }
 

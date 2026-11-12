@@ -43,10 +43,10 @@ function fixFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
             );
         }
         case "unknown-type": {
-            const { type, similar } = diagnostic.detail;
+            const { type, suggestion } = diagnostic.detail;
             if (type === "") return deleteEmptyType(tokens, span, nodeAt(tokens, span));
-            if (similar === undefined) return undefined;
-            return guess(fixTitles.useSimilar(similar), [replacing(span, similar)]);
+            if (suggestion === undefined) return undefined;
+            return guess(fixTitles.useSimilar(suggestion), [replacing(span, suggestion)]);
         }
         case "invalid-property": {
             const { property, reference } = diagnostic.detail;
@@ -80,19 +80,20 @@ function fixFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
             });
         }
         case "unknown-property": {
-            const similar = "similar" in diagnostic.detail ? diagnostic.detail.similar : undefined;
-            if (similar === undefined) return undefined;
-            return guess(fixTitles.useSimilar(similar), [replacing(span, similar)]);
+            const suggestion =
+                "suggestion" in diagnostic.detail ? diagnostic.detail.suggestion : undefined;
+            if (suggestion === undefined) return undefined;
+            return guess(fixTitles.useSimilar(suggestion), [replacing(span, suggestion)]);
         }
         case "missing-reference": {
-            const { ref, similar } = diagnostic.detail;
-            if (similar === undefined) return undefined;
+            const { ref, suggestion } = diagnostic.detail;
+            if (suggestion === undefined) return undefined;
             const uses = [
                 span,
                 ...(diagnostic.relatedInformation ?? []).map((related) => related.span),
             ];
-            const edits = uses.flatMap((use) => renamedReference(tokens, use, ref, similar));
-            return edits.length > 0 ? guess(fixTitles.useSimilar(similar), edits) : undefined;
+            const edits = uses.flatMap((use) => renamedReference(tokens, use, ref, suggestion));
+            return edits.length > 0 ? guess(fixTitles.useSimilar(suggestion), edits) : undefined;
         }
         default:
             return undefined;
@@ -167,13 +168,13 @@ function renamedReference(
     tokens: DesignTokens,
     use: Span,
     ref: string,
-    similar: string,
+    suggestion: string,
 ): TextEdit[] {
     const node = nodeAt(tokens, use);
     const reference = node && parseReference(getNodeValue(node));
     const text = node && refString(node);
     if (!reference || !text || toReferenceTarget(reference) !== ref) return [];
-    const renamed = reference.syntax === "curly-brace" ? `{${similar}}` : similar;
+    const renamed = reference.syntax === "curly-brace" ? `{${suggestion}}` : suggestion;
     return [
         { file: use.file, offset: text.offset, length: text.length, text: JSON.stringify(renamed) },
     ];

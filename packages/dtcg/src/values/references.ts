@@ -117,19 +117,19 @@ export function toJsonPointer(reference: ParsedReference): { $ref: string } {
     return { $ref: encodePointer([...reference.path.split("."), "$value"]) };
 }
 
-export function applyMovesToReference<R extends ParsedReference>(ref: R, moved: readonly Move[]): R;
+export function applyMovesToReference<R extends ParsedReference>(ref: R, moves: readonly Move[]): R;
 export function applyMovesToReference(
     ref: ParsedReference,
-    moved: readonly Move[],
+    moves: readonly Move[],
 ): ParsedReference {
     if (ref.syntax === "curly-brace") {
-        return { syntax: "curly-brace", path: tokenPath.applyMoves(ref.path, moved) };
+        return { syntax: "curly-brace", path: tokenPath.applyMoves(ref.path, moves) };
     }
     const steps = refSteps(ref.pointer);
     if (!steps) return ref;
     const { path, inside } = pointerParts(steps);
     if (path === undefined) return ref;
-    const now = tokenPath.applyMoves(path, moved);
+    const now = tokenPath.applyMoves(path, moves);
     if (now === path) return ref;
     const pointer = encodePointer([...now.split("."), ...(inside ? ["$value", ...inside] : [])]);
     return { syntax: "json-pointer", pointer };

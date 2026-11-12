@@ -307,11 +307,11 @@ class ColorModeWriter {
             const target = ref.pointsToWholeToken;
             if (!target) return undefined;
 
-            const written = this.#writeReference(target, cssProperty);
-            if (!written) return undefined;
+            const referenceCSS = this.#writeReference(target, cssProperty);
+            if (!referenceCSS) return undefined;
 
-            dependencies.push(...written.dependencies);
-            return written.replacement;
+            dependencies.push(...referenceCSS.dependencies);
+            return referenceCSS.replacement;
         };
 
         const css = toCSSValue(token, { replaceReference, colors: this.#colors });
@@ -338,9 +338,9 @@ class ColorModeWriter {
         let css = strings[0] ?? "";
 
         parts.forEach((part, index) => {
-            const written = this.#writeTemplatePart(part);
-            css += written.css + (strings[index + 1] ?? "");
-            dependencies.push(...written.dependencies);
+            const partCSS = this.#writeTemplatePart(part);
+            css += partCSS.css + (strings[index + 1] ?? "");
+            dependencies.push(...partCSS.dependencies);
         });
 
         return { css, dependencies: unique(dependencies) };

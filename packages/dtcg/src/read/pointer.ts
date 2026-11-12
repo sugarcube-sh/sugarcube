@@ -21,18 +21,18 @@ export function parsePointerText(text: string): PointerParseResult {
     if (pointer === "") return { ok: true, steps: [] };
 
     const slashed = pointer.startsWith("/") ? pointer : `/${pointer}`;
-    const written = slashed.slice(1).split("/");
+    const steps = slashed.slice(1).split("/");
     const problem = !pointer.startsWith("/")
         ? "no-leading-slash"
-        : written.some((step) => badEscape.test(step))
+        : steps.some((step) => badEscape.test(step))
           ? "bad-escape"
           : undefined;
     if (problem) {
-        const escaped = written.map((step) => step.replaceAll(badEscapes, "~0"));
+        const escaped = steps.map((step) => step.replaceAll(badEscapes, "~0"));
         const corrected = `#/${escaped.join("/")}`;
         return { ok: false, problem, corrected, correctedSteps: escaped.map(unescapeStep) };
     }
-    return { ok: true, steps: written.map(unescapeStep) };
+    return { ok: true, steps: steps.map(unescapeStep) };
 }
 
 function unescapeStep(step: string): string {

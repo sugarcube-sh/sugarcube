@@ -80,7 +80,7 @@ describe("deprecate", () => {
                 },
             ],
             alsoAffects: [],
-            moved: [],
+            moves: [],
         });
     });
 

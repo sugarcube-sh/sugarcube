@@ -169,9 +169,9 @@ function createSourceLookup(
             sets: route(first),
             contexts: contextsBySource.get(sourceKey(loaded)) ?? "every-context",
         };
-        const made = { source, pieces };
-        byContext.set(context, made);
-        return made;
+        const listedSource = { source, pieces };
+        byContext.set(context, listedSource);
+        return listedSource;
     };
 }
 

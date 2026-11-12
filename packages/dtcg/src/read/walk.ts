@@ -41,7 +41,7 @@ export interface SourceToken extends Properties {
     path: string;
     json: JsonFile;
     value: Node;
-    valueAsWritten: unknown;
+    originalValue: unknown;
     reference: ParsedReference | undefined;
     span: Span;
     nameSpan: Span;
@@ -232,15 +232,15 @@ function addToken(
     path: string,
     entries: readonly Member[],
     value: Node,
-    valueAsWritten: unknown,
+    originalValue: unknown,
 ): void {
     const { json } = walk;
     const token: SourceToken = {
         path,
         json,
         value,
-        valueAsWritten,
-        reference: parseReference(valueAsWritten),
+        originalValue,
+        reference: parseReference(originalValue),
         span: toSpan(json, node),
         nameSpan: toSpan(json, getKeyNode(node)),
         ...readProperties(walk, path, entries),
@@ -334,8 +334,8 @@ function readProperties(
 function readType(walk: FileWalk, path: string, node: Node, name: string): TokenType | "invalid" {
     if (isTokenType(name)) return name;
 
-    const similar = similarName(name, tokenTypes);
-    const detail = { type: name, ...(similar !== undefined && { similar }) };
+    const suggestion = similarName(name, tokenTypes);
+    const detail = { type: name, ...(suggestion !== undefined && { suggestion }) };
     walk.report("unknown-type", detail, node, { path });
     return "invalid";
 }
@@ -445,9 +445,9 @@ function findNonObjectKind(node: Node): NonObjectKind | undefined {
     return node.type;
 }
 
-function suggestReference(written: unknown): string | undefined {
-    if (typeof written !== "string" || written === "" || /[{}#]/.test(written)) return undefined;
-    return `{${written}}`;
+function suggestReference(value: unknown): string | undefined {
+    if (typeof value !== "string" || value === "" || /[{}#]/.test(value)) return undefined;
+    return `{${value}}`;
 }
 
 function isProperty(key: string): key is Property {

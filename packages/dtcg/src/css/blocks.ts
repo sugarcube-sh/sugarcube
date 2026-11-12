@@ -219,15 +219,15 @@ function dependents(
             else users.set(path, [line]);
         }
     }
-    const reached = new Set<string>();
+    const affected = new Set<string>();
     const queue = [...new Set(changed.map(({ token }) => token.path))];
     for (const path of queue) {
         for (const { token } of users.get(path) ?? []) {
-            if (reached.has(token.path)) continue;
-            reached.add(token.path);
+            if (affected.has(token.path)) continue;
+            affected.add(token.path);
             queue.push(token.path);
         }
     }
-    const written = new Set(changed.map(({ name }) => name));
-    return all.filter(({ name, token }) => reached.has(token.path) && !written.has(name));
+    const changedNames = new Set(changed.map(({ name }) => name));
+    return all.filter(({ name, token }) => affected.has(token.path) && !changedNames.has(name));
 }

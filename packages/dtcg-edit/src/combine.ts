@@ -51,7 +51,7 @@ function together(tokens: DesignTokens, last: DesignTokens, made: Made[]): OpRes
         ),
     );
     const left = made.flatMap(({ broken = [] }, index) => {
-        const later = made.slice(index + 1).flatMap(({ moved }) => moved);
+        const later = made.slice(index + 1).flatMap(({ moves }) => moves);
         return broken.map((path) => tokenPath.applyMoves(path, later));
     });
     return {
@@ -60,6 +60,6 @@ function together(tokens: DesignTokens, last: DesignTokens, made: Made[]): OpRes
         broken: [...new Set(left)].filter((path) =>
             last.getDiagnostics(path).some(({ kind }) => kind === "missing-reference"),
         ),
-        moved: made.flatMap(({ moved }) => moved),
+        moves: made.flatMap(({ moves }) => moves),
     };
 }

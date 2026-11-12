@@ -58,8 +58,8 @@ export function* load(
     const pieces = allPieces(items);
     yield* fetchFiles(files, allFiles(pieces));
     const sources = openSources(files, resolver, pieces);
-    const made = toPublicResolver(resolver, setsUsed, diagnostics);
-    const part = previous && sameResolver(previous, made) ? previous : made;
+    const publicResolver = toPublicResolver(resolver, setsUsed, diagnostics);
+    const part = previous && sameResolver(previous, publicResolver) ? previous : publicResolver;
     return loaded({
         resolver: part,
         ...fromResolver(part, items, sources, options, diagnostics),
@@ -67,10 +67,10 @@ export function* load(
 }
 
 function pickUsedTexts(texts: Map<string, FileText>, used: string[]): Record<string, string> {
-    const kept: Record<string, string> = {};
+    const picked: Record<string, string> = {};
     for (const path of used) {
         const text = texts.get(path);
-        if (text && "text" in text) kept[path] = text.text;
+        if (text && "text" in text) picked[path] = text.text;
     }
-    return kept;
+    return picked;
 }

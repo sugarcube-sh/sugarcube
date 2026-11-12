@@ -47,7 +47,7 @@ describe("rename, on the demo", () => {
             "gradient.json": 2,
             "border.json": 1,
         });
-        expect(result.ops && result.moved).toEqual([{ from: "color.brand", to: "color.primary" }]);
+        expect(result.ops && result.moves).toEqual([{ from: "color.brand", to: "color.primary" }]);
     });
 
     it("changes only the renamed key and the references, every other line kept", () => {
@@ -368,7 +368,7 @@ describe("rename, in a session", () => {
             committed(demo, {
                 ops,
                 alsoAffects: demo.permutations.select(() => false),
-                moved: [],
+                moves: [],
             }).toMemory().files,
         ).toEqual(session.tokens.toMemory().files);
     });

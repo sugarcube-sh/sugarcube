@@ -59,10 +59,10 @@ export async function findResolver(
 }
 
 async function filterResolverFiles(files: string[]): Promise<string[]> {
-    const kept = await Promise.all(
+    const matches = await Promise.all(
         files.map(async (file) => isResolverName(file) || isResolverFile(file)),
     );
-    return files.filter((_, index) => kept[index]);
+    return files.filter((_, index) => matches[index]);
 }
 
 async function isResolverFile(file: string): Promise<boolean> {
