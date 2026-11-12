@@ -44,64 +44,95 @@ export interface MissingReferences {
 }
 
 export function missingReferences(diagnostics: DiagnosticCollector): MissingReferences {
-    const mergedAcrossInputs = new Map<string, MissingInInputs>();
-    return {
-        createRecorder: (input, paths, unreadSources) => {
-            if (unreadSources.length > 0) return NOOP_RECORDER;
-            const missing = new Map<string, Missing>();
-            return {
-                record: (reference, from, span) => {
-                    const ref = toReferenceTarget(reference);
-                    const entry = missing.get(ref) ?? {
-                        reference,
-                        first: { from, span },
-                        uses: [],
-                    };
-                    entry.uses.push({ from, span });
-                    missing.set(ref, entry);
-                },
-                flush: () => {
-                    for (const [ref, { reference, first, uses }] of missing) {
-                        const suggestion = similarReference(reference, paths, getUniquePaths(uses));
-                        const key = JSON.stringify([ref, suggestion]);
-                        let entry = mergedAcrossInputs.get(key);
-                        if (entry) entry.inputs.push(input);
-                        else {
-                            entry = { ref, suggestion, first, uses: [], inputs: [input] };
-                            mergedAcrossInputs.set(key, entry);
-                        }
-                        for (const use of uses)
-                            if (!entry.uses.some(({ span }) => span === use.span))
-                                entry.uses.push(use);
-                    }
-                },
-            };
-        },
-        report: () => {
-            for (const { ref, suggestion, first, uses, inputs } of mergedAcrossInputs.values()) {
-                const relatedInformation = uses
-                    .filter(({ span }) => span !== first.span)
-                    .map((use) => ({
-                        message: relatedMessages.alsoUsedHere,
-                        span: use.span,
-                        path: use.from,
-                    }));
-                const detail = {
-                    ref,
-                    from: getUniquePaths(uses),
-                    ...(suggestion !== undefined && { suggestion }),
-                };
-                const [input, ...others] = inputs;
-                const report = diagnostic("missing-reference", detail, {
-                    span: first.span,
-                    path: first.from,
-                    ...(relatedInformation.length > 0 && { relatedInformation }),
-                });
-                const stored = diagnostics.add(report, input);
-                for (const each of others) diagnostics.addInput(stored, each);
-            }
-        },
-    };
+    return new MissingAcrossPermutations(diagnostics);
+}
+
+class MissingAcrossPermutations implements MissingReferences {
+    readonly #diagnostics: DiagnosticCollector;
+    readonly #byReference = new Map<string, MissingInInputs>();
+
+    constructor(diagnostics: DiagnosticCollector) {
+        this.#diagnostics = diagnostics;
+    }
+
+    createRecorder(
+        input: Input,
+        paths: ReadonlyMap<string, unknown>,
+        unreadSources: readonly Source[],
+    ): MissingRecorder {
+        if (unreadSources.length > 0) return NOOP_RECORDER;
+        return new MissingInPermutation(this, input, paths);
+    }
+
+    add(input: Input, ref: string, suggestion: string | undefined, { first, uses }: Missing): void {
+        const key = JSON.stringify([ref, suggestion]);
+        let entry = this.#byReference.get(key);
+        if (entry) entry.inputs.push(input);
+        else {
+            entry = { ref, suggestion, first, uses: [], inputs: [input] };
+            this.#byReference.set(key, entry);
+        }
+
+        for (const use of uses) {
+            if (!entry.uses.some(({ span }) => span === use.span)) entry.uses.push(use);
+        }
+    }
+
+    report(): void {
+        for (const entry of this.#byReference.values()) this.#reportMissing(entry);
+    }
+
+    #reportMissing({ ref, suggestion, first, uses, inputs }: MissingInInputs): void {
+        const relatedInformation = uses
+            .filter(({ span }) => span !== first.span)
+            .map((use) => ({
+                message: relatedMessages.alsoUsedHere,
+                span: use.span,
+                path: use.from,
+            }));
+        const detail = {
+            ref,
+            from: getUniquePaths(uses),
+            ...(suggestion !== undefined && { suggestion }),
+        };
+        const report = diagnostic("missing-reference", detail, {
+            span: first.span,
+            path: first.from,
+            ...(relatedInformation.length > 0 && { relatedInformation }),
+        });
+
+        const [input, ...others] = inputs;
+        const stored = this.#diagnostics.add(report, input);
+        for (const each of others) this.#diagnostics.addInput(stored, each);
+    }
+}
+
+class MissingInPermutation implements MissingRecorder {
+    readonly #all: MissingAcrossPermutations;
+    readonly #input: Input;
+    readonly #paths: ReadonlyMap<string, unknown>;
+    readonly #missing = new Map<string, Missing>();
+
+    constructor(all: MissingAcrossPermutations, input: Input, paths: ReadonlyMap<string, unknown>) {
+        this.#all = all;
+        this.#input = input;
+        this.#paths = paths;
+    }
+
+    record(reference: ParsedReference, from: string, span: Span): void {
+        const ref = toReferenceTarget(reference);
+        const missing = this.#missing.get(ref) ?? { reference, first: { from, span }, uses: [] };
+        missing.uses.push({ from, span });
+        this.#missing.set(ref, missing);
+    }
+
+    flush(): void {
+        for (const [ref, missing] of this.#missing) {
+            const from = getUniquePaths(missing.uses);
+            const suggestion = similarReference(missing.reference, this.#paths, from);
+            this.#all.add(this.#input, ref, suggestion, missing);
+        }
+    }
 }
 
 function getUniquePaths(uses: readonly Use[]): string[] {
