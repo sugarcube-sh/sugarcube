@@ -44,7 +44,7 @@ import { type Occurrence, createAliasOccurrence } from "./occurrence.js";
 import type { LocatedReference, ValueReader } from "./parse-value.js";
 import { type ReferenceWithTarget, createReference } from "./reference.js";
 import { type ReferenceLookup, followReference, getAtPath, toValuePointer } from "./ref-meaning.js";
-import { type ReferenceResolver, UNRESOLVED, resolveValue } from "./resolve-value.js";
+import { type ResolveContext, UNRESOLVED, resolveValue } from "./resolve-value.js";
 import { type TokenBuildFields, sameGroup, sameToken } from "./same-object.js";
 import { type Properties, toValidType } from "./walk.js";
 
@@ -125,10 +125,10 @@ function buildPermutation(permutation: NormalisedPermutation, context: Context):
     const { input, merged, sources, unreadSources } = permutation;
     const { readValue, diagnostics, tracker, reusable } = context;
     const missing = context.missing.createRecorder(input, merged.tokens, unreadSources);
-    const resolver = new ValueResolver(permutation, readValue, diagnostics, missing);
+    const tokenValues = new TokenValues(permutation, readValue, diagnostics, missing);
     const shared = { input, merged, sources, tracker, diagnostics, reusable };
 
-    const tokensToBuild = orderTokens(merged, resolver);
+    const tokensToBuild = orderTokens(merged, tokenValues);
     const tokens = buildTokens(tokensToBuild, shared);
     const groups = buildGroups(tokens, shared);
     missing.flush();
@@ -136,7 +136,7 @@ function buildPermutation(permutation: NormalisedPermutation, context: Context):
     return toPermutation(permutation, tokens, groups);
 }
 
-function orderTokens(merged: Merged, resolver: ValueResolver): TokenToBuild[] {
+function orderTokens(merged: Merged, tokenValues: TokenValues): TokenToBuild[] {
     const tokensToBuild: TokenToBuild[] = [];
     const visits = new Map<string, "visiting" | "done">();
 
@@ -147,7 +147,7 @@ function orderTokens(merged: Merged, resolver: ValueResolver): TokenToBuild[] {
         if (!mergedToken) return;
 
         visits.set(path, "visiting");
-        const resolved = resolver.resolve(mergedToken);
+        const resolved = tokenValues.resolve(mergedToken);
         if (resolved === "untyped") {
             visits.set(path, "done");
             return;
@@ -449,7 +449,7 @@ function toPermutation(
     );
 }
 
-class ValueResolver implements ReferenceResolver {
+class TokenValues implements ResolveContext {
     readonly input: Input;
     readonly merged: Merged;
     readonly readValue: ValueReader;
