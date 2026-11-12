@@ -13,7 +13,7 @@ import type {
     Span,
     Token,
     TokenType,
-    Written,
+    OriginalProperties,
 } from "../model.js";
 import { tokenPath } from "../path.js";
 import { getReferencePath, toReferenceTarget } from "../values/references.js";
@@ -290,9 +290,9 @@ function linkReferences(
 ): void {
     if (targets.length === 0) return;
 
-    const pointerAlone = mergedToken.value.type === "string";
+    const isBarePointer = mergedToken.value.type === "string";
     token.references = attachTargets(targets, built).map((target) =>
-        createReference(token, target, { pointerAlone }),
+        createReference(token, target, { isBarePointer }),
     );
 }
 
@@ -623,7 +623,7 @@ class ValueResolver implements ReferenceResolver {
             return;
         }
         if (reached === "stops-at-token") {
-            this.report("not-a-value", { ref, corrected: toValuePointer(ref) }, from, span);
+            this.report("not-a-value", { ref, suggestion: toValuePointer(ref) }, from, span);
             return;
         }
         this.#missing.record(aim.reference, from, span);
@@ -710,7 +710,7 @@ function toGroupFields(
         children: [],
         references: NO_REFERENCES,
         ...(inheritedFrom && { inherited: inheritedFrom }),
-        ...(Object.keys(own).length > 0 && { asWritten: own }),
+        ...(Object.keys(own).length > 0 && { original: own }),
     };
 }
 
@@ -735,7 +735,10 @@ function pickPublicProperties<Deprecated extends Properties["deprecated"]>({
     description,
     deprecated,
     extensions,
-}: Omit<Properties, "deprecated"> & { deprecated?: Deprecated }): Omit<Written, "deprecated"> & {
+}: Omit<Properties, "deprecated"> & { deprecated?: Deprecated }): Omit<
+    OriginalProperties,
+    "deprecated"
+> & {
     deprecated?: Deprecated;
 } {
     const type = toValidType(declaredType);
@@ -751,7 +754,7 @@ function toTokenFields(
     token: MergedToken,
     fields: TokenBuildFields,
 ): Parameters<typeof createTokenObject>[0] {
-    const asWritten = token.isGenerated
+    const original = token.isGenerated
         ? undefined
         : {
               value: token.valueAsWritten,
@@ -770,7 +773,7 @@ function toTokenFields(
         deprecated: fields.deprecated,
         deprecatedByGroup: fields.deprecatedByGroup,
         extensions: token.extensions,
-        asWritten,
+        original,
         generated: token.generated,
         inherited: token.inherited,
     } as Parameters<typeof createTokenObject>[0];

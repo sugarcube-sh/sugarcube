@@ -95,7 +95,7 @@ describe("deprecate", () => {
         const after = committed(tokens, deprecate(tokens, "old.kept", false));
 
         expect(after.getPermutation().getToken("old.kept")).not.toHaveProperty("deprecated");
-        expect(after.getPermutation().getToken("old.kept")?.asWritten?.deprecated).toBe(false);
+        expect(after.getPermutation().getToken("old.kept")?.original?.deprecated).toBe(false);
     });
 
     it("is refused for a path that is neither a token nor a group", () => {

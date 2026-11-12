@@ -175,7 +175,7 @@ export function tokenRow(token: Token, name: string, value: BuildOutput["value"]
         path: token.path,
         name,
         type: token.type,
-        written: token.asWritten?.value,
+        written: token.original?.value,
         css: value(token),
     };
 }

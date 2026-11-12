@@ -5,7 +5,7 @@ import type {
     JsonPath,
     Span,
     TokenType,
-    WrittenReference,
+    ParsedReference,
 } from "../model.js";
 import { isJsonObject } from "../values/json.js";
 import { toReferenceTarget } from "../values/references.js";
@@ -152,7 +152,7 @@ function resolveReferenceValue(
 function substitute(
     resolver: ReferenceResolver,
     token: MergedToken,
-    reference: WrittenReference,
+    reference: ParsedReference,
     path: string,
     expected: TokenType,
     use: Occurrence,

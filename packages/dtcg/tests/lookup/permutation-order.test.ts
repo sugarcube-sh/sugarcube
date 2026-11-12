@@ -23,10 +23,16 @@ describe("every group's permutations, with two modifiers and files that overlap"
         const answers = [
             ...tokens
                 .getDefinitions("gap")
-                .flatMap(({ permutations, winsIn }) => [permutations, winsIn]),
+                .flatMap(({ permutations, winningPermutations }) => [
+                    permutations,
+                    winningPermutations,
+                ]),
             ...tokens
                 .getDefinitions("color.x")
-                .flatMap(({ permutations, winsIn }) => [permutations, winsIn]),
+                .flatMap(({ permutations, winningPermutations }) => [
+                    permutations,
+                    winningPermutations,
+                ]),
             ...asked((p) => p.getToken("gap")?.resolved),
             ...asked((p) => p.getToken("color.x")),
             ...tokens.getReferencesTo("color.red").map(({ permutations }) => permutations),

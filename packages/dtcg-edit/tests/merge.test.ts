@@ -19,13 +19,13 @@ describe("edits merged into one step", () => {
         expect(session.tokens).toBe(demo);
         session.redo();
         expect(
-            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+            session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(blue);
     });
 
     it("keeps one edit for a place set again and again: the first was, the last value", () => {
         const session = createSession(demo);
-        const was = demo.getPermutation().getToken("color.brand.500")?.asWritten?.value;
+        const was = demo.getPermutation().getToken("color.brand.500")?.original?.value;
         session.do(setValue(session.tokens, "color.brand.500", red), { merge: brand });
         session.do(setValue(session.tokens, "color.brand.500", blue), { merge: brand });
 
@@ -155,7 +155,7 @@ describe("edits merged into one step", () => {
     it("never folds an edit past a later one to the value around it", () => {
         const session = createSession(demo);
         const field = "value shadow.sm";
-        const whole = demo.getPermutation().getToken("shadow.sm")?.asWritten?.value;
+        const whole = demo.getPermutation().getToken("shadow.sm")?.original?.value;
         session.do(
             setValue(session.tokens, "shadow.sm", "{color.neutral.900}", { part: ["color"] }),
             { merge: field },
@@ -252,7 +252,7 @@ describe("what ends a step", () => {
 
         expect(session.unsaved.steps).toHaveLength(1);
         expect(
-            session.opened.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+            session.opened.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(red);
     });
 

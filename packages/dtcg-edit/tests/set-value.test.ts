@@ -16,11 +16,11 @@ describe("setValue, the shared value", () => {
             },
         ]);
         const after = committed(demo, result);
-        expect(after.getPermutation().getToken("color.text.brand")?.asWritten?.value).toBe(
+        expect(after.getPermutation().getToken("color.text.brand")?.original?.value).toBe(
             "{color.brand.800}",
         );
         expect(
-            after.getPermutation({ mode: "dark" }).getToken("color.text.brand")?.asWritten?.value,
+            after.getPermutation({ mode: "dark" }).getToken("color.text.brand")?.original?.value,
         ).toBe("{color.brand.300}");
     });
 
@@ -645,10 +645,10 @@ describe("setValue, at a place it is written", () => {
                     was: "{color.brand.300}",
                 },
             ],
-            alsoAffects: place.winsIn.inputs,
+            alsoAffects: place.winningPermutations.inputs,
             moved: [],
         });
-        expect(place.winsIn.inputs).toEqual([{ mode: "dark" }]);
+        expect(place.winningPermutations.inputs).toEqual([{ mode: "dark" }]);
     });
 
     it("changes a file two modifiers' permutations read, which an input can't name, naming those whose value comes from it", () => {

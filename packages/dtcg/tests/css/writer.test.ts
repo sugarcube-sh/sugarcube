@@ -109,10 +109,10 @@ describe("createCSSWriter", () => {
 
         it("lists a token with no value as not written, and writes a reference to it from its value", () => {
             const tokens = one({ broken: color("{nowhere}"), fine: color("#e11d48") });
-            const { declarations, notWritten } = declare(tokens);
+            const { declarations, undeclared } = declare(tokens);
             expect(declarations.map(({ name }) => name)).toStrictEqual(["--fine"]);
-            expect(notWritten).toStrictEqual([
-                { token: tokenAt(tokens, "broken"), because: "no value" },
+            expect(undeclared).toStrictEqual([
+                { token: tokenAt(tokens, "broken"), reason: "no value" },
             ]);
         });
     });
@@ -129,9 +129,9 @@ describe("createCSSWriter", () => {
         const skip = (token: Token) => token.path.startsWith("palette.");
 
         it("declares nothing for a skipped token, and lists it as skipped", () => {
-            const { declarations, notWritten } = declare(tokens, { skip });
+            const { declarations, undeclared } = declare(tokens, { skip });
             expect(declarations.map(({ name }) => name)).toStrictEqual(["--brand", "--edge"]);
-            expect(notWritten.map(({ token, because }) => [token.path, because])).toStrictEqual([
+            expect(undeclared.map(({ token, reason }) => [token.path, reason])).toStrictEqual([
                 ["palette.rose", "skipped"],
                 ["palette.ink", "skipped"],
             ]);
@@ -175,10 +175,10 @@ describe("createCSSWriter", () => {
 
         it("gives the hook the value as written, which it can keep or wrap with write", () => {
             const { declarations } = declare(modes, {
-                writeValue: (token, { written, write }) =>
+                writeValue: (token, { value, write }) =>
                     token.path === "color.text"
-                        ? write`color-mix(in oklch, ${written} 80%, white)`
-                        : written,
+                        ? write`color-mix(in oklch, ${value} 80%, white)`
+                        : value,
             });
             const text = declarations.find(({ name }) => name === "--color-text");
             expect(text?.value).toBe("color-mix(in oklch, var(--color-neutral-900) 80%, white)");
@@ -188,8 +188,8 @@ describe("createCSSWriter", () => {
         it("writes a token placed in write as var(), and records it", () => {
             const gap = tokenAt(modes, "gap");
             const { declarations } = declare(modes, {
-                writeValue: (token, { written, write }) =>
-                    token.path === "color.text" ? write`${written} ${gap} ${2}` : written,
+                writeValue: (token, { value, write }) =>
+                    token.path === "color.text" ? write`${value} ${gap} ${2}` : value,
             });
             const text = declarations.find(({ name }) => name === "--color-text");
             expect(text?.value).toBe("var(--color-neutral-900) var(--gap) 2");
@@ -203,8 +203,8 @@ describe("createCSSWriter", () => {
             });
             const body = tokenAt(tokens, "body");
             const writer = createCSSWriter({
-                writeValue: (token, { written, write }) =>
-                    token.path === "gap" ? write`${body}` : written,
+                writeValue: (token, { value, write }) =>
+                    token.path === "gap" ? write`${body}` : value,
             });
             expect(() => writer.getDeclarations(tokens.getPermutation())).toThrow(TypeError);
         });
@@ -214,23 +214,23 @@ describe("createCSSWriter", () => {
                 gap: { $type: "dimension", $value: px(8) },
                 space: { $type: "dimension", $value: "{gap}" },
             });
-            const { declarations, notWritten } = declare(tokens, {
-                writeValue: (token, { written }) => (token.path === "gap" ? undefined : written),
+            const { declarations, undeclared } = declare(tokens, {
+                writeValue: (token, { value }) => (token.path === "gap" ? undefined : value),
             });
             expect(declarations.map(({ name, value }) => [name, value])).toStrictEqual([
                 ["--space", "8px"],
             ]);
-            expect(notWritten).toStrictEqual([
-                { token: tokenAt(tokens, "gap"), because: "no value" },
+            expect(undeclared).toStrictEqual([
+                { token: tokenAt(tokens, "gap"), reason: "no value" },
             ]);
         });
 
         it("asks the hook once for a token the same in two permutations", () => {
             const asked: string[] = [];
             const writer = createCSSWriter({
-                writeValue: (token, { written }) => {
+                writeValue: (token, { value }) => {
                     asked.push(token.path);
-                    return written;
+                    return value;
                 },
             });
             writer.getDeclarations(modes.getPermutation());
@@ -246,10 +246,10 @@ describe("createCSSWriter", () => {
     describe("fallback", () => {
         const p3 = color({ colorSpace: "display-p3", components: [1, 0, 0], hex: "#ff0000" });
         const condition = "(color: color(display-p3 1 1 1))";
-        const writeFallback: CSSWriterOptions["writeFallback"] = (token, { writeWith }) => {
+        const writeFallback: CSSWriterOptions["writeFallback"] = (token, { rewrite }) => {
             if (token.type !== "color") return undefined;
-            const hex = writeWith({ colors: "hex" });
-            return hex && { written: hex, unless: condition };
+            const hex = rewrite({ colors: "hex" });
+            return hex && { value: hex, condition };
         };
 
         it("declares the fallback, and the value under @supports where it differs", () => {
@@ -276,7 +276,7 @@ describe("createCSSWriter", () => {
             ]);
         });
 
-        it("writes the value another way with writeWith, through the value hook and references alike", () => {
+        it("writes the value another way with rewrite, through the value hook and references alike", () => {
             const tokens = one({
                 hidden: p3,
                 edge: {
@@ -286,9 +286,9 @@ describe("createCSSWriter", () => {
             });
             const { declarations } = createCSSWriter({
                 skip: (token) => token.path === "hidden",
-                writeFallback: (token, { writeWith }) => {
-                    const hex = writeWith({ colors: "hex" });
-                    return hex && { written: hex, unless: condition };
+                writeFallback: (token, { rewrite }) => {
+                    const hex = rewrite({ colors: "hex" });
+                    return hex && { value: hex, condition };
                 },
             }).getDeclarations(tokens.getPermutation());
             expect(declarations.map(({ value }) => value)).toStrictEqual(["1px solid #ff0000"]);
@@ -305,8 +305,8 @@ describe("createCSSWriter", () => {
                     $value: { color: "#000000", width: "{gap}", style: "solid" },
                 },
             });
-            const writeValue: CSSWriterOptions["writeValue"] = (token, { written }) =>
-                token.path === "gap" ? "clamp(4px, 1vw, 8px)" : written;
+            const writeValue: CSSWriterOptions["writeValue"] = (token, { value }) =>
+                token.path === "gap" ? "clamp(4px, 1vw, 8px)" : value;
             expect(lines(tokens, { writeValue, references: "values" })).toStrictEqual([
                 "--gap: clamp(4px, 1vw, 8px)",
                 "--space: clamp(4px, 1vw, 8px)",

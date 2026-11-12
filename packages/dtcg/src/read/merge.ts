@@ -70,7 +70,7 @@ export function merge(
                 "token-and-group",
                 {
                     reason: "declared",
-                    here: earlierIs === "token" ? "group" : "token",
+                    declaredAs: earlierIs === "token" ? "group" : "token",
                     path,
                     otherFiles: [...new Set(earlier.map(({ file }) => file))],
                 },

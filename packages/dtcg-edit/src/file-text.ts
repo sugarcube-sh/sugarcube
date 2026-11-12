@@ -6,7 +6,7 @@ import { getJsonAt, getJsonPath, getSpan } from "@sugarcube-sh/dtcg/editor";
 export interface Member {
     span: Span;
     jsonPath: JsonPath;
-    asWritten: JsonValue;
+    json: JsonValue;
 }
 
 const parsed = new WeakMap<DesignTokens, Map<string, Node | undefined>>();
@@ -48,7 +48,7 @@ export function memberOf(tokens: DesignTokens, place: Definition): Member {
     return {
         span: getSpan(tokens, place),
         jsonPath: getJsonPath(tokens, place),
-        asWritten: place.asWritten,
+        json: place.json,
     };
 }
 

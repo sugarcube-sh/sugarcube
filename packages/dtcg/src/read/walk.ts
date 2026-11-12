@@ -7,7 +7,7 @@ import type {
     Span,
     JsonValue,
     TokenType,
-    WrittenReference,
+    ParsedReference,
 } from "../model.js";
 import { parseReference } from "../values/references.js";
 import { isTokenType, tokenTypes } from "../values/token-types.js";
@@ -42,14 +42,14 @@ export interface SourceToken extends Properties {
     json: JsonFile;
     value: Node;
     valueAsWritten: unknown;
-    reference: WrittenReference | undefined;
+    reference: ParsedReference | undefined;
     span: Span;
     nameSpan: Span;
     extensionsLocation?: ExtensionsLocation;
 }
 
 export interface GroupReference {
-    reference: WrittenReference;
+    reference: ParsedReference;
     steps: string[] | undefined;
     json: JsonFile;
     node: Node;
@@ -355,7 +355,7 @@ function correctKeys(
         const { key, keyNode } = entry;
 
         if (intended !== undefined && intended !== key) {
-            const detail = { written: key, property: intended, owner };
+            const detail = { key, property: intended, owner };
             walk.report("misspelt-property", detail, keyNode, { path });
             corrected ??= [...entries];
             corrected[index] = { ...entry, key: intended };

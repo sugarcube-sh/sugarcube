@@ -1,6 +1,6 @@
 import type { ColorValue } from "../model.js";
 import { colorDecimals, roundToDigits } from "./decimals.js";
-import type { ValueErrorFacts } from "./value-errors.js";
+import type { ValueErrorDetailByCode } from "./value-errors.js";
 
 function parseHexChannels(hex: string): {
     r: number;
@@ -29,7 +29,7 @@ export function getOriginalHex(color: ColorValue): string | undefined {
     return typeof written === "string" ? written : undefined;
 }
 
-export function hexToColorObject(hex: string): ValueErrorFacts["hex-string"]["asObject"] {
+export function hexToColorObject(hex: string): ValueErrorDetailByCode["hex-string"]["asObject"] {
     const { r, g, b, a, hex: kept } = parseHexChannels(hex);
     const round = (value: number) => roundToDigits(value, colorDecimals);
     const withAlpha = hex.length === 5 || hex.length === 9;

@@ -9,9 +9,9 @@ import type {
     Permutations,
     Token,
     TokenProperty,
-    Written,
-    WrittenGroup,
-    WrittenToken,
+    OriginalProperties,
+    OriginalGroup,
+    OriginalToken,
 } from "../model.js";
 import { makePermutations } from "../read/make-permutations.js";
 import { tokenPath } from "../path.js";
@@ -54,13 +54,18 @@ export function diffGroup({ before, after }: Pair<Group>, moved: Move[]): Change
     const inherited = (after ?? before)?.inherited;
     const flags = inherited ? { inherited } : {};
     if (!before)
-        return { kind: "group-added", path: after.path, after: writtenGroup(after), ...flags };
+        return { kind: "group-added", path: after.path, after: toOriginalGroup(after), ...flags };
     if (!after) {
-        return { kind: "group-removed", path: before.path, before: writtenGroup(before), ...flags };
+        return {
+            kind: "group-removed",
+            path: before.path,
+            before: toOriginalGroup(before),
+            ...flags,
+        };
     }
     const properties = groupDifferences(before, after, moved);
     const { path } = after;
-    const snapshots = { before: writtenGroup(before), after: writtenGroup(after), ...flags };
+    const snapshots = { before: toOriginalGroup(before), after: toOriginalGroup(after), ...flags };
     if (before.path !== path) {
         return { kind: "group-renamed", from: before.path, path, properties, ...snapshots };
     }
@@ -71,12 +76,13 @@ export function diffGroup({ before, after }: Pair<Group>, moved: Move[]): Change
 export function diffToken({ before, after }: Pair<Token>, moved: Move[]): ChangeEntry | undefined {
     const { generated, inherited } = after ?? before ?? {};
     const flags = { ...(generated && { generated }), ...(inherited && { inherited }) };
-    if (!before) return { kind: "added", path: after.path, after: writtenToken(after), ...flags };
+    if (!before)
+        return { kind: "added", path: after.path, after: toOriginalToken(after), ...flags };
     if (!after)
-        return { kind: "removed", path: before.path, before: writtenToken(before), ...flags };
+        return { kind: "removed", path: before.path, before: toOriginalToken(before), ...flags };
     const properties = tokenDifferences(before, after, moved);
     const { path } = after;
-    const snapshots = { before: writtenToken(before), after: writtenToken(after), ...flags };
+    const snapshots = { before: toOriginalToken(before), after: toOriginalToken(after), ...flags };
     if (before.path !== path) {
         return { kind: "renamed", from: before.path, path, properties, ...snapshots };
     }
@@ -84,18 +90,18 @@ export function diffToken({ before, after }: Pair<Token>, moved: Move[]): Change
     return { kind: "changed", path, properties, ...snapshots };
 }
 
-function writtenToken({ asWritten, description, extensions }: Token): WrittenToken {
-    if (!asWritten) return {};
+function toOriginalToken({ original, description, extensions }: Token): OriginalToken {
+    if (!original) return {};
     return {
-        value: asWritten.value,
-        ...pickDefinedFields({ ...asWritten, description, extensions }),
+        value: original.value,
+        ...pickDefinedFields({ ...original, description, extensions }),
     };
 }
 
-function writtenGroup(group: Group): WrittenGroup {
+function toOriginalGroup(group: Group): OriginalGroup {
     const extended = getExtendsPath(group);
     return {
-        ...pickDefinedFields(group.asWritten ?? {}),
+        ...pickDefinedFields(group.original ?? {}),
         ...(extended !== undefined && { extends: extended }),
     };
 }
@@ -104,7 +110,12 @@ function getExtendsPath(group: Group): string | undefined {
     return group.references[0]?.pointsToPath;
 }
 
-function pickDefinedFields({ type, description, deprecated, extensions }: Written): Written {
+function pickDefinedFields({
+    type,
+    description,
+    deprecated,
+    extensions,
+}: OriginalProperties): OriginalProperties {
     return {
         ...(type !== undefined && { type }),
         ...(description !== undefined && { description }),
@@ -127,16 +138,16 @@ function tokenDifferences(before: Token, after: Token, moved: Move[]): TokenProp
 function groupDifferences(before: Group, after: Group, moved: Move[]): GroupProperty[] {
     const extended = getExtendsPath(before);
     return getChangedKeys({
-        ...sameWritten(before.asWritten ?? {}, after.asWritten ?? {}),
+        ...compareOwnProperties(before.original ?? {}, after.original ?? {}),
         extends:
             (extended === undefined ? undefined : tokenPath.applyMoves(extended, moved)) ===
             getExtendsPath(after),
     });
 }
 
-function sameWritten(
-    before: Written,
-    after: Written,
+function compareOwnProperties(
+    before: OriginalProperties,
+    after: OriginalProperties,
 ): Record<Exclude<GroupProperty, "extends">, boolean> {
     return {
         type: before.type === after.type,
@@ -151,11 +162,11 @@ function getChangedKeys<P extends string>(same: Record<P, boolean>): P[] {
 }
 
 function getDeclaredType(token: Token): string | undefined {
-    return token.asWritten ? token.asWritten.type : token.type;
+    return token.original ? token.original.type : token.type;
 }
 
-function getDeclaredDeprecation(token: Token): Written["deprecated"] {
-    return token.asWritten ? token.asWritten.deprecated : token.deprecated;
+function getDeclaredDeprecation(token: Token): OriginalProperties["deprecated"] {
+    return token.original ? token.original.deprecated : token.deprecated;
 }
 
 export class Changes {
@@ -187,12 +198,12 @@ export class Changes {
 
 function getValueAfterMoves(token: Token, moved: Move[]): ComparableValue {
     if (token.value !== undefined) return { value: applyMovesToValue(token.value, moved) };
-    if (!token.asWritten) return token;
-    let written: unknown = token.asWritten.value;
+    if (!token.original) return token;
+    let value: unknown = token.original.value;
     for (const reference of token.references) {
-        written = replaceAtPath(written, reference.writtenInProperty ?? [], reference.moved(moved));
+        value = replaceAtPath(value, reference.property ?? [], reference.applyMoves(moved));
     }
-    return { asWritten: { value: written } };
+    return { original: { value } };
 }
 
 function replaceAtPath(value: unknown, [step, ...rest]: JsonPath, replacement: JsonValue): unknown {

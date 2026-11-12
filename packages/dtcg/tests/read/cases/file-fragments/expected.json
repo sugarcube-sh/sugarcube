@@ -15,7 +15,7 @@
       "detail": {
         "ref": "all.json#color",
         "reason": "no-leading-slash",
-        "corrected": "all.json#/color"
+        "suggestion": "all.json#/color"
       },
       "span": {
         "file": "tokens.resolver.json",
@@ -32,7 +32,7 @@
           "name": "parts"
         }
       ],
-      "readBy": "every-context"
+      "contexts": "every-context"
     },
     {
       "file": "all.json",
@@ -42,7 +42,7 @@
           "name": "parts"
         }
       ],
-      "readBy": "every-context"
+      "contexts": "every-context"
     },
     {
       "file": "all.json",
@@ -52,7 +52,7 @@
           "name": "parts"
         }
       ],
-      "readBy": "every-context"
+      "contexts": "every-context"
     },
     {
       "file": "all.json",
@@ -61,7 +61,7 @@
           "name": "parts"
         }
       ],
-      "readBy": "every-context"
+      "contexts": "every-context"
     }
   ]
 }

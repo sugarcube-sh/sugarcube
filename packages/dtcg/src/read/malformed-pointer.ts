@@ -10,7 +10,7 @@ export function malformedPointer(
     { problem, corrected }: Extract<PointerParseResult, { ok: false }>,
     resolves: boolean,
 ): Malformed {
-    return { ref, reason: problem, ...(resolves && { corrected }) };
+    return { ref, reason: problem, ...(resolves && { suggestion: corrected }) };
 }
 
 export function checkMalformedPointer(

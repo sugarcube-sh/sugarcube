@@ -1,5 +1,5 @@
 import { relatedMessages } from "../error-messages.js";
-import type { Input, Source, Span, WrittenReference } from "../model.js";
+import type { Input, Source, Span, ParsedReference } from "../model.js";
 import {
     applyMovesToReference,
     getReferencePath,
@@ -14,7 +14,7 @@ interface Use {
 }
 
 interface Missing {
-    reference: WrittenReference;
+    reference: ParsedReference;
     first: Use;
     uses: Use[];
 }
@@ -28,7 +28,7 @@ interface MissingInInputs {
 }
 
 export interface MissingRecorder {
-    record(reference: WrittenReference, from: string, span: Span): void;
+    record(reference: ParsedReference, from: string, span: Span): void;
     flush(): void;
 }
 
@@ -109,7 +109,7 @@ function getUniquePaths(uses: readonly Use[]): string[] {
 }
 
 function similarReference(
-    reference: WrittenReference,
+    reference: ParsedReference,
     paths: ReadonlyMap<string, unknown>,
     from: string[],
 ): string | undefined {

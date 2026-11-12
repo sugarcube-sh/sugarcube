@@ -106,14 +106,14 @@ const examples: { [K in DiagnosticKind]: Example<K>[] } = {
         },
         {
             reason: "declared",
-            here: "token",
+            declaredAs: "token",
             path: "color.blue",
             otherFiles: ["dark.json"],
             message: "`color.blue` is a group in `dark.json`",
         },
         {
             reason: "declared",
-            here: "group",
+            declaredAs: "group",
             path: "color.blue",
             otherFiles: ["base.json", "brand.json"],
             message: "`color.blue` is a token in `base.json` and `brand.json`",
@@ -410,18 +410,18 @@ const examples: { [K in DiagnosticKind]: Example<K>[] } = {
             data: { ratio: 1 },
         },
     ],
-    "written-generated": [
+    "overridden-by-generator": [
         {
             path: "size.step.3",
             from: "size.step",
             extension: ["sh.sugarcube", "scale"],
-            written: "token",
+            declaredAs: "token",
         },
         {
             path: "md",
             from: "",
             extension: ["sh.sugarcube", "scale"],
-            written: "group",
+            declaredAs: "group",
             message: "`md` is made by `sh.sugarcube.scale` on the top level",
         },
     ],
@@ -446,26 +446,26 @@ const examples: { [K in DiagnosticKind]: Example<K>[] } = {
         {
             ref: "#color/ink",
             reason: "no-leading-slash",
-            corrected: "#/color/ink",
+            suggestion: "#/color/ink",
             message: "`#color/ink` is not a JSON Pointer",
             help: "write `#/color/ink`",
         },
         { ref: "#missing/$value", reason: "no-leading-slash" },
-        { ref: "#/a~b/$value", reason: "bad-escape", corrected: "#/a~0b/$value" },
+        { ref: "#/a~b/$value", reason: "bad-escape", suggestion: "#/a~0b/$value" },
         {
             ref: "#/a~b",
             reason: "bad-escape",
-            corrected: "#/a~0b",
+            suggestion: "#/a~0b",
             message: "`~` and `/` must be escaped",
             help: "write `#/a~0b`",
         },
-        { ref: "all.json#color", reason: "no-leading-slash", corrected: "all.json#/color" },
+        { ref: "all.json#color", reason: "no-leading-slash", suggestion: "all.json#/color" },
     ],
     "not-a-token": [{ ref: "color.accent" }],
     "not-a-value": [
         {
             ref: "#/base",
-            corrected: "#/base/$value",
+            suggestion: "#/base/$value",
             message: "a `$ref` must point at a value",
             help: "write `#/base/$value`",
         },
@@ -502,14 +502,14 @@ const examples: { [K in DiagnosticKind]: Example<K>[] } = {
     ],
     "misspelt-property": [
         {
-            written: "value",
+            key: "value",
             property: "$value",
             owner: "token",
             message: "`value` is not a token property",
             help: "did you mean `$value`?",
         },
-        { written: "type", property: "$type", owner: "group" },
-        { written: "$tpye", property: "$type", owner: "group" },
+        { key: "type", property: "$type", owner: "group" },
+        { key: "$tpye", property: "$type", owner: "group" },
     ],
     "permutation-limit": [
         { count: 16384, limit: 64, built: 15 },

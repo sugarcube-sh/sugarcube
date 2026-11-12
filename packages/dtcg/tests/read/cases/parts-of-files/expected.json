@@ -20,7 +20,7 @@
         {
           "path": "size.sm",
           "type": "number",
-          "asWritten": {
+          "original": {
             "value": 2
           },
           "definitions": [

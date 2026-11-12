@@ -211,7 +211,7 @@ describe("undo after the files change", () => {
         expect(session.unsaved.steps).toHaveLength(1);
         expect(session.tokens.getText("radius.json")).toBe(fresh.getText("radius.json"));
         expect(
-            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+            session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(red);
         expect(session.tokens.getPermutation().getToken("color.brand.300")).toBeDefined();
         expect(session.pathOf("color.brand.300")).toBe("color.brand.300");
@@ -254,7 +254,7 @@ describe("undo after the files change", () => {
 
         expect(session.tokens.getPermutation().getToken("radius.full")).toBeDefined();
         expect(
-            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+            session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(red);
         expect(session.idOf("radius.full")).toBe("radius.full");
 

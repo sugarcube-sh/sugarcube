@@ -33,7 +33,7 @@
           "name": "baseSize"
         }
       ],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "size",
           "name": "small"
@@ -52,7 +52,7 @@
     {
       "file": "device/mobile.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "size",
           "name": "small"
@@ -63,7 +63,7 @@
     {
       "file": "typography/mobile.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "size",
           "name": "small"
@@ -74,7 +74,7 @@
     {
       "file": "device/tablet.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "size",
           "name": "medium"
@@ -85,7 +85,7 @@
     {
       "file": "typography/base.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "size",
           "name": "medium"
@@ -100,7 +100,7 @@
     {
       "file": "device/desktop.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "size",
           "name": "large"

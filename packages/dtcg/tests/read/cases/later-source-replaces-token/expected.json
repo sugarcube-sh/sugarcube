@@ -9,7 +9,7 @@
           "name": "base"
         }
       ],
-      "readBy": "every-context"
+      "contexts": "every-context"
     },
     {
       "file": "brand.json",
@@ -18,12 +18,12 @@
           "name": "base"
         }
       ],
-      "readBy": "every-context"
+      "contexts": "every-context"
     },
     {
       "file": "dark.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "theme",
           "name": "dark"
@@ -39,7 +39,7 @@
           "path": "color.brand",
           "type": "color",
           "description": "The brand color",
-          "asWritten": {
+          "original": {
             "value": {
               "colorSpace": "srgb",
               "components": [0.882, 0.114, 0.282],
@@ -65,7 +65,7 @@
         {
           "path": "color.muted",
           "type": "color",
-          "asWritten": {
+          "original": {
             "value": {
               "colorSpace": "srgb",
               "components": [0.4, 0.4, 0.4]
@@ -133,7 +133,7 @@
         {
           "path": "color.brand",
           "type": "color",
-          "asWritten": {
+          "original": {
             "value": {
               "colorSpace": "oklch",
               "components": [0.7, 0.2, 20]
@@ -164,7 +164,7 @@
         {
           "path": "color.muted",
           "type": "color",
-          "asWritten": {
+          "original": {
             "value": {
               "colorSpace": "srgb",
               "components": [0.4, 0.4, 0.4]

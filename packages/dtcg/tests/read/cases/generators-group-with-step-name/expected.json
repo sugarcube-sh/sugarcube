@@ -19,12 +19,12 @@
   ],
   "diagnostics": [
     {
-      "kind": "written-generated",
+      "kind": "overridden-by-generator",
       "detail": {
         "path": "space.1",
         "from": "space",
         "extension": ["com.example", "steps"],
-        "written": "group"
+        "declaredAs": "group"
       },
       "span": { "file": "tokens.json", "valueAfter": "\"1\":" },
       "relatedInformation": [

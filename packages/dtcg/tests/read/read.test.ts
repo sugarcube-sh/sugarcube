@@ -245,7 +245,7 @@ describe("read", () => {
         expect(readText.mock.calls).toStrictEqual([["tokens/base.json", "base.json"]]);
         expect(tokens.files).toStrictEqual(["base.json"]);
         expect(tokens.permutations[0]?.sources).toEqual([
-            { file: "base.json", sets: [], readBy: "every-context" },
+            { file: "base.json", sets: [], contexts: "every-context" },
         ]);
     });
 

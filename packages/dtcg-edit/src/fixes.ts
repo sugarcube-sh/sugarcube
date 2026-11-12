@@ -66,13 +66,13 @@ function fixFor(tokens: DesignTokens, diagnostic: Diagnostic): Fix | undefined {
             return valueFix(tokens, diagnostic.detail, span, nodeAt(tokens, span)?.value);
         case "malformed-pointer":
         case "not-a-value": {
-            const { corrected } = diagnostic.detail;
+            const { suggestion } = diagnostic.detail;
             const node = nodeAt(tokens, span);
             const ref = node && refString(node);
-            if (corrected === undefined || !ref) return undefined;
+            if (suggestion === undefined || !ref) return undefined;
             const { offset, length } = ref;
-            const text = JSON.stringify(corrected);
-            return safe(fixTitles.writePointer(corrected), {
+            const text = JSON.stringify(suggestion);
+            return safe(fixTitles.writePointer(suggestion), {
                 file: span.file,
                 offset,
                 length,

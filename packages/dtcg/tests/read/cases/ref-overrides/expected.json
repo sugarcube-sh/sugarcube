@@ -18,7 +18,7 @@
           "name": "base"
         }
       ],
-      "readBy": "every-context"
+      "contexts": "every-context"
     },
     {
       "file": "replacement.json",
@@ -27,7 +27,7 @@
           "name": "other"
         }
       ],
-      "readBy": "every-context"
+      "contexts": "every-context"
     }
   ]
 }

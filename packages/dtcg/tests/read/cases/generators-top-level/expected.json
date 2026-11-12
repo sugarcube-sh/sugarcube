@@ -25,7 +25,7 @@
             "from": "",
             "extension": ["com.example", "steps"]
           },
-          "asWritten": null,
+          "original": null,
           "definitions": [
             {
               "source": 0,

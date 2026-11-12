@@ -27,7 +27,7 @@
           "name": "base"
         }
       ],
-      "readBy": "every-context"
+      "contexts": "every-context"
     },
     {
       "file": "shared.json",
@@ -36,12 +36,12 @@
           "name": "base"
         }
       ],
-      "readBy": "every-context"
+      "contexts": "every-context"
     },
     {
       "file": "both.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "mode",
           "name": "light"
@@ -57,7 +57,7 @@
       "file": "all.json",
       "pointer": "#/dark",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "mode",
           "name": "dark"
@@ -68,7 +68,7 @@
     {
       "file": "shared.json",
       "sets": [],
-      "readBy": "every-context",
+      "contexts": "every-context",
       "modifier": "mode"
     }
   ]

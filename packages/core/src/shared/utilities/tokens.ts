@@ -26,8 +26,8 @@ export function utilityTokens({ entries }: Declarations): UtilityToken[] {
         listed.push(each);
     };
     for (const declared of read) for (const each of declaredIn(declared)) add(each);
-    for (const { notWritten } of read) {
-        for (const { token, because } of notWritten) add({ token, private: because === "skipped" });
+    for (const { undeclared } of read) {
+        for (const { token, reason } of undeclared) add({ token, private: reason === "skipped" });
     }
     return listed;
 }

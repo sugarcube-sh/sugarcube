@@ -8,7 +8,7 @@
           "path": "red",
           "type": "color",
           "invalid": true,
-          "asWritten": {
+          "original": {
             "value": {
               "colorSpace": "srgb",
               "components": [2, 0, 0]

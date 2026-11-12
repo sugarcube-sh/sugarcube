@@ -148,9 +148,9 @@ export function runGenerators(
                 }
                 const path = tokenPath.join(groupPath, made.name);
                 if (added.has(path)) continue;
-                const written = findExistingSpans(merged, path);
-                if (written) {
-                    const detail = { path, ...from, written: written.kind };
+                const existing = findExistingSpans(merged, path);
+                if (existing) {
+                    const detail = { path, ...from, declaredAs: existing.kind };
                     const relatedInformation = [
                         {
                             message: relatedMessages.madeByThisExtension,
@@ -158,9 +158,9 @@ export function runGenerators(
                             path: extension.group,
                         },
                     ];
-                    for (const span of written.spans) {
+                    for (const span of existing.spans) {
                         diagnostics.add(
-                            diagnostic("written-generated", detail, {
+                            diagnostic("overridden-by-generator", detail, {
                                 span,
                                 path,
                                 relatedInformation,

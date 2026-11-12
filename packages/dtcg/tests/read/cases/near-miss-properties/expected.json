@@ -99,7 +99,7 @@
     {
       "kind": "misspelt-property",
       "detail": {
-        "written": "value",
+        "key": "value",
         "property": "$value",
         "owner": "token"
       },
@@ -112,7 +112,7 @@
     {
       "kind": "misspelt-property",
       "detail": {
-        "written": "$vlaue",
+        "key": "$vlaue",
         "property": "$value",
         "owner": "token"
       },
@@ -125,7 +125,7 @@
     {
       "kind": "misspelt-property",
       "detail": {
-        "written": "$Value",
+        "key": "$Value",
         "property": "$value",
         "owner": "token"
       },
@@ -138,7 +138,7 @@
     {
       "kind": "misspelt-property",
       "detail": {
-        "written": "$descripton",
+        "key": "$descripton",
         "property": "$description",
         "owner": "token"
       },
@@ -176,7 +176,7 @@
     {
       "kind": "misspelt-property",
       "detail": {
-        "written": "type",
+        "key": "type",
         "property": "$type",
         "owner": "group"
       },

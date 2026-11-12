@@ -31,7 +31,7 @@ describe("apply, set", () => {
         const after = applied(demo, [setBrand500(demo)]);
 
         expect(at(after, "color.json", brand500)).toEqual(red);
-        expect(after.getPermutation().getToken("color.brand.500")?.asWritten?.value).toEqual(red);
+        expect(after.getPermutation().getToken("color.brand.500")?.original?.value).toEqual(red);
     });
 
     it("still applies after someone changed another token in the same file", () => {
@@ -94,7 +94,7 @@ describe("apply, add", () => {
         ]);
 
         expect(at(after, "space.json", ["color", "raw", "red", "$value"])).toEqual(red);
-        expect(after.getPermutation().getToken("color.raw.red")?.asWritten?.value).toEqual(red);
+        expect(after.getPermutation().getToken("color.raw.red")?.original?.value).toEqual(red);
     });
 
     it("is a conflict when someone already made something different there", () => {

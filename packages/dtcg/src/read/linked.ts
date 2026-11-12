@@ -73,14 +73,14 @@ class TokenObject {
         if (fields.deprecatedByGroup !== undefined)
             self.deprecatedByGroup = fields.deprecatedByGroup;
         if (fields.extensions) self.extensions = fields.extensions;
-        if (fields.asWritten) self.asWritten = fields.asWritten;
+        if (fields.original) self.original = fields.original;
         if (fields.generated) self.generated = fields.generated;
         if (fields.inherited) self.inherited = fields.inherited;
     }
 
     getReferenceAt(property: JsonPath = []): Reference | undefined {
         return (this as unknown as Token).references.find((each) =>
-            samePropertyPath(each.writtenInProperty, property),
+            samePropertyPath(each.property, property),
         );
     }
 
@@ -199,17 +199,17 @@ class PermutationObject {
         for (const references of waiting) {
             for (const reference of references) {
                 found.add(reference);
-                const { writtenIn } = reference;
-                if (seen.has(writtenIn.path)) continue;
-                seen.add(writtenIn.path);
-                waiting.push(findReferences(writtenIn.path, writtenIn.kind === "token"));
+                const { owner } = reference;
+                if (seen.has(owner.path)) continue;
+                seen.add(owner.path);
+                waiting.push(findReferences(owner.path, owner.kind === "token"));
             }
         }
         return [...found].sort((a, b) => (position.get(a) ?? 0) - (position.get(b) ?? 0));
     }
 
     getDependents(path: string, options?: ReferenceOptions): (Token | Group)[] {
-        return [...new Set(this.getReferencesTo(path, options).map(({ writtenIn }) => writtenIn))];
+        return [...new Set(this.getReferencesTo(path, options).map(({ owner }) => owner))];
     }
 
     getDependencies(path: string, { chained = false }: ReferenceOptions = {}): (Token | Group)[] {
@@ -311,10 +311,7 @@ class DesignTokensObject {
                 let atSpan = merged.get(span);
                 if (!atSpan) merged.set(span, (atSpan = []));
                 let here = atSpan.find((each) =>
-                    samePropertyPath(
-                        each.reference.writtenInProperty,
-                        reference.writtenInProperty ?? [],
-                    ),
+                    samePropertyPath(each.reference.property, reference.property ?? []),
                 );
                 if (!here) {
                     here = {
@@ -326,8 +323,8 @@ class DesignTokensObject {
                     atSpan.push(here);
                 }
                 if (!here.permutations.includes(permutation)) here.permutations.push(permutation);
-                const { writtenIn } = reference;
-                (writtenIn.inherited ? here.inheritedPaths : here.ownerPaths).add(writtenIn.path);
+                const { owner } = reference;
+                (owner.inherited ? here.inheritedPaths : here.ownerPaths).add(owner.path);
             }
         }
         return [...merged].flatMap(([span, here]) =>
@@ -375,12 +372,12 @@ class DesignTokensObject {
             get jsonPath() {
                 return findJsonPath(tokens, span);
             },
-            get asWritten() {
-                return first.asWritten;
+            get json() {
+                return first.json;
             },
             sources,
             permutations: makePermutations(permutations, tokens.permutations),
-            winsIn: makePermutations(
+            winningPermutations: makePermutations(
                 permutations.filter((permutation) => {
                     const winner = permutation.getToken(path)?.winningDefinition;
                     return winner !== undefined && getSpan(tokens, winner) === span;
@@ -456,8 +453,8 @@ class DesignTokensObject {
         return tokens.diagnostics.filter(createDiagnosticFilter(tokens, path, tokens.permutations));
     }
 
-    getChangesSince(before: DesignTokens, options?: { moved?: Move[] }): Change[] {
-        const moved = options?.moved ?? [];
+    getChangesSince(before: DesignTokens, options?: { moves?: Move[] }): Change[] {
+        const moved = options?.moves ?? [];
         const changes = new Changes();
         for (const now of this.#self.permutations) {
             const was = findPermutation(before, now.input);
@@ -563,7 +560,7 @@ class DefinitionObject {
     #asList: Definition[] | undefined;
     #text: string | undefined;
     #textAt: Span;
-    #written: JsonValue | undefined;
+    #json: JsonValue | undefined;
 
     constructor(source: Source, span: Span, text: string | undefined) {
         this.source = source;
@@ -572,12 +569,12 @@ class DefinitionObject {
         this.#textAt = span;
     }
 
-    get asWritten(): JsonValue {
-        if (this.#written === undefined) {
-            this.#written = parse(sliceSpan(this.#text, this.#textAt) ?? "null");
+    get json(): JsonValue {
+        if (this.#json === undefined) {
+            this.#json = parse(sliceSpan(this.#text, this.#textAt) ?? "null");
             this.#text = undefined;
         }
-        return this.#written as JsonValue;
+        return this.#json as JsonValue;
     }
 
     static getSpan(place: DefinitionObject): Span {
@@ -585,7 +582,7 @@ class DefinitionObject {
     }
 
     static setText(place: DefinitionObject, text: string | undefined, span: Span): void {
-        if (place.#written !== undefined) return;
+        if (place.#json !== undefined) return;
         place.#text = text;
         place.#textAt = span;
     }

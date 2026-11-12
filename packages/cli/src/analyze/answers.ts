@@ -53,9 +53,9 @@ export function unused({ tokens, uses }: Analysis): Unused {
 }
 
 export function writtenOf(tokens: DesignTokens, path: string): Written[] | "group" | undefined {
-    const written = tokens.getDefinitions(path).flatMap(({ span, winsIn }) => {
-        const token = winsIn[0]?.getToken(path);
-        return token ? [{ token, file: span.file, permutations: winsIn }] : [];
+    const written = tokens.getDefinitions(path).flatMap(({ span, winningPermutations }) => {
+        const token = winningPermutations[0]?.getToken(path);
+        return token ? [{ token, file: span.file, permutations: winningPermutations }] : [];
     });
     if (written.length > 0) return written;
     return tokens.has(path) ? "group" : undefined;
@@ -71,7 +71,7 @@ export function impact({ tokens, uses }: Analysis, path: string, written: Writte
     const groups = groupPermutationsBy(tokens, (p) => p.getReferencesTo(path, { chained: true }));
     for (const { result, permutations } of groups) {
         for (const reference of result) {
-            const from = reference.writtenIn.path;
+            const from = reference.owner.path;
             if (from === path || reference.pointsToPath === undefined) continue;
             const named = { path: reference.pointsToPath, permutations };
             byDependent.set(from, [...(byDependent.get(from) ?? []), named]);
@@ -103,8 +103,11 @@ function dependent(tokens: DesignTokens, path: string, references: Named[]): Dep
         paths(references.filter((each) => permutations.some((p) => each.permutations.includes(p))));
     const places = tokens
         .getDefinitions(path)
-        .filter(({ winsIn }) => winsIn.length > 0)
-        .map(({ sources, winsIn }) => ({ sources, named: namedIn(winsIn).join("\0") }));
+        .filter(({ winningPermutations }) => winningPermutations.length > 0)
+        .map(({ sources, winningPermutations }) => ({
+            sources,
+            named: namedIn(winningPermutations).join("\0"),
+        }));
     const base = new Set(
         places.filter(({ sources }) => sources.some(readByEveryone)).map(({ named }) => named),
     );
@@ -122,10 +125,10 @@ function dependent(tokens: DesignTokens, path: string, references: Named[]): Dep
     return found;
 }
 
-function readByEveryone({ readBy }: Source): boolean {
-    return readBy === "every-context";
+function readByEveryone({ contexts }: Source): boolean {
+    return contexts === "every-context";
 }
 
-function readersOf({ readBy }: Source): readonly ResolverContext[] {
-    return readBy === "every-context" ? [] : readBy;
+function readersOf({ contexts }: Source): readonly ResolverContext[] {
+    return contexts === "every-context" ? [] : contexts;
 }

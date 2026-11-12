@@ -50,7 +50,7 @@ function fluidForm(
     const { path } = token;
     const placeIn = (now: DesignTokens) =>
         now.getDefinitions(path).find(({ span }) => span.file === at.file);
-    const written = placeIn(tokens)?.asWritten;
+    const written = placeIn(tokens)?.json;
     const fluid = sugarcubeSetting(
         isJsonObject(written) ? written.$extensions : undefined,
         "fluid",

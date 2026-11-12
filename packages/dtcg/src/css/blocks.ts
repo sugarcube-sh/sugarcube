@@ -43,9 +43,9 @@ export interface CSSBlock extends CSSBlockInput {
     /** Every custom property of the block's permutation. */
     readonly declarations: readonly CSSDeclaration[];
     /** The custom properties the block writes in its rule. */
-    readonly inRule: readonly CSSDeclaration[];
+    readonly ruleDeclarations: readonly CSSDeclaration[];
     /** The custom properties whose `@supports` alternatives the block writes. */
-    readonly underSupports: readonly CSSDeclaration[];
+    readonly supportsDeclarations: readonly CSSDeclaration[];
 }
 
 /**
@@ -106,7 +106,7 @@ export function getCSSBlocks(
                 for (const line of earlier.declarations) inEffect.set(line.name, line);
                 continue;
             }
-            for (const { name, value } of earlier.inRule) {
+            for (const { name, value } of earlier.ruleDeclarations) {
                 const values = otherBlockValues.get(name);
                 if (values) values.add(value);
                 else otherBlockValues.set(name, new Set([value]));
@@ -120,16 +120,16 @@ export function getCSSBlocks(
                 (own(line.token) &&
                     hasConflictingValue(otherBlockValues.get(line.name), line.value)),
         );
-        const inRule =
+        const ruleDeclarations =
             block.redeclare === false ? changed : [...changed, ...dependents(all, changed)];
-        const names = new Set(inRule.map(({ name }) => name));
-        const underSupports = all.filter(
+        const names = new Set(ruleDeclarations.map(({ name }) => name));
+        const supportsDeclarations = all.filter(
             (line) =>
                 line.supports !== undefined &&
                 (names.has(line.name) ||
                     !sameSupports(inEffect.get(line.name)?.supports, line.supports)),
         );
-        result.push({ ...block, inRule, underSupports });
+        result.push({ ...block, ruleDeclarations, supportsDeclarations });
     }
     return result;
 }

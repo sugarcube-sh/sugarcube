@@ -105,7 +105,7 @@ export function createSession(tokens: DesignTokens): Session {
             changed();
         },
         changes() {
-            return current.getChangesSince(opened, { moved: movesIn(unsaved.steps) });
+            return current.getChangesSince(opened, { moves: movesIn(unsaved.steps) });
         },
         markSaved(saved) {
             const count = saved ? leadingSteps(saved, unsaved) : unsaved.steps.length;

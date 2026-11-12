@@ -131,9 +131,9 @@ export const exceptionMessages = {
         detail.reason === "not-read"
             ? `\`${toInputLabel(detail.input)}\` was not built by this read`
             : [inputHeadline(detail), inputHelp(detail)].filter(Boolean).join(": "),
-    severalPermutations: ({ asked, modifiers, example }: SeveralPermutationsDetail) => {
+    severalPermutations: ({ member, modifiers, example }: SeveralPermutationsDetail) => {
         const named = `${modifiers.length === 1 ? "the modifier" : "the modifiers"} ${formatList(modifiers, "and")}`;
-        return `tokens.${asked} needs a permutation: this resolver has ${named}. Pick one with tokens.getPermutation(${formatInput(example)}), or group them with groupPermutationsBy(tokens, …)`;
+        return `tokens.${member} needs a permutation: this resolver has ${named}. Pick one with tokens.getPermutation(${formatInput(example)}), or group them with groupPermutationsBy(tokens, …)`;
     },
     entryFile: ({ reason, files }: EntryFileErrorDetail) => {
         const named = files.map((file) => `\`${file}\``).join(", ");
@@ -217,7 +217,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
                         ? "a token can't contain other tokens"
                         : `\`${detail.child}\` is not a token property`;
                 case "declared": {
-                    const other = detail.here === "token" ? "group" : "token";
+                    const other = detail.declaredAs === "token" ? "group" : "token";
                     return `\`${detail.path}\` is a ${other} in ${formatFiles(detail.otherFiles)}`;
                 }
                 case "ref":
@@ -259,7 +259,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
         severity: "error",
         message: ({ key }) => `invalid \`${key}\` extension`,
     },
-    "written-generated": {
+    "overridden-by-generator": {
         severity: "error",
         message: ({ path, from, extension }) =>
             `\`${path}\` is made by \`${extension.join(".")}\` on ${formatPath(from)}`,
@@ -275,7 +275,8 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
             reason === "no-leading-slash"
                 ? `\`${ref}\` is not a JSON Pointer`
                 : "`~` and `/` must be escaped",
-        help: ({ corrected }) => (corrected === undefined ? undefined : `write \`${corrected}\``),
+        help: ({ suggestion }) =>
+            suggestion === undefined ? undefined : `write \`${suggestion}\``,
     },
     "not-a-token": {
         severity: "error",
@@ -284,7 +285,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     "not-a-value": {
         severity: "error",
         message: () => "a `$ref` must point at a value",
-        help: ({ corrected }) => `write \`${corrected}\``,
+        help: ({ suggestion }) => `write \`${suggestion}\``,
     },
     "ref-and-value": {
         severity: "error",
@@ -320,7 +321,7 @@ export const diagnosticMessages: { [K in DiagnosticKind]: Entry<K> } = {
     },
     "misspelt-property": {
         severity: "error",
-        message: ({ written, owner }) => `\`${written}\` is not a ${owner} property`,
+        message: ({ key, owner }) => `\`${key}\` is not a ${owner} property`,
         help: ({ property }) => didYouMean(property),
     },
     "permutation-limit": {

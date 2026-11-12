@@ -27,7 +27,7 @@ export function cssWriterOptions(
     return {
         naming: { prefix, case: casing, delimiter, getName: variableName },
         skip,
-        writeValue: (token, { written, write }) => {
+        writeValue: (token, { value, write }) => {
             if (token.type === "dimension") {
                 const fluid = readFluid(
                     token.extensions?.[SUGARCUBE_NAMESPACE],
@@ -37,14 +37,14 @@ export function cssWriterOptions(
                 if (fluid.value) return clamp(fluid.value, transforms.fluid);
             }
             return token.type === "gradient" && !token.getReferenceAt()
-                ? write`linear-gradient(${written})`
-                : written;
+                ? write`linear-gradient(${value})`
+                : value;
         },
         ...(transforms.colorFallbackStrategy === "polyfill" && {
-            writeFallback: (token, { writeWith }) => {
+            writeFallback: (token, { rewrite }) => {
                 const { spaces } = fallbacksIn(token, skip);
-                const hex = spaces.length > 0 ? writeWith({ colors: "hex" }) : undefined;
-                return hex && { written: hex, unless: supportsCondition(spaces) };
+                const hex = spaces.length > 0 ? rewrite({ colors: "hex" }) : undefined;
+                return hex && { value: hex, condition: supportsCondition(spaces) };
             },
         }),
     };

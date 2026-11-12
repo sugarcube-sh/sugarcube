@@ -1,4 +1,4 @@
-import type { JsonPath, WrittenReference } from "../model.js";
+import type { JsonPath, ParsedReference } from "../model.js";
 import { isJsonObject } from "../values/json.js";
 import type { Merged, MergedToken } from "./merge.js";
 import { arrayIndex } from "./json.js";
@@ -12,11 +12,11 @@ export type LookupResult =
     | { kind: "nothing" };
 
 export interface ReferenceLookup {
-    reference: WrittenReference;
+    reference: ParsedReference;
     steps: string[] | undefined;
 }
 
-export function toPointerSteps(reference: WrittenReference): string[] | undefined {
+export function toPointerSteps(reference: ParsedReference): string[] | undefined {
     return reference.syntax === "json-pointer" ? refSteps(reference.pointer) : undefined;
 }
 

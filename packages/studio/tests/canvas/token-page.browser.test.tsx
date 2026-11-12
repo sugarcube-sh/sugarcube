@@ -125,7 +125,7 @@ describe("a new token", () => {
         await expect.element(add).toBeEnabled();
         await add.click();
 
-        expect(studio.state.showing.getToken("space.l")?.asWritten?.value).toEqual({
+        expect(studio.state.showing.getToken("space.l")?.original?.value).toEqual({
             value: 12,
             unit: "px",
         });

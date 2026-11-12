@@ -109,7 +109,7 @@ describe("where a reference is in its file, as a JSON path", () => {
         expect(
             tokens
                 .getReferencesTo("base")
-                .map(({ writtenInPaths, jsonPath }) => [writtenInPaths, jsonPath]),
+                .map(({ ownerPaths, jsonPath }) => [ownerPaths, jsonPath]),
         ).toStrictEqual([
             [
                 ["color.x", "b.x"],

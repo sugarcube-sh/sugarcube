@@ -26,7 +26,7 @@ const root = { input: {}, selector: ":root" };
 const dark = { input: { mode: "dark" }, selector: '[data-mode="dark"]' };
 
 function written(block: CSSBlock | undefined): string[] {
-    return block?.inRule.map(({ name, value }) => `${name}: ${value}`) ?? [];
+    return block?.ruleDeclarations.map(({ name, value }) => `${name}: ${value}`) ?? [];
 }
 
 describe("getCSSBlocks", () => {
@@ -62,7 +62,7 @@ describe("getCSSBlocks", () => {
         );
         const ink = mixed.getPermutation().getToken("color.ink");
         const writer = createCSSWriter({
-            writeValue: (token, { written: value, write }) =>
+            writeValue: (token, { value, write }) =>
                 token.path === "shade" && ink
                     ? write`color-mix(in oklch, ${ink} 50%, black)`
                     : value,
@@ -143,9 +143,9 @@ describe("getCSSBlocks", () => {
 
     describe("@supports", () => {
         const p3 = { colorSpace: "display-p3", components: [1, 0, 0], hex: "#ff0000" };
-        const writeFallback: CSSWriterOptions["writeFallback"] = (token, { writeWith }) => {
-            const hex = token.type === "color" ? writeWith({ colors: "hex" }) : undefined;
-            return hex && { written: hex, unless: "(color: color(display-p3 1 1 1))" };
+        const writeFallback: CSSWriterOptions["writeFallback"] = (token, { rewrite }) => {
+            const hex = token.type === "color" ? rewrite({ colors: "hex" }) : undefined;
+            return hex && { value: hex, condition: "(color: color(display-p3 1 1 1))" };
         };
         const wide = themed(
             { brand: color(p3) },
@@ -156,9 +156,9 @@ describe("getCSSBlocks", () => {
             const [first, later] = getCSSBlocks(wide, [root, dark], {
                 writer: createCSSWriter({ writeFallback }),
             });
-            expect(first?.underSupports.map(({ name }) => name)).toStrictEqual(["--brand"]);
+            expect(first?.supportsDeclarations.map(({ name }) => name)).toStrictEqual(["--brand"]);
             expect(written(later)).toStrictEqual([]);
-            expect(later?.underSupports.map(({ supports }) => supports)).toStrictEqual([
+            expect(later?.supportsDeclarations.map(({ supports }) => supports)).toStrictEqual([
                 [
                     {
                         condition: "(color: color(display-p3 1 1 1))",

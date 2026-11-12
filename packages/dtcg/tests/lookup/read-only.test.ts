@@ -43,9 +43,9 @@ function changesWhatTheReadGave(): void {
     // @ts-expect-error
     tokens.resolver?.resolutionOrder.pop();
     // @ts-expect-error
-    if (source!.readBy !== "every-context") source!.readBy.pop();
+    if (source!.contexts !== "every-context") source!.contexts.pop();
     // @ts-expect-error
-    brand.references[0]!.writtenInProperty!.push("color");
+    brand.references[0]!.property!.push("color");
     // @ts-expect-error nor can anything inside them be assigned
     brand.path = "color.other";
     // @ts-expect-error

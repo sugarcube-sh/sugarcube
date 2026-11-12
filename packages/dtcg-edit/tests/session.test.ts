@@ -32,7 +32,7 @@ describe("createSession", () => {
         ]);
         expect(session.unsaved).not.toHaveProperty("files");
         expect(
-            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+            session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(red);
         expect(session.opened).toBe(demo);
     });
@@ -94,7 +94,7 @@ describe("createSession", () => {
 
         expect(session.changes()).toEqual(
             session.tokens.getChangesSince(demo, {
-                moved: session.unsaved.steps.flatMap((step) => step.moved),
+                moves: session.unsaved.steps.flatMap((step) => step.moved),
             }),
         );
         expect(session.changes().map((change) => [change.kind, change.path])).toContainEqual([

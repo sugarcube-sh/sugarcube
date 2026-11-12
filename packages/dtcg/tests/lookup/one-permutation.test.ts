@@ -68,7 +68,7 @@ describe("the design tokens of a read with several permutations", () => {
         const error = thrownBy(SeveralPermutationsError, () => oneMode.getToken("gap"));
 
         expect(error.detail).toStrictEqual({
-            asked: "getToken()",
+            member: "getToken()",
             modifiers: ["mode"],
             example: { mode: "dark" },
         });
@@ -90,9 +90,9 @@ describe("the design tokens of a read with several permutations", () => {
             ["getDependencies()", (tokens) => tokens.getDependencies("color.x")],
         ];
 
-        for (const [asked, ask] of asks) {
+        for (const [member, ask] of asks) {
             expect(thrownBy(SeveralPermutationsError, () => ask(modes)).detail).toMatchObject({
-                asked,
+                member,
             });
         }
     });

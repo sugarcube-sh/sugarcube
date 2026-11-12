@@ -79,13 +79,13 @@ export function sameSource(was: Source, now: Source): boolean {
         was.file === now.file &&
         was.pointer === now.pointer &&
         was.modifier === now.modifier &&
-        sameContexts(was.readBy, now.readBy) &&
+        sameContexts(was.contexts, now.contexts) &&
         isEqualJson(was.sets, now.sets) &&
         isEqualJson(was.extensions, now.extensions)
     );
 }
 
-function sameContexts(was: Source["readBy"], now: Source["readBy"]): boolean {
+function sameContexts(was: Source["contexts"], now: Source["contexts"]): boolean {
     if (was === "every-context" || now === "every-context") return was === now;
     return sameList(was, now);
 }

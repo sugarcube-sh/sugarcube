@@ -10,7 +10,7 @@
         {
           "path": "space.2",
           "resolved": { "value": 2, "unit": "rem" },
-          "asWritten": null
+          "original": null
         },
         { "path": "space.1" }
       ]
@@ -20,7 +20,7 @@
         {
           "path": "space.2",
           "resolved": { "value": 2, "unit": "rem" },
-          "asWritten": null
+          "original": null
         },
         { "path": "space.1" }
       ]
@@ -28,12 +28,12 @@
   ],
   "diagnostics": [
     {
-      "kind": "written-generated",
+      "kind": "overridden-by-generator",
       "detail": {
         "path": "space.2",
         "from": "space",
         "extension": ["com.example", "steps"],
-        "written": "token"
+        "declaredAs": "token"
       },
       "span": { "file": "base.json", "valueAfter": "\"2\":" },
       "relatedInformation": [
@@ -46,12 +46,12 @@
       "path": "space.2"
     },
     {
-      "kind": "written-generated",
+      "kind": "overridden-by-generator",
       "detail": {
         "path": "space.2",
         "from": "space",
         "extension": ["com.example", "steps"],
-        "written": "token"
+        "declaredAs": "token"
       },
       "span": { "file": "roomy.json", "valueAfter": "\"2\":" },
       "relatedInformation": [

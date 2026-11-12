@@ -1,18 +1,18 @@
 import type { ParseOptions, TokenType, ValueByType } from "../model.js";
 import { isJsonObject } from "./json.js";
-import type { ValueErrorCode, ValueErrorFacts } from "./value-errors.js";
+import type { ValueErrorCode, ValueErrorDetailByCode } from "./value-errors.js";
 
 export type Problem = {
-    [R in ValueErrorCode]: { reason: R } & ValueErrorFacts[R];
+    [R in ValueErrorCode]: { reason: R } & ValueErrorDetailByCode[R];
 }[ValueErrorCode];
 
 export type BareReason = {
-    [R in ValueErrorCode]: keyof ValueErrorFacts[R] extends never ? R : never;
+    [R in ValueErrorCode]: keyof ValueErrorDetailByCode[R] extends never ? R : never;
 }[ValueErrorCode];
 
 type ValueReason = {
-    [R in ValueErrorCode]: ValueErrorFacts[R] extends { value: unknown }
-        ? { value: unknown } extends ValueErrorFacts[R]
+    [R in ValueErrorCode]: ValueErrorDetailByCode[R] extends { value: unknown }
+        ? { value: unknown } extends ValueErrorDetailByCode[R]
             ? R
             : never
         : never;

@@ -11,7 +11,7 @@
           "path": "alias",
           "type": "number",
           "description": "Same as base",
-          "asWritten": { "value": { "$ref": "#/base/$value" }, "type": "number" },
+          "original": { "value": { "$ref": "#/base/$value" }, "type": "number" },
           "resolved": 4,
           "definitions": [
             { "source": 0, "span": { "file": "tokens.json", "valueAfter": "\"alias\":" } }
@@ -21,7 +21,7 @@
         {
           "path": "blue-red",
           "type": "number",
-          "asWritten": { "value": { "$ref": "#/blue/$value/components/0" }, "type": "number" },
+          "original": { "value": { "$ref": "#/blue/$value/components/0" }, "type": "number" },
           "resolved": 0.2
         },
         {
@@ -59,7 +59,7 @@
     },
     {
       "kind": "not-a-value",
-      "detail": { "ref": "#/base", "corrected": "#/base/$value" },
+      "detail": { "ref": "#/base", "suggestion": "#/base/$value" },
       "span": { "file": "tokens.json", "text": "\"#/base\"" },
       "path": "stops-at-token"
     },

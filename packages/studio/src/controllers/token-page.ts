@@ -29,7 +29,7 @@ export interface PlaceRow {
 export function placeRows(tokens: DesignTokens, path: string): PlaceRow[] {
     return tokens.getDefinitions(path).map((place) => ({
         label: labelOf(place),
-        value: isJsonObject(place.asWritten) ? place.asWritten.$value : undefined,
+        value: isJsonObject(place.json) ? place.json.$value : undefined,
         at: place.span,
     }));
 }
@@ -91,8 +91,7 @@ export function valueView(
         }
         const offer = offered.find((each) => each.label === label);
         if (!offer) return [];
-        const inForce = tokens.getPermutation(offer.input).getToken(path)
-            ?.winningDefinition.asWritten;
+        const inForce = tokens.getPermutation(offer.input).getToken(path)?.winningDefinition.json;
         return [
             {
                 key,

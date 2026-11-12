@@ -71,7 +71,7 @@ describe("scale generator", () => {
             })),
         ).toEqual([
             {
-                kind: "written-generated",
+                kind: "overridden-by-generator",
                 path: "size.md",
                 message: "`size.md` is made by `sh.sugarcube.scale` on `size`",
                 help: undefined,

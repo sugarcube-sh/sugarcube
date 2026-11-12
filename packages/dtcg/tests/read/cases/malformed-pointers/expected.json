@@ -7,7 +7,7 @@
       "detail": {
         "ref": "#g",
         "reason": "no-leading-slash",
-        "corrected": "#/g"
+        "suggestion": "#/g"
       },
       "span": {
         "file": "tokens.json",
@@ -21,7 +21,7 @@
       "detail": {
         "ref": "#color/ink/$value/colorSpace",
         "reason": "no-leading-slash",
-        "corrected": "#/color/ink/$value/colorSpace"
+        "suggestion": "#/color/ink/$value/colorSpace"
       },
       "span": {
         "file": "tokens.json",
@@ -34,7 +34,7 @@
       "detail": {
         "ref": "#color/ink",
         "reason": "no-leading-slash",
-        "corrected": "#/color/ink/$value"
+        "suggestion": "#/color/ink/$value"
       },
       "span": {
         "file": "tokens.json",
@@ -47,7 +47,7 @@
       "detail": {
         "ref": "#/a~b/$value",
         "reason": "bad-escape",
-        "corrected": "#/a~0b/$value"
+        "suggestion": "#/a~0b/$value"
       },
       "span": {
         "file": "tokens.json",

@@ -34,10 +34,10 @@ describe("rebase", () => {
 
         expect(session.rebase(fresh)).toEqual([]);
         expect(
-            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+            session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(red);
         expect(
-            session.tokens.getPermutation().getToken("color.brand.600")?.asWritten?.value,
+            session.tokens.getPermutation().getToken("color.brand.600")?.original?.value,
         ).toEqual(blue);
         expect(opsIn(session.unsaved)).toHaveLength(1);
         expect(session.changes().map((change) => change.path)).toEqual(["color.brand.500"]);
@@ -53,7 +53,7 @@ describe("rebase", () => {
         session.rebase(fresh);
         expect(session.tokens.getText("radius.json")).toBe(fresh.getText("radius.json"));
         expect(
-            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+            session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(red);
     });
 
@@ -231,7 +231,7 @@ describe("rebase", () => {
         expect(session.unsaved.steps.map((step) => step.ops.map((op) => op.file))).toEqual([
             ["radius.json"],
         ]);
-        expect(session.tokens.getPermutation().getToken("radius.md")?.asWritten?.value).toEqual({
+        expect(session.tokens.getPermutation().getToken("radius.md")?.original?.value).toEqual({
             value: 1,
             unit: "rem",
         });
@@ -390,7 +390,7 @@ describe("restore", () => {
                 theirs: expect.objectContaining({ $value: blue }),
             },
         ]);
-        expect(session.tokens.getPermutation().getToken("radius.md")?.asWritten?.value).toEqual({
+        expect(session.tokens.getPermutation().getToken("radius.md")?.original?.value).toEqual({
             value: 1,
             unit: "rem",
         });

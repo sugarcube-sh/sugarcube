@@ -67,7 +67,7 @@ function setValueIn(
     const part = options.part ?? [];
     if ("at" in placed) {
         const { at, alsoAffects } = placed;
-        const whole = isJsonObject(at.asWritten) ? at.asWritten.$value : undefined;
+        const whole = isJsonObject(at.json) ? at.json.$value : undefined;
         const checked = withPart(path, whole, part, value);
         if ("refused" in checked) return checked;
         return { ops: opsAt(tokens, at, ["$value", ...part], value), alsoAffects, moved: [] };

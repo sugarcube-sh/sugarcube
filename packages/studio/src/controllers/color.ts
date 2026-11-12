@@ -187,7 +187,7 @@ export function channelsOf(name: string): Channel[] {
     const space = spaceNamed(name);
     return space
         ? colorSpaces[space.name].map((channel) => {
-              const { min, max } = channel.inPractice ?? channel;
+              const { min, max } = channel.typicalRange ?? channel;
               const step = max - min > 1 ? 0.1 : 0.001;
               const top = channel.maxExclusive ? max - step : max;
               return { name: channel.name, min, max: top, step };
