@@ -6,7 +6,7 @@ type PlaceOp = Extract<FileOp, { kind: "set" | "add" | "remove" }>;
 export function merged(last: EditStep, next: EditStep): EditStep {
     let ops = [...last.ops];
     for (const op of next.ops) ops = withOp(ops, op);
-    return { ops, moved: [...last.moved, ...next.moved] };
+    return { ops, moves: [...last.moves, ...next.moves] };
 }
 
 function withOp(ops: FileOp[], op: FileOp): FileOp[] {

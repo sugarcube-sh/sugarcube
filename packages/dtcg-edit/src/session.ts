@@ -52,16 +52,16 @@ export function createSession(tokens: DesignTokens): Session {
         do(result: OpResult, options = {}): Committed {
             const done = commit(current, result);
             if (!done.tokens) return done;
-            const step = { ops: done.ops, moved: done.moved };
+            const step = { ops: done.ops, moves: done.moves };
             const last = history.at(-1);
             const earlier = history.slice(0, -1);
             undone = [];
             if (last?.before && options.merge !== undefined && options.merge === run) {
                 const joined = merged(last.step, step);
-                if (joined.ops.length > 0 || joined.moved.length > 0) {
+                if (joined.ops.length > 0 || joined.moves.length > 0) {
                     keep([...earlier, { step: joined, before: last.before }]);
                     current = done.tokens;
-                    ids = followed(ids, done.moved, current, counter);
+                    ids = followed(ids, done.moves, current, counter);
                 } else {
                     keep(earlier);
                     current = last.before.tokens;
@@ -71,7 +71,7 @@ export function createSession(tokens: DesignTokens): Session {
             } else {
                 keep([...history, { step, before: { tokens: current, ids } }]);
                 current = done.tokens;
-                ids = followed(ids, done.moved, current, counter);
+                ids = followed(ids, done.moves, current, counter);
                 run = options.merge;
             }
             changed();
@@ -105,7 +105,7 @@ export function createSession(tokens: DesignTokens): Session {
             changed();
         },
         changes() {
-            return current.getChangesSince(opened, { moved: movesIn(unsaved.steps) });
+            return current.getChangesSince(opened, { moves: movesIn(unsaved.steps) });
         },
         markSaved(saved) {
             const count = saved ? leadingSteps(saved, unsaved) : unsaved.steps.length;
@@ -168,7 +168,7 @@ export function createSession(tokens: DesignTokens): Session {
         const steps = earlier.map((each) => each.step);
         const { tokens: before, skipped } = applyStepsThatFit(opened, steps);
         if (skipped.length > 0) throw new Error(thrown.stepsNoLongerFit);
-        const known = unmoved(ids, step.moved);
+        const known = unmoved(ids, step.moves);
         return { tokens: before, ids: followed(openedIds, movesIn(steps), before, counter, known) };
     }
 }
@@ -189,9 +189,9 @@ interface Undone {
     readonly after: Version;
 }
 
-function unmoved(ids: Ids, moved: readonly Move[]): Ids {
+function unmoved(ids: Ids, moves: readonly Move[]): Ids {
     const back: Move[] = [];
-    for (const { from, to } of moved) back.unshift({ from: to, to: from });
+    for (const { from, to } of moves) back.unshift({ from: to, to: from });
     const byId = new Map<string, string>();
     const byPath = new Map<string, string>();
     for (const [id, path] of ids.byId) {
@@ -209,7 +209,7 @@ interface Ids {
 
 function followed(
     ids: Ids | undefined,
-    moved: readonly Move[],
+    moves: readonly Move[],
     tokens: DesignTokens,
     counter: { made: number },
     known?: Ids,
@@ -223,7 +223,7 @@ function followed(
     };
     const from = ids?.byId ?? new Map([...paths].map((path) => [path, path]));
     for (const [id, path] of from) {
-        const now = tokenPath.applyMoves(path, moved);
+        const now = tokenPath.applyMoves(path, moves);
         if (paths.has(now)) set(id, now);
     }
     const taken = (id: string) => byId.has(id) || (known?.byId.has(id) ?? false);
@@ -248,7 +248,7 @@ function leadingSteps(saved: Edits, unsaved: Edits): number {
 }
 
 function movesIn(steps: readonly EditStep[]): Move[] {
-    return steps.flatMap((step) => step.moved);
+    return steps.flatMap((step) => step.moves);
 }
 
 function pathsIn(tokens: DesignTokens): Set<string> {

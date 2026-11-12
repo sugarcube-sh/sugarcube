@@ -59,11 +59,9 @@
       "kind": "token-and-group",
       "detail": {
         "reason": "declared",
-        "here": "group",
+        "declaredAs": "group",
         "path": "space.scale",
-        "otherFiles": [
-          "base.json"
-        ]
+        "otherFiles": ["base.json"]
       },
       "span": {
         "file": "dark.json",
@@ -90,11 +88,9 @@
       "kind": "token-and-group",
       "detail": {
         "reason": "declared",
-        "here": "token",
+        "declaredAs": "token",
         "path": "radius",
-        "otherFiles": [
-          "base.json"
-        ]
+        "otherFiles": ["base.json"]
       },
       "span": {
         "file": "dark.json",

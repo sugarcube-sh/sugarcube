@@ -20,18 +20,26 @@ import type { CSSBlock } from "./blocks.js";
  */
 export function toCSS(blocks: readonly CSSBlock[]): string {
     const rules = blocks
-        .filter(({ inRule, underSupports }) => inRule.length > 0 || underSupports.length > 0)
+        .filter(
+            ({ ruleDeclarations, supportsDeclarations }) =>
+                ruleDeclarations.length > 0 || supportsDeclarations.length > 0,
+        )
         .map(blockToCSS);
     return rules.length === 0 ? "" : `${rules.join("\n\n")}\n`;
 }
 
-function blockToCSS({ selector, atRules = [], inRule, underSupports }: CSSBlock): string {
+function blockToCSS({
+    selector,
+    atRules = [],
+    ruleDeclarations,
+    supportsDeclarations,
+}: CSSBlock): string {
     const rule = (lines: readonly { name: string; value: string }[]) => {
-        const written = lines.map(({ name, value }) => `    ${name}: ${value};`);
-        return `${[selector].flat().join(",\n")} {\n${written.join("\n")}\n}`;
+        const formatted = lines.map(({ name, value }) => `    ${name}: ${value};`);
+        return `${[selector].flat().join(",\n")} {\n${formatted.join("\n")}\n}`;
     };
     const conditions = new Map<string, { name: string; value: string }[]>();
-    for (const { name, supports = [] } of underSupports) {
+    for (const { name, supports = [] } of supportsDeclarations) {
         for (const { condition, value } of supports) {
             const lines = conditions.get(condition) ?? [];
             lines.push({ name, value });
@@ -39,7 +47,7 @@ function blockToCSS({ selector, atRules = [], inRule, underSupports }: CSSBlock)
         }
     }
     const css = [
-        ...(inRule.length > 0 ? [rule(inRule)] : []),
+        ...(ruleDeclarations.length > 0 ? [rule(ruleDeclarations)] : []),
         ...[...conditions].map(
             ([condition, lines]) => `@supports ${condition} {\n${indent(rule(lines))}\n}`,
         ),

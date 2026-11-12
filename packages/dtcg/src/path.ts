@@ -188,15 +188,15 @@ export const tokenPath = {
      * Moves are made in order. Moving a group moves everything inside it.
      *
      * @param path - The path, such as `"color.blue.500"`.
-     * @param moved - The {@link Move}s, such as `[{ from: "color.blue", to: "color.azure" }]`.
+     * @param moves - The {@link Move}s, such as `[{ from: "color.blue", to: "color.azure" }]`.
      *
      * @example
      * // After renaming color.blue
      * tokenPath.applyMoves("color.blue.500", [{ from: "color.blue", to: "color.azure" }])
      * // => "color.azure.500"
      */
-    applyMoves(path: string, moved: readonly Move[]): string {
-        return moved.reduce((current, { from, to }) => {
+    applyMoves(path: string, moves: readonly Move[]): string {
+        return moves.reduce((current, { from, to }) => {
             if (current === from) return to;
             const rest = tokenPath.relative(from, current);
             return rest === undefined ? current : `${to}.${rest}`;

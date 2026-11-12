@@ -159,7 +159,7 @@ describe("a save to GitHub", () => {
                         },
                         { kind: "deleteFile", file: "dark.json", was: DARK },
                     ],
-                    moved: [],
+                    moves: [],
                 },
             ],
         };

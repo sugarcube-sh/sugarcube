@@ -17,7 +17,7 @@
             "from": "space",
             "extension": ["com.example", "steps"]
           },
-          "asWritten": null
+          "original": null
         },
         {
           "path": "space.2",
@@ -29,7 +29,7 @@
             "from": "space",
             "extension": ["com.example", "steps"]
           },
-          "asWritten": null,
+          "original": null,
           "definitions": [
             {
               "source": 0,
@@ -55,7 +55,7 @@
             "from": "space",
             "extension": ["com.example", "steps"]
           },
-          "asWritten": null,
+          "original": null,
           "definitions": [
             {
               "source": 0,
@@ -78,12 +78,12 @@
   ],
   "diagnostics": [
     {
-      "kind": "written-generated",
+      "kind": "overridden-by-generator",
       "detail": {
         "path": "space.2",
         "from": "space",
         "extension": ["com.example", "steps"],
-        "written": "token"
+        "declaredAs": "token"
       },
       "span": {
         "file": "tokens.json",

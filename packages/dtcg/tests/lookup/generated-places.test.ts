@@ -33,10 +33,7 @@ describe("generated tokens across permutations", () => {
     it("is one reference to what it references, in every permutation", () => {
         const references = tokens.getReferencesTo("base");
         expect(
-            references.map(({ writtenInPaths, permutations }) => [
-                writtenInPaths,
-                permutations.label,
-            ]),
+            references.map(({ ownerPaths, permutations }) => [ownerPaths, permutations.label]),
         ).toStrictEqual([[["g.a"], "every permutation"]]);
     });
 
@@ -68,9 +65,9 @@ describe("generated tokens across permutations", () => {
             },
             { generators: [two] },
         );
-        expect(
-            both.getReferencesTo("base").map(({ writtenInPaths }) => writtenInPaths),
-        ).toStrictEqual([["g.a", "g.b"]]);
+        expect(both.getReferencesTo("base").map(({ ownerPaths }) => ownerPaths)).toStrictEqual([
+            ["g.a", "g.b"],
+        ]);
     });
 });
 

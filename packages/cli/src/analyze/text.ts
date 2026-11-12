@@ -123,7 +123,7 @@ export function impactHeading({ path, written }: Impact): string {
     const values = [
         ...new Set(
             written.flatMap(({ token }) => {
-                const valueAsWritten = token.asWritten?.value;
+                const valueAsWritten = token.original?.value;
                 return typeof valueAsWritten === "string" ? [valueAsWritten] : [];
             }),
         ),

@@ -4,7 +4,7 @@ import { type CSSValueOptions, type Replacement, type TypographyCSS, toCSSValue 
 import { type CSSNaming, toCustomPropertyName } from "./custom-property.js";
 
 /** A value written as CSS, with the tokens it uses. */
-export interface CSSWritten {
+export interface CSSResult {
     readonly css: string | TypographyCSS;
     readonly dependencies: readonly Token[];
 }
@@ -20,21 +20,21 @@ export interface CSSWritten {
  *
  * @example
  * // Mix the token's value with white
- * write`color-mix(in oklch, ${written} 80%, white)`
+ * write`color-mix(in oklch, ${value} 80%, white)`
  */
 export type CSSTemplate = (
     strings: TemplateStringsArray,
-    ...parts: readonly (CSSWritten | Token | string | number)[]
-) => CSSWritten;
+    ...parts: readonly (CSSResult | Token | string | number)[]
+) => CSSResult;
 
 /**
  * What to declare for browsers that lack a feature.
  *
- * `unless` is the `@supports` condition for the feature, such as `"(color: oklch(0 0 0))"`.
+ * `condition` is the `@supports` condition for the feature, such as `"(color: oklch(0 0 0))"`.
  */
 export interface CSSFallback {
-    readonly written: CSSWritten;
-    readonly unless: string;
+    readonly value: CSSResult;
+    readonly condition: string;
 }
 
 /**
@@ -53,33 +53,33 @@ export interface CSSWriterOptions {
      *
      * @example
      * // Wrap a gradient's stops in linear-gradient()
-     * writeValue: (token, { written, write }) =>
+     * writeValue: (token, { value, write }) =>
      *     token.type === "gradient" && !token.getReferenceAt()
-     *         ? write`linear-gradient(${written})`
-     *         : written
+     *         ? write`linear-gradient(${value})`
+     *         : value
      */
     writeValue?: (
         token: Token,
-        tools: { readonly written: CSSWritten; readonly write: CSSTemplate },
-    ) => CSSWritten | string | undefined;
+        tools: { readonly value: CSSResult; readonly write: CSSTemplate },
+    ) => CSSResult | string | undefined;
     /**
      * Adds a fallback for browsers that lack a feature.
      *
-     * The fallback is declared, and the usual value goes under `@supports`. `writeWith` writes the
+     * The fallback is declared, and the usual value goes under `@supports`. `rewrite` writes the
      * value with other color settings.
      *
      * @example
      * // A hex fallback for browsers without oklch()
-     * writeFallback: (token, { writeWith }) => {
-     *     const hex = writeWith({ colors: "hex" });
-     *     return hex && { written: hex, unless: "(color: oklch(0 0 0))" };
+     * writeFallback: (token, { rewrite }) => {
+     *     const hex = rewrite({ colors: "hex" });
+     *     return hex && { value: hex, condition: "(color: oklch(0 0 0))" };
      * }
      */
     writeFallback?: (
         token: Token,
         tools: {
-            readonly written: CSSWritten;
-            writeWith(options: Pick<CSSValueOptions, "colors">): CSSWritten | undefined;
+            readonly value: CSSResult;
+            rewrite(options: Pick<CSSValueOptions, "colors">): CSSResult | undefined;
         },
     ) => CSSFallback | undefined;
     /**
@@ -118,15 +118,15 @@ export interface CSSDeclaration {
  * `"skipped"` means `skip` left it out.
  * `"no value"` means it has none, or `writeValue` returned `undefined`.
  */
-export interface CSSNotWritten {
+export interface CSSUndeclared {
     readonly token: Token;
-    readonly because: "skipped" | "no value";
+    readonly reason: "skipped" | "no value";
 }
 
 /** A permutation's custom properties, and the tokens that have none. */
 export interface CSSDeclarations {
     readonly declarations: readonly CSSDeclaration[];
-    readonly notWritten: readonly CSSNotWritten[];
+    readonly undeclared: readonly CSSUndeclared[];
 }
 
 /**
@@ -153,7 +153,7 @@ export interface CSSWriter {
      * createCSSWriter().getValue(light.getToken("button.background"))?.css
      * // => "var(--color-primary)"
      */
-    getValue(token: Token | undefined): CSSWritten | undefined;
+    getValue(token: Token | undefined): CSSResult | undefined;
 }
 
 type Colors = NonNullable<CSSValueOptions["colors"]>;
@@ -213,37 +213,37 @@ function declarePermutation(
 ): CSSDeclarations {
     const writer = getWriter("components");
     const declarations: CSSDeclaration[] = [];
-    const notWritten: CSSNotWritten[] = [];
+    const undeclared: CSSUndeclared[] = [];
 
     for (const token of permutation.tokens) {
         if (isSkipped(token, options)) {
-            notWritten.push({ token, because: "skipped" });
+            undeclared.push({ token, reason: "skipped" });
             continue;
         }
 
         const result = writer.writeToken(token);
         if (!result) {
-            notWritten.push({ token, because: "no value" });
+            undeclared.push({ token, reason: "no value" });
             continue;
         }
 
         declarations.push(...declareToken(token, result, options, getWriter));
     }
 
-    return { declarations, notWritten };
+    return { declarations, undeclared };
 }
 
 function declareToken(
     token: Token,
-    result: CSSWritten,
+    result: CSSResult,
     options: CSSWriterOptions,
     getWriter: GetWriter,
 ): CSSDeclaration[] {
     const fallback = options.writeFallback?.(token, {
-        written: result,
-        writeWith: ({ colors = "components" }) => getWriter(colors).writeToken(token),
+        value: result,
+        rewrite: ({ colors = "components" }) => getWriter(colors).writeToken(token),
     });
-    const declared = fallback?.written ?? result;
+    const declared = fallback?.value ?? result;
     const dependencies = fallback
         ? unique([...declared.dependencies, ...result.dependencies])
         : result.dependencies;
@@ -252,7 +252,7 @@ function declareToken(
     return splitByProperty(declared.css).map(([cssProperty, value]) => {
         const original = originalByProperty.get(cssProperty);
         const differs = fallback !== undefined && original !== undefined && original !== value;
-        const supports = differs ? [{ condition: fallback.unless, value: original }] : undefined;
+        const supports = differs ? [{ condition: fallback.condition, value: original }] : undefined;
         const name = toCustomPropertyName(token.path, { ...options.naming, cssProperty });
         return toDeclaration({ token, name, cssProperty, value, supports, dependencies });
     });
@@ -273,27 +273,27 @@ function toDeclaration(fields: DeclarationFields): CSSDeclaration {
 class ColorModeWriter {
     #colors: Colors;
     #options: CSSWriterOptions;
-    #results = new Map<Token, CSSWritten | undefined>();
+    #results = new Map<Token, CSSResult | undefined>();
 
     constructor(colors: Colors, options: CSSWriterOptions) {
         this.#colors = colors;
         this.#options = options;
     }
 
-    writeToken(token: Token): CSSWritten | undefined {
+    writeToken(token: Token): CSSResult | undefined {
         return getOrCompute(this.#results, token, () => this.#writeTokenUncached(token));
     }
 
-    #writeTokenUncached(token: Token): CSSWritten | undefined {
+    #writeTokenUncached(token: Token): CSSResult | undefined {
         const defaultValue = this.#writeDefaultValue(token);
         const { writeValue } = this.#options;
         if (!defaultValue || !writeValue) return defaultValue;
 
-        const custom = writeValue(token, { written: defaultValue, write: this.#template });
+        const custom = writeValue(token, { value: defaultValue, write: this.#template });
         return toCSSResult(custom);
     }
 
-    #writeDefaultValue(token: Token): CSSWritten | undefined {
+    #writeDefaultValue(token: Token): CSSResult | undefined {
         if (token.resolved === undefined) return undefined;
 
         const aliasTarget = token.getReferenceAt()?.pointsToWholeToken;
@@ -307,11 +307,11 @@ class ColorModeWriter {
             const target = ref.pointsToWholeToken;
             if (!target) return undefined;
 
-            const written = this.#writeReference(target, cssProperty);
-            if (!written) return undefined;
+            const referenceCSS = this.#writeReference(target, cssProperty);
+            if (!referenceCSS) return undefined;
 
-            dependencies.push(...written.dependencies);
-            return written.replacement;
+            dependencies.push(...referenceCSS.dependencies);
+            return referenceCSS.replacement;
         };
 
         const css = toCSSValue(token, { replaceReference, colors: this.#colors });
@@ -338,15 +338,15 @@ class ColorModeWriter {
         let css = strings[0] ?? "";
 
         parts.forEach((part, index) => {
-            const written = this.#writeTemplatePart(part);
-            css += written.css + (strings[index + 1] ?? "");
-            dependencies.push(...written.dependencies);
+            const partCSS = this.#writeTemplatePart(part);
+            css += partCSS.css + (strings[index + 1] ?? "");
+            dependencies.push(...partCSS.dependencies);
         });
 
         return { css, dependencies: unique(dependencies) };
     };
 
-    #writeTemplatePart(part: CSSWritten | Token | string | number): PartCSS {
+    #writeTemplatePart(part: CSSResult | Token | string | number): PartCSS {
         if (typeof part === "string" || typeof part === "number") {
             return { css: String(part), dependencies: [] };
         }
@@ -391,7 +391,7 @@ function toCSSText(replacement: Replacement): string {
     return replacement.css;
 }
 
-function toCSSResult(answer: CSSWritten | string | undefined): CSSWritten | undefined {
+function toCSSResult(answer: CSSResult | string | undefined): CSSResult | undefined {
     if (typeof answer === "string") return { css: answer, dependencies: [] };
     return answer;
 }

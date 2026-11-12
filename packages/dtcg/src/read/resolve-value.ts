@@ -5,7 +5,7 @@ import type {
     JsonPath,
     Span,
     TokenType,
-    WrittenReference,
+    ParsedReference,
 } from "../model.js";
 import { isJsonObject } from "../values/json.js";
 import { toReferenceTarget } from "../values/references.js";
@@ -31,8 +31,8 @@ export interface ReferenceResolver {
         path: string,
         span: Span,
     ): void;
-    reportUnresolved(aim: ReferenceLookup, from: string, span: Span): void;
-    reportUnreachable(aim: ReferenceLookup, from: string, span: Span): void;
+    reportUnresolved(lookup: ReferenceLookup, from: string, span: Span): void;
+    reportUnreachable(lookup: ReferenceLookup, from: string, span: Span): void;
 }
 
 interface ResolveState {
@@ -118,26 +118,26 @@ function resolveReferenceValue(
         return adjusted(substitute(resolver, token, ref, ref.path, expected, use, isElement));
     }
 
-    const { pointer: written } = ref;
-    if (seen.includes(written)) {
-        resolver.report("circular-reference", { chain: [...seen, written] }, token.path, use.span);
+    const { pointer } = ref;
+    if (seen.includes(pointer)) {
+        resolver.report("circular-reference", { chain: [...seen, pointer] }, token.path, use.span);
         return UNRESOLVED;
     }
-    const aim = { reference: ref, steps: toPointerSteps(ref) };
-    const reached = followReference(aim, merged);
+    const lookup = { reference: ref, steps: toPointerSteps(ref) };
+    const target = followReference(lookup, merged);
     const unreachable = () => {
-        if (origin) resolver.reportUnresolved(aim, token.path, use.span);
-        else resolver.reportUnreachable(aim, token.path, use.span);
+        if (origin) resolver.reportUnresolved(lookup, token.path, use.span);
+        else resolver.reportUnreachable(lookup, token.path, use.span);
         return UNRESOLVED;
     };
-    if (reached.kind !== "token" && reached.kind !== "part") return unreachable();
+    if (target.kind !== "token" && target.kind !== "part") return unreachable();
 
-    const whole = reached.kind === "token";
+    const whole = target.kind === "token";
     if (whole && (syntax.kind === "ofType" || isElement)) {
-        return adjusted(substitute(resolver, token, ref, reached.path, expected, use, isElement));
+        return adjusted(substitute(resolver, token, ref, target.path, expected, use, isElement));
     }
-    const { valueAsWritten } = reached.token;
-    const stepped = whole ? { value: valueAsWritten } : getAtPath(valueAsWritten, reached.inside);
+    const { originalValue } = target.token;
+    const stepped = whole ? { value: originalValue } : getAtPath(originalValue, target.inside);
     if (!stepped) return unreachable();
     const raw = stepped.value;
 
@@ -145,14 +145,14 @@ function resolveReferenceValue(
     const { result, notes } = readValue.readSlot(token, slot, raw, input);
     if (!result.ok) return UNRESOLVED;
     const inner = notes.references.map((reference) => ({ reference, occurrence: use }));
-    const deeper = { token, seen: [...seen, written], origin: use };
+    const deeper = { token, seen: [...seen, pointer], origin: use };
     return resolveReferences(resolver, deeper, result.value, inner, notes.deferredReads);
 }
 
 function substitute(
     resolver: ReferenceResolver,
     token: MergedToken,
-    reference: WrittenReference,
+    reference: ParsedReference,
     path: string,
     expected: TokenType,
     use: Occurrence,

@@ -33,7 +33,7 @@
         {
           "path": "button-primary.state.hover",
           "type": "number",
-          "asWritten": {
+          "original": {
             "value": 30
           }
         },
@@ -66,7 +66,7 @@
         },
         {
           "path": "button-large.background",
-          "asWritten": {
+          "original": {
             "value": 9
           },
           "inherited": {
@@ -75,7 +75,7 @@
         },
         {
           "path": "button-large.state.hover",
-          "asWritten": {
+          "original": {
             "value": 30
           },
           "inherited": {
@@ -111,7 +111,7 @@
           "description": "Buttons",
           "references": [
             {
-              "asWritten": { "syntax": "curly-brace", "path": "button" },
+              "parsed": { "syntax": "curly-brace", "path": "button" },
               "span": {
                 "file": "tokens.json",
                 "valueAfter": "\"$extends\":"
@@ -147,7 +147,7 @@
           "description": "Buttons",
           "references": [
             {
-              "asWritten": { "syntax": "curly-brace", "path": "button-primary" },
+              "parsed": { "syntax": "curly-brace", "path": "button-primary" },
               "span": {
                 "file": "tokens.json",
                 "valueAfter": "\"$extends\":",

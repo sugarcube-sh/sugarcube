@@ -133,10 +133,10 @@ export function runGenerators(
                 continue;
             }
             const from = { from: groupPath, extension: generator.extension };
-            for (const made of result.value) {
-                const problem = tokenPath.findNameProblem(made.name);
+            for (const generated of result.value) {
+                const problem = tokenPath.findNameProblem(generated.name);
                 if (problem) {
-                    const detail = { name: made.name, ...problem };
+                    const detail = { name: generated.name, ...problem };
                     diagnostics.add(
                         diagnostic("invalid-name", detail, {
                             span: toSpan(extension.json, extension.node),
@@ -146,11 +146,11 @@ export function runGenerators(
                     );
                     continue;
                 }
-                const path = tokenPath.join(groupPath, made.name);
+                const path = tokenPath.join(groupPath, generated.name);
                 if (added.has(path)) continue;
-                const written = findExistingSpans(merged, path);
-                if (written) {
-                    const detail = { path, ...from, written: written.kind };
+                const existing = findExistingSpans(merged, path);
+                if (existing) {
+                    const detail = { path, ...from, declaredAs: existing.kind };
                     const relatedInformation = [
                         {
                             message: relatedMessages.madeByThisExtension,
@@ -158,9 +158,9 @@ export function runGenerators(
                             path: extension.group,
                         },
                     ];
-                    for (const span of written.spans) {
+                    for (const span of existing.spans) {
                         diagnostics.add(
-                            diagnostic("written-generated", detail, {
+                            diagnostic("overridden-by-generator", detail, {
                                 span,
                                 path,
                                 relatedInformation,
@@ -170,7 +170,7 @@ export function runGenerators(
                     }
                     merged.order.delete(path);
                 }
-                added.set(path, createGeneratedToken(path, made, from, extension));
+                added.set(path, createGeneratedToken(path, generated, from, extension));
             }
         }
     }
@@ -200,10 +200,10 @@ function findGeneratorExtension(
     settings: Settings,
     extension: Generator["extension"],
 ): Extension | undefined {
-    const written = settings.extensionLocations?.[extension[0]];
-    const found = findExtension(settings.extensions, written, extension);
-    if (!written || !found) return undefined;
-    const { json, source, group } = written;
+    const location = settings.extensionLocations?.[extension[0]];
+    const found = findExtension(settings.extensions, location, extension);
+    if (!location || !found) return undefined;
+    const { json, source, group } = location;
     return { ...found, json, source, group };
 }
 
@@ -217,7 +217,7 @@ function createGeneratedToken(
         path,
         json,
         value: node,
-        valueAsWritten: $value,
+        originalValue: $value,
         reference: parseReference($value),
         span: toSpan(json, node),
         nameSpan: toSpan(json, getKeyNode(node)),

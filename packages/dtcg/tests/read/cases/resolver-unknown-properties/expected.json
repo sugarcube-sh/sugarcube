@@ -18,7 +18,7 @@
       "detail": {
         "property": "descripton",
         "owner": "set",
-        "similar": "description"
+        "suggestion": "description"
       },
       "span": {
         "file": "tokens.resolver.json",
@@ -30,7 +30,7 @@
       "detail": {
         "property": "defualt",
         "owner": "modifier",
-        "similar": "default"
+        "suggestion": "default"
       },
       "span": {
         "file": "tokens.resolver.json",
@@ -64,7 +64,7 @@
       "detail": {
         "property": "sourcse",
         "owner": "set",
-        "similar": "sources"
+        "suggestion": "sources"
       },
       "span": {
         "file": "tokens.resolver.json",

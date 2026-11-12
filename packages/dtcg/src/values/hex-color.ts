@@ -1,6 +1,6 @@
 import type { ColorValue } from "../model.js";
 import { colorDecimals, roundToDigits } from "./decimals.js";
-import type { ValueErrorFacts } from "./value-errors.js";
+import type { ValueErrorDetailByCode } from "./value-errors.js";
 
 function parseHexChannels(hex: string): {
     r: number;
@@ -18,26 +18,31 @@ function parseHexChannels(hex: string): {
 const READ_FROM_HEX_STRING = Symbol.for("@sugarcube-sh/dtcg/hex-string");
 
 export function parseHexColor(hex: string): ColorValue {
-    const { r, g, b, a, hex: kept } = parseHexChannels(hex);
-    const color: ColorValue = { colorSpace: "srgb", components: [r, g, b], alpha: a, hex: kept };
+    const { r, g, b, a, hex: parsedHex } = parseHexChannels(hex);
+    const color: ColorValue = {
+        colorSpace: "srgb",
+        components: [r, g, b],
+        alpha: a,
+        hex: parsedHex,
+    };
     Object.defineProperty(color, READ_FROM_HEX_STRING, { value: hex });
     return color;
 }
 
 export function getOriginalHex(color: ColorValue): string | undefined {
-    const written: unknown = (color as { [READ_FROM_HEX_STRING]?: unknown })[READ_FROM_HEX_STRING];
-    return typeof written === "string" ? written : undefined;
+    const original: unknown = (color as { [READ_FROM_HEX_STRING]?: unknown })[READ_FROM_HEX_STRING];
+    return typeof original === "string" ? original : undefined;
 }
 
-export function hexToColorObject(hex: string): ValueErrorFacts["hex-string"]["asObject"] {
-    const { r, g, b, a, hex: kept } = parseHexChannels(hex);
+export function hexToColorObject(hex: string): ValueErrorDetailByCode["hex-string"]["asObject"] {
+    const { r, g, b, a, hex: parsedHex } = parseHexChannels(hex);
     const round = (value: number) => roundToDigits(value, colorDecimals);
     const withAlpha = hex.length === 5 || hex.length === 9;
     return {
         colorSpace: "srgb",
         components: [round(r), round(g), round(b)],
         ...(withAlpha && { alpha: round(a) }),
-        hex: kept,
+        hex: parsedHex,
     };
 }
 

@@ -9,8 +9,8 @@ declare function showPreview(tokens: DesignTokens): void;
 
 const tokens = session.tokens;
 const steps = (tokens.getPermutation().getGroup("space")?.childTokens ?? []).flatMap(({ path }) =>
-    tokens.getDefinitions(path).flatMap(({ span, winsIn }) => {
-        const there = winsIn[0]?.getToken(path);
+    tokens.getDefinitions(path).flatMap(({ span, winningPermutations }) => {
+        const there = winningPermutations[0]?.getToken(path);
         return there?.type === "dimension" &&
             there.resolved &&
             !there.getReferenceAt() &&

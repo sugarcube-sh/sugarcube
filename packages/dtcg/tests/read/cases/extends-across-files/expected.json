@@ -13,7 +13,7 @@
         {
           "path": "card.raised",
           "type": "number",
-          "asWritten": {
+          "original": {
             "value": 1
           },
           "inherited": {
@@ -42,7 +42,7 @@
         {
           "path": "card.raised",
           "type": "number",
-          "asWritten": {
+          "original": {
             "value": 2
           },
           "inherited": {

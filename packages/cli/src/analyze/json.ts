@@ -17,7 +17,7 @@ export function impactJSON({ path, written, dependents, uses }: Impact) {
     return {
         token: path,
         written: written.map(({ token, file, permutations }) => ({
-            value: token.asWritten?.value,
+            value: token.original?.value,
             type: token.type,
             file,
             permutations: permutations.inputs,

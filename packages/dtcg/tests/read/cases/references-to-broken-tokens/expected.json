@@ -39,7 +39,7 @@
       "kind": "unknown-type",
       "detail": {
         "type": "colour",
-        "similar": "color"
+        "suggestion": "color"
       },
       "span": {
         "file": "tokens.json",

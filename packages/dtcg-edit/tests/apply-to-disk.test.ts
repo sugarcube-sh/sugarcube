@@ -53,9 +53,7 @@ describe("applyToDisk", () => {
         );
 
         if (!result.tokens) throw new Error(JSON.stringify(result));
-        expect(result.tokens.getPermutation().getToken("radius.md")?.asWritten?.value).toEqual(
-            half,
-        );
+        expect(result.tokens.getPermutation().getToken("radius.md")?.original?.value).toEqual(half);
         expect(result.tokens.toMemory().files).toEqual(
             (await readFromDisk(entryFile)).toMemory().files,
         );
@@ -194,8 +192,8 @@ describe("applyToDisk", () => {
             { entryFile },
             {
                 steps: [
-                    { ops: opsOf(setValue(demo, "radius.md", half)), moved: [] },
-                    { ops: [stale], moved: [] },
+                    { ops: opsOf(setValue(demo, "radius.md", half)), moves: [] },
+                    { ops: [stale], moves: [] },
                 ],
             },
         );

@@ -23,7 +23,7 @@
           },
           "references": [
             {
-              "asWritten": { "syntax": "curly-brace", "path": "color.red" },
+              "parsed": { "syntax": "curly-brace", "path": "color.red" },
               "span": {
                 "file": "tokens.json",
                 "text": "\"{color.red}\""
@@ -46,7 +46,7 @@
           },
           "references": [
             {
-              "asWritten": { "syntax": "curly-brace", "path": "color.brand" },
+              "parsed": { "syntax": "curly-brace", "path": "color.brand" },
               "span": {
                 "file": "tokens.json",
                 "text": "\"{color.brand}\""
@@ -73,20 +73,20 @@
           },
           "references": [
             {
-              "asWritten": { "syntax": "curly-brace", "path": "semantic.danger" },
+              "parsed": { "syntax": "curly-brace", "path": "semantic.danger" },
               "span": {
                 "file": "tokens.json",
                 "text": "\"{semantic.danger}\""
               },
-              "writtenInProperty": ["color"]
+              "property": ["color"]
             },
             {
-              "asWritten": { "syntax": "curly-brace", "path": "space.sm" },
+              "parsed": { "syntax": "curly-brace", "path": "space.sm" },
               "span": {
                 "file": "tokens.json",
                 "text": "\"{space.sm}\""
               },
-              "writtenInProperty": ["width"]
+              "property": ["width"]
             }
           ]
         },
@@ -120,22 +120,22 @@
           ],
           "references": [
             {
-              "asWritten": { "syntax": "curly-brace", "path": "color.brand" },
+              "parsed": { "syntax": "curly-brace", "path": "color.brand" },
               "span": {
                 "file": "tokens.json",
                 "text": "\"{color.brand}\"",
                 "occurrence": 2
               },
-              "writtenInProperty": [0, "color"]
+              "property": [0, "color"]
             },
             {
-              "asWritten": { "syntax": "curly-brace", "path": "space.sm" },
+              "parsed": { "syntax": "curly-brace", "path": "space.sm" },
               "span": {
                 "file": "tokens.json",
                 "text": "\"{space.sm}\"",
                 "occurrence": 2
               },
-              "writtenInProperty": [0, "offsetX"]
+              "property": [0, "offsetX"]
             }
           ]
         }

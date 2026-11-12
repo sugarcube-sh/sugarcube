@@ -34,10 +34,10 @@ describe("rebase", () => {
 
         expect(session.rebase(fresh)).toEqual([]);
         expect(
-            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+            session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(red);
         expect(
-            session.tokens.getPermutation().getToken("color.brand.600")?.asWritten?.value,
+            session.tokens.getPermutation().getToken("color.brand.600")?.original?.value,
         ).toEqual(blue);
         expect(opsIn(session.unsaved)).toHaveLength(1);
         expect(session.changes().map((change) => change.path)).toEqual(["color.brand.500"]);
@@ -53,7 +53,7 @@ describe("rebase", () => {
         session.rebase(fresh);
         expect(session.tokens.getText("radius.json")).toBe(fresh.getText("radius.json"));
         expect(
-            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+            session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(red);
     });
 
@@ -231,7 +231,7 @@ describe("rebase", () => {
         expect(session.unsaved.steps.map((step) => step.ops.map((op) => op.file))).toEqual([
             ["radius.json"],
         ]);
-        expect(session.tokens.getPermutation().getToken("radius.md")?.asWritten?.value).toEqual({
+        expect(session.tokens.getPermutation().getToken("radius.md")?.original?.value).toEqual({
             value: 1,
             unit: "rem",
         });
@@ -272,7 +272,7 @@ describe("rebase", () => {
         ]);
 
         expect(session.rebase(fresh)).toEqual([]);
-        expect(session.unsaved.steps.flatMap((step) => step.moved)).toEqual([
+        expect(session.unsaved.steps.flatMap((step) => step.moves)).toEqual([
             { from: "radius.md", to: "radius.medium" },
             { from: "radius.medium", to: "radius.mid" },
         ]);
@@ -390,7 +390,7 @@ describe("restore", () => {
                 theirs: expect.objectContaining({ $value: blue }),
             },
         ]);
-        expect(session.tokens.getPermutation().getToken("radius.md")?.asWritten?.value).toEqual({
+        expect(session.tokens.getPermutation().getToken("radius.md")?.original?.value).toEqual({
             value: 1,
             unit: "rem",
         });
@@ -423,8 +423,8 @@ describe("restore", () => {
 
         session.restore({
             steps: [
-                { ops: [fits, stale], moved: [] },
-                { ops: [later], moved: [] },
+                { ops: [fits, stale], moves: [] },
+                { ops: [later], moves: [] },
             ],
         });
 
@@ -435,7 +435,7 @@ describe("restore", () => {
             value: 2,
             unit: "rem",
         });
-        expect(session.unsaved.steps).toEqual([{ ops: [later], moved: [] }]);
+        expect(session.unsaved.steps).toEqual([{ ops: [later], moves: [] }]);
     });
 
     it("puts back a step whole or not at all after a reload", () => {
@@ -458,7 +458,7 @@ describe("restore", () => {
 
         const session = createSession(elsewhere);
         session.restore(before.unsaved);
-        expect(session.unsaved.steps.flatMap((step) => step.moved)).toEqual([
+        expect(session.unsaved.steps.flatMap((step) => step.moves)).toEqual([
             { from: "radius.sm", to: "radius.small" },
         ]);
     });

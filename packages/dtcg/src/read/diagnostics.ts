@@ -45,15 +45,15 @@ export class DiagnosticCollector {
     add(problem: Diagnostic, input?: Input): Diagnostic {
         const { span } = problem;
         const spot = span === undefined ? "" : `${span.file}:${span.offset}:${span.length}`;
-        const here = this.#bySpan.get(spot);
-        const kept = here?.find((each) => isEqualJson(each, problem)) ?? problem;
-        if (kept === problem) {
-            if (here) here.push(problem);
+        const atSpan = this.#bySpan.get(spot);
+        const stored = atSpan?.find((each) => isEqualJson(each, problem)) ?? problem;
+        if (stored === problem) {
+            if (atSpan) atSpan.push(problem);
             else this.#bySpan.set(spot, [problem]);
             this.#all.push(problem);
         }
-        if (input !== undefined) this.addInput(kept, input);
-        return kept;
+        if (input !== undefined) this.addInput(stored, input);
+        return stored;
     }
 
     addAll(problems: readonly Diagnostic[], input?: Input): Diagnostic[] {

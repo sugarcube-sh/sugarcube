@@ -32,7 +32,7 @@ describe("createSession", () => {
         ]);
         expect(session.unsaved).not.toHaveProperty("files");
         expect(
-            session.tokens.getPermutation().getToken("color.brand.500")?.asWritten?.value,
+            session.tokens.getPermutation().getToken("color.brand.500")?.original?.value,
         ).toEqual(red);
         expect(session.opened).toBe(demo);
     });
@@ -59,7 +59,7 @@ describe("createSession", () => {
             "color.json",
             "dark.json",
         ]);
-        expect(session.unsaved.steps[0]?.moved).toEqual([
+        expect(session.unsaved.steps[0]?.moves).toEqual([
             { from: "color.text.default", to: "color.text.body" },
         ]);
     });
@@ -94,7 +94,7 @@ describe("createSession", () => {
 
         expect(session.changes()).toEqual(
             session.tokens.getChangesSince(demo, {
-                moved: session.unsaved.steps.flatMap((step) => step.moved),
+                moves: session.unsaved.steps.flatMap((step) => step.moves),
             }),
         );
         expect(session.changes().map((change) => [change.kind, change.path])).toContainEqual([

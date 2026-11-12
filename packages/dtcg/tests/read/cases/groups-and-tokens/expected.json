@@ -7,7 +7,7 @@
         {
           "path": "color.accent.$root",
           "type": "color",
-          "asWritten": {
+          "original": {
             "value": {
               "colorSpace": "srgb",
               "components": [0.867, 0, 0]
@@ -33,7 +33,7 @@
               "note": true
             }
           },
-          "asWritten": {
+          "original": {
             "value": {
               "colorSpace": "srgb",
               "components": [1, 0.133, 0.133]
@@ -53,7 +53,7 @@
         {
           "path": "opacity.half",
           "type": "number",
-          "asWritten": {
+          "original": {
             "value": 0.5
           },
           "definitions": [
@@ -69,7 +69,7 @@
         {
           "path": "space.sm",
           "type": "dimension",
-          "asWritten": {
+          "original": {
             "value": {
               "value": 4,
               "unit": "px"
@@ -111,7 +111,7 @@
         {
           "path": "color.accent",
           "type": "color",
-          "asWritten": null,
+          "original": null,
           "definitions": [
             {
               "source": 0,

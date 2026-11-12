@@ -32,7 +32,7 @@
       "detail": {
         "ref": "#sets/loop",
         "reason": "no-leading-slash",
-        "corrected": "#/sets/loop"
+        "suggestion": "#/sets/loop"
       },
       "span": {
         "file": "tokens.resolver.json",

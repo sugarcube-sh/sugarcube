@@ -60,12 +60,12 @@
   ],
   "diagnostics": [
     {
-      "kind": "written-generated",
+      "kind": "overridden-by-generator",
       "detail": {
         "path": "inset.2",
         "from": "inset",
         "extension": ["com.example", "steps"],
-        "written": "token"
+        "declaredAs": "token"
       },
       "span": {
         "file": "tokens.json",

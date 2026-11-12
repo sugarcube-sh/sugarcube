@@ -60,7 +60,7 @@ export class PermutationError extends Error {
  *         // Pick one with tokens.getPermutation({ mode: \"dark\" }), or group them with
  *         // groupPermutationsBy(tokens, …)"
  *         error.detail;
- *         // => { asked: "getToken()", modifiers: ["mode"], example: { mode: "dark" } }
+ *         // => { member: "getToken()", modifiers: ["mode"], example: { mode: "dark" } }
  *     }
  * }
  */
@@ -74,7 +74,7 @@ export class SeveralPermutationsError extends Error {
     }
 }
 
-export function getOnlyPermutation(tokens: DesignTokens, asked: string): Permutation {
+export function getOnlyPermutation(tokens: DesignTokens, member: string): Permutation {
     const [only, ...more] = tokens.permutations;
     if (only && more.length === 0) return only;
     const nonDefault = tokens.permutations.find((each) => !each.isDefault);
@@ -84,7 +84,7 @@ export function getOnlyPermutation(tokens: DesignTokens, asked: string): Permuta
             .map((context) => [context.modifier.name, context.name]),
     );
     const modifiers = allModifiers(tokens.resolver).map(({ name }) => name);
-    throw new SeveralPermutationsError({ asked, modifiers, example });
+    throw new SeveralPermutationsError({ member, modifiers, example });
 }
 
 export function findPermutation(

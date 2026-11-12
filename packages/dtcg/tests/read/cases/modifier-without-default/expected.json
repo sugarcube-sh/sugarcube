@@ -67,7 +67,7 @@
     {
       "file": "light.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "theme",
           "name": "light"
@@ -78,7 +78,7 @@
     {
       "file": "dark.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "theme",
           "name": "dark"

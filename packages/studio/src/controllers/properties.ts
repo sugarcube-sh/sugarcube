@@ -14,7 +14,7 @@ export function descriptionView(node: Token | Group, editable: boolean): Descrip
 }
 
 function takenFrom(group: Group): string | undefined {
-    const taken = group.asWritten?.description === undefined && group.description !== undefined;
+    const taken = group.original?.description === undefined && group.description !== undefined;
     return taken ? group.extends?.path : undefined;
 }
 
@@ -46,7 +46,7 @@ export function deprecationView(node: Token | Group, editable: boolean): Depreca
 }
 
 function boxFor(node: Token | Group, applies: boolean, message: string): DeprecationView["box"] {
-    if (node.asWritten?.deprecated !== undefined || !applies) {
+    if (node.original?.deprecated !== undefined || !applies) {
         return { checked: applies, untick: null, message };
     }
     const by = node.deprecatedByGroup;

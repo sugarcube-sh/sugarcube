@@ -58,5 +58,5 @@ function createIn(
                   ...(token.$description !== undefined && { $description: token.$description }),
               };
     const op: FileOp = { kind: "add", file, jsonPath: path.split("."), value };
-    return { ops: [op], alsoAffects, moved: [] };
+    return { ops: [op], alsoAffects, moves: [] };
 }

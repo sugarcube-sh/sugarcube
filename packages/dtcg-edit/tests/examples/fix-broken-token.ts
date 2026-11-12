@@ -7,7 +7,7 @@ declare let tokens: DesignTokens;
 const permutation = tokens.getPermutation();
 const t = permutation.getToken("color.brand");
 if (t?.invalid) {
-    showBroken(t.asWritten?.value, permutation.getDiagnostics(t.path));
+    showBroken(t.original?.value, permutation.getDiagnostics(t.path));
     const done = commit(tokens, setValue(tokens, t.path, "#e11d48"));
     if (done.tokens) tokens = done.tokens;
 }

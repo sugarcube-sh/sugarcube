@@ -23,7 +23,7 @@ const choicesFor = (type: TokenType | "boolean") =>
           : undefined;
 
 const t = tokens.getPermutation().getToken("border.card");
-const written = t?.asWritten?.value;
+const written = t?.original?.value;
 if (t && isComposite(t.type) && written && typeof written === "object") {
     for (const [part, type] of Object.entries(compositeParts[t.type])) {
         control(part, type, (written as Record<string, unknown>)[part], choicesFor(type));

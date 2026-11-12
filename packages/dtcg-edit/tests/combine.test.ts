@@ -44,7 +44,7 @@ describe("combine", () => {
             inTurn(demo, operations).toMemory().files,
         );
         const renamed = rename(demo, "color.brand", "primary");
-        expect(result.ops && result.moved).toEqual(renamed.ops && renamed.moved);
+        expect(result.ops && result.moves).toEqual(renamed.ops && renamed.moves);
     });
 
     it("gives what the operation gives, for one operation, and always what is left broken", () => {
@@ -66,7 +66,7 @@ describe("combine", () => {
             ops: [],
             alsoAffects: [],
             broken: [],
-            moved: [],
+            moves: [],
         });
     });
 

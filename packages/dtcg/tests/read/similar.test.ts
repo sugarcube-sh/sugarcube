@@ -38,7 +38,7 @@ describe("a missing reference's similar name", () => {
         const tokens = oneFile(json);
         const [found] = tokens.diagnostics;
         expect(found?.kind).toBe("missing-reference");
-        expect(found?.detail).not.toHaveProperty("similar");
+        expect(found?.detail).not.toHaveProperty("suggestion");
     });
 
     const pointingAt = ($ref: string, $type = "color") => {
@@ -77,11 +77,11 @@ describe("a missing reference's similar name", () => {
             "#/color/ink/$value/components/9",
             "number",
         ],
-    ])("%s", ([, $ref, $type, similar]) => {
+    ])("%s", ([, $ref, $type, suggestion]) => {
         expect(pointingAt($ref, $type)).toStrictEqual([
             {
                 kind: "missing-reference",
-                detail: { ref: $ref, from: ["uses"], ...(similar && { similar }) },
+                detail: { ref: $ref, from: ["uses"], ...(suggestion && { suggestion }) },
             },
         ]);
     });

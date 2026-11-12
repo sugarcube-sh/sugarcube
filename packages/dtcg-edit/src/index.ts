@@ -106,7 +106,7 @@ export type OpResult =
            */
           broken?: readonly string[];
           /** Tokens and groups whose path changed, such as after a {@link rename}. Empty when none did. */
-          moved: readonly Move[];
+          moves: readonly Move[];
           question?: undefined;
           refused?: undefined;
       }
@@ -440,7 +440,7 @@ export type Committed =
           /** The edits that were applied, for undo, saving, and sharing. */
           ops: readonly FileOp[];
           /** Tokens and groups whose path changed, for keeping a selection or a URL on them. */
-          moved: readonly Move[];
+          moves: readonly Move[];
           question?: undefined;
           refused?: undefined;
           conflicts?: undefined;
@@ -455,7 +455,7 @@ export type Committed =
  */
 export interface EditStep {
     readonly ops: readonly FileOp[];
-    readonly moved: readonly Move[];
+    readonly moves: readonly Move[];
 }
 
 /**

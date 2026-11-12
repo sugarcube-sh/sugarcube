@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createSession, isEdits, remove, rename, setValue } from "../src/index.js";
 import { demo } from "./helpers.js";
 
-const step = (ops: unknown[], moved: unknown[] = []) => ({ steps: [{ ops, moved }] });
+const step = (ops: unknown[], moves: unknown[] = []) => ({ steps: [{ ops, moves }] });
 
 describe("isEdits", () => {
     it("is true for a session's unsaved edits, sent as JSON and read back", () => {
@@ -22,7 +22,7 @@ describe("isEdits", () => {
             "edits",
             { steps: {} },
             { steps: [{ ops: [] }] },
-            { ops: [], moved: [] },
+            { ops: [], moves: [] },
             step([{ kind: "bogus", file: "color.json" }]),
             step([{ kind: "set", file: "color.json", path: "color", value: 1, was: 0 }]),
             step([{ kind: "set", file: "color.json", jsonPath: ["color"], value: 1 }]),

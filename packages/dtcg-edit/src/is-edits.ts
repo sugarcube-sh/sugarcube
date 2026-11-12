@@ -17,8 +17,8 @@ export function isEdits(value: unknown): value is Edits {
 
 function isStep(value: unknown): boolean {
     if (!isObject(value)) return false;
-    const { ops, moved } = value;
-    return Array.isArray(ops) && ops.every(isOp) && Array.isArray(moved) && moved.every(isMove);
+    const { ops, moves } = value;
+    return Array.isArray(ops) && ops.every(isOp) && Array.isArray(moves) && moves.every(isMove);
 }
 
 function isOp(value: unknown): boolean {

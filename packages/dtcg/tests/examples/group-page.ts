@@ -15,6 +15,6 @@ for (const t of group?.childTokens ?? []) {
     const overrides = tokens
         .getDefinitions(t.path)
         .filter(({ sources }) => sources.some(({ modifier }) => modifier))
-        .map(({ winsIn, span }) => `${winsIn.label} in ${span.file}`);
-    row(t.path, t.asWritten?.value, t.winningDefinition.source.file, overrides.join(", "));
+        .map(({ winningPermutations, span }) => `${winningPermutations.label} in ${span.file}`);
+    row(t.path, t.original?.value, t.winningDefinition.source.file, overrides.join(", "));
 }

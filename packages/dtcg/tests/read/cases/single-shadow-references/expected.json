@@ -14,37 +14,37 @@
           "path": "lifted",
           "references": [
             {
-              "asWritten": { "syntax": "curly-brace", "path": "color.ink" },
+              "parsed": { "syntax": "curly-brace", "path": "color.ink" },
               "span": {
                 "file": "tokens.json",
                 "text": "\"{color.ink}\""
               },
-              "writtenInProperty": [0, "color"]
+              "property": [0, "color"]
             },
             {
-              "asWritten": { "syntax": "json-pointer", "pointer": "#/space/sm/$value" },
+              "parsed": { "syntax": "json-pointer", "pointer": "#/space/sm/$value" },
               "span": {
                 "file": "tokens.json",
                 "text": "{ \"$ref\": \"#/space/sm/$value\" }"
               },
-              "writtenInProperty": [0, "offsetX"]
+              "property": [0, "offsetX"]
             },
             {
-              "asWritten": { "syntax": "curly-brace", "path": "color.ink" },
+              "parsed": { "syntax": "curly-brace", "path": "color.ink" },
               "span": {
                 "file": "tokens.json",
                 "text": "\"{color.ink}\"",
                 "occurrence": 2
               },
-              "writtenInProperty": [0, "offsetY"]
+              "property": [0, "offsetY"]
             },
             {
-              "asWritten": { "syntax": "curly-brace", "path": "space.missing" },
+              "parsed": { "syntax": "curly-brace", "path": "space.missing" },
               "span": {
                 "file": "tokens.json",
                 "text": "\"{space.missing}\""
               },
-              "writtenInProperty": [0, "blur"]
+              "property": [0, "blur"]
             }
           ]
         }

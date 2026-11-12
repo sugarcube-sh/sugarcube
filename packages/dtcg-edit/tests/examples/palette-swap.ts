@@ -17,14 +17,14 @@ function swapped(t: Token): JsonValue | undefined {
         tokenPath.relative(oldPalette, whole.pointsToPath) === undefined
     )
         return undefined;
-    return whole.moved(swap);
+    return whole.applyMoves(swap);
 }
 
 const tokens = session.tokens;
 const changes: ({ path: string; value: JsonValue } & ValueOptions)[] = [];
 for (const t of tokens.getPermutation().getGroup("color.button")?.tokens ?? []) {
-    for (const { span, winsIn } of tokens.getDefinitions(t.path)) {
-        const there = winsIn[0]?.getToken(t.path);
+    for (const { span, winningPermutations } of tokens.getDefinitions(t.path)) {
+        const there = winningPermutations[0]?.getToken(t.path);
         const value = there && swapped(there);
         if (value) changes.push({ path: t.path, value, at: span });
     }

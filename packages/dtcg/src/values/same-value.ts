@@ -48,12 +48,12 @@ export function isEquivalentValue(
 
 export interface ComparableValue {
     value?: unknown;
-    asWritten?: { value: unknown } | undefined;
+    original?: { value: unknown } | undefined;
 }
 
 export function hasEquivalentValue(a: ComparableValue, b: ComparableValue): boolean {
     if (a.value === undefined || b.value === undefined) {
-        return a.value === b.value && isEqualJson(a.asWritten?.value, b.asWritten?.value);
+        return a.value === b.value && isEqualJson(a.original?.value, b.original?.value);
     }
     return deepEqual(a.value, b.value, valueRules);
 }

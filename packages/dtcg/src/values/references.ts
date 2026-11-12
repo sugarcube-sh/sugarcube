@@ -1,9 +1,4 @@
-import type {
-    CurlyBraceReference,
-    JsonPointerReference,
-    Move,
-    WrittenReference,
-} from "../model.js";
+import type { CurlyBraceReference, JsonPointerReference, Move, ParsedReference } from "../model.js";
 import { tokenPath } from "../path.js";
 import { encodePointer, refSteps } from "../read/pointer.js";
 import { pointerParts } from "../read/ref-meaning.js";
@@ -50,14 +45,14 @@ export function readJsonPointer(raw: unknown): JsonPointerReference | undefined 
  * parseReference("{color.primary}")
  * // => { syntax: "curly-brace", path: "color.primary" }
  */
-export function parseReference(raw: unknown): WrittenReference | undefined {
+export function parseReference(raw: unknown): ParsedReference | undefined {
     return readCurlyBrace(raw) ?? readJsonPointer(raw);
 }
 
 /**
  * Checks whether a value dtcg has read is a reference.
  *
- * For an entry in a token's `references`, check its `asWritten`. For JSON as written in a file,
+ * For an entry in a token's `references`, check its `parsed`. For JSON as written in a file,
  * use {@link parseReference}.
  *
  * @param value - A value dtcg has read, such as `token.value`.
@@ -67,7 +62,7 @@ export function parseReference(raw: unknown): WrittenReference | undefined {
  * isReference(light.getToken("button.background")?.value)
  * // => true
  */
-export function isReference(value: unknown): value is WrittenReference {
+export function isReference(value: unknown): value is ParsedReference {
     if (!isJsonObject(value)) return false;
     if (value.syntax === "curly-brace") return typeof value.path === "string";
     return value.syntax === "json-pointer" && typeof value.pointer === "string";
@@ -86,7 +81,7 @@ export function isReference(value: unknown): value is WrittenReference {
  * toReferenceTarget(parseReference("{color.primary}")!)
  * // => "color.primary"
  */
-export function toReferenceTarget(reference: WrittenReference): string {
+export function toReferenceTarget(reference: ParsedReference): string {
     return reference.syntax === "curly-brace" ? reference.path : reference.pointer;
 }
 
@@ -97,7 +92,7 @@ export function toReferenceTarget(reference: WrittenReference): string {
  *
  * @see {@link https://www.designtokens.org/TR/2025.10/format/#json-pointer-syntax-required-support | Format 7.1.2, JSON Pointer syntax}
  */
-export function getReferencePath(ref: WrittenReference): string | undefined {
+export function getReferencePath(ref: ParsedReference): string | undefined {
     if (ref.syntax === "curly-brace") return ref.path;
     const steps = refSteps(ref.pointer);
     return steps && pointerParts(steps).path;
@@ -117,27 +112,24 @@ export function getReferencePath(ref: WrittenReference): string | undefined {
  * toJsonPointer(parseReference("{color.primary}")!)
  * // => { $ref: "#/color/primary/$value" }
  */
-export function toJsonPointer(reference: WrittenReference): { $ref: string } {
+export function toJsonPointer(reference: ParsedReference): { $ref: string } {
     if (reference.syntax === "json-pointer") return { $ref: reference.pointer };
     return { $ref: encodePointer([...reference.path.split("."), "$value"]) };
 }
 
-export function applyMovesToReference<R extends WrittenReference>(
-    ref: R,
-    moved: readonly Move[],
-): R;
+export function applyMovesToReference<R extends ParsedReference>(ref: R, moves: readonly Move[]): R;
 export function applyMovesToReference(
-    ref: WrittenReference,
-    moved: readonly Move[],
-): WrittenReference {
+    ref: ParsedReference,
+    moves: readonly Move[],
+): ParsedReference {
     if (ref.syntax === "curly-brace") {
-        return { syntax: "curly-brace", path: tokenPath.applyMoves(ref.path, moved) };
+        return { syntax: "curly-brace", path: tokenPath.applyMoves(ref.path, moves) };
     }
     const steps = refSteps(ref.pointer);
     if (!steps) return ref;
     const { path, inside } = pointerParts(steps);
     if (path === undefined) return ref;
-    const now = tokenPath.applyMoves(path, moved);
+    const now = tokenPath.applyMoves(path, moves);
     if (now === path) return ref;
     const pointer = encodePointer([...now.split("."), ...(inside ? ["$value", ...inside] : [])]);
     return { syntax: "json-pointer", pointer };

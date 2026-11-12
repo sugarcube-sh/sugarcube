@@ -76,7 +76,7 @@ describe("sugarcube's fluid form", () => {
 
         expect(studio.unsaved.steps).toHaveLength(1);
         const gutter = token(studio, "size.fluid.gutter");
-        expect(gutter.asWritten?.value).toEqual(rem(2.5));
+        expect(gutter.original?.value).toEqual(rem(2.5));
         expect(gutter.extensions?.["sh.sugarcube"]).toMatchObject({ fluid: { max: rem(2.5) } });
     });
 

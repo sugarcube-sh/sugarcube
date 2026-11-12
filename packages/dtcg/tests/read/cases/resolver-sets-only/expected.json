@@ -42,7 +42,7 @@
           "name": "base"
         }
       ],
-      "readBy": "every-context"
+      "contexts": "every-context"
     }
   ]
 }

@@ -39,7 +39,7 @@ describe("a group's $extends to a group that isn't there", () => {
             brand: { $extends: "{colorz}" },
         });
         expect(missing(tokens).map(({ detail }) => detail)).toStrictEqual([
-            { ref: "colorz", from: ["brand"], similar: "color" },
+            { ref: "colorz", from: ["brand"], suggestion: "color" },
         ]);
     });
 

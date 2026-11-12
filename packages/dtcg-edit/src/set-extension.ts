@@ -68,13 +68,13 @@ function setExtensionIn(
             return {
                 ops: opsAt(tokens, at, ["$extensions", ...jsonPath], value),
                 alsoAffects,
-                moved: [],
+                moves: [],
             };
         }
         const [key, ...within] = jsonPath;
         const made = withSetting(inForce, within, value);
         const ops = made === inForce ? [] : opsAt(tokens, at, ["$extensions", key], made ?? null);
-        return { ops, alsoAffects, moved: [] };
+        return { ops, alsoAffects, moves: [] };
     }
     const { into, inside, was } = placed;
     const made = withSetting(was, placed.within, value);
@@ -82,7 +82,7 @@ function setExtensionIn(
         made === was || made === undefined
             ? []
             : [{ kind: "add", file: into, jsonPath: inside, value: made }];
-    return { ops, alsoAffects, moved: [] };
+    return { ops, alsoAffects, moves: [] };
 }
 
 type Placed =

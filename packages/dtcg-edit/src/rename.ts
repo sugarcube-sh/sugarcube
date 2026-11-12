@@ -31,16 +31,16 @@ export function rename(tokens: DesignTokens, path: string, newName: string): OpR
     const copies = copiesOf(tokens, path);
     if ("refused" in copies) return copies;
     const to = tokenPath.join(parent, newName);
-    if (to === path) return { ops: [], alsoAffects: copies.alsoAffects, moved: [] };
+    if (to === path) return { ops: [], alsoAffects: copies.alsoAffects, moves: [] };
     if (tokens.has(to)) return refused({ kind: "taken", path: to });
 
     const moved = [{ from: path, to }];
-    const keys = copies.places.map(({ span, jsonPath, asWritten }): FileOp => ({
+    const keys = copies.places.map(({ span, jsonPath, json }): FileOp => ({
         kind: "renameKey",
         file: span.file,
         jsonPath,
         name: newName,
-        was: asWritten,
+        was: json,
     }));
     const all = tokens.getReferencesTo(path);
     const references = all.filter(isWritten).flatMap((reference): FileOp[] => {
@@ -48,19 +48,17 @@ export function rename(tokens: DesignTokens, path: string, newName: string): OpR
         const was = getJsonAt(tokens, span.file, reference.jsonPath);
         if (was === undefined) return [];
         const jsonPath = afterKeys(
-            { span, jsonPath: reference.jsonPath, asWritten: was },
+            { span, jsonPath: reference.jsonPath, json: was },
             copies.places,
             newName,
         );
-        const value = reference.moved(moved);
+        const value = reference.applyMoves(moved);
         return [{ kind: "set", file: span.file, jsonPath, value, was }];
     });
     const broken = [
-        ...new Set(
-            all.filter((each) => !isWritten(each)).flatMap(({ writtenInPaths }) => writtenInPaths),
-        ),
+        ...new Set(all.filter((each) => !isWritten(each)).flatMap(({ ownerPaths }) => ownerPaths)),
     ];
-    return { ops: [...keys, ...references], alsoAffects: copies.alsoAffects, broken, moved };
+    return { ops: [...keys, ...references], alsoAffects: copies.alsoAffects, broken, moves: moved };
 }
 
 function afterKeys(member: Member, keys: Member[], name: string): Member["jsonPath"] {
@@ -76,6 +74,6 @@ function afterKeys(member: Member, keys: Member[], name: string): Member["jsonPa
 }
 
 function isWritten(reference: ReferenceInPermutations): boolean {
-    const [writer] = reference.writtenInPaths;
+    const [writer] = reference.ownerPaths;
     return !reference.permutations.some((each) => writer && each.getToken(writer)?.generated);
 }

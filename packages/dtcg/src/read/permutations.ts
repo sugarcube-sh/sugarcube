@@ -1,4 +1,4 @@
-import type { Input, Resolver, ResolverContext, SetOnRoute, Source } from "../model.js";
+import type { Input, Resolver, ResolverContext, ParentSet, Source } from "../model.js";
 import { relatedMessages } from "../error-messages.js";
 import { formatContextsLabel } from "../lookup/permutation-label.js";
 import { diagnostic, type DiagnosticCollector } from "./diagnostics.js";
@@ -35,7 +35,7 @@ export function fromTokenFile(path: string, json: JsonFile | undefined): LoadedP
                 contexts: [],
                 sources: [
                     {
-                        source: { file: path, sets: [], readBy: "every-context" },
+                        source: { file: path, sets: [], contexts: "every-context" },
                         pieces: [{ file: path, ...(json && { json, tree: json.root }) }],
                     },
                 ],
@@ -151,7 +151,7 @@ function createSourceLookup(
     sources: Map<SourcePiece, LoadedSource>,
     findContext: FindContext,
 ): SourceLookup {
-    const readBy = getContextsBySource(items, sources, findContext);
+    const contextsBySource = getContextsBySource(items, sources, findContext);
     const listed = new Map<SourceEntry, Map<ResolverContext | undefined, ListedSource>>();
     return (entry, context) => {
         const [first] = entry.pieces;
@@ -167,11 +167,11 @@ function createSourceLookup(
             ...(loaded.pointer && { pointer: loaded.pointer }),
             ...(context && { modifier: context.modifier }),
             sets: route(first),
-            readBy: readBy.get(sourceKey(loaded)) ?? "every-context",
+            contexts: contextsBySource.get(sourceKey(loaded)) ?? "every-context",
         };
-        const made = { source, pieces };
-        byContext.set(context, made);
-        return made;
+        const listedSource = { source, pieces };
+        byContext.set(context, listedSource);
+        return listedSource;
     };
 }
 
@@ -191,7 +191,7 @@ function getSourcesForInput(
     });
 }
 
-function route({ route: steps }: SourcePiece): SetOnRoute[] {
+function route({ route: steps }: SourcePiece): ParentSet[] {
     return steps.map(({ name, extensions }) => ({
         name,
         ...(extensions && { extensions: toPlainObject(extensions) }),
@@ -202,20 +202,20 @@ function getContextsBySource(
     items: ExpandedItem[],
     sources: Map<SourcePiece, LoadedSource>,
     findContext: FindContext,
-): Map<string, Source["readBy"]> {
-    const readBy = new Map<string, "every-context" | ResolverContext[]>();
+): Map<string, Source["contexts"]> {
+    const bySource = new Map<string, "every-context" | ResolverContext[]>();
     const read = (entry: SourceEntry, context?: ResolverContext) => {
         const loaded = getLoadedSource(entry, sources);
         if (!loaded) return;
         const key = sourceKey(loaded);
-        const existing = readBy.get(key);
+        const existing = bySource.get(key);
         if (!context || existing === "every-context") {
-            readBy.set(key, "every-context");
+            bySource.set(key, "every-context");
             return;
         }
         const list = existing ?? [];
         if (!list.includes(context)) list.push(context);
-        readBy.set(key, list);
+        bySource.set(key, list);
     };
     for (const item of items) {
         if (item.kind === "set") {
@@ -227,7 +227,7 @@ function getContextsBySource(
             for (const entry of entries) read(entry, context);
         }
     }
-    return readBy;
+    return bySource;
 }
 
 function getLoadedSource(

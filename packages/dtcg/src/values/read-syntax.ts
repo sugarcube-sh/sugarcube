@@ -6,7 +6,7 @@ import type {
     TokenType,
     UnresolvedValueByType,
     ValueError,
-    WrittenReference,
+    ParsedReference,
 } from "../model.js";
 import { syntaxes } from "./syntaxes.js";
 import { isJsonObject } from "./json.js";
@@ -34,7 +34,7 @@ export interface Slot {
 }
 
 export interface ReferenceInValue extends Slot {
-    ref: WrittenReference;
+    ref: ParsedReference;
     property: JsonPath;
 }
 
@@ -242,7 +242,7 @@ function toChildLocation(
 }
 
 function recordReference(
-    ref: WrittenReference,
+    ref: ParsedReference,
     syntax: Syntax,
     where: ReadLocation,
     reading: ReadContext,

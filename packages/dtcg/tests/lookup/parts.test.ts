@@ -85,7 +85,7 @@ describe("token.parts", () => {
         expect(partsOfPath("accent")).toStrictEqual({
             type: "color",
             resolved: redRead,
-            ref: expect.objectContaining({ asWritten: { syntax: "curly-brace", path: "red" } }),
+            ref: expect.objectContaining({ parsed: { syntax: "curly-brace", path: "red" } }),
         });
     });
 
@@ -101,7 +101,7 @@ describe("token.parts", () => {
                 type: "color",
                 property: ["color"],
                 resolved: redRead,
-                ref: expect.objectContaining({ asWritten: { syntax: "curly-brace", path: "red" } }),
+                ref: expect.objectContaining({ parsed: { syntax: "curly-brace", path: "red" } }),
             },
             width: { type: "dimension", property: ["width"], resolved: px(2) },
             style: {
@@ -114,11 +114,11 @@ describe("token.parts", () => {
 
     it("gives a JSON Pointer written at a part as its reference", () => {
         const border = partsOfPath("pointed");
-        expect(border?.type === "border" && border.color.ref?.asWritten).toStrictEqual({
+        expect(border?.type === "border" && border.color.ref?.parsed).toStrictEqual({
             syntax: "json-pointer",
             pointer: "#/red/$value",
         });
-        expect(border?.type === "border" && border.width.ref?.asWritten).toStrictEqual({
+        expect(border?.type === "border" && border.width.ref?.parsed).toStrictEqual({
             syntax: "curly-brace",
             path: "thin",
         });
@@ -146,7 +146,7 @@ describe("token.parts", () => {
                     property: [0, "color"],
                     resolved: redRead,
                     ref: expect.objectContaining({
-                        asWritten: { syntax: "curly-brace", path: "red" },
+                        parsed: { syntax: "curly-brace", path: "red" },
                     }),
                 },
                 offsetX: { type: "dimension", property: [0, "offsetX"], resolved: px(0) },
@@ -161,7 +161,7 @@ describe("token.parts", () => {
         const shadow = partsOfPath("layered");
         if (shadow?.type !== "shadow") throw new Error("not a shadow");
         const [first, second] = shadow.layers;
-        expect(first?.ref).toMatchObject({ asWritten: { syntax: "curly-brace", path: "lone" } });
+        expect(first?.ref).toMatchObject({ parsed: { syntax: "curly-brace", path: "lone" } });
         expect(first?.color).toStrictEqual({
             type: "color",
             property: [0, "color"],
@@ -170,7 +170,7 @@ describe("token.parts", () => {
         expect(second?.ref).toBeUndefined();
         expect(second?.resolved.inset).toBe(true);
         expect(second?.offsetX.ref).toMatchObject({
-            asWritten: { syntax: "curly-brace", path: "thin" },
+            parsed: { syntax: "curly-brace", path: "thin" },
         });
     });
 
@@ -180,13 +180,13 @@ describe("token.parts", () => {
         expect(gradient.stops.map(({ color, position }) => [color.ref, position])).toStrictEqual([
             [undefined, { type: "number", property: [0, "position"], resolved: 0 }],
             [
-                expect.objectContaining({ asWritten: { syntax: "curly-brace", path: "red" } }),
+                expect.objectContaining({ parsed: { syntax: "curly-brace", path: "red" } }),
                 {
                     type: "number",
                     property: [1, "position"],
                     resolved: 0.5,
                     ref: expect.objectContaining({
-                        asWritten: { syntax: "curly-brace", path: "half" },
+                        parsed: { syntax: "curly-brace", path: "half" },
                     }),
                 },
             ],
@@ -202,7 +202,7 @@ describe("token.parts", () => {
                     property: ["dashArray", 0],
                     resolved: px(1),
                     ref: expect.objectContaining({
-                        asWritten: { syntax: "curly-brace", path: "thin" },
+                        parsed: { syntax: "curly-brace", path: "thin" },
                     }),
                 },
                 { type: "dimension", property: ["dashArray", 1], resolved: px(2) },
@@ -223,13 +223,13 @@ describe("token.parts", () => {
             ["lineHeight", "number"],
         ]);
         expect(typography.fontFamily.ref).toMatchObject({
-            asWritten: { syntax: "curly-brace", path: "family" },
+            parsed: { syntax: "curly-brace", path: "family" },
         });
         expect(typography.lineHeight).toStrictEqual({
             type: "number",
             property: ["lineHeight"],
             resolved: 0.5,
-            ref: expect.objectContaining({ asWritten: { syntax: "curly-brace", path: "half" } }),
+            ref: expect.objectContaining({ parsed: { syntax: "curly-brace", path: "half" } }),
         });
     });
 

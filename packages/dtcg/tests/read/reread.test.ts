@@ -98,7 +98,7 @@ describe("a reread", () => {
 
     it("leaves the read it started from as it was", () => {
         before.reread({ "dark.json": null });
-        expect(before.getPermutation().getToken("color.red")?.asWritten?.value).toStrictEqual(
+        expect(before.getPermutation().getToken("color.red")?.original?.value).toStrictEqual(
             rgb(1),
         );
         expect(before.getPermutation().getToken("color.red")?.resolved).toMatchObject({

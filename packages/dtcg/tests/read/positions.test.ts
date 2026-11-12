@@ -55,7 +55,7 @@ describe("a place and a reference", () => {
 
     it("still say which source writes them and what it writes", () => {
         expect(brand?.winningDefinition.source.file).toBe("tokens.json");
-        expect(brand?.winningDefinition.asWritten).toStrictEqual({ $value: "{color.red}" });
+        expect(brand?.winningDefinition.json).toStrictEqual({ $value: "{color.red}" });
         expect(brand?.references[0]?.pointsToPath).toBe("color.red");
     });
 });

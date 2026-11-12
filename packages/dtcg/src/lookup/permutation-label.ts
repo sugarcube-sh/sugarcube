@@ -110,16 +110,16 @@ function sameNames(one: readonly string[], other: readonly string[]): boolean {
 }
 
 function removeRedundantParts(parts: Part[], all: readonly Permutation[]): Part[] {
-    const kept = [...parts];
-    for (let i = kept.length - 1; i >= 0; i--) {
-        const part = kept[i];
-        const others = kept.filter((_, index) => index !== i);
+    const remaining = [...parts];
+    for (let i = remaining.length - 1; i >= 0; i--) {
+        const part = remaining[i];
+        const others = remaining.filter((_, index) => index !== i);
         const covered = all
             .filter((perm) => part && matches(part, perm))
             .every((perm) => others.some((other) => matches(other, perm)));
-        if (covered) kept.splice(i, 1);
+        if (covered) remaining.splice(i, 1);
     }
-    return kept;
+    return remaining;
 }
 
 function widen(part: Part, exact: (part: Part) => boolean): Part {

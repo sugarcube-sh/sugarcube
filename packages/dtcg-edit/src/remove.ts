@@ -20,13 +20,13 @@ export function remove(tokens: DesignTokens, path: string): OpResult {
     const copies = copiesOf(tokens, path);
     if ("refused" in copies) return copies;
 
-    const ops = copies.places.map(({ span, jsonPath, asWritten }): FileOp => ({
+    const ops = copies.places.map(({ span, jsonPath, json }): FileOp => ({
         kind: "remove",
         file: span.file,
         jsonPath,
-        was: asWritten,
+        was: json,
     }));
-    const users = tokens.getReferencesTo(path).flatMap(({ writtenInPaths }) => writtenInPaths);
+    const users = tokens.getReferencesTo(path).flatMap(({ ownerPaths }) => ownerPaths);
     const broken = [...new Set(users)].filter((user) => !tokenPath.contains(path, user));
-    return { ops, alsoAffects: copies.alsoAffects, broken, moved: [] };
+    return { ops, alsoAffects: copies.alsoAffects, broken, moves: [] };
 }

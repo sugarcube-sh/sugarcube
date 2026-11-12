@@ -137,12 +137,12 @@
           "name": "base"
         }
       ],
-      "readBy": "every-context"
+      "contexts": "every-context"
     },
     {
       "file": "ocean.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "brand",
           "name": "ocean"
@@ -153,7 +153,7 @@
     {
       "file": "dark.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "theme",
           "name": "dark"

@@ -8,7 +8,7 @@
           "path": "top",
           "deprecated": true,
           "deprecatedByGroup": "",
-          "asWritten": {
+          "original": {
             "value": 1
           }
         },
@@ -16,7 +16,7 @@
           "path": "old.a",
           "deprecated": "use new",
           "deprecatedByGroup": "old",
-          "asWritten": {
+          "original": {
             "value": 2
           }
         },
@@ -24,7 +24,7 @@
           "path": "old.b",
           "deprecated": "use new.b",
           "deprecatedByGroup": null,
-          "asWritten": {
+          "original": {
             "value": 3,
             "deprecated": "use new.b"
           }
@@ -33,7 +33,7 @@
           "path": "old.inner.c",
           "deprecated": "use new",
           "deprecatedByGroup": "old",
-          "asWritten": {
+          "original": {
             "value": 6
           }
         },
@@ -41,7 +41,7 @@
           "path": "old.kept.c",
           "deprecated": null,
           "deprecatedByGroup": null,
-          "asWritten": {
+          "original": {
             "value": 4
           }
         },
@@ -49,7 +49,7 @@
           "path": "old.kept.d",
           "deprecated": true,
           "deprecatedByGroup": null,
-          "asWritten": {
+          "original": {
             "value": 5,
             "deprecated": true
           }
@@ -58,7 +58,7 @@
           "path": "button.pad",
           "deprecated": "Use control",
           "deprecatedByGroup": "button",
-          "asWritten": {
+          "original": {
             "value": {
               "value": 4,
               "unit": "px"
@@ -69,7 +69,7 @@
           "path": "primary.gap",
           "deprecated": "Use control",
           "deprecatedByGroup": "button",
-          "asWritten": {
+          "original": {
             "value": {
               "value": 2,
               "unit": "px"
@@ -101,7 +101,7 @@
           "path": "old.kept",
           "deprecated": null,
           "deprecatedByGroup": null,
-          "asWritten": {
+          "original": {
             "deprecated": false
           }
         },
@@ -111,7 +111,7 @@
           "description": "Base button",
           "deprecated": "Use control",
           "deprecatedByGroup": null,
-          "asWritten": {
+          "original": {
             "type": "dimension",
             "description": "Base button",
             "deprecated": "Use control",
@@ -128,7 +128,7 @@
           "description": "Primary only",
           "deprecated": "Use control",
           "deprecatedByGroup": "button",
-          "asWritten": {
+          "original": {
             "description": "Primary only"
           }
         }

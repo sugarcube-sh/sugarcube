@@ -44,12 +44,12 @@
           "invalid": null,
           "references": [
             {
-              "asWritten": { "syntax": "json-pointer", "pointer": "#/space/md/$value" },
+              "parsed": { "syntax": "json-pointer", "pointer": "#/space/md/$value" },
               "span": {
                 "file": "tokens.json",
                 "text": "{ \"$ref\": \"#/space/md/$value\" }"
               },
-              "writtenInProperty": ["width"]
+              "property": ["width"]
             }
           ]
         },
@@ -71,7 +71,7 @@
           "invalid": null,
           "references": [
             {
-              "asWritten": { "syntax": "json-pointer", "pointer": "#/heading/$value" },
+              "parsed": { "syntax": "json-pointer", "pointer": "#/heading/$value" },
               "span": {
                 "file": "tokens.json",
                 "text": "{ \"$ref\": \"#/heading/$value\" }"
@@ -104,12 +104,12 @@
           "invalid": null,
           "references": [
             {
-              "asWritten": { "syntax": "json-pointer", "pointer": "#/wide/$value" },
+              "parsed": { "syntax": "json-pointer", "pointer": "#/wide/$value" },
               "span": {
                 "file": "tokens.json",
                 "text": "{ \"$ref\": \"#/wide/$value\" }"
               },
-              "writtenInProperty": ["width"]
+              "property": ["width"]
             }
           ]
         }

@@ -14,11 +14,11 @@ export {
     type CSSDeclaration,
     type CSSDeclarations,
     type CSSFallback,
-    type CSSNotWritten,
+    type CSSUndeclared,
     type CSSTemplate,
     type CSSWriter,
     type CSSWriterOptions,
-    type CSSWritten,
+    type CSSResult,
     createCSSWriter,
 } from "./css/writer.js";
 export { type CSSBlock, type CSSBlockInput, getCSSBlocks } from "./css/blocks.js";

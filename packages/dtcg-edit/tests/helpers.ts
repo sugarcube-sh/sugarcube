@@ -68,6 +68,6 @@ export function changed(
 
 export const opsIn = (edits: Edits): readonly FileOp[] => edits.steps.flatMap((step) => step.ops);
 
-export const asEdits = (ops: readonly FileOp[]): Edits => ({ steps: [{ ops, moved: [] }] });
+export const asEdits = (ops: readonly FileOp[]): Edits => ({ steps: [{ ops, moves: [] }] });
 
 export const partsOf = (clashes: readonly Clash[]) => clashes.flatMap((clash) => clash.parts);

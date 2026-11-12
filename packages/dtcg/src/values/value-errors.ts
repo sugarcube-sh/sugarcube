@@ -11,7 +11,7 @@ import type {
 import { fontWeightKeywords } from "./keywords.js";
 
 /** The facts each reason carries, beside `type` and `reason`. */
-export interface ValueErrorFacts {
+export interface ValueErrorDetailByCode {
     /** The wrong kind of JSON, such as a number for a dimension. */
     "wrong-shape": {
         readonly value: unknown;
@@ -131,7 +131,7 @@ export interface ValueErrorFacts {
  *
  * Check this in your code, not the message. A message's wording can change.
  */
-export type ValueErrorCode = keyof ValueErrorFacts;
+export type ValueErrorCode = keyof ValueErrorDetailByCode;
 
 /**
  * Why a value couldn't be read, with the facts behind its message.
@@ -144,7 +144,10 @@ export type ValueErrorCode = keyof ValueErrorFacts;
  * { type: "dimension", reason: "unit-not-allowed", unit: "em", allowed: ["px", "rem"] }
  */
 export type ValueErrorDetail = {
-    [R in ValueErrorCode]: { readonly type: TokenType; readonly reason: R } & ValueErrorFacts[R];
+    [R in ValueErrorCode]: {
+        readonly type: TokenType;
+        readonly reason: R;
+    } & ValueErrorDetailByCode[R];
 }[ValueErrorCode];
 
 type DetailOf<R extends ValueErrorCode> = Extract<ValueErrorDetail, { reason: R }>;
@@ -194,8 +197,8 @@ function describeValue(value: unknown): string {
     return `\`${String(value)}\``;
 }
 
-export function didYouMean(similar: string | undefined): string | undefined {
-    return similar === undefined ? undefined : `did you mean \`${similar}\`?`;
+export function didYouMean(suggestion: string | undefined): string | undefined {
+    return suggestion === undefined ? undefined : `did you mean \`${suggestion}\`?`;
 }
 
 export function formatList(names: readonly string[], joiner: "or" | "and" = "or"): string {

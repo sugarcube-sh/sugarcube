@@ -69,7 +69,7 @@ type FilesChanged =
     | { conflicts: Conflict[]; tokens?: undefined };
 
 function changedBy(tokens: DesignTokens, ops: readonly FileOp[]): FilesChanged {
-    const { changed, conflicts } = editedFiles(tokens, [{ ops, moved: [] }]);
+    const { changed, conflicts } = editedFiles(tokens, [{ ops, moves: [] }]);
     if (conflicts.length > 0) return { conflicts };
     const next = tokens.reread(changed);
     const lost = unread(next, ops);
@@ -164,7 +164,7 @@ export function commit(tokens: DesignTokens, result: OpResult): Committed {
     if (!result.ops) return result;
     const next = apply(tokens, result.ops);
     if (next.conflicts) return next;
-    return { tokens: next.tokens, ops: result.ops, moved: result.moved };
+    return { tokens: next.tokens, ops: result.ops, moves: result.moves };
 }
 
 function applyOne(

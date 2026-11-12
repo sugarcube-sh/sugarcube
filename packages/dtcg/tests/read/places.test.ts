@@ -44,8 +44,8 @@ describe("sources", () => {
 
     it("say who reads them: every context, or the contexts that do", () => {
         const [base, darkFile] = tokens.sources;
-        expect(base?.readBy).toBe("every-context");
-        expect(darkFile?.readBy).toStrictEqual([darkContext]);
+        expect(base?.contexts).toBe("every-context");
+        expect(darkFile?.contexts).toStrictEqual([darkContext]);
     });
 });
 
@@ -142,11 +142,13 @@ describe("on the design tokens", () => {
 
     it("getDefinitions gives where each place's value wins: the permutations whose token's value comes from it", () => {
         const places = tokens.getDefinitions("color.bg");
-        expect(places.map(({ span, winsIn }) => [span.file, winsIn.inputs])).toStrictEqual([
+        expect(
+            places.map(({ span, winningPermutations }) => [span.file, winningPermutations.inputs]),
+        ).toStrictEqual([
             ["base.json", [{ mode: "light" }]],
             ["dark.json", [{ mode: "dark" }]],
         ]);
-        expect(places[0]?.winsIn).toStrictEqual([light]);
+        expect(places[0]?.winningPermutations).toStrictEqual([light]);
     });
 
     it("getDefinitions gives a place whose value never wins, as a later source always replaces it, no permutations it wins in", () => {
@@ -165,14 +167,16 @@ describe("on the design tokens", () => {
         });
         const [base, brand] = overridden.getDefinitions("gap");
         expect(base?.permutations.label).toBe("every permutation");
-        expect(base?.winsIn.label).toBe("no permutation");
-        expect(brand?.winsIn.label).toBe("every permutation");
+        expect(base?.winningPermutations.label).toBe("no permutation");
+        expect(brand?.winningPermutations.label).toBe("every permutation");
     });
 
     it("getDefinitions gives a group's places too, read but winning nowhere, as groups merge", () => {
         const places = tokens.getDefinitions("color");
         expect(places.map(({ span }) => span.file)).toStrictEqual(["base.json", "dark.json"]);
-        expect(places.map(({ winsIn }) => winsIn.length)).toStrictEqual([0, 0]);
+        expect(places.map(({ winningPermutations }) => winningPermutations.length)).toStrictEqual([
+            0, 0,
+        ]);
     });
 });
 
@@ -299,17 +303,17 @@ describe("what is written at a place", () => {
     it("is the JSON the file writes there, exactly as written, for each place", () => {
         const places = placed.getDefinitions("red");
 
-        expect(places.map(({ span, asWritten: json }) => [span.file, json])).toStrictEqual([
+        expect(places.map(({ span, json }) => [span.file, json])).toStrictEqual([
             ["base.json", { $type: "color", $value: "#ff0000", $description: "Red." }],
             ["dark.json", { $type: "color", $value: "#990000" }],
         ]);
-        expect(placed.getPermutation().getToken("red")?.definitions[0]?.asWritten).toStrictEqual(
-            places[0]?.asWritten,
+        expect(placed.getPermutation().getToken("red")?.definitions[0]?.json).toStrictEqual(
+            places[0]?.json,
         );
     });
 
     it("is found at its place in a file read through a pointer", () => {
-        expect(placed.getDefinitions("gap")[0]?.asWritten).toStrictEqual({
+        expect(placed.getDefinitions("gap")[0]?.json).toStrictEqual({
             $type: "number",
             $value: 4,
         });
@@ -318,6 +322,6 @@ describe("what is written at a place", () => {
     it("is the same value each time it is read", () => {
         const [place] = placed.getPermutation().getToken("red")?.definitions ?? [];
 
-        expect(place?.asWritten).toBe(place?.asWritten);
+        expect(place?.json).toBe(place?.json);
     });
 });

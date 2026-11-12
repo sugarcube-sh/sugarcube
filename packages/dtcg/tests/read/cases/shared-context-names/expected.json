@@ -40,7 +40,7 @@
     {
       "file": "beta.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "beta",
           "name": "true"
@@ -51,7 +51,7 @@
     {
       "file": "debug.json",
       "sets": [],
-      "readBy": [
+      "contexts": [
         {
           "modifier": "debug",
           "name": "true"

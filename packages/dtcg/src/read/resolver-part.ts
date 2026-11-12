@@ -24,9 +24,9 @@ export function toPublicResolver(
         item.kind === "set" ? [item.set] : [],
     );
     const sets = new Map(named.map((set) => [set.name, set]));
-    for (const reached of setsUsed.referenced) {
-        const set = resolver.sets.get(reached);
-        if (set && !sets.has(reached)) sets.set(reached, set);
+    for (const setName of setsUsed.referenced) {
+        const set = resolver.sets.get(setName);
+        if (set && !sets.has(setName)) sets.set(setName, set);
     }
     const modifiers = resolver.resolutionOrder.flatMap((item) =>
         item.kind === "modifier" ? [item.modifier] : [],
@@ -76,7 +76,7 @@ function publicSet(resolver: CheckedResolver, set: SetDefinition): ResolverSet {
 
 function publicModifier(resolver: CheckedResolver, modifier: ModifierDefinition): ResolverModifier {
     const extensions = modifier.extensions && toPlainObject(modifier.extensions);
-    const made: Mutable<ResolverModifier> = createModifier({
+    const result: Mutable<ResolverModifier> = createModifier({
         name: modifier.name,
         ...(modifier.description !== undefined && { description: modifier.description }),
         ...(extensions && { extensions }),
@@ -84,16 +84,16 @@ function publicModifier(resolver: CheckedResolver, modifier: ModifierDefinition)
         ...(modifier.default !== undefined && { default: modifier.default }),
         span: toSpan(resolver.file, modifier.declared),
     });
-    made.contexts = [...modifier.contexts].map(([context, { sources, declared }]) =>
+    result.contexts = [...modifier.contexts].map(([context, { sources, declared }]) =>
         createContext({
             name: context,
-            modifier: made,
+            modifier: result,
             sources: toSourceRefs(resolver, sources),
             isDefault: context === modifier.default,
             span: toSpan(resolver.file, declared),
         }),
     );
-    return made;
+    return result;
 }
 
 function toSourceRefs(resolver: CheckedResolver, sources: ResolverNode[]): SourceRef[] {

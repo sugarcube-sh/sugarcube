@@ -4,13 +4,13 @@ import type { Merged } from "./merge.js";
 export function sortByDocumentOrder(merged: Merged): void {
     const { tokens, groups, order } = merged;
     const children = new Map<string | undefined, string[]>();
-    const place = (path: string) => {
+    const addToParent = (path: string) => {
         const parent = tokenPath.getParent(path);
         const siblings = children.get(parent);
         if (siblings) siblings.push(path);
         else children.set(parent, [path]);
     };
-    for (const path of order) if (tokens.has(path) || groups.has(path)) place(path);
+    for (const path of order) if (tokens.has(path) || groups.has(path)) addToParent(path);
 
     const orderedTokens: Merged["tokens"] = new Map();
     const orderedGroups: Merged["groups"] = new Map();

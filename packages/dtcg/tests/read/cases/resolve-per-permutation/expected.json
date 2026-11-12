@@ -21,7 +21,7 @@
           },
           "references": [
             {
-              "asWritten": { "syntax": "curly-brace", "path": "color.brand" },
+              "parsed": { "syntax": "curly-brace", "path": "color.brand" },
               "span": {
                 "file": "base.json",
                 "text": "\"{color.brand}\""
@@ -38,7 +38,7 @@
           },
           "references": [
             {
-              "asWritten": { "syntax": "curly-brace", "path": "color.brand" },
+              "parsed": { "syntax": "curly-brace", "path": "color.brand" },
               "span": {
                 "file": "base.json",
                 "text": "\"{color.brand}\"",
@@ -68,7 +68,7 @@
           },
           "references": [
             {
-              "asWritten": { "syntax": "curly-brace", "path": "color.brand" },
+              "parsed": { "syntax": "curly-brace", "path": "color.brand" },
               "span": {
                 "file": "base.json",
                 "text": "\"{color.brand}\""
@@ -86,7 +86,7 @@
           "resolved": null,
           "references": [
             {
-              "asWritten": { "syntax": "curly-brace", "path": "color.highlight" },
+              "parsed": { "syntax": "curly-brace", "path": "color.highlight" },
               "span": {
                 "file": "dark.json",
                 "text": "\"{color.highlight}\""

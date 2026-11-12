@@ -149,8 +149,8 @@ function shadowLayerToCSS(part: ShadowLayerPart, options: CSSValueOptions): stri
     const css = getReplacementCSS(part, options);
     if (css !== undefined) return css;
     const lengths = [part.offsetX, part.offsetY, part.blur, part.spread, part.color];
-    const written = lengths.map((one) => write(one, options));
-    return `${part.resolved.inset ? "inset " : ""}${written.join(" ")}`;
+    const lengthsCSS = lengths.map((one) => write(one, options));
+    return `${part.resolved.inset ? "inset " : ""}${lengthsCSS.join(" ")}`;
 }
 
 function gradientStopToCSS(

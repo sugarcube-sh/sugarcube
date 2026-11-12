@@ -67,7 +67,7 @@
       "detail": {
         "ref": "#sets/base",
         "reason": "no-leading-slash",
-        "corrected": "#/sets/base"
+        "suggestion": "#/sets/base"
       },
       "span": {
         "file": "tokens.resolver.json",

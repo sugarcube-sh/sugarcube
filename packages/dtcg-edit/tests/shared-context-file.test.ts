@@ -27,7 +27,7 @@ describe("editing for a context that reads a file another context also lists", (
                 { kind: "set", file: "night.json", jsonPath: ["gap", "$value"], value: 3, was: 2 },
             ],
             alsoAffects: [{ mode: "dark" }],
-            moved: [],
+            moves: [],
         });
     });
 
@@ -45,7 +45,7 @@ describe("editing for a context that reads a file another context also lists", (
                 },
             ],
             alsoAffects: [{ mode: "dark" }],
-            moved: [],
+            moves: [],
         });
     });
 

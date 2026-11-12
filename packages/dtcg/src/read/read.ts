@@ -178,12 +178,12 @@ function toDesignTokens(
     const resolving = performance.now();
     onStage?.("generate", generating);
     onStage?.("normalise", resolving - normalising - generating);
-    const places = createDefinitionTracker(loaded.texts, previous);
+    const tracker = createDefinitionTracker(loaded.texts, previous);
     const resolved = buildPermutations(normalised, {
         readValue,
         diagnostics,
         missing,
-        places,
+        tracker,
         previous,
     });
     missing.report();
@@ -211,7 +211,7 @@ function toDesignTokens(
         },
         {
             texts: loaded.texts,
-            moved: places.moved,
+            newSpans: tracker.newSpans,
             known,
             reread: (files, from) => readFromKnownFiles(files, options, from),
         },

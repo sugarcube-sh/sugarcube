@@ -65,7 +65,7 @@ const renamed = (from: string, path: string, properties: string[] = [], kind = "
 });
 
 function brief(before: DesignTokens, after: DesignTokens, moved?: Move[]) {
-    return after.getChangesSince(before, moved && { moved }).map((change) => {
+    return after.getChangesSince(before, moved && { moves: moved }).map((change) => {
         const shown: Record<string, unknown> = { kind: change.kind, path: change.path };
         if ("from" in change) shown.from = change.from;
         if ("properties" in change) shown.properties = change.properties;

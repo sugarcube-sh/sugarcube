@@ -7,9 +7,7 @@ const after = await read("tokens.resolver.json", { readText: fromGit("HEAD") });
 
 for (const change of after.getChangesSince(before)) {
     if (change.kind !== "changed" || !change.properties.includes("value")) continue;
-    const users = after
-        .getReferencesTo(change.path)
-        .flatMap(({ writtenInPaths }) => writtenInPaths);
+    const users = after.getReferencesTo(change.path).flatMap(({ ownerPaths }) => ownerPaths);
     const dependents = new Set(users).size;
     comment(`${change.path} changed; ${dependents} tokens depend on it`);
 }
