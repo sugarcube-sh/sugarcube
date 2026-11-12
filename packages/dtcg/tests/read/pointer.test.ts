@@ -1,7 +1,7 @@
 import { getNodeValue } from "jsonc-parser";
 import { describe, expect, it } from "vitest";
 import { parseJson } from "../../src/read/json.js";
-import { encodePointer, follow, parsePointer } from "../../src/read/pointer.js";
+import { encodePointer, resolvePointer, parsePointer } from "../../src/read/pointer.js";
 
 function tree(text: string) {
     const { root, syntax } = parseJson(text);
@@ -12,7 +12,7 @@ function tree(text: string) {
 function valueAt(text: string, pointer: string) {
     const steps = parsePointer(pointer);
     if (!steps) return { invalid: true };
-    const followed = follow(tree(text), steps);
+    const followed = resolvePointer(tree(text), steps);
     return followed.ok
         ? { value: JSON.parse(JSON.stringify(getNodeValue(followed.node))) }
         : { notFound: followed.step };

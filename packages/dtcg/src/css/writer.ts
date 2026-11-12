@@ -1,4 +1,4 @@
-import { thrownMessages } from "../error-messages.js";
+import { exceptionMessages } from "../error-messages.js";
 import type { Permutation, Reference, Token } from "../model.js";
 import { type CSSValueOptions, type Replacement, type TypographyCSS, toCSSValue } from "./value.js";
 import { type CSSNaming, toCustomPropertyName } from "./custom-property.js";
@@ -352,11 +352,13 @@ class ColorModeWriter {
         }
 
         if ("css" in part) {
-            if (typeof part.css !== "string") throw new TypeError(thrownMessages.typographyPlaced);
+            if (typeof part.css !== "string")
+                throw new TypeError(exceptionMessages.typographyNotPlaceable);
             return { css: part.css, dependencies: part.dependencies };
         }
 
-        if (part.type === "typography") throw new TypeError(thrownMessages.typographyPlaced);
+        if (part.type === "typography")
+            throw new TypeError(exceptionMessages.typographyNotPlaceable);
 
         const reference = this.#writeReference(part);
         if (reference) {
@@ -364,7 +366,7 @@ class ColorModeWriter {
         }
 
         const css = toCSSValue(part, { colors: this.#colors });
-        if (typeof css !== "string") throw new TypeError(thrownMessages.typographyPlaced);
+        if (typeof css !== "string") throw new TypeError(exceptionMessages.typographyNotPlaceable);
         return { css, dependencies: [] };
     }
 

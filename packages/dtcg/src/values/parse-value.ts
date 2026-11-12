@@ -6,8 +6,8 @@ import type {
     UnresolvedValue,
     ValueByType,
 } from "../model.js";
-import { thrownMessages } from "../error-messages.js";
-import { type Notes, readToken } from "./read-syntax.js";
+import { exceptionMessages } from "../error-messages.js";
+import { type ReadCollector, readToken } from "./read-syntax.js";
 import { isTokenType } from "./token-types.js";
 import { valueError } from "./value-errors.js";
 
@@ -84,10 +84,10 @@ export function parseValue<T extends TokenType>(
         ...options
     }: ParseValueOptions & { references?: boolean } = {},
 ): ParseResult<UnresolvedValue<T> | ValueByType[T]> {
-    if (!isTokenType(type)) throw new TypeError(thrownMessages.notATokenType(type));
+    if (!isTokenType(type)) throw new TypeError(exceptionMessages.notATokenType(type));
     if (references) return readToken(type, raw, jsonPath, options);
 
-    const notes: Notes = { references: [], readAgain: [] };
+    const notes: ReadCollector = { references: [], deferredReads: [] };
     const read = readToken(type, raw, jsonPath, options, notes);
     if (!read.ok || notes.references.length === 0) return read;
     const errors = notes.references.map(({ ref, jsonPath: written }) =>

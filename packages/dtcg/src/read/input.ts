@@ -21,11 +21,11 @@ export type CheckedInput =
     | { ok: true; input: Input }
     | { ok: false; problems: [InputProblem, ...InputProblem[]] };
 
-export function checkedInput(modifiers: Modifier[], raw: Record<string, unknown>): CheckedInput {
+export function checkInput(modifiers: Modifier[], raw: Record<string, unknown>): CheckedInput {
     if (modifiers.length === 0) return { ok: true, input: {} };
     const problems: InputProblem[] = [];
     const chosen: Record<string, string> = {};
-    const mentioned = new Set<Modifier>();
+    const provided = new Set<Modifier>();
 
     for (const [key, value] of Object.entries(raw)) {
         const modifier = findByName(modifiers, key, ({ name }) => name);
@@ -34,7 +34,7 @@ export function checkedInput(modifiers: Modifier[], raw: Record<string, unknown>
             problems.push({ reason: "unknown-modifier", modifier: key, valid });
             continue;
         }
-        mentioned.add(modifier);
+        provided.add(modifier);
         if (typeof value !== "string") {
             problems.push({ reason: "not-a-string", modifier: modifier.name });
             continue;
@@ -49,7 +49,7 @@ export function checkedInput(modifiers: Modifier[], raw: Record<string, unknown>
     }
 
     for (const modifier of modifiers) {
-        if (mentioned.has(modifier) || modifier.default !== undefined) continue;
+        if (provided.has(modifier) || modifier.default !== undefined) continue;
         const { name, contexts: valid } = modifier;
         problems.push({ reason: "missing-modifier", modifier: name, valid });
     }

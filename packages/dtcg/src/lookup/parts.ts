@@ -8,17 +8,17 @@ export function buildParts(token: Token): Part | undefined {
     return buildPart(token, token.type, token.resolved, []) as Part;
 }
 
-type Built = Record<string, unknown>;
+type PartObject = Record<string, unknown>;
 
 function buildPart(token: Token, type: TokenType, resolved: unknown, property: JsonPath): unknown {
-    const part = placed(token, property, { type, resolved });
+    const part = attachLocation(token, property, { type, resolved });
     addParts(token, part, syntaxes[type], resolved, property);
     return part;
 }
 
 function addParts(
     token: Token,
-    part: Built,
+    part: PartObject,
     syntax: Syntax,
     resolved: unknown,
     property: JsonPath,
@@ -78,7 +78,7 @@ function listParts(
         case "elements":
             return items.map((item, index) => {
                 const where = [...property, index];
-                const element = placed(token, where, { resolved: item });
+                const element = attachLocation(token, where, { resolved: item });
                 addParts(token, element, syntax.item, item, where);
                 return element;
             });
@@ -93,7 +93,7 @@ function listParts(
     }
 }
 
-function placed(token: Token, property: JsonPath, part: Built): Built {
+function attachLocation(token: Token, property: JsonPath, part: PartObject): PartObject {
     if (property.length > 0) part.property = property;
     const ref = token.getReferenceAt(property);
     if (ref) part.ref = ref;

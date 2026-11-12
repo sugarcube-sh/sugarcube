@@ -15,13 +15,13 @@ import { getFilePath } from "../read/paths.js";
  * // => "/work/tokens/dark.json"
  */
 export function getAbsoluteFilePath(entryFile: string, file: string): string {
-    return diskPath(getFilePath(slashed(entryFile), file));
+    return toAbsolutePath(getFilePath(toPosixPath(entryFile), file));
 }
 
-export function diskPath(path: string): string {
-    return slashed(resolve(slashed(path)));
+export function toAbsolutePath(path: string): string {
+    return toPosixPath(resolve(toPosixPath(path)));
 }
 
-export function slashed(path: string): string {
+export function toPosixPath(path: string): string {
     return path.replaceAll("\\", "/");
 }

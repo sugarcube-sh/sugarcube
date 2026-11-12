@@ -7,7 +7,7 @@ interface FileStats {
     mtimeMs: number;
 }
 
-const WATCHER_DROPS_CHANGES_FOR_MS = 50;
+const RECHECK_DELAY_MS = 50;
 
 /**
  * Calls `listener` each time `watcher` says a file was saved.
@@ -29,18 +29,18 @@ export function onFileChanged(
 ): () => void {
     const waiting = new Set<ReturnType<typeof setTimeout>>();
     let stopped = false;
-    const changed = (path: string) => {
-        const before = statsNow(path);
+    const handleChange = (path: string) => {
+        const before = tryStatSync(path);
         listener(path);
         const check = setTimeout(async () => {
             waiting.delete(check);
             const now = await readStats(path);
             if (stopped) return;
-            if (now && !(before && sameFile(before, now))) listener(path);
-        }, WATCHER_DROPS_CHANGES_FOR_MS);
+            if (now && !(before && sameStats(before, now))) listener(path);
+        }, RECHECK_DELAY_MS);
         waiting.add(check);
     };
-    watcher.on("change", changed);
+    watcher.on("change", handleChange);
     return () => {
         stopped = true;
         for (const check of waiting) clearTimeout(check);
@@ -48,7 +48,7 @@ export function onFileChanged(
     };
 }
 
-function statsNow(path: string): FileStats | undefined {
+function tryStatSync(path: string): FileStats | undefined {
     try {
         const { size, mtimeMs } = statSync(path);
         return { size, mtimeMs };
@@ -64,6 +64,6 @@ function readStats(path: string): Promise<FileStats | undefined> {
     );
 }
 
-function sameFile(a: FileStats, b: FileStats): boolean {
+function sameStats(a: FileStats, b: FileStats): boolean {
     return a.size === b.size && a.mtimeMs === b.mtimeMs;
 }

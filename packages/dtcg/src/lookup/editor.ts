@@ -9,7 +9,7 @@ import type {
 } from "../model.js";
 import { findNodeAtLocation, parse } from "jsonc-parser";
 import { findJsonPath, findNode, getTree } from "./json-path.js";
-import { findLineStarts, keyOf, toSpan } from "../read/json.js";
+import { findLineStarts, getKeyNode, toSpan } from "../read/json.js";
 
 export const SPAN_OF = Symbol.for("@sugarcube-sh/dtcg/span-of");
 
@@ -55,7 +55,7 @@ export function getSpan(tokens: DesignTokens, definitionOrReference: Definition 
  */
 export function getNameSpan(tokens: DesignTokens, definition: Definition): Span {
     const span = getSpan(tokens, definition);
-    const name = keyOf(findNode(tokens, span));
+    const name = getKeyNode(findNode(tokens, span));
     const lineStarts = findLineStarts(tokens.getText(span.file) ?? "");
     return toSpan({ path: span.file, lineStarts }, name);
 }

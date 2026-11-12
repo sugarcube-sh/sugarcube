@@ -1,5 +1,5 @@
 import type { Node } from "jsonc-parser";
-import { thrownMessages } from "../error-messages.js";
+import { exceptionMessages } from "../error-messages.js";
 import type {
     Diagnostic,
     ExtensionError,
@@ -13,7 +13,7 @@ import { isJsonObject } from "../values/json.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { type JsonFile, deepestNode, markedNode, member, toSpan } from "./json.js";
 import { ignoredDiagnostic, valueDiagnostic } from "./value-diagnostic.js";
-import type { ExtensionsAt } from "./walk.js";
+import type { ExtensionsLocation } from "./walk.js";
 
 export type SchemaOutput<S> = S extends StandardSchemaV1
     ? StandardSchemaV1.InferOutput<S>
@@ -26,7 +26,7 @@ export type ExtensionProblem =
     | { jsonPath: JsonPath; message: string };
 
 export interface CheckedExtension {
-    within: readonly [string, ...string[]];
+    keyPath: readonly [string, ...string[]];
     messages?: ExtensionMessages | undefined;
     json: JsonFile;
     node: Node;
@@ -35,7 +35,7 @@ export interface CheckedExtension {
 
 export function findExtension(
     extensions: Readonly<Record<string, unknown>> | undefined,
-    at: ExtensionsAt | undefined,
+    at: ExtensionsLocation | undefined,
     [key, ...inside]: readonly [string, ...string[]],
 ): { value: unknown; node: Node } | undefined {
     if (!at) return undefined;
@@ -49,10 +49,10 @@ export function findExtension(
     return value === undefined || !node ? undefined : { value, node };
 }
 
-export class Reported {
+export class ReportDeduper {
     readonly #seen = new Map<object, Set<Node>>();
 
-    first(by: object, node: Node): boolean {
+    isFirst(by: object, node: Node): boolean {
         const seen = this.#seen.get(by) ?? new Set<Node>();
         this.#seen.set(by, seen);
         if (seen.has(node)) return false;
@@ -68,7 +68,7 @@ export function checkSchema(
 ): { ok: true; value: unknown } | { ok: false; problems: ExtensionProblem[] } {
     if (!schema) return { ok: true, value };
     const result = schema["~standard"].validate(value);
-    if (result instanceof Promise) throw new TypeError(thrownMessages.asyncSchema(key));
+    if (result instanceof Promise) throw new TypeError(exceptionMessages.asyncSchema(key));
     if (!result.issues) return { ok: true, value: result.value };
     return {
         ok: false,
@@ -91,9 +91,9 @@ function issuePath(path: StandardSchemaV1.Issue["path"]): JsonPath {
 
 export function extensionDiagnostic(
     problem: ExtensionProblem,
-    { within, messages, json, node, path }: CheckedExtension,
+    { keyPath, messages, json, node, path }: CheckedExtension,
 ): Diagnostic {
-    const jsonPath = ["$extensions", ...within, ...problem.jsonPath];
+    const jsonPath = ["$extensions", ...keyPath, ...problem.jsonPath];
     if ("kind" in problem && problem.kind === "unknown-property") {
         const where = { node, steps: problem.jsonPath, json };
         return ignoredDiagnostic(problem, jsonPath, where, { ...(path !== undefined && { path }) });
@@ -105,7 +105,7 @@ export function extensionDiagnostic(
     };
     if ("kind" in problem) return valueDiagnostic(problem.detail, jsonPath, found, extra);
 
-    const key = within[0];
+    const key = keyPath[0];
     if ("message" in problem) {
         return diagnostic(
             "extension-invalid",
@@ -114,10 +114,13 @@ export function extensionDiagnostic(
         );
     }
     const { reason, data } = problem;
-    const worded = messages && Object.hasOwn(messages, reason) && messages[reason]?.(data);
+    const formatMessage = messages && Object.hasOwn(messages, reason) && messages[reason]?.(data);
     return diagnostic(
         "extension-invalid",
         { key, jsonPath, reason, ...(data !== undefined && { data }) },
-        { ...extra, ...(typeof worded === "string" ? { message: worded } : worded) },
+        {
+            ...extra,
+            ...(typeof formatMessage === "string" ? { message: formatMessage } : formatMessage),
+        },
     );
 }

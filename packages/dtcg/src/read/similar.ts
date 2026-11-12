@@ -6,7 +6,7 @@ export function similarName<T extends string>(
     let best: T | undefined;
     let tied = false;
     for (const name of candidates) {
-        const [target, candidate] = differing(wanted.toLowerCase(), name.toLowerCase());
+        const [target, candidate] = stripCommonPrefix(wanted.toLowerCase(), name.toLowerCase());
         const limit = Math.max(1, Math.min(2, Math.floor(target.length / 3)));
         if (Math.abs(candidate.length - target.length) > limit) continue;
         const distance = editDistance(target, candidate, limit);
@@ -22,7 +22,7 @@ export function similarName<T extends string>(
     return tied ? undefined : best;
 }
 
-function differing(wanted: string, name: string): [string[], string[]] {
+function stripCommonPrefix(wanted: string, name: string): [string[], string[]] {
     const [from, to] = [wanted.split("."), name.split(".")];
     let shared = 0;
     while (shared < from.length - 1 && shared < to.length - 1 && from[shared] === to[shared]) {

@@ -29,41 +29,41 @@ import { valueError } from "./value-errors.js";
 export interface Slot {
     syntax: Syntax;
     jsonPath: JsonPath;
-    owner: TokenType;
-    element: boolean;
+    tokenType: TokenType;
+    isElement: boolean;
 }
 
-export interface ReferenceRead extends Slot {
+export interface ReferenceInValue extends Slot {
     ref: WrittenReference;
     property: JsonPath;
 }
 
-export interface ReadAgain {
+export interface DeferredRead {
     property: JsonPath;
     jsonPath: JsonPath;
     raw: unknown;
     from(siblings: Siblings): Syntax;
     siblings: Siblings;
-    owner: TokenType;
+    tokenType: TokenType;
 }
 
-export interface Notes {
-    references: ReferenceRead[];
-    readAgain: ReadAgain[];
+export interface ReadCollector {
+    references: ReferenceInValue[];
+    deferredReads: DeferredRead[];
 }
 
-interface Where {
+interface ReadLocation {
     jsonPath: JsonPath;
     property: JsonPath;
-    element: boolean;
+    isElement: boolean;
 }
 
-interface Reading {
+interface ReadContext {
     options: ParseOptions;
-    owner: TokenType;
+    tokenType: TokenType;
     errors: ValueError[];
     ignored: IgnoredProperty[];
-    notes: Notes | undefined;
+    notes: ReadCollector | undefined;
 }
 
 const FAILED = Symbol("failed");
@@ -73,33 +73,38 @@ export function readToken<T extends TokenType>(
     raw: unknown,
     jsonPath: JsonPath,
     options: ParseOptions = {},
-    notes?: Notes,
+    notes?: ReadCollector,
 ): ParseResult<UnresolvedValueByType[T]> {
     const syntax = ofType(type);
-    const result = readSlot({ syntax, jsonPath, owner: type, element: false }, raw, options, notes);
+    const result = readSlot(
+        { syntax, jsonPath, tokenType: type, isElement: false },
+        raw,
+        options,
+        notes,
+    );
     return result.ok ? { ...result, value: result.value as UnresolvedValueByType[T] } : result;
 }
 
 export function readSlot(
-    { syntax, jsonPath, owner, element }: Slot,
+    { syntax, jsonPath, tokenType, isElement }: Slot,
     raw: unknown,
     options: ParseOptions,
-    notes: Notes | undefined,
+    notes: ReadCollector | undefined,
 ): ParseResult<unknown> {
-    const reading: Reading = { options, owner, errors: [], ignored: [], notes };
-    const value = read(syntax, raw, { jsonPath, property: [], element }, reading);
+    const reading: ReadContext = { options, tokenType, errors: [], ignored: [], notes };
+    const value = read(syntax, raw, { jsonPath, property: [], isElement }, reading);
     const { errors, ignored } = reading;
     return value === FAILED ? { ok: false, errors, ignored } : { ok: true, value, ignored };
 }
 
-function read(syntax: Syntax, raw: unknown, where: Where, reading: Reading): unknown {
+function read(syntax: Syntax, raw: unknown, where: ReadLocation, reading: ReadContext): unknown {
     const pointer = readJsonPointer(raw);
-    if (pointer) return keep(pointer, syntax, where, reading);
+    if (pointer) return recordReference(pointer, syntax, where, reading);
 
     if (typeof raw === "string") {
         const curly = readCurlyBrace(raw);
-        if (curly && (where.element || syntax.kind === "ofType")) {
-            return keep(curly, syntax, where, reading);
+        if (curly && (where.isElement || syntax.kind === "ofType")) {
+            return recordReference(curly, syntax, where, reading);
         }
         if (curly)
             return fail(where, { reason: "curly-brace-not-allowed-here", reference: raw }, reading);
@@ -108,13 +113,18 @@ function read(syntax: Syntax, raw: unknown, where: Where, reading: Reading): unk
     return readSyntax(syntax, raw, where, reading);
 }
 
-function readSyntax(syntax: Syntax, raw: unknown, where: Where, reading: Reading): unknown {
+function readSyntax(
+    syntax: Syntax,
+    raw: unknown,
+    where: ReadLocation,
+    reading: ReadContext,
+): unknown {
     switch (syntax.kind) {
         case "ofType": {
-            const owner = reading.owner;
-            reading.owner = syntax.type;
+            const owner = reading.tokenType;
+            reading.tokenType = syntax.type;
             const value = readSyntax(syntaxes[syntax.type], raw, where, reading);
-            reading.owner = owner;
+            reading.tokenType = owner;
             return value !== FAILED && syntax.adjust ? syntax.adjust(value) : value;
         }
         case "object":
@@ -137,30 +147,35 @@ function readSyntax(syntax: Syntax, raw: unknown, where: Where, reading: Reading
     }
 }
 
-function readObject(syntax: ObjectSyntax, raw: unknown, where: Where, reading: Reading): unknown {
+function readObject(
+    syntax: ObjectSyntax,
+    raw: unknown,
+    where: ReadLocation,
+    reading: ReadContext,
+): unknown {
     if (!isJsonObject(raw)) return fail(where, wrongShape(raw), reading);
 
-    const { errors, options, owner } = reading;
-    const defines = (name: string) => Object.hasOwn(syntax.properties, name);
+    const { errors, options, tokenType } = reading;
+    const isKnownProperty = (name: string) => Object.hasOwn(syntax.properties, name);
     const before = errors.length;
     reading.ignored.push(
-        ...unknownProperties(raw, defines, owner, where.jsonPath, errors, options),
+        ...unknownProperties(raw, isKnownProperty, tokenType, where.jsonPath, errors, options),
     );
 
     const value: Record<string, unknown> = {};
     let failed = errors.length > before;
     for (const [name, property] of syntax.inOrder) {
-        const there = inside(where, name);
+        const childLocation = toChildLocation(where, name);
         if (!Object.hasOwn(raw, name)) {
             if (property.kind === "default") value[name] = property.value;
             else if (property.kind !== "optional") {
                 failed = true;
-                fail(there, { reason: "missing-property", property: name }, reading);
+                fail(childLocation, { reason: "missing-property", property: name }, reading);
             }
             continue;
         }
-        const partSyntax = chooseSyntax(property, value, raw[name], there, reading);
-        const part = read(partSyntax, raw[name], there, reading);
+        const partSyntax = chooseSyntax(property, value, raw[name], childLocation, reading);
+        const part = read(partSyntax, raw[name], childLocation, reading);
         if (part === FAILED) failed = true;
         else value[name] = part;
     }
@@ -171,29 +186,34 @@ function chooseSyntax(
     propertySyntax: PropertySyntax,
     siblings: Record<string, unknown>,
     raw: unknown,
-    { jsonPath, property }: Where,
-    reading: Reading,
+    { jsonPath, property }: ReadLocation,
+    reading: ReadContext,
 ): Syntax {
     if (propertySyntax.kind === "dependent" && Object.values(siblings).some(isReference)) {
         const { from } = propertySyntax;
-        const { owner } = reading;
-        reading.notes?.readAgain.push({
+        const { tokenType } = reading;
+        reading.notes?.deferredReads.push({
             property,
             jsonPath,
             raw,
             from,
             siblings: { ...siblings },
-            owner,
+            tokenType,
         });
     }
     return getSyntax(propertySyntax, siblings);
 }
 
-function readList(syntax: ArraySyntax, items: unknown[], where: Where, reading: Reading): unknown {
+function readList(
+    syntax: ArraySyntax,
+    items: unknown[],
+    where: ReadLocation,
+    reading: ReadContext,
+): unknown {
     let failed = false;
     const readItem = (itemSyntax: Syntax, item: unknown, index: number) => {
-        const there = inside(where, index, syntax.kind === "elements");
-        const value = read(itemSyntax, item, there, reading);
+        const childLocation = toChildLocation(where, index, syntax.kind === "elements");
+        const value = read(itemSyntax, item, childLocation, reading);
         if (value === FAILED) failed = true;
         return value;
     };
@@ -213,24 +233,33 @@ function readList(syntax: ArraySyntax, items: unknown[], where: Where, reading: 
     return failed ? FAILED : values;
 }
 
-function inside({ jsonPath, property }: Where, step: string | number, element = false): Where {
-    return { jsonPath: [...jsonPath, step], property: [...property, step], element };
+function toChildLocation(
+    { jsonPath, property }: ReadLocation,
+    step: string | number,
+    isElement = false,
+): ReadLocation {
+    return { jsonPath: [...jsonPath, step], property: [...property, step], isElement };
 }
 
-function keep(ref: WrittenReference, syntax: Syntax, where: Where, reading: Reading) {
-    const { jsonPath, property, element } = where;
+function recordReference(
+    ref: WrittenReference,
+    syntax: Syntax,
+    where: ReadLocation,
+    reading: ReadContext,
+) {
+    const { jsonPath, property, isElement } = where;
     reading.notes?.references.push({
         ref,
         syntax,
         jsonPath,
         property,
-        element,
-        owner: reading.owner,
+        isElement,
+        tokenType: reading.tokenType,
     });
     return ref;
 }
 
-function fail({ jsonPath }: Where, problem: Problem, reading: Reading): typeof FAILED {
-    reading.errors.push(valueError(jsonPath, { type: reading.owner, ...problem }));
+function fail({ jsonPath }: ReadLocation, problem: Problem, reading: ReadContext): typeof FAILED {
+    reading.errors.push(valueError(jsonPath, { type: reading.tokenType, ...problem }));
     return FAILED;
 }

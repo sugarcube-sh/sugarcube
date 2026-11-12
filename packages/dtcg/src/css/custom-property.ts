@@ -61,7 +61,7 @@ export interface CSSCustomPropertyOptions extends CSSNaming {
  * // => "type-body-copy-size"
  */
 export function toCSSIdentifier(path: string): string {
-    return named(path, {});
+    return buildName(path, {});
 }
 
 /**
@@ -86,10 +86,10 @@ export function toCSSIdentifier(path: string): string {
  * // => "--space-1\\/2"
  */
 export function toCustomPropertyName(path: string, options: CSSCustomPropertyOptions = {}): string {
-    return `--${escape(named(path, options))}`;
+    return `--${escape(buildName(path, options))}`;
 }
 
-function named(
+function buildName(
     path: string,
     { prefix, case: casing, delimiter = "-", getName, cssProperty }: CSSCustomPropertyOptions,
 ): string {
@@ -98,13 +98,13 @@ function named(
         : tokenPath
               .removeRoot(path)
               .split(".")
-              .map((segment) => words(segment, casing, delimiter))
+              .map((segment) => formatSegment(segment, casing, delimiter))
               .join(delimiter);
     if (!getName && prefix) whole = `${prefix}${delimiter}${whole}`;
     return cssProperty ? `${whole}${delimiter}${cssProperty}` : whole;
 }
 
-function words(segment: string, casing: "kebab" | undefined, delimiter: string): string {
+function formatSegment(segment: string, casing: "kebab" | undefined, delimiter: string): string {
     let spaced = segment.trim();
     if (casing === "kebab") {
         spaced = spaced

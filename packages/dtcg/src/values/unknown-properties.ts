@@ -3,7 +3,7 @@ import { ignoredProperty, valueError } from "./value-errors.js";
 
 export function unknownProperties(
     raw: Record<string, unknown>,
-    defines: (name: string) => boolean,
+    isKnownProperty: (name: string) => boolean,
     type: TokenType,
     jsonPath: JsonPath,
     errors: ValueError[],
@@ -11,7 +11,7 @@ export function unknownProperties(
 ): IgnoredProperty[] {
     const ignored: IgnoredProperty[] = [];
     for (const name of Object.keys(raw)) {
-        if (defines(name)) continue;
+        if (isKnownProperty(name)) continue;
         const path = [...jsonPath, name];
         if (name === "$ref") errors.push(valueError(path, { type, reason: "pointer-not-alone" }));
         else if (options.ignoreUnknownProperties) ignored.push(ignoredProperty(path, type, name));

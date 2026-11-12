@@ -1,8 +1,8 @@
 import type { Diagnostic, Resolver } from "../model.js";
 import {
-    type Answer,
+    type FileResponse,
     type FileText,
-    type Request,
+    type FileRequest,
     createFiles,
     fetchFiles,
     openFile,
@@ -15,8 +15,8 @@ import {
     fromTokenFile,
 } from "./permutations.js";
 import { checkResolver, isResolver } from "./resolver.js";
-import { resolverPart } from "./resolver-part.js";
-import { Problems } from "./diagnostics.js";
+import { toPublicResolver } from "./resolver-part.js";
+import { DiagnosticCollector } from "./diagnostics.js";
 import { expandSources, allFiles, openSources, allPieces } from "./sources.js";
 import { sameResolver } from "./same-object.js";
 
@@ -33,8 +33,8 @@ export function* load(
     entry: string,
     options: PermutationOptions,
     previous: Resolver | undefined,
-): Generator<Request, Loaded, Answer> {
-    const diagnostics = new Problems();
+): Generator<FileRequest, Loaded, FileResponse> {
+    const diagnostics = new DiagnosticCollector();
     const files = createFiles(diagnostics);
     yield* fetchFiles(files, [entry]);
 
@@ -58,7 +58,7 @@ export function* load(
     const pieces = allPieces(items);
     yield* fetchFiles(files, allFiles(pieces));
     const sources = openSources(files, resolver, pieces);
-    const made = resolverPart(resolver, setsUsed, diagnostics);
+    const made = toPublicResolver(resolver, setsUsed, diagnostics);
     const part = previous && sameResolver(previous, made) ? previous : made;
     return loaded({
         resolver: part,

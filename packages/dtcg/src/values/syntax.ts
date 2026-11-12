@@ -18,9 +18,9 @@ type ValueReason = {
         : never;
 }[ValueErrorCode];
 
-export type Refusal = (raw: unknown) => Problem;
+export type ProblemFactory = (raw: unknown) => Problem;
 
-export type Literal = { ok: true; value: unknown } | { ok: false; problem: Problem };
+export type LiteralResult = { ok: true; value: unknown } | { ok: false; problem: Problem };
 
 export type Siblings = Readonly<Record<string, unknown>>;
 
@@ -42,14 +42,14 @@ export interface LiteralSyntax {
     readonly kind: "literal";
     readonly hasParts: false;
     readonly part?: string;
-    read(raw: unknown, options: ParseOptions): Literal;
+    read(raw: unknown, options: ParseOptions): LiteralResult;
 }
 
 export interface OneOfSyntax {
     readonly kind: "oneOf";
     readonly choices: Readonly<Partial<Record<"string" | "number" | "boolean" | "object", Syntax>>>;
     readonly array?: ArraySyntax;
-    readonly other: Syntax | Refusal;
+    readonly other: Syntax | ProblemFactory;
     readonly hasParts: boolean;
 }
 
@@ -96,12 +96,12 @@ export interface Optional {
     readonly syntax: Syntax;
 }
 
-export interface DependsOn {
+export interface DependentSyntax {
     readonly kind: "dependent";
     from(siblings: Siblings): Syntax;
 }
 
-export type PropertySyntax = Syntax | WithDefault | Optional | DependsOn;
+export type PropertySyntax = Syntax | WithDefault | Optional | DependentSyntax;
 
 export function ofType<T extends TokenType>(
     type: T,
@@ -131,17 +131,19 @@ export function optional(syntax: Syntax): Optional {
     return { kind: "optional", syntax };
 }
 
-export function dependsOn(from: (siblings: Siblings) => Syntax): DependsOn {
+export function dependsOn(from: (siblings: Siblings) => Syntax): DependentSyntax {
     return { kind: "dependent", from };
 }
 
-export function literal(read: (raw: unknown, options: ParseOptions) => Literal): LiteralSyntax;
+export function literal(
+    read: (raw: unknown, options: ParseOptions) => LiteralResult,
+): LiteralSyntax;
 export function literal<N extends string>(
-    read: (raw: unknown, options: ParseOptions) => Literal,
+    read: (raw: unknown, options: ParseOptions) => LiteralResult,
     part: N,
 ): LiteralSyntax & { readonly part: N };
 export function literal(
-    read: (raw: unknown, options: ParseOptions) => Literal,
+    read: (raw: unknown, options: ParseOptions) => LiteralResult,
     part?: string,
 ): LiteralSyntax {
     return part === undefined
@@ -155,7 +157,7 @@ export function oneOf({
     ...choices
 }: Partial<Record<"string" | "number" | "boolean" | "object", Syntax>> & {
     array?: ArraySyntax;
-    other: Syntax | Refusal;
+    other: Syntax | ProblemFactory;
 }): OneOfSyntax {
     const all = [...Object.values(choices), ...(array ? [array] : []), other];
     const hasParts = all.some((each) => typeof each !== "function" && each.hasParts);
@@ -202,19 +204,19 @@ export function wrongShape(value: unknown): Problem {
         : { reason: "wrong-shape", value };
 }
 
-export function refuse(reason: ValueReason): Refusal {
+export function reject(reason: ValueReason): ProblemFactory {
     return (value) => ({ reason, value });
 }
 
-export function ok(value: unknown): Literal {
+export function ok(value: unknown): LiteralResult {
     return { ok: true, value };
 }
 
-export function no(problem: Problem): Literal {
+export function err(problem: Problem): LiteralResult {
     return { ok: false, problem };
 }
 
-export type Choice = Syntax | Refusal | { list: ArraySyntax; items: unknown[] };
+export type Choice = Syntax | ProblemFactory | { list: ArraySyntax; items: unknown[] };
 
 export function chooseByKind({ choices, array, other }: OneOfSyntax, json: unknown): Choice {
     if (Array.isArray(json)) return array ? { list: array, items: json } : other;

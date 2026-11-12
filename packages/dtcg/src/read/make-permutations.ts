@@ -1,74 +1,74 @@
 import type { Input, Permutation, Permutations, Resolver, Scope } from "../model.js";
-import { scopeLabel, workOutScope } from "../lookup/permutation-label.js";
-import { checkedInput, allModifiers } from "./input.js";
+import { scopeLabel, computeScope } from "../lookup/permutation-label.js";
+import { checkInput, allModifiers } from "./input.js";
 
-interface Worded {
+interface PermutationDescription {
     scope: Scope;
     label?: string;
 }
 
-const wordings = new WeakMap<readonly Permutation[], Map<string, Worded>>();
+const descriptionCache = new WeakMap<readonly Permutation[], Map<string, PermutationDescription>>();
 
 function describePermutations(
-    held: ReadonlySet<Permutation>,
+    memberSet: ReadonlySet<Permutation>,
     list: readonly Permutation[],
     all: readonly Permutation[],
-): Worded {
-    let known = wordings.get(all);
+): PermutationDescription {
+    let known = descriptionCache.get(all);
     if (!known) {
         known = new Map();
-        wordings.set(all, known);
+        descriptionCache.set(all, known);
     }
-    const key = all.map((each) => (held.has(each) ? "1" : "0")).join("");
+    const key = all.map((each) => (memberSet.has(each) ? "1" : "0")).join("");
     let worded = known.get(key);
     if (!worded) {
-        worded = { scope: workOutScope(list, all) };
+        worded = { scope: computeScope(list, all) };
         known.set(key, worded);
     }
     return worded;
 }
 
-type Matching = (input: Input) => Permutation | undefined;
+type FindByInput = (input: Input) => Permutation | undefined;
 
 export function allPermutations(
     built: readonly Permutation[],
     resolver: Resolver | undefined,
 ): Permutations {
     const modifiers = allModifiers(resolver);
-    return listed(built, built, (input) => {
-        const checked = checkedInput(modifiers, input);
+    return createPermutations(built, built, (input) => {
+        const checked = checkInput(modifiers, input);
         if (!checked.ok) return undefined;
         return built.find((each) => sameInput(each.input, checked.input));
     });
 }
 
 export function makePermutations(given: readonly Permutation[], all: Permutations): Permutations {
-    return listed(given, all, all.findByInput);
+    return createPermutations(given, all, all.findByInput);
 }
 
-function listed(
+function createPermutations(
     given: readonly Permutation[],
     all: readonly Permutation[],
-    matchingAll: Matching,
+    matchingAll: FindByInput,
 ): Permutations {
-    const held = new Set(given);
-    const list = all.filter((each) => held.has(each));
+    const memberSet = new Set(given);
+    const list = all.filter((each) => memberSet.has(each));
     const inputs = () => list.map(({ input }) => input);
     let others: Permutations | undefined;
     const permutations = Object.defineProperties(list, {
         inputs: { get: inputs },
         others: {
             get: () =>
-                (others ??= listed(
-                    all.filter((each) => !held.has(each)),
+                (others ??= createPermutations(
+                    all.filter((each) => !memberSet.has(each)),
                     all,
                     matchingAll,
                 )),
         },
-        scope: { get: () => describePermutations(held, list, all).scope },
+        scope: { get: () => describePermutations(memberSet, list, all).scope },
         label: {
             get: () => {
-                const worded = describePermutations(held, list, all);
+                const worded = describePermutations(memberSet, list, all);
                 worded.label ??= scopeLabel(worded.scope);
                 return worded.label;
             },
@@ -77,13 +77,15 @@ function listed(
         select: {
             value: (test: (permutation: Permutation) => boolean) => {
                 const kept = list.filter(test);
-                return kept.length === list.length ? permutations : listed(kept, all, matchingAll);
+                return kept.length === list.length
+                    ? permutations
+                    : createPermutations(kept, all, matchingAll);
             },
         },
         findByInput: {
             value: (input: Input) => {
                 const found = matchingAll(input);
-                return found && held.has(found) ? found : undefined;
+                return found && memberSet.has(found) ? found : undefined;
             },
         },
     }) as unknown as Permutations;

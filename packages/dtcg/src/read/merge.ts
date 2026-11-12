@@ -1,11 +1,11 @@
 import { relatedMessages } from "../error-messages.js";
 import { tokenPath } from "../path.js";
 import type { Input, Span } from "../model.js";
-import { diagnostic, type Problems } from "./diagnostics.js";
+import { diagnostic, type DiagnosticCollector } from "./diagnostics.js";
 import type { Inheritable } from "./inherit.js";
 import type { Settings } from "./settings.js";
 import type {
-    ExtensionsAt,
+    ExtensionsLocation,
     GroupReference,
     Properties,
     SourceContents,
@@ -13,7 +13,7 @@ import type {
     SourceToken,
 } from "./walk.js";
 
-export interface WrittenAt {
+export interface SourceSpan {
     source: number;
     span: Span;
     nameSpan: Span;
@@ -21,19 +21,19 @@ export interface WrittenAt {
 
 export interface MergedToken extends SourceToken {
     source: number;
-    replaces?: WrittenAt[];
+    overridden?: SourceSpan[];
     inherited?: { from: string };
     generated?: { from: string; extension: readonly [string, ...string[]] };
-    added?: true;
+    isGenerated?: true;
 }
 
 export interface MergedGroup extends Properties {
     path: string;
-    declaredIn: WrittenAt[];
-    extensionsAt?: Record<string, ExtensionsAt & { source: number; group: string }>;
+    locations: SourceSpan[];
+    extensionLocations?: Record<string, ExtensionsLocation & { source: number; group: string }>;
     extends?: GroupReference & { source: number };
     extendsGroup?: string;
-    takesFrom?: string;
+    inheritsFrom?: string;
     inherited?: { from: string };
 }
 
@@ -43,24 +43,29 @@ export interface Merged {
     order: Set<string>;
     children: Map<string | undefined, string[]>;
     settings: Map<MergedGroup, Settings>;
-    inheritedAt: { [K in Inheritable]: Map<string, Settings[K]> };
+    inheritanceCache: { [K in Inheritable]: Map<string, Settings[K]> };
 }
 
 export function merge(
     pieces: { contents: SourceContents | undefined; source: number }[],
     input: Input,
-    diagnostics: Problems,
+    diagnostics: DiagnosticCollector,
 ): Merged {
     const merged: Merged = {
         tokens: new Map(),
-        groups: new Map([["", { path: "", declaredIn: [] }]]),
+        groups: new Map([["", { path: "", locations: [] }]]),
         order: new Set([""]),
         children: new Map(),
         settings: new Map(),
-        inheritedAt: { type: new Map(), deprecated: new Map(), deprecatedAt: new Map() },
+        inheritanceCache: { type: new Map(), deprecated: new Map(), deprecatedBy: new Map() },
     };
-    const conflict = (path: string, later: Span, earlier: Span[], earlierIs: "token" | "group") =>
-        diagnostics.found(
+    const reportConflict = (
+        path: string,
+        later: Span,
+        earlier: Span[],
+        earlierIs: "token" | "group",
+    ) =>
+        diagnostics.add(
             diagnostic(
                 "token-and-group",
                 {
@@ -91,7 +96,7 @@ export function merge(
                 merged.order.add(group.path);
                 const token = merged.tokens.get(group.path);
                 if (token) {
-                    conflict(group.path, group.nameSpan, [token.nameSpan], "token");
+                    reportConflict(group.path, group.nameSpan, [token.nameSpan], "token");
                     merged.tokens.delete(group.path);
                 }
                 mergeGroup(merged.groups, group, source);
@@ -101,34 +106,37 @@ export function merge(
             merged.order.add(token.path);
             const group = merged.groups.get(token.path);
             if (group) {
-                conflict(
+                reportConflict(
                     token.path,
                     token.nameSpan,
-                    group.declaredIn.map(({ nameSpan }) => nameSpan),
+                    group.locations.map(({ nameSpan }) => nameSpan),
                     "group",
                 );
                 removeGroup(merged, token.path);
             }
             const earlier = merged.tokens.get(token.path);
-            const replaces = earlier && [
-                ...(earlier.replaces ?? []),
+            const overridden = earlier && [
+                ...(earlier.overridden ?? []),
                 { source: earlier.source, span: earlier.span, nameSpan: earlier.nameSpan },
             ];
-            merged.tokens.set(token.path, { ...token, source, ...(replaces && { replaces }) });
+            merged.tokens.set(token.path, { ...token, source, ...(overridden && { overridden }) });
         }
     }
     return merged;
 }
 
 function mergeGroup(groups: Map<string, MergedGroup>, group: SourceGroup, source: number): void {
-    const { path, extends: extending, span, nameSpan, extensionsAt, ...properties } = group;
-    const existing = groups.get(path) ?? { path, declaredIn: [] };
+    const { path, extends: extending, span, nameSpan, extensionsLocation, ...properties } = group;
+    const existing = groups.get(path) ?? { path, locations: [] };
     mergeProperties(existing, properties);
-    existing.declaredIn.push({ source, span, nameSpan });
-    if (extensionsAt && properties.extensions) {
-        const declared = { ...extensionsAt, source, group: path };
+    existing.locations.push({ source, span, nameSpan });
+    if (extensionsLocation && properties.extensions) {
+        const declared = { ...extensionsLocation, source, group: path };
         const keys = Object.keys(properties.extensions).map((key) => [key, declared]);
-        existing.extensionsAt = { ...existing.extensionsAt, ...Object.fromEntries(keys) };
+        existing.extensionLocations = {
+            ...existing.extensionLocations,
+            ...Object.fromEntries(keys),
+        };
     }
     if (extending) existing.extends = { ...extending, source };
     groups.set(path, existing);

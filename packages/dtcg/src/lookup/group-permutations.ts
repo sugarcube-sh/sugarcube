@@ -29,16 +29,16 @@ export function groupPermutationsBy<Result>(
     tokens: DesignTokens,
     fn: (permutation: Permutation) => Result,
 ): readonly PermutationGroup<Result>[] {
-    const groups: { result: Result; gave: Permutation[] }[] = [];
+    const groups: { result: Result; permutations: Permutation[] }[] = [];
     for (const permutation of tokens.permutations) {
         const result = fn(permutation);
         const same = groups.find((each) => sameResult(each.result, result));
-        if (same) same.gave.push(permutation);
-        else groups.push({ result, gave: [permutation] });
+        if (same) same.permutations.push(permutation);
+        else groups.push({ result, permutations: [permutation] });
     }
-    return groups.map(({ result, gave }) => ({
+    return groups.map(({ result, permutations }) => ({
         result,
-        permutations: makePermutations(gave, tokens.permutations),
+        permutations: makePermutations(permutations, tokens.permutations),
     }));
 }
 

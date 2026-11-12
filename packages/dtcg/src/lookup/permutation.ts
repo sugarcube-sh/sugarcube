@@ -1,4 +1,4 @@
-import { thrownMessages } from "../error-messages.js";
+import { exceptionMessages } from "../error-messages.js";
 import type {
     DesignTokens,
     Input,
@@ -7,7 +7,7 @@ import type {
     PermutationErrorDetail,
     SeveralPermutationsDetail,
 } from "../model.js";
-import { checkedInput, allModifiers } from "../read/input.js";
+import { checkInput, allModifiers } from "../read/input.js";
 
 /**
  * Thrown when an input names a permutation the tokens don't have.
@@ -36,7 +36,7 @@ export class PermutationError extends Error {
     readonly detail: PermutationErrorDetail;
 
     constructor(detail: PermutationErrorDetail) {
-        super(thrownMessages.permutation(detail));
+        super(exceptionMessages.permutation(detail));
         this.name = "PermutationError";
         this.detail = detail;
     }
@@ -68,18 +68,18 @@ export class SeveralPermutationsError extends Error {
     readonly detail: SeveralPermutationsDetail;
 
     constructor(detail: SeveralPermutationsDetail) {
-        super(thrownMessages.severalPermutations(detail));
+        super(exceptionMessages.severalPermutations(detail));
         this.name = "SeveralPermutationsError";
         this.detail = detail;
     }
 }
 
-export function onlyPermutation(tokens: DesignTokens, asked: string): Permutation {
+export function getOnlyPermutation(tokens: DesignTokens, asked: string): Permutation {
     const [only, ...more] = tokens.permutations;
     if (only && more.length === 0) return only;
-    const away = tokens.permutations.find((each) => !each.isDefault);
+    const nonDefault = tokens.permutations.find((each) => !each.isDefault);
     const example = Object.fromEntries(
-        (away?.contexts ?? [])
+        (nonDefault?.contexts ?? [])
             .filter((context) => !context.isDefault)
             .map((context) => [context.modifier.name, context.name]),
     );
@@ -121,6 +121,6 @@ type CompleteInput = { ok: true; input: Input } | ({ ok: false } & InputProblem)
  * // => { ok: true, input: { mode: "dark" } }
  */
 export function completeInput(tokens: DesignTokens, input: Input): CompleteInput {
-    const checked = checkedInput(allModifiers(tokens.resolver), input);
+    const checked = checkInput(allModifiers(tokens.resolver), input);
     return checked.ok ? checked : { ok: false, ...checked.problems[0] };
 }

@@ -1,7 +1,11 @@
 import { relatedMessages } from "../error-messages.js";
 import type { Input, Source, Span, WrittenReference } from "../model.js";
-import { movedReference, namedPath, toReferenceTarget } from "../values/references.js";
-import { diagnostic, type Problems } from "./diagnostics.js";
+import {
+    applyMovesToReference,
+    getReferencePath,
+    toReferenceTarget,
+} from "../values/references.js";
+import { diagnostic, type DiagnosticCollector } from "./diagnostics.js";
 import { similarName } from "./similar.js";
 
 interface Use {
@@ -23,27 +27,27 @@ interface MissingInInputs {
     inputs: [Input, ...Input[]];
 }
 
-export interface MissingIn {
+export interface MissingRecorder {
     record(reference: WrittenReference, from: string, span: Span): void;
-    close(): void;
+    flush(): void;
 }
 
-const MISSING_NOT_REPORTED: MissingIn = Object.freeze({ record: () => {}, close: () => {} });
+const NOOP_RECORDER: MissingRecorder = Object.freeze({ record: () => {}, flush: () => {} });
 
 export interface MissingReferences {
-    in(
+    createRecorder(
         input: Input,
         paths: ReadonlyMap<string, unknown>,
         unreadSources: readonly Source[],
-    ): MissingIn;
+    ): MissingRecorder;
     report(): void;
 }
 
-export function missingReferences(diagnostics: Problems): MissingReferences {
+export function missingReferences(diagnostics: DiagnosticCollector): MissingReferences {
     const mergedAcrossInputs = new Map<string, MissingInInputs>();
     return {
-        in: (input, paths, unreadSources) => {
-            if (unreadSources.length > 0) return MISSING_NOT_REPORTED;
+        createRecorder: (input, paths, unreadSources) => {
+            if (unreadSources.length > 0) return NOOP_RECORDER;
             const missing = new Map<string, Missing>();
             return {
                 record: (reference, from, span) => {
@@ -56,9 +60,9 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
                     entry.uses.push({ from, span });
                     missing.set(ref, entry);
                 },
-                close: () => {
+                flush: () => {
                     for (const [ref, { reference, first, uses }] of missing) {
-                        const similar = similarReference(reference, paths, allFrom(uses));
+                        const similar = similarReference(reference, paths, getUniquePaths(uses));
                         const key = JSON.stringify([ref, similar]);
                         let entry = mergedAcrossInputs.get(key);
                         if (entry) entry.inputs.push(input);
@@ -84,7 +88,7 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
                     }));
                 const detail = {
                     ref,
-                    from: allFrom(uses),
+                    from: getUniquePaths(uses),
                     ...(similar !== undefined && { similar }),
                 };
                 const [input, ...others] = inputs;
@@ -93,14 +97,14 @@ export function missingReferences(diagnostics: Problems): MissingReferences {
                     path: first.from,
                     ...(relatedInformation.length > 0 && { relatedInformation }),
                 });
-                const kept = diagnostics.found(made, input);
-                for (const each of others) diagnostics.also(kept, each);
+                const kept = diagnostics.add(made, input);
+                for (const each of others) diagnostics.addInput(kept, each);
             }
         },
     };
 }
 
-function allFrom(uses: readonly Use[]): string[] {
+function getUniquePaths(uses: readonly Use[]): string[] {
     return [...new Set(uses.map(({ from }) => from))];
 }
 
@@ -109,12 +113,12 @@ function similarReference(
     paths: ReadonlyMap<string, unknown>,
     from: string[],
 ): string | undefined {
-    const named = namedPath(reference);
+    const named = getReferencePath(reference);
     if (named === undefined || paths.has(named)) return undefined;
     const close = similarName(
         named,
         [...paths.keys()].filter((path) => path !== "" && !from.includes(path)),
     );
     if (close === undefined) return undefined;
-    return toReferenceTarget(movedReference(reference, [{ from: named, to: close }]));
+    return toReferenceTarget(applyMovesToReference(reference, [{ from: named, to: close }]));
 }

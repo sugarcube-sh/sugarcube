@@ -1,6 +1,6 @@
 import type { DesignTokens, ReadOptions } from "../model.js";
 import { onFileChanged } from "./file-changed.js";
-import { diskPath, getAbsoluteFilePath } from "./paths.js";
+import { toAbsolutePath, getAbsoluteFilePath } from "./paths.js";
 import { read } from "./read.js";
 
 /** Where design tokens are on disk, and how to read them. */
@@ -96,7 +96,7 @@ export interface LiveTokens {
  * It reads straight away, and on each save once you pass a watcher to {@link LiveTokens.watch}.
  * Saves during a read lead to one more read.
  *
- * @param onDisk - Where the tokens are, such as `{ entryFile: "tokens/tokens.resolver.json" }`.
+ * @param source - Where the tokens are, such as `{ entryFile: "tokens/tokens.resolver.json" }`.
  * Give a function to be asked again on every read.
  * @param options - `onError` gets each failed read, and anything a listener throws.
  *
@@ -110,11 +110,11 @@ export interface LiveTokens {
  * live.onRead((tokens, { file }) => console.log(`${file} saved`));
  */
 export function createLiveTokens(
-    onDisk: TokensOnDisk | (() => TokensOnDisk),
+    source: TokensOnDisk | (() => TokensOnDisk),
     { onError }: { onError: (error: unknown) => void },
 ): LiveTokens {
     const listeners = new Set<(tokens: DesignTokens, event: ReadEvent) => void>();
-    let names = new Map<string, string>();
+    let filesByAbsolutePath = new Map<string, string>();
     let watcher: FileWatcher | undefined;
     const watched = new Set<string>();
     let reading = false;
@@ -124,32 +124,32 @@ export function createLiveTokens(
 
     const watchNewFiles = () => {
         if (!watcher) return;
-        const added = [...names.keys()].filter((path) => !watched.has(path));
+        const added = [...filesByAbsolutePath.keys()].filter((path) => !watched.has(path));
         for (const path of added) watched.add(path);
         if (added.length > 0) watcher.add(added);
     };
 
-    const readOnce = async (): Promise<DesignTokens> => {
+    const reload = async (): Promise<DesignTokens> => {
         reading = true;
         savedDuringRead = new Set();
         try {
-            const { entryFile, options } = typeof onDisk === "function" ? onDisk() : onDisk;
+            const { entryFile, options } = typeof source === "function" ? source() : source;
             const tokens = await read(entryFile, options);
-            names = new Map(
+            filesByAbsolutePath = new Map(
                 tokens.files.map((file) => [getAbsoluteFilePath(entryFile, file), file]),
             );
             watchNewFiles();
             return tokens;
         } finally {
             reading = false;
-            const missed = [...savedDuringRead].find((path) => names.has(path));
-            if (missed !== undefined) queueRead(names.get(missed));
+            const savedFile = [...savedDuringRead].find((path) => filesByAbsolutePath.has(path));
+            if (savedFile !== undefined) queueRead(filesByAbsolutePath.get(savedFile));
         }
     };
 
-    const readAndTell = async (file?: string): Promise<DesignTokens> => {
+    const reloadAndNotify = async (file?: string): Promise<DesignTokens> => {
         const started = performance.now();
-        const tokens = await readOnce();
+        const tokens = await reload();
         const ms = performance.now() - started;
         if (queued) return tokens;
         const event: ReadEvent = file === undefined ? { ms } : { file, ms };
@@ -163,7 +163,7 @@ export function createLiveTokens(
         return tokens;
     };
 
-    let latest = readOnce();
+    let latest = reload();
     latest.catch(onError);
 
     function queueRead(file?: string): Promise<DesignTokens> {
@@ -171,7 +171,7 @@ export function createLiveTokens(
         if (queued) return queued;
         const start = () => {
             queued = undefined;
-            return readAndTell(queuedFile);
+            return reloadAndNotify(queuedFile);
         };
         queued = latest.then(start, start);
         latest = queued;
@@ -179,9 +179,9 @@ export function createLiveTokens(
         return latest;
     }
 
-    const changed = (path: string) => {
-        const disk = diskPath(path);
-        const file = names.get(disk);
+    const handleChange = (path: string) => {
+        const disk = toAbsolutePath(path);
+        const file = filesByAbsolutePath.get(disk);
         if (file !== undefined) queueRead(file);
         else if (reading) savedDuringRead.add(disk);
     };
@@ -197,11 +197,11 @@ export function createLiveTokens(
                 () => undefined,
                 () => undefined,
             ),
-        watch(given) {
-            watcher = given;
-            onFileChanged(given, changed);
-            given.on("add", changed);
-            given.on("unlink", changed);
+        watch(fileWatcher) {
+            watcher = fileWatcher;
+            onFileChanged(fileWatcher, handleChange);
+            fileWatcher.on("add", handleChange);
+            fileWatcher.on("unlink", handleChange);
             watchNewFiles();
         },
     };

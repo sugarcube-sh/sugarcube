@@ -1,11 +1,11 @@
 import type { Span } from "../model.js";
 import { relatedMessages } from "../error-messages.js";
-import { diagnostic, type Problems } from "./diagnostics.js";
+import { diagnostic, type DiagnosticCollector } from "./diagnostics.js";
 import { type JsonFile, type JsonProblem, type ParsedJson, parseJson, toSpan } from "./json.js";
 
 export type FileText = { text: string } | { missing: true };
-export type Request = string[];
-export type Answer = Record<string, FileText>;
+export type FileRequest = string[];
+export type FileResponse = Record<string, FileText>;
 export type FileKind = "tokens" | "resolver";
 
 export interface Files {
@@ -13,14 +13,17 @@ export interface Files {
     parsed: Map<string, ParsedJson>;
     opened: Map<string, JsonFile | undefined>;
     used: string[];
-    diagnostics: Problems;
+    diagnostics: DiagnosticCollector;
 }
 
-export function createFiles(diagnostics: Problems): Files {
+export function createFiles(diagnostics: DiagnosticCollector): Files {
     return { texts: new Map(), parsed: new Map(), opened: new Map(), used: [], diagnostics };
 }
 
-export function* fetchFiles(files: Files, paths: string[]): Generator<Request, void, Answer> {
+export function* fetchFiles(
+    files: Files,
+    paths: string[],
+): Generator<FileRequest, void, FileResponse> {
     const wanted = [...new Set(paths)].filter((path) => !files.texts.has(path));
     if (wanted.length === 0) return;
     const answer = yield wanted;
@@ -45,12 +48,12 @@ export function openFile(
 ): JsonFile | undefined {
     if (files.opened.has(path)) return files.opened.get(path);
     files.used.push(path);
-    const file = openOnce(files, path, kind, referencedFrom);
+    const file = loadFile(files, path, kind, referencedFrom);
     files.opened.set(path, file);
     return file;
 }
 
-function openOnce(
+function loadFile(
     files: Files,
     path: string,
     kind: FileKind,
@@ -59,7 +62,7 @@ function openOnce(
     const { diagnostics } = files;
     const parsed = parseFile(files, path);
     if (!parsed) {
-        diagnostics.found(
+        diagnostics.add(
             diagnostic(
                 "file-not-found",
                 { file: path, ...(referencedFrom && { referencedFrom: referencedFrom.file }) },
@@ -79,7 +82,7 @@ function openOnce(
             : []),
     ];
     for (const problem of problems.sort((a, b) => a.offset - b.offset)) {
-        diagnostics.found(
+        diagnostics.add(
             diagnostic("invalid-json", { reason: problem.reason }, { span: toSpan(file, problem) }),
         );
     }
@@ -89,7 +92,7 @@ function openOnce(
         const relatedInformation = [
             { message: relatedMessages.alsoWrittenHere, span: toSpan(file, first) },
         ];
-        diagnostics.found(
+        diagnostics.add(
             diagnostic("duplicate-key", { key }, { span: toSpan(file, last), relatedInformation }),
         );
     }

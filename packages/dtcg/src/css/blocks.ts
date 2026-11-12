@@ -97,27 +97,28 @@ export function getCSSBlocks(
         };
     });
     const pathsByModifier = allPathsByModifier(blocksWithDeclarations);
-    const made: CSSBlock[] = [];
+    const result: CSSBlock[] = [];
     for (const { permutation, ...block } of blocksWithDeclarations) {
         const inEffect = new Map<string, CSSDeclaration>();
-        const elsewhere = new Map<string, Set<string>>();
-        for (const earlier of made) {
-            if (reaches(earlier, block)) {
+        const otherBlockValues = new Map<string, Set<string>>();
+        for (const earlier of result) {
+            if (covers(earlier, block)) {
                 for (const line of earlier.declarations) inEffect.set(line.name, line);
                 continue;
             }
             for (const { name, value } of earlier.inRule) {
-                const values = elsewhere.get(name);
+                const values = otherBlockValues.get(name);
                 if (values) values.add(value);
-                else elsewhere.set(name, new Set([value]));
+                else otherBlockValues.set(name, new Set([value]));
             }
         }
-        const own = ownership(block.input, permutation, pathsByModifier);
+        const own = createOwnershipCheck(block.input, permutation, pathsByModifier);
         const all = block.declarations;
         const changed = all.filter(
             (line) =>
                 hasChanged(inEffect.get(line.name), line) ||
-                (own(line.token) && disputed(elsewhere.get(line.name), line.value)),
+                (own(line.token) &&
+                    hasConflictingValue(otherBlockValues.get(line.name), line.value)),
         );
         const inRule =
             block.redeclare === false ? changed : [...changed, ...dependents(all, changed)];
@@ -128,19 +129,19 @@ export function getCSSBlocks(
                 (names.has(line.name) ||
                     !sameSupports(inEffect.get(line.name)?.supports, line.supports)),
         );
-        made.push({ ...block, inRule, underSupports });
+        result.push({ ...block, inRule, underSupports });
     }
-    return made;
+    return result;
 }
 
-function reaches(earlier: CSSBlockInput, later: CSSBlockInput): boolean {
+function covers(earlier: CSSBlockInput, later: CSSBlockInput): boolean {
     const reach = [earlier.selector].flat();
     const target = [later.selector].flat();
     const everyElement = reach.includes(":root") || target.every((each) => reach.includes(each));
-    return everyElement && everyScreen(earlier.atRules ?? [], later.atRules ?? []);
+    return everyElement && coversAtRules(earlier.atRules ?? [], later.atRules ?? []);
 }
 
-function everyScreen(earlier: readonly string[], later: readonly string[]): boolean {
+function coversAtRules(earlier: readonly string[], later: readonly string[]): boolean {
     if (earlier.length === 0) return true;
     if (earlier.length === later.length && earlier.every((each, index) => each === later[index])) {
         return true;
@@ -166,7 +167,7 @@ function allPathsByModifier(
     return pathsByModifier;
 }
 
-function ownership(
+function createOwnershipCheck(
     input: Input,
     permutation: Permutation,
     pathsByModifier: Map<ResolverModifier, Set<string>>,
@@ -183,7 +184,7 @@ function ownership(
     return ({ path }) => paths.some((each) => each.has(path));
 }
 
-function disputed(values: Set<string> | undefined, value: string): boolean {
+function hasConflictingValue(values: Set<string> | undefined, value: string): boolean {
     if (!values) return false;
     for (const each of values) if (each !== value) return true;
     return false;

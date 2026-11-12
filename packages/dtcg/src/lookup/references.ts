@@ -5,10 +5,10 @@ interface ReferenceIndex {
     byPath: Map<string, Reference[]>;
 }
 
-const written = new WeakMap<Permutation, ReferenceIndex>();
+const indexCache = new WeakMap<Permutation, ReferenceIndex>();
 
 export function referenceIndex(permutation: Permutation): ReferenceIndex {
-    const cached = written.get(permutation);
+    const cached = indexCache.get(permutation);
     if (cached) return cached;
     const position = new Map<Reference, number>();
     const byPath = new Map<string, Reference[]>();
@@ -26,6 +26,6 @@ export function referenceIndex(permutation: Permutation): ReferenceIndex {
     };
     visit([permutation.topLevel]);
     const built = { position, byPath };
-    written.set(permutation, built);
+    indexCache.set(permutation, built);
     return built;
 }

@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import type { DesignTokens, ReadOptions } from "../model.js";
 import { read as readAnywhere } from "../read/read.js";
-import { slashed } from "./paths.js";
+import { toPosixPath } from "./paths.js";
 
 /**
  * Reads design tokens from disk.
@@ -18,13 +18,13 @@ import { slashed } from "./paths.js";
  * // => ["tokens.resolver.json", "color.json", "dark.json"]
  */
 export function read(entry: string, options: ReadOptions = {}): Promise<DesignTokens> {
-    return readAnywhere(slashed(entry), {
+    return readAnywhere(toPosixPath(entry), {
         ...options,
-        readText: textOnDisk,
+        readText: readTextFile,
     });
 }
 
-export async function textOnDisk(file: string): Promise<string | undefined> {
+export async function readTextFile(file: string): Promise<string | undefined> {
     try {
         return await readFile(file, "utf8");
     } catch (error) {

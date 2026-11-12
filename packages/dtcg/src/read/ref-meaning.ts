@@ -4,14 +4,14 @@ import type { Merged, MergedToken } from "./merge.js";
 import { arrayIndex } from "./json.js";
 import { refSteps } from "./pointer.js";
 
-export type Reached =
+export type LookupResult =
     | { kind: "group"; path: string }
     | { kind: "token"; path: string; token: MergedToken }
     | { kind: "part"; path: string; token: MergedToken; inside: string[] }
     | { kind: "stops-at-token"; path: string }
     | { kind: "nothing" };
 
-export interface Aim {
+export interface ReferenceLookup {
     reference: WrittenReference;
     steps: string[] | undefined;
 }
@@ -20,15 +20,18 @@ export function toPointerSteps(reference: WrittenReference): string[] | undefine
     return reference.syntax === "json-pointer" ? refSteps(reference.pointer) : undefined;
 }
 
-export function followReference({ reference, steps }: Aim, merged: Merged): Reached {
-    if (reference.syntax === "json-pointer") return reach(steps, merged);
+export function followReference(
+    { reference, steps }: ReferenceLookup,
+    merged: Merged,
+): LookupResult {
+    if (reference.syntax === "json-pointer") return lookupPointer(steps, merged);
     const { path } = reference;
     const token = merged.tokens.get(path);
     if (token) return { kind: "token", path, token };
     return merged.groups.has(path) ? { kind: "group", path } : { kind: "nothing" };
 }
 
-export function reach(steps: string[] | undefined, merged: Merged): Reached {
+export function lookupPointer(steps: string[] | undefined, merged: Merged): LookupResult {
     if (!steps) return { kind: "nothing" };
     const { path, inside } = pointerParts(steps);
     if (path === undefined) return { kind: "nothing" };
@@ -57,7 +60,7 @@ export function pointerParts(steps: string[]): { path?: string; inside?: string[
     };
 }
 
-export function stepInto(
+export function getAtPath(
     raw: unknown,
     steps: string[],
 ): { value: unknown; property: JsonPath } | undefined {

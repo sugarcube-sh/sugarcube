@@ -9,8 +9,8 @@ import type {
     Token,
     TypographyPart,
 } from "../model.js";
-import { colorDecimals, roundedTo } from "../values/decimals.js";
-import { getWrittenHex } from "../values/hex-color.js";
+import { colorDecimals, roundToDigits } from "../values/decimals.js";
+import { getOriginalHex } from "../values/hex-color.js";
 
 /** A typography value written as CSS, one value for each CSS property. */
 export interface TypographyCSS {
@@ -67,7 +67,7 @@ export interface CSSValueOptions {
  * For typography, it returns an object, with one value for each CSS property. For a gradient, it
  * returns only the stops, for inside `linear-gradient()`.
  *
- * @param of - A token, such as `permutation.getToken("color.primary")`, or part of one, such as a
+ * @param value - A token, such as `permutation.getToken("color.primary")`, or part of one, such as a
  * border's `color`.
  * @param options - How to write references and colors.
  *
@@ -77,43 +77,46 @@ export interface CSSValueOptions {
  * // => "rgb(102 153 255)"
  */
 export function toCSSValue(
-    of: Extract<Token, { type: "typography" }> | TypographyPart | undefined,
+    value: Extract<Token, { type: "typography" }> | TypographyPart | undefined,
     options?: CSSValueOptions,
 ): TypographyCSS | undefined;
 export function toCSSValue(
-    of: Exclude<Token, { type: "typography" }> | Exclude<Part, TypographyPart> | undefined,
+    value: Exclude<Token, { type: "typography" }> | Exclude<Part, TypographyPart> | undefined,
     options?: CSSValueOptions,
 ): string | undefined;
 export function toCSSValue(
-    of: Token | Part | undefined,
+    value: Token | Part | undefined,
     options?: CSSValueOptions,
 ): string | TypographyCSS | undefined;
 export function toCSSValue(
-    of: Token | Part | undefined,
+    value: Token | Part | undefined,
     options: CSSValueOptions = {},
 ): string | TypographyCSS | undefined {
-    if (of === undefined) return undefined;
-    const whole = "path" in of ? of.parts : of;
+    if (value === undefined) return undefined;
+    const whole = "path" in value ? value.parts : value;
     if (!whole) return undefined;
-    return whole.type === "typography" ? typography(whole, options) : write(whole, options);
+    return whole.type === "typography" ? typographyToCSS(whole, options) : write(whole, options);
 }
 
-function replaced({ ref }: PartBase<unknown>, { replaceReference }: CSSValueOptions) {
+function getReplacement({ ref }: PartBase<unknown>, { replaceReference }: CSSValueOptions) {
     return ref ? replaceReference?.(ref) : undefined;
 }
 
-function customProperty(part: PartBase<unknown>, options: CSSValueOptions): string | undefined {
-    const answer = replaced(part, options);
+function getReplacementProperty(
+    part: PartBase<unknown>,
+    options: CSSValueOptions,
+): string | undefined {
+    const answer = getReplacement(part, options);
     return answer && "customProperty" in answer ? answer.customProperty : undefined;
 }
 
-function replacedCSS(part: PartBase<unknown>, options: CSSValueOptions): string | undefined {
-    const answer = replaced(part, options);
+function getReplacementCSS(part: PartBase<unknown>, options: CSSValueOptions): string | undefined {
+    const answer = getReplacement(part, options);
     return answer && ("customProperty" in answer ? `var(${answer.customProperty})` : answer.css);
 }
 
 function write(part: Exclude<Part, TypographyPart>, options: CSSValueOptions): string {
-    const css = replacedCSS(part, options);
+    const css = getReplacementCSS(part, options);
     if (css !== undefined) return css;
     const each = (inner: Exclude<Part, TypographyPart>) => write(inner, options);
     switch (part.type) {
@@ -136,29 +139,32 @@ function write(part: Exclude<Part, TypographyPart>, options: CSSValueOptions): s
         case "transition":
             return [part.duration, part.timingFunction, part.delay].map(each).join(" ");
         case "shadow":
-            return part.layers.map((one) => layer(one, options)).join(", ");
+            return part.layers.map((one) => shadowLayerToCSS(one, options)).join(", ");
         case "gradient":
-            return part.stops.map((one) => stop(one, options)).join(", ");
+            return part.stops.map((one) => gradientStopToCSS(one, options)).join(", ");
     }
 }
 
-function layer(part: ShadowLayerPart, options: CSSValueOptions): string {
-    const css = replacedCSS(part, options);
+function shadowLayerToCSS(part: ShadowLayerPart, options: CSSValueOptions): string {
+    const css = getReplacementCSS(part, options);
     if (css !== undefined) return css;
     const lengths = [part.offsetX, part.offsetY, part.blur, part.spread, part.color];
     const written = lengths.map((one) => write(one, options));
     return `${part.resolved.inset ? "inset " : ""}${written.join(" ")}`;
 }
 
-function stop({ color, position }: GradientStopPart, options: CSSValueOptions): string {
-    const named = customProperty(position, options);
+function gradientStopToCSS(
+    { color, position }: GradientStopPart,
+    options: CSSValueOptions,
+): string {
+    const named = getReplacementProperty(position, options);
     const where = named
         ? `clamp(0%, var(${named}) * 100%, 100%)`
-        : `${roundedTo(position.resolved * 100, 4)}%`;
+        : `${roundToDigits(position.resolved * 100, 4)}%`;
     return `${write(color, options)} ${where}`;
 }
 
-function typography(part: TypographyPart, options: CSSValueOptions): TypographyCSS {
+function typographyToCSS(part: TypographyPart, options: CSSValueOptions): TypographyCSS {
     const each = (cssProperty: keyof TypographyCSS, value: Exclude<Part, TypographyPart>) => {
         const answer = part.ref ? options.replaceReference?.(part.ref, cssProperty) : undefined;
         return answer && "customProperty" in answer
@@ -211,18 +217,24 @@ function quoteFont(name: string): string {
 
 function writeColor(color: ColorValue, colors: "components" | "hex"): string {
     const { colorSpace, components, alpha, hex } = color;
-    const asRead = getWrittenHex(color);
-    if (asRead !== undefined) return asRead;
+    const originalHex = getOriginalHex(color);
+    if (originalHex !== undefined) return originalHex;
     if (hex !== undefined && colors === "hex") return addAlpha(hex, alpha);
     const [a, b, c] = components;
-    const numbers = [a, b, c].map((each) => fixed(each)).join(" ");
+    const numbers = [a, b, c].map((each) => formatComponent(each)).join(" ");
     switch (colorSpace) {
         case "srgb":
-            return withAlpha(`rgb(${[a, b, c].map(channel).join(" ")}`, alpha);
+            return withAlpha(`rgb(${[a, b, c].map(formatRGBChannel).join(" ")}`, alpha);
         case "hsl":
-            return withAlpha(`hsl(${fixed(a)} ${percent(b)} ${percent(c)}`, alpha);
+            return withAlpha(
+                `hsl(${formatComponent(a)} ${formatPercent(b)} ${formatPercent(c)}`,
+                alpha,
+            );
         case "hwb":
-            return withAlpha(`hwb(${fixed(a)} ${percent(b)} ${percent(c)}`, alpha);
+            return withAlpha(
+                `hwb(${formatComponent(a)} ${formatPercent(b)} ${formatPercent(c)}`,
+                alpha,
+            );
         case "lab":
         case "lch":
         case "oklab":
@@ -239,20 +251,20 @@ function writeColor(color: ColorValue, colors: "components" | "hex"): string {
     }
 }
 
-function withAlpha(opened: string, alpha: number): string {
-    return alpha === 1 ? `${opened})` : `${opened} / ${fixed(alpha)})`;
+function withAlpha(prefix: string, alpha: number): string {
+    return alpha === 1 ? `${prefix})` : `${prefix} / ${formatComponent(alpha)})`;
 }
 
-function channel(component: ColorComponent): string {
-    return component === "none" ? "none" : String(roundedTo(component * 255, 2));
+function formatRGBChannel(component: ColorComponent): string {
+    return component === "none" ? "none" : String(roundToDigits(component * 255, 2));
 }
 
-function percent(component: ColorComponent): string {
-    return component === "none" ? "none" : `${fixed(component)}%`;
+function formatPercent(component: ColorComponent): string {
+    return component === "none" ? "none" : `${formatComponent(component)}%`;
 }
 
-function fixed(component: ColorComponent): string {
-    return component === "none" ? "none" : String(roundedTo(component, colorDecimals));
+function formatComponent(component: ColorComponent): string {
+    return component === "none" ? "none" : String(roundToDigits(component, colorDecimals));
 }
 
 function addAlpha(hex: string, alpha: number): string {

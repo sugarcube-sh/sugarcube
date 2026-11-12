@@ -1,9 +1,9 @@
 import type { DesignTokens, Input, ReadOptions, ReadText, TokensInMemory } from "../model.js";
-import type { Answer, FileText, Request } from "./files.js";
-import { Problems, addPermutations } from "./diagnostics.js";
+import type { FileResponse, FileText, FileRequest } from "./files.js";
+import { DiagnosticCollector, addPermutations } from "./diagnostics.js";
 import { type Loaded, load } from "./load.js";
 import { normalisePermutations } from "./normalise.js";
-import { fillGenerated } from "./generate.js";
+import { runGenerators } from "./generate.js";
 import { validateExtensions } from "./validate-extensions.js";
 import type { Merged } from "./merge.js";
 import { createValueReader } from "./parse-value.js";
@@ -11,12 +11,12 @@ import { buildPermutations } from "./build.js";
 import { missingReferences } from "./missing.js";
 import type { PermutationOptions } from "./permutations.js";
 import { fileName, getFolder, join, normalise } from "./paths.js";
-import { type KnownFiles, answerFrom, knownInMemory } from "./known-files.js";
+import { type KnownFiles, respondFromKnownFiles, createKnownFiles } from "./known-files.js";
 import { parseJson } from "./json.js";
 import { isResolver } from "./resolver.js";
-import { thrownMessages } from "../error-messages.js";
+import { exceptionMessages } from "../error-messages.js";
 import { EntryFileError } from "./entry-file-error.js";
-import { linkedDesignTokens, trackPlaces } from "./linked.js";
+import { createDesignTokens, createDefinitionTracker } from "./linked.js";
 import { allPermutations } from "./make-permutations.js";
 
 const { performance } = globalThis as unknown as { performance: { now(): number } };
@@ -65,7 +65,11 @@ export async function read(
     return toDesignTokens(step.value, options, undefined, known);
 }
 
-async function fetchAll(files: Request, folder: string, readText: ReadText): Promise<Answer> {
+async function fetchAll(
+    files: FileRequest,
+    folder: string,
+    readText: ReadText,
+): Promise<FileResponse> {
     const fetched = await Promise.all(
         files.map(async (file): Promise<[string, FileText]> => {
             const path = join(folder, file);
@@ -73,7 +77,7 @@ async function fetchAll(files: Request, folder: string, readText: ReadText): Pro
             try {
                 text = await readText(path, file);
             } catch (cause) {
-                throw new Error(thrownMessages.couldNotFetch(path), { cause });
+                throw new Error(exceptionMessages.couldNotFetch(path), { cause });
             }
             return [file, text === undefined ? { missing: true } : { text }];
         }),
@@ -98,11 +102,11 @@ export function readFromMemory(memory: TokensInMemory, options: ReadOptions = {}
     const texts = new Map(
         Object.entries(memory.files).map(([path, text]) => [normalise(path), text]),
     );
-    const entry = memory.entryFile ?? entryAmong(texts);
-    return readKnown(knownInMemory(entry, texts), options, undefined);
+    const entry = memory.entryFile ?? findEntryFile(texts);
+    return readFromKnownFiles(createKnownFiles(entry, texts), options, undefined);
 }
 
-function readKnown(
+function readFromKnownFiles(
     known: KnownFiles,
     options: ReadOptions,
     previous: DesignTokens | undefined,
@@ -110,12 +114,12 @@ function readKnown(
     const started = performance.now();
     const run = load(fileName(known.entryFile), permutationOptions(options), previous?.resolver);
     let step = run.next();
-    while (!step.done) step = run.next(answerFrom(known, step.value));
+    while (!step.done) step = run.next(respondFromKnownFiles(known, step.value));
     options.onStage?.("load", performance.now() - started);
     return toDesignTokens(step.value, options, previous, known);
 }
 
-function entryAmong(texts: Map<string, string>): string {
+function findEntryFile(texts: Map<string, string>): string {
     const names = [...texts.keys()];
     const [only] = names;
     if (names.length === 1 && only !== undefined) return only;
@@ -149,7 +153,7 @@ function toDesignTokens(
         hexStringColors,
         ignoreUnknownProperties,
     } = options;
-    const diagnostics = new Problems();
+    const diagnostics = new DiagnosticCollector();
     const parseOptions = {
         hexStringColors: hexStringColors ?? false,
         ignoreUnknownProperties: ignoreUnknownProperties ?? false,
@@ -159,7 +163,7 @@ function toDesignTokens(
     const generate = (merged: Merged, input: Input) => {
         if (generators.length === 0) return;
         const started = performance.now();
-        fillGenerated(merged, generators, { input, parseOptions }, diagnostics);
+        runGenerators(merged, generators, { input, parseOptions }, diagnostics);
         generating += performance.now() - started;
     };
     const normalising = performance.now();
@@ -174,7 +178,7 @@ function toDesignTokens(
     const resolving = performance.now();
     onStage?.("generate", generating);
     onStage?.("normalise", resolving - normalising - generating);
-    const places = trackPlaces(loaded.texts, previous);
+    const places = createDefinitionTracker(loaded.texts, previous);
     const resolved = buildPermutations(normalised, {
         readValue,
         diagnostics,
@@ -192,7 +196,7 @@ function toDesignTokens(
         diagnostics,
     );
 
-    return linkedDesignTokens(
+    return createDesignTokens(
         {
             files: loaded.files,
             entryFile: loaded.entry,
@@ -202,14 +206,14 @@ function toDesignTokens(
             parseOptions,
             diagnostics: [
                 ...addPermutations(loaded.diagnostics, permutations, loaded.entry),
-                ...diagnostics.inPermutations(permutations),
+                ...diagnostics.attachPermutations(permutations),
             ],
         },
         {
             texts: loaded.texts,
             moved: places.moved,
             known,
-            readAgain: (files, from) => readKnown(files, options, from),
+            reread: (files, from) => readFromKnownFiles(files, options, from),
         },
     );
 }
