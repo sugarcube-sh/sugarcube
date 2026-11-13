@@ -8,6 +8,7 @@ import type {
     Permutation,
     StandardSchemaV1,
     IgnoredProperty,
+    Input,
     ParseOptions,
     ValueError,
 } from "../model.js";
@@ -21,6 +22,7 @@ import {
 } from "./extension-check.js";
 import type { JsonFile } from "./json.js";
 import { findSettings } from "./settings.js";
+import type { Merged } from "./merge.js";
 import type { NormalisedPermutation } from "./normalise.js";
 
 type ExtensionOwner = Parameters<NonNullable<ExtensionValidator["validate"]>>[0];
@@ -81,55 +83,88 @@ export function validateExtensions(
     if (validators.length === 0) return;
 
     normalised.forEach(({ merged, input }, index) => {
-        const reported = new ReportDeduper();
-        const check = (
-            validator: ExtensionValidator,
-            owner: ExtensionOwner,
-            value: unknown,
-            json: JsonFile,
-            node: Node,
-        ) => {
-            if (!reported.isFirst(validator, node)) return;
-            const passed = checkSchema(validator.schema, value, validator.key);
-            const problems = passed.ok
-                ? toProblems(validator.validate?.(owner, passed.value, parseOptions) ?? [])
-                : passed.problems;
-            const extension: CheckedExtension = {
-                keyPath: [validator.key],
-                messages: validator.messages,
-                json,
-                node,
-                path: owner.path,
-            };
-            for (const each of problems)
-                diagnostics.add(extensionDiagnostic(each, extension), input);
-        };
+        const validation = new ExtensionValidation(validators, parseOptions, diagnostics, input);
+        validation.validateGroups(merged);
+        validation.validateTokens(merged, permutations[index]);
+    });
+}
 
+class ExtensionValidation {
+    readonly #validators: readonly ExtensionValidator[];
+    readonly #parseOptions: ParseOptions;
+    readonly #diagnostics: DiagnosticCollector;
+    readonly #input: Input;
+    readonly #reported = new ReportDeduper();
+
+    constructor(
+        validators: readonly ExtensionValidator[],
+        parseOptions: ParseOptions,
+        diagnostics: DiagnosticCollector,
+        input: Input,
+    ) {
+        this.#validators = validators;
+        this.#parseOptions = parseOptions;
+        this.#diagnostics = diagnostics;
+        this.#input = input;
+    }
+
+    validateGroups(merged: Merged): void {
         for (const [path, group] of merged.groups) {
             const settings = findSettings(merged, group);
-            for (const validator of validators) {
+            for (const validator of this.#validators) {
                 if (!validator.appliesTo.includes("group")) continue;
-                const at = settings.extensionLocations?.[validator.key];
-                const found = findExtension(settings.extensions, at, [validator.key]);
-                if (!at || !found) continue;
+                const location = settings.extensionLocations?.[validator.key];
+                const found = findExtension(settings.extensions, location, [validator.key]);
+                if (!location || !found) continue;
+
                 const owner: ExtensionOwner = { path, type: "group" };
-                check(validator, owner, found.value, at.json, found.node);
+                this.#check(validator, owner, found.value, location.json, found.node);
             }
         }
+    }
 
-        const types = new Map(permutations[index]?.tokens.map(({ path, type }) => [path, type]));
+    validateTokens(merged: Merged, permutation: Permutation | undefined): void {
+        const types = new Map(permutation?.tokens.map(({ path, type }) => [path, type]));
         for (const token of merged.tokens.values()) {
             const type = types.get(token.path);
-            const at = token.extensionsLocation;
-            if (!type || !at) continue;
-            for (const validator of validators) {
+            const location = token.extensionsLocation;
+            if (!type || !location) continue;
+
+            for (const validator of this.#validators) {
                 if (!validator.appliesTo.includes(type)) continue;
-                const found = findExtension(token.extensions, at, [validator.key]);
-                if (found)
-                    check(validator, { path: token.path, type }, found.value, at.json, found.node);
+                const found = findExtension(token.extensions, location, [validator.key]);
+                if (!found) continue;
+
+                const owner = { path: token.path, type };
+                this.#check(validator, owner, found.value, location.json, found.node);
             }
         }
-    });
+    }
+
+    #check(
+        validator: ExtensionValidator,
+        owner: ExtensionOwner,
+        value: unknown,
+        json: JsonFile,
+        node: Node,
+    ): void {
+        if (!this.#reported.isFirst(validator, node)) return;
+
+        const passed = checkSchema(validator.schema, value, validator.key);
+        const problems = passed.ok
+            ? toProblems(validator.validate?.(owner, passed.value, this.#parseOptions) ?? [])
+            : passed.problems;
+        const extension: CheckedExtension = {
+            keyPath: [validator.key],
+            messages: validator.messages,
+            json,
+            node,
+            path: owner.path,
+        };
+        for (const each of problems) {
+            this.#diagnostics.add(extensionDiagnostic(each, extension), this.#input);
+        }
+    }
 }
 
 function toProblems(

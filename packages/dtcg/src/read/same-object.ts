@@ -38,7 +38,7 @@ export function sameToken(
         if (!reference || reference.pointsToToken !== token || reference.pointsToPath !== path)
             return false;
     }
-    if (!current.isGenerated) return true;
+    if (!current.generated) return true;
     return (
         isEqualJson(earlier.value, now.value) &&
         earlier.description === current.description &&

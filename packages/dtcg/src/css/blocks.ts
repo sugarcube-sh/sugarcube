@@ -99,39 +99,97 @@ export function getCSSBlocks(
     const pathsByModifier = allPathsByModifier(blocksWithDeclarations);
     const result: CSSBlock[] = [];
     for (const { permutation, ...block } of blocksWithDeclarations) {
-        const inEffect = new Map<string, CSSDeclaration>();
-        const otherBlockValues = new Map<string, Set<string>>();
-        for (const earlier of result) {
-            if (covers(earlier, block)) {
-                for (const line of earlier.declarations) inEffect.set(line.name, line);
-                continue;
-            }
-            for (const { name, value } of earlier.ruleDeclarations) {
-                const values = otherBlockValues.get(name);
-                if (values) values.add(value);
-                else otherBlockValues.set(name, new Set([value]));
-            }
-        }
-        const own = createOwnershipCheck(block.input, permutation, pathsByModifier);
-        const all = block.declarations;
-        const changed = all.filter(
-            (line) =>
-                hasChanged(inEffect.get(line.name), line) ||
-                (own(line.token) &&
-                    hasConflictingValue(otherBlockValues.get(line.name), line.value)),
+        const inEffect = findInEffect(result, block);
+        const valuesThatMightApply = findValuesThatMightApply(result, block);
+        const isSetByThisBlock = createSetByThisBlockCheck(
+            block.input,
+            permutation,
+            pathsByModifier,
         );
-        const ruleDeclarations =
-            block.redeclare === false ? changed : [...changed, ...dependents(all, changed)];
-        const names = new Set(ruleDeclarations.map(({ name }) => name));
-        const supportsDeclarations = all.filter(
-            (line) =>
-                line.supports !== undefined &&
-                (names.has(line.name) ||
-                    !sameSupports(inEffect.get(line.name)?.supports, line.supports)),
+        const ruleDeclarations = chooseRuleDeclarations(
+            block,
+            inEffect,
+            valuesThatMightApply,
+            isSetByThisBlock,
         );
+        const supportsDeclarations = chooseSupportsDeclarations(block, ruleDeclarations, inEffect);
         result.push({ ...block, ruleDeclarations, supportsDeclarations });
     }
     return result;
+}
+
+type BlockWithDeclarations = CSSBlockInput & { readonly declarations: readonly CSSDeclaration[] };
+
+function findInEffect(
+    earlier: readonly CSSBlock[],
+    block: CSSBlockInput,
+): Map<string, CSSDeclaration> {
+    const inEffect = new Map<string, CSSDeclaration>();
+    for (const each of earlier) {
+        if (!covers(each, block)) continue;
+        for (const line of each.declarations) inEffect.set(line.name, line);
+    }
+    return inEffect;
+}
+
+function findValuesThatMightApply(
+    earlier: readonly CSSBlock[],
+    block: CSSBlockInput,
+): Map<string, Set<string>> {
+    const valuesByName = new Map<string, Set<string>>();
+    for (const each of earlier) {
+        if (covers(each, block)) continue;
+        for (const { name, value } of each.ruleDeclarations) {
+            const values = valuesByName.get(name);
+            if (values) values.add(value);
+            else valuesByName.set(name, new Set([value]));
+        }
+    }
+    return valuesByName;
+}
+
+function chooseRuleDeclarations(
+    block: BlockWithDeclarations,
+    inEffect: Map<string, CSSDeclaration>,
+    valuesThatMightApply: Map<string, Set<string>>,
+    isSetByThisBlock: (token: Token) => boolean,
+): CSSDeclaration[] {
+    const all = block.declarations;
+    const changed = all.filter((line) =>
+        needsDeclaring(line, inEffect, valuesThatMightApply, isSetByThisBlock),
+    );
+    if (block.redeclare === false) return changed;
+    return [...changed, ...findDependents(all, changed)];
+}
+
+function needsDeclaring(
+    line: CSSDeclaration,
+    inEffect: Map<string, CSSDeclaration>,
+    valuesThatMightApply: Map<string, Set<string>>,
+    isSetByThisBlock: (token: Token) => boolean,
+): boolean {
+    if (hasChanged(inEffect.get(line.name), line)) return true;
+    if (!isSetByThisBlock(line.token)) return false;
+    return hasConflictingValue(valuesThatMightApply.get(line.name), line.value);
+}
+
+function chooseSupportsDeclarations(
+    block: BlockWithDeclarations,
+    ruleDeclarations: readonly CSSDeclaration[],
+    inEffect: Map<string, CSSDeclaration>,
+): CSSDeclaration[] {
+    const declared = new Set(ruleDeclarations.map(({ name }) => name));
+    return block.declarations.filter((line) => needsSupports(line, declared, inEffect));
+}
+
+function needsSupports(
+    line: CSSDeclaration,
+    declared: Set<string>,
+    inEffect: Map<string, CSSDeclaration>,
+): boolean {
+    if (line.supports === undefined) return false;
+    if (declared.has(line.name)) return true;
+    return !sameSupports(inEffect.get(line.name)?.supports, line.supports);
 }
 
 function covers(earlier: CSSBlockInput, later: CSSBlockInput): boolean {
@@ -167,7 +225,7 @@ function allPathsByModifier(
     return pathsByModifier;
 }
 
-function createOwnershipCheck(
+function createSetByThisBlockCheck(
     input: Input,
     permutation: Permutation,
     pathsByModifier: Map<ResolverModifier, Set<string>>,
@@ -207,7 +265,7 @@ function sameSupports(
     );
 }
 
-function dependents(
+function findDependents(
     all: readonly CSSDeclaration[],
     changed: readonly CSSDeclaration[],
 ): CSSDeclaration[] {

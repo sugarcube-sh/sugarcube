@@ -76,7 +76,7 @@ export function createValueReader(
 
     return {
         read: (token, type, input) => {
-            if (token.isGenerated) return read(token, type, input);
+            if (token.generated) return read(token, type, input);
             const cache: NonNullable<Cache[typeof type]> = caches[type] ?? new Map();
             caches[type] = cache;
             const cached = cache.get(token.value);
