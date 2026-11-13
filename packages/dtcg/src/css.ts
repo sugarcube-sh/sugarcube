@@ -22,4 +22,4 @@ export {
     createCSSWriter,
 } from "./css/writer.js";
 export { type CSSBlock, type CSSBlockInput, getCSSBlocks } from "./css/blocks.js";
-export { toCSS } from "./css/text.js";
+export { toCSS } from "./css/stylesheet.js";

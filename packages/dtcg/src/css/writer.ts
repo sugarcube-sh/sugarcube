@@ -1,5 +1,7 @@
 import { exceptionMessages } from "../error-messages.js";
-import type { Permutation, Reference, Token } from "../model.js";
+import type { Permutation } from "../model/permutation.js";
+import type { Reference } from "../model/reference.js";
+import type { Token } from "../model/token.js";
 import { type CSSValueOptions, type Replacement, type TypographyCSS, toCSSValue } from "./value.js";
 import { type CSSNaming, toCustomPropertyName } from "./custom-property.js";
 

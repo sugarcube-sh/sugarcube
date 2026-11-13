@@ -1,4 +1,4 @@
-import type { TokenType } from "../model.js";
+import type { TokenType } from "../model/value.js";
 
 /**
  * Every token type the spec defines, in the spec's order.

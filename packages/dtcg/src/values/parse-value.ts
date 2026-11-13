@@ -1,11 +1,6 @@
-import type {
-    JsonPath,
-    ParseOptions,
-    ParseResult,
-    TokenType,
-    UnresolvedValue,
-    ValueByType,
-} from "../model.js";
+import type { JsonPath } from "../model/location.js";
+import type { ParseOptions, ParseResult } from "../model/parse.js";
+import type { TokenType, UnresolvedValue, ValueByType } from "../model/value.js";
 import { exceptionMessages } from "../error-messages.js";
 import { type ReadCollector, readToken } from "./read-syntax.js";
 import { isTokenType } from "./token-types.js";

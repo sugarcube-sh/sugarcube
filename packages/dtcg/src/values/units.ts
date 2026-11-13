@@ -1,4 +1,4 @@
-import type { DimensionValue, DurationValue } from "../model.js";
+import type { DimensionValue, DurationValue } from "../model/value.js";
 
 /**
  * The units a dimension can use, `"px"` and `"rem"`.

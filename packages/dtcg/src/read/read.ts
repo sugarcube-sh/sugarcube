@@ -1,23 +1,25 @@
-import type { DesignTokens, Input, ReadOptions, ReadText, TokensInMemory } from "../model.js";
-import type { FileResponse, FileText, FileRequest } from "./files.js";
-import { DiagnosticCollector, addPermutations } from "./diagnostics.js";
+import { type DesignTokens, createDesignTokens } from "../model/design-tokens.js";
+import type { Input } from "../model/permutation.js";
+import type { ReadOptions, ReadText, TokensInMemory } from "../model/read-options.js";
+import type { FileResponse, FileText, FileRequest } from "./files/open.js";
+import { DiagnosticCollector, addPermutations } from "./diagnostics/diagnostics.js";
 import { type Loaded, load } from "./load.js";
-import { normalisePermutations } from "./normalise.js";
-import { runGenerators } from "./generate.js";
-import { validateExtensions } from "./validate-extensions.js";
-import type { Merged } from "./merge.js";
-import { createValueReader } from "./parse-value.js";
-import { buildPermutations } from "./build.js";
-import { missingReferences } from "./missing.js";
-import type { PermutationOptions } from "./permutations.js";
-import { fileName, getFolder, join, normalise } from "./paths.js";
-import { type KnownFiles, respondFromKnownFiles, createKnownFiles } from "./known-files.js";
-import { parseJson } from "./json.js";
-import { isResolver } from "./resolver.js";
+import { mergePermutations } from "./merge/merge-permutations.js";
+import { runGenerators } from "./extensions/generate.js";
+import { validateExtensions } from "./extensions/validate.js";
+import type { Merged } from "./merge/merge.js";
+import { createValueReader } from "./build/value-reader.js";
+import { buildPermutations } from "./build/build.js";
+import { missingReferences } from "./build/missing.js";
+import type { PermutationOptions } from "./resolver/permutations.js";
+import { fileName, getFolder, join, normalise } from "./files/paths.js";
+import { type KnownFiles, respondFromKnownFiles, createKnownFiles } from "./files/known.js";
+import { parseJson } from "./json/parse.js";
+import { isResolver } from "./resolver/check.js";
 import { exceptionMessages } from "../error-messages.js";
-import { EntryFileError } from "./entry-file-error.js";
-import { createDesignTokens, createDefinitionTracker } from "./linked.js";
-import { allPermutations } from "./make-permutations.js";
+import { EntryFileError } from "./files/entry-file-error.js";
+import { createDefinitionTracker } from "./build/definition-tracker.js";
+import { allPermutations } from "../model/permutations.js";
 
 const { performance } = globalThis as unknown as { performance: { now(): number } };
 
@@ -166,20 +168,20 @@ function toDesignTokens(
         runGenerators(merged, generators, { input, parseOptions }, diagnostics);
         generating += performance.now() - started;
     };
-    const normalising = performance.now();
+    const merging = performance.now();
     const missing = missingReferences(diagnostics);
-    const { permutations: normalised, sources } = normalisePermutations(
+    const { permutations: mergedPermutations, sources } = mergePermutations(
         loaded.permutations,
         diagnostics,
         missing,
         generate,
         previous?.sources,
     );
-    const resolving = performance.now();
+    const building = performance.now();
     onStage?.("generate", generating);
-    onStage?.("normalise", resolving - normalising - generating);
+    onStage?.("merge", building - merging - generating);
     const tracker = createDefinitionTracker(loaded.texts, previous);
-    const resolved = buildPermutations(normalised, {
+    const built = buildPermutations(mergedPermutations, {
         readValue,
         diagnostics,
         missing,
@@ -187,14 +189,16 @@ function toDesignTokens(
         previous,
     });
     missing.report();
-    const permutations = allPermutations(resolved, loaded.resolver);
-    onStage?.("resolve", performance.now() - resolving);
+    const permutations = allPermutations(built, loaded.resolver);
+    const validating = performance.now();
+    onStage?.("build", validating - building);
     validateExtensions(
-        normalised,
+        mergedPermutations,
         permutations,
         { validators: extensionValidators, parseOptions },
         diagnostics,
     );
+    onStage?.("validate-extensions", performance.now() - validating);
 
     return createDesignTokens(
         {

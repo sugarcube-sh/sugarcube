@@ -1,15 +1,8 @@
 import { exceptionMessages } from "../error-messages.js";
-import type {
-    ExtensionError,
-    ExtensionMessages,
-    ExtensionResult,
-    IgnoredProperty,
-    JsonPath,
-    ParseOptions,
-    TokenType,
-    ValueByType,
-    ValueError,
-} from "../model.js";
+import type { ExtensionError, ExtensionMessages, ExtensionResult } from "../model/extension.js";
+import type { IgnoredProperty, ParseOptions, ValueError } from "../model/parse.js";
+import type { JsonPath } from "../model/location.js";
+import type { TokenType, ValueByType } from "../model/value.js";
 import { parseValue } from "./parse-value.js";
 
 /**

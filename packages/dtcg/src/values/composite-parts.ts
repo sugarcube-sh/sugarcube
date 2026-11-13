@@ -1,10 +1,10 @@
-import type { TokenType } from "../model.js";
-import { border } from "./border.js";
-import { stop } from "./gradient.js";
-import { layer } from "./shadow.js";
+import type { TokenType } from "../model/value.js";
+import { border } from "./syntaxes/border.js";
+import { stop } from "./syntaxes/gradient.js";
+import { layer } from "./syntaxes/shadow.js";
 import type { LiteralSyntax, OfTypeSyntax, WithDefault } from "./syntax.js";
-import { transition } from "./transition.js";
-import { typography } from "./typography.js";
+import { transition } from "./syntaxes/transition.js";
+import { typography } from "./syntaxes/typography.js";
 
 type PartSyntax =
     | (OfTypeSyntax & { readonly type: TokenType })

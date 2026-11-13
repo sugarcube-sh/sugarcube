@@ -1,0 +1,81 @@
+import type { JsonPath } from "../../model/location.js";
+import type { ParsedReference } from "../../model/reference.js";
+import { isJsonObject } from "../../values/json.js";
+import type { Merged, MergedToken } from "./merge.js";
+import { arrayIndex } from "../json/parse.js";
+import { refSteps } from "../json/pointer.js";
+
+export type LookupResult =
+    | { kind: "group"; path: string }
+    | { kind: "token"; path: string; token: MergedToken }
+    | { kind: "part"; path: string; token: MergedToken; inside: string[] }
+    | { kind: "stops-at-token"; path: string }
+    | { kind: "nothing" };
+
+export interface ReferenceLookup {
+    reference: ParsedReference;
+    steps: string[] | undefined;
+}
+
+export function toPointerSteps(reference: ParsedReference): string[] | undefined {
+    return reference.syntax === "json-pointer" ? refSteps(reference.pointer) : undefined;
+}
+
+export function followReference(
+    { reference, steps }: ReferenceLookup,
+    merged: Merged,
+): LookupResult {
+    if (reference.syntax === "json-pointer") return lookupPointer(steps, merged);
+    const { path } = reference;
+    const token = merged.tokens.get(path);
+    if (token) return { kind: "token", path, token };
+    return merged.groups.has(path) ? { kind: "group", path } : { kind: "nothing" };
+}
+
+export function lookupPointer(steps: string[] | undefined, merged: Merged): LookupResult {
+    if (!steps) return { kind: "nothing" };
+    const { path, inside } = pointerParts(steps);
+    if (path === undefined) return { kind: "nothing" };
+    const token = merged.tokens.get(path);
+    if (token) {
+        if (!inside) return { kind: "stops-at-token", path };
+        return inside.length > 0
+            ? { kind: "part", path, token, inside }
+            : { kind: "token", path, token };
+    }
+    if (!inside && merged.groups.has(path)) return { kind: "group", path };
+    return { kind: "nothing" };
+}
+
+export function toValuePointer(pointer: string): string {
+    return `${pointer}/$value`;
+}
+
+export function pointerParts(steps: string[]): { path?: string; inside?: string[] } {
+    const valueStep = steps.indexOf("$value");
+    const before = valueStep === -1 ? steps : steps.slice(0, valueStep);
+    if (before.includes("")) return {};
+    return {
+        path: before.join("."),
+        ...(valueStep !== -1 && { inside: steps.slice(valueStep + 1) }),
+    };
+}
+
+export function getAtPath(
+    raw: unknown,
+    steps: string[],
+): { value: unknown; property: JsonPath } | undefined {
+    let current = raw;
+    const property: (string | number)[] = [];
+    for (const step of steps) {
+        if (Array.isArray(current) && arrayIndex.test(step)) {
+            current = current[Number(step)];
+            property.push(Number(step));
+        } else if (isJsonObject(current) && Object.hasOwn(current, step)) {
+            current = current[step];
+            property.push(step);
+        } else return undefined;
+        if (current === undefined) return undefined;
+    }
+    return { value: current, property };
+}

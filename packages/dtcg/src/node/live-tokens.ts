@@ -1,4 +1,5 @@
-import type { DesignTokens, ReadOptions } from "../model.js";
+import type { DesignTokens } from "../model/design-tokens.js";
+import type { ReadOptions } from "../model/read-options.js";
 import { onFileChanged } from "./file-changed.js";
 import { toAbsolutePath, getAbsoluteFilePath } from "./paths.js";
 import { read } from "./read.js";

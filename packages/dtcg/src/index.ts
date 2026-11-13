@@ -1,10 +1,10 @@
 export { isReference } from "./values/references.js";
 export { PermutationError, SeveralPermutationsError } from "./lookup/permutation.js";
-export { EntryFileError } from "./read/entry-file-error.js";
-export { defineGenerator } from "./read/generate.js";
-export { defineExtensionValidator } from "./read/validate-extensions.js";
+export { EntryFileError } from "./read/files/entry-file-error.js";
+export { defineGenerator } from "./read/extensions/generate.js";
+export { defineExtensionValidator } from "./read/extensions/validate.js";
 export { read, readFromMemory } from "./read/read.js";
-export { getFilePath } from "./read/paths.js";
+export { getFilePath } from "./read/files/paths.js";
 export { tokenPath } from "./path.js";
 export { toInputLabel } from "./lookup/permutation-label.js";
 export { groupPermutationsBy } from "./lookup/group-permutations.js";
@@ -108,4 +108,4 @@ export type {
     OriginalGroup,
     ParsedReference,
     OriginalToken,
-} from "./model.js";
+} from "./model/index.js";

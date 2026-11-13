@@ -1,4 +1,4 @@
-import type { ColorSpace } from "../model.js";
+import type { ColorSpace } from "../model/value.js";
 
 /** One component of a color space, with the values it can take. */
 export interface ColorComponentRange {

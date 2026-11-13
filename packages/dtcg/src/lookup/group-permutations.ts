@@ -1,6 +1,8 @@
-import type { DesignTokens, Permutation, PermutationGroup } from "../model.js";
-import { makePermutations } from "../read/make-permutations.js";
-import { sameList } from "../read/same-object.js";
+import type { DesignTokens } from "../model/design-tokens.js";
+import type { Permutation } from "../model/permutation.js";
+import type { PermutationGroup } from "../model/reference.js";
+import { makePermutations } from "../model/permutations.js";
+import { sameList } from "../model/location.js";
 
 /**
  * Groups the permutations by what `fn` returns in each.

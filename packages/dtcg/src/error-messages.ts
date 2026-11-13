@@ -2,15 +2,17 @@ import type {
     Diagnostic,
     DiagnosticDetailByKind,
     DiagnosticKind,
-    EntryFileErrorDetail,
-    Input,
     JsonErrorReason,
-    InputProblem,
-    PermutationErrorDetail,
     ResolverProblem,
     ResolverRule,
+} from "./model/diagnostic.js";
+import type {
+    EntryFileErrorDetail,
+    InputProblem,
+    PermutationErrorDetail,
     SeveralPermutationsDetail,
-} from "./model.js";
+} from "./model/errors.js";
+import type { Input } from "./model/permutation.js";
 import { toInputLabel } from "./lookup/permutation-label.js";
 import {
     didYouMean,

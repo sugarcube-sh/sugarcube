@@ -1,7 +1,7 @@
 import { getNodeValue } from "jsonc-parser";
 import { describe, expect, it } from "vitest";
-import { parseJson } from "../../src/read/json.js";
-import { encodePointer, resolvePointer, parsePointer } from "../../src/read/pointer.js";
+import { parseJson } from "../../src/read/json/parse.js";
+import { encodePointer, resolvePointer, parsePointer } from "../../src/read/json/pointer.js";
 
 function tree(text: string) {
     const { root, syntax } = parseJson(text);

@@ -1,13 +1,12 @@
 import { exceptionMessages } from "../error-messages.js";
+import type { DesignTokens } from "../model/design-tokens.js";
+import type { Input, Permutation } from "../model/permutation.js";
 import type {
-    DesignTokens,
-    Input,
     InputProblem,
-    Permutation,
     PermutationErrorDetail,
     SeveralPermutationsDetail,
-} from "../model.js";
-import { checkInput, allModifiers } from "../read/input.js";
+} from "../model/errors.js";
+import { checkInput, allModifiers } from "../read/resolver/input.js";
 
 /**
  * Thrown when an input names a permutation the tokens don't have.

@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { getFilePath } from "../read/paths.js";
+import { getFilePath } from "../read/files/paths.js";
 
 /**
  * Works out where a file the tokens name is on disk.

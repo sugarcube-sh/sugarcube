@@ -295,6 +295,18 @@ describe("read", () => {
         await read("tokens.json", { readText: async () => valid, onStage });
         expect(onStage).toHaveBeenCalledWith("load", expect.any(Number));
     });
+
+    it("reports every stage once, in order", async () => {
+        const onStage = vi.fn();
+        await read("tokens.json", { readText: async () => valid, onStage });
+        expect(onStage.mock.calls.map(([stage]) => stage)).toEqual([
+            "load",
+            "generate",
+            "merge",
+            "build",
+            "validate-extensions",
+        ]);
+    });
 });
 
 describe("paths in a resolver", () => {

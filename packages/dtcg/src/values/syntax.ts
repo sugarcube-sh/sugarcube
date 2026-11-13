@@ -1,4 +1,5 @@
-import type { ParseOptions, TokenType, ValueByType } from "../model.js";
+import type { ParseOptions } from "../model/parse.js";
+import type { TokenType, ValueByType } from "../model/value.js";
 import { isJsonObject } from "./json.js";
 import type { ValueErrorCode, ValueErrorDetailByCode } from "./value-errors.js";
 

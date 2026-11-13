@@ -1,5 +1,8 @@
-import type { DesignTokens, Input, Permutation, ResolverModifier, Token } from "../model.js";
-import { findByName } from "../read/input.js";
+import type { DesignTokens } from "../model/design-tokens.js";
+import type { Input, Permutation } from "../model/permutation.js";
+import type { ResolverModifier } from "../model/resolver.js";
+import type { Token } from "../model/token.js";
+import { findByName } from "../read/resolver/input.js";
 import { canStack } from "./can-stack.js";
 import { type CSSDeclaration, type CSSWriter, createCSSWriter } from "./writer.js";
 

@@ -1,14 +1,13 @@
+import type { ColorComponent, ColorValue } from "../model/value.js";
 import type {
-    ColorComponent,
-    ColorValue,
     GradientStopPart,
     Part,
     PartBase,
-    Reference,
     ShadowLayerPart,
-    Token,
     TypographyPart,
-} from "../model.js";
+} from "../model/part.js";
+import type { Reference } from "../model/reference.js";
+import type { Token } from "../model/token.js";
 import { colorDecimals, roundToDigits } from "../values/decimals.js";
 import { getOriginalHex } from "../values/hex-color.js";
 

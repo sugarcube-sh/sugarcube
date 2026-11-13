@@ -1,4 +1,5 @@
-import type { Token, TokenType, UnresolvedValue } from "../model.js";
+import type { Token } from "../model/token.js";
+import type { TokenType, UnresolvedValue } from "../model/value.js";
 import { isJsonObject } from "./json.js";
 
 const ROUNDING = 0.0005;

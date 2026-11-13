@@ -8,6 +8,7 @@
     "values/**/*",
     "node/**/*",
     "lookup/**/*",
+    "model/**/*",
     "css/**/*",
     "conformance/**/*",
     "../src/**/*"
