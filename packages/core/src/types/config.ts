@@ -4,7 +4,8 @@ import type { UtilityClassConfig } from "./utilities.js";
  * How colors outside sRGB are written.
  *
  * - `"native"` writes them as they are, such as `oklch(0.6 0.15 250)`.
- * - `"polyfill"` writes each color's `hex` first, then the color inside `@supports`. It is deprecated.
+ * - `"polyfill"` is deprecated. Use `"native"`. It writes each color's `hex` first, then the
+ *   color inside `@supports`.
  *
  * @see {@link https://sugarcube.sh/docs/color-formats/#color-fallbacks | Color fallbacks}
  */

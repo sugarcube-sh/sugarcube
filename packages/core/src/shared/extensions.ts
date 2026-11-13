@@ -2,7 +2,7 @@
 export const SUGARCUBE_NAMESPACE = "sh.sugarcube";
 
 type SugarcubeModifierExtensions = {
-    /** @deprecated Use variables.permutations with atRule instead */
+    /** @deprecated Use `variables.permutations` with `atRule`. */
     prefersColorScheme?: boolean;
 };
 
