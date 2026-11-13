@@ -38,8 +38,23 @@ export interface ReadOptions extends ParseOptions {
      * They run in order.
      */
     generators?: readonly Generator[];
-    /** Called as each stage of reading finishes, with how long it took in milliseconds. */
-    onStage?: (stage: "load" | "generate" | "normalise" | "resolve", milliseconds: number) => void;
+    /**
+     * Called as each stage of reading finishes, with how long it took in milliseconds.
+     *
+     * The stages, in order:
+     *
+     * - `"load"`: reading the entry file, the resolver and every file it lists.
+     * - `"generate"`: running {@link ReadOptions.generators | generators}.
+     * - `"merge"`: combining each permutation's files into one set of tokens, not counting
+     *   generating.
+     * - `"build"`: resolving every value and making the tokens and groups.
+     * - `"validate-extensions"`: running
+     *   {@link ReadOptions.extensionValidators | extension validators}.
+     */
+    onStage?: (
+        stage: "load" | "generate" | "merge" | "build" | "validate-extensions",
+        milliseconds: number,
+    ) => void;
 }
 
 /**

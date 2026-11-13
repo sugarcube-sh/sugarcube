@@ -20,7 +20,7 @@ import {
 import type { JsonFile } from "../json/parse.js";
 import { findSettings } from "../merge/settings.js";
 import type { Merged } from "../merge/merge.js";
-import type { NormalisedPermutation } from "../merge/normalise.js";
+import type { MergedPermutation } from "../merge/merge-permutations.js";
 
 type ExtensionOwner = Parameters<NonNullable<ExtensionValidator["validate"]>>[0];
 
@@ -69,7 +69,7 @@ export function defineExtensionValidator<
 }
 
 export function validateExtensions(
-    normalised: NormalisedPermutation[],
+    mergedPermutations: MergedPermutation[],
     permutations: readonly Permutation[],
     {
         validators,
@@ -79,7 +79,7 @@ export function validateExtensions(
 ): void {
     if (validators.length === 0) return;
 
-    normalised.forEach(({ merged, input }, index) => {
+    mergedPermutations.forEach(({ merged, input }, index) => {
         const validation = new ExtensionValidation(validators, parseOptions, diagnostics, input);
         validation.validateGroups(merged);
         validation.validateTokens(merged, permutations[index]);

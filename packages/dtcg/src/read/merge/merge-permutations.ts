@@ -11,7 +11,7 @@ import type { LoadedSource } from "../resolver/sources.js";
 import { type SourceContents, type WalkResult, walkSource } from "./walk.js";
 import { sameSource } from "../build/reuse.js";
 
-export interface NormalisedPermutation {
+export interface MergedPermutation {
     input: Input;
     label: string;
     contexts: ResolverContext[];
@@ -20,16 +20,16 @@ export interface NormalisedPermutation {
     unreadSources: Source[];
 }
 
-export function normalisePermutations(
+export function mergePermutations(
     permutations: LoadedPermutation[],
     diagnostics: DiagnosticCollector,
     missing: MissingReferences,
     generate: (merged: Merged, input: Input) => void,
     previous: readonly Source[] | undefined,
-): { permutations: NormalisedPermutation[]; sources: Source[] } {
-    const normaliser = new Normaliser(diagnostics, missing, generate, previous);
-    const normalised = permutations.map((permutation) => normaliser.normalise(permutation));
-    return { permutations: normalised, sources: normaliser.sources };
+): { permutations: MergedPermutation[]; sources: Source[] } {
+    const merger = new PermutationMerger(diagnostics, missing, generate, previous);
+    const merged = permutations.map((permutation) => merger.merge(permutation));
+    return { permutations: merged, sources: merger.sources };
 }
 
 interface WalkedPiece {
@@ -37,7 +37,7 @@ interface WalkedPiece {
     source: number;
 }
 
-class Normaliser {
+class PermutationMerger {
     readonly sources: Source[] = [];
     readonly #diagnostics: DiagnosticCollector;
     readonly #missing: MissingReferences;
@@ -58,7 +58,7 @@ class Normaliser {
         this.#previous = previous;
     }
 
-    normalise({ input, label, contexts, sources }: LoadedPermutation): NormalisedPermutation {
+    merge({ input, label, contexts, sources }: LoadedPermutation): MergedPermutation {
         const pieces = sources.flatMap((each, source) =>
             each.pieces.map((piece) => ({ contents: this.#walk(piece, input), source })),
         );

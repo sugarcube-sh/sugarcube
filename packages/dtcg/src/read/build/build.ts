@@ -33,7 +33,7 @@ import type { DefinitionTracker } from "./definition-tracker.js";
 import { checkMalformedPointer } from "../json/malformed-pointer.js";
 import type { Merged, MergedGroup, MergedToken, SourceSpan } from "../merge/merge.js";
 import type { MissingRecorder, MissingReferences } from "./missing.js";
-import type { NormalisedPermutation } from "../merge/normalise.js";
+import type { MergedPermutation } from "../merge/merge-permutations.js";
 import { type Occurrence, createAliasOccurrence } from "./occurrence.js";
 import type { LocatedReference, ValueReader } from "./value-reader.js";
 import {
@@ -112,14 +112,14 @@ const RESOLVING = Symbol("resolving");
 const NONE: readonly never[] = [];
 
 export function buildPermutations(
-    permutations: NormalisedPermutation[],
+    permutations: MergedPermutation[],
     { previous, ...rest }: Omit<Context, "reusable"> & { previous: DesignTokens | undefined },
 ): Permutation[] {
     const context = { ...rest, reusable: indexReusable(previous) };
     return permutations.map((permutation) => buildPermutation(permutation, context));
 }
 
-function buildPermutation(permutation: NormalisedPermutation, context: Context): Permutation {
+function buildPermutation(permutation: MergedPermutation, context: Context): Permutation {
     const { input, merged, sources, unreadSources } = permutation;
     const { readValue, diagnostics, tracker, reusable } = context;
     const missing = context.missing.createRecorder(input, merged.tokens, unreadSources);
@@ -424,7 +424,7 @@ function getGroupBuildFields(
 }
 
 function toPermutation(
-    { input, label, sources, contexts, merged }: NormalisedPermutation,
+    { input, label, sources, contexts, merged }: MergedPermutation,
     tokens: Map<string, Token>,
     groups: Map<string, Group>,
 ): Permutation {
@@ -458,7 +458,7 @@ class TokenValues implements ResolveContext {
     #resolveStack: { path: string; span: Span }[] = [];
 
     constructor(
-        { input, merged }: NormalisedPermutation,
+        { input, merged }: MergedPermutation,
         readValue: ValueReader,
         diagnostics: DiagnosticCollector,
         missing: MissingRecorder,
