@@ -3,7 +3,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ERROR_MESSAGES } from "../../src/constants/error-messages.js";
+import { ErrorMessages } from "../../src/constants/error-messages.js";
 import { strip } from "../../src/prompts/common.js";
 import { cli, createPackageJson, createTokens, TEST_TIMEOUT } from "./helpers.js";
 
@@ -59,11 +59,11 @@ describe("analyze command: content globs", () => {
             reject: false,
         });
 
-    const emptyScan = () => ERROR_MESSAGES.ANALYZE_UNUSED_NO_FILES_SCANNED(assetsJs);
+    const emptyScan = () => ErrorMessages.ANALYZE_UNUSED_NO_FILES_SCANNED(assetsJs);
 
     const analyzeUnread = () =>
-        ERROR_MESSAGES.ANALYZE_UNREAD_STYLESHEETS([{ dir: "../css", count: 1 }]);
-    const lintUnread = () => ERROR_MESSAGES.LINT_UNREAD_STYLESHEETS([{ dir: "../css", count: 1 }]);
+        ErrorMessages.ANALYZE_UNREAD_STYLESHEETS([{ dir: "../css", count: 1 }]);
+    const lintUnread = () => ErrorMessages.LINT_UNREAD_STYLESHEETS([{ dir: "../css", count: 1 }]);
 
     it(
         "warns instead of quietly reporting a used token as unused",
@@ -86,7 +86,7 @@ describe("analyze command: content globs", () => {
             const result = await run("analyze unused --json");
 
             expect(() => JSON.parse(result.stdout)).not.toThrow();
-            expect(JSON.parse(result.stdout).scanned.forVarReferences).toBe(0);
+            expect(JSON.parse(result.stdout).scanned.stylesheets).toBe(0);
             expect(hasMessage(result.stderr, emptyScan())).toBe(true);
         },
     );
@@ -123,7 +123,7 @@ describe("analyze command: content globs", () => {
         const result = await run("analyze impact color.primary");
 
         expect(
-            hasMessage(result.stdout, ERROR_MESSAGES.ANALYZE_IMPACT_NO_FILES_SCANNED(assetsJs)),
+            hasMessage(result.stdout, ErrorMessages.ANALYZE_IMPACT_NO_FILES_SCANNED(assetsJs)),
         ).toBe(true);
     });
 

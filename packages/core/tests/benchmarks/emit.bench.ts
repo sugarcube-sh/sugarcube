@@ -4,14 +4,14 @@ import { bench, describe } from "vitest";
 import { fillDefaults } from "../../src/node/config/normalize.js";
 import { declare } from "../../src/shared/css/declare.js";
 import { emitCSS } from "../../src/shared/css/emit.js";
-import { readOptions } from "../../src/shared/read-options.js";
+import { createReadOptions } from "../../src/shared/read-options.js";
 
 const repo = join(import.meta.dirname, "../../../..");
 const kits = join(repo, "apps/www/registry/tokens/starter-kits");
 
 async function project(resolver: string) {
     const config = fillDefaults({ resolver, variables: { path: "variables.css" } });
-    return { config, tokens: await read(resolver, readOptions(config)) };
+    return { config, tokens: await read(resolver, createReadOptions(config)) };
 }
 
 const projects = {

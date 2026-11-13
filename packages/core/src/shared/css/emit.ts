@@ -1,33 +1,30 @@
 import type { InternalConfig } from "../../types/config.js";
-import type { Reported } from "../../types/diagnostics.js";
+import type { AnyDiagnostic } from "../../types/diagnostics.js";
 import type { CSSFileOutput } from "../../types/generate.js";
-import { diagnostic } from "../diagnostics.js";
+import { createDiagnostic } from "../diagnostics.js";
 import { getCSSBlocks, toCSS } from "@sugarcube-sh/dtcg/css";
-import type { Declarations, Entry } from "./declare.js";
+import type { Declarations, DeclaredPermutation } from "./declare.js";
 
 /**
- * Writes the design tokens' CSS variables, named from the config's `prefix` or `variableName`,
- * with every reference to a token that has its own variable written as `var()`. Each permutation
- * is a block under its selector, inside its `atRule` if it has one, in its own `path` or the
- * config's. What each block in a file writes is `dtcg/css`'s `getCSSBlocks`, each block for its
- * `input` (a worked-out block, the contexts that set it apart), so themes stack on one element;
- * every variable referring to what a block writes is written again, unless `redeclareDependents`
- * is `false`, so a theme set on any element gives the right values. With
- * `colorFallbackStrategy: "polyfill"`, a color outside sRGB and HSL is written as its `hex`, and
- * as itself inside an `@supports` block for browsers that can show it. Hands back a warning when
- * the config still says `propagateDependents`; what reading and declaring found is in
- * `declared.diagnostics`.
+ * Writes the CSS variables files.
+ *
+ * Each permutation is a block under its selector, in its own file or in `variables.path`.
+ * A block after the first declares only the tokens its input changes. Unless
+ * `variables.redeclareDependents` is false, it also declares the tokens that refer to them.
+ *
+ * @param declared - The variables from `declare`.
+ * @param config - The config with its defaults.
  *
  * @example
- * const tokens = await read(config.resolver, readOptions(config));
- * const { files, diagnostics } = emitCSS(declare(tokens, config), config);
+ * emitCSS(declare(tokens, config), config).files.map(({ path }) => path)
+ * // => ["src/styles/tokens.css"]
  */
 export function emitCSS(
     declared: Declarations,
     config: InternalConfig,
-): { files: CSSFileOutput; diagnostics: Reported[] } {
-    const { redeclare, renamed } = redeclaring(config);
-    const byFile = new Map<string, Entry[]>();
+): { files: CSSFileOutput; diagnostics: AnyDiagnostic[] } {
+    const { redeclare, renamed } = getRedeclareOption(config);
+    const byFile = new Map<string, DeclaredPermutation[]>();
     for (const entry of declared.entries) {
         const inFile = byFile.get(entry.path);
         if (inFile) inFile.push(entry);
@@ -51,7 +48,10 @@ export function emitCSS(
     return { files, diagnostics: renamed };
 }
 
-function redeclaring(config: InternalConfig): { redeclare: boolean; renamed: Reported[] } {
+function getRedeclareOption(config: InternalConfig): {
+    redeclare: boolean;
+    renamed: AnyDiagnostic[];
+} {
     const { redeclareDependents, propagateDependents } = config.variables;
     return {
         redeclare: redeclareDependents ?? propagateDependents ?? true,
@@ -59,7 +59,7 @@ function redeclaring(config: InternalConfig): { redeclare: boolean; renamed: Rep
             propagateDependents === undefined
                 ? []
                 : [
-                      diagnostic("option-renamed", {
+                      createDiagnostic("option-renamed", {
                           from: "propagateDependents",
                           to: "redeclareDependents",
                       }),

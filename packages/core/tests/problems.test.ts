@@ -1,7 +1,12 @@
 import { readFromMemory } from "@sugarcube-sh/dtcg";
-import type { Reported } from "../src/types/diagnostics.js";
+import type { AnyDiagnostic } from "../src/types/diagnostics.js";
 import { describe, expect, it } from "vitest";
-import { type Where, problemBlocks, problemCount, problemsText } from "../src/shared/problems.js";
+import {
+    type ProblemContext,
+    formatProblemBlocks,
+    formatProblemCount,
+    formatProblems,
+} from "../src/shared/problems.js";
 
 const base = `{
   "space": {
@@ -37,14 +42,14 @@ const tokens = readFromMemory({
     },
 });
 
-const where: Where = {
+const where: ProblemContext = {
     cwd: "/project",
     entryFile: "/project/tokens/tokens.resolver.json",
     configFile: "/project/sugarcube.config.ts",
     tokens,
 };
 
-function writing(ref: string): Reported {
+function writing(ref: string): AnyDiagnostic {
     const problem = tokens.diagnostics.find(({ detail }) => "ref" in detail && detail.ref === ref);
     if (!problem) throw new Error(`no problem with ${ref}`);
     return problem;
@@ -55,7 +60,7 @@ const typo = writing("space.sn");
 const darkOnly = writing("color.brand");
 const inDarkFile = writing("color.brnd");
 
-const polyfill: Reported = {
+const polyfill: AnyDiagnostic = {
     kind: "option-deprecated",
     severity: "warning",
     message: "`polyfill` is deprecated",
@@ -65,9 +70,9 @@ const polyfill: Reported = {
 
 const look = { colors: false };
 
-describe("problemBlocks", () => {
+describe("formatProblemBlocks", () => {
     it("writes the place and kind, the message, then the problem's line with its fix at the marker", () => {
-        expect(problemBlocks([asString], where, look).map(({ text }) => text)).toStrictEqual([
+        expect(formatProblemBlocks([asString], where, look).map(({ text }) => text)).toStrictEqual([
             [
                 "tokens/base.json:4:23  error[invalid-value]",
                 "  a dimension can't be a string",
@@ -78,30 +83,34 @@ describe("problemBlocks", () => {
     });
 
     it("leaves the marker alone when there's no fix", () => {
-        const [{ text: block } = { text: "" }] = problemBlocks([inDarkFile], where, look);
+        const [{ text: block } = { text: "" }] = formatProblemBlocks([inDarkFile], where, look);
         expect(block?.split("\n").at(-1)?.endsWith("^")).toBe(true);
     });
 
     it("names the permutations when the file doesn't already say them", () => {
-        expect(problemBlocks([darkOnly], where, look)[0]?.text.split("\n")[1]).toBe(
+        expect(formatProblemBlocks([darkOnly], where, look)[0]?.text.split("\n")[1]).toBe(
             "  `color.brand` does not exist in mode: dark",
         );
     });
 
     it("names no permutations when only they read the file", () => {
-        expect(problemBlocks([inDarkFile], where, look)[0]?.text.split("\n")[1]).toBe(
+        expect(formatProblemBlocks([inDarkFile], where, look)[0]?.text.split("\n")[1]).toBe(
             "  `color.brnd` does not exist",
         );
     });
 
     it("names no permutations when every one has the problem", () => {
-        expect(problemBlocks([typo], where, look)[0]?.text.split("\n")[1]).toBe(
+        expect(formatProblemBlocks([typo], where, look)[0]?.text.split("\n")[1]).toBe(
             "  `space.sn` does not exist",
         );
     });
 
     it("sorts by file, then line and column, with the config's problems last", () => {
-        const blocks = problemBlocks([polyfill, inDarkFile, darkOnly, typo, asString], where, look);
+        const blocks = formatProblemBlocks(
+            [polyfill, inDarkFile, darkOnly, typo, asString],
+            where,
+            look,
+        );
         expect(blocks.map(({ text }) => text.split("  ")[0])).toStrictEqual([
             "tokens/base.json:4:23",
             "tokens/base.json:5:23",
@@ -113,7 +122,7 @@ describe("problemBlocks", () => {
 
     it("writes a problem with no place in a file as its first two lines, then its fix", () => {
         const helped = { ...polyfill, help: "use `native`" };
-        expect(problemBlocks([helped], where, look).map(({ text }) => text)).toStrictEqual([
+        expect(formatProblemBlocks([helped], where, look).map(({ text }) => text)).toStrictEqual([
             [
                 "sugarcube.config.ts  warning[option-deprecated]",
                 "  `polyfill` is deprecated",
@@ -124,13 +133,15 @@ describe("problemBlocks", () => {
 
     it("leaves the place out for a config problem when there is no config file", () => {
         const flagsOnly = { ...where, configFile: undefined };
-        expect(problemBlocks([polyfill], flagsOnly, look)[0]?.text.split("\n")[0]).toBe(
+        expect(formatProblemBlocks([polyfill], flagsOnly, look)[0]?.text.split("\n")[0]).toBe(
             "warning[option-deprecated]",
         );
     });
 
     it("moves the fix under the marker when it doesn't fit beside it", () => {
-        const lines = problemBlocks([asString], where, { ...look, width: 60 })[0]?.text.split("\n");
+        const lines = formatProblemBlocks([asString], where, { ...look, width: 60 })[0]?.text.split(
+            "\n",
+        );
         expect(lines?.slice(3)).toStrictEqual([
             "    |                       ^^^^^^^^^",
             '    |                       write `{ "value": 0.25, "unit": "rem" }`',
@@ -146,7 +157,7 @@ describe("problemBlocks", () => {
                 }),
             },
         });
-        const [{ text: block } = { text: "" }] = problemBlocks(
+        const [{ text: block } = { text: "" }] = formatProblemBlocks(
             long.diagnostics,
             { ...where, tokens: long },
             look,
@@ -158,7 +169,7 @@ describe("problemBlocks", () => {
     });
 
     it("writes the fix on its own line when there are no tokens to read the file from", () => {
-        const [{ text: block } = { text: "" }] = problemBlocks(
+        const [{ text: block } = { text: "" }] = formatProblemBlocks(
             [asString],
             { ...where, tokens: undefined },
             look,
@@ -169,7 +180,7 @@ describe("problemBlocks", () => {
     });
 
     it("prints each place a problem points to as well, under it", () => {
-        const conflict: Reported = {
+        const conflict: AnyDiagnostic = {
             ...asString,
             relatedInformation: [
                 {
@@ -178,20 +189,20 @@ describe("problemBlocks", () => {
                 },
             ],
         };
-        expect(problemBlocks([conflict], where, look)[0]?.text.split("\n").at(-1)).toBe(
+        expect(formatProblemBlocks([conflict], where, look)[0]?.text.split("\n").at(-1)).toBe(
             "  tokens/dark.json:4:23  declared as a group here",
         );
     });
 
     it("places a file the resolver names from the root where it is, not under the tokens' folder", () => {
         const shared = { ...typo, span: { ...typo.span!, file: "/shared/brand.json" } };
-        expect(problemBlocks([shared], where, look)[0]?.text).toMatch(
+        expect(formatProblemBlocks([shared], where, look)[0]?.text).toMatch(
             /^\.\.\/shared\/brand\.json:5:23 /,
         );
     });
 
     it("colors the severity, the place and the marker, and greys the kind", () => {
-        const [first, , , marker] = problemBlocks([asString], where, {
+        const [first, , , marker] = formatProblemBlocks([asString], where, {
             colors: true,
         })[0]!.text.split("\n");
         expect(first).toBe(
@@ -201,37 +212,39 @@ describe("problemBlocks", () => {
     });
 });
 
-const counts: [Reported[], string][] = [
+const counts: [AnyDiagnostic[], string][] = [
     [[asString, typo, polyfill], "2 errors and 1 warning."],
     [[asString], "1 error."],
     [[polyfill, polyfill], "2 warnings."],
 ];
 
-describe("problemCount", () => {
+describe("formatProblemCount", () => {
     it.for(counts)("counts %#: %s", ([problems, counted]) => {
-        expect(problemCount(problems)).toBe(counted);
+        expect(formatProblemCount(problems)).toBe(counted);
     });
 });
 
-describe("problemsText", () => {
+describe("formatProblems", () => {
     it("is empty when there are no problems", () => {
-        expect(problemsText([], where, look)).toBe("");
+        expect(formatProblems([], where, look)).toBe("");
     });
 
     it("is every problem, a blank line apart, then the count", () => {
-        const [first, second] = problemBlocks([typo, polyfill], where, look).map(
+        const [first, second] = formatProblemBlocks([typo, polyfill], where, look).map(
             ({ text }) => text,
         );
-        expect(problemsText([typo, polyfill], where, look)).toBe(
+        expect(formatProblems([typo, polyfill], where, look)).toBe(
             `${first}\n\n${second}\n\n1 error and 1 warning.`,
         );
     });
 
     it("ends the count with what the host says, when there is an error", () => {
         const ending = "No CSS was written.";
-        expect(problemsText([typo], where, { ...look, ending })).toMatch(
+        expect(formatProblems([typo], where, { ...look, failureText: ending })).toMatch(
             /\n1 error\. No CSS was written\.$/,
         );
-        expect(problemsText([polyfill], where, { ...look, ending })).toMatch(/\n1 warning\.$/);
+        expect(formatProblems([polyfill], where, { ...look, failureText: ending })).toMatch(
+            /\n1 warning\.$/,
+        );
     });
 });

@@ -4,12 +4,12 @@ import { findResolver, findTokenFiles } from "@sugarcube-sh/dtcg/node";
 import { Command } from "commander";
 import { relative } from "pathe";
 import color from "picocolors";
-import { type Built, build, buildFiles } from "../build.js";
+import { type BuildResult, build, buildFromMemory } from "../build.js";
 import { CLIError } from "../cli-error.js";
 import { loadConfig } from "../config.js";
-import { ERROR_MESSAGES } from "../constants/error-messages.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
-import { printProblems, whereOf } from "../problems.js";
+import { printProblems, getProblemContext } from "../problems.js";
 import { intro, label, outro } from "../prompts/common.js";
 
 export const validate = new Command()
@@ -21,9 +21,9 @@ export const validate = new Command()
             intro(label("Validate"));
             const built =
                 paths.length > 0
-                    ? await builtFromPaths(paths)
+                    ? await buildFromPaths(paths)
                     : await build(await loadConfig(), { markup: false });
-            if (printProblems(built.diagnostics, whereOf(built))) {
+            if (printProblems(built.diagnostics, getProblemContext(built))) {
                 process.exitCode = 1;
                 return;
             }
@@ -33,14 +33,14 @@ export const validate = new Command()
         }
     });
 
-async function builtFromPaths(paths: string[]): Promise<Built> {
+async function buildFromPaths(paths: string[]): Promise<BuildResult> {
     for (const path of paths) {
-        if (!existsSync(path)) throw new CLIError(ERROR_MESSAGES.VALIDATE_PATH_NOT_FOUND(path));
+        if (!existsSync(path)) throw new CLIError(ErrorMessages.VALIDATE_PATH_NOT_FOUND(path));
     }
     const shown = (path: string) => relative(process.cwd(), path);
     const resolver = await findResolver(paths, { by: "content" });
     if (resolver.kind === "several") {
-        throw new CLIError(ERROR_MESSAGES.VALIDATE_SEVERAL_RESOLVERS(resolver.paths.map(shown)));
+        throw new CLIError(ErrorMessages.VALIDATE_SEVERAL_RESOLVERS(resolver.paths.map(shown)));
     }
     if (resolver.kind === "one") {
         return build(await loadConfig({ resolver: shown(resolver.path) }), { markup: false });
@@ -52,8 +52,8 @@ async function builtFromPaths(paths: string[]): Promise<Built> {
     const files = [...new Set([...named, ...tokenFiles].map(shown))].sort();
     const [file, ...others] = files;
     if (file === undefined) {
-        throw new CLIError(ERROR_MESSAGES.VALIDATE_NO_TOKEN_FILES(otherFiles.map(shown)));
+        throw new CLIError(ErrorMessages.VALIDATE_NO_TOKEN_FILES(otherFiles.map(shown)));
     }
-    if (others.length > 0) throw new CLIError(ERROR_MESSAGES.VALIDATE_NO_RESOLVER(files));
-    return buildFiles({ [file]: await readFile(file, "utf-8") }, file);
+    if (others.length > 0) throw new CLIError(ErrorMessages.VALIDATE_NO_RESOLVER(files));
+    return buildFromMemory({ [file]: await readFile(file, "utf-8") }, file);
 }

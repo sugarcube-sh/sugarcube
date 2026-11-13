@@ -57,8 +57,8 @@ describe("lint, with utility classes that set variables", () => {
             reject: false,
             env: PLAIN_OUTPUT,
         });
-        const { noFallback } = JSON.parse(stdout) as { noFallback: { name: string }[] };
-        return noFallback.map(({ name }) => name);
+        const { withoutFallback } = JSON.parse(stdout) as { withoutFallback: { name: string }[] };
+        return withoutFallback.map(({ name }) => name);
     };
 
     it(

@@ -1,5 +1,5 @@
 import type { Group, Token } from "@sugarcube-sh/dtcg";
-import { fillDefaultsCore } from "@sugarcube-sh/core/client";
+import { fillDefaultsWithDirs } from "@sugarcube-sh/core/client";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 import { render } from "vitest-browser-react";
@@ -13,7 +13,7 @@ import { StudioContext } from "../../src/providers/studio-context";
 const entryFile = "tokens.resolver.json";
 
 function sizeStudio() {
-    const settings = fillDefaultsCore(
+    const settings = fillDefaultsWithDirs(
         { resolver: entryFile },
         { stylesDir: "src/styles", componentsDir: "src/components" },
     );

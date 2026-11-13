@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import {
     type DefaultDirs,
-    fillDefaultsCore,
+    fillDefaultsWithDirs,
     validateSugarcubeConfig,
 } from "../../shared/config.js";
 import type { InternalConfig, SugarcubeConfig } from "../../types/config.js";
@@ -23,27 +23,31 @@ function detectDefaultDirs(cwd: string = process.cwd()): DefaultDirs {
 }
 
 /**
- * Fills in default values for any omitted fields in a user configuration.
+ * Fills in a config's defaults.
  *
- * Output paths default to `src/styles` or `styles` (and similar) depending on
- * whether a `src/` directory exists in the project root.
+ * Output paths go in `src/styles` when the project has a `src` folder, and in `styles` when not.
+ * In a browser, use {@link fillDefaultsWithDirs}.
  *
- * Node-only. Uses `existsSync` to detect the `src/` directory. For
- * browser/edge/worker contexts, use `fillDefaultsCore` directly with explicit
- * directory parameters.
+ * @param userConfig - The settings, such as `{ resolver: "./tokens.resolver.json" }`.
+ * @param cwd - The project's folder, such as `"/site"`. It's `process.cwd()` when left out.
+ *
+ * @example
+ * // In a project with a src folder
+ * fillDefaults({}).variables.path
+ * // => "src/styles/variables.gen.css"
  */
 export function fillDefaults(
     userConfig: SugarcubeConfig,
     cwd: string = process.cwd(),
 ): InternalConfig {
-    return fillDefaultsCore(userConfig, detectDefaultDirs(cwd));
+    return fillDefaultsWithDirs(userConfig, detectDefaultDirs(cwd));
 }
 
 /**
- * Checks a user configuration object and fills in defaults.
+ * Checks a config and fills in its defaults.
  *
- * Node convenience wrapper that auto-detects default directories via the
- * filesystem.
+ * @param config - The settings, such as `{ resolver: "./tokens.resolver.json" }`.
+ * @throws ConfigError if the config has mistakes.
  */
 export function validateConfig(config: Partial<SugarcubeConfig>): InternalConfig {
     return fillDefaults(validateSugarcubeConfig(config));

@@ -1,7 +1,7 @@
 import { x } from "tinyexec";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CLIError } from "../src/cli-error.js";
-import { ERROR_MESSAGES } from "../src/constants/error-messages.js";
+import { ErrorMessages } from "../src/constants/error-messages.js";
 import { installDependencies } from "../src/installation/dependencies.js";
 
 vi.mock("tinyexec", () => ({
@@ -39,7 +39,7 @@ describe("installDependencies error surfacing", () => {
 
         expect(thrown).toBeInstanceOf(CLIError);
         expect((thrown as CLIError).message).toBe(
-            ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED("pnpm", stderr),
+            ErrorMessages.DEPENDENCY_INSTALL_FAILED("pnpm", stderr),
         );
         expect((thrown as CLIError).cause).toBe(failed);
     });
@@ -54,7 +54,7 @@ describe("installDependencies error surfacing", () => {
         const thrown = await captureError(() => installDependencies(["nope"], "/tmp/test", "pnpm"));
 
         expect((thrown as CLIError).message).toBe(
-            ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED("pnpm", stdout),
+            ErrorMessages.DEPENDENCY_INSTALL_FAILED("pnpm", stdout),
         );
     });
 
@@ -66,7 +66,7 @@ describe("installDependencies error surfacing", () => {
         );
 
         expect((thrown as CLIError).message).toBe(
-            ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED("pnpm", "spawn pnpm ENOENT"),
+            ErrorMessages.DEPENDENCY_INSTALL_FAILED("pnpm", "spawn pnpm ENOENT"),
         );
     });
 
@@ -80,7 +80,7 @@ describe("installDependencies error surfacing", () => {
             installDependencies(["anything"], "/tmp/test", "pnpm"),
         );
 
-        expect((thrown as CLIError).message).toBe(ERROR_MESSAGES.DEPENDENCY_INSTALL_FAILED("pnpm"));
+        expect((thrown as CLIError).message).toBe(ErrorMessages.DEPENDENCY_INSTALL_FAILED("pnpm"));
     });
 
     it("skips the install when dependency list is empty", async () => {

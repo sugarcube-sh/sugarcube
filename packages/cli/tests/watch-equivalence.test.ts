@@ -5,11 +5,11 @@ import {
     type LoadedConfig,
     type UtilityClassesConfig,
     fillDefaults,
-    readOptions,
+    createReadOptions,
 } from "@sugarcube-sh/core";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { afterEach, describe, expect, it } from "vitest";
-import { type Built, build, buildFrom, rescan } from "../src/build.js";
+import { type BuildResult, build, buildFromTokens, rescan } from "../src/build.js";
 
 interface Fixture {
     loaded: LoadedConfig;
@@ -84,11 +84,11 @@ function project(options: Options = {}): Fixture {
     return { loaded: { config: { ...config, resolver } }, tokens, markup };
 }
 
-const css = ({ variables, utilities }: Built) => ({ variables, utilities });
+const css = ({ variables, utilities }: BuildResult) => ({ variables, utilities });
 
-async function rebuilt(loaded: LoadedConfig, previous: Built): Promise<Built> {
-    const tokens = await read(loaded.config.resolver, readOptions(loaded.config));
-    return buildFrom(tokens, loaded, {}, previous);
+async function rebuilt(loaded: LoadedConfig, previous: BuildResult): Promise<BuildResult> {
+    const tokens = await read(loaded.config.resolver, createReadOptions(loaded.config));
+    return buildFromTokens(tokens, loaded, {}, previous);
 }
 
 describe("a save while watching makes what a cold build makes", () => {

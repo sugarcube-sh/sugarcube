@@ -6,9 +6,9 @@ import wwwConfig from "../../../../apps/www/sugarcube.config.js";
 import { fillDefaults } from "../../src/node/config/normalize.js";
 import { declare } from "../../src/shared/css/declare.js";
 import { emitCSS } from "../../src/shared/css/emit.js";
-import { readOptions } from "../../src/shared/read-options.js";
-import { utilityRules } from "../../src/shared/utilities/rules.js";
-import { utilityTokens } from "../../src/shared/utilities/tokens.js";
+import { createReadOptions } from "../../src/shared/read-options.js";
+import { createUtilityRules } from "../../src/shared/utilities/rules.js";
+import { getUtilityTokens } from "../../src/shared/utilities/tokens.js";
 import type { UtilityClassesConfig } from "../../src/types/config.js";
 
 const repo = join(import.meta.dirname, "../../../..");
@@ -29,7 +29,7 @@ async function project(resolver: string) {
         variables: { path: "variables.css" },
         utilities: { classes },
     });
-    const tokens = await read(resolver, readOptions(config));
+    const tokens = await read(resolver, createReadOptions(config));
     return { config, tokens };
 }
 
@@ -59,12 +59,12 @@ for (const [name, { config, tokens }] of Object.entries(projects)) {
         const declared = declare(tokens, config);
 
         bench("new core: tokens, rules, safelist, answers, from the build's declarations", () => {
-            const { rules, safelist } = utilityRules(utilityTokens(declared), classes);
+            const { rules, safelist } = createUtilityRules(getUtilityTokens(declared), classes);
             answerEach(rules, safelist);
         });
 
         bench("new core: the token list alone", () => {
-            utilityTokens(declared);
+            getUtilityTokens(declared);
         });
 
         bench("new core: declare, for scale", () => {

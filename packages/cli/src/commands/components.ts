@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import color from "picocolors";
 import { CLIError } from "../cli-error.js";
-import { ERROR_MESSAGES } from "../constants/error-messages.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import { installComponents } from "../installation/components.js";
 import { installDependencies } from "../installation/dependencies.js";
@@ -29,7 +29,7 @@ export interface RunComponentsOptions {
     framework?: string;
     output?: string;
     silent?: boolean;
-    overwrite?: boolean;
+    force?: boolean;
     skipIntro?: boolean;
     skipOutro?: boolean;
     continueOnDecline?: boolean;
@@ -50,12 +50,12 @@ export async function runComponents(
 
     if (componentArgs.length > 0 || options.framework) {
         if (!options.framework) {
-            throw new CLIError(ERROR_MESSAGES.COMPONENTS_FRAMEWORK_REQUIRED());
+            throw new CLIError(ErrorMessages.COMPONENTS_FRAMEWORK_REQUIRED());
         }
 
         const validFrameworks = ["react", "css-only"] as const;
         if (!validFrameworks.includes(options.framework as SupportedFramework)) {
-            throw new CLIError(ERROR_MESSAGES.COMPONENTS_INVALID_FRAMEWORK());
+            throw new CLIError(ErrorMessages.COMPONENTS_INVALID_FRAMEWORK());
         }
 
         componentType = options.framework as SupportedFramework;
@@ -86,7 +86,7 @@ export async function runComponents(
     });
 
     const warningMessage = formatOverwriteWarnings(warnings);
-    if (warningMessage && !options.overwrite && !options.silent) {
+    if (warningMessage && !options.force && !options.silent) {
         printWarning(warningMessage, { plain: false });
         const confirmed = await confirmOverwrite("Continue?", false, {
             exitOnDecline: !options.continueOnDecline,
@@ -131,7 +131,7 @@ export async function runComponents(
                     selectedComponents: [component.name],
                     componentType,
                     componentsOutputDirectory,
-                    overwrite: options.overwrite || false,
+                    overwrite: options.force || false,
                     packageManager,
                 });
                 allCreatedFiles.push(...result.createdFiles);
@@ -155,9 +155,9 @@ export const components = new Command()
     .description("Add components to your project")
     .argument("[components...]", "Components to add (e.g., button card)")
     .option("-f, --framework <type>", "Framework to use (react, css-only)")
-    .option("--output <dir>", "Components output directory (e.g., 'src/components')")
+    .option("-o, --output <dir>", "Components output directory (e.g., 'src/components')")
     .option("-s, --silent", "Suppress logs and prompts")
-    .option("-o, --overwrite", "Overwrite existing files")
+    .option("--force", "Skip overwrite confirmation")
     .action(async (componentNames, options) => {
         try {
             await runComponents(componentNames, options);

@@ -1,4 +1,4 @@
-import { type LoadedConfig, tokensOnDisk } from "@sugarcube-sh/core";
+import { type LoadedConfig, getTokensOnDisk } from "@sugarcube-sh/core";
 import { type FileWatcher, createLiveTokens } from "@sugarcube-sh/dtcg/node";
 import type { StudioFiles } from "./files";
 
@@ -6,7 +6,7 @@ export async function nodeFiles(
     config: LoadedConfig["config"],
     { onError }: { onError: (error: unknown) => void },
 ): Promise<StudioFiles & { watch(watcher: FileWatcher): void }> {
-    const live = createLiveTokens(tokensOnDisk(config), { onError });
+    const live = createLiveTokens(getTokensOnDisk(config), { onError });
     let tokens = await live.getTokens();
     const listeners = new Set<() => void>();
     live.onRead((next) => {

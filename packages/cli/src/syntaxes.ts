@@ -14,6 +14,6 @@ const PARSERS: Record<string, Parser> = {
 
 export const STYLESHEET_EXTENSIONS = Object.keys(PARSERS);
 
-export function parserFor(file: string): Parser | undefined {
+export function getParser(file: string): Parser | undefined {
     return PARSERS[extname(file).toLowerCase()];
 }

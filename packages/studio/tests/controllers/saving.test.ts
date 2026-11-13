@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { readOptions } from "@sugarcube-sh/core/client";
+import { createReadOptions } from "@sugarcube-sh/core/client";
 import type { Change } from "@sugarcube-sh/dtcg";
 import { type Edits, setValue } from "@sugarcube-sh/dtcg-edit";
 import { afterEach, describe, expect, it } from "vitest";
@@ -164,7 +164,7 @@ describe("saving", () => {
     it("writes the edits into the files on disk through the host's save", async () => {
         const copy = demoCopy();
         remove = copy.remove;
-        const onDisk = { entryFile: copy.config.resolver, options: readOptions(copy.config) };
+        const onDisk = { entryFile: copy.config.resolver, options: createReadOptions(copy.config) };
         const studio = createStudio(demoMessage(), adapterFor, (edits) =>
             saveEdits(onDisk, JSON.parse(JSON.stringify(edits))),
         );

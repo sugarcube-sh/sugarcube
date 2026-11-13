@@ -1,31 +1,31 @@
 import { Command, Option } from "commander";
-import { type Analysis, impact, unused, writtenOf } from "../analyze/answers.js";
-import { impactJSON, unusedJSON } from "../analyze/json.js";
+import { type Analysis, findImpact, findUnused, findDefinitions } from "../analyze/answers.js";
+import { toImpactJSON, toUnusedJSON } from "../analyze/json.js";
 import {
-    impactHeading,
-    impactLines,
-    impactSummary,
-    shortfall,
-    unusedLines,
-    unusedSummary,
+    formatImpactHeading,
+    formatImpactTree,
+    formatImpactSummary,
+    formatAnalyzeWarning,
+    formatUnusedTable,
+    formatUnusedSummary,
 } from "../analyze/text.js";
-import { type Uses, findUses } from "../analyze/uses.js";
-import { type Built, build } from "../build.js";
+import { type TokenUses, findUses } from "../analyze/uses.js";
+import { type BuildResult, build } from "../build.js";
 import { CLIError } from "../cli-error.js";
-import { ERROR_MESSAGES } from "../constants/error-messages.js";
+import { ErrorMessages } from "../constants/error-messages.js";
 import { handleError } from "../handle-error.js";
 import { loadTokenConfigOrThrow } from "../load-config.js";
-import { printProblems, whereOf } from "../problems.js";
+import { printProblems, getProblemContext } from "../problems.js";
 import { printWarning } from "../prompts/box-with-badge.js";
 import { intro, label, outro } from "../prompts/common.js";
 import { log, rawLog } from "../prompts/log.js";
 
-async function builtFor(plain: boolean): Promise<Built | undefined> {
+async function buildForAnalyze(isMachineOutput: boolean): Promise<BuildResult | undefined> {
     const built = await build(await loadTokenConfigOrThrow("analyze"));
-    const failed = printProblems(built.diagnostics, whereOf(built), {
+    const failed = printProblems(built.diagnostics, getProblemContext(built), {
         onlyErrors: true,
-        whenFailed: ERROR_MESSAGES.NOTHING_ANALYSED(),
-        ...(plain && { to: process.stderr }),
+        failureText: ErrorMessages.NOTHING_ANALYSED(),
+        ...(isMachineOutput && { stream: process.stderr }),
     });
     if (failed) {
         process.exitCode = 1;
@@ -34,9 +34,13 @@ async function builtFor(plain: boolean): Promise<Built | undefined> {
     return built;
 }
 
-async function usesFor(built: Built, asking: "unused" | "impact", plain: boolean): Promise<Uses> {
+async function findUsesAndWarn(
+    built: BuildResult,
+    asking: "unused" | "impact",
+    plain: boolean,
+): Promise<TokenUses> {
     const uses = await findUses(built);
-    const warning = shortfall(uses, asking);
+    const warning = formatAnalyzeWarning(uses, asking);
     if (warning) printWarning(warning, { plain });
     return uses;
 }
@@ -54,21 +58,21 @@ const unusedCommand = new Command()
             const plain = options.json === true || options.all === true;
             if (!plain) intro(label("Analyze"));
 
-            const built = await builtFor(plain);
+            const built = await buildForAnalyze(plain);
             if (!built) return;
-            const uses = await usesFor(built, "unused", plain);
+            const uses = await findUsesAndWarn(built, "unused", plain);
             const analysis: Analysis = { tokens: built.tokens, uses };
-            const answer = unused(analysis);
+            const answer = findUnused(analysis);
 
-            if (options.json) return printJSON(unusedJSON(answer, uses));
+            if (options.json) return printJSON(toUnusedJSON(answer, uses));
             if (options.all) {
                 for (const path of answer.unused) rawLog(path);
                 return;
             }
             if (answer.unused.length > 0) {
-                log.message(unusedLines(answer, built.tokens.getTokenPaths()));
+                log.message(formatUnusedTable(answer, built.tokens.getTokenPaths()));
             }
-            outro(unusedSummary(answer, uses));
+            outro(formatUnusedSummary(answer, uses));
         } catch (error) {
             handleError(error);
         }
@@ -76,7 +80,7 @@ const unusedCommand = new Command()
 
 const impactCommand = new Command()
     .name("impact")
-    .description("Show everything affected by changing a token (dependent tokens and CSS/markup)")
+    .description("Show what changing a token affects")
     .argument("<token>", "Token path, e.g. color.pink.600")
     .addOption(new Option("--tree").hideHelp())
     .addOption(new Option("--brief").hideHelp())
@@ -86,20 +90,20 @@ const impactCommand = new Command()
             const plain = options.json === true;
             if (!plain) intro(label("Analyze"));
 
-            const built = await builtFor(plain);
+            const built = await buildForAnalyze(plain);
             if (!built) return;
-            const written = writtenOf(built.tokens, path);
+            const written = findDefinitions(built.tokens, path);
             if (written === "group")
-                throw new CLIError(ERROR_MESSAGES.ANALYZE_GROUP_NOT_TOKEN(path));
-            if (!written) throw new CLIError(ERROR_MESSAGES.ANALYZE_NO_TOKEN(path));
-            const uses = await usesFor(built, "impact", plain);
-            const answer = impact({ tokens: built.tokens, uses }, path, written);
+                throw new CLIError(ErrorMessages.ANALYZE_GROUP_NOT_TOKEN(path));
+            if (!written) throw new CLIError(ErrorMessages.ANALYZE_NO_TOKEN(path));
+            const uses = await findUsesAndWarn(built, "impact", plain);
+            const answer = findImpact({ tokens: built.tokens, uses }, path, written);
 
-            if (plain) return printJSON(impactJSON(answer));
-            log.message(impactHeading(answer));
-            const lines = impactLines(answer);
+            if (plain) return printJSON(toImpactJSON(answer));
+            log.message(formatImpactHeading(answer));
+            const lines = formatImpactTree(answer);
             if (lines.length > 0) log.message(lines);
-            outro(impactSummary(answer));
+            outro(formatImpactSummary(answer));
         } catch (error) {
             handleError(error);
         }
@@ -107,6 +111,6 @@ const impactCommand = new Command()
 
 export const analyze = new Command()
     .name("analyze")
-    .description("Report what's true about your token system (insight, not pass/fail)")
+    .description("Find unused tokens and what a change affects")
     .addCommand(unusedCommand)
     .addCommand(impactCommand);

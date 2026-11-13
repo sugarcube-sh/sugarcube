@@ -8,7 +8,7 @@ export interface NextStepsContext {
     installedVitePlugin: boolean;
 }
 
-export async function next(ctx: NextStepsContext): Promise<void> {
+export async function showNextSteps(ctx: NextStepsContext): Promise<void> {
     log.space(2);
     await sleep(200);
 

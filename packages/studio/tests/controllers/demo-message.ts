@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { type InternalConfig, fillDefaults } from "@sugarcube-sh/core";
-import type { Reported } from "@sugarcube-sh/core/client";
+import type { AnyDiagnostic } from "@sugarcube-sh/core/client";
 import { adapterFor } from "../../src/adapters";
 import type { PlainSettings } from "../../src/adapters/plain";
 import { createStudio } from "../../src/controllers/studio";
@@ -29,7 +29,10 @@ export function asSent(
 export function sugarcubeSent({
     config = asSent(),
     problems = [],
-}: { config?: InternalConfig; problems?: readonly Reported[] } = {}): StudioMessage["adapter"] {
+}: {
+    config?: InternalConfig;
+    problems?: readonly AnyDiagnostic[];
+} = {}): StudioMessage["adapter"] {
     return { name: "sugarcube", settings: config, problems };
 }
 
@@ -58,7 +61,7 @@ export function studioOn(message: StudioMessage = demoMessage()) {
     return createStudio(message, adapterFor);
 }
 
-export const configProblem: Reported = {
+export const configProblem: AnyDiagnostic = {
     kind: "invalid-config",
     severity: "error",
     message: "`variables.prefix` must be a string",

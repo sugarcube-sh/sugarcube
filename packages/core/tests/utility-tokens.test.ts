@@ -1,9 +1,9 @@
 import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { describe, expect, it } from "vitest";
 import { fillDefaults } from "../src/node/config/normalize.js";
-import { readOptions } from "../src/shared/read-options.js";
+import { createReadOptions } from "../src/shared/read-options.js";
 import { declare } from "../src/shared/css/declare.js";
-import { utilityTokens } from "../src/shared/utilities/tokens.js";
+import { getUtilityTokens } from "../src/shared/utilities/tokens.js";
 
 type Variables = Parameters<typeof fillDefaults>[0]["variables"];
 
@@ -12,8 +12,8 @@ function tokensFor(files: Record<string, unknown>, variables: Variables = {}) {
     const texts = Object.fromEntries(
         Object.entries(files).map(([path, json]) => [path, JSON.stringify(json)]),
     );
-    return utilityTokens(
-        declare(readFromMemory({ files: texts }, readOptions(config)), config),
+    return getUtilityTokens(
+        declare(readFromMemory({ files: texts }, createReadOptions(config)), config),
     ).map((listed) => {
         const { path, type } = listed.token;
         if ("name" in listed) return { path, type, name: listed.name };
@@ -42,7 +42,7 @@ const themed = {
     "dark.json": { ink: color("#eeeeee"), glow: color("#ffffff") },
 };
 
-describe("utilityTokens", () => {
+describe("getUtilityTokens", () => {
     it("lists each token with a variable in any permutation, once, in the order first met, by its variable's name", () => {
         expect(tokensFor(themed, { prefix: "ds" })).toStrictEqual([
             { path: "ink", type: "color", name: "--ds-ink" },

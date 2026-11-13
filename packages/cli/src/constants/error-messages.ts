@@ -1,28 +1,27 @@
-import { plural } from "@sugarcube-sh/core";
+import { pluralize } from "@sugarcube-sh/core";
 import color from "picocolors";
 import { COMMANDS } from "./commands.js";
 import { LINKS } from "./links.js";
+import type { UnreadStylesheets } from "../scan-stylesheets.js";
 
-type Unread = { dir: string; count: number };
-
-const unreadHeadline = (entries: Unread[]) => {
+const formatUnreadHeadline = (entries: UnreadStylesheets[]) => {
     const [first] = entries;
     if (entries.length === 1 && first) {
-        return `Didn't read ${plural(first.count, "stylesheet")} in ${color.cyan(first.dir)}`;
+        return `Didn't read ${pluralize(first.count, "stylesheet")} in ${color.cyan(first.dir)}`;
     }
 
     const total = entries.reduce((sum, entry) => sum + entry.count, 0);
     const list = entries.map(({ dir, count }) => `  ${count} in ${color.cyan(dir)}`).join("\n");
-    return `Didn't read ${plural(total, "stylesheet")}:\n\n${list}`;
+    return `Didn't read ${pluralize(total, "stylesheet")}:\n\n${list}`;
 };
 
-const unreadFix = (entries: Unread[]) =>
+const formatUnreadFix = (entries: UnreadStylesheets[]) =>
     `Add the ${entries.length === 1 ? "folder" : "folders"} to ${color.cyan("content")}.`;
 
-const noStylesheetsHelp = (cwd: string, also = "") =>
+const formatNoStylesheetsHelp = (cwd: string, also = "") =>
     `Looked below ${color.cyan(cwd)} and in your ${color.cyan("content")} globs.\nIf your CSS lives elsewhere, add it to ${color.cyan("content")}:\n\n  content: ["../css/**/*.css"]\n\n${also}See ${color.cyan(LINKS.CONFIGURATION)} for more information.`;
 
-export const ERROR_MESSAGES = {
+export const ErrorMessages = {
     CONFIG_EXISTS: () =>
         `A sugarcube config file already exists in this project.\n\nTo start over, remove it and run ${color.cyan(COMMANDS.INIT)} again.`,
 
@@ -89,21 +88,22 @@ export const ERROR_MESSAGES = {
     COMPONENTS_INVALID_FRAMEWORK: () => "Invalid framework. Must be one of: react, css-only.",
 
     LINT_NO_FILES_SCANNED: (cwd: string) =>
-        `No stylesheets found, so nothing was linted.\n\n${noStylesheetsHelp(cwd, `Or name it for one run: ${color.cyan("sugarcube lint ../css")}\n\n`)}`,
+        `No stylesheets found, so nothing was linted.\n\n${formatNoStylesheetsHelp(cwd, `Or name it for one run: ${color.cyan("sugarcube lint ../css")}\n\n`)}`,
 
     ANALYZE_UNUSED_NO_FILES_SCANNED: (cwd: string) =>
-        `No stylesheets found. Tokens reached only through your CSS are listed as unused below.\n\n${noStylesheetsHelp(cwd)}`,
+        `No stylesheets found. Tokens reached only through your CSS are listed as unused below.\n\n${formatNoStylesheetsHelp(cwd)}`,
 
     ANALYZE_IMPACT_NO_FILES_SCANNED: (cwd: string) =>
-        `No stylesheets found, so no CSS consumers of this token can be listed.\n\n${noStylesheetsHelp(cwd)}`,
+        `No stylesheets found, so no CSS consumers of this token can be listed.\n\n${formatNoStylesheetsHelp(cwd)}`,
 
-    LINT_UNREAD_STYLESHEETS: (entries: Unread[]) =>
-        `${unreadHeadline(entries)}\n\nThose files weren't checked. ${unreadFix(entries)}\n\n${color.cyan(LINKS.CONFIGURATION)}`,
+    LINT_UNREAD_STYLESHEETS: (entries: UnreadStylesheets[]) =>
+        `${formatUnreadHeadline(entries)}\n\nThose files weren't checked. ${formatUnreadFix(entries)}\n\n${color.cyan(LINKS.CONFIGURATION)}`,
 
-    ANALYZE_UNREAD_STYLESHEETS: (entries: Unread[]) =>
-        `${unreadHeadline(entries)}\n\nTokens used only there appear unused. ${unreadFix(entries)}\n\n${color.cyan(LINKS.CONFIGURATION)}`,
+    ANALYZE_UNREAD_STYLESHEETS: (entries: UnreadStylesheets[]) =>
+        `${formatUnreadHeadline(entries)}\n\nTokens used only there appear unused. ${formatUnreadFix(entries)}\n\n${color.cyan(LINKS.CONFIGURATION)}`,
 
     NO_CSS_WRITTEN: () => "No CSS was written.",
+    NO_CSS_TO_WRITE: () => "No CSS to write.",
 
     NOTHING_ANALYSED: () => "Nothing was analysed.",
 

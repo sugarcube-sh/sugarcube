@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { readOptions } from "@sugarcube-sh/core/client";
+import { createReadOptions } from "@sugarcube-sh/core/client";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { createSession, setValue } from "@sugarcube-sh/dtcg-edit";
 import { afterEach, describe, expect, it } from "vitest";
@@ -15,7 +15,7 @@ afterEach(() => remove());
 async function demo() {
     const copy = demoCopy();
     remove = copy.remove;
-    const onDisk = { entryFile: copy.config.resolver, options: readOptions(copy.config) };
+    const onDisk = { entryFile: copy.config.resolver, options: createReadOptions(copy.config) };
     const session = createSession(await read(onDisk.entryFile, onDisk.options));
     session.do(setValue(session.tokens, "color.brand.500", lighter));
     return { ...copy, onDisk, edits: session.unsaved };

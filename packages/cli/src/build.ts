@@ -4,12 +4,12 @@ import {
     type Declarations,
     type InternalConfig,
     type LoadedConfig,
-    type Reported,
+    type AnyDiagnostic,
     type UtilityCSS,
-    cssFrom,
+    generateCSS,
     fillDefaults,
-    readOptions,
-    tokensOnDisk,
+    createReadOptions,
+    getTokensOnDisk,
 } from "@sugarcube-sh/core";
 import { type DesignTokens, readFromMemory } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
@@ -28,7 +28,7 @@ interface MarkupScan {
     markupFiles: string[];
 }
 
-export interface Built {
+export interface BuildResult {
     tokens: DesignTokens;
     config: InternalConfig;
     entryFile: string;
@@ -37,106 +37,116 @@ export interface Built {
     variables: CSSFileOutput;
     utilities: CSSFileOutput;
     markupFiles: string[];
-    utilityRules?: UtilityCSS;
-    diagnostics: Reported[];
+    utilityCSS?: UtilityCSS;
+    diagnostics: AnyDiagnostic[];
     uno?: UnoGenerator;
 }
 
-interface Reading {
+interface BuildInput {
     tokens: DesignTokens;
     entryFile: string;
     config: InternalConfig;
     configFile?: string;
 }
 
-export async function build(loaded: LoadedConfig, options: BuildOptions = {}): Promise<Built> {
-    const onDisk = tokensOnDisk(loaded.config);
+export async function build(
+    loaded: LoadedConfig,
+    options: BuildOptions = {},
+): Promise<BuildResult> {
+    const onDisk = getTokensOnDisk(loaded.config);
     const tokens = await read(onDisk.entryFile, onDisk.options);
-    return buildFrom(tokens, loaded, options);
+    return buildFromTokens(tokens, loaded, options);
 }
 
-export function buildFrom(
+export function buildFromTokens(
     tokens: DesignTokens,
     { config, configFile }: LoadedConfig,
     options: BuildOptions = {},
-    previous?: Built,
-): Promise<Built> {
+    previous?: BuildResult,
+): Promise<BuildResult> {
     const reading = { tokens, entryFile: config.resolver, config, configFile };
-    return fromReading(reading, options, previous);
+    return createBuild(reading, options, previous);
 }
 
-export function buildFiles(texts: Record<string, string>, entryFile: string): Promise<Built> {
+export function buildFromMemory(
+    texts: Record<string, string>,
+    entryFile: string,
+): Promise<BuildResult> {
     const config = fillDefaults({});
-    const tokens = readFromMemory({ files: texts, entryFile }, readOptions(config));
-    return fromReading({ tokens, entryFile, config }, {});
+    const tokens = readFromMemory({ files: texts, entryFile }, createReadOptions(config));
+    return createBuild({ tokens, entryFile, config }, {});
 }
 
-export async function rescan(built: Built): Promise<Built> {
-    if (!built.uno || !built.utilityRules) return built;
-    return { ...built, ...(await scanMarkup(built.uno, built.utilityRules, built.config)) };
+export async function rescan(built: BuildResult): Promise<BuildResult> {
+    if (!built.uno || !built.utilityCSS) return built;
+    return { ...built, ...(await scanMarkup(built.uno, built.utilityCSS, built.config)) };
 }
 
-export function variablesOf({ declared }: Built): Map<string, string> {
+export function getTokenByVariable({ declared }: BuildResult): Map<string, string> {
     const tokenOf = new Map<string, string>();
-    for (const { declared: made } of declared.entries) {
-        for (const { name, token } of made.declarations) tokenOf.set(name, token.path);
+    for (const { declared: declarations } of declared.entries) {
+        for (const { name, token } of declarations.declarations) tokenOf.set(name, token.path);
     }
     return tokenOf;
 }
 
-export function filesOf({ variables, utilities }: Built): CSSFileOutput {
+export function getOutputFiles({ variables, utilities }: BuildResult): CSSFileOutput {
     return [...variables, ...utilities];
 }
 
-async function fromReading(
-    { tokens, entryFile, config, configFile }: Reading,
+async function createBuild(
+    { tokens, entryFile, config, configFile }: BuildInput,
     options: BuildOptions,
-    previous?: Built,
-): Promise<Built> {
-    const made = cssFrom(tokens, config, {
+    previous?: BuildResult,
+): Promise<BuildResult> {
+    const generated = generateCSS(tokens, config, {
         variables: !options.utilitiesOnly,
         utilities: !options.variablesOnly,
     });
     const scan =
-        made.utilities && options.markup !== false
-            ? await markupUtilities(made.utilities, config, previous)
+        generated.utilities && options.markup !== false
+            ? await getMarkupUtilities(generated.utilities, config, previous)
             : { utilities: [], markupFiles: [] };
     return {
         tokens,
         config,
         entryFile,
         configFile,
-        declared: made.declared,
-        variables: finished(made.variables, config.variables.layer),
-        utilityRules: made.utilities,
-        diagnostics: made.diagnostics,
+        declared: generated.declared,
+        variables: finishFiles(generated.variables, config.variables.layer),
+        utilityCSS: generated.utilities,
+        diagnostics: generated.diagnostics,
         ...scan,
     };
 }
 
-async function markupUtilities(
+async function getMarkupUtilities(
     rules: UtilityCSS,
     config: InternalConfig,
-    previous: Built | undefined,
+    previous: BuildResult | undefined,
 ): Promise<MarkupScan & { uno: UnoGenerator }> {
-    if (previous?.uno && unchanged(previous, rules, config)) {
+    if (previous?.uno && hasSameUtilities(previous, rules, config)) {
         const { uno, utilities, markupFiles } = previous;
         return { uno, utilities, markupFiles };
     }
-    const uno = await generatorFor(rules);
+    const uno = await createUnoGenerator(rules);
     return { uno, ...(await scanMarkup(uno, rules, config)) };
 }
 
-function unchanged(previous: Built, rules: UtilityCSS, config: InternalConfig): boolean {
-    const before = previous.utilityRules;
+function hasSameUtilities(
+    previous: BuildResult,
+    rules: UtilityCSS,
+    config: InternalConfig,
+): boolean {
+    const before = previous.utilityCSS;
     return (
         previous.config === config &&
         before !== undefined &&
-        isDeepStrictEqual([before.starts, before.safelist], [rules.starts, rules.safelist])
+        isDeepStrictEqual([before.prefixes, before.safelist], [rules.prefixes, rules.safelist])
     );
 }
 
-function generatorFor({ rules, safelist }: UtilityCSS): Promise<UnoGenerator> {
+function createUnoGenerator({ rules, safelist }: UtilityCSS): Promise<UnoGenerator> {
     return createGenerator({ presets: [{ name: "sugarcube", rules, preflights: [] }], safelist });
 }
 
@@ -151,9 +161,9 @@ async function scanMarkup(
     const { css } = await uno.generate(sources.join("\n"), { preflights: false });
     if (!css?.trim()) return { utilities: [], markupFiles };
     const files = [{ path: config.utilities.path, css }];
-    return { utilities: finished(files, config.utilities.layer), markupFiles };
+    return { utilities: finishFiles(files, config.utilities.layer), markupFiles };
 }
 
-function finished(files: CSSFileOutput, layer: string | undefined): CSSFileOutput {
+function finishFiles(files: CSSFileOutput, layer: string | undefined): CSSFileOutput {
     return addBanner(layer ? wrapInLayer(files, layer) : files);
 }

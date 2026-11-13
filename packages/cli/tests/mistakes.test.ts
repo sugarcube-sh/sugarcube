@@ -1,9 +1,9 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { fillDefaults, problemsText } from "@sugarcube-sh/core";
+import { fillDefaults, formatProblems } from "@sugarcube-sh/core";
 import { expect, it } from "vitest";
 import { build } from "../src/build.js";
-import { whereOf } from "../src/problems.js";
+import { getProblemContext } from "../src/problems.js";
 
 const MISTAKES = join(__dirname, "__fixtures__/mistakes");
 
@@ -12,8 +12,8 @@ async function shown(name: string): Promise<string> {
     const resolver = join(folder, "tokens.resolver.json");
     const config = fillDefaults({ resolver, variables: { path: join(folder, "unwritten.css") } });
     const built = await build({ config: { ...config, resolver } }, { markup: false });
-    const where = { ...whereOf(built), cwd: folder };
-    return problemsText(built.diagnostics, where, { colors: false });
+    const where = { ...getProblemContext(built), cwd: folder };
+    return formatProblems(built.diagnostics, where, { colors: false });
 }
 
 it("shows what a person reads for each common mistake", async () => {

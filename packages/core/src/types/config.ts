@@ -1,161 +1,263 @@
-import type { PropertyUtilityConfig } from "./utilities.js";
+import type { UtilityClassConfig } from "./utilities.js";
 
+/**
+ * How colors outside sRGB are written.
+ *
+ * - `"native"` writes them as they are, such as `oklch(0.6 0.15 250)`.
+ * - `"polyfill"` writes each color's `hex` first, then the color inside `@supports`. It is deprecated.
+ *
+ * @see {@link https://sugarcube.sh/docs/color-formats/#color-fallbacks | Color fallbacks}
+ */
 export type ColorFallbackStrategy = "native" | "polyfill";
 
 /**
- * Maps a token's DTCG path to its CSS variable name (without the leading `--`).
- * Overrides `variables.prefix` entirely when set.
+ * Names a token's CSS variable from its path.
+ *
+ * Return the name without the leading `--`.
  *
  * @example
- * variableName: (path) => `ds-${path.replaceAll(".", "-").toLowerCase()}`
+ * // For the token color.primary
+ * (path) => `ds-${path.replaceAll(".", "-")}`
+ * // => --ds-color-primary
  */
-export type VariableNameFn = (path: string) => string;
+export type VariableNameFunction = (path: string) => string;
 
 /**
- * A resolved token set and how to emit it as CSS.
- * Aligned with the DTCG resolver "permutation" concept - maps 1:1 to a resolver input.
+ * One resolver input, and where its variables are written.
+ *
+ * @see {@link https://sugarcube.sh/docs/theming/#custom-selectors-the-permutations-api | The permutations API}
  */
 export type PermutationConfig = {
     /**
-     * Modifier name → context value. Missing modifiers use their DTCG defaults.
-     * @example { theme: "dark" }
+     * The context for each modifier, such as `{ mode: "dark" }`.
+     *
+     * A modifier left out uses its default context.
      */
     readonly input: Readonly<Record<string, string>>;
     /**
-     * Selector(s) wrapping this permutation's output. Arrays are comma-joined.
-     * @example "[data-theme=\"dark\"]"
-     * @example ["[data-color-mode=dark]", "[data-color-mode=auto]"]
+     * The selector the variables are written under, such as `'[data-mode="dark"]'`.
+     *
+     * An array is joined with commas.
      */
     readonly selector: string | readonly string[];
-    /** e.g. `"@media (prefers-color-scheme: dark)"` */
+    /**
+     * An at-rule to write the block inside, such as `"@media (prefers-color-scheme: dark)"`.
+     */
     readonly atRule?: string;
     /**
-     * Write this permutation to its own file instead of the default variables path.
-     * @example "dist/brand-one.css"
+     * A file to write this permutation to, such as `"src/styles/dark.css"`.
+     *
+     * @default `variables.path`
      */
     readonly path?: string;
 };
 
-export type FluidConfig = {
+/**
+ * The viewport widths fluid tokens scale between, in pixels.
+ *
+ * @see {@link https://sugarcube.sh/docs/fluid-space-and-type/ | Fluid space and type}
+ */
+export type FluidViewport = {
+    /**
+     * The width where a fluid token is at its smallest.
+     *
+     * @default 320
+     */
     readonly min: number;
+    /**
+     * The width where a fluid token is at its largest.
+     *
+     * @default 1200
+     */
     readonly max: number;
 };
 
+/**
+ * The utility classes to make, by CSS property.
+ *
+ * A property can have one entry or an array of them.
+ */
 export type UtilityClassesConfig = Readonly<
-    Record<string, PropertyUtilityConfig | readonly PropertyUtilityConfig[]>
+    Record<string, UtilityClassConfig | readonly UtilityClassConfig[]>
 >;
 
+/**
+ * Settings for the CSS variables file.
+ *
+ * @see {@link https://sugarcube.sh/docs/reference/configuration-schema/#variables | variables}
+ */
 export interface VariablesConfig {
     /**
-     * @example "src/styles/tokens.css"
+     * The file the variables are written to, such as `"src/styles/tokens.css"`.
+     *
+     * @default "src/styles/variables.gen.css", or "styles/variables.gen.css" with no `src` folder
      */
     path?: string;
 
     /**
-     * Prepended to every generated CSS variable name.
-     * @example // prefix: "ds" → color.brandPrimary becomes --ds-color-brandPrimary
+     * Text added to the start of every variable's name.
+     *
+     * @example
+     * // prefix: "ds", for the token color.primary
+     * // => --ds-color-primary
      */
     prefix?: string;
 
     /**
-     * `"kebab"` splits each name in a token's path at its camelCase and PascalCase words, in
-     * lowercase.
-     * @example // case: "kebab" makes color.brandPrimary --color-brand-primary
+     * Splits camelCase names into lowercase words.
+     *
+     * @example
+     * // case: "kebab", for the token color.brandPrimary
+     * // => --color-brand-primary
      */
     case?: "kebab";
 
     /**
-     * What joins the parts of a variable's name: the prefix, the names in the path, their words, and
-     * a typography variable's CSS property.
+     * The text between the parts of a variable's name.
+     *
      * @default "-"
-     * @example // delimiter: "_" makes color.brandPrimary --color_brandPrimary
+     *
+     * @example
+     * // delimiter: "_", for the token color.primary
+     * // => --color_primary
      */
     delimiter?: string;
 
     /**
-     * Full control over the CSS variable name from a token path.
-     * Overrides `prefix` and `case` when set, and `delimiter` but for joining a typography
-     * variable's CSS property. Return the name without the leading `--`.
+     * Names each variable yourself.
+     *
+     * When set, `prefix`, `case` and `delimiter` are not used.
      */
-    variableName?: VariableNameFn;
+    variableName?: VariableNameFunction;
 
     /**
-     * When set, output is wrapped in `@layer`.
-     * @example "tokens"
+     * The cascade layer the variables are written in, such as `"tokens"`.
+     *
+     * @see {@link https://sugarcube.sh/docs/cascade-layers/ | Cascade layers}
      */
     layer?: string;
 
+    /**
+     * Settings for fluid tokens and for colors outside sRGB.
+     */
     transforms?: {
-        /** Viewport range for tokens with the `sh.sugarcube.fluid` extension. */
-        fluid?: FluidConfig;
         /**
-         * Colors outside sRGB:
-         * - `"native"`: CSS color functions as-is
-         * - `"polyfill"`: generate fallbacks for older browsers
+         * The viewport widths fluid tokens scale between.
+         *
+         * @default { min: 320, max: 1200 }
+         */
+        fluid?: FluidViewport;
+        /**
+         * How colors outside sRGB are written.
+         *
+         * @default "native"
          */
         colorFallbackStrategy?: ColorFallbackStrategy;
     };
 
     /**
-     * How modifier contexts map to CSS selectors.
-     * When omitted, sugarcube resolves with all defaults and outputs to `:root`.
+     * The resolver inputs to write, each under its own selector.
+     *
+     * When left out, the default input is written under `:root`.
+     * Each other context of a modifier gets a `[data-modifier="context"]` block.
      *
      * @example
      * permutations: [
-     *   { input: { theme: "light" }, selector: ":root" },
-     *   { input: { theme: "dark" }, selector: "[data-theme=\"dark\"]" },
+     *   { input: { mode: "light" }, selector: ":root" },
+     *   { input: { mode: "dark" }, selector: '[data-mode="dark"]' },
      * ]
      */
     permutations?: PermutationConfig[];
 
     /**
-     * Writes again, in each theme's block, every variable that refers to something the theme
-     * changes, so a theme set on any element, not only on `<html>`, gives the right values. Turn
-     * it off for the smallest CSS when a theme only ever sits on `<html>`.
+     * Writes a variable again where something it refers to changes.
+     *
+     * Then a selector such as `[data-mode="dark"]` works on any element, not only on `<html>`.
+     * Turn it off for smaller CSS when the selector is only ever on `<html>`.
+     *
      * @default true
+     *
+     * @see {@link https://sugarcube.sh/docs/theming/#theming-nested-elements | Nested elements}
      */
     redeclareDependents?: boolean;
 
     /**
-     * @deprecated Renamed `redeclareDependents`. Still read, with a warning, until 1.0.
+     * @deprecated Use `redeclareDependents`. This name still works, with a warning, until 1.0.
      */
     propagateDependents?: boolean;
 }
 
-export interface UtilitiesOutputConfig {
+/**
+ * Settings for the utility classes file.
+ *
+ * @see {@link https://sugarcube.sh/docs/utilities/ | Utilities}
+ */
+export interface UtilitiesConfig {
     /**
-     * @example "src/styles/utilities.css"
+     * The file the utility classes are written to, such as `"src/styles/utilities.css"`.
+     *
+     * @default "src/styles/utilities.gen.css", or "styles/utilities.gen.css" with no `src` folder
      */
     path?: string;
 
     /**
-     * When set, output is wrapped in `@layer`.
-     * @example "utilities"
+     * The cascade layer the classes are written in, such as `"utilities"`.
+     *
+     * @see {@link https://sugarcube.sh/docs/cascade-layers/ | Cascade layers}
      */
     layer?: string;
 
     /**
-     * Maps CSS properties to token sources and generation options.
+     * The classes to make, by CSS property.
      *
      * @example
      * classes: {
-     *   "background-color": { source: "color.background.*" },
-     *   "padding": { source: "space.*", directions: ["x", "y", "all"] },
+     *   "background-color": { source: "color.*", prefix: "bg" },
+     *   "padding": { source: "space.*", prefix: "p", directions: ["x", "y"] },
      * }
+     * // => .bg-primary, .px-sm, .py-sm and the rest
      */
     classes?: UtilityClassesConfig;
 }
 
+/**
+ * Settings for saving from studio to GitHub.
+ */
 export type StudioConfig = {
+    /**
+     * The GitHub repository the tokens are in, such as `"acme/site"`.
+     */
     readonly repository?: string;
+    /**
+     * The branch studio saves to, such as `"main"`.
+     *
+     * @default the branch checked out
+     */
     readonly branch?: string;
-    readonly app?: string;
+    /**
+     * The GitHub App's name as it appears in its URL, such as `"acme-studio"`.
+     *
+     * Without it, studio can't offer to install the app.
+     */
+    readonly githubApp?: string;
+    /**
+     * Whether studio can save to GitHub.
+     *
+     * @default true
+     */
     readonly save?: boolean;
-    readonly signIn?: string;
+    /**
+     * The path of your site's sign-in function, such as `"/auth/studio"`.
+     *
+     * @default "/api/sugarcube-studio"
+     */
+    readonly signInPath?: string;
 };
 
 /**
- * Shape of `sugarcube.config.ts`.
+ * The settings in `sugarcube.config.ts`.
+ *
+ * @see {@link https://sugarcube.sh/docs/reference/configuration-schema/ | Configuration}
  *
  * @example
  * export default defineConfig({
@@ -165,38 +267,53 @@ export type StudioConfig = {
  */
 export interface SugarcubeConfig {
     /**
-     * Path to the DTCG resolver document.
-     * When omitted, sugarcube discovers `*.resolver.json` in the project.
-     * Only needed when multiple resolvers exist and you must pick one.
+     * The resolver file to read, such as `"./tokens.resolver.json"`.
+     *
+     * When left out, sugarcube looks for one `*.resolver.json` in the project.
      */
     resolver?: string;
 
+    /**
+     * Settings for the CSS variables file.
+     */
     variables?: VariablesConfig;
 
-    utilities?: UtilitiesOutputConfig;
+    /**
+     * Settings for the utility classes file.
+     */
+    utilities?: UtilitiesConfig;
 
     /**
-     * Globs scanned for token/utility usage.
-     * When omitted, scanning falls back to the working directory downward.
-     * @example ["./**\/*.{js,ts}", "../../lib/**\/*.heex"]
+     * The files to scan for classes and variables, as globs.
+     *
+     * When left out, every file under the working folder is scanned.
+     *
+     * @example
+     * content: ["./src/**\/*.{html,ts}", "../../lib/**\/*.heex"]
      */
     content?: string[];
 
     /**
-     * @example "src/components/ui"
+     * The folder components are copied to, such as `"src/components/ui"`.
+     *
+     * @default "src/components/ui", or "components/ui" with no `src` folder
      */
     components?: string;
 
     /**
-     * Where CUBE CSS files are copied.
-     * @example "src/styles"
+     * The folder CUBE CSS files are copied to, such as `"src/styles"`.
+     *
+     * @default "src/styles", or "styles" with no `src` folder
      */
     cube?: string;
 
+    /**
+     * Settings for saving from studio to GitHub.
+     */
     studio?: StudioConfig;
 }
 
-/** Normalized config with defaults applied. Used internally after processing {@link SugarcubeConfig}. */
+/** The config with every default filled in. */
 export interface InternalConfig {
     readonly resolver?: string;
 
@@ -205,10 +322,10 @@ export interface InternalConfig {
         readonly prefix?: string;
         readonly case?: "kebab";
         readonly delimiter?: string;
-        readonly variableName?: VariableNameFn;
+        readonly variableName?: VariableNameFunction;
         readonly layer?: string;
         readonly transforms: {
-            readonly fluid: FluidConfig;
+            readonly fluid: FluidViewport;
             readonly colorFallbackStrategy: ColorFallbackStrategy;
         };
         readonly permutations?: readonly PermutationConfig[];

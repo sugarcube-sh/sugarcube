@@ -14,8 +14,10 @@ export function getSugarcubeExtensions(
 }
 
 /**
- * Check if the modifier uses prefersColorScheme (for validation purposes).
- * @deprecated Use variables.permutations with atRule instead
+ * Checks if a modifier's extensions set `prefersColorScheme`.
+ *
+ * @param extensions - The modifier's `$extensions`, such as `{ "sh.sugarcube": { prefersColorScheme: true } }`.
+ * @deprecated Use `variables.permutations` with `atRule`.
  */
 export function usesPrefersColorScheme(extensions: Record<string, unknown> | undefined): boolean {
     const ext = getSugarcubeExtensions(extensions);

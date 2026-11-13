@@ -21,10 +21,10 @@ export function loadConfig(
     flags: ConfigFlags = {},
     lastConfigFile?: string,
 ): Promise<LoadedConfig> {
-    return loadInternalConfig(overridesFrom(flags), { lastConfigFile });
+    return loadInternalConfig(toConfigOverrides(flags), { lastConfigFile });
 }
 
-function overridesFrom(flags: ConfigFlags): ConfigOverrides {
+function toConfigOverrides(flags: ConfigFlags): ConfigOverrides {
     const input = parseInputFlags(flags.input);
     return {
         resolver: flags.resolver,
@@ -42,9 +42,11 @@ function overridesFrom(flags: ConfigFlags): ConfigOverrides {
 }
 
 /**
- * Parse --input flags into an input object.
- * Accepts formats like: --input theme=dark --input brand=ocean
- * Returns: { theme: "dark", brand: "ocean" }
+ * Turns `--input` flags into a resolver input.
+ *
+ * @example
+ * parseInputFlags(["mode=dark", "brand=ocean"])
+ * // => { mode: "dark", brand: "ocean" }
  */
 function parseInputFlags(inputFlags: string[] | undefined): Record<string, string> | undefined {
     const result: Record<string, string> = {};

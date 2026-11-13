@@ -1,12 +1,7 @@
 /**
- * Node entry point for @sugarcube-sh/core.
+ * Everything in `@sugarcube-sh/core/client`, plus the functions that read and write files in Node.
  *
- * Exports everything the browser/client entry exports, plus Node-only
- * additions (file loaders, writers) and Node-flavoured
- * overrides (one-arg `validateConfig` / `fillDefaults` that auto-detect
- * default directories via the filesystem).
- *
- * For browser/worker/edge contexts, import from `@sugarcube-sh/core/client`.
+ * In a browser, use `@sugarcube-sh/core/client`.
  */
 
 // Full browser/pure surface (orchestrators, pure config helpers, types, guards, etc.)
@@ -20,10 +15,10 @@ export {
     loadInternalConfig,
 } from "./node/config/load.js";
 export type { ConfigOverrides, LoadedConfig } from "./node/config/load.js";
-export { tokensOnDisk } from "./node/tokens-on-disk.js";
+export { getTokensOnDisk } from "./node/tokens-on-disk.js";
 
 export { createChangeQueue } from "./shared/scheduling.js";
 
 export { writeCSSFiles } from "./node/write-css.js";
 
-export { plural } from "./shared/plural.js";
+export { pluralize } from "./shared/plural.js";

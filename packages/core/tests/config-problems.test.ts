@@ -5,8 +5,8 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { loadInternalConfig } from "../src/node/config/load.js";
 import { validateSugarcubeConfig } from "../src/shared/config.js";
 import { number, object, oneOf, optional, string } from "../src/shared/checks.js";
-import type { ColorFallbackStrategy, FluidConfig } from "../src/types/config.js";
-import { ConfigError, configProblems } from "../src/shared/config-error.js";
+import type { ColorFallbackStrategy, FluidViewport } from "../src/types/config.js";
+import { ConfigError, toConfigDiagnostics } from "../src/shared/config-error.js";
 import { issuesIn, mistakesIn } from "./config-mistakes.js";
 
 let folder: string;
@@ -34,7 +34,7 @@ async function problemsWith(text: string): Promise<{ lines: string[]; error: Con
         (thrown: unknown) => thrown,
     );
     if (!(error instanceof ConfigError)) throw error;
-    return { lines: configProblems(error).map(({ message }) => message), error };
+    return { lines: toConfigDiagnostics(error).map(({ message }) => message), error };
 }
 
 const entry = (fields: string) =>
@@ -138,7 +138,7 @@ it("gives each mistake its own problem", async () => {
 it("words a problem from the facts it carries", async () => {
     const { error } = await problemsWith("export default { variables: { path: 5 } };");
 
-    expect(configProblems(error)).toEqual([
+    expect(toConfigDiagnostics(error)).toEqual([
         {
             kind: "invalid-config",
             severity: "error",
@@ -233,12 +233,12 @@ it.for([
         '`studio.repository` is written as "owner/name", such as "acme/site", not "acme"',
     ],
     [
-        { app: "Acme Studio" },
-        '`studio.app` is the GitHub App\'s name as it appears in its address, such as "acme-studio" in github.com/apps/acme-studio, not "Acme Studio"',
+        { githubApp: "Acme Studio" },
+        '`studio.githubApp` is the GitHub App\'s name as it appears in its address, such as "acme-studio" in github.com/apps/acme-studio, not "Acme Studio"',
     ],
     [
-        { signIn: "auth" },
-        '`studio.signIn` is a path on your site, such as "/api/sugarcube-studio", not "auth"',
+        { signInPath: "auth" },
+        '`studio.signInPath` is a path on your site, such as "/api/sugarcube-studio", not "auth"',
     ],
 ] as const)("says how studio's %j is written, and what it was", ([studio, message]) => {
     expect(mistakesIn({ studio })).toEqual([message]);
@@ -287,15 +287,15 @@ it("keeps an unknown setting as a fact", () => {
 
 it("won't compile a check that disagrees with its setting's type", () => {
     // @ts-expect-error
-    object<FluidConfig>({ min: string, max: number });
+    object<FluidViewport>({ min: string, max: number });
     // @ts-expect-error
-    object<FluidConfig>({ min: number, max: optional(number) });
+    object<FluidViewport>({ min: number, max: optional(number) });
     // @ts-expect-error
-    object<FluidConfig>({ min: number });
+    object<FluidViewport>({ min: number });
     // @ts-expect-error
     oneOf<ColorFallbackStrategy>({ native: true });
     // @ts-expect-error
     oneOf<ColorFallbackStrategy>({ native: true, polyfill: true, fast: true });
 
-    expect(object<FluidConfig>({ min: number, max: number })).toBeTypeOf("function");
+    expect(object<FluidViewport>({ min: number, max: number })).toBeTypeOf("function");
 });

@@ -1,9 +1,11 @@
 import type { DimensionValue } from "@sugarcube-sh/dtcg";
 
 /**
- * Recipe for generating a family of dimension tokens from a single
- * group node. Authored under `$extensions["sh.sugarcube"].scale`;
- * sugarcube materializes the resulting tokens during the expand pass.
+ * A recipe that makes a scale of dimension tokens in a group.
+ *
+ * It is written in the group's `$extensions["sh.sugarcube"].scale`.
+ *
+ * @see {@link https://sugarcube.sh/docs/fluid-space-and-type/#scale-recipes | Scale recipes}
  */
 export type ScaleExtension = ExponentialScaleConfig | MultiplierScaleConfig;
 
@@ -21,10 +23,13 @@ export type MultiplierScaleConfig = BaseScaleConfig & {
     mode: "multipliers";
     multipliers: Record<string, number>;
     /**
-     * Generate space pairs from named multipliers.
-     * - omitted: no pairs
-     * - "adjacent": one pair for each consecutive multiplier (sm-md, md-lg, …)
-     * - string[]: explicit list like ["sm-lg", "xs-xl"]; each name must exist in `multipliers`
+     * Pairs of steps to make tokens for, such as `sm-lg`.
+     *
+     * - `"adjacent"` makes a pair for each step and the next, such as `sm-md` and `md-lg`.
+     * - An array makes the pairs named, such as `["sm-lg"]`. Each name is in `multipliers`.
+     * - Left out, it makes no pairs.
+     *
+     * @see {@link https://sugarcube.sh/docs/fluid-space-and-type/#pair-tokens | Pair tokens}
      */
     pairs?: "adjacent" | string[];
 };

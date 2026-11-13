@@ -3,10 +3,10 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { Built } from "../src/build.js";
-import { scanStylesheets, shortfallOf } from "../src/scan-stylesheets.js";
+import type { BuildResult } from "../src/build.js";
+import { scanStylesheets, getScanWarning } from "../src/scan-stylesheets.js";
 
-function builtWriting(variables: string[], utilities: string, content?: string[]): Built {
+function builtWriting(variables: string[], utilities: string, content?: string[]): BuildResult {
     return {
         config: {
             variables: { path: "styles/variables.gen.css" },
@@ -14,10 +14,10 @@ function builtWriting(variables: string[], utilities: string, content?: string[]
             ...(content ? { content } : {}),
         },
         declared: { entries: variables.map((path) => ({ path })), diagnostics: [] },
-    } as unknown as Built;
+    } as unknown as BuildResult;
 }
 
-function builtWith(content?: string[], outputDir = "../css"): Built {
+function builtWith(content?: string[], outputDir = "../css"): BuildResult {
     return builtWriting([`${outputDir}/tokens.css`], `${outputDir}/utilities.css`, content);
 }
 
@@ -259,18 +259,21 @@ describe("scanStylesheets: what went unread", () => {
     });
 });
 
-describe("shortfallOf", () => {
+describe("getScanWarning", () => {
     const unread = [{ dir: "../css", count: 2 }];
 
     it("says nothing was read, before anything went unread", () => {
-        expect(shortfallOf({ files: [], unread })).toStrictEqual({ kind: "nothing-read" });
+        expect(getScanWarning({ files: [], unread })).toStrictEqual({ kind: "nothing-read" });
     });
 
     it("names the folders that went unread", () => {
-        expect(shortfallOf({ files: ["a.css"], unread })).toStrictEqual({ kind: "unread", unread });
+        expect(getScanWarning({ files: ["a.css"], unread })).toStrictEqual({
+            kind: "unread",
+            unread,
+        });
     });
 
     it("says nothing when every stylesheet was read", () => {
-        expect(shortfallOf({ files: ["a.css"], unread: [] })).toBeUndefined();
+        expect(getScanWarning({ files: ["a.css"], unread: [] })).toBeUndefined();
     });
 });

@@ -90,7 +90,7 @@ describe("analyze command", () => {
 
         expect(result.token).toBe("palette.blue.500");
         expect(result).not.toHaveProperty("type");
-        expect(result.written).toMatchObject([
+        expect(result.definitions).toMatchObject([
             { value: "#007bff", type: "color", permutations: [{}] },
         ]);
         expect(result.dependents).toContainEqual({
@@ -140,7 +140,7 @@ describe("analyze command", () => {
         "ignores its own generated CSS when deciding what is used",
         { timeout: TEST_TIMEOUT },
         async () => {
-            await run("generate --force --silent");
+            await run("generate --silent");
             await writeFile(join(testDir, "index.html"), "<div>no classes</div>");
 
             const { stdout } = await run("analyze unused --json");
@@ -159,9 +159,9 @@ describe("analyze command", () => {
                 '<div class="p-md">hi</div>\n<section>\n  <p class="p-md">again</p>\n</section>',
             );
             const { stdout } = await run("analyze impact space.md --json");
-            const { consumers } = JSON.parse(stdout);
+            const { uses } = JSON.parse(stdout);
 
-            expect(consumers).toStrictEqual([
+            expect(uses).toStrictEqual([
                 {
                     file: "index.html",
                     line: 1,
@@ -197,9 +197,9 @@ describe("analyze command", () => {
         );
         await rm(join(testDir, "index.html"));
         const { stdout } = await run("analyze impact space.md --json");
-        const { consumers } = JSON.parse(stdout);
+        const { uses } = JSON.parse(stdout);
 
-        expect(consumers).toStrictEqual([
+        expect(uses).toStrictEqual([
             { file: "sugarcube.config.js", var: "--space-md", token: "space.md", class: "p-md" },
         ]);
     });

@@ -5,44 +5,53 @@ import { DEFAULT_CONFIG } from "./constants/config.js";
 import { checkConfig } from "./check-config.js";
 
 /**
- * Define a sugarcube configuration with full type inference.
+ * Adds type checking to the settings in `sugarcube.config.ts`.
+ *
+ * It returns the config unchanged.
+ *
+ * @param config - The settings, such as `{ resolver: "./tokens.resolver.json" }`.
+ *
+ * @see {@link https://sugarcube.sh/docs/reference/configuration-schema/ | Configuration}
  *
  * @example
- * ```ts
  * // sugarcube.config.ts
- * import { defineConfig } from "@sugarcube-sh/cli";
+ * import { defineConfig } from "@sugarcube-sh/vite";
  *
  * export default defineConfig({
- *   resolver: "./tokens/resolver.json",
- *   variables: { path: "src/styles/tokens.css" }
+ *   resolver: "./tokens.resolver.json",
+ *   variables: { path: "src/styles/tokens.css" },
  * });
- * ```
  */
 export function defineConfig(config: SugarcubeConfig): SugarcubeConfig {
     return config;
 }
 
 /**
- * Default directories for path defaults. Callers in non-Node environments
- * (browser, edge, workers) construct one of these manually instead of
- * relying on filesystem detection.
+ * The folders the default paths go in.
  */
 export type DefaultDirs = {
-    /** Directory used for default `variables.path` and `utilities.path`, and `cube` */
+    /** The folder for `variables.path`, `utilities.path` and `cube`, such as `"src/styles"`. */
     stylesDir: string;
-    /** Directory used for default `components` */
+    /** The folder for `components`, such as `"src/components/ui"`. */
     componentsDir: string;
 };
 
 /**
- * Pure, environment-agnostic version of `fillDefaults`. Takes the default
- * directories explicitly instead of detecting them from the filesystem,
- * making this safe to use in browsers, workers, edge functions, etc.
+ * Fills in a config's defaults, using the folders passed in.
  *
- * The Node-coupled `fillDefaults` (in `node/config/normalize.ts`) is a thin
- * wrapper around this function that handles `src/` detection via `existsSync`.
+ * It reads no files, so it runs in a browser. In Node, `fillDefaults` finds the folders.
+ *
+ * @param userConfig - The settings, such as `{ resolver: "./tokens.resolver.json" }`.
+ * @param dirs - The folders, such as `{ stylesDir: "styles", componentsDir: "components/ui" }`.
+ *
+ * @example
+ * fillDefaultsWithDirs({}, { stylesDir: "styles", componentsDir: "components/ui" }).variables.path
+ * // => "styles/variables.gen.css"
  */
-export function fillDefaultsCore(userConfig: SugarcubeConfig, dirs: DefaultDirs): InternalConfig {
+export function fillDefaultsWithDirs(
+    userConfig: SugarcubeConfig,
+    dirs: DefaultDirs,
+): InternalConfig {
     const { stylesDir, componentsDir } = dirs;
 
     const defaultVariablesPath = `${stylesDir}/${DEFAULT_CONFIG.variables.filename}`;
@@ -90,11 +99,11 @@ export function fillDefaultsCore(userConfig: SugarcubeConfig, dirs: DefaultDirs)
 }
 
 /**
- * Checks a configuration object against the settings sugarcube knows.
+ * Checks a config against the settings sugarcube knows.
  *
- * @param config - The configuration object to check
- * @returns The same object, typed as a configuration
- * @throws ConfigError with every mistake found, if there are any
+ * @param config - The settings, such as `{ resolver: "./tokens.resolver.json" }`.
+ * @returns The same object, typed as a config.
+ * @throws ConfigError with every mistake found.
  */
 export function validateSugarcubeConfig(config: unknown): SugarcubeConfig {
     const issues: ConfigIssue[] = [];

@@ -4,7 +4,7 @@ import { calculateScale } from "./calculator.js";
 import { readScaleRecipe } from "./recipe.js";
 import { ErrorMessages } from "../constants/error-messages.js";
 
-const asWritten = ({ value, unit }: DimensionValue) => ({ value, unit });
+const toDimensionJSON = ({ value, unit }: DimensionValue) => ({ value, unit });
 
 export const scaleGenerator = defineGenerator({
     extension: [SUGARCUBE_NAMESPACE, "scale"],
@@ -17,9 +17,11 @@ export const scaleGenerator = defineGenerator({
             value: calculateScale(recipe.value).map(({ name, min, max }) => ({
                 name,
                 $type: "dimension",
-                $value: asWritten(max),
+                $value: toDimensionJSON(max),
                 $extensions: {
-                    [SUGARCUBE_NAMESPACE]: { fluid: { min: asWritten(min), max: asWritten(max) } },
+                    [SUGARCUBE_NAMESPACE]: {
+                        fluid: { min: toDimensionJSON(min), max: toDimensionJSON(max) },
+                    },
                 },
             })),
         };

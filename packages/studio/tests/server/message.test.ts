@@ -1,4 +1,4 @@
-import { readOptions } from "@sugarcube-sh/core/client";
+import { createReadOptions } from "@sugarcube-sh/core/client";
 import { readFromMemory } from "@sugarcube-sh/dtcg";
 import { read } from "@sugarcube-sh/dtcg/node";
 import { afterEach, describe, expect, it } from "vitest";
@@ -12,7 +12,7 @@ afterEach(() => remove());
 async function demo() {
     const copy = demoCopy();
     remove = copy.remove;
-    const tokens = await read(copy.config.resolver, readOptions(copy.config));
+    const tokens = await read(copy.config.resolver, createReadOptions(copy.config));
     return { ...copy, tokens };
 }
 
@@ -31,7 +31,7 @@ describe("studioMessage", () => {
         const { config, tokens } = await demo();
 
         const message = studioMessage({ config, tokens, configProblems: [] });
-        const there = readFromMemory(message, readOptions(sugarcubeSettings(message)));
+        const there = readFromMemory(message, createReadOptions(sugarcubeSettings(message)));
 
         expect(there.getTokenPaths()).toEqual(tokens.getTokenPaths());
     });

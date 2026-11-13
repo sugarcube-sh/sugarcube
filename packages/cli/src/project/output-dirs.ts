@@ -2,19 +2,19 @@ import { isNoConfigError, loadInternalConfig } from "@sugarcube-sh/core";
 import { resolve } from "pathe";
 import { getProjectInfo } from "./framework.js";
 
-function absolutePath(flagValue: string): string {
+function toAbsolutePath(flagValue: string): string {
     return resolve(process.cwd(), flagValue);
 }
 
 export async function getCubeDir(flagValue: string | undefined): Promise<{ directory: string }> {
     if (flagValue) {
-        return { directory: absolutePath(flagValue) };
+        return { directory: toAbsolutePath(flagValue) };
     }
 
     try {
         const { config } = await loadInternalConfig();
         if (config.cube) {
-            return { directory: absolutePath(config.cube) };
+            return { directory: toAbsolutePath(config.cube) };
         }
     } catch (error) {
         if (!isNoConfigError(error)) {
@@ -23,23 +23,23 @@ export async function getCubeDir(flagValue: string | undefined): Promise<{ direc
     }
 
     const { stylesDir } = getProjectInfo(process.cwd());
-    return { directory: absolutePath(stylesDir) };
+    return { directory: toAbsolutePath(stylesDir) };
 }
 
 export async function getComponentsDir(
     flagValue: string | undefined,
 ): Promise<{ directory: string }> {
     if (flagValue) {
-        return { directory: absolutePath(flagValue) };
+        return { directory: toAbsolutePath(flagValue) };
     }
 
     try {
         const { config } = await loadInternalConfig();
-        return { directory: absolutePath(config.components ?? "components/ui") };
+        return { directory: toAbsolutePath(config.components ?? "components/ui") };
     } catch (error) {
         if (isNoConfigError(error)) {
             const { componentDir } = getProjectInfo(process.cwd());
-            return { directory: absolutePath(componentDir) };
+            return { directory: toAbsolutePath(componentDir) };
         }
         throw error;
     }

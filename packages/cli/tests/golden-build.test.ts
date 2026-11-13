@@ -1,9 +1,9 @@
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
-import { declare, utilityTokens } from "@sugarcube-sh/core";
+import { declare, getUtilityTokens } from "@sugarcube-sh/core";
 import { describe, expect, it } from "vitest";
-import { build, filesOf } from "../src/build.js";
+import { build, getOutputFiles } from "../src/build.js";
 import { CASES, GOLDEN_DIR, type GoldenCase, goldenConfig, withoutBanner } from "./golden-cases.js";
 import {
     decidedUtilities,
@@ -33,7 +33,7 @@ async function built(goldenCase: GoldenCase) {
             config: loaded.config,
             tokens: made.tokens,
             diagnostics: made.diagnostics,
-            files: filesOf(made).map((file) => ({
+            files: getOutputFiles(made).map((file) => ({
                 name: relative(outDir, file.path),
                 css: withoutBanner(file.css),
             })),
@@ -61,7 +61,12 @@ describe("golden CSS through the CLI's build on the new core", () => {
             const expected = readFileSync(join(GOLDEN_DIR, name, file), "utf8");
             const explained =
                 file === "utilities.css"
-                    ? explainUtilities(name, css, expected, utilityTokens(declare(tokens, config)))
+                    ? explainUtilities(
+                          name,
+                          css,
+                          expected,
+                          getUtilityTokens(declare(tokens, config)),
+                      )
                     : explainVariables(`${name}/${file}`, css, expected);
             if (!explained) {
                 expect(css, file).toBe(expected);
