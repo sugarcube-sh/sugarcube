@@ -55,7 +55,7 @@
     "jsonc-parser": "^3.3.1"
   },
   "devDependencies": {
-    "pkgroll": "^2.28.1"
+    "pkgroll": "^2.29.0"
   },
   "engines": {
     "node": ">=22.14.0"
