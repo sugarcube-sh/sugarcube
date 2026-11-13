@@ -1,5 +1,12 @@
 import type { Node } from "jsonc-parser";
-import type { Resolver, ResolverModifier, ResolverSet, SourceRef } from "../../model/index.js";
+import {
+    type Resolver,
+    type ResolverModifier,
+    type ResolverSet,
+    type SourceRef,
+    createContext,
+    createModifier,
+} from "../../model/resolver.js";
 import { diagnostic, type DiagnosticCollector } from "../diagnostics/diagnostics.js";
 import { member, toPlainObject, toSpan } from "../json/parse.js";
 import { getFolder } from "../files/paths.js";
@@ -13,7 +20,6 @@ import {
 } from "./check.js";
 import { type SetsUsed, fragmentPointer, parseSourceRef, parseSetName } from "./sources.js";
 import type { Mutable } from "../types.js";
-import { createContext, createModifier } from "../linked.js";
 
 export function toPublicResolver(
     resolver: CheckedResolver,

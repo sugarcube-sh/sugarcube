@@ -1,13 +1,7 @@
-import type {
-    IgnoredProperty,
-    JsonPath,
-    ParseOptions,
-    ParseResult,
-    TokenType,
-    UnresolvedValueByType,
-    ValueError,
-    ParsedReference,
-} from "../model/index.js";
+import type { IgnoredProperty, ParseOptions, ParseResult, ValueError } from "../model/parse.js";
+import type { JsonPath } from "../model/location.js";
+import type { TokenType, UnresolvedValueByType } from "../model/value.js";
+import type { ParsedReference } from "../model/reference.js";
 import { syntaxes } from "./syntaxes/index.js";
 import { isJsonObject } from "./json.js";
 import { isReference, readCurlyBrace, readJsonPointer } from "./references.js";

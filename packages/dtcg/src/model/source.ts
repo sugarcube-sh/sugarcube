@@ -85,3 +85,25 @@ export interface ParentSet {
     readonly name: string;
     readonly extensions?: Readonly<Record<string, JsonValue>>;
 }
+
+export class SourceObject {
+    readonly #position: number;
+
+    constructor(fields: Source, position: number) {
+        Object.assign(this, fields);
+        this.#position = position;
+    }
+
+    static positionOf(source: Source): number {
+        return (source as unknown as SourceObject).#position;
+    }
+
+    toJSON() {
+        const { modifier, ...fields } = this as unknown as Source;
+        return modifier ? { ...fields, modifier: modifier.name } : fields;
+    }
+}
+
+export function createSource(fields: Source, position: number): Source {
+    return new SourceObject(fields, position) as unknown as Source;
+}

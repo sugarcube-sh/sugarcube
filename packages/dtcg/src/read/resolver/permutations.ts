@@ -1,4 +1,6 @@
-import type { Input, Resolver, ResolverContext, ParentSet, Source } from "../../model/index.js";
+import type { Input } from "../../model/permutation.js";
+import type { Resolver, ResolverContext } from "../../model/resolver.js";
+import type { ParentSet, Source } from "../../model/source.js";
 import { relatedMessages } from "../../error-messages.js";
 import { formatContextsLabel } from "../../lookup/permutation-label.js";
 import { diagnostic, type DiagnosticCollector } from "../diagnostics/diagnostics.js";

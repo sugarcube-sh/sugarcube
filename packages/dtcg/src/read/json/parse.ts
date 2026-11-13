@@ -1,5 +1,7 @@
 import { type Node, createScanner, parseTree, printParseErrorCode } from "jsonc-parser";
-import type { JsonErrorReason, JsonValue, Span } from "../../model/index.js";
+import type { JsonErrorReason } from "../../model/diagnostic.js";
+import type { JsonValue } from "../../model/json.js";
+import type { Span } from "../../model/location.js";
 
 export interface JsonFile {
     path: string;

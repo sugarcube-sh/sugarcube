@@ -1,12 +1,9 @@
-import type {
-    Diagnostic,
-    DesignTokens,
-    JsonPath,
-    JsonValue,
-    Definition,
-    Reference,
-    Span,
-} from "../model/index.js";
+import type { Diagnostic } from "../model/diagnostic.js";
+import type { DesignTokens } from "../model/design-tokens.js";
+import type { JsonPath, Span } from "../model/location.js";
+import type { JsonValue } from "../model/json.js";
+import type { Definition } from "../model/definition.js";
+import type { Reference } from "../model/reference.js";
 import { findNodeAtLocation, parse } from "jsonc-parser";
 import { findJsonPath, findNode, getTree } from "./json-path.js";
 import { findLineStarts, getKeyNode, toSpan } from "../read/json/parse.js";

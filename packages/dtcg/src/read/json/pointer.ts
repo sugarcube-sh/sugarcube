@@ -1,5 +1,5 @@
 import type { Node } from "jsonc-parser";
-import type { DiagnosticDetailByKind } from "../../model/index.js";
+import type { DiagnosticDetailByKind } from "../../model/diagnostic.js";
 import { child } from "./parse.js";
 
 export type PointerResult = { ok: true; node: Node } | { ok: false; step: number };

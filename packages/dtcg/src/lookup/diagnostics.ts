@@ -1,4 +1,7 @@
-import type { DesignTokens, Diagnostic, Permutation, Token } from "../model/index.js";
+import type { DesignTokens } from "../model/design-tokens.js";
+import type { Diagnostic } from "../model/diagnostic.js";
+import type { Permutation } from "../model/permutation.js";
+import type { Token } from "../model/token.js";
 import { getSpan } from "./editor.js";
 
 export function createDiagnosticFilter(

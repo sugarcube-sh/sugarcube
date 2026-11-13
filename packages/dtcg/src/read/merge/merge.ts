@@ -1,6 +1,8 @@
 import { relatedMessages } from "../../error-messages.js";
 import { tokenPath } from "../../path.js";
-import type { Diagnostic, Input, Span } from "../../model/index.js";
+import type { Diagnostic } from "../../model/diagnostic.js";
+import type { Input } from "../../model/permutation.js";
+import type { Span } from "../../model/location.js";
 import { diagnostic, type DiagnosticCollector } from "../diagnostics/diagnostics.js";
 import type { Inheritable } from "./inherit.js";
 import type { Settings } from "./settings.js";

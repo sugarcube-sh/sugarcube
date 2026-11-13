@@ -1,14 +1,10 @@
 import { tokenPath } from "../../path.js";
 import type { Node } from "jsonc-parser";
-import type {
-    Diagnostic,
-    DiagnosticDetailByKind,
-    DiagnosticKind,
-    Span,
-    JsonValue,
-    TokenType,
-    ParsedReference,
-} from "../../model/index.js";
+import type { Diagnostic, DiagnosticDetailByKind, DiagnosticKind } from "../../model/diagnostic.js";
+import type { Span } from "../../model/location.js";
+import type { JsonValue } from "../../model/json.js";
+import type { TokenType } from "../../model/value.js";
+import type { ParsedReference } from "../../model/reference.js";
 import { parseReference } from "../../values/references.js";
 import { isTokenType, tokenTypes } from "../../values/token-types.js";
 import { type DiagnosticExtra, diagnostic } from "../diagnostics/diagnostics.js";

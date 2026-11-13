@@ -3,9 +3,9 @@ import type {
     Diagnostic,
     DiagnosticDetailByKind,
     DiagnosticKind,
-    JsonPath,
     ResolverProblem,
-} from "../../model/index.js";
+} from "../../model/diagnostic.js";
+import type { JsonPath } from "../../model/location.js";
 import {
     type DiagnosticExtra,
     diagnostic,

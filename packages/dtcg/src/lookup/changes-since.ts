@@ -1,19 +1,17 @@
 import type {
     Change,
-    Group,
     GroupProperty,
-    JsonPath,
-    JsonValue,
     Move,
-    Permutation,
-    Permutations,
-    Token,
     TokenProperty,
-    OriginalProperties,
     OriginalGroup,
     OriginalToken,
-} from "../model/index.js";
-import { makePermutations } from "../read/make-permutations.js";
+} from "../model/change.js";
+import type { Group } from "../model/group.js";
+import type { JsonPath } from "../model/location.js";
+import type { JsonValue } from "../model/json.js";
+import type { Permutation } from "../model/permutation.js";
+import { type Permutations, makePermutations } from "../model/permutations.js";
+import type { Token, OriginalProperties } from "../model/token.js";
 import { tokenPath } from "../path.js";
 import { isJsonObject } from "../values/json.js";
 import { isReference, applyMovesToReference } from "../values/references.js";

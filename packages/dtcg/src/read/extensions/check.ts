@@ -1,14 +1,10 @@
 import type { Node } from "jsonc-parser";
 import { exceptionMessages } from "../../error-messages.js";
-import type {
-    Diagnostic,
-    ExtensionError,
-    ExtensionMessages,
-    IgnoredProperty,
-    JsonPath,
-    StandardSchemaV1,
-    ValueError,
-} from "../../model/index.js";
+import type { Diagnostic } from "../../model/diagnostic.js";
+import type { ExtensionError, ExtensionMessages } from "../../model/extension.js";
+import type { IgnoredProperty, ValueError } from "../../model/parse.js";
+import type { JsonPath } from "../../model/location.js";
+import type { StandardSchemaV1 } from "../../standard-schema.js";
 import { isJsonObject } from "../../values/json.js";
 import { type DiagnosticExtra, diagnostic } from "../diagnostics/diagnostics.js";
 import { type JsonFile, deepestNode, markedNode, member, toSpan } from "../json/parse.js";

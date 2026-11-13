@@ -1,12 +1,11 @@
 import { exceptionMessages } from "../error-messages.js";
+import type { DesignTokens } from "../model/design-tokens.js";
+import type { Input, Permutation } from "../model/permutation.js";
 import type {
-    DesignTokens,
-    Input,
     InputProblem,
-    Permutation,
     PermutationErrorDetail,
     SeveralPermutationsDetail,
-} from "../model/index.js";
+} from "../model/errors.js";
 import { checkInput, allModifiers } from "../read/resolver/input.js";
 
 /**

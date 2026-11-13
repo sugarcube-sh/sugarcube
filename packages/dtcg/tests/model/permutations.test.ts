@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { makePermutations } from "../../src/read/make-permutations.js";
+import { makePermutations } from "../../src/model/permutations.js";
 import { twoModifiers } from "../lookup/two-modifiers.js";
 
 const { permutations: all } = twoModifiers();

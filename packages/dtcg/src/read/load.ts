@@ -1,4 +1,5 @@
-import type { Diagnostic, Resolver } from "../model/index.js";
+import type { Diagnostic } from "../model/diagnostic.js";
+import type { Resolver } from "../model/resolver.js";
 import {
     type FileResponse,
     type FileText,
@@ -18,7 +19,7 @@ import { checkResolver, isResolver } from "./resolver/check.js";
 import { toPublicResolver } from "./resolver/public.js";
 import { DiagnosticCollector } from "./diagnostics/diagnostics.js";
 import { expandSources, allFiles, openSources, allPieces } from "./resolver/sources.js";
-import { sameResolver } from "./same-object.js";
+import { sameResolver } from "./build/reuse.js";
 
 export interface Loaded {
     files: string[];

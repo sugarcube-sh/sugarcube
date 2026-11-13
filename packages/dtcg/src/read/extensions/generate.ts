@@ -2,19 +2,17 @@ import { getEffectiveSettings } from "../merge/inherit.js";
 import type { Settings } from "../merge/settings.js";
 import { tokenPath } from "../../path.js";
 import type { Node } from "jsonc-parser";
+import type { DiagnosticDetailByKind } from "../../model/diagnostic.js";
 import type {
-    DiagnosticDetailByKind,
     ExtensionError,
     ExtensionMessages,
     GeneratedToken,
     Generator,
-    IgnoredProperty,
-    Input,
-    ParseOptions,
-    Span,
-    StandardSchemaV1,
-    ValueError,
-} from "../../model/index.js";
+} from "../../model/extension.js";
+import type { IgnoredProperty, ParseOptions, ValueError } from "../../model/parse.js";
+import type { Input } from "../../model/permutation.js";
+import type { Span } from "../../model/location.js";
+import type { StandardSchemaV1 } from "../../standard-schema.js";
 import { parseReference } from "../../values/references.js";
 import {
     type CheckedExtension,

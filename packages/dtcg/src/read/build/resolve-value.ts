@@ -1,12 +1,8 @@
-import type {
-    DiagnosticDetailByKind,
-    DiagnosticKind,
-    Input,
-    JsonPath,
-    JsonPointerReference,
-    Span,
-    TokenType,
-} from "../../model/index.js";
+import type { DiagnosticDetailByKind, DiagnosticKind } from "../../model/diagnostic.js";
+import type { Input } from "../../model/permutation.js";
+import type { JsonPath, Span } from "../../model/location.js";
+import type { JsonPointerReference } from "../../model/reference.js";
+import type { TokenType } from "../../model/value.js";
 import { isJsonObject } from "../../values/json.js";
 import { toReferenceTarget } from "../../values/references.js";
 import type { DeferredRead, Slot } from "../../values/read-syntax.js";

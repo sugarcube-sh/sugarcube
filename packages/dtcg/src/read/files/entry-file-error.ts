@@ -1,5 +1,5 @@
 import { exceptionMessages } from "../../error-messages.js";
-import type { EntryFileErrorDetail } from "../../model/index.js";
+import type { EntryFileErrorDetail } from "../../model/errors.js";
 
 /**
  * Thrown by `readFromMemory` when it can't tell which file to start from.

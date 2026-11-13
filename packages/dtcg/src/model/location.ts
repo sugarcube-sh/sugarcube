@@ -30,3 +30,11 @@ export interface SourceLine {
     readonly column: number;
     readonly length: number;
 }
+
+export function sameList(a: readonly unknown[], b: readonly unknown[]): boolean {
+    return a.length === b.length && a.every((each, index) => each === b[index]);
+}
+
+export function samePropertyPath(a: JsonPath | undefined, b: JsonPath): boolean {
+    return a === undefined ? b.length === 0 : sameList(a, b);
+}

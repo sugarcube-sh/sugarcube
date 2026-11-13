@@ -1,4 +1,6 @@
-import type { Input, Permutation, ResolverContext, Scope } from "../model/index.js";
+import type { Input, Permutation } from "../model/permutation.js";
+import type { ResolverContext } from "../model/resolver.js";
+import type { Scope } from "../model/permutations.js";
 
 /**
  * Writes an input out for people.

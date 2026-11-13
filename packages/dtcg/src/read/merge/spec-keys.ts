@@ -1,4 +1,4 @@
-import type { DiagnosticDetailByKind } from "../../model/index.js";
+import type { DiagnosticDetailByKind } from "../../model/diagnostic.js";
 
 export type OwnProperty = DiagnosticDetailByKind["misspelt-property"]["property"];
 

@@ -1,7 +1,8 @@
 import type { JsonValue } from "./json.js";
 import type { JsonPath, Span } from "./location.js";
 import type { Permutations } from "./permutations.js";
-import type { Source } from "./source.js";
+import { type Source, SourceObject } from "./source.js";
+import { parse } from "jsonc-parser";
 
 /**
  * A place where a token or group is written.
@@ -59,4 +60,55 @@ export interface DefinitionInPermutations {
      * // => ["mode: light", "mode: dark"]
      */
     readonly winningPermutations: Permutations;
+}
+
+export const NO_DEFINITIONS: readonly Definition[] = Object.freeze([]);
+
+export const NO_EXTENSION_DEFINITIONS: Readonly<Record<string, Definition>> = Object.freeze({});
+
+export class DefinitionObject {
+    readonly source: Source;
+    readonly #span: Span;
+    #asList: Definition[] | undefined;
+    #text: string | undefined;
+    #textAt: Span;
+    #json: JsonValue | undefined;
+
+    constructor(source: Source, span: Span, text: string | undefined) {
+        this.source = source;
+        this.#span = span;
+        this.#text = text;
+        this.#textAt = span;
+    }
+
+    get json(): JsonValue {
+        if (this.#json === undefined) {
+            this.#json = parse(sliceSpan(this.#text, this.#textAt) ?? "null");
+            this.#text = undefined;
+        }
+        return this.#json as JsonValue;
+    }
+
+    static getSpan(definition: DefinitionObject): Span {
+        return definition.#span;
+    }
+
+    static setText(definition: DefinitionObject, text: string | undefined, span: Span): void {
+        if (definition.#json !== undefined) return;
+        definition.#text = text;
+        definition.#textAt = span;
+    }
+
+    static asList(definition: DefinitionObject): Definition[] {
+        definition.#asList ??= [definition];
+        return definition.#asList;
+    }
+
+    toJSON() {
+        return { source: SourceObject.positionOf(this.source) };
+    }
+}
+
+export function sliceSpan(text: string | undefined, { offset, length }: Span): string | undefined {
+    return text?.slice(offset, offset + length);
 }

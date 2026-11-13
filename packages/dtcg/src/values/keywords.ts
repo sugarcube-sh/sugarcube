@@ -1,4 +1,4 @@
-import type { StrokeStyleKeyword, StrokeStyleValue } from "../model/index.js";
+import type { StrokeStyleKeyword, StrokeStyleValue } from "../model/value.js";
 
 /**
  * The font weight keywords the spec defines, each with its number.

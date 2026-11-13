@@ -1,20 +1,18 @@
 import { relatedMessages } from "../../error-messages.js";
-import type {
-    DesignTokens,
-    DiagnosticDetailByKind,
-    DiagnosticKind,
-    Group,
-    Input,
-    JsonPath,
-    ParseResult,
-    Permutation,
-    Definition,
-    Source,
-    Span,
-    Token,
-    TokenType,
-    OriginalProperties,
-} from "../../model/index.js";
+import type { DesignTokens } from "../../model/design-tokens.js";
+import type { DiagnosticDetailByKind, DiagnosticKind } from "../../model/diagnostic.js";
+import { type Group, createGroupObject, allTokens } from "../../model/group.js";
+import { type Input, type Permutation, createPermutation } from "../../model/permutation.js";
+import type { JsonPath, Span } from "../../model/location.js";
+import type { ParseResult } from "../../model/parse.js";
+import {
+    type Definition,
+    NO_EXTENSION_DEFINITIONS,
+    NO_DEFINITIONS,
+} from "../../model/definition.js";
+import type { Source } from "../../model/source.js";
+import { type Token, type OriginalProperties, createTokenObject } from "../../model/token.js";
+import type { TokenType } from "../../model/value.js";
 import { tokenPath } from "../../path.js";
 import { getReferencePath, toReferenceTarget } from "../../values/references.js";
 import type { Mutable } from "../types.js";
@@ -30,23 +28,14 @@ import {
     findDeprecation,
     getInheritedProperty,
 } from "../merge/inherit.js";
-import {
-    NO_EXTENSION_DEFINITIONS,
-    NO_DEFINITIONS,
-    NO_REFERENCES,
-    type DefinitionTracker,
-    createGroupObject,
-    createPermutation,
-    createTokenObject,
-    allTokens,
-} from "../linked.js";
+import { NO_REFERENCES, type ReferenceWithTarget, createReference } from "../../model/reference.js";
+import type { DefinitionTracker } from "./definition-tracker.js";
 import { checkMalformedPointer } from "../json/malformed-pointer.js";
 import type { Merged, MergedGroup, MergedToken, SourceSpan } from "../merge/merge.js";
 import type { MissingRecorder, MissingReferences } from "./missing.js";
 import type { NormalisedPermutation } from "../merge/normalise.js";
 import { type Occurrence, createAliasOccurrence } from "./occurrence.js";
 import type { LocatedReference, ValueReader } from "./value-reader.js";
-import { type ReferenceWithTarget, createReference } from "../reference.js";
 import {
     type ReferenceLookup,
     followReference,
@@ -54,7 +43,7 @@ import {
     toValuePointer,
 } from "../merge/target.js";
 import { type ResolveContext, UNRESOLVED, resolveValue } from "./resolve-value.js";
-import { type TokenBuildFields, sameGroup, sameToken } from "../same-object.js";
+import { type TokenBuildFields, sameGroup, sameToken } from "./reuse.js";
 import { type Properties, toValidType } from "../merge/walk.js";
 
 interface Context {

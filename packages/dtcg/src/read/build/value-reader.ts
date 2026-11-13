@@ -1,15 +1,9 @@
 import type { Node } from "jsonc-parser";
-import type {
-    Diagnostic,
-    IgnoredProperty,
-    Input,
-    ParseOptions,
-    ParseResult,
-    TokenType,
-    UnresolvedValueByType,
-    ValueError,
-} from "../../model/index.js";
-import { type DiagnosticExtra, type DiagnosticCollector } from "../diagnostics/diagnostics.js";
+import type { Diagnostic } from "../../model/diagnostic.js";
+import type { IgnoredProperty, ParseOptions, ParseResult, ValueError } from "../../model/parse.js";
+import type { Input } from "../../model/permutation.js";
+import type { TokenType, UnresolvedValueByType } from "../../model/value.js";
+import type { DiagnosticExtra, DiagnosticCollector } from "../diagnostics/diagnostics.js";
 import { ignoredDiagnostic, valueDiagnostic } from "../diagnostics/value.js";
 import {
     type ReadCollector,

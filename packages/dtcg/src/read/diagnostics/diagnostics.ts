@@ -1,11 +1,7 @@
 import { diagnosticMessages } from "../../error-messages.js";
-import type {
-    Diagnostic,
-    DiagnosticDetailByKind,
-    DiagnosticKind,
-    Input,
-    Permutations,
-} from "../../model/index.js";
+import type { Diagnostic, DiagnosticDetailByKind, DiagnosticKind } from "../../model/diagnostic.js";
+import type { Input } from "../../model/permutation.js";
+import type { Permutations } from "../../model/permutations.js";
 import { isEqualJson } from "../../values/same-value.js";
 import type { Mutable } from "../types.js";
 

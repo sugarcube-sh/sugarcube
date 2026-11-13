@@ -136,3 +136,54 @@ export interface Group {
      */
     readonly tokens: readonly Token[];
 }
+
+type GroupFields = Omit<Group, "kind" | "childTokens" | "tokens">;
+
+class GroupObject {
+    #childTokens: readonly Token[] | undefined;
+    #tokens: readonly Token[] | undefined;
+
+    constructor(fields: GroupFields) {
+        Object.assign(this, fields);
+    }
+
+    get childTokens(): readonly Token[] {
+        this.#childTokens ??= (this as unknown as Group).children.filter(
+            (child): child is Token => child.kind === "token",
+        );
+        return this.#childTokens;
+    }
+
+    get tokens(): readonly Token[] {
+        this.#tokens ??= allTokens((this as unknown as Group).children);
+        return this.#tokens;
+    }
+
+    toJSON() {
+        const group = this as unknown as Group;
+        return {
+            ...group,
+            extends: undefined,
+            rootToken: undefined,
+            children: paths(group.children),
+        };
+    }
+}
+
+Object.defineProperty(GroupObject.prototype, "kind", { value: "group" });
+
+export function allTokens(children: readonly (Token | Group)[], found: Token[] = []): Token[] {
+    for (const child of children) {
+        if (child.kind === "token") found.push(child);
+        else allTokens(child.children, found);
+    }
+    return found;
+}
+
+export function createGroupObject(fields: GroupFields): Group {
+    return new GroupObject(fields) as unknown as Group;
+}
+
+export function paths(items: readonly (Token | Group)[]): string[] {
+    return items.map(({ path }) => path);
+}

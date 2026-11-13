@@ -5,13 +5,10 @@ import type {
     ExtensionMessages,
     ExtensionResult,
     ExtensionValidator,
-    Permutation,
-    StandardSchemaV1,
-    IgnoredProperty,
-    Input,
-    ParseOptions,
-    ValueError,
-} from "../../model/index.js";
+} from "../../model/extension.js";
+import type { Permutation, Input } from "../../model/permutation.js";
+import type { StandardSchemaV1 } from "../../standard-schema.js";
+import type { IgnoredProperty, ParseOptions, ValueError } from "../../model/parse.js";
 import {
     type CheckedExtension,
     type SchemaOutput,

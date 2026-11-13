@@ -3,11 +3,10 @@ import type {
     ColorValue,
     DimensionValue,
     DurationValue,
-    IgnoredProperty,
-    JsonPath,
     TokenType,
-    ValueError,
-} from "../model/index.js";
+} from "../model/value.js";
+import type { IgnoredProperty, ValueError } from "../model/parse.js";
+import type { JsonPath } from "../model/location.js";
 import { fontWeightKeywords } from "./keywords.js";
 
 /** The facts each reason carries, beside `type` and `reason`. */

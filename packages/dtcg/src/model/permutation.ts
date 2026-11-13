@@ -1,9 +1,14 @@
 import type { Diagnostic } from "./diagnostic.js";
-import type { Group } from "./group.js";
+import { type Group, paths } from "./group.js";
 import type { Reference, ReferenceOptions } from "./reference.js";
 import type { ResolverContext } from "./resolver.js";
-import type { Source } from "./source.js";
+import { type Source, SourceObject } from "./source.js";
 import type { Token } from "./token.js";
+import { createDiagnosticFilter } from "../lookup/diagnostics.js";
+import { referenceIndex } from "../lookup/references.js";
+import { tokenPath } from "../path.js";
+import { isEquivalentValue } from "../values/same-value.js";
+import type { DesignTokens } from "./design-tokens.js";
 
 /**
  * A selection of contexts, such as `{ mode: "dark" }`.
@@ -212,4 +217,133 @@ export interface Permutation {
      * for (const problem of dark.getDiagnostics("color.primary")) console.log(problem.message);
      */
     getDiagnostics(path: string): readonly Diagnostic[];
+}
+
+type PermutationFields = Omit<Permutation, keyof PermutationObject>;
+
+export class PermutationObject {
+    readonly #tokens: ReadonlyMap<string, Token>;
+    readonly #groups: ReadonlyMap<string, Group>;
+    #designTokens: DesignTokens | undefined;
+
+    constructor(
+        fields: PermutationFields,
+        tokens: ReadonlyMap<string, Token>,
+        groups: ReadonlyMap<string, Group>,
+    ) {
+        Object.assign(this, fields);
+        this.#tokens = tokens;
+        this.#groups = groups;
+    }
+
+    get isDefault(): boolean {
+        return this.#self.contexts.every((context) => context.isDefault);
+    }
+
+    getToken(path: string): Token | undefined {
+        return this.#tokens.get(path);
+    }
+
+    getGroup(path: string): Group | undefined {
+        return this.#groups.get(path);
+    }
+
+    getTokenOrGroup(path: string): Token | Group | undefined {
+        return this.#tokens.get(path) ?? this.#groups.get(path);
+    }
+
+    getReferencesTo(path: string, { chained = false }: ReferenceOptions = {}): Reference[] {
+        const { position, byPath } = referenceIndex(this.#self);
+        const findReferences = (each: string, isToken: boolean): Reference[] => {
+            if (isToken) return byPath.get(each) ?? [];
+            return [...byPath].flatMap(([named, references]) =>
+                tokenPath.contains(each, named) ? references : [],
+            );
+        };
+        const first = findReferences(path, this.getToken(path) !== undefined);
+        const found = new Set<Reference>(first);
+        const seen = new Set([path]);
+        const waiting = chained ? [first] : [];
+        for (const references of waiting) {
+            for (const reference of references) {
+                found.add(reference);
+                const { owner } = reference;
+                if (seen.has(owner.path)) continue;
+                seen.add(owner.path);
+                waiting.push(findReferences(owner.path, owner.kind === "token"));
+            }
+        }
+        return [...found].sort((a, b) => (position.get(a) ?? 0) - (position.get(b) ?? 0));
+    }
+
+    getDependents(path: string, options?: ReferenceOptions): (Token | Group)[] {
+        return [...new Set(this.getReferencesTo(path, options).map(({ owner }) => owner))];
+    }
+
+    getDependencies(path: string, { chained = false }: ReferenceOptions = {}): (Token | Group)[] {
+        const start = this.getTokenOrGroup(path);
+        if (!start) return [];
+        const found = new Set<Token | Group>();
+        const followed = new Set<Token | Group>([start]);
+        const waiting: (Token | Group)[] = [start];
+        for (const each of waiting) {
+            for (const { pointsToPath } of each.references) {
+                const next =
+                    pointsToPath === undefined ? undefined : this.getTokenOrGroup(pointsToPath);
+                if (!next) continue;
+                found.add(next);
+                if (!chained || followed.has(next)) continue;
+                followed.add(next);
+                waiting.push(next);
+            }
+        }
+        return [...found];
+    }
+
+    getTokensDifferentFrom(other: Permutation): Token[] {
+        return this.#self.tokens.filter((token) => {
+            const otherToken = other.getToken(token.path);
+            if (otherToken === token) return false;
+            if (otherToken === undefined || otherToken.type !== token.type) return true;
+            if (token.resolved === undefined || otherToken.resolved === undefined)
+                return token.resolved !== otherToken.resolved;
+            return !isEquivalentValue(token.type, token.resolved, otherToken.resolved);
+        });
+    }
+
+    getDiagnostics(path: string): Diagnostic[] {
+        const tokens = this.#designTokens as DesignTokens;
+        const permutation = this.#self;
+        const about = createDiagnosticFilter(tokens, path, [permutation]);
+        return tokens.diagnostics.filter(
+            (found) => found.permutations.includes(permutation) && about(found),
+        );
+    }
+
+    toJSON() {
+        const permutation = this.#self;
+        const sources = permutation.sources.map(SourceObject.positionOf);
+        return {
+            ...permutation,
+            contexts: undefined,
+            sources,
+            children: paths(permutation.children),
+        };
+    }
+
+    get #self(): Permutation {
+        return this as unknown as Permutation;
+    }
+
+    static setOwner(permutation: PermutationObject, tokens: DesignTokens): void {
+        permutation.#designTokens = tokens;
+    }
+}
+
+export function createPermutation(
+    fields: PermutationFields,
+    tokens: ReadonlyMap<string, Token>,
+    groups: ReadonlyMap<string, Group>,
+): Permutation {
+    return new PermutationObject(fields, tokens, groups) as unknown as Permutation;
 }

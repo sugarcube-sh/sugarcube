@@ -1,4 +1,7 @@
-import type { Input, InputProblem, Resolver, Span } from "../../model/index.js";
+import type { Input } from "../../model/permutation.js";
+import type { InputProblem } from "../../model/errors.js";
+import type { Resolver } from "../../model/resolver.js";
+import type { Span } from "../../model/location.js";
 
 export interface Modifier {
     name: string;

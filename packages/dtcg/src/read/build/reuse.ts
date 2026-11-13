@@ -1,21 +1,14 @@
-import type {
-    Group,
-    JsonPath,
-    Definition,
-    Resolver,
-    Source,
-    Token,
-    TokenType,
-} from "../model/index.js";
-import type { MergedGroup, MergedToken } from "./merge/merge.js";
-import { type Properties, toValidType } from "./merge/walk.js";
-import { isEqualJson } from "../values/same-value.js";
-
-export interface Target {
-    path?: string | undefined;
-    token?: Token | undefined;
-    pointsToProperty?: JsonPath | undefined;
-}
+import type { Group } from "../../model/group.js";
+import { sameList } from "../../model/location.js";
+import type { Definition } from "../../model/definition.js";
+import type { Target } from "../../model/reference.js";
+import type { Resolver } from "../../model/resolver.js";
+import type { Source } from "../../model/source.js";
+import type { Token } from "../../model/token.js";
+import type { TokenType } from "../../model/value.js";
+import type { MergedGroup, MergedToken } from "../merge/merge.js";
+import { type Properties, toValidType } from "../merge/walk.js";
+import { isEqualJson } from "../../values/same-value.js";
 
 export interface TokenBuildFields {
     type: TokenType;
@@ -74,10 +67,6 @@ export function sameGroup(
     );
 }
 
-export function sameList(a: readonly unknown[], b: readonly unknown[]): boolean {
-    return a.length === b.length && a.every((each, index) => each === b[index]);
-}
-
 export function sameResolver(was: Resolver, now: Resolver): boolean {
     return JSON.stringify(was) === JSON.stringify(now);
 }
@@ -96,8 +85,4 @@ export function sameSource(was: Source, now: Source): boolean {
 function sameContexts(was: Source["contexts"], now: Source["contexts"]): boolean {
     if (was === "every-context" || now === "every-context") return was === now;
     return sameList(was, now);
-}
-
-export function samePropertyPath(a: JsonPath | undefined, b: JsonPath): boolean {
-    return a === undefined ? b.length === 0 : sameList(a, b);
 }

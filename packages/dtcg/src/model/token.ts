@@ -4,6 +4,8 @@ import type { JsonPath } from "./location.js";
 import type { Part } from "./part.js";
 import type { Reference } from "./reference.js";
 import type { TokenType, UnresolvedValue, ValueByType } from "./value.js";
+import { buildParts } from "../lookup/parts.js";
+import { samePropertyPath } from "./location.js";
 
 /** What every token has. */
 export interface TokenBase<T extends TokenType> {
@@ -210,4 +212,72 @@ export interface OriginalProperties {
     readonly description?: string;
     readonly deprecated?: boolean | string;
     readonly extensions?: Readonly<Record<string, JsonValue>>;
+}
+
+const UNCOMPUTED = Symbol("not yet worked out");
+
+type TokenFields = Omit<
+    Token,
+    "kind" | "getReferenceAt" | "aliasChain" | "winningDefinition" | "parts"
+>;
+
+class TokenObject {
+    #aliasChain: readonly Token[] | undefined;
+    #parts: Part | undefined | typeof UNCOMPUTED = UNCOMPUTED;
+
+    constructor(fields: TokenFields) {
+        const self = this as unknown as Record<string, unknown>;
+        self.path = fields.path;
+        self.type = fields.type;
+        self.references = fields.references;
+        self.definitions = fields.definitions;
+        if (fields.value !== undefined) self.value = fields.value;
+        if (fields.resolved !== undefined) self.resolved = fields.resolved;
+        if (fields.invalid) self.invalid = fields.invalid;
+        if (fields.description !== undefined) self.description = fields.description;
+        if (fields.deprecated !== undefined) self.deprecated = fields.deprecated;
+        if (fields.deprecatedByGroup !== undefined)
+            self.deprecatedByGroup = fields.deprecatedByGroup;
+        if (fields.extensions) self.extensions = fields.extensions;
+        if (fields.original) self.original = fields.original;
+        if (fields.generated) self.generated = fields.generated;
+        if (fields.inherited) self.inherited = fields.inherited;
+    }
+
+    getReferenceAt(property: JsonPath = []): Reference | undefined {
+        return (this as unknown as Token).references.find((each) =>
+            samePropertyPath(each.property, property),
+        );
+    }
+
+    get aliasChain(): readonly Token[] {
+        this.#aliasChain ??= followAliasChain(this as unknown as Token);
+        return this.#aliasChain;
+    }
+
+    get winningDefinition(): Definition {
+        const { definitions } = this as unknown as Token;
+        return definitions[definitions.length - 1] as Definition;
+    }
+
+    get parts(): Part | undefined {
+        if (this.#parts === UNCOMPUTED) this.#parts = buildParts(this as unknown as Token);
+        return this.#parts;
+    }
+}
+
+Object.defineProperty(TokenObject.prototype, "kind", { value: "token" });
+
+function followAliasChain(token: Token): Token[] {
+    const chain: Token[] = [];
+    for (let current: Token | undefined = token; current;) {
+        if (chain.includes(current)) break;
+        chain.push(current);
+        current = current.getReferenceAt()?.pointsToWholeToken;
+    }
+    return chain;
+}
+
+export function createTokenObject(fields: TokenFields): Token {
+    return new TokenObject(fields) as unknown as Token;
 }

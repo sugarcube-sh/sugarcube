@@ -1,5 +1,8 @@
 import type { Node } from "jsonc-parser";
-import type { Diagnostic, IgnoredProperty, JsonPath, ValueErrorDetail } from "../../model/index.js";
+import type { Diagnostic } from "../../model/diagnostic.js";
+import type { IgnoredProperty } from "../../model/parse.js";
+import type { JsonPath } from "../../model/location.js";
+import type { ValueErrorDetail } from "../../values/value-errors.js";
 import { type DiagnosticExtra, diagnostic } from "./diagnostics.js";
 import { type JsonFile, deepestNode, propertyKey, toSpan } from "../json/parse.js";
 

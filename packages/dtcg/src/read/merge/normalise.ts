@@ -1,4 +1,6 @@
-import type { Input, ResolverContext, Source } from "../../model/index.js";
+import type { Input } from "../../model/permutation.js";
+import type { ResolverContext } from "../../model/resolver.js";
+import { type Source, createSource } from "../../model/source.js";
 import type { DiagnosticCollector } from "../diagnostics/diagnostics.js";
 import { applyExtends } from "./extends.js";
 import { type Merged, merge } from "./merge.js";
@@ -7,8 +9,7 @@ import { sortByDocumentOrder } from "./order.js";
 import type { ListedSource, LoadedPermutation } from "../resolver/permutations.js";
 import type { LoadedSource } from "../resolver/sources.js";
 import { type SourceContents, type WalkResult, walkSource } from "./walk.js";
-import { createSource } from "../linked.js";
-import { sameSource } from "../same-object.js";
+import { sameSource } from "../build/reuse.js";
 
 export interface NormalisedPermutation {
     input: Input;

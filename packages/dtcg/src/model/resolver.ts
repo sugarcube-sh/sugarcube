@@ -106,3 +106,24 @@ export interface ResolverContext {
 export type SourceRef =
     | { readonly file: string; readonly pointer?: string }
     | { readonly set: string };
+
+const modifierShared = {
+    toJSON(this: ResolverModifier) {
+        const contexts = this.contexts.map(({ name, sources, span }) => ({ name, sources, span }));
+        return { ...this, contexts };
+    },
+};
+
+const contextShared = {
+    toJSON(this: ResolverContext) {
+        return { modifier: this.modifier.name, name: this.name };
+    },
+};
+
+export function createModifier(fields: ResolverModifier): ResolverModifier {
+    return Object.assign(Object.create(modifierShared), fields);
+}
+
+export function createContext(fields: ResolverContext): ResolverContext {
+    return Object.assign(Object.create(contextShared), fields);
+}

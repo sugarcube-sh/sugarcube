@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
-import type { DesignTokens, ReadOptions } from "../model/index.js";
+import type { DesignTokens } from "../model/design-tokens.js";
+import type { ReadOptions } from "../model/read-options.js";
 import { read as readAnywhere } from "../read/read.js";
 import { toPosixPath } from "./paths.js";
 

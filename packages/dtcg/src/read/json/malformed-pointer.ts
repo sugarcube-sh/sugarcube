@@ -1,4 +1,4 @@
-import type { DiagnosticDetailByKind } from "../../model/index.js";
+import type { DiagnosticDetailByKind } from "../../model/diagnostic.js";
 import type { Merged } from "../merge/merge.js";
 import { type PointerParseResult, parsePointerText } from "./pointer.js";
 import { lookupPointer, toValuePointer } from "../merge/target.js";

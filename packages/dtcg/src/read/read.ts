@@ -1,4 +1,6 @@
-import type { DesignTokens, Input, ReadOptions, ReadText, TokensInMemory } from "../model/index.js";
+import { type DesignTokens, createDesignTokens } from "../model/design-tokens.js";
+import type { Input } from "../model/permutation.js";
+import type { ReadOptions, ReadText, TokensInMemory } from "../model/read-options.js";
 import type { FileResponse, FileText, FileRequest } from "./files/open.js";
 import { DiagnosticCollector, addPermutations } from "./diagnostics/diagnostics.js";
 import { type Loaded, load } from "./load.js";
@@ -16,8 +18,8 @@ import { parseJson } from "./json/parse.js";
 import { isResolver } from "./resolver/check.js";
 import { exceptionMessages } from "../error-messages.js";
 import { EntryFileError } from "./files/entry-file-error.js";
-import { createDesignTokens, createDefinitionTracker } from "./linked.js";
-import { allPermutations } from "./make-permutations.js";
+import { createDefinitionTracker } from "./build/definition-tracker.js";
+import { allPermutations } from "../model/permutations.js";
 
 const { performance } = globalThis as unknown as { performance: { now(): number } };
 
