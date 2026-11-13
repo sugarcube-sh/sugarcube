@@ -1,6 +1,6 @@
 import type { Group, JsonPath, Definition, Resolver, Source, Token, TokenType } from "../model.js";
-import type { MergedGroup, MergedToken } from "./merge.js";
-import { type Properties, toValidType } from "./walk.js";
+import type { MergedGroup, MergedToken } from "./merge/merge.js";
+import { type Properties, toValidType } from "./merge/walk.js";
 import { isEqualJson } from "../values/same-value.js";
 
 export interface Target {

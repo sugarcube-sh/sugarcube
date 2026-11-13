@@ -11,7 +11,7 @@ import type {
     ParsedReference,
 } from "../model.js";
 import { applyMovesToReference } from "../values/references.js";
-import type { Occurrence } from "./occurrence.js";
+import type { Occurrence } from "./build/occurrence.js";
 import type { Target } from "./same-object.js";
 
 export interface ReferenceWithTarget extends Target {

@@ -33,7 +33,7 @@ import { tokenPath } from "../path.js";
 import { makePermutations } from "./make-permutations.js";
 import { getReferenceSpan, toReferenceInPermutations } from "./reference.js";
 import { samePropertyPath } from "./same-object.js";
-import { type KnownFiles, createKnownFiles, withChanges } from "./known-files.js";
+import { type KnownFiles, createKnownFiles, withChanges } from "./files/known.js";
 
 export const NO_REFERENCES: readonly Reference[] = Object.freeze([]);
 export const NO_DEFINITIONS: readonly Definition[] = Object.freeze([]);

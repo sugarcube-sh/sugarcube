@@ -1,7 +1,7 @@
 import type { CurlyBraceReference, JsonPointerReference, Move, ParsedReference } from "../model.js";
 import { tokenPath } from "../path.js";
-import { encodePointer, refSteps } from "../read/pointer.js";
-import { pointerParts } from "../read/ref-meaning.js";
+import { encodePointer, refSteps } from "../read/json/pointer.js";
+import { pointerParts } from "../read/merge/target.js";
 import { isJsonObject } from "./json.js";
 
 /**

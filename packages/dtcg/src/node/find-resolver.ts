@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
-import { parseJson } from "../read/json.js";
-import { isResolver, isResolverName } from "../read/resolver.js";
+import { parseJson } from "../read/json/parse.js";
+import { isResolver, isResolverName } from "../read/resolver/check.js";
 import { findFiles, isJson } from "./find-files.js";
 
 /**

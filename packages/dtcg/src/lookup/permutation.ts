@@ -7,7 +7,7 @@ import type {
     PermutationErrorDetail,
     SeveralPermutationsDetail,
 } from "../model.js";
-import { checkInput, allModifiers } from "../read/input.js";
+import { checkInput, allModifiers } from "../read/resolver/input.js";
 
 /**
  * Thrown when an input names a permutation the tokens don't have.

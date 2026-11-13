@@ -1,5 +1,5 @@
 import { literal, err, object, ok, oneOf, wrongShape } from "./syntax.js";
-import { number } from "./number.js";
+import { number } from "./syntaxes/number.js";
 import type { DimensionValue, DurationValue } from "../model.js";
 
 /**

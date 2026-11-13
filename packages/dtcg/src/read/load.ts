@@ -7,17 +7,17 @@ import {
     fetchFiles,
     openFile,
     parseFile,
-} from "./files.js";
+} from "./files/open.js";
 import {
     type PermutationOptions,
     type LoadedPermutation,
     fromResolver,
     fromTokenFile,
-} from "./permutations.js";
-import { checkResolver, isResolver } from "./resolver.js";
-import { toPublicResolver } from "./resolver-part.js";
-import { DiagnosticCollector } from "./diagnostics.js";
-import { expandSources, allFiles, openSources, allPieces } from "./sources.js";
+} from "./resolver/permutations.js";
+import { checkResolver, isResolver } from "./resolver/check.js";
+import { toPublicResolver } from "./resolver/public.js";
+import { DiagnosticCollector } from "./diagnostics/diagnostics.js";
+import { expandSources, allFiles, openSources, allPieces } from "./resolver/sources.js";
 import { sameResolver } from "./same-object.js";
 
 export interface Loaded {

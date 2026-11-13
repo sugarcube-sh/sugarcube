@@ -9,7 +9,7 @@ import type {
 } from "../model.js";
 import { findNodeAtLocation, parse } from "jsonc-parser";
 import { findJsonPath, findNode, getTree } from "./json-path.js";
-import { findLineStarts, getKeyNode, toSpan } from "../read/json.js";
+import { findLineStarts, getKeyNode, toSpan } from "../read/json/parse.js";
 
 export const SPAN_OF = Symbol.for("@sugarcube-sh/dtcg/span-of");
 

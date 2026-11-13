@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { OTHER_SPEC_KEYS, OWN_PROPERTIES } from "../read/spec-keys.js";
+import { OTHER_SPEC_KEYS, OWN_PROPERTIES } from "../read/merge/spec-keys.js";
 import { findFiles, isJson } from "./find-files.js";
 
 /**

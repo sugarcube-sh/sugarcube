@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { oneFile } from "../token-files.js";
-import { similarName } from "../../src/read/similar.js";
+import { similarName } from "../../src/read/diagnostics/similar.js";
 
 const close: [string, string[], string][] = [
     ["color.brnd", ["color.brand", "color.ink"], "color.brand"],
