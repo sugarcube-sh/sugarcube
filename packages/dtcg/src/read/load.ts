@@ -1,4 +1,4 @@
-import type { Diagnostic, Resolver } from "../model.js";
+import type { Diagnostic, Resolver } from "../model/index.js";
 import {
     type FileResponse,
     type FileText,

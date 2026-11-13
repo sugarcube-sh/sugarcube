@@ -1,4 +1,4 @@
-import type { SourceLine, Span } from "../model.js";
+import type { SourceLine, Span } from "../model/index.js";
 
 /**
  * Gets the line a span starts on, and where the span sits on it.

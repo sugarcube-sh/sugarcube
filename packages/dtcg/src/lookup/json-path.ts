@@ -1,6 +1,6 @@
 import { type Node, findNodeAtOffset, getNodePath, parseTree } from "jsonc-parser";
 import { exceptionMessages } from "../error-messages.js";
-import type { DesignTokens, JsonPath, Span } from "../model.js";
+import type { DesignTokens, JsonPath, Span } from "../model/index.js";
 
 interface ParseCache {
     trees: Map<string, Node | undefined>;

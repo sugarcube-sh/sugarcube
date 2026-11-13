@@ -11,7 +11,7 @@ import type {
     Input,
     ParseOptions,
     ValueError,
-} from "../../model.js";
+} from "../../model/index.js";
 import {
     type CheckedExtension,
     type SchemaOutput,

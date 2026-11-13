@@ -5,7 +5,7 @@ import type {
     DiagnosticKind,
     Input,
     Permutations,
-} from "../../model.js";
+} from "../../model/index.js";
 import { isEqualJson } from "../../values/same-value.js";
 import type { Mutable } from "../types.js";
 

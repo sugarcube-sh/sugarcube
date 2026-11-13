@@ -1,5 +1,5 @@
 import { relatedMessages } from "../../error-messages.js";
-import type { Input, Source, Span, ParsedReference } from "../../model.js";
+import type { Input, Source, Span, ParsedReference } from "../../model/index.js";
 import {
     applyMovesToReference,
     getReferencePath,

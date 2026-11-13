@@ -6,7 +6,7 @@ import type {
     Definition,
     Reference,
     Span,
-} from "../model.js";
+} from "../model/index.js";
 import { findNodeAtLocation, parse } from "jsonc-parser";
 import { findJsonPath, findNode, getTree } from "./json-path.js";
 import { findLineStarts, getKeyNode, toSpan } from "../read/json/parse.js";

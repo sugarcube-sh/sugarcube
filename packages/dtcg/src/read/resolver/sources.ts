@@ -1,6 +1,6 @@
 import type { DiagnosticCollector } from "../diagnostics/diagnostics.js";
 import type { Node } from "jsonc-parser";
-import type { JsonPath } from "../../model.js";
+import type { JsonPath } from "../../model/index.js";
 import { type Files, openFile, parseFile } from "../files/open.js";
 import { type JsonFile, member, members, toSpan } from "../json/parse.js";
 import { malformedPointer } from "../json/malformed-pointer.js";

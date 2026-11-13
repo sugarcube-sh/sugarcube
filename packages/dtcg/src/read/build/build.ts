@@ -14,7 +14,7 @@ import type {
     Token,
     TokenType,
     OriginalProperties,
-} from "../../model.js";
+} from "../../model/index.js";
 import { tokenPath } from "../../path.js";
 import { getReferencePath, toReferenceTarget } from "../../values/references.js";
 import type { Mutable } from "../types.js";

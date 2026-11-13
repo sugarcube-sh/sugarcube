@@ -1,4 +1,4 @@
-import type { DesignTokens, Input, ReadOptions, ReadText, TokensInMemory } from "../model.js";
+import type { DesignTokens, Input, ReadOptions, ReadText, TokensInMemory } from "../model/index.js";
 import type { FileResponse, FileText, FileRequest } from "./files/open.js";
 import { DiagnosticCollector, addPermutations } from "./diagnostics/diagnostics.js";
 import { type Loaded, load } from "./load.js";

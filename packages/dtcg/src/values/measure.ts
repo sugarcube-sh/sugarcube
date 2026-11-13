@@ -1,6 +1,6 @@
 import { literal, err, object, ok, oneOf, wrongShape } from "./syntax.js";
 import { number } from "./syntaxes/number.js";
-import type { DimensionValue, DurationValue } from "../model.js";
+import type { DimensionValue, DurationValue } from "../model/index.js";
 
 /**
  * A number followed by a unit, such as `"16px"`.

@@ -20,7 +20,7 @@ import type {
     Source,
     Span,
     Token,
-} from "../model.js";
+} from "../model/index.js";
 import { createDiagnosticFilter } from "../lookup/diagnostics.js";
 import { Changes, diffGroup, pairByPath, diffToken } from "../lookup/changes-since.js";
 import { SPAN_OF, getSpan } from "../lookup/editor.js";

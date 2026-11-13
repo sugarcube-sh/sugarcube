@@ -5,7 +5,7 @@ import type {
     DiagnosticKind,
     JsonPath,
     ResolverProblem,
-} from "../../model.js";
+} from "../../model/index.js";
 import {
     type DiagnosticExtra,
     diagnostic,

@@ -1,5 +1,5 @@
 import type { Node } from "jsonc-parser";
-import type { Resolver, ResolverModifier, ResolverSet, SourceRef } from "../../model.js";
+import type { Resolver, ResolverModifier, ResolverSet, SourceRef } from "../../model/index.js";
 import { diagnostic, type DiagnosticCollector } from "../diagnostics/diagnostics.js";
 import { member, toPlainObject, toSpan } from "../json/parse.js";
 import { getFolder } from "../files/paths.js";

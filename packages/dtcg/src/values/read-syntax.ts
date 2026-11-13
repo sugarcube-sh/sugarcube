@@ -7,7 +7,7 @@ import type {
     UnresolvedValueByType,
     ValueError,
     ParsedReference,
-} from "../model.js";
+} from "../model/index.js";
 import { syntaxes } from "./syntaxes/index.js";
 import { isJsonObject } from "./json.js";
 import { isReference, readCurlyBrace, readJsonPointer } from "./references.js";

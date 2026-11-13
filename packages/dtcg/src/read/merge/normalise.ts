@@ -1,4 +1,4 @@
-import type { Input, ResolverContext, Source } from "../../model.js";
+import type { Input, ResolverContext, Source } from "../../model/index.js";
 import type { DiagnosticCollector } from "../diagnostics/diagnostics.js";
 import { applyExtends } from "./extends.js";
 import { type Merged, merge } from "./merge.js";

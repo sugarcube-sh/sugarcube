@@ -1,4 +1,4 @@
-import type { Move } from "./model.js";
+import type { Move } from "./model/index.js";
 
 const FORBIDDEN = [".", "{", "}"] as const;
 

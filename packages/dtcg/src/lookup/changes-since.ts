@@ -12,7 +12,7 @@ import type {
     OriginalProperties,
     OriginalGroup,
     OriginalToken,
-} from "../model.js";
+} from "../model/index.js";
 import { makePermutations } from "../read/make-permutations.js";
 import { tokenPath } from "../path.js";
 import { isJsonObject } from "../values/json.js";

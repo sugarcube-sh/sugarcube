@@ -8,7 +8,7 @@ import type {
     JsonValue,
     TokenType,
     ParsedReference,
-} from "../../model.js";
+} from "../../model/index.js";
 import { parseReference } from "../../values/references.js";
 import { isTokenType, tokenTypes } from "../../values/token-types.js";
 import { type DiagnosticExtra, diagnostic } from "../diagnostics/diagnostics.js";

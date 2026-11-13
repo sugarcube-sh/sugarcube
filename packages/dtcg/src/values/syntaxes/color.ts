@@ -1,4 +1,4 @@
-import type { ColorSpace } from "../../model.js";
+import type { ColorSpace } from "../../model/index.js";
 import { colorSpaces } from "../color-spaces.js";
 import { expandHex, hexToColorObject, parseHexColor } from "../hex-color.js";
 import {

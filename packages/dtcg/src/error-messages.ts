@@ -10,7 +10,7 @@ import type {
     ResolverProblem,
     ResolverRule,
     SeveralPermutationsDetail,
-} from "./model.js";
+} from "./model/index.js";
 import { toInputLabel } from "./lookup/permutation-label.js";
 import {
     didYouMean,

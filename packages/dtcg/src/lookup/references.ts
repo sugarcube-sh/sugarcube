@@ -1,4 +1,4 @@
-import type { Group, Permutation, Reference, Token } from "../model.js";
+import type { Group, Permutation, Reference, Token } from "../model/index.js";
 
 interface ReferenceIndex {
     position: Map<Reference, number>;

@@ -1,4 +1,4 @@
-import type { DesignTokens, Permutation, PermutationGroup } from "../model.js";
+import type { DesignTokens, Permutation, PermutationGroup } from "../model/index.js";
 import { makePermutations } from "../read/make-permutations.js";
 import { sameList } from "../read/same-object.js";
 

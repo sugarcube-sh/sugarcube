@@ -108,4 +108,4 @@ export type {
     OriginalGroup,
     ParsedReference,
     OriginalToken,
-} from "./model.js";
+} from "./model/index.js";

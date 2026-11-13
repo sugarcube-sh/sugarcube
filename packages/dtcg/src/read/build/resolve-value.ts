@@ -6,7 +6,7 @@ import type {
     JsonPointerReference,
     Span,
     TokenType,
-} from "../../model.js";
+} from "../../model/index.js";
 import { isJsonObject } from "../../values/json.js";
 import { toReferenceTarget } from "../../values/references.js";
 import type { DeferredRead, Slot } from "../../values/read-syntax.js";

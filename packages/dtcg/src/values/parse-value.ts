@@ -5,7 +5,7 @@ import type {
     TokenType,
     UnresolvedValue,
     ValueByType,
-} from "../model.js";
+} from "../model/index.js";
 import { exceptionMessages } from "../error-messages.js";
 import { type ReadCollector, readToken } from "./read-syntax.js";
 import { isTokenType } from "./token-types.js";
